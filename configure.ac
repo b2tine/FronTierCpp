@@ -1,24 +1,29 @@
 #Initialize autoconf with project name and version number
 AC_INIT([FronTier],[1.0])
 
-#Store generated build tools
+#Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
+#Directory for generated macros
+#AC_CONFIG_MACRO_DIR([m4])
 
 #Initialize automake and specify foreign (non-GNU) standards.
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 #To create static library
 AC_PROG_RANLIB
 
 #Check for C compiler
 AC_PROG_CC
+#Check for ar 
+AM_PROG_AR
 
 #NOTE: will most likely want to use autoheader for this task
 #Header files to produce that include #DEFINE statements
 #AC_CONFIG_HEADERS([config.h])
 
 #Makefiles to produce
-AC_CONFIG_FILES([Makefile src/util/Makefile])
+AC_CONFIG_FILES([Makefile libs/Makefile])
+#AC_CONFIG_FILES([Makefile src/util/Makefile])
 
 #Generate output
 AC_OUTPUT

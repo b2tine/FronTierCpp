@@ -1,2 +1,3 @@
-SUBDIRS = src/util
+SUBDIRS = libs
+#SUBDIRS = src/util
 #SUBDIRS = src/front src/intfc src/util example2d
