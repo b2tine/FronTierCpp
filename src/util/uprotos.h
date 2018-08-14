@@ -346,6 +346,7 @@ FORTRAN  void FORTRAN_NAME(splev)(double*,int*,double*,int*,double*,double*,
 }
 #endif
 
-#include <util/uapi.h>
+#include <uapi.h>
+//#include <util/uapi.h>
 
 #endif /* !defined(_UPROTOS_H) */

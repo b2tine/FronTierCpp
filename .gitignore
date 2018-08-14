@@ -19,15 +19,15 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
+#*.a
 *.lib
 
 # Executables
 *.exe
 *.out
 *.app
-Makefile
-*.cache
+#Makefile
+#*.cache
 *.log
 *.status
 *.inc
@@ -35,7 +35,7 @@ Makefile
 *.dep.*
 *.files
 *.ofiles
-configure
+#configure
 include
 crystal
 iFluid
