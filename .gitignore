@@ -28,8 +28,8 @@
 *.app
 #Makefile
 #*.cache
-*.log
-*.status
+#*.log
+#*.status
 *.inc
 *.dep
 *.dep.*
