@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_wall_surf"
 
-#include <intfc/int.h>
+#include <int.h>
 
 LOCAL  int compare_surf(const void *, const void *);
 

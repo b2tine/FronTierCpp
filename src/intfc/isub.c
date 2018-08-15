@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	angles, areas, vector and scalar products.
 */
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 	/* LOCAL Function Prototypes */
 LOCAL	BDRY_SIDE rect_bdry_side_for_surface(int*,int*,SURFACE*,RECT_GRID*);

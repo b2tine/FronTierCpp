@@ -31,9 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_IGEOM_H)
 #define _IGEOM_H
 
-#include <util/cdecs.h>
-#include <util/vmalloc.h>
-#include <intfc/triangledefs.h>
+#include <cdecs.h>
+#include <vmalloc.h>
+#include <triangledefs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

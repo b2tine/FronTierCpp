@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_make_curve"
 
-#include <intfc/int.h>
+#include <int.h>
 
 struct  _EG_CRX_2D {
         BBI_POINT ***x_crx;

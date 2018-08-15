@@ -33,9 +33,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if !defined(_INT_H)
 #define _INT_H
 
-#include <intfc/geom.h>
+#include <geom.h>
 #ifdef IMESH
-#include <intfc/iTaps.h>
+#include <iTaps.h>
 #endif /*def IMESH */
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -1341,7 +1341,7 @@ enum {
 
 #define Prev_corner(n,nc)       (((n) + (nc) - 1) % (nc))
 
-#include <intfc/array.h>
+#include <array.h>
 
 #define Num_pos_curves_of_surface(surface)				\
 		size_of_pointers((POINTER *)(surface)->pos_curves)
@@ -1571,8 +1571,8 @@ typedef struct _SCALED_REDIST_PARAMS SCALED_REDIST_PARAMS;
 #endif
 
 
-#include <intfc/table.h>
-#include <intfc/userint.h>
-#include <intfc/iprotos.h>
+#include <table.h>
+#include <userint.h>
+#include <iprotos.h>
 
 #endif /* !defined(_INT_H) */

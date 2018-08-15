@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_tris_set"
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 typedef  struct {
 	TRI		*tri1;

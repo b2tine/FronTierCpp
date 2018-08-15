@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING    "comp3d"
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 typedef struct {
 	double   pt[3];		/* Location being projected on tri */

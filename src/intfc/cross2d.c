@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	double	distance_between_points_on_curve(POINT*,BOND*,POINT*,BOND*,

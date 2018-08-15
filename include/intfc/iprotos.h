@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_IPROTOS_H)
 #define _IPROTOS_H
 
-#include <intfc/int.h>
+#include <int.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -989,6 +989,6 @@ IMPORT iBase_EntityHandle entityOfTri(TRI *t);
 }
 #endif
 
-#include <intfc/iapi.h>
+#include <iapi.h>
 
 #endif /* !defined(_IPROTOS_H) */

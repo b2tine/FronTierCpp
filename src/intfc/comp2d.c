@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define DEBUG_STRING "comp2d"
 #endif /* defined(DEBUG_COMP2D) */
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	COMPONENT find_compon2d(int,int,INTERFACE*);

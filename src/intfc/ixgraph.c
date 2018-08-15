@@ -47,7 +47,7 @@ const char xgraph_color[][100] ={"red",
 			"navy"};
 
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 LOCAL	void 	xgraph_curve_within_range(FILE*,CURVE*,double*,double,
 				const char*);

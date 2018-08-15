@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *			User Supplied Operations
 */
 
-#include <intfc/iloc.h>
+#include <iloc.h>
 
 /* User interface hooks switching functions */
 /* TODO:  upon upgrade to C++ these should be declared inline */

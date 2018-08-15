@@ -2,12 +2,12 @@
 #define ITAPS
 #endif
 
-#include <intfc/iBase.h>
-#include <intfc/iMesh.h>
-#include <intfc/iGeom.h>
-#include <intfc/iRel.h>
+#include <iBase.h>
+#include <iMesh.h>
+#include <iGeom.h>
+#include <iRel.h>
 #if defined __MPI__
-#include <intfc/iMeshP.h>
+#include <iMeshP.h>
 #endif /* defined __MPI__ */
 
 

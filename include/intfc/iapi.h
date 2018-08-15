@@ -10,7 +10,7 @@
 /*! \defgroup QUERY  	 QUERY Functions
  **/
 
-#include <intfc/int.h>
+#include <int.h>
 
                 /* Interface Function Prototypes*/
 
