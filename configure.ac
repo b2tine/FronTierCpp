@@ -14,16 +14,23 @@ AC_PROG_RANLIB
 
 #Check for C compiler
 AC_PROG_CC
+#Check for C++ compiler
+AC_PROG_CXX
 #Check for ar 
 AM_PROG_AR
 
-#NOTE: will most likely want to use autoheader for this task
 #Header files to produce that include #DEFINE statements
 #AC_CONFIG_HEADERS([config.h])
 
+AC_ARG_WITH([hdf],[AS_HELP_STRING([--with-hdf],
+            [use hdf (default is no)])],[],[use_hdf=no])
+
 #Makefiles to produce
+#AC_CONFIG_FILES([Makefile libs/Makefile example2d/Makefile])
 AC_CONFIG_FILES([Makefile libs/Makefile])
-#AC_CONFIG_FILES([Makefile src/util/Makefile])
+
+#Calls ./configure in example2d recursively
+#AC_CONFIG_SUBDIRS([example2d])
 
 #Generate output
 AC_OUTPUT
