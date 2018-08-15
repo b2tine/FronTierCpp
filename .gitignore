@@ -1,7 +1,7 @@
 # Compiled Object files
 *.slo
 *.lo
-*.o
+#*.o
 *.obj
 
 # Precompiled Headers
@@ -36,7 +36,7 @@
 *.files
 *.ofiles
 #configure
-include
+#include
 crystal
 iFluid
 
