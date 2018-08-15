@@ -24,6 +24,7 @@ AM_PROG_AR
 
 AC_ARG_WITH([hdf],[AS_HELP_STRING([--with-hdf],
             [use hdf (default is no)])],[],[use_hdf=no])
+#TODO: write test to check for header and libs and use AC_SUBST to hand out to Makefile.in's.
 
 #Makefiles to produce
 #AC_CONFIG_FILES([Makefile libs/Makefile example2d/Makefile])
