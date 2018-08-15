@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING "2drp"
-#include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fdecs.h>		/* includes int.h, table.h */
 
 	/* LOCAL Function Declarations */
 LOCAL	CURVE	*merge_propagated_curves(O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,

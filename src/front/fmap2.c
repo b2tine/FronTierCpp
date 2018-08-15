@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fdecs.h>		/* includes int.h, table.h */
 
 LOCAL double cell_frac_comp2(double***,double***,COMPONENT**,COMPONENT);
 LOCAL double corner_cell_frac(double***,double***,COMPONENT**,

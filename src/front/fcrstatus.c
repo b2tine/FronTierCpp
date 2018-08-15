@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	int	are_curves_close(CURVE*,CURVE*,RECT_GRID*);

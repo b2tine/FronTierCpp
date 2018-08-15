@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "fscatter"
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 struct _POINT_LIST {
 	POINT              *p;

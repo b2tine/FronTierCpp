@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING	"redist3d"
-#include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fdecs.h>		/* includes int.h, table.h */
 
 enum _SPQ_FLAG {
 	SHORTEST = 0,

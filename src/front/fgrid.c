@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 LOCAL	int set_grid_intfc_components1d(INTERFACE*,INTERFACE*);
 LOCAL	int set_grid_intfc_components2d(INTERFACE*,INTERFACE*);

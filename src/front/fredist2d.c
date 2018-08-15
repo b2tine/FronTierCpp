@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "redistribute"
-#include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fdecs.h>		/* includes int.h, table.h */
 
 	/* LOCAL Function Declarations */
 LOCAL	INTERFACE	*make_save_intfc(INTERFACE*);

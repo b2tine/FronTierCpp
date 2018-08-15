@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fdecs.h>		/* includes int.h, table.h */
 
 LOCAL 	boolean build_linear_element(INTRP_CELL*,double*);
 LOCAL 	void collect_cell_ptst(INTRP_CELL*,int*,double*,COMPONENT,Front*,

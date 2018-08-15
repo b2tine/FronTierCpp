@@ -34,8 +34,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_STRING "crx_intfc"
 #define DB_TEC  true
 
-#include <front/fdecs.h>
-#include <front/fpatrecon.h>
+#include <fdecs.h>
+#include <fpatrecon.h>
 
 LOCAL	boolean track_comp_and_repair3d(int*,int*,int*,INTERFACE*,Front*);
 LOCAL	boolean track_comp_and_set_boxes(int*,int*,int*,INTERFACE*,Front*);

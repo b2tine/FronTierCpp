@@ -20,7 +20,7 @@
  *  \defgroup INFO          	FronTier Print Information
  **/
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
                 /* Front IMPORTED Function Prototypes*/
 

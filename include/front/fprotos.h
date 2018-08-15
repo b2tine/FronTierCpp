@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_FPROTOS_H)
 #define _FPROTOS_H
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 		/* Front IMPORTED Function Prototypes*/
 
@@ -947,5 +947,5 @@ IMPORT	double FrontHypTimeStep(Front*);
 }
 #endif
 
-#include <front/fapi.h>
+#include <fapi.h>
 #endif /* !defined(_FPROTOS_H) */

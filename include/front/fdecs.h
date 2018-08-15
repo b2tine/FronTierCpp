@@ -38,14 +38,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_FDECS_H)
 #define _FDECS_H
 
-#include <intfc/int.h>
+#include <int.h>
 
 
 #define LOCSTATE
 typedef POINTER Locstate;
 
-#include <front/frp.h>
-#include <front/fvelo.h>
+#include <frp.h>
+#include <fvelo.h>
 #if defined(USE_HDF)
 #include <hdf.h>
 #include <mfhdf.h>
@@ -1561,6 +1561,6 @@ typedef struct _HDF_frame_data HDF_frame_data;
 }
 #endif
 
-#include <front/fuserint.h>
-#include <front/fprotos.h>
+#include <fuserint.h>
+#include <fprotos.h>
 #endif /* !defined(_FDECS_H) */

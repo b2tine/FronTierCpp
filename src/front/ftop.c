@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	interface not covered in the intfc library routines.
 */
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	int	merge_cross_with_node(CURVE*,ORIENTATION,CROSS*,COMPONENT*,

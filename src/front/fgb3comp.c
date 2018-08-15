@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "crx_intfc"
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 #define  is_moving_curve(c)    (curve_type(c) == NEUMANN_CURVE_P || \
                                 curve_type(c) == NEUMANN_CURVE_W )

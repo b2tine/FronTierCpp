@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 LOCAL 	void 	summary_of_nodes(INTERFACE*);
 LOCAL 	void	summary_of_curves(INTERFACE*);

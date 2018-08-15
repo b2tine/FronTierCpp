@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define DEBUG_STRING "crx_intfc"
 
-#include <front/fdecs.h>
+#include <fdecs.h>
 
 struct _CRX_SORT {
   	double *compare_coord;
