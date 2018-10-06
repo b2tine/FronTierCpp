@@ -1,7 +1,7 @@
 # Compiled Object files
 *.slo
 *.lo
-#*.o
+*.o
 *.obj
 
 # Precompiled Headers
@@ -17,9 +17,10 @@
 *.mod
 
 # Compiled Static libraries
+lib
 *.lai
 *.la
-#*.a
+*.a
 *.lib
 
 # Executables
@@ -31,7 +32,7 @@
 #*.log
 #*.status
 *.inc
-*.dep
+*.deps
 *.dep.*
 *.files
 *.ofiles
@@ -39,6 +40,9 @@
 #include
 crystal
 iFluid
+
+#example2d
+example2d/example*
 
 # Others
 *~

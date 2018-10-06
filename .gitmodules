@@ -1,0 +1,3 @@
+[submodule "autoconf-archive"]
+	path = autoconf-archive
+	url = https://github.com/autoconf-archive/autoconf-archive.git

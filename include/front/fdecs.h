@@ -46,10 +46,11 @@ typedef POINTER Locstate;
 
 #include <frp.h>
 #include <fvelo.h>
-#if defined(USE_HDF)
+
+#if defined(USE_HDF4)
 #include <hdf.h>
 #include <mfhdf.h>
-#endif /* defined(USE_HDF) */
+#endif
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -506,10 +507,18 @@ struct _CELL_PART {			/* Cell partition data structure */
 typedef struct _CELL_PART CELL_PART;
 
 struct _Front {
-		/* Grid Specification */
-	RECT_GRID *rect_grid;		/* Grid Info */
-	PP_GRID* pp_grid;
+	
 	F_BASIC_DATA *f_basic;
+
+    RECT_GRID *rect_grid;		/* Grid Info */
+	PP_GRID* pp_grid;
+
+	INTERFACE *interf;		/* Interface */
+	INTERFACE *grid_intfc;		/* Grid Interface */
+	INTERFACE *comp_grid_intfc;		/* Grid Interface */
+	INTERFACE *emb_grid_intfc;	/* Grid Interface for embedded bdry */
+	INTERFACE *old_grid_intfc;      /* Grid Interface of previous step*/
+
 
 		/* advancing the front */
 	void	(*_pre_advance_front)(struct _Front*);
@@ -704,11 +713,6 @@ struct _Front {
 
 		/* (the rest of the front consists of pointers) */
 
-	INTERFACE *interf;		/* Interface */
-	INTERFACE *grid_intfc;		/* Grid Interface */
-	INTERFACE *comp_grid_intfc;		/* Grid Interface */
-	INTERFACE *emb_grid_intfc;	/* Grid Interface for embedded bdry */
-	INTERFACE *old_grid_intfc;      /* Grid Interface of previous step*/
 	boolean extrapolation_permitted;
 
 };
@@ -1406,7 +1410,7 @@ struct _INTRP_CELL {
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 
-#if defined(USE_HDF)
+#if defined(USE_HDF4)
 
 typedef	enum {HDF_RASTER, HDF_SDS} HDF_DATA_TYPE;
 
@@ -1544,7 +1548,7 @@ typedef struct _HDF_frame_data HDF_frame_data;
 #define hdf_frame_plot_filter(fdata)	HDF_plot_filter(hdf_frame_opts(fdata))
 #define HDF_frame_plot_function(Fdata)	HDF_plot_function(HDF_frame_opts(Fdata))
 #define hdf_frame_plot_function(fdata)	HDF_plot_function(hdf_frame_opts(fdata))
-#endif /* defined(USE_HDF) */
+#endif /* defined(USE_HDF4) */
 
 /* Front Macros for outside users */
 

@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 LOCAL	void	   fprint_FlowSpecifiedRegion_list(FILE*,Front*);
 LOCAL	void	   show_phys_curve_states(INTERFACE*);
 LOCAL	void	   show_states_at_point_on_tri(FILE*,int,TRI*,SURFACE*);
-#if defined(USE_HDF)
+#if defined(USE_HDF4)
 LOCAL	int32	dfnt_size_float(void);
 LOCAL	long	fill_hdf_values1d(POINTER,Front*,HDF_plot_data*,double*,double*,
 				  double*,double*,int*);
@@ -69,7 +69,7 @@ LOCAL	void	hdf_plot_var3d(Front*,char*,char*,double*,COMPONENT,
 		double (*get_state_var)(Locstate),int,boolean);
 LOCAL 	void 	add_cut_frame(char*,char*,int,int,uint8*,double*,double,
 				double,double*,double*,boolean);
-#endif /* defined(USE_HDF) */
+#endif /* defined(USE_HDF4) */
 LOCAL   void    show_front_gv(Front*,char*);
 LOCAL	void	gv_plot_var2d(Front*,char*,HDF_MOVIE_VAR*,int);
 
@@ -1340,7 +1340,7 @@ LOCAL	void show_front_hdf(
 	int dim = front->rect_grid->dim;
 
 	if (dim == 1) return;
-#if defined(USE_HDF)
+#if defined(USE_HDF4)
 	/* Create HDF directory */
 	sprintf(dirname,"%s/hdf",out_name);
 	if (first && pp_mynode() == 0)
@@ -1384,7 +1384,7 @@ LOCAL	void show_front_hdf(
 		}
 	    }
 	}
-#endif /* defined(USE_HDF) */
+#endif /* defined(USE_HDF4) */
 	first = NO;
 	return;
 }	/* end show_front_hdf */
@@ -1679,7 +1679,7 @@ EXPORT  void show_front_output(
 	show_front_sdl(front,out_name);
 }       /* end show_front_output */
 
-#if defined(USE_HDF)
+#if defined(USE_HDF4)
 EXPORT void plot_hdf_data(
 	POINTER		wave,
 	Front		*front,
@@ -3638,7 +3638,7 @@ LOCAL	void	hdf_plot_var3d(
 	free_these(2,var_val,r_val);
 	debug_print("HDF","Left hdf_plot_var3d()\n");
 }	/* end hdf_plot_var3d */
-#endif /* defined(USE_HDF) */
+#endif /* defined(USE_HDF4) */
 
 LOCAL 	void fprint_front_time_stamp(
 	FILE *file,

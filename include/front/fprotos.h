@@ -475,9 +475,9 @@ IMPORT	void	debug_front(const char*,const char*,Front*);
 IMPORT	void	f_fprint_max_front_speed_info(FILE*,Front*);
 IMPORT  void    print_front_output(Front*,char*);
 IMPORT	void	show_front_output(Front*,char*,boolean);
-#if defined(USE_HDF)
+#if defined(USE_HDF4)
 IMPORT	void	plot_hdf_data(POINTER,Front*,HDF_plot_data*);
-#endif /* defined(USE_HDF) */
+#endif
 IMPORT	const char *propagation_status_as_string(NODE_PROPAGATION_STATUS);
 IMPORT	const char *redistribution_direction_as_string(REDISTRIBUTION_DIRECTION);
 IMPORT	const char *untangle_status_as_string(int);

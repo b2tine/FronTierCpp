@@ -1,37 +1,61 @@
 #Initialize autoconf with project name and version number
 AC_INIT([FronTier],[1.0])
 
+#Include macros from the autoconf-archive
+AC_CONFIG_MACRO_DIR([autoconf-archive/m4])
 #Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
-#Directory for generated macros
-#AC_CONFIG_MACRO_DIR([m4])
+#Header files to produce that include #DEFINE statements
+AC_CONFIG_HEADERS([build-aux/config.h])
+
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
-#To create static library
-AC_PROG_RANLIB
-
 #Check for C compiler
 AC_PROG_CC
-#Check for C++ compiler
 AC_PROG_CXX
-#Check for ar 
+
+AC_PROG_RANLIB
 AM_PROG_AR
 
-#Header files to produce that include #DEFINE statements
-#AC_CONFIG_HEADERS([config.h])
+#configure with hdf4
+AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
+            [specify location of single directory installation)])],
+            [hdf4_dir=$withval],[hdf4-dir=""])
 
-AC_ARG_WITH([hdf],[AS_HELP_STRING([--with-hdf],
-            [use hdf (default is no)])],[],[use_hdf=no])
-#TODO: write test to check for header and libs and use AC_SUBST to hand out to Makefile.in's.
+AC_ARG_WITH([hdf4-inc],[AS_HELP_STRING([--with-hdf4-inc=path],
+            [specify location of header files])],
+            [hdf4_inc=$withval],[hdf4_inc=""])
+
+AC_ARG_WITH([hdf4-lib],[AS_HELP_STRING([--with-hdf4-lib=path],
+            [specify location of libraries])],
+            [hdf4_lib=$withval],[hdf4_lib=""])
+
+with_hdf=no
+AS_IF([test "x$hdf4_dir" != "x"],
+      [with_hdf=yes
+       hdfinc="-I${hdf4_dir}/include"
+       hdflib="-L${hdf4_dir}/lib"],
+       [test "x$hdf4_inc" != "x" && test "x$hdf4_lib" != "x"],
+       [with_hdf=yes
+        hdfinc="-I${hdf4_inc}"
+        hdflib="-L${hdf_lib}"])
+
+AS_IF([test $with_hdf = yes],
+      [AC_DEFINE([USE_HDF4],[1],[building with hd4])
+      AC_SUBST(HDF_FLAGS,${hdfinc})
+      AC_SUBST(HDF_LIBS,${hdflib}" -lmfhdf -ldf -ljpeg -lz")])
+
+
+AC_ARG_ENABLE([example2d],[AS_HELP_STRING([--enable-example2d],
+              [build 2d examples])],[twoD="yes"],[twoD="no"])
+
+AM_CONDITIONAL([EX2D_OPT],[test "$twoD" = "yes"])
+
 
 #Makefiles to produce
-#AC_CONFIG_FILES([Makefile libs/Makefile example2d/Makefile])
-AC_CONFIG_FILES([Makefile libs/Makefile])
-
-#Calls ./configure in example2d recursively
-#AC_CONFIG_SUBDIRS([example2d])
+AC_CONFIG_FILES([Makefile example2d/Makefile])
 
 #Generate output
 AC_OUTPUT
