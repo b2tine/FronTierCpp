@@ -17,7 +17,6 @@
 *.mod
 
 # Compiled Static libraries
-lib
 *.lai
 *.la
 *.a
@@ -27,19 +26,18 @@ lib
 *.exe
 *.out
 *.app
+
 #Makefile
-#*.cache
-#*.log
-#*.status
+*.cache
+*.log
+*.status
 *.inc
 *.deps
 *.dep.*
 *.files
 *.ofiles
-#configure
-#include
-crystal
-iFluid
+*.in
+configure
 
 #example2d
 example2d/example*

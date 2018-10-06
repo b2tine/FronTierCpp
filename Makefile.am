@@ -2,19 +2,19 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I autoconf-archive/m4
 
 if EX2D_OPT
-	MAYBE_OPT = example2d
+	MAYBE_EX2D = example2d
 endif
 
-SUBDIRS = . $(MAYBE_OPT)
+SUBDIRS = lib . $(MAYBE_EX2D) tests
 
 
-
-AM_CPPFLAGS = -I$(srcdir)/include/front \
-			  -I$(srcdir)/include/intfc \
-			  -I$(srcdir)/include/util \
+AM_CPPFLAGS = -I$(top_srcdir)/include/front \
+			  -I$(top_srcdir)/include/intfc \
+			  -I$(top_srcdir)/include/util \
 			  @HDF_FLAGS@
 
 AM_LDFLAGS = @HDF_LIBS@
+
 
 noinst_LIBRARIES = lib/libutil.a \
 				   lib/libintfc.a \

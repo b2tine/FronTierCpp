@@ -5,7 +5,7 @@ AC_INIT([FronTier],[1.0])
 AC_CONFIG_MACRO_DIR([autoconf-archive/m4])
 #Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
-#Header files to produce that include #DEFINE statements
+#Header file with generated #DEFINE statements
 AC_CONFIG_HEADERS([build-aux/config.h])
 
 
@@ -15,9 +15,28 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 #Check for C compiler
 AC_PROG_CC
 AC_PROG_CXX
-
-AC_PROG_RANLIB
+AC_LANG([C],[C++])
 AM_PROG_AR
+LT_INIT([static])
+
+ACX_PTHREAD([have_pthread=yes],[have_pthread=no])
+
+GTEST_VERSION="1.8.0"
+AS_IF([test "x$have_pthread" = "xyes"],
+      [GTEST_CPPFLAGS="-DGTEST_HAS_PTHREADS=1"
+       GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
+       GTEST_LDFLAGS=
+       GTEST_LIBS="$PTHREAD_LIBS"],
+       [GTEST_CPPFLAGS="-DGTEST_HAS_PTHREADS=0"
+        GTEST_CXXFLAGS=
+        GTEST_LDFLAGS=
+        GTEST_LIBS=])
+
+AC_SUBST([GTEST_VERSION])
+AC_SUBST([GTEST_CPPFLAGS])
+AC_SUBST([GTEST_CXXFLAGS])
+AC_SUBST([GTEST_LDFLAGS])
+AC_SUBST([GTEST_LIBS])
 
 #configure with hdf4
 AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
@@ -55,8 +74,35 @@ AM_CONDITIONAL([EX2D_OPT],[test "$twoD" = "yes"])
 
 
 #Makefiles to produce
-AC_CONFIG_FILES([Makefile example2d/Makefile])
+AC_CONFIG_FILES([Makefile
+                 lib/Makefile
+                 lib/gmock/Makefile
+                 example2d/Makefile
+                 tests/Makefile])
 
 #Generate output
 AC_OUTPUT
 
+AC_MSG_RESULT([
+FronTier_Automake $VERSION is now configured
+Configure Information:
+  C Compiler        : $CC
+    DEFS            :   $DEFS
+    CPPFLAGS        :   $CPPFLAGS
+    CFLAGS          :   $CFLAGS
+
+  C++ Compiler      : $CXX
+    DEFS            :   $DEFS
+    CPPFLAGS        :   $CPPFLAGS
+    CXXFLAGS        :   $CXXFLAGS
+
+  Linker            : $LD
+    LDFLAGS         :   $LDFLAGS
+    LIBS            :   $LIBS
+
+  Google Test 
+    GTEST_CPPFLAGS  : $GTEST_CPPFLAGS
+    GTEST_CXXFLAGS  : $GTEST_CXXFLAGS
+    GTEST_LDFLAGS   : $GTEST_LDFLAGS
+    GTEST_LIBS      : $GTEST_LIBS
+])
