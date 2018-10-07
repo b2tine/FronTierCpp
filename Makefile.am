@@ -5,4 +5,5 @@ if EX2D_OPT
 	MAYBE_EX2D = example2d
 endif
 
-SUBDIRS = lib $(MAYBR_EX2D)
+
+SUBDIRS = lib tests $(MAYBE_EX2D)

@@ -1,9 +1,10 @@
-AM_CPPFLAGS = -I$(srcdir)/gmock -I$(srcdir)/gtest -I$(srcdir) $(GTEST_CPPFLAGS)
+AM_CPPFLAGS = $(GTEST_CPPFLAGS)
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 AM_LDFLAGS = $(GTEST_LDFLAGS)
 LDADD = $(GTEST_LIBS)
 
 check_LTLIBRARIES = lib/libgmock.la lib/libgmock_main.la
+check_HEADERS = gmock/gmock.h gtest/gtest.h
 
 lib_libgmock_la_SOURCES = src/gmock-gtest-all.cc
 

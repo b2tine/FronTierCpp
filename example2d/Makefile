@@ -111,101 +111,55 @@ CONFIG_HEADER = $(top_builddir)/build-aux/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_example00_OBJECTS = example00-example00.$(OBJEXT)
+am_example00_OBJECTS = example00.$(OBJEXT)
 example00_OBJECTS = $(am_example00_OBJECTS)
-am__DEPENDENCIES_1 =
-example00_DEPENDENCIES = $(am__DEPENDENCIES_1)
+example00_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-example00_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example00_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example01_OBJECTS = example01-example01.$(OBJEXT)
+am_example01_OBJECTS = example01.$(OBJEXT)
 example01_OBJECTS = $(am_example01_OBJECTS)
-example01_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example01_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example01_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example02_OBJECTS = example02-example02.$(OBJEXT)
+example01_LDADD = $(LDADD)
+am_example02_OBJECTS = example02.$(OBJEXT)
 example02_OBJECTS = $(am_example02_OBJECTS)
-example02_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example02_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example02_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example03_OBJECTS = example03-example03.$(OBJEXT)
+example02_LDADD = $(LDADD)
+am_example03_OBJECTS = example03.$(OBJEXT)
 example03_OBJECTS = $(am_example03_OBJECTS)
-example03_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example03_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example03_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example04_OBJECTS = example04-example04.$(OBJEXT)
+example03_LDADD = $(LDADD)
+am_example04_OBJECTS = example04.$(OBJEXT)
 example04_OBJECTS = $(am_example04_OBJECTS)
-example04_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example04_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example04_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example05_OBJECTS = example05-example05.$(OBJEXT)
+example04_LDADD = $(LDADD)
+am_example05_OBJECTS = example05.$(OBJEXT)
 example05_OBJECTS = $(am_example05_OBJECTS)
-example05_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example05_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example05_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example06_OBJECTS = example06-example06.$(OBJEXT)
+example05_LDADD = $(LDADD)
+am_example06_OBJECTS = example06.$(OBJEXT)
 example06_OBJECTS = $(am_example06_OBJECTS)
-example06_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example06_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example06_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example07_OBJECTS = example07-example07.$(OBJEXT)
+example06_LDADD = $(LDADD)
+am_example07_OBJECTS = example07.$(OBJEXT)
 example07_OBJECTS = $(am_example07_OBJECTS)
-example07_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example07_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example07_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example08_OBJECTS = example08-example08.$(OBJEXT)
+example07_LDADD = $(LDADD)
+am_example08_OBJECTS = example08.$(OBJEXT)
 example08_OBJECTS = $(am_example08_OBJECTS)
-example08_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example08_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example08_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example09_OBJECTS = example09-example09.$(OBJEXT)
+example08_LDADD = $(LDADD)
+am_example09_OBJECTS = example09.$(OBJEXT)
 example09_OBJECTS = $(am_example09_OBJECTS)
-example09_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example09_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example09_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example10_OBJECTS = example10-example10.$(OBJEXT)
+example09_LDADD = $(LDADD)
+am_example10_OBJECTS = example10.$(OBJEXT)
 example10_OBJECTS = $(am_example10_OBJECTS)
-example10_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example10_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example10_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example11_OBJECTS = example11-example11.$(OBJEXT)
+example10_LDADD = $(LDADD)
+am_example11_OBJECTS = example11.$(OBJEXT)
 example11_OBJECTS = $(am_example11_OBJECTS)
-example11_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example11_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example11_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example12_OBJECTS = example12-example12.$(OBJEXT)
+example11_LDADD = $(LDADD)
+am_example12_OBJECTS = example12.$(OBJEXT)
 example12_OBJECTS = $(am_example12_OBJECTS)
-example12_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example12_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example12_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example13_OBJECTS = example13-example13.$(OBJEXT)
+example12_LDADD = $(LDADD)
+am_example13_OBJECTS = example13.$(OBJEXT)
 example13_OBJECTS = $(am_example13_OBJECTS)
-example13_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example13_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example13_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_example14_OBJECTS = example14-example14.$(OBJEXT)
+example13_LDADD = $(LDADD)
+am_example14_OBJECTS = example14.$(OBJEXT)
 example14_OBJECTS = $(am_example14_OBJECTS)
-example14_DEPENDENCIES = $(am__DEPENDENCIES_1)
-example14_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(example14_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+example14_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -309,12 +263,12 @@ EGREP = /bin/grep -E
 EXEEXT = 
 FGREP = /bin/grep -F
 GREP = /bin/grep
-GTEST_CPPFLAGS = -DGTEST_HAS_PTHREADS=1
+GTEST_CPPFLAGS = -I$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=1
 GTEST_CXXFLAGS = -pthread
-GTEST_LDFLAGS = 
+GTEST_LDFLAGS = -L$(abs_top_builddir)/lib/gmock/lib
 GTEST_LIBS = 
 GTEST_VERSION = 1.8.0
-HDF_FLAGS = -I/usr/local/hdf4-2.10/include
+HDF_CFLAGS = -I/usr/local/hdf4-2.10/include
 HDF_LIBS = -L/usr/local/hdf4-2.10/lib -lmfhdf -ldf -ljpeg -lz
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
@@ -411,59 +365,30 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-AUTOMAKE_OPTIONS = foreign
-EX2D_CXXFLAGS = -I$(top_srcdir)/include \
-				-I$(top_srcdir)/include/front \
-				-I$(top_srcdir)/include/intfc \
-				-I$(top_srcdir)/include/util \
-				-I/usr/local/hdf4-2.10/include
+AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
+			  -I$(abs_top_srcdir)/include/front \
+			  -I$(abs_top_srcdir)/include/intfc \
+			  -I$(abs_top_srcdir)/include/util \
+			  -I/usr/local/hdf4-2.10/include
 
-EX2D_LDADD = -L$(top_srcdir)/lib -lfront -lintfc -lutil -L/usr/local/hdf4-2.10/lib -lmfhdf -ldf -ljpeg -lz
+AM_LDFLAGS = -L$(abs_top_builddir)/lib -lfront -lintfc -lutil \
+			 -L/usr/local/hdf4-2.10/lib -lmfhdf -ldf -ljpeg -lz
+
 example00_SOURCES = example00.cpp
-example00_CXXFLAGS = $(EX2D_CXXFLAGS)
-example00_LDADD = $(EX2D_LDADD)
 example01_SOURCES = example01.cpp
-example01_CXXFLAGS = $(EX2D_CXXFLAGS)
-example01_LDADD = $(EX2D_LDADD)
 example02_SOURCES = example02.cpp
-example02_CXXFLAGS = $(EX2D_CXXFLAGS)
-example02_LDADD = $(EX2D_LDADD)
 example03_SOURCES = example03.cpp
-example03_CXXFLAGS = $(EX2D_CXXFLAGS)
-example03_LDADD = $(EX2D_LDADD)
 example04_SOURCES = example04.cpp
-example04_CXXFLAGS = $(EX2D_CXXFLAGS)
-example04_LDADD = $(EX2D_LDADD)
 example05_SOURCES = example05.cpp
-example05_CXXFLAGS = $(EX2D_CXXFLAGS)
-example05_LDADD = $(EX2D_LDADD)
 example06_SOURCES = example06.cpp
-example06_CXXFLAGS = $(EX2D_CXXFLAGS)
-example06_LDADD = $(EX2D_LDADD)
 example07_SOURCES = example07.cpp
-example07_CXXFLAGS = $(EX2D_CXXFLAGS)
-example07_LDADD = $(EX2D_LDADD)
 example08_SOURCES = example08.cpp
-example08_CXXFLAGS = $(EX2D_CXXFLAGS)
-example08_LDADD = $(EX2D_LDADD)
 example09_SOURCES = example09.cpp
-example09_CXXFLAGS = $(EX2D_CXXFLAGS)
-example09_LDADD = $(EX2D_LDADD)
 example10_SOURCES = example10.cpp
-example10_CXXFLAGS = $(EX2D_CXXFLAGS)
-example10_LDADD = $(EX2D_LDADD)
 example11_SOURCES = example11.cpp
-example11_CXXFLAGS = $(EX2D_CXXFLAGS)
-example11_LDADD = $(EX2D_LDADD)
 example12_SOURCES = example12.cpp
-example12_CXXFLAGS = $(EX2D_CXXFLAGS)
-example12_LDADD = $(EX2D_LDADD)
 example13_SOURCES = example13.cpp
-example13_CXXFLAGS = $(EX2D_CXXFLAGS)
-example13_LDADD = $(EX2D_LDADD)
 example14_SOURCES = example14.cpp
-example14_CXXFLAGS = $(EX2D_CXXFLAGS)
-example14_LDADD = $(EX2D_LDADD)
 all: all-am
 
 .SUFFIXES:
@@ -509,63 +434,63 @@ clean-noinstPROGRAMS:
 
 example00$(EXEEXT): $(example00_OBJECTS) $(example00_DEPENDENCIES) $(EXTRA_example00_DEPENDENCIES) 
 	@rm -f example00$(EXEEXT)
-	$(AM_V_CXXLD)$(example00_LINK) $(example00_OBJECTS) $(example00_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example00_OBJECTS) $(example00_LDADD) $(LIBS)
 
 example01$(EXEEXT): $(example01_OBJECTS) $(example01_DEPENDENCIES) $(EXTRA_example01_DEPENDENCIES) 
 	@rm -f example01$(EXEEXT)
-	$(AM_V_CXXLD)$(example01_LINK) $(example01_OBJECTS) $(example01_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example01_OBJECTS) $(example01_LDADD) $(LIBS)
 
 example02$(EXEEXT): $(example02_OBJECTS) $(example02_DEPENDENCIES) $(EXTRA_example02_DEPENDENCIES) 
 	@rm -f example02$(EXEEXT)
-	$(AM_V_CXXLD)$(example02_LINK) $(example02_OBJECTS) $(example02_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example02_OBJECTS) $(example02_LDADD) $(LIBS)
 
 example03$(EXEEXT): $(example03_OBJECTS) $(example03_DEPENDENCIES) $(EXTRA_example03_DEPENDENCIES) 
 	@rm -f example03$(EXEEXT)
-	$(AM_V_CXXLD)$(example03_LINK) $(example03_OBJECTS) $(example03_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example03_OBJECTS) $(example03_LDADD) $(LIBS)
 
 example04$(EXEEXT): $(example04_OBJECTS) $(example04_DEPENDENCIES) $(EXTRA_example04_DEPENDENCIES) 
 	@rm -f example04$(EXEEXT)
-	$(AM_V_CXXLD)$(example04_LINK) $(example04_OBJECTS) $(example04_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example04_OBJECTS) $(example04_LDADD) $(LIBS)
 
 example05$(EXEEXT): $(example05_OBJECTS) $(example05_DEPENDENCIES) $(EXTRA_example05_DEPENDENCIES) 
 	@rm -f example05$(EXEEXT)
-	$(AM_V_CXXLD)$(example05_LINK) $(example05_OBJECTS) $(example05_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example05_OBJECTS) $(example05_LDADD) $(LIBS)
 
 example06$(EXEEXT): $(example06_OBJECTS) $(example06_DEPENDENCIES) $(EXTRA_example06_DEPENDENCIES) 
 	@rm -f example06$(EXEEXT)
-	$(AM_V_CXXLD)$(example06_LINK) $(example06_OBJECTS) $(example06_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example06_OBJECTS) $(example06_LDADD) $(LIBS)
 
 example07$(EXEEXT): $(example07_OBJECTS) $(example07_DEPENDENCIES) $(EXTRA_example07_DEPENDENCIES) 
 	@rm -f example07$(EXEEXT)
-	$(AM_V_CXXLD)$(example07_LINK) $(example07_OBJECTS) $(example07_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example07_OBJECTS) $(example07_LDADD) $(LIBS)
 
 example08$(EXEEXT): $(example08_OBJECTS) $(example08_DEPENDENCIES) $(EXTRA_example08_DEPENDENCIES) 
 	@rm -f example08$(EXEEXT)
-	$(AM_V_CXXLD)$(example08_LINK) $(example08_OBJECTS) $(example08_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example08_OBJECTS) $(example08_LDADD) $(LIBS)
 
 example09$(EXEEXT): $(example09_OBJECTS) $(example09_DEPENDENCIES) $(EXTRA_example09_DEPENDENCIES) 
 	@rm -f example09$(EXEEXT)
-	$(AM_V_CXXLD)$(example09_LINK) $(example09_OBJECTS) $(example09_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example09_OBJECTS) $(example09_LDADD) $(LIBS)
 
 example10$(EXEEXT): $(example10_OBJECTS) $(example10_DEPENDENCIES) $(EXTRA_example10_DEPENDENCIES) 
 	@rm -f example10$(EXEEXT)
-	$(AM_V_CXXLD)$(example10_LINK) $(example10_OBJECTS) $(example10_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example10_OBJECTS) $(example10_LDADD) $(LIBS)
 
 example11$(EXEEXT): $(example11_OBJECTS) $(example11_DEPENDENCIES) $(EXTRA_example11_DEPENDENCIES) 
 	@rm -f example11$(EXEEXT)
-	$(AM_V_CXXLD)$(example11_LINK) $(example11_OBJECTS) $(example11_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example11_OBJECTS) $(example11_LDADD) $(LIBS)
 
 example12$(EXEEXT): $(example12_OBJECTS) $(example12_DEPENDENCIES) $(EXTRA_example12_DEPENDENCIES) 
 	@rm -f example12$(EXEEXT)
-	$(AM_V_CXXLD)$(example12_LINK) $(example12_OBJECTS) $(example12_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example12_OBJECTS) $(example12_LDADD) $(LIBS)
 
 example13$(EXEEXT): $(example13_OBJECTS) $(example13_DEPENDENCIES) $(EXTRA_example13_DEPENDENCIES) 
 	@rm -f example13$(EXEEXT)
-	$(AM_V_CXXLD)$(example13_LINK) $(example13_OBJECTS) $(example13_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example13_OBJECTS) $(example13_LDADD) $(LIBS)
 
 example14$(EXEEXT): $(example14_OBJECTS) $(example14_DEPENDENCIES) $(EXTRA_example14_DEPENDENCIES) 
 	@rm -f example14$(EXEEXT)
-	$(AM_V_CXXLD)$(example14_LINK) $(example14_OBJECTS) $(example14_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(example14_OBJECTS) $(example14_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -573,21 +498,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/example00-example00.Po
-include ./$(DEPDIR)/example01-example01.Po
-include ./$(DEPDIR)/example02-example02.Po
-include ./$(DEPDIR)/example03-example03.Po
-include ./$(DEPDIR)/example04-example04.Po
-include ./$(DEPDIR)/example05-example05.Po
-include ./$(DEPDIR)/example06-example06.Po
-include ./$(DEPDIR)/example07-example07.Po
-include ./$(DEPDIR)/example08-example08.Po
-include ./$(DEPDIR)/example09-example09.Po
-include ./$(DEPDIR)/example10-example10.Po
-include ./$(DEPDIR)/example11-example11.Po
-include ./$(DEPDIR)/example12-example12.Po
-include ./$(DEPDIR)/example13-example13.Po
-include ./$(DEPDIR)/example14-example14.Po
+include ./$(DEPDIR)/example00.Po
+include ./$(DEPDIR)/example01.Po
+include ./$(DEPDIR)/example02.Po
+include ./$(DEPDIR)/example03.Po
+include ./$(DEPDIR)/example04.Po
+include ./$(DEPDIR)/example05.Po
+include ./$(DEPDIR)/example06.Po
+include ./$(DEPDIR)/example07.Po
+include ./$(DEPDIR)/example08.Po
+include ./$(DEPDIR)/example09.Po
+include ./$(DEPDIR)/example10.Po
+include ./$(DEPDIR)/example11.Po
+include ./$(DEPDIR)/example12.Po
+include ./$(DEPDIR)/example13.Po
+include ./$(DEPDIR)/example14.Po
 
 .cpp.o:
 	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -612,216 +537,6 @@ include ./$(DEPDIR)/example14-example14.Po
 #	$(AM_V_CXX)source='$<' object='$@' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(LTCXXCOMPILE) -c -o $@ $<
-
-example00-example00.o: example00.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example00_CXXFLAGS) $(CXXFLAGS) -MT example00-example00.o -MD -MP -MF $(DEPDIR)/example00-example00.Tpo -c -o example00-example00.o `test -f 'example00.cpp' || echo '$(srcdir)/'`example00.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example00-example00.Tpo $(DEPDIR)/example00-example00.Po
-#	$(AM_V_CXX)source='example00.cpp' object='example00-example00.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example00_CXXFLAGS) $(CXXFLAGS) -c -o example00-example00.o `test -f 'example00.cpp' || echo '$(srcdir)/'`example00.cpp
-
-example00-example00.obj: example00.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example00_CXXFLAGS) $(CXXFLAGS) -MT example00-example00.obj -MD -MP -MF $(DEPDIR)/example00-example00.Tpo -c -o example00-example00.obj `if test -f 'example00.cpp'; then $(CYGPATH_W) 'example00.cpp'; else $(CYGPATH_W) '$(srcdir)/example00.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example00-example00.Tpo $(DEPDIR)/example00-example00.Po
-#	$(AM_V_CXX)source='example00.cpp' object='example00-example00.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example00_CXXFLAGS) $(CXXFLAGS) -c -o example00-example00.obj `if test -f 'example00.cpp'; then $(CYGPATH_W) 'example00.cpp'; else $(CYGPATH_W) '$(srcdir)/example00.cpp'; fi`
-
-example01-example01.o: example01.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example01_CXXFLAGS) $(CXXFLAGS) -MT example01-example01.o -MD -MP -MF $(DEPDIR)/example01-example01.Tpo -c -o example01-example01.o `test -f 'example01.cpp' || echo '$(srcdir)/'`example01.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example01-example01.Tpo $(DEPDIR)/example01-example01.Po
-#	$(AM_V_CXX)source='example01.cpp' object='example01-example01.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example01_CXXFLAGS) $(CXXFLAGS) -c -o example01-example01.o `test -f 'example01.cpp' || echo '$(srcdir)/'`example01.cpp
-
-example01-example01.obj: example01.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example01_CXXFLAGS) $(CXXFLAGS) -MT example01-example01.obj -MD -MP -MF $(DEPDIR)/example01-example01.Tpo -c -o example01-example01.obj `if test -f 'example01.cpp'; then $(CYGPATH_W) 'example01.cpp'; else $(CYGPATH_W) '$(srcdir)/example01.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example01-example01.Tpo $(DEPDIR)/example01-example01.Po
-#	$(AM_V_CXX)source='example01.cpp' object='example01-example01.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example01_CXXFLAGS) $(CXXFLAGS) -c -o example01-example01.obj `if test -f 'example01.cpp'; then $(CYGPATH_W) 'example01.cpp'; else $(CYGPATH_W) '$(srcdir)/example01.cpp'; fi`
-
-example02-example02.o: example02.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example02_CXXFLAGS) $(CXXFLAGS) -MT example02-example02.o -MD -MP -MF $(DEPDIR)/example02-example02.Tpo -c -o example02-example02.o `test -f 'example02.cpp' || echo '$(srcdir)/'`example02.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example02-example02.Tpo $(DEPDIR)/example02-example02.Po
-#	$(AM_V_CXX)source='example02.cpp' object='example02-example02.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example02_CXXFLAGS) $(CXXFLAGS) -c -o example02-example02.o `test -f 'example02.cpp' || echo '$(srcdir)/'`example02.cpp
-
-example02-example02.obj: example02.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example02_CXXFLAGS) $(CXXFLAGS) -MT example02-example02.obj -MD -MP -MF $(DEPDIR)/example02-example02.Tpo -c -o example02-example02.obj `if test -f 'example02.cpp'; then $(CYGPATH_W) 'example02.cpp'; else $(CYGPATH_W) '$(srcdir)/example02.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example02-example02.Tpo $(DEPDIR)/example02-example02.Po
-#	$(AM_V_CXX)source='example02.cpp' object='example02-example02.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example02_CXXFLAGS) $(CXXFLAGS) -c -o example02-example02.obj `if test -f 'example02.cpp'; then $(CYGPATH_W) 'example02.cpp'; else $(CYGPATH_W) '$(srcdir)/example02.cpp'; fi`
-
-example03-example03.o: example03.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example03_CXXFLAGS) $(CXXFLAGS) -MT example03-example03.o -MD -MP -MF $(DEPDIR)/example03-example03.Tpo -c -o example03-example03.o `test -f 'example03.cpp' || echo '$(srcdir)/'`example03.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example03-example03.Tpo $(DEPDIR)/example03-example03.Po
-#	$(AM_V_CXX)source='example03.cpp' object='example03-example03.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example03_CXXFLAGS) $(CXXFLAGS) -c -o example03-example03.o `test -f 'example03.cpp' || echo '$(srcdir)/'`example03.cpp
-
-example03-example03.obj: example03.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example03_CXXFLAGS) $(CXXFLAGS) -MT example03-example03.obj -MD -MP -MF $(DEPDIR)/example03-example03.Tpo -c -o example03-example03.obj `if test -f 'example03.cpp'; then $(CYGPATH_W) 'example03.cpp'; else $(CYGPATH_W) '$(srcdir)/example03.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example03-example03.Tpo $(DEPDIR)/example03-example03.Po
-#	$(AM_V_CXX)source='example03.cpp' object='example03-example03.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example03_CXXFLAGS) $(CXXFLAGS) -c -o example03-example03.obj `if test -f 'example03.cpp'; then $(CYGPATH_W) 'example03.cpp'; else $(CYGPATH_W) '$(srcdir)/example03.cpp'; fi`
-
-example04-example04.o: example04.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example04_CXXFLAGS) $(CXXFLAGS) -MT example04-example04.o -MD -MP -MF $(DEPDIR)/example04-example04.Tpo -c -o example04-example04.o `test -f 'example04.cpp' || echo '$(srcdir)/'`example04.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example04-example04.Tpo $(DEPDIR)/example04-example04.Po
-#	$(AM_V_CXX)source='example04.cpp' object='example04-example04.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example04_CXXFLAGS) $(CXXFLAGS) -c -o example04-example04.o `test -f 'example04.cpp' || echo '$(srcdir)/'`example04.cpp
-
-example04-example04.obj: example04.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example04_CXXFLAGS) $(CXXFLAGS) -MT example04-example04.obj -MD -MP -MF $(DEPDIR)/example04-example04.Tpo -c -o example04-example04.obj `if test -f 'example04.cpp'; then $(CYGPATH_W) 'example04.cpp'; else $(CYGPATH_W) '$(srcdir)/example04.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example04-example04.Tpo $(DEPDIR)/example04-example04.Po
-#	$(AM_V_CXX)source='example04.cpp' object='example04-example04.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example04_CXXFLAGS) $(CXXFLAGS) -c -o example04-example04.obj `if test -f 'example04.cpp'; then $(CYGPATH_W) 'example04.cpp'; else $(CYGPATH_W) '$(srcdir)/example04.cpp'; fi`
-
-example05-example05.o: example05.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example05_CXXFLAGS) $(CXXFLAGS) -MT example05-example05.o -MD -MP -MF $(DEPDIR)/example05-example05.Tpo -c -o example05-example05.o `test -f 'example05.cpp' || echo '$(srcdir)/'`example05.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example05-example05.Tpo $(DEPDIR)/example05-example05.Po
-#	$(AM_V_CXX)source='example05.cpp' object='example05-example05.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example05_CXXFLAGS) $(CXXFLAGS) -c -o example05-example05.o `test -f 'example05.cpp' || echo '$(srcdir)/'`example05.cpp
-
-example05-example05.obj: example05.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example05_CXXFLAGS) $(CXXFLAGS) -MT example05-example05.obj -MD -MP -MF $(DEPDIR)/example05-example05.Tpo -c -o example05-example05.obj `if test -f 'example05.cpp'; then $(CYGPATH_W) 'example05.cpp'; else $(CYGPATH_W) '$(srcdir)/example05.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example05-example05.Tpo $(DEPDIR)/example05-example05.Po
-#	$(AM_V_CXX)source='example05.cpp' object='example05-example05.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example05_CXXFLAGS) $(CXXFLAGS) -c -o example05-example05.obj `if test -f 'example05.cpp'; then $(CYGPATH_W) 'example05.cpp'; else $(CYGPATH_W) '$(srcdir)/example05.cpp'; fi`
-
-example06-example06.o: example06.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example06_CXXFLAGS) $(CXXFLAGS) -MT example06-example06.o -MD -MP -MF $(DEPDIR)/example06-example06.Tpo -c -o example06-example06.o `test -f 'example06.cpp' || echo '$(srcdir)/'`example06.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example06-example06.Tpo $(DEPDIR)/example06-example06.Po
-#	$(AM_V_CXX)source='example06.cpp' object='example06-example06.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example06_CXXFLAGS) $(CXXFLAGS) -c -o example06-example06.o `test -f 'example06.cpp' || echo '$(srcdir)/'`example06.cpp
-
-example06-example06.obj: example06.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example06_CXXFLAGS) $(CXXFLAGS) -MT example06-example06.obj -MD -MP -MF $(DEPDIR)/example06-example06.Tpo -c -o example06-example06.obj `if test -f 'example06.cpp'; then $(CYGPATH_W) 'example06.cpp'; else $(CYGPATH_W) '$(srcdir)/example06.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example06-example06.Tpo $(DEPDIR)/example06-example06.Po
-#	$(AM_V_CXX)source='example06.cpp' object='example06-example06.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example06_CXXFLAGS) $(CXXFLAGS) -c -o example06-example06.obj `if test -f 'example06.cpp'; then $(CYGPATH_W) 'example06.cpp'; else $(CYGPATH_W) '$(srcdir)/example06.cpp'; fi`
-
-example07-example07.o: example07.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example07_CXXFLAGS) $(CXXFLAGS) -MT example07-example07.o -MD -MP -MF $(DEPDIR)/example07-example07.Tpo -c -o example07-example07.o `test -f 'example07.cpp' || echo '$(srcdir)/'`example07.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example07-example07.Tpo $(DEPDIR)/example07-example07.Po
-#	$(AM_V_CXX)source='example07.cpp' object='example07-example07.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example07_CXXFLAGS) $(CXXFLAGS) -c -o example07-example07.o `test -f 'example07.cpp' || echo '$(srcdir)/'`example07.cpp
-
-example07-example07.obj: example07.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example07_CXXFLAGS) $(CXXFLAGS) -MT example07-example07.obj -MD -MP -MF $(DEPDIR)/example07-example07.Tpo -c -o example07-example07.obj `if test -f 'example07.cpp'; then $(CYGPATH_W) 'example07.cpp'; else $(CYGPATH_W) '$(srcdir)/example07.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example07-example07.Tpo $(DEPDIR)/example07-example07.Po
-#	$(AM_V_CXX)source='example07.cpp' object='example07-example07.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example07_CXXFLAGS) $(CXXFLAGS) -c -o example07-example07.obj `if test -f 'example07.cpp'; then $(CYGPATH_W) 'example07.cpp'; else $(CYGPATH_W) '$(srcdir)/example07.cpp'; fi`
-
-example08-example08.o: example08.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example08_CXXFLAGS) $(CXXFLAGS) -MT example08-example08.o -MD -MP -MF $(DEPDIR)/example08-example08.Tpo -c -o example08-example08.o `test -f 'example08.cpp' || echo '$(srcdir)/'`example08.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example08-example08.Tpo $(DEPDIR)/example08-example08.Po
-#	$(AM_V_CXX)source='example08.cpp' object='example08-example08.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example08_CXXFLAGS) $(CXXFLAGS) -c -o example08-example08.o `test -f 'example08.cpp' || echo '$(srcdir)/'`example08.cpp
-
-example08-example08.obj: example08.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example08_CXXFLAGS) $(CXXFLAGS) -MT example08-example08.obj -MD -MP -MF $(DEPDIR)/example08-example08.Tpo -c -o example08-example08.obj `if test -f 'example08.cpp'; then $(CYGPATH_W) 'example08.cpp'; else $(CYGPATH_W) '$(srcdir)/example08.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example08-example08.Tpo $(DEPDIR)/example08-example08.Po
-#	$(AM_V_CXX)source='example08.cpp' object='example08-example08.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example08_CXXFLAGS) $(CXXFLAGS) -c -o example08-example08.obj `if test -f 'example08.cpp'; then $(CYGPATH_W) 'example08.cpp'; else $(CYGPATH_W) '$(srcdir)/example08.cpp'; fi`
-
-example09-example09.o: example09.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example09_CXXFLAGS) $(CXXFLAGS) -MT example09-example09.o -MD -MP -MF $(DEPDIR)/example09-example09.Tpo -c -o example09-example09.o `test -f 'example09.cpp' || echo '$(srcdir)/'`example09.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example09-example09.Tpo $(DEPDIR)/example09-example09.Po
-#	$(AM_V_CXX)source='example09.cpp' object='example09-example09.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example09_CXXFLAGS) $(CXXFLAGS) -c -o example09-example09.o `test -f 'example09.cpp' || echo '$(srcdir)/'`example09.cpp
-
-example09-example09.obj: example09.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example09_CXXFLAGS) $(CXXFLAGS) -MT example09-example09.obj -MD -MP -MF $(DEPDIR)/example09-example09.Tpo -c -o example09-example09.obj `if test -f 'example09.cpp'; then $(CYGPATH_W) 'example09.cpp'; else $(CYGPATH_W) '$(srcdir)/example09.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example09-example09.Tpo $(DEPDIR)/example09-example09.Po
-#	$(AM_V_CXX)source='example09.cpp' object='example09-example09.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example09_CXXFLAGS) $(CXXFLAGS) -c -o example09-example09.obj `if test -f 'example09.cpp'; then $(CYGPATH_W) 'example09.cpp'; else $(CYGPATH_W) '$(srcdir)/example09.cpp'; fi`
-
-example10-example10.o: example10.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example10_CXXFLAGS) $(CXXFLAGS) -MT example10-example10.o -MD -MP -MF $(DEPDIR)/example10-example10.Tpo -c -o example10-example10.o `test -f 'example10.cpp' || echo '$(srcdir)/'`example10.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example10-example10.Tpo $(DEPDIR)/example10-example10.Po
-#	$(AM_V_CXX)source='example10.cpp' object='example10-example10.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example10_CXXFLAGS) $(CXXFLAGS) -c -o example10-example10.o `test -f 'example10.cpp' || echo '$(srcdir)/'`example10.cpp
-
-example10-example10.obj: example10.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example10_CXXFLAGS) $(CXXFLAGS) -MT example10-example10.obj -MD -MP -MF $(DEPDIR)/example10-example10.Tpo -c -o example10-example10.obj `if test -f 'example10.cpp'; then $(CYGPATH_W) 'example10.cpp'; else $(CYGPATH_W) '$(srcdir)/example10.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example10-example10.Tpo $(DEPDIR)/example10-example10.Po
-#	$(AM_V_CXX)source='example10.cpp' object='example10-example10.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example10_CXXFLAGS) $(CXXFLAGS) -c -o example10-example10.obj `if test -f 'example10.cpp'; then $(CYGPATH_W) 'example10.cpp'; else $(CYGPATH_W) '$(srcdir)/example10.cpp'; fi`
-
-example11-example11.o: example11.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example11_CXXFLAGS) $(CXXFLAGS) -MT example11-example11.o -MD -MP -MF $(DEPDIR)/example11-example11.Tpo -c -o example11-example11.o `test -f 'example11.cpp' || echo '$(srcdir)/'`example11.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example11-example11.Tpo $(DEPDIR)/example11-example11.Po
-#	$(AM_V_CXX)source='example11.cpp' object='example11-example11.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example11_CXXFLAGS) $(CXXFLAGS) -c -o example11-example11.o `test -f 'example11.cpp' || echo '$(srcdir)/'`example11.cpp
-
-example11-example11.obj: example11.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example11_CXXFLAGS) $(CXXFLAGS) -MT example11-example11.obj -MD -MP -MF $(DEPDIR)/example11-example11.Tpo -c -o example11-example11.obj `if test -f 'example11.cpp'; then $(CYGPATH_W) 'example11.cpp'; else $(CYGPATH_W) '$(srcdir)/example11.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example11-example11.Tpo $(DEPDIR)/example11-example11.Po
-#	$(AM_V_CXX)source='example11.cpp' object='example11-example11.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example11_CXXFLAGS) $(CXXFLAGS) -c -o example11-example11.obj `if test -f 'example11.cpp'; then $(CYGPATH_W) 'example11.cpp'; else $(CYGPATH_W) '$(srcdir)/example11.cpp'; fi`
-
-example12-example12.o: example12.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example12_CXXFLAGS) $(CXXFLAGS) -MT example12-example12.o -MD -MP -MF $(DEPDIR)/example12-example12.Tpo -c -o example12-example12.o `test -f 'example12.cpp' || echo '$(srcdir)/'`example12.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example12-example12.Tpo $(DEPDIR)/example12-example12.Po
-#	$(AM_V_CXX)source='example12.cpp' object='example12-example12.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example12_CXXFLAGS) $(CXXFLAGS) -c -o example12-example12.o `test -f 'example12.cpp' || echo '$(srcdir)/'`example12.cpp
-
-example12-example12.obj: example12.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example12_CXXFLAGS) $(CXXFLAGS) -MT example12-example12.obj -MD -MP -MF $(DEPDIR)/example12-example12.Tpo -c -o example12-example12.obj `if test -f 'example12.cpp'; then $(CYGPATH_W) 'example12.cpp'; else $(CYGPATH_W) '$(srcdir)/example12.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example12-example12.Tpo $(DEPDIR)/example12-example12.Po
-#	$(AM_V_CXX)source='example12.cpp' object='example12-example12.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example12_CXXFLAGS) $(CXXFLAGS) -c -o example12-example12.obj `if test -f 'example12.cpp'; then $(CYGPATH_W) 'example12.cpp'; else $(CYGPATH_W) '$(srcdir)/example12.cpp'; fi`
-
-example13-example13.o: example13.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example13_CXXFLAGS) $(CXXFLAGS) -MT example13-example13.o -MD -MP -MF $(DEPDIR)/example13-example13.Tpo -c -o example13-example13.o `test -f 'example13.cpp' || echo '$(srcdir)/'`example13.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example13-example13.Tpo $(DEPDIR)/example13-example13.Po
-#	$(AM_V_CXX)source='example13.cpp' object='example13-example13.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example13_CXXFLAGS) $(CXXFLAGS) -c -o example13-example13.o `test -f 'example13.cpp' || echo '$(srcdir)/'`example13.cpp
-
-example13-example13.obj: example13.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example13_CXXFLAGS) $(CXXFLAGS) -MT example13-example13.obj -MD -MP -MF $(DEPDIR)/example13-example13.Tpo -c -o example13-example13.obj `if test -f 'example13.cpp'; then $(CYGPATH_W) 'example13.cpp'; else $(CYGPATH_W) '$(srcdir)/example13.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example13-example13.Tpo $(DEPDIR)/example13-example13.Po
-#	$(AM_V_CXX)source='example13.cpp' object='example13-example13.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example13_CXXFLAGS) $(CXXFLAGS) -c -o example13-example13.obj `if test -f 'example13.cpp'; then $(CYGPATH_W) 'example13.cpp'; else $(CYGPATH_W) '$(srcdir)/example13.cpp'; fi`
-
-example14-example14.o: example14.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example14_CXXFLAGS) $(CXXFLAGS) -MT example14-example14.o -MD -MP -MF $(DEPDIR)/example14-example14.Tpo -c -o example14-example14.o `test -f 'example14.cpp' || echo '$(srcdir)/'`example14.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example14-example14.Tpo $(DEPDIR)/example14-example14.Po
-#	$(AM_V_CXX)source='example14.cpp' object='example14-example14.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example14_CXXFLAGS) $(CXXFLAGS) -c -o example14-example14.o `test -f 'example14.cpp' || echo '$(srcdir)/'`example14.cpp
-
-example14-example14.obj: example14.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example14_CXXFLAGS) $(CXXFLAGS) -MT example14-example14.obj -MD -MP -MF $(DEPDIR)/example14-example14.Tpo -c -o example14-example14.obj `if test -f 'example14.cpp'; then $(CYGPATH_W) 'example14.cpp'; else $(CYGPATH_W) '$(srcdir)/example14.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/example14-example14.Tpo $(DEPDIR)/example14-example14.Po
-#	$(AM_V_CXX)source='example14.cpp' object='example14-example14.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example14_CXXFLAGS) $(CXXFLAGS) -c -o example14-example14.obj `if test -f 'example14.cpp'; then $(CYGPATH_W) 'example14.cpp'; else $(CYGPATH_W) '$(srcdir)/example14.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -17,8 +17,8 @@ AM_PROG_AR
 LT_INIT([static])
 
 #Check for compilers
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CC([gcc])
+AC_PROG_CXX([g++])
 AC_LANG([C],[C++])
 
 #Check for pthreads
@@ -26,14 +26,14 @@ ACX_PTHREAD([have_pthread=yes],[have_pthread=no])
 
 GTEST_VERSION="1.8.0"
 AS_IF([test "x$have_pthread" = "xyes"],
-      [GTEST_CPPFLAGS="-DGTEST_HAS_PTHREADS=1"
+      [GTEST_CPPFLAGS="-I\$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=1"
        GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
-       GTEST_LDFLAGS=""
+       GTEST_LDFLAGS="-L\$(abs_top_builddir)/lib/gmock/lib"
        GTEST_LIBS="$PTHREAD_LIBS"],
-       [GTEST_CPPFLAGS="-DGTEST_HAS_PTHREADS=0"
-        GTEST_CXXFLAGS=""
-        GTEST_LDFLAGS=""
-        GTEST_LIBS=""])
+       [GTEST_CPPFLAGS="-I\$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=0"
+        GTEST_CXXFLAGS=
+        GTEST_LDFLAGS="-L\$(abs_top_builddir)/lib/gmock/lib"
+        GTEST_LIBS=])
 
 AC_SUBST([GTEST_VERSION])
 AC_SUBST([GTEST_CPPFLAGS])
@@ -66,20 +66,22 @@ AS_IF([test "x$hdf4_dir" != "xno"],
 
 AS_IF([test $with_hdf = yes],
       [AC_DEFINE([USE_HDF4],[1],[building with hd4])
-      AC_SUBST(HDF_FLAGS,${hdfinc})
+      AC_SUBST(HDF_CFLAGS,${hdfinc})
       AC_SUBST(HDF_LIBS,${hdflib}" -lmfhdf -ldf -ljpeg -lz")])
 
 
-AC_ARG_ENABLE([example2d],[AS_HELP_STRING([--enable-example2d],
-              [build 2d examples])],[twoD="yes"],[twoD="no"])
+AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
+              [build the 2d example directory])],
+              [exTwoD="yes"],[exTwoD="no"])
 
-AM_CONDITIONAL([EX2D_OPT],[test "$twoD" = "yes"])
+AM_CONDITIONAL([EX2D_OPT],[test "$exTwoD" = "yes"])
 
 
 #Output files
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/gmock/Makefile
+                 tests/Makefile
                  example2d/Makefile])
 
 #Generate output
