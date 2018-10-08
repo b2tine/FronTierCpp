@@ -37,6 +37,7 @@
 *.files
 *.ofiles
 *.in
+*.dirstamp
 configure
 
 #example2d
