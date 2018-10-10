@@ -16,7 +16,7 @@ noinst_PROGRAMS = example00 \
 				  example08 \
 				  example09 \
 				  example10 \
-				  example11 \
+				  example11
 
 example00_SOURCES = example00.cpp
 
@@ -41,7 +41,3 @@ example09_SOURCES = example09.cpp
 example10_SOURCES = example10.cpp
 
 example11_SOURCES = example11.cpp
-
-#example12_SOURCES = example12.cpp
-
-#example13_SOURCES = example13.cpp
