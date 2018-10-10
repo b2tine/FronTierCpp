@@ -76,13 +76,19 @@ AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
 
 AM_CONDITIONAL([EX2D_OPT],[test "$exTwoD" = "yes"])
 
+AC_ARG_WITH([example3d],[AS_HELP_STRING([--with-example3d],
+              [build the 3d example directory])],
+              [exThreeD="yes"],[exThreeD="no"])
+
+AM_CONDITIONAL([EX3D_OPT],[test "$exThreeD" = "yes"])
 
 #Output files
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/gmock/Makefile
                  tests/Makefile
-                 example2d/Makefile])
+                 example2d/Makefile
+                 example3d/Makefile])
 
 #Generate output
 AC_OUTPUT

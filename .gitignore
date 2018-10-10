@@ -21,6 +21,7 @@
 *.la
 *.a
 *.lib
+libtool
 
 # Executables
 *.exe
@@ -42,6 +43,10 @@ configure
 
 #example2d
 example2d/example*
+example3d/example*
+Makefile
+*/Makefile
+*/*/Makefile
 
 # Others
 *~
