@@ -42,8 +42,8 @@ libtool
 configure
 
 #example2d
-example2d/example*
-example3d/example*
+#example2d/example*
+#example3d/example*
 Makefile
 */Makefile
 */*/Makefile
