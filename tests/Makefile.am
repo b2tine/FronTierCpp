@@ -20,7 +20,7 @@ TESTS_ENVIRONMENT =
 TESTS =
 check_PROGRAMS =
 
-TESTS += RectGridTests
-check_PROGRAMS += RectGridTests
+TESTS += DummyFrontTests
+check_PROGRAMS += DummyFrontTests
 
-RectGridTests_SOURCES = RectGridTests.cpp
+DummyFrontTests_SOURCES = DummyFrontTests.cpp
