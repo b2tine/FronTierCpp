@@ -41,6 +41,7 @@ libtool
 *.dirstamp
 configure
 build-aux
+aclocal.m4
 
 #example2d
 example2d/example*
