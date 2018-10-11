@@ -17,9 +17,10 @@ AM_PROG_AR
 LT_INIT([static])
 
 #Check for compilers
-AC_PROG_CC([gcc])
+#AC_PROG_CC([gcc])
 AC_PROG_CXX([g++])
-AC_LANG([C],[C++])
+AC_LANG([C++])
+#AC_LANG([C],[C++])
 
 #Check for pthreads
 ACX_PTHREAD([have_pthread=yes],[have_pthread=no])
