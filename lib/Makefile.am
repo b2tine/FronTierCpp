@@ -39,7 +39,8 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/fprotos.h \
 				 ../include/front/frp.h \
 				 ../include/front/fuserint.h \
-				 ../include/front/fvelo.h 
+				 ../include/front/fvelo.h \
+				 ../include/front/dummyfront.h 
 
 libutil_la_SOURCES = ../src/util/cleanup.c \
 					 ../src/util/debug.c \
