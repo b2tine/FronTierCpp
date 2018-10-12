@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 
-TEST(DummyFrontTests, BasicDataAndFront)
+TEST(DummyFrontTests, CompileTest)
 {
     cpp::BasicData f_basic;
     cpp::Front front;

@@ -687,6 +687,11 @@ struct _Front {
 				double*);
 	int  (*is_nzn_bdry)(double,double,COMPONENT,CURVE*);
 
+    POINTER open_end_params;
+    /* input: params,coords,comp; output: bdry_type,state */
+    void (*open_end_func)(struct _Front*,POINTER,int*,COMPONENT,
+            int,int,int*,Locstate);
+
 		/*Locstate allocation and clearing*/
 
 	void (*_alloc_state)(Locstate*,size_t);

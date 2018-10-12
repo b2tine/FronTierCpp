@@ -2257,6 +2257,41 @@ EXPORT  double cylinder_func(
         return arg;
 }	/*end cylinder_func*/
 
+
+EXPORT  double acylinder_func(
+	POINTER func_params,
+	double *coords)
+{
+	ACYLINDER_PARAMS *d_params = (ACYLINDER_PARAMS*)func_params;
+        double *c;
+        double x,y,z,r1,r2,h,arg;
+	int idir;
+
+        c = d_params->center;
+        r1 = d_params->radius1;
+	r2 = d_params->radius2;
+        h = d_params->height;
+	idir = d_params->idir;
+
+        x = coords[idir] - c[idir];
+        y = coords[(idir+1)%3] - c[(idir+1)%3];
+        z = coords[(idir+2)%3] - c[(idir+2)%3];
+
+        if(x > -h && x < h)
+        {
+            if(sqr(y) + sqr(z) > sqr(r1) || sqr(y) + sqr(z) < sqr(r2))
+	       arg = 1; 
+	    else
+	       arg = -1;
+        }
+        else
+        {
+            arg = 1;
+        }
+        return arg;
+}	/* end acylinder_func */
+
+
 EXPORT  double cone_func(
 	POINTER func_params,
         double *coords)
