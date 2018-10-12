@@ -813,6 +813,7 @@ IMPORT  double  slotted_circle_func(POINTER,double*);
 IMPORT  double  four_slotted_circle_func(POINTER,double*);
 IMPORT  double  cuboid_func(POINTER,double*);
 IMPORT  double  cylinder_func(POINTER,double*);
+IMPORT  double  acylinder_func(POINTER,double*);
 IMPORT  double  cone_func(POINTER,double*);
 IMPORT  double  crosscylinder_func(POINTER,double*);
 IMPORT  double  bowl_func(POINTER,double*);

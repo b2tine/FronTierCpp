@@ -3,7 +3,7 @@
 #ifndef DUMMY_FRONT_H
 #define DUMMY_FRONT_H
 
-namespace FTCpp
+namespace cpp
 {
 
 class Front

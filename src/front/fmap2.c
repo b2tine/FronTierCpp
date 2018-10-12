@@ -824,6 +824,57 @@ EXPORT  void FT_MakeCylinderSurf(
 
 }        /*end FT_MakeCylinderSurf*/
 
+
+EXPORT  void FT_MakeAnnularCylinderSurf(
+        Front *front,
+        double *center,
+        double radius1, 
+	double radius2,
+        double height,
+        COMPONENT neg_comp,
+        COMPONENT pos_comp,
+	int idir,
+        int w_type,
+	int refinement_level,
+	boolean extend_to_buffer,
+        SURFACE **surf)
+{
+	RECT_GRID *rgr = front->rect_grid;
+	RECT_GRID box_rg;
+        ACYLINDER_PARAMS acylinder_params;
+        int i,dim = rgr->dim;
+	double L[MAXD],U[MAXD],dh;
+        int gmax[MAXD];
+        double *h = rgr->h;
+	int lbuf[MAXD],ubuf[MAXD];
+	
+	for (i = 0; i < dim; ++i)
+	{
+            acylinder_params.center[i] = center[i];
+	    lbuf[i] = (extend_to_buffer) ? rgr->lbuf[i] : 0;
+	    ubuf[i] = (extend_to_buffer) ? rgr->ubuf[i] : 0;
+	    L[i] = rgr->L[i] - lbuf[i]*h[i];
+            U[i] = rgr->U[i] + ubuf[i]*h[i];
+            gmax[i] = rint((U[i] - L[i])/h[i]);
+            dh = gmax[i]*h[i] - (U[i] - L[i]);
+            L[i] -= sqrt(0.5)*dh;
+            U[i] += sqrt(0.5)*dh;
+            gmax[i] = refinement_level*rint((U[i] - L[i])/h[i]);
+	}
+	set_box_rect_grid(L,U,gmax,NULL,NULL,dim,&box_rg);
+
+        acylinder_params.radius1 = radius1;
+	acylinder_params.radius2 = radius2;
+        acylinder_params.height = height;
+        acylinder_params.idir = idir;
+
+        if (make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
+                        acylinder_func,(POINTER)&acylinder_params,surf))
+            wave_type(*surf) = w_type;
+        front->interf->modified = YES;
+}        /* end FT_MakeAnnularCylinderSurf */
+
+
 EXPORT  void FT_MakeConeSurf(
         Front *front,
         double *center,

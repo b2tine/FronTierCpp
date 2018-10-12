@@ -308,6 +308,16 @@ typedef struct {
 	double *L,*U; 		/* domain length in each direction */
 } FOURIER_POLY;
 
+typedef struct {
+	int   num_modes;
+	int   dim;
+	double **nu;
+	double z0;
+	double croSectAtz;
+    double **A,**B,**C,**D, *phase;
+	double *L,*U;
+} FOURIER_POLY_MD;
+
 /*
 *			Legendre Polynomial
 *
@@ -512,6 +522,14 @@ typedef struct {
 	double radius;
 	double height;
 } CYLINDER_PARAMS;
+
+typedef struct {
+	double center[3];
+	double radius1;
+	double radius2;
+	double height;
+    int idir;
+} ACYLINDER_PARAMS;
 
 typedef struct {
 	double center[3];

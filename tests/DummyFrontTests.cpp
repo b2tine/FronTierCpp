@@ -5,5 +5,5 @@
 
 TEST(DummyFrontTests, CompilerLinksSuccesfully)
 {
-    FTCpp::Front front;
+    cpp::Front front;
 }
