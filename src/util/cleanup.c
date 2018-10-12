@@ -39,9 +39,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <sys/types.h>
 #include <time.h>
 
-#if defined(__MPI__) && defined(_MIPS_ISA_MIPS4)
+#if defined(USE_MPI) && defined(_MIPS_ISA_MIPS4)
 #  include <arraysvcs.h>
-#endif /* defined(__MPI__) && defined(_MIPS_ISA_MIPS4) */
+#endif /* defined(USE_MPI) && defined(_MIPS_ISA_MIPS4) */
 
 #include <signal.h>
 
@@ -132,9 +132,9 @@ LOCAL	void	terminate_run(int);
 LOCAL	void	(*clean_up_printout)(int) = NULL;
 LOCAL	void	(*user_clean_up)(void) = NULL;
 
-#if defined(__MPI__) && defined(_MIPS_ISA_MIPS4)
+#if defined(USE_MPI) && defined(_MIPS_ISA_MIPS4)
 #define SIG_PP_TRAP		SIGUSR2
-#endif /* defined(__MPI__) && defined(_MIPS_ISA_MIPS4) */
+#endif /* defined(USE_MPI) && defined(_MIPS_ISA_MIPS4) */
 
 #if defined(DEBUG_CLEAN_UP)
 #define debug_enter(fname) (void) printf("Entered %s()\n",#fname);

@@ -155,9 +155,9 @@ EXPORT	double FrontHypTimeStep(
 
 	/* f_max_front_time_step */
 	max_dt = (*front->max_front_time_step)(front,fcrds);
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	pp_global_min(&max_dt,1);
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	return max_dt;
 }	/* end FrontTimeStep */
 
@@ -464,7 +464,7 @@ EXPORT	void	FT_Init(
 		argc -= 2;
 		argv += 2;
 		break;
-#if defined(__MPI__)
+#if defined(USE_MPI)
             case 'p':
             case 'P':
                 for (i = 0; i < MAXD; ++i)
@@ -485,7 +485,7 @@ EXPORT	void	FT_Init(
                     clean_up(ERROR);
                 }
 		break;
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	    default:
 		argc -= 2;
 		argv += 2;
@@ -3273,9 +3273,9 @@ EXPORT	void FT_SetTimeStep(
 
 	/* f_max_front_time_step */
 	max_dt = CFL*(*front->max_front_time_step)(front,fcrds);
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	pp_global_min(&max_dt,1);
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	front->dt = max_dt;
 	if (debugging("step_size"))
             printf("Time step from FT_SetTimeStep(): %f\n",front->dt);

@@ -2901,7 +2901,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    ic_index[k] = j + (pheight - i - 1)*pwidth;
 	    k++;
 	}
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	if(pp_mynode() != 0)
 	{
 	    pp_send(hdf_comp_tag,(POINTER)&data_in_domain,sizeof(boolean),0);
@@ -2912,7 +2912,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    	pp_send(hdf_comp_tag,(POINTER)ic_index,size*sizeof(int),0);
 	    }
 	}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	if(pp_mynode() == 0)
 	{
 	    uni_array(&pr_val,pwidth*pheight,sizeof(uint8));
@@ -2921,7 +2921,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    	ic = ic_index[k];
 	    	pcomps[ic] = comps[k];
 	    }
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	    for (i = 1; i < pp_numnodes(); i++)
 	    {
 	        pp_recv(hdf_comp_tag,i,(POINTER)&data_in_domain,	
@@ -2939,7 +2939,7 @@ LOCAL	void	hdf_plot_comp2d(
 		    }
 		}
 	    }
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
             for (j = 0; j < pwidth; ++j)
             for (i = 0; i < pheight; ++i)
 	    {
@@ -2974,9 +2974,9 @@ LOCAL	void	hdf_plot_comp2d(
 	    front->hdf_comps[0] = pcomps;
 	else
 	    front->hdf_comps[0] = comps;
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	pp_gsync();
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 
 	debug_print("HDF","Left plot_hdf_comp2d().\n");
 }	/* end plot_hdf_comp2d */
@@ -3030,10 +3030,10 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	debug_print("HDF","Entered hdf_plot_cross_sectional_comp().\n");
 
 	my_id = pp_mynode();
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	find_Cartesian_coordinates(my_id,pp_grid,my_ic);
 	if (my_ic[idir] != pp_grid->gmax[idir]/2) return;
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	switch (idir)
 	{
 	case 0:
@@ -3119,19 +3119,19 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	}
 	sprintf(file_name,"%s/comp-%s.hdf",dirname,crx_suffix[idir]);
 	
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	if (my_id != io_node)
 	{
 	    pp_send(hdf_comp_tag,r_val,width*height*sizeof(uint8),io_node);
 	}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	
 	if (my_id == io_node)
 	{
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 	        tmp2_val = r_val;
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	        find_Cartesian_coordinates(i,pp_grid,icoords);
 		if (icoords[idir] != pp_grid->gmax[idir]/2) continue;
 	        if (i != io_node)
@@ -3139,15 +3139,15 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	            pp_recv(hdf_comp_tag,i,tmp_val,width*height*sizeof(uint8)); 
 	            tmp2_val = tmp_val;
 		}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	        for (j = 0; j < width; ++j)
 	        for (k = 0; k < height; ++k)
                 {
 		     index = j + (height - k - 1)*width;    
-#if defined(__MPI__)
+#if defined(USE_MPI)
                      index = pwidth*(pheight - icoords[i2]*height - k - 1) 
 				+ icoords[i1]*width + j;   
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
                      index2= j + (height - k - 1)*width;
                    
 	             pr_val[index] = tmp2_val[index2];
@@ -3327,7 +3327,7 @@ LOCAL	void	hdf_plot_var2d(
 	    }
             k++;
 	}
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	pp_global_max(&max_val,1);
 	pp_global_min(&min_val,1);
         if(pp_mynode() != 0)
@@ -3340,7 +3340,7 @@ LOCAL	void	hdf_plot_var2d(
                 pp_send(hdf_comp_tag,(POINTER)var_val,size*sizeof(double),0);
             }
         }
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
         if(pp_mynode() == 0)
         {
             for (k = 0; k < size; ++k)
@@ -3348,7 +3348,7 @@ LOCAL	void	hdf_plot_var2d(
             	ic = ic_index[k];
             	pvar_val[ic] = var_val[k];
             }
-#if defined(__MPI__)
+#if defined(USE_MPI)
             for (i = 1; i < pp_numnodes(); i++)
             {
                 pp_recv(hdf_comp_tag,i,(POINTER)&data_in_domain,
@@ -3366,7 +3366,7 @@ LOCAL	void	hdf_plot_var2d(
                     }
                 }
             }
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	    if (debugging("hdf"))
 	    {
 	    	printf("Maximum value: %f at (%d,%d)\n",max_val,
@@ -3429,9 +3429,9 @@ LOCAL	void	hdf_plot_var2d(
 	    else
             	(void) DFR8addimage(file_name,pr_val,pwidth,pheight,COMP_NONE);
 	}
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	pp_gsync();
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 
 	if (debugging("hdf"))
 	    (void) printf("Left hdf_plot_var2d()\n\n");
@@ -3482,10 +3482,10 @@ LOCAL	void	hdf_plot_var3d(
 
 	debug_print("HDF","Entered hdf_plot_var3d().\n");
         my_id = pp_mynode();
-#if defined(__MPI__)
+#if defined(USE_MPI)
         find_Cartesian_coordinates(my_id,pp_grid,my_ic);
         if (my_ic[idir] != pp_grid->gmax[idir]/2) return;
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
         switch (idir)
         {
         case 0:
@@ -3547,7 +3547,7 @@ LOCAL	void	hdf_plot_var3d(
 	    if (var_val[k] < min_val) min_val = var_val[k];
 	    if (var_val[k] > max_val) max_val = var_val[k];
 	}
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	ext_val[0] = min_val;
 	ext_val[1] = max_val;
 	for (i = 0; i < pp_numnodes(); i++)
@@ -3564,7 +3564,7 @@ LOCAL	void	hdf_plot_var3d(
 	    if (min_val > ext_val[0]) min_val = ext_val[0];
 	    if (max_val < ext_val[1]) max_val = ext_val[1];
 	}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 
 	vrng = max_val - min_val;
 
@@ -3592,18 +3592,18 @@ LOCAL	void	hdf_plot_var3d(
 	}
 	sprintf(file_name,"%s/%s.hdf",dirname,var_name);
 	
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	if (my_id != io_node)
 	{
 	    pp_send(hdf_comp_tag, r_val,width*height*sizeof(uint8),io_node);
 	}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	
 	if (my_id == io_node)
 	{
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	        find_Cartesian_coordinates(i,pp_grid,icoords);
 		if (icoords[idir] != pp_grid->gmax[idir]/2) continue;
 	        if (i != io_node)
@@ -3611,17 +3611,17 @@ LOCAL	void	hdf_plot_var3d(
 	            pp_recv(hdf_comp_tag,i,tmp_val, width*height*sizeof(uint8)); 
 		}
 	        tmp2_val = tmp_val;
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	        if(i == io_node)
 	            tmp2_val = r_val;
 	        for (j = 0; j < width; ++j)
 	        for (k = 0; k < height; ++k)
                 {
 		    index = j + (height - k - 1)*width;    
-#if defined(__MPI__)
+#if defined(USE_MPI)
                     index = pwidth*(pheight - icoords[i2]*height - k - 1) + 
 				icoords[i1]*width + j;   
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
                      index2= j +(height-k-1)*width;
                    
 	            pr_val[index] = tmp2_val[index2];

@@ -1677,10 +1677,10 @@ EXPORT  void    FT_StartUp(
             		subdomains(init_data(&Init))[i] = 1;
             		buffer_zones(init_data(&Init))[i] = DEFAULT_BUF_WIDTH 
 					+ MAXD/3;
-#if defined(__MPI__)
+#if defined(USE_MPI)
                         subdomains(init_data(&Init))[i] =
                                         ft_basic->subdomains[i];
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
         	}
 		Init._StateSize = front->sizest = 
 				ft_basic->size_of_intfc_state;

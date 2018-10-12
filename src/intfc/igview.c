@@ -5025,10 +5025,10 @@ EXPORT void gd_2d_intfc(
 	static int current_max_num_points = 0;
 	static double *x,*y;
 
-#if defined __MPI__
+#if defined USE_MPI
 	if (pp_mynode() != 0) 
 	    goto make_frame;
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 	if (first) 
 	    first = NO;
 	else 
@@ -5103,9 +5103,9 @@ make_frame:
 	    num_curves++;
 	}
 	if (num_curves == 0) return;
-#if defined __MPI__
+#if defined USE_MPI
 	pp_global_imax(&max_num_points,1);
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 	if (current_max_num_points < max_num_points)
 	{
 	    if (x != NULL) free_these(2,x,y);
@@ -5113,12 +5113,12 @@ make_frame:
 	    uni_array(&y,max_num_points,FLOAT);
 	    current_max_num_points = max_num_points;
 	}
-#if defined __MPI__
+#if defined USE_MPI
 	if (pp_mynode() != 0)
 	{
 	    pp_send(10,(POINTER)&num_curves,INT,0);
 	}
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (is_bdry(*c)) continue;
@@ -5132,7 +5132,7 @@ make_frame:
 	    x[num_points] = Coords((*c)->last->end)[0];
 	    y[num_points] = Coords((*c)->last->end)[1];
 	    num_points++;
-#if defined __MPI__
+#if defined USE_MPI
 	    if (pp_mynode() != 0)
 	    {
 		pp_send(10,(POINTER)&num_points,INT,0);
@@ -5140,10 +5140,10 @@ make_frame:
 		pp_send(10,(POINTER)y,num_points*FLOAT,0);
 	    }
 	    else
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 	    	gd_plotdata(num_points,x,y);
 	}
-#if defined __MPI__
+#if defined USE_MPI
 	if (pp_mynode() == 0)
 	{
 	    for (i = 1; i < pp_numnodes(); ++i)
@@ -5157,12 +5157,12 @@ make_frame:
 	    	    gd_plotdata(num_points,x,y);
 	    	}
 	    }
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 	    gd_plotframe(label);
 	    fflush(PLOT_DATA.gifout);
-#if defined __MPI__
+#if defined USE_MPI
 	}
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 }	/* end gd_2d_intfc */
 #endif /* if defined(__GD__) */
 

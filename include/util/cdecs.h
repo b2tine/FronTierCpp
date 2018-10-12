@@ -57,9 +57,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <limits.h>
 #include <float.h>
 #include <errno.h>
-#if defined(__MPI__)
+#if defined(USE_MPI)
 #   include <mpi.h>
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 #if defined(__GD__)
 #include <gd.h>
 #include <gdfonts.h>

@@ -269,9 +269,9 @@ label_1:
 		    double *center = Coords(cr->p);
 		    double radius = 3.0*h[0];
 	    	    sprintf(xg_name,"untangle");
-#if defined __MPI__
+#if defined USE_MPI
 	    	    sprintf(xg_name,"%s-%d",xg_name,pp_mynode());
-#endif /* defined __MPI__ */
+#endif /* defined USE_MPI */
 		    xgraph_2d_intfc_within_range(xg_name,intfc,center,radius,
 						NO);
 		    (void) printf("WARNING in scalar_unravel(), "
