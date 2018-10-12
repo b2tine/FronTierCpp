@@ -10,4 +10,4 @@ if EX3D_OPT
 endif
 
 
-SUBDIRS = lib tests $(MAYBE_EX2D) $(MAYBE_EX3D)
+SUBDIRS = lib tests cFluid $(MAYBE_EX2D) $(MAYBE_EX3D)
