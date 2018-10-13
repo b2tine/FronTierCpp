@@ -2,9 +2,10 @@ SUBDIRS = gmock
 
 AM_CPPFLAGS = -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
-			  -I$(top_srcdir)/include/util @HDF_CFLAGS@
+			  -I$(top_srcdir)/include/util @HDF_CFLAGS@ @MPI_CFLAGS@
 
-AM_LDFLAGS = @HDF_LIBS@
+AM_LDFLAGS = @HDF_LIBS@ @MPI_LIB@
+
 
 noinst_LTLIBRARIES = libutil.la \
 					 libintfc.la \

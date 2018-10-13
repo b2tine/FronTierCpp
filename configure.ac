@@ -17,7 +17,7 @@ AM_PROG_AR
 LT_INIT([static])
 
 #Check for compilers
-AC_PROG_CXX([g++])
+AC_PROG_CXX([mpic++ mpicxx])
 AC_LANG([C++])
 
 #Check for pthreads
@@ -42,7 +42,7 @@ AC_SUBST([GTEST_LIBS])
 
 #configure with hdf4
 AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
-            [specify location of single directory installation)])],
+            [specify location of single directory installation])],
             [hdf4_dir=$withval],[hdf4_dir="no"])
 
 AC_ARG_WITH([hdf4-inc],[AS_HELP_STRING([--with-hdf4-inc=path],
@@ -64,9 +64,32 @@ AS_IF([test "x$hdf4_dir" != "xno"],
         hdflib="-L${hdf_lib}"])
 
 AS_IF([test $with_hdf = yes],
-      [AC_DEFINE([USE_HDF4],[1],[building with hd4])
-      AC_SUBST(HDF_CFLAGS,${hdfinc})
-      AC_SUBST(HDF_LIBS,${hdflib}" -lmfhdf -ldf -ljpeg -lz")])
+      [AC_DEFINE([USE_HDF4],[1],[building with hd4])])
+
+AC_SUBST(HDF_CFLAGS,${hdfinc})
+AC_SUBST(HDF_LIBS,${hdflib}" -lmfhdf -ldf -ljpeg -lz")
+
+
+#configure with mpich
+AC_ARG_WITH([mpich-dir],[AS_HELP_STRING([--with-mpich-dir=path],
+            [specify location of single directory installation])],
+            [mpich_dir=$withval],[mpich_dir="no"])
+
+with_mpich=no
+AS_IF([test "x$mpich_dir" != "xno"],
+      [with_mpich=yes
+       mpichinc="-I${mpich_dir}/include"
+       mpichlib="-L${mpich_dir}/lib"])
+
+AS_IF([test $with_mpich = yes],
+      [AC_DEFINE([USE_MPI],[1],[building with mpich])])
+
+AC_SUBST(MPI_CFLAGS,${mpichinc})
+AC_SUBST(MPI_LIBS,${mpichlib}" -lmpi -lmpicxx")
+
+
+
+
 
 
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
