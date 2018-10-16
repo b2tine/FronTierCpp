@@ -64,7 +64,7 @@ AS_IF([test "x$hdf4_dir" != "xno"],
         hdflib="-L${hdf_lib} -lmfhdf -ldf -ljpeg -lz"])
 
 AS_IF([test $with_hdf = yes],
-      [AC_DEFINE([USE_HDF4],[1],[building with hd4])])
+      [AC_DEFINE([USE_HDF4],[1],[build with hd4])])
 
 AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
@@ -82,13 +82,29 @@ AS_IF([test "x$mpich_dir" != "xno"],
        mpichlib="-L${mpich_dir}/lib -lmpi -lmpicxx"])
 
 AS_IF([test $with_mpich = yes],
-      [AC_DEFINE([USE_MPI],[1],[building with mpich])])
+      [AC_DEFINE([USE_MPI],[1],[build with mpich])])
 
 AC_SUBST(MPI_CFLAGS,${mpichinc})
 AC_SUBST(MPI_LIBS,${mpichlib})
 
+#configure with petsc
+AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
+            [specify location of single directory installation])],
+            [petsc_dir=$withval],[petsc_dir="no"])
 
+with_petsc=no
+AS_IF([test "x$petsc_dir" != "xno"],
+      [with_petsc=yes
+       petscinc="-I${petsc_dir}/include"
+       petsclib="-L${petsc_dir}/lib -lpetsc -lHYPRE"])
 
+#AS_IF([test $with_petsc = yes],
+#      [AC_DEFINE([USE_PETSC],[1],[build with PETSc])
+
+AC_SUBST(PETSC_CFLAGS,${petscinc})
+AC_SUBST(PETSC_LIBS,${petsclib})
+
+#compile examples options
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
               [build the 2d example directory])],
               [exTwoD="yes"],[exTwoD="no"])
