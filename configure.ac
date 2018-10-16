@@ -57,17 +57,17 @@ with_hdf=no
 AS_IF([test "x$hdf4_dir" != "xno"],
       [with_hdf=yes
        hdfinc="-I${hdf4_dir}/include"
-       hdflib="-L${hdf4_dir}/lib"],
+       hdflib="-L${hdf4_dir}/lib -lmfhdf -ldf -ljpeg -lz"],
        [test "x$hdf4_inc" != "xno" && test "x$hdf4_lib" != "xno"],
        [with_hdf=yes
         hdfinc="-I${hdf4_inc}"
-        hdflib="-L${hdf_lib}"])
+        hdflib="-L${hdf_lib} -lmfhdf -ldf -ljpeg -lz"])
 
 AS_IF([test $with_hdf = yes],
       [AC_DEFINE([USE_HDF4],[1],[building with hd4])])
 
 AC_SUBST(HDF_CFLAGS,${hdfinc})
-AC_SUBST(HDF_LIBS,${hdflib}" -lmfhdf -ldf -ljpeg -lz")
+AC_SUBST(HDF_LIBS,${hdflib})
 
 
 #configure with mpich
@@ -79,16 +79,13 @@ with_mpich=no
 AS_IF([test "x$mpich_dir" != "xno"],
       [with_mpich=yes
        mpichinc="-I${mpich_dir}/include"
-       mpichlib="-L${mpich_dir}/lib"])
+       mpichlib="-L${mpich_dir}/lib -lmpi -lmpicxx"])
 
 AS_IF([test $with_mpich = yes],
       [AC_DEFINE([USE_MPI],[1],[building with mpich])])
 
 AC_SUBST(MPI_CFLAGS,${mpichinc})
-AC_SUBST(MPI_LIBS,${mpichlib}" -lmpi -lmpicxx")
-
-
-
+AC_SUBST(MPI_LIBS,${mpichlib})
 
 
 
