@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "setb2d"
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 
 	/* BPOINT is a structure characterizing Boundary Points: */

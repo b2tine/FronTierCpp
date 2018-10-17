@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 
 	/* LOCAL Function Declarations */
 LOCAL	boolean	BothSidesActive(HYPER_SURF*,Front*);
@@ -342,12 +342,6 @@ LOCAL int preserve_advance_front3d(
 	int	   status;
 	boolean	   do_redist = YES;
 	int	   i;
-
-	DEBUG_ENTER(preserve_advance_front3d)
-
-	debug_print("front","Entered %s(step %d time %g dt %g)\n",fname,
-				front->step,front->time,dt);
-	debug_front("old_front","into advance front",front);
 
 	if (debugging("trace"))
 	    (void) printf("Entering preserve_advance_front3d()\n");
@@ -1358,6 +1352,7 @@ LOCAL void propagate_surface_points(
 
         start_clock("propagate_surface_points");
 
+	front->max_scaled_prop_dist = 0.0;
 	(void) next_point(intfc_old,NULL,NULL,NULL);
         (void) next_point(intfc_new,NULL,NULL,NULL);
         while (next_point(intfc_old,&oldp,&oldhse,&oldhs) &&
@@ -1372,7 +1367,18 @@ LOCAL void propagate_surface_points(
 	        continue;
 	    }
 	    point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+	    if (debugging("max_prop_dist"))
+	    {
+		double *h = front->rect_grid->h;
+		double dist = distance_between_positions(Coords(oldp),
+					Coords(newp),3)/h[0];
+		if (front->max_scaled_prop_dist < dist)
+		    front->max_scaled_prop_dist = dist;
+	    }
 	}
+	if (debugging("max_prop_dist"))
+	    (void) printf("Step %d  maximum propagated scaled distance = %f\n",
+				front->step,front->max_scaled_prop_dist);
 
         stop_clock("propagate_surface_points");
         DEBUG_LEAVE(propagate_surface_points)
@@ -1455,7 +1461,7 @@ LOCAL int struct_advance_front3d(
 	    (*front->interior_propagate)(*newfront,dt);
 	init_intfc_curvature3d(*newfront,(*newfront)->interf);
 	stop_clock("interior_propagate");
-	
+/*	
 	if (debugging("collision"))
 	{
 	    printf("Before resolve_collision()\n");
@@ -1464,7 +1470,7 @@ LOCAL int struct_advance_front3d(
             resolve_collision(*newfront);
 	    printf("After resolve_collision()\n");
 	}
-
+*/
 	start_clock("scatter_front");
 	if (!scatter_front(*newfront))
 	{

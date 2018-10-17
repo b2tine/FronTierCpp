@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING    "comp3d"
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 typedef struct {
 	double   pt[3];		/* Location being projected on tri */
@@ -100,6 +100,16 @@ LOCAL	double	crx_tolv;
 LOCAL	double	crx_toll;
 LOCAL	double	ctol;
 LOCAL	const double	blk_tol = 1.0e-6;
+
+/*	New shortest_distance3d() related functions	*/
+LOCAL   void    shortest_distance3d_new(TRI_PROJECTION*);
+LOCAL   void    shortest_distance3d_old(TRI_PROJECTION*);
+LOCAL   void    rotate_point(double*,double b[][3]);
+LOCAL   void    transposeMatrix(double b[][3]);
+LOCAL   void    rot_and_trans(double*,double*,double a[][3]);
+LOCAL   void    trans_and_rot(double*,double*,double*,double*,double a[][3]);
+LOCAL   double  dist_point_line_2d(double*, double*, double*);
+LOCAL   double  edge_equation(double,double,double,double,double,double);
 
 LOCAL	boolean	comp_is_on_surface(
 	SURFACE         *surf,
@@ -1411,6 +1421,15 @@ LIB_LOCAL boolean long_nearest_similar_interface_point3d(
 LOCAL void shortest_distance3d(
 	TRI_PROJECTION	*tri_proj)
 {
+	shortest_distance3d_new(tri_proj);
+	/*
+	shortest_distance3d_old(tri_proj);
+	*/
+}	/* end shortest_distance3d */
+
+LOCAL void shortest_distance3d_old(
+	TRI_PROJECTION	*tri_proj)
+{
 	TRI   *tri = tri_proj->tri;
 	double pt0, pt1, pt2;
 	double a0, a1, a2;
@@ -1731,7 +1750,7 @@ LOCAL void shortest_distance3d(
 	}
 	tri_proj->a[0] = a0; tri_proj->a[1] = a1; tri_proj->a[2] = a2;
 	tri_proj->d = sqrt(tri_proj->d2);
-}		/*end shortest_distance3d*/
+}		/*end shortest_distance3d_old*/
 
 
 /*
@@ -4569,3 +4588,786 @@ EXPORT boolean mergable_surfaces(
 	    return YES;
 	return NO;
 }	/* end mergable_surfaces */
+
+/***************************************************************/
+
+#define PtoV(A,B,ans)                                                   \
+        {                                                               \
+                (ans)[0] = (B)[0] - (A)[0];                             \
+                (ans)[1] = (B)[1] - (A)[1];                             \
+                (ans)[2] = (B)[2] - (A)[2];                             \
+        }                                                               
+
+#define VaddV(A,B,ans)                                                  \
+        {                                                               \
+                (ans)[0] = (B)[0] + (A)[0];                             \
+                (ans)[1] = (B)[1] + (A)[1];                             \
+                (ans)[2] = (B)[2] + (A)[2];                             \
+        }
+
+#define Scal3d(num,A,ans)                                               \
+        {                                                               \
+                (ans)[0] = num * (A)[0];                                \
+                (ans)[1] = num * (A)[1];                                \
+                (ans)[2] = num * (A)[2];                                \
+        }                                                               
+
+#define Nor2d(A,ans)                                                    \
+        {                                                               \
+                (ans)[0] = 0;                                           \
+                (ans)[1] = -(A)[2];                                     \
+                (ans)[2] = (A)[1];                                      \
+        }
+
+LOCAL void shortest_distance3d_new(
+	TRI_PROJECTION *tri_proj)
+{
+	TRI *tri = tri_proj->tri;
+	POINT *P0, *P1, *P2;  
+	double a0,a1,a2,area; 
+	double dist,L,ps,np,s_temp1,s_temp2;
+	double lv10s,lv21s,lv02s; 
+	const double *nor;
+	double nor2d[3];  
+	double rot_matrix[3][3];
+	double judge1,judge2,judge3,judge4,judge5,judge6,judge7;
+	double judge8,judge9; 
+	double p0[3],p1[3],p2[3],dp0[3],pt[3],p_temp[3],p_close[3], ptori[3];
+	double v01[3],v12[3],v20[3],v10[3],v21[3],v02[3],v_temp[3]; 
+	double v001[3],v112[3],v220[3],v_temp1[3],v_temp2[3];
+	const double *l; 
+	int i; 
+	
+	nor = Tri_normal(tri);
+	for (i = 0; i < 3; i++)
+	     ptori[i] = pt[i] = tri_proj->pt[i];
+        tri_proj->pv = tri_proj->p1 = tri_proj->p2 = NULL;
+
+        P0 = Point_of_tri(tri)[0]; 
+	for (i = 0; i < 3; i++)
+	     p0[i] = Coords(P0)[i];
+        P1 = Point_of_tri(tri)[1]; 
+	for (i = 0; i < 3; i++)
+	     p1[i] = Coords(P1)[i];
+        P2 = Point_of_tri(tri)[2]; 
+	for (i = 0; i < 3; i++)
+	     p2[i] = Coords(P2)[i];
+	
+	PtoV(p0,pt,dp0);
+
+	for (i = 0; i < 3; i++)
+             p_temp[i] = p0[i]; 
+
+	np = Dot3d(dp0,nor);
+	L = Dot3d(nor,nor); 
+
+	l = length_side(tri);
+        lv10s = l[0]*l[0];
+        lv21s = l[1]*l[1];
+        lv02s = l[2]*l[2];
+
+	ps = (lv10s + lv21s + lv02s)/3.0;
+
+	if (L <= sqr(EPSILON*ps))       /*TOLERANCE*/
+        {
+            /*Zero area triangle*/
+            tri_proj->side = UNKNOWN_SIDE;
+            tri_proj->d2 = HUGE_VAL;
+            return;
+        }
+
+	tri_proj->nor_d2 = np*np/L;
+
+	trans_and_rot(p0,p1,p2,pt,rot_matrix); 
+
+	PtoV(p0,p1,v01);
+	PtoV(p1,p2,v12);
+	PtoV(p2,p0,v20);
+	Scal3d(-1.0,v01,v10); 
+	Scal3d(-1.0,v12,v21); 
+	Scal3d(-1.0,v20,v02);
+
+	Nor2d(v12,v112); 
+	if (Dot3d(v112,v10) > 0)
+	    Scal3d(-1.0,v112,v112);
+	Nor2d(v20,v220); 
+	if (Dot3d(v220,v21) > 0)
+            Scal3d(-1.0,v220,v220);
+
+	/* if projected point is inside or on the edge of the triangle */
+ 
+        v001[0] = 0;
+        v001[2] = 0;
+
+	if (p2[1] > 0)
+            v001[1] = -1;
+        else
+            v001[1] = 1;
+
+	judge1 = edge_equation(pt[1],pt[2],p0[1],p0[2],v01[1],v01[2]);
+        judge2 = edge_equation(pt[1],pt[2],p1[1],p1[2],v12[1],v12[2]);
+        judge3 = edge_equation(pt[1],pt[2],p2[1],p2[2],v20[1],v20[2]);
+        judge4 = edge_equation(pt[1],pt[2],p0[1],p0[2],v001[1],v001[2]);
+        judge5 = edge_equation(pt[1],pt[2],p1[1],p1[2],v001[1],v001[2]);
+        judge6 = edge_equation(pt[1],pt[2],p1[1],p1[2],v112[1],v112[2]);
+        judge7 = edge_equation(pt[1],pt[2],p2[1],p2[2],v112[1],v112[2]);
+        judge8 = edge_equation(pt[1],pt[2],p2[1],p2[2],v220[1],v220[2]);
+        judge9 = edge_equation(pt[1],pt[2],p0[1],p0[2],v220[1],v220[2]);
+
+	transposeMatrix(rot_matrix);
+	area = fabs(p2[1] * p1[2]) * 0.5; 
+	nor2d[2] = nor2d[1] = 0; 
+ 
+	if (p1[2]  * p2[1] > 0)
+	{
+	    nor2d[0] = 1;
+	    if (judge1 > 0 && judge2 > 0 && judge3 > 0)
+	    {
+		/* The point is inside the triangle */
+		
+                    if (np > 0.0)
+                        tri_proj->side = POSITIVE_SIDE;
+                    else if (np < 0.0)
+                        tri_proj->side = NEGATIVE_SIDE;
+                    else
+                        tri_proj->side = COPLANAR;/* pt is coplanar with tri */
+
+	        p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+
+		a2 = fabs(pt[1] * p1[2]) / (2 * area); 
+		PtoV(p_close,p2,v_temp1); 
+		PtoV(p_close,p1,v_temp2);
+		Cross3d(v_temp1,v_temp2,v_temp);
+		a0 = sqrt(Dot3d(v_temp,v_temp)) / (2 * area);
+		a1 = 1.0 - a2 - a0; 
+
+		tri_proj->d2 = pt[0] * pt[0];
+
+		rot_and_trans(p_close,p_temp,rot_matrix);
+
+	    	for (i = 0; i < 3; i++)
+		     tri_proj->dpt[i] = ptori[i] - p_close[i]; 
+	    }
+	    else if (judge1 <= 0 && judge4 >= 0 && judge5 <= 0)
+	    {
+		/* closest point is on the side p0 -> p1 */
+
+		a2 = 0; 
+		a1 = fabs(pt[2] * p2[1]) * 0.5 / area;
+		a0 = 1.0 - a1;
+
+		tri_proj->d2 = sqr(pt[1]) + sqr(pt[0]);
+		tri_proj->p1 = P0;
+		tri_proj->p2 = P1;
+
+		p_close[0] = 0;
+                p_close[1] = 0;
+                p_close[2] = pt[2];
+	
+		rot_and_trans(p_close,p_temp,rot_matrix);	
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - p_close[i];
+		tri_proj->side = ONEDGE; 
+		tri_proj->side_index = 0; 
+	    }
+	    else if (judge5 > 0 && judge6 < 0)
+	    {
+		/* closest point is p1 */
+		
+		a1 = 1; 
+		a0 = a2 = 0; 
+		
+		PtoV(pt,p1,v_temp);
+		tri_proj->d2 = Dot3d(v_temp,v_temp); 
+		tri_proj->pv = P1; 
+		tri_proj->side = ONVERTEX; 
+		tri_proj->vertex_index = 1; 
+		for (i = 0; i < 3; i++)
+		     tri_proj->dpt[i] = ptori[i] - Coords(P1)[i]; 
+
+		
+		/* determine which side is projected point close to */
+
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+		s_temp1 = 1.0 / sqrt(Dot3d(v21,v21));
+		s_temp2 = 1.0 / sqrt(Dot3d(v01,v01));
+		Scal3d(s_temp1,v21,v_temp1);
+		Scal3d(s_temp2,v01,v_temp2);
+		VaddV(v_temp1,v_temp2,v_temp);
+		PtoV(p1,p_close,v_temp1);
+		Cross3d(v_temp,v_temp1,v_temp2); 
+		s_temp1 = Dot3d(v_temp2,nor2d); 
+
+		if (s_temp1 > 0)
+		    tri_proj->side_index = 0;
+		else 
+		    tri_proj->side_index = 1;
+	    }
+
+	    else if (judge2 <= 0 && judge6 >= 0 && judge7 <= 0)
+	    {
+		/* closest point is on the side p1 -> p2 */
+
+		tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p1,p2));
+		tri_proj->p1 = P1; 
+		tri_proj->p2 = P2;
+		p_close[0] = 0;
+		p_close[1] = pt[1];
+		p_close[2] = pt[2];
+
+		/* calculate the closet point on p1->p2 */
+
+		if (judge2 == 0)
+		{
+		    a0 = 0; 
+		    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+		    a1 = 1.0 - a2; 
+
+		    rot_and_trans(p_close,p_temp,rot_matrix);	
+
+		    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+		else
+		{
+		    PtoV(p_close,p2,v_temp2);
+		    PtoV(p_close,p1,v_temp1); 
+		    Cross3d(v_temp2,v_temp1,v_temp);
+		    Cross3d(v_temp,v12,v_temp2);
+		    s_temp1 = Dot3d(v_temp1,v_temp2) / 
+			(sqrt(Dot3d(v_temp1,v_temp1)) * 
+			sqrt(Dot3d(v_temp2,v_temp2)));
+		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1; 
+		    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+		    Scal3d(s_temp1,v_temp2,v_temp);
+		    for (i = 0; i < 3; i++)
+		         p_close[i] += v_temp[i];   
+
+		    a0 = 0; 
+		    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+		    a1 = 1.0 - a2; 
+
+		    rot_and_trans(p_close,p_temp,rot_matrix);
+		    for (i = 0; i < 3; i++)
+		         tri_proj->dpt[i] = ptori[i] - p_close[i]; 
+		}
+
+		tri_proj->side = ONEDGE; 
+	  	tri_proj->side_index = 1; 
+	    }
+	    else if (judge7 > 0 && judge8 < 0)
+	    {
+		/* Closest point is p2 */
+
+		a2 = 1;
+                a0 = a1 = 0;
+
+                PtoV(pt,p2,v_temp);
+                tri_proj->d2 = Dot3d(v_temp,v_temp);
+                tri_proj->pv = P2;
+                tri_proj->side = ONVERTEX;
+                tri_proj->vertex_index = 2;
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - Coords(P2)[i];
+
+		/* determine which side is projected point close to */
+
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+                s_temp1 = 1.0 / sqrt(Dot3d(v02,v02));
+                s_temp2 = 1.0 / sqrt(Dot3d(v12,v12));
+                Scal3d(s_temp1,v02,v_temp1);
+                Scal3d(s_temp2,v12,v_temp2);
+                VaddV(v_temp1,v_temp2,v_temp);
+                PtoV(p2,p_close,v_temp1);
+                Cross3d(v_temp,v_temp1,v_temp2);
+                s_temp1 = Dot3d(v_temp2,nor2d);
+
+                if (s_temp1 > 0)
+                    tri_proj->side_index = 1;
+                else
+                    tri_proj->side_index = 2;
+	    }	
+	    else if (judge3 <= 0 && judge8 >= 0 && judge9 <= 0)
+	    {
+		/*  Closest point is on side p2 -> p0 */
+
+                tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p2,p0));
+		tri_proj->p1 = P2;
+                tri_proj->p2 = P0;
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+
+                if (judge3 == 0)
+		{
+		    a1 = 0;
+                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                    a0 = 1 - a2;
+
+		    rot_and_trans(p_close,p_temp,rot_matrix);
+
+		    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+		else
+		{
+		    PtoV(p_close,p0,v_temp2);
+                    PtoV(p_close,p2,v_temp1);
+                    Cross3d(v_temp2,v_temp1,v_temp);
+                    Cross3d(v_temp,v20,v_temp2);
+                    s_temp1 = Dot3d(v_temp1,v_temp2) / 
+			(sqrt(Dot3d(v_temp1,v_temp1)) * 
+			sqrt(Dot3d(v_temp2,v_temp2)));
+		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
+                    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+                    Scal3d(s_temp1,v_temp2,v_temp);
+                    for (i = 0; i < 3; i++)
+                         p_close[i] += v_temp[i];
+
+                    a1 = 0;
+		    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+		    a0 = 1 - a2;
+
+                    rot_and_trans(p_close,p_temp,rot_matrix);
+                    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+
+                tri_proj->side = ONEDGE;
+                tri_proj->side_index = 2;
+            }
+	    else
+	    {
+		/* Closest point is p0 */
+
+		a0 = 1;
+                a2 = a1 = 0;
+
+                PtoV(pt,p0,v_temp);
+                tri_proj->d2 = Dot3d(v_temp,v_temp);
+                tri_proj->pv = P2;
+                tri_proj->side = ONVERTEX;
+                tri_proj->vertex_index = 2;
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - Coords(P0)[i];
+
+                /* determine which side is projected point close to */
+
+                p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+		s_temp1 = 1.0 / sqrt(Dot3d(v10,v10));
+                s_temp2 = 1.0 / sqrt(Dot3d(v20,v20));
+                Scal3d(s_temp1,v10,v_temp1);
+                Scal3d(s_temp2,v20,v_temp2);
+                VaddV(v_temp1,v_temp2,v_temp);
+                PtoV(p0,p_close,v_temp1);
+                Cross3d(v_temp,v_temp1,v_temp2);
+                s_temp1 = Dot3d(v_temp2,nor2d);
+
+                if (s_temp1 > 0)
+                    tri_proj->side_index = 2;
+                else
+                    tri_proj->side_index = 0;
+	    }
+	}
+	else
+ 	{
+	    nor2d[0] = -1; 
+   	    if (judge1 < 0 && judge2 < 0 && judge3 < 0)
+	    {
+		/* Closest point is inside the triangle */
+
+                    if (np > 0.0)
+                        tri_proj->side = POSITIVE_SIDE;
+                    else if (np < 0.0)
+                        tri_proj->side = NEGATIVE_SIDE;
+                    else
+                        tri_proj->side = COPLANAR;/* pt is coplanar with tri */
+
+                p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+
+                a2 = fabs(pt[1] * p1[2]) / (2 * area);
+                PtoV(p_close,p2,v_temp1);
+                PtoV(p_close,p1,v_temp2);
+                Cross3d(v_temp1,v_temp2,v_temp);
+                a0 = sqrt(Dot3d(v_temp,v_temp)) / (2 * area);
+                a1 = 1.0 - a2 - a0;
+
+                tri_proj->d2 = pt[0] * pt[0];
+
+                rot_and_trans(p_close,p_temp,rot_matrix);
+
+                for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - p_close[i];
+	     }
+	     else if (judge1 >= 0 && judge4 <= 0 && judge5 >= 0)
+	     {
+		 /* closest point is on the side p0 -> p1 */
+
+                a2 = 0;
+                a1 = fabs(pt[2] * p2[1]) * 0.5 / area;
+                a0 = 1.0 - a1;
+
+                tri_proj->d2 = sqr(pt[1]) + sqr(pt[0]);
+		tri_proj->p1 = P0;
+                tri_proj->p2 = P1;
+
+                p_close[0] = 0;
+                p_close[1] = 0;
+                p_close[2] = pt[2];
+
+                rot_and_trans(p_close,p_temp,rot_matrix);
+                for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - p_close[i];
+                tri_proj->side = ONEDGE;
+                tri_proj->side_index = 0;
+	     }
+	     else if (judge5 < 0 && judge6 > 0)
+	     {
+		/* closest point is p1 */
+
+                a1 = 1;
+                a0 = a2 = 0;
+
+                PtoV(pt,p1,v_temp);
+                tri_proj->d2 = Dot3d(v_temp,v_temp);
+                tri_proj->pv = P1;
+                tri_proj->side = ONVERTEX;
+                tri_proj->vertex_index = 1;
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - Coords(P1)[i];
+
+                /* determine which side is projected point close to */
+
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+                s_temp1 = 1.0 / sqrt(Dot3d(v21,v21));
+                s_temp2 = 1.0 / sqrt(Dot3d(v01,v01));
+                Scal3d(s_temp1,v21,v_temp1);
+                Scal3d(s_temp2,v01,v_temp2);
+                VaddV(v_temp1,v_temp2,v_temp);
+                PtoV(p1,p_close,v_temp1);
+                Cross3d(v_temp,v_temp1,v_temp2);
+                s_temp1 = Dot3d(v_temp2,nor2d);
+
+                if (s_temp1 > 0)
+                    tri_proj->side_index = 0;
+                else
+                    tri_proj->side_index = 1;
+	     }
+	     else if (judge2 >= 0 && judge6 <= 0 && judge7 >= 0)
+	     {
+		/* closest point is on the side p1 -> p2 */
+
+		tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p1,p2));
+		tri_proj->p1 = P1;
+                tri_proj->p2 = P2;
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+
+                /* calculate the closet point on p1->p2 */
+
+		if (judge2 == 0)
+		{
+		    a0 = 0;
+                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                    a1 = 1 - a2;
+
+		    rot_and_trans(p_close,p_temp,rot_matrix);
+
+                    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+		else
+		{
+                    PtoV(p_close,p2,v_temp2);
+                    PtoV(p_close,p1,v_temp1);
+                    Cross3d(v_temp2,v_temp1,v_temp);
+                    Cross3d(v_temp,v12,v_temp2);
+                    s_temp1 = Dot3d(v_temp1,v_temp2) / 
+			(sqrt(Dot3d(v_temp1,v_temp1)) * 
+			sqrt(Dot3d(v_temp2,v_temp2)));
+		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
+                    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+                    Scal3d(s_temp1,v_temp2,v_temp);
+                    for (i = 0; i < 3; i++)
+                         p_close[i] += v_temp[i];
+
+                    a0 = 0;
+                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                    a1 = 1 - a2;
+
+                    rot_and_trans(p_close,p_temp,rot_matrix);
+
+                    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+
+                tri_proj->side = ONEDGE;
+                tri_proj->side_index = 1;
+	     }
+	     else if (judge7 < 0 && judge8 > 0)
+	     {
+		/* Closest point is p2 */
+
+                a2 = 1;
+                a0 = a1 = 0;
+
+                PtoV(pt,p2,v_temp);
+                tri_proj->d2 = Dot3d(v_temp,v_temp);
+                tri_proj->pv = P2;
+                tri_proj->side = ONVERTEX;
+                tri_proj->vertex_index = 2;
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - Coords(P2)[i];
+
+                /* determine which side is projected point close to */
+
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+                s_temp1 = 1.0 / sqrt(Dot3d(v02,v02));
+                s_temp2 = 1.0 / sqrt(Dot3d(v12,v12));
+                Scal3d(s_temp1,v02,v_temp1);
+                Scal3d(s_temp2,v12,v_temp2);
+                VaddV(v_temp1,v_temp2,v_temp);
+                PtoV(p2,p_close,v_temp1);
+                Cross3d(v_temp,v_temp1,v_temp2);
+                s_temp1 = Dot3d(v_temp2,nor2d);
+
+                if (s_temp1 > 0)
+                    tri_proj->side_index = 1;
+                else
+                    tri_proj->side_index = 2;
+	     }
+	     else if (judge3 >= 0 && judge8 <= 0 && judge9 >= 0)
+	     {
+		/*  Closest point is on side p2 -> p0 */
+
+		tri_proj->d2 = sqr(pt[1]) + sqr(dist_point_line_2d(pt,p2,p0));
+		tri_proj->p1 = P2;
+                tri_proj->p2 = P0;
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+
+                if (judge3 == 0)
+		{
+		    a1 = 0;
+                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                    a0 = 1 - a2;
+
+                    rot_and_trans(p_close,p_temp,rot_matrix);
+
+                    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+		else 
+		{
+		    PtoV(p_close,p0,v_temp2);
+                    PtoV(p_close,p2,v_temp1);
+                    Cross3d(v_temp2,v_temp1,v_temp);
+                    Cross3d(v_temp,v20,v_temp2);
+                    s_temp1 = Dot3d(v_temp1,v_temp2) / 
+			(sqrt(Dot3d(v_temp1,v_temp1)) * 
+			sqrt(Dot3d(v_temp2,v_temp2)));
+		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
+                    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+                    Scal3d(s_temp1,v_temp2,v_temp);
+                    for (i = 0; i < 3; i++)
+                         p_close[i] += v_temp[i];
+
+                    a1 = 0;
+                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                    a0 = 1 - a2;
+
+                    rot_and_trans(p_close,p_temp,rot_matrix);
+                
+		    for (i = 0; i < 3; i++)
+                         tri_proj->dpt[i] = ptori[i] - p_close[i];
+		}
+
+                tri_proj->side = ONEDGE;
+                tri_proj->side_index = 2;
+	     }
+	     else 
+	     {
+		/* Closest point is p0 */
+
+                a0 = 1;
+                a2 = a1 = 0;
+
+                PtoV(pt,p0,v_temp);
+                tri_proj->d2 = Dot3d(v_temp,v_temp);
+                tri_proj->pv = P2;
+                tri_proj->side = ONVERTEX;
+                tri_proj->vertex_index = 2;
+		for (i = 0; i < 3; i++)
+                     tri_proj->dpt[i] = ptori[i] - Coords(P0)[i];
+
+                /* determine which side is projected point close to */
+
+		p_close[0] = 0;
+                p_close[1] = pt[1];
+                p_close[2] = pt[2];
+                s_temp1 = 1.0 / sqrt(Dot3d(v10,v10));
+                s_temp2 = 1.0 / sqrt(Dot3d(v20,v20));
+                Scal3d(s_temp1,v10,v_temp1);
+                Scal3d(s_temp2,v20,v_temp2);
+                VaddV(v_temp1,v_temp2,v_temp);
+                PtoV(p0,p_close,v_temp1);
+                Cross3d(v_temp,v_temp1,v_temp2);
+                s_temp1 = Dot3d(v_temp2,nor2d);
+
+                if (s_temp1 > 0)
+                    tri_proj->side_index = 2;
+                else
+                    tri_proj->side_index = 0;
+	     }
+	}
+
+	tri_proj->a[0] = a0; tri_proj->a[1] = a1; tri_proj->a[2] = a2;
+        tri_proj->d = sqrt(tri_proj->d2);
+	
+}	/* end shortest_distance3d_new */
+
+
+LOCAL  double edge_equation(
+	double x, 
+	double y, 
+	double lx, 
+	double ly,
+	double dx, 
+	double dy)
+{
+	return ((x - lx) * dy- (y - ly) * dx);
+}
+
+LOCAL void rotate_point(
+	double *p, 
+	double b[][3])
+{
+	double x, y, z; 
+	
+	x = b[0][0] * p[0] + b[0][1] * p[1] +
+                b[0][2] * p[2];
+        y = b[1][0] * p[0] + b[1][1] * p[1] +
+                b[1][2] * p[2];
+        z = b[2][0] * p[0] + b[2][1] * p[1] +
+                b[2][2] * p[2];
+
+	p[0] = x;
+	p[1] = y; 
+	p[2] = z;
+}
+
+LOCAL void transposeMatrix(
+	double b[][3])
+{
+        int i,j;
+        double temp;
+
+        for (i = 0; i < 3; i++)
+          for (j = 0; j < 3; j++)
+          {
+               if (i >= j)
+                   continue;
+               else
+               {
+                   temp = b[i][j];
+                   b[i][j] = b[j][i];
+                   b[j][i] = temp;
+               }
+          }
+}
+
+LOCAL void rot_and_trans(
+	double *pt, 
+	double *p0, 
+	double a[][3])
+{
+	int i; 
+
+	rotate_point(pt,a);
+
+	for (i = 0; i < 3; i++)
+	     pt[i] += p0[i];
+}
+
+LOCAL void trans_and_rot(
+	double *p0, 
+	double *p1, 
+	double *p2, 
+	double *pt,
+	double a[][3])
+{
+	double u[3], v[3], w[3], vec_temp[3];
+	double length,temp,x_temp,y_temp,z_temp;
+	int i,j;  
+	
+	for (i = 0; i < 3; i++)
+	     p1[i] -= p0[i];
+	for (i = 0; i < 3; i++)
+             p2[i] -= p0[i];
+	for (i = 0; i < 3; i++)
+             pt[i] -= p0[i];
+	for (i = 0; i < 3; i++)
+             p0[i] = 0;
+	PtoV(p0,p1,u);
+	length = sqrt(Dot3d(u,u));
+	for (i = 0; i < 3; i++)
+	     u[i] /= length; 
+	PtoV(p2,p0,vec_temp);
+	Cross3d(u,vec_temp,w);
+	length = sqrt(Dot3d(w,w));
+	for (i = 0; i < 3; i++)
+             w[i] /= length;
+	Cross3d(u,w,v);
+
+       /* rotation matrix */
+
+	for (i = 0; i < 3; i++)
+	     a[i][0] = w[i];
+	for (i = 0; i < 3; i++)
+             a[i][1] = v[i];
+	for (i = 0; i < 3; i++)
+             a[i][2] = u[i];
+
+	transposeMatrix(a);
+	
+	rotate_point(p0,a);
+	rotate_point(p1,a);
+	rotate_point(p2,a);
+	rotate_point(pt,a);
+}
+
+/* calculate distance between pt and line p1p2 (in 2D plane) */
+
+LOCAL double dist_point_line_2d(
+	double *pt, 
+	double *p1, 
+	double *p2)
+{
+        double x0, x1, x2, y0, y1, y2;
+
+        x0 = pt[1];
+        y0 = pt[2];
+        x1 = p1[1];
+        y1 = p1[2];
+        x2 = p2[1];
+        y2 = p2[2];
+
+        return (fabs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) /
+                sqrt(sqr(x2 - x1) + sqr(y2 - y1)));
+}

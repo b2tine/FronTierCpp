@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 LOCAL 	void 	f_second_order_intfc_propagate2d(Front*,POINTER,INTERFACE*,
 				INTERFACE*,double);

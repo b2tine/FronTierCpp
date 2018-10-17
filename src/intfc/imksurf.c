@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_make_surf"
 
-#include <int.h>
+#include <intfc/int.h>
 
 LOCAL   void 	assign_blk_crx(BLK_CRX*,int,int,int,const EG_CRX*,boolean);
 LOCAL	void 	assign_two_comp_domain(double (*func)(POINTER,double*),POINTER,
@@ -353,7 +353,7 @@ EXPORT boolean make_level_surface(
 	else
 	{
 	    delete_surface(surf);
-	    surf = NULL;
+	    *s = NULL;
 	}
 	interface_reconstructed(intfc) = YES;
 	intfc->modified = YES;
@@ -361,7 +361,7 @@ EXPORT boolean make_level_surface(
 	free_grid_crx_mem(&Eg_crx,NO);
 	free_these(3,Eg_crx.comp,blk_info.surfs,blk_info.cur_tris);
 	set_current_interface(save_intfc);
-	return YES;
+	return (*s) == NULL ? NO : YES;
 }	/* end make_level_surface */
 
 /*******************************************************************
@@ -829,6 +829,7 @@ EXPORT	int install_grid_crx(
 	double coords2[3];
 	double crds_crx[3];
 	double *L = grid.L;
+	double *U = grid.U;
 	double *h = grid.h;
 	int *gmax = grid.gmax;
 	int dim = grid.dim;
@@ -846,9 +847,13 @@ EXPORT	int install_grid_crx(
 	for (j = 0; j <= gmax[1]; ++j)
 	{
 	    coords1[1] = coords2[1] = L[1] + j*h[1];
+	    if (j == gmax[1])
+		coords1[1] = coords2[1] = U[1];
 	    for (k = 0; k <= gmax[2]; ++k)
 	    {
 		coords1[2] = coords2[2] = L[2] + k*h[2];
+	    	if (k == gmax[2])
+		    coords1[2] = coords2[2] = U[2];
 		for (i = 0; i < gmax[0]; ++i)
 		{
 		    /*x_crx[i][j][k] = NULL; */
@@ -887,9 +892,13 @@ EXPORT	int install_grid_crx(
 	for (i = 0; i <= gmax[0]; ++i)
 	{
 	    coords1[0] = coords2[0] = L[0] + i*h[0];
+	    if (i == gmax[0])
+		coords1[0] = coords2[0] = U[0];
 	    for (k = 0; k <= gmax[2]; ++k)
 	    {
 		coords1[2] = coords2[2] = L[2] + k*h[2];
+	    	if (k == gmax[2])
+		    coords1[2] = coords2[2] = U[2];
 		for (j = 0; j < gmax[1]; ++j)
 		{
 		    /*y_crx[i][j][k] = NULL; */
@@ -929,9 +938,13 @@ EXPORT	int install_grid_crx(
 	for (i = 0; i <= gmax[0]; ++i)
 	{
 	    coords1[0] = coords2[0] = L[0] + i*h[0];
+	    if (i == gmax[0])
+		coords1[0] = coords2[0] = U[0];
 	    for (j = 0; j <= gmax[1]; ++j)
 	    {
 		coords1[1] = coords2[1] = L[1] + j*h[1];
+	    	if (j == gmax[1])
+		    coords1[1] = coords2[1] = U[1];
 		for (k = 0; k < gmax[2]; ++k)
 		{
 		    /*z_crx[i][j][k] = NULL; */
@@ -2237,18 +2250,19 @@ EXPORT  double cylinder_func(
 	CYLINDER_PARAMS *d_params = (CYLINDER_PARAMS*)func_params;
         double *c;
         double x,y,z,r,h,arg;
+	int idir = d_params->idir;
 
         c = d_params->center;
         r = d_params->radius;
         h = d_params->height;
 
-        x = coords[0] - c[0];
-        y = coords[1] - c[1];
-        z = coords[2] - c[2];
+        x = coords[(idir+1)%3] - c[(idir+1)%3];
+        y = coords[(idir+2)%3] - c[(idir+2)%3];
+        z = coords[idir] - c[idir];
 
-        if(x > -h && x < h)
+        if(z > -h && z < h)
         {
-            arg = sqr(z) + sqr(y) - sqr(r);
+            arg = sqr(x) + sqr(y) - sqr(r);
         }
         else
         {
@@ -2256,7 +2270,6 @@ EXPORT  double cylinder_func(
         }
         return arg;
 }	/*end cylinder_func*/
-
 
 EXPORT  double acylinder_func(
 	POINTER func_params,
@@ -2290,7 +2303,6 @@ EXPORT  double acylinder_func(
         }
         return arg;
 }	/* end acylinder_func */
-
 
 EXPORT  double cone_func(
 	POINTER func_params,
@@ -3610,7 +3622,8 @@ EXPORT	boolean grid_line_crx_in_dir(
 	double *crx_crds,
 	int dir)
 {
-	double f1,f2,fm,a1,a2, gtol = 10*MACH_EPS;
+	double f1,f2,fm,a1,a2;
+	double  gtol = 10*MACH_EPS;
 	int i,num_iter = 50;
 	double coords1[MAXD],coords2[MAXD];
 

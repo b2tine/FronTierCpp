@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 LOCAL	int set_grid_intfc_components1d(INTERFACE*,INTERFACE*);
 LOCAL	int set_grid_intfc_components2d(INTERFACE*,INTERFACE*);
@@ -2058,8 +2058,6 @@ EXPORT	void show_line_components3d(
 
 	for (i = 0; i < 3; ++i)
 	    ipn[i] = ip[i];
-	printf("icoords = %d %d %d  dir = %s\n",ip[0],ip[1],ip[2],
-			grid_direction_name(dir));
 	for (ipn[idir] = smin[idir]; ipn[idir] <= smax[idir]; ++ipn[idir])
 	{
 	    if (ipn[idir] != smax[idir])
@@ -2089,7 +2087,12 @@ EXPORT	void show_line_components3d(
 		}
 	    }
 	    else
-		printf("%d ",comp[d_index(ipn,gmax,3)]);
+	    {
+		if (comp[d_index(ipn,gmax,3)] == NO_COMP)
+		    printf("N ");
+		else
+		    printf("%d ",comp[d_index(ipn,gmax,3)]);
+	    }
 	}
 	printf("\n");
 }

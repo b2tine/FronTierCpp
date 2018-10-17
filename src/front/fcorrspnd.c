@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING	"correspond"
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 
 struct _HS_LIST {
 	HYPER_SURF *hs;

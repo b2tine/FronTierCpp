@@ -176,13 +176,13 @@ LOCAL void gview_plot_intfc2d(
 
             while (oldb)
             {
-                fprintf(fp,"%f %f %f \t",  Coords(oldb->start)[0],
+                fprintf(fp,"%12.8g %12.8g %f \t",  Coords(oldb->start)[0],
                                 Coords(oldb->start)[1] , 1.0);
                 if (oldb == oldc->last)
                     break;
                 oldb = oldb->next;
             }
-            fprintf(fp,"%f %f %f \t\n",  Coords(oldb->end)[0],
+            fprintf(fp,"%12.8g %12.8g %f \t\n",  Coords(oldb->end)[0],
                   Coords(oldb->end)[1] , 1.0);
             fprintf(fp,"%f %f %f %f \t\n", 1.0, 0.2, 0.2, 0.8 );
             fprintf(fp,"}\n");
@@ -196,11 +196,11 @@ LOCAL void gview_plot_intfc2d(
         fprintf(fp,"{ VECT\n");
         fprintf(fp,"%1d %1d %1d\n", 1, 5, 1);
         fprintf(fp,"%1d\n%1d\n", 5,1);
-        (void) fprintf(fp,"%f %f %f \t",L[0],L[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",U[0],L[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",U[0],U[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t\n",L[0],U[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",L[0],L[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",L[0],L[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",U[0],L[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",U[0],U[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t\n",L[0],U[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",L[0],L[1],1.0);
         fprintf(fp,"%f %f %f %f \t\n", 1.0, 1.0, 0.0, 1.0 );
         fprintf(fp,"}\n");
 
@@ -209,11 +209,11 @@ LOCAL void gview_plot_intfc2d(
         fprintf(fp,"{ VECT\n");
         fprintf(fp,"%1d %1d %1d\n", 1, 5, 1);
         fprintf(fp,"%1d\n%1d\n", 5,1);
-        (void) fprintf(fp,"%f %f %f \t",VL[0],VL[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",VU[0],VL[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",VU[0],VU[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t\n",VL[0],VU[1],1.0);
-        (void) fprintf(fp,"%f %f %f \t",VL[0],VL[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",VL[0],VL[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",VU[0],VL[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",VU[0],VU[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t\n",VL[0],VU[1],1.0);
+        (void) fprintf(fp,"%12.8g %12.8g %f \t",VL[0],VL[1],1.0);
         fprintf(fp,"%f %f %f %f \t\n", 1.0, 1.0, 1.0, 1.0 );
         fprintf(fp,"}\n");
 
@@ -1705,6 +1705,7 @@ LOCAL	void	gview_plot_color_scaled_surfaces(
 	}
 	D = (num_surfs == 1) ? 1.0 : 1/(num_surfs - 1.0);
 	range = max_color - min_color;
+	if (range == 0.0) range = 1.0;
 	for (j = 0; j < ntris; ++j)
 	{
 	    (void) fprintf(file,"%s%s%-4d %-4d %-4d %-4d ",indent,indent,
@@ -2832,6 +2833,57 @@ EXPORT void gview_plot_tri_list(
 	(void) fprintf(file,"}\n");
 	(void) fclose(file);
 }               /*end gview_plot_tri_list*/
+
+EXPORT void gview_plot_colored_tri_list(
+	const char *dname,
+	TRI        **tris,
+	int        num_tris,
+	SURFACE_COLOR color)
+{
+	static const char *indent = "    ";
+	int        i,j;
+	char       fname[256];
+	FILE       *file;
+	POINT      *p;
+
+	if (create_directory(dname,YES) == FUNCTION_FAILED)
+	{
+	    screen("WARNING in gview_plot_tri_list(), "
+	           "directory %s doesn't exist and can't be created\n",dname);
+	    return;
+	}
+	(void) sprintf(fname,"%s/tri.list",dname);
+	if ((file = fopen(fname,"w")) == NULL)
+	{
+	    screen("WARNING in gview_plot_tri_list(), "
+	           "can't open %s\n",fname);
+	    return;
+	}
+	(void) fprintf(file,"{ LIST\n");
+	(void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
+			indent,indent,indent,
+			indent,indent,3*num_tris,num_tris,0);
+	for (i = 0; i < num_tris; ++i)
+	{
+	    for (j = 0; j < 3; ++j)
+	    {
+		p = Point_of_tri(tris[i])[j];
+		(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",
+			indent,indent,
+			Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+	    }
+	}
+	for (i = 0; i < num_tris; ++i)
+	{
+	    (void) fprintf(file,"%s%s%-4d %-4d %-4d %-4d ",indent,indent,
+		3,3*i,3*i+1,3*i+2);
+	    write_color(file,color,0.0);
+	    (void) fprintf(file,"\n");
+	}
+	(void) fprintf(file,"%s}\n",indent);
+	(void) fprintf(file,"}\n");
+	(void) fclose(file);
+}               /*end gview_plot_colored_tri_list*/
 
 EXPORT void gview_plot_tri_and_point_list(
 	const char    *dname,
@@ -5211,6 +5263,25 @@ EXPORT void sdl_interface_plot(
 }	/*end sdl_interface_plot*/
 
 
+EXPORT void gview_plot_colored_surface(
+	const char *dname,
+	SURFACE *surf,
+	SURFACE_COLOR color)
+{
+	int i,j,num_tris;
+	TRI **tris,*t;
+		
+	num_tris = surf->num_tri;
+	uni_array(&tris,num_tris,sizeof(TRI*));
+	num_tris = 0;
+	for (t = first_tri(surf); !at_end_of_tri_list(t,surf); t = t->next)
+	{
+	    tris[num_tris++] = t;
+	}
+	gview_plot_colored_tri_list(dname,tris,num_tris,color);
+	free_these(1,tris);
+}	/* end gview_plot_surface*/
+
 EXPORT void gview_plot_surface(
 	const char *dname,
 	SURFACE *surf)
@@ -5376,6 +5447,17 @@ EXPORT void gview_plot_pt_tri_within_range(
 	(void) fclose(file);
 	free_these(1,tris);
 }	/* end gview_plot_surf_within_range */
+
+EXPORT void gview_plot_intfc_within_scaled_range(
+	const char *dname,
+	INTERFACE *intfc,
+	double *center,
+	int num_grid_spacings)
+{
+	RECT_GRID *gr = &topological_grid(intfc);
+	double radius = num_grid_spacings*gr->h[0];
+	gview_plot_intfc_within_range(dname,intfc,center,radius);
+}	/* end gview_plot_intfc_within_scaled_range */
 
 EXPORT void gview_plot_intfc_within_range(
 	const char *dname,
@@ -5713,3 +5795,142 @@ LOCAL	void	gview_plot_surfs_and_curves(
         (void) fprintf(file,"}\n");
         fclose(file);
 }               /*end gview_plot_surfs_and_curves*/
+
+EXPORT void gview_plot_crossing(
+	const char *fname,
+	int idir,
+	int num_tris,
+	TRI **tris,
+	double *crds_start,
+	double *h)
+{
+	double crds_end[MAXD];
+	int i,j;
+	FILE *file = fopen(fname,"w");
+	char *indent = "    ";
+	POINT *p;
+
+	for (i = 0; i < 3; ++i)
+	    crds_end[i] = crds_start[i];
+	crds_end[idir] += h[idir];
+	(void) fprintf(file,"{ LIST\n");
+        (void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
+                        indent,indent,indent,
+                        indent,indent,3*num_tris+2,num_tris+1,0);
+	for (i = 0; i < num_tris; ++i)
+        {
+            for (j = 0; j < 3; ++j)
+            {
+                p = Point_of_tri(tris[i])[j];
+                (void) fprintf(file, "%s%s%-9g %-9g %-9g\n",
+                        indent,indent,
+                        Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+            }
+        }
+	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",
+                        indent,indent,
+                        crds_start[0],crds_start[1],crds_start[2]);
+	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",
+                        indent,indent,
+                        crds_end[0],crds_end[1],crds_end[2]);
+	for (i = 0; i < num_tris; ++i)
+        {
+            (void) fprintf(file,"%s%s%-4d %-4d %-4d %-4d\n",indent,indent,
+                3,3*i,3*i+1,3*i+2);
+        }
+        (void) fprintf(file,"%s%s%-4d %-4d %-4d\n",indent,indent,
+                2,3*num_tris,3*num_tris+1);
+        (void) fprintf(file,"%s}\n",indent);
+        (void) fprintf(file,"}\n");
+	fclose(file);
+}	/* end gview_plot_crossing */
+
+EXPORT	void gview_show_box_tri(
+	RECT_BOX *box,
+	TRI **tris,
+	int num_tris,
+	FILE *file)
+{
+	static const char *indent = "    ";
+	POINT *p;
+	int i,j,k;
+	int nls;	/* number of grid lines */
+	double *L = box->grid->L;
+	double *U = box->grid->U;
+	double *h = box->grid->h;
+
+	(void) fprintf(file,"{ LIST\n");
+
+	nls = (box->bmax[0] - box->bmin[0] + 1)*
+	      (box->bmax[1] - box->bmin[1] + 1) +
+	      (box->bmax[1] - box->bmin[1] + 1)*
+	      (box->bmax[2] - box->bmin[2] + 1) +
+	      (box->bmax[2] - box->bmin[2] + 1)*
+	      (box->bmax[0] - box->bmin[0] + 1);
+
+	(void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
+	    		indent,indent,indent,indent,indent,
+			2*nls,nls,0);
+	for (i = box->bmin[0]; i <= box->bmax[0]; ++i)
+	{
+	    for (j = box->bmin[1]; j <= box->bmax[1]; ++j)
+	    {
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + i*h[0],L[1] + j*h[1],
+			L[2] + box->bmin[2]*h[2]);
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + i*h[0],L[1] + j*h[1],
+			L[2] + box->bmax[2]*h[2]);
+	    }
+	}
+	for (j = box->bmin[1]; j <= box->bmax[1]; ++j)
+	{
+	    for (k = box->bmin[2]; k <= box->bmax[2]; ++k)
+	    {
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + box->bmin[0]*h[0],L[1] + j*h[1],
+			L[2] + k*h[2]);
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + box->bmax[0]*h[0],L[1] + j*h[1],
+			L[2] + k*h[2]);
+	    }
+	}
+	for (k = box->bmin[2]; k <= box->bmax[2]; ++k)
+	{
+	    for (i = box->bmin[0]; i <= box->bmax[0]; ++i)
+	    {
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + i*h[0],L[1] + box->bmin[1]*h[1],
+			L[2] + k*h[2]);
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+			L[0] + i*h[0],L[1] + box->bmax[1]*h[1],
+			L[2] + k*h[2]);
+	    }
+	}
+	for (i = 0; i < nls; ++i)
+	{
+	    (void) fprintf(file,"%s%s%-4d %-4d %-4d\n",indent,indent,
+			2,2*i,2*i+1);
+	}
+	(void) fprintf(file,"%s}\n",indent);
+
+	(void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
+	    		indent,indent,indent,indent,indent,
+			3*num_tris,num_tris,0);
+	for (i = 0; i < num_tris; ++i)
+	{
+	    for (j = 0; j < 3; ++j)
+	    {
+	    	p = Point_of_tri(tris[i])[j];
+	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
+		    	Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+	    }
+	}
+	for (i = 0; i < num_tris; ++i)
+	{
+	    (void) fprintf(file,"%s%s%-4d %-4d %-4d %-4d\n",indent,indent,
+			3,3*i,3*i+1,3*i+2);
+	}
+	(void) fprintf(file,"%s}\n",indent);
+	(void) fprintf(file,"}\n");
+}	/* end gview_show_box_tri */

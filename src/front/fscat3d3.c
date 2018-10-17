@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "fscatter"
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 struct _POINT_LIST {
 	POINT              *p;
@@ -67,7 +67,8 @@ LOCAL 	void 	delete_surface_set(SURFACE*);
 LOCAL   boolean append_other_curves3(INTERFACE*,INTERFACE*,P_LINK*,int);
 LOCAL   boolean bond_match3(BOND*,BOND*);
 LOCAL	void print_unmatched_tris(TRI**,TRI**,int,int);
-LOCAL 	void exchange_intfc_extra(INTERFACE*);
+LOCAL   boolean tri_on_strip(TRI*,double,double,int);
+LOCAL   boolean tris_match_in_gindex(TRI*,TRI*,double*);
 
 LOCAL	double	tol1[MAXD]; /*TOLERANCE*/
 
@@ -99,7 +100,8 @@ EXPORT	boolean f_intfc_communication3d3(
 			         0.0, -1.0,  0.0,
 			         0.0,  0.0, -1.0};
 
-	DEBUG_ENTER(f_intfc_communication3d3)
+	if (debugging("trace"))
+            (void) printf("Entering f_intfc_communication3d3()\n");
 
 	set_floating_point_tolerance1(fr->rect_grid->h);
 	sav_copy = copy_intfc_states();
@@ -193,13 +195,13 @@ EXPORT	boolean f_intfc_communication3d3(
 		}    /*if (adj_intfc[j] != NULL) */
 		
 		/*surface in this direction can not mathch, return */
+		if (!status) clean_up(ERROR);
 		status = pp_min_status(status);
 		if(!status)
 		    goto comm_exit;
 
 	    }	
 	}
-	exchange_intfc_extra(intfc);
 
 	if (status == FUNCTION_SUCCEEDED)
 	{
@@ -216,7 +218,8 @@ EXPORT	boolean f_intfc_communication3d3(
 comm_exit:
 	set_copy_intfc_states(sav_copy);
 	set_current_interface(sav_intfc);
-	DEBUG_LEAVE(f_intfc_communication3d3)
+	if (debugging("trace"))
+            (void) printf("Leaving f_intfc_communication3d3()\n");
 	return status;
 }	/*end f_intfc_communication3d3 */
 
@@ -349,23 +352,16 @@ LOCAL int append_buffer_surface3(
 	int		p_size)
 {
 	SURFACE    *new_adj_surf;
-	TRI	   *tri;
+	TRI	   *tri_s,*tri_a;
 	CURVE	   **c;
-	int	   ns, na, new_na;
-	double	   crx_coord;
+	int	   i,ns,na;
+	double	   crx_l,crx_u,crx_coord,T[MAXD];
 	static TRI **tris_s = NULL, **tris_a = NULL;
 	static int len_tris_s = 0, len_tris_a = 0;
 
-	DEBUG_ENTER(append_buffer_surface3)
-	
-	if (DEBUG)
-	{
-	    (void) printf("dir = %d,nb = %d\n",dir,nb);
-	    (void) printf("My surface\n");
-	    print_surface(surf);
-	    (void) printf("Buffer surface\n");
-	    print_surface(adj_surf);
-	}
+	if (debugging("trace"))
+            printf("Entering append_buffer_surface3() dir = %d  nb = %d\n",
+                                        dir,nb);
 	
 	if (len_tris_s < surf->num_tri)
 	{
@@ -383,29 +379,29 @@ LOCAL int append_buffer_surface3(
 	}
 
 	crx_coord = (nb == 0) ? grid->L[dir] : grid->U[dir];
+	crx_l = crx_coord - 2.0*grid->h[dir];
+        crx_u = crx_coord + 2.0*grid->h[dir];
+	for (i = 0; i < 3; ++i) T[i] = grid->U[i] - grid->L[i];
 
 	ns = na = 0;
-	for (tri=first_tri(surf); !at_end_of_tri_list(tri,surf); tri=tri->next)
-	{
-	    if (tri_set_cross_line(tri,crx_coord,dir) == YES)
-	    {
-		tris_s[ns++] = tri;
-	    }
-	}
-
-	for (tri = first_tri(adj_surf); !at_end_of_tri_list(tri,adj_surf); 
-	     tri = tri->next)
-	{
-	    if (tri_set_cross_line(tri,crx_coord,dir) == YES)
-	    {
-		tris_a[na++] = tri;
-	    }
-	}
-	if (ns != na)
-	{
-	    print_unmatched_tris(tris_s,tris_a,ns,na);
-	    clean_up(ERROR);
-	}
+        surf_tri_loop(surf,tri_s)
+        {
+            if (!tri_on_strip(tri_s,crx_l,crx_u,dir))
+                continue;
+            surf_tri_loop(adj_surf,tri_a)
+            {
+                if (!tri_on_strip(tri_a,crx_l,crx_u,dir))
+                    continue;
+                if (tris_match_in_gindex(tri_s,tri_a,T))
+                {
+                    tris_s[ns] = tri_s;
+                    tris_a[na] = tri_a;
+                    ns++;
+                    na++;
+                    break;
+                }
+            }
+        }
 
 	/* Add matching points to the hashing table p_table */
 
@@ -427,15 +423,19 @@ LOCAL int append_buffer_surface3(
 
 	synchronize_tris_at_subdomain_bdry(tris_a,tris_s,ns,p_table,p_size);
 	
-	na = 0;
-	for (tri = first_tri(adj_surf); !at_end_of_tri_list(tri,adj_surf);
-	     tri = tri->next)
-	{
-	    if (tri_set_cross_line(tri,crx_coord,dir) == YES)
-	    {
-	        tris_a[na++] = tri;
-	    }
-	}
+	surf_tri_loop(adj_surf,tri_a)
+        {
+            if (!tri_on_strip(tri_a,crx_l,crx_u,dir))
+                continue;
+            for (i = 0; i < ns; ++i)
+            {
+                if (tris_match_in_gindex(tris_s[i],tri_a,T))
+                {
+                    tris_a[i] = tri_a;
+                    break;
+                }
+            }
+        }
 
 	/*adjoin adj_surf tri list to surf tri list */
 	last_tri(surf)->next = first_tri(adj_surf);
@@ -475,11 +475,13 @@ LOCAL int append_buffer_surface3(
 	    (void) printf("WARNING in append_buffer_surface3(), "
 	                  "no match of tris at subdomain\n");
 	    (void) printf("dir = %d, nb = %d\n",dir,nb);
-	    DEBUG_LEAVE(append_buffer_surface3)
+	    if (debugging("trace"))
+            	printf("Leaving append_buffer_surface3()\n");
 	    return NO;
 	}
 
-	DEBUG_LEAVE(append_buffer_surface3)
+	if (debugging("trace"))
+            printf("Leaving append_buffer_surface3()\n");
 	return YES;
 }		/*end append_buffer_surface3*/
 
@@ -1343,7 +1345,7 @@ LOCAL	void print_unmatched_tris(
 		if (match_found == NO)
 		{
 		    (void) printf("Unmatched local tri:\n");
-		    (void) printf("Global indices: %ld %ld %ld\n",
+		    (void) printf("Global indices: %ld, %ld, %ld\n",
 				Gindex(Point_of_tri(tris_s[i])[0]),
 				Gindex(Point_of_tri(tris_s[i])[1]),
 				Gindex(Point_of_tri(tris_s[i])[2]));
@@ -1389,55 +1391,61 @@ LOCAL	void print_unmatched_tris(
 	}
 }	/* end print_unmatched_tris */
 
-LOCAL void exchange_intfc_extra(INTERFACE *intfc)
+LOCAL boolean tri_on_strip(
+	TRI *tri,
+	double crx_l,
+	double crx_u,
+	int dir)
 {
-	int i,j,num_nodes;
-	int global_index;
-	int size_of_extra;
-	NODE **n;
-	POINTER extra;
-	boolean extra_assigned;
+	int i;
+	POINT *p;
 
-	num_nodes = 0;
-	intfc_node_loop(intfc,n)
-	    if ((*n)->extra != NULL) num_nodes++;
-
-	for (i = 0; i < pp_numnodes(); ++i)
+	for (i = 0; i < 3; ++i)
 	{
-	    if (i == pp_mynode()) continue;
-	    pp_send(30,&num_nodes,sizeof(int),i);
-	    intfc_node_loop(intfc,n)
-	    {
-	    	if ((*n)->extra == NULL) continue;
-	    	pp_send(31,&(Gindex((*n)->posn)),sizeof(long),i);
-	    	pp_send(32,&((*n)->size_of_extra),sizeof(int),i);
-	    	pp_send(33,(*n)->extra,(*n)->size_of_extra,i);
-	    }
+	    p = Point_of_tri(tri)[i];
+	    if (Coords(p)[dir] > crx_l && Coords(p)[dir] < crx_u)
+		return YES;
 	}
-	pp_gsync();
-	for (i = 0; i < pp_numnodes(); ++i)
+	return NO;
+}	/* end tri_on_strip */
+
+LOCAL boolean tris_match_in_gindex(
+	TRI *tri_s,
+	TRI *tri_a,
+	double *T)
+{
+	int i,j,k;
+	POINT *ps,*pa;
+	for (i = 0; i < 3; ++i)
 	{
-	    if (i == pp_mynode()) continue;
-	    pp_recv(30,i,&num_nodes,sizeof(int));
-	    for (j = 0; j < num_nodes; ++j)
+	    ps = Point_of_tri(tri_s)[i];
+	    pa = Point_of_tri(tri_a)[0];
+	    if (Gindex(ps) == Gindex(pa))
 	    {
-	    	pp_recv(31,i,&global_index,sizeof(long));
-	    	pp_recv(32,i,&size_of_extra,sizeof(int));
-		FT_ScalarMemoryAlloc((POINTER*)&extra,size_of_extra);
-	    	pp_recv(33,i,extra,size_of_extra);
-		extra_assigned = NO;
-		intfc_node_loop(intfc,n)
+		for (k = 0; k < 3; ++k)
 		{
-		    if ((*n)->extra == NULL && 
-			Gindex((*n)->posn) == global_index)
+		    if (fabs(Coords(ps)[k] - Coords(pa)[k]) > 0.5*T[k])
+			return NO;
+		}
+		for (j = 1; j < 3; ++j)
+		{
+		    ps = Point_of_tri(tri_s)[(i+j)%3];
+		    pa = Point_of_tri(tri_a)[j];
+	    	    if (Gindex(ps) != Gindex(pa))
+			return NO;
+		    for (k = 0; k < 3; ++k)
 		    {
-			(*n)->extra = extra;
-			(*n)->size_of_extra = size_of_extra;
-			extra_assigned = YES;
+		    	if (fabs(Coords(ps)[k] - Coords(pa)[k]) > 0.5*T[k])
+			    return NO;
 		    }
 		}
-		if (extra_assigned == NO)
-		    free_these(1,extra);
+		if (i != 0)
+		{
+		    (void) printf("Unsynchronized triangles found!\n");
+		    clean_up(ERROR);
+		}
+		return YES;
 	    }
 	}
-}	/* end exchange_intfc_extra */
+	return NO;
+}	/* end tris_match_in_gindex */

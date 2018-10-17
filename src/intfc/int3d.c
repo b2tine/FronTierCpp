@@ -249,7 +249,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	trigrid construction.
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	COMPONENT	new_pp_index(COMPONENT,INTERFACE*);
@@ -1658,6 +1658,13 @@ EXPORT void print_tri(
 	TRI	  *tri,
 	INTERFACE *intfc)
 {
+	if (intfc == NULL)
+	{
+	    if (tri->surf->interface != NULL)
+		intfc = tri->surf->interface;
+	    else
+		printf("In print_tri(), cannot find interface for tri!\n");
+	}
 	fprint_tri(stdout,tri,intfc);
 }		/*end print_tri*/
 
@@ -2460,14 +2467,28 @@ LOCAL	TRI*	tri_at_bond(
 	ORIENTATION	orient)
 {
 	BOND_TRI	**btris;
+	TRI		*tri = NULL;
+	ORIENTATION	opp_orient = (orient == POSITIVE_ORIENTATION) ?
+			NEGATIVE_ORIENTATION : POSITIVE_ORIENTATION;
 
 	for (btris = Btris(b); btris && *btris; ++btris)
 	    if (Surface_of_tri((*btris)->tri) == s)
 	    {
 		if (orientation_of_bond_at_tri(b,(*btris)->tri) == orient)
-	    	    return (*btris)->tri;
+		    tri = (*btris)->tri;
 	    }
-	return NULL;
+	/* This is needed for now until gore surfaces are separated */
+	if (tri == NULL)
+	{
+	    for (btris = Btris(b); btris && *btris; ++btris)
+	    	if (Surface_of_tri((*btris)->tri) == s)
+	    	{
+		    if (orientation_of_bond_at_tri(b,(*btris)->tri) == 
+			opp_orient)
+		    	tri = (*btris)->tri;
+	    	}
+	}
+	return tri;
 }		/*end tri_at_bond*/
 
 EXPORT	void link_tri_list_to_surface(

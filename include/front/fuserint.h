@@ -386,6 +386,7 @@ struct _F_HYPER_SURF {
 	double           _surface_tension;
 	/* for rigid body mechanics */
 	int	body_index;		/* To identify different body */
+	int	num_clips;		/* number of partitions of the rg */
         double  mass;			/* Total mass */
         double  moment_of_inertia;	/* Moment of inertia about the axis */
         double  center_of_mass[MAXD];	/* Center of mass */
@@ -416,6 +417,7 @@ typedef struct _F_HYPER_SURF F_HYPER_SURF;
 #define surface_tension(hs)     (f_hyper_surf(hs)->_surface_tension)
 
 #define body_index(hs)          (f_hyper_surf(hs)->body_index)
+#define num_clips(hs)           (f_hyper_surf(hs)->num_clips)
 #define total_mass(hs)          (f_hyper_surf(hs)->mass)
 #define mom_inertia(hs)        (f_hyper_surf(hs)->moment_of_inertia)
 #define center_of_mass(hs)      (f_hyper_surf(hs)->center_of_mass)
@@ -615,6 +617,7 @@ enum {
 	MOVABLE_BODY_BOUNDARY,
 	GROWING_BODY_BOUNDARY,
 	ICE_PARTICLE_BOUNDARY,
+	ELASTIC_STRING,
 	FIRST_PHYSICS_WAVE_TYPE,
 	CONTACT			      = FIRST_PHYSICS_WAVE_TYPE,
 	ELASTIC_BOUNDARY,
@@ -662,6 +665,7 @@ enum {
 	SOURCE_HSBDRY,
 	SINK_HSBDRY,
 	MONO_COMP_HSBDRY,
+	CONTACT_HSBDRY,
 	PRESET_HSBDRY,
 	GORE_HSBDRY,
 	FIRST_PHYSICS_HSBDRY_TYPE = 20,
@@ -679,6 +683,7 @@ enum {
 	SOURCE_NODE	        = SOURCE_HSBDRY,
 	SINK_NODE	        = SINK_HSBDRY,
 	MONO_COMP_NODE	        = MONO_COMP_HSBDRY,
+	CONTACT_NODE		= CONTACT_HSBDRY,
 	FIRST_PHYSICS_NODE_TYPE = FIRST_PHYSICS_HSBDRY_TYPE,
 	/* String node type */
 	MONO_STRING_NODE,

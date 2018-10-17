@@ -34,8 +34,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DEBUG_STRING "crx_intfc"
 #define DB_TEC  true
 
-#include <fdecs.h>
-#include <fpatrecon.h>
+#include <front/fdecs.h>
+#include <front/fpatrecon.h>
 
 LOCAL	boolean track_comp_and_repair3d(int*,int*,int*,INTERFACE*,Front*);
 LOCAL	boolean track_comp_and_set_boxes(int*,int*,int*,INTERFACE*,Front*);
@@ -55,7 +55,6 @@ LOCAL	boolean null_side_tri_in_list(TRI**,int,TRI**,int*);
 LOCAL	boolean grid_based_box_untangle(INTERFACE*,RECT_BOX*,boolean);
 LOCAL   boolean tri_in_box(TRI*,INTERFACE*,RECT_BOX*);
 LOCAL	boolean check_extension_of_surface(TRI**, int, SURFACE*);
-LOCAL	void 	gview_show_box_tri(RECT_BOX*,TRI**,int,FILE*);
 LOCAL   int     find_nearest_pts(POINT**,int,POINT**,int,int,TRI**,TRI**,
 				RECT_GRID,RECT_GRID);
 LOCAL   int     find_nearest_pts_pair(POINT**,int,POINT**,int,int,RECT_GRID,
@@ -1080,6 +1079,7 @@ LOCAL	boolean grid_based_box_untangle(
 	double	hmin;
 	FILE 	*file;
 	char 	dname[100],fname[100];
+	boolean status;
 	
 	DEBUG_ENTER(grid_based_box_untangle)
 	
@@ -1098,9 +1098,6 @@ LOCAL	boolean grid_based_box_untangle(
 
 	total_nt = count_tris_in_top_box(kmin, kmax, intfc);
 
-	if (debugging("gbd3d"))
-	    printf("#total_nt = %d\n", total_nt);
-
 	if(total_nt == 0)
 	    return FUNCTION_SUCCEEDED;
 	
@@ -1113,7 +1110,7 @@ LOCAL	boolean grid_based_box_untangle(
 	uni_array(&new_tris, max_n_new, sizeof(TRI*));
 	
 	/*getting tris directly from the intfc. When there are two rect boxes
-	  the new generated tris are not in the intfc table, getting tris 
+	  the newly generated tris are not in the intfc table, getting tris 
 	  from intfc table may skip these tris.
 	*/
 	num_test_tris = tris_set_in_top_box(test_tris, total_nt, 
@@ -1135,44 +1132,47 @@ LOCAL	boolean grid_based_box_untangle(
 	    nstris = tris_intersection(sect_tris, test_tris, num_test_tris);
 	}
 
-	/* finding ref_tris */
+	/* finding ref_tris: tris with at least one point in box */
 	num_ref_tris = 0;
-	for(i=0; i<num_test_tris; i++)
+	for (i=0; i<num_test_tris; i++)
 	{
 	    tri = test_tris[i];
-	    if(skip_bdry_tri(tri) || !tri_in_box(tri,intfc,box) || 
+	    if (skip_bdry_tri(tri) || !tri_in_box(tri,intfc,box) || 
 	       (tri_tag && skip_tag_tri(tri)))
 		continue;
-	    if(!tri_recorded(tri,ref_tris,num_ref_tris))
+	    if (!tri_recorded(tri,ref_tris,num_ref_tris))
 		ref_tris[num_ref_tris++] = tri;
 	}
 	
-	/* finding out_tris */
+	/* Finding out_tris: out_tris are those neighbors of
+	   ref_tris but not among ref_tris */
 
 	num_out_tris = bound_tris_set(out_tris, ref_tris, num_ref_tris);
 
 	/* removing ref_tris */
-	for(i=0; i<num_ref_tris; i++)
+	for (i=0; i<num_ref_tris; i++)
 	    remove_tri_from_surface(ref_tris[i],ref_tris[i]->surf,NO);
 	
-	/* finding in_tris */
+	/* Record the old last_tri(surf) */
 	i = 0;
-	printf("Before calling reconstruct_intfc3d_in_box_lgb()\n");
 	for(surfs=intfc->surfaces; surfs && *surfs; ++surfs)
 	{
 	    last_tris[i] = last_tri(*surfs);
 	    ref_surfs[i] = *surfs;
 	    i++;
-	    printf("(*surf)->num_tri = %d\n",(*surfs)->num_tri);
 	}
 	num_surfs = i;
-	reconstruct_intfc3d_in_box_lgb(intfc,smin,smax,NO,NULL);
+	/* New constructed tris will be append to the old last_tri
+	   of the unredonstructed surfaces */
+	status = reconstruct_intfc3d_in_box_lgb(intfc,smin,smax,NO,NULL);
 	/* Check if any surface has been deleted */
 	for (i = 0; i < num_surfs; ++i)
 	{
 	    if (!surf_in_interface(ref_surfs[i],intfc))
 		last_tris[i] = NULL;
 	}
+	/* Start from old last_tri forward, these are reconstructed
+	   tris inside the box, called in_tris */
 	i = 0;
 	num_in_tris = 0;
 	for(surfs=intfc->surfaces; surfs && *surfs; ++surfs)
@@ -1200,14 +1200,14 @@ LOCAL	boolean grid_based_box_untangle(
 					in_tris, num_in_tris, 1, YES);
 	num_out_tris = seal_all_loops_wo_constraint(deg_tris, &num_deg_tris, 
 					out_tris, num_out_tris, 1, YES);
+	printf("num_in_tris = %d\n",num_in_tris);
+	printf("num_out_tris = %d\n",num_out_tris);
 	/* linking suitable pairs */
-	if(debugging("pairsfix"))
-	{
-	    num_new_tris = linking_tris_with_pairs_fix(new_tris, max_n_new, 
-		out_tris, num_out_tris, in_tris, num_in_tris, 
-		ref_tris, num_ref_tris, intfc);
-
-	}
+	if (num_in_tris == 0)
+        {
+            num_new_tris = linking_tris_of_outer_loops(new_tris, max_n_new,
+                out_tris, num_out_tris);
+        }	
 	else
 	{
 	    num_new_tris = linking_tris_with_pairs(new_tris, max_n_new, 
@@ -1224,6 +1224,7 @@ LOCAL	boolean grid_based_box_untangle(
 	/*removing all linking non-null edges in loops */
 	num_new_tris = sep_common_edge_from_tris(&sep_new_tris, new_tris, 
 						 num_new_tris, intfc);
+	I_SearchTheTriOnIntfc(intfc);
 	/* sealing all the null loops */
 	num_seal_tris = 0;
 	num_new_tris = seal_all_loops_wo_constraint(new_tris, &num_seal_tris, 
@@ -1356,14 +1357,15 @@ boolean	compute_average_point(SMOOTH_PARA*,POINT*,TRI*,SURFACE*,SMOOTH_TOL*);
 		Index_of_point(p) = 1;
 		if(!compute_average_point(&smooth_que[num], p,tri,s,&stol))
 		    continue;
-		
 		num++;
 	    }
 	}
 
 	/* Apply Laplacian smooth */
-	for(i=0; i<num; i++)
+	for (i = 0; i < num; i++)
+	{
 	    compute_point_smooth(&smooth_que[i], &stol, s->interface);
+	}
 }
 
 	void  seal_null_loop(
@@ -2457,96 +2459,6 @@ LOCAL   boolean crx_out_tris_twice(
 	    return NO;
 
 } /* end  crx_out_tris_twice */
-
-LOCAL	void gview_show_box_tri(
-	RECT_BOX *box,
-	TRI **tris,
-	int num_tris,
-	FILE *file)
-{
-	static const char *indent = "    ";
-	POINT *p;
-	int i,j,k;
-	int nls;	/* number of grid lines */
-	double *L = box->grid->L;
-	double *U = box->grid->U;
-	double *h = box->grid->h;
-
-	(void) fprintf(file,"{ LIST\n");
-
-	nls = (box->bmax[0] - box->bmin[0] + 1)*
-	      (box->bmax[1] - box->bmin[1] + 1) +
-	      (box->bmax[1] - box->bmin[1] + 1)*
-	      (box->bmax[2] - box->bmin[2] + 1) +
-	      (box->bmax[2] - box->bmin[2] + 1)*
-	      (box->bmax[0] - box->bmin[0] + 1);
-
-	(void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
-	    		indent,indent,indent,indent,indent,
-			2*nls,nls,0);
-	for (i = box->bmin[0]; i <= box->bmax[0]; ++i)
-	{
-	    for (j = box->bmin[1]; j <= box->bmax[1]; ++j)
-	    {
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + i*h[0],L[1] + j*h[1],
-			L[2] + box->bmin[2]*h[2]);
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + i*h[0],L[1] + j*h[1],
-			L[2] + box->bmax[2]*h[2]);
-	    }
-	}
-	for (j = box->bmin[1]; j <= box->bmax[1]; ++j)
-	{
-	    for (k = box->bmin[2]; k <= box->bmax[2]; ++k)
-	    {
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + box->bmin[0]*h[0],L[1] + j*h[1],
-			L[2] + k*h[2]);
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + box->bmax[0]*h[0],L[1] + j*h[1],
-			L[2] + k*h[2]);
-	    }
-	}
-	for (k = box->bmin[2]; k <= box->bmax[2]; ++k)
-	{
-	    for (i = box->bmin[0]; i <= box->bmax[0]; ++i)
-	    {
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + i*h[0],L[1] + box->bmin[1]*h[1],
-			L[2] + k*h[2]);
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-			L[0] + i*h[0],L[1] + box->bmax[1]*h[1],
-			L[2] + k*h[2]);
-	    }
-	}
-	for (i = 0; i < nls; ++i)
-	{
-	    (void) fprintf(file,"%s%s%-4d %-4d %-4d\n",indent,indent,
-			2,2*i,2*i+1);
-	}
-	(void) fprintf(file,"%s}\n",indent);
-
-	(void) fprintf(file,"%s{\n%s%sOFF\n%s%s%6d %6d %6d\n",
-	    		indent,indent,indent,indent,indent,
-			3*num_tris,num_tris,0);
-	for (i = 0; i < num_tris; ++i)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-	    	p = Point_of_tri(tris[i])[j];
-	    	(void) fprintf(file, "%s%s%-9g %-9g %-9g\n",indent,indent,
-		    	Coords(p)[0],Coords(p)[1],Coords(p)[2]);
-	    }
-	}
-	for (i = 0; i < num_tris; ++i)
-	{
-	    (void) fprintf(file,"%s%s%-4d %-4d %-4d %-4d\n",indent,indent,
-			3,3*i,3*i+1,3*i+2);
-	}
-	(void) fprintf(file,"%s}\n",indent);
-	(void) fprintf(file,"}\n");
-}	/* end gview_show_box_tri */
 
 LOCAL   boolean null_sides_sharing_same_vertex(
         TRI *tri,

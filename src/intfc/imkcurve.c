@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_make_curve"
 
-#include <int.h>
+#include <intfc/int.h>
 
 struct  _EG_CRX_2D {
         BBI_POINT ***x_crx;
@@ -504,6 +504,7 @@ LOCAL	int install_grid_crx2d(
 	double coords2[MAXD];
 	double crds_crx[MAXD];
 	double *L = grid->L;
+	double *U = grid->U;
 	double *h = grid->h;
 	int *gmax = grid->gmax;
 	int dim = grid->dim;
@@ -520,6 +521,8 @@ LOCAL	int install_grid_crx2d(
 	for (j = 0; j <= gmax[1]; ++j)
 	{
 	    coords1[1] = coords2[1] = L[1] + j*h[1];
+	    if (j == gmax[1]) 
+		coords1[1] = coords2[1] = U[1];
 	    for (i = 0; i < gmax[0]; ++i)
 	    {
 		x_crx[i][j] = NULL;
@@ -548,6 +551,8 @@ LOCAL	int install_grid_crx2d(
 	for (i = 0; i <= gmax[0]; ++i)
 	{
 	    coords1[0] = coords2[0] = L[0] + i*h[0];
+	    if (i == gmax[0]) 
+		coords1[0] = coords2[0] = U[0];
 	    for (j = 0; j < gmax[1]; ++j)
 	    {
 		y_crx[i][j] = NULL;
@@ -555,6 +560,7 @@ LOCAL	int install_grid_crx2d(
 		{
 		    coords1[1] = L[1] + j*h[1];
 		    coords2[1] = L[1] + (j+1)*h[1];
+		    if (j+1 == gmax[1]) coords2[1] = U[1];
 		    if (!grid_line_crx_in_dir(func,func_params,
 			dim,coords1,coords2,crds_crx,1))
 		    {

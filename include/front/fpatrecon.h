@@ -24,17 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ******************************************************************************/
 
 
-/*
-*				fdecs.h:
-*
-*	Copyright 1999 by The University at Stony Brook, All rights reserved.
-*
-*	Contains declarations of variables related to the front.  A front
-*	consists of an interface (see int.c for documentation) and
-*	and the values of the physical state variables on each side of the
-*	interface, together with further variables which specify algorithms for
-*	the processing of fronts.
-*/
 
 #if !defined(_PATRECON_H)
 #define _FDECS_H

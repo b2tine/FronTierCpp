@@ -172,12 +172,13 @@ IMPORT	void	u_pp_recv_any(int,POINTER,size_t,const char*,int);
 IMPORT	void	u_pp_send(int,POINTER,size_t,int,const char*,int);
 IMPORT	void	u_pp_send_all(int,POINTER,size_t,const char*,int);
 IMPORT  void    u_pp_bcast(int,POINTER,size_t,const char*,int);
-#if defined(USE_MPI)
+
+#ifdef USE_MPI
 IMPORT	boolean pp_test(MPI_Request*);
 IMPORT	void	pp_wait(MPI_Request*);
 IMPORT	void	u_pp_irecv(int,int,POINTER,size_t,MPI_Request*,const char*,int);
 IMPORT	void	u_pp_isend(int,POINTER,size_t,int,MPI_Request*,const char*,int);
-#endif /* defined(USE_MPI) */
+#endif
 
 /* quad.c*/
 IMPORT	double	dqng(double(*)(double,POINTER),POINTER,double,double,double,

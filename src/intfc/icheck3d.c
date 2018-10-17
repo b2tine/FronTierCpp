@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	The functions in this file check the pointers of the interface.
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 
 	/* LOCAL Function Declarations */
@@ -355,6 +355,7 @@ LOCAL	boolean i_consistent_interface3d(
 		b = Bond_on_side(tri,pside);
 	    else    /*#bjet2 */
 	    {
+		int i;
 		ntris = set_tri_list_around_point(p,tri,&tris,intfc);
 		v = Vertex_of_point(tris[0],p);
 		nside = v;
@@ -363,9 +364,13 @@ LOCAL	boolean i_consistent_interface3d(
 		    b = Bond_on_side(tris[0],nside);
 		else if (is_side_bdry(tris[0],pside))
 		    b = Bond_on_side(tris[0],pside);
+		else if (is_isolated_node_point(p,tris,ntris)) 
+		{
+		    /* This occurs in string attached to rigid body */
+		    continue;
+		}
 		else if (!allow_null_sides)
 		{
-		    int i;
 	            (void) printf("%s Boundary_point has no adjacent "
 				  "tri with a bond\n",warn);
 	    	    (void) printf("p(%llu) - (%g, %g, %g), ",
@@ -1363,3 +1368,30 @@ EXPORT void check_global_index(
 	}
 	free_these(1,points);
 }	/* end check_global_index */
+
+EXPORT boolean is_isolated_node_point(
+	POINT *p,
+	TRI **tris,
+	int ntris)
+{
+	int i,v;
+	if (!Boundary_point(p)) 
+	{
+	    return NO;
+	}
+	for (i = 0; i < ntris; ++i)
+	{
+	    v = Vertex_of_point(tris[i],p);
+	    if (v == ERROR)
+	    {
+		(void) printf("In is_isolated_node_point():\n");
+		(void) printf("Vertex of tri inconsistent!\n");
+		clean_up(ERROR);
+	    }
+	    if (is_side_bdry(tris[i],v))
+	    {
+		return NO;
+	    }
+	}
+	return YES;
+}	/* end is_isolated_node_point */

@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -4054,13 +4054,25 @@ LOCAL void vtk_plot_scalar_field3d(
         double          *top_L = front->pp_grid->Zoom_grid.L;
 
         int kmin,kmax,jmin,jmax,imin,imax;
-        imin = (lbuf[0] == 0) ? 1 : lbuf[0];
-        jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
-        kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
-        imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
-        jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
-        kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
 
+        if (vtk_movie_var->plot_band)
+	{
+            imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+            jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
+            kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+            jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
+            kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
+	}
+	else
+        {
+            imin = (lbuf[0] == 0) ? 1 : lbuf[0] - 1;
+            jmin = (lbuf[1] == 0) ? 1 : lbuf[1] - 1;
+            kmin = (lbuf[2] == 0) ? 1 : lbuf[2] - 1;
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0] + 1;
+            jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1] + 1;
+            kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2] + 1;
+        }
 
         sprintf(filename, "%s/vtk/vtk.ts%s",OutName(front),
                 right_flush(front->step,7));

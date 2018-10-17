@@ -92,6 +92,8 @@ struct _POINT
 	boolean		crx;
 	int		indx;
 	long            global_index;
+	/* Periodic shift since initialization, for static mesh only */
+        double          pshift[3];
 };
 typedef struct _POINT POINT;
 
@@ -464,32 +466,34 @@ struct _INTERFACE
 	struct _SURFACE **surfaces;	/* Pointer to Set of Surfaces */
 	struct _C_CURVE **c_curves;	/* c_curves on interface */
 
-	int		dim;		/* Dimension of Imbedding Space */
-	int		num_points;	/* Total from curves */
-	long		max_point_gindex;
-	long		max_curve_gindex;
-	long		max_surf_gindex;
+	int	dim;		/* Dimension of Embedding Space */
+	int	num_points;	/* Total from curves */
+	long max_point_gindex;
+	long max_curve_gindex;
+	long max_surf_gindex;
 
 	/* Internal Variables: */
 	struct Table	*table;	/* Pointer to Interface Table */
 	boolean	modified;	/* Interface Recently Modified */
 	boolean	normal_unset;	/* Normal unset since last modify */
 	boolean	curvature_unset;/* Curvature unset since last modify */
-	boolean            _interface_reconstructed;
-	boolean            _static_mesh; /* No remeshing */
-	int		rect_bdry_type[MAXD][2];
-	COMPONENT	elliptic_comp;	/* component of elliptic region */
-	COMPONENT	default_comp;	/* for subdomain with no surf */
+	boolean _interface_reconstructed;
+	boolean _static_mesh; /* No remeshing */
+	
+    int	rect_bdry_type[MAXD][2];
+	COMPONENT elliptic_comp;	/* component of elliptic region */
+	COMPONENT default_comp;	/* for subdomain with no surf */
 	struct _INTERFACE  *prev_interf;
-	POINTER		e_comps;
-	struct	_TRI	**point_tri_store;
-	struct  _TRI    **point_tri_store_rgb;
+	POINTER	e_comps;
+	struct _TRI	**point_tri_store;
+	struct _TRI **point_tri_store_rgb;
 };
 typedef struct _INTERFACE INTERFACE;
 
 #define interface_reconstructed(intfc) ((intfc)->_interface_reconstructed)
 #define static_mesh(intfc) ((intfc)->_static_mesh)
 #define Dimension(intfc) ((intfc)->dim)
+
 /*#bjet2 */
 #define prev_interface(intfc)    ((intfc)->prev_interf)
 
@@ -1563,6 +1567,9 @@ typedef struct _SCALED_REDIST_PARAMS SCALED_REDIST_PARAMS;
 
 #define	node_out_curve_loop(node,c)	\
 	for ((c) = (node)->out_curves; (c) && (*c); ++(c))
+
+#define bond_btri_loop(b,btris)		\
+	for ((btris) = Btris((b)); (btris) && *(btris); ++(btris))
 
 #define E_comps(intfc)          ((EQUIV_COMPS *) (intfc)->e_comps)
 

@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 	/* LOCAL function prototypes */
 LOCAL	boolean	correct_exterior_curve(CURVE*,Front*);

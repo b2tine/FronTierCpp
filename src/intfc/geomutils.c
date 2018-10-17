@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Contains elementary functions for the computation of geometry.
 */
 
-#include <geom.h>
+#include <intfc/geom.h>
 
 EXPORT	double	EPSILON	= 1.e-4;	/* TOLERANCE */
 

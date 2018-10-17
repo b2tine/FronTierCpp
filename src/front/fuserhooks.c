@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Front Extensions to Interface and Rproblem User Supplied Operations
 */
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 
 /* Front extensions to intfc user interface hooks functions */
@@ -100,9 +100,8 @@ EXPORT	boolean	nearest_intfc_state(
 {
 	if (intfc == NULL)
 	    return NO;
-	return (*f_user_interface(intfc)._nearest_intfc_state)(coords,comp,
-							       intfc,state,
-							       coords_on,hs_on);
+	return (*f_user_interface(intfc)._nearest_intfc_state)(
+            coords,comp,intfc,state, coords_on,hs_on);
 }		/*end nearest_intfc_state*/
 
 EXPORT	void	bi_interpolate_intfc_states(
@@ -357,6 +356,7 @@ EXPORT	double	mean_curvature_at_point(
 	intfc = hs->interface;
 	if (f_user_interface(intfc)._mean_curvature_at_point == NULL)
 	    return 0.0;
+	/* Hooked to f_wlsp_curvature() */
 	return (*f_user_interface(intfc)._mean_curvature_at_point)(p,hse,hs,fr);
 }		/*end mean_curvature_at_point*/
 

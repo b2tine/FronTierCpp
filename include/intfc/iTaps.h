@@ -6,9 +6,10 @@
 #include <iMesh.h>
 #include <iGeom.h>
 #include <iRel.h>
-#if defined USE_MPI
+
+#ifdef USE_MPI
 #include <iMeshP.h>
-#endif /* defined USE_MPI */
+#endif
 
 
 struct _FTMESH

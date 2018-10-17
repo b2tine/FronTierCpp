@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <int.h>
+#include <intfc/int.h>
 
 #define DEBUG_STRING "i_redistribute"
 
@@ -762,7 +762,8 @@ LOCAL  boolean redistribute_surf_o1(
 	double	  coords[3];
 	boolean	  status,change_side;
 
-	DEBUG_ENTER(redistribute_surf_o1)
+	if (debugging("trace"))
+	    (void) printf("Entering redistribute_surf_o1()\n");
 
 	set_pointer_queue_opts(PQ_BLOCK_SIZE,Num_pqs_in_block,PQ_ALLOC_TYPE,
 		               "vmalloc",PQ_ALLOC_SIZE_FOR_POINTERS,
@@ -788,6 +789,7 @@ LOCAL  boolean redistribute_surf_o1(
 	    {
 	    case BAD_ANGLE:	
 		++nf;
+		break;
 	    case LARGE:
 		++nl;
 		insert_queue = alloc_and_add_to_queue(tri,s,insert_queue,nside);
@@ -805,7 +807,8 @@ LOCAL  boolean redistribute_surf_o1(
 	
 	if(insert_queue==NULL && delete_queue==NULL)
 	{
-	    DEBUG_ENTER(redistribute_surf_o1)
+	    if (debugging("trace"))
+	    	(void) printf("Leaving redistribute_surf_o1()\n");
 	    return nothing_done;
 	}
 
@@ -874,6 +877,8 @@ LOCAL  boolean redistribute_surf_o1(
 		    (void) printf("WARNING: delete longest side also failed\n");
 	    }
 	    if (!status)
+	        delete_queue = dequeue(tri,delete_queue);
+	    if (!status && debugging("foldback"))
 	    {
 		printf("WARNING, redistribute_surf_o1, "
 		       "delete_min_side_of_tri fails.\n");
@@ -883,7 +888,8 @@ LOCAL  boolean redistribute_surf_o1(
 	    
 	interface_reconstructed(intfc) = NO;
 	
-	DEBUG_LEAVE(redistribute_surf_o1)
+	if (debugging("trace"))
+	    (void) printf("Leaving redistribute_surf_o1()\n");
 	return nothing_done;
 }		/*end redistribute_surf_o1*/
 
@@ -1163,9 +1169,18 @@ LOCAL boolean delete_min_side_of_tri(
 	    for (i = 0; i < ntris[k]; i++)
 	    {
 		tris[k][i] = tmp_tris[i];
-	        *pq = dequeue(tris[k][i],*pq);
 	    }
+	}
+	if (ntris[0] + ntris[1] > 12) /* form too small angle */
+	{
+	    *change_side = YES;
+	    return NO;
+	}
 
+	for(k=0; k<2; k++)
+	{
+	    for (i = 0; i < ntris[k]; i++)
+	        *pq = dequeue(tris[k][i],*pq);
 	    np[k] = 0;
 	    /*finding bounding points except the 4 common points. */
 	    for(i=0; i<ntris[k]; i++)
@@ -1285,6 +1300,7 @@ LOCAL void sort_pointer_queue(
 	
 	if (pq == NULL)
 	    return;
+	pq1 = head_of_pointer_queue(pq);
 
 	pq1 = head_of_pointer_queue(pq);
 	while (pq1 != tail_of_pointer_queue(pq))

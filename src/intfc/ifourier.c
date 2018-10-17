@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Contains intialization and support routines for Fourier polynomials.
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 	/* FOURIER POLYNOMIAL Function Declarations */
 LOCAL	void	        prompt_for_fourier_multi_modes(int,int,FOURIER_POLY*,

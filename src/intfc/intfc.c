@@ -324,7 +324,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 
 	/* LOCAL Function Declarations */
@@ -548,6 +548,8 @@ EXPORT INTERFACE *i_copy_interface(
 	new_intfc->default_comp = intfc->default_comp;
 	new_intfc->elliptic_comp = intfc->elliptic_comp;
 	new_intfc->max_point_gindex = intfc->max_point_gindex;
+	new_intfc->max_surf_gindex = intfc->max_surf_gindex;
+	new_intfc->max_curve_gindex = intfc->max_curve_gindex;
 	new_intfc->table->min_comp = intfc->table->min_comp;
 	new_intfc->table->max_comp = intfc->table->max_comp;
 	interface_reconstructed(new_intfc) = interface_reconstructed(intfc);
@@ -2909,7 +2911,7 @@ LOCAL  CURVE **split_curve3d(
 	}
 	curves[0]->first = curve->first;
 	curves[0]->last = bond;
-	
+
 	if ((curves[1] = make_curve(neg_comp,pos_comp,node,curve->end)) == NULL)
 	{
 	    printf("ERROR in split_curve: make second_curve fails.\n");
@@ -5469,6 +5471,57 @@ EXPORT	ORIENTATION orientation_of_bond_at_tri(
 	return ORIENTATION_NOT_SET;
 }		/*end orientation_of_bond_at_tri*/
 
+EXPORT	ORIENTATION orientation_of_curve_at_surface(
+	CURVE *curve,
+	SURFACE  *surf)
+{
+	ORIENTATION orient;
+	CURVE **c;
+	SURFACE **s;
+
+	surf_pos_curve_loop(surf,c)
+	    if (curve == *c) orient = POSITIVE_ORIENTATION;
+
+	surf_neg_curve_loop(surf,c)
+	    if (curve == *c) orient = NEGATIVE_ORIENTATION;
+
+	curve_pos_surf_loop(curve,s)
+	{
+	    if (surf == *s)
+	    {
+		if (orient != POSITIVE_ORIENTATION)
+		{
+		    (void) printf("Inconsistent curve-surface orientation!\n");
+		    (void) printf("surface-curve orient = %s\n",
+					orientation_name(orient));
+		    (void) printf("curve-surface orient = "
+				  "POSITIVE_ORIENTATION\n");
+		    clean_up(ERROR);
+		}
+		else
+		    return orient;
+	    }
+	}
+	curve_neg_surf_loop(curve,s)
+	{
+	    if (surf == *s)
+	    {
+		if (orient != NEGATIVE_ORIENTATION)
+		{
+		    (void) printf("Inconsistent curve-surface orientation!\n");
+		    (void) printf("surface-curve orient = %s\n",
+					orientation_name(orient));
+		    (void) printf("curve-surface orient = "
+				  "NEGATIVE_ORIENTATION\n");
+		    clean_up(ERROR);
+		}
+		else
+		    return orient;
+	    }
+	}
+	return ORIENTATION_NOT_SET;
+}	/* end orientation_of_curve_at_surface */
+
 EXPORT	int side_of_tri_with_bond(
 	BOND *b,
 	TRI  *tri)
@@ -6478,11 +6531,26 @@ EXPORT	void	order_interface(
 EXPORT void  delete_scn(
 	SURFACE  *s)
 {
-INTERFACE	*intfc = s->interface; 
-SURFACE		*surf;
-CURVE		**c, **curves_to_delete;
-NODE		**n, **nodes_to_delete;
-BOND		*bs;
+	INTERFACE	*intfc = s->interface; 
+	SURFACE		*surf;
+	CURVE		**c, **curves_to_delete;
+	NODE		**n, **nodes_to_delete;
+	BOND		*bs;
+
+	curves_to_delete = NULL;
+	nodes_to_delete = NULL;
+	surf_pos_curve_loop(s, c)
+	{
+	    add_to_pointers(*c, &curves_to_delete);
+	    add_to_pointers((*c)->start, &nodes_to_delete);
+	    add_to_pointers((*c)->end, &nodes_to_delete);
+	}
+	surf_neg_curve_loop(s, c)
+	{
+	    add_to_pointers(*c, &curves_to_delete);
+	    add_to_pointers((*c)->start, &nodes_to_delete);
+	    add_to_pointers((*c)->end, &nodes_to_delete);
+	}
 
 	if(s != NULL && !delete_surface(s))
 	{
@@ -6490,19 +6558,7 @@ BOND		*bs;
 	    clean_up(ERROR);
 	}
 	
-	/*ref: cut_out_curves_in_buffer */
-	/*it will only delete subdomain curves */
-	curves_to_delete = NULL;
-	for(c=intfc->curves; c && *c; c++)
-	{
-	    for (bs = (*c)->first; bs != NULL; bs = bs->next)
-	        if (Btris(bs) != NULL)
-		    break;
-
-	    if(bs == NULL)
-	        add_to_pointers(*c, &curves_to_delete);
-	}
-	
+	/* delete curves related to OUT_DOMAIN surface */
 	for(c=curves_to_delete; c && *c; c++)
 	    if (!delete_curve(*c))
 	    {
@@ -6511,10 +6567,7 @@ BOND		*bs;
 		clean_up(ERROR);
 	    }
 
-	/*delete no curve related nodes */
-	nodes_to_delete = NULL;
-	for (n = intfc->nodes; n && *n; ++n)
-	    add_to_pointers(*n, &nodes_to_delete);
+	/* delete nodes related to OUT_DOMAIN surface */
 	for (n = nodes_to_delete; n && *n; ++n)
 	    (void) delete_node(*n);
 

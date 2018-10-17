@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 
 LOCAL double cell_frac_comp2(double***,double***,COMPONENT**,COMPONENT);
 LOCAL double corner_cell_frac(double***,double***,COMPONENT**,
@@ -38,7 +38,8 @@ LOCAL void FT_ComputeGridVolumeFraction2d(Front*,COMPONENT,POINTER*);
 LOCAL double FT_ComputeTotalVolumeFraction2d(Front*,COMPONENT);
 LOCAL void forward_curve_seg_len_constr(CURVE*,BOND*,BOND*,int,double);
 LOCAL void backward_curve_seg_len_constr(CURVE*,BOND*,BOND*,int,double);
-static boolean find_nearest_ring2_cell_with_comp(int*,int*,int*,int*,int);
+LOCAL void exchange_cell_partition(CELL_PART*,INTERFACE*,Front*);
+LOCAL boolean find_nearest_ring2_cell_with_comp(int*,int*,int*,int*,int);
 
 EXPORT double FT_ComputeTotalVolumeFraction(
 	Front *front,
@@ -639,9 +640,9 @@ EXPORT	void FT_MakeEllipticSurf(
 	    gmax[i] = refinement_level*rint((U[i] - L[i])/h[i]);
 	}
 	set_box_rect_grid(L,U,gmax,NULL,NULL,dim,&box_rg);
-	make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
-			ellipsoid_func,(POINTER)&ellip_params,surf);
-	wave_type(*surf) = w_type;
+	if (make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
+			ellipsoid_func,(POINTER)&ellip_params,surf))
+	    wave_type(*surf) = w_type;
 	front->interf->modified = YES;
 	interface_reconstructed(front->interf) = NO;
 }	/* end FT_MakeEllipticSurf */
@@ -692,9 +693,9 @@ EXPORT	void FT_MakeDumbBellSurf(
 	d_params.z = z0;
 	d_params.R = R;
 	d_params.rr = r;
-	make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-			dumbbell_func,(POINTER)&d_params,surf);
-	wave_type(*surf) = w_type;
+	if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+			dumbbell_func,(POINTER)&d_params,surf))
+	    wave_type(*surf) = w_type;
 	front->interf->modified = YES;
 }	/* end FT_MakeDumbBellSurf */
 
@@ -720,9 +721,9 @@ EXPORT	void FT_MakeProjectileSurf(
 	proj_params.R = R;
 	proj_params.r = r;
 	proj_params.h = h;
-	make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-			projectile_func,(POINTER)&proj_params,surf);
-	wave_type(*surf) = w_type;
+	if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+			projectile_func,(POINTER)&proj_params,surf))
+	    wave_type(*surf) = w_type;
 	front->interf->modified = YES;
 }	/* end FT_MakeProjectileSurf */
 
@@ -790,9 +791,9 @@ EXPORT  void FT_MakeCuboidSurf(
             gmax[i] = refinement_level*rint((U[i] - L[i])/h[i]);
 	}
 	set_box_rect_grid(L,U,gmax,NULL,NULL,dim,&box_rg);
-	make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
-			cuboid_func,(POINTER)&cuboid_params,surf);
-        wave_type(*surf) = w_type;
+	if (make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
+			cuboid_func,(POINTER)&cuboid_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 	interface_reconstructed(front->interf) = NO;
 }	 /*end FT_MakeCuboidSurf*/
@@ -802,6 +803,7 @@ EXPORT  void FT_MakeCylinderSurf(
         double *center,
         double radius,
 	double height,
+	int idir,
         COMPONENT neg_comp,
         COMPONENT pos_comp,
         int w_type,
@@ -816,14 +818,14 @@ EXPORT  void FT_MakeCylinderSurf(
             cylinder_params.center[i] = center[i];
             cylinder_params.radius = radius;
 	    cylinder_params.height = height;	   
+	    cylinder_params.idir = idir;	   
         }
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-                        cylinder_func,(POINTER)&cylinder_params,surf);
-        wave_type(*surf) = w_type;
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+                        cylinder_func,(POINTER)&cylinder_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeCylinderSurf*/
-
 
 EXPORT  void FT_MakeAnnularCylinderSurf(
         Front *front,
@@ -874,7 +876,6 @@ EXPORT  void FT_MakeAnnularCylinderSurf(
         front->interf->modified = YES;
 }        /* end FT_MakeAnnularCylinderSurf */
 
-
 EXPORT  void FT_MakeConeSurf(
         Front *front,
         double *center,
@@ -895,9 +896,9 @@ EXPORT  void FT_MakeConeSurf(
             cone_params.slope = slope;
 	    cone_params.height = height;
         }
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-                        cone_func,(POINTER)&cone_params,surf);
-        wave_type(*surf) = w_type;
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+                        cone_func,(POINTER)&cone_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeConeSurf*/
@@ -920,9 +921,9 @@ EXPORT  void FT_MakeTetrahedronSurf(
             tetrahedron_params.center[i] = center[i];
             tetrahedron_params.edge = edge;
         }
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-                        tetrahedron_func,(POINTER)&tetrahedron_params,surf);
-        wave_type(*surf) = w_type;
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+                        tetrahedron_func,(POINTER)&tetrahedron_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeTetrahedronSurf*/
@@ -946,9 +947,9 @@ EXPORT	void FT_MakePlaneSurf(
 	    plane_params.N[i] = plane_nor[i];
 	    plane_params.P[i] = plane_pt[i];
 	}
-	make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-			plane_func,(POINTER)&plane_params,surf);
-	wave_type(*surf) = w_type;
+	if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+			plane_func,(POINTER)&plane_params,surf))
+	    wave_type(*surf) = w_type;
 	if (reset_bdry_comp)
 	{
 	    printf("FT_MakePlaneSurf(): reset_bdry_comp code needed\n");
@@ -1563,7 +1564,7 @@ LOCAL	boolean increment_parametric_function(
 
 	if (ds < ds_min)
 	{
-	    dt_min = t + dt;
+	    dt_min = dt;
 	    for (i = 0; i < imax; ++i)
 	    {
 		dt *= 2.0;
@@ -1572,11 +1573,11 @@ LOCAL	boolean increment_parametric_function(
 		if (ds > ds_min) break;
 	    }
 	    if (i == imax) return NO;
-	    dt_max = t + dt;
+	    dt_max = dt;
 	}
 	else if (ds > ds_max)
 	{
-	    dt_max = t + dt;
+	    dt_max = dt;
 	    for (i = 0; i < imax; ++i)
 	    {
 		dt /= 2.0;
@@ -1585,7 +1586,7 @@ LOCAL	boolean increment_parametric_function(
 		if (ds < ds_max) break;
 	    }
 	    if (i == imax) return NO;
-	    dt_min = t + dt;
+	    dt_min = dt;
 	}
 	if (ds >= ds_min && ds <= ds_max) 
 	{
@@ -1627,7 +1628,7 @@ EXPORT CURVE *FT_MakeParametricCurve(
 	CURVE   *c;
 	int	num_points = 0;
 	double	**point_array = NULL;
-	double	dt,dt_min,dt_max;
+	double	dt,dt_min=0,dt_max=0;
 	double	t = 0.0;		/* parametric variable */
 	int 	max_num_pts = 400;
 	double	hmin,ds;
@@ -1646,7 +1647,7 @@ EXPORT CURVE *FT_MakeParametricCurve(
 	p0 = point_array[0];
 	(*func)(func_params,t,point_array[0]);
 	num_points++;
-	while (t + dt < 1.0)
+	while (t <= 1.0)
 	{
 	    if (num_points >= max_num_pts) /* expand memory */
 	    {
@@ -1661,6 +1662,8 @@ EXPORT CURVE *FT_MakeParametricCurve(
 		(void) printf("ERROR in increment_parametric_function()\n");
 		(void) printf("Re-run and turn on parametric_curve\n");
 	    }
+	    if (t < 1 && t + dt > 1)
+		dt = 1-t;
 	    t += dt;
 	    p0 = point_array[num_points];
 	    num_points++;
@@ -1710,10 +1713,10 @@ EXPORT  void FT_MakeCrossCylinderSurf(
         crosscylinder_params.height1 = height1;
 	crosscylinder_params.height2 = height2;
 
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
 			crosscylinder_func,
-			(POINTER)&crosscylinder_params,surf);
-        wave_type(*surf) = w_type;
+			(POINTER)&crosscylinder_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeCrossCylinderSurf*/
@@ -1745,9 +1748,9 @@ EXPORT  void FT_MakeBowlSurf(
         bowl_params.height1 = height1;
 	bowl_params.height2 = height2;
 
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-                        bowl_func,(POINTER)&bowl_params,surf);
-        wave_type(*surf) = w_type;
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+                        bowl_func,(POINTER)&bowl_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeBowlSurf*/
@@ -1772,11 +1775,11 @@ EXPORT  void FT_MakeStellatedOctahedronSurf(
 	
 	stellatedoctahedron_params.edge = edge;
 
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
                         stellatedoctahedron_func,
 			(POINTER)&stellatedoctahedron_params,
-			surf);
-        wave_type(*surf) = w_type;
+			surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;
 
 }        /*end FT_MakeStellatedOctahedronSurf */
@@ -1805,9 +1808,9 @@ EXPORT  void FT_MakePlatformSurf(
         platform_params.height = height;
 	platform_params.radius = radius; 
 
-        make_level_surface(rgr,front->interf,neg_comp,pos_comp,
-                        platform_func,(POINTER)&platform_params,surf);
-        wave_type(*surf) = w_type;
+        if (make_level_surface(rgr,front->interf,neg_comp,pos_comp,
+                        platform_func,(POINTER)&platform_params,surf))
+            wave_type(*surf) = w_type;
         front->interf->modified = YES;	
 }	/* end FT_MakePlatformSurf */
 
@@ -2084,6 +2087,7 @@ EXPORT boolean FT_NearestGridIcoordsWithComp(
 struct _CELL_INFO_2D {
 	/* Input vatiables */
 	boolean is_corner;
+	boolean is_side;
 	int comp[2][2];
 	int icrds[2][2][MAXD];
 	double crds[2][2][MAXD];
@@ -2121,6 +2125,370 @@ static void cell_length(CELL_INFO_1D*);
 static void rotate_cell(CELL_INFO_2D*,boolean);
 static void reverse_cell(CELL_INFO_2D*);
 
+/*TMP*/
+LOCAL boolean debug_cell(
+        Front *front,
+        int i,
+        int j)
+{
+	return NO;
+        if (front->step != 74) return NO;
+        if (pp_mynode() == 0)
+        {
+            if (i != 44) return NO;
+            if (j != 50) return NO;
+            return YES;
+        }
+        if (pp_mynode() == 3 && NO)
+        {
+            if (i != 3) return NO;
+            if (j == 9 || j == 10 || j == 11) return YES;
+            return NO;
+        }
+        return NO;
+}
+
+LOCAL void set_cell_comp2d(Front *front,
+		     CELL_INFO_2D *cell2d,
+		     int *icoords,
+		     int *shift)
+{
+	INTERFACE *grid_intfc,*comp_grid_intfc;
+	RECT_GRID *top_grid,*comp_grid;
+	int *top_comp,*comp_comp;
+	int *top_gmax,*comp_gmax;
+	double *comp_L,*comp_h;
+	int dim;
+	int i,j,ii,jj,l,m;
+	int ic,icc;
+	
+	grid_intfc = front->grid_intfc;
+	top_grid = &topological_grid(grid_intfc);
+	top_gmax = top_grid->gmax;
+	dim = grid_intfc->dim;
+	top_comp = table_of_interface(grid_intfc)->components;
+	
+	comp_grid_intfc = front->comp_grid_intfc;
+	comp_comp = table_of_interface(comp_grid_intfc)->components;
+	comp_grid = &topological_grid(comp_grid_intfc);
+	comp_L = comp_grid->L;
+	comp_h = comp_grid->h;
+	comp_gmax = comp_grid->gmax;
+	
+	i = icoords[0];
+	j = icoords[1];
+	ic = d_index(icoords,top_gmax,dim);
+	cell2d->cell_comp = top_comp[ic];
+	cell2d->nv = 0;
+	cell2d->orphan = 0.0;
+	cell2d->is_side = cell2d->is_corner = NO;
+	
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 3; ++m)
+	{
+	    cell2d->nb_flag[l][m] = NO;
+	    cell2d->nb_frac[l][m] = 0.0;
+	}
+	
+	for (ii = 0; ii < 2; ++ii)
+	for (jj = 0; jj < 2; ++jj)
+	{
+	
+	    cell2d->icrds[ii][jj][0] = i + ii - shift[0];
+	    cell2d->icrds[ii][jj][1] = j + jj - shift[1];
+	    
+	    cell2d->crds[ii][jj][0] = comp_L[0] +
+	    		(i + ii - shift[0])*comp_h[0];
+	    cell2d->crds[ii][jj][1] = comp_L[1] +
+	    		(j + jj - shift[1])*comp_h[1];
+	    icc = d_index(cell2d->icrds[ii][jj],comp_gmax,dim);
+	    cell2d->comp[ii][jj] = comp_comp[icc];
+	    if (comp_comp[icc] == cell2d->soln_comp)
+	    {
+	    	cell2d->nv++;
+		for (l = ii; l < ii+2; ++l)
+		for (m = jj; m < jj+2; ++m)
+		    cell2d->nb_flag[l][m] = YES;
+	    }
+	}
+	return ;
+}	/* end set_cell_comp2d */
+
+LOCAL void set_cell_crx2d(Front *front,
+		   CELL_INFO_2D *cell2d)
+{
+	INTERFACE *grid_intfc,*comp_grid_intfc;
+	RECT_GRID *comp_grid;
+	int *comp_comp;
+	int *comp_gmax;
+	int dim;
+	int ii;
+	int icc1,icc2;
+	HYPER_SURF *hs;
+
+	grid_intfc = front->grid_intfc;
+	dim = grid_intfc->dim;
+
+	comp_grid_intfc = front->comp_grid_intfc;
+	comp_comp = table_of_interface(comp_grid_intfc)->components;
+	comp_grid = &topological_grid(comp_grid_intfc);
+	comp_gmax = comp_grid->gmax;
+
+	for (ii = 0; ii < 2; ++ii)
+	{
+	    icc1 = d_index(cell2d->icrds[0][ii],comp_gmax,dim);
+	    icc2 = d_index(cell2d->icrds[1][ii],comp_gmax,dim);
+	    cell2d->crx_coords[0][ii][0] = cell2d->crx_coords[0][ii][1] 
+		    		= HUGE;
+	    if (comp_comp[icc1] != comp_comp[icc2])
+	    {
+		FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+		    	cell2d->icrds[0][ii],EAST,comp_comp[icc1],
+			&hs,cell2d->crx_coords[0][ii]);
+	    }
+	    icc1 = d_index(cell2d->icrds[ii][0],comp_gmax,dim);
+	    icc2 = d_index(cell2d->icrds[ii][1],comp_gmax,dim);
+	    cell2d->crx_coords[1][ii][0] = cell2d->crx_coords[1][ii][1] 
+		    		= HUGE;
+	    if (comp_comp[icc1] != comp_comp[icc2])
+	    {
+		FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+		    	cell2d->icrds[ii][0],NORTH,comp_comp[icc1],
+			&hs,cell2d->crx_coords[1][ii]);
+	    }
+	}
+	return ;
+}	/* end set_cell_crx2d */
+
+LOCAL void set_cell_neighbor2d(Front *front,
+			   CELL_INFO_2D *cell2d,
+			   int *icoords,
+			   COMPONENT comp)
+{
+	INTERFACE *grid_intfc;
+	RECT_GRID *top_grid;
+	int *top_gmax;
+	int *top_comp;
+	int l,m;
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int ipn[MAXD];
+	int icn;
+
+	grid_intfc = front->grid_intfc;
+	top_grid = &topological_grid(grid_intfc);
+	top_gmax = top_grid->gmax;
+	top_comp = table_of_interface(grid_intfc)->components;
+
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 3; ++m)
+	{
+	    if (cell2d->nb_flag[l][m] == NO) continue;
+	    dirs[0] = dir[0][l];
+	    dirs[1] = dir[1][m];
+	    if (!FT_AdjTopGridIcoords(front,icoords,dirs,ipn))
+		cell2d->nb_flag[l][m] = NO;
+	    icn = d_index(ipn,top_gmax,2);
+	    if (top_comp[icn] != comp)
+		cell2d->nb_flag[l][m] = NO;
+	}
+	return ;
+}	/* end set_cell_neighbor2d */
+
+LOCAL void set_corner_flag2d(CELL_INFO_2D *cell2d,
+		       int *icoords,
+		       int *imin,
+		       int *imax,
+		       int *lm,
+		       int *um)
+{
+	int i,j;
+	i = icoords[0];
+	j = icoords[1];
+	if ((i == imin[0] && lm[0] == 0) ||
+	    (i == imax[0] && um[0] == 0))
+	{
+	    cell2d->is_side = YES;
+	}
+	if ((j == imin[1] && lm[1] == 0) ||
+            (j == imax[1] && um[1] == 0))
+        {
+           cell2d->is_side = YES;
+        }
+	if (((i == imin[0] && lm[0] == 0) || 
+	     (i == imax[0] && um[0] == 0)) && 
+	    ((j == imin[1] && lm[1] == 0) || 
+	     (j == imax[1] && um[1] == 0)))
+	{
+	    cell2d->is_corner = YES;
+	}
+}	/* end set_corner_flag2d */
+
+LOCAL void assign_nb_frac(Front *front,
+			 CELL_PART *cell_part,
+			 CELL_INFO_2D *cell2d,
+			 int *icoords,
+			 int *top_gmax,
+			 int dim,
+			 int n)
+{
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int l,m;	
+	int ipn[MAXD];
+	int ic, icn;
+	int nr,ns;
+
+	ic = d_index(icoords,top_gmax,dim);
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 3; ++m)
+	{
+	    if (cell2d->nb_frac[l][m] == 0.0) continue;
+	    dirs[0] = dir[0][l];
+	    dirs[1] = dir[1][m];
+	    FT_AdjTopGridIcoords(front,icoords,dirs,ipn);
+	    icn = d_index(ipn,top_gmax,dim);
+	    cell_part[icn].vol_new[n] += cell2d->nb_frac[l][m];
+	    if (icn != ic)
+	    {
+		nr = cell_part[icn].nr_new;
+		cell_part[icn].icn_new[nr] = ic;
+		cell_part[icn].nr_new++;
+		ns = cell_part[ic].ns_new;
+                cell_part[ic].icn_new_send[ns] = icn;
+		cell_part[ic].ns_new++;
+	    }
+	}
+	
+}	/* end assign_nb_frac */
+
+LOCAL void set_cell_comp1d(
+	CELL_INFO_1D *cell1d,
+	int *icoords,
+	int *top_gmax,
+	int *top_comp,
+	int *comp_gmax,
+	int *comp_comp,
+	double *comp_L,
+	double *comp_h)
+{
+	int i,ii,l;
+	int ic,icc;
+	
+	i = icoords[0];
+	ic = d_index(icoords,top_gmax,1);
+	cell1d->cell_comp = top_comp[ic];
+	cell1d->nv = 0;
+	for (l = 0; l < 3; ++l)
+	{
+	    cell1d->nb_flag[l] = NO;
+	    cell1d->nb_frac[l] = 0.0;
+	}
+	for (ii = 0; ii < 2; ++ii)
+	{
+	    cell1d->icrds[ii][0] = i + ii - 1;
+	    cell1d->crds[ii][0] = comp_L[0] + (i + ii - 1)*comp_h[0];
+	    icc = d_index(cell1d->icrds[ii],comp_gmax,1);
+	    cell1d->comp[ii] = comp_comp[icc];
+	    if (comp_comp[icc] == cell1d->soln_comp) 
+	    {
+		cell1d->nv++;
+		for (l = ii; l < ii+2; ++l)
+		    cell1d->nb_flag[l] = YES;
+	    }
+	}
+}	/* end of set_cell_comp1d */
+
+LOCAL void set_cell_crx1d(
+	Front *front,
+	CELL_INFO_1D *cell1d,
+	int *comp_comp,
+	int *comp_gmax,
+	INTERFACE *comp_grid_intfc)
+{
+	int icc1,icc2;
+	HYPER_SURF *hs;
+	icc1 = d_index(cell1d->icrds[0],comp_gmax,1);
+	icc2 = d_index(cell1d->icrds[1],comp_gmax,1);
+	cell1d->crx_coords[0] = HUGE;
+	if (comp_comp[icc1] != comp_comp[icc2])
+	{
+	    boolean status;
+	    icc1 = d_index(cell1d->icrds[0],comp_gmax,1);
+	    status = FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+		    	cell1d->icrds[0],EAST,comp_comp[icc1],
+			&hs,cell1d->crx_coords);
+	}
+}	/* end of set_cell_crx1d */
+
+LOCAL void set_cell_neighbor1d(
+	Front *front,
+	CELL_INFO_1D *cell1d,
+	int *icoords,
+	int *top_gmax,
+	int *top_comp,
+	COMPONENT comp)
+{
+	int l;
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int ipn[MAXD];
+	int icn;
+ 	for (l = 0; l < 3; ++l)
+	{
+	    if (cell1d->nb_flag[l] == NO) continue;
+	    dirs[0] = dir[0][l];
+	    if (!FT_AdjTopGridIcoords(front,icoords,dirs,ipn))
+		cell1d->nb_flag[l] = NO;
+		icn = d_index(ipn,top_gmax,1);
+		if (top_comp[icn] != comp)
+		    cell1d->nb_flag[l] = NO;
+	}
+}	/* end of set_cell_neighbor1d */
+
+LOCAL void assign_nb_frac1d(
+	Front *front,
+	CELL_PART *cell_part,
+	CELL_INFO_1D *cell1d,
+	int *icoords,
+	int *top_gmax,
+	int n)
+{
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int l;
+	int ipn[MAXD];
+	int ic,icn;
+	int nr,ns;
+	
+	ic = d_index(icoords,top_gmax,1);
+	for (l = 0; l < 3; ++l)
+	{
+	    if (cell1d->nb_frac[l] == 0.0) continue;
+	    dirs[0] = dir[0][l];
+	    FT_AdjTopGridIcoords(front,icoords,dirs,ipn);
+	    icn = d_index(ipn,top_gmax,1);
+            cell_part[icn].vol_new[n] += cell1d->nb_frac[l];
+	    if (ic != icn)
+	    {
+		nr = cell_part[icn].nr_new;
+                cell_part[icn].icn_new[nr] = ic;
+		cell_part[icn].nr_new++;
+		ns = cell_part[ic].ns_new;
+                cell_part[ic].icn_new_send[ns] = icn;
+		cell_part[ic].ns_new++;
+	    }
+	 }
+}	/* end of assign_nb_frac1d  */
+
 EXPORT void FT_ComputeVolumeFraction(
 	Front *front,
 	int num_phases,
@@ -2152,6 +2520,7 @@ EXPORT void FT_ComputeVolumeFraction(
 	double full_cell_vol;
 	GRID_DIRECTION dirs[MAXD];
 	int size;
+	int shift[MAXD];
 
 	if (debugging("trace"))
 	    (void) printf("Entering computeVolumeFraction()\n");
@@ -2185,12 +2554,14 @@ EXPORT void FT_ComputeVolumeFraction(
 	size = 1;
 	for (i = 0; i < dim; ++i)
 	{
-	    lm[i] = (lbuf[i] == 0) ? 0 : 1;
-	    um[i] = (ubuf[i] == 0) ? 0 : 1;
+	    lm[i] = (lbuf[i] == 0) ? 0 : 2;
+	    um[i] = (ubuf[i] == 0) ? 0 : 2;
             imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
             imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : top_gmax[i] - ubuf[i];
 	    size *= (top_gmax[i] + 1);
+	    shift[i] = (lbuf[i] == 0) ? 1 : 0;
 	}
+
 	for (ic = 0; ic < size; ++ic)
 	{
 	    cell_part[ic].nr_new = 0;
@@ -2202,8 +2573,7 @@ EXPORT void FT_ComputeVolumeFraction(
 	    }
 	}
 
-      for (n = 0; n < num_phases; ++n)
-      {
+      	for (n = 0; n < num_phases; ++n)
 	switch (dim)
 	{
 	case 1:
@@ -2213,26 +2583,8 @@ EXPORT void FT_ComputeVolumeFraction(
 	    {
 		icoords[0] = i;
 		ic = d_index(icoords,top_gmax,dim);
-		cell1d.cell_comp = top_comp[ic];
-		cell1d.nv = 0;
-	    	for (l = 0; l < 3; ++l)
-		{
-		    cell1d.nb_flag[l] = NO;
-		    cell1d.nb_frac[l] = 0.0;
-		}
-	    	for (ii = 0; ii < 2; ++ii)
-		{
-		    cell1d.icrds[ii][0] = i + ii - 1;
-		    cell1d.crds[ii][0] = comp_L[0] + (i + ii - 1)*comp_h[0];
-		    icc = d_index(cell1d.icrds[ii],comp_gmax,dim);
-		    cell1d.comp[ii] = comp_comp[icc];
-		    if (comp_comp[icc] == cell1d.soln_comp) 
-		    {
-		    	cell1d.nv++;
-			for (l = ii; l < ii+2; ++l)
-			    cell1d.nb_flag[l] = YES;
-		    }
-		}
+		set_cell_comp1d(&cell1d,icoords,top_gmax,top_comp,
+				comp_gmax,comp_comp,comp_L,comp_h);	
 		if (cell1d.nv == 0 || cell1d.nv == 2)
 		{
 		    if (top_comp[ic] == comps[n])
@@ -2241,45 +2593,12 @@ EXPORT void FT_ComputeVolumeFraction(
 		    }
 		    continue;
 		}
-		icc1 = d_index(cell1d.icrds[0],comp_gmax,dim);
-		icc2 = d_index(cell1d.icrds[1],comp_gmax,dim);
-		cell1d.crx_coords[0] = HUGE;
-		if (comp_comp[icc1] != comp_comp[icc2])
-		{
-		    boolean status;
-		    icc1 = d_index(cell1d.icrds[0],comp_gmax,dim);
-		    status = FT_CoordsAtGridCrossing(front,comp_grid_intfc,
-		    		cell1d.icrds[0],EAST,comp_comp[icc1],
-				&hs,cell1d.crx_coords);
-		}
-	    	for (l = 0; l < 3; ++l)
-		{
-		    if (cell1d.nb_flag[l] == NO) continue;
-		    dirs[0] = dir[0][l];
-		    if (!FT_AdjTopGridIcoords(front,icoords,dirs,ipn))
-		    	cell1d.nb_flag[l] = NO;
-		    icn = d_index(ipn,top_gmax,dim);
-		    if (top_comp[icn] != comps[n])
-		    	cell1d.nb_flag[l] = NO;
-		}
+		set_cell_crx1d(front,&cell1d,comp_comp,comp_gmax,
+				comp_grid_intfc);
+	  	set_cell_neighbor1d(front,&cell1d,icoords,top_gmax,top_comp,
+				comps[n]); 
 		cell_length(&cell1d);
-		for (l = 0; l < 3; ++l)
-		{
-		    if (cell1d.nb_frac[l] == 0.0) continue;
-		    dirs[0] = dir[0][l];
-		    FT_AdjTopGridIcoords(front,icoords,dirs,ipn);
-		    icn = d_index(ipn,top_gmax,dim);
-                    cell_part[icn].vol_new[n] += cell1d.nb_frac[l];
-		    if (ic != icn)
-		    {
-		    	nr = cell_part[icn].nr_new;
-                    	cell_part[icn].icn_new[nr] = ic;
-		    	cell_part[icn].nr_new++;
-		    	ns = cell_part[ic].ns_new;
-                    	cell_part[ic].icn_new_send[ns] = icn;
-		    	cell_part[ic].ns_new++;
-		    }
-		}
+		assign_nb_frac1d(front,cell_part,&cell1d,icoords,top_gmax,n);
 	    }
 	    break;
 	case 2:
@@ -2291,33 +2610,8 @@ EXPORT void FT_ComputeVolumeFraction(
 		icoords[0] = i;
 		icoords[1] = j;
 		ic = d_index(icoords,top_gmax,dim);
-		cell2d.cell_comp = top_comp[ic];
-		cell2d.nv = 0;
-		cell2d.orphan = 0.0;
-		cell2d.is_corner = NO;
-	    	for (l = 0; l < 3; ++l)
-	    	for (m = 0; m < 3; ++m)
-		{
-		    cell2d.nb_flag[l][m] = NO;
-		    cell2d.nb_frac[l][m] = 0.0;
-		}
-	    	for (ii = 0; ii < 2; ++ii)
-	    	for (jj = 0; jj < 2; ++jj)
-		{
-		    cell2d.icrds[ii][jj][0] = i + ii - 1;
-		    cell2d.icrds[ii][jj][1] = j + jj - 1;
-		    cell2d.crds[ii][jj][0] = comp_L[0] + (i + ii - 1)*comp_h[0];
-		    cell2d.crds[ii][jj][1] = comp_L[1] + (j + jj - 1)*comp_h[1];
-		    icc = d_index(cell2d.icrds[ii][jj],comp_gmax,dim);
-		    cell2d.comp[ii][jj] = comp_comp[icc];
-		    if (comp_comp[icc] == cell2d.soln_comp) 
-		    {
-		    	cell2d.nv++;
-			for (l = ii; l < ii+2; ++l)
-			for (m = jj; m < jj+2; ++m)
-			    cell2d.nb_flag[l][m] = YES;
-		    }
-		}
+		set_cell_comp2d(front,&cell2d,icoords,shift);
+		
 		if (cell2d.nv == 0 || cell2d.nv == 4)
 		{
 		    if (top_comp[ic] == comps[n])
@@ -2326,80 +2620,15 @@ EXPORT void FT_ComputeVolumeFraction(
 		    }
 		    continue;
 		}
-	    	for (ii = 0; ii < 2; ++ii)
-		{
-		    icc1 = d_index(cell2d.icrds[0][ii],comp_gmax,dim);
-		    icc2 = d_index(cell2d.icrds[1][ii],comp_gmax,dim);
-		    cell2d.crx_coords[0][ii][0] = cell2d.crx_coords[0][ii][1] 
-		    			= HUGE;
-		    if (comp_comp[icc1] != comp_comp[icc2])
-		    {
-		    	FT_CoordsAtGridCrossing(front,comp_grid_intfc,
-		    		cell2d.icrds[0][ii],EAST,comp_comp[icc1],
-				&hs,cell2d.crx_coords[0][ii]);
-		    }
-		    icc1 = d_index(cell2d.icrds[ii][0],comp_gmax,dim);
-		    icc2 = d_index(cell2d.icrds[ii][1],comp_gmax,dim);
-		    cell2d.crx_coords[1][ii][0] = cell2d.crx_coords[1][ii][1] 
-		    			= HUGE;
-		    if (comp_comp[icc1] != comp_comp[icc2])
-		    {
-		    	FT_CoordsAtGridCrossing(front,comp_grid_intfc,
-		    		cell2d.icrds[ii][0],NORTH,comp_comp[icc1],
-				&hs,cell2d.crx_coords[1][ii]);
-		    }
-		}
-	    	for (l = 0; l < 3; ++l)
-	    	for (m = 0; m < 3; ++m)
-		{
-		    if (cell2d.nb_flag[l][m] == NO) continue;
-		    dirs[0] = dir[0][l];
-		    dirs[1] = dir[1][m];
-		    if (!FT_AdjTopGridIcoords(front,icoords,dirs,ipn))
-		    	cell2d.nb_flag[l][m] = NO;
-		    icn = d_index(ipn,top_gmax,dim);
-		    if (top_comp[icn] != comps[n])
-		    	cell2d.nb_flag[l][m] = NO;
-		}
-		if ((i == imin[0] || i == imax[0]) && 
-		    (j == imin[1] || j == imax[1]))
-		    cell2d.is_corner = YES;
+		set_cell_crx2d(front,&cell2d);
+		set_cell_neighbor2d(front,&cell2d,icoords,comps[n]);
+		set_corner_flag2d(&cell2d,icoords,imin,imax,lm,um);
 		cell_area(&cell2d);
-		for (l = 0; l < 3; ++l)
-		for (m = 0; m < 3; ++m)
-		{
-		    if (cell2d.nb_frac[l][m] == 0.0) continue;
-		    dirs[0] = dir[0][l];
-		    dirs[1] = dir[1][m];
-		    FT_AdjTopGridIcoords(front,icoords,dirs,ipn);
-		    icn = d_index(ipn,top_gmax,dim);
-		    cell_part[icn].vol_new[n] += cell2d.nb_frac[l][m];
-		    if (icn != ic)
-		    {
-		    	nr = cell_part[icn].nr_new;
-		    	cell_part[icn].icn_new[nr] = ic;
-		    	cell_part[icn].nr_new++;
-		    	ns = cell_part[ic].ns_new;
-                    	cell_part[ic].icn_new_send[ns] = icn;
-		    	cell_part[ic].ns_new++;
-		    }
-		}
+		assign_nb_frac(front,cell_part,&cell2d,icoords,top_gmax,dim,n);
 		if (cell2d.orphan != 0.0)
 		{
-		    if (!find_nearest_ring2_cell_with_comp(icoords,ipn,
-		    		top_gmax,top_comp,comps[n]))
-		    {
-		    	printf("Cannot find parent cell in ring 2!\n");
-			clean_up(ERROR);
-		    }
-		    icn = d_index(ipn,top_gmax,dim);
-		    cell_part[icn].vol_new[n] += cell2d.orphan;
-		    nr = cell_part[icn].nr_new;
-		    cell_part[ic].icn_new[nr] = icn;
-		    cell_part[icn].nr_new++;
-		    ns = cell_part[ic].ns_new;
-                    cell_part[ic].icn_new_send[ns] = icn;
-		    cell_part[ic].ns_new++;
+		    /* Orphan volume is added to opposite phase */
+		    cell_part[ic].vol_new[(n+1)%2] += cell2d.orphan;
 		}
 	    }
 	    break;
@@ -2416,26 +2645,15 @@ EXPORT void FT_ComputeVolumeFraction(
 	    (void) printf("Unknown dimension\n");
 	    clean_up(ERROR);
 	}
-      }
 
-	/*
-	FT_ParallelExchGridStructArrayBuffer((POINTER)cell_part,front,
-				sizeof(CELL_PART));
-	*/
-	if (first)
-	{
-	    for (i = 0; i < size; ++i)
-	    {
-		cell_part[i].vol_old[0] = cell_part[i].vol_new[0];
-		cell_part[i].vol_old[1] = cell_part[i].vol_new[1];
-	    }
-	}
+	if (dim != 1)
+	    exchange_cell_partition(cell_part,grid_intfc,front);
 	first = NO;
 	if (debugging("trace"))
 	    (void) printf("Leaving computeVolumeFraction()\n");
 }	/* end computeVolumeFraction */
 
-static boolean find_nearest_ring2_cell_with_comp(
+LOCAL boolean find_nearest_ring2_cell_with_comp(
 	int *icoords,
 	int *ipn,
 	int *top_gmax,
@@ -2588,6 +2806,12 @@ static void cell_area(
 	else if (cell->nv == 2)
 	{
 	    double area_sum = 0.0;
+	    if (cell->is_side)
+	    {
+	    	cell->nb_frac[1][1] = (cell->cell_comp == cell->soln_comp) ?
+			cell->full_cell_vol : 0.0;
+	    	return;
+	    }
 	    for (i = 0; i < 4; ++i)
 	    {
 	    	if (cell->comp[0][0] == cell->soln_comp &&
@@ -2668,22 +2892,12 @@ static void cell_area(
 	    }
 	    if (rotate_vfrac)
 	    {
-		if (debugging("DD"))
-		{
-		    printf("cell->cell_comp = %d cell->soln_comp = %d\n",
-			cell->cell_comp,cell->soln_comp);
-		    printf("area_sum = %20.14f\n",area_sum);
-		    printf("half_vol = %20.14f\n",0.5*cell->full_cell_vol);
-		}
 	    	if ((cell->cell_comp != cell->soln_comp &&
 		     area_sum > 0.5*cell->full_cell_vol) ||
 		    (cell->cell_comp == cell->soln_comp &&
 		     area_sum < 0.5*cell->full_cell_vol))
 		{
 		    double lambda = 0.5*cell->full_cell_vol/area_sum;
-		    if (debugging("DD"))
-		    	printf("Case caught: half cell vol = %20.14f\n",
-		    		0.5*cell->full_cell_vol);
 		    for (i = 0; i < 3; ++i)
 		    for (j = 0; j < 3; ++j)
 		    {
@@ -2862,3 +3076,135 @@ static void cell_length(
 	    }
 	}
 }	/* end cell_length */
+
+LOCAL int local_to_global(int,int,int*,int*,int*);
+LOCAL int global_to_local(int,int,int*,int*,int*);
+
+LOCAL void exchange_cell_partition(
+	CELL_PART *cell_part,
+	INTERFACE *grid_intfc,
+	Front *front)
+{
+	int ggmax[MAXD];
+        RECT_GRID *top_grid = &topological_grid(grid_intfc);
+	int *top_gmax = top_grid->gmax;
+        int *lbuf = front->rect_grid->lbuf;
+        int *ubuf = front->rect_grid->ubuf;
+	int imin[MAXD],imax[MAXD];
+	int i,j,l,dim = top_grid->dim;
+	PP_GRID         *pp_grid = front->pp_grid;
+	int		*G = pp_grid->gmax;
+	int		me[MAXD];
+	int		myid;
+	int 		*iwidth[MAXD];
+	int		ibase[MAXD];
+	int 		icoords[MAXD];
+	int		ic,*icc,nc;
+	int		lm[MAXD],um[MAXD];
+
+	myid = pp_mynode();
+	find_Cartesian_coordinates(myid,pp_grid,me);
+	for (i = 0; i < dim; ++i)
+	{
+            imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+            imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : top_gmax[i] - ubuf[i];
+	    lm[i] = (lbuf[i] == 0) ? 0 : 2;
+	    um[i] = (ubuf[i] == 0) ? 0 : 2;
+	    FT_VectorMemoryAlloc((POINTER*)&iwidth[i],G[i],sizeof(int));
+	    for (j = 0; j < G[i]; ++j)  
+		iwidth[i][j] = 0;
+	    iwidth[i][me[i]] = (me[i] == 0) ? imax[i]+1 : imax[i]-imin[i]+1;
+	    pp_global_imax(iwidth[i],G[i]);
+	}
+	for (i = 0; i < dim; ++i)
+	{
+	    ibase[i] = 0;
+	    for (j = 0; j < me[i]; ++j)
+		ibase[i] += iwidth[i][j];
+	    if (me[i] != 0)
+		ibase[i] -= imin[i];
+	    ggmax[i] = top_gmax[i] + ibase[i];
+	}
+	pp_global_imax(ggmax,dim);
+
+	for (i = imin[0]-lm[0]; i <= imax[0]+um[0]; ++i)
+	for (j = imin[1]-lm[1]; j <= imax[1]+um[1]; ++j)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    ic = d_index(icoords,top_gmax,dim);
+
+	    icc = cell_part[ic].icn_old;
+	    nc = cell_part[ic].nr_old;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = local_to_global(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_new;
+	    nc = cell_part[ic].nr_new;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = local_to_global(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_old_send;
+	    nc = cell_part[ic].ns_old;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = local_to_global(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_new_send;
+	    nc = cell_part[ic].ns_new;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = local_to_global(icc[l],dim,top_gmax,ggmax,ibase);
+	}
+	FT_ParallelExchGridStructArrayBuffer((POINTER)cell_part,front,
+				sizeof(CELL_PART));
+	for (i = 0; i <= top_gmax[0]; ++i)
+	for (j = 0; j <= top_gmax[1]; ++j)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    ic = d_index(icoords,top_gmax,dim);
+
+	    icc = cell_part[ic].icn_old;
+	    nc = cell_part[ic].nr_old;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = global_to_local(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_new;
+	    nc = cell_part[ic].nr_new;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = global_to_local(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_old_send;
+	    nc = cell_part[ic].ns_old;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = global_to_local(icc[l],dim,top_gmax,ggmax,ibase);
+	    icc = cell_part[ic].icn_new_send;
+	    nc = cell_part[ic].ns_new;
+	    for (l = 0; l < nc; ++l)
+		icc[l] = global_to_local(icc[l],dim,top_gmax,ggmax,ibase);
+	}
+}	/* end exchange_cell_partition */
+
+LOCAL int local_to_global(
+	int ic,
+	int dim,
+	int *lgmax,
+	int *ggmax,
+	int *ibase)
+{
+	int i,icoords[MAXD];
+
+	invert_to_icoords(ic,icoords,lgmax,dim);
+	for (i = 0; i < dim; ++i)
+	    icoords[i] += ibase[i];
+	return d_index(icoords,ggmax,dim);
+}	/* end local_to_global */
+
+LOCAL int global_to_local(
+	int ic,
+	int dim,
+	int *lgmax,
+	int *ggmax,
+	int *ibase)
+{
+	int i,icoords[MAXD];
+
+	invert_to_icoords(ic,icoords,ggmax,dim);
+	for (i = 0; i < dim; ++i)
+	    icoords[i] -= ibase[i];
+	return d_index(icoords,lgmax,dim);
+}	/* end global_to_local */

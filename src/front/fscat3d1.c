@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "fscatter"
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 struct _POINT_LIST {
 	POINT              *p;
@@ -1585,7 +1585,8 @@ LOCAL	boolean f_intfc_communication3d1(
 			         0.0, -1.0,  0.0,
 			         0.0,  0.0, -1.0};
 
-	DEBUG_ENTER(f_intfc_communication3d1)
+	if (debugging("trace"))
+	    (void) printf("Entering f_intfc_communication3d1()\n");
 
 	set_floating_point_tolerance1(fr->rect_grid->h);
 	sav_copy = copy_intfc_states();
@@ -1709,7 +1710,8 @@ LOCAL	boolean f_intfc_communication3d1(
 comm_exit:
 	set_copy_intfc_states(sav_copy);
 	set_current_interface(sav_intfc);
-	DEBUG_LEAVE(f_intfc_communication3d1)
+	if (debugging("trace"))
+	    (void) printf("Leaving f_intfc_communication3d1()\n");
 	return status;
 }	/*end f_intfc_communication3d1 */
 
@@ -1922,7 +1924,8 @@ LOCAL boolean buffer_extension3d1(
 {
 	RECT_GRID	*gr = computational_grid(intfc);
 
-	DEBUG_ENTER(buffer_extension3d1)
+	if (debugging("trace"))
+	    (void) printf("Entering buffer_extension3d1()\n");
 
 	set_current_interface(intfc);
 
@@ -1935,67 +1938,77 @@ LOCAL boolean buffer_extension3d1(
 	                  "append_adj_intfc_to_buffer1() failed\n");
 	}
 
-	DEBUG_LEAVE(buffer_extension3d1)
+	if (debugging("trace"))
+	    (void) printf("Leaving buffer_extension3d1()\n");
 	return status;
 }	/*end buffer_extension3d1*/
 
-EXPORT	void	shift_interface(
+EXPORT	void shift_interface(
 	INTERFACE *intfc,
 	double     T,
 	int       dir)
 {
 	POINT   *p;
 	SURFACE **s;
+	NODE	**n;
+	CURVE	**c;
 	TRI     *t;
+	BOND	*b;
 	int     i;
 
-	DEBUG_ENTER(shift_interface)
+	if (debugging("trace"))
+	    (void) printf("Entering shift_interface()\n");
 
-	if (DEBUG)
+	/* Reset sort status of all points on interface */
+	intfc_node_loop(intfc,n)
+	    sorted((*n)->posn) = NO;
+
+	intfc_curve_loop(intfc,c)
+	    curve_bond_loop(*c,b)
+	    	sorted(b->end) = NO;
+
+	intfc_surface_loop(intfc,s)
+	    surf_tri_loop(*s,t)
+		for (i = 0; i < 3; ++i)
+		    sorted(Point_of_tri(t)[i]) = NO;
+
+	/* Shift points on interface */
+	intfc_node_loop(intfc,n)
 	{
-	    char dname[1024];
-	    static int ntimes[3];
-	    (void) printf("Shifting interface %llu by %g in direction %d\n",
-			  (long long unsigned int)interface_number(intfc),T,dir);
-	    print_interface(intfc);
-	    (void) sprintf(dname,"fscatter/shift_interface/Into%d.%d.%s%g",
-			   ntimes[dir],dir,(T>0.0) ? "+" : "",T);
-	    ++ntimes[dir];
-	    gview_plot_interface(dname,intfc);
+	    p = (*n)->posn;
+	    Coords(p)[dir] += T;
+	    p->pshift[dir] += T;
+	    sorted(p) = YES;	    
 	}
-
-		/* Shift points on interface */
-	(void) next_point(intfc,NULL,NULL,NULL);/*reset sort status*/
-	for (s = intfc->surfaces; s && *s; ++s)
+	intfc_curve_loop(intfc,c)
+	{
+	    curve_bond_loop(*c,b)
+	    {
+		p = b->end;
+		if (sorted(p)) continue;
+	    	Coords(p)[dir] += T;
+	    	p->pshift[dir] += T;
+	    	sorted(p) = YES;	    
+	    }
+	}
+	intfc_surface_loop(intfc,s)
 	{
 	    for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
 	    {
 		for (i = 0; i < 3; ++i)
 		{
 		    p = Point_of_tri(t)[i];
-		    if (sorted(p) == NO)
-	                Coords(p)[dir] += T;
+		    if (sorted(p)) continue;
+	            Coords(p)[dir] += T;
+		    p->pshift[dir] += T;
 		    sorted(p) = YES;
 		}
 	    }
 	}
 
-	if (DEBUG)
-	{
-	    char dname[1024];
-	    static int ntimes[3];
-	    (void) printf("Interface %llu after shift by %g in direction %d\n",
-			  (long long unsigned int)interface_number(intfc),T,dir);
-	    print_interface(intfc);
-	    (void) sprintf(dname,"fscatter/shift_interface/Outof%d.%d.%s%g",
-			   ntimes[dir],dir,(T>0.0)?"+":"",T);
-	    ++ntimes[dir];
-	    gview_plot_interface(dname,intfc);
-	}
-
-	DEBUG_LEAVE(shift_interface)
-}		/*end periodic_shift_interface*/
-
+	if (debugging("trace"))
+	    (void) printf("Leaving shift_interface()\n");
+}		/*end shift_interface*/
 
 LOCAL 	int append_adj_intfc_to_buffer1(
 	INTERFACE	*intfc,		/* my interface 	       */
@@ -2338,10 +2351,10 @@ EXPORT boolean tri_set_cross_line(
 	double		crx_coord,
 	int		dir)
 {
-	int	i, j, n;
+	int	i,j,n,l,num_bonds;
 	TRI	**tris,*t;
 	POINT	*p;
-	BOND	*b;
+	BOND	*b,*bonds[2];
 	BOND_TRI **btris;
 
     	if (tri_cross_line(tri,crx_coord,dir))
@@ -2351,10 +2364,13 @@ EXPORT boolean tri_set_cross_line(
             p = Point_of_tri(tri)[i];
             if (Boundary_point(p))
             {
-		b = bond_of_boundary_point(p,tri);
-                if (b == NULL) continue;
-                for (btris = Btris(b); btris && *btris; ++btris)
-                {
+		bonds_of_boundary_point(p,tri,bonds,&num_bonds);
+                if (num_bonds == 0) continue;
+		for (l = 0; l < num_bonds; ++l)
+		{
+		  b = bonds[l];
+                  for (btris = Btris(b); btris && *btris; ++btris)
+                  {
                     t = (*btris)->tri;
                     n = set_tri_list_around_point(p,t,&tris,t->surf->interface);
 		    for (j = 0; j < n; ++j)
@@ -2362,6 +2378,7 @@ EXPORT boolean tri_set_cross_line(
 		    	if (tri_cross_line(tris[j],crx_coord,dir))
 			    return YES;
 		    }
+		  }
 		}
 	    }
 	}
@@ -3149,9 +3166,9 @@ LOCAL boolean tri_set_out_domain(
 	int		dir,
 	int		nb)
 {
-	int		i,j,n;
+	int		i,j,n,l,num_bonds;
 	POINT		*p;
-	BOND		*b;
+	BOND		*b,*bonds[2];
 	TRI		**tris,*t;
 	BOND_TRI	**btris;
 
@@ -3162,10 +3179,13 @@ LOCAL boolean tri_set_out_domain(
 	    p = Point_of_tri(tri)[i];
 	    if (Boundary_point(p))
 	    {
-		b = bond_of_boundary_point(p,tri);
-		if (b == NULL) continue;
-		for (btris = Btris(b); btris && *btris; ++btris)
+		bonds_of_boundary_point(p,tri,bonds,&num_bonds);
+		if (num_bonds == 0) continue;
+		for (l = 0; l < num_bonds; ++l)
 		{
+		  b = bonds[l];
+		  for (btris = Btris(b); btris && *btris; ++btris)
+		  {
 		    t = (*btris)->tri;
 		    n = set_tri_list_around_point(p,t,&tris,t->surf->interface);
 		    for (j = 0; j < n; ++j)
@@ -3173,6 +3193,7 @@ LOCAL boolean tri_set_out_domain(
 			if (!tri_out_domain(tris[j],L,U,dir,nb))
 			    return NO;
 		    }
+		  }
 		}
 	    }
 	}
@@ -3976,31 +3997,6 @@ LOCAL COMPONENT buffer_component(
 
 }	/* end buffer_component */
 
-EXPORT	void search_the_point(INTERFACE *intfc)
-{
-	SURFACE **s;
-	TRI *tri;
-	POINT *p;
-	int i;
-
-	for (s = intfc->surfaces; s && *s; ++s)
-	{
-	    for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
-	    		tri = tri->next)
-	    {
-	    	for (i = 0; i < 3; ++i)
-		{
-		    p = Point_of_tri(tri)[i];
-		    if (the_point(p))
-		    {
-		    	printf("The point found on tri:\n");
-			print_tri(tri,intfc);
-		    }
-		}
-	    }
-	}
-}
-
 EXPORT	void cut_surface(
 	SURFACE *surf,
 	boolean (*constr_func)(POINTER,double*), /* Constraint function */
@@ -4354,6 +4350,9 @@ EXPORT 	boolean surfaces_matched(
 	    {
 		return (body_index(s) == body_index(as)) ? YES : NO;
 	    }
+	    else if (wave_type(s) == ELASTIC_BOUNDARY && 
+		     wave_type(as) == ELASTIC_BOUNDARY)
+		return (body_index(s) == body_index(as)) ? YES : NO;
 	    else
 	    	return YES;
 	}

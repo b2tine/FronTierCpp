@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *       Boundary(s);	 testing boundary surface? 
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 LOCAL   int crossings_in_direction1d(CRXING**,int*,GRID_DIRECTION,INTERFACE*);
 LOCAL   int crossings_in_direction2d(CRXING**,int*,GRID_DIRECTION,INTERFACE*);

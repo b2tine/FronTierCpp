@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING	"redist3d"
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 
 enum _SPQ_FLAG {
 	SHORTEST = 0,
@@ -120,8 +120,6 @@ LOCAL 	boolean surface_needs_redist(SURFACE*,RECT_GRID*,TRI_REDIST_PARAMS);
 */
 
 #define MAX_SMOOTH_PARA  500
-
-
 
 double	smooth_min_tri_area = 0.0;
 
@@ -1622,6 +1620,8 @@ LOCAL  boolean redistribute_surface(
 	int	  dim, wc;
 	FILE	  *db_file;
 	double	  coords[3], len;
+	SCALED_REDIST_PARAMS scaled_redist_params;
+	double hmin;
 
 	DEBUG_ENTER(redistribute_surface)
 
@@ -1636,6 +1636,21 @@ LOCAL  boolean redistribute_surface(
 	/* set the tolerance for tri_status */
 	wc = wave_type(s)< FIRST_VECTOR_PHYSICS_WAVE_TYPE ?
 				GENERAL_WAVE : VECTOR_WAVE;
+
+	/* Save for unification in the future
+	hmin = gr->h[0];
+	scaled_redist_params.max_scaled_side_length =
+			sqrt(Max_scaled_tri_side_sqr_length(fr))/hmin;
+	scaled_redist_params.min_scaled_tri_area =
+			sqrt(Min_tri_sqr_area(fr,wc))/sqr(hmin);
+	scaled_redist_params.max_scaled_tri_area = 
+			sqrt(Max_tri_sqr_area(fr,wc))/sqr(hmin);
+	scaled_redist_params.aspect_tol = 4.0;
+
+	redistribute_surf(s,gr,scaled_redist_params);
+	return YES;
+	*/
+
 	max_sqr_area = Max_tri_sqr_area(fr,wc);
 	min_sqr_area = Min_tri_sqr_area(fr,wc);
 	max_sqr_length = Max_scaled_tri_side_sqr_length(fr);
@@ -1735,6 +1750,8 @@ LOCAL  boolean redistribute_surface(
 		                 Coords(Point_of_tri(tri)[Next_m3(nside)])[i]);
 	    midp = Point(coords);
 
+	/*
+	*/
 	    if (!insert_point_in_tri_side(midp,nside,tri,s))
 	    {
 		printf("WARNING redistribute_surface, "
@@ -1762,6 +1779,8 @@ LOCAL  boolean redistribute_surface(
 		
 	    delete_queue = dequeue(tri, delete_queue);
 
+	/*
+	*/
 	    if(!delete_min_side_of_tri(tri,nside,s,&delete_queue,fr))
 	    {
 		printf("WARNING, redistribute_surface, "
@@ -2100,6 +2119,16 @@ LOCAL boolean delete_min_side_of_tri(
 	    for(i=0; i<ntris[k]; i++)
 	    {
 		tris[k][i] = tmp_tris[i];
+	    }
+	}
+	if (ntris[0] + ntris[1] > 12) /* form too small angle */
+        {
+            return YES;
+        }
+	for(k=0; k<2; k++)
+        {
+	    for(i=0; i<ntris[k]; i++)
+	    {
 	        *pq = dequeue(tris[k][i],*pq);
 	    }
 

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	and printing of rectangular grids.
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 /*Local Function Prototypes*/
 LOCAL	double	area_of_rect_grid(const RECT_GRID*);

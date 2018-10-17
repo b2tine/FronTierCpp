@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING    "setb1d"
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 /*
 *				i_set_boundary1d():

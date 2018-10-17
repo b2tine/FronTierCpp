@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include <plotdecs.h>
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 
 typedef struct {

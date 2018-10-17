@@ -32,7 +32,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <iloc.h>
+#include <intfc/iloc.h>
+
+static	double	the_p1[3] = {0.612029,   0.303286,   1.890613};
+static	double	the_p2[3] = {0.620959,   0.349305,   1.875875};
+static	double	the_tri_coords[9] = {0,0,0,0,0,0,0,0,0};
+static	long	the_gindex;
+static	long	the_tri_gindex[3] = {0,0,0};
+static	long	the_bond_gindex[2] = {0,0};
 
 LOCAL 	void 	data_of_point(POINT*,int);
 	
@@ -251,13 +258,12 @@ EXPORT boolean the_tri_rot(TRI *tri)
 
 EXPORT boolean the_tri_with_gindex(TRI *tri)
 {
-	long gindex[3] = {12937, 12938, 14840};
 	int i,j;
 	for (i = 0; i < 3; ++i)
 	{
 	    for (j = 0; j < 3; ++j)
 	    {
-		if (Gindex(Point_of_tri(tri)[i]) == gindex[j])
+		if (Gindex(Point_of_tri(tri)[i]) == the_tri_gindex[j])
 		    break;
 	    }
 	    if (j == 3) return NO;
@@ -270,22 +276,14 @@ EXPORT boolean the_tri(TRI *tri)
 	int i,j;
 	double tol = 1.0e-5;	/* vertices coords must have at least */
 				/* five digits after decimal points */
-
-	double p[3][3] = {{7.086424,   6.177732,  18.731641},
-			  {7.011301,   6.168649,  18.730873},
-			  {7.094202,   6.103728,  18.718782}};
-
-	/*return NO; */
+	POINT *p;
 
 	for (i = 0; i < 3; i++)
 	{
+	    p = Point_of_tri(tri)[i];
 	    for (j = 0; j < 3; j++)
-	    {
-	    	if (fabs(Coords(Point_of_tri(tri)[i])[j] - p[i][j]) > tol)
-		{
-		    return NO;
-		}
-	    }
+	    	if (fabs(Coords(p)[j] - the_tri_coords[i*3+j]) > tol)
+	            return NO;
 	}
 	return YES;
 }	/* end the_tri */
@@ -324,9 +322,11 @@ EXPORT boolean the_side(TRI  *tri)
 
 EXPORT boolean the_bond_with_gindex(BOND *bond)
 {
-	long gindex[2] = {15907, 12804};
-	if (Gindex(bond->start) == gindex[0] &&
-	    Gindex(bond->end) == gindex[1])
+	if (Gindex(bond->start) == the_bond_gindex[0] &&
+	    Gindex(bond->end) == the_bond_gindex[1])
+	    return YES;
+	else if (Gindex(bond->end) == the_bond_gindex[0] &&
+	    Gindex(bond->start) == the_bond_gindex[1])
 	    return YES;
 	else
 	    return NO;
@@ -361,8 +361,10 @@ EXPORT void print_tri_coords(TRI* tri)
 	for (i = 0; i < 3; i++)
 	{
 	    p = Point_of_tri(tri)[i];
-	    printf("%10.6f, %10.6f, %10.6f\n",Coords(p)[0],Coords(p)[1],
+	    printf("%10.6f, %10.6f, %10.6f",Coords(p)[0],Coords(p)[1],
 					Coords(p)[2]);
+	    if (i < 2) printf(",\n");
+	    else printf("\n");
 	}
 }	/* end print_tri_coords */
 
@@ -527,10 +529,7 @@ LOCAL boolean the_point_one(POINT *pt, double *p)
 
 EXPORT boolean the_point(POINT *pt)
 {
-	double	p1[3] = {7.086424, 6.177732, 18.731641};
-	double	p2[3] = {7.086424, 6.177732, 18.731641};
-
-	if(the_point_one(pt,p1) || the_point_one(pt,p2))
+	if(the_point_one(pt,the_p1) || the_point_one(pt,the_p2))
 	    return YES;
 	return NO;
 }
@@ -642,4 +641,251 @@ EXPORT boolean point_on_curve(
 	}
 	return NO;
 }	/* end point_on_curve */
+
+EXPORT boolean I_SearchThePointOnIntfc(INTERFACE *intfc)
+{
+	int i,dim = Dimension(intfc);
+	POINT *p;
+	boolean point_in_intfc = NO;
+
+	if (dim == 2)
+	{
+	    (void) printf(" I_SearchThePointOnIntfc() dim = 2\n");
+	    (void) printf("Coded needed\n");
+	}
+	if (dim == 3)
+	{
+	    SURFACE **s;
+	    TRI *tri;
+	    intfc_surface_loop(intfc,s)
+	    {
+		surf_tri_loop(*s,tri)
+		{
+		    for (i = 0; i < 3; ++i)
+		    {
+			p = Point_of_tri(tri)[i];
+			if (the_point(p))
+			{
+			    (void) printf("Search point found: %f %f %f\n",
+					Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+			    point_in_intfc = YES;
+			}
+		    }
+		}
+	    }
+	}
+	return point_in_intfc;
+}	/* end I_SearchThePointOnIntfc */
+
+EXPORT boolean I_SearchThePointOnSurface(SURFACE *surf)
+{
+	TRI *tri;
+	POINT *p;
+	int i;
+	boolean point_in_surf = NO;
+
+	surf_tri_loop(surf,tri)
+	{
+	    for (i = 0; i < 3; ++i)
+	    {
+		p = Point_of_tri(tri)[i];
+		if (the_point(p))
+		{
+		    (void) printf("Search point found: %f %f %f\n",
+				Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+		    point_in_surf = YES;
+		}
+	    }
+	}
+	return point_in_surf;
+}	/* end I_SearchThePointOnSurface */
+
+EXPORT void I_SetPointGindexForSearch(
+	const long gindex)
+{
+	the_gindex = gindex;
+}	/* end I_SetPointGindexForSearch */
+
+EXPORT void I_SetBondGindexForSearch(
+	const long *bond_gindex)
+{
+	the_bond_gindex[0] = bond_gindex[0];
+	the_bond_gindex[1] = bond_gindex[1];
+}	/* end I_SetBondGindexForSearch */
+
+EXPORT void I_SetTriGindexForSearch(
+	const long *tri_gindex)
+{
+	the_tri_gindex[0] = tri_gindex[0];
+	the_tri_gindex[1] = tri_gindex[1];
+	the_tri_gindex[2] = tri_gindex[2];
+}	/* end I_SetTriGindexForSearch */
+
+EXPORT void I_SetPointCoordsForSearch(
+	const double *coords)
+{
+	the_p1[0] = coords[0];
+	the_p1[1] = coords[1];
+	the_p1[2] = coords[2];
+}	/* end I_SetPointCoordsForSearch */
+
+EXPORT void I_SetTriCoordsForSearch(
+	const double *tri_coords)
+{
+	int i;
+	for (i = 0; i < 9; ++i)
+	    the_tri_coords[i] = tri_coords[i];
+}	/* end I_SetTriCoordsForSearch */
+
+EXPORT boolean I_SearchTheTriOnIntfc(INTERFACE *intfc)
+{
+	int i,dim = Dimension(intfc);
+	boolean tri_in_intfc = NO;
+
+	if (dim == 2)
+	{
+	    (void) printf(" I_SearchThePointOnIntfc() dim = 2\n");
+	    (void) printf("Coded needed\n");
+	}
+	if (dim == 3)
+	{
+	    SURFACE **s;
+	    TRI *tri;
+	    intfc_surface_loop(intfc,s)
+	    {
+		surf_tri_loop(*s,tri)
+		{
+		    if (the_tri(tri))
+		    {
+			(void) printf("Search tri found:\n");
+			print_tri_coords(tri);
+			tri_in_intfc = YES;
+		    }
+		}
+	    }
+	}
+	return tri_in_intfc;
+}	/* end I_SearchTheTriOnIntfc */
+
+EXPORT boolean I_SearchTheBondWithGindexOnIntfc(INTERFACE *intfc)
+{
+	boolean bond_in_intfc = NO;
+
+	CURVE **c;
+	BOND *b;
+	intfc_curve_loop(intfc,c)
+	{
+	    curve_bond_loop(*c,b)
+	    {
+		if (the_bond_with_gindex(b))
+		{
+		    (void) printf("Search bond found:\n");
+		    print_bond(b);
+		    bond_in_intfc = YES;
+		}
+	    }
+	}
+	return bond_in_intfc;
+}	/* end I_SearchTheBondWithGindexOnIntfc */
+
+EXPORT boolean I_SearchTheTriWithGindexOnIntfc(INTERFACE *intfc)
+{
+	int i,dim = Dimension(intfc);
+	boolean tri_in_intfc = NO;
+
+	if (dim == 2)
+	{
+	    (void) printf(" I_SearchThePointOnIntfc() dim = 2\n");
+	    (void) printf("Coded needed\n");
+	}
+	if (dim == 3)
+	{
+	    SURFACE **s;
+	    TRI *tri;
+	    intfc_surface_loop(intfc,s)
+	    {
+		surf_tri_loop(*s,tri)
+		{
+		    if (the_tri_with_gindex(tri))
+		    {
+			(void) printf("Search tri found:\n");
+			print_tri_coords(tri);
+			tri_in_intfc = YES;
+		    }
+		}
+	    }
+	}
+	return tri_in_intfc;
+}	/* end I_SearchTheTriWithGindexOnIntfc */
+
+EXPORT boolean I_SearchTheTriOnSurface(SURFACE *surf)
+{
+	TRI *tri;
+	boolean tri_in_surf = NO;
+
+	surf_tri_loop(surf,tri)
+	{
+	    if (the_tri(tri))
+	    {
+		(void) printf("Search tri found:\n");
+		print_tri_coords(tri);
+		tri_in_surf = YES;
+	    }
+	}
+	return tri_in_surf;
+}	/* end I_SearchTheTriOnSurface */
+
+EXPORT boolean I_SearchTheNodeOnIntfc(INTERFACE *intfc)
+{
+	NODE **n,*node;
+	boolean node_in_intfc = NO;
+	CURVE **c;
+	CURVE **c_in,**c_out;
+
+	intfc_node_loop(intfc,n)
+	{
+	    if (the_point((*n)->posn))
+	    {
+		(void) printf("Search node found:\n");
+		print_node(*n);
+		node = *n;
+		node_in_intfc = YES;
+	    }
+	}
+	intfc_curve_loop(intfc,c)
+	{
+	    if ((*c)->start == node)
+		printf("Curve of node found: node is start\n");
+	    if ((*c)->end == node)
+		printf("Curve of node found: node is start\n");
+	}
+	return node_in_intfc;
+}	/* end I_SearchTheNodeOnIntfc */
+
+EXPORT boolean I_SearchTheNodeWithGindexOnIntfc(INTERFACE *intfc)
+{
+	NODE **n,*node;
+	boolean node_in_intfc = NO;
+	CURVE **c;
+	CURVE **c_in,**c_out;
+
+	intfc_node_loop(intfc,n)
+	{
+	    if (Gindex((*n)->posn) == the_gindex)
+	    {
+		(void) printf("Search node found:\n");
+		print_node(*n);
+		node = *n;
+		node_in_intfc = YES;
+	    }
+	}
+	intfc_curve_loop(intfc,c)
+	{
+	    if ((*c)->start == node)
+		printf("Curve of node found: node is start\n");
+	    if ((*c)->end == node)
+		printf("Curve of node found: node is start\n");
+	}
+	return node_in_intfc;
+}	/* end I_SearchTheNodeOnIntfc */
 

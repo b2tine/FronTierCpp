@@ -48,8 +48,8 @@ typedef POINTER Locstate;
 #include <fvelo.h>
 
 #if defined(USE_HDF4)
-#include <hdf.h>
-#include <mfhdf.h>
+    #include <hdf.h>
+    #include <mfhdf.h>
 #endif
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -220,7 +220,7 @@ typedef struct _SAMPLE SAMPLE;
 
 struct _F_BASIC_DATA {
 	/* Need to assign before calling FT_Init() */
-        int dim;
+    int dim;
 
 	/* The following will get from FT_Init() */
 	char 	in_name[200];
@@ -234,9 +234,9 @@ struct _F_BASIC_DATA {
 	char	restart_state_name[200];
 
 	/* The following are needed before FT_StartUp() */
-        double 	L[MAXD],U[MAXD];
-        int 	gmax[MAXD];
-        int 	boundary[MAXD][2];
+    double 	L[MAXD],U[MAXD];
+    int 	gmax[MAXD];
+    int 	boundary[MAXD][2];
 	size_t 	size_of_intfc_state;
 	GEOMETRY_REMAP coord_system;
 };
@@ -507,18 +507,10 @@ struct _CELL_PART {			/* Cell partition data structure */
 typedef struct _CELL_PART CELL_PART;
 
 struct _Front {
-	
-	F_BASIC_DATA *f_basic;
-
-    RECT_GRID *rect_grid;		/* Grid Info */
+		/* Grid Specification */
+	RECT_GRID *rect_grid;		/* Grid Info */
 	PP_GRID* pp_grid;
-
-	INTERFACE *interf;		/* Interface */
-	INTERFACE *grid_intfc;		/* Grid Interface */
-	INTERFACE *comp_grid_intfc;		/* Grid Interface */
-	INTERFACE *emb_grid_intfc;	/* Grid Interface for embedded bdry */
-	INTERFACE *old_grid_intfc;      /* Grid Interface of previous step*/
-
+	F_BASIC_DATA *f_basic;
 
 		/* advancing the front */
 	void	(*_pre_advance_front)(struct _Front*);
@@ -580,6 +572,7 @@ struct _Front {
 	boolean print_gview_color;
         boolean tan_sec, parab;
         double subgrid_time;
+	double max_scaled_prop_dist; /* maximum propagated scaled distance */
 
 		/* Advancing the Front */
 	int  hyperbolic;
@@ -590,13 +583,7 @@ struct _Front {
 	POINTER extra1;		/* pointer to extra data structure */
 	POINTER extra2;		/* pointer to extra data structure */
 	POINTER extra3;		/* pointer to extra data structure */
-	char *out_name;		/* Directory name of output files */
-	SAMPLE *sample;
-	COMPONENT *hdf_comps[MAXD];	/* Saved for hdf plotting */
-	HDF_MOVIE_VAR *hdf_movie_var;	/* variables for hdf movies */
-	boolean hdf_cut_frame;
-	double cut_L[MAXD],cut_U[MAXD];
-	VTK_MOVIE_VAR *vtk_movie_var;	/* variables for vtk movies */
+
 	int  (*init_topology_of_new_interface)(struct _Front*,struct _Front*);
 	struct _F_WAVE_CAPTURE *_f_wave_capture;
 	void (*_init_propagate)(struct _Front*);
@@ -605,6 +592,8 @@ struct _Front {
 	void (*curve_propagate)(struct _Front*,POINTER,CURVE*,CURVE*,double);
 	int  (*node_propagate)(struct _Front*,POINTER,NODE*,NODE*,RPROBLEM**,
 			       double,double*,NODE_FLAG,POINTER);
+	int  (*_contact_node_propagate)(struct _Front*,POINTER,NODE*,NODE*,RPROBLEM**,
+			       double,double*,NODE_FLAG);
 	void (*_point_propagate)(struct _Front*,POINTER,POINT*,POINT*,
 			        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 	void (*_point_propagate_along_wall)(struct _Front*,POINTER,POINT*,
@@ -642,6 +631,7 @@ struct _Front {
 				double*,double*);
 	void (*surface_propagate)(struct _Front*,struct _Front*,POINTER,
 				double,double*);
+	void (*_scatter_front_extra)(struct _Front*);
 
 	/* The following is a new set of propagation family */
 	void (*_surface_propagate)(struct _Front*,POINTER,SURFACE*,SURFACE*,
@@ -687,10 +677,10 @@ struct _Front {
 				double*);
 	int  (*is_nzn_bdry)(double,double,COMPONENT,CURVE*);
 
-    POINTER open_end_params;
-    /* input: params,coords,comp; output: bdry_type,state */
-    void (*open_end_func)(struct _Front*,POINTER,int*,COMPONENT,
-            int,int,int*,Locstate);
+	POINTER open_end_params;
+	/* input: params,coords,comp; output: bdry_type,state */
+	void (*open_end_func)(struct _Front*,POINTER,int*,COMPONENT,
+				int,int,int*,Locstate);
 
 		/*Locstate allocation and clearing*/
 
@@ -718,7 +708,20 @@ struct _Front {
 
 		/* (the rest of the front consists of pointers) */
 
+	INTERFACE *interf;		/* Interface */
+	INTERFACE *grid_intfc;		/* Grid Interface */
+	INTERFACE *comp_grid_intfc;		/* Grid Interface */
+	INTERFACE *emb_grid_intfc;	/* Grid Interface for embedded bdry */
+	INTERFACE *old_grid_intfc;      /* Grid Interface of previous step*/
 	boolean extrapolation_permitted;
+
+	char *out_name;		/* Directory name of output files */
+	SAMPLE *sample;
+	COMPONENT *hdf_comps[MAXD];	/* Saved for hdf plotting */
+	HDF_MOVIE_VAR *hdf_movie_var;	/* variables for hdf movies */
+	boolean hdf_cut_frame;
+	double cut_L[MAXD],cut_U[MAXD];
+	VTK_MOVIE_VAR *vtk_movie_var;	/* variables for vtk movies */
 
 };
 typedef struct _Front Front;
@@ -1353,39 +1356,45 @@ typedef struct _F_INIT_DATA F_INIT_DATA;
 #define enforce_flow_specified_states(init)				\
     (f_init_data(init)->_EnforceFlowSpecifedStates)
 
-struct _LEVEL_FUNC_PACK {
+struct _LEVEL_FUNC_PACK
+{
 	/* Not needed for restart initialization */
-        COMPONENT neg_component;
-        COMPONENT pos_component;
+    COMPONENT neg_component;
+    COMPONENT pos_component;
 
 	/* For level set initialization */
-        double (*func)(POINTER,double*);
-        POINTER func_params;
+    double (*func)(POINTER,double*);
+    POINTER func_params;
 
 	/* For point array initialization */
 	int num_points;
 	double **point_array;
 	boolean closed_curve;
 	int direction;
-	/* For initialization by reading SDL file */
+
+    /* For initialization by reading SDL file */
 	boolean read_sdl_input;
 	char *sdl_name;
-	/* For initialization by reading VTK file */
-	boolean read_vtk_input;
+
+    /* For initialization by reading VTK file */
+    boolean read_vtk_input;
 	char *vtk_name;
 	int wave_type;
 
 	boolean is_mono_hs;
 	int num_mono_hs;
-	/* For constrained level set initialization */
-        boolean (*constr_func)(POINTER,double*);
-        POINTER constr_params;
-	/* For constrained level set initialization */
-        boolean (*string_func)(INTERFACE*,SURFACE*,POINTER,int);
-        POINTER string_params;
+
+    /* For constrained level set initialization */
+    boolean (*constr_func)(POINTER,double*);
+    POINTER constr_params;
+
+    /* For constrained level set initialization */
+    boolean (*string_func)(INTERFACE*,SURFACE*,POINTER,int);
+    POINTER string_params;
 	
 	boolean set_3d_bdry;
 	boolean attach_string;
+
 };
 typedef struct _LEVEL_FUNC_PACK LEVEL_FUNC_PACK;
 
@@ -1570,6 +1579,6 @@ typedef struct _HDF_frame_data HDF_frame_data;
 }
 #endif
 
-#include <fuserint.h>
-#include <fprotos.h>
+#include <front/fuserint.h>
+#include <front/fprotos.h>
 #endif /* !defined(_FDECS_H) */

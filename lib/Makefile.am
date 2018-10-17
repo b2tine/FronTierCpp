@@ -1,6 +1,7 @@
 SUBDIRS = gmock
 
-AM_CPPFLAGS = -I$(top_srcdir)/include/front \
+AM_CPPFLAGS = -I $(top_srcdir)/include \
+			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
 			  -I$(top_srcdir)/include/util @HDF_CFLAGS@ @MPI_CFLAGS@
 

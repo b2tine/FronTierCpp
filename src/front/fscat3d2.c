@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #define DEBUG_STRING    "fscatter"
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	INTERFACE *cut_buf_interface2(INTERFACE*,int,int,int*,int*);
@@ -700,6 +700,7 @@ EXPORT   void  merge_curves(
 	NODE      **n,**nodes;
 	int       found_node;
 	boolean	  first_match,last_match;
+	static int count = 0;
  
 merge_curve:
 	for (c = intfc->curves; c && *c; c++)
@@ -714,6 +715,7 @@ merge_curve:
 		if (use_gindex && Gindex(*curve) != Gindex(*c))
 		    continue;
        
+		count++;
 		/* find merged curve in the head of the curve */
 		first_match = last_match = NO;
 		bs = (*c)->first;
@@ -862,7 +864,14 @@ merge_curve:
 	    }
 	    if(!found_node)
 	    {
-		delete_node(*n);
+		if (!delete_node(*n))
+		{
+		    (void) printf("In merge_curves() delete_node() failed!\n");
+		    (void) printf("Global index of node->posn: %ld\n",
+					Gindex((*n)->posn));
+		    (void) print_node(*n);
+		    clean_up(ERROR);
+		}
 		n--;
 	    }
 	}

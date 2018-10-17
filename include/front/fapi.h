@@ -903,6 +903,16 @@ extern "C" {
 
    IMPORT  boolean FT_FrontContainWaveType(Front *front , int w_type);
 
+/*! \fn boolean FT_FrontContainHsbdryType(Front *front, int hsbdry_type)
+ *  \ingroup QUERY
+    \brief This function tells if front contains hyper-surface of certain
+     type. It returns YES if it does, NO if it does not contain.
+    \param front @b in	Pointer the front.
+    \param w_type @b in Type of hyper-surface boundary type for the hyper-surface.
+ */
+
+   IMPORT  boolean FT_FrontContainHsbdryType(Front *front , int hsbdry_type);
+
 /*! \fn HYPER_SURF *FT_RectBoundaryHypSurf(INTERFACE *intfc, int wave_type, int dir, int side)
  *  \ingroup QUERY
     \brief This function looks for a boundary hyper surface (curve in 2D and
@@ -1446,8 +1456,7 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
     \param surf @b out surface made by this function
 */
 
-    IMPORT void FT_MakeCylinderSurf(Front *front,double *center,double radius, double height, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf);
-
+    IMPORT void FT_MakeCylinderSurf(Front *front,double *center,double radius, double height, int idir, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf);
 
 /*! \fn void FT_MakeAnnularCylinderSurf(Front *front,double *center,double r_out,double r_in, double height, COMPONENT neg_comp,COMPONENT pos_comp,int idir,int w_type,int refinement_level,boolean extend_to_buffer,SURFACE **surf)
  *  \ingroup INSERT
@@ -1469,14 +1478,13 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
 
     IMPORT void FT_MakeAnnularCylinderSurf(Front *front,double *center,double r_out,double r_in,double height, COMPONENT neg_comp,COMPONENT pos_comp,int idir,int w_type,int refinement_level,boolean extend_to_buffer,SURFACE **surf);
 
-
-/*! \fn void FT_MakeConeSurf(Front *front,double *center,double slope, double height, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf)
+/*! \fn void FT_MakeConeSurf(Front *front,double *center,double slope,double height, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf)
  *  \ingroup INSERT
     \brief This function inserts a cone surface into the front with given
      information of its parameters, components, and wave type.
     \param front @b inout Pointer to the front in which surface is inserted.
-    \param center @b in vertex of the cone.
-    \param slope @b in slope of the cone.
+    \param center @b in center of the cone base.
+    \param slope @b in slope of the cone side.
     \param height @b in height of the cone.
     \param neg_comp @b in index for negative side of the surface (inner side).
     \param pos_comp @b in index for positive side of the surface (outer side).

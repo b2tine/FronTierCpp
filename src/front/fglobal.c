@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 struct _GTRI
 {
@@ -51,7 +51,7 @@ LOCAL boolean point_out_domain(POINT*,INTERFACE*,double*,double*);
 LOCAL void merge_with_nb_surf_gindex(INTERFACE*,int,long*,int*,GTRI**);
 LOCAL void merge_with_nb_curve_gindex(INTERFACE*,int,long*,int*,GBOND**);
 LOCAL void exchange_surf_gindex(Front*);
-LOCAL void exchange_curve_gindex(Front*);
+//LOCAL void exchange_curve_gindex(Front*);
 
 LOCAL boolean point_out_domain(
 	POINT *p,
@@ -374,7 +374,7 @@ LOCAL void merge_with_nb_curve_gindex(
 	}
 }	/* end merge_with_nb_curve_gindex */
 
-LOCAL void exchange_surf_gindex(
+EXPORT void exchange_surf_gindex(
 	Front *front)
 {
 	INTERFACE *intfc = front->interf;
@@ -584,7 +584,7 @@ LOCAL void exchange_surf_gindex(
 	}
 }	/* end exchange_surf_gindex */
 
-LOCAL void exchange_curve_gindex(
+EXPORT void exchange_curve_gindex(
 	Front *front)
 {
 	INTERFACE *intfc = front->interf;

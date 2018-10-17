@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #define DEBUG_STRING	"hypunr"
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 #define Cross_pro(p0,p1,p2)						   \
 	((Coords(p1)[0] - Coords(p0)[0])*(Coords(p2)[1] - Coords(p0)[1]) - \

@@ -33,8 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #define DEBUG_STRING    "setb3d"
-#include <int.h>
-#include <iprotos.h>
+#include <intfc/int.h>
+#include <intfc/iprotos.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	int	set_boundary_surface_components(INTERFACE*,INTERFACE*,

@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *		n = (n_equiv/EQUIV_COMPS_LEN + 1);
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 #define	E_comps(intfc)		((EQUIV_COMPS *) (intfc)->e_comps)
 

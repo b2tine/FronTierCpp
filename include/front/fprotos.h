@@ -263,6 +263,7 @@ IMPORT	int	idir_of_dir(GRID_DIRECTION);
 IMPORT	void  	set_point_gindex(Front*);
 IMPORT	void  	set_surface_gindex(Front*);
 IMPORT	void  	set_curve_gindex(Front*);
+IMPORT  void	exchange_curve_gindex(Front*);
 
         /* fgrid.c*/
 IMPORT	int  	count_grid_intfc_crossings(INTERFACE*);
@@ -475,9 +476,11 @@ IMPORT	void	debug_front(const char*,const char*,Front*);
 IMPORT	void	f_fprint_max_front_speed_info(FILE*,Front*);
 IMPORT  void    print_front_output(Front*,char*);
 IMPORT	void	show_front_output(Front*,char*,boolean);
+
 #if defined(USE_HDF4)
 IMPORT	void	plot_hdf_data(POINTER,Front*,HDF_plot_data*);
-#endif
+#endif /* defined(USE_HDF4) */
+
 IMPORT	const char *propagation_status_as_string(NODE_PROPAGATION_STATUS);
 IMPORT	const char *redistribution_direction_as_string(REDISTRIBUTION_DIRECTION);
 IMPORT	const char *untangle_status_as_string(int);
@@ -703,6 +706,7 @@ IMPORT	void	delete_subdomain_curves(INTERFACE*);
 IMPORT  boolean    merge_interface(Front*,int);
 IMPORT  void    clip_to_interior_region(INTERFACE*,int*,int*);
 IMPORT  void    copy_interface_into(INTERFACE*,INTERFACE*);
+EXPORT 	boolean check_for_cut_nodes(INTERFACE*);
 
 	/* fscat3d1.c*/
 IMPORT	CURVE	*matching_curve(CURVE*,P_LINK*,int);
@@ -850,6 +854,11 @@ IMPORT	void	eliminate_small_loops(INTERFACE*,double,double,CROSS**);
 
 	/*funtan3d.c*/
 IMPORT	boolean scalar_unravel_3d(Front*,CROSS**);
+IMPORT	boolean retriangulate_surf_along_c_curves(SURFACE*);
+IMPORT  boolean split_surfaces_at_c_curves(INTERFACE*);
+IMPORT  boolean split_surf_with_colors(SURFACE*, int);
+IMPORT  boolean delete_surfaces_on_side(INTERFACE*,double,int,int,int);
+IMPORT	int	color_bounded_surf_pieces(SURFACE*);
 
 	/* fuserintfc.c */
 IMPORT	F_USER_INTERFACE *f_user_hook(int);

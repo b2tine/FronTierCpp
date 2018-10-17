@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 LOCAL void mark_topolinked_tris(TRI*,TRI***,int*);
 LOCAL SURFACE *merge_surfs_exist(INTERFACE*);
@@ -41,7 +41,6 @@ EXPORT void merge_surfaces(
 	boolean to_merge = NO;
 	boolean preserve_neighbors = YES;
 
-	printf("Entering merge_surfaces()\n");
 	intfc_surface_loop(intfc,s)
 	{
 	    surf_tri_loop(*s,tri)
@@ -57,8 +56,6 @@ EXPORT void merge_surfaces(
 	    }
 	    num_tri = surf->num_tri;
 	    mark_topolinked_tris(tri,&tri_linked_list,&num_tri);
-	    printf("surf->num_tri = %d linked num_tri = %d\n",
-			surf->num_tri,num_tri);
 	    surf_tri_loop(surf,tri)
 	    {
 		if (sorted(tri) == NO)
@@ -67,7 +64,6 @@ EXPORT void merge_surfaces(
 	    for (s = surf->merge_surfs; s && *s; ++s)
 		delete_from_pointers(surf,&(*s)->merge_surfs);
 	    surf->merge_surfs = NULL;
-	    printf("Step 1: surf->num_tri = %d\n",surf->num_tri);
 	    
 	    break;
 	}

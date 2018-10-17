@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	angles, areas, vector and scalar products.
 */
 
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 	/* LOCAL Function Prototypes */
 LOCAL	BDRY_SIDE rect_bdry_side_for_surface(int*,int*,SURFACE*,RECT_GRID*);
@@ -3272,8 +3272,8 @@ EXPORT boolean node_in_interface(
 }	/* end node_in_interface */
 
 /* WLSP method for normal and curvature */
-#define         MAX_RING1_PTS            20
-#define         MAX_RING2_PTS            100
+#define         MAX_RING1_PTS            40
+#define         MAX_RING2_PTS            200
 LOCAL void polyfit2d_lhf(double*,double*,double*,int,int,int);
 LOCAL void polyfit3d_lhf(double*,int*,double*,double*,double*,int,double*,
                                         int,int,int);
@@ -4227,22 +4227,11 @@ EXPORT boolean WLSP_compute_normal3d(
         POINT *pc,*pt;
         int np1,np2;
         int i,j;
-
-        double tang[6],nrm1st[3],nrm[3],nrm_t[3],nrm_v[50][3];
-        double xs_v[50][3],xss_v[50][2],nrm_vs[3];
-        double PT[3][3],xss_r[50][2];
-        double ws_row[50],w;
-
-        int degree = 2;
-        double temp,ncoeffs[]={3,6,10,15,21,28};
-        double bs[50][2];
-        double x_t[3],coeffs[20];
-        double cs[10][2]={0.0},cond;
-        double curvature;
+        double nrm1st[3],nrm[3];
         int xs_dim, nrm_coor_dim;
-        double xs[60][3],prcurvs[2],maxprdir[3];
+        double xs[200][3],prcurvs[2],maxprdir[3];
         int deg;
-        double nrm_coor[60][3];       
+        double nrm_coor[200][3];       
  
         pc = p; /*point to current point */
         PointArrayRing2(pc,hse,hs,&np1,&np2,pts_ring1,pts_ring2);
@@ -4793,30 +4782,41 @@ EXPORT	void  unit_vector(
 	    uvec[i] = vec[i]/length;
 }	/* end unit_vector */
 
-EXPORT BOND *bond_of_boundary_point(
+EXPORT void bonds_of_boundary_point(
 	POINT *p,
-	TRI *tri)
+	TRI *tri,
+	BOND **bonds,
+	int *nb)
 {
 	int i,n;
 	TRI **tris;
 	BOND *b;
 	n = set_tri_list_around_point(p,tri,&tris,tri->surf->interface);
+	*nb = 0;
 	for (i = 0; i < 3; ++i)
 	{
 	    if (is_side_bdry(tris[0],i))
 	    {
 		b = Bond_on_side(tris[0],i);
 		if (p == b->start || p == b->end)
-		    return b;
+		{
+		    bonds[(*nb)++] = b;
+		    break;
+		}
 	    }
+	}
+	for (i = 0; i < 3; ++i)
+	{
 	    if (is_side_bdry(tris[n-1],i))
 	    {
 		b = Bond_on_side(tris[n-1],i);
 		if (p == b->start || p == b->end)
-		    return b;
+		{
+		    bonds[(*nb)++] = b;
+		    break;
+		}
 	    }
 	}	
-	return NULL;
 }	/* end bond_of_boundary_point */
 
 EXPORT  void linear_22_equation(
@@ -4829,3 +4829,17 @@ EXPORT  void linear_22_equation(
         soln[0] = Det2d(c,b)/denom;
         soln[1] = Det2d(a,c)/denom;
 }       /* end linear_22_equation */
+
+EXPORT void invert_to_icoords(
+        int ic,
+        int *icoords,
+        int *gmax,
+        int dim)
+{
+        int i;
+        for (i = 0; i < dim; ++i)
+        {
+            icoords[i] = ic%(gmax[i] + 1);
+            ic = (ic - icoords[i])/(gmax[i] + 1);
+        }
+}       /* end invert_to_icoords */

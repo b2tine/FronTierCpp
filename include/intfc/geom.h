@@ -31,8 +31,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_IGEOM_H)
 #define _IGEOM_H
 
-#include <cdecs.h>
-#include <vmalloc.h>
+#include <util/cdecs.h>
+#include <util/vmalloc.h>
 #include <triangledefs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -67,17 +67,17 @@ typedef	enum {
 	EXPANDED_DUAL_GRID = 4
 } GRID_TYPE;
 
-#define d_index1d(ix,gmax)       \
+#define d_index1d(ix,gmax)       					\
         (ix)
 
-#define d_index2d(ix,iy,gmax)                                        \
+#define d_index2d(ix,iy,gmax)                                        	\
         ((iy)*((gmax)[0]+1)+(ix))
 
 #define d_index3d(ix,iy,iz,gmax)                                        \
         (((iz)*((gmax)[1]+1)+(iy))*((gmax)[0]+1)+(ix))
 
-#define d_index(icoords,gmax,dim)                               \
-        ((dim) == 1 ? d_index1d((icoords[0]),(gmax)) :          \
+#define d_index(icoords,gmax,dim)                               	\
+        ((dim) == 1 ? d_index1d((icoords[0]),(gmax)) :          	\
          (dim) == 2 ? d_index2d((icoords[0]),(icoords[1]),(gmax)) :     \
          d_index3d((icoords[0]),(icoords[1]),(icoords[2]),(gmax)))	
 
@@ -155,7 +155,7 @@ struct _RECT_GRID {
 	double *edges[3];	/* Coordinate cell edges */
 	double *centers[3];	/* Coordinate cell centers */
 	double *dh[3];	   	/* Coordindate cell widths */
-	double *glstore;	   	/* Storage for edges, centers and dh arrays */
+	double *glstore;	/* Storage for edges, centers and dh arrays */
 	int   variable_mesh[3]; /* YES for variable dh in ith direction */
 
 	struct _REMAP {
@@ -309,13 +309,13 @@ typedef struct {
 } FOURIER_POLY;
 
 typedef struct {
-	int   num_modes;
-	int   dim;
-	double **nu;
-	double z0;
-	double croSectAtz;
-    double **A,**B,**C,**D, *phase;
-	double *L,*U;
+        int   num_modes;
+        int   dim; 
+        double **nu;
+        double z0;
+        double croSectAtz;
+        double **A,**B,**C,**D, *phase;
+        double *L,*U;
 } FOURIER_POLY_MD;
 
 /*
@@ -521,14 +521,15 @@ typedef struct {
 	double center[3];
 	double radius;
 	double height;
+	int idir;
 } CYLINDER_PARAMS;
 
 typedef struct {
-	double center[3];
-	double radius1;
-	double radius2;
-	double height;
-    int idir;
+        double center[3];
+        double radius1;
+        double radius2;
+        double height;
+	int idir;
 } ACYLINDER_PARAMS;
 
 typedef struct {

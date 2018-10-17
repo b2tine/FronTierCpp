@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define DEBUG_STRING "isect3d"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <iloc.h>
+#include <intfc/iloc.h>
 
 
 	/* LOCAL Function Declarations */

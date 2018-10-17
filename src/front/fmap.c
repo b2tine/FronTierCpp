@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <fdecs.h>		/* includes int.h, table.h */
+#include <front/fdecs.h>		/* includes int.h, table.h */
 
 LOCAL 	boolean build_linear_element(INTRP_CELL*,double*);
 LOCAL 	void collect_cell_ptst(INTRP_CELL*,int*,double*,COMPONENT,Front*,
@@ -376,7 +376,8 @@ EXPORT	void	FT_Init(
 
 	f_basic->ReadFromInput = NO;
 	f_basic->RestartRun = NO;
-    	f_basic->dim = 1;
+	if (f_basic->dim == 0)
+    	    f_basic->dim = 1;
 
 	argc--;
 	argv++;
@@ -396,11 +397,11 @@ EXPORT	void	FT_Init(
 	    case 'i':
 	    case 'I':
 	    	f_basic->ReadFromInput = YES;
-	    	zero_scalar(in_name,200);
-                strcpy(in_name,argv[1]);
-                argc -= 2;
-		argv += 2;
-		break;
+	    	zero_scalar(in_name,200); //in_name is pointing to f_basic->in_name  
+            strcpy(in_name,argv[1]);
+            argc -= 2;
+            argv += 2;
+            break;
 	    case 'r':
 	    case 'R':
 	    	f_basic->RestartRun = YES;
@@ -525,6 +526,8 @@ EXPORT	void FrontFreeAll(
 EXPORT	void FT_MakeGridIntfc(
 	Front *front)
 {
+	Table *T;
+        COMPONENT *comps;
 	if (Tracking_algorithm(front) == SIMPLE_TRACKING)
 	    return;
 	if (debugging("grid_line_comp"))
@@ -532,6 +535,10 @@ EXPORT	void FT_MakeGridIntfc(
 	communicate_default_comp(front);
 	front->grid_intfc = make_grid_intfc(front->interf,
 			EXPANDED_DUAL_GRID,NULL);
+	/* communicate the components */
+        T = table_of_interface(front->grid_intfc);
+        comps = T->components;
+        FT_ParallelExchGridIntArrayBuffer(comps,front);
 }	/* end FT_MakeGridIntfc */
 
 EXPORT	void FT_MakeCompGridIntfc(
@@ -714,10 +721,12 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-        int j;
+
+    int j;
 	int crx_index;
 	INTERFACE *grid_intfc = front->grid_intfc;
-	static CRXING *crxs[MAX_NUM_CRX];
+	
+    CRXING *crxs[MAX_NUM_CRX];
 	int i,nc,dim = grid_intfc->dim;
 	POINT *p;
 	BOND *b;
@@ -778,7 +787,7 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	return YES;
 }	/* end FT_NormalAtGridCrossing */
 
-#define         MAX_NUM_VERTEX_IN_CELL          20
+#define MAX_NUM_VERTEX_IN_CELL 20
 EXPORT	boolean FT_StateStructAtGridCrossing(
 	Front *front,
 	INTERFACE *grid_intfc,
@@ -789,18 +798,11 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-        int j;
-	int crx_index;
-	static CRXING *crxs[MAX_NUM_CRX];
-	int i,nc,dim = grid_intfc->dim;
+	int crx_index = 0;
+	CRXING *crxs[MAX_NUM_CRX];
 
-	crx_index = 0;
-	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
-	if (nc == 0) return NO;
-	if (dir == EAST || dir == NORTH || dir == UPPER)
-	    crx_index = 0;
-	else
-	    crx_index = nc - 1;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+    if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
 	if (comp == negative_component(*hs))
@@ -814,9 +816,12 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 			"component does not match\n");
 	    return NO;
 	}
-	for (i = 0; i < dim; ++i)
+	
+    int dim = grid_intfc->dim;
+	for (int i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-	return YES;
+
+    return YES;
 }	/* end FT_StateStructAtGridCrossing */
 
 EXPORT	boolean FT_StateStructAtGridCrossing2(
@@ -838,10 +843,6 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 	crx_index = 0;
 	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
 	if (nc == 0) return NO;
-	if (dir == EAST || dir == NORTH || dir == UPPER)
-	    crx_index = 0;
-	else
-	    crx_index = nc - 1;
 
 	*hs = crxs[crx_index]->hs;
 	if (comp == negative_component(*hs))
@@ -909,24 +910,10 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 {
 	int icoords[MAXD];
 	INTERFACE *grid_intfc = front->grid_intfc;
-	static INTRP_CELL *blk_cell;
 	RECT_GRID *gr = &topological_grid(grid_intfc);
 	int i,dim = gr->dim;
 	extrapolation_permitted = front->extrapolation_permitted;
 
-	if (blk_cell == NULL)
-	{
-	    scalar(&blk_cell,sizeof(INTRP_CELL));
-	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,
-						sizeof(double));
-	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
-	    uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
-	    lin_cell_tol = 1.0;
-	    for (i = 0; i < dim; ++i)
-	    	lin_cell_tol *= 0.00001*gr->h[i];
-	}
 
 	if (!rect_in_which(coords,icoords,gr))
 	{
@@ -947,8 +934,25 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    	return NO;
 	    }
 	}
-	collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,
+
+	static INTRP_CELL *blk_cell;
+	if (blk_cell == NULL)
+    {
+        scalar(&blk_cell,sizeof(INTRP_CELL));
+        uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+        uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+        bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+        bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
+        uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
+
+        lin_cell_tol = 1.0;
+        for (i = 0; i < dim; ++i)
+            lin_cell_tol *= 0.00001*gr->h[i];
+    }  
+	
+    collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,
 				get_state);
+
 	if (blk_cell->is_bilinear)
 	{
 	    if (debugging("the_pt"))
@@ -971,13 +975,23 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	}
 	else
 	{
-	    static Locstate state;
 	    if (debugging("the_pt"))
-		printf("Using nearest_intfc_state()\n");
+		    printf("Using nearest_intfc_state()\n");
+
+        /*
+	    static Locstate state;
 	    if (state == NULL)
-		scalar(&state,front->sizest);
+		    scalar(&state,front->sizest);
+        */
+
+        Locstate state;
+        scalar(&state,front->sizest);
+
 	    nearest_intfc_state(coords,comp,front->grid_intfc,state,NULL,NULL);
 	    *ans = get_state(state);
+
+        free(state);
+
 	    return YES;
 	}
 }	/* end FT_IntrpStateVarAtCoords */
@@ -1298,10 +1312,12 @@ LOCAL void collect_cell_ptst(
 	double *L = gr->L;
 	double *h = gr->h;
 	COMPONENT *gr_comp = T->components;
-	static COMPONENT cell_comp1d[2];
-	static COMPONENT cell_comp2d[2][2];
-	static COMPONENT cell_comp3d[2][2][2];
-	int i,j,k,index,nv,nc;
+	
+    COMPONENT cell_comp1d[2];
+	COMPONENT cell_comp2d[2][2];
+	COMPONENT cell_comp3d[2][2][2];
+	
+    int i,j,k,index,nv,nc;
 	CRXING *crx,*crxs[MAX_NUM_CRX];
 	GRID_DIRECTION dir;
 	int ic[MAXD];
@@ -1856,6 +1872,10 @@ EXPORT void FT_ReadSpaceDomain(
 	    case 'm':
 	    	f_basic->boundary[i][0] = MIXED_TYPE_BOUNDARY;
 	    	break;
+	    case 'O':
+	    case 'o':
+	    	f_basic->boundary[i][0] = OPEN_BOUNDARY;
+	    	break;
 	    default:
 	    	printf("Unknown boundary!\n");
 		clean_up(ERROR);
@@ -1888,6 +1908,10 @@ EXPORT void FT_ReadSpaceDomain(
 	    case 'M':
 	    case 'm':
 	    	f_basic->boundary[i][1] = MIXED_TYPE_BOUNDARY;
+	    	break;
+	    case 'O':
+	    case 'o':
+	    	f_basic->boundary[i][1] = OPEN_BOUNDARY;
 	    	break;
 	    default:
 	    	printf("Unknown boundary!\n");
@@ -2598,6 +2622,7 @@ LOCAL void FrontPreAdvance2d(
 	double *torque,**force;
 	double t,f[MAXD];
 	double dt = front->dt;
+	double old_vel[2];
 
 	if (debugging("rigid_body"))
 	    (void) printf("Entering FrontPreAdvance()\n");
@@ -2657,6 +2682,8 @@ LOCAL void FrontPreAdvance2d(
 	    if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
 	    {
 		index = body_index(*c);
+		for (i = 0; i < dim; ++i)
+		    old_vel[i] = center_of_mass_velo(*c)[j];
 		if (motion_type(*c) == PRESET_MOTION ||
 		    motion_type(*c) == PRESET_COM_MOTION ||
 		    motion_type(*c) == PRESET_TRANSLATION ||
@@ -2706,7 +2733,8 @@ LOCAL void FrontPreAdvance2d(
                     angular_velo(*c) += dt*torque[index]/mom_inertia(*c);
                 }
                 for (i = 0; i < dim; ++i)
-                    center_of_mass(*c)[i] += dt*center_of_mass_velo(*c)[i];
+                    center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + 
+							old_vel[i])*0.5;
                 if (debugging("rigid_body"))
                 {
                     printf("Body index: %d\n",index);
@@ -2761,6 +2789,8 @@ LOCAL void FrontPreAdvance3d(
 	double t[MAXD],f[MAXD];
 	double dt = front->dt;
 	double coef[3],temp[4][4];
+	int *flags;
+	double old_vel[3];
 
 	if (debugging("rigid_body"))
 	    (void) printf("Entering FrontPreAdvance()\n");
@@ -2777,6 +2807,7 @@ LOCAL void FrontPreAdvance3d(
 
 	bi_array(&torque,max_body_index,MAXD,FLOAT);
 	bi_array(&force,max_body_index,MAXD,FLOAT);
+	uni_array(&flags,max_body_index,INT);
 	for (i = 0; i < max_body_index; ++i)
 	{
 	    for (j = 0; j < dim; ++j)
@@ -2785,6 +2816,22 @@ LOCAL void FrontPreAdvance3d(
 	    	force[i][j] = 0.0;
 	    }
 	}
+
+	/* count the number of clips for each rigid body */
+	for (i = 0; i < max_body_index; ++i)
+		flags[i] = 0;
+	for (s = intfc->surfaces; s && *s; ++s)
+	{
+	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+		flags[body_index(*s)] = 1;
+	}
+	pp_global_isum(flags, max_body_index);
+	for (s = intfc->surfaces; s && *s; ++s)
+	{
+	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+		num_clips(*s) = flags[body_index(*s)];
+	}
+	/* end of counting the number of clips */
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -2818,6 +2865,8 @@ LOCAL void FrontPreAdvance3d(
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
 	    {
 		index = body_index(*s);
+		for (i = 0; i < dim; ++i)
+		    old_vel[i] = center_of_mass_velo(*s)[i];
 		if (motion_type(*s) == PRESET_MOTION ||
 		    motion_type(*s) == PRESET_COM_MOTION ||
                     motion_type(*s) == PRESET_TRANSLATION)
@@ -3040,7 +3089,8 @@ LOCAL void FrontPreAdvance3d(
 
 		}
 		for (i = 0; i < dim; ++i)
-                    center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
+                    center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + 
+							old_vel[i])*0.5;
 		if (debugging("rigid_body"))
 		{
 		    printf("Body index: %d\n",index);
@@ -3264,7 +3314,17 @@ EXPORT void FT_AddTimeStepToCounter(Front *front)
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 
-EXPORT	void FT_SetTimeStep(
+
+/* FT_SetTimeStep() summary:
+ *
+ *      Next time step determined by maximum speed of
+ *      the previous step, assuming the propagation is
+ *      hyperbolic and  is not dependent on the second
+ *      order derivatives of the interface such as
+ *      curvature, etc.
+ */
+
+ EXPORT	void FT_SetTimeStep(
 	Front *front)
 {
 	double fcrds[MAXD];
@@ -3789,7 +3849,8 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    wave_type(hs) != MOVABLE_BODY_BOUNDARY &&
 	    wave_type(hs) != GROWING_BODY_BOUNDARY &&
 	    wave_type(hs) != ICE_PARTICLE_BOUNDARY &&
-	    wave_type(hs) != ELASTIC_BOUNDARY)
+	    wave_type(hs) != ELASTIC_BOUNDARY &&
+	    wave_type(hs) != ELASTIC_STRING)
 	    return NO;
 
 	if (dim != 1)
@@ -3968,3 +4029,23 @@ EXPORT	boolean FT_FrontContainWaveType(
 	status = pp_max_status(status);
 	return status;
 }	/* end FT_FrontContainContact */
+
+EXPORT  boolean FT_FrontContainHsbdryType(
+	Front *front, 
+	int hsbdry_type)
+{
+	INTERFACE *intfc = front->interf;
+	boolean status;
+	int dim = FT_Dimension();
+	CURVE **c;
+
+	status = NO;
+	if (dim == 2) return status;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == hsbdry_type)
+		status = YES;
+	}
+	status = pp_max_status(status);
+	return status;
+}

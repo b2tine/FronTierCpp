@@ -8,6 +8,7 @@
 /*! \defgroup SURFACE    SURFACE Functions
 /*! \defgroup INTERFACE  INTERFACE Functions
 /*! \defgroup QUERY  	 QUERY Functions
+/*! \defgroup DEBUG-TOOL Debugging Used Functions
  **/
 
 #include <int.h>
@@ -494,6 +495,194 @@ extern "C" {
  */
 
    IMPORT  NODE* I_NodeOfPoint(INTERFACE *intfc, POINT *point);
+
+/*! \fn boolean I_SearchThePointOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a point with given coordinates
+     through the entire interface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchThePointOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchTheTriOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a tri with given coordinates
+     through the entire interface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheTriOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchTheTriWithGindexOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a tri with given global indices
+     through the entire interface structure. The global indices 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheTriWithGindexOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchTheBondOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a bond with given coordinates
+     through the entire interface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheBondOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchTheBondWithGindexOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a bond with given global indices
+     through the entire interface structure. The global indices 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheBondWithGindexOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchThePointOnSurface(SURFACE *surf)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a point with given coordinates
+     through the surface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the surface, otherwise it returns NO.
+    \param surf @b in	Pointer to the surface.
+ */
+
+   IMPORT  boolean I_SearchThePointOnSurface(SURFACE *surf);
+
+/*! \fn boolean I_SearchTheTriOnSurface(SURFACE *surf)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a tri with given coordinates
+     through the surface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the surface, otherwise it returns NO.
+    \param surf @b in	Pointer to the surface.
+ */
+
+   IMPORT  boolean I_SearchTheTriOnSurface(SURFACE *surf);
+
+/*! \fn boolean I_SearchThePointOnCurve(CURVE *curve)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a point with given coordinates
+     through the curve structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the curve, otherwise it returns NO.
+    \param curve @b in	Pointer to the curve.
+ */
+
+   IMPORT  boolean I_SearchThePointOnCurve(CURVE *curve);
+
+/*! \fn boolean I_SearchTheBondOnCurve(CURVE *curve)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a bond with given coordinates
+     through the curve structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the curve, otherwise it returns NO.
+    \param curve @b in	Pointer to the curve.
+ */
+
+   IMPORT  boolean I_SearchTheBondOnCurve(CURVE *curve);
+
+/*! \fn void I_SetPointGindexForSearch(const long gindex)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the global index of a point for search
+    \param gindex @b in	Global index of the point.
+ */
+
+   IMPORT  void I_SetPointGindexForSearch(const long gindex);
+
+/*! \fn void I_SetBondGindexForSearch(const long *gindex)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the global indices of a bond for search
+    \param gindex @b in	Array of global indices of the bond.
+ */
+
+   IMPORT  void I_SetBondGindexForSearch(const long *gindex);
+
+/*! \fn void I_SetTriGindexForSearch(const long *gindex)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the global indices of a tri for search
+    \param gindex @b in	Array of global indices of the tri.
+ */
+
+   IMPORT  void I_SetTriGindexForSearch(const long *gindex);
+
+/*! \fn void I_SetPointCoordsForSearch(const double *coords)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the coordinates of a point for search
+    \param coords @b in	Pointer to the array of coordinates.
+ */
+
+   IMPORT  void I_SetPointCoordsForSearch(const double *coords);
+
+/*! \fn void I_SetTriCoordsForSearch(const double *coords)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the coordinates of a tri for search
+    \param coords @b in	Pointer to the array of coordinates.
+ */
+
+   IMPORT  void I_SetTriCoordsForSearch(const double *coords);
+
+/*! \fn boolean I_SetTriForSearch(const double *coords1,const double coords2,const double coords3)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the coordinates of a tri for search
+    \param coords1 @b in Pointer to the coordinates of vertex 1.
+    \param coords2 @b in Pointer to the coordinates of vertex 2.
+    \param coords3 @b in Pointer to the coordinates of vertex 3.
+ */
+
+   IMPORT  void I_SetTriForSearch(
+	const double *coords1,
+	const double *coords2,
+	const double *coords3);
+
+/*! \fn boolean I_SetBondForSearch(const double *coords1,const double *coords2)
+ *  \ingroup DEBUG-TOOL
+    \brief This function set the coordinates of a bond for search
+    \param coords1 @b in Pointer to the coordinates of end point 1.
+    \param coords2 @b in Pointer to the coordinates of end point 2.
+ */
+
+   IMPORT  void I_SetBondForSearch(
+	const double *coords1,
+	const double *coords2);
+
+/*! \fn boolean I_SearchTheNodeOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a node with given coordinates
+     through the entire interface structure. The coordinates 
+     must be set first using I_SearchThePointOnIntfc(). 
+     The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheNodeOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchTheNodeWithGindexOnIntfc(INTERFACE *intfc)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a node with given global index
+     through the entire interface structure. The global index 
+     must be set first using I_SetPointGindexForSearch(). 
+     The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in	Pointer to the interface.
+ */
+
+   IMPORT  boolean I_SearchTheNodeWithGindexOnIntfc(INTERFACE *intfc);
+
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif

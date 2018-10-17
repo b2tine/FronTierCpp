@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	interface not covered in the intfc library routines.
 */
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 	/* LOCAL Function Declarations */
 LOCAL	int	merge_cross_with_node(CURVE*,ORIENTATION,CROSS*,COMPONENT*,
@@ -1127,7 +1127,8 @@ label_2:
 	        (curve_length(*c) < perim_tol))
 	    {
 	    	if (debugging("small_loops"))
-	    	    (void) printf("Deleting small loop %llu\n",(long long unsigned int)curve_number(*c));
+	    	    (void) printf("Deleting small loop %llu\n",
+			(long long unsigned int)curve_number(*c));
 		(void) delete_curve(*c);
 		goto label_2;
 	    }
@@ -1135,7 +1136,8 @@ label_2:
 		    (curve_length(*c) < 4.0*perim_tol)) /*TOLERANCE*/
 	    {
 	    	if (debugging("small_loops"))
-	    	    (void) printf("Deleting small loop %llu\n",(long long unsigned int)curve_number(*c));
+	    	    (void) printf("Deleting small loop %llu\n",
+			(long long unsigned int)curve_number(*c));
 	    	m = (*c)->start;
 	    	(void) delete_curve(*c);
 	    	if (node_type(m) == CLOSED_NODE) (void) delete_node(m);

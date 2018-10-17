@@ -24,7 +24,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define DEBUG_STRING "i_tris_set"
 
-#include <iloc.h>
+#include <intfc/iloc.h>
+
+#define	MAX_TANGLED_TRIS		800
+#define	MAX_TEST_TRIS			3000
 
 typedef  struct {
 	TRI		*tri1;
@@ -36,11 +39,11 @@ typedef  struct {
 }	TRI_PAIR;
 
 typedef  struct {
-	TRI		**tris;
-	int		*sides;
-	POINT		**pts;
+	TRI		*tris[MAX_TANGLED_TRIS];
+	int		sides[MAX_TANGLED_TRIS];
+	POINT		*pts[MAX_TANGLED_TRIS];
 	int		n_sides;
-	double		*tnor;
+	double		tnor[MAXD];
 	ORIENTATION	orient;
 	int		max_side;
 }	NULL_LOOP;
@@ -681,14 +684,14 @@ EXPORT	int	bound_tris_set(
 	TRI	*tri, *nbtri;
 
 	num_out_tris = 0;
-	for(i=0; i<nt; i++)
+	for (i=0; i<nt; i++)
 	{
             tri = tris[i];
-	    for(j=0; j<3; j++)
+	    for (j=0; j<3; j++)
 	    {
 		nbtri = Tri_on_side(tris[i],j);
-		if(!tri_recorded(nbtri,out_tris,num_out_tris) &&
-		   !tri_recorded(nbtri,tris,nt))
+		if (!tri_recorded(nbtri,out_tris,num_out_tris) &&
+		    !tri_recorded(nbtri,tris,nt))
 		    out_tris[num_out_tris++] = nbtri;
 	    }
 	}
@@ -1089,9 +1092,6 @@ EXPORT  boolean tri_in_grid_block(
 	return bflag;
 }
 
-#define	MAX_TANGLED_TRIS		800
-#define	MAX_TEST_TRIS			3000
-
 EXPORT  int	sect_tris_in_box(
 	TRI		**sect_tris,
 	int		max_sect_tris,
@@ -1461,15 +1461,12 @@ EXPORT	double	get_comm_pt_fac()
 	return	comm_pt_fac;
 }
 
-#define	MAX_TRI_LISTS	10
+#define	MAX_TRI_LISTS	20
 
 /*
-assume the point on the ending of null sides are not boundary points,
-remove all nbtris Entering remove_tri_from_surface from tri array nbtris .
-usually, nbtris are the removed tris, tris are the remaining tris. 
-tris and nbtris can have the same tris. 
-nbtris == NULL and num_nbtris == NULL will ignore the nbtris.
-Note: change the order of tris in tris.
+Assume the point on the ending vertex of null side is not a boundary point,
+remove all nbtris by calling remove_tri_from_surface().
+Those nbtris are to be removed, tris are the remaining ones. 
 */
 EXPORT	boolean sep_common_point_from_loop(
 	TRI		**tris,
@@ -1492,15 +1489,15 @@ EXPORT	boolean sep_common_point_from_loop(
 
 	n_nbtris = num_nbtris == NULL ? 0 : *num_nbtris;
 	
-	for(i=0; i<num_tris; i++)
+	for (i=0; i<num_tris; i++)
 	{
 	    tri = tris[i];
-	    for(j=0; j<3; j++)
+	    for (j=0; j<3; j++)
 		sorted(Point_of_tri(tri)[j]) = NO;
 	}
 
 	sep_comm_flag = NO;
-	for(i=0; i<num_tris; i++)
+	for (i=0; i<num_tris; i++)
 	{
 	    tri_in = tris[i];
 	    for(j=0; j<3; j++)
@@ -1510,9 +1507,9 @@ EXPORT	boolean sep_common_point_from_loop(
 		if(sorted(p))
 		    continue;
 		
-		/* only when the point is starting or ending point of a tri, 
-		   we test it */
-	        if(!(Tri_on_side(tri_in,j) == NULL || 
+		/* Only when the point is the starting or ending point 
+		   of a tri, we test it */
+	        if (!(Tri_on_side(tri_in,j) == NULL || 
 		     Tri_on_side(tri_in,Prev_m3(j)) == NULL))
 		    continue;
 		
@@ -1520,7 +1517,7 @@ EXPORT	boolean sep_common_point_from_loop(
 	
 		num_tri_lists = 0;
 		/* find all the tri lists related to point p */
-		for(k=0; k<num_tris; k++)
+		for (k=0; k<num_tris; k++)
 		{
 		    tri = tris[k];
 
@@ -1550,11 +1547,6 @@ EXPORT	boolean sep_common_point_from_loop(
 		    tri_lists[num_tri_lists] = NULL;
 		    for(kt=0; kt<nt; kt++)
 		    {
-			if(the_point(p))
-			{
-			    printf("#common the point list.\n");
-			    print_tri(ptris[kt],intfc);
-			}
 			/*storage issue: each point for an ending points of 
 			  a null side. there is a tri list the total number 
 			  of this kind of loop is not large. The storage is 
@@ -2203,13 +2195,118 @@ EXPORT	int	linking_tris_with_pairs(
 	    make_tri_pairs_with_constraint(&tri_pairs[i], new_tris, &n_new);
 	    if(n_new >= max_tris - 2)
 	    {
-		printf("ERROR linking_tris_with_pairs, n_new = %d is too large.\n", n_new);
-		clean_up(ERROR);
+                printf("ERROR linking_tris_with_pairs():\n");
+                printf("n_new = %d is too large.\n", n_new);
+                clean_up(ERROR);
 	    }
 	}
 
 	return n_new;
 }
+
+EXPORT	int	linking_tris_of_outer_loops(
+	TRI	**new_tris,
+	int	max_tris,
+	TRI	**tris,
+	int	nt)
+{
+	TRI		**null_tris, *tri;
+	POINT		**pts;
+	int		num_tris, *null_sides;
+	NULL_LOOP	null_loop[20];
+	int		i,j,k,side;
+	int		num_loops,n_new;
+	int 		nt1,nt2,n_pair,nt_max;
+	TRI		**tris1,**tris2;
+	int		*sides1,*sides2;
+	TRI_PAIR        tst_pair, tri_pairs[MAX_TRI_PAIRS];
+	boolean         found;
+        double          min_dist;
+
+	/* find and all the null loops in tris. */
+	for (k = 0; k < nt; k++)
+	    Tri_order(tris[k]) = 0;
+
+	num_loops = 0;
+	for (k = 0; k < nt; k++)
+	{
+	    tri = tris[k];
+
+	    if (Tri_order(tri) == 1)
+		continue;
+
+	    Tri_order(tri) = 1;
+	    for (i = 0; i < 3; i++)
+		if(Tri_on_side(tri,i) == NULL)
+		{
+		    side = i;
+		    break;
+		}
+	    
+	    /*if no null sides for the tri, the loop is already sealed,  */
+	    if (i == 3)
+		continue;
+
+	    null_side_tris_loop(&null_loop[num_loops],tri,side,
+			POSITIVE_ORIENTATION);
+	    
+	    num_tris = null_loop[num_loops].n_sides;
+	    null_tris = null_loop[num_loops].tris;
+	    for (i = 0; i < num_tris; i++)
+		Tri_order(null_tris[i]) = 1;
+	    num_loops++;
+	    printf("num_tris = %d\n",num_tris);
+	}
+	if (num_loops != 2) 
+	    return 0;
+
+	nt_max = 0;
+	for (i = 0; i < num_loops; ++i)
+	    if (nt_max < null_loop[i].n_sides)
+		nt_max = null_loop[i].n_sides;
+	if (nt_max < 30)
+	    return 0;
+
+	nt1 = null_loop[0].n_sides;
+	nt2 = null_loop[1].n_sides;
+	tris1 = null_loop[0].tris;
+	tris2 = null_loop[1].tris;
+	sides1 = null_loop[0].sides;
+	sides2 = null_loop[1].sides;
+	printf("num_loops = %d\n",num_loops);
+	printf("nt1 = %d  nt2 = %d\n",nt1,nt2);
+	n_pair = 0;
+	min_dist = HUGE_VAL;
+	found = NO;
+	for (j = 0; j < nt1; ++j)
+	for (k = 0; k < nt2; ++k)
+	{
+	    if(!add_to_tri_pairs(&tst_pair, tris1[j], sides1[j],
+                        tris2[k], sides2[k], NO))
+            	continue;
+            if(tst_pair.dist < min_dist)
+            {
+                tri_pairs[n_pair] = tst_pair;
+                min_dist = tst_pair.dist;
+                found = YES;
+		n_pair++;
+            }
+	}
+
+	n_new = 0;
+        for (i = 0; i < n_pair; i++)
+        {
+            make_tri_pairs_with_constraint(&tri_pairs[i], new_tris, &n_new);
+            if(n_new >= max_tris - 2)
+            {
+                printf("ERROR linking_tris_of_outer_loops():\n");
+                printf("n_new = %d is too large.\n", n_new);
+                clean_up(ERROR);
+            }
+        }
+
+	return n_new;
+}	/* end linking_tris_of_outer_loops */
 
 boolean	point_is_in_tri(
 	double		*pt,
@@ -2243,85 +2340,6 @@ boolean	point_is_in_tri(
 	return NO;
 }
 
-
-EXPORT	int	linking_tris_with_pairs_fix(
-	TRI		**new_tris,
-	int		max_tris,
-	TRI		**out_tris,
-	int		n_out,
-	TRI		**in_tris,
-	int		n_in,
-	TRI		**crx_tris,
-	int		n_crx,
-	INTERFACE	*intfc)
-{
-	TRI		*tri, *tris[2], *tris1[2];
-	POINT		*p;
-	int		i, j, k, n_new, sides[2], sides1[2];
-	TRI_PAIR	tri_pairs[MAX_TRI_PAIRS];
-	double		tol;
-	double		pt[][3]={{3.90084e-5, 0.0180396, -0.00628228},
-				 {-2.29887e-6, 0.0179307, -0.00627843}};
-
-	tol = 0.01;
-
-	for(i=0; i<n_out; i++)
-	{
-	    tri = out_tris[i];
-	    for(j=0; j<2; j++)
-		if(point_is_in_tri(pt[j], tri, tol))
-		{
-		    tris[j] = tri;
-
-		    printf("tri found %p i=%d j=%d\n", (void*)tri, i, j);
-
-		    for(k=0; k<3; k++)
-			if(Tri_on_side(tri,k) == NULL)
-			{
-			    sides[j] = k;
-			    break;
-			}
-		    if(k == 3)
-		    {
-			printf("ERROR linking_tris_with_pairs_fix, i"
-			       "no null side %d\n", j);
-			clean_up(ERROR);
-		    }
-		    break;
-		}
-	}
-
-	printf("fixed tri pairs found. %d %d\n", sides[0], sides[1]);
-	print_tri(tris[0], intfc);
-	print_tri(tris[1], intfc);
-
-	p = Point_of_tri(tris[0])[Next_m3(sides[0])];
-	sides1[0] = next_null_sided_tri(tris[0], p, &tris1[0]);
-	p = Point_of_tri(tris[1])[sides[1]];
-	sides1[1] = prev_null_sided_tri(tris[1], p, &tris1[1]);
-
-	if(!add_to_tri_pairs(&tri_pairs[0], tris[0], sides[0], tris[1], sides[1], NO))
-	{
-	    printf("ERROR linking_tris_with_pairs_fix"
-	           "add_to_tri_pairs tris fails.\n");
-	    clean_up(ERROR);
-	}
-	
-	if(!add_to_tri_pairs(&tri_pairs[1], tris1[0], sides1[0], tris1[1], sides1[1], NO))
-	{
-	    printf("ERROR linking_tris_with_pairs_fix"
-	           "add_to_tri_pairs tris1 fails.\n");
-	    clean_up(ERROR);
-	}
-
-	n_new = 0;
-	for(i=0; i<2; i++)
-	    make_tri_pairs_with_constraint(&tri_pairs[i], new_tris, &n_new);
-	
-	return n_new;
-}
-
-
 #define	MAX_NULL_SIDE_LOOP	2000
 
 /* WARN static points are ft_assigned to null_loop. */
@@ -2335,19 +2353,12 @@ LOCAL	boolean null_side_tris_loop(
 	int		i, j, side, num_sides;
 	TRI		*next_tri = start;
 	double		v1[3],v2[3],cprod[3];
-	static TRI	**null_tris = NULL;
-	static int	*null_sides =  NULL;
-	static POINT	**pts;
-	static double	normal[3];
+	TRI	**null_tris = null_loop->tris;
+	int	*null_sides =  null_loop->sides;
+	POINT	**pts = null_loop->pts;
+	double	*normal = null_loop->tnor;
 
 	DEBUG_ENTER(null_side_tris_loop)
-
-	if (null_tris == NULL)
-	{
-	    uni_array(&null_tris,MAX_NULL_SIDE_LOOP,sizeof(TRI*));
-	    uni_array(&null_sides,MAX_NULL_SIDE_LOOP,INT);
-	    uni_array(&pts,MAX_NULL_SIDE_LOOP,sizeof(POINT*));
-	}
 
 	next_tri = start;
 	side = start_side;
@@ -2430,11 +2441,7 @@ LOCAL	boolean null_side_tris_loop(
 	    for (j = 0; j < 3; ++j)
 		normal[j] *= -1.0;
 	
-	null_loop->tris = null_tris;
-	null_loop->sides = null_sides;
-	null_loop->pts = pts;
 	null_loop->n_sides = num_sides;
-	null_loop->tnor = normal;
 	null_loop->orient = orient;
 
 	DEBUG_LEAVE(null_side_tris_loop)
@@ -2458,7 +2465,8 @@ EXPORT	boolean	seal_degenerated_null_loop(
 	
 	if(num_tris < 3)
 	{
-	    printf("ERROR in seal_degenerated_null_loop, num_tris = %d.\n", num_tris);
+	    printf("ERROR in seal_degenerated_null_loop, num_tris = %d.\n", 
+				num_tris);
 	    clean_up(ERROR);
 	}
 
@@ -2801,8 +2809,8 @@ EXPORT	void  smooth_null_tris_loop(
 
 
 
-/*find all the null loops in tris and seal them. Also remove degenerated loops
-  from tris. Shoud be called after sep_common_point, otherwise, there will be 
+/*Find all the null loops in tris and seal them. Also remove degenerated loops
+  from tris. Should be called after sep_common_point, otherwise, there will be 
   errors.
 */
 
@@ -2852,6 +2860,7 @@ EXPORT	int	seal_all_loops_wo_constraint(
 	    for(i=0; i<num_tris; i++)
 		Tri_order(null_tris[i]) = 1;
 		
+	    /* seal loop if it has exactly three null sides */
 	    if(seal_degenerated_null_loop(seal_tris, nstris, &null_loop))
 		continue;
 	    if(seal_deg)
@@ -2862,7 +2871,10 @@ EXPORT	int	seal_all_loops_wo_constraint(
 	    case 0:
 		seal_null_loop_in_center(seal_tris, nstris, &null_loop);
 	    	/* after smoothing, both tris and new tris are changed. */
+		/* This could cause large jump of triangle position, harm
+		   the topological setting.
 		smooth_null_tris_loop(&null_loop);
+		*/
 		break;
 	    case 1:
 	    	/*sep_common_edge_from_tris must be called before. */
@@ -3306,6 +3318,14 @@ EXPORT	void	compute_point_smooth(
 	    avep[i] = alpha*smooth_para->avep[i] + (1.0-alpha)*Coords(p)[i];
 
 	ft_assign(Coords(p), avep, 3*FLOAT);
+	if (the_point(p))
+	{
+	    for(i=0; i<3; i++)
+	    {
+	    	printf("alpha = %f avep[%d] = %f Coords(p)[%d] = %f\n",
+			alpha,i,smooth_para->avep[i],i,Coords(p)[i]);
+	    }
+	}
 	nt = set_tri_list_around_point(p, tri, &ptris, intfc);
 	for(i=0; i<nt; i++)
 	    set_normal_of_tri(ptris[i]);
