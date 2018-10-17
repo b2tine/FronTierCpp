@@ -96,7 +96,7 @@ with_petsc=no
 AS_IF([test "x$petsc_dir" != "xno"],
       [with_petsc=yes
        petscinc="-I${petsc_dir}/include"
-       petsclib="-L${petsc_dir}/lib -lpetsc -lHYPRE"])
+       petsclib="-L${petsc_dir}/lib -lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"])
 
 #AS_IF([test $with_petsc = yes],
 #      [AC_DEFINE([USE_PETSC],[1],[build with PETSc])
@@ -123,6 +123,7 @@ AC_CONFIG_FILES([Makefile
                  lib/gmock/Makefile
                  tests/Makefile
                  cFluid/Makefile
+                 iFluid/Makefile
                  example2d/Makefile
                  example3d/Makefile])
 
