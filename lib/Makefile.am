@@ -67,7 +67,8 @@ libutil_la_SOURCES = ../src/util/cleanup.c \
 					 ../src/util/uinit.c \
 					 ../src/util/umap.c \
 					 ../src/util/vectormalloc.c \
-					 ../src/util/vtk.c
+					 ../src/util/vtk.c \
+					 ../src/util/dummyutil.cpp
 
 libintfc_la_SOURCES = ../src/intfc/arrayutils.c \
 					  ../src/intfc/comp1d.c \
