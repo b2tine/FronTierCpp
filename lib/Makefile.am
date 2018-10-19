@@ -117,7 +117,8 @@ libintfc_la_SOURCES = ../src/intfc/arrayutils.c \
 					  ../src/intfc/triangle.c \
 					  ../src/intfc/trisurf.c \
 					  ../src/intfc/userhooks.c \
-					  ../src/intfc/zoom.c
+					  ../src/intfc/zoom.c \
+ 					  ../src/intfc/dummyintfc.cpp
 
 libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fadv.c \
@@ -168,5 +169,6 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/funtan3d.c \
 					  ../src/front/fuserhooks.c \
 					  ../src/front/fuserintfc.c \
-					  ../src/front/fvelo.c
+					  ../src/front/fvelo.c \
+					  ../src/front/dummyfront.cpp
 

@@ -36,6 +36,9 @@ struct BasicData
 
 class Front
 {
+    public:
+
+        void testfunction();
 
 };
 
