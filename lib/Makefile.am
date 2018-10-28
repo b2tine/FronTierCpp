@@ -1,10 +1,10 @@
 SUBDIRS = gmock
 
-AM_CPPFLAGS = -I $(top_srcdir)/include \
+AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
 			  -I$(top_srcdir)/include/util \
-			  -I$(top_srcdir)/cFluid @HDF_CFLAGS@ @MPI_CFLAGS@
+			  @HDF_CFLAGS@ @MPI_CFLAGS@
 
 AM_LDFLAGS = @HDF_LIBS@ @MPI_LIB@
 
@@ -174,6 +174,11 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fvelo.c \
 					  ../src/front/dummyfront.cpp
 
+libcFluid_la_CPPFLAGS = -I$(top_srcdir)/cFluid $(AM_CPPFLAGS)
+libcFluid_la_LIBADD = $(abs_top_builddir)/lib/libfront.la \
+					  $(abs_top_builddir)/lib/libintfc.la \
+					  $(abs_top_builddir)/lib/libutil.la
+
 libcFluid_la_SOURCES = ../cFluid/cFluid.h \
 					   ../cFluid/cFbase.cpp \
 					   ../cFluid/cFcartsn.cpp \
@@ -183,3 +188,13 @@ libcFluid_la_SOURCES = ../cFluid/cFluid.h \
 					   ../cFluid/cFsub.cpp \
 					   ../cFluid/cFtvd.cpp \
 					   ../cFluid/cFweno.cpp
+
+#libsolver_la_SOURCES = ../solver/solver.h \
+#					   ../solver/cim_ellip.cpp \
+#					   ../solver/cim_parab.cpp \
+#					   ../solver/dual_ellip.cpp \
+#					   ../solver/ellip.cpp \
+#					   ../solver/hyperb.cpp \
+#					   ../solver/parab.cpp \
+#					   ../solver/solver.cpp
+

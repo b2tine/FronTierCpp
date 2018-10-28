@@ -102,8 +102,7 @@ AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
 
 #check if iFluid should be compiled
-AM_CONDITIONAL([IFLUID_OPT],
-               [test "$with_mpich" = "yes" && test "$with_petsc" = "yes"])
+AM_CONDITIONAL([PETSC_OPT],[test "$with_petsc" = "yes"])
 
 #compile examples options
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
