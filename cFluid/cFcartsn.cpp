@@ -89,6 +89,7 @@ void G_CARTESIAN::initMesh()
 	    (void) printf("Entering g_cartesian.initMesh()\n");
 
 	FT_MakeGridIntfc(front);
+
     initComputationalData();
 	
     int num_cells = 1;

@@ -3,14 +3,16 @@ SUBDIRS = gmock
 AM_CPPFLAGS = -I $(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
-			  -I$(top_srcdir)/include/util @HDF_CFLAGS@ @MPI_CFLAGS@
+			  -I$(top_srcdir)/include/util \
+			  -I$(top_srcdir)/cFluid @HDF_CFLAGS@ @MPI_CFLAGS@
 
 AM_LDFLAGS = @HDF_LIBS@ @MPI_LIB@
 
 
 noinst_LTLIBRARIES = libutil.la \
 					 libintfc.la \
-					 libfront.la
+					 libfront.la \
+					 libcFluid.la
 
 noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/util/fnamedebug.h \
@@ -172,3 +174,12 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fvelo.c \
 					  ../src/front/dummyfront.cpp
 
+libcFluid_la_SOURCES = ../cFluid/cFluid.h \
+					   ../cFluid/cFbase.cpp \
+					   ../cFluid/cFcartsn.cpp \
+					   ../cFluid/cFeos.cpp \
+					   ../cFluid/cFinit.cpp \
+					   ../cFluid/cFriem.cpp \
+					   ../cFluid/cFsub.cpp \
+					   ../cFluid/cFtvd.cpp \
+					   ../cFluid/cFweno.cpp
