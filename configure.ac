@@ -98,11 +98,12 @@ AS_IF([test "x$petsc_dir" != "xno"],
        petscinc="-I${petsc_dir}/include"
        petsclib="-L${petsc_dir}/lib -lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"])
 
-#AS_IF([test $with_petsc = yes],
-#      [AC_DEFINE([USE_PETSC],[1],[build with PETSc])
-
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
+
+#check if iFluid should be compiled
+AM_CONDITIONAL([IFLUID_OPT],
+               [test "$with_mpich" = "yes" && test "$with_petsc" = "yes"])
 
 #compile examples options
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
