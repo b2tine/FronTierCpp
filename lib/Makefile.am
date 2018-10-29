@@ -4,9 +4,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
 			  -I$(top_srcdir)/include/util \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@
+AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 noinst_LTLIBRARIES = libutil.la \

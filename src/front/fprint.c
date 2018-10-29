@@ -73,12 +73,12 @@ LOCAL 	void 	add_cut_frame(char*,char*,int,int,uint8*,double*,double,
 LOCAL   void    show_front_gv(Front*,char*);
 LOCAL	void	gv_plot_var2d(Front*,char*,HDF_MOVIE_VAR*,int);
 
-#if defined(__GD__)
+#if defined(USE_GD)
 LOCAL	void 	FrontGDMovie(char*,Front*);
 LOCAL	void 	FrontGDMovie1d(char*,Front*);
 LOCAL	void 	FrontGDMovie2d(char*,Front*);
 LOCAL	void 	gd_plot_var(INTERFACE*,char*,double,HDF_MOVIE_VAR*,int,boolean);
-#endif /* defined(__GD__) */
+#endif /* defined(USE_GD) */
 LOCAL   void    xgraph_plot_var(INTERFACE*,char*,double,char*,double*, 
                 double (*get_state_var)(Locstate),int,boolean); /* for 1d */
 LOCAL 	void 	fprint_front_time_stamp(FILE*,Front*);
@@ -1627,7 +1627,7 @@ LOCAL	void show_front_gd(
         int dim = front->rect_grid->dim;
 	static boolean first = YES;
 
-#if defined(__GD__)
+#if defined(USE_GD)
 	if (dim > 2 || pp_numnodes() > 1) return; /* not for 1,3-D */
 						   /* not for parallel */
 	sprintf(dirname,"%s/gd",out_name);
@@ -1640,7 +1640,7 @@ LOCAL	void show_front_gd(
 	    }
 	}
 	FrontGDMovie(dirname,front);
-#endif /* defined(__GD__) */
+#endif /* defined(USE_GD) */
 	first = NO;
 	return;
 }	/* end show_front_gd */
@@ -3652,7 +3652,7 @@ LOCAL 	void fprint_front_time_stamp(
                        front->time,front->step,front->dt);	
 }	/* end fprint_front_time_stamp */
 
-#if defined(__GD__)
+#if defined(USE_GD)
 LOCAL	void FrontGDMovie(
 	char *dirname,
 	Front *front)
@@ -3853,7 +3853,7 @@ LOCAL	void FrontGDMovie2d(
 			front->resolution_level,plot_bullet);
 	delete_interface(copy_intfc);
 }	/* end FrontGDMovie2d */
-#endif /* defined(__GD__) */
+#endif /* defined(USE_GD) */
 
 LOCAL void vtk_plot_vector_field(
 	const char *dname,

@@ -62,12 +62,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #   include <mpi.h>
 #endif
 
-#if defined(__GD__)
+#if defined(USE_GD)
 #include <gd.h>
 #include <gdfonts.h>
 #include <gdfontl.h>
 #include <gdfontt.h>
-#endif /* defined(__GD__) */
+#endif /* defined(USE_GD) */
 
 #define ptr2ull(p) u_ptr2ull((void*)(p))
 

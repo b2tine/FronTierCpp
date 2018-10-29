@@ -92,7 +92,7 @@ LOCAL	void 	tecplot_surface_in_box(const char*,int*,int*,SURFACE*,FILE*);
 LOCAL   void    gview_plot_intfc2d(const char*,const char*, INTERFACE*, 
 				RECT_GRID*);
 /*For GD Movie plots */
-#if defined(__GD__)
+#if defined(USE_GD)
 LOCAL   void    mkImg(int, int*, int*);
 LOCAL   void    initialize_image(gdImagePtr, const char*, int, int);
 LOCAL   void    freecolors();
@@ -100,7 +100,7 @@ LOCAL   void    setcolors(gdImagePtr, int);
 LOCAL   double   xtransform(double);
 LOCAL   double   ytransform(double);
 LOCAL   int     getcolor(int);
-#endif /* if defined(__GD__) */
+#endif /* if defined(USE_GD) */
 
 EXPORT void geomview_intfc_plot2d(
         const char    *dname,
@@ -4550,7 +4550,7 @@ LOCAL   void    vtk_plot_curves3d(
 
 /* END NEW VTK */
 
-#if defined (__GD__)
+#if defined (USE_GD)
 
 /* 1D data plotter using GD graphics library
  * By Ryan Kaufman
@@ -5216,7 +5216,7 @@ make_frame:
 	}
 #endif /* defined USE_MPI */
 }	/* end gd_2d_intfc */
-#endif /* if defined(__GD__) */
+#endif /* if defined(USE_GD) */
 
 EXPORT void sdl_interface_plot(
 	const char *dname,

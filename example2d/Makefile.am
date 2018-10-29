@@ -2,10 +2,10 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
 			  -I$(abs_top_srcdir)/include/front \
 			  -I$(abs_top_srcdir)/include/intfc \
 			  -I$(abs_top_srcdir)/include/util \
-			  @HDF_CFLAGS@ @MPI_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = -L$(abs_top_builddir)/lib -lfront -lintfc -lutil \
-			 @HDF_LIBS@ @MPI_LIBS@
+			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 noinst_PROGRAMS = example00 \
 				  example01 \

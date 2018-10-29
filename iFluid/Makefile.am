@@ -5,11 +5,11 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
 			  -I$(abs_top_srcdir)/include/front \
 			  -I$(abs_top_srcdir)/include/intfc \
 			  -I$(abs_top_srcdir)/include/util \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 noinst_PROGRAMS = iFluid
 
 iFluid_LDADD = -L$(abs_top_builddir)/lib -liFluid \
-			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@
+			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 iFluid_SOURCES = iFluid.cpp

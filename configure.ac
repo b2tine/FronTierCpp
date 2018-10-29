@@ -40,6 +40,35 @@ AC_SUBST([GTEST_CXXFLAGS])
 AC_SUBST([GTEST_LDFLAGS])
 AC_SUBST([GTEST_LIBS])
 
+#configure with GD
+AC_ARG_WITH([gd-dir],[AS_HELP_STRING([--with-gd-dir=path],
+            [specify location of single directory installation])],
+            [gd_dir=$withval],[gd_dir="no"])
+
+AC_ARG_WITH([gd-inc],[AS_HELP_STRING([--with-gd-inc=path],
+            [specify location of header files])],
+            [gd_inc=$withval],[gd_inc="no"])
+
+AC_ARG_WITH([gd-lib],[AS_HELP_STRING([--with-gd-lib=path],
+            [specify location of libraries])],
+            [gd_lib=$withval],[gd_lib="no"])
+
+with_gd=no
+AS_IF([test "x$gd_dir" != "xno"],
+      [with_gd=yes
+       gdinc="-I${gd_dir}/include"
+       gdlib="-L${gd_dir}/lib -lgd"],
+       [test "x$gd_inc" != "xno" && test "x$gd_lib" != "xno"],
+       [with_gd=yes
+        gdinc="-I${gd_inc}"
+        gdlib="-L${gd_lib} -lgd"])
+
+AS_IF([test $with_gd = yes],
+      [AC_DEFINE([USE_GD],[1],[build with gd])])
+
+AC_SUBST(GD_CFLAGS,${gdinc})
+AC_SUBST(GD_LIBS,${gdlib})
+
 #configure with hdf4
 AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
             [specify location of single directory installation])],

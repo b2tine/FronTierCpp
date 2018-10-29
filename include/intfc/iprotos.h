@@ -421,14 +421,14 @@ IMPORT	void    tecplot_surface_in_ball(const char *, SURFACE*);
 IMPORT	void	set_tst_posn(double*);
 IMPORT	void	vtk_interface_plot(const char*,INTERFACE*,boolean,double,int);
 IMPORT	void	sdl_interface_plot(const char*,INTERFACE*);
-#if defined __GD__
+#if defined USE_GD
 IMPORT  void    gd_initplot(char*,char*,double,double,double,double,int);
 IMPORT  void    gd_appendplot(char*,char*,double,double,double,double,int);
 IMPORT  void    gd_plotdata(int,double*,double*);
 IMPORT  void    gd_plotframe(char*);
 IMPORT  void    gd_closeplot();
 IMPORT  void    gd_2d_intfc(char*,char*,INTERFACE*,RECT_GRID*,int,boolean);
-#endif /* defined __GD__ */
+#endif /* defined USE_GD */
 IMPORT	char	*get_vtk_file_name(char*,const char*,const char*,size_t*);
 IMPORT	void	gview_plot_surf_within_range(const char*,SURFACE*,double*,
         			double);
