@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 #Initialize autoconf with project name and version number
-AC_INIT([FronTier],[1.0])
+AC_INIT([FronTier],[1.1])
 
 #Include macros from the autoconf-archive
 AC_CONFIG_MACRO_DIR([autoconf-archive/m4])
@@ -69,7 +69,7 @@ AS_IF([test $with_gd = yes],
 AC_SUBST(GD_CFLAGS,${gdinc})
 AC_SUBST(GD_LIBS,${gdlib})
 
-#configure with hdf4
+#configure with HDF4
 AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
             [specify location of single directory installation])],
             [hdf4_dir=$withval],[hdf4_dir="no"])
@@ -83,14 +83,16 @@ AC_ARG_WITH([hdf4-lib],[AS_HELP_STRING([--with-hdf4-lib=path],
             [hdf4_lib=$withval],[hdf4_lib="no"])
 
 with_hdf=no
+hdf4_libflags="-lmfhdf -ldf -ljpeg -lz"
+
 AS_IF([test "x$hdf4_dir" != "xno"],
       [with_hdf=yes
        hdfinc="-I${hdf4_dir}/include"
-       hdflib="-L${hdf4_dir}/lib -lmfhdf -ldf -ljpeg -lz"],
+       hdflib="-L${hdf4_dir}/lib ${hdf4_libflags}"],
        [test "x$hdf4_inc" != "xno" && test "x$hdf4_lib" != "xno"],
        [with_hdf=yes
         hdfinc="-I${hdf4_inc}"
-        hdflib="-L${hdf_lib} -lmfhdf -ldf -ljpeg -lz"])
+        hdflib="-L${hdf_lib} ${hdf4_libflags}"])
 
 AS_IF([test $with_hdf = yes],
       [AC_DEFINE([USE_HDF4],[1],[build with hd4])])
@@ -99,7 +101,7 @@ AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 
-#configure with mpich
+#configure with MPICH
 AC_ARG_WITH([mpich-dir],[AS_HELP_STRING([--with-mpich-dir=path],
             [specify location of single directory installation])],
             [mpich_dir=$withval],[mpich_dir="no"])
@@ -116,7 +118,7 @@ AS_IF([test $with_mpich = yes],
 AC_SUBST(MPI_CFLAGS,${mpichinc})
 AC_SUBST(MPI_LIBS,${mpichlib})
 
-#configure with petsc
+#configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=$withval],[petsc_dir="no"])
@@ -133,7 +135,44 @@ AC_SUBST(PETSC_LIBS,${petsclib})
 #check if iFluid should be compiled
 AM_CONDITIONAL([PETSC_OPT],[test "$with_petsc" = "yes"])
 
-#compile examples options
+#configure with CGAL
+AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
+            [specify location of single directory installation])],
+            [cgal_dir=$withval],[cgal_dir="no"])
+
+AC_ARG_WITH([cgal-inc],[AS_HELP_STRING([--with-cgal-inc=path],
+            [specify location of header files])],
+            [cgal_inc=$withval],[cgal_inc="no"])
+
+AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
+            [specify location of libraries])],
+            [cgal_lib=$withval],[cgal_lib="no"])
+
+with_cgal=no
+cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
+
+AS_IF([test "x$cgal_dir" != "xno"],
+      [with_cgal=yes
+       cgalinc="-I${cgal_dir}/include -frounding-math"
+       cgallib="-L${cgal_dir}/lib ${cgal_libflags}"],
+       [test "x$cgal_inc" != "xno" && test "x$cgal_lib" != "xno"],
+       [with_cgal=yes
+        cgalinc="-I${cgal_inc} -frounding-math"
+        cgallib="-L${cgal_lib} ${cgal_libflags}"])
+
+AS_IF([test $with_cgal = yes],
+      [AC_DEFINE([USE_CGAL],[1],[build with cgal])])
+
+AC_SUBST(CGAL_CFLAGS,${cgalinc})
+AC_SUBST(CGAL_LIBS,${cgallib})
+
+
+#enable Collision module ....
+
+#check if airfoil should be compiled ...
+
+
+#optionally compile examples
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
               [build the 2d example directory])],
               [exTwoD="yes"],[exTwoD="no"])
@@ -160,7 +199,7 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT
 
 AC_MSG_RESULT([
-FronTier_Automake $VERSION is now configured
+FronTier++ $VERSION is now configured
 Configure Information:
   C Compiler        : $CC
     DEFS            :   $DEFS

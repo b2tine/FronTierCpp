@@ -2490,6 +2490,49 @@ static void initWingsPlaneEdge(
 	}
 }	/* end initWingsPlaneEdge */
 
+extern void rotateObjects(Front *front)
+{
+        INTERFACE *intfc;
+        SURFACE **s,*surf = NULL;
+        double center[3],phi,theta;
+        char string[100];
+	FILE *infile = fopen(InName(front),"r");
+
+	if (CursorAfterStringOpt(infile,
+            "Entering yes to rotate elastic surface: "))
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                intfc_surface_loop(front->interf,s)
+                {
+                    if (wave_type(*s) == ELASTIC_BOUNDARY)
+                    {
+                        surf = *s;
+                        break;
+                    }
+                }
+            }
+            if (surf == NULL)
+            {
+                printf("No elastic surface found!\n");
+                clean_up(ERROR);
+            }
+            CursorAfterString(infile,"Enter center of rotation: ");
+            fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
+            printf("%f %f %f\n",center[0],center[1],center[2]);
+            CursorAfterString(infile,
+                    "Enter azimuthal and polar angles (degree) of rotation: ");
+            fscanf(infile,"%lf %lf",&phi,&theta);
+            printf("%f %f\n",phi,theta);
+            theta *= PI/180.0;
+            phi *= PI/180.0;
+            I_RotateSurfaceSet(surf,center,phi,theta);
+        }
+        fclose(infile);
+}       /* rotateObjects */
+
 extern void initRigidBody(
 	Front *front)
 {
