@@ -12,6 +12,7 @@ AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 noinst_LTLIBRARIES = libutil.la \
 					 libintfc.la \
 					 libfront.la \
+					 libFronTier.la \
 					 libcFluid.la \
 					 libsolver.la \
 					 libiFluid.la
@@ -182,11 +183,16 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/dummyfront.cpp
 
 
+libFronTier_la_SOURCES = ../include/FronTier.h
+
+libFronTier_la_LIBADD = $(abs_top_builddir)/lib/libfront.la \
+  						$(abs_top_builddir)/lib/libintfc.la \
+  						$(abs_top_builddir)/lib/libutil.la
+
+
 libcFluid_la_CPPFLAGS = -I$(top_srcdir)/cFluid $(AM_CPPFLAGS)
 
-libcFluid_la_LIBADD = $(abs_top_builddir)/lib/libfront.la \
-					  $(abs_top_builddir)/lib/libintfc.la \
-					  $(abs_top_builddir)/lib/libutil.la
+libcFluid_la_LIBADD = $(abs_top_builddir)/lib/libFronTier.la
 
 libcFluid_la_SOURCES = ../cFluid/cFluid.h \
 					   ../cFluid/cFtvd.cpp \
@@ -218,9 +224,7 @@ libiFluid_la_CPPFLAGS = -I$(top_srcdir)/iFluid -I$(top_srcdir)/solver \
 						@PETSC_CFLAGS@ $(AM_CPPFLAGS)
 
 libiFluid_la_LIBADD = $(abs_top_builddir)/lib/libsolver.la \
-					  $(abs_top_builddir)/lib/libfront.la \
-					  $(abs_top_builddir)/lib/libintfc.la \
-					  $(abs_top_builddir)/lib/libutil.la
+					  $(abs_top_builddir)/lib/libFronTier.la
 
 libiFluid_la_SOURCES = ../iFluid/iFluid.h \
 					   ../iFluid/ifluid_state.h \
