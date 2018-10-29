@@ -9,14 +9,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
-noinst_LTLIBRARIES = libutil.la \
-					 libintfc.la \
-					 libfront.la \
-					 libFronTier.la \
-					 libcFluid.la \
-					 libsolver.la \
-					 libiFluid.la
-
 noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/util/fnamedebug.h \
 				 ../include/util/navdecs.h \
@@ -50,6 +42,14 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/fcell.h \
 				 ../include/front/dummyfront.h 
 
+
+EXTRA_LTLIBRARIES = libsolver.la libiFluid.la
+
+noinst_LTLIBRARIES = libutil.la \
+					 libintfc.la \
+					 libfront.la \
+					 libFronTier.la \
+					 libcFluid.la
 
 libutil_la_SOURCES = ../src/util/cleanup.c \
 					 ../src/util/debug.c \
@@ -204,6 +204,11 @@ libcFluid_la_SOURCES = ../cFluid/cFluid.h \
 					   ../cFluid/cFinit.cpp \
 					   ../cFluid/cFeos.cpp \
 					   ../cFluid/cFriem.cpp
+
+
+if PETSC_OPT
+noinst_LTLIBRARIES += libsolver.la libiFluid.la
+endif
 
 
 libsolver_la_CPPFLAGS = -I$(top_srcdir)/solver @PETSC_CFLAGS@ $(AM_CPPFLAGS)

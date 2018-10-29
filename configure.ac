@@ -43,22 +43,22 @@ AC_SUBST([GTEST_LIBS])
 #configure with GD
 AC_ARG_WITH([gd-dir],[AS_HELP_STRING([--with-gd-dir=path],
             [specify location of single directory installation])],
-            [gd_dir=$withval],[gd_dir="no"])
+            [gd_dir=$withval],[gd_dir=no])
 
 AC_ARG_WITH([gd-inc],[AS_HELP_STRING([--with-gd-inc=path],
             [specify location of header files])],
-            [gd_inc=$withval],[gd_inc="no"])
+            [gd_inc=$withval],[gd_inc=no])
 
 AC_ARG_WITH([gd-lib],[AS_HELP_STRING([--with-gd-lib=path],
             [specify location of libraries])],
-            [gd_lib=$withval],[gd_lib="no"])
+            [gd_lib=$withval],[gd_lib=no])
 
 with_gd=no
-AS_IF([test "x$gd_dir" != "xno"],
+AS_IF([test "x$gd_dir" != xno],
       [with_gd=yes
        gdinc="-I${gd_dir}/include"
        gdlib="-L${gd_dir}/lib -lgd"],
-       [test "x$gd_inc" != "xno" && test "x$gd_lib" != "xno"],
+       [test "x$gd_inc" != xno && test "x$gd_lib" != xno],
        [with_gd=yes
         gdinc="-I${gd_inc}"
         gdlib="-L${gd_lib} -lgd"])
@@ -72,27 +72,27 @@ AC_SUBST(GD_LIBS,${gdlib})
 #configure with HDF4
 AC_ARG_WITH([hdf4-dir],[AS_HELP_STRING([--with-hdf4-dir=path],
             [specify location of single directory installation])],
-            [hdf4_dir=$withval],[hdf4_dir="no"])
+            [hdf4_dir=$withval],[hdf4_dir=no])
 
 AC_ARG_WITH([hdf4-inc],[AS_HELP_STRING([--with-hdf4-inc=path],
             [specify location of header files])],
-            [hdf4_inc=$withval],[hdf4_inc="no"])
+            [hdf4_inc=$withval],[hdf4_inc=no])
 
 AC_ARG_WITH([hdf4-lib],[AS_HELP_STRING([--with-hdf4-lib=path],
             [specify location of libraries])],
-            [hdf4_lib=$withval],[hdf4_lib="no"])
+            [hdf4_lib=$withval],[hdf4_lib=no])
 
 with_hdf=no
 hdf4_libflags="-lmfhdf -ldf -ljpeg -lz"
 
-AS_IF([test "x$hdf4_dir" != "xno"],
+AS_IF([test "x$hdf4_dir" != xno],
       [with_hdf=yes
        hdfinc="-I${hdf4_dir}/include"
        hdflib="-L${hdf4_dir}/lib ${hdf4_libflags}"],
-       [test "x$hdf4_inc" != "xno" && test "x$hdf4_lib" != "xno"],
+       [test "x$hdf4_inc" != xno && test "x$hdf4_lib" != xno],
        [with_hdf=yes
         hdfinc="-I${hdf4_inc}"
-        hdflib="-L${hdf_lib} ${hdf4_libflags}"])
+        hdflib="-L${hdf4_lib} ${hdf4_libflags}"])
 
 AS_IF([test $with_hdf = yes],
       [AC_DEFINE([USE_HDF4],[1],[build with hd4])])
@@ -104,10 +104,10 @@ AC_SUBST(HDF_LIBS,${hdflib})
 #configure with MPICH
 AC_ARG_WITH([mpich-dir],[AS_HELP_STRING([--with-mpich-dir=path],
             [specify location of single directory installation])],
-            [mpich_dir=$withval],[mpich_dir="no"])
+            [mpich_dir=$withval],[mpich_dir=no])
 
 with_mpich=no
-AS_IF([test "x$mpich_dir" != "xno"],
+AS_IF([test "x$mpich_dir" != xno],
       [with_mpich=yes
        mpichinc="-I${mpich_dir}/include"
        mpichlib="-L${mpich_dir}/lib -lmpi -lmpicxx"])
@@ -121,33 +121,39 @@ AC_SUBST(MPI_LIBS,${mpichlib})
 #configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
-            [petsc_dir=$withval],[petsc_dir="no"])
+            [petsc_dir=$withval],[petsc_dir=no])
 
 with_petsc=no
-AS_IF([test "x$petsc_dir" != "xno"],
+petsc_libflags="-lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
+
+AS_IF([test "x$petsc_dir" != xno],
       [with_petsc=yes
        petscinc="-I${petsc_dir}/include"
-       petsclib="-L${petsc_dir}/lib -lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"])
+       petsclib="-L${petsc_dir}/lib ${petsc_libflags}"])
 
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
 
-#check if iFluid should be compiled
-AM_CONDITIONAL([PETSC_OPT],[test "$with_petsc" = "yes"])
-AM_COND_IF([PETSC_OPT],[AC_CONFIG_FILES([iFluid/Makefile])])
+#check if iFluid should be built
+with_ifluid=no
+AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
+
+AM_COND_IF([PETSC_OPT],
+           [with_ifluid=yes
+            AC_CONFIG_FILES([iFluid/Makefile])])
 
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
             [specify location of single directory installation])],
-            [cgal_dir=$withval],[cgal_dir="no"])
+            [cgal_dir=$withval],[cgal_dir=no])
 
 AC_ARG_WITH([cgal-inc],[AS_HELP_STRING([--with-cgal-inc=path],
             [specify location of header files])],
-            [cgal_inc=$withval],[cgal_inc="no"])
+            [cgal_inc=$withval],[cgal_inc=no])
 
 AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
             [specify location of libraries])],
-            [cgal_lib=$withval],[cgal_lib="no"])
+            [cgal_lib=$withval],[cgal_lib=no])
 
 with_cgal=no
 cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
@@ -156,21 +162,28 @@ AS_IF([test "x$cgal_dir" != "xno"],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
        cgallib="-L${cgal_dir}/lib ${cgal_libflags}"],
-       [test "x$cgal_inc" != "xno" && test "x$cgal_lib" != "xno"],
+       [test "x$cgal_inc" != xno && test "x$cgal_lib" != xno],
        [with_cgal=yes
         cgalinc="-I${cgal_inc} -frounding-math"
         cgallib="-L${cgal_lib} ${cgal_libflags}"])
 
+#USE_CGAL isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cgal = yes],
       [AC_DEFINE([USE_CGAL],[1],[build with cgal])])
 
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
 
-#enable Collision module ....
+#check if airfoil should be built
+with_airfoil=no
+AM_CONDITIONAL([CGAL_OPT],
+               [test $with_cgal = yes && test $with_ifluid = yes])
 
-#check if airfoil should be compiled ...
-AM_CONDITIONAL([CGAL_OPT],[test "$with_cgal" = "yes"])
+AM_COND_IF([CGAL_OPT],
+           [with_airfoil=yes
+            AC_CONFIG_FILES([airfoil/Makefile])])
+
+#enable Collision module ....
 
 
 #optionally compile the examples
@@ -192,7 +205,6 @@ AC_CONFIG_FILES([Makefile
                  lib/gmock/Makefile
                  tests/Makefile
                  cFluid/Makefile
-                 airfoil/Makefile
                  example2d/Makefile
                  example3d/Makefile])
 
