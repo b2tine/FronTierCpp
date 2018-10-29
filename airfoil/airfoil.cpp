@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
 
 	/*  Function Declarations */
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
 
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
 static void setInitialIntfcAF2d(Front*,LEVEL_FUNC_PACK*,char*);
