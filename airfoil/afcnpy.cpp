@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <iFluid.h>
 #include <airfoil.h>
 #include "solver.h"
-#ifdef __COLLISION__
+#ifdef COLLISION_DETECTION
 	#include "collid.h"
 #endif
 
@@ -1775,7 +1775,7 @@ extern void fourth_order_elastic_set_propagate(
 	static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
-#ifdef __COLLISION__
+#ifdef COLLISION_DETECTION
 	static CollisionSolver* collision_solver = new CollisionSolver3d();
 #endif
 
@@ -1895,7 +1895,7 @@ extern void fourth_order_elastic_set_propagate(
 
 	if (myid == owner_id)
 	{
-#ifdef __COLLISION__
+#ifdef COLLISION_DETECTION
 	    if (FT_Dimension() == 3)
             {
                 // collision setup
@@ -1969,7 +1969,7 @@ extern void fourth_order_elastic_set_propagate(
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
-#ifdef __COLLISION__
+#ifdef COLLISION_DETECTION
 	if (myid == owner_id)
         {
             if (FT_Dimension() == 3)

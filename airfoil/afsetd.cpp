@@ -269,7 +269,7 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] = sv->x_nb[i][k] - sv->x[k];
 		len += sqr(vec[k]);
-#ifdef __DAMPING__
+#ifdef DAMPING_FORCE
 		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
 #endif
 	    }
@@ -278,14 +278,14 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-#ifdef __DAMPING__
+#ifdef DAMPING_FORCE
 		f[k] += sv->lambda*v_rel[k]/sv->m;
 #endif
 	    }
 	}
 	for (k = 0; k < dim; ++k)
 	    sv->f[k] = f[k]*sv->m;
-#ifndef __DAMPING__
+#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
