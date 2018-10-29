@@ -683,6 +683,22 @@ extern "C" {
 
    IMPORT  boolean I_SearchTheNodeWithGindexOnIntfc(INTERFACE *intfc);
 
+/*! \fn void I_RotateSurfaceSet(SURFACE *surf,double *center,double phi,double theta)
+ *  \ingroup DEBUG-TOOL
+    \brief This function will rotate the surface set, including all curves
+     and nodes attached to it, with the given center and phi-theta angles.
+    \param surf @b in/out Pointer to the surface to be rotated.
+    \param center @b in Center of the rotation.
+    \param phi @b in Azimuthal angle of the rotation.
+    \param theta @b in Polar angle of the rotation.
+ */
+
+   IMPORT  void I_RotateSurfaceSet(
+        SURFACE *surf,
+        double *center,
+        double phi,
+        double theta);
+
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif

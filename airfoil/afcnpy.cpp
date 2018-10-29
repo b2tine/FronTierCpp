@@ -22,10 +22,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include <iFluid.h>
-#include <airfoil.h>
-#include "solver.h"
+#include "airfoil.h"
+#include <solver.h>
 #ifdef COLLISION_DETECTION
-	#include "collid.h"
+	#include <collid.h>
 #endif
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);

@@ -1,13 +1,15 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/box_intersection_d.h>
 #include <CGAL/intersections.h>
+
 #include <vector>
 #include <fstream>
 #include <math.h>
 #include <algorithm>
 #include <FronTier.h>
 #include "collid.h"
-#include "../iFluid/ifluid_state.h"
+#include <ifluid_state.h>
+
 #include <omp.h>
 
 /*****declaration of static functions starts here********/
@@ -25,7 +27,7 @@ typedef Kernel::Triangle_3                                    Triangle_3;
 //define default parameters for collision detection
 bool   CollisionSolver::s_detImpZone = false;
 double CollisionSolver::s_eps = EPS;
-double CollisionSolver::s_thickness = 0.0001;
+double CollisionSolver::s_thickness = 0.001;
 double CollisionSolver::s_dt = DT;
 double CollisionSolver::s_k = 1000;
 double CollisionSolver::s_m = 0.01;
@@ -33,7 +35,7 @@ double CollisionSolver::s_lambda = 0.02;
 double CollisionSolver::s_cr = 0.0;
 int traitsForProximity::m_dim = 3;
 int traitsForCollision::m_dim = 3;
-double traitsForProximity::s_eps = EPS;	
+double traitsForProximity::s_eps = 0.001;	
 double traitsForCollision::s_eps = EPS;
 double traitsForCollision::s_dt = DT;
 
@@ -735,7 +737,7 @@ bool CollisionSolver::isProximity(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t1 = cd_t1->m_tri;
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
-		return false;
+            return false;
 	    return TriToTri(t1,t2,h);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 

@@ -15,8 +15,9 @@ AM_CXXFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION
 noinst_PROGRAMS = airfoil
 
 
-airfoil_LDADD = @CGAL_LIBS@ -L$(abs_top_builddir)/lib -liFluid \
-			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
+				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
+				@HDF_LIBS@ @GD_LIBS@
 
 airfoil_SOURCES = airfoil.h \
 				  airfoil_sv.h \

@@ -1,9 +1,11 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/box_intersection_d.h>
+
 #include <FronTier.h>
-#include "../iFluid/ifluid_state.h"
+#include <ifluid_state.h>
 #include <functional>
 #include <map>
+
 #if defined(isnan)
 #undef isnan
 #endif
@@ -235,9 +237,11 @@ public:
 struct reportProximity{
     int& num_pairs;
     CollisionSolver* collsn_solver;
-    reportProximity(int &npair,CollisionSolver* solver): 
-			 	 num_pairs(npair = 0),
-				 collsn_solver(solver){}
+
+    reportProximity(int &npair,CollisionSolver* solver)
+        : num_pairs(npair = 0), collsn_solver(solver)
+    {}
+
     void operator()( const CD_HSE* a, const CD_HSE* b) {
 	if(collsn_solver->isProximity(a,b)){
 	    num_pairs++;
@@ -249,10 +253,12 @@ struct reportCollision{
     bool& is_collision;
     int&  num_pairs;
     CollisionSolver* collsn_solver;
-    reportCollision(bool &status, int &npairs,CollisionSolver* solver): 
-		     is_collision(status), 
-		     num_pairs(npairs = 0), 
-		     collsn_solver(solver){}
+    
+    reportCollision(bool &status, int &npairs,CollisionSolver* solver)
+        : is_collision(status), num_pairs(npairs = 0),
+        collsn_solver(solver)
+    {}
+
     void operator()( const CD_HSE* a, const CD_HSE* b) {
 	if (collsn_solver->isCollision(a,b)){
 	    num_pairs ++;

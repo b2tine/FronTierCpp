@@ -11,6 +11,16 @@ endif
 
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
+if CGAL_OPT
+MAYBE_AIRFOIL = airfoil
+endif
 endif
 
-SUBDIRS = lib tests cFluid $(MAYBE_IFLUID) $(MAYBE_EX2D) $(MAYBE_EX3D)
+
+SUBDIRS = lib \
+		  tests \
+		  cFluid \
+		  $(MAYBE_IFLUID) \
+		  $(MAYBE_AIRFOIL) \
+		  $(MAYBE_EX2D) \
+		  $(MAYBE_EX3D)

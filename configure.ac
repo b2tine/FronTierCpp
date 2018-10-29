@@ -166,13 +166,13 @@ AS_IF([test $with_cgal = yes],
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
 
-
 #enable Collision module ....
 
 #check if airfoil should be compiled ...
+AM_CONDITIONAL([CGAL_OPT],[test "$with_cgal" = "yes"])
 
 
-#optionally compile examples
+#optionally compile the examples
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
               [build the 2d example directory])],
               [exTwoD="yes"],[exTwoD="no"])
@@ -192,6 +192,7 @@ AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  cFluid/Makefile
                  iFluid/Makefile
+                 airfoil/Makefile
                  example2d/Makefile
                  example3d/Makefile])
 

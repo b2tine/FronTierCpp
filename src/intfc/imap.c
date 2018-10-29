@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <intfc/int.h>		/* includes int.h, table.h */
+#include <int.h>		/* includes int.h, table.h */
 
 LOCAL boolean curve_of_boundary_hs(CURVE*);
 LOCAL void change_vertex_of_tris(POINT*,TRI*,POINT*);
@@ -1308,3 +1308,71 @@ EXPORT int I_FirstRingTrisAroundPoint(
 	nt = set_tri_list_around_point(p,tri,tris,p->interface);
 	return nt;
 }	/* end I_FirstRingTrisAroundPoint */
+
+EXPORT void I_RotateSurfaceSet(
+        SURFACE *surf,
+        double *center,
+        double phi,
+        double theta)
+{
+	int i;
+	int nc,nn;			// nc, nn: number of curves and nodes;
+	CURVE **c,*curves[500];
+	NODE **n,*nodes[500];
+
+	/* Assemble curves and nodes */
+	nc = nn = 0;
+	surf_pos_curve_loop(surf,c)
+	{
+	    if (!pointer_in_list(*c,nc,(POINTER*)curves))
+	    {
+		curves[nc++] = *c;
+		if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+		    nodes[nn++] = (*c)->start;
+		if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+		    nodes[nn++] = (*c)->end;
+	    }
+	}
+	surf_neg_curve_loop(surf,c)
+	{
+	    if (!pointer_in_list(*c,nc,(POINTER*)curves))
+	    {
+		curves[nc++] = *c;
+		if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+		    nodes[nn++] = (*c)->start;
+		if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+		    nodes[nn++] = (*c)->end;
+	    }
+	}
+	for (i = 0; i < nn; ++i)
+	{
+	    node_in_curve_loop(nodes[i],c)
+	    {
+		if (!pointer_in_list(*c,nc,(POINTER*)curves))
+		{
+		    curves[nc++] = *c;
+		    if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+		    	nodes[nn++] = (*c)->start;
+		    if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+		    	nodes[nn++] = (*c)->end;
+		}
+	    }
+	    node_out_curve_loop(nodes[i],c)
+	    {
+		if (!pointer_in_list(*c,nc,(POINTER*)curves))
+		{
+		    curves[nc++] = *c;
+		    if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+		    	nodes[nn++] = (*c)->start;
+		    if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+		    	nodes[nn++] = (*c)->end;
+		}
+	    }
+	}
+	/* Systematically rotate all points */
+	I_SphericalRotateInteriorSurfPoints(surf,center,phi,theta);
+	for (i = 0; i < nc; ++i)
+	    I_SphericalRotateInteriorCurvePoints(curves[i],center,phi,theta);
+	for (i = 0; i < nn; ++i)
+	    I_SphericalRotatePoint(nodes[i]->posn,center,phi,theta,NO);
+}       /* end I_RotateSurfaceSet */
