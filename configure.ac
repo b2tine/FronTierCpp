@@ -134,6 +134,7 @@ AC_SUBST(PETSC_LIBS,${petsclib})
 
 #check if iFluid should be compiled
 AM_CONDITIONAL([PETSC_OPT],[test "$with_petsc" = "yes"])
+AM_COND_IF([PETSC_OPT],[AC_CONFIG_FILES([iFluid/Makefile])])
 
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
@@ -191,7 +192,6 @@ AC_CONFIG_FILES([Makefile
                  lib/gmock/Makefile
                  tests/Makefile
                  cFluid/Makefile
-                 iFluid/Makefile
                  airfoil/Makefile
                  example2d/Makefile
                  example3d/Makefile])
