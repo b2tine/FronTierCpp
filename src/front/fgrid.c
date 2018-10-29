@@ -2158,6 +2158,12 @@ LOCAL	void show_grid_components3d(
 		    	        printf("%d ",comp[d_index3d(ix,iy,iz,gmax)]);
 		    	    else if (nc == 1)
 		    	        printf("%d|",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 2)
+		    	        printf("%dD",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 3)
+		    	        printf("%dT",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 4)
+		    	        printf("%dF",comp[d_index3d(ix,iy,iz,gmax)]);
 			    else
 		    	        printf("%d*",comp[d_index3d(ix,iy,iz,gmax)]);
 			}
@@ -2178,6 +2184,12 @@ LOCAL	void show_grid_components3d(
 		    	    printf("  ");
 		    	else if (nc == 1)
 		    	    printf("- ");
+		    	else if (nc == 2)
+		    	    printf("D ");
+		    	else if (nc == 3)
+		    	    printf("T ");
+		    	else if (nc == 4)
+		    	    printf("F ");
 		    	else 
 		    	    printf("* ");
 		    }
@@ -2202,6 +2214,12 @@ LOCAL	void show_grid_components3d(
 		    	        printf("%d ",comp[d_index3d(ix,iy,iz,gmax)]);
 		    	    else if (nc == 1)
 		    	        printf("%d|",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 2)
+		    	        printf("%dD",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 3)
+		    	        printf("%dT",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 4)
+		    	        printf("%dF",comp[d_index3d(ix,iy,iz,gmax)]);
 		    	    else
 		    	        printf("%d*",comp[d_index3d(ix,iy,iz,gmax)]);
 			}
@@ -2222,6 +2240,12 @@ LOCAL	void show_grid_components3d(
 		    	    printf("  ");
 		    	else if (nc == 1)
 		    	    printf("- ");
+		    	else if (nc == 2)
+		    	    printf("D ");
+		    	else if (nc == 3)
+		    	    printf("T ");
+		    	else if (nc == 4)
+		    	    printf("F ");
 		    	else
 		    	    printf("* ");
 		    }
@@ -2246,6 +2270,12 @@ LOCAL	void show_grid_components3d(
 		    	        printf("%d ",comp[d_index3d(ix,iy,iz,gmax)]);
 		    	    else if (nc == 1)
 		    	        printf("%d|",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 2)
+		    	        printf("%dD",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 3)
+		    	        printf("%dT",comp[d_index3d(ix,iy,iz,gmax)]);
+		    	    else if (nc == 4)
+		    	        printf("%dF",comp[d_index3d(ix,iy,iz,gmax)]);
 		    	    else
 		    	        printf("%d*",comp[d_index3d(ix,iy,iz,gmax)]);
 			}
@@ -2266,6 +2296,12 @@ LOCAL	void show_grid_components3d(
 		    	    printf("  ");
 		    	else if (nc == 1)
 		    	    printf("- ");
+		    	else if (nc == 2)
+		    	    printf("D ");
+		    	else if (nc == 3)
+		    	    printf("T ");
+		    	else if (nc == 4)
+		    	    printf("F ");
 			else
 		    	    printf("* ");
 		    }

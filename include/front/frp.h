@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if !defined(_FRP_H)
 #define _FRP_H
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

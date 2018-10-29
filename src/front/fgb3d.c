@@ -868,10 +868,12 @@ LOCAL	boolean track_comp_and_repair3d(
 	if(ips == NULL)
 	    stat_matrix(&ips,MAX_NUM_UNPHY_IP,3,INT);
 
+        /*
 	adjust_crossings(smin,smax,intfc);
-	fill_comp_from_prev_intfc(intfc, smin, smax);
-	
+	fill_comp_from_prev_intfc(intfc,smin,smax);
 	fill_physical_comps(smin,smax,gmax,intfc);
+        */
+        preset_grid_component(intfc,smin,smax,gmax);
 
 	remove_unphysical_crxings(smin,smax,gmax,intfc,SINGLE,&num_ip,ips);
 

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_FPROTOS_H)
 #define _FPROTOS_H
 
-#include <fdecs.h>
+#include <front/fdecs.h>
 
 		/* Front IMPORTED Function Prototypes*/
 
@@ -213,10 +213,11 @@ IMPORT	boolean check_degenerated_loop(TRI**,int*,POINT**,int);
 
 	/*fgb3dutil.c */
 IMPORT	void	adjust_crossings(int*,int*,INTERFACE*);
-IMPORT	boolean	next_ip_in_dir(const int*,int,int*,int*,int*);
+IMPORT	boolean	next_ip_in_dir(const int*,GRID_DIRECTION,int*,int*,int*);
 IMPORT	boolean	check_and_repair_crx(INTERFACE*,int*,int*);
 IMPORT	void 	fill_comps_in_box(int*,int*,int*,INTERFACE*);
 IMPORT	void 	fill_physical_comps(int*,int*,int*,INTERFACE*);
+IMPORT	void 	preset_grid_component(INTERFACE*,int*,int*,int*);
 IMPORT	void 	fill_comp_with_component3d(int*,int*,int*,INTERFACE*);
 IMPORT	void 	show_component_along_line(int,int,int*,int*,int,INTERFACE*);
 IMPORT	void 	remove_unphysical_crxings(int*,int*,int*,INTERFACE*,CRX_TYPE,
@@ -476,11 +477,9 @@ IMPORT	void	debug_front(const char*,const char*,Front*);
 IMPORT	void	f_fprint_max_front_speed_info(FILE*,Front*);
 IMPORT  void    print_front_output(Front*,char*);
 IMPORT	void	show_front_output(Front*,char*,boolean);
-
 #if defined(USE_HDF4)
 IMPORT	void	plot_hdf_data(POINTER,Front*,HDF_plot_data*);
 #endif /* defined(USE_HDF4) */
-
 IMPORT	const char *propagation_status_as_string(NODE_PROPAGATION_STATUS);
 IMPORT	const char *redistribution_direction_as_string(REDISTRIBUTION_DIRECTION);
 IMPORT	const char *untangle_status_as_string(int);
@@ -956,5 +955,5 @@ IMPORT	double FrontHypTimeStep(Front*);
 }
 #endif
 
-#include <fapi.h>
+#include <front/fapi.h>
 #endif /* !defined(_FPROTOS_H) */

@@ -1738,3 +1738,15 @@ EXPORT	void	pp_l_allgather(
 	DEBUG_LEAVE(pp_l_allgather)
 }		/*end pp_l_allgather*/
 
+LOCAL   int num_of_thread = 1;          /* default */
+
+EXPORT  int get_num_of_thread()
+{
+        return num_of_thread;
+}       /* end get_num_of_thread */
+
+EXPORT  void set_num_of_thread(int nt)
+{
+        num_of_thread = nt;
+}       /* end get_num_of_thread */
+

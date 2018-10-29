@@ -21,115 +21,108 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
+/*******************************************************************
+ * 		G_CARTESIAN.c
+ *******************************************************************/
 #include "cFluid.h"
 
-class ToFill
-{
-    public:
-
-        int icoords[3];
+class ToFill{
+public:
+int icoords[3];
 };
 
-EXPORT void tecplot_interface_states(
-        const char*, INTERFACE*);
+EXPORT  void    tecplot_interface_states(const char*, INTERFACE	*);
 
-static double (*getStateMom[MAXD])(Locstate) 
-    = {getStateXmom, getStateYmom, getStateZmom};
+static double (*getStateMom[MAXD])(Locstate) =
+               {getStateXmom,getStateYmom,getStateZmom};
+static void printInputStencil(SWEEP,int);
 
 //----------------------------------------------------------------
 //		L_RECTANGLE
 //----------------------------------------------------------------
 
-L_RECTANGLE::L_RECTANGLE()
-    : m_index{-1}, comp{-1}
-{}
-
-void L_RECTANGLE::setCoords(double *coords, int dim)
+L_RECTANGLE::L_RECTANGLE(): m_index(-1), comp(-1)
 {
-	for(int i = 0; i < dim; ++i)
-        m_coords[i] = coords[i];
 }
 
+void L_RECTANGLE::setCoords(
+	double *coords,
+	int dim)
+{
+	int i;
+	for (i = 0; i < dim; ++i)
+	    m_coords[i] = coords[i];
+}
 //--------------------------------------------------------------------------
 // 		G_CARTESIAN
 //--------------------------------------------------------------------------
 
-G_CARTESIAN::G_CARTESIAN(Front* frnt)
-    : front{frnt}, dim{frnt->rect_grid->dim},
-    eqn_params{(EQN_PARAMS*)front->extra1},
-    coeffsRK(4,std::vector<double>(4,0.0)),
-    weightsRK(4,0.0)
-{
-    initMesh();
-    initMovieVariables();
-}
-
 G_CARTESIAN::~G_CARTESIAN()
 {
-    FT_FreeThese(5,eqn_params->vel,eqn_params->mom,
-           eqn_params->engy,eqn_params->pres,eqn_params->dens);
-
-    FT_FreeThese(4,eqn_params->gnor,eqn_params->Gdens,
-           eqn_params->Gpres,eqn_params->Gvel);
-    
-    //TODO: free rk4 flux data
-
-    FT_FreeThese(1,array);
 }
 
-
-void G_CARTESIAN::initMesh()
+//---------------------------------------------------------------
+//	initMesh
+// include the following parts
+// 1) setup cell_center
+//---------------------------------------------------------------
+void G_CARTESIAN::initMesh(void)
 {
-	int index;
+	int i,j,k, index;
 	double coords[2];
+	int num_cells;
 
-	L_RECTANGLE rectangle;
+	// init cell_center
+	L_RECTANGLE       rectangle;
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
-
+	/*TMP*/
+	min_dens = 0.0001;
+	min_pres = 0.0001;
 	FT_MakeGridIntfc(front);
-
-    initComputationalData();
+	setDomain();
+	num_cells = 1;
+	for (i = 0; i < dim; ++i)
+	{
+	    num_cells *= (top_gmax[i] + 1);
+	}
+	cell_center.insert(cell_center.end(),num_cells,rectangle);
 	
-    int num_cells = 1;
-	for (int i = 0; i < dim; ++i)
-        num_cells *= (top_gmax[i] + 1);
-	
-    cell_center.insert(cell_center.end(),num_cells,rectangle);
-	
+	// setup vertices
+	// left to right, down to up
 	switch (dim)
 	{
 	case 1:
-	    for (int i = 0; i <= top_gmax[0]; ++i)
+	    for (i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	coords[0] = top_L[0] + top_h[0]*i;
-            index = d_index1d(i,top_gmax);
+		index = d_index1d(i,top_gmax);
 	    	cell_center[index].setCoords(coords,dim);
 	    	cell_center[index].icoords[0] = i;
 	    }
 	    break;
 	case 2:
-	    for (int j = 0; j <= top_gmax[1]; ++j)
-	    for (int i = 0; i <= top_gmax[0]; ++i)
+	    for (j = 0; j <= top_gmax[1]; j++)
+	    for (i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	coords[0] = top_L[0] + top_h[0]*i;
 	    	coords[1] = top_L[1] + top_h[1]*j;
-            index = d_index2d(i,j,top_gmax);
+		index = d_index2d(i,j,top_gmax);
 	    	cell_center[index].setCoords(coords,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
 	    }
 	    break;
 	case 3:
-	    for (int k = 0; k <= top_gmax[2]; k++)
-	    for (int j = 0; j <= top_gmax[1]; j++)
-	    for (int i = 0; i <= top_gmax[0]; i++)
+	    for (k = 0; k <= top_gmax[2]; k++)
+	    for (j = 0; j <= top_gmax[1]; j++)
+	    for (i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	coords[0] = top_L[0] + top_h[0]*i;
 	    	coords[1] = top_L[1] + top_h[1]*j;
 	    	coords[2] = top_L[2] + top_h[2]*k;
-            index = d_index3d(i,j,k,top_gmax);
+		index = d_index3d(i,j,k,top_gmax);
 	    	cell_center[index].setCoords(coords,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
@@ -139,186 +132,39 @@ void G_CARTESIAN::initMesh()
 	
 	setComponent();
 	FT_FreeGridIntfc(front);
-
 	if (debugging("trace"))
 	    (void) printf("Leaving g_cartesian.initMesh()\n");
 }
 
-void G_CARTESIAN::initComputationalData()
+void G_CARTESIAN::setComponent(void)
 {
-    getDomainBounds();
-    allocEqnField();
-    allocGhostFluid();
-    initRungeKutta();
-
-    //Scatter array
-    FT_VectorMemoryAlloc((POINTER*)&array,
-            sizeEqnVst,sizeof(double));
-}
-
-void G_CARTESIAN::getDomainBounds()
-{
-	setDomain();
-    
-    //for (int i = 0; i < 3; ++i)
-      //  top_gmax[i] = 0;
-
-    sizeEqnVst = 1;
-    hmin = HUGE;
-
-    for (int i = 0; i < dim; ++i)
-    {
-        lbuf[i] = front->rect_grid->lbuf[i];
-        ubuf[i] = front->rect_grid->ubuf[i];
-
-        top_L[i] = top_grid->L[i];
-        top_U[i] = top_grid->U[i];
-        top_h[i] = top_grid->h[i];
-        
-        if (hmin > top_h[i])
-            hmin = top_h[i];
-
-        top_gmax[i] = top_grid->gmax[i];
-        sizeEqnVst *= (top_gmax[i]+1);
-        
-        imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
-        
-        imax[i] = (ubuf[i] == 0) ? 
-            top_gmax[i] - 1 : top_gmax[i] - ubuf[i];
-    }
-}
-
-void G_CARTESIAN::allocEqnField()
-{
-    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vel,
-            dim,sizeEqnVst,sizeof(double));
-    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->mom,
-            dim,sizeEqnVst,sizeof(double));
-    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,
-            sizeEqnVst,sizeof(double));
-    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,
-            sizeEqnVst,sizeof(double));
-    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,
-            sizeEqnVst,sizeof(double));
-
-    if (dim == 2)
-    {
-        FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,
-                sizeEqnVst,sizeof(double));
-    }
-    
-    field.vel = eqn_params->vel;
-    field.momn = eqn_params->mom;
-    field.engy = eqn_params->engy;
-    field.pres = eqn_params->pres;
-    field.dens = eqn_params->dens;
-}
-
-void G_CARTESIAN::allocGhostFluid()
-{
-    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->gnor,
-            dim,sizeEqnVst,sizeof(double));
-    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gdens,
-            2,sizeEqnVst,sizeof(double));
-    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gpres,
-            2,sizeEqnVst,sizeof(double));
-    FT_TriArrayMemoryAlloc((POINTER*)&eqn_params->Gvel,
-            2,dim,sizeEqnVst,sizeof(double));
-
-    setGhostFluidStatesToZero();
-}
-
-void G_CARTESIAN::initRungeKutta()
-{
-	switch(eqn_params->num_scheme)
-    {
-        case TVD_FIRST_ORDER:
-        case WENO_FIRST_ORDER:
-            setFirstOrderRK();
-            break;
-        case TVD_SECOND_ORDER:
-        case WENO_SECOND_ORDER:
-            setSecondOrderRK();
-            break;
-        case TVD_FOURTH_ORDER:
-        case WENO_FOURTH_ORDER:
-            setFourthOrderRK();
-            break;
-        default:
-            (void)printf("ERROR: Numerical scheme not recognized\n");
-            clean_up(ERROR);
-    }
-
-    allocRungeKuttaVstFlux();
-}
-
-void G_CARTESIAN::setFirstOrderRK()
-{
-    orderRK = 1;
-    weightsRK[0] = 1.0;
-}
-
-void G_CARTESIAN::setSecondOrderRK()
-{
-    orderRK = 2;
-
-    coeffsRK[0][0] = 1.0;
-    weightsRK[0] = 0.5; weightsRK[1] = 0.5;
-}
-
-void G_CARTESIAN::setFourthOrderRK()
-{
-    orderRK = 4;
-    
-    coeffsRK[0][0] = 0.5;
-    coeffsRK[1][0] = 0.0;   coeffsRK[1][1] = 0.5;
-    coeffsRK[2][0] = 0.0;   coeffsRK[2][1] = 0.0;   coeffsRK[2][2] = 1.0;
-
-    weightsRK[0] = 1.0/6.0;  weightsRK[1] = 1.0/3.0;
-    weightsRK[2] = 1.0/3.0;  weightsRK[3] = 1.0/6.0;
-}
-
-void G_CARTESIAN::allocRungeKuttaVstFlux()
-{
-    FT_VectorMemoryAlloc((POINTER*)&st_field,orderRK,sizeof(SWEEP));
-    FT_VectorMemoryAlloc((POINTER*)&st_flux,orderRK,sizeof(FSWEEP));
-	
-    for (int i = 0; i < orderRK; ++i)
-    {
-        allocMeshVst(&st_field[i]);
-        allocMeshFlux(&st_flux[i]);
-    }
-}
-
-
-void G_CARTESIAN::setComponent()
-{
+	int		i,j, ind;
 	double 		*coords;
 	int 		*icoords;
+	COMPONENT 	old_comp,new_comp;
 	double		***Gvel = eqn_params->Gvel;
 	double		**Gdens = eqn_params->Gdens;
 	double		**Gpres = eqn_params->Gpres;
+	static STATE 	*state = NULL;
 	double		*dens = field.dens;
 	double		*engy = field.engy;
 	double		*pres = field.pres;
 	double		**momn = field.momn;
-	int		size = (int) cell_center.size();
-	COMPONENT 	old_comp,new_comp;
+	int		size = (int)cell_center.size();
+	
+	// cell center components
+	if(state == NULL)
+	    FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
 
-    STATE* state;
-    FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
-
-	for (int i = 0; i < size; ++i)
+	for (i = 0; i < size; i++)
 	{
 	    icoords = cell_center[i].icoords;
 	    coords = cell_center[i].m_coords;
 	    old_comp = cell_center[i].comp;
 	    new_comp = top_comp[i];
-	    
-        if (eqn_params->tracked && cell_center[i].comp != -1 &&
+	    if (eqn_params->tracked && cell_center[i].comp != -1 &&
 		cell_center[i].comp != top_comp[i] && gas_comp(new_comp))
 	    {
-
 		if (!FrontNearestIntfcState(front,coords,new_comp,
 				(POINTER)state))
 		{
@@ -326,55 +172,143 @@ void G_CARTESIAN::setComponent()
 		    (void) printf("FrontNearestIntfcState() failed\n");
 		    (void) printf("old_comp = %d new_comp = %d\n",
 					old_comp,new_comp);
-
-            clean_up(ERROR);
+		    clean_up(ERROR);
 		}
 
 		//GFM
-        state->dim = dim;
+		state->dim = dim;
 		state->eos = &eqn_params->eos[new_comp];
-	
-	    int ind;
-        if (gas_comp(old_comp) && gas_comp(new_comp))
+		if (gas_comp(old_comp) && gas_comp(new_comp))
 		{
 		    if(new_comp == GAS_COMP1)
-                ind = 0;
+			ind = 0;
 		    else
-                ind = 1;
+			ind = 1;
 
-		    state->dens = Gdens[ind][i];
-		    state->pres = Gpres[ind][i];
-	
-            for(int j = 0; j < dim; ++j)
-                state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
-	
-            state->engy = EosEnergy(state);
+                    if (Gdens[ind][i] != 0.0) // Not unset
+                    {
+		        state->dens = Gdens[ind][i];
+		        state->pres = Gpres[ind][i];
+		        for(j = 0; j < dim; ++j)
+			    state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
+		        state->engy = EosEnergy(state);
+                    }
 		}
 
 		dens[i] = state->dens;
 		pres[i] = state->pres;
 		engy[i] = state->engy;
-
-		for (int j = 0; j < dim; ++j)
-            momn[j][i] = state->momn[j];
-	    
-        }
-
+		for (j = 0; j < dim; ++j)
+		    momn[j][i] = state->momn[j];
+	    }
 	    cell_center[i].comp = top_comp[i];
 	}
-
-    FT_FreeThese(1,state);
-
 }	/* end setComponent() */
 
+void G_CARTESIAN::setInitialIntfc(
+	LEVEL_FUNC_PACK *level_func_pack,
+	char *inname)
+{
+	dim = front->rect_grid->dim;
+	eqn_params = (EQN_PARAMS*)front->extra1;
+	switch (eqn_params->prob_type)
+	{
+	case TWO_FLUID_RT:
+	case TWO_FLUID_RM:
+	    initSinePertIntfc(level_func_pack,inname);
+	    break;
+	case TWO_FLUID_RM_RAND:
+	    initRandPertIntfc(level_func_pack,inname);
+	    break;
+	case TWO_FLUID_BUBBLE:
+	case FLUID_SOLID_CIRCLE:
+	    initCirclePlaneIntfc(level_func_pack,inname);
+	    break;
+	case IMPLOSION:
+	    initImplosionIntfc(level_func_pack,inname);
+	    break;
+	case MT_FUSION:
+	    initMTFusionIntfc(level_func_pack,inname);
+	    break;
+	case PROJECTILE:
+	    initProjectileIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_RECT:
+	    initRectPlaneIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_TRIANGLE:
+	    initTrianglePlaneIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_CYLINDER:
+             initCylinderPlaneIntfc(level_func_pack,inname);
+             break;
+	case RIEMANN_PROB:
+	case ONED_BLAST:
+	case ONED_SSINE:
+	case ONED_ASINE:
+	    initRiemannProb(level_func_pack,inname);
+	    break;
+	case OBLIQUE_SHOCK_REFLECT:
+	    initObliqueIntfc(level_func_pack,inname);
+	    break;
+	default:
+	    (void) printf("Problem type not implemented, code needed!\n");
+	    clean_up(ERROR);
+	}
+}	/* end setInitialIntfc */
 
+void G_CARTESIAN::setProbParams(char *inname)
+{
+	dim = front->rect_grid->dim;
+	eqn_params = (EQN_PARAMS*)front->extra1;
+	switch (eqn_params->prob_type)
+	{
+	case TWO_FLUID_RT:
+	    setRayleiTaylorParams(inname);
+	    break;
+	case TWO_FLUID_RM:
+	case TWO_FLUID_RM_RAND:
+	    setRichtmyerMeshkovParams(inname);
+	    break;
+	case TWO_FLUID_BUBBLE:
+	    setBubbleParams(inname);
+	    break;
+	case IMPLOSION:
+	    setImplosionParams(inname);
+	    break;
+	case MT_FUSION:
+	    setMTFusionParams(inname);
+	    break;
+	case PROJECTILE:
+	case FLUID_SOLID_CIRCLE:
+	case FLUID_SOLID_RECT:
+	case FLUID_SOLID_TRIANGLE:
+	case FLUID_SOLID_CYLINDER:
+	    setProjectileParams(inname);
+	    break;
+	case RIEMANN_PROB:
+	    setRiemProbParams(inname);
+	    break;
+	case ONED_BLAST:
+	case ONED_SSINE:
+	case ONED_ASINE:
+	    setOnedParams(inname);
+	    break;
+	case OBLIQUE_SHOCK_REFLECT:
+	    setRichtmyerMeshkovParams(inname);
+	    break;
+	default:
+	    printf("In setProbParams(), unknown problem type!\n");
+	    clean_up(ERROR);
+	}
+}	/* end setProbParams */
 
 void G_CARTESIAN::setInitialStates()
 {
 	switch (eqn_params->prob_type)
 	{
 	case TWO_FLUID_RT:
-	    initRayleighTaylorStates();
+	    initRayleiTaylorStates();
 	    break;
 	case TWO_FLUID_RM:
 	case TWO_FLUID_RM_RAND:
@@ -415,55 +349,115 @@ void G_CARTESIAN::setInitialStates()
 	    (void) printf("In setInitialStates(), case not implemented!\n");
 	    clean_up(ERROR);
 	}
-
-    copyMeshStates();
-
+	copyMeshStates();
 }	/* end setInitialStates */
 
-
-void G_CARTESIAN::computeAdvection()
+void G_CARTESIAN::computeAdvection(void)
 {
-    //potential to modify the method adaptively here
-    solveRungeKutta();
-}
+	int order;
+	switch (eqn_params->num_scheme)
+	{
+	case TVD_FIRST_ORDER:
+	case WENO_FIRST_ORDER:
+	    nrad = 3;
+	    order = 1;
+	    break;
+	case TVD_SECOND_ORDER:
+	case WENO_SECOND_ORDER:
+	    nrad = 3;
+	    order = 2;
+	    break;
+	case TVD_FOURTH_ORDER:
+	case WENO_FOURTH_ORDER:
+	    nrad = 3;
+	    order = 4;
+	    break;
+	default:
+	    order = -1;
+	}
+	solveRungeKutta(order);
+}	/* end computeAdvection */
 
-void G_CARTESIAN::solveRungeKutta()
+
+void G_CARTESIAN::solveRungeKutta(int order)
 {
-    start_clock("solveRungeKutta");
+	static SWEEP *st_field,st_tmp;
+	static FSWEEP *st_flux;
+	static double **a,*b;
+	double delta_t;
+	int i,j;
 
-    copyToMeshVst(&st_field[0]);
+	/* Allocate memory for Runge-Kutta of order */
+	start_clock("solveRungeKutta");
+	if (st_flux == NULL)
+	{
+	    FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
 
-	double delta_t = front->dt;
-    computeMeshFlux(st_field[0],&st_flux[0],delta_t);
+	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+	    for (i = 0; i < order; ++i)
+	    {
+	    	allocMeshVst(&st_tmp);
+	    	allocMeshVst(&st_field[i]);
+	    	allocMeshFlux(&st_flux[i]);
+	    }
+	    /* Set coefficient a, b, c for different order of RK method */
+	    switch (order)
+	    {
+	    case 1:
+		b[0] = 1.0;
+	    	break;
+	    case 2:
+	    	a[0][0] = 1.0;
+	    	b[0] = 0.5;  b[1] = 0.5;
+	    	break;
+	    case 4:
+	    	a[0][0] = 0.5;
+	    	a[1][0] = 0.0;  a[1][1] = 0.5;
+	    	a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
+	    	b[0] = 1.0/6.0;  b[1] = 1.0/3.0;
+	    	b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+	    	break;
+	    default:
+	    	(void)printf("ERROR: %d-th order RK method not implemented\n",
+					order);
+	    	clean_up(ERROR);
+	    }
+	}
+	delta_t = m_dt;
+
+	/* Compute flux and advance field */
+
+	copyToMeshVst(&st_field[0]);
+	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
 	
-	for (int i = 0; i < orderRK-1; ++i)
+	for (i = 0; i < order-1; ++i)
 	{
 	    copyMeshVst(st_field[0],&st_field[i+1]);
-        for (int j = 0; j <= i; ++j)
+	    for (j = 0; j <= i; ++j)
 	    {
-            if (coeffsRK[i][j] != 0.0)
-                addMeshFluxToVst(&st_field[i+1],st_flux[j],coeffsRK[i][j]);
+		if (a[i][j] != 0.0)
+		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
 	    }
-
-        computeMeshFlux(st_field[i+1],&st_flux[i+1],delta_t);
+	    computeMeshFlux(st_field[i+1],&st_flux[i+1],delta_t);
 	}
-	
-    for (int i = 0; i < orderRK; ++i)
+	for (i = 0; i < order; ++i)
 	{
-	    if (weightsRK[i] != 0.0)
-            addMeshFluxToVst(&st_field[0],st_flux[i],weightsRK[i]);
+	    if (b[i] != 0.0)
+		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	}
-
 	copyFromMeshVst(st_field[0]);
-	
-    stop_clock("solveRungeKutta");
-}
-
+	stop_clock("solveRungeKutta");
+}	/* end solveRungeKutta */
 
 void G_CARTESIAN::computeMeshFlux(
-        SWEEP m_vst, FSWEEP *m_flux,
-        double delta_t)
+	SWEEP m_vst,
+	FSWEEP *m_flux,
+	double delta_t)
 {
+	int dir;
+
 	if(eqn_params->tracked)
 	{
 	    start_clock("get_ghost_state");
@@ -471,14 +465,13 @@ void G_CARTESIAN::computeMeshFlux(
 	    get_ghost_state(m_vst, 3, 1);
 	    scatMeshGhost();
 	    stop_clock("get_ghost_state");
-	    
-        start_clock("solve_exp_value");
+	    start_clock("solve_exp_value");
 	    solve_exp_value();
 	    stop_clock("solve_exp_value");
 	}
 
 	resetFlux(m_flux);
-	for (int dir = 0; dir < dim; ++dir)
+	for (dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
@@ -504,38 +497,30 @@ void G_CARTESIAN::addFluxInDirection(
 	FSWEEP *m_flux,
 	double delta_t)
 {
+	int i,j,icoords[MAXD];
+        int num_thread = get_num_of_thread();
 	switch (dim)
 	{
-	    case 1:
-        {
-            int icoords[MAXD];
-	        addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
-	        break;
-        }
-	    case 2:
-        {
-            //#pragma omp parallel for num_threads(1)
-            for (int i = imin[(dir+1)%dim]; i <= imax[(dir+1)%dim]; ++i)
-            {
-                int icoords[MAXD];
-                icoords[(dir+1)%dim] = i;
-                addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
-            }
-            break;
-        }
-	    case 3:
-        {
-            //#pragma omp parallel for collapse(2) num_threads(1)
-            for (int i = imin[(dir+1)%dim]; i <= imax[(dir+1)%dim]; ++i)
-            for (int j = imin[(dir+2)%dim]; j <= imax[(dir+2)%dim]; ++j)
-            {
-                int icoords[MAXD];
-                icoords[(dir+1)%dim] = i;
-                icoords[(dir+2)%dim] = j;
-                addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
-            }
-            break;
-        }
+	case 1:
+	    addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
+	    break;
+	case 2:
+	    for (i = imin[(dir+1)%dim]; i <= imax[(dir+1)%dim]; ++i)
+	    {
+	    	icoords[(dir+1)%dim] = i;
+	    	addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
+	    }
+	    break;
+	case 3:
+            #pragma omp parallel for num_threads(num_thread)
+	    for (i = imin[(dir+1)%dim]; i <= imax[(dir+1)%dim]; ++i)
+	    for (j = imin[(dir+2)%dim]; j <= imax[(dir+2)%dim]; ++j)
+	    {
+	    	icoords[(dir+1)%dim] = i;
+	    	icoords[(dir+2)%dim] = j;
+	    	addFluxAlongGridLine(dir,icoords,delta_t,m_vst,m_flux);
+	    }
+	    break;
 	}
 }	/* end addFluxInDirection */
 
@@ -770,23 +755,21 @@ void G_CARTESIAN::addSourceTerm(
 // for initial condition: 
 // 		setInitialCondition();	
 // this function should be called before solve()
-//
 // for the source term of the momentum equation: 	
 // 		computeSourceTerm();
-
-
-void G_CARTESIAN::solve()
+void G_CARTESIAN::solve(double dt)
 {
+	m_dt = dt;
+	max_speed = 0.0;
+
 	if (debugging("trace"))
-        printf("Entering solve()\n");
-	
-    setupSolver();
-    start_clock("solve");
-
+	    printf("Entering solve()\n");
+	start_clock("solve");
+	setDomain();
 	appendOpenEndStates(); /* open boundary test */
-	scatMeshStates(); //MPI; static variables inside
+	scatMeshStates();
 
-	adjustGhostFluidStates();
+	adjustGFMStates();
 	setComponent();
 	
 	if (debugging("trace"))
@@ -794,51 +777,40 @@ void G_CARTESIAN::solve()
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-
-    computeAdvection();
+	computeAdvection();
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
+	stop_clock("computeAdvection");
 	
-    stop_clock("computeAdvection");
-	
-    //can turn this off if needed for time being.
 	if (debugging("sample_velocity"))
 	{
 	    sampleVelocity();
 	}
 
 	start_clock("copyMeshStates");
-	copyMeshStates(); //MPI; static variables inside
+	copyMeshStates();
 	stop_clock("copyMeshStates");
 
 	setAdvectionDt();
 	stop_clock("solve");
-	
-    if (debugging("trace"))
+	if (debugging("trace"))
 	    printf("Leaving solve()\n");
-
 }	/* end solve */
 
-void G_CARTESIAN::setupSolver()
-{
-	max_speed = 0.0;
-    setDomain();
-    setGhostFluidStatesToZero();
-}
 
 // check http://en.wikipedia.org/wiki/Bilinear_interpolation
 void G_CARTESIAN::getVelocity(double *p, double *U)
 {
-    double **vel = eqn_params->vel;
+        double **vel = eqn_params->vel;
 
-    FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
-                NULL);
-    if (dim > 1)
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
-                NULL);
-    if (dim > 2)
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
-                NULL);
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
+					NULL);
+        if (dim > 1)
+            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
+					NULL);
+        if (dim > 2)
+            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
+					NULL);
 }
 
 void G_CARTESIAN::getRectangleIndex(int index, int &i, int &j)
@@ -965,44 +937,130 @@ void G_CARTESIAN::save(char *filename)
 	fclose(hfile);
 }
 
+G_CARTESIAN::G_CARTESIAN(Front &front):front(&front)
+{
+}
 
 void G_CARTESIAN::setDomain()
 {
-	INTERFACE* grid_intfc = front->grid_intfc;
-	this->top_grid = &topological_grid(grid_intfc);
+	static boolean first = YES;
+	INTERFACE *grid_intfc;
+	Table *T;
+	int i,j,k;
+	static int size;
+
+	grid_intfc = front->grid_intfc;
+	top_grid = &topological_grid(grid_intfc);
+	T = table_of_interface(grid_intfc);
+	top_comp = T->components;
+	eqn_params = (EQN_PARAMS*)front->extra1;
 	
-	Table* T = table_of_interface(grid_intfc);
-	this->top_comp = T->components;
+	if (first)
+	{
+	    first = NO;
+	    dim = grid_intfc->dim;
+
+	    hmin = HUGE;
+	    size = 1;
+	    
+            for (i = 0; i < 3; ++i)
+	    	top_gmax[i] = 0;
+
+            for (i = 0; i < dim; ++i)
+	    {
+	    	lbuf[i] = front->rect_grid->lbuf[i];
+	    	ubuf[i] = front->rect_grid->ubuf[i];
+	    	top_gmax[i] = top_grid->gmax[i];
+	    	top_L[i] = top_grid->L[i];
+	    	top_U[i] = top_grid->U[i];
+	    	top_h[i] = top_grid->h[i];
+
+                if (hmin > top_h[i]) hmin = top_h[i];
+	        size *= (top_gmax[i]+1);
+	    	imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+	    	imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : 
+				top_gmax[i] - ubuf[i];
+	    }
+
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,size,
+					sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,size,
+					sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,size,
+					sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vel,dim,size,
+					sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->mom,dim,size,
+					sizeof(double));
+	    //GFM
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->gnor,dim,size,
+					sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gdens,2,size,
+					sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gpres,2,size,
+					sizeof(double));
+	    FT_TriArrayMemoryAlloc((POINTER*)&eqn_params->Gvel,2,dim,size,
+					sizeof(double));
+
+	    FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+	    if (dim == 2)
+	    	FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,size,
+					sizeof(double));
+	    field.dens = eqn_params->dens;
+	    field.engy = eqn_params->engy;
+	    field.pres = eqn_params->pres;
+	    field.momn = eqn_params->mom;
+	    field.vel = eqn_params->vel;
+	}
+	for (i = 0; i < size; ++i)
+	for (j = 0; j < 2; ++j)
+	{
+	    eqn_params->Gdens[j][i] = 0.0;
+	    eqn_params->Gpres[j][i] = 0.0;
+	    for (k = 0; k < dim; ++k)
+		eqn_params->Gvel[j][k][i] = 0.0;
+	}
 }
 
 void G_CARTESIAN::allocMeshVst(
 	SWEEP *vst)
 {
-	FT_VectorMemoryAlloc((POINTER*)&vst->dens,sizeEqnVst,sizeof(double));
-	FT_VectorMemoryAlloc((POINTER*)&vst->engy,sizeEqnVst,sizeof(double));
-	FT_VectorMemoryAlloc((POINTER*)&vst->pres,sizeEqnVst,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,sizeEqnVst,sizeof(double));
-}
+	int i,size;
+
+	size = 1;
+        for (i = 0; i < dim; ++i)
+	    size *= (top_gmax[i]+1);
+
+	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
+	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
+}	/* end allocMeshVstFlux */
 
 void G_CARTESIAN::allocMeshFlux(
 	FSWEEP *flux)
 {
-	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,sizeEqnVst,sizeof(double));
-	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,sizeEqnVst,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,sizeEqnVst,sizeof(double));
-}
+	int i,size;
+
+	size = 1;
+        for (i = 0; i < dim; ++i)
+	    size *= (top_gmax[i]+1);
+
+	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
+	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
+}	/* end allocMeshVstFlux */
 
 void G_CARTESIAN::allocDirVstFlux(
         SWEEP *vst,
         FSWEEP *flux)
 {
-	int size = 1;
-    for (int i = 0; i < dim; ++i)
-    {
-        if (size < top_gmax[i]+7)
-            size = top_gmax[i]+7;
-    }
+	int i,size;
 
+	size = 1;
+        for (i = 0; i < dim; ++i)
+	    if (size < top_gmax[i]+7) 
+		size = top_gmax[i]+7;
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
@@ -1014,11 +1072,11 @@ void G_CARTESIAN::allocDirVstFlux(
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::freeDirVstFlux(
-        SWEEP* vst,
-        FSWEEP* flux)
+        SWEEP vst,
+        FSWEEP flux)
 {
-        FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
-        FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
+        FT_FreeThese(4,vst.dens,vst.engy,vst.pres,vst.momn);
+        FT_FreeThese(3,flux.dens_flux,flux.engy_flux,flux.momn_flux);
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::checkVst(SWEEP *vst)
@@ -1029,9 +1087,9 @@ void G_CARTESIAN::checkVst(SWEEP *vst)
 	{	
 	    index  = d_index2d(i,j,top_gmax);
 	    if (isnan(vst->dens[index]))
-            printf("At %d %d: dens is nan\n",i,j);
-        if (vst->dens[index] < 0.0)
-            printf("At %d %d: dens is negative\n",i,j);
+		printf("At %d %d: dens is nan\n",i,j);
+	    if (vst->dens[index] < 0.0)
+		printf("At %d %d: dens is negative\n",i,j);
 	}
 }
 
@@ -1137,7 +1195,6 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	double **momn = field.momn;
 
 	setDomain();
-
 	m_dens[0] = eqn_params->rho1;		
 	m_dens[1] = eqn_params->rho2;		
 	m_mu[0] = eqn_params->mu1;		
@@ -1706,8 +1763,6 @@ void G_CARTESIAN::copyMeshStates()
 	}
 }	/* end copyMeshStates */
 
-
-//Is this an Initialization routine?
 void G_CARTESIAN::compSGS(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -1925,7 +1980,6 @@ void G_CARTESIAN::compSGS(void)
                               s*((s22[index0]/2.0)-(s11[index0]/2.0));
         }
 
-        double m_dt = front->dt;
         for (j = imin[1]; j <= imax[1]; j++)
         for (i = imin[0]; i <= imax[0]; i++)
         {
@@ -1978,392 +2032,388 @@ void G_CARTESIAN::sampleVelocity3d()
 	char *out_name = front-> out_name;
 	double dens;
 
-	if (front->step < sample->start_step
-            || front->step > sample->end_step)
-        return;
-
+	if (front->step < sample->start_step || front->step > sample->end_step)
+	    return;
 	if ((front->step - sample->start_step)%sample->step_interval)
-        return;
-
-    if (step != front->step)
-    {
-        step = front->step;
-        count = 0;
-    }
-
-    switch (sample_type[0])
-    {
-    case 'x':
-        if (l == -1)
+	    return;
+        if (step != front->step)
         {
-            double x1,x2;
-            do
-            {
-                ++l;
-                index = d_index3d(l,0,0,top_gmax);
-                getRectangleCenter(index, coords);
-            }while(sample_line[0]>=coords[0]);
-            --l;
-            index = d_index3d(l,0,0,top_gmax);
-            getRectangleCenter(index,coords);
-            x1 = coords[0];
-            index = d_index3d(l+1,0,0,top_gmax);
-            getRectangleCenter(index,coords);
-            x2 = coords[0];
-            lambda1 = (sample_line[0] - x1) / (x2 - sample_line[0]);
+            step = front->step;
+            count = 0;
         }
-
-        switch (sample_type[1])
+        switch (sample_type[0])
         {
-            case 'y':
-                if (m == -1)
+        case 'x':
+            if (l == -1)
+            {
+                double x1,x2;
+                do
                 {
-                    double y1,y2;
-                    do
+                    ++l;
+                    index = d_index3d(l,0,0,top_gmax);
+                    getRectangleCenter(index, coords);
+                }while(sample_line[0]>=coords[0]);
+                --l;
+                index = d_index3d(l,0,0,top_gmax);
+                getRectangleCenter(index,coords);
+                x1 = coords[0];
+                index = d_index3d(l+1,0,0,top_gmax);
+                getRectangleCenter(index,coords);
+                x2 = coords[0];
+                lambda1 = (sample_line[0] - x1) / (x2 - sample_line[0]);
+            }
+
+            switch (sample_type[1])
+            {
+                case 'y':
+                    if (m == -1)
                     {
-                        ++m;
+                        double y1,y2;
+                        do
+                        {
+                            ++m;
+                            index = d_index3d(0,m,0,top_gmax);
+                            getRectangleCenter(index,coords);
+                        }while(sample_line[1]>=coords[1]);
+                        --m;
                         index = d_index3d(0,m,0,top_gmax);
                         getRectangleCenter(index,coords);
-                    }while(sample_line[1]>=coords[1]);
-                    --m;
-                    index = d_index3d(0,m,0,top_gmax);
-                    getRectangleCenter(index,coords);
-                    y1 = coords[1];
-                    index = d_index3d(0,m+1,0,top_gmax);
-                    getRectangleCenter(index,coords);
-                    y2 = coords[1];
-                    lambda2 = (sample_line[1] - y1)/(y2 - sample_line[1]);
-                }
-                i = l;
-                j = m;
-                sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (k = imin[2]; k <= imax[2]; ++k)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i+1,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
-                }
-                fclose(sfile);
-
-                sprintf(sname,"%s/y-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (k = imin[2]; k <= imax[2]; ++k)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i+1,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
-                }
-                fclose(sfile);
-
-                sprintf(sname,"%s/z-%d-%d.xg",out_name,step,count++);
-                sfile = fopen(sname,"w");
-                for (k = imin[2]; k <= imax[2]; ++k)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i+1,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
-                }
-                fclose(sfile);
-
-                printf("sample line: x = %20.14f, y = %20.14f\n",coords[0],
-                    coords[1]);
-
-                break;
-
-            case 'z':
-                if (m == -1)
-                {
-                    double z1,z2;
-                    do
+                        y1 = coords[1];
+                        index = d_index3d(0,m+1,0,top_gmax);
+                        getRectangleCenter(index,coords);
+                        y2 = coords[1];
+                        lambda2 = (sample_line[1] - y1)/(y2 - sample_line[1]);
+                    }
+                    i = l;
+                    j = m;
+                    sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (k = imin[2]; k <= imax[2]; ++k)
                     {
-                        ++m;
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i+1,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
+                    }
+                    fclose(sfile);
+
+                    sprintf(sname,"%s/y-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (k = imin[2]; k <= imax[2]; ++k)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i+1,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
+                    }
+                    fclose(sfile);
+
+                    sprintf(sname,"%s/z-%d-%d.xg",out_name,step,count++);
+                    sfile = fopen(sname,"w");
+                    for (k = imin[2]; k <= imax[2]; ++k)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i+1,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[2],velo);
+                    }
+                    fclose(sfile);
+
+                    printf("sample line: x = %20.14f, y = %20.14f\n",coords[0],
+                        coords[1]);
+
+                    break;
+
+                case 'z':
+                    if (m == -1)
+                    {
+                        double z1,z2;
+                        do
+                        {
+                            ++m;
+                            index = d_index3d(0,0,m,top_gmax);
+                            getRectangleCenter(index,coords);
+                        }while(sample_line[1]>=coords[2]);
+                        --m;
                         index = d_index3d(0,0,m,top_gmax);
                         getRectangleCenter(index,coords);
-                    }while(sample_line[1]>=coords[2]);
-                    --m;
-                    index = d_index3d(0,0,m,top_gmax);
-                    getRectangleCenter(index,coords);
-                    z1 = coords[2];
-                    index = d_index3d(0,0,m+1,top_gmax);
-                    getRectangleCenter(index,coords);
-                    z2 = coords[2];
-                    lambda2 = (sample_line[1] - z1)/(z2 - sample_line[1]);
-                }
-                i = l;
-                k = m;
-                sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (j = imin[1]; j <= imax[1]; ++j)
+                        z1 = coords[2];
+                        index = d_index3d(0,0,m+1,top_gmax);
+                        getRectangleCenter(index,coords);
+                        z2 = coords[2];
+                        lambda2 = (sample_line[1] - z1)/(z2 - sample_line[1]);
+                    }
+                    i = l;
+                    k = m;
+                    sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (j = imin[1]; j <= imax[1]; ++j)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i+1,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
+                    }
+                    fclose(sfile);
+
+                    sprintf(sname,"%s/y-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (j = imin[1]; j <= imax[1]; ++j)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i+1,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
+                    }
+                    fclose(sfile);
+
+                    sprintf(sname,"%s/z-%d-%d.xg",out_name,step,count++);
+                    sfile = fopen(sname,"w");
+                    for (j = imin[1]; j <= imax[1]; ++j)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i+1,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i+1,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
+                    }
+                    fclose(sfile);
+
+                    printf("sample line: x = %20.14f, z = %20.14f\n",coords[0],
+                        coords[2]);
+
+                    break;
+
+                    default:
+                        printf("Incorrect input for sample velocity!\n");
+                        break;
+
+            }
+            break;
+
+        case 'y':
+            if (l == -1)
+            {
+                double y1,y2;
+                do
                 {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+                    ++l;
+                    index = d_index3d(0,l,0,top_gmax);
+                    getRectangleCenter(index, coords);
+                }while(sample_line[0]>=coords[1]);
+                --l;
+                index = d_index3d(0,l,0,top_gmax);
+                getRectangleCenter(index,coords);
+                y1 = coords[1];
+                index = d_index3d(0,l+1,0,top_gmax);
+                getRectangleCenter(index,coords);
+                y2 = coords[1];
+                lambda1 = (sample_line[0] - y1)/(y2 - sample_line[0]);
+            }
 
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i+1,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+            switch (sample_type[1])
+            {
+                case 'z':
+                    if (m == -1)
+                    {
+                        double z1,z2;
+                        do
+                        {
+                            ++m;
+                            index = d_index3d(0,0,m,top_gmax);
+                            getRectangleCenter(index,coords);
+                        }while(sample_line[1]>=coords[2]);
+                        --m;
+                        index = d_index3d(0,0,m,top_gmax);
+                        getRectangleCenter(index,coords);
+                        z1 = coords[2];
+                        index = d_index3d(0,0,m+1,top_gmax);
+                        getRectangleCenter(index,coords);
+                        z2 = coords[2];
+                        lambda2 = (sample_line[1] - z1)/(z2 - sample_line[1]);
+                    }
+                    j = l;
+                    k = m;
+                    sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (i = imin[0]; i <= imax[0]; ++i)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
-                }
-                fclose(sfile);
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[0][index]/dens;
+                        index = d_index3d(i,j+1,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[0][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                sprintf(sname,"%s/y-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (j = imin[1]; j <= imax[1]; ++j)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
+                    }
+                    fclose(sfile);
 
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i+1,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+                    sprintf(sname, "%s/y-%d-%d.xg",out_name,step,count);
+                    sfile = fopen(sname,"w");
+                    for (i = imin[0]; i <= imax[0]; ++i)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
-                }
-                fclose(sfile);
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[1][index]/dens;
+                        index = d_index3d(i,j+1,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[1][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                sprintf(sname,"%s/z-%d-%d.xg",out_name,step,count++);
-                sfile = fopen(sname,"w");
-                for (j = imin[1]; j <= imax[1]; ++j)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i+1,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
+                    }
+                    fclose(sfile);
 
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i+1,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
+                    sprintf(sname, "%s/z-%d-%d.xg",out_name,step,count++);
+                    sfile = fopen(sname,"w");
+                    for (i = imin[0]; i <= imax[0]; ++i)
+                    {
+                        index = d_index3d(i,j,k,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i,j+1,k,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[1],velo);
-                }
-                fclose(sfile);
+                        index = d_index3d(i,j,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo1 = field.momn[2][index]/dens;
+                        index = d_index3d(i,j+1,k+1,top_gmax);
+                        dens = field.dens[index];
+                        velo2 = field.momn[2][index]/dens;
+                        velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
 
-                printf("sample line: x = %20.14f, z = %20.14f\n",coords[0],
-                    coords[2]);
+                        velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
+                        getRectangleCenter(index,coords);
+                        fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
+                    }
+                    fclose(sfile);
 
-                break;
+                    printf("sample line: y = %20.14f, z = %20.14f\n",coords[1],
+                        coords[2]);
+
+                    break;
 
                 default:
                     printf("Incorrect input for sample velocity!\n");
                     break;
-
+            }
+        default:
+            printf("Incorrect input for sample velocity!\n");
+            break;
         }
-        break;
-
-    case 'y':
-        if (l == -1)
-        {
-            double y1,y2;
-            do
-            {
-                ++l;
-                index = d_index3d(0,l,0,top_gmax);
-                getRectangleCenter(index, coords);
-            }while(sample_line[0]>=coords[1]);
-            --l;
-            index = d_index3d(0,l,0,top_gmax);
-            getRectangleCenter(index,coords);
-            y1 = coords[1];
-            index = d_index3d(0,l+1,0,top_gmax);
-            getRectangleCenter(index,coords);
-            y2 = coords[1];
-            lambda1 = (sample_line[0] - y1)/(y2 - sample_line[0]);
-        }
-
-        switch (sample_type[1])
-        {
-            case 'z':
-                if (m == -1)
-                {
-                    double z1,z2;
-                    do
-                    {
-                        ++m;
-                        index = d_index3d(0,0,m,top_gmax);
-                        getRectangleCenter(index,coords);
-                    }while(sample_line[1]>=coords[2]);
-                    --m;
-                    index = d_index3d(0,0,m,top_gmax);
-                    getRectangleCenter(index,coords);
-                    z1 = coords[2];
-                    index = d_index3d(0,0,m+1,top_gmax);
-                    getRectangleCenter(index,coords);
-                    z2 = coords[2];
-                    lambda2 = (sample_line[1] - z1)/(z2 - sample_line[1]);
-                }
-                j = l;
-                k = m;
-                sprintf(sname, "%s/x-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (i = imin[0]; i <= imax[0]; ++i)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[0][index]/dens;
-                    index = d_index3d(i,j+1,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[0][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
-                }
-                fclose(sfile);
-
-                sprintf(sname, "%s/y-%d-%d.xg",out_name,step,count);
-                sfile = fopen(sname,"w");
-                for (i = imin[0]; i <= imax[0]; ++i)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[1][index]/dens;
-                    index = d_index3d(i,j+1,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[1][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
-                }
-                fclose(sfile);
-
-                sprintf(sname, "%s/z-%d-%d.xg",out_name,step,count++);
-                sfile = fopen(sname,"w");
-                for (i = imin[0]; i <= imax[0]; ++i)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i,j+1,k,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp1 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    index = d_index3d(i,j,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo1 = field.momn[2][index]/dens;
-                    index = d_index3d(i,j+1,k+1,top_gmax);
-                    dens = field.dens[index];
-                    velo2 = field.momn[2][index]/dens;
-                    velo_tmp2 = (velo1 + lambda1*velo2)/(1.0 + lambda1);
-
-                    velo = (velo_tmp1 + lambda2*velo_tmp2)/(1.0 + lambda2);
-                    getRectangleCenter(index,coords);
-                    fprintf(sfile,"%20.14f   %20.14f\n",coords[0],velo);
-                }
-                fclose(sfile);
-
-                printf("sample line: y = %20.14f, z = %20.14f\n",coords[1],
-                    coords[2]);
-
-                break;
-
-            default:
-                printf("Incorrect input for sample velocity!\n");
-                break;
-        }
-    default:
-        printf("Incorrect input for sample velocity!\n");
-        break;
-    }
 }	/* end sampleVelocity3d */
 
 void G_CARTESIAN::sampleVelocity2d()
@@ -2615,7 +2665,7 @@ void G_CARTESIAN::numericalFlux(
 	case WENO_FIRST_ORDER:
 	case WENO_SECOND_ORDER:
 	case WENO_FOURTH_ORDER:
-	    WENO_flux(scheme_params,sweep,fsweep,n,sizeEqnVst);
+	    WENO_flux(scheme_params,sweep,fsweep,n);
 	    break;
 	default:
 	    (void) printf("Unknow numerical scheme\n");
@@ -2628,7 +2678,6 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 {
 	int i,j,k,l,index;
 
-    //NOTE: these contain static variables
 	FT_ParallelExchGridArrayBuffer(m_vst->dens,front,NULL);
 	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,NULL);
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,NULL);
@@ -2864,7 +2913,6 @@ void G_CARTESIAN::copyToMeshVst(
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
-
 	switch (dim)
 	{
 	case 1:
@@ -3447,16 +3495,16 @@ void G_CARTESIAN::scatMeshStates()
 	SWEEP vst;
 	allocMeshVst(&vst);
 	copyToMeshVst(&vst);
-	scatMeshVst(&vst); //has static variables in called function
+	scatMeshVst(&vst);
 	copyFromMeshVst(vst);
 	freeVst(&vst);
-}
+}	/* end scatMeshStates */
 
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
 	FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
-}
+}	/* end freeVstFlux */
 
 void G_CARTESIAN::freeFlux(
 	FSWEEP *flux)
@@ -3611,9 +3659,6 @@ void G_CARTESIAN::appendGhostBuffer(
 	int		ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic_next[MAXD];
 	INTERFACE	*grid_intfc = front->grid_intfc;
-	static int count = 0;
-	count++;
-	boolean Debug = NO;
 
 	if (debugging("append_buffer"))
 		printf("Entering appendGhostBuffer()\n");
@@ -3625,11 +3670,11 @@ void G_CARTESIAN::appendGhostBuffer(
 
 	switch(nb)
 	{
-        case 0:
+	case 0:
 	    for (i = 1; i <= nrad; ++i)
 	    {
-            ic[idir] = icoords[idir] - i;
-	    	index = d_index(ic,top_gmax,dim);
+		ic[idir] = icoords[idir] - i;
+		index = d_index(ic,top_gmax,dim);
 		    
 		if (!needBufferFromIntfc(comp,cell_center[index].comp))
 		{
@@ -3655,88 +3700,79 @@ void G_CARTESIAN::appendGhostBuffer(
 		    boolean status;
 		    /* check neighbor in ldir[idir] */
 		    for (k = 0; k < dim; ++k)
-                ic_next[k] = ic[k];
-
-            ic_next[idir]++;
+			ic_next[k] = ic[k];
+		    ic_next[idir]++;
 		    status = FT_StateStructAtGridCrossing(front,grid_intfc,
-				ic_next,ldir[idir],comp,(POINTER*)&state,&hs,crx_coords);
-		    
-            //extreme cases
-            if (!status)
-            {
-                double coords[MAXD], wtol[MAXD], tol[MAXD];
-                int ic_tmp[MAXD];
-                for (k = 0; k < dim; ++k)
-                                tol[k] = 2.0 * IG_TOL * top_h[k];
-                /* check neighbor in the opposite direction */
-                for (k = 0; k < dim; ++k)
+				ic_next,ldir[idir],comp,(POINTER*)&state,
+				&hs,crx_coords);
+		    if (!status) /* extreme cases */
+		    {
+			double coords[MAXD], wtol[MAXD], tol[MAXD];
+			int ic_tmp[MAXD];
+			for (k = 0; k < dim; ++k)
+                            tol[k] = 2.0 * IG_TOL * top_h[k];
+			/* check neighbor in the opposite direction */
+			for (k = 0; k < dim; ++k)
+                            ic_tmp[k] = ic[k];
+                        ic_tmp[idir]--;
+			status = FT_StateStructAtGridCrossing(front,grid_intfc,
+					ic_tmp,rdir[idir],comp,(POINTER*)&state,
+					&hs,crx_coords);
+			if(!status)
+			{
+			    /* check second neighbor in the same direction */
+			    for (k = 0; k < dim; ++k)
                                 ic_tmp[k] = ic[k];
-                            ic_tmp[idir]--;
-                status = FT_StateStructAtGridCrossing(front,grid_intfc,
-                        ic_tmp,rdir[idir],comp,(POINTER*)&state,
-                        &hs,crx_coords);
-
-                if(!status)
-                {
-                    /* check second neighbor in the same direction */
-                    for (k = 0; k < dim; ++k)
-                        ic_tmp[k] = ic[k];
-
-                    ic_tmp[idir] += 2;
-                    status = FT_StateStructAtGridCrossing(front,grid_intfc,
-                            ic_tmp,ldir[idir],comp,(POINTER*)&state,&hs,crx_coords);
-
-                    if (!status)
-                    {
-                    /* must be something wrong */
-                            printf("In appendGhostBuffer() Case 0\n");
-                            printf("ERROR: No crossing found!\n");
-                            print_int_vector("ic=",ic,dim,"\n");
-                            printf("direction: %s side %d\n",
-                            grid_direction_name(ldir[idir]), nb);
-                            clean_up(ERROR);
-                    }
-                    else
-                    {
-                        /* check if crossing is close enough */
-                        boolean close_enough = YES;
-                        for (k = 0; k < dim; ++k)
-                        {
-                            coords[k] = top_L[k]+ic_next[k]*top_h[k];
-                            wtol[k] = crx_coords[k] - coords[k];
-                            if (fabs(wtol[k]) > tol[k])
-                                close_enough = NO;
+                            ic_tmp[idir] += 2;
+                            status = FT_StateStructAtGridCrossing(front,
+                                        grid_intfc,ic_tmp,ldir[idir],comp,
+                                        (POINTER*)&state,&hs,crx_coords);
+			    if (!status)
+			    {
+				/* must be something wrong */
+		    	    	printf("In appendGhostBuffer() Case 0\n");
+		    	    	printf("ERROR: No crossing found!\n");
+		    	    	print_int_vector("ic=",ic,dim,"\n");
+		    	    	printf("direction: %s side %d\n",
+		           		grid_direction_name(ldir[idir]), nb);
+				clean_up(ERROR);
+			    }
+			    else
+			    {
+				/* check if crossing is close enough */
+			        boolean close_enough = YES;
+                                for (k = 0; k < dim; ++k)
+                                {
+                                    coords[k] = top_L[k]+ic_next[k]*top_h[k];
+                                    wtol[k] = crx_coords[k] - coords[k];
+                                    if (fabs(wtol[k]) > tol[k])
+                                        close_enough = NO;
+                                }
+                                if (!close_enough)
+                                {
+                                    (void) printf("ERROR: Not close enough!\n");
+                                    clean_up(ERROR);
+                                }
+			    }
+			}
+			else
+			{
+			    /* check if crossing is close enough */
+			    boolean close_enough = YES;
+			    for (k = 0; k < dim; ++k)
+                            {
+                                coords[k] = top_L[k] + ic[k] * top_h[k];
+                                wtol[k] = crx_coords[k] - coords[k];
+                                if (fabs(wtol[k]) > tol[k])
+                                    close_enough = NO;
+                            }
+                            if (!close_enough)
+                            {
+                                (void) printf("ERROR: Not close enough!\n");
+                                clean_up(ERROR);
+			    }
                         }
-                        
-                        if (!close_enough)
-                        {
-                            (void) printf("ERROR: Not close enough!\n");
-                            clean_up(ERROR);
-                        }
-                    }
-                }
-                else
-                {
-                    /* check if crossing is close enough */
-                    boolean close_enough = YES;
-                    for (k = 0; k < dim; ++k)
-                    {
-                        coords[k] = top_L[k] + ic[k] * top_h[k];
-                        wtol[k] = crx_coords[k] - coords[k];
-                        if (fabs(wtol[k]) > tol[k])
-                            close_enough = NO;
-                    }
-                    
-                    if (!close_enough)
-                    {
-                        (void) printf("ERROR: Not close enough!\n");
-                        clean_up(ERROR);
-                    }
-
-                }
-
-            }
-
+		    }
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -3750,6 +3786,8 @@ void G_CARTESIAN::appendGhostBuffer(
 		    	break;
 		    case FIRST_PHYSICS_WAVE_TYPE:
 		    	//GFM
+                        if (debugging("append_buffer"))
+                            printf("Calling GFMGhostState()\n");
 		    	GFMGhostState(ic,comp,&ghost_st);
 		    	for (k = i; k <= nrad; ++k)
 		    	{
@@ -3780,7 +3818,6 @@ void G_CARTESIAN::appendGhostBuffer(
 		    }
 		    break;
 		}
-
 	    }
 	    break;
 	case 1:
@@ -3788,7 +3825,6 @@ void G_CARTESIAN::appendGhostBuffer(
 	    {
 		ic[idir] = icoords[idir] + i;
 		index = d_index(ic,top_gmax,dim);
-
 		if (!needBufferFromIntfc(comp,cell_center[index].comp))
 		{
 		    vst->dens[n+nrad+i-1] = m_vst->dens[index];
@@ -3937,6 +3973,7 @@ void G_CARTESIAN::appendGhostBuffer(
 }	/* end appendGhostBuffer */
 
 //ghost fluid method.
+
 void G_CARTESIAN::solve_exp_value()
 {
 	int		i, j, k, n;
@@ -4326,6 +4363,12 @@ void G_CARTESIAN::get_normal_from_front()
 
 	    normal(p,hse,hs,nor,front);
 	    curv = p->curvature;
+            if (the_point(p))
+            {
+                printf("Testing normal of point: %f %f %f\n",
+                        Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                printf("nor = %f %f %f curv = %f\n",nor[0],nor[1],nor[2],curv);
+            }
 
 	    pt = Coords(p);
 	   
@@ -4829,7 +4872,9 @@ boolean G_CARTESIAN::get_ave_state(
 }
 
 void G_CARTESIAN::get_ghost_state(
-        SWEEP m_vst, int comp, int ind)
+	SWEEP 		m_vst,
+	int		comp,
+	int		ind)
 {
 	int			i,j,k;
 	int			ic[3],index;
@@ -4845,6 +4890,7 @@ void G_CARTESIAN::get_ghost_state(
 	static 	int 		loop_count = 0;
 	std::list<ToFill> resetThese;
 	std::list<ToFill> fillThese;
+
 
 	if (norset == NULL)
 	{
@@ -5065,27 +5111,21 @@ void G_CARTESIAN::setNeumannStates(
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
-	    
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	   
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
-	    
-        if (dim > 1)
-        {
-            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                    m_vst->momn[1],getStateYmom,&st_tmp.momn[1],&m_vst->momn[1][index]);
-        }
-
+		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
+			&m_vst->momn[0][index]);
+	    if (dim > 1)
+		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+			m_vst->momn[1],getStateYmom,&st_tmp.momn[1],
+			&m_vst->momn[1][index]);
 	    if (dim > 2)
-        {
-            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                    m_vst->momn[2],getStateZmom,&st_tmp.momn[2],&m_vst->momn[2][index]);
-        }
-    
-        /* Galileo Transformation */
+		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
+			&m_vst->momn[2][index]);
+		/* Galileo Transformation */
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
@@ -5139,15 +5179,6 @@ void G_CARTESIAN::setNeumannStates(
 	    }
 	    else
 	    {
-		/* Debug selectively!
-		if (debugging("crx_reflection"))
-		{
-	            sprintf(fname,"intfc-%d-%d",count,i);
-	            sprintf(fname,"intfc-xx");
-	            xgraph_2d_reflection(fname,front->grid_intfc,coords,
-				crx_coords,coords_ref,nor);
-		}
-		*/
 		vst->dens[n+nrad+i-1] = st_tmp.dens;
 		vst->engy[n+nrad+i-1] = st_tmp.engy;
 		vst->pres[n+nrad+i-1] = st_tmp.pres;
@@ -5295,51 +5326,48 @@ void G_CARTESIAN::setDirichletStates(
 	}
 }
 
-void initSampleVelocity(Front* front, char *infile_name)
+void G_CARTESIAN::initSampleVelocity(char *in_name)
 {
-    FILE *infile;
+        FILE *infile;
 	static SAMPLE *sample;
 	char *sample_type;
 	double *sample_line;
 
-	infile = fopen(infile_name,"r");
+	infile = fopen(in_name,"r");
 	FT_ScalarMemoryAlloc((POINTER*)&sample,sizeof(SAMPLE));
 	sample_type = sample->sample_type;
 	sample_line = sample->sample_coords;
-	int dim = front->rect_grid->dim;
+	dim = front->rect_grid->dim;
 
 	if (dim == 2)
-    {
-        CursorAfterString(infile,"Enter the sample line type:");
-        fscanf(infile,"%s",sample_type);
-        (void) printf(" %s\n",sample_type);
-        CursorAfterString(infile,"Enter the sample line coordinate:");
-        fscanf(infile,"%lf",sample_line);
-        (void) printf(" %f\n",sample_line[0]);
-    }
+	{
+            CursorAfterString(infile,"Enter the sample line type:");
+            fscanf(infile,"%s",sample_type);
+            (void) printf(" %s\n",sample_type);
+            CursorAfterString(infile,"Enter the sample line coordinate:");
+            fscanf(infile,"%lf",sample_line);
+            (void) printf(" %f\n",sample_line[0]);
+	}
 	else if (dim == 3)
-    {
-        CursorAfterString(infile,"Enter the sample line type:");
-        fscanf(infile,"%s",sample_type);
-        (void) printf(" %s\n",sample_type);
-        CursorAfterString(infile,"Enter the sample line coordinate:");
-        fscanf(infile,"%lf %lf",sample_line,sample_line+1);
-        (void) printf(" %f %f\n",sample_line[0],sample_line[1]);
-    }
-
-    CursorAfterString(infile,"Enter the start step for sample: ");
-    fscanf(infile,"%d",&sample->start_step);
-    (void) printf("%d\n",sample->start_step);
-    CursorAfterString(infile,"Enter the end step for sample: ");
-    fscanf(infile,"%d",&sample->end_step);
-    (void) printf("%d\n",sample->end_step);
-    CursorAfterString(infile,"Enter the step interval for sample: ");
-    fscanf(infile,"%d",&sample->step_interval);
-    (void) printf("%d\n",sample->step_interval);
-
-    front->sample = sample;
-    fclose(infile);
-
+        {
+            CursorAfterString(infile,"Enter the sample line type:");
+            fscanf(infile,"%s",sample_type);
+            (void) printf(" %s\n",sample_type);
+            CursorAfterString(infile,"Enter the sample line coordinate:");
+            fscanf(infile,"%lf %lf",sample_line,sample_line+1);
+            (void) printf(" %f %f\n",sample_line[0],sample_line[1]);
+        }
+        CursorAfterString(infile,"Enter the start step for sample: ");
+        fscanf(infile,"%d",&sample->start_step);
+        (void) printf("%d\n",sample->start_step);
+        CursorAfterString(infile,"Enter the end step for sample: ");
+        fscanf(infile,"%d",&sample->end_step);
+        (void) printf("%d\n",sample->end_step);
+        CursorAfterString(infile,"Enter the step interval for sample: ");
+        fscanf(infile,"%d",&sample->step_interval);
+        (void) printf("%d\n",sample->step_interval);
+	front->sample = sample;
+        fclose(infile);
 }	/* end initSampleVelocity */
 
 void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
@@ -5410,139 +5438,116 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	int *grid_icoords,
 	double dt,
 	SWEEP *m_vst,
-    FSWEEP *m_flux)
+        FSWEEP *m_flux)
 {
+	int i,l,n,index;
 	SCHEME_PARAMS scheme_params;
 	EOS_PARAMS	*eos;
-	int seg_min,seg_max;
-	
 	SWEEP vst;
 	FSWEEP vflux;
-    allocDirVstFlux(&vst,&vflux);
-
-    scheme_params.lambda = dt/top_h[idir];
-    scheme_params.beta = 0.0;
-	scheme_params.artificial_compression = eqn_params->articomp;
-
-	int icoords[MAXD];
-    for (int i = 0; i < dim; ++i)
-	    icoords[i] = grid_icoords[i];
-
-    int index;
 	COMPONENT comp;
-    seg_min = imin[idir];
-
+	int seg_min,seg_max;
+	int icoords[MAXD];
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)(front->extra1);
+	
+        allocDirVstFlux(&vst,&vflux);
+	scheme_params.lambda = dt/top_h[idir];
+        scheme_params.beta = 0.0;
+	scheme_params.artificial_compression = eqn_params->articomp;
+	for (i = 0; i < dim; ++i)
+	    icoords[i] = grid_icoords[i];
+	seg_min = imin[idir];
 	while (seg_min <= imax[idir])
 	{
 	    for (; seg_min <= imax[idir]; ++seg_min)
 	    {
-    		icoords[idir] = seg_min;
+		icoords[idir] = seg_min;
 	    	index = d_index(icoords,top_gmax,dim);
 	    	comp = top_comp[index];
-	    	
-            if (gas_comp(comp))
-                break;
+	    	if (gas_comp(comp)) break;
 	    }
-	
-        if (seg_min > imax[idir])
-            break;
-	
-        for (int i = 0; i <= top_gmax[idir]; ++i)
+	    if (seg_min > imax[idir]) break;
+	    for (i = 0; i <= top_gmax[idir]; ++i)
 	    {
 	    	vst.dens[i] = 0.0; 
 	    	vst.pres[i] = 0.0; 
 	    	vst.engy[i] = 0.0; 
-	    
-            vst.momn[0][i] = 0.0;
-            vst.momn[1][i] = 0.0;
-            vst.momn[2][i] = 0.0;
+	    	vst.momn[0][i] = vst.momn[1][i] = vst.momn[2][i] = 0.0;
 	    }
-
-	    icoords[idir] = seg_min;
+	    i = seg_min;
+	    icoords[idir] = i;
 	    index = d_index(icoords,top_gmax,dim);
 	    comp = top_comp[index];
-	    
-        vst.dens[nrad] = m_vst->dens[index];
-        vst.engy[nrad] = m_vst->engy[index];
-        vst.pres[nrad] = m_vst->pres[index];
-
-	    for (int l = 0; l < dim; ++l)
-            	vst.momn[l][nrad] = m_vst->momn[(l+idir)%dim][index];
-	
-        for (int l = dim; l < 3; ++l)
-            	vst.momn[l][nrad] = 0.0;
-
-        
-        int n = 1;
-        seg_max = seg_min;
-        	
-        for (int i = seg_min+1; i <= imax[idir]; i++)
+	    n = 0;
+	    vst.dens[n+nrad] = m_vst->dens[index];
+            vst.engy[n+nrad] = m_vst->engy[index];
+            vst.pres[n+nrad] = m_vst->pres[index];
+	    for (l = 0; l < dim; ++l)
+            	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
+	    for (l = dim; l < 3; ++l)
+            	vst.momn[l][n+nrad] = 0.0;
+	    seg_max = i;
+	    n++;
+	    for (i = seg_min+1; i <= imax[idir]; i++)
 	    {
-            icoords[idir] = i;
-	    	index = d_index(icoords,top_gmax,dim);
-	
-            if (needBufferFromIntfc(comp,top_comp[index]))
-	    	    break;
-		    else
-            {
-                vst.dens[n+nrad] = m_vst->dens[index];
-                vst.engy[n+nrad] = m_vst->engy[index];
-                vst.pres[n+nrad] = m_vst->pres[index];
-    
-                for (int l = 0; l < dim; ++l)
-                        vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
-
-                for (int l = dim; l < 3; ++l)
-                        vst.momn[l][n+nrad] = 0.0;
-                n++;
-            }
-	
-            seg_max++;
-            //seg_max = i;
+		icoords[idir] = i;
+		index = d_index(icoords,top_gmax,dim);
+		if (needBufferFromIntfc(comp,top_comp[index]))
+		    break;
+		else
+		{
+	    	    vst.dens[n+nrad] = m_vst->dens[index];
+	    	    vst.engy[n+nrad] = m_vst->engy[index];
+	    	    vst.pres[n+nrad] = m_vst->pres[index];
+		    for (l = 0; l < dim; ++l)
+	    	    	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
+		    for (l = dim; l < 3; ++l)
+	    	    	vst.momn[l][n+nrad] = 0.0;
+		    n++;
+		}
+		seg_max = i;
 	    }
+	    icoords[idir] = seg_min;
+	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
+	    icoords[idir] = seg_max;
+	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    
-        icoords[idir] = seg_min;
-        //#pragma omp single
-        //{
-	        appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
-        //}
-
-        icoords[idir] = seg_max;
-	    
-        //#pragma omp single
-        //{
-            appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
-        //}
-
 	    eos = &(eqn_params->eos[comp]);
 	    EosSetTVDParams(&scheme_params, eos);
-
 	    numericalFlux((POINTER)&scheme_params,&vst,&vflux,n);
-        
-
-        int iter = 0; 
-        for (int i = seg_min; i <= seg_max; ++i)
+		    
+	    n = 0;
+	    for (i = seg_min; i <= seg_max; ++i)
 	    {
-            icoords[idir] = i;
+		icoords[idir] = i;
 	    	index = d_index(icoords,top_gmax,dim);
-	    	m_flux->dens_flux[index] += vflux.dens_flux[iter+nrad];
-	    	m_flux->engy_flux[index] += vflux.engy_flux[iter+nrad];
-	
-            for (int l = 0; l < dim; ++l)
-                m_flux->momn_flux[(l+idir)%dim][index] += 
-                    vflux.momn_flux[l][iter+nrad];
-	
-            for (int l = dim; l < 3; ++l)
-                m_flux->momn_flux[l][index] = 0.0;
-
-            iter++;
+	    	m_flux->dens_flux[index] += vflux.dens_flux[n+nrad];
+	    	m_flux->engy_flux[index] += vflux.engy_flux[n+nrad];
+		for (l = 0; l < dim; ++l)
+	    	    m_flux->momn_flux[(l+idir)%dim][index] += 
+				vflux.momn_flux[l][n+nrad];
+		for (l = dim; l < 3; ++l)
+	    	    m_flux->momn_flux[l][index] = 0.0;
+		n++;
 	    }
-
 	    seg_min = seg_max + 1;
 	}
+        freeDirVstFlux(vst,vflux);
+}	/* end addFluxAlongGridLine */
 
-    freeDirVstFlux(&vst,&vflux);
-}
+static void printInputStencil(
+        SWEEP vst,
+        int n)
+{
+        int i;
+        printf("  density    momn[0]    memn[1]    momn[2]    energy\n");
+        for (i = 0; i < n+6; ++i)
+        {
+            printf("  %7.3g    %7.3g    %7.3g    %7.3g    %7.3g\n",
+                    vst.dens[i],vst.momn[0][i],vst.momn[1][i],vst.momn[2][i],
+                    vst.engy[i]);
+        }    
+}       /* end printInputStencil */
 
 void G_CARTESIAN::errFunction()
 {
@@ -5584,113 +5589,90 @@ void G_CARTESIAN::errFunction()
 		(void) printf("\n %e \t %e \t %e \n",err[0],err[1],err[2]);
 	    }
 	}
-}
+}	/* end errFunction, check the accuracy in AccuracySineWave case */
 
-void G_CARTESIAN::setGhostFluidStatesToZero()
+
+void G_CARTESIAN::adjustGFMStates()
 {
-    for (int i = 0; i < sizeEqnVst; ++i)
-    {
-        for (int j = 0; j < 2; ++j)
+        if(eqn_params->tracked)
         {
-            eqn_params->Gdens[j][i] = 0.0;
-	        eqn_params->Gpres[j][i] = 0.0;
-	   
-            for (int k = 0; k < dim; ++k)
-                eqn_params->Gvel[j][k][i] = 0.0;	
+           double ***Gvel = eqn_params->Gvel;
+           double **Gdens = eqn_params->Gdens;
+           double **Gpres = eqn_params->Gpres;
+           int i,j,k,ii,jj,kk,index,index1,ind;
+           int icoords[3];
+
+           for (i = 0; i <= top_gmax[0]; i++)
+           for (j = 0; j <= top_gmax[1]; j++)
+           for (k = 0; k <= top_gmax[2]; k++)
+           {
+                icoords[0] = i;
+                icoords[1] = j;
+                icoords[2] = k;
+                index = d_index(icoords,top_gmax,dim);
+
+                if (cell_center[index].comp != top_comp[index])
+                {
+                    if (top_comp[index] == GAS_COMP1)
+                        ind = 0;
+                    else
+                        ind = 1;
+
+                    for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
+                    {
+                         icoords[1] = j+jj;
+                         index1 = d_index(icoords,top_gmax,dim);
+                         Gdens[ind][index] = Gdens[ind][index1];
+			 for (kk = 0; kk < dim; ++kk)
+                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                         Gpres[ind][index] = Gpres[ind][index1];
+
+                         if (Gdens[ind][index] != 0)
+                             break;
+                    }
+
+                    for (jj = 0; (j+jj) >= 0; jj--)
+                    {
+                         icoords[1] = j+jj;
+                         index1 = d_index(icoords,top_gmax,dim);
+                         Gdens[ind][index] = Gdens[ind][index1];
+			 for (kk = 0; kk < dim; ++kk)
+                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                         Gpres[ind][index] = Gpres[ind][index1];
+
+                         if (Gdens[ind][index] != 0)
+                             break;
+                    }
+
+                    for (ii = 0; (i+ii) >= 0; ii--)
+                    {
+                         icoords[0] = i+ii;
+                         index1 = d_index(icoords,top_gmax,dim);
+                         Gdens[ind][index] = Gdens[ind][index1];
+			 for (kk = 0; kk < dim; ++kk)
+                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                         Gpres[ind][index] = Gpres[ind][index1];
+
+                         if (Gdens[ind][index] != 0)
+                             break;
+                    }
+
+                    for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
+                    {
+                         icoords[0] = i+ii;
+                         index1 = d_index(icoords,top_gmax,dim);
+                         Gdens[ind][index] = Gdens[ind][index1];
+			 for (kk = 0; kk < dim; ++kk)
+                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                         Gpres[ind][index] = Gpres[ind][index1];
+
+                         if (Gdens[ind][index] != 0)
+                             break;
+                    }
+                }
+           }
         }
-    }
-}
-
-void G_CARTESIAN::adjustGhostFluidStates()
-{
-    if(eqn_params->tracked)
-    {
-       double ***Gvel = eqn_params->Gvel;
-       double **Gdens = eqn_params->Gdens;
-       double **Gpres = eqn_params->Gpres;
-       int i,j,k,ii,jj,kk,index,index1,ind;
-       int icoords[3];
-
-       for (i = 0; i <= top_gmax[0]; i++)
-       for (j = 0; j <= top_gmax[1]; j++)
-       for (k = 0; k <= top_gmax[2]; k++)
-       {
-            icoords[0] = i;
-            icoords[1] = j;
-            icoords[2] = k;
-            index = d_index(icoords,top_gmax,dim);
-
-            if (cell_center[index].comp != top_comp[index])
-            {
-                if (top_comp[index] == GAS_COMP1)
-                    ind = 0;
-                else
-                    ind = 1;
-
-                for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
-                {
-                     icoords[1] = j+jj;
-                     index1 = d_index(icoords,top_gmax,dim);
-                     Gdens[ind][index] = Gdens[ind][index1];
-            
-                     for (kk = 0; kk < dim; ++kk)
-                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-            
-                     Gpres[ind][index] = Gpres[ind][index1];
-
-                     if (Gdens[ind][index] != 0)
-                         break;
-                }
-
-                for (jj = 0; (j+jj) >= 0; jj--)
-                {
-                     icoords[1] = j+jj;
-                     index1 = d_index(icoords,top_gmax,dim);
-                     Gdens[ind][index] = Gdens[ind][index1];
-            
-                     for (kk = 0; kk < dim; ++kk)
-                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-
-                     Gpres[ind][index] = Gpres[ind][index1];
-
-                     if (Gdens[ind][index] != 0)
-                         break;
-                }
-
-                for (ii = 0; (i+ii) >= 0; ii--)
-                {
-                     icoords[0] = i+ii;
-                     index1 = d_index(icoords,top_gmax,dim);
-                     Gdens[ind][index] = Gdens[ind][index1];
-            
-                     for (kk = 0; kk < dim; ++kk)
-                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-
-                     Gpres[ind][index] = Gpres[ind][index1];
-
-                     if (Gdens[ind][index] != 0)
-                         break;
-                }
-
-                for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
-                {
-                     icoords[0] = i+ii;
-                     index1 = d_index(icoords,top_gmax,dim);
-                     Gdens[ind][index] = Gdens[ind][index1];
-            
-                     for (kk = 0; kk < dim; ++kk)
-                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-
-                     Gpres[ind][index] = Gpres[ind][index1];
-
-                     if (Gdens[ind][index] != 0)
-                         break;
-                }
-            }
-       }
-    }
-
-}
+}	/* end adjustGFMState */
 
 void G_CARTESIAN::appendOpenEndStates()
 {
@@ -5737,7 +5719,4 @@ void G_CARTESIAN::appendOpenEndStates()
 	if (debugging("trace"))
 	    printf("Leaving appendOpenEndStates() \n");
         return;
-} 	// end appendOpenEndStates
-
-
-
+}	/* end appendOpenEndStates */

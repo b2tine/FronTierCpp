@@ -355,6 +355,24 @@ EXPORT  void ArrayOfIntfcTris(
 
 #define		MAX_NUM_CRXINGS_ON_SEG		10
 
+EXPORT  int NearestGridCrossingComp(
+        COMPONENT *comp,
+        int *icoords,
+        GRID_DIRECTION  dir,
+        INTERFACE       *grid_intfc)
+{
+        CRXING *crx_list[100];
+        int nc;
+
+        nc = GridSegCrossing(crx_list,icoords,dir,grid_intfc);
+        if (nc == 0) return 0;
+	if (dir == EAST || dir == NORTH || dir == UPPER)
+            *comp = crx_list[0]->lcomp;
+        else
+            *comp = crx_list[0]->ucomp;
+        return nc;
+}       /* end NearestGridCrossingComp */
+
 EXPORT	int GridSegCrossing(
 	CRXING    	**crx_list,
 	int 		*icoords,

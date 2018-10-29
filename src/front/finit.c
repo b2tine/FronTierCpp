@@ -1668,7 +1668,7 @@ EXPORT  void    FT_StartUp(
 	{
 		Init.use_default_front_data = NO;
 		init_default_debugging(init_data(&Init));
-        set_binary_output(NO);
+        	set_binary_output(NO);
 		dim = ft_basic->dim;
 		front->out_name = ft_basic->out_name;
 
@@ -1686,9 +1686,8 @@ EXPORT  void    FT_StartUp(
 				ft_basic->size_of_intfc_state;
 		set_size_of_intfc_state(front->sizest);
 
-        f_set_interface_hooks(dim,init_data(&Init));
-
-        if (ft_basic->RestartRun)
+        	f_set_interface_hooks(dim,init_data(&Init));
+		if (ft_basic->RestartRun)
 		{
 		    IO_TYPE io_type;
 		    int grid_set;
@@ -1976,67 +1975,59 @@ LOCAL   void FT_InitIntfc3d(
 	{
 	    neg_comp = level_func_pack->neg_component;
 	    pos_comp = level_func_pack->pos_component;
-	    
-        if (!read_sdl_surface(intfc,neg_comp,pos_comp,
+	    if (!read_sdl_surface(intfc,neg_comp,pos_comp,
 	    		level_func_pack->sdl_name,&surf))
 	    {
-            screen("read_sdl_surface() failed!\n");
-            clean_up(ERROR);
+		screen("read_sdl_surface() failed!\n");
+		clean_up(ERROR);
 	    }
 	}
 	else if (level_func_pack->read_vtk_input)
 	{
 	    neg_comp = level_func_pack->neg_component;
 	    pos_comp = level_func_pack->pos_component;
-	 
-        if (!read_vtk_surface(intfc,neg_comp,pos_comp,
+	    if (!read_vtk_surface(intfc,neg_comp,pos_comp,
 	    		level_func_pack->vtk_name,&surf))
 	    {
-            screen("read_sdl_surface() failed!\n");
-            clean_up(ERROR);
+		screen("read_sdl_surface() failed!\n");
+		clean_up(ERROR);
 	    }
 	}
 	else if (level_func_pack->is_mono_hs)
 	{
-	    for (int i = 0; i < level_func_pack->num_mono_hs; ++i)
+	    int i;
+	    for (i = 0; i < level_func_pack->num_mono_hs; ++i)
 	    {
-            pos_comp = level_func_pack->pos_component;
+            	pos_comp = level_func_pack->pos_component;
 	    	neg_comp = level_func_pack->pos_component+1;
-	    	
-            if (!make_level_surface(gr,intfc,neg_comp,pos_comp,
+	    	if (!make_level_surface(gr,intfc,neg_comp,pos_comp,
 			level_func_pack->func,level_func_pack->func_params,
 			&surf))
 	    	{
-                screen("make_level_surface() failed!\n");
-	    	    clean_up(ERROR);
+		    screen("make_level_surface() failed!\n");
+		    clean_up(ERROR);
 	    	}
-    
-            if (level_func_pack->constr_func != NULL)
-            {
-                FT_CutSurfBdry(surf,level_func_pack->constr_func,
+		if (level_func_pack->constr_func != NULL)
+		    FT_CutSurfBdry(surf,level_func_pack->constr_func,
                         level_func_pack->constr_params,
                         level_func_pack->point_array,
                         level_func_pack->num_points,
                         level_func_pack->direction);
-            }
-
 	    	install_hsbdry_on_surface(surf,MONO_COMP_HSBDRY);
 	    	negative_component(surf) = positive_component(surf);
 	    	if (level_func_pack->attach_string == YES)
 	    	{
-                (*level_func_pack->string_func)(intfc,surf,
-                        level_func_pack->string_params,i);
-	    	}    
-            interface_reconstructed(intfc) = NO;
-	    	
-            if (level_func_pack->wave_type != UNKNOWN_WAVE_TYPE)
-                wave_type(surf) = level_func_pack->wave_type;
-            else
-                wave_type(surf) = FIRST_PHYSICS_WAVE_TYPE;
+		    (*level_func_pack->string_func)(intfc,surf,
+				level_func_pack->string_params,i);
+	    	}
+		interface_reconstructed(intfc) = NO;
+	    	if (level_func_pack->wave_type != UNKNOWN_WAVE_TYPE)
+		    wave_type(surf) = level_func_pack->wave_type;
+		else
+	    	    wave_type(surf) = FIRST_PHYSICS_WAVE_TYPE;
 	    }
-	
-    }
-    else if (level_func_pack->func != NULL)
+	}
+	else if (level_func_pack->func != NULL)
 	{
 	    double (*func)(POINTER,double*);
 	    POINTER func_params;
@@ -2044,22 +2035,20 @@ LOCAL   void FT_InitIntfc3d(
 	    pos_comp = level_func_pack->pos_component;
 	    func = level_func_pack->func;
 	    func_params = level_func_pack->func_params;
-
-        if (!make_level_surface(gr,intfc,neg_comp,pos_comp,func,
+	    if (!make_level_surface(gr,intfc,neg_comp,pos_comp,func,
 			func_params,&surf))
 	    {
-            intfc->default_comp = level_func_pack->pos_component;
+		intfc->default_comp = level_func_pack->pos_component;
 	    }
 	}
 	else
 	{
 	    intfc->default_comp = level_func_pack->pos_component;
 	}
-
 	if (surf)
 	{
 	    if (level_func_pack->wave_type != UNKNOWN_WAVE_TYPE)
-            wave_type(surf) = level_func_pack->wave_type;
+	    	wave_type(surf) = level_func_pack->wave_type;
 	    else
 	    	wave_type(surf) = FIRST_PHYSICS_WAVE_TYPE;
 	}
@@ -2067,10 +2056,11 @@ LOCAL   void FT_InitIntfc3d(
 	    intfc->default_comp = level_func_pack->pos_component;
 
 	set_topological_grid(intfc,computational_grid(intfc));
+
 	set_default_comp(NO);
 	scatter_front(front);
 	(void) set_boundary(front->interf,front->rect_grid,
-            front->interf->default_comp,eps);
+			front->interf->default_comp,eps);
 	scatter_front(front);
 }	/* end FT_InitIntfc3d */
 

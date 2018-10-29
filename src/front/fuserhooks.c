@@ -100,8 +100,10 @@ EXPORT	boolean	nearest_intfc_state(
 {
 	if (intfc == NULL)
 	    return NO;
-	return (*f_user_interface(intfc)._nearest_intfc_state)(
-            coords,comp,intfc,state, coords_on,hs_on);
+        /* link to: f_nearest_intfc_state() */
+	return (*f_user_interface(intfc)._nearest_intfc_state)(coords,comp,
+							       intfc,state,
+							       coords_on,hs_on);
 }		/*end nearest_intfc_state*/
 
 EXPORT	void	bi_interpolate_intfc_states(
@@ -165,6 +167,10 @@ EXPORT	void	state_along_hypersurface_element(
 {
 	if (hs == NULL || hs->interface == NULL)
 	    return;
+        /* linked to:
+            state_at_point() for 1D;
+            state_along_bond() for 2D;
+            state_in_tri() for 3D. */
 	f_user_interface(hs->interface)._state_along_hypersurface_element(
 	    comp,t,hse,hs,state);
 }		/*end state_along_hypersurface_element*/

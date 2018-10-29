@@ -77,6 +77,8 @@ LOCAL	void	print_crx_sort(CRX_SORT*,int,GRID_PT*);
 LOCAL	void	print_edge_crxings(GRID_PT*,INTERFACE*);
 LOCAL	void	set_grid_crx_edge(RECT_GRID*,int*,GRID_DIRECTION,
 				double*,double*,int*,int*);
+LOCAL	void	rm_unphy_crx_in_direction(INTERFACE*,int*,int*,int*,CRX_TYPE,
+                                int*,int**,int);
 LOCAL	int	rm_unphy_crx_along_grid_line(INTERFACE*,int*,int*,int*,int*,
 			     	GRID_DIRECTION,CRX_TYPE,int*,int**);
 
@@ -1212,7 +1214,7 @@ EXPORT 	boolean track_comp_through_crxings3d(
 {
 	int count = 0;
 	static int **ips = NULL;
-	int num_ip;
+	int idir,num_ip;
 
 	DEBUG_ENTER(track_comp_through_crxings3d)
 
@@ -1220,29 +1222,48 @@ EXPORT 	boolean track_comp_through_crxings3d(
             stat_matrix(&ips,MAX_NUM_UNPHY_IP,3,INT);
 
 	/* eliminate duplicate crossings */
+        /*
 	if (debugging("grid_line_comp"))
             debug_comp_on_grid_line("Before adjust_crossings()",
                                 intfc,smin,smax);
 	adjust_crossings(smin,smax,intfc);
+        */
 
 	/* assign components and isolate unphysical clusters */
-	start_clock("fill_physical_comps");
-	fill_physical_comps(smin,smax,gmax,intfc);
-	stop_clock("fill_physical_comps");
+	start_clock("preset_grid_component");
+	//fill_physical_comps(smin,smax,gmax,intfc);
+        preset_grid_component(intfc,smin,smax,gmax);
+	stop_clock("preset_grid_component");
 
 	/* annihilate unphysical clusters */
 	start_clock("remove_unphysical_crxings");
 
-	while(unset_comp_exist(smin,smax,intfc))
+	remove_unphysical_crxings(smin,smax,gmax,intfc,crx_type,&num_ip,ips);
+	if (!check_and_unset_bad_comp(smin,smax,intfc))
 	{
-	    remove_unphysical_crxings(smin,smax,gmax,intfc,crx_type,&num_ip,
-					ips);
-	    if (count++ == 4)
+	    screen("ERROR: unset component exist!\n");
+            add_to_debug("unset_bad_comp");
+            printf("Check with debugging on\n");
+            /*
+            check_and_unset_bad_comp(smin,smax,intfc);
 	    {
-	    	screen("ERROR: unset component still exist after 4 rounds!\n");
-		clean_up(ERROR);
+                int ip[3],ip1[3];
+	        Table *T = table_of_interface(intfc);
+	        printf("In track_comp_through_crxings3d()\n");
+	        ip[0] = ip1[0] = 50;
+	        ip[1] = ip1[1] = 69;
+	        ip[2] = smin[2]; ip1[2] = smax[2];
+	        print_comp_along_grid_line(ip,ip1,UPPER,T,gmax,smin,smax);
+	        ip[0] = ip1[0] = 50;
+	        ip[2] = ip1[2] = 43;
+	        ip[1] = smin[1]; ip1[1] = smax[1];
+	        print_comp_along_grid_line(ip,ip1,NORTH,T,gmax,smin,smax);
 	    }
-	}
+            */
+            //preset_grid_component(intfc,smin,smax,gmax);
+	    //show_grid_components(smin,smax,2,intfc);
+	    clean_up(ERROR);
+        }
 	stop_clock("remove_unphysical_crxings");
 	
 	DEBUG_LEAVE(track_comp_through_crxings3d)
@@ -1268,7 +1289,9 @@ LOCAL	boolean unset_comp_exist(
 	        for (ip[0] = smin[0]; ip[0] <= smax[0]; ++ip[0])
 	        {
 		    if (comp[d_index3d(ip[0],ip[1],ip[2],gmax)] == NO_COMP)
+                    {
 		    	return YES;
+                    }
 	        }
 	    }
 	}
@@ -1345,7 +1368,11 @@ LOCAL	int check_and_unset_bad_comp(
 	        for (ip[0] = smin[0]; ip[0] <= smax[0]; ++ip[0])
 	        {
 		    if (unset[ip[0]][ip[1]][ip[2]] == YES)
+                    {
 		    	comp[d_index3d(ip[0],ip[1],ip[2],gmax)] = NO_COMP;
+                        if (debugging("unset_bad_comp"))
+                            printf("Unset component at (%d %d %d)\n",ip[0],ip[1],ip[2]);
+                    }
 	        }
 	    }
 	}
@@ -1734,218 +1761,43 @@ EXPORT	void remove_unphysical_crxings(
 	COMPONENT 	c,cn;
 
 	/* remove unphysical crossings */
-
 	if (debugging("trace"))
 	    (void) printf("Entering remove_unphysical_crxings()\n");
-	*num_ip = 0;
-	/* Save sample to debug comp/crx along a grid line 
-	{
-	    printf("In reconstruct_intfc3d_in_box_lgb()\n");
-	    ip[0] = ip1[0] = 15;
-	    ip[1] = ip1[1] = 18;
-	    ip[2] = smin[2]; ip1[2] = smax[2];
-	    printf("Before unset:\n");
-	    print_comp_along_grid_line(ip,ip1,UPPER,T,gmax,smin,smax);
-	}
-	*/
-	unset_comp_along_grid_line(intfc,smin,smax,gmax,2);
-	/* Save sample to debug comp/crx along a grid line 
-	{
-	    printf("After unset:\n");
-	    print_comp_along_grid_line(ip,ip1,UPPER,T,gmax,smin,smax);
-	}
-	*/
 
-	for (ix = smin[0]; ix <= smax[0]; ++ix)
+	*num_ip = 0;
+	unset_at_crossings(intfc,smin,smax,gmax,0);
+	rm_unphy_crx_in_direction(intfc,smin,smax,gmax,crx_type,num_ip,
+                                        ips,0);
+	if(debugging("rm_crx"))
 	{
-	    ip[0] = ix;
-	    for (iy = smin[1]; iy <= smax[1]; ++iy)
-	    {
-	        ip[1] = iy;
-	    
-		for (iz = smin[2]; iz <= smax[2]; ++iz)
-		{
-	            ip[2] = iz;
-	            c = comp[d_index3d(ix,iy,iz,gmax)];
-		    if (c == NO_COMP)
-			continue;
-		    
-		    /* Only release it when debugging line removal
-		    if (ix == 15 && iy == 18) 
-		    {
-			(void) printf("Before z removal:\n");
-			show_line_components3d(ip,smin,smax,2,intfc);
-			add_to_debug("seg_comp");
-		    }
-		    */
-		    rm_unphy_crx_along_grid_line(intfc,smin,smax,
-			             gmax,ip,LOWER,crx_type,num_ip,ips);
-		    step = rm_unphy_crx_along_grid_line(intfc,smin,smax,
-				     gmax,ip,UPPER,crx_type,num_ip,ips);
-		    iz += step;
-		    /* Only release it when debugging line removal
-		    if (debugging("seg_comp"))
-		    {
-			(void) printf("After z removal:\n");
-			show_line_components3d(ip,smin,smax,2,intfc);
-			remove_from_debug("seg_comp");
-		    }
-		    */
-		}
-	    }
-	}
-	
-	if(debugging("rm_crx_z"))
-	{
-	    (void) printf("Component-crossing after z-sweep:\n");
+	    (void) printf("Component-crossing after %d-sweep:\n",0);
 	    show_grid_components(smin,smax,1,intfc);
 	}
-	if (debugging("trace"))
-	    (void) printf("Passed z-sweep\n");
 
-        /* Save sample to debug comp/crx along a grid line 
-        {
-            printf("In reconstruct_intfc3d_in_box_lgb() after z-sweep\n");
-            ip[0] = ip1[0] = 22;
-            ip[2] = ip1[2] = 30;
-            ip[1] = smin[1]; ip1[1] = smax[1];
-            printf("Before unset:\n");
-            print_comp_along_grid_line(ip,ip1,NORTH,T,gmax,smin,smax);
-            fflush(stdout);
-        }
-	*/
 	unset_at_crossings(intfc,smin,smax,gmax,1);
-	/*
-	if (pp_mynode() == 1)
-        {
-	    printf("After unset_at_crossings()\n");
-            print_comp_along_grid_line(ip,ip1,NORTH,T,gmax,smin,smax);
-            fflush(stdout);
-        }
-        */
-	for (iz = smin[2]; iz <= smax[2]; ++iz)
+	rm_unphy_crx_in_direction(intfc,smin,smax,gmax,crx_type,num_ip,ips,1);
+	if(debugging("rm_crx"))
 	{
-	    ip[2] = iz;
-	    for (ix = smin[0]; ix <= smax[0]; ++ix)
-	    {
-	    	ip[0] = ix;
-	    	for (iy = smin[1]; iy <= smax[1]; ++iy)
-		{
-	            ip[1] = iy;
-	            c = comp[d_index3d(ix,iy,iz,gmax)];
-		    if (c == NO_COMP)
-			continue;
-
-		    /* Only release it when debugging line removal
-		    if (ix == 30 && iz == 100)
-		    {
-			(void) printf("Before removal:\n");
-			show_line_components3d(ip,smin,smax,1,intfc);
-			add_to_debug("seg_comp");
-		    }
-		    */
-		    rm_unphy_crx_along_grid_line(intfc,smin,smax,
-			             gmax,ip,SOUTH,crx_type,num_ip,ips);
-		    step = rm_unphy_crx_along_grid_line(intfc,smin,smax,
-			             gmax,ip,NORTH,crx_type,num_ip,ips);
-		    /* Only release it when debugging line removal
-		    if (debugging("seg_comp"))
-		    {
-			show_line_components3d(ip,smin,smax,1,intfc);
-			remove_from_debug("seg_comp");
-		    }
-		    */
-		    iy += step;
-		}
-	    }
+	    (void) printf("Component-crossing after %d-sweep:\n",1);
+	    show_grid_components(smin,smax,1,intfc);
 	}
 
-	if (debugging("rm_crx_y"))
+	unset_at_crossings(intfc,smin,smax,gmax,2);
+	rm_unphy_crx_in_direction(intfc,smin,smax,gmax,crx_type,num_ip,
+                                        ips,2);
+	if(debugging("rm_crx"))
 	{
-	    (void) printf("Component-crossing after y-sweep:\n");
-	    show_grid_components(smin,smax,0,intfc);
+	    (void) printf("Component-crossing after %d-sweep:\n",2);
+	    show_grid_components(smin,smax,1,intfc);
 	}
-	if (debugging("trace"))
-	    (void) printf("Passed y-sweep\n");
-	/* Uncomment for debugging if needed
-	{
-            printf("In reconstruct_intfc3d_in_box_lgb() after y-sweep\n");
-	    ip[1] = ip1[1] = 14;
-	    ip[2] = ip1[2] = 100;
-	    ip[0] = smin[0]; ip1[0] = smax[0];
-	    printf("Before unset:\n");
-	    print_comp_along_grid_line(ip,ip1,EAST,T,gmax,smin,smax);
-	    fflush(stdout);
-	}
-	*/
-	unset_at_crossings(intfc,smin,smax,gmax,0);
-	/* Uncomment for debugging if needed
-	{
-	    printf("After unset_at_crossings()\n");
-	    print_comp_along_grid_line(ip,ip1,EAST,T,gmax,smin,smax);
-	    fflush(stdout);
-	}
-	*/
-	for (iy = smin[1]; iy <= smax[1]; ++iy)
-	{
-	    ip[1] = iy;
-	    for (iz = smin[2]; iz <= smax[2]; ++iz)
-	    {
-	    	ip[2] = iz;
-	        for (ix = smin[0]; ix <= smax[0]; ++ix)
-		{
-	    	    ip[0] = ix;
-	            c = comp[d_index3d(ix,iy,iz,gmax)];
-		    if (c == NO_COMP)
-			continue;
-		    /* Only release it when debugging line removal
-		    if (iz == 100 && iy == 14)
-		    {
-			add_to_debug("seg_comp");
-			(void) printf("Before removal:\n");
-			show_line_components3d(ip,smin,smax,0,intfc);
-		    }
-		    */
-		    rm_unphy_crx_along_grid_line(intfc,smin,smax,
-				       	gmax,ip,WEST,crx_type,num_ip,ips);
-		    step = rm_unphy_crx_along_grid_line(intfc,smin,smax,
-					gmax,ip,EAST,crx_type,num_ip,ips);
-		    /* Only release it when debugging line removal
-		    if(debugging("seg_comp"))
-		    {
-			remove_from_debug("seg_comp");
-			(void) printf("After backward removal:\n");
-			show_line_components3d(ip,smin,smax,0,intfc);
-		    }
-		    */
-		    ix += step;
-		}
-	    }
-	}
-	/* Uncomment for debugging if needed
-	{
-	    printf("Leaving reconstruct_intfc3d_in_box_lgb()\n");
-	    ip[1] = ip1[1] = 14;
-	    ip[2] = ip1[2] = 100;
-	    ip[0] = smin[0]; ip1[0] = smax[0];
-	    printf("Before unset:\n");
-	    print_comp_along_grid_line(ip,ip1,EAST,T,gmax,smin,smax);
-	}
-	*/
-	if (debugging("rm_crx_x") || debugging("rm_crx"))
-	{
-	    (void) printf("Component-crossing after x-sweep (final):\n");
-	    show_grid_components(smin,smax,2,intfc);
-	}
-	if (debugging("trace"))
-	    (void) printf("Passed x-sweep\n");
+
 	if (debugging("trace"))
 	    (void) printf("Leaving remove_unphysical_crxings()\n");
 }	/* end remove_unphysical_crxings */
 
 EXPORT	boolean next_ip_in_dir(
 	const int *ip,
-	int       dir,
+	GRID_DIRECTION dir,
 	int       *ipn,
 	int *smin,
 	int *smax)
@@ -3980,6 +3832,7 @@ EXPORT	int count_grid_intfc_crossings3d(
 	    if (nt == 0) continue;
 	    t = T->tris[k][j][i];
 	    s = T->surfaces[k][j][i];
+            int ic = d_index3d(i,j,k,rgr->gmax);
 	    icrds[0] = i; icrds[1] = j; icrds[2] = k;
 	    n_crx += count_block_crossings(rgr,seg_crx_count,s,t,nt,icrds);
 	}
@@ -4291,15 +4144,13 @@ LOCAL int add_to_edge_list(
 	}
 	else
 	{
-	    for (i = 0; i < 3; ++i)
-	    {
-	    	crx_list[*nc].coords[i] = crds_crx[i];
-	    }
 	    crx_list[*nc].coords[3] = Tri_normal(tri)[ic];
 	    crx_list[*nc].vertex = NULL;
 	    crx_list[*nc].edge[0] = NULL;
 	    crx_list[*nc].edge[1] = NULL;
 	}
+	for (i = 0; i < 3; ++i)
+	    crx_list[*nc].coords[i] = crds_crx[i];
 	++(*nc);
 	return 1;
 }		/*end add_to_edge_list*/
@@ -4374,19 +4225,6 @@ LOCAL void insert_block_crossings(
 
 		/* Insert UPPER face crossings */
 
-	/* Uncomment it when debugging
-	if (icrds[0] == 15 && icrds[1] == 18 &&
-	    icrds[2] == 73 && pp_mynode() == 2)
-	{
-	    char fname[100];
-	    static int count = 0;
-	    add_to_debug("block_crossing");
-	    sprintf(fname,"crx-tri-%d-%d-%d.list",icrds[2],count/2,pp_mynode());
-	    count++;
-	    gview_plot_crossing(fname,2,num_tris,tris,coords,h);
-	    printf("icrds = %d %d %d dir = UPPER\n",icrds[0],icrds[1],icrds[2]);
-	}
-	*/
 	k = seg_index3d(icrds[0],icrds[1],icrds[2],UPPER,gmax);
 	edge_list = seg_crx_lists[k];
 	crx_list = crx_store + *index;
@@ -4395,25 +4233,11 @@ LOCAL void insert_block_crossings(
 	{
 	    if (tri_edge_crossing(tris[i],coords,crds_crx,2,&iv,&ie,h))
 	    {
-		/*
-		if (debugging("block_crossing"))
-		{
-		    printf("iv = %d  ie = %d\n",iv,ie);
-		    print_tri_coords(tris[i]);
-		}
-		*/
 		add_to_crx_list(index,2,intfc,tris[i],surfs[i],crx_list,
 				crx_tmp_store,edge_list,&n_ecrx,crds_crx,iv,ie);
 	    }
 	}
 	seg_crx_count[k] = n_ecrx;
-	/*
-	if (debugging("block_crossing"))
-	{
-	    printf("n_ecrx = %d\n",n_ecrx);
-	    remove_from_debug("block_crossing");
-	}
-	*/
 
 	if (icrds[0] != xmax-1 && icrds[1] != ymax-1 && icrds[2] != zmax-1)
 	    return;
@@ -4717,17 +4541,6 @@ LOCAL	void add_to_crx_list(
 		crx_list[*nc].ucomp = negative_component(surf);
 	    }
 	}
-	/*
-	if (debugging("block_crossing"))
-	{
-	    printf("crx pt: %20.14f %20.14f %20.14f\n",
-				Coords(crx_list[*nc].pt)[0],
-				Coords(crx_list[*nc].pt)[1],
-				Coords(crx_list[*nc].pt)[2]);
-	    printf("crossing lcomp = %d ucomp = %d\n",
-			crx_list[*nc].lcomp,crx_list[*nc].ucomp);
-	}
-	*/
 
 	crx_list[*nc].hs = Hyper_surf(surf);
 	crx_list[*nc].tri = tri;
@@ -4972,6 +4785,7 @@ EXPORT 	int insert_grid_intfc_crossings3d(
 	for (j = 0; j < ymax; ++j)
 	for (i = 0; i < xmax; ++i)
 	{
+            int ic = d_index3d(i,j,k,rgr->gmax);
 	    nt = T->num_of_tris[k][j][i];
 	    if (nt == 0) continue;
 	    t = T->tris[k][j][i];
@@ -5581,39 +5395,33 @@ LOCAL boolean is_subdomain_end(
 	switch (dir)
 	{
 	case WEST:
-	    if (ip[0] == 0 && 
-		rect_boundary_type(intfc,0,0) == SUBDOMAIN_BOUNDARY)
+	    if (ip[0] == 0) 
 		return YES;
 	    else
 		return NO;
 	case EAST:
-	    if (ip[0] == gmax[0] && 
-		rect_boundary_type(intfc,0,1) == SUBDOMAIN_BOUNDARY)
+	    if (ip[0] == gmax[0]) 
 		return YES;
 	    else
 		return NO;
 	case SOUTH:
-	    if (ip[1] == 0 && 
-		rect_boundary_type(intfc,1,0) == SUBDOMAIN_BOUNDARY)
+	    if (ip[1] == 0) 
 		return YES;
 	    else
 		return NO;
 	case NORTH:
-	    if (ip[1] == gmax[1] && 
-		rect_boundary_type(intfc,1,1) == SUBDOMAIN_BOUNDARY)
+	    if (ip[1] == gmax[1]) 
 		return YES;
 	    else
 		return NO;
 	    break;
 	case LOWER:
-	    if (ip[2] == 0 && 
-		rect_boundary_type(intfc,2,0) == SUBDOMAIN_BOUNDARY)
+	    if (ip[2] == 0) 
 		return YES;
 	    else
 		return NO;
 	case UPPER:
-	    if (ip[2] == gmax[2] && 
-		rect_boundary_type(intfc,2,1) == SUBDOMAIN_BOUNDARY)
+	    if (ip[2] == gmax[2]) 
 		return YES;
 	    else
 		return NO;
@@ -6493,3 +6301,327 @@ LOCAL boolean remove_odd_crossing(
 	printf("Odd crossing found: %p\n",(POINTER)crx_up);
     	remove_crossing(crx_up,ip,dir,gmax,T);
 }	/* end remove_odd_crossing */
+
+static void rm_unphy_crx_in_direction(
+        INTERFACE *intfc,
+        int *smin,
+        int *smax,
+        int *gmax,
+        CRX_TYPE crx_type,
+        int *num_ip,
+        int **ips,
+        int idir)
+{
+        int ip[3];
+        GRID_DIRECTION dir[6] = {EAST,NORTH,UPPER,WEST,SOUTH,LOWER};
+	Table		*T = table_of_interface(intfc);
+	COMPONENT 	*comp = T->components;
+        COMPONENT c;
+        
+
+	for (ip[(idir+1)%3] = smin[(idir+1)%3]; 
+                    ip[(idir+1)%3] <= smax[(idir+1)%3]; ++ip[(idir+1)%3])
+	for (ip[(idir+2)%3] = smin[(idir+2)%3]; 
+                    ip[(idir+2)%3] <= smax[(idir+2)%3]; ++ip[(idir+2)%3])
+	{
+	    for (ip[idir] = smin[idir]; ip[idir] <= smax[idir]; ++ip[idir])
+	    {
+	        c = comp[d_index(ip,gmax,3)];
+		if (c == NO_COMP)
+		    continue;
+		    
+                /* Save for debugging
+                if (idir == 2 && ip[0] == 50 && ip[1] == 69)
+                {
+                    add_to_debug("seg_comp");
+                    int ip1[3],ip2[3];
+                    printf("Start tracing long the grid line\n");
+                    ip1[0] = ip2[0] = 50;
+                    ip1[1] = ip2[1] = 69;
+                    ip1[2] = smin[2];
+                    ip2[2] = smax[2];
+	    	    print_comp_along_grid_line(ip1,ip2,dir[idir],T,gmax,
+                                    smin,smax);
+                }
+                */
+		rm_unphy_crx_along_grid_line(intfc,smin,smax,
+		             gmax,ip,dir[idir],crx_type,num_ip,ips);
+		ip[idir] += rm_unphy_crx_along_grid_line(intfc,smin,smax,
+			     gmax,ip,dir[idir+3],crx_type,num_ip,ips);
+                /* Save for debugging
+                if (idir == 2 && ip[0] == 50 && ip[1] == 69)
+                {
+                    remove_from_debug("seg_comp");
+                    int ip1[3],ip2[3];
+                    printf("End tracing long the grid line\n");
+                    ip1[0] = ip2[0] = 50;
+                    ip1[1] = ip2[1] = 69;
+                    ip1[2] = smin[2];
+                    ip2[2] = smax[2];
+	    	    print_comp_along_grid_line(ip1,ip2,dir[idir],T,gmax,
+                                    smin,smax);
+                }
+                */
+	    }
+	}
+}       /* end rm_unphy_crx_in_direction */
+
+struct _PIXEL
+{
+        int icoords[3];
+        COMPONENT comp;
+        boolean on_intfc;
+};
+typedef struct _PIXEL PIXEL;
+
+struct _PATCH 
+{
+        int num_pixel;
+        int num_majority;
+        int num_minority;
+        COMPONENT comp_majority;
+        COMPONENT comp_minority;
+        struct _PIXEL *pixel;
+};
+typedef struct _PATCH PATCH;
+
+LOCAL boolean paint_the_patch(int*,int*,int*,INTERFACE*,int*,PATCH*,COMPONENT*,
+                        int**);
+
+EXPORT void preset_grid_component(
+        INTERFACE *intfc,
+        int *smin,
+        int *smax,
+        int *gmax)
+{
+	Table *T = table_of_interface(intfc);
+	COMPONENT *comp = T->components;
+        COMPONENT c;
+        PIXEL *pixel,*pstore;
+        PATCH *patch;
+        int i,j,ic,idir;
+        int ip[3],**ip_store;
+        int npatch,size,nc;
+        int max_num_patch = 1000;
+        GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+        boolean new_patch;
+        boolean status;
+
+        if (debugging("trace"))
+            printf("Entering preset_grid_component()\n");
+        size = 1;
+        for (i = 0; i < Dimension(intfc); ++i)
+            size *= (smax[i] - smin[i] + 1);
+
+        FT_VectorMemoryAlloc((POINTER*)&pstore,size,sizeof(PIXEL));
+        FT_VectorMemoryAlloc((POINTER*)&ip_store,size,sizeof(int*));
+        FT_VectorMemoryAlloc((POINTER*)&patch,max_num_patch,sizeof(PATCH));
+        pixel = pstore;
+
+        /* Reset component */
+        for (ip[0] = smin[0]; ip[0] <= smax[0]; ++ip[0])
+        for (ip[1] = smin[1]; ip[1] <= smax[1]; ++ip[1])
+        for (ip[2] = smin[2]; ip[2] <= smax[2]; ++ip[2])
+        {
+            ic = d_index(ip,gmax,3);
+            comp[ic] = NO_COMP;
+        }
+        npatch = 0;
+        /* Fill patches */
+        new_patch = YES;
+        while (new_patch)
+        {
+            new_patch = NO;
+            patch[npatch].comp_majority = NO_COMP;
+            patch[npatch].comp_minority = NO_COMP;
+            patch[npatch].num_majority = 0;
+            patch[npatch].num_minority = 0;
+            for (ip[0] = smin[0]; ip[0] <= smax[0]; ++ip[0])
+            for (ip[1] = smin[1]; ip[1] <= smax[1]; ++ip[1])
+            for (ip[2] = smin[2]; ip[2] <= smax[2]; ++ip[2])
+            {
+                ic = d_index(ip,gmax,3);
+                if (comp[ic] != NO_COMP) continue;
+                for (idir = 0; idir < 6; ++idir)
+                {
+                    nc = NearestGridCrossingComp(&c,ip,dir[idir],intfc);
+                    if (nc == 0) continue;
+                    new_patch = YES;
+                    break;
+                }
+                if (new_patch) goto loops_out;
+            }
+loops_out:
+            if (!new_patch) break;
+            patch[npatch].pixel = pixel;
+            status = paint_the_patch(smin,smax,gmax,intfc,ip,patch+npatch,
+                                comp,ip_store);
+            /* Record potentially demaged patch */
+            if (status == YES)
+            {
+                if (debugging("comp_patch"))
+                {
+                    printf("Potential damaged patch begin with (%d %d %d)\n",
+                                ip[0],ip[1],ip[2]);
+                    printf("npatch = %d\n",npatch);
+                    printf("num_majority = %d\n",patch[npatch].num_majority);
+                    printf("num_minority = %d\n",patch[npatch].num_minority);
+                    printf("comp_majority = %d\n",patch[npatch].comp_majority);
+                    printf("comp_minority = %d\n",patch[npatch].comp_minority);
+                    printf("num_pixel = %d\n",patch[npatch].num_pixel);
+                }
+                if (npatch >= max_num_patch - 1)
+                {
+                    PATCH *new_patch;
+                    FT_VectorMemoryAlloc((POINTER*)&new_patch,
+                                    max_num_patch+1000,sizeof(PATCH));
+                    for (i = 0; i < max_num_patch; ++i)
+                    {
+                        new_patch[i].num_majority = patch[i].num_majority;
+                        new_patch[i].num_minority = patch[i].num_minority;
+                        new_patch[i].comp_majority = patch[i].comp_majority;
+                        new_patch[i].comp_minority = patch[i].comp_minority;
+                        new_patch[i].num_pixel = patch[i].num_pixel;
+                        new_patch[i].pixel = patch[i].pixel;
+                    }
+                    FT_FreeThese(1,patch);
+                    patch = new_patch;
+                    max_num_patch += 1000;
+                }
+                pixel += patch[npatch].num_pixel;
+                npatch++;
+            }
+        }
+        /* Small patches are potentially demaged patches, reset */
+        for (i = 0; i < npatch; ++i)
+        {
+            if (patch[i].num_pixel > 10) continue;
+            for (j = 0; j < patch[i].num_pixel; ++j)
+            {
+                int *icoords;
+                icoords = patch[i].pixel[j].icoords;
+                ic = d_index(icoords,gmax,3);
+                comp[ic] = NO_COMP;
+            }
+        }
+            
+        FT_FreeThese(3,pstore,ip_store,patch);
+        if (debugging("trace"))
+            printf("Leaving preset_grid_component()\n");
+}       /* end preset_grid_component */
+
+/* Recursive function to prefill component on grid points */
+
+LOCAL boolean paint_the_patch(
+        int *smin,
+        int *smax,
+        int *gmax,
+        INTERFACE *intfc,
+        int *ip_in,
+        PATCH *patch,
+        COMPONENT *comp,
+        int **ip_store)
+{
+        int i,ic,idir,nc[6],*ip,ipn[3],ipixel;
+        int np;
+        GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+        COMPONENT c;
+        boolean nb_found;
+
+        np = 0;
+        ip = ip_in;
+        ipixel = patch->num_pixel = 0;
+
+start_loop:
+        ipixel = patch->num_pixel;
+        patch->pixel[ipixel].on_intfc = NO;
+        for (i = 0; i < 3; ++i)
+            patch->pixel[ipixel].icoords[i] = ip[i];
+        ip_store[np] = patch->pixel[ipixel].icoords;
+        np++;
+
+        int c0 = NO_COMP;
+        for (idir = 0; idir < 6; ++idir)
+        {
+            nc[idir] = NearestGridCrossingComp(&c,ip,dir[idir],intfc);
+            if (nc[idir] == 0) continue;
+            patch->pixel[ipixel].on_intfc = YES;
+            if (patch->comp_majority == NO_COMP) // Initiate
+            {
+                patch->comp_majority = c;
+                patch->num_majority++;
+            }
+            else if (c == patch->comp_majority)
+                patch->num_majority++;
+            else
+            {
+                patch->comp_minority = c;
+                patch->num_minority++;
+            }
+        }
+        ic = d_index(ip,gmax,3);
+        patch->pixel[ipixel].comp = patch->comp_majority;
+        comp[ic] = patch->comp_majority;
+        patch->num_pixel++;
+
+        /* Depth-first search of unassigned and connected grid points */
+inner_loop:
+        nb_found = NO;
+        for (idir = 0; idir < 6; ++idir)
+        {
+            nc[idir] = NearestGridCrossingComp(&c,ip,dir[idir],intfc);
+            if (nc[idir] != 0) continue;
+            if (!next_ip_in_dir(ip,dir[idir],ipn,smin,smax)) continue;
+            ic = d_index(ipn,gmax,3);
+            if (comp[ic] != NO_COMP) continue;
+            nb_found = YES;
+            for (i = 0; i < 3; ++i) ip[i] = ipn[i];
+            goto start_loop;
+        }
+        if (!nb_found)
+        {
+            static int count = 0;
+            --np;
+            if (np >= 0)
+            {
+                ip = ip_store[np];
+                goto inner_loop;
+            }
+        }
+
+        /* Check if majority/minority is consistent */
+        if (patch->num_majority < patch->num_minority)
+        {
+            /* Swap between majority and minority *
+            /* This should rarely happen for large patch*/
+            int itmp;
+            COMPONENT ctmp;
+            printf("Before swapping:\n");
+            printf("num_majority = %d\n",patch->num_majority);
+            printf("num_minority = %d\n",patch->num_minority);
+            printf("comp_majority = %d\n",patch->comp_majority);
+            printf("comp_minority = %d\n",patch->comp_minority);
+            itmp = patch->num_minority;
+            patch->num_minority = patch->num_majority;
+            patch->num_majority = itmp;
+            ctmp = patch->comp_minority;
+            patch->comp_minority = patch->comp_majority;
+            patch->comp_majority = ctmp;
+            printf("After swapping:\n");
+            printf("num_majority = %d\n",patch->num_majority);
+            printf("num_minority = %d\n",patch->num_minority);
+            printf("comp_majority = %d\n",patch->comp_majority);
+            printf("comp_minority = %d\n",patch->comp_minority);
+            for (i = 0; i < patch->num_pixel; ++i)
+            {
+                patch->pixel[i].comp = patch->comp_majority;
+                ip = patch->pixel[i].icoords;
+                ic = d_index(ip,gmax,3);
+                comp[ic] = patch->comp_majority;
+            }
+        }
+        if (patch->num_pixel > 10 && patch->num_minority == 0)
+            return NO;          // Consistent patch, no need to record
+        else
+            return YES;
+}       /* end paint_the_patch */

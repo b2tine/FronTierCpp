@@ -1174,7 +1174,7 @@ EXPORT	void	f_user_copy_hyper_surf(
 	   copy anyway */
 	{
 	    body_index(new_hs) = body_index(old_hs);
-            mom_inertia(new_hs) = mom_inertia(old_hs);
+            mom_inertial(new_hs) = mom_inertial(old_hs);
             total_mass(new_hs) = total_mass(old_hs);
             angular_velo(new_hs) = angular_velo(old_hs);
             motion_type(new_hs) = motion_type(old_hs);
@@ -1189,7 +1189,7 @@ EXPORT	void	f_user_copy_hyper_surf(
                 rotation_direction(new_hs)[i] = rotation_direction(old_hs)[i];
                 rotation_center(new_hs)[i] = rotation_center(old_hs)[i];
                 translation_dir(new_hs)[i] = translation_dir(old_hs)[i];
-		p_mom_inertia(new_hs)[i] = p_mom_inertia(old_hs)[i];
+		p_mom_inertial(new_hs)[i] = p_mom_inertial(old_hs)[i];
                 p_angular_velo(new_hs)[i] = p_angular_velo(old_hs)[i];
             }
 	    for (i = 0; i < 4; i++)
@@ -1405,8 +1405,8 @@ EXPORT	boolean f_user_read_print_curve(
             	status = fscanf(file,"%d",&body_index(Hyper_surf(curve)));
                 total_mass(Hyper_surf(curve)) =
                         read_print_float("Total mass = ",1.0,io_type);
-                mom_inertia(Hyper_surf(curve)) =
-                        read_print_float("Moment of inertia = ",1.0,io_type);
+                mom_inertial(Hyper_surf(curve)) =
+                        read_print_float("Moment of inertial = ",1.0,io_type);
                 fgetstring(file,"Center of Mass = ");
 	    	for (i = 0; i < 2; ++i)
                     center_of_mass(Hyper_surf(curve))[i] =
@@ -1658,9 +1658,9 @@ EXPORT	void f_user_fprint_curve(
                 (void) fprintf(file,"%d\n",body_index(Hyper_surf(curve)));
                 (void) fprintf(file,"\tTotal mass = ");
                 (void) fprintf(file,"%"FFMT"\n",total_mass(Hyper_surf(curve)));
-                (void) fprintf(file,"\tMoment of inertia = ");
+                (void) fprintf(file,"\tMoment of inertial = ");
                 (void) fprintf(file,"%"FFMT"\n",
-                                mom_inertia(Hyper_surf(curve)));
+                                mom_inertial(Hyper_surf(curve)));
                 (void) fprintf(file,"\tCenter of Mass = ");
                 (void) fprintf(file,"%"FFMT" %"FFMT"\n",
                                 center_of_mass(Hyper_surf(curve))[0],
@@ -2139,12 +2139,10 @@ LOCAL	boolean f_user_2d_insert_point_in_bond(
 	    len = bond_length(b);
 	    total_len = len + bond_length(bnew);
 	    para = (total_len > 0.0) ? len/total_len : 0.5;
-
 	    bi_interpolate_intfc_states(intfc,1.0-para,para,
 			                Coords(b->start),start_left_state,
 			                Coords(bnew->end),end_left_state,
 			                left_state(b->end));
-
 	    bi_interpolate_intfc_states(intfc,1.0-para,para,
 			                Coords(b->start),start_right_state,
 			                Coords(bnew->end),end_right_state,
@@ -2753,9 +2751,9 @@ EXPORT	void	f_user_fprint_surface(
             (void) fprintf(file,"%d\n",body_index(Hyper_surf(s)));
             (void) fprintf(file,"\tTotal mass = ");
             (void) fprintf(file,"%"FFMT"\n",total_mass(Hyper_surf(s)));
-            (void) fprintf(file,"\tMoment of inertia = ");
+            (void) fprintf(file,"\tMoment of inertial = ");
             (void) fprintf(file,"%"FFMT"\n",
-                                mom_inertia(Hyper_surf(s)));
+                                mom_inertial(Hyper_surf(s)));
             (void) fprintf(file,"\tCenter of Mass = ");
             (void) fprintf(file,"%"FFMT" %"FFMT" %"FFMT"\n",
                                 center_of_mass(Hyper_surf(s))[0],
@@ -2784,11 +2782,11 @@ EXPORT	void	f_user_fprint_surface(
             (void) fprintf(file,"\tAngular velocity = ");
             (void) fprintf(file,"%"FFMT"\n",
                                 angular_velo(Hyper_surf(s)));
-	    (void) fprintf(file,"\tPrincipal Moment of inertia = ");
+	    (void) fprintf(file,"\tPrincipal Moment of inertial = ");
 	    (void) fprintf(file,"%"FFMT" %"FFMT" %"FFMT"\n", 
-				p_mom_inertia(Hyper_surf(s))[0], 
-				p_mom_inertia(Hyper_surf(s))[1], 
-				p_mom_inertia(Hyper_surf(s))[2]);
+				p_mom_inertial(Hyper_surf(s))[0], 
+				p_mom_inertial(Hyper_surf(s))[1], 
+				p_mom_inertial(Hyper_surf(s))[2]);
 	    (void) fprintf(file,"\tPrincipal Angular Velocity = ");
 	    (void) fprintf(file,"%"FFMT" %"FFMT" %"FFMT"\n",
 				p_angular_velo(Hyper_surf(s))[0], 
@@ -2852,8 +2850,8 @@ EXPORT	void f_user_read_print_surface(
             status = fscanf(file,"%d",&body_index(Hyper_surf(surf)));
             total_mass(Hyper_surf(surf)) =
                             read_print_float("Total mass = ",1.0,io_type);
-            mom_inertia(Hyper_surf(surf)) =
-                            read_print_float("Moment of inertia = ",1.0,
+            mom_inertial(Hyper_surf(surf)) =
+                            read_print_float("Moment of inertial = ",1.0,
 			    io_type);
             fgetstring(file,"Center of Mass = ");
 	    for (i = 0; i < 3; ++i)
@@ -2877,9 +2875,9 @@ EXPORT	void f_user_read_print_surface(
                             fread_float(NULL,io_type);
             angular_velo(Hyper_surf(surf)) =
                         read_print_float("Angular velocity = ",1.0,io_type);
-	    fgetstring(file,"Principal Moment of inertia = ");
+	    fgetstring(file,"Principal Moment of inertial = ");
 	    for (i = 0; i < 3; ++i)
-		p_mom_inertia(Hyper_surf(surf))[i] = 
+		p_mom_inertial(Hyper_surf(surf))[i] = 
 			    fread_float(NULL,io_type);
 	    fgetstring(file,"Principal Angular Velocity = ");
 	    for (i = 0; i < 3; ++i)

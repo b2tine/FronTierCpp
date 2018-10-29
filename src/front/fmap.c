@@ -367,6 +367,7 @@ EXPORT	void	FT_Init(
 	char *restart_name = f_basic->restart_name;
 	int  *subdomains   = f_basic->subdomains;
         int i,total_num_proc = 1;
+        int num_thread;
 	char dirname[256];
 	char file_name[256];
 	FILE *ifile;
@@ -397,11 +398,11 @@ EXPORT	void	FT_Init(
 	    case 'i':
 	    case 'I':
 	    	f_basic->ReadFromInput = YES;
-	    	zero_scalar(in_name,200); //in_name is pointing to f_basic->in_name  
-            strcpy(in_name,argv[1]);
-            argc -= 2;
-            argv += 2;
-            break;
+	    	zero_scalar(in_name,200);
+                strcpy(in_name,argv[1]);
+                argc -= 2;
+		argv += 2;
+		break;
 	    case 'r':
 	    case 'R':
 	    	f_basic->RestartRun = YES;
@@ -485,6 +486,13 @@ EXPORT	void	FT_Init(
                            total_num_proc,pp_numnodes());
                     clean_up(ERROR);
                 }
+		break;
+            case 'm':
+            case 'M':
+	    	num_thread = atoi(argv[1]);
+                set_num_of_thread(num_thread);
+                argc -= 2;
+                argv += 2;
 		break;
 #endif /* defined(USE_MPI) */
 	    default:
@@ -721,12 +729,10 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-
-    int j;
+        int j;
 	int crx_index;
 	INTERFACE *grid_intfc = front->grid_intfc;
-	
-    CRXING *crxs[MAX_NUM_CRX];
+	CRXING *crxs[MAX_NUM_CRX];
 	int i,nc,dim = grid_intfc->dim;
 	POINT *p;
 	BOND *b;
@@ -787,7 +793,7 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	return YES;
 }	/* end FT_NormalAtGridCrossing */
 
-#define MAX_NUM_VERTEX_IN_CELL 20
+#define         MAX_NUM_VERTEX_IN_CELL          20
 EXPORT	boolean FT_StateStructAtGridCrossing(
 	Front *front,
 	INTERFACE *grid_intfc,
@@ -798,11 +804,14 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-	int crx_index = 0;
+        int j;
+	int crx_index;
 	CRXING *crxs[MAX_NUM_CRX];
+	int i,nc,dim = grid_intfc->dim;
 
-	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
-    if (nc == 0) return NO;
+	crx_index = 0;
+	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
 	if (comp == negative_component(*hs))
@@ -816,12 +825,9 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 			"component does not match\n");
 	    return NO;
 	}
-	
-    int dim = grid_intfc->dim;
-	for (int i = 0; i < dim; ++i)
+	for (i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-
-    return YES;
+	return YES;
 }	/* end FT_StateStructAtGridCrossing */
 
 EXPORT	boolean FT_StateStructAtGridCrossing2(
@@ -910,10 +916,24 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 {
 	int icoords[MAXD];
 	INTERFACE *grid_intfc = front->grid_intfc;
+	static INTRP_CELL *blk_cell;
 	RECT_GRID *gr = &topological_grid(grid_intfc);
 	int i,dim = gr->dim;
 	extrapolation_permitted = front->extrapolation_permitted;
 
+	if (blk_cell == NULL)
+	{
+	    scalar(&blk_cell,sizeof(INTRP_CELL));
+	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,
+						sizeof(double));
+	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
+	    uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
+	    lin_cell_tol = 1.0;
+	    for (i = 0; i < dim; ++i)
+	    	lin_cell_tol *= 0.00001*gr->h[i];
+	}
 
 	if (!rect_in_which(coords,icoords,gr))
 	{
@@ -934,25 +954,8 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    	return NO;
 	    }
 	}
-
-	static INTRP_CELL *blk_cell;
-	if (blk_cell == NULL)
-    {
-        scalar(&blk_cell,sizeof(INTRP_CELL));
-        uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-        uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-        bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
-        bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
-        uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
-
-        lin_cell_tol = 1.0;
-        for (i = 0; i < dim; ++i)
-            lin_cell_tol *= 0.00001*gr->h[i];
-    }  
-	
-    collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,
+	collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,
 				get_state);
-
 	if (blk_cell->is_bilinear)
 	{
 	    if (debugging("the_pt"))
@@ -975,23 +978,13 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	}
 	else
 	{
-	    if (debugging("the_pt"))
-		    printf("Using nearest_intfc_state()\n");
-
-        /*
 	    static Locstate state;
+	    if (debugging("the_pt"))
+		printf("Using nearest_intfc_state()\n");
 	    if (state == NULL)
-		    scalar(&state,front->sizest);
-        */
-
-        Locstate state;
-        scalar(&state,front->sizest);
-
+		scalar(&state,front->sizest);
 	    nearest_intfc_state(coords,comp,front->grid_intfc,state,NULL,NULL);
 	    *ans = get_state(state);
-
-        free(state);
-
 	    return YES;
 	}
 }	/* end FT_IntrpStateVarAtCoords */
@@ -1312,12 +1305,10 @@ LOCAL void collect_cell_ptst(
 	double *L = gr->L;
 	double *h = gr->h;
 	COMPONENT *gr_comp = T->components;
-	
-    COMPONENT cell_comp1d[2];
+	COMPONENT cell_comp1d[2];
 	COMPONENT cell_comp2d[2][2];
 	COMPONENT cell_comp3d[2][2][2];
-	
-    int i,j,k,index,nv,nc;
+	int i,j,k,index,nv,nc;
 	CRXING *crx,*crxs[MAX_NUM_CRX];
 	GRID_DIRECTION dir;
 	int ic[MAXD];
@@ -1657,7 +1648,7 @@ EXPORT	double FrontLinIntrp(
 	double *var = blk_cell->var_lin;
 	double ans;
 	int dim = blk_cell->dim;
-	static double f[MAXD+1];
+	double f[MAXD+1];
 
 	switch (dim)
 	{
@@ -2714,7 +2705,7 @@ LOCAL void FrontPreAdvance2d(
 		{
 		    for (i = 0; i < dim; ++i)
 		    	center_of_mass_velo(*c)[i] = 0.0;
-		    angular_velo(*c) += dt*torque[index]/mom_inertia(*c);
+		    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
 		}
 		else if (motion_type(*c) == COM_MOTION)
 		{
@@ -2730,7 +2721,7 @@ LOCAL void FrontPreAdvance2d(
 		    	center_of_mass_velo(*c)[i] +=
                         	dt*force[index][i]/total_mass(*c);
                     }
-                    angular_velo(*c) += dt*torque[index]/mom_inertia(*c);
+                    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
                 }
                 for (i = 0; i < dim; ++i)
                     center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + 
@@ -2739,7 +2730,7 @@ LOCAL void FrontPreAdvance2d(
                 {
                     printf("Body index: %d\n",index);
                     printf("total mass = %16.15f\n",total_mass(*c));
-                    printf("moment of inertia = %f\n",mom_inertia(*c));
+                    printf("moment of inertial = %f\n",mom_inertial(*c));
                     printf("torque = %f\n",torque[index]);
                     printf("force = %f %f\n",force[index][0],force[index][1]);
                     printf("angular_velo = %f\n",angular_velo(*c));
@@ -2934,57 +2925,57 @@ LOCAL void FrontPreAdvance3d(
 		    /* update the principle angular velocity by solving
 		       euler's equation with 4th order RK method */
 		    /* torque has been added in the equations */
-                    coef[0] = (p_mom_inertia(*s)[2]-p_mom_inertia(*s)[1]) /
-                                        p_mom_inertia(*s)[0];
-                    coef[1] = (p_mom_inertia(*s)[0]-p_mom_inertia(*s)[2]) /
-                                        p_mom_inertia(*s)[1];
-                    coef[2] = (p_mom_inertia(*s)[1]-p_mom_inertia(*s)[0]) /
-                                        p_mom_inertia(*s)[2];
+                    coef[0] = (p_mom_inertial(*s)[2]-p_mom_inertial(*s)[1]) /
+                                        p_mom_inertial(*s)[0];
+                    coef[1] = (p_mom_inertial(*s)[0]-p_mom_inertial(*s)[2]) /
+                                        p_mom_inertial(*s)[1];
+                    coef[2] = (p_mom_inertial(*s)[1]-p_mom_inertial(*s)[0]) /
+                                        p_mom_inertial(*s)[2];
                     temp[0][0] = - coef[0] * p_angular_velo(*s)[1]
                                 * p_angular_velo(*s)[2]
-				+ torque[index][0] / p_mom_inertia(*s)[0];
+				+ torque[index][0] / p_mom_inertial(*s)[0];
                     temp[0][1] = - coef[1] * p_angular_velo(*s)[2]
                                 * p_angular_velo(*s)[0]
-				+ torque[index][1] / p_mom_inertia(*s)[1];
+				+ torque[index][1] / p_mom_inertial(*s)[1];
                     temp[0][2] = - coef[2] * p_angular_velo(*s)[0]
                                 * p_angular_velo(*s)[1]
-				+ torque[index][2] / p_mom_inertia(*s)[2];
+				+ torque[index][2] / p_mom_inertial(*s)[2];
                     temp[1][0] = - coef[0]
                          * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt)
                          * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt)
-			 + torque[index][0] / p_mom_inertia(*s)[0];
+			 + torque[index][0] / p_mom_inertial(*s)[0];
                     temp[1][1] = - coef[1]
                          * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt)
                          * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt)
-			 + torque[index][1] / p_mom_inertia(*s)[1];
+			 + torque[index][1] / p_mom_inertial(*s)[1];
                     temp[1][2] = - coef[2]
                          * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt)
                          * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt)
-			 + torque[index][2] / p_mom_inertia(*s)[2];
+			 + torque[index][2] / p_mom_inertial(*s)[2];
                     temp[2][0] = - coef[0]
                          * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt)
                          * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt)
-			 + torque[index][0] / p_mom_inertia(*s)[0];
+			 + torque[index][0] / p_mom_inertial(*s)[0];
                     temp[2][1] = - coef[1]
                          * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt)
                          * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt)
-			 + torque[index][1] / p_mom_inertia(*s)[1];
+			 + torque[index][1] / p_mom_inertial(*s)[1];
                     temp[2][2] = - coef[2]
                          * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt)
                          * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt)
-			 + torque[index][2] / p_mom_inertia(*s)[2];
+			 + torque[index][2] / p_mom_inertial(*s)[2];
                     temp[3][0] = - coef[0]
                          * (p_angular_velo(*s)[1] +  temp[2][1] * dt)
                          * (p_angular_velo(*s)[2] +  temp[2][2] * dt)
-			 + torque[index][0] / p_mom_inertia(*s)[0];
+			 + torque[index][0] / p_mom_inertial(*s)[0];
                     temp[3][1] = - coef[1]
                          * (p_angular_velo(*s)[2] +  temp[2][2] * dt)
                          * (p_angular_velo(*s)[0] +  temp[2][0] * dt)
-			 + torque[index][1] / p_mom_inertia(*s)[1];
+			 + torque[index][1] / p_mom_inertial(*s)[1];
                     temp[3][2] = - coef[2]
                          * (p_angular_velo(*s)[0] +  temp[2][0] * dt)
                          * (p_angular_velo(*s)[1] +  temp[2][1] * dt)
-			 + torque[index][2] / p_mom_inertia(*s)[2];
+			 + torque[index][2] / p_mom_inertial(*s)[2];
                     for (i = 0; i < dim; ++i)
                         p_angular_velo(*s)[i] += dt/6.0 * (temp[0][i] +
                                 2*temp[1][i] + 2*temp[2][i] + temp[3][i]);
@@ -3314,17 +3305,7 @@ EXPORT void FT_AddTimeStepToCounter(Front *front)
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 
-
-/* FT_SetTimeStep() summary:
- *
- *      Next time step determined by maximum speed of
- *      the previous step, assuming the propagation is
- *      hyperbolic and  is not dependent on the second
- *      order derivatives of the interface such as
- *      curvature, etc.
- */
-
- EXPORT	void FT_SetTimeStep(
+EXPORT	void FT_SetTimeStep(
 	Front *front)
 {
 	double fcrds[MAXD];

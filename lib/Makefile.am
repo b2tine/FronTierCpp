@@ -46,6 +46,7 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/frp.h \
 				 ../include/front/fuserint.h \
 				 ../include/front/fvelo.h \
+				 ../include/front/fcell.h \
 				 ../include/front/dummyfront.h 
 
 
@@ -177,6 +178,7 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fuserhooks.c \
 					  ../src/front/fuserintfc.c \
 					  ../src/front/fvelo.c \
+					  ../src/front/fcell.c \
 					  ../src/front/dummyfront.cpp
 
 
@@ -191,6 +193,7 @@ libcFluid_la_SOURCES = ../cFluid/cFluid.h \
 					   ../cFluid/cFweno.cpp \
 					   ../cFluid/cFsub.cpp \
 					   ../cFluid/cFcartsn.cpp \
+					   ../cFluid/cFphys.cpp \
 					   ../cFluid/cFbase.cpp \
 					   ../cFluid/cFinit.cpp \
 					   ../cFluid/cFeos.cpp \

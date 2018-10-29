@@ -39,7 +39,16 @@ LOCAL double FT_ComputeTotalVolumeFraction2d(Front*,COMPONENT);
 LOCAL void forward_curve_seg_len_constr(CURVE*,BOND*,BOND*,int,double);
 LOCAL void backward_curve_seg_len_constr(CURVE*,BOND*,BOND*,int,double);
 LOCAL void exchange_cell_partition(CELL_PART*,INTERFACE*,Front*);
-LOCAL boolean find_nearest_ring2_cell_with_comp(int*,int*,int*,int*,int);
+LOCAL boolean find_nearest_ring2_cell_with_comp(int*,int*,int*,int*,int,int);
+LOCAL void set_domain_boundary_flag3d(CELL_INFO_3D*,int*,int*,int*,int*,int*);
+LOCAL void set_cell_neighbor3d(Front*,CELL_INFO_3D*,int*,int*,int*,COMPONENT);
+LOCAL void set_cell_comp3d(CELL_INFO_3D*,int*,int*,int*,int*,int*,int*,
+                        double*,double*,const int);
+LOCAL void set_cell_crx3d(Front*,CELL_INFO_3D*,int*,int*,INTERFACE*,char*,
+	                INTERFACE*,const int*,const int*);
+LOCAL void assign_nb_frac3d(Front*,CELL_PART*,CELL_INFO_3D*,int*,int*,int*,int);
+LOCAL void set_cell_crx3d(Front*,CELL_INFO_3D*,int*,int*,INTERFACE*,char*,
+	                INTERFACE*,const int*,const int*);
 
 EXPORT double FT_ComputeTotalVolumeFraction(
 	Front *front,
@@ -2079,10 +2088,27 @@ EXPORT boolean FT_NearestGridIcoordsWithComp(
 	int *icoords_next)
 {
 	boolean status;
+        int dim = FT_Dimension();
 	status = find_nearest_ring2_cell_with_comp(icoords,icoords_next,
-                      gmax,comp_map,comp);
+                      gmax,comp_map,comp,dim);
 	return status;
 }	/* end FT_NearestGridIcoordsWithComp */
+
+struct _CELL_INFO_1D {
+	/* Input vatiables */
+	int comp[2];
+	int icrds[2][MAXD];
+	double crds[2][MAXD];
+	int soln_comp;
+	int cell_comp;
+	double crx_coords[MAXD];
+	int nv;
+	/* output variables */
+	double nb_frac[3];
+	boolean nb_flag[3];
+	double full_cell_vol;
+};
+typedef struct _CELL_INFO_1D CELL_INFO_1D;
 
 struct _CELL_INFO_2D {
 	/* Input vatiables */
@@ -2103,22 +2129,6 @@ struct _CELL_INFO_2D {
 	double full_cell_vol;
 };
 typedef struct _CELL_INFO_2D CELL_INFO_2D;
-
-struct _CELL_INFO_1D {
-	/* Input vatiables */
-	int comp[2];
-	int icrds[2][MAXD];
-	double crds[2][MAXD];
-	int soln_comp;
-	int cell_comp;
-	double crx_coords[MAXD];
-	int nv;
-	/* output variables */
-	double nb_frac[3];
-	boolean nb_flag[3];
-	double full_cell_vol;
-};
-typedef struct _CELL_INFO_1D CELL_INFO_1D;
 
 static void cell_area(CELL_INFO_2D*);
 static void cell_length(CELL_INFO_1D*);
@@ -2508,8 +2518,9 @@ EXPORT void FT_ComputeVolumeFraction(
 	int i,j,k,ii,jj,kk,l,m,n,nr,ns;
 	int ic,icn,icc,icc1,icc2;
 	HYPER_SURF *hs;
-	static CELL_INFO_2D cell2d;
 	static CELL_INFO_1D cell1d;
+	static CELL_INFO_2D cell2d;
+	static CELL_INFO_3D cell3d;
 	int lm[MAXD],um[MAXD]; 	/* lower and upper margin */
 	int icoords[MAXD],ipn[MAXD];
 	static boolean first = YES;
@@ -2518,12 +2529,19 @@ EXPORT void FT_ComputeVolumeFraction(
 					  {LOWER,CENTER,UPPER}};
 	double S,Sn,new_S,v_old,v_oldn;
 	double full_cell_vol;
+        double vol,new_vol;
 	GRID_DIRECTION dirs[MAXD];
 	int size;
 	int shift[MAXD];
+        double domain_vol = 0.0;
+        int nb_frac_count;
+        double vol_test[2];
+        char *out_name = OutName(front);
+        const int comp0 = comps[0];
+        const int comp1 = comps[1];
 
 	if (debugging("trace"))
-	    (void) printf("Entering computeVolumeFraction()\n");
+	    (void) printf("Entering FT_ComputeVolumeFraction()\n");
 
 	if (num_phases > 2)
 	{
@@ -2633,13 +2651,152 @@ EXPORT void FT_ComputeVolumeFraction(
 	    }
 	    break;
 	case 3:
+	    cell3d.full_cell_vol = full_cell_vol 
+	    			= comp_h[0]*comp_h[1]*comp_h[2];
 	    for (i = imin[0] - lm[0]; i <= imax[0] + um[0]; ++i)
 	    for (j = imin[1] - lm[1]; j <= imax[1] + um[1]; ++j)
 	    for (k = imin[2] - lm[2]; k <= imax[2] + um[2]; ++k)
 	    {
-	    	(void) printf("In computeVolumeFraction(), 3D code needed!\n");
-		clean_up(ERROR);
+	      for (n = 0; n < num_phases; ++n)
+	      {	
+	        nb_frac_count = 0; 
+	        vol_test[n] = 0.0;
+		cell3d.soln_comp = comps[n];
+		icoords[0] = i;
+		icoords[1] = j;
+		icoords[2] = k;
+		
+		ic = d_index(icoords,top_gmax,dim);
+		set_cell_comp3d(&cell3d,icoords,shift,top_gmax,top_comp,
+				comp_gmax,comp_comp,comp_L,comp_h,comp1);
+		set_domain_boundary_flag3d(&cell3d,icoords,imin,imax,lm,um);
+		if (cell3d.is_corner || cell3d.is_side || cell3d.is_face)
+		{
+		    if (top_comp[ic] == comps[n])
+		    {
+		        cell_part[ic].vol_new[n] += full_cell_vol;
+			domain_vol += full_cell_vol;
+			vol_test[n] = full_cell_vol;
+		    }
+		    continue;
+		}
+		if (cell3d.num_comps == 1)
+		{
+		    if (top_comp[ic] == comps[n])
+		    {
+		    	cell_part[ic].vol_new[n] += full_cell_vol;
+			domain_vol += full_cell_vol;
+			vol_test[n] = full_cell_vol;
+		    }
+		    continue;
+		}
+
+		set_cell_crx3d(front,&cell3d,comp_comp,comp_gmax,
+			comp_grid_intfc,out_name,grid_intfc,icoords,shift);
+		set_cell_neighbor3d(front,&cell3d,icoords,top_gmax,
+						top_comp,comps[n]);
+		cell_volume(&cell3d,ic,top_comp);
+		for (ii = 0; ii < 3; ++ii)
+		for (jj = 0; jj < 3; ++jj)
+		for (kk = 0; kk < 3; ++kk)
+		{
+		    if (cell3d.nb_frac[ii][jj][kk] != 0.0)
+		    {
+		    	vol_test[n] += cell3d.nb_frac[ii][jj][kk];
+			domain_vol += cell3d.nb_frac[ii][jj][kk];
+		        if (++nb_frac_count > 1)
+			{
+			     printf("Seems wrong: nb_frac_count > 1\n");
+			     clean_up(ERROR);
+			}
+		    }
+		}
+		if (cell3d.orphan != 0.0)
+		   vol_test[n] += cell3d.orphan;
+		if (vol_test[n] < 0.0)
+		{
+		    printf("vol_test is less than 0\n");
+		    clean_up(ERROR);
+		}
+		if (vol_test[n] > full_cell_vol)
+		{
+		    printf("vol_test is larger than full cell volume\n");
+		    clean_up(ERROR);
+		}
+		/*
+		if (cell3d.orphan != 0.0)
+		{
+		    printf("step = %d\n",front->step);
+		    printf("(i,j,k) = (%d %d %d)\n",i,j,k);
+		    printf("Cell orphan is not zero!\n\n");
+		    
+		    for (ii = i-1; ii <= i+1; ++ii)
+		    for (jj = j-1; jj <= j+1; ++jj)
+		    {
+		    	for (kk = k-1; kk <= k+1; ++kk)
+			{
+			    icn = d_index3d(ii,jj,kk,top_gmax);
+			    printf("Component = %d\t",top_comp[icn]);
+			}
+			printf("\n");
+		    }
+		    printf("Corner component\n");
+		    for (ii = 0; ii < 2; ++ii)
+		    for (jj = 0; jj < 2; ++jj)
+		    {
+		    	for (kk = 0; kk < 2; ++kk)
+		    	{
+			    printf("Corner(%d,%d,%d) comp = %d\t",
+			    	ii,jj,kk,cell3d.comp[ii][jj][kk]);
+		    	}
+			printf("\n");
+		    }
+		    gview_plot_intfc_within_cell3d(out_name,comp_grid_intfc,
+		    	icoords,shift,&cell3d,front->step);
+		    plot_around_cell3d(out_name,front,grid_intfc,
+		     comp_grid_intfc,icoords,shift,top_gmax,top_comp,
+		     comp_gmax,comp_comp,comp_L,comp_h,front->step,comp1);
+		}
+		*/
+		if (i == 9 && j == 38 && k == 30)
+		   gview_plot_intfc_within_cell3d(out_name,comp_grid_intfc,
+		                           icoords,shift,&cell3d,front->step);
+		assign_nb_frac3d(front,cell_part,&cell3d,icoords,
+					top_gmax,top_comp,n);
+	      }
+	      double vol_diff = full_cell_vol-(vol_test[0]+vol_test[1]);
+	      if (fabs(vol_diff) > 1e-8)
+	      { 
+	          printf("Cell (%2d,%2d,%2d): vol_diff = %20.14f\n",i,j,k,
+		  		vol_diff);
+		  clean_up(ERROR);
+	      }
 	    }
+	    new_vol = 0.0;
+	    for (i = imin[0] - lm[0]; i <= imax[0] + um[0]; ++i)
+	    for (j = imin[1] - lm[1]; j <= imax[1] + um[1]; ++j)
+	    for (k = imin[2] - lm[2]; k <= imax[2] + um[2]; ++k)
+	    {
+	        icoords[0] = i;
+		icoords[1] = j;
+		icoords[2] = k;
+		ic = d_index(icoords,top_gmax,dim);
+		new_vol += cell_part[ic].vol_new[0];
+		new_vol += cell_part[ic].vol_new[1];
+		if (top_comp[ic] != comp1)
+		{
+		    if (cell_part[ic].vol_new[1] != 0.0)
+		    {
+		        printf("Potential leak at step =%2d\n",front->step);
+			printf("At cell (%2d,%2d,%2d),component = %d\n"
+					,i,j,k,top_comp[ic]);
+			clean_up(ERROR);
+		    }
+		}
+
+	    }
+	    printf("Full domian volume is %32.18f\n",domain_vol);
+	    printf("   Full new volume is %32.18f\n",new_vol);
 	    break;
 	default:
 	    (void) printf("Unknown dimension\n");
@@ -2650,38 +2807,67 @@ EXPORT void FT_ComputeVolumeFraction(
 	    exchange_cell_partition(cell_part,grid_intfc,front);
 	first = NO;
 	if (debugging("trace"))
-	    (void) printf("Leaving computeVolumeFraction()\n");
-}	/* end computeVolumeFraction */
+	    (void) printf("Leaving FT_ComputeVolumeFraction()\n");
+}	/* end FT_ComputeVolumeFraction */
 
 LOCAL boolean find_nearest_ring2_cell_with_comp(
 	int *icoords,
 	int *ipn,
 	int *top_gmax,
 	int *top_comp,
-	int soln_comp)
+	int soln_comp,
+        int dim)
 {
-	int i,j,ic;
-	int dist,min_dist = 100;
+	int i,j,k,ic;
+	int dist,min_dist = 200;
 	int ip[MAXD];
 	boolean status = NO;
-
-	for (i = -8; i <= 8; ++i)
-	for (j = -8; j <= 8; ++j)
-	{
-	    ip[0] = icoords[0] + i;
-	    ip[1] = icoords[1] + j;
-	    if (ip[0] < 0 || ip[0] > top_gmax[0]) continue;
-	    if (ip[1] < 0 || ip[1] > top_gmax[1]) continue;
-	    ic = d_index(ip,top_gmax,2);
-	    if (top_comp[ic] != soln_comp) continue;
-	    status = YES;
-	    dist = i*i + j*j;
-	    if (dist < min_dist)
+	
+	switch(dim){
+	case 2:
+	    for (i = -8; i <= 8; ++i)
+	    for (j = -8; j <= 8; ++j)
 	    {
-	    	min_dist = dist;
-		ipn[0] = ip[0];
-		ipn[1] = ip[1];
+	        ip[0] = icoords[0] + i;
+	        ip[1] = icoords[1] + j;
+	        if (ip[0] < 0 || ip[0] > top_gmax[0]) continue;
+	        if (ip[1] < 0 || ip[1] > top_gmax[1]) continue;
+	        ic = d_index(ip,top_gmax,2);
+	        if (top_comp[ic] != soln_comp) continue;
+	        status = YES;
+	        dist = i*i + j*j;
+	        if (dist < min_dist)
+	        {
+	            min_dist = dist;
+	            ipn[0] = ip[0];
+	            ipn[1] = ip[1];
+	        }
 	    }
+	    break;
+	case 3:
+	    for (i = -8; i <= 8; ++i)
+	    for (j = -8; j <= 8; ++j)
+	    for (k = -8; k <= 8; ++k)
+	    {
+		ip[0] = icoords[0] + i;
+		ip[1] = icoords[1] + j;
+		ip[2] = icoords[2] + k;
+		if (ip[0] < 0 || ip[0] > top_gmax[0]) continue;
+		if (ip[1] < 0 || ip[1] > top_gmax[1]) continue;
+		if (ip[2] < 0 || ip[2] > top_gmax[2]) continue;
+		ic = d_index(ip,top_gmax,3);
+		if (top_comp[ic] != soln_comp) continue;
+		status = YES;
+		dist = i*i + j*j + k*k;
+		if (dist < min_dist)
+		{
+		    min_dist = dist;
+		    ipn[0] = ip[0];
+		    ipn[1] = ip[1];
+		    ipn[2] = ip[2];
+		}
+	    }
+	    break;
 	}
 	return status;
 }	/* end find_nearest_ring2_cell_with_comp */
@@ -3208,3 +3394,373 @@ LOCAL int global_to_local(
 	    icoords[i] -= ibase[i];
 	return d_index(icoords,lgmax,dim);
 }	/* end global_to_local */
+
+LOCAL	void set_cell_comp3d(
+	CELL_INFO_3D *cell3d,
+	int *icoords,
+	int *shift,
+	int *top_gmax,
+	int *top_comp,
+	int *comp_gmax,
+	int *comp_comp,
+	double *comp_L,
+	double *comp_h,
+	const int comp1)
+{
+	int i,j,k,ii,jj,kk,l,m,n,i_comp;
+	int ic, icc;
+
+	i = icoords[0];
+	j = icoords[1];
+	k = icoords[2];
+	ic = d_index(icoords,top_gmax,3);
+	cell3d->cell_comp = top_comp[ic];
+	cell3d->num_comps = 0;
+	cell3d->nv[0] = cell3d->nv[1] = 0;
+	cell3d->orphan = 0.0;
+	cell3d->is_side = cell3d->is_corner = 
+		cell3d->is_face = NO;
+
+	if (cell3d->soln_comp == comp1)
+	    cell3d->is_soln_solute = YES;
+	else 
+	    cell3d->is_soln_solute = NO;
+	
+	if (cell3d->cell_comp == comp1)
+	    cell3d->is_center_solute = YES;
+	else 
+	    cell3d->is_center_solute = NO;
+	cell3d->unstable_cell = NO;	
+	cell3d->solute_volume = 0.0;
+
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 3; ++m)
+	for (n = 0; n < 3; ++n)
+	{
+	    cell3d->nb_flag[l][m][n] = NO;
+	    cell3d->nb_frac[l][m][n] = 0.0;
+	    cell3d->area[l][m][n] = -1.0;
+	}
+	
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 2; ++m)
+	for (n = 0; n < 2; ++n)
+	for (ii = 0; ii < 3; ++ii)
+	    cell3d->crx_coords[l][m][n][ii] = HUGE;
+
+	for (ii = 0; ii < 2; ++ii)
+	for (jj = 0; jj < 2; ++jj)
+	for (kk = 0; kk < 2; ++kk)
+	{
+	    cell3d->ix[ii][jj][kk] = ii;
+	    cell3d->iy[ii][jj][kk] = jj;
+	    cell3d->iz[ii][jj][kk] = kk;
+
+	    cell3d->icrds[ii][jj][kk][0] = i + ii - shift[0];
+	    cell3d->icrds[ii][jj][kk][1] = j + jj - shift[1];
+	    cell3d->icrds[ii][jj][kk][2] = k + kk - shift[2];
+
+	    cell3d->crds[ii][jj][kk][0] = comp_L[0] + 
+	    			(i + ii - shift[0])*comp_h[0];
+	    cell3d->crds[ii][jj][kk][1] = comp_L[1] +
+	    			(j + jj - shift[1])*comp_h[1];
+	    cell3d->crds[ii][jj][kk][2] = comp_L[2] +
+	    			(k + kk - shift[2])*comp_h[2];
+	    icc = d_index(cell3d->icrds[ii][jj][kk],comp_gmax,3);
+	    cell3d->comp[ii][jj][kk] = comp_comp[icc];
+	    if (comp_comp[icc] == cell3d->soln_comp)
+	    {
+		for (l = ii; l < ii + 2; ++l)
+		for (m = jj; m < jj + 2; ++m)
+		for (n = kk; n < kk + 2; ++n)
+		    cell3d->nb_flag[l][m][n] = YES;
+	    }
+	    for (i_comp = 0; i_comp < cell3d->num_comps; ++i_comp)
+	    {
+	    	if (cell3d->comp[ii][jj][kk] == cell3d->comps[i_comp])
+		{
+		    ++cell3d->nv[i_comp];
+		    break;
+		}
+	    }
+	    if (i_comp == cell3d->num_comps)
+	    {
+	        cell3d->comps[i_comp] = cell3d->comp[ii][jj][kk];
+		cell3d->nv[i_comp] = 1;
+		++cell3d->num_comps;
+	    }
+	}
+	if (cell3d->num_comps == 2)
+	{
+	    if (cell3d->nv[0] > cell3d->nv[1])
+	    {
+	    	int nv_tmp, c_tmp;
+		nv_tmp = cell3d->nv[0];
+		cell3d->nv[0] = cell3d->nv[1];
+		cell3d->nv[1] = nv_tmp;
+		c_tmp = cell3d->comps[0];
+		cell3d->comps[0] = cell3d->comps[1];
+		cell3d->comps[1] = c_tmp;
+	    }
+	}
+	return ;
+}
+
+LOCAL	void set_domain_boundary_flag3d(
+	CELL_INFO_3D *cell3d,
+	int *icoords,
+	int *imin,
+	int *imax,
+	int *lm,
+	int *um)
+{
+	int i,j,k;
+	i = icoords[0];
+	j = icoords[1];
+	k = icoords[2];
+
+	if ((i == imin[0] && lm[0] == 0) ||
+	    (i == imax[0] && um[0] == 0))
+	{
+	    cell3d->is_face = YES;
+	}
+	if ((j == imin[1] && lm[1] == 0) ||
+	    (j == imax[1] && um[1] == 0))
+	{
+	    cell3d->is_face = YES;
+	}
+	if ((k == imin[2] && lm[2] == 0) ||
+	    (k == imax[2] && lm[2] == 0))
+	{
+	    cell3d->is_face = YES;
+	}
+	if (((i == imin[0] && lm[0] == 0) || 
+	     (i == imax[0] && um[0] == 0)) && 
+	    ((j == imin[1] && lm[1] == 0) || 
+	     (j == imax[1] && um[1] == 0)) &&
+	    ((k == imin[2] && lm[2] == 0) || 
+	     (k == imax[2] && um[2] == 0)))
+	{
+	    cell3d->is_corner = YES;
+	}
+	if ((((i == imin[0] && lm[0] == 0) || 
+	      (i == imax[0] && um[0] == 0)) &&
+	     ((j == imin[1] && lm[1] == 0) || 
+	      (j == imax[1] && um[1] == 0))) || 
+	    (((j == imin[1] && lm[1] == 0) || 
+	      (j == imax[1] && um[1] == 0)) && 
+	     ((k == imin[2] && lm[2] == 0) || 
+	      (k == imax[2] && um[2] == 0))) ||
+	    (((i == imin[0] && lm[0] == 0) || 
+	      (i == imax[0] && um[0] == 0)) && 
+	     ((k == imin[2] && lm[2] == 0) || 
+	      (k == imax[2] && um[2] == 0))))
+	{
+	    cell3d->is_side = YES;
+	}
+}
+
+LOCAL	void set_cell_neighbor3d(
+	Front *front,
+	CELL_INFO_3D *cell3d,
+	int *icoords,
+	int *top_gmax,
+	int *top_comp,
+	COMPONENT comp)
+{
+	int l,m,n;
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int ipn[MAXD];
+	int icn;
+
+	for (l = 0; l < 3; ++l)
+	for (m = 0; m < 3; ++m)
+	for (n = 0; n < 3; ++n)
+	{
+	    if (cell3d->nb_flag[l][m][n] == NO)
+	    	continue;
+	    dirs[0] = dir[0][l];
+	    dirs[1] = dir[1][m];
+	    dirs[2] = dir[2][n];
+	    if (!FT_AdjTopGridIcoords(front,icoords,dirs,ipn))
+	    	cell3d->nb_flag[l][m][n] = NO;
+	    icn = d_index(ipn,top_gmax,3);
+	    if (top_comp[icn] != comp)
+	    	cell3d->nb_flag[l][m][n] = NO;
+	}
+	return ;
+}
+
+LOCAL void assign_nb_frac3d(
+	Front *front,
+	CELL_PART *cell_part,
+	CELL_INFO_3D *cell3d,
+	int *icoords,
+	int *top_gmax,
+	int *top_comp,
+	int n)
+{
+	const GRID_DIRECTION dir[3][3] = {{WEST,CENTER,EAST},
+					  {SOUTH,CENTER,NORTH},
+					  {LOWER,CENTER,UPPER}};
+	GRID_DIRECTION dirs[MAXD];
+	int i,j,k;
+	int ipn[MAXD];
+	int ic,icn;
+	int nr,ns;
+
+	ic = d_index(icoords,top_gmax,3);
+	cell_part[ic].unstable_cell = cell3d->unstable_cell;
+	cell_part[ic].solute_volume = cell3d->solute_volume;
+	
+	if (cell3d->orphan != 0.0)
+	{
+	    boolean transfer_orphan = NO;
+	    int dist,min_dist = 3*pow(3,2);
+	    int icoords_nb[MAXD],min_icn;
+	    for (i = icoords[0]-2; i <= icoords[0]+2; ++i)
+	    for (j = icoords[1]-2; j <= icoords[1]+2; ++j)
+	    for (k = icoords[2]-2; k <= icoords[2]+2; ++k)
+	    {
+		icoords_nb[0] = i;
+		icoords_nb[1] = j;
+		icoords_nb[2] = k;
+		icn = d_index(icoords_nb,top_gmax,3);
+		dist = pow(i-icoords[0],2)+pow(j-icoords[1],2)
+				+pow(k-icoords[2],2);
+		if (top_comp[icn] == cell3d->soln_comp && dist < min_dist)
+		{
+		    transfer_orphan = YES;
+		    min_dist = dist;
+		    min_icn = icn;
+		}
+	    }
+	    if (transfer_orphan)
+	    {
+		cell_part[min_icn].vol_new[n] += cell3d->orphan;
+		cell3d->orphan = 0.0;
+	    	nr = cell_part[min_icn].nr_new;
+		cell_part[min_icn].icn_new[nr] = ic;
+		cell_part[min_icn].nr_new++;
+		ns = cell_part[ic].ns_new;
+		cell_part[ic].icn_new_send[ns] = min_icn;
+		cell_part[ic].ns_new++;
+	    }
+	}
+	for (i = 0; i < 3; ++i)
+	for (j = 0; j < 3; ++j)
+	for (k = 0; k < 3; ++k)
+	{
+	    if (cell3d->nb_frac[i][j][k] == 0.0) 
+	    	continue;
+	    dirs[0] = dir[0][i];
+	    dirs[1] = dir[1][j];
+	    dirs[2] = dir[2][k];
+	    FT_AdjTopGridIcoords(front,icoords,dirs,ipn);
+	    icn = d_index(ipn,top_gmax,3);
+	    cell_part[icn].vol_new[n] += cell3d->nb_frac[i][j][k];
+	    if (icn != ic)
+	    {
+	    	nr = cell_part[icn].nr_new;
+		cell_part[icn].icn_new[nr] = ic;
+		cell_part[icn].nr_new++;
+		ns = cell_part[ic].ns_new;
+		cell_part[ic].icn_new_send[ns] = icn;
+		cell_part[ic].ns_new++;
+	    }
+	}
+	if (cell3d->orphan != 0.0)
+	{
+	    cell_part[ic].vol_new[(n+1)%2] += cell3d->orphan;
+	    printf("orphan cell cannot find neighbor to contain it\n");
+	    clean_up(ERROR);
+	}
+}
+
+LOCAL 	void set_cell_crx3d(
+	Front *front,
+	CELL_INFO_3D *cell3d,
+	int *comp_comp,
+	int *comp_gmax,
+	INTERFACE *comp_grid_intfc,
+	char *out_name,
+	INTERFACE *grid_intfc,
+	const int *icoords,
+	const int *shift)
+{
+	int i,ii,jj;
+	int icc1,icc2;
+	HYPER_SURF *hs;
+
+	if (icoords[0] == 20 && icoords[1] == 10 && icoords[2] == 8)
+	    printf("shift = (%d,%d,%d)\n",shift[0],shift[1],shift[2]);
+
+
+	for (ii = 0; ii < 2; ++ii)
+	for (jj = 0; jj < 2; ++jj)
+	{
+	    icc1 = d_index(cell3d->icrds[0][ii][jj],comp_gmax,3);
+	    icc2 = d_index(cell3d->icrds[1][ii][jj],comp_gmax,3);
+	    cell3d->crx_coords[0][ii][jj][0] = cell3d->crx_coords[0][ii][jj][1] 
+	    		= cell3d->crx_coords[0][ii][jj][2] = HUGE;
+	    if (comp_comp[icc1] != comp_comp[icc2])
+	    {
+	    	if ( !FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+			cell3d->icrds[0][ii][jj],EAST,comp_comp[icc1],
+			&hs,cell3d->crx_coords[0][ii][jj]) )
+		{	
+		    printf("icc1 = %d, icc2 = %d\n",icc1,icc2);
+		    printf("comp_comp1 = %d,comp_comp2 = %d\n",comp_comp[icc1],
+		    		comp_comp[icc2]);
+		    screen("ERROR in set_cell_crx3d(): x-dir\n");
+		    clean_up(ERROR);
+		}
+	    }
+
+	    icc1 = d_index(cell3d->icrds[jj][0][ii],comp_gmax,3);
+	    icc2 = d_index(cell3d->icrds[jj][1][ii],comp_gmax,3);
+	    cell3d->crx_coords[1][ii][jj][0] = cell3d->crx_coords[1][ii][jj][1]
+	    		= cell3d->crx_coords[1][ii][jj][2] = HUGE;
+	    if (comp_comp[icc1] != comp_comp[icc2])
+	    {	
+	    	if( !FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+			cell3d->icrds[jj][0][ii],NORTH,comp_comp[icc1],
+			&hs,cell3d->crx_coords[1][ii][jj]) )
+		{
+		    screen("\nERROR in set_cell_crx3d():y-dir\n");
+		    printf("(i,j,k) = %d,%d,%d\n",
+		    	icoords[0],icoords[1],icoords[2]);
+		    for (i = 0; i < 3; ++i)
+		        printf("icrds[%d][0][%d][%d] = %d\n",
+				jj,ii,i,cell3d->icrds[jj][0][ii][i]);
+		    printf("comp_comp1 = %d,comp_comp2 = %d\n",comp_comp[icc1],
+		    		comp_comp[icc2]);
+		    gview_plot_intfc_within_cell3d(out_name,grid_intfc,icoords,
+		    	shift,cell3d,front->step);
+		    clean_up(ERROR);
+		}
+	    }
+
+	    icc1 = d_index(cell3d->icrds[ii][jj][0],comp_gmax,3);
+	    icc2 = d_index(cell3d->icrds[ii][jj][1],comp_gmax,3);
+	    cell3d->crx_coords[2][ii][jj][0] = cell3d->crx_coords[2][ii][jj][1]
+	    		= cell3d->crx_coords[2][ii][jj][2] = HUGE;
+	    if (comp_comp[icc1] != comp_comp[icc2])
+	    {
+	    	if ( !FT_CoordsAtGridCrossing(front,comp_grid_intfc,
+			cell3d->icrds[ii][jj][0],UPPER,comp_comp[icc1],
+			&hs,cell3d->crx_coords[2][ii][jj]) )
+		{
+		    printf("icc1 = %d, icc2 = %d\n",icc1,icc2);
+		    printf("comp_comp1 = %d,comp_comp2 = %d\n",comp_comp[icc1],
+		    		comp_comp[icc2]);
+		    screen("ERROR in set_cell_crx3d(): z-dir\n");
+		    clean_up(ERROR);
+		}
+	    }
+	}
+	return ;
+}

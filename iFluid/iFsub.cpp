@@ -2565,18 +2565,18 @@ extern  void prompt_for_rigid_body_params(
         if (rgb_params->motion_type == FREE_MOTION ||
             rgb_params->motion_type == ROTATION)
         {
-            CursorAfterString(infile,"Enter the moment of inertia: ");
+            CursorAfterString(infile,"Enter the moment of inertial: ");
             if (dim == 2)
             {
-                fscanf(infile,"%lf",&rgb_params->moment_of_inertia);
-                (void) printf("%f\n",rgb_params->moment_of_inertia);
+                fscanf(infile,"%lf",&rgb_params->moment_of_inertial);
+                (void) printf("%f\n",rgb_params->moment_of_inertial);
             }
             else if (dim == 3)
             {
                 for (i = 0; i < dim; ++i)
                 {
-                    fscanf(infile,"%lf",&rgb_params->p_moment_of_inertia[i]);
-                    (void) printf("%f ",rgb_params->p_moment_of_inertia[i]);
+                    fscanf(infile,"%lf",&rgb_params->p_moment_of_inertial[i]);
+                    (void) printf("%f ",rgb_params->p_moment_of_inertial[i]);
                 }
                 (void) printf("\n");
             }
@@ -2630,7 +2630,7 @@ extern void set_rgbody_params(
         int i,dim = rg_params.dim;
 	body_index(hs) = rg_params.body_index;
         total_mass(hs) = rg_params.total_mass;
-        mom_inertia(hs) = rg_params.moment_of_inertia;
+        mom_inertial(hs) = rg_params.moment_of_inertial;
         angular_velo(hs) = rg_params.angular_velo;
         motion_type(hs) = rg_params.motion_type;
         vparams(hs) = rg_params.vparams;
@@ -2647,7 +2647,7 @@ extern void set_rgbody_params(
             if (dim == 3)
             {
                 rotation_direction(hs)[i] = rg_params.rotation_dir[i];
-                p_mom_inertia(hs)[i] = rg_params.p_moment_of_inertia[i];
+                p_mom_inertial(hs)[i] = rg_params.p_moment_of_inertial[i];
                 p_angular_velo(hs)[i] = rg_params.p_angular_velo[i];
             }
         }
