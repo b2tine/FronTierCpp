@@ -4,15 +4,17 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
 			  -I$(top_srcdir)/include/util \
-			  @HDF_CFLAGS@ @MPI_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@
 
-AM_LDFLAGS = @HDF_LIBS@ @MPI_LIB@
+AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@
 
 
 noinst_LTLIBRARIES = libutil.la \
 					 libintfc.la \
 					 libfront.la \
-					 libcFluid.la
+					 libcFluid.la \
+					 libsolver.la \
+					 libiFluid.la
 
 noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/util/fnamedebug.h \
@@ -46,6 +48,7 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/fvelo.h \
 				 ../include/front/dummyfront.h 
 
+
 libutil_la_SOURCES = ../src/util/cleanup.c \
 					 ../src/util/debug.c \
 					 ../src/util/error.c \
@@ -71,6 +74,7 @@ libutil_la_SOURCES = ../src/util/cleanup.c \
 					 ../src/util/vectormalloc.c \
 					 ../src/util/vtk.c \
 					 ../src/util/dummyutil.cpp
+
 
 libintfc_la_SOURCES = ../src/intfc/arrayutils.c \
 					  ../src/intfc/comp1d.c \
@@ -121,6 +125,7 @@ libintfc_la_SOURCES = ../src/intfc/arrayutils.c \
 					  ../src/intfc/userhooks.c \
 					  ../src/intfc/zoom.c \
  					  ../src/intfc/dummyintfc.cpp
+
 
 libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fadv.c \
@@ -174,27 +179,51 @@ libfront_la_SOURCES = ../src/front/fadv3d.c \
 					  ../src/front/fvelo.c \
 					  ../src/front/dummyfront.cpp
 
+
 libcFluid_la_CPPFLAGS = -I$(top_srcdir)/cFluid $(AM_CPPFLAGS)
+
 libcFluid_la_LIBADD = $(abs_top_builddir)/lib/libfront.la \
 					  $(abs_top_builddir)/lib/libintfc.la \
 					  $(abs_top_builddir)/lib/libutil.la
 
 libcFluid_la_SOURCES = ../cFluid/cFluid.h \
-					   ../cFluid/cFbase.cpp \
-					   ../cFluid/cFcartsn.cpp \
-					   ../cFluid/cFeos.cpp \
-					   ../cFluid/cFinit.cpp \
-					   ../cFluid/cFriem.cpp \
-					   ../cFluid/cFsub.cpp \
 					   ../cFluid/cFtvd.cpp \
-					   ../cFluid/cFweno.cpp
+					   ../cFluid/cFweno.cpp \
+					   ../cFluid/cFsub.cpp \
+					   ../cFluid/cFcartsn.cpp \
+					   ../cFluid/cFbase.cpp \
+					   ../cFluid/cFinit.cpp \
+					   ../cFluid/cFeos.cpp \
+					   ../cFluid/cFriem.cpp
 
-#libsolver_la_SOURCES = ../solver/solver.h \
-#					   ../solver/cim_ellip.cpp \
-#					   ../solver/cim_parab.cpp \
-#					   ../solver/dual_ellip.cpp \
-#					   ../solver/ellip.cpp \
-#					   ../solver/hyperb.cpp \
-#					   ../solver/parab.cpp \
-#					   ../solver/solver.cpp
+
+libsolver_la_CPPFLAGS = -I$(top_srcdir)/solver @PETSC_CFLAGS@ $(AM_CPPFLAGS)
+
+libsolver_la_LIBADD = @PETSC_LIBS@
+
+libsolver_la_SOURCES = ../solver/solver.h \
+					   ../solver/solver.cpp \
+					   ../solver/ellip.cpp \
+					   ../solver/dual_ellip.cpp \
+					   ../solver/cim_ellip.cpp \
+					   ../solver/hyperb.cpp \
+					   ../solver/parab.cpp \
+					   ../solver/cim_parab.cpp
+
+
+libiFluid_la_CPPFLAGS = -I$(top_srcdir)/iFluid -I$(top_srcdir)/solver \
+						@PETSC_CFLAGS@ $(AM_CPPFLAGS)
+
+libiFluid_la_LIBADD = $(abs_top_builddir)/lib/libsolver.la \
+					  $(abs_top_builddir)/lib/libfront.la \
+					  $(abs_top_builddir)/lib/libintfc.la \
+					  $(abs_top_builddir)/lib/libutil.la
+
+libiFluid_la_SOURCES = ../iFluid/iFluid.h \
+					   ../iFluid/ifluid_state.h \
+					   ../iFluid/iFbasic.cpp \
+					   ../iFluid/iFcartsn2d.cpp \
+					   ../iFluid/iFcartsn3d.cpp \
+					   ../iFluid/iFsub.cpp \
+					   ../iFluid/iFinit.cpp
 

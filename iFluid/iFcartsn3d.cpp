@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 			iFcartsn3d.cpp	
  *******************************************************************/
 #include "iFluid.h"
-#include "solver.h"
 
 //--------------------------------------------------------------------------
 // 		   Incompress_Solver_Smooth_3D_Cartesian	
