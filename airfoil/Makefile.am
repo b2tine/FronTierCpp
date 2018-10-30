@@ -18,10 +18,11 @@ airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
 				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
 				@HDF_LIBS@ @GD_LIBS@
 
-airfoil_HEADERS = airfoil.h \
-				  airfoil_sv.h \
-				  airfoil_gpu.cuh \
-				  ../Collision/collid.h
+EXTRA_DIST = airfoil_gpu.cuh airfoil_gpu.cu
+
+noinst_HEADERS = airfoil.h \
+				 airfoil_sv.h \
+				 ../Collision/collid.h
 
 airfoil_SOURCES = airfoil.cpp \
 				  afcnpy.cpp \
