@@ -43,8 +43,6 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/dummyfront.h 
 
 
-EXTRA_LTLIBRARIES = libsolver.la libiFluid.la
-
 noinst_LTLIBRARIES = libutil.la \
 					 libintfc.la \
 					 libfront.la \

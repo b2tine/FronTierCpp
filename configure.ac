@@ -24,7 +24,7 @@ AC_LANG([C++])
 ACX_PTHREAD([have_pthread=yes],[have_pthread=no])
 
 GTEST_VERSION="1.8.0"
-AS_IF([test "x$have_pthread" = "xyes"],
+AS_IF([test "x$have_pthread" = xyes],
       [GTEST_CPPFLAGS="-I\$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=1"
        GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
        GTEST_LDFLAGS="-L\$(abs_top_builddir)/lib/gmock/lib"
@@ -112,11 +112,11 @@ AS_IF([test "x$mpich_dir" != xno],
        mpichinc="-I${mpich_dir}/include"
        mpichlib="-L${mpich_dir}/lib -lmpi -lmpicxx"])
 
-AS_IF([test $with_mpich = yes],
-      [AC_DEFINE([USE_MPI],[1],[build with mpich])])
-
 AC_SUBST(MPI_CFLAGS,${mpichinc})
 AC_SUBST(MPI_LIBS,${mpichlib})
+
+AS_IF([test $with_mpich = yes],
+      [AC_DEFINE([USE_MPI],[1],[build with mpich])])
 
 #configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
@@ -167,12 +167,12 @@ AS_IF([test "x$cgal_dir" != "xno"],
         cgalinc="-I${cgal_inc} -frounding-math"
         cgallib="-L${cgal_lib} ${cgal_libflags}"])
 
+AC_SUBST(CGAL_CFLAGS,${cgalinc})
+AC_SUBST(CGAL_LIBS,${cgallib})
+
 #USE_CGAL isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cgal = yes],
       [AC_DEFINE([USE_CGAL],[1],[build with cgal])])
-
-AC_SUBST(CGAL_CFLAGS,${cgalinc})
-AC_SUBST(CGAL_LIBS,${cgallib})
 
 #check if airfoil should be built
 with_airfoil=no
@@ -183,7 +183,7 @@ AM_COND_IF([CGAL_OPT],
            [with_airfoil=yes
             AC_CONFIG_FILES([airfoil/Makefile])])
 
-#enable Collision module ....
+#enable/disable Collision module ....
 
 
 #optionally compile the examples
