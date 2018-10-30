@@ -211,7 +211,7 @@ endif
 
 libsolver_la_CPPFLAGS = -I$(top_srcdir)/solver @PETSC_CFLAGS@ $(AM_CPPFLAGS)
 
-libsolver_la_LIBADD = @PETSC_LIBS@
+libsolver_la_LIBADD = @PETSC_LIBS@ $(abs_top_builddir)/lib/libFronTier.la
 
 libsolver_la_SOURCES = ../solver/solver.h \
 					   ../solver/solver.cpp \
@@ -226,8 +226,7 @@ libsolver_la_SOURCES = ../solver/solver.h \
 libiFluid_la_CPPFLAGS = -I$(top_srcdir)/iFluid -I$(top_srcdir)/solver \
 						@PETSC_CFLAGS@ $(AM_CPPFLAGS)
 
-libiFluid_la_LIBADD = $(abs_top_builddir)/lib/libsolver.la \
-					  $(abs_top_builddir)/lib/libFronTier.la
+libiFluid_la_LIBADD = $(abs_top_builddir)/lib/libsolver.la
 
 libiFluid_la_SOURCES = ../iFluid/iFluid.h \
 					   ../iFluid/ifluid_state.h \

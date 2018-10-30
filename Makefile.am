@@ -11,6 +11,7 @@ endif
 
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
+MAYBE_CRYSTAL = crystal
 if CGAL_OPT
 MAYBE_AIRFOIL = airfoil
 endif
@@ -22,5 +23,6 @@ SUBDIRS = lib \
 		  cFluid \
 		  $(MAYBE_IFLUID) \
 		  $(MAYBE_AIRFOIL) \
+		  $(MAYBE_CRYSTAL) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D)
