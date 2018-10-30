@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-ACLOCAL_AMFLAGS = -I autoconf-archive/m4
+ACLOCAL_AMFLAGS = -I m4
 
 if EX2D_OPT
 MAYBE_EX2D = example2d

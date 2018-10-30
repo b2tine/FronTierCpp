@@ -3,10 +3,11 @@ AC_PREREQ([2.69])
 AC_INIT([FronTier],[1.1])
 
 #Include macros from the autoconf-archive
-AC_CONFIG_MACRO_DIR([autoconf-archive/m4])
+AC_CONFIG_MACRO_DIR([m4])
 #Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
-#Header file with generated #DEFINE statements
+#Header file with generated #DEFINE macros.
+#   included at the top of include/util/cdecs.h
 AC_CONFIG_HEADERS([build-aux/config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
@@ -21,7 +22,7 @@ AC_PROG_CXX([mpic++ mpicxx])
 AC_LANG([C++])
 
 #Check for pthreads
-ACX_PTHREAD([have_pthread=yes],[have_pthread=no])
+AX_PTHREAD([have_pthread=yes],[have_pthread=no])
 
 GTEST_VERSION="1.8.0"
 AS_IF([test "x$have_pthread" = xyes],
@@ -186,7 +187,7 @@ AM_COND_IF([CGAL_OPT],
 #enable/disable Collision module ....
 
 
-#optionally compile the examples
+#optionally compile the examples (Makefiles always generated)
 AC_ARG_WITH([example2d],[AS_HELP_STRING([--with-example2d],
               [build the 2d example directory])],
               [exTwoD="yes"],[exTwoD="no"])
