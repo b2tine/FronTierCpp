@@ -1,6 +1,6 @@
-#include "FronTier.h"
-#include "dummyfront.h"
-#include "gtest/gtest.h"
+#include <FronTier.h>
+#include <dummyfront.hpp>
+#include <gtest/gtest.h>
 
 
 TEST(DummyFrontTests, CompileTest)

@@ -43,3 +43,7 @@ example09_SOURCES = example09.cpp
 example10_SOURCES = example10.cpp
 
 example11_SOURCES = example11.cpp
+
+
+tagsfile:
+	ctags *.cpp ../include/*/*.h ../src/*/*.c

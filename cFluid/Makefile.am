@@ -13,3 +13,6 @@ cFluid_LDADD = -L$(abs_top_builddir)/lib -lcFluid \
 
 cFluid_SOURCES = cFluid.cpp
 
+
+tagsfile:
+	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c

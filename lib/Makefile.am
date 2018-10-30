@@ -40,7 +40,7 @@ noinst_HEADERS = ../include/util/cdecs.h \
 				 ../include/front/fuserint.h \
 				 ../include/front/fvelo.h \
 				 ../include/front/fcell.h \
-				 ../include/front/dummyfront.h 
+				 ../include/front/dummyfront.hpp 
 
 
 noinst_LTLIBRARIES = libutil.la \

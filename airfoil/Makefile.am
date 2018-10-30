@@ -35,3 +35,6 @@ airfoil_SOURCES = airfoil.h \
 				  ../Collision/dcollid.cpp \
 				  ../Collision/dcollid3d.cpp
 
+
+tagsfile:
+	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c

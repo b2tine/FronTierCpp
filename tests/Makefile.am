@@ -7,7 +7,7 @@ AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 
 AM_LDFLAGS = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
-			 -L$(abs_top_builddir)/lib -lfront -lintfc -lutil @HDF_LIBS@
+			 -L$(abs_top_builddir)/lib -lFronTier @HDF_LIBS@
 
 
 # Build rules for tests.
