@@ -1,5 +1,9 @@
 #!/bin/bash
 
+function config_intruder {
+    CONF="--with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib64"
+}
+
 function config_omega {
     CONF="CXXFLAGS=-std=c++11 --with-mpich-dir=/usr/local/pkg/mpich2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
 }
@@ -15,6 +19,9 @@ function config_defiant {
 
 HOST=`uname -n`
 
+if [[ "$HOST" == intruder.cluster ]]; then
+    echo "Machine recognized as intruder."
+    config_intruder
 if [[ "$HOST" == omega.ams.stonybrook.edu ]]; then
     echo "Machine recognized as omega."
     config_omega

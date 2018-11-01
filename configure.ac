@@ -18,7 +18,7 @@ AM_PROG_AR
 LT_INIT([static])
 
 #Check for compilers
-AC_PROG_CXX([mpic++ mpicxx])
+AC_PROG_CXX([mpic++ mpicxx g++])
 AC_LANG([C++])
 
 #Check for pthreads
@@ -100,6 +100,11 @@ AS_IF([test $with_hdf = yes],
 
 AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
+
+#configure with MPI present in user environment
+AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
+            [use when paths to mpi are part of user environment])],
+            [with_mpi=yes],[with_mpi=no])
 
 
 #configure with MPICH
