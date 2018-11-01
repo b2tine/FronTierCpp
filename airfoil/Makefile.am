@@ -18,10 +18,9 @@ airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
 				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
 				@HDF_LIBS@ @GD_LIBS@
 
-EXTRA_DIST = airfoil_gpu.cuh airfoil_gpu.cu
-
 noinst_HEADERS = airfoil.h \
 				 airfoil_sv.h \
+				 airfoil_gpu.cuh \
 				 ../Collision/collid.h
 
 airfoil_SOURCES = airfoil.cpp \
@@ -34,9 +33,28 @@ airfoil_SOURCES = airfoil.cpp \
 				  aftest.cpp \
 				  afvelo.cpp \
 				  cgal.cpp \
+				  airfoil_gpu.cu \
 				  ../Collision/dcollid.cpp \
 				  ../Collision/dcollid3d.cpp
 
 
 tagsfile:
 	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+
+
+input_directories = input-2d \
+					input-7ft \
+					input-C9 \
+					input-cloth \
+					input-collsn \
+					input-Cross \
+					input-drum \
+					input-G11 \
+					input-G12D \
+					input-intruder \
+					input-others \
+					input-T10 \
+					input-young3d
+
+
+EXTRA_DIST = $(input_directories)

@@ -43,14 +43,24 @@ configure
 build-aux
 build-aux/config.*
 aclocal.m4
+m4/lt*.m4
+m4/lbtool.m4
+CTAGS
+TAGS
+tags
 
-#example2d
-example2d/example*
-example3d/example*
+#generated files
 Makefile
 */Makefile
 */*/Makefile
+example2d/example*
+example3d/example*
+cFluid/cFluid
+iFluid/iFluid
+crystal/crystal
+airfoil/airfoil
 
 # Others
+*/out-*
 *~
 autogen*

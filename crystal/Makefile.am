@@ -22,3 +22,8 @@ crystal_SOURCES = crystal.h \
 
 tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+
+
+input_directories = input-1d input-2d input-3d
+
+EXTRA_DIST = $(input_directories)

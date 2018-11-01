@@ -16,3 +16,8 @@ cFluid_SOURCES = cFluid.cpp
 
 tagsfile:
 	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c
+
+
+input_directories = input-1d input-2d input-3d
+
+EXTRA_DIST = $(input_directories)

@@ -22,7 +22,7 @@ HOST=`uname -n`
 if [[ "$HOST" == intruder.cluster ]]; then
     echo "Machine recognized as intruder."
     config_intruder
-if [[ "$HOST" == omega.ams.stonybrook.edu ]]; then
+elif [[ "$HOST" == omega.ams.stonybrook.edu ]]; then
     echo "Machine recognized as omega."
     config_omega
 elif [[ "$HOST" == alpha ]]; then

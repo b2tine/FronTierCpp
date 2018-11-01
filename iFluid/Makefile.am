@@ -17,3 +17,16 @@ iFluid_SOURCES = iFluid.cpp
 
 tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+
+
+input_directories = input-bubble \
+				   	input-cauchy \
+					input-drop \
+					input-eddy \
+					input-obst \
+					input-others \
+					input-rt2d \
+					input-rt3d \
+					input-TG
+
+EXTRA_DIST = $(input_directories)

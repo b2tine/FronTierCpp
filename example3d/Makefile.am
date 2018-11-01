@@ -47,3 +47,13 @@ example11_SOURCES = example11.cpp
 
 tagsfile:
 	ctags *.cpp ../include/*/*.h ../src/*/*.c
+
+
+broken_files = example12.cpp \
+			   example13.cpp \
+			   example14.cpp \
+			   example_sphere_redistribute.cpp
+
+EXTRA_DIST = input $(broken_files)
+
+
