@@ -4,7 +4,7 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
 			  -I$(abs_top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -L$(abs_top_builddir)/lib -lfront -lintfc -lutil \
+AM_LDFLAGS = -L$(abs_top_builddir)/lib -lFronTier \
 			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 noinst_PROGRAMS = example00 \

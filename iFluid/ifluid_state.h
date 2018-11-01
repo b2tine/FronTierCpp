@@ -2,7 +2,9 @@
  * 		ifluid_state.h
  **********************************************************************/
 
-#pragma once
+#ifndef IFLUID_STATE_H
+#define IFLUID_STATE_H
+
 struct _STATE
 {
     double dens;            /* Density */
@@ -48,4 +50,4 @@ struct _STATE
 typedef struct _STATE STATE;
 
 
-
+#endif

@@ -1,12 +1,13 @@
 /**********************************************************************
- * 		crystal_basic.h					      *
+ * 		crystal_state.h					      *
  **********************************************************************/
 
-#ifndef _FT_CRYSTAL_BASIC_H_
-#define _FT_CRYSTAL_BASIC_H_
+
+#ifndef CRYSTAL_STATE_H
+#define CRYSTAL_STATE_H
 
 
-struct _STATE {
+struct CRYSTAL_STATE {
         double dens;                    /* Density */
         double pres;                    /* Pressure */
         double phi;                     /* Potential */
@@ -15,6 +16,7 @@ struct _STATE {
         double solute;                  /* For subsurface problem */
         double mu;                      /* For eddy viscosity */
 };
-typedef struct _STATE STATE;
+typedef struct CRYSTAL_STATE STATE;
 
 #endif
+

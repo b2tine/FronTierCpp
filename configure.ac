@@ -135,13 +135,11 @@ AS_IF([test "x${petsc_dir}" != xno],
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
 
-#check if iFluid should be built
-with_ifluid=no
+#check if PETSC dependent modules should be built
 AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
 
 AM_COND_IF([PETSC_OPT],
-           [with_ifluid=yes
-            AC_CONFIG_FILES([iFluid/Makefile
+           [AC_CONFIG_FILES([iFluid/Makefile
                              crystal/Makefile])])
 
 #configure with CGAL
@@ -177,15 +175,15 @@ AS_IF([test $with_cgal = yes],
       [AC_DEFINE([USE_CGAL],[1],[build with cgal])])
 
 #check if airfoil should be built
-with_airfoil=no
 AM_CONDITIONAL([CGAL_OPT],
-               [test $with_cgal = yes && test $with_ifluid = yes])
+               [test $with_cgal = yes])
 
 AM_COND_IF([CGAL_OPT],
-           [with_airfoil=yes
-            AC_CONFIG_FILES([airfoil/Makefile])])
+           [AM_COND_IF([PETSC_OPT],
+                       [AC_CONFIG_FILES([airfoil/Makefile])])])
 
 #enable/disable Collision module ....
+
 
 
 #optionally compile the examples (Makefiles always generated)
