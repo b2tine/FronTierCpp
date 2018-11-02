@@ -4,9 +4,6 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
 			  -I$(abs_top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -L$(abs_top_builddir)/lib -lFronTier \
-			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
-
 noinst_PROGRAMS = example00 \
 				  example01 \
 				  example02 \
@@ -19,6 +16,8 @@ noinst_PROGRAMS = example00 \
 				  example09 \
 				  example10 \
 				  example11
+
+noinst_HEADERS = ../include/FronTier.h
 
 example00_SOURCES = example00.cpp
 
@@ -43,6 +42,10 @@ example09_SOURCES = example09.cpp
 example10_SOURCES = example10.cpp
 
 example11_SOURCES = example11.cpp
+
+
+AM_LDFLAGS = -L$(abs_top_builddir)/lib -lFronTier \
+			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 tagsfile:

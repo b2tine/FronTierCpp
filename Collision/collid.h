@@ -1,3 +1,6 @@
+#ifndef COLLID_H
+#define COLLID_H
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/box_intersection_d.h>
 
@@ -291,3 +294,5 @@ bool isRigidBody(const CD_HSE*);
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
+
+#endif

@@ -25,9 +25,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 	#include <collid.h>
 #endif
 
-#include <iFluid.h>
+//#include <iFluid.h>
 #include "airfoil.h"
-#include <solver.h>
+//#include <solver.h>
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);

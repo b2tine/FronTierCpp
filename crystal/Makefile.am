@@ -10,15 +10,18 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/crystal \
 
 noinst_PROGRAMS = crystal
 
+noinst_HEADERS = crystal.h \
+				 ../solver/solver.h \
+				 ../include/FronTier.h \
+				 ../iFluid/ifluid_state.h \
+				 crystal_state.h \
+
+crystal_SOURCES = crystal.cpp \
+				  crysub.cpp \
+				  ccartsn.cpp
+
 crystal_LDADD = -L$(abs_top_builddir)/lib -lsolver \
 			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
-
-crystal_SOURCES = crystal.h \
-				  crystal_state.h \
-				  ../iFluid/ifluid_state.h \
-				  crysub.cpp \
-				  ccartsn.cpp \
-				  crystal.cpp
 
 tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c

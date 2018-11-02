@@ -14,14 +14,14 @@ AM_CXXFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION
 
 noinst_PROGRAMS = airfoil
 
-airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
-				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
-				@HDF_LIBS@ @GD_LIBS@
-
-noinst_HEADERS = airfoil.h \
+noinst_HEADERS = ../Collision/collid.h \
+				 airfoil.h \
+				 ../iFluid/iFluid.h \
+				 ../solver/solver.h \
+				 ../include/FronTier.h \
 				 airfoil_sv.h \
-				 airfoil_gpu.cuh \
-				 ../Collision/collid.h
+				 airfoil_gpu.cuh
+				 
 
 airfoil_SOURCES = airfoil.cpp \
 				  afcnpy.cpp \
@@ -36,6 +36,10 @@ airfoil_SOURCES = airfoil.cpp \
 				  airfoil_gpu.cu \
 				  ../Collision/dcollid.cpp \
 				  ../Collision/dcollid3d.cpp
+
+airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
+				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
+				@HDF_LIBS@ @GD_LIBS@
 
 
 tagsfile:

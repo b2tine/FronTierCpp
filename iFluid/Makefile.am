@@ -9,10 +9,15 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
 
 noinst_PROGRAMS = iFluid
 
-iFluid_LDADD = -L$(abs_top_builddir)/lib -liFluid \
-			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+noinst_HEADERS = iFluid.h \
+				 ../solver/solver.h \
+				 ../include/FronTier.h \
+				 ifluid_state.h
 
 iFluid_SOURCES = iFluid.cpp
+
+iFluid_LDADD = -L$(abs_top_builddir)/lib -liFluid \
+			   @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 tagsfile:

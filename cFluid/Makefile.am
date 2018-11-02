@@ -8,10 +8,12 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/cFluid \
 
 noinst_PROGRAMS = cFluid
 
-cFluid_LDADD = -L$(abs_top_builddir)/lib -lcFluid \
-			   @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+noinst_HEADERS = cFluid.h ../include/FronTier.h
 
 cFluid_SOURCES = cFluid.cpp
+
+cFluid_LDADD = -L$(abs_top_builddir)/lib -lcFluid \
+			   @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 tagsfile:
