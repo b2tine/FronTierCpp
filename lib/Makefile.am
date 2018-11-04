@@ -9,33 +9,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
-include_HEADERS = ../include/FronTier.h
+noinst_HEADERS = ../include/FronTier.h
 
-lib_LTLIBRARIES = libFronTier.la
+noinst_LTLIBRARIES = libFronTier.la
 
 libFronTier_la_SOURCES =
 libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
   						$(abs_top_builddir)/src/intfc/libintfc.la \
   						$(abs_top_builddir)/src/util/libFTutil.la
-
-noinst_LTLIBRARIES = 
-#noinst_LTLIBRARIES = libcFluid.la
-
-#libcFluid_la_CPPFLAGS = -I$(top_srcdir)/cFluid $(AM_CPPFLAGS)
-#
-#libcFluid_la_LIBADD = $(abs_top_builddir)/lib/libFronTier.la
-#
-#libcFluid_la_SOURCES = ../cFluid/cFluid.h \
-#					   ../cFluid/cFtvd.cpp \
-#					   ../cFluid/cFweno.cpp \
-#					   ../cFluid/cFsub.cpp \
-#					   ../cFluid/cFcartsn.cpp \
-#					   ../cFluid/cFphys.cpp \
-#					   ../cFluid/cFbase.cpp \
-#					   ../cFluid/cFinit.cpp \
-#					   ../cFluid/cFeos.cpp \
-#					   ../cFluid/cFriem.cpp
-
 
 if PETSC_OPT
 noinst_LTLIBRARIES += libsolver.la libiFluid.la
