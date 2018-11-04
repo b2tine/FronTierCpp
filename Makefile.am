@@ -18,7 +18,8 @@ MAYBE_EX3D = example3d
 endif
 
 
-SUBDIRS = lib \
+SUBDIRS = src \
+		  lib \
 		  tests \
 		  cFluid \
 		  $(MAYBE_IFLUID) \

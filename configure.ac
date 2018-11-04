@@ -15,7 +15,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 #Initialize Libtool
 AM_PROG_AR
-LT_INIT([static])
+LT_INIT([disable-shared])
 
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx g++])
@@ -206,6 +206,10 @@ AM_CONDITIONAL([EX3D_OPT],[test $exThreeD = yes])
 
 #Output files
 AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 src/util/Makefile
+                 src/intfc/Makefile
+                 src/front/Makefile
                  lib/Makefile
                  lib/gmock/Makefile
                  tests/Makefile

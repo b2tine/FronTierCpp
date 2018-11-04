@@ -9,6 +9,9 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
 
 noinst_PROGRAMS = iFluid
 
+iFluid_DEPENDENCIES = $(abs_top_builddir)/lib/libiFluid.la \
+					  $(abs_top_builddir)/lib/libFronTier.la
+
 noinst_HEADERS = iFluid.h \
 				 ../solver/solver.h \
 				 ../include/FronTier.h \

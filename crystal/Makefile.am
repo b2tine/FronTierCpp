@@ -14,7 +14,7 @@ noinst_HEADERS = crystal.h \
 				 ../solver/solver.h \
 				 ../include/FronTier.h \
 				 ../iFluid/ifluid_state.h \
-				 crystal_state.h \
+				 crystal_state.h
 
 crystal_SOURCES = crystal.cpp \
 				  crysub.cpp \
