@@ -23,12 +23,10 @@ SUBDIRS = src \
 		  tests \
 		  cFluid \
 		  $(MAYBE_IFLUID) \
-		  $(MAYBE_AIRFOIL)
-
-
-#		  $(MAYBE_CRYSTAL) \
-#		  $(MAYBE_EX2D) \
-#		  $(MAYBE_EX3D)
+		  $(MAYBE_AIRFOIL) \
+		  $(MAYBE_CRYSTAL) \
+		  $(MAYBE_EX2D) \
+		  $(MAYBE_EX3D)
 
 
 EXTRA_DIST = build

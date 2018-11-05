@@ -42,14 +42,10 @@ airfoil_SOURCES = airfoil.h \
 				  aftest.cpp \
 				  afvelo.cpp \
 				  cgal.cpp \
-				  ../iFluid/iFluid.h \
-				  ../iFluid/iFsub.cpp \
-				  ../iFluid/iFbasic.cpp \
-				  ../iFluid/iFcartsn2d.cpp \
-				  ../iFluid/iFcartsn3d.cpp \
 				  airfoil.cpp
-
+				  
 airfoil_LDADD =	$(abs_top_builddir)/lib/libCollision.la \
+				$(abs_top_builddir)/lib/libiFluid.la \
 				$(abs_top_builddir)/lib/libsolver.la \
 				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \
 				$(abs_top_builddir)/lib/libFronTier.la \

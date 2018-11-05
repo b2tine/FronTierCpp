@@ -26,16 +26,13 @@ noinst_PROGRAMS = iFluid
 
 iFluid_SOURCES = iFluid.h \
 				 ifluid_state.h \
-				 iFbasic.cpp \
-				 iFcartsn2d.cpp \
-				 iFcartsn3d.cpp \
-				 iFinit.cpp \
-				 iFsub.cpp \
 				 iFluid.cpp
 
-iFluid_LDADD = $(abs_top_builddir)/lib/libsolver.la \
+iFluid_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
+			   $(abs_top_builddir)/lib/libsolver.la \
 			   @PETSC_LIBS@ @MPI_LIBS@ \
-			   $(abs_top_builddir)/lib/libFronTier.la
+			   $(abs_top_builddir)/lib/libFronTier.la \
+			   @HDF_LIBS@ @GD_LIBS@
 			   
 
 

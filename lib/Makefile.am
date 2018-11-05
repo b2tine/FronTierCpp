@@ -1,5 +1,8 @@
 SUBDIRS = gmock
 
+AM_CFLAGS = $(CFLAGS)
+AM_CXXFLAGS = $(CXXFLAGS)
+
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
@@ -18,7 +21,7 @@ libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 if PETSC_OPT
-noinst_LTLIBRARIES += libsolver.la
+noinst_LTLIBRARIES += libsolver.la libiFluid.la
 endif
 
 
@@ -34,6 +37,20 @@ libsolver_la_SOURCES = ../solver/solver.h \
 					   ../solver/cim_parab.cpp
 
 libsolver_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+
+
+libiFluid_la_CPPFLAGS = -I$(top_srcdir)/iFluid \
+						-I$(top_srcdir)/solver \
+						@PETSC_CFLAGS@ $(AM_CPPFLAGS)
+
+libiFluid_la_SOURCES = ../iFluid/iFluid.h \
+					   ../iFluid/iFbasic.cpp \
+					   ../iFluid/iFcartsn2d.cpp \
+					   ../iFluid/iFcartsn3d.cpp \
+					   ../iFluid/iFinit.cpp \
+					   ../iFluid/iFsub.cpp
+
+libiFluid_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 if CGAL_OPT
