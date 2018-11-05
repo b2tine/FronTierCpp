@@ -36,8 +36,13 @@ iFluid_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
 			   
 
 
-
 tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
 
+
+clean-local:
+	-rm -rf tags
+	-rm -rf TAGS
+	-rm -rf CTAGS
+	-rm -rf Makefile
 

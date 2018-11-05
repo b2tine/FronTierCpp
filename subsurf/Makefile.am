@@ -30,3 +30,11 @@ subsurf_LDADD =	$(abs_top_builddir)/crystal/ccartsn.o \
 
 tagsfile:
 	ctags *.h *.cpp ../crystal/*.h ../crystal/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+
+
+clean-local:
+	-rm -rf tags
+	-rm -rf TAGS
+	-rm -rf CTAGS
+	-rm -rf Makefile
+
