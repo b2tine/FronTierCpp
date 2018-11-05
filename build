@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#export CXXFLAGS='-std=c++11 -w'
+export CXX='mpic++ -std=c++11 -w'
 
 function config_intruder {
     CONF='--with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib64'
