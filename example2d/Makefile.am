@@ -59,8 +59,4 @@ tagsfile:
 	ctags *.cpp ../include/*/*.h ../src/*/*.c
 
 
-clean-local:
-	-rm -rf tags
-	-rm -rf TAGS
-	-rm -rf Makefile
 

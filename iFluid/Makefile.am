@@ -40,8 +40,3 @@ tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
 
 
-clean-local:
-	-rm -rf tags
-	-rm -rf TAGS
-	-rm -rf Makefile
-
