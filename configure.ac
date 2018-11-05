@@ -186,7 +186,9 @@ AM_CONDITIONAL([CGAL_OPT],
 
 AM_COND_IF([CGAL_OPT],
            [AM_COND_IF([PETSC_OPT],
-                       [AC_CONFIG_FILES([airfoil/Makefile])])])
+                       [AC_CONFIG_FILES(
+                        [airfoil/Makefile
+                         parachute/Makefile])])])
 
 #enable/disable Collision module ....
 

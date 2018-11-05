@@ -31,20 +31,12 @@ AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
 
 noinst_PROGRAMS = airfoil
 
-airfoil_SOURCES = airfoil.h \
- 				  airfoil_sv.h \
-				  afcnpy.cpp \
-				  afdata.cpp \
-				  afinit.cpp \
-				  afinit3d.cpp \
-				  afprop.cpp \
-				  afsetd.cpp \
-				  aftest.cpp \
-				  afvelo.cpp \
-				  cgal.cpp \
-				  airfoil.cpp
 				  
-airfoil_LDADD =	$(abs_top_builddir)/lib/libCollision.la \
+airfoil_SOURCES = airfoil.h \
+				  airfoil.cpp
+
+airfoil_LDADD =	$(abs_top_builddir)/lib/libairfoil.la \
+				$(abs_top_builddir)/lib/libCollision.la \
 				$(abs_top_builddir)/lib/libiFluid.la \
 				$(abs_top_builddir)/lib/libsolver.la \
 				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \

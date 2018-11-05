@@ -55,7 +55,11 @@ libiFluid_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 if CGAL_OPT
 noinst_LTLIBRARIES += libCollision.la
+if PETSC_OPT
+noinst_LTLIBRARIES += libairfoil.la
 endif
+endif
+
 
 libCollision_la_CPPFLAGS = -I$(top_srcdir)/Collision @CGAL_CFLAGS@ \
 						   -I$(top_srcdir)/iFluid $(AM_CPPFLAGS)
@@ -65,4 +69,23 @@ libCollision_la_SOURCES = ../Collision/collid.h \
 						  ../Collision/dcollid3d.cpp
 						  
 libCollision_la_LIBADD = @CGAL_LIBS@ 
+
+
+libairfoil_la_CPPFLAGS = -I$(top_srcdir)/airfoil \
+						 -I$(top_srcdir)/Collision @CGAL_CFLAGS@ \
+						 -I$(top_srcdir)/iFluid \
+						 -I$(top_srcdir)/solver @PETSC_CFLAGS@ \
+						 $(AM_CPPFLAGS)
+
+libairfoil_la_SOURCES = ../airfoil/afcnpy.cpp \
+						../airfoil/afdata.cpp \
+						../airfoil/afinit3d.cpp \
+						../airfoil/afinit.cpp \
+						../airfoil/afprop.cpp \
+						../airfoil/afsetd.cpp \
+						../airfoil/aftest.cpp \
+						../airfoil/afvelo.cpp \
+						../airfoil/cgal.cpp
+
+libairfol_la_LIBADD = @CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 

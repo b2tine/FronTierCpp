@@ -7,6 +7,7 @@ MAYBE_CRYSTAL = crystal
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
 MAYBE_AIRFOIL = airfoil
+MAYBE_PARACHUTE = parachute
 endif
 endif
 
@@ -25,6 +26,7 @@ SUBDIRS = src \
 		  cFluid \
 		  $(MAYBE_IFLUID) \
 		  $(MAYBE_AIRFOIL) \
+		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_CRYSTAL) \
 		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_EX2D) \
