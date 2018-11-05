@@ -13,6 +13,10 @@ MAYBE_PARACHUTE = parachute
 endif
 endif
 
+if CGAL_OPT
+MAYBE_COLLISION = Collision
+endif
+
 if EX2D_OPT
 MAYBE_EX2D = example2d
 endif
@@ -27,6 +31,7 @@ SUBDIRS = src \
 		  tests \
 		  cFluid \
 		  $(MAYBE_IFLUID) \
+		  $(MAYBE_COLLISION) \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_CRYSTAL) \

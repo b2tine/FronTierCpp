@@ -1,9 +1,9 @@
-#include <FronTier.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <map>
 #include "collid.h"
+
 static CURVE* make3dCurve(Front&,double[][3],int);
 static void initSurface(Front&,char*);
 static void initCurves(Front&,char*); 

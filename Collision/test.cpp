@@ -1,4 +1,3 @@
-#include <FronTier.h>
 #include <vector>
 #include "collid.h"
 
