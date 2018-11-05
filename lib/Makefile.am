@@ -91,3 +91,9 @@ libairfoil_la_SOURCES = ../airfoil/airfoil.h \
 
 libairfoil_la_LIBADD = @CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
+
+clean-local:
+	-rm -rf tags
+	-rm -rf TAGS
+	-rm -rf Makefile
+
