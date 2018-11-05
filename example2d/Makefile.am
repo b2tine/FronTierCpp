@@ -20,7 +20,6 @@ noinst_PROGRAMS = example00 \
 				  example13 \
 				  example14
 
-noinst_HEADERS = ../include/FronTier.h
 
 example00_SOURCES = example00.cpp
 
@@ -53,7 +52,7 @@ example13_SOURCES = example13.cpp
 example14_SOURCES = example14.cpp
 
 
-AM_LDFLAGS = -L$(abs_top_builddir)/lib -lFronTier \
+AM_LDFLAGS = $(abs_top_builddir)/lib/libFronTier.la \
 			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 tagsfile:

@@ -1,19 +1,24 @@
 #!/bin/bash
 
+WARNINGS_OFF="-Wformat-overflow=0 -Wunused-result=0 -Wimplicit-function-declaration=0"
+DEFAULT_CFLAGS=${WARNINGS_OFF}
+DEFAULT_CXXFLAGS="-sdt=c++11 ${DEFAULT_CFLAGS}"
+
 function config_intruder {
-    CONF="--with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib64"
+    CONF="CFLAGS=${DEFAULT_CFLAGS} CXXFLAGS=${DEFAULT_CXXFLAGS} --with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib64"
 }
 
 function config_omega {
-    CONF="CXXFLAGS=-std=c++11 --with-mpich-dir=/usr/local/pkg/mpich2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
+
+    CONF="CFLAGS=${DEFAULT_CFLAGS} CXXFLAGS=${DEFAULT_CXXFLAGS} --with-mpich-dir=/usr/local/pkg/mpich2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_alpha {
-    CONF="CFLAGS=-Wformat-overflow=0 CXXFLAGS=-Wformat-overflow=0 --with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
+    CONF="CFLAGS=${DEFAULT_CFLAGS} CXXFLAGS=${DEFAULT_CXXFLAGS} --with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_defiant {
-    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
+    CONF="CFLAGS=${DEFAULT_CFLAGS} CXXFLAGS=${DEFAULT_CXXFLAGS} --with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 

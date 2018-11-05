@@ -1,3 +1,5 @@
+EXTRA_DIST = testintfc.c intfc_gpu.cuh intfc_gpu.cu
+
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
@@ -9,7 +11,7 @@ AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 noinst_LTLIBRARIES = libintfc.la
 
-include_HEADERS = \
+noinst_HEADERS = \
 ../../include/intfc/array.h \
 ../../include/intfc/geom.h \
 ../../include/intfc/iapi.h \

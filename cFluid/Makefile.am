@@ -1,3 +1,6 @@
+input_directories = input-1d input-2d input-3d
+EXTRA_DIST = $(input_directories)
+
 AM_CPPFLAGS = -I$(abs_top_srcdir)/cFluid \
 			  -I$(abs_top_srcdir)/include \
 			  -I$(abs_top_srcdir)/include/front \
@@ -21,12 +24,9 @@ cFluid_SOURCES = cFluid.h \
 				 cFweno.cpp \
 				 cFluid.cpp
 
-cFluid_LDADD = -L$(abs_top_builddir)/lib -lFronTier $(AM_LDFLAGS)
+cFluid_LDADD = $(abs_top_builddir)/lib/libFronTier.la
 
 tagsfile:
 	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c
 
 
-input_directories = input-1d input-2d input-3d
-
-EXTRA_DIST = $(input_directories)

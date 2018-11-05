@@ -7,9 +7,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
-noinst_LTLIBRARIES = libFTutil.la
+noinst_LTLIBRARIES = libutil.la
 
-include_HEADERS = \
+noinst_HEADERS = \
 ../../include/util/cdecs.h \
 ../../include/util/fnamedebug.h \
 ../../include/util/navdecs.h \
@@ -18,7 +18,7 @@ include_HEADERS = \
 ../../include/util/uprotos.h \
 ../../include/util/vmalloc.h
 
-libFTutil_la_SOURCES = \
+libutil_la_SOURCES = \
 cleanup.c \
 debug.c \
 error.c \

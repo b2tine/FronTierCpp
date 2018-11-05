@@ -1,51 +1,3 @@
-AM_CPPFLAGS = -I$(abs_top_srcdir)/airfoil \
-			  -I$(abs_top_srcdir)/Collision \
-			  -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
-			  @CGAL_CFLAGS@ @PETSC_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
-			  -I$(abs_top_srcdir)/include/front \
-			  -I$(abs_top_srcdir)/include/intfc \
-			  -I$(abs_top_srcdir)/include/util \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
-
-AM_CXXFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION
-
-
-noinst_PROGRAMS = airfoil
-
-noinst_HEADERS = ../Collision/collid.h \
-				 airfoil.h \
-				 ../iFluid/iFluid.h \
-				 ../solver/solver.h \
-				 ../include/FronTier.h \
-				 airfoil_sv.h \
-				 airfoil_gpu.cuh
-				 
-
-airfoil_SOURCES = airfoil.cpp \
-				  afcnpy.cpp \
-				  afdata.cpp \
-				  afinit.cpp \
-				  afinit3d.cpp \
-				  afprop.cpp \
-				  afsetd.cpp \
-				  aftest.cpp \
-				  afvelo.cpp \
-				  cgal.cpp \
-				  airfoil_gpu.cu \
-				  ../Collision/dcollid.cpp \
-				  ../Collision/dcollid3d.cpp
-
-airfoil_LDADD = -L$(abs_top_builddir)/lib -liFluid \
-				@CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
-				@HDF_LIBS@ @GD_LIBS@
-
-
-tagsfile:
-	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
-
-
 input_directories = input-2d \
 					input-7ft \
 					input-C9 \
@@ -60,5 +12,52 @@ input_directories = input-2d \
 					input-T10 \
 					input-young3d
 
+EXTRA_DIST = $(input_directories) airfoil_gpu.cuh airfoil_gpu.cu
 
-EXTRA_DIST = $(input_directories)
+AM_CPPFLAGS = -I$(abs_top_srcdir)/airfoil \
+			  -I$(abs_top_srcdir)/Collision \
+			  @CGAL_CFLAGS@ \
+			  -I$(abs_top_srcdir)/iFluid \
+			  -I$(abs_top_srcdir)/solver \
+			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
+			  -I$(abs_top_srcdir)/include \
+			  -I$(abs_top_srcdir)/include/front \
+			  -I$(abs_top_srcdir)/include/intfc \
+			  -I$(abs_top_srcdir)/include/util \
+			  @HDF_CFLAGS@ @GD_CFLAGS@
+
+AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
+
+
+noinst_PROGRAMS = airfoil
+
+airfoil_SOURCES = airfoil.h \
+ 				  airfoil_sv.h \
+				  afcnpy.cpp \
+				  afdata.cpp \
+				  afinit.cpp \
+				  afinit3d.cpp \
+				  afprop.cpp \
+				  afsetd.cpp \
+				  aftest.cpp \
+				  afvelo.cpp \
+				  cgal.cpp \
+				  ../iFluid/iFluid.h \
+				  ../iFluid/iFsub.cpp \
+				  ../iFluid/iFbasic.cpp \
+				  ../iFluid/iFcartsn2d.cpp \
+				  ../iFluid/iFcartsn3d.cpp \
+				  airfoil.cpp
+
+airfoil_LDADD =	$(abs_top_builddir)/lib/libCollision.la \
+				$(abs_top_builddir)/lib/libsolver.la \
+				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \
+				$(abs_top_builddir)/lib/libFronTier.la \
+				@HDF_LIBS@ @GD_LIBS@
+
+
+
+tagsfile:
+	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+
+

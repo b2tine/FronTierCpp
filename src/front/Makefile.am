@@ -1,3 +1,5 @@
+EXTRA_DIST = in testfront.c
+
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
 			  -I$(top_srcdir)/include/intfc \
@@ -9,7 +11,7 @@ AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 noinst_LTLIBRARIES = libfront.la
 
-include_HEADERS = \
+noinst_HEADERS = \
 ../../include/front/fapi.h \
 ../../include/front/fcell.h \
 ../../include/front/fdecs.h \
