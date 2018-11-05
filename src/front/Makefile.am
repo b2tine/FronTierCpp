@@ -1,4 +1,4 @@
-EXTRA_DIST = in testfront.c
+EXTRA_DIST = in testfront.c front_gpu.cu front_gpu.cuh
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/front \
@@ -76,9 +76,4 @@ fuserintfc.c \
 fvelo.c \
 dummyfront.cpp
 
-
-clean-local:
-	-rm -rf tags
-	-rm -rf TAGS
-	-rm -rf Makefile
 

@@ -81,8 +81,3 @@ zoom.c \
 dummyintfc.cpp
 
 
-clean-local:
-	-rm -rf tags
-	-rm -rf TAGS
-	-rm -rf Makefile
-
