@@ -35,6 +35,9 @@ if [[ "$HOST" == intruder.cluster ]]; then
 elif [[ "$HOST" == omega ]]; then
     echo "Machine recognized as omega."
     config_omega
+elif [[ "$HOST" == lambda ]]; then
+    echo "Machine recognized as lambda."
+    config_lambda
 elif [[ "$HOST" == alpha ]]; then
     echo "Machine recognized as alpha."
     config_alpha
