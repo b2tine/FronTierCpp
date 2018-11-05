@@ -12,6 +12,8 @@
 #include <solver.h>
 #include "ifluid_state.h"
 
+using STATE = iFluid_STATE;
+
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2
 #define         LIQUID_COMP2		3

@@ -19,8 +19,7 @@ crystal_SOURCES = crystal.h \
 				  ccartsn.cpp \
 				  crystal.cpp
 
-crystal_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
-				$(abs_top_builddir)/lib/libsolver.la \
+crystal_LDADD = $(abs_top_builddir)/lib/libsolver.la \
 				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \
 				$(abs_top_builddir)/lib/libFronTier.la \
 				@HDF_LIBS@ @GD_LIBS@

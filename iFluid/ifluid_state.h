@@ -5,7 +5,7 @@
 #ifndef IFLUID_STATE_H
 #define IFLUID_STATE_H
 
-struct _STATE
+struct iFluid_STATE
 {
     double dens;            /* Density */
     double pres;            /* Pressure */
@@ -47,7 +47,7 @@ struct _STATE
     bool is_movableRG;
     UF impZone;
 };
-typedef struct _STATE STATE;
+//typedef struct _STATE STATE;
 
 
 #endif

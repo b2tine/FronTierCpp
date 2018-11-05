@@ -4,6 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
 MAYBE_CRYSTAL = crystal
+#MAYBE_SUBSURF = subsurf
 if CGAL_OPT
 MAYBE_AIRFOIL = airfoil
 endif
@@ -25,6 +26,7 @@ SUBDIRS = src \
 		  $(MAYBE_IFLUID) \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_CRYSTAL) \
+		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D)
 

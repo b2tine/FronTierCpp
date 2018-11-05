@@ -7,7 +7,7 @@
 #define CRYSTAL_STATE_H
 
 
-struct CRYSTAL_STATE {
+struct Crystal_STATE {
         double dens;                    /* Density */
         double pres;                    /* Pressure */
         double phi;                     /* Potential */
@@ -16,7 +16,6 @@ struct CRYSTAL_STATE {
         double solute;                  /* For subsurface problem */
         double mu;                      /* For eddy viscosity */
 };
-typedef struct CRYSTAL_STATE STATE;
 
 #endif
 

@@ -145,7 +145,8 @@ AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
 
 AM_COND_IF([PETSC_OPT],
            [AC_CONFIG_FILES([iFluid/Makefile
-                             crystal/Makefile])])
+                             crystal/Makefile
+                             subsurf/Makefile])])
 
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],

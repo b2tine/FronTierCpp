@@ -9,7 +9,9 @@
 
 #include <FronTier.h>
 #include "collid.h"
-#include <ifluid_state.h>
+//#include <ifluid_state.h>
+
+//using STATE = iFluid_STATE;
 
 #include <omp.h>
 

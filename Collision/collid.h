@@ -6,6 +6,9 @@
 
 #include <FronTier.h>
 #include <ifluid_state.h>
+
+using STATE = iFluid_STATE;
+
 #include <functional>
 #include <map>
 
