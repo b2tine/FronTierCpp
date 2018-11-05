@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
+EXTRA_DIST = build
+
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
 MAYBE_CRYSTAL = crystal
@@ -32,5 +34,3 @@ SUBDIRS = src \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D)
 
-
-EXTRA_DIST = build

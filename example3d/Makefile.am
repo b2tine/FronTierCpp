@@ -1,3 +1,13 @@
+broken_files = example06.cpp \
+			   example12.cpp \
+			   example13.cpp \
+			   example14.cpp \
+			   example_sphere_redistribute.cpp
+
+EXTRA_DIST = input $(broken_files)
+
+
+
 AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
 			  -I$(abs_top_srcdir)/include/front \
 			  -I$(abs_top_srcdir)/include/intfc \
@@ -10,7 +20,6 @@ noinst_PROGRAMS = example00 \
 				  example03 \
 				  example04 \
 				  example05 \
-				  example06 \
 				  example07 \
 				  example08 \
 				  example09 \
@@ -30,8 +39,6 @@ example04_SOURCES = example04.cpp
 
 example05_SOURCES = example05.cpp
 
-example06_SOURCES = example06.cpp
-
 example07_SOURCES = example07.cpp
 
 example08_SOURCES = example08.cpp
@@ -50,12 +57,5 @@ AM_LDFLAGS = $(abs_top_builddir)/lib/libFronTier.la \
 tagsfile:
 	ctags *.cpp ../include/*/*.h ../src/*/*.c
 
-
-broken_files = example12.cpp \
-			   example13.cpp \
-			   example14.cpp \
-			   example_sphere_redistribute.cpp
-
-EXTRA_DIST = input $(broken_files)
 
 

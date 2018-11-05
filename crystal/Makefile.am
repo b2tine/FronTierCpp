@@ -15,6 +15,7 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/crystal \
 noinst_PROGRAMS = crystal
 
 crystal_SOURCES = crystal.h \
+				  crystal_state.h \
 				  crysub.cpp \
 				  ccartsn.cpp \
 				  crystal.cpp

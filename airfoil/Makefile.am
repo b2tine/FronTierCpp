@@ -33,6 +33,7 @@ noinst_PROGRAMS = airfoil
 
 				  
 airfoil_SOURCES = airfoil.h \
+				  airfoil_sv.h \
 				  airfoil.cpp
 
 airfoil_LDADD =	$(abs_top_builddir)/lib/libairfoil.la \
