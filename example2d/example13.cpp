@@ -90,9 +90,9 @@ int main(int argc, char **argv)
         RestartStep             = f_basic.RestartStep;
 
         sprintf(restart_name,"%s.ts%s",restart_name,right_flush(RestartStep,7));
-#if defined(USE_MPI)
+#if defined(__MPI__)
         sprintf(restart_name,"%s-nd%s",restart_name,right_flush(pp_mynode(),4));
-#endif
+#endif /* defined(__MPI__) */
 
 	FT_StartUp(&front,&f_basic);
 	add_to_debug("high_order_redist");

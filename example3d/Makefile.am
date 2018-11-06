@@ -4,14 +4,11 @@ broken_files = example06.cpp \
 			   example14.cpp \
 			   example_sphere_redistribute.cpp
 
-EXTRA_DIST = input $(broken_files)
+EXTRA_DIST = README input $(broken_files)
 
 
 
 AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
-			  -I$(abs_top_srcdir)/include/front \
-			  -I$(abs_top_srcdir)/include/intfc \
-			  -I$(abs_top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 noinst_PROGRAMS = example00 \

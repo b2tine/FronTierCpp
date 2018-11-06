@@ -67,11 +67,9 @@ int main(int argc, char **argv)
 
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,
                         right_flush(RestartStep,7));
-        /*
         if (pp_numnodes() > 1)
             sprintf(restart_name,"%s-nd%s",restart_name, 
                                 right_flush(pp_mynode(),4));
-        */
 
 	FT_StartUp(&front,&f_basic);
 

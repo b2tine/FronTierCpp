@@ -108,9 +108,7 @@ int main(int argc, char **argv)
 	    level_func_pack.func_params = (POINTER)&disk_params;
 	    level_func_pack.func = slotted_disk_func;
 	    level_func_pack.wave_type = FIRST_PHYSICS_WAVE_TYPE;
-	    
-        FT_InitIntfc(&front,&level_func_pack);
-
+	    FT_InitIntfc(&front,&level_func_pack);
 	    if (f_basic.dim < 3)
                 FT_ClipIntfcToSubdomain(&front);
 	}
