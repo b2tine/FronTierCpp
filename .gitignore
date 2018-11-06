@@ -57,8 +57,11 @@ example2d/example*
 example3d/example*
 cFluid/cFluid
 iFluid/iFluid
+melting/melting
 crystal/crystal
 airfoil/airfoil
+Collision/test
+parachute/parachute
 
 # Others
 */out-*

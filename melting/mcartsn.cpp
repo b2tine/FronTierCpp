@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <iFluid.h>
-#include "solver.h"
+#include <solver.h>
 #include "melting.h"
 
 static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
@@ -1163,10 +1163,10 @@ void CARTESIAN::printFrontInteriorState(char *out_name)
 	double *Temp = field->temperature;
 
 	sprintf(filename,"%s/state.ts%s",out_name,right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (pp_numnodes() > 1)
             sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	outfile = fopen(filename,"w");
 	
         /* Initialize states at the interface */
@@ -1415,9 +1415,9 @@ void CARTESIAN::xgraphOneDimPlot(char *outname)
 	if (debugging("trace"))
 	    printf("Entering xgraphTemp1()\n");
         sprintf(filename,"%s/tmp-xg.ts%s",outname,right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
         sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         outfile = fopen(filename,"w");
 	fprintf(outfile,"\"Solid temp at %6.3f\"\n",front->time);
 	for (i = 0; i <= top_gmax[0]; ++i)

@@ -962,10 +962,10 @@ void C_CARTESIAN::printFrontInteriorStates()
 
 	sprintf(filename,"%s/state.ts%s",out_name,
 			right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (pp_numnodes() > 1)
             sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	sprintf(filename,"%s-solute",filename);
 	outfile = fopen(filename,"w");
 	
@@ -1278,9 +1278,9 @@ void C_CARTESIAN::xgraphOneDimPlot(char *outname)
 
         sprintf(filename,"%s/solute-xg.ts%s",
 			outname,right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
         sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         outfile = fopen(filename,"w");
 	num_pts = imax - imin + 1;
 	FT_VectorMemoryAlloc((POINTER*)&x,num_pts,sizeof(double));

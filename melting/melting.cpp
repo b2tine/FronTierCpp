@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 /*
-*				melting.cpp:
+*				melting.c:
 *
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 *
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 			right_flush(RestartStep,7));
 	sprintf(restart_name,"%s/intfc-ts%s",restart_name,
 			right_flush(RestartStep,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (pp_numnodes() > 1)
 	{
         	sprintf(restart_name,"%s-nd%s",restart_name,
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
         	sprintf(restart_state_name,"%s-nd%s",restart_state_name,
 			            right_flush(pp_mynode(),4));
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         FT_ReadSpaceDomain(in_name,&f_basic);
 
 	FT_StartUp(&front,&f_basic);
@@ -481,9 +481,9 @@ static boolean fractal_dimension(
 	}
 	r_max = sqrt(r_max);
 	*radius = r_max;
-#if defined (USE_MPI)
+#if defined (HAVE_MPI)
 	pp_global_max(radius,1);
-#endif /* defined (USE_MPI) */
+#endif /* defined (HAVE_MPI) */
 
 	/* Preparation for counting */
 
@@ -543,10 +543,10 @@ static boolean fractal_dimension(
 		}
 	    }
 	}
-#if defined (USE_MPI)
+#if defined (HAVE_MPI)
 	pp_global_isum(&N,1);
 	pp_global_isum(&Nc,1);
-#endif /* defined (USE_MPI) */
+#endif /* defined (HAVE_MPI) */
 	if (grid_intfc_made)
 	    FT_FreeGridIntfc(front);
 	ratio = ((double)N)/((double)Nc);

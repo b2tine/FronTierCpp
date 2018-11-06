@@ -5,8 +5,8 @@ EXTRA_DIST = build
 
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
-#MAYBE_MELTING = melting
-#MAYBE_CRYSTAL = crystal
+MAYBE_CRYSTAL = crystal
+MAYBE_MELTING = melting
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
 #MAYBE_AIRFOIL = airfoil
@@ -32,12 +32,12 @@ SUBDIRS = src \
 		  tests \
 		  cFluid \
 		  $(MAYBE_IFLUID) \
+		  $(MAYBE_CRYSTAL) \
+		  $(MAYBE_MELTING) \
+		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_COLLISION) \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
-		  $(MAYBE_MELTING) \
-		  $(MAYBE_CRYSTAL) \
-		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D)
 

@@ -5,22 +5,16 @@
 #ifndef _FT_CRYSTAL_H_
 #define _FT_CRYSTAL_H_
 
+#include <FronTier.h>
+#if defined(IFLUID_STATE)
+#include <ifluid_state.h>
+#else /* defined(IFLUID_STATE) */
+#include "crystal_state.h"
+#endif /* defined(IFLUID_STATE) */
 #include <vector>
 #include <petscksp.h>
 #include <assert.h>
-
-#include <FronTier.h>
 #include <solver.h>
-
-#include <ifluid_state.h>
-#include "crystal_state.h"
-
-#if defined(IFLUID_STATE)
-using STATE = iFluid_STATE;
-#else
-using STATE = Crystal_STATE;
-#endif
-
 
 #define         CRYSTAL_COMP            0
 #define         SOLUTE_COMP             3

@@ -1,5 +1,5 @@
 /**********************************************************************
- * 		melting.h
+ * 		liquid.h
  * the code is a direct modification of the code by Leveque[1].
  *
  * References:
