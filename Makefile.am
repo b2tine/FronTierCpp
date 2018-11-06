@@ -9,13 +9,13 @@ MAYBE_CRYSTAL = crystal
 MAYBE_MELTING = melting
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
-#MAYBE_AIRFOIL = airfoil
-#MAYBE_PARACHUTE = parachute
+MAYBE_AIRFOIL = airfoil
+MAYBE_PARACHUTE = parachute
 endif
 endif
 
 if CGAL_OPT
-#MAYBE_COLLISION = Collision
+MAYBE_COLLISION = Collision
 endif
 
 if EX2D_OPT

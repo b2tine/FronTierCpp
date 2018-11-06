@@ -49,10 +49,10 @@ extern void printAfExtraDada(
 
 	sprintf(filename,"%s/state.ts%s",out_name,
                         right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
         if (pp_numnodes() > 1)
             sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         sprintf(filename,"%s-afdata",filename);
         outfile = fopen(filename,"w");
 

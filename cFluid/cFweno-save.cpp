@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <ctime>
 #include <time.h>
 
-#if defined(__GPU__)
+#if defined(USE_GPU)
 #include "cFweno_gpu.cuh"
 #endif
 
@@ -63,7 +63,7 @@ extern void WENO_flux(
 	ghost_size = 3;
 	extend_size = n + 2*ghost_size;
 
-#if defined(__GPU__)
+#if defined(USE_GPU)
 	//startClock("Total_time_flux_gpu");
 	weno5_get_flux_gpu(scheme_params->gamma,scheme_params->lambda,
 				extend_size,ghost_size,u_old,flux);

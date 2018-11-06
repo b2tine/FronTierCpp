@@ -6,9 +6,6 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/subsurf \
 			  -I$(abs_top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(abs_top_srcdir)/include \
-			  -I$(abs_top_srcdir)/include/front \
-			  -I$(abs_top_srcdir)/include/intfc \
-			  -I$(abs_top_srcdir)/include/util \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 

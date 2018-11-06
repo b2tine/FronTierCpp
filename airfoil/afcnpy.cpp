@@ -21,11 +21,13 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
+#include <iFluid.h>
+#include "airfoil.h"
+#include <solver.h>
+
 #ifdef COLLISION_DETECTION
 #include <collid.h>
 #endif
-
-#include "airfoil.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
@@ -1931,7 +1933,7 @@ extern void fourth_order_elastic_set_propagate(
 	    } 
 
 	    start_clock("spring_model");
-#if defined(__GPU__)
+#if defined(USE_GPU)
             if (af_params->use_gpu)
             {
             	if (debugging("trace"))

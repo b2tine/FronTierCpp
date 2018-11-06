@@ -112,7 +112,7 @@ extern void setMotionParams(
 	    af_params->attach_gores = YES;
 	    checkSetGoreNodes(intfc);
 	}
-#if defined(__GPU__)
+#if defined(USE_GPU)
      	if (CursorAfterStringOpt(infile,
 		"Enter yes to use GPU solver:"))
 	{
@@ -175,7 +175,7 @@ extern void setMotionParams(
 		    {
 	    	    	front->tan_curve_propagate 
 				= fourth_order_elastic_curve_propagate;
-#if defined(__GPU__)
+#if defined(USE_GPU)
             		if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
 			{
@@ -210,7 +210,7 @@ extern void setMotionParams(
 	    	    	front->interior_propagate 
 				= fourth_order_elastic_surf_propagate;
 				//= fourth_order_elastic_set_propagate;
-#if defined(__GPU__)
+#if defined(USE_GPU)
             		if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
 			{

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 /*
-*				subsurf.cpp:
+*				crystal.c:
 *
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 *
@@ -70,9 +70,9 @@ int main(int argc, char **argv)
 	C_CARTESIAN  c_cartesian(front);
 	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
 	if(f_basic.dim == 2)
-	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
+	    l_cartesian = new Incompress_Solver_2D_Cartesian(front);
 	else if(f_basic.dim == 3)
-	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
+	    l_cartesian = new Incompress_Solver_3D_Cartesian(front);
 
 	/* Initialize basic computational data */
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 			right_flush(RestartStep,7));
 	sprintf(restart_name,"%s/intfc-ts%s",
 			restart_name,right_flush(RestartStep,7));
-#if defined(USE_MPI)
+#if defined(__MPI__)
 	if (pp_numnodes() > 1)
 	{
             sprintf(restart_name,"%s-nd%s",restart_name,
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
             sprintf(restart_state_name,"%s-nd%s",restart_state_name,
 				right_flush(pp_mynode(),4));
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(__MPI__) */
 	if (!ReadFromInput)
 	{
 	    (void) printf("ERROR: Input file needed!\n");

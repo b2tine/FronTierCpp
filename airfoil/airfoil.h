@@ -1,9 +1,7 @@
-#ifndef _AIRFOIL_
-#define _AIRFOIL_
+#ifndef AIRFOIL_H
+#define AIRFOIL_H
 
 #include <FronTier.h>
-#include <iFluid.h>
-
 #include "airfoil_sv.h"
 #include "airfoil_gpu.cuh"
 #include <map>

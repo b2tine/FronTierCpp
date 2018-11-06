@@ -1,5 +1,5 @@
-#ifndef _AIRFOIL_SV_
-#define _AIRFOIL_SV_
+#ifndef AIRFOIL_SV_H
+#define AIRFOIL_SV_H
 
 struct _SPRING_VERTEX {
         double *x;

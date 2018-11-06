@@ -1,5 +1,6 @@
-#include <vector>
 #include "collid.h"
+
+#include <vector>
 
 //test module for 3d surface
 //proximity and collision detection
@@ -103,7 +104,6 @@ static  void propagation_driver(
 	    //collision detect and handling
 	    collision_solver->assembleFromInterface(front->interf,front->dt);
 	    collision_solver->setFrictionConstant(0.0);
-        //collision_solver->setRestitutionCoef(1.0); //perfectly elastic collision
 	    collision_solver->resolveCollision();
 
             FT_AddTimeStepToCounter(front);

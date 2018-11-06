@@ -22,13 +22,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include <iFluid.h>
-#include <airfoil.h>
-#include "solver.h"
+#include "airfoil.h"
+#include <solver.h>
 
-#if defined(__GPU__)
-
+#if defined(USE_GPU)
 #include "airfoil_gpu.cuh"
-
 #endif
 
 #define		MAX_SURF_CURVES		10
@@ -1608,7 +1606,7 @@ extern void fourth_order_elastic_curve_propagate(
 
 	start_clock("spring_model");
 
-#if defined(__GPU__)
+#if defined(USE_GPU)
 	if (af_params->use_gpu)
 	{
 	    if (debugging("trace"))
@@ -1889,7 +1887,7 @@ extern void fourth_order_elastic_surf_propagate(
 
 	start_clock("spring_model");
 
-#if defined(__GPU__)
+#if defined(USE_GPU)
 	if (af_params->use_gpu)
 	{
 	    if (debugging("trace"))

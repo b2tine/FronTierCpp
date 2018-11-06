@@ -7,8 +7,6 @@
 #include <FronTier.h>
 #include <ifluid_state.h>
 
-using STATE = iFluid_STATE;
-
 #include <functional>
 #include <map>
 
@@ -20,8 +18,11 @@ using STATE = iFluid_STATE;
 const double ROUND_EPS = 1e-10;
 const double EPS = 1e-6;
 const double DT = 0.001;
+
+
+//user-defined state should include the following
+//
 /*
-user-defined state should include the following
 struct UF{
 	POINT* next_pt;
 	POINT* root;
@@ -39,7 +40,9 @@ struct STATE{
 	bool   has_collsn;
 	bool   is_fixed;
 	UF     impZone;
-};*/
+};
+*/
+
 
 //abstract base class for hypersurface element(HSE)
 //can be a point or a bond or a triangle
@@ -243,11 +246,9 @@ public:
 struct reportProximity{
     int& num_pairs;
     CollisionSolver* collsn_solver;
-
-    reportProximity(int &npair,CollisionSolver* solver)
-        : num_pairs(npair = 0), collsn_solver(solver)
-    {}
-
+    reportProximity(int &npair,CollisionSolver* solver): 
+			 	 num_pairs(npair = 0),
+				 collsn_solver(solver){}
     void operator()( const CD_HSE* a, const CD_HSE* b) {
 	if(collsn_solver->isProximity(a,b)){
 	    num_pairs++;
@@ -259,12 +260,10 @@ struct reportCollision{
     bool& is_collision;
     int&  num_pairs;
     CollisionSolver* collsn_solver;
-    
-    reportCollision(bool &status, int &npairs,CollisionSolver* solver)
-        : is_collision(status), num_pairs(npairs = 0),
-        collsn_solver(solver)
-    {}
-
+    reportCollision(bool &status, int &npairs,CollisionSolver* solver): 
+		     is_collision(status), 
+		     num_pairs(npairs = 0), 
+		     collsn_solver(solver){}
     void operator()( const CD_HSE* a, const CD_HSE* b) {
 	if (collsn_solver->isCollision(a,b)){
 	    num_pairs ++;
