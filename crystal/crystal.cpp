@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 			right_flush(RestartStep,7));
 	sprintf(restart_name,"%s/intfc-ts%s",restart_name,
 			right_flush(RestartStep,7));
-#if defined(__MPI__)
+#if defined(USE_MPI)
 	if (pp_numnodes() > 1)
 	{
             sprintf(restart_name,"%s-nd%s",restart_name,
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
             sprintf(restart_state_name,"%s-nd%s",restart_state_name,
 				right_flush(pp_mynode(),4));
 	}
-#endif /* defined(__MPI__) */
+#endif /* defined(USE_MPI) */
 	if (!ReadFromInput)
 	{
 	    (void) printf("ERROR: Input file needed!\n");

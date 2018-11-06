@@ -671,10 +671,10 @@ extern void fractal_dimension(
 	}
 	r_max = sqrt(r_max);
 	*radius = r_max;
-#if defined (__MPI__)
+#if defined (USE_MPI)
 	pp_global_max(radius,1);
 	crystal_exist = pp_max_status(crystal_exist);
-#endif /* defined (__MPI__) */
+#endif /* defined (USE_MPI) */
 	if (!crystal_exist)
 	    return;
 
@@ -729,10 +729,10 @@ extern void fractal_dimension(
 		}
 	    }
 	}
-#if defined (__MPI__)
+#if defined (USE_MPI)
 	pp_global_isum(&N,1);
 	pp_global_isum(&Nc,1);
-#endif /* defined (__MPI__) */
+#endif /* defined (USE_MPI) */
 	ratio = ((double)N)/((double)Nc);
 	*frac_dim = (double)dim + log(ratio)/log(h[0]);
 	return;
@@ -1880,11 +1880,11 @@ extern boolean bdryReached(
 		    coords_max[i] = Coords(p)[i];
 	    }
 	}
-#if defined (__MPI__)
+#if defined (USE_MPI)
 	pp_global_max(coords_max,dim);
 	pp_global_min(coords_min,dim);
 	crystal_exist = pp_max_status(crystal_exist);
-#endif /* defined (__MPI__) */
+#endif /* defined (USE_MPI) */
 	if (!crystal_exist)
 	    return NO;
 	for (i = 0; i < dim; ++i)
@@ -1895,11 +1895,11 @@ extern boolean bdryReached(
 	    	U[i] - coords_max[i] < 2.0*h[i]) 
 	    	bdry_reached = YES;
 	}
-#if defined (__MPI__)
+#if defined (USE_MPI)
 	bdry_reached = pp_max_status(bdry_reached);
 	if (bdry_reached)
 	    printf("Crystal growth has reached boundary.\n");
-#endif /* defined (__MPI__) */
+#endif /* defined (USE_MPI) */
 	return bdry_reached;
 }	/* end bdryReached */
 
