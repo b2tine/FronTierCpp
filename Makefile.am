@@ -77,14 +77,17 @@ $$ME/tests/Makefile.am \
 $$ME/tests/*.cpp \
 $$ME/example2d/Makefile.am \
 $$ME/example2d/*.cpp \
+$$ME/example2d/README \
 $$ME/example3d/Makefile.am \
 $$ME/example3d/*.cpp \
 $$ME/example3d/input/* \
+$$ME/example3d/README \
 $$ME/cFluid/Makefile.am \
 $$ME/cFluid/*.h \
 $$ME/cFluid/*.cpp \
 $$ME/cFluid/in-* \
 $$ME/cFluid/input-*/in-* \
+$$ME/cFluid/mrun* \
 $$ME/iFluid/Makefile.am \
 $$ME/iFluid/*.h \
 $$ME/iFluid/*.cpp \

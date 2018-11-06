@@ -33,10 +33,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static double weno5_scal(double *f);
 static void matmvec(double *b, double L[5][5], std::vector<double> x);
 static void f2is(double *f, double *s);
-static void u2f(std::vector<double>,std::vector<double>&);
+static void u2f(std::vector<double> u, std::vector<double> f);
 static void weno5_get_flux(POINTER,int,int,double**,double**);
-static void arti_compression(POINTER,double*,double*,double,double,double*,
-                int,double &c);
+static void arti_compression(POINTER,double*,double*,double,double,double*,int,double &c);
 
 extern void WENO_flux(
         POINTER params,
@@ -44,8 +43,8 @@ extern void WENO_flux(
         FSWEEP *vflux,
         int n)
 {
-	double *u_old[6];
-	double *flux[5];
+        double *u_old[6];
+        double *flux[5];
 	int i,extend_size,ghost_size;
 	SCHEME_PARAMS *scheme_params = (SCHEME_PARAMS*)params;
 	double lambda = scheme_params->lambda;
@@ -107,7 +106,8 @@ static void weno5_get_flux(
     	double maxeig[5] = {0 ,0 ,0, 0, 0};
 	double v,ff[5];
         std::vector<double> u(9,0),f_tmp(5,0);
-        std::vector<std::vector<double> > f(extend_size,std::vector<double>(5));
+        std::vector<double> pf(5,0);
+        std::vector< std::vector<double> > f(extend_size,pf);
 	SCHEME_PARAMS *scheme_params = (SCHEME_PARAMS*)params;
 	double gamma = scheme_params->gamma;
 	double vecp[5][4],vecm[5][4];
@@ -218,9 +218,9 @@ static void weno5_get_flux(
 	    for(j = 0; j < 6; ++j)
 	    {
 		for (k = 0; k < 5; ++k)
-                    u[k] = u_old[k][i-ghost_size+j];
+                    u[k] = u_old[k][i - ghost_size + j];
 	    	matmvec(sten_u[j],L,u);
-	    	matmvec(sten_f[j],L,f[i-ghost_size+j]);
+	    	matmvec(sten_f[j],L,f[i - ghost_size + j]);
 	    }
 
 	    for(j = 0; j < 5; ++j)
@@ -237,21 +237,21 @@ static void weno5_get_flux(
 	    	f_nowp[j] = weno5_scal(gfluxp[j]);
 		f_tmp[j] = f_nowp[j];
 		/* artificial compression */
-	    	for (k = 0; k < 5; ++k)
-                    gflux_tmp[k] = 0.5*(sten_f[5-k][j] + 
-                                maxeig[j]*sten_u[5-k][j]);
-                arti_compression(params,gfluxp[j],gflux_tmp,f_prevp[j],
-                            f_nowp[j],vecp[j],1,c);
+	    	for(k = 0; k < 5; ++k)
+		    gflux_tmp[k] = 0.5*(sten_f[5-k][j] + 
+                                    maxeig[j]*sten_u[5-k][j]);
+		arti_compression(params,gfluxp[j],gflux_tmp,f_prevp[j],
+                                f_nowp[j],vecp[j],1,c);
 		f_tmp[j] += c;
 		/* end of artificial compression */
 		f_prevm[j] = f_nowm[j];
 	    	f_nowm[j] = weno5_scal(gfluxm[j]);
 		f_tmp[j] += f_nowm[j];
 		/* artificial compression */
-	    	for (k = 0; k < 5; ++k)
-                    gflux_tmp[k] = 0.5*(sten_f[k][j] - maxeig[j]*sten_u[k][j]);
-                arti_compression(params,gfluxm[j],gflux_tmp,f_prevm[j],
-                            f_nowm[j],vecm[j],-1,c);
+	    	for(k = 0; k < 5; ++k)
+		    gflux_tmp[k] = 0.5*(sten_f[k][j] - maxeig[j]*sten_u[k][j]);
+		arti_compression(params,gfluxm[j],gflux_tmp,f_prevm[j],
+                                f_nowm[j],vecm[j],-1,c);
 		f_tmp[j] += c;
 		/* end of artificial compression */
 	    }
@@ -262,8 +262,8 @@ static void weno5_get_flux(
                 flux[j][i] = ff[j];
 		if (isnan(flux[j][i]))
 		{
-		    (void) printf("In weno5_get_flux(): flux[%d][%d] = %f\n",
-                                        j,i,flux[j][i]);
+		    (void) printf("In weno5_flux(): flux[%d][%d] = %f\n",j,i,
+					f[j][i]);
 		    for (k = 0; k < extend_size; ++k)
                         printf("u[%d] = %f %f %f %f %f\n",k,u_old[0][k],
 				u_old[1][k],u_old[2][k],u_old[3][k],
@@ -336,7 +336,7 @@ static void f2is(
 static void matmvec(
 	double *b, 
 	double L[5][5], 
-	std::vector<double> x)
+	double *x)
 {
     	int i, j;
 
@@ -351,8 +351,8 @@ static void matmvec(
 }
 
 static void u2f(
-	std::vector<double> u,
-        std::vector<double> &f)
+	double *u,
+        std::vector<double> f)
 {
 	double v = u[1]/u[0];
 
