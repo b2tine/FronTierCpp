@@ -130,7 +130,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_PLOTDECS_H)
 #define _PLOTDECS_H
 
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

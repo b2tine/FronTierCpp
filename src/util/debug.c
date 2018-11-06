@@ -103,7 +103,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 /* LINTLIBRARY */
 
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 #if !defined(MAX_NAMES)
 enum { MAX_NAMES = 50 };	/* Max Number of debugging names */

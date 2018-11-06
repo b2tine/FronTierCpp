@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 LOCAL	void	   fprint_FlowSpecifiedRegion_list(FILE*,Front*);
 LOCAL	void	   show_phys_curve_states(INTERFACE*);
 LOCAL	void	   show_states_at_point_on_tri(FILE*,int,TRI*,SURFACE*);
-#if defined(USE_HDF4)
+#if defined(HAVE_HDF4)
 LOCAL	int32	dfnt_size_float(void);
 LOCAL	long	fill_hdf_values1d(POINTER,Front*,HDF_plot_data*,double*,double*,
 				  double*,double*,int*);
@@ -69,16 +69,16 @@ LOCAL	void	hdf_plot_var3d(Front*,char*,char*,double*,COMPONENT,
 		double (*get_state_var)(Locstate),int,boolean);
 LOCAL 	void 	add_cut_frame(char*,char*,int,int,uint8*,double*,double,
 				double,double*,double*,boolean);
-#endif /* defined(USE_HDF4) */
+#endif /* defined(HAVE_HDF4) */
 LOCAL   void    show_front_gv(Front*,char*);
 LOCAL	void	gv_plot_var2d(Front*,char*,HDF_MOVIE_VAR*,int);
 
-#if defined(USE_GD)
+#if defined(HAVE_GD)
 LOCAL	void 	FrontGDMovie(char*,Front*);
 LOCAL	void 	FrontGDMovie1d(char*,Front*);
 LOCAL	void 	FrontGDMovie2d(char*,Front*);
 LOCAL	void 	gd_plot_var(INTERFACE*,char*,double,HDF_MOVIE_VAR*,int,boolean);
-#endif /* defined(USE_GD) */
+#endif /* defined(HAVE_GD) */
 LOCAL   void    xgraph_plot_var(INTERFACE*,char*,double,char*,double*, 
                 double (*get_state_var)(Locstate),int,boolean); /* for 1d */
 LOCAL 	void 	fprint_front_time_stamp(FILE*,Front*);
@@ -1340,7 +1340,7 @@ LOCAL	void show_front_hdf(
 	int dim = front->rect_grid->dim;
 
 	if (dim == 1) return;
-#if defined(USE_HDF4)
+#if defined(HAVE_HDF4)
 	/* Create HDF directory */
 	sprintf(dirname,"%s/hdf",out_name);
 	if (first && pp_mynode() == 0)
@@ -1384,7 +1384,7 @@ LOCAL	void show_front_hdf(
 		}
 	    }
 	}
-#endif /* defined(USE_HDF4) */
+#endif /* defined(HAVE_HDF4) */
 	first = NO;
 	return;
 }	/* end show_front_hdf */
@@ -1627,7 +1627,7 @@ LOCAL	void show_front_gd(
         int dim = front->rect_grid->dim;
 	static boolean first = YES;
 
-#if defined(USE_GD)
+#if defined(HAVE_GD)
 	if (dim > 2 || pp_numnodes() > 1) return; /* not for 1,3-D */
 						   /* not for parallel */
 	sprintf(dirname,"%s/gd",out_name);
@@ -1640,7 +1640,7 @@ LOCAL	void show_front_gd(
 	    }
 	}
 	FrontGDMovie(dirname,front);
-#endif /* defined(USE_GD) */
+#endif /* defined(HAVE_GD) */
 	first = NO;
 	return;
 }	/* end show_front_gd */
@@ -1679,7 +1679,7 @@ EXPORT  void show_front_output(
 	show_front_sdl(front,out_name);
 }       /* end show_front_output */
 
-#if defined(USE_HDF4)
+#if defined(HAVE_HDF4)
 EXPORT void plot_hdf_data(
 	POINTER		wave,
 	Front		*front,
@@ -2901,7 +2901,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    ic_index[k] = j + (pheight - i - 1)*pwidth;
 	    k++;
 	}
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if(pp_mynode() != 0)
 	{
 	    pp_send(hdf_comp_tag,(POINTER)&data_in_domain,sizeof(boolean),0);
@@ -2912,7 +2912,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    	pp_send(hdf_comp_tag,(POINTER)ic_index,size*sizeof(int),0);
 	    }
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	if(pp_mynode() == 0)
 	{
 	    uni_array(&pr_val,pwidth*pheight,sizeof(uint8));
@@ -2921,7 +2921,7 @@ LOCAL	void	hdf_plot_comp2d(
 	    	ic = ic_index[k];
 	    	pcomps[ic] = comps[k];
 	    }
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	    for (i = 1; i < pp_numnodes(); i++)
 	    {
 	        pp_recv(hdf_comp_tag,i,(POINTER)&data_in_domain,	
@@ -2939,7 +2939,7 @@ LOCAL	void	hdf_plot_comp2d(
 		    }
 		}
 	    }
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
             for (j = 0; j < pwidth; ++j)
             for (i = 0; i < pheight; ++i)
 	    {
@@ -2974,9 +2974,9 @@ LOCAL	void	hdf_plot_comp2d(
 	    front->hdf_comps[0] = pcomps;
 	else
 	    front->hdf_comps[0] = comps;
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	pp_gsync();
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	debug_print("HDF","Left plot_hdf_comp2d().\n");
 }	/* end plot_hdf_comp2d */
@@ -3030,10 +3030,10 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	debug_print("HDF","Entered hdf_plot_cross_sectional_comp().\n");
 
 	my_id = pp_mynode();
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	find_Cartesian_coordinates(my_id,pp_grid,my_ic);
 	if (my_ic[idir] != pp_grid->gmax[idir]/2) return;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	switch (idir)
 	{
 	case 0:
@@ -3119,19 +3119,19 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	}
 	sprintf(file_name,"%s/comp-%s.hdf",dirname,crx_suffix[idir]);
 	
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (my_id != io_node)
 	{
 	    pp_send(hdf_comp_tag,r_val,width*height*sizeof(uint8),io_node);
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	
 	if (my_id == io_node)
 	{
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 	        tmp2_val = r_val;
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	        find_Cartesian_coordinates(i,pp_grid,icoords);
 		if (icoords[idir] != pp_grid->gmax[idir]/2) continue;
 	        if (i != io_node)
@@ -3139,15 +3139,15 @@ LOCAL	void	hdf_plot_cross_sectional_comp(
 	            pp_recv(hdf_comp_tag,i,tmp_val,width*height*sizeof(uint8)); 
 	            tmp2_val = tmp_val;
 		}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	        for (j = 0; j < width; ++j)
 	        for (k = 0; k < height; ++k)
                 {
 		     index = j + (height - k - 1)*width;    
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
                      index = pwidth*(pheight - icoords[i2]*height - k - 1) 
 				+ icoords[i1]*width + j;   
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
                      index2= j + (height - k - 1)*width;
                    
 	             pr_val[index] = tmp2_val[index2];
@@ -3327,7 +3327,7 @@ LOCAL	void	hdf_plot_var2d(
 	    }
             k++;
 	}
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	pp_global_max(&max_val,1);
 	pp_global_min(&min_val,1);
         if(pp_mynode() != 0)
@@ -3340,7 +3340,7 @@ LOCAL	void	hdf_plot_var2d(
                 pp_send(hdf_comp_tag,(POINTER)var_val,size*sizeof(double),0);
             }
         }
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         if(pp_mynode() == 0)
         {
             for (k = 0; k < size; ++k)
@@ -3348,7 +3348,7 @@ LOCAL	void	hdf_plot_var2d(
             	ic = ic_index[k];
             	pvar_val[ic] = var_val[k];
             }
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
             for (i = 1; i < pp_numnodes(); i++)
             {
                 pp_recv(hdf_comp_tag,i,(POINTER)&data_in_domain,
@@ -3366,7 +3366,7 @@ LOCAL	void	hdf_plot_var2d(
                     }
                 }
             }
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	    if (debugging("hdf"))
 	    {
 	    	printf("Maximum value: %f at (%d,%d)\n",max_val,
@@ -3429,9 +3429,9 @@ LOCAL	void	hdf_plot_var2d(
 	    else
             	(void) DFR8addimage(file_name,pr_val,pwidth,pheight,COMP_NONE);
 	}
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	pp_gsync();
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("hdf"))
 	    (void) printf("Left hdf_plot_var2d()\n\n");
@@ -3482,10 +3482,10 @@ LOCAL	void	hdf_plot_var3d(
 
 	debug_print("HDF","Entered hdf_plot_var3d().\n");
         my_id = pp_mynode();
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
         find_Cartesian_coordinates(my_id,pp_grid,my_ic);
         if (my_ic[idir] != pp_grid->gmax[idir]/2) return;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
         switch (idir)
         {
         case 0:
@@ -3547,7 +3547,7 @@ LOCAL	void	hdf_plot_var3d(
 	    if (var_val[k] < min_val) min_val = var_val[k];
 	    if (var_val[k] > max_val) max_val = var_val[k];
 	}
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	ext_val[0] = min_val;
 	ext_val[1] = max_val;
 	for (i = 0; i < pp_numnodes(); i++)
@@ -3564,7 +3564,7 @@ LOCAL	void	hdf_plot_var3d(
 	    if (min_val > ext_val[0]) min_val = ext_val[0];
 	    if (max_val < ext_val[1]) max_val = ext_val[1];
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	vrng = max_val - min_val;
 
@@ -3592,18 +3592,18 @@ LOCAL	void	hdf_plot_var3d(
 	}
 	sprintf(file_name,"%s/%s.hdf",dirname,var_name);
 	
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (my_id != io_node)
 	{
 	    pp_send(hdf_comp_tag, r_val,width*height*sizeof(uint8),io_node);
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	
 	if (my_id == io_node)
 	{
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	        find_Cartesian_coordinates(i,pp_grid,icoords);
 		if (icoords[idir] != pp_grid->gmax[idir]/2) continue;
 	        if (i != io_node)
@@ -3611,17 +3611,17 @@ LOCAL	void	hdf_plot_var3d(
 	            pp_recv(hdf_comp_tag,i,tmp_val, width*height*sizeof(uint8)); 
 		}
 	        tmp2_val = tmp_val;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	        if(i == io_node)
 	            tmp2_val = r_val;
 	        for (j = 0; j < width; ++j)
 	        for (k = 0; k < height; ++k)
                 {
 		    index = j + (height - k - 1)*width;    
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
                     index = pwidth*(pheight - icoords[i2]*height - k - 1) + 
 				icoords[i1]*width + j;   
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
                      index2= j +(height-k-1)*width;
                    
 	            pr_val[index] = tmp2_val[index2];
@@ -3638,7 +3638,7 @@ LOCAL	void	hdf_plot_var3d(
 	free_these(2,var_val,r_val);
 	debug_print("HDF","Left hdf_plot_var3d()\n");
 }	/* end hdf_plot_var3d */
-#endif /* defined(USE_HDF4) */
+#endif /* defined(HAVE_HDF4) */
 
 LOCAL 	void fprint_front_time_stamp(
 	FILE *file,
@@ -3652,7 +3652,7 @@ LOCAL 	void fprint_front_time_stamp(
                        front->time,front->step,front->dt);	
 }	/* end fprint_front_time_stamp */
 
-#if defined(USE_GD)
+#if defined(HAVE_GD)
 LOCAL	void FrontGDMovie(
 	char *dirname,
 	Front *front)
@@ -3853,7 +3853,7 @@ LOCAL	void FrontGDMovie2d(
 			front->resolution_level,plot_bullet);
 	delete_interface(copy_intfc);
 }	/* end FrontGDMovie2d */
-#endif /* defined(USE_GD) */
+#endif /* defined(HAVE_GD) */
 
 LOCAL void vtk_plot_vector_field(
 	const char *dname,

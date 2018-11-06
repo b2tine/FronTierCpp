@@ -1,6 +1,8 @@
 #ifndef FRONTIER_H
 #define FRONTIER_H
 
-#include "front/fdecs.h"
+#include <config.h>
+
+#include <front/fdecs.h>
 
 #endif

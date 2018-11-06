@@ -33,8 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	version of these functions.
 */
 
-#include <cdecs.h>
-#include <vmalloc.h>
+#include <util/cdecs.h>
+#include <util/vmalloc.h>
 
 /* LOCAL function prototypes */
 LOCAL	double dnlft(int,int,double,double*);

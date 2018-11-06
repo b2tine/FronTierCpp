@@ -2255,7 +2255,6 @@ EXPORT	int	linking_tris_of_outer_loops(
 	    for (i = 0; i < num_tris; i++)
 		Tri_order(null_tris[i]) = 1;
 	    num_loops++;
-	    printf("num_tris = %d\n",num_tris);
 	}
 	if (num_loops != 2) 
 	    return 0;
@@ -2727,7 +2726,7 @@ LOCAL	void	seal_null_loop_with_triangulation(
 	    p1 = Point_of_tri(in_tri)[Next_m3(nside)];
 	    p2 = Point_of_tri(base_tri)[Next_m3(side)];
 	    
-	    apply_pt_constraint(p0, p1, p2, in_tri);
+	    //apply_pt_constraint(p0, p1, p2, in_tri);
 
 	    new_tri = make_tri(p0,p1,p2,NULL,NULL,NULL,NO);
 	    seal_tris[*nstris] = new_tri;

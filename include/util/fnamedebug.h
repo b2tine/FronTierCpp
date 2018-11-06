@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #if !defined(_FNAMEDEBUG_H)
 #define _FNAMEDEBUG_H
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 #if defined(IGNORE_ERRORS)
 #define	Check_return(func,fname)					\
@@ -59,6 +59,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define	DEBUG		NO
 #endif /* defined(DEBUG_STRING) */
 
-#include <navdecs.h>
+#include <util/navdecs.h>
 
 #endif /* !defined(_FNAMEDEBUG_H) */

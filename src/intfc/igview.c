@@ -30,8 +30,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include <iloc.h>
-#include <cdecs.h>
+#include <intfc/iloc.h>
+#include <util/cdecs.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -92,7 +92,7 @@ LOCAL	void 	tecplot_surface_in_box(const char*,int*,int*,SURFACE*,FILE*);
 LOCAL   void    gview_plot_intfc2d(const char*,const char*, INTERFACE*, 
 				RECT_GRID*);
 /*For GD Movie plots */
-#if defined(USE_GD)
+#if defined(HAVE_GD)
 LOCAL   void    mkImg(int, int*, int*);
 LOCAL   void    initialize_image(gdImagePtr, const char*, int, int);
 LOCAL   void    freecolors();
@@ -100,7 +100,7 @@ LOCAL   void    setcolors(gdImagePtr, int);
 LOCAL   double   xtransform(double);
 LOCAL   double   ytransform(double);
 LOCAL   int     getcolor(int);
-#endif /* if defined(USE_GD) */
+#endif /* if defined(HAVE_GD) */
 
 EXPORT void geomview_intfc_plot2d(
         const char    *dname,
@@ -4550,7 +4550,7 @@ LOCAL   void    vtk_plot_curves3d(
 
 /* END NEW VTK */
 
-#if defined (USE_GD)
+#if defined (HAVE_GD)
 
 /* 1D data plotter using GD graphics library
  * By Ryan Kaufman
@@ -5077,10 +5077,10 @@ EXPORT void gd_2d_intfc(
 	static int current_max_num_points = 0;
 	static double *x,*y;
 
-#if defined USE_MPI
+#if defined HAVE_MPI
 	if (pp_mynode() != 0) 
 	    goto make_frame;
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	if (first) 
 	    first = NO;
 	else 
@@ -5155,9 +5155,9 @@ make_frame:
 	    num_curves++;
 	}
 	if (num_curves == 0) return;
-#if defined USE_MPI
+#if defined HAVE_MPI
 	pp_global_imax(&max_num_points,1);
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	if (current_max_num_points < max_num_points)
 	{
 	    if (x != NULL) free_these(2,x,y);
@@ -5165,12 +5165,12 @@ make_frame:
 	    uni_array(&y,max_num_points,FLOAT);
 	    current_max_num_points = max_num_points;
 	}
-#if defined USE_MPI
+#if defined HAVE_MPI
 	if (pp_mynode() != 0)
 	{
 	    pp_send(10,(POINTER)&num_curves,INT,0);
 	}
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (is_bdry(*c)) continue;
@@ -5184,7 +5184,7 @@ make_frame:
 	    x[num_points] = Coords((*c)->last->end)[0];
 	    y[num_points] = Coords((*c)->last->end)[1];
 	    num_points++;
-#if defined USE_MPI
+#if defined HAVE_MPI
 	    if (pp_mynode() != 0)
 	    {
 		pp_send(10,(POINTER)&num_points,INT,0);
@@ -5192,10 +5192,10 @@ make_frame:
 		pp_send(10,(POINTER)y,num_points*FLOAT,0);
 	    }
 	    else
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	    	gd_plotdata(num_points,x,y);
 	}
-#if defined USE_MPI
+#if defined HAVE_MPI
 	if (pp_mynode() == 0)
 	{
 	    for (i = 1; i < pp_numnodes(); ++i)
@@ -5209,14 +5209,14 @@ make_frame:
 	    	    gd_plotdata(num_points,x,y);
 	    	}
 	    }
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	    gd_plotframe(label);
 	    fflush(PLOT_DATA.gifout);
-#if defined USE_MPI
+#if defined HAVE_MPI
 	}
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 }	/* end gd_2d_intfc */
-#endif /* if defined(USE_GD) */
+#endif /* if defined(HAVE_GD) */
 
 EXPORT void sdl_interface_plot(
 	const char *dname,
@@ -5934,3 +5934,4 @@ EXPORT	void gview_show_box_tri(
 	(void) fprintf(file,"%s}\n",indent);
 	(void) fprintf(file,"}\n");
 }	/* end gview_show_box_tri */
+

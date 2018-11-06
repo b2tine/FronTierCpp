@@ -43,6 +43,7 @@ LOCAL	boolean 	install_bdry_objects(INTERFACE*,NODE****,CURVE****,
 			SURFACE***,RECT_GRID*,RECT_GRID*);
 LOCAL   void    stitch_curves_of_blk(int*,BLK_TRI****,CURVE**,int);
 LOCAL 	void 	adjust_corner_bond_btris(CURVE*);
+LOCAL   void    offset_bdry_faces(INTERFACE*,RECT_GRID*,SURFACE***);
 LOCAL	boolean 	is_positive_bdry_curve(int,int,int,NODE*,NODE*);
 LOCAL   boolean    face_crx_in_dir(double (*func1)(POINTER,double*),POINTER,
                         double (*func2)(POINTER,double*),POINTER,
@@ -201,6 +202,7 @@ EXPORT	boolean make_bdry_surfaces(
 		adjust_corner_bond_btris(edges[i][j][k]);
 	}
 	reset_intfc_num_points(intfc);
+        offset_bdry_faces(intfc,rgr,faces);
 
 	free_grid_crx_mem(&Eg_crx,YES);
 	free_these(4,Eg_crx.comp,corners,edges,faces);
@@ -5377,3 +5379,39 @@ EXPORT  double platform_func(
         return arg;
 
 }       /*end platform_func*/
+
+LOCAL   void offset_bdry_faces(
+        INTERFACE *intfc,
+        RECT_GRID *rgr,
+        SURFACE ***faces)
+{
+        int i,j,k,dim = Dimension(intfc);
+        TRI *tri;
+        POINT *p;
+        double tol = 0.00000001;
+        double *h = rgr->h;
+
+        printf("Entering offset_bdry_faces()\n");
+        for (i = 0; i < dim; ++i)
+        {
+            for (j = 0; j < 2; ++j)
+            {
+                if (faces[i][j] == NULL)
+                    continue;
+                reset_surface_points(faces[i][j]);
+                surf_tri_loop(faces[i][j],tri)
+                {
+                    for (k = 0; k < 3; ++k)
+                    {
+                        p = Point_of_tri(tri)[k];
+                        if (sorted(p)) continue;
+                        if (j == 0)
+                            Coords(p)[i] -= tol*h[i];
+                        else
+                            Coords(p)[i] += tol*h[i];
+                        sorted(p) = YES;
+                    }
+                }
+            }
+        }
+}       /* end offset_bdry_faces */

@@ -27,8 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Contains routines for the evalution of definite integrals.
 */
 
-#include <cdecs.h>
-#include <vmalloc.h>
+#include <util/cdecs.h>
+#include <util/vmalloc.h>
 
 LOCAL	const double TINY = 5e-29;
 

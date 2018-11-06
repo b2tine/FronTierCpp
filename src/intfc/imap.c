@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <int.h>		/* includes int.h, table.h */
+#include <intfc/int.h>		/* includes int.h, table.h */
 
 LOCAL boolean curve_of_boundary_hs(CURVE*);
 LOCAL void change_vertex_of_tris(POINT*,TRI*,POINT*);

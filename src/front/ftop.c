@@ -1721,7 +1721,7 @@ EXPORT   boolean  cross_rect_grid_bdry(
         return NO;
 }       /* end cross_rect_grid_bdry */
 
-#include <plotdecs.h>
+#include <util/plotdecs.h>
 
 EXPORT	void f_fset_hyper_surf_color(
 	FILE       *file,

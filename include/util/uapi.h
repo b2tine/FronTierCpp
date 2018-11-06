@@ -29,7 +29,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 /*! \defgroup SAMPLE   Sampling Functions
  **/
 
-#include <cdecs.h>
+#ifndef UAPI_H
+#define UAPI_H
+
+#include <util/cdecs.h>
 
                 /* Utility Function Prototypes*/
 
@@ -42,4 +45,6 @@ extern "C" {
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
+#endif
+
 #endif

@@ -255,9 +255,7 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[1]._consistent_interface = i_consistent_interface;
 	    User_hooks[2].size_bond_tri = sizeof(BOND_TRI);
 	    User_hooks[2].size_tri = sizeof(TRI);
-	    if (debugging("MinTStor"))
-	        set_tri_storage_type(MIN_TRI_STORAGE);
-	    else if (debugging("FullTGeo"))
+	    if (debugging("FullTGeo"))
 	        set_tri_storage_type(FULL_TRI_GEOMETRY);
 	    else
 	        set_tri_storage_type(TRI_PLUS_NORMAL);

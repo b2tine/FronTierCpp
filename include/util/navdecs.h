@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #if !defined(_NAVDECS_H)
 #define _NAVDECS_H
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 #if defined(NAVIGATOR)
 

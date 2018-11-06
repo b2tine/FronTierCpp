@@ -148,7 +148,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* LINTLIBRARY */
 
 
-#include <cdecs.h>
+#include <util/cdecs.h>
 #include <stdarg.h>
 #include <sys/types.h>
 #include <malloc.h>
@@ -257,7 +257,6 @@ EXPORT POINTER array_T(
 	size_t          naligns;
 	ALLOC_HEADER	*h;
 
-    /*
 #if defined(_SGI_SOURCE) && !defined(__GNUC__) && !defined(SPEEDSHOP)
 	{
 	    static boolean first = YES;
@@ -268,8 +267,7 @@ EXPORT POINTER array_T(
 	    	mallopt(M_FREEHD,1);
 	    }
 	}
-#endif // defined(_SGI_SOURCE) && !defined(__GNUC__) && !defined(SPEEDSHOP)
-    */
+#endif /* defined(_SGI_SOURCE) && !defined(__GNUC__) && !defined(SPEEDSHOP) */
 
 	if (vmalloc_debug_on)
 	{

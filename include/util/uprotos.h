@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_UPROTOS_H)
 #define _UPROTOS_H
 
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -172,12 +172,12 @@ IMPORT	void	u_pp_recv_any(int,POINTER,size_t,const char*,int);
 IMPORT	void	u_pp_send(int,POINTER,size_t,int,const char*,int);
 IMPORT	void	u_pp_send_all(int,POINTER,size_t,const char*,int);
 IMPORT  void    u_pp_bcast(int,POINTER,size_t,const char*,int);
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 IMPORT	boolean pp_test(MPI_Request*);
 IMPORT	void	pp_wait(MPI_Request*);
 IMPORT	void	u_pp_irecv(int,int,POINTER,size_t,MPI_Request*,const char*,int);
 IMPORT	void	u_pp_isend(int,POINTER,size_t,int,MPI_Request*,const char*,int);
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 IMPORT  void    set_num_of_thread(int);
 IMPORT  int     get_num_of_thread();
 
@@ -348,6 +348,6 @@ FORTRAN  void FORTRAN_NAME(splev)(double*,int*,double*,int*,double*,double*,
 }
 #endif
 
-#include <uapi.h>
+#include <util/uapi.h>
 
 #endif /* !defined(_UPROTOS_H) */

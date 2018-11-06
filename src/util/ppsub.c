@@ -90,8 +90,8 @@ ENVIRONMENT
 
 #define	DEBUG_STRING	"ppsub"
 
-#include <cdecs.h>
-#include <vmalloc.h>
+#include <util/cdecs.h>
+#include <util/vmalloc.h>
 
 EXPORT	boolean	allow_pp_comm = YES;
 
@@ -101,7 +101,7 @@ EXPORT	boolean	allow_pp_comm = YES;
 
 	/* LOCAL Function Prototypes */
 LOCAL	void	pp_okay_to_proceed(const char*,const char*);
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 LOCAL	double	*float_work_vector(size_t);
 LOCAL	int	*int_work_vector(size_t);
 LOCAL	long	*long_work_vector(size_t);
@@ -114,7 +114,7 @@ LOCAL   MPI_Comm FronTier_COMM;
 #pragma	inline	float_work_vector
 #endif /*!defined(__INTEL_COMPILER)*/
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 LOCAL	void	pp_okay_to_proceed(
 	const char *fn,
@@ -135,7 +135,7 @@ EXPORT	int	pp_init(
 		char	***argv)
 {
 	static	int status = 0;
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	static	boolean first = YES;
 
 	if (first == YES)
@@ -150,19 +150,19 @@ EXPORT	int	pp_init(
 	    }
 	    FronTier_COMM = MPI_COMM_WORLD;
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	return status;
 }		/*end pp_init*/
 
 EXPORT	int	pp_finalize(void)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	int status = MPI_SUCCESS;
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 	int status = 0;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
-#if defined(USE_MPI) && !defined(_CRAYMPP)
+#if defined(HAVE_MPI) && !defined(_CRAYMPP)
 	{
 	    int flag;
 	    status = MPI_Initialized(&flag);
@@ -175,7 +175,7 @@ EXPORT	int	pp_finalize(void)
 	    if (flag)
 	    	return MPI_Finalize();
 	}
-#endif /* defined(USE_MPI) && !defined(_CRAYMPP) */
+#endif /* defined(HAVE_MPI) && !defined(_CRAYMPP) */
 	return status;
 }		/*end pp_finalize*/
 
@@ -196,7 +196,7 @@ EXPORT	int	pp_finalize(void)
 EXPORT	int	pp_mynode(void)
 {
 	static int me = 0;
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	int mpi_return_status = MPI_Comm_rank(FronTier_COMM,&me);
 	if (mpi_return_status != MPI_SUCCESS)
 	{
@@ -204,7 +204,7 @@ EXPORT	int	pp_mynode(void)
 	           "mpi_return_status = %d\n",mpi_return_status);
 	    clean_up(ERROR);
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	return me;
 }		/*end pp_mynode*/
 
@@ -212,7 +212,7 @@ EXPORT	int	pp_mynode(void)
 EXPORT	int	pp_numnodes(void)
 {
 	static int n = 1;
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	int mpi_return_status = MPI_Comm_size(FronTier_COMM,&n);
 	if (mpi_return_status != MPI_SUCCESS)
 	{
@@ -220,7 +220,7 @@ EXPORT	int	pp_numnodes(void)
 	           "mpi_return_status = %d\n",mpi_return_status);
 	    clean_up(ERROR);
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	return n;
 }		/*end pp_numnodes*/
 
@@ -232,28 +232,28 @@ EXPORT	int	pp_numnodes(void)
 *	from "node" with process ID "pid" synchronously
 */
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 LOCAL	size_t MSG_BUF_SIZE = 100000000;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*ARGSUSED*/
 EXPORT	void	set_MSG_BUF_SIZE(
 	size_t	new_MSG_BUF_SIZE)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	MSG_BUF_SIZE = new_MSG_BUF_SIZE;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end MSG_BUF_SIZE*/
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 static	byte	*msg_buf = NULL;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*ARGSUSED*/
 EXPORT	void	EnsureSufficientMessageBufferSize(
 	size_t	min_MSG_BUF_SIZE)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	int size;
 	int mpi_return_status;
 
@@ -275,7 +275,7 @@ EXPORT	void	EnsureSufficientMessageBufferSize(
 	    	       "mpi_return_status = %d\n",mpi_return_status);
 	    clean_up(ERROR);
 	}
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end EnsureSufficientMessageBufferSize*/
 
 /*ARGSUSED*/
@@ -287,9 +287,9 @@ EXPORT	void	u_pp_send(
 	const char *file,
 	int	   line)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	int	mpi_return_status;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    start_clock("pp_send");
@@ -303,7 +303,7 @@ EXPORT	void	u_pp_send(
 
 	pp_okay_to_proceed("u_pp_send","no message sent");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	if (msg_buf == NULL)
 	{
@@ -330,11 +330,11 @@ EXPORT	void	u_pp_send(
 	    clean_up(ERROR);
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("u_pp_send","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_send");
@@ -376,7 +376,7 @@ EXPORT	void	u_pp_send_all(
 
 	pp_okay_to_proceed("u_pp_send_all","no message sent");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int i, n;
@@ -387,7 +387,7 @@ EXPORT	void	u_pp_send_all(
 	    	pp_send(tag,buf,len,i);
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_send_all");
@@ -426,7 +426,7 @@ EXPORT	void	u_pp_recv(
 
 	pp_okay_to_proceed("u_pp_recv","no message received");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    MPI_Status status;
@@ -434,11 +434,11 @@ EXPORT	void	u_pp_recv(
 				  FronTier_COMM,&status,file,line);
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("u_pp_recv","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_recv");
@@ -478,7 +478,7 @@ EXPORT	void	u_pp_recv_any(
 
 	pp_okay_to_proceed("u_pp_recv_any","no message received");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    MPI_Status status;
@@ -486,11 +486,11 @@ EXPORT	void	u_pp_recv_any(
 	    		          FronTier_COMM,&status,file,line);
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("u_pp_recv_any","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	DEBUG_LEAVE(u_pp_recv_any)
 	if (debugging("pp_clock"))
@@ -514,7 +514,7 @@ EXPORT	void	u_pp_all_gather(
 	if (DEBUG)
 	    (void) printf("File %s, line %d\n",file,line);
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int mpi_return_status;
@@ -536,11 +536,11 @@ EXPORT	void	u_pp_all_gather(
 	    }
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("u_pp_all_gather","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_all_gather");
@@ -559,7 +559,7 @@ EXPORT	boolean	pp_iprobe(
 	    start_clock("pp_iprobe");
 	pp_okay_to_proceed("pp_iprobe","no checking for messages performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    MPI_Status status;
@@ -573,11 +573,11 @@ EXPORT	boolean	pp_iprobe(
 	    }
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_iprobe","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	DEBUG_LEAVE(pp_iprobe)
 	if (debugging("pp_clock"))
@@ -597,7 +597,7 @@ EXPORT	boolean	pp_iprobe_any(
 	pp_okay_to_proceed("pp_iprobe_any",
 			   "no checking for messages performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    MPI_Status status;
@@ -612,11 +612,11 @@ EXPORT	boolean	pp_iprobe_any(
 	    }
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_iprobe_any","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_iprobe_any");
@@ -635,7 +635,7 @@ EXPORT	void	pp_global_ior(
 	    start_clock("pp_global_ior");
 	pp_okay_to_proceed("pp_global_ior","no operation performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int	*iwork = int_work_vector((size_t)n);
@@ -659,11 +659,11 @@ EXPORT	void	pp_global_ior(
 	    	x[i] = iwork[i];
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_global_ior","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_ior");
@@ -681,7 +681,7 @@ EXPORT	void	pp_global_lor(
 	    start_clock("pp_global_lor");
 	pp_okay_to_proceed("pp_global_lor","no operation performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    long	*lwork = long_work_vector((size_t)n);
@@ -705,11 +705,11 @@ EXPORT	void	pp_global_lor(
 	    	x[i] = lwork[i];
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_global_lor","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_lor");
@@ -728,7 +728,7 @@ EXPORT	void	pp_global_isum(
 	    start_clock("pp_global_isum");
 	pp_okay_to_proceed("pp_global_isum","no summation performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int	*iwork = int_work_vector((size_t)n);
@@ -752,7 +752,7 @@ EXPORT	void	pp_global_isum(
 	    	x[i] = iwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_isum");
@@ -770,7 +770,7 @@ EXPORT	void	pp_global_lsum(
 	    start_clock("pp_global_lsum");
 	pp_okay_to_proceed("pp_global_lsum","no summation performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    long	*lwork = long_work_vector((size_t)n);
@@ -795,16 +795,16 @@ EXPORT	void	pp_global_lsum(
 	    	x[i] = lwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_lsum");
 	DEBUG_LEAVE(pp_global_lsum)
 }		/*end pp_global_lsum*/
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 #    define MPI_FLOAT_OR_DOUBLE MPI_DOUBLE
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 
 /*ARGSUSED*/
@@ -818,7 +818,7 @@ EXPORT	void	pp_global_sum(
 	    start_clock("pp_global_sum");
 	pp_okay_to_proceed("pp_global_sum","no summation performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    double	*fwork = float_work_vector((size_t)n);
@@ -843,7 +843,7 @@ EXPORT	void	pp_global_sum(
 	    	x[i] = fwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_sum");
@@ -861,7 +861,7 @@ EXPORT	void	pp_global_imax(
 	    start_clock("pp_global_imax");
 	pp_okay_to_proceed("pp_global_imax","maximum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int	*iwork = int_work_vector((size_t)n);
@@ -885,7 +885,7 @@ EXPORT	void	pp_global_imax(
 		x[i] = iwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_imax");
@@ -903,7 +903,7 @@ EXPORT	void	pp_global_lmax(
 	    start_clock("pp_global_lmax");
 	pp_okay_to_proceed("pp_global_lmax","maximum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    long	*lwork = long_work_vector((size_t)n);
@@ -927,7 +927,7 @@ EXPORT	void	pp_global_lmax(
 	    	x[i] = lwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_lmax");
@@ -946,7 +946,7 @@ EXPORT	void	pp_global_max(
 	    start_clock("pp_global_max");
 	pp_okay_to_proceed("pp_global_max","maximum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    double	*fwork = float_work_vector((size_t)n);
@@ -971,7 +971,7 @@ EXPORT	void	pp_global_max(
 		x[i] = fwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_max");
@@ -989,7 +989,7 @@ EXPORT	void	pp_global_imin(
 	    start_clock("pp_global_imin");
 	pp_okay_to_proceed("pp_global_imin","minimum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int	*iwork = int_work_vector((size_t)n);
@@ -1013,7 +1013,7 @@ EXPORT	void	pp_global_imin(
 		x[i] = iwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_imin");
@@ -1031,7 +1031,7 @@ EXPORT	void	pp_global_lmin(
 	    start_clock("pp_global_lmin");
 	pp_okay_to_proceed("pp_global_lmin","minimum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    long	*lwork = long_work_vector((size_t)n);
@@ -1055,7 +1055,7 @@ EXPORT	void	pp_global_lmin(
 		x[i] = lwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_lmin");
@@ -1075,7 +1075,7 @@ EXPORT	void	pp_global_min(
 	    start_clock("pp_global_min");
 	pp_okay_to_proceed("pp_global_min","minimum not computed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    double	*fwork = float_work_vector((size_t)n);
@@ -1100,7 +1100,7 @@ EXPORT	void	pp_global_min(
 		x[i] = fwork[i];
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_min");
@@ -1117,7 +1117,7 @@ EXPORT	void	pp_gsync(void)
 	    start_clock("pp_gsync");
 	pp_okay_to_proceed("pp_gsync","no synchronization performed");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int mpi_return_status = MPI_Barrier(FronTier_COMM);
@@ -1130,49 +1130,49 @@ EXPORT	void	pp_gsync(void)
 	    }
 	}
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_gsync");
 	DEBUG_LEAVE(pp_gsync)
 }		/*end pp_gsync*/
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 LOCAL	unsigned	recv_wait_interval = 1;
 LOCAL	unsigned	recv_num_retries = 60;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*ARGSUSED*/
 EXPORT	void	set_pp_recv_wait_interval(
 	unsigned	new_recv_wait_interval)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	recv_wait_interval = new_recv_wait_interval;
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end set_pp_recv_wait_interval*/
 
 /*ARGSUSED*/
 EXPORT	void	set_pp_recv_num_retries(
 	unsigned	new_recv_num_retries)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	recv_num_retries = new_recv_num_retries;
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end set_pp_recv_num_retries*/
 
 /*ARGSUSED*/
 EXPORT	void	set_pp_recv_timeout(
 	unsigned	recv_timeout)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	recv_wait_interval = recv_timeout/recv_num_retries;
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end set_pp_recv_timeout*/
 
 EXPORT	boolean	pp_global_status(
@@ -1183,7 +1183,7 @@ EXPORT	boolean	pp_global_status(
 
 	if (debugging("pp_clock"))
 	    start_clock("pp_global_status");
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    boolean        ostatus;
@@ -1214,11 +1214,11 @@ EXPORT	boolean	pp_global_status(
 	    status = ostatus;
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_global_status","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_global_status");
@@ -1230,9 +1230,9 @@ EXPORT	void pp_abort(
 	int	error,
 	boolean dump_core)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	(void) MPI_Abort(FronTier_COMM,error);
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 	if (dump_core == YES)
 	{
 	    (void) fflush(stdout);
@@ -1240,11 +1240,11 @@ EXPORT	void pp_abort(
 	}
 	else
 	    exit(error);
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }		/*end pp_abort*/
 	
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 static	void	*work = NULL;
 static	size_t	work_len = 0;
 typedef union _FLI {double f;long l;int i;} FLI;
@@ -1371,13 +1371,13 @@ LOCAL	int	mpi_timed_recv(
 	clean_up(ERROR);
 	return MPI_ERR_OTHER;
 }		/*end mpi_timed_recv*/
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*ARGSUSED*/
 EXPORT   int     pp_comm_split(
 	int size)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	MPI_Comm in_comm = FronTier_COMM;
 	int             status = MPI_SUCCESS;
 	int             me, in_comm_size;
@@ -1415,9 +1415,9 @@ EXPORT   int     pp_comm_split(
 	    clean_up(ERROR);
 	}
 	return status;
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 	return 0;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 }               /*end pp_comm_split*/
 
 EXPORT	boolean	pp_min_status(
@@ -1452,7 +1452,7 @@ EXPORT	boolean	pp_max_status(
 	}
 }		/*end pp_max_status*/
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 /*ARGSUSED*/
 EXPORT	void	u_pp_isend(
@@ -1574,7 +1574,7 @@ EXPORT	boolean pp_test(
 	return (flag) ? YES : NO;
 }		/*end pp_test*/
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 /*
 *				u_pp_bcast():
@@ -1591,9 +1591,9 @@ EXPORT	void	u_pp_bcast(
 	const char *file,
 	int	   line)
 {
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
         int         mpi_return_status;
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	DEBUG_ENTER(u_pp_bcast)
 	if (debugging("pp_clock"))
@@ -1607,7 +1607,7 @@ EXPORT	void	u_pp_bcast(
 
 	pp_okay_to_proceed("u_pp_bcast","no message received");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
         mpi_return_status = MPI_Bcast(buf,(int)len,MPI_BYTE,root,FronTier_COMM);
 
@@ -1618,11 +1618,11 @@ EXPORT	void	u_pp_bcast(
             clean_up(ERROR);
         }
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("u_pp_bcast","scalar mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_bcast");
@@ -1642,7 +1642,7 @@ EXPORT	void	pp_f_allgatherv(
 	if (debugging("pp_clock"))
 	    start_clock("pp_f_allgatherv");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int  mpi_return_status, i;
@@ -1681,11 +1681,11 @@ EXPORT	void	pp_f_allgatherv(
 	    }
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_f_allgatherv","non-MPI mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_f_allgatherv");
@@ -1705,7 +1705,7 @@ EXPORT	void	pp_l_allgather(
 	if (debugging("pp_clock"))
 	    start_clock("pp_l_allgather");
 
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 
 	{
 	    int mpi_return_status;
@@ -1727,11 +1727,11 @@ EXPORT	void	pp_l_allgather(
 	    }
 	}
 
-#else /* defined(USE_MPI) */
+#else /* defined(HAVE_MPI) */
 
 	COMMAND_NOT_IMPLEMENTED("pp_l_allgather","non-MPI mode");
 
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
 	if (debugging("pp_clock"))
 	    stop_clock("pp_l_allgather");

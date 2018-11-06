@@ -2,14 +2,14 @@
 #define ITAPS
 #endif
 
-#include <iBase.h>
-#include <iMesh.h>
-#include <iGeom.h>
-#include <iRel.h>
+#include <intfc/iBase.h>
+#include <intfc/iMesh.h>
+#include <intfc/iGeom.h>
+#include <intfc/iRel.h>
 
-#ifdef USE_MPI
-#include <iMeshP.h>
-#endif
+#if defined HAVE_MPI
+#include <intfc/iMeshP.h>
+#endif /* defined HAVE_MPI */
 
 
 struct _FTMESH

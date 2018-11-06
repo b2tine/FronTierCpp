@@ -29,8 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *  	the dimensions are not powers of 2
 */
 
-#include <cdecs.h>
-#include <vmalloc.h>
+#include <util/cdecs.h>
+#include <util/vmalloc.h>
 
 EXPORT boolean fft2d(
 	COMPLEX **c,

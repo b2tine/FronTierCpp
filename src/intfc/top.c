@@ -1982,7 +1982,7 @@ EXPORT	void print_int_vector(
 
 
 #define NOBINARY
-#include <plotdecs.h>
+#include <util/plotdecs.h>
 
 #undef PLOTFILE
 #define PLOTFILE plotfile

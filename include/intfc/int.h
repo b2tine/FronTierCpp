@@ -33,9 +33,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if !defined(_INT_H)
 #define _INT_H
 
-#include <geom.h>
+#include <intfc/geom.h>
 #ifdef IMESH
-#include <iTaps.h>
+#include <intfc/iTaps.h>
 #endif /*def IMESH */
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -239,7 +239,6 @@ union _TRI_NEIGHBOR
 typedef union  _TRI_NEIGHBOR TRI_NEIGHBOR;
 
 enum _TRI_STORAGE_TYPE {
-	MIN_TRI_STORAGE   = 0x001,
 	TRI_PLUS_NORMAL   = 0x010,
 	FULL_TRI_GEOMETRY = 0x100
 };
@@ -466,36 +465,35 @@ struct _INTERFACE
 	struct _SURFACE **surfaces;	/* Pointer to Set of Surfaces */
 	struct _C_CURVE **c_curves;	/* c_curves on interface */
 
-	int	dim;		/* Dimension of Embedding Space */
-	int	num_points;	/* Total from curves */
-	long max_point_gindex;
-	long max_curve_gindex;
-	long max_surf_gindex;
+	int		dim;		/* Dimension of Imbedding Space */
+	int		num_points;	/* Total from curves */
+	long		max_point_gindex;
+	long		max_curve_gindex;
+	long		max_surf_gindex;
 
 	/* Internal Variables: */
 	struct Table	*table;	/* Pointer to Interface Table */
 	boolean	modified;	/* Interface Recently Modified */
 	boolean	normal_unset;	/* Normal unset since last modify */
 	boolean	curvature_unset;/* Curvature unset since last modify */
-	boolean _interface_reconstructed;
-	boolean _static_mesh; /* No remeshing */
-	
-    int	rect_bdry_type[MAXD][2];
-	COMPONENT elliptic_comp;	/* component of elliptic region */
-	COMPONENT default_comp;	/* for subdomain with no surf */
+	boolean            _interface_reconstructed;
+	boolean            _static_mesh; /* No remeshing */
+	int		rect_bdry_type[MAXD][2];
+	COMPONENT	elliptic_comp;	/* component of elliptic region */
+	COMPONENT	default_comp;	/* for subdomain with no surf */
 	struct _INTERFACE  *prev_interf;
-	POINTER	e_comps;
-	struct _TRI	**point_tri_store;
-	struct _TRI **point_tri_store_rgb;
+	POINTER		e_comps;
+	struct	_TRI	**point_tri_store;
+	struct  _TRI    **point_tri_store_rgb;
 };
 typedef struct _INTERFACE INTERFACE;
 
 #define interface_reconstructed(intfc) ((intfc)->_interface_reconstructed)
 #define static_mesh(intfc) ((intfc)->_static_mesh)
 #define Dimension(intfc) ((intfc)->dim)
-
 /*#bjet2 */
 #define prev_interface(intfc)    ((intfc)->prev_interf)
+#define grid_comp(intfc)    (table_of_interface(intfc)->components)
 
  /* Node with curves angle ordered */
  /* documentation needed for structure elements */
@@ -1345,7 +1343,7 @@ enum {
 
 #define Prev_corner(n,nc)       (((n) + (nc) - 1) % (nc))
 
-#include <array.h>
+#include <intfc/array.h>
 
 #define Num_pos_curves_of_surface(surface)				\
 		size_of_pointers((POINTER *)(surface)->pos_curves)
@@ -1578,8 +1576,8 @@ typedef struct _SCALED_REDIST_PARAMS SCALED_REDIST_PARAMS;
 #endif
 
 
-#include <table.h>
-#include <userint.h>
-#include <iprotos.h>
+#include <intfc/table.h>
+#include <intfc/userint.h>
+#include <intfc/iprotos.h>
 
 #endif /* !defined(_INT_H) */

@@ -1765,7 +1765,7 @@ EXPORT double level_cwave_func(
         }
         dist = coords[dim-1] - y;
         return dist;
-}       /* end level_cwave_func */
+}       /* end level_wave_func */
 
 EXPORT double level_circle_func(
         POINTER func_params,

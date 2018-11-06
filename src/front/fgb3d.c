@@ -868,11 +868,6 @@ LOCAL	boolean track_comp_and_repair3d(
 	if(ips == NULL)
 	    stat_matrix(&ips,MAX_NUM_UNPHY_IP,3,INT);
 
-        /*
-	adjust_crossings(smin,smax,intfc);
-	fill_comp_from_prev_intfc(intfc,smin,smax);
-	fill_physical_comps(smin,smax,gmax,intfc);
-        */
         preset_grid_component(intfc,smin,smax,gmax);
 
 	remove_unphysical_crxings(smin,smax,gmax,intfc,SINGLE,&num_ip,ips);
@@ -1202,8 +1197,6 @@ LOCAL	boolean grid_based_box_untangle(
 					in_tris, num_in_tris, 1, YES);
 	num_out_tris = seal_all_loops_wo_constraint(deg_tris, &num_deg_tris, 
 					out_tris, num_out_tris, 1, YES);
-	printf("num_in_tris = %d\n",num_in_tris);
-	printf("num_out_tris = %d\n",num_out_tris);
 	/* linking suitable pairs */
 	if (num_in_tris == 0)
         {
@@ -1226,7 +1219,6 @@ LOCAL	boolean grid_based_box_untangle(
 	/*removing all linking non-null edges in loops */
 	num_new_tris = sep_common_edge_from_tris(&sep_new_tris, new_tris, 
 						 num_new_tris, intfc);
-	I_SearchTheTriOnIntfc(intfc);
 	/* sealing all the null loops */
 	num_seal_tris = 0;
 	num_new_tris = seal_all_loops_wo_constraint(new_tris, &num_seal_tris, 
@@ -2618,7 +2610,6 @@ LOCAL	boolean	merge_adjacent_boxes(
 			{
 			    printf("WARNING merge_adjacent_boxes "
 			    	    "box is too large when merging.\n");
-			    return NO;
 			}
 
 		for(nbox=box->next; nbox!=NULL; nbox=nbox->next)

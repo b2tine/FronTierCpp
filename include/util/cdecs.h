@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <config.h>
-
 #if !defined(_CDECS_H)
 #define _CDECS_H
 
@@ -57,17 +55,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <limits.h>
 #include <float.h>
 #include <errno.h>
-
-#ifdef USE_MPI
+#if defined(HAVE_MPI)
 #   include <mpi.h>
-#endif
-
-#if defined(USE_GD)
+#endif /* defined(HAVE_MPI) */
+#if defined(HAVE_GD)
 #include <gd.h>
 #include <gdfonts.h>
 #include <gdfontl.h>
 #include <gdfontt.h>
-#endif /* defined(USE_GD) */
+#endif /* defined(HAVE_GD) */
 
 #define ptr2ull(p) u_ptr2ull((void*)(p))
 
@@ -104,12 +100,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #   define isnanf(x)    isnan(x)
 #   define isnand(x)    isnan(x)
 #elif defined(__GNUC__) || defined(__PGI__) || defined(__INTEL_COMPILER) || defined(__bg__)
-//#   if !defined(isnan)
-//#       define isnan(x) isnan(x)
-//#   endif /*!defined(isnan)*/
+#   if !defined(isnan)
+#       define isnan(x) isnand(x)
+#   endif /*!defined(isnan)*/
 #elif !defined(__alpha) && !defined(__hpux) && !defined(linux) && !defined(_AIX)
 #   include <ieeefp.h>
-#   define isnan(x) isnand(x)
+#   define isnan(x)    isnand(x)
 #endif /* defined(cray) */
 
 #define MACH_EPS DBL_EPSILON
@@ -579,7 +575,7 @@ typedef struct _GH_PARAMS GH_PARAMS;
 }
 #endif
 
-#include <fnamedebug.h>
-#include <uprotos.h>
+#include <util/fnamedebug.h>
+#include <util/uprotos.h>
 
 #endif /* !defined(_CDECS_H) */

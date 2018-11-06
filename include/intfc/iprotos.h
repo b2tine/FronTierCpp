@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_IPROTOS_H)
 #define _IPROTOS_H
 
-#include <int.h>
+#include <intfc/int.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -421,14 +421,14 @@ IMPORT	void    tecplot_surface_in_ball(const char *, SURFACE*);
 IMPORT	void	set_tst_posn(double*);
 IMPORT	void	vtk_interface_plot(const char*,INTERFACE*,boolean,double,int);
 IMPORT	void	sdl_interface_plot(const char*,INTERFACE*);
-#if defined USE_GD
+#if defined HAVE_GD
 IMPORT  void    gd_initplot(char*,char*,double,double,double,double,int);
 IMPORT  void    gd_appendplot(char*,char*,double,double,double,double,int);
 IMPORT  void    gd_plotdata(int,double*,double*);
 IMPORT  void    gd_plotframe(char*);
 IMPORT  void    gd_closeplot();
 IMPORT  void    gd_2d_intfc(char*,char*,INTERFACE*,RECT_GRID*,int,boolean);
-#endif /* defined USE_GD */
+#endif /* defined HAVE_GD */
 IMPORT	char	*get_vtk_file_name(char*,const char*,const char*,size_t*);
 IMPORT	void	gview_plot_surf_within_range(const char*,SURFACE*,double*,
         			double);
@@ -473,6 +473,7 @@ IMPORT 	void 	print_blk_tri(BLK_TRI*);
 IMPORT	void 	print_bond(BOND*);
 IMPORT  void 	points_of_interface(INTERFACE*);
 IMPORT	boolean	the_tri(TRI*);
+IMPORT	boolean	the_tri_shifted(TRI*,double*);
 IMPORT	boolean	the_tri_with_gindex(TRI*);
 IMPORT	boolean	the_side(TRI*);
 IMPORT	boolean	the_bond(BOND*);
@@ -596,6 +597,8 @@ IMPORT  void    ArrayOfSurfTris(SURFACE*,double*,int*);
 IMPORT  void    ArrayOfIntfcTris_FT(INTERFACE*,TRI**);
 IMPORT  void    ArrayOfIntfcTris(INTERFACE*,double*,int*);
 IMPORT	int	GridSegCrossing(CRXING**,int*,GRID_DIRECTION,INTERFACE*);
+IMPORT	int	NearestGridCrossingComp(COMPONENT*,int*,GRID_DIRECTION,
+                                INTERFACE*);
 IMPORT	COMPONENT *GridIntfcComp(INTERFACE*);
 IMPORT	boolean	IntfcGetPointChain(POINT*,POINT**,int);
 
@@ -1003,6 +1006,6 @@ IMPORT iBase_EntityHandle entityOfTri(TRI *t);
 }
 #endif
 
-#include <iapi.h>
+#include <intfc/iapi.h>
 
 #endif /* !defined(_IPROTOS_H) */

@@ -1,9 +1,6 @@
 EXTRA_DIST = in testfront.c front_gpu.cu front_gpu.cuh
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
-			  -I$(top_srcdir)/include/front \
-			  -I$(top_srcdir)/include/intfc \
-			  -I$(top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = -static

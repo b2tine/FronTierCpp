@@ -129,7 +129,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	
 */
 
-#include <plotdecs.h>
+#include <util/plotdecs.h>
 
 #define	binary_plot ((is_binary_output()==YES)?BINARY_VERSION:NO_BINARY_VERSION)
 

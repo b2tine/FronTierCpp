@@ -46,10 +46,10 @@ typedef POINTER Locstate;
 
 #include <front/frp.h>
 #include <front/fvelo.h>
-#if defined(USE_HDF4)
+#if defined(HAVE_HDF4)
 #include <hdf.h>
 #include <mfhdf.h>
-#endif /* defined(USE_HDF4) */
+#endif /* defined(HAVE_HDF4) */
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -1416,7 +1416,7 @@ struct _INTRP_CELL {
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 
-#if defined(USE_HDF4)
+#if defined(HAVE_HDF4)
 
 typedef	enum {HDF_RASTER, HDF_SDS} HDF_DATA_TYPE;
 
@@ -1554,7 +1554,7 @@ typedef struct _HDF_frame_data HDF_frame_data;
 #define hdf_frame_plot_filter(fdata)	HDF_plot_filter(hdf_frame_opts(fdata))
 #define HDF_frame_plot_function(Fdata)	HDF_plot_function(HDF_frame_opts(Fdata))
 #define hdf_frame_plot_function(fdata)	HDF_plot_function(hdf_frame_opts(fdata))
-#endif /* defined(USE_HDF4) */
+#endif /* defined(HAVE_HDF4) */
 
 /* Front Macros for outside users */
 

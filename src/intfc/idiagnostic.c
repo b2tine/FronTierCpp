@@ -34,9 +34,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <intfc/iloc.h>
 
-static	double	the_p1[3] = {0.612029,   0.303286,   1.890613};
-static	double	the_p2[3] = {0.620959,   0.349305,   1.875875};
-static	double	the_tri_coords[9] = {0,0,0,0,0,0,0,0,0};
+static	double	the_p1[3] = {0.407029,0.648137,1.659124};
+static	double	the_p2[3] = {0.407029,0.648137,1.659124};
+static	double	the_tri_coords[9] = {0.379664741722715582,-0.019368477164232626,2.55380989900332134,0.379532279836457598,0.00105824378706123601,2.55440522359787625,0.376016895465755618,-0.0126302608449629893,2.53797644354082008};
 static	long	the_gindex;
 static	long	the_tri_gindex[3] = {0,0,0};
 static	long	the_bond_gindex[2] = {0,0};
@@ -283,6 +283,25 @@ EXPORT boolean the_tri(TRI *tri)
 	    p = Point_of_tri(tri)[i];
 	    for (j = 0; j < 3; j++)
 	    	if (fabs(Coords(p)[j] - the_tri_coords[i*3+j]) > tol)
+	            return NO;
+	}
+	return YES;
+}	/* end the_tri */
+
+EXPORT boolean the_tri_shifted(
+        TRI *tri,
+        double *shift)
+{
+	int i,j;
+	double tol = 1.0e-5;	/* vertices coords must have at least */
+				/* five digits after decimal points */
+	POINT *p;
+
+	for (i = 0; i < 3; i++)
+	{
+	    p = Point_of_tri(tri)[i];
+	    for (j = 0; j < 3; j++)
+	    	if (fabs(Coords(p)[j] - the_tri_coords[i*3+j] + shift[j]) > tol)
 	            return NO;
 	}
 	return YES;
@@ -766,6 +785,46 @@ EXPORT boolean I_SearchTheTriOnIntfc(INTERFACE *intfc)
 	}
 	return tri_in_intfc;
 }	/* end I_SearchTheTriOnIntfc */
+
+EXPORT boolean I_SearchPeriodicTriPairs(
+        INTERFACE *intfc,
+        RECT_GRID *rgr,
+        int dir)
+{
+	int i,dim = Dimension(intfc);
+	boolean tri_in_intfc = NO;
+	SURFACE **s;
+	TRI *tri;
+        double shift0[3],shift1[3];
+
+        for (i = 0; i < 3; ++i) 
+            shift0[i] = shift1[i] = 0.0;
+        shift0[dir] = rgr->U[dir] - rgr->L[dir];
+        shift1[dir] = rgr->L[dir] - rgr->U[dir];
+	intfc_surface_loop(intfc,s)
+	{
+	    surf_tri_loop(*s,tri)
+	    {
+		if (the_tri(tri))
+		{
+		    (void) printf("Search tri found:\n");
+		    print_tri_coords(tri);
+		    tri_in_intfc = YES;
+		}
+                if (the_tri_shifted(tri,shift0))
+                {
+		    (void) printf("tri lower shift found:\n");
+		    print_tri_coords(tri);
+                }
+                if (the_tri_shifted(tri,shift1))
+                {
+		    (void) printf("tri upper shift found:\n");
+		    print_tri_coords(tri);
+                }
+	    }
+	}
+	return tri_in_intfc;
+}	/* end I_SearchPeriodicTriPairs */
 
 EXPORT boolean I_SearchTheBondWithGindexOnIntfc(INTERFACE *intfc)
 {

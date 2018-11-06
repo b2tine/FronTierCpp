@@ -20,6 +20,9 @@
  *  \defgroup INFO          	FronTier Print Information
  **/
 
+#ifndef FAPI_H
+#define FAPI_H
+
 #include <front/fdecs.h>
 
                 /* Front IMPORTED Function Prototypes*/
@@ -1977,4 +1980,6 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
+#endif
+
 #endif

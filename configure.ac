@@ -66,7 +66,7 @@ AS_IF([test "x${gd_dir}" != xno],
         gdlib="-L${gd_lib} -lgd"])
 
 AS_IF([test $with_gd = yes],
-      [AC_DEFINE([USE_GD],[1],[build with gd])])
+      [AC_DEFINE([HAVE_GD],[1],[build with gd])])
 
 AC_SUBST(GD_CFLAGS,${gdinc})
 AC_SUBST(GD_LIBS,${gdlib})
@@ -97,7 +97,7 @@ AS_IF([test "x${hdf4_dir}" != xno],
         hdflib="-L${hdf4_lib} ${hdf4_libflags}"])
 
 AS_IF([test $with_hdf = yes],
-      [AC_DEFINE([USE_HDF4],[1],[build with hd4])])
+      [AC_DEFINE([HAVE_HDF4],[1],[build with hd4])])
 
 AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
@@ -123,7 +123,7 @@ AC_SUBST(MPI_CFLAGS,${mpichinc})
 AC_SUBST(MPI_LIBS,${mpichlib})
 
 AS_IF([test $with_mpich = yes],
-      [AC_DEFINE([USE_MPI],[1],[build with mpich])])
+      [AC_DEFINE([HAVE_MPI],[1],[build with mpich])])
 
 #configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
@@ -177,9 +177,9 @@ AS_IF([test "x${cgal_dir}" != "xno"],
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
 
-#The macro USE_CGAL isn't being used right now, but may be useful for debugging
+#The macro HAVE_CGAL isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cgal = yes],
-      [AC_DEFINE([USE_CGAL],[1],[build with cgal])])
+      [AC_DEFINE([HAVE_CGAL],[1],[build with cgal])])
 
 #check if airfoil should be built
 AM_CONDITIONAL([CGAL_OPT],

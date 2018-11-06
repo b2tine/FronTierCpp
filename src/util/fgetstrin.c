@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <cdecs.h>
+#include <util/cdecs.h>
 
 boolean fgetstring_debug = NO;
 
@@ -96,6 +96,9 @@ EXPORT	boolean CursorAfterStringOpt(
 	FILE		*file,
 	const char	*strng)
 {
+	long		current;
+
+	current = ftell(file); /*Mark current location in file*/
 	(void) printf("%s ",strng);
 	if (fgetstring(file,strng) == FUNCTION_FAILED)
 	{
@@ -103,6 +106,7 @@ EXPORT	boolean CursorAfterStringOpt(
 	    if (fgetstring(file,strng) == FUNCTION_FAILED)
 	    {
 	    	screen("\nCannot find the string, using default\n");
+	        (void) fseek(file,current,SEEK_SET);
 	    	return NO;
 	    }
 	}

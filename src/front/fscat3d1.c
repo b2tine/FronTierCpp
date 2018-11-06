@@ -133,13 +133,13 @@ EXPORT  void    set_default_comp(boolean flag)
 EXPORT boolean f_intfc_communication3d(
 	Front		*fr)
 {
-#if defined USE_MPI
+#if defined HAVE_MPI
 	if (pp_numnodes() > 1 && deact_default_comp == NO)
 	{
 	    communicate_default_comp(fr);
 	    set_default_comp(YES);
 	}
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 	if (static_mesh(fr->interf))
 	{
 	    return f_intfc_communication3d3(fr);

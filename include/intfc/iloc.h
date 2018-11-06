@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #if !defined(_ILOC_H)
 #define _ILOC_H
 
-#include <int.h>
+#include <intfc/int.h>
 
 typedef struct {
 	int      dim;
@@ -61,6 +61,6 @@ typedef struct {
 	uint64_t **ncurves;    /* addresses of pos curves on surfaces */
 } INTERFACE_ADDRESSES;
 
-#include <ilocprotos.h>
+#include <intfc/ilocprotos.h>
 
 #endif /* !defined(_ILOC_H) */

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <intfc/int.h>
 
 #ifdef IMESH
-#if defined USE_MPI
+#if defined HAVE_MPI
 
 /*------------------------------------------------------------------------*/
 /*------------------------------------------------------------------------*/
@@ -2246,5 +2246,5 @@ void iMeshP_saveAll(
             int options_len)
 {
 }	/* end */
-#endif /* defined USE_MPI */
+#endif /* defined HAVE_MPI */
 #endif /* def IMESH */

@@ -1384,10 +1384,6 @@ LIB_LOCAL	void	set_tri_storage_type(
 	I_USER_INTERFACE *iuh = i_user_hook(3);
 	switch (type)
 	{
-	case MIN_TRI_STORAGE:
-	    tri_storage_type = type;
-	    iuh->size_tri = sizeof(TRI);
-	    break;
 	case FULL_TRI_GEOMETRY:
 	    tri_storage_type = type;
 	    iuh->size_tri = sizeof(TRI_FullGeometry);
@@ -1411,8 +1407,6 @@ EXPORT void reset_normal_on_intfc(
 
 	switch (tri_storage_type)
 	{
-	case MIN_TRI_STORAGE:
-	    break;
 	case FULL_TRI_GEOMETRY:
 	case TRI_PLUS_NORMAL:
 	    for (s = intfc->surfaces; s && *s; ++s)
@@ -1434,9 +1428,6 @@ EXPORT	void set_normal_of_tri(
 	double *n;
 	double **s, s0, s1, s2;
 	int   i;
-
-	if (tri_storage_type == MIN_TRI_STORAGE)
-	    return;
 
 	p[0] = Coords(Point_of_tri(tri)[0]);
 	p[1] = Coords(Point_of_tri(tri)[1]);
@@ -1478,43 +1469,13 @@ EXPORT	void set_normal_of_tri(
 EXPORT	const double	*Tri_normal(
 	const TRI *tri)
 {
-	if (tri_storage_type == MIN_TRI_STORAGE)
-	{
-	    const double  *p[3];
-	    double        s[3][3];
-	    static double n[3];
-	    int   i;
-
-	    p[0] = Coords(Point_of_tri(tri)[0]);
-	    p[1] = Coords(Point_of_tri(tri)[1]);
-	    p[2] = Coords(Point_of_tri(tri)[2]);
-
-	    for (i = 0; i < 3; ++i)
-	    {
-	        s[i][0] = p[Next_m3(i)][0] - p[i][0];
-	        s[i][1] = p[Next_m3(i)][1] - p[i][1];
-	        s[i][2] = p[Next_m3(i)][2] - p[i][2];
-	    }
-
-	    n[0] = s[2][1]*s[0][2] - s[2][2]*s[0][1];
-	    n[1] = s[2][2]*s[0][0] - s[2][0]*s[0][2];
-	    n[2] = s[2][0]*s[0][1] - s[2][1]*s[0][0];
-	    return n;
-	}
-	else
-	    return Tri_normal_vector(tri);
+	return Tri_normal_vector(tri);
 }		/*end Tri_normal*/
 
 EXPORT	double	sqr_norm(
 	const TRI *tri)
 {
-	if (tri_storage_type == MIN_TRI_STORAGE)
-	{
-	    const double *n = Tri_normal(tri);
-	    return n[0]*n[0] + n[1]*n[1] + n[2]*n[2];
-	}
-	else
-	    return sqr_normal_vector(tri);
+	return sqr_normal_vector(tri);
 }		/*end sqr_norm*/
 
 EXPORT double tri_area(
@@ -3610,6 +3571,9 @@ LOCAL void  polyfit3d_lhf(
       	    absnrm[i] = fabs(nrm_coor[i]);
       	    nrm_out[i] = nrm_coor[i];
    	}
+        if (debugging("poly"))
+            printf("Step 1: nrm_out = %f %f %f\n",
+                        nrm_out[0],nrm_out[1],nrm_out[2]);
    	if (( absnrm[0] >  absnrm[1])&&( absnrm[0] >  absnrm[2])) 
       	    for (i=0; i<=2; i+=1) 
          	t1[i] = t1_3[i];
@@ -3751,6 +3715,15 @@ LOCAL void  polyfit3d_lhf(
       	    dtemp_12 = dtemp_12 +  P[1][i] *  nrm_l[i];
       	    dtemp_13 = dtemp_13 +  P[2][i] *  nrm_l[i];
    	}
+        if (debugging("poly"))
+        {
+            printf("dtemp_11 = %f  dtemp_12 = %f  dtemp_13 = %f\n",
+                            dtemp_11,dtemp_12,dtemp_13);
+            printf("    P[0] = %f %f %f\n",P[0][0],P[0][1],P[0][2]);
+            printf("    P[1] = %f %f %f\n",P[1][0],P[1][1],P[1][2]);
+            printf("    P[2] = %f %f %f\n",P[2][0],P[2][1],P[2][2]);
+            printf("nrm_l = %f %f %f\n",nrm_l[0],nrm_l[1],nrm_l[2]);
+        }
    	nrm_out[0] = dtemp_11;
    	nrm_out[1] = dtemp_12;
    	nrm_out[2] = dtemp_13;
@@ -4210,7 +4183,10 @@ EXPORT  boolean  WLSP_compute_normal3d0(
         norm = sqrt(norm);
         for(i = 0; i < 3; i++)
         {
-            p->_nor0[i] = nor_f[i]/norm;
+            if (norm == 0.0)
+                p->_nor0[i] = 0.0;
+            else
+                p->_nor0[i] = nor_f[i]/norm;
         }
 	return YES;
 }	/* end WLSP_compute_normal3d0 */

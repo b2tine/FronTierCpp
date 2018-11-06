@@ -93,6 +93,7 @@ LOCAL   void    insert_block_crossings(INTERFACE*,RECT_GRID*,CRXING*,int**,
 LOCAL   void    linear_interp_coefs_3d_tri(double*,double*,TRI*);
 LOCAL   boolean set_comp_at_vertex(CRXING*,POINT*,TRI*,SURFACE*,int);
 LOCAL 	boolean two_side_vertex(POINT*,TRI*,SURFACE*,int);
+LOCAL   boolean fill_default_component(int*,int*,int*,INTERFACE*);
 
 /*grid based reconstruction */
 LOCAL	void	 fill_block_crx(int,int,int,BLK_CRX*,int*,
@@ -175,27 +176,6 @@ EXPORT 	boolean reconstruct_intfc3d_in_box_lgb(
 
 	if (debugging("trace"))
 	    (void) printf("Entering reconstruct_intfc3d_in_box_lgb()\n");
-	/* Save sample to debug comp/crx along a grid line 
-	{
-	    int ip1[MAXD],ip2[MAXD];
-	    printf("In reconstruct_intfc3d_in_box_lgb()\n");
-	    ip1[0] = ip2[0] = 43;
-	    ip1[1] = ip2[1] = 40;
-	    ip1[2] = smin[2];
-	    ip2[2] = smax[2];
-	    print_comp_along_grid_line(ip1,ip2,UPPER,T,gmax,smin,smax);
-	}
-	for (iy = smin[1]; iy <= smax[1]; ++iy)
-	for (ix = smin[0]; ix <= smax[0]; ++ix)
-	{
-	    int ip1[MAXD],ip2[MAXD];
-	    ip1[0] = ip2[0] = ix;
-	    ip1[1] = ip2[1] = iy;
-	    ip1[2] = smin[2];
-	    ip2[2] = smax[2];
-	    print_comp_along_grid_line(ip1,ip2,UPPER,T,gmax,smin,smax);
-	}
-	*/
 
 	blk_info.num_surfs = 0;
         for (i = 0, s = intfc->surfaces; s && *s; ++i, ++s)
@@ -1205,6 +1185,25 @@ LOCAL   void fill_block_curve_crx(
 
 }       /* end fill_block_curve_crx */
 
+LOCAL boolean fill_default_component(
+        int      *smin,
+        int      *smax,
+        int      *gmax,
+        INTERFACE *intfc)
+{
+        int ip[MAXD],ic;
+        COMPONENT *comp = grid_comp(intfc);
+
+        for (ip[0] = smin[0]; ip[0] <= smax[0]; ++ip[0])
+        for (ip[1] = smin[1]; ip[1] <= smax[1]; ++ip[1])
+        for (ip[2] = smin[2]; ip[2] <= smax[2]; ++ip[2])
+        {
+            ic = d_index(ip,gmax,3);
+            comp[ic] = intfc->default_comp;
+        }
+	return FUNCTION_SUCCEEDED;
+}       /* end fill_default_component */
+
 EXPORT 	boolean track_comp_through_crxings3d(
 	int 	 *smin,
 	int 	 *smax,
@@ -1216,56 +1215,48 @@ EXPORT 	boolean track_comp_through_crxings3d(
 	static int **ips = NULL;
 	int idir,num_ip;
 
+        if (I_NumOfIntfcSurfaces(intfc) == 0)
+            return fill_default_component(smin,smax,gmax,intfc);
+
 	DEBUG_ENTER(track_comp_through_crxings3d)
 
 	if(ips == NULL)
             stat_matrix(&ips,MAX_NUM_UNPHY_IP,3,INT);
 
-	/* eliminate duplicate crossings */
-        /*
-	if (debugging("grid_line_comp"))
-            debug_comp_on_grid_line("Before adjust_crossings()",
-                                intfc,smin,smax);
-	adjust_crossings(smin,smax,intfc);
-        */
-
 	/* assign components and isolate unphysical clusters */
 	start_clock("preset_grid_component");
-	//fill_physical_comps(smin,smax,gmax,intfc);
         preset_grid_component(intfc,smin,smax,gmax);
 	stop_clock("preset_grid_component");
 
 	/* annihilate unphysical clusters */
 	start_clock("remove_unphysical_crxings");
-
-	remove_unphysical_crxings(smin,smax,gmax,intfc,crx_type,&num_ip,ips);
-	if (!check_and_unset_bad_comp(smin,smax,intfc))
-	{
-	    screen("ERROR: unset component exist!\n");
-            add_to_debug("unset_bad_comp");
-            printf("Check with debugging on\n");
-            /*
-            check_and_unset_bad_comp(smin,smax,intfc);
-	    {
+        while (!check_and_unset_bad_comp(smin,smax,intfc))
+        {
+	    remove_unphysical_crxings(smin,smax,gmax,intfc,crx_type,
+                                &num_ip,ips);
+            if (++count == 3)
+            {
                 int ip[3],ip1[3];
+	        screen("ERROR: unset component exist after %d rounds!\n",count);
+                add_to_debug("unset_bad_comp");
+                printf("Check with debugging on\n");
+                check_and_unset_bad_comp(smin,smax,intfc);
+                /* Fill appropriate grid infor
 	        Table *T = table_of_interface(intfc);
 	        printf("In track_comp_through_crxings3d()\n");
-	        ip[0] = ip1[0] = 50;
-	        ip[1] = ip1[1] = 69;
-	        ip[2] = smin[2]; ip1[2] = smax[2];
-	        print_comp_along_grid_line(ip,ip1,UPPER,T,gmax,smin,smax);
-	        ip[0] = ip1[0] = 50;
-	        ip[2] = ip1[2] = 43;
-	        ip[1] = smin[1]; ip1[1] = smax[1];
-	        print_comp_along_grid_line(ip,ip1,NORTH,T,gmax,smin,smax);
-	    }
-            */
-            //preset_grid_component(intfc,smin,smax,gmax);
-	    //show_grid_components(smin,smax,2,intfc);
-	    clean_up(ERROR);
+	        ip[2] = ip1[2] = 73;
+                if (pp_mynode() == 2)
+	            ip[1] = ip1[1] = 2;
+                if (pp_mynode() == 0)
+	            ip[1] = ip1[1] = 12;
+	        ip[0] = smin[0]; ip1[0] = smax[0];
+	        print_comp_along_grid_line(ip,ip1,EAST,T,gmax,smin,smax);
+                */
+                clean_up(ERROR);
+            }
         }
 	stop_clock("remove_unphysical_crxings");
-	
+
 	DEBUG_LEAVE(track_comp_through_crxings3d)
 	return FUNCTION_SUCCEEDED;
 
@@ -5208,14 +5199,12 @@ LOCAL CRXING *next_crossing(
 	    if (dir == EAST || dir == NORTH || dir == UPPER)
 	    {
 		list = T->seg_crx_lists[k][0];
-		next_crx = &(T->crx_store[list]);
-		return next_crx;
+		return &(T->crx_store[list]);
 	    }
 	    else
 	    {
 		list = T->seg_crx_lists[k][nc-1];
-		next_crx = &(T->crx_store[list]);
-		return next_crx;
+		return &(T->crx_store[list]);
 	    }
 	}
 	else
@@ -5231,8 +5220,7 @@ LOCAL CRXING *next_crossing(
 			else
 			{
 			    list = T->seg_crx_lists[k][i+1];
-			    next_crx = &(T->crx_store[list]);
-			    return next_crx;
+			    return &(T->crx_store[list]);
 			}
 		    }
 		    else
@@ -5241,8 +5229,7 @@ LOCAL CRXING *next_crossing(
 			else
 			{
 			    list = T->seg_crx_lists[k][i-1];
-			    next_crx = &(T->crx_store[list]);
-			    return next_crx;
+			    return &(T->crx_store[list]);
 			}
 		    }
 		}
@@ -5497,6 +5484,8 @@ LOCAL boolean remove_unphy_pair(
 	boolean is_start_open = NO;
 	boolean is_end_open = NO;
 
+        crx1 = crx2 = crx2_prev = NULL;
+        crx11 = crx22 = NULL;
 	opp_dir = opposite_direction(dir);
 	for (i = 0; i < 3; ++i)
 	    ip1[i] = ip[i];
@@ -5843,7 +5832,7 @@ LOCAL boolean remove_unphy_pair(
 	{
 	    scaled_dist = fabs(Coords(crx1->pt)[idir] - 
 			Coords(crx2->pt)[idir])/h[idir];
-	    if (scaled_dist >= 3.0)
+	    if (scaled_dist >= 4.0)
 	    {
 	    	(void) printf("Scaled distance between crx1 and crx2 ");
 		(void) printf("is too large: %f\n",scaled_dist);
@@ -6199,17 +6188,14 @@ LOCAL void unset_at_crossings(
 		list = T->seg_crx_lists[l][0];
 		crx = &(T->crx_store[list]);
 	    	ic = d_index3d(ip[0],ip[1],ip[2],gmax);
-		if (crx->lcomp != comp[ic])	/* bad at the first one */
+		if (comp[ic] != crx->lcomp)	/* bad at the first one */
 		{
 		    comp[ic] = NO_COMP;
 		    ipn[0] = ip[0];  ipn[1] = ip[1];  ipn[2] = ip[2];
-		    for (m = 0; m < 3; ++m)
+		    if (next_ip_in_dir(ipn,dir,ipn,smin,smax))
 		    {
-		    	if (next_ip_in_dir(ipn,dir,ipn,smin,smax))
-		    	{
-		    	    icn = d_index3d(ipn[0],ipn[1],ipn[2],gmax);
-		    	    comp[icn] = NO_COMP;
-		    	}
+		    	icn = d_index3d(ipn[0],ipn[1],ipn[2],gmax);
+		    	comp[icn] = NO_COMP;
 		    }
 		    continue;
 		}
@@ -6219,32 +6205,13 @@ LOCAL void unset_at_crossings(
 		    {
 		    	comp[ic] = NO_COMP;
 		    	ipn[0] = ip[0];  ipn[1] = ip[1];  ipn[2] = ip[2];
-			for (m = 0; m < 3; ++m)
-			{
-		    	    if (next_ip_in_dir(ipn,dir,ipn,smin,smax))
-		    	    {
-		    	    	icn = d_index3d(ipn[0],ipn[1],ipn[2],gmax);
-		    	    	comp[icn] = NO_COMP;
-			    	break;
-		    	    }
-			}
-		    }
-		    crx = next_crx;
-		}
-		if (next_crx != NULL) continue;	/* bad crx detected */
-
-		if (next_ip_in_dir(ip,dir,ipn,smin,smax)) /* last check */
-		{
-		    icn = d_index3d(ipn[0],ipn[1],ipn[2],gmax);
-		    if (comp[icn] != crx->ucomp)
-		    {
-			comp[ic] = comp[icn] = NO_COMP;
 		    	if (next_ip_in_dir(ipn,dir,ipn,smin,smax))
 		    	{
 		    	    icn = d_index3d(ipn[0],ipn[1],ipn[2],gmax);
-			    comp[icn] = NO_COMP;
+		    	    comp[icn] = NO_COMP;
 		    	}
 		    }
+		    crx = next_crx;
 		}
 	    }
 	}
@@ -6331,15 +6298,15 @@ static void rm_unphy_crx_in_direction(
 		    continue;
 		    
                 /* Save for debugging
-                if (idir == 2 && ip[0] == 50 && ip[1] == 69)
+                if (idir == 0 && ip[1] == 9 && ip[2] == 21)
                 {
-                    add_to_debug("seg_comp");
+                    //add_to_debug("seg_comp");
                     int ip1[3],ip2[3];
                     printf("Start tracing long the grid line\n");
-                    ip1[0] = ip2[0] = 50;
-                    ip1[1] = ip2[1] = 69;
-                    ip1[2] = smin[2];
-                    ip2[2] = smax[2];
+                    ip1[1] = ip2[1] = 9;
+                    ip1[2] = ip2[2] = 21;
+                    ip1[0] = smin[0];
+                    ip2[0] = smax[0];
 	    	    print_comp_along_grid_line(ip1,ip2,dir[idir],T,gmax,
                                     smin,smax);
                 }
@@ -6385,6 +6352,7 @@ struct _PATCH
 };
 typedef struct _PATCH PATCH;
 
+LOCAL boolean check_print_damaged_patch(int*,int*,int*,INTERFACE*,PATCH);
 LOCAL boolean paint_the_patch(int*,int*,int*,INTERFACE*,int*,PATCH*,COMPONENT*,
                         int**);
 
@@ -6459,17 +6427,6 @@ loops_out:
             /* Record potentially demaged patch */
             if (status == YES)
             {
-                if (debugging("comp_patch"))
-                {
-                    printf("Potential damaged patch begin with (%d %d %d)\n",
-                                ip[0],ip[1],ip[2]);
-                    printf("npatch = %d\n",npatch);
-                    printf("num_majority = %d\n",patch[npatch].num_majority);
-                    printf("num_minority = %d\n",patch[npatch].num_minority);
-                    printf("comp_majority = %d\n",patch[npatch].comp_majority);
-                    printf("comp_minority = %d\n",patch[npatch].comp_minority);
-                    printf("num_pixel = %d\n",patch[npatch].num_pixel);
-                }
                 if (npatch >= max_num_patch - 1)
                 {
                     PATCH *new_patch;
@@ -6491,6 +6448,19 @@ loops_out:
                 pixel += patch[npatch].num_pixel;
                 npatch++;
             }
+        }
+        if (debugging("comp_patch"))
+        {
+            boolean damage_found = NO;
+            for (i = 0; i < npatch; ++i)
+            {
+                if (check_print_damaged_patch(smin,smax,gmax,intfc,patch[i]))
+                    damage_found = YES;
+            }
+            /*
+            if (damage_found)
+                clean_up(ERROR);
+            */
         }
         /* Small patches are potentially demaged patches, reset */
         for (i = 0; i < npatch; ++i)
@@ -6522,14 +6492,15 @@ LOCAL boolean paint_the_patch(
         COMPONENT *comp,
         int **ip_store)
 {
-        int i,ic,idir,nc[6],*ip,ipn[3],ipixel;
+        int i,ic,idir,nc[6],ip[3],ipn[3],ipixel;
         int np;
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         COMPONENT c;
         boolean nb_found;
 
         np = 0;
-        ip = ip_in;
+        for (i = 0; i < 3; ++i)
+            ip[i] = ip_in[i];
         ipixel = patch->num_pixel = 0;
 
 start_loop:
@@ -6538,7 +6509,6 @@ start_loop:
         for (i = 0; i < 3; ++i)
             patch->pixel[ipixel].icoords[i] = ip[i];
         ip_store[np] = patch->pixel[ipixel].icoords;
-        np++;
 
         int c0 = NO_COMP;
         for (idir = 0; idir < 6; ++idir)
@@ -6576,6 +6546,7 @@ inner_loop:
             if (comp[ic] != NO_COMP) continue;
             nb_found = YES;
             for (i = 0; i < 3; ++i) ip[i] = ipn[i];
+            np++;
             goto start_loop;
         }
         if (!nb_found)
@@ -6584,7 +6555,8 @@ inner_loop:
             --np;
             if (np >= 0)
             {
-                ip = ip_store[np];
+                for (i = 0; i < 3; ++i)
+                    ip[i] = ip_store[np][i];
                 goto inner_loop;
             }
         }
@@ -6596,27 +6568,32 @@ inner_loop:
             /* This should rarely happen for large patch*/
             int itmp;
             COMPONENT ctmp;
-            printf("Before swapping:\n");
-            printf("num_majority = %d\n",patch->num_majority);
-            printf("num_minority = %d\n",patch->num_minority);
-            printf("comp_majority = %d\n",patch->comp_majority);
-            printf("comp_minority = %d\n",patch->comp_minority);
+            if (debugging("comp_patch"))
+            {
+                printf("Before swapping:\n");
+                printf("num_majority = %d\n",patch->num_majority);
+                printf("num_minority = %d\n",patch->num_minority);
+                printf("comp_majority = %d\n",patch->comp_majority);
+                printf("comp_minority = %d\n",patch->comp_minority);
+            }
             itmp = patch->num_minority;
             patch->num_minority = patch->num_majority;
             patch->num_majority = itmp;
             ctmp = patch->comp_minority;
             patch->comp_minority = patch->comp_majority;
             patch->comp_majority = ctmp;
-            printf("After swapping:\n");
-            printf("num_majority = %d\n",patch->num_majority);
-            printf("num_minority = %d\n",patch->num_minority);
-            printf("comp_majority = %d\n",patch->comp_majority);
-            printf("comp_minority = %d\n",patch->comp_minority);
+            if (debugging("comp_patch"))
+            {
+                printf("After swapping:\n");
+                printf("num_majority = %d\n",patch->num_majority);
+                printf("num_minority = %d\n",patch->num_minority);
+                printf("comp_majority = %d\n",patch->comp_majority);
+                printf("comp_minority = %d\n",patch->comp_minority);
+            }
             for (i = 0; i < patch->num_pixel; ++i)
             {
                 patch->pixel[i].comp = patch->comp_majority;
-                ip = patch->pixel[i].icoords;
-                ic = d_index(ip,gmax,3);
+                ic = d_index(patch->pixel[i].icoords,gmax,3);
                 comp[ic] = patch->comp_majority;
             }
         }
@@ -6625,3 +6602,63 @@ inner_loop:
         else
             return YES;
 }       /* end paint_the_patch */
+
+LOCAL   boolean check_print_damaged_patch(
+        int *smin,
+        int *smax,
+        int *gmax,
+        INTERFACE *intfc,
+        PATCH patch)
+{
+	Table *T = table_of_interface(intfc);
+	COMPONENT *comp = T->components;
+        int i,j,ic,nc;
+        int *ip;
+        COMPONENT c;
+        GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+
+        printf("Entering check_print_damaged_patch()\n");
+        if (patch.num_majority%2 == 0)
+            return NO;
+        for (i = 0; i < patch.num_pixel; ++i)
+        {
+            ip = patch.pixel[i].icoords;
+            for (j = 0; j < 3; ++j)
+            {
+                if (ip[j] == smin[j])
+                    return NO;
+                if (ip[j] == smax[j])
+                    return NO;
+            }
+        }
+        printf("Patch information:\n");
+        printf("num_majority = %d\n",patch.num_majority);
+        printf("num_minority = %d\n",patch.num_minority);
+        printf("comp_majority = %d\n",patch.comp_majority);
+        printf("comp_minority = %d\n",patch.comp_minority);
+        printf("num_pixel = %d\n",patch.num_pixel);
+        printf("Information of pixels:\n");
+        for (i = 0; i < patch.num_pixel; ++i)
+        {
+            ip = patch.pixel[i].icoords;
+            printf("Pixel icoords: %d %d %d\n",ip[0],ip[1],ip[2]);
+            printf("Pixel component: %d\n",patch.pixel[i].comp);
+            for (j = 0; j < 6; ++j)
+            {
+                nc = NearestGridCrossingComp(&c,ip,dir[j],intfc);
+                if (nc != 0)
+                    printf("Direction %5s nc %d and facing comp: %d\n",
+                            grid_direction_name(dir[j]),nc,c);
+                else
+                {
+                    int ipn[3];
+		    next_ip_in_dir(ip,dir[j],ipn,smin,smax);
+                    ic = d_index(ipn,gmax,3);
+                    c = comp[ic];
+                    printf("Direction %5s nc 0 and facing comp: %d\n",
+                            grid_direction_name(dir[j]),c);
+                }
+            }
+        }
+        return YES;
+}       /* end damaged_patch */

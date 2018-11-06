@@ -11,7 +11,7 @@
 /*! \defgroup DEBUG-TOOL Debugging Used Functions
  **/
 
-#include <int.h>
+#include <intfc/int.h>
 
                 /* Interface Function Prototypes*/
 
@@ -517,6 +517,23 @@ extern "C" {
  */
 
    IMPORT  boolean I_SearchTheTriOnIntfc(INTERFACE *intfc);
+
+/*! \fn boolean I_SearchPeriodicTriPairs(INTERFACE *intfc, RECT_GRID *rect_grid, int dir)
+ *  \ingroup DEBUG-TOOL
+    \brief This function searches a tri and its periodic shifted
+     pairs with the given coordinates of the tri
+     through the entire interface structure. The coordinates 
+     must be set first. The function returns YES if it is in
+     the interface, otherwise it returns NO.
+    \param intfc @b in Pointer to the interface.
+    \param rect_grid @b in Pointer to the recttangular grid of the domain.
+    \param dir @b in direction of the periodic shift.
+ */
+
+   IMPORT  boolean I_SearchPeriodicTriPairs(
+        INTERFACE *intfc, 
+        RECT_GRID *rect_grid,
+        int dir);
 
 /*! \fn boolean I_SearchTheTriWithGindexOnIntfc(INTERFACE *intfc)
  *  \ingroup DEBUG-TOOL
