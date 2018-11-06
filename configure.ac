@@ -8,7 +8,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 #Header file with generated #DEFINE macros.
 #   included at the top of include/util/cdecs.h
-AC_CONFIG_HEADERS([build-aux/config.h])
+AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([foreign subdir-objects])
