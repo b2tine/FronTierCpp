@@ -7,7 +7,7 @@ AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
-noinst_HEADERS = ../include/FronTier.h
+include_HEADERS = ../include/FronTier.h
 
 lib_LTLIBRARIES = libFronTier.la
 
