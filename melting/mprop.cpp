@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include <iFluid.h>
 #include "melting.h"
+
 static void ice_point_propagate_secondorder(Front*,POINTER,POINT*,POINT*,
                 HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 static void ice_point_propagate(Front*,POINTER,POINT*,POINT*,	

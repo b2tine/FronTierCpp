@@ -5,6 +5,7 @@ EXTRA_DIST = build
 
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
+MAYBE_MELTING = melting
 MAYBE_CRYSTAL = crystal
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
@@ -34,6 +35,7 @@ SUBDIRS = src \
 		  $(MAYBE_COLLISION) \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
+		  $(MAYBE_MELTING) \
 		  $(MAYBE_CRYSTAL) \
 		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_EX2D) \
@@ -104,6 +106,7 @@ $$ME/airfoil/*.cpp \
 $$ME/airfoil/*.cuh \
 $$ME/airfoil/*.cu \
 $$ME/airfoil/input-*/* \
+$$ME/airfoil/mrun* \
 $$ME/parachute/Makefile.am \
 $$ME/parachute/*.cpp \
 $$ME/parachute/input-*/* \
@@ -122,9 +125,10 @@ $$ME/subsurf/Makefile.am \
 $$ME/subsurf/*.h \
 $$ME/subsurf/*.cpp \
 $$ME/subsurf/input-2d/* \
+$$ME/melting/Makefile.am \
 $$ME/melting/*.h \
 $$ME/melting/*.cpp \
-$$ME/melting/in-* \
+$$ME/melting/input/* \
 $$ME/melting/mrun*
 
 tar:

@@ -22,13 +22,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 /*
-*				melting.c:
+*				melting.cpp:
 *
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 *
 */
 
-#include "../iFluid/iFluid.h"
+#include <iFluid.h>
 #include "melting.h"
 
 #define		MAX_NUM_VERTEX_IN_CELL		20
