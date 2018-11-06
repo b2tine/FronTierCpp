@@ -7,9 +7,11 @@ broken_files = example06.cpp \
 EXTRA_DIST = README input $(broken_files)
 
 
-
 AM_CPPFLAGS = -I$(abs_top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
+
+AM_LDFLAGS = -all-static
+
 
 noinst_PROGRAMS = example00 \
 				  example01 \

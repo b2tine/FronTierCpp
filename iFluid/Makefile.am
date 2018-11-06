@@ -17,6 +17,7 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
 			  -I$(abs_top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = -all-static
 
 
 noinst_PROGRAMS = iFluid

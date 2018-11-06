@@ -12,14 +12,13 @@ include_HEADERS = ../include/FronTier.h
 lib_LTLIBRARIES = libFronTier.la
 
 libFronTier_la_SOURCES =
-libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
-  						$(abs_top_builddir)/src/intfc/libintfc.la \
-  						$(abs_top_builddir)/src/util/libutil.la \
+libFronTier_la_LIBADD = $(top_builddir)/src/front/libfront.la \
+  						$(top_builddir)/src/intfc/libintfc.la \
+  						$(top_builddir)/src/util/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
-noinst_LTLIBRARIES = 
 if PETSC_OPT
-noinst_LTLIBRARIES += libsolver.la libiFluid.la
+lib_LTLIBRARIES += libsolver.la libiFluid.la
 endif
 
 
@@ -53,9 +52,9 @@ libiFluid_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 if CGAL_OPT
-noinst_LTLIBRARIES += libCollision.la
+lib_LTLIBRARIES += libCollision.la
 if PETSC_OPT
-noinst_LTLIBRARIES += libairfoil.la
+lib_LTLIBRARIES += libairfoil.la
 endif
 endif
 
