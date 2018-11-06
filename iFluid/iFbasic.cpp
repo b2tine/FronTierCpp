@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		         iFbasic.cpp
  *******************************************************************/
 #include "iFluid.h"
-
+#include <solver.h>
 //C++ STL
 #include <iostream>
 #include <fstream>
@@ -666,10 +666,10 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 
 	sprintf(filename,"%s/state.ts%s",out_name,
 			right_flush(front->step,7));
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 	if (pp_numnodes() > 1)
             sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
-#endif /* defined(USE_MPI) */
+#endif /* defined(HAVE_MPI) */
 	sprintf(filename,"%s-ifluid",filename);
 	outfile = fopen(filename,"w");
 
@@ -1244,7 +1244,7 @@ void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
         FT_FreeThese(5,vel_u,vel_v,vel_uu,vel_uv,vel_vv);
         FT_FreeThese(11,co_coords_y,ma11,ma12,la11,la12,la22,r,cs,cs_ave,
 					deno,nume);
-}       /* end computeSubgridModel */
+}       /* end compSGS */
 
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_2D_Basis

@@ -9,10 +9,9 @@
 #include <petscksp.h>
 #include <assert.h>
 
+#include "FronTier.h"
 #include <solver.h>
 #include "ifluid_state.h"
-
-using STATE = iFluid_STATE;
 
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2
@@ -226,7 +225,7 @@ struct _RG_PARAMS {
 	boolean no_fluid;		/* For benchmark tests */
 	int 	body_index;		/* Body index */
         double  total_mass;             /* Total mass */
-        double  moment_of_inertial;     /* Moment of inertia about the axis */
+        double  moment_of_inertial;     /* Moment of inertial about the axis */
         double  center_of_mass[MAXD];   /* Center of mass */
         double  rotation_dir[MAXD];     /* Direction of rotation */
 	double	translation_dir[MAXD];	/* Restricted direction of motion */

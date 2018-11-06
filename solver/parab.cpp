@@ -2511,6 +2511,208 @@ void PARABOLIC_SOLVER::Csolve3d(
 	double *var_in,
 	double *var_out)
 {
+	int i,j,k,l,m,ic,icn,I,I_nb,icoords[MAXD];
+	int gmin[MAXD],ipn[MAXD];
+	double crx_coords[MAXD],coords[MAXD];
+	double C_nb,lambda,eta,eta_nb,coeff,coeff_nb,rhs;
+	COMPONENT comp;
+	PETSc solver;
+	double *x;
+	int num_iter = 0;
+	int size;
+	double rel_residual = 0;
+	int fr_crx_grid_seg;
+	const GRID_DIRECTION dir[3][2] =
+		{{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+	HYPER_SURF *hs;
+	POINTER state;
+	double v_new,v_old,v0;
+	double eta_new,eta_old;
+	double sink;
+	boolean regular_nb;
+	boolean switched_nb;
+	double vel;
+	int N = 0;
+
+	start_clock("Csolve3d");
+
+	v0 = 1.0;
+	for (i = 0; i < dim; ++i)
+	{
+	    gmin[i] = 0;
+	    v0 *= top_h[i];
+	}
+	size = iupper-ilower;
+	solver.Create(ilower,iupper-1,7,7);
+	
+	for (i = imin; i <= imax; ++i)
+	for (j = jmin; j <= jmax; ++j)
+	for (k = kmin; k <= kmax; ++k)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    icoords[2] = k;
+	    ic = d_index(icoords,top_gmax,dim);
+	    comp = top_comp[ic];
+	    I = ijk_to_I[i][j][k];
+	    if (comp != soln_comp)
+	    	continue;
+	    ++N;
+	    rhs = 0.0;
+	    coeff = 0.0;
+	    for (l = 0; l < dim; ++l)
+	    {
+	    	for (m = 0; m < 2; ++m)
+		{
+		    regular_nb = NO;
+		    switched_nb = NO;
+		    if (next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax))
+		    {
+		    	icn = d_index(ipn,top_gmax,dim);
+			if (top_comp[icn] == soln_comp)
+			{
+			    I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
+			    regular_nb = YES;
+			}
+		    }
+		    if (regular_nb)
+		    {
+		    	if (nu == NULL)
+			    lambda = D*sub_dt/sqr(top_h[l]);
+			else
+			    lambda = 0.5*(nu[ic]+nu[icn])*
+			    		sub_dt/sqr(top_h[l]);
+			if (a != NULL)
+			{
+			    eta = 0.5*a[l][ic]*sub_dt/top_h[l];
+			    eta_nb = 0.5*a[l][icn]*sub_dt/top_h[l];
+			    if (m == 0)
+			    {
+			    	eta *= -1.0;
+				eta_nb *= -1.0;
+			    }
+			}
+			else
+			    eta = 0.0;
+			coeff_nb = -lambda + eta_nb;
+			coeff += lambda + eta;
+			solver.Add_A(I,I_nb,coeff_nb);
+		    }
+		    else
+		    {
+		        fr_crx_grid_seg = (*findStateAtCrossing)(front,icoords,
+				dir[l][m],comp,&state,&hs,crx_coords);
+			if (fr_crx_grid_seg == NO_PDE_BOUNDARY)
+			{
+			    printf("ERROR: no crossing between current and "
+			    	   "irregular neighbor cells\n");
+			    clean_up(ERROR);
+			}
+			else if (fr_crx_grid_seg == DIRICHLET_PDE_BOUNDARY)
+			{
+			    if (nu == NULL)
+			        lambda = D*sub_dt/sqr(top_h[l]);
+			    else
+			        lambda = nu[ic]*sub_dt/sqr(top_h[l]);
+			    if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+			        boundary_state_function(hs) &&
+				strcmp(boundary_state_function_name(hs),
+				"flowThroughBoundaryState") == 0)
+			    {
+			        vel = a[l][ic];
+				C_nb = var_in[ic];
+				eta = (m == 0) ? -vel*sub_dt/top_h[l] :
+					vel*sub_dt/top_h[l];
+
+				coeff += lambda;
+				coeff_nb = (-lambda+eta);
+				rhs -= coeff_nb*C_nb;
+			    }
+			    else
+			    {
+				vel = (*getStateVel[l])(state);
+			    	C_nb = (*getStateVarFunc)(state);
+			    	eta = (m == 0) ? -vel*sub_dt/top_h[l] :
+					vel*sub_dt/top_h[l];
+
+                            	coeff += lambda;
+			    	coeff_nb = -lambda + eta;
+			    	rhs -= coeff_nb*C_nb;
+			    }
+			}
+			else if (fr_crx_grid_seg != NEUMANN_PDE_BOUNDARY &&
+				 fr_crx_grid_seg != MOVING_BOUNDARY)
+			{
+			    printf("Unknown PDE boundary type\n");
+			    clean_up(ERROR);
+			}
+		    }
+		}
+	    }
+	    v_new = cell_part[ic].vol_new[1];
+	    v_old = cell_part[ic].vol_old[1];
+	    eta_new = v_new/v0;
+	    eta_old = v_old/v0;
+	    rhs += eta_old*var_in[ic];
+	    coeff += eta_new;
+	    sink = source[ic]/v0;
+	    rhs += sink;
+	    solver.Add_A(I,I,coeff);
+	    solver.Add_b(I,rhs);
+	}
+	printf("size = %d  N = %d\n",size,N);
+	start_clock("petsc_solve");
+	solver.SetMaxIter(500);
+	solver.SetTol(1e-10);
+	solver.Solve();
+	
+	if (debugging("PETSc"))
+	{
+	    printf("C_CARTESIAN::computeAdvectionImplicit: "
+	    	"num_iter = %d, rel_residual = %g\n",
+		num_iter,rel_residual);
+	}
+	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+	solver.Get_x(x);
+	stop_clock("petsc_solve");
+
+	for (i = imin; i <= imax; ++i)
+	for (j = jmin; j <= jmax; ++j)
+	for (k = kmin; k <= kmax; ++k)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    icoords[2] = k;
+	    I = ijk_to_I[i][j][k];
+	    ic = d_index(icoords,top_gmax,dim);
+	    comp = top_comp[ic];
+	    if (comp == soln_comp)
+	        array[ic] = x[I-ilower];
+	    else if (comp == obst_comp)
+	    {
+	    	if (var_obst_func == NULL)
+		    array[ic] = var_obst;
+		else
+		{
+		    for (l = 0; l < dim; ++l)
+		        coords[l] = top_L[l] + i*top_h[l];
+		    array[ic] = (*var_obst_func)(obst_func_params,coords);
+		}
+	    }
+	    
+	}
+	
+	FT_ParallelExchGridArrayBuffer(array,front,NULL);
+	for (i = 0; i <= top_gmax[0]; ++i)
+	for (j = 0; j <= top_gmax[1]; ++j)
+	for (k = 0; k <= top_gmax[2]; ++k)
+	{
+	    ic = d_index3d(i,j,k,top_gmax);
+	    var_out[ic] = array[ic];
+	}
+
+	FT_FreeThese(1,x);
+	stop_clock("Csolve3d");
 }
 
 void PARABOLIC_SOLVER::Csolve2d(

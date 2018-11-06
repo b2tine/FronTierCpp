@@ -125,7 +125,7 @@ AC_SUBST(MPI_LIBS,${mpichlib})
 AS_IF([test $with_mpich = yes],
       [AC_DEFINE([HAVE_MPI],[1],[build with mpich])])
 
-#configure with PETSC
+#configure with PETSC (must be built with HYPRE)
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=${withval}],[petsc_dir=no])
@@ -140,6 +140,9 @@ AS_IF([test "x${petsc_dir}" != xno],
 
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
+
+AS_IF([test $with_petsc = yes],
+      [AC_DEFINE([HAVE_HYPRE],[1],[build with HYPRE])])
 
 #check if PETSC dependent modules should be built
 AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])

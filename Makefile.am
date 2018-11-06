@@ -5,17 +5,17 @@ EXTRA_DIST = build
 
 if PETSC_OPT
 MAYBE_IFLUID = iFluid
-MAYBE_MELTING = melting
-MAYBE_CRYSTAL = crystal
+#MAYBE_MELTING = melting
+#MAYBE_CRYSTAL = crystal
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
-MAYBE_AIRFOIL = airfoil
-MAYBE_PARACHUTE = parachute
+#MAYBE_AIRFOIL = airfoil
+#MAYBE_PARACHUTE = parachute
 endif
 endif
 
 if CGAL_OPT
-MAYBE_COLLISION = Collision
+#MAYBE_COLLISION = Collision
 endif
 
 if EX2D_OPT
@@ -92,6 +92,7 @@ $$ME/iFluid/Makefile.am \
 $$ME/iFluid/*.h \
 $$ME/iFluid/*.cpp \
 $$ME/iFluid/input-*/in-* \
+$$ME/iFluid/mrun* \
 $$ME/solver/*.h \
 $$ME/solver/*.cpp \
 $$ME/rgbody/*.h \

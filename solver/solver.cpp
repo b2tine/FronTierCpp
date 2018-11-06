@@ -261,11 +261,11 @@ void PETSc::Solve_GMRES(void)
 
 void PETSc::Solve(void)
 {
-#if defined __HYPRE__
+#if defined HAVE_HYPRE
 	Solve_HYPRE();
-#else // defined __HYPRE__*/
+#else // defined HAVE_HYPRE*/
 	Solve_BCGSL();
-#endif // defined __HYPRE__
+#endif // defined HAVE_HYPRE
 }	/* end Solve */
 
 void PETSc::Solve_BCGSL(void)
@@ -454,7 +454,7 @@ extern void viewTopVariable(
 	front->hdf_movie_var = hdf_movie_var_save;
 }	/* end viewTopVariable */
 
-#if defined __HYPRE__
+#if defined HAVE_HYPRE
 void PETSc::Solve_HYPRE(void)
 {
         PC pc;
@@ -482,7 +482,7 @@ void PETSc::Solve_HYPRE(void)
         stop_clock("KSPSolve");
 
 }
-#endif // defined __HYPRE__
+#endif // defined HAVE_HYPRE
 
 void PETSc::Solve_LU(void)
 {

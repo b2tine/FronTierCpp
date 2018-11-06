@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
+#include <config.h>
+
 #if !defined(_CDECS_H)
 #define _CDECS_H
 
@@ -100,9 +102,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #   define isnanf(x)    isnan(x)
 #   define isnand(x)    isnan(x)
 #elif defined(__GNUC__) || defined(__PGI__) || defined(__INTEL_COMPILER) || defined(__bg__)
-#   if !defined(isnan)
-#       define isnan(x) isnand(x)
-#   endif /*!defined(isnan)*/
+//#   if !defined(isnan)
+//#       define isnan(x) isnand(x)
+//#   endif /*!defined(isnan)*/
 #elif !defined(__alpha) && !defined(__hpux) && !defined(linux) && !defined(_AIX)
 #   include <ieeefp.h>
 #   define isnan(x)    isnand(x)

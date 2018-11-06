@@ -527,7 +527,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     icrds_max[1] = j;
                 }
             }
-            (void) printf("In dual elliptic solver:\n");
+            (void) printf("In elliptic solver:\n");
             (void) printf("Max relative elliptic error: %20.14f\n",max_error);
             (void) printf("Occuring at (%d %d)\n",icrds_max[0],icrds_max[1]);
             error = checkSolver(icrds_max,YES);
@@ -753,7 +753,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     icrds_max[2] = k;
                 }
             }
-            (void) printf("In dual elliptic solver:\n");
+            (void) printf("In elliptic solver:\n");
             (void) printf("Max relative elliptic error: %20.14f\n",max_error);
             (void) printf("Occuring at (%d %d %d)\n",icrds_max[0],
                                 icrds_max[1],icrds_max[2]);

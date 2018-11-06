@@ -111,7 +111,7 @@ public:
 	void Solve_GMRES(void);
 	void Solve_BCGSL(void);
 	void Solve_LU(void);
-#if defined(__HYPRE__)
+#if defined(HAVE_HYPRE)
 	void Solve_HYPRE(void);
 #endif
 	void Solve_withPureNeumann(void);
