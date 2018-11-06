@@ -9,7 +9,7 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 noinst_HEADERS = ../include/FronTier.h
 
-noinst_LTLIBRARIES = libFronTier.la
+lib_LTLIBRARIES = libFronTier.la
 
 libFronTier_la_SOURCES =
 libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
@@ -17,7 +17,7 @@ libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
   						$(abs_top_builddir)/src/util/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
-
+noinst_LTLIBRARIES = 
 if PETSC_OPT
 noinst_LTLIBRARIES += libsolver.la libiFluid.la
 endif

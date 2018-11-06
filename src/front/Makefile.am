@@ -6,9 +6,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 AM_LDFLAGS = -static
 
 
-noinst_LTLIBRARIES = libfront.la
+lib_LTLIBRARIES = libfront.la
 
-noinst_HEADERS = ../../include/front/fapi.h \
+include_HEADERS = ../../include/front/fapi.h \
 				 ../../include/front/fcell.h \
 				 ../../include/front/fdecs.h \
 				 ../../include/front/fpatrecon.h \

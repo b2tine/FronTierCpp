@@ -6,9 +6,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 AM_LDFLAGS = -static
 
 
-noinst_LTLIBRARIES = libintfc.la
+lib_LTLIBRARIES = libintfc.la
 
-noinst_HEADERS = ../../include/intfc/array.h \
+include_HEADERS = ../../include/intfc/array.h \
 				 ../../include/intfc/geom.h \
 				 ../../include/intfc/iapi.h \
 				 ../../include/intfc/iBase.h \

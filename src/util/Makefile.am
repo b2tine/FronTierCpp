@@ -3,8 +3,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 
 AM_LDFLAGS = -static
 
-
-noinst_LTLIBRARIES = libutil.la
+lib_LTLIBRARIES = libutil.la
 
 include_HEADERS = ../../include/util/cdecs.h \
 				 ../../include/util/fnamedebug.h \
