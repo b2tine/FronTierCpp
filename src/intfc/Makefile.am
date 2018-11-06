@@ -6,7 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+AM_LDFLAGS = -static
 
 
 noinst_LTLIBRARIES = libintfc.la
@@ -78,3 +78,4 @@ libintfc_la_SOURCES = arrayutils.c \
 					  zoom.c \
 					  dummyintfc.cpp
 
+libintfc_la_LIBADD = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@

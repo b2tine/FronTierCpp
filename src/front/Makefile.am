@@ -6,7 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+AM_LDFLAGS = -static
 
 
 noinst_LTLIBRARIES = libfront.la
@@ -74,3 +74,4 @@ libfront_la_SOURCES = fadv3d.c \
 					  fvelo.c \
 					  dummyfront.cpp
 
+libfront_la_LIBADD = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@

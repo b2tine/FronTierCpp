@@ -16,6 +16,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 #Initialize Libtool
 AM_PROG_AR
 LT_INIT([disable-shared])
+LT_LANG([C++])
 
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx g++])

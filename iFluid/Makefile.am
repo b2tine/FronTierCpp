@@ -33,7 +33,11 @@ iFluid_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
 			   @PETSC_LIBS@ @MPI_LIBS@ \
 			   $(abs_top_builddir)/lib/libFronTier.la \
 			   @HDF_LIBS@ @GD_LIBS@
-			   
+
+EXTRA_iFluid_DEPENDENCIES = $(abs_top_builddir)/lib/libiFluid.la \
+							$(abs_top_builddir)/lib/libsolver.la \
+			 				$(abs_top_builddir)/lib/libFronTier.la
+
 
 tagsfile:
 	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c

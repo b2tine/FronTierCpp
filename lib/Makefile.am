@@ -9,6 +9,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = -static
+AM_LIBTOOLFLAGS = --tag=CXX --preserve-dup-deps
+
 
 noinst_HEADERS = ../include/FronTier.h
 
@@ -19,6 +22,7 @@ libFronTier_la_LIBADD = $(abs_top_builddir)/src/front/libfront.la \
   						$(abs_top_builddir)/src/intfc/libintfc.la \
   						$(abs_top_builddir)/src/util/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+
 
 if PETSC_OPT
 noinst_LTLIBRARIES += libsolver.la libiFluid.la
@@ -37,6 +41,7 @@ libsolver_la_SOURCES = ../solver/solver.h \
 					   ../solver/cim_parab.cpp
 
 libsolver_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+
 
 
 libiFluid_la_CPPFLAGS = -I$(top_srcdir)/iFluid \

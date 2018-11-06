@@ -4,12 +4,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/include/util \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+AM_LDFLAGS = -static
 
 
 noinst_LTLIBRARIES = libutil.la
 
-noinst_HEADERS = ../../include/util/cdecs.h \
+include_HEADERS = ../../include/util/cdecs.h \
 				 ../../include/util/fnamedebug.h \
 				 ../../include/util/navdecs.h \
 				 ../../include/util/plotdecs.h \
@@ -43,4 +43,5 @@ libutil_la_SOURCES = cleanup.c \
 					 vtk.c \
 					 dummyutil.cpp
 
+libutil_la_LIBADD = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
