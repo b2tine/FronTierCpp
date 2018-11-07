@@ -11,7 +11,8 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign --warnings=none])
+#AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 #Initialize Libtool
 AM_PROG_AR
@@ -216,8 +217,11 @@ AM_CONDITIONAL([EX3D_OPT],[test $exThreeD = yes])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
+                 src/util/lib/Makefile
                  src/intfc/Makefile
+                 src/intfc/lib/Makefile
                  src/front/Makefile
+                 src/front/lib/Makefile
                  lib/Makefile
                  lib/gmock/Makefile
                  tests/Makefile
