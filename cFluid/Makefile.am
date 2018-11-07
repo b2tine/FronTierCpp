@@ -27,6 +27,10 @@ cFluid_LDADD = $(top_builddir)/lib/libFronTier.la \
 			   @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
+all-local:
+	@cd $(top_builddir)/lib && $(MAKE) --silent all
+
+
 tagsfile:
 	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c
 

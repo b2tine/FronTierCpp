@@ -10,9 +10,9 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 noinst_LTLIBRARIES = libFronTier.la
 
 libFronTier_la_SOURCES = ../include/FronTier.h
-libFronTier_la_LIBADD = $(top_builddir)/src/front/lib/libfront.la \
-  						$(top_builddir)/src/intfc/lib/libintfc.la \
-  						$(top_builddir)/src/util/lib/libutil.la \
+libFronTier_la_LIBADD = $(top_builddir)/src/front/objs/libfront.la \
+  						$(top_builddir)/src/intfc/objs/libintfc.la \
+  						$(top_builddir)/src/util/objs/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 if PETSC_OPT

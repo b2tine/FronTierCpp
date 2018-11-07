@@ -55,6 +55,10 @@ example14_SOURCES = example14.cpp
 AM_LDFLAGS = $(abs_top_builddir)/lib/libFronTier.la \
 			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
+
+all-local:
+	@cd $(top_builddir)/lib && $(MAKE) --silent all
+
 tagsfile:
 	ctags *.cpp ../include/*/*.h ../src/*/*.c
 

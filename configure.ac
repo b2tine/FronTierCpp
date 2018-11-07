@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([foreign --warnings=none])
+AM_SILENT_RULES([yes])
 
 #Initialize Libtool
 AM_PROG_AR
@@ -21,6 +22,9 @@ LT_LANG([C++])
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx g++])
 AC_LANG([C++])
+
+#TODO: check usage of this macro
+#AC_OPENMP
 
 #Check for pthreads
 AX_PTHREAD([have_pthread=yes],[have_pthread=no])
@@ -218,11 +222,11 @@ AC_CONFIG_FILES([Makefile
                  lib/gmock/Makefile
                  src/Makefile
                  src/util/Makefile
-                 src/util/lib/Makefile
+                 src/util/objs/Makefile
                  src/intfc/Makefile
-                 src/intfc/lib/Makefile
+                 src/intfc/objs/Makefile
                  src/front/Makefile
-                 src/front/lib/Makefile
+                 src/front/objs/Makefile
                  tests/Makefile
                  cFluid/Makefile
                  example2d/Makefile
