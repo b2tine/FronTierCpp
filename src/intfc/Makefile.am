@@ -4,11 +4,11 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = -static
+AM_LIBTOOLFLAGS = --preserve-dup-deps
 
+noinst_LTLIBRARIES = libintfc.la
 
-lib_LTLIBRARIES = libintfc.la
-
-include_HEADERS = ../../include/intfc/array.h \
+noinst_HEADERS = ../../include/intfc/array.h \
 				 ../../include/intfc/geom.h \
 				 ../../include/intfc/iapi.h \
 				 ../../include/intfc/iBase.h \

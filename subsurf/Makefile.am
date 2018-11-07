@@ -8,7 +8,6 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/subsurf \
 			  -I$(abs_top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -all-static
 
 
 noinst_PROGRAMS = subsurf

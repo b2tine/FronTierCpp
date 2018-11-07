@@ -8,7 +8,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/cFluid \
 			  -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -all-static
 
 noinst_PROGRAMS = cFluid
 

@@ -12,8 +12,6 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/Collision \
 			  -I$(abs_top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -all-static
-
 
 
 noinst_PROGRAMS = test

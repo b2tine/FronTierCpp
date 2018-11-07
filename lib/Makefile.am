@@ -7,18 +7,16 @@ AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
-include_HEADERS = ../include/FronTier.h
+noinst_LTLIBRARIES = libFronTier.la
 
-lib_LTLIBRARIES = libFronTier.la
-
-libFronTier_la_SOURCES =
+libFronTier_la_SOURCES = ../include/FronTier.h
 libFronTier_la_LIBADD = $(top_builddir)/src/front/libfront.la \
   						$(top_builddir)/src/intfc/libintfc.la \
   						$(top_builddir)/src/util/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 if PETSC_OPT
-lib_LTLIBRARIES += libsolver.la libiFluid.la
+noinst_LTLIBRARIES += libsolver.la libiFluid.la
 endif
 
 
@@ -52,9 +50,9 @@ libiFluid_la_LIBADD = @PETSC_LIBS@ @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 if CGAL_OPT
-lib_LTLIBRARIES += libCollision.la
+noinst_LTLIBRARIES += libCollision.la
 if PETSC_OPT
-lib_LTLIBRARIES += libairfoil.la
+noinst_LTLIBRARIES += libairfoil.la
 endif
 endif
 

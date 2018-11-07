@@ -6,9 +6,6 @@ AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 
-AM_LDFLAGS = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
-			 -L$(abs_top_builddir)/lib -lFronTier @HDF_LIBS@
-
 
 # Build rules for tests.
 # TESTS_ENVIRONMENT: Set environment variables for the test run
@@ -24,3 +21,7 @@ TESTS += DummyFrontTests
 check_PROGRAMS += DummyFrontTests
 
 DummyFrontTests_SOURCES = DummyFrontTests.cpp
+
+AM_LDFLAGS = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
+			 -L$(abs_top_builddir)/lib -lFronTier @HDF_LIBS@
+

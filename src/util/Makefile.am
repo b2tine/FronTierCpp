@@ -2,10 +2,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = -static
+AM_LIBTOOLFLAGS = --preserve-dup-deps
 
-lib_LTLIBRARIES = libutil.la
 
-include_HEADERS = ../../include/util/cdecs.h \
+noinst_LTLIBRARIES = libutil.la
+
+noinst_HEADERS = ../../include/util/cdecs.h \
 				 ../../include/util/fnamedebug.h \
 				 ../../include/util/navdecs.h \
 				 ../../include/util/plotdecs.h \

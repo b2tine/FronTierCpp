@@ -4,11 +4,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = -static
+AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
-lib_LTLIBRARIES = libfront.la
+noinst_LTLIBRARIES = libfront.la
 
-include_HEADERS = ../../include/front/fapi.h \
+noinst_HEADERS = ../../include/front/fapi.h \
 				 ../../include/front/fcell.h \
 				 ../../include/front/fdecs.h \
 				 ../../include/front/fpatrecon.h \
