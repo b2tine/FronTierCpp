@@ -1,4 +1,4 @@
-SUBDIRS = gmock
+SUBDIRS = ../src gmock
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
@@ -15,7 +15,6 @@ libFronTier_la_LIBADD = $(top_builddir)/src/front/lib/libfront.la \
   						$(top_builddir)/src/util/lib/libutil.la \
 						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
-noinst_LTLIBRARIES = 
 if PETSC_OPT
 noinst_LTLIBRARIES += libsolver.la libiFluid.la
 endif

@@ -7,12 +7,11 @@ AC_CONFIG_MACRO_DIR([m4])
 #Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
 #Header file with generated #DEFINE macros.
-#   included at the top of include/util/cdecs.h
+#   Must be included at the top of include/util/cdecs.h
 AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([foreign --warnings=none])
-#AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 #Initialize Libtool
 AM_PROG_AR
@@ -215,6 +214,8 @@ AM_CONDITIONAL([EX3D_OPT],[test $exThreeD = yes])
 
 #Output files
 AC_CONFIG_FILES([Makefile
+                 lib/Makefile
+                 lib/gmock/Makefile
                  src/Makefile
                  src/util/Makefile
                  src/util/lib/Makefile
@@ -222,8 +223,6 @@ AC_CONFIG_FILES([Makefile
                  src/intfc/lib/Makefile
                  src/front/Makefile
                  src/front/lib/Makefile
-                 lib/Makefile
-                 lib/gmock/Makefile
                  tests/Makefile
                  cFluid/Makefile
                  example2d/Makefile
