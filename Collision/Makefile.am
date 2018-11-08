@@ -12,18 +12,16 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/include \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@
 
 
 
-noinst_PROGRAMS = collisiontest
+noinst_PROGRAMS = test
 
 				  
-collisiontest_SOURCES = cdinit.cpp \
-						collisiontest.cpp
+test_SOURCES = test.cpp
 
-collisiontest_LDADD = $(top_builddir)/lib/libCollision.la \
-					  $(top_builddir)/lib/libFronTier.la
+test_LDADD = $(top_builddir)/lib/libCollision.la
 
 
 

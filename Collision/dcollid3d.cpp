@@ -1,4 +1,6 @@
+#include <armadillo>
 #include "collid.h"
+
 static void unsort_surface_point(SURFACE *surf);
 static bool MovingPointToTri(POINT**,double);
 static bool MovingEdgeToEdge(POINT**,double);
@@ -28,7 +30,11 @@ void CollisionSolver3d::assembleFromInterface(
 	    unsort_surface_point(*s);
 	    surf_tri_loop(*s,tri)
 	    {
-	        hseList.push_back(new CD_TRI(tri));
+                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
+                    wave_type(*s) == NEUMANN_BOUNDARY)
+	            hseList.push_back(new CD_TRI(tri, "tris_rigid"));
+                else 
+                    hseList.push_back(new CD_TRI(tri, "tris"));
 		n_tri++;
 	    }
 	}
@@ -37,7 +43,7 @@ void CollisionSolver3d::assembleFromInterface(
 	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
 	    curve_bond_loop(*c,b)
 	    {
-		hseList.push_back(new CD_BOND(b,m_dim));
+		hseList.push_back(new CD_BOND(b,m_dim, "lines"));
 		n_bond++;
 	    }
 	}
@@ -126,14 +132,40 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 
 	//compute angular velocity w: I*w = L;
 	double w[3], mag_w = 0;
-	for (int i = 0; i < 3; ++i){
-	    memcpy(tmp,I,9*sizeof(double));
-	    for (int j = 0; j < 3; j++)
-		tmp[j][i] = L[j];
-	    if (myDet3d(I) < ROUND_EPS)
-		w[i] = 0.0;
-	    else
-	        w[i] = myDet3d(tmp)/myDet3d(I);
+
+        if (myDet3d(I) < ROUND_EPS) {
+            // I is non-invertible, calculate pseudo-inverse
+            arma::mat arI(3, 3);
+            arma::vec arL(3);
+
+            for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                 arI(i, j) = I[i][j];
+            for (int i = 0; i < 3; i++)
+                 arL(i) = L[i];
+
+            arma::mat arU;
+            arma::mat arV;
+            arma::vec ars;
+
+            arma::svd(arU, ars, arV, arI);
+            for (int i = 0; i < 3; i++)
+                 if (ars(i))
+                     ars(i) = 1.0/ars(i);
+            
+            arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
+            arma::vec arw = pinvarI*arL;
+
+            for (int i = 0; i < 3; i++)
+                 w[i] = arw[i];
+        }
+        else {
+	    for (int i = 0; i < 3; ++i){
+	         memcpy(tmp,I,9*sizeof(double));
+	         for (int j = 0; j < 3; j++)
+		      tmp[j][i] = L[j];
+	         w[i] = myDet3d(tmp)/myDet3d(I);
+            }
 	}
 	mag_w = Mag3d(w);
 	
@@ -218,16 +250,14 @@ bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 
 	/* detect collision of start point of bond w.r.t to tri */
 	pts[3] = bd->start;
-	if (MovingPointToTri(pts, h)) status = true;
-	if (status && is_detImpZone)
-	    createImpZone(pts,4);
-
+        if (MovingPointToTri(pts, h)) status = true;
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
 	/* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
-	if (MovingPointToTri(pts, h)) status = true;
-	if (status && is_detImpZone)
-	    createImpZone(pts,4);
-
+        if (MovingPointToTri(pts, h)) status = true;
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
 	/* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
 	pts[3] = bd->end;
@@ -235,11 +265,10 @@ bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-	    if (MovingEdgeToEdge(pts,h)) status = true;
-	    if (status && is_detImpZone)
-		createImpZone(pts,4);
+            if (MovingEdgeToEdge(pts,h)) status = true;
+            if (status && is_detImpZone)
+                createImpZone(pts,4);
 	}
-
 	return status;
 }
 
@@ -262,12 +291,10 @@ bool CollisionSolver3d::MovingBondToBond(const BOND* b1, const BOND* b2, double 
 		    return false;
 	    }
 	}
-
 	/* detect collision between two bonds */	
-	if(MovingEdgeToEdge(pts,h)) status = true;
-	if (status && is_detImpZone)
-	    createImpZone(pts,4);
-	
+        if(MovingEdgeToEdge(pts,h)) status = true;
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
 	return status;
 }
 
@@ -296,10 +323,9 @@ bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
 	    if (pts[3] == pts[0] || pts[3] == pts[1] ||
 		pts[3] == pts[2])
 		continue; 
-
-	    if(MovingPointToTri(pts,h)) status = true;
-	    if (status && is_detImpZone)
-		createImpZone(pts,4);
+            if(MovingPointToTri(pts,h)) status = true;
+            if (status && is_detImpZone)
+                createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -315,16 +341,16 @@ bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
 		if (pts[0] == pts[2] || pts[0] == pts[3] ||
 		    pts[1] == pts[2] || pts[1] == pts[3])
 		    continue;
-
                 if(MovingEdgeToEdge(pts,h)) status = true;
-	        if (status && is_detImpZone)
-		    createImpZone(pts,4);
+                if (status && is_detImpZone)
+                    createImpZone(pts,4);
 	    }
         }
 	return status;
 }
 
-static bool MovingPointToTri(POINT* pts[],const double h){
+
+static bool MovingPointToTri(POINT* pts[],const double h) {
 
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
@@ -346,7 +372,7 @@ static bool MovingPointToTri(POINT* pts[],const double h){
 	    return false;
 }
 
-static bool MovingEdgeToEdge(POINT* pts[],const double h){
+static bool MovingEdgeToEdge(POINT* pts[],const double h) {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 	STATE* sl;
@@ -770,7 +796,6 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	else
 	for (int i = 0; i < 3; ++i)
             nor[i] /= nor_mag;
-
 	EdgeToEdgeImpulse(pts, nor, a, b, dist, root);
 	return true;
 }

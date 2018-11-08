@@ -74,6 +74,7 @@ Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
 Type y to make vector velocity field movie: y
+Type y to plot bullet in gd movie: y
 
 ************Debugging options*****************
 
@@ -81,8 +82,8 @@ Enter yes for debugging: yes
 Enter the debugging string: trace
 Enter the debugging string: CLOCK
 Enter the debugging string: step_size
-Enter the debugging string: tsample_velocity
+Enter the debugging string: make_grid_intfc
 
-Enter yes to use GPU solver: no
+Enter yes to use GPU solver: yes
 
 Type y to plot surface stress: y

@@ -30,9 +30,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 
 noinst_PROGRAMS = airfoil
 
+airfoil_CPPFLAGS = -DDAMPING_FORCE $(AM_CPPFLAGS)
 
-airfoil_CPPFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION \
-				   $(AM_CPPFLAGS)
+#airfoil_CPPFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION \
+#				   $(AM_CPPFLAGS)
 
 				  
 airfoil_SOURCES = airfoil.cpp

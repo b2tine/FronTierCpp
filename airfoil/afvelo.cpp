@@ -21,7 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include <iFluid.h>
+#include <airfoil.h>
 
 typedef struct {
 	double cen[MAXD];
@@ -111,7 +112,7 @@ extern void setMotionParams(
 	    af_params->attach_gores = YES;
 	    checkSetGoreNodes(intfc);
 	}
-#if defined(USE_GPU)
+#if defined(__GPU__)
      	if (CursorAfterStringOpt(infile,
 		"Enter yes to use GPU solver:"))
 	{
@@ -174,7 +175,7 @@ extern void setMotionParams(
 		    {
 	    	    	front->tan_curve_propagate 
 				= fourth_order_elastic_curve_propagate;
-#if defined(USE_GPU)
+#if defined(__GPU__)
             		if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
 			{
@@ -209,7 +210,7 @@ extern void setMotionParams(
 	    	    	front->interior_propagate 
 				= fourth_order_elastic_surf_propagate;
 				//= fourth_order_elastic_set_propagate;
-#if defined(USE_GPU)
+#if defined(__GPU__)
             		if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
 			{

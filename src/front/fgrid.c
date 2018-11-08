@@ -975,6 +975,7 @@ EXPORT	INTERFACE *make_grid_intfc(
 	interpolate_intfc_states(grid_intfc) = YES;
 	insert_grid_intfc_crossings(grid_intfc);
 	stop_clock("insert_grid_intfc_crossings");
+
 	start_clock("set_grid_intfc_components");
 	set_grid_intfc_components(grid_intfc,intfc);
 	stop_clock("set_grid_intfc_components");

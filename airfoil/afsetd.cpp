@@ -21,7 +21,9 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include <iFluid.h>
+#include <airfoil.h>
+#include "solver.h"
 
 static void link_surf_point_set(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**,
 				GLOBAL_POINT*,int*);

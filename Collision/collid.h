@@ -9,6 +9,8 @@
 
 #include <functional>
 #include <map>
+#include <fstream>
+#include <memory>
 
 #if defined(isnan)
 #undef isnan
@@ -18,11 +20,8 @@
 const double ROUND_EPS = 1e-10;
 const double EPS = 1e-6;
 const double DT = 0.001;
-
-
-//user-defined state should include the following
-//
 /*
+user-defined state should include the following
 struct UF{
 	POINT* next_pt;
 	POINT* root;
@@ -40,14 +39,13 @@ struct STATE{
 	bool   has_collsn;
 	bool   is_fixed;
 	UF     impZone;
-};
-*/
-
+};*/
 
 //abstract base class for hypersurface element(HSE)
 //can be a point or a bond or a triangle
 class CD_HSE{
 public:
+        std::string name;
 	virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;
 	virtual double max_moving_coord(int,double) = 0;
@@ -61,7 +59,9 @@ public:
 class CD_TRI: public CD_HSE{
 public:
 	TRI* m_tri;
-	CD_TRI(TRI* tri):m_tri(tri){}
+	CD_TRI(TRI* tri, const char* n):m_tri(tri){
+            name = n;
+        }
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
@@ -75,7 +75,9 @@ class CD_BOND: public CD_HSE{
 public:
 	BOND* m_bond;
 	int m_dim;
-	CD_BOND(BOND* bond, int dim):m_bond(bond), m_dim(dim){}
+	CD_BOND(BOND* bond, int dim, const char* n):m_bond(bond), m_dim(dim){
+            name = n;
+        }
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
@@ -128,10 +130,17 @@ struct traitsForCollision{
 	static std::ptrdiff_t id(Box_parameter b) { return (std::ptrdiff_t)(b);}
 };
 
+// Pimpl(Pointer to Implementation) idiom
+// declare AABBTree but not defined yet
+class AABBTree;
+
 //abstract base class for collision detection and handling
 class CollisionSolver {
 private:
 	//global parameters
+	std::unique_ptr<AABBTree> abt_proximity;
+        std::unique_ptr<AABBTree> abt_collision;
+        double volume;
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;
@@ -155,6 +164,8 @@ private:
 	void setTraitsDimension();
 	void detectProximity();
 	void detectCollision();
+        void aabbProximity();
+        void aabbCollision();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
@@ -166,7 +177,6 @@ private:
 	virtual bool MovingBondToBond(const BOND*,const BOND*,double) = 0;
 	virtual bool MovingTriToTri(const TRI*,const TRI*,double) = 0;
 	virtual bool MovingTriToBond(const TRI*,const BOND*,double)=0;
-
 protected:
 	int m_dim;
 	std::vector<CD_HSE*> hseList;
@@ -174,8 +184,12 @@ protected:
 	static bool s_detImpZone;
 	void clearHseList();
 public:
-	CollisionSolver(int dim):m_dim(dim){}
-	CollisionSolver(){}
+        enum {STATIC, MOVING};
+	CollisionSolver(int);
+	CollisionSolver();
+        // in case we are going to use move operations
+        CollisionSolver(CollisionSolver&&);
+        CollisionSolver& operator=(CollisionSolver&&);
 	static void setRoundingTolerance(double);
 	static double getRoundingTolerance();
 	static void setFabricThickness(double);
@@ -191,7 +205,7 @@ public:
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
-	virtual ~CollisionSolver(){} //virtual destructor
+	virtual ~CollisionSolver(); //virtual destructor
 	//pure virtual functions
 	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
 	virtual void createImpZoneForRG(const INTERFACE*) = 0;
@@ -245,27 +259,40 @@ public:
 //callback functor to identify real collision
 struct reportProximity{
     int& num_pairs;
+    // how many pairs of AABBs are collided
+    int& numBox;
+    // record time of nonAABB part
+    double& time;
     CollisionSolver* collsn_solver;
-    reportProximity(int &npair,CollisionSolver* solver): 
-			 	 num_pairs(npair = 0),
-				 collsn_solver(solver){}
+    reportProximity(double& ntime, int& nnumBox, int &npair,
+                CollisionSolver* solver): num_pairs(npair = 0),
+                                          time(ntime),
+                                          numBox(nnumBox),
+				          collsn_solver(solver){}
     void operator()( const CD_HSE* a, const CD_HSE* b) {
+        double start = cpu_seconds();
+
+        numBox++;
 	if(collsn_solver->isProximity(a,b)){
 	    num_pairs++;
 	}
+        time += cpu_seconds()-start;
     }
 };
 
 struct reportCollision{
     bool& is_collision;
-    int&  num_pairs;
+    int& numBox;
+    int& num_pairs;
     CollisionSolver* collsn_solver;
-    reportCollision(bool &status, int &npairs,CollisionSolver* solver): 
-		     is_collision(status), 
-		     num_pairs(npairs = 0), 
-		     collsn_solver(solver){}
+    reportCollision(int& nnumBox, bool &status, int &npairs,
+                    CollisionSolver* solver): is_collision(status), 
+                                              numBox(nnumBox),
+		                              num_pairs(npairs = 0), 
+		                              collsn_solver(solver){}
     void operator()( const CD_HSE* a, const CD_HSE* b) {
 	if (collsn_solver->isCollision(a,b)){
+            numBox++;
 	    num_pairs ++;
 	    is_collision = true;
 	}

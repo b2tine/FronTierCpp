@@ -9,6 +9,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkVersion.h>
+
 #include "collid.h"
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>& hse_list, const char* fname)

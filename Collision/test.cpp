@@ -1,6 +1,5 @@
-#include "collid.h"
-
 #include <vector>
+#include "collid.h"
 
 //test module for 3d surface
 //proximity and collision detection

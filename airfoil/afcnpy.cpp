@@ -21,8 +21,13 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#ifdef COLLISION_DETECTION
+	#include "collid.h"
+#endif
 
+#include "iFluid.h"
+#include "airfoil.h"
+#include "solver.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
@@ -1902,8 +1907,7 @@ extern void fourth_order_elastic_set_propagate(
                 collision_solver->setFrictionConstant(0.0);
                 collision_solver->setPointMass(af_params->m_s);
                 collision_solver->setFabricThickness(1.0e-4);
-		
-                collision_solver->setRestitutionCoef(1.0);
+		collision_solver->setRestitutionCoef(0.0);
             }
 #endif
 
@@ -1929,7 +1933,7 @@ extern void fourth_order_elastic_set_propagate(
 	    } 
 
 	    start_clock("spring_model");
-#if defined(USE_GPU)
+#if defined(__GPU__)
             if (af_params->use_gpu)
             {
             	if (debugging("trace"))
@@ -1973,6 +1977,7 @@ extern void fourth_order_elastic_set_propagate(
                 // resolve collision
                 collision_solver->resolveCollision();
         }
+	setSpecialNodeForce(fr, geom_set.kl);
 #endif
 
 	if (debugging("trace"))
@@ -2331,9 +2336,9 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
             sl->is_fixed = false;
             AF_NODE_EXTRA* extra;
             if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
-                (extra->af_node_type == PRESET_NODE ||
-                 is_load_node(*n) ||
-                 is_rg_string_node(*n)))
+                (extra->af_node_type == PRESET_NODE))
+                 //is_load_node(*n) ||
+                 //is_rg_string_node(*n)))
             {
                 sl->is_fixed = true;
             }

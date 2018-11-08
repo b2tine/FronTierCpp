@@ -1,17 +1,9 @@
-#ifndef AIRFOIL_H
-#define AIRFOIL_H
+#ifndef _AIRFOIL_
+#define _AIRFOIL_
 
-#ifdef COLLISION_DETECTION
-#include <collid.h>
-#endif
-
-#include <iFluid.h>
+#include <FronTier.h>
 #include "airfoil_sv.h"
-
-#if defined(USE_GPU)
 #include "airfoil_gpu.cuh"
-#endif
-
 #include <map>
 
 typedef struct {
@@ -252,7 +244,6 @@ extern void initPlaneSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initAirbag(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initRigidBody(Front*);
 extern void initIsolated3dCurves(Front*);
-extern void rotateObjects(Front*);
 
 // afprop.cpp
 extern void airfoil_point_propagate(Front*,POINTER,POINT*,POINT*,

@@ -3,15 +3,17 @@
 #include <CGAL/intersections.h>
 
 #include <vector>
+#include <iostream>
 #include <fstream>
 #include <cmath>
 #include <algorithm>
 
-//#include <FronTier.h>
+#include <FronTier.h>
+#include "AABB.h"
 #include "collid.h"
 #include <ifluid_state.h>
 
-//#include <omp.h>
+#include <omp.h>
 
 /*****declaration of static functions starts here********/
 //static void makeSet(std::vector<CD_HSE*>&);
@@ -47,7 +49,15 @@ int CollisionSolver::is_coplanar = 0;
 int CollisionSolver::edg_to_edg = 0;
 int CollisionSolver::pt_to_tri = 0;
 
-//functions in the abstract base class
+// To use Pimpl idiom by unique_ptr, special member function 
+// should be explicit declared in header file and defined in 
+// implementation file
+CollisionSolver::CollisionSolver(int dim):m_dim(dim), abt_proximity(nullptr) {}
+CollisionSolver::CollisionSolver() = default;
+CollisionSolver::CollisionSolver(CollisionSolver&& rhs) = default;
+CollisionSolver& CollisionSolver::operator=(CollisionSolver&& rhs) = default;
+CollisionSolver::~CollisionSolver() = default;
+
 void CollisionSolver::clearHseList(){
 	for (unsigned i = 0; i < hseList.size(); ++i){
 		delete hseList[i];
@@ -121,7 +131,7 @@ void CollisionSolver::detectDomainBoundaryCollision() {
                 it < hseList.end(); ++it) {
 	    for (int i = 0; i < (*it)->num_pts(); ++i) {
 		POINT* pt = (*it)->Point_of_hse(i);
-		if (isMovableRigidBody(pt)) continue;
+		//if (isMovableRigidBody(pt)) continue;
                 STATE* sl = (STATE*)left_state(pt);
 		double cand_coords[3]; //candidate position
 		//try to modify the average velocity 
@@ -137,7 +147,10 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 			sl->has_collsn = true;
 			cand_coords[j] = L + s_thickness;
 			dv = fabs(sl->avgVel[j]);
-		    	sl->avgVel[j] = 0.0;
+                        // ytb
+                        for (int k = 0; k < 3; k++)
+                             sl->avgVel[k] = 0.0;
+		    	//sl->avgVel[j] = 0.0;
 		        Coords(pt)[j] = cand_coords[j];
 		    }
 		    else if (cand_coords[j] >= U)
@@ -162,8 +175,8 @@ void CollisionSolver::computeAverageVelocity(){
 	POINT* pt;
         STATE* sl; 
 	double dt = getTimeStepSize();
-	double max_speed = 0, *max_vel = NULL;
-	POINT* max_pt;
+	double max_speed = 0, *max_vel = nullptr;
+	POINT* max_pt=nullptr;
 	//#pragma omp parallel for private(pt,sl)
         for (std::vector<CD_HSE*>::iterator it = hseList.begin();
                 it < hseList.end(); ++it){
@@ -172,10 +185,14 @@ void CollisionSolver::computeAverageVelocity(){
                 sl = (STATE*)left_state(pt); 
                 for (int j = 0; j < 3; ++j)
 		{
-		    if (dt > ROUND_EPS)
+		    if (dt > ROUND_EPS) {
                         sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
-		    else
+                        sl->avgVel_old[j] = sl->avgVel[j];
+                    }
+		    else {
 		        sl->avgVel[j] = 0.0;
+                        sl->avgVel_old[j] = 0.0;
+                    }
 		    if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
 		    {
 			std::cout<<"nan avgVel" << std::endl;
@@ -194,16 +211,19 @@ void CollisionSolver::computeAverageVelocity(){
         }
 	if (debugging("collision"))
 	{
-	    std::cout << "Maximum average velocity is " 
-		      << max_vel[0] << " "
-		      << max_vel[1] << " "
-		      << max_vel[2] << std::endl; 
-	    sl = (STATE*)left_state(max_pt);
-	    printf("x_old = [%f %f %f]\n",
-		   sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-	    printf("x_new = [%f %f %f]\n",
-		   Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
-	    printf("dt = %f\n",dt);
+            if (max_vel)
+	        std::cout << "Maximum average velocity is " 
+		          << max_vel[0] << " "
+		          << max_vel[1] << " "
+		          << max_vel[2] << std::endl; 
+            if (max_pt) {
+	        sl = (STATE*)left_state(max_pt);
+	        printf("x_old = [%f %f %f]\n",
+		        sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+	        printf("x_new = [%f %f %f]\n",
+		        Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
+	        printf("dt = %f\n",dt);
+            }
 	}
 	//restore coords of points to old coords !!!
 	//x_old is the only valid coords for each point 
@@ -230,7 +250,6 @@ void CollisionSolver::computeImpactZone()
 	bool is_collision = true;
         int numZones = 0;
 	int niter = 0;
-	int cd_pair = 0;
 
         std::cout<<"Starting compute Impact Zone: "<<std::endl;
 	turnOnImpZone();
@@ -241,16 +260,24 @@ void CollisionSolver::computeImpactZone()
 	    //start UF alogrithm
 	    //merge four pts if collision happens
 
-	    start_clock("cgal_impactzone");
+	    start_clock("dynamic_AABB_collision");
+            aabbCollision();
+            is_collision = abt_collision->getCollsnState();
+            /*
+            int numBox = 0;
+	    int cd_pair = 0;
+
 	    CGAL::box_self_intersection_d(hseList.begin(),
-                  hseList.end(),reportCollision(is_collision,cd_pair,this),
-                  traitsForCollision());
-	    stop_clock("cgal_impactzone");
+                  hseList.end(),reportCollision(numBox, is_collision,
+                    cd_pair,this), traitsForCollision());
+            */
+	    stop_clock("dynamic_AABB_collision");
  
             updateAverageVelocity();
 
 	    updateImpactZoneVelocity(numZones);
-            std::cout <<"    #"<<niter++ << ": " << cd_pair 
+            std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
+            //std::cout <<"    #"<< niter++ << ": " << cd_pair
                       << " pair of collision tris" << std::endl;
 	    std::cout <<"     "<< numZones
 		      <<" zones of impact" << std::endl;
@@ -286,8 +313,8 @@ void CollisionSolver::updateImpactZoneVelocity(int &nZones)
 {
 	POINT* pt;
 	int numZones = 0;
-	unsortHseList(hseList);
 
+	unsortHseList(hseList);
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
 	     it < hseList.end(); ++it){
 	    for (int i = 0; i < (*it)->num_pts(); ++i){
@@ -348,23 +375,84 @@ void CollisionSolver::resolveCollision()
 	updateFinalPosition();
 	stop_clock("updateFinalPosition");
 
-	reduceSuperelast();
+	// reduceSuperelast();
 	
 	start_clock("updateFinalVelocity");
+	//detectProximity();
 	//update velocity using average velocity
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
 }
 
+// function to perform AABB tree building, updating structure
+// and query for proximity detection process
+void CollisionSolver::aabbProximity() {
+    // if first time, build the tree and AABB elements and node
+    if (!abt_proximity.get()) {
+        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
+        for (auto it = hseList.begin(); it != hseList.end(); it++) {
+             AABB* ab = new AABB (*it, abt_proximity->getType());
+             abt_proximity->addAABB(ab);
+        }
+        abt_proximity->updatePointMap(hseList);
+        volume = abt_proximity->getVolume();
+    }
+    else {
+        abt_proximity->updateAABBTree(hseList);
+        // if current tree structure don't fit for the current 
+        // surface, update structure of the tree
+        if ((abt_proximity->getVolume() - volume) > 0.2*volume) {
+            abt_proximity->updateTreeStructure();
+            volume = abt_proximity->getVolume();
+        }
+    }
+    // query for collision detection of AABB elements
+    abt_proximity->query(this);
+}
+
 void CollisionSolver::detectProximity()
 {
+        /*
+        start_clock("cgal_proximity");
+
 	int num_pairs = 0;
+        int numBox = 0;
+        double time; 
+
 	CGAL::box_self_intersection_d(hseList.begin(),hseList.end(),
-                                     reportProximity(num_pairs,this),
-				     traitsForProximity());
+                             reportProximity(time, numBox, num_pairs,this),
+			     traitsForProximity());
+        */
+        start_clock("dynamic_AABB_proximity");
+        aabbProximity();
+        stop_clock("dynamci_AABB_proximity");
 	updateAverageVelocity();
 	if (debugging("collision"))
-	std::cout << num_pairs << " pair of proximity" << std::endl;
+	std::cout << abt_proximity->getCount() 
+	//std::cout << num_pairs
+                  << " pair of proximity" << std::endl;
+}
+
+// AABB tree for collision detection process
+void CollisionSolver::aabbCollision() {
+    if (!abt_collision.get()) {
+        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
+        for (auto it = hseList.begin(); it != hseList.end(); it++) {
+             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
+             abt_collision->addAABB(ab);
+        }
+        abt_collision->updatePointMap(hseList);
+        volume = abt_collision->getVolume();
+    }
+    else {
+        abt_collision->setTimeStep(s_dt);
+        abt_collision->updateAABBTree(hseList);
+        if ((abt_collision->getVolume() - volume) > 0.2*volume) {
+            abt_collision->updateTreeStructure();
+            volume = abt_collision->getVolume();
+        }
+    }
+    abt_collision->query(this);
 }
 
 void CollisionSolver::detectCollision()
@@ -372,7 +460,6 @@ void CollisionSolver::detectCollision()
 	bool is_collision = true; 
 	const int MAX_ITER = 5;
 	int niter = 1;
-	int cd_pair = 0;
 
 	std::cout<<"Starting collision handling: "<<std::endl;
 	//record if has an actual collision
@@ -382,17 +469,24 @@ void CollisionSolver::detectCollision()
 	//
 	while(is_collision){
 	    is_collision = false;
-	    start_clock("cgal_collision");
+	    start_clock("dynamic_AABB_collision");
+            /*
+            int numBox = 0;
+	    int cd_pair = 0;
+   
 	    CGAL::box_self_intersection_d(hseList.begin(),
-		  hseList.end(),reportCollision(is_collision,cd_pair,this),
-		  traitsForCollision());
-	    stop_clock("cgal_collision");
-	
+		  hseList.end(),reportCollision(numBox, 
+                    is_collision,cd_pair,this), traitsForCollision());
+            */
+	    aabbCollision();
+            is_collision = abt_collision->getCollsnState();
+	    stop_clock("dynamic_AABB_collision");
 	    if (cd_count++ == 0 && is_collision) 
 		setHasCollision(true);
 
 	    updateAverageVelocity();
-	    std::cout<<"    #"<<niter << ": " << cd_pair 
+	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+	    //std::cout<<"    #"<<niter << ": " << cd_pair
 		     << " pair of collision tris" << std::endl;
 	    if (++niter > MAX_ITER) break;
 	}
@@ -566,6 +660,24 @@ void CollisionSolver::updateFinalForRG()
 	std::vector<int> mrg;
 	std::map<int, bool> visited;
 
+        for (auto it = hseList.begin(); it < hseList.end(); it++) {
+             for (int i = 0; i < (*it)->num_pts(); i++) {
+                  pt = (*it)->Point_of_hse(i);
+                  sl = (STATE*)left_state(pt);
+                  if (!isMovableRigidBody(pt)) continue;
+
+                  int rg_index = body_index(pt->hs);
+
+                  if ((visited.count(rg_index) == 0) || (!visited[rg_index]))
+                  {
+                       double* com = center_of_mass(pt->hs);
+
+                       mrg_com[rg_index] = std::vector<double>(com, com+3);
+                       visited[rg_index] = true;
+                  }
+             }
+        }
+
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
              it < hseList.end(); ++it)
         {
@@ -614,9 +726,9 @@ void CollisionSolver::updateAverageVelocity()
 	POINT *p;
 	STATE *sl;
 	double maxSpeed = 0;
-	double* maxVel = NULL;
+	double* maxVel = nullptr;
 
-#ifdef HAVE_VTK
+#ifdef __VTK__
 	if (debugging("CollisionImpulse")){
        	  char fname[200] = "vtk_test";
        	  static int count = 0;
@@ -670,8 +782,10 @@ void CollisionSolver::updateAverageVelocity()
 		if (debugging("collision")){
 		    //debugging: print largest speed
 		    double speed = Mag3d(sl->avgVel);
-		    if (speed > maxSpeed)
+		    if (speed > maxSpeed) {
 			maxVel = sl->avgVel;
+                        maxSpeed = speed;
+                    }
 		}
 		sorted(p) = YES;
 	    }
@@ -679,7 +793,7 @@ void CollisionSolver::updateAverageVelocity()
 	if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
 	if (debugging("collision"))
-	if (maxVel != NULL)
+	if (maxVel != nullptr)
 	    printf("    max velocity = [%f %f %f]\n",maxVel[0],maxVel[1],maxVel[2]);
 	if (debugging("collision"))
 	    printDebugVariable();
@@ -688,6 +802,14 @@ void CollisionSolver::updateAverageVelocity()
 bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
+        // temp code
+        // skip lines collision and line with rigid body
+        if (a->name == "lines" && b->name == "lines") {
+            return false;
+        }
+        if (a->name == "lines" && b->name == "tris_rigid" || 
+            a->name == "tris_rigid" && b->name == "lines")
+            return false;
 	double h = CollisionSolver3d::getRoundingTolerance();
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
@@ -701,6 +823,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
+            return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
 	    return MovingBondToBond(b1,b2,h);
@@ -708,6 +831,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
+            return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
 	    return MovingTriToBond(t1,b1,h);
@@ -715,6 +839,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
+            return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
 	    return MovingTriToBond(t1,b1,h);

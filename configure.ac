@@ -195,7 +195,6 @@ AS_IF([test $with_cgal = yes],
 AM_CONDITIONAL([CGAL_OPT],
                [test $with_cgal = yes])
 
-#enable/disable Collision module ....
 
 AM_COND_IF([CGAL_OPT],
            [AC_CONFIG_FILES([Collision/Makefile
@@ -205,6 +204,8 @@ AM_COND_IF([CGAL_OPT],
                                         airfoil/objs/Makefile
                                         parachute/Makefile])])])
 
+#enable/disable Collision module ....
+#AC_ARG_ENABLE
 
 
 

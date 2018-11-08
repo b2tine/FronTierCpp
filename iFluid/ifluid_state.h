@@ -32,6 +32,7 @@ struct STATE {
 	double collsnImpulse_RG[3];
         double friction[3];
         double avgVel[3];
+        double avgVel_old[3];
         double x_old[3];
         int    collsn_num;
 	int    collsn_num_RG;

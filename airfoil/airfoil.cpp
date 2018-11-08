@@ -26,7 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include "airfoil.h"
+#include <iFluid.h>
+#include <airfoil.h>
 
 	/*  Function Declarations */
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
@@ -115,7 +116,6 @@ int main(int argc, char **argv)
 	    if (f_basic.dim == 3)
 		initIsolated3dCurves(&front);
 	    initRigidBody(&front);
-            rotateObjects(&front);
 	    rgb_init(&front, rgb_params);
 	    if (f_basic.dim == 3 && debugging("trace"))
 	    {
