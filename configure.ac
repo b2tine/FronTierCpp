@@ -12,7 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([foreign --warnings=none])
-#AM_SILENT_RULES([yes])
+AM_SILENT_RULES([yes])
 
 #Initialize Libtool
 AM_PROG_AR
@@ -228,6 +228,7 @@ AC_CONFIG_FILES([Makefile
                  src/front/objs/Makefile
                  tests/Makefile
                  cFluid/Makefile
+                 cFluid/objs/Makefile
                  example2d/Makefile
                  example2d/objs/Makefile
                  example3d/Makefile
