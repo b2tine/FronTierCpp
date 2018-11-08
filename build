@@ -47,10 +47,10 @@ autoreconf -vif
 
 echo "configure options: ${CONF}"
 
-export CC=mpicc
+#export CC=mpicc
 export CFLAGS=-w
 
-export CXX=mpic++
+#export CXX=mpic++
 export CXXFLAGS="-std=c++11 -w"
 
 ./configure ${CONF}

@@ -38,9 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if defined(USE_OVERTURE) 
 #else 
 #if defined(linux)
-#  if !defined(_GNU_SOURCE)
-#    define _GNU_SOURCE
-#  endif /*!defined(_GNU_SOURCE)*/
+    #if !defined(_GNU_SOURCE)
+    #define _GNU_SOURCE
+#endif /*!defined(_GNU_SOURCE)*/
 #endif /* defined(linux) */
 #endif /* if defined(USE_OVERTURE) */  
 
@@ -57,9 +57,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <limits.h>
 #include <float.h>
 #include <errno.h>
+
 #if defined(HAVE_MPI)
-#   include <mpi.h>
+#include <mpi.h>
 #endif /* defined(HAVE_MPI) */
+
 #if defined(HAVE_GD)
 #include <gd.h>
 #include <gdfonts.h>
