@@ -56,8 +56,13 @@ AM_LDFLAGS = $(abs_top_builddir)/lib/libFronTier.la \
 			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
-all-local:
+$(PROGRAMS): $(abs_top_builddir)/lib/libFronTier.la
+
+$(abs_top_builddir)/lib/libFronTier.la: FORCE
 	@cd $(top_builddir)/lib && $(MAKE) --silent all
+
+FORCE:
+
 
 tagsfile:
 	ctags *.cpp ../include/*/*.h ../src/*/*.c

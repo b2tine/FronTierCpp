@@ -26,13 +26,12 @@ cFluid_SOURCES = cFluid.h \
 cFluid_LDADD = $(top_builddir)/lib/libFronTier.la \
 			   @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
-
-all-local:
+$(cFluid_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/lib && $(MAKE) --silent all
+
+FORCE:
 
 
 tagsfile:
 	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c
-
-
 
