@@ -25,7 +25,8 @@ ______lib_libsolver_la_LIBADD = $(top_builddir)/lib/libFronTier.la \
 								@PETSC_LIBS@
 
 
+
 $(______lib_libsolver_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib && $(MAKE) all
+	@cd $(top_builddir)/src && $(MAKE) all
 
 FORCE:
