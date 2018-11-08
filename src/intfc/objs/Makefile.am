@@ -1,7 +1,3 @@
-EXTRA_DIST = ../testintfc.c \
-			 ../intfc_gpu.cuh \
-			 ../intfc_gpu.cu
-
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 

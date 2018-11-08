@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 /*
-*				example00.c:
+*				example00.cpp:
 *
 *		User initialization example for Front Package:
 *

@@ -12,7 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 
 #Initialize automake and specify foreign (non-GNU) standards.
 AM_INIT_AUTOMAKE([foreign --warnings=none])
-AM_SILENT_RULES([yes])
+#AM_SILENT_RULES([yes])
 
 #Initialize Libtool
 AM_PROG_AR
@@ -192,14 +192,13 @@ AS_IF([test $with_cgal = yes],
 AM_CONDITIONAL([CGAL_OPT],
                [test $with_cgal = yes])
 
-AM_COND_IF([CGAL_OPT],
-           [AM_COND_IF([PETSC_OPT],
-                       [AC_CONFIG_FILES(
-                        [Collision/Makefile
-                         airfoil/Makefile
-                         parachute/Makefile])])])
-
 #enable/disable Collision module ....
+
+AM_COND_IF([CGAL_OPT],
+           [AC_CONFIG_FILES([Collision/Makefile])
+           AM_COND_IF([PETSC_OPT],
+                      [AC_CONFIG_FILES([airfoil/Makefile parachute/Makefile])])])
+
 
 
 
@@ -230,7 +229,9 @@ AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  cFluid/Makefile
                  example2d/Makefile
-                 example3d/Makefile])
+                 example2d/objs/Makefile
+                 example3d/Makefile
+                 example3d/objs/Makefile])
 
 #Generate output
 AC_OUTPUT

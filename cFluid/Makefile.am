@@ -33,5 +33,5 @@ FORCE:
 
 
 tagsfile:
-	ctags *.h *.cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp $(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 

@@ -1,8 +1,3 @@
-EXTRA_DIST = input \
-			../ testfront.c \
-			../front_gpu.cu \
-			front_gpu.cuh
-
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 

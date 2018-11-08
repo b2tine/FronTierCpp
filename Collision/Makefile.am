@@ -14,17 +14,17 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/Collision \
 
 
 
-noinst_PROGRAMS = test
+noinst_PROGRAMS = collisiontest
 
 				  
-test_SOURCES = collid.h \
-			   cdinit.cpp \
-			   test.cpp
+collisiontest_SOURCES = collid.h \
+		 				cdinit.cpp \
+		 				collisiontest.cpp
 
-test_LDADD = $(abs_top_builddir)/lib/libCollision.la \
-			 @CGAL_LIBS@ \
-			 $(abs_top_builddir)/lib/libFronTier.la \
-			 @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+collisiontest_LDADD = $(abs_top_builddir)/lib/libCollision.la \
+		 			  @CGAL_LIBS@ \
+		 			  $(abs_top_builddir)/lib/libFronTier.la \
+		 			  @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
 
 
