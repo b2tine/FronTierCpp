@@ -1902,7 +1902,8 @@ extern void fourth_order_elastic_set_propagate(
                 collision_solver->setFrictionConstant(0.0);
                 collision_solver->setPointMass(af_params->m_s);
                 collision_solver->setFabricThickness(1.0e-4);
-		collision_solver->setRestitutionCoef(0.0);
+		
+                collision_solver->setRestitutionCoef(1.0);
             }
 #endif
 

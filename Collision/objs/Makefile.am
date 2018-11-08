@@ -5,7 +5,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_LDFLAGS = -static
+#NOTE: libCollision.la is a nonstatic libtool convenience library
+
+#AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
@@ -20,12 +22,15 @@ ______lib_libCollision_la_SOURCES = \
 ../dcollid3d.cpp
 
 
-______lib_libCollision_la_LIBADD = @CGAL_LIBS@ @MPI_CFLAGS@ \
-								   @HDF_CFLAGS@ @GD_CFLAGS@
+______lib_libCollision_la_LIBADD = @CGAL_LIBS@
 
 
 
-$(______lib_libCollision_la_DEPENDENCIES): FORCE
+EXTRA______lib_libCollision_la_DEPENDENCIES = $(top_builddir)/lib/libFronTier.la
+
+
+
+$(EXTRA______lib_libCollision_la_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/src && $(MAKE) all
 
 FORCE:

@@ -1,8 +1,5 @@
 AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
-			 -I$(abs_top_srcdir)/include \
-			 -I$(abs_top_srcdir)/include/front \
-			 -I$(abs_top_srcdir)/include/intfc \
-			 -I$(abs_top_srcdir)/include/util \
+			 -I$(top_srcdir)/include \
 			 @MPI_CFLAGS@ @HDF_CFLAGS@
 
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
@@ -24,5 +21,6 @@ check_PROGRAMS += DummyFrontTests
 DummyFrontTests_SOURCES = DummyFrontTests.cpp
 
 DummyFrontTests_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
-		   				-L$(top_builddir)/lib -lFronTier @MPI_LIBS@ @HDF_LIBS@
+		   				$(top_builddir)/lib/libFronTier.la \
+						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 

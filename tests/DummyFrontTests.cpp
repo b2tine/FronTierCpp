@@ -1,5 +1,5 @@
 #include <FronTier.h>
-#include <dummyfront.hpp>
+#include <front/dummyfront.hpp>
 #include <gtest/gtest.h>
 
 

@@ -27,10 +27,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
-
 
 noinst_PROGRAMS = airfoil
+
+
+airfoil_CPPFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION \
+				   $(AM_CPPFLAGS)
+
 				  
 airfoil_SOURCES = airfoil.cpp
 

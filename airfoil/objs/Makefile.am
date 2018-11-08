@@ -7,8 +7,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+
 AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
+
+
+
+AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
+
 
 
 noinst_LTLIBRARIES = ../../lib/libairfoil.la
