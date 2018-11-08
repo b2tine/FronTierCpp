@@ -1,3 +1,5 @@
+SUBDIRS = objs
+
 input_directories = input-bubble \
 				   	input-cauchy \
 					input-drop \
@@ -11,31 +13,27 @@ input_directories = input-bubble \
 EXTRA_DIST = $(input_directories)
 
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
+AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 noinst_PROGRAMS = iFluid
 
-iFluid_SOURCES = iFluid.h \
-				 ifluid_state.h \
-				 iFluid.cpp
 
-iFluid_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
-			   $(abs_top_builddir)/lib/libsolver.la \
-			   @PETSC_LIBS@ @MPI_LIBS@ \
-			   $(abs_top_builddir)/lib/libFronTier.la \
-			   @HDF_LIBS@ @GD_LIBS@
+iFluid_SOURCES = iFluid.cpp
 
-EXTRA_iFluid_DEPENDENCIES = $(abs_top_builddir)/lib/libiFluid.la \
-							$(abs_top_builddir)/lib/libsolver.la \
-			 				$(abs_top_builddir)/lib/libFronTier.la
+
+
+iFluid_LDADD = $(top_builddir)/lib/libiFluid.la
+
+
 
 
 tagsfile:
-	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp $(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 

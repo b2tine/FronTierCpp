@@ -1,3 +1,6 @@
+SUBDIRS = objs
+
+
 broken_files = example06.cpp \
 			   example12.cpp \
 			   example13.cpp \
@@ -7,7 +10,6 @@ broken_files = example06.cpp \
 EXTRA_DIST = README input $(broken_files)
 
 
-SUBDIRS = objs
 
 
 tagsfile:

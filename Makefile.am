@@ -4,6 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = build
 
 if PETSC_OPT
+MAYBE_SOLVER = solver
 MAYBE_IFLUID = iFluid
 MAYBE_CRYSTAL = crystal
 MAYBE_MELTING = melting
@@ -28,8 +29,8 @@ endif
 
 
 SUBDIRS = lib \
-		  tests \
 		  cFluid \
+		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \
 		  $(MAYBE_CRYSTAL) \
 		  $(MAYBE_MELTING) \
@@ -38,7 +39,8 @@ SUBDIRS = lib \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_EX2D) \
-		  $(MAYBE_EX3D)
+		  $(MAYBE_EX3D) \
+		  tests
 
 
 TARFILELIST = \

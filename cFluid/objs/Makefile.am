@@ -24,7 +24,7 @@ ___cFluid_LDADD = $(top_builddir)/lib/libFronTier.la \
 
 
 $(___cFluid_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib && $(MAKE) --silent all
+	@cd $(top_builddir)/lib && $(MAKE) all
 
 FORCE:
 

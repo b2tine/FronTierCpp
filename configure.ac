@@ -152,9 +152,12 @@ AS_IF([test $with_petsc = yes],
 AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
 
 AM_COND_IF([PETSC_OPT],
-           [AC_CONFIG_FILES([iFluid/Makefile
-                            melting/Makefile
-                            crystal/Makefile])])
+           [AC_CONFIG_FILES([solver/Makefile
+                             solver/objs/Makefile
+                             iFluid/Makefile
+                             iFluid/objs/Makefile
+                             melting/Makefile
+                             crystal/Makefile])])
 
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
@@ -197,7 +200,8 @@ AM_CONDITIONAL([CGAL_OPT],
 AM_COND_IF([CGAL_OPT],
            [AC_CONFIG_FILES([Collision/Makefile])
            AM_COND_IF([PETSC_OPT],
-                      [AC_CONFIG_FILES([airfoil/Makefile parachute/Makefile])])])
+                      [AC_CONFIG_FILES([airfoil/Makefile
+                                        parachute/Makefile])])])
 
 
 
@@ -226,13 +230,13 @@ AC_CONFIG_FILES([Makefile
                  src/intfc/objs/Makefile
                  src/front/Makefile
                  src/front/objs/Makefile
-                 tests/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
                  example2d/Makefile
                  example2d/objs/Makefile
                  example3d/Makefile
-                 example3d/objs/Makefile])
+                 example3d/objs/Makefile
+                 tests/Makefile])
 
 #Generate output
 AC_OUTPUT

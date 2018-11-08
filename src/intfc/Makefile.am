@@ -1,7 +1,10 @@
+SUBDIRS = objs
+
+
 EXTRA_DIST = testintfc.c \
 			 intfc_gpu.cuh \
 			 intfc_gpu.cu
 
 
-SUBDIRS = objs
-
+tagsfile:
+	ctags $(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
