@@ -21,13 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
 #include "airfoil.h"
-#include <solver.h>
 
-#ifdef COLLISION_DETECTION
-#include <collid.h>
-#endif
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);

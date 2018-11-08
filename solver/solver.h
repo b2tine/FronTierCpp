@@ -2,8 +2,8 @@
  * 		solver.h
  **********************************************************************/
 
-#ifndef _FT_IFLUID_SOLVER_H_
-#define _FT_IFLUID_SOLVER_H_
+#ifndef FT_IFLUID_SOLVER_H
+#define FT_IFLUID_SOLVER_H
 
 #include <FronTier.h>
 #include <vector>

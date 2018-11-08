@@ -1,9 +1,17 @@
 #ifndef AIRFOIL_H
 #define AIRFOIL_H
 
-#include <FronTier.h>
+#ifdef COLLISION_DETECTION
+#include <collid.h>
+#endif
+
+#include <iFluid.h>
 #include "airfoil_sv.h"
+
+#if defined(USE_GPU)
 #include "airfoil_gpu.cuh"
+#endif
+
 #include <map>
 
 typedef struct {

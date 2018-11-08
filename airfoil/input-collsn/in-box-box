@@ -111,18 +111,17 @@ Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
 Type y to make vector velocity field movie: y
-Type y to plot bullet in gd movie: y
 
 ************Debugging options*****************
 
 Enter yes for debugging: yes
 Enter the debugging string: rigid_body
-Enter the debugging string: ttrace
-Enter the debugging string: tisect3d
-Enter the debugging string: tCLOCK
-Enter the debugging string: tstep_size
-Enter the debugging string: ttri_cluster
-Enter the debugging string: tcollision
-Enter the debugging string: tCollisionImpulse
+Enter the debugging string: trace
+Enter the debugging string: isect3d
+Enter the debugging string: CLOCK
+Enter the debugging string: step_size
+Enter the debugging string: tri_cluster
+Enter the debugging string: collision
+Enter the debugging string: CollisionImpulse
 Enter the debugging string: tsample_velocity
 Enter the debugging string: no_optimize 

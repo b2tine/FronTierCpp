@@ -11,7 +11,7 @@ MAYBE_MELTING = melting
 #MAYBE_SUBSURF = subsurf
 if CGAL_OPT
 MAYBE_AIRFOIL = airfoil
-MAYBE_PARACHUTE = parachute
+#MAYBE_PARACHUTE = parachute
 endif
 endif
 

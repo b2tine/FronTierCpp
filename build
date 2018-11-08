@@ -1,10 +1,6 @@
 #!/bin/bash
 
-export CC=mpicc
-export CFLAGS=-w
-
-export CXX=mpic++
-export CXXFLAGS="-std=c++11 -w"
+source ~/.bashrc
 
 function config_intruder {
     CONF="--with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-dir=/opt/cgal"
@@ -50,6 +46,12 @@ fi
 autoreconf -vif
 
 echo "configure options: ${CONF}"
+
+export CC=mpicc
+export CFLAGS=-w
+
+export CXX=mpic++
+export CXXFLAGS="-std=c++11 -w"
 
 ./configure ${CONF}
 

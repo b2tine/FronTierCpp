@@ -21,8 +21,9 @@ ______lib_libsolver_la_SOURCES = \
 ../solver.cpp
 
 
-______lib_libsolver_la_LIBADD = $(top_builddir)/lib/libFronTier.la \
-								@PETSC_LIBS@
+______lib_libsolver_la_LIBADD = @PETSC_LIBS@ \
+								$(top_builddir)/lib/libFronTier.la
+								
 
 
 

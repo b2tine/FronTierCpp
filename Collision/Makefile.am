@@ -1,3 +1,5 @@
+SUBDIRS = objs
+
 input_directories = input
 
 EXTRA_DIST = $(input_directories) \
@@ -6,10 +8,10 @@ EXTRA_DIST = $(input_directories) \
 			 vtk.cpp
 			 
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/Collision \
+AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ \
-			  -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
@@ -17,19 +19,18 @@ AM_CPPFLAGS = -I$(abs_top_srcdir)/Collision \
 noinst_PROGRAMS = collisiontest
 
 				  
-collisiontest_SOURCES = collid.h \
-		 				cdinit.cpp \
-		 				collisiontest.cpp
+collisiontest_SOURCES = cdinit.cpp \
+						collisiontest.cpp
 
-collisiontest_LDADD = $(abs_top_builddir)/lib/libCollision.la \
-		 			  @CGAL_LIBS@ \
-		 			  $(abs_top_builddir)/lib/libFronTier.la \
-		 			  @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+collisiontest_LDADD = $(top_builddir)/lib/libCollision.la \
+					  $(top_builddir)/lib/libFronTier.la
 
 
 
 tagsfile:
-	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp \
+		$(top_srcdir)/iFluid/ifluid_state.h \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 
 

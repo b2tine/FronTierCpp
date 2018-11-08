@@ -2,8 +2,11 @@
  * 		ifluid_state.h
  **********************************************************************/
 
-#pragma once
-struct _STATE {
+#ifndef IFLUID_STATE_H
+#define IFLUID_STATE_H
+
+
+struct STATE {
         double dens;                    /* Density */
         double pres;                    /* Pressure */
         double phi;                     /* Potential */
@@ -37,4 +40,7 @@ struct _STATE {
 	bool   is_movableRG;
         UF     impZone;
 };
-typedef struct _STATE STATE;
+
+
+
+#endif

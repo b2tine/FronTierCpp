@@ -2,14 +2,14 @@
  * 		iFluid.h
  **********************************************************************/
 
-#ifndef _FT_IFLUID_H_
-#define _FT_IFLUID_H_
+#ifndef FT_IFLUID_H
+#define FT_IFLUID_H
 
 #include <vector>
-#include <petscksp.h>
+//#include <petscksp.h>
 #include <assert.h>
 
-#include "FronTier.h"
+//#include <FronTier.h>
 #include <solver.h>
 #include "ifluid_state.h"
 

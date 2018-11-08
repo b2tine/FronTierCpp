@@ -4,14 +4,14 @@
 
 #include <vector>
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 
-#include <FronTier.h>
+//#include <FronTier.h>
 #include "collid.h"
 #include <ifluid_state.h>
 
-#include <omp.h>
+//#include <omp.h>
 
 /*****declaration of static functions starts here********/
 //static void makeSet(std::vector<CD_HSE*>&);
@@ -616,7 +616,7 @@ void CollisionSolver::updateAverageVelocity()
 	double maxSpeed = 0;
 	double* maxVel = NULL;
 
-#ifdef __VTK__
+#ifdef HAVE_VTK
 	if (debugging("CollisionImpulse")){
        	  char fname[200] = "vtk_test";
        	  static int count = 0;
