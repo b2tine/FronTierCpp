@@ -88,6 +88,6 @@ Enter the debugging string: CLOCK
 Enter the debugging string: step_size
 Enter the debugging string: make_grid_intfc
 
-Enter yes to use GPU solver: yes
+Enter yes to use GPU solver: no
 
 Type y to plot surface stress: y
