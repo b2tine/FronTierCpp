@@ -95,20 +95,20 @@ AS_IF([test "x${hdf4_dir}" != xno],
       [with_hdf=yes
        hdfinc="-I${hdf4_dir}/include"
        hdflib="-L${hdf4_dir}/lib ${hdf4_libflags}"],
-       [test "x${hdf4_inc}" != xno && test "x$h{df4_lib}" != xno],
+       [test "x${hdf4_inc}" != xno && test "x${hdf4_lib}" != xno],
        [with_hdf=yes
         hdfinc="-I${hdf4_inc}"
         hdflib="-L${hdf4_lib} ${hdf4_libflags}"])
 
 AS_IF([test $with_hdf = yes],
-      [AC_DEFINE([HAVE_HDF4],[1],[build with hd4])])
+      [AC_DEFINE([HAVE_HDF4],[1],[build with hdf4])])
 
 AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 #configure with MPI present in user environment
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
-            [use when paths to mpi are part of user environment])],
+            [use when mpi provided by user environment])],
             [with_mpi=yes],[with_mpi=no])
 
 
@@ -126,8 +126,8 @@ AS_IF([test "x${mpich_dir}" != xno],
 AC_SUBST(MPI_CFLAGS,${mpichinc})
 AC_SUBST(MPI_LIBS,${mpichlib})
 
-AS_IF([test $with_mpich = yes],
-      [AC_DEFINE([HAVE_MPI],[1],[build with mpich])])
+AS_IF([test $with_mpich = yes || test $with_mpi = yes],
+      [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
 #configure with PETSC (must be built with HYPRE)
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
@@ -191,21 +191,59 @@ AC_SUBST(CGAL_LIBS,${cgallib})
 AS_IF([test $with_cgal = yes],
       [AC_DEFINE([HAVE_CGAL],[1],[build with cgal])])
 
-#check if airfoil should be built
-AM_CONDITIONAL([CGAL_OPT],
-               [test $with_cgal = yes])
 
+#configure with Armadillo
+AC_ARG_WITH([arma-dir],[AS_HELP_STRING([--with-arma-dir=path],
+            [specify location of single directory installation])],
+            [arma_dir=${withval}],[arma_dir=no])
 
-AM_COND_IF([CGAL_OPT],
-           [AC_CONFIG_FILES([Collision/Makefile
-                             Collision/objs/Makefile])
-           AM_COND_IF([PETSC_OPT],
-                      [AC_CONFIG_FILES([airfoil/Makefile
-                                        airfoil/objs/Makefile
-                                        parachute/Makefile])])])
+AC_ARG_WITH([arma-inc],[AS_HELP_STRING([--with-arma-inc=path],
+            [specify location of header files])],
+            [arma_inc=${withval}],[arma_inc=no])
+
+AC_ARG_WITH([arma-lib],[AS_HELP_STRING([--with-arma-lib=path],
+            [specify location of libraries])],
+            [arma_lib=${withval}],[arma_lib=no])
+
+with_arma=no
+arma_libflags="-larmadillo"
+
+AS_IF([test "x${arma_dir}" != xno],
+      [with_arma=yes
+       armainc="-I${arma_dir}/include"
+       armalib="-L${arma_dir}/lib ${arma_libflags}"],
+       [test "x${arma_inc}" != xno && test "x${arma_lib}" != xno],
+       [with_arma=yes
+        armainc="-I${arma_inc}"
+        armalib="-L${arma_lib} ${arma_libflags}"])
+
+#The macro HAVE_ARMA isn't being used right now, but may be useful for debugging
+AS_IF([test $with_arma = yes],
+      [AC_DEFINE([HAVE_ARMA],[1],[build with armadillo])])
+
+AC_SUBST(ARMA_CFLAGS,${armainc})
+AC_SUBST(ARMA_LIBS,${armalib})
+
 
 #enable/disable Collision module ....
 #AC_ARG_ENABLE
+
+
+#check if airfoil and Collsion should be built
+AM_CONDITIONAL([CGAL_ARMA_OPT],
+               [test $with_cgal = yes && test $with_arma = yes])
+
+
+AM_COND_IF([CGAL_ARMA_OPT],
+           [AM_COND_IF([PETSC_OPT],
+                       [AC_CONFIG_FILES([Collision/Makefile
+                                         Collision/objs/Makefile
+                                         airfoil/Makefile
+                                         airfoil/objs/Makefile
+                                         parachute/Makefile])])])
+
+
+#Build with CVODE .... for folding module
 
 
 

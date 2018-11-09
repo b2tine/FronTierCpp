@@ -9,10 +9,10 @@ MAYBE_IFLUID = iFluid
 MAYBE_CRYSTAL = crystal
 MAYBE_MELTING = melting
 #MAYBE_SUBSURF = subsurf
-if CGAL_OPT
+if CGAL_ARMA_OPT
 MAYBE_COLLISION = Collision
 MAYBE_AIRFOIL = airfoil
-#MAYBE_PARACHUTE = parachute
+MAYBE_PARACHUTE = parachute
 endif
 endif
 

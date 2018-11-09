@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
-			  @CGAL_CFLAGS@ \
+			  @CGAL_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
@@ -21,7 +21,7 @@ ______lib_libCollision_la_SOURCES = \
 ../AABB.h
 
 
-______lib_libCollision_la_LIBADD = @CGAL_LIBS@ -larmadillo \
+______lib_libCollision_la_LIBADD = @CGAL_LIBS@ @ARMA_LIBS@ \
 								   $(top_builddir)/lib/libiFluid.la
 
 

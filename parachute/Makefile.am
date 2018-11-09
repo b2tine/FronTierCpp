@@ -9,36 +9,43 @@ input_directories = input-C9 \
 
 EXTRA_DIST = $(input_directories)
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/parachute \
-			  -I$(abs_top_srcdir)/airfoil \
-			  -I$(abs_top_srcdir)/Collision \
-			  @CGAL_CFLAGS@ \
-			  -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
+
+AM_CPPFLAGS = -I$(top_srcdir)/parachute \
+			  -I$(top_srcdir)/airfoil \
+			  -I$(top_srcdir)/Collision \
+			  @CGAL_CFLAGS@ @ARMA_CFLAGS@ \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-
-AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
 
 
 noinst_PROGRAMS = parachute
 
+
+
 parachute_SOURCES = modules.cpp \
 					parachute.cpp
-				  
-parachute_LDADD = $(abs_top_builddir)/lib/libairfoil.la \
-				  $(abs_top_builddir)/lib/libCollision.la \
-  				  $(abs_top_builddir)/lib/libiFluid.la \
-  				  $(abs_top_builddir)/lib/libsolver.la \
-  				  @CGAL_LIBS@ @PETSC_LIBS@ @MPI_LIBS@ \
-				  $(abs_top_builddir)/lib/libFronTier.la \
-  				  @HDF_LIBS@ @GD_LIBS@
+
+
+parachute_LDADD = $(top_builddir)/lib/libairfoil.la
+
+
+
+$(parachute_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/airfoil/objs && $(MAKE) all
+
+FORCE:
 
 
 
 tagsfile:
-	ctags *.h *.cpp ../Collision/*.h ../Collision/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp \
+		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 
