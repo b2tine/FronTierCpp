@@ -2,16 +2,17 @@ input_directories = input-1d input-2d input-3d
 
 EXTRA_DIST = $(input_directories)
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/crystal \
-			  -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
+AM_CPPFLAGS = -I$(top_srcdir)/crystal \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 
 noinst_PROGRAMS = crystal
+
 
 crystal_SOURCES = crystal.h \
 				  crystal_state.h \
@@ -19,12 +20,23 @@ crystal_SOURCES = crystal.h \
 				  ccartsn.cpp \
 				  crystal.cpp
 
-crystal_LDADD = $(abs_top_builddir)/lib/libsolver.la \
-				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \
-				$(abs_top_builddir)/lib/libFronTier.la \
-				@HDF_LIBS@ @GD_LIBS@
+
+crystal_LDADD = $(top_builddir)/lib/libsolver.la
+
+
+
+
+$(crystal_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/solver && $(MAKE) all
+
+FORCE:
+
+
 
 tagsfile:
-	ctags *.h *.cpp ../solver/*.h ../solver/*.cpp ../iFluid/*.h ../iFluid/*cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/iFluid/*.h \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 

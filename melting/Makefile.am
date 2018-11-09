@@ -3,36 +3,41 @@ input_directories = input
 EXTRA_DIST = $(input_directories) mrun1d mrun2d mrun3d
 
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
+AM_CPPFLAGS = -I$(top_srcdir)/melting \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 
 noinst_PROGRAMS = melting
 
-melting_SOURCES = iFluid.h \
- 				  melting.h \
+
+melting_SOURCES = melting.h \
  				  msub.cpp \
  				  minit.cpp \
  				  mcartsn.cpp \
  				  mprop.cpp \
  				  melting.cpp
 
-melting_LDADD = $(abs_top_builddir)/lib/libiFluid.la \
- 				$(abs_top_builddir)/lib/libsolver.la \
- 				@PETSC_LIBS@ @MPI_LIBS@ \
- 				$(abs_top_builddir)/lib/libFronTier.la \
- 				@HDF_LIBS@ @GD_LIBS@
 
-EXTRA_melting_DEPENDENCIES = $(abs_top_builddir)/lib/libiFluid.la \
- 							 $(abs_top_builddir)/lib/libsolver.la \
- 							 $(abs_top_builddir)/lib/libFronTier.la
+melting_LDADD = $(top_builddir)/lib/libiFluid.la
+
+
+
+$(melting_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+
+FORCE:
+
 
 
 tagsfile:
-	ctags *.h *.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
+	ctags *.h *.cpp \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 

@@ -787,8 +787,9 @@ static void coating_mono_hyper_surf3d(
 	{
 	    index = d_index(icoords,top_gmax,dim);
 	    for (i = 0; i < dim; ++i)
-		coords[i] = L[i] + icoords[i]*h[i];
-	    if (nearest_interface_point_within_range(coords,comp,grid_intfc,
+            coords[i] = L[i] + icoords[i]*h[i];
+	    
+        if (nearest_interface_point_within_range(coords,comp,grid_intfc,
 			NO_BOUNDARIES,NULL,p,t,&hse,&hs,3))
 	    {
 		if (wave_type(hs) != ELASTIC_BOUNDARY) continue;

@@ -5,7 +5,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-#NOTE: libCollision.la is a nonstatic libtool convenience library
 
 AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
@@ -27,10 +26,6 @@ ______lib_libCollision_la_SOURCES = \
 
 ______lib_libCollision_la_LIBADD = @CGAL_LIBS@ -larmadillo \
 								   $(top_builddir)/lib/libFronTier.la
-
-
-
-#EXTRA______lib_libCollision_la_DEPENDENCIES = $(top_builddir)/lib/libFronTier.la
 
 
 

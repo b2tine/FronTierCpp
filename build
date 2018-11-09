@@ -2,10 +2,10 @@
 
 source ~/.bashrc
 
-#export CC=mpicc
+export CC=mpicc
 export CFLAGS=-w
 
-#export CXX=mpic++
+export CXX=mpic++
 export CXXFLAGS="-std=c++14 -w"
 
 function config_intruder {

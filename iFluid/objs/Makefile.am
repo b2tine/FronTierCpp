@@ -4,8 +4,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -static
-AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
 noinst_LTLIBRARIES = ../../lib/libiFluid.la

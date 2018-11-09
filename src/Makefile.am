@@ -4,8 +4,6 @@ SUBDIRS = util intfc front
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = -static
-AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
 noinst_LTLIBRARIES = ../lib/libFronTier.la
