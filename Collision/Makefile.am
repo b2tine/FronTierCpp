@@ -11,8 +11,10 @@ EXTRA_DIST = $(input_directories) \
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
+			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@
+			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 

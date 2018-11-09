@@ -17,6 +17,8 @@ input_directories = input-2d \
 
 EXTRA_DIST = $(input_directories) airfoil_gpu.cuh airfoil_gpu.cu
 
+
+
 AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ \
@@ -30,13 +32,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 
 noinst_PROGRAMS = airfoil
 
-airfoil_CPPFLAGS = -DDAMPING_FORCE $(AM_CPPFLAGS)
-
-#airfoil_CPPFLAGS = -DDAMPING_FORCE -DCOLLISION_DETECTION \
-#				   $(AM_CPPFLAGS)
-
 				  
 airfoil_SOURCES = airfoil.cpp
+
 
 airfoil_LDADD =	$(top_builddir)/lib/libairfoil.la
 

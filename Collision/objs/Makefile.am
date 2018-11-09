@@ -1,13 +1,11 @@
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
-			  -I$(top_srcdir)/iFluid \
 			  @CGAL_CFLAGS@ \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
+			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
-			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
+			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-
-
-AM_LDFLAGS = -static
-AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
 noinst_LTLIBRARIES = ../../lib/libCollision.la
@@ -15,7 +13,6 @@ noinst_LTLIBRARIES = ../../lib/libCollision.la
 
 
 ______lib_libCollision_la_SOURCES = \
-../../iFluid/ifluid_state.h \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
@@ -25,12 +22,12 @@ ______lib_libCollision_la_SOURCES = \
 
 
 ______lib_libCollision_la_LIBADD = @CGAL_LIBS@ -larmadillo \
-								   $(top_builddir)/lib/libFronTier.la
+								   $(top_builddir)/lib/libiFluid.la
 
 
 
 $(______lib_libCollision_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/src && $(MAKE) all
+	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
 
 FORCE:
 

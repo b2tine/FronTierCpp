@@ -8,12 +8,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-#AM_LDFLAGS = -static
-#AM_LIBTOOLFLAGS = --preserve-dup-deps
-
-
-
-#AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
+AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
 
 
 
@@ -35,22 +30,17 @@ ______lib_libairfoil_la_SOURCES = \
 ../cgal.cpp
 
 
-______lib_libairfoil_la_LIBADD = @CGAL_LIBS@ $(top_builddir)/lib/libiFluid.la
 
-#______lib_libairfoil_la_LIBADD = $(top_builddir)/lib/libCollision.la \
-#								 $(top_builddir)/lib/libiFluid.la
+______lib_libairfoil_la_LIBADD = $(top_builddir)/lib/libCollision.la
+
+
 
 
 $(______lib_libairfoil_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+	@cd $(top_builddir)/Collision/objs && $(MAKE) all
 
 FORCE:
 
-#$(______lib_libairfoil_la_DEPENDENCIES): FORCE
-#	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
-#	@cd $(top_builddir)/Collision/objs && $(MAKE) all
-#
-#FORCE:
 
 
 

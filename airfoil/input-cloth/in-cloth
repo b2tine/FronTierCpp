@@ -43,13 +43,14 @@ Enter type of plane edge: c
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
 Enter yes to attach strings to canopy: n
-Entering yes to turn off fluid solver: y
+Entering yes to turn off fluid solver: n
 
 Enter density and viscosity of the fluid: 1 0.00628
 Enter gravity: 0.0 0.0 -100.0
 Enter payload: 0.0
 Enter interior sub step number: 10
 Enter surface tension: 0.0
+Enter area density of canopy: 1
 Enter factor of smoothing radius: 1
 
 Enter fabric spring constant: 1000
@@ -74,12 +75,15 @@ Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
 Type y to make vector velocity field movie: y
-Type y to plot bullet in gd movie: y
 
 ************Debugging options*****************
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
+Enter the debugging string: coat_comp
+Enter the debugging string: canopy_struct
+Enter the debugging string: opt_elastic_mesh
+Enter the debugging string: step_size
 Enter the debugging string: CLOCK
 Enter the debugging string: step_size
 Enter the debugging string: make_grid_intfc
