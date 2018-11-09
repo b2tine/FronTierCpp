@@ -10,7 +10,7 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 8.0
-Max step: 2
+Max step: 2500
 Print interval: 0.2
 Movie frame interval: 0.2
 CFL factor: 0.5
@@ -74,11 +74,11 @@ Type y to make vector velocity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: tcoat_comp
-Enter the debugging string: tcanopy_struct
-Enter the debugging string: ttrace
+Enter the debugging string: coat_comp
+Enter the debugging string: canopy_struct
+Enter the debugging string: trace
 Enter the debugging string: opt_elastic_mesh
-Enter the debugging string: tstep_size
+Enter the debugging string: step_size
 Enter the debugging string: tCLOCK
 Enter the debugging string: tdirichlet_bdry
 Enter the debugging string: tflow_through

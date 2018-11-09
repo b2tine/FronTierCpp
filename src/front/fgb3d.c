@@ -2610,6 +2610,8 @@ LOCAL	boolean	merge_adjacent_boxes(
 			{
 			    printf("WARNING merge_adjacent_boxes "
 			    	    "box is too large when merging.\n");
+                //TODO: check if this is supposed to be here ...
+                return NO; // <--- this line
 			}
 
 		for(nbox=box->next; nbox!=NULL; nbox=nbox->next)

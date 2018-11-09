@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
+			  -I$(top_srcdir)/iFluid \
 			  @CGAL_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
@@ -15,7 +16,7 @@ noinst_LTLIBRARIES = ../../lib/libCollision.la
 
 
 ______lib_libCollision_la_SOURCES = \
-../ifluid_state.h \
+../../iFluid/ifluid_state.h \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \

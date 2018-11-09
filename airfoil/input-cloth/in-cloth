@@ -16,7 +16,7 @@ Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
-Entering yes to turn off fluid solver: yes
+Entering yes to turn off fluid solver: no
 Enter velocity function: vertical_velo
 Enter center velocity: 0.3
 Enter stop motion time: 3.0
