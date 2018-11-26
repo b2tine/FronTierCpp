@@ -27,7 +27,7 @@ def createFileList(projdir):
 
 
 def writeManifest(projdir):
-    manifestFile = open('manifest.txt','w')
+    manifestFile = open('Manifest.txt','w')
     for file in createFileList(projdir):
         manifestFile.write(str(file) + "\n")
     manifestFile.close()
@@ -35,6 +35,7 @@ def writeManifest(projdir):
 
 
 
+#begin script
 topdir = str(sys.argv[1])
 writeManifest(topdir)
 

@@ -145,18 +145,22 @@ $$ME/melting/*.cpp \
 $$ME/melting/input/* \
 $$ME/melting/mrun*
 
-tar:
+old-tar:
 	cd ./ && ME=`basename $$PWD` && cd .. && tar -cf "`date +FronTier++.%m_%d_%y.tar`" ${TARFILELIST} && \
 	gzip "`date +FronTier++.%m_%d_%y.tar`" && mv `date +FronTier++.%m_%d_%y.tar`.gz $$ME/.
 
 
-.PHONY: manifest
+.PHONY: tar
 
-manifest: create-manifest
+tar: create-tar
 
-create-manifest: manifest.py
-	ME=`basename $$PWD` && cp manifest.py ../. && \
-	   cd .. && ./manifest.py $$ME && rm -f manifest.py && \
-	   mv manifest.txt $$ME/.
+create-tar: manifest.py
+	@ME=`basename $$PWD` && cp manifest.py ../. && \
+		cd .. && ./manifest.py $$ME && rm -f manifest.py && \
+		tar -cf $${ME}.tar.gz -T Manifest.txt && \
+		mv $${ME}.tar.gz Manifest.txt $$ME/.
+
+clean-local:
+	rm -f Manifest.txt
 
 

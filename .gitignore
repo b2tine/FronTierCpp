@@ -76,3 +76,7 @@ autogen*
 */input*/qrun
 tests/*.trs
 tests/DummyFrontTests
+Manifest.txt
+*.tar.gz
+
+
