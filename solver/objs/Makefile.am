@@ -3,6 +3,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/solver \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = @PETSC_LIBS@
 
 
 noinst_LTLIBRARIES = ../../lib/libsolver.la
@@ -19,8 +20,7 @@ ______lib_libsolver_la_SOURCES = \
 ../solver.cpp
 
 
-______lib_libsolver_la_LIBADD = @PETSC_LIBS@ \
-								$(top_builddir)/lib/libFronTier.la
+______lib_libsolver_la_LIBADD = $(top_builddir)/lib/libFronTier.la
 								
 
 
