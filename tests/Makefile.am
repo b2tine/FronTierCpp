@@ -1,6 +1,6 @@
 AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 			 -I$(top_srcdir)/include \
-			 @MPI_CFLAGS@ @HDF_CFLAGS@
+			 @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 
