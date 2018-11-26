@@ -149,3 +149,14 @@ tar:
 	cd ./ && ME=`basename $$PWD` && cd .. && tar -cf "`date +FronTier++.%m_%d_%y.tar`" ${TARFILELIST} && \
 	gzip "`date +FronTier++.%m_%d_%y.tar`" && mv `date +FronTier++.%m_%d_%y.tar`.gz $$ME/.
 
+
+.PHONY: manifest
+
+manifest: create-manifest
+
+create-manifest: manifest.py
+	ME=`basename $$PWD` && cp manifest.py ../. && \
+	   cd .. && ./manifest.py $$ME && rm -f manifest.py && \
+	   mv manifest.txt $$ME/.
+
+
