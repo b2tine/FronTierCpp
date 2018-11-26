@@ -31,13 +31,13 @@ AX_PTHREAD([have_pthread=yes],[have_pthread=no])
 
 GTEST_VERSION="1.8.0"
 AS_IF([test "x${have_pthread}" = xyes],
-      [GTEST_CPPFLAGS="-I\$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=1"
+      [GTEST_CPPFLAGS="-I\$(top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=1"
        GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
-       GTEST_LDFLAGS="-L\$(abs_top_builddir)/lib/gmock/lib"
+       GTEST_LDFLAGS="-L\$(top_builddir)/lib/gmock/lib"
        GTEST_LIBS="$PTHREAD_LIBS"],
-       [GTEST_CPPFLAGS="-I\$(abs_top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=0"
+       [GTEST_CPPFLAGS="-I\$(top_srcdir)/lib/gmock -DGTEST_HAS_PTHREADS=0"
         GTEST_CXXFLAGS=
-        GTEST_LDFLAGS="-L\$(abs_top_builddir)/lib/gmock/lib"
+        GTEST_LDFLAGS="-L\$(top_builddir)/lib/gmock/lib"
         GTEST_LIBS=])
 
 AC_SUBST([GTEST_VERSION])

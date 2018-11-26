@@ -21,6 +21,5 @@ check_PROGRAMS += DummyFrontTests
 DummyFrontTests_SOURCES = DummyFrontTests.cpp
 
 DummyFrontTests_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
-		   				$(top_builddir)/lib/libFronTier.la \
-						@MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
+		   				$(top_builddir)/lib/libFronTier.la
 

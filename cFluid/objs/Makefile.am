@@ -28,3 +28,6 @@ $(______lib_libcFluid_la_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/src && $(MAKE) all
 
 FORCE:
+
+
+clean-libtool:

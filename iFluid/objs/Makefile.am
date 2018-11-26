@@ -30,4 +30,6 @@ $(______lib_libiFluid_la_DEPENDENCIES): FORCE
 FORCE:
 
 
+clean-libtool:
+
 

@@ -29,3 +29,6 @@ $(______lib_libsolver_la_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/src && $(MAKE) all
 
 FORCE:
+
+
+clean-libtool:
