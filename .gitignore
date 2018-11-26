@@ -74,3 +74,5 @@ core.*
 */out-*
 autogen*
 */input*/qrun
+tests/*.trs
+tests/DummyFrontTests

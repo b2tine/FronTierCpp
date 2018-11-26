@@ -20,6 +20,6 @@ check_PROGRAMS += DummyFrontTests
 
 DummyFrontTests_SOURCES = DummyFrontTests.cpp
 
-DummyFrontTests_LDADD = $(GTEST_LDFLAGS) $(GTEST_LIBS) -lgmock_main -lgmock \
-		   				$(top_builddir)/lib/libFronTier.la
+DummyFrontTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
+						$(top_builddir)/lib/libFronTier.la
 
