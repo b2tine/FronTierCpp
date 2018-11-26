@@ -1,7 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = build
+EXTRA_DIST = build \
+			 manifest.py
 
 if PETSC_OPT
 MAYBE_SOLVER = solver
@@ -41,113 +42,6 @@ SUBDIRS = lib \
 		  tests
 
 
-TARFILELIST = \
-$$ME/LICENSE \
-$$ME/README \
-$$ME/build \
-$$ME/m4/*.m4 \
-$$ME/configure.ac \
-$$ME/Makefile.am \
-$$ME/include/FronTier.h \
-$$ME/src/Makefile.am \
-$$ME/src/util/Makefile.am \
-$$ME/src/util/*.c \
-$$ME/src/util/*.cpp \
-$$ME/src/util/objs/Makefile.am \
-$$ME/include/util/*.h \
-$$ME/src/intfc/Makefile.am \
-$$ME/src/intfc/*.c \
-$$ME/src/intfc/*.cpp \
-$$ME/src/intfc/*.cuh  \
-$$ME/src/intfc/*.cu \
-$$ME/src/intfc/objs/Makefile.am \
-$$ME/include/intfc/*.h  \
-$$ME/src/front/Makefile.am \
-$$ME/src/front/*.c \
-$$ME/src/front/*.cpp \
-$$ME/src/front/*.cuh \
-$$ME/src/front/*.cu \
-$$ME/src/front/objs/Makefile.am \
-$$ME/include/front/*.h \
-$$ME/include/front/*.hpp \
-$$ME/lib/Makefile.am \
-$$ME/lib/gmock/Makefile.am \
-$$ME/lib/gmock/gmock/gmock.h \
-$$ME/lib/gmock/gtest/gtest.h \
-$$ME/lib/gmock/src/*.cc \
-$$ME/tests/Makefile.am \
-$$ME/tests/*.cpp \
-$$ME/example2d/Makefile.am \
-$$ME/example2d/*.cpp \
-$$ME/example2d/README \
-$$ME/example2d/objs/Makefile.am \
-$$ME/example3d/Makefile.am \
-$$ME/example3d/*.cpp \
-$$ME/example3d/input/* \
-$$ME/example3d/README \
-$$ME/example3d/objs/Makefile.am \
-$$ME/cFluid/Makefile.am \
-$$ME/cFluid/*.h \
-$$ME/cFluid/*.cpp \
-$$ME/cFluid/in-* \
-$$ME/cFluid/input-*/in-* \
-$$ME/cFluid/mrun* \
-$$ME/cFluid/objs/Makefile.am \
-$$ME/iFluid/Makefile.am \
-$$ME/iFluid/*.h \
-$$ME/iFluid/*.cpp \
-$$ME/iFluid/input-*/in-* \
-$$ME/iFluid/mrun* \
-$$ME/iFluid/objs/Makefile.am \
-$$ME/solver/Makefile.am \
-$$ME/solver/*.h \
-$$ME/solver/*.cpp \
-$$ME/solver/objs/Makefile.am \
-$$ME/rgbody/*.h \
-$$ME/rgbody/*.cpp \
-$$ME/rgbody/in-* \
-$$ME/rgbody/input-*/in-* \
-$$ME/rgbody/mrun* \
-$$ME/Collision/Makefile.am \
-$$ME/Collision/*.h \
-$$ME/Collision/*.cpp \
-$$ME/Collision/input/* \
-$$ME/Collision/objs/Makefile.am \
-$$ME/airfoil/Makefile.am \
-$$ME/airfoil/*.h \
-$$ME/airfoil/*.cpp \
-$$ME/airfoil/*.cuh \
-$$ME/airfoil/*.cu \
-$$ME/airfoil/input-*/* \
-$$ME/airfoil/mrun* \
-$$ME/airfoil/objs/Makefile.am \
-$$ME/parachute/Makefile.am \
-$$ME/parachute/*.cpp \
-$$ME/parachute/input-*/* \
-$$ME/parachute/mrun* \
-$$ME/parachute2d/*.h \
-$$ME/parachute2d/*.cpp \
-$$ME/parachute2d/input-*/* \
-$$ME/parachute2d/mrun* \
-$$ME/crystal/Makefile.am \
-$$ME/crystal/*.h \
-$$ME/crystal/*.cpp \
-$$ME/crystal/input-*/* \
-$$ME/crystal/mrun* \
-$$ME/crystal/README \
-$$ME/subsurf/Makefile.am \
-$$ME/subsurf/*.h \
-$$ME/subsurf/*.cpp \
-$$ME/subsurf/input-2d/* \
-$$ME/melting/Makefile.am \
-$$ME/melting/*.h \
-$$ME/melting/*.cpp \
-$$ME/melting/input/* \
-$$ME/melting/mrun*
-
-old-tar:
-	cd ./ && ME=`basename $$PWD` && cd .. && tar -cf "`date +FronTier++.%m_%d_%y.tar`" ${TARFILELIST} && \
-	gzip "`date +FronTier++.%m_%d_%y.tar`" && mv `date +FronTier++.%m_%d_%y.tar`.gz $$ME/.
 
 
 .PHONY: tar
@@ -157,8 +51,8 @@ tar: create-tar
 create-tar: manifest.py
 	@ME=`basename $$PWD` && cp manifest.py ../. && \
 		cd .. && ./manifest.py $$ME && rm -f manifest.py && \
-		tar -cf $${ME}.tar.gz -T Manifest.txt && \
-		mv $${ME}.tar.gz Manifest.txt $$ME/.
+		tar -cf "`date +FronTier++.%m_%d_%y.tar.gz`" -T Manifest.txt && \
+		mv `date +FronTier++.%m_%d_%y.tar.gz` Manifest.txt $$ME/.
 
 clean-local:
 	rm -f Manifest.txt
