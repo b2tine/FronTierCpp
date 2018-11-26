@@ -57,15 +57,20 @@ stamp-h1
 example2d/example*
 example3d/example*
 cFluid/cFluid
+cFluid/init_intfc-*
 iFluid/iFluid
+iFluid/gv-init
 melting/melting
 crystal/crystal
 airfoil/airfoil
 Collision/test
 Collision/init
 parachute/parachute
+*/*.xg
 
 # Others
-*/out-*
 *~
+core.*
+*/out-*
 autogen*
+*/input*/qrun
