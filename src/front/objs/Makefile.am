@@ -1,6 +1,21 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = -static
+AM_LIBTOOLFLAGS = --preserve-dup-deps
+
+
+noinst_HEADERS = \
+../../../include/front/fapi.h \
+../../../include/front/fcell.h \
+../../../include/front/fdecs.h \
+../../../include/front/fpatrecon.h \
+../../../include/front/fprotos.h \
+../../../include/front/frp.h \
+../../../include/front/fuserint.h \
+../../../include/front/fvelo.h \
+../../../include/front/dummyfront.hpp
+
 
 noinst_LTLIBRARIES = libfront.la
 

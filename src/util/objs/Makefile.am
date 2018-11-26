@@ -5,8 +5,6 @@ AM_LDFLAGS = -static
 AM_LIBTOOLFLAGS = --preserve-dup-deps
 
 
-noinst_LTLIBRARIES = libutil.la
-
 noinst_HEADERS = \
 ../../../include/util/cdecs.h \
 ../../../include/util/fnamedebug.h \
@@ -15,6 +13,10 @@ noinst_HEADERS = \
 ../../../include/util/uapi.h \
 ../../../include/util/uprotos.h \
 ../../../include/util/vmalloc.h
+
+
+noinst_LTLIBRARIES = libutil.la
+
 
 libutil_la_SOURCES = \
 ../cleanup.c \
@@ -44,5 +46,4 @@ libutil_la_SOURCES = \
 ../dummyutil.cpp
 
 
-libutil_la_LIBADD = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 

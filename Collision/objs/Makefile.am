@@ -6,6 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = @CGAL_LIBS@ @ARMA_LIBS@
 
 
 noinst_LTLIBRARIES = ../../lib/libCollision.la
@@ -21,8 +22,7 @@ ______lib_libCollision_la_SOURCES = \
 ../AABB.h
 
 
-______lib_libCollision_la_LIBADD = @CGAL_LIBS@ @ARMA_LIBS@ \
-								   $(top_builddir)/lib/libiFluid.la
+______lib_libCollision_la_LIBADD = $(top_builddir)/lib/libiFluid.la
 
 
 
