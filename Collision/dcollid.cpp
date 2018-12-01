@@ -389,7 +389,7 @@ void CollisionSolver::resolveCollision()
 void CollisionSolver::aabbProximity() {
     // if first time, build the tree and AABB elements and node
     if (!abt_proximity.get()) {
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
+        abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (*it, abt_proximity->getType());
              abt_proximity->addAABB(ab);
@@ -436,7 +436,7 @@ void CollisionSolver::detectProximity()
 // AABB tree for collision detection process
 void CollisionSolver::aabbCollision() {
     if (!abt_collision.get()) {
-        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
+        abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
