@@ -32,13 +32,13 @@ NP=$((${PX}*${PY}*${PZ}))
 
 if [ "$#" -ne 4 ]; then
     echo "Error: incorrect number of input arguments"
-    exit 1;
+    exit -1;
 elif [ ! -d "$INDIR" ]; then
     echo "Error: input directory does not exist"
-    exit 2
+    exit -1
 elif [ $PX -le 0 -o $PY -le 0 -o $PZ -le 0 ]; then
     echo "Error: each partition must be specified by a positive integer"
-    exit 3
+    exit -1
 fi
 
 

@@ -80,12 +80,12 @@ Type y to make vector velocity field movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
-Enter the debugging string: coat_comp
-Enter the debugging string: canopy_struct
-Enter the debugging string: opt_elastic_mesh
-Enter the debugging string: step_size
-Enter the debugging string: CLOCK
-Enter the debugging string: step_size
+Enter the debugging string: tcoat_comp
+Enter the debugging string: tcanopy_struct
+Enter the debugging string: topt_elastic_mesh
+Enter the debugging string: tstep_size
+Enter the debugging string: tCLOCK
+Enter the debugging string: tstep_size
 Enter the debugging string: make_grid_intfc
 
 Enter yes to use GPU solver: no

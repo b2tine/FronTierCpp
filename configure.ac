@@ -135,7 +135,8 @@ AC_SUBST(MPI_LIBS,${mpilib})
 AS_IF([test $with_mpich = yes || test $with_mpi = yes],
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
-#configure with PETSC (must be built with HYPRE)
+#configure with PETSC (currently, petsc must be built with --download-hypre)
+#TODO: add option for independent HYPRE installations/libraries
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=${withval}],[petsc_dir=no])
@@ -246,16 +247,19 @@ AC_ARG_WITH([arma-lib],[AS_HELP_STRING([--with-arma-lib=path],
             [specify location of libraries])],
             [arma_lib=${withval}],[arma_lib=no])
 
-arma_libflags="-larmadillo"
+
+arma_cflags=-DARMA_DONT_USE_WRAPPER
+arma_libflags="-lblas -llapack"
+#TODO: add option to specify -lopenblas intead.
 
 with_arma=no
 AS_IF([test "x${arma_dir}" != xno],
       [with_arma=yes
-       armainc="-I${arma_dir}/include"
+       armainc="-I${arma_dir}/include ${arma_cflags}"
        armalib="-L${arma_dir}/lib ${arma_libflags}"],
        [test "x${arma_inc}" != xno && test "x${arma_lib}" != xno],
        [with_arma=yes
-        armainc="-I${arma_inc}"
+        armainc="-I${arma_inc} ${arma_cflags}"
         armalib="-L${arma_lib} ${arma_libflags}"])
 
 #The macro HAVE_ARMA isn't being used right now, but may be useful for debugging
