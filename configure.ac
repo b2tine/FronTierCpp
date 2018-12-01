@@ -106,10 +106,16 @@ AS_IF([test $with_hdf = yes],
 AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
+
+mpi_libflags="-lmpi -lmpicxx"
+
 #configure with MPI present in user environment
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
             [use when mpi provided by user environment])],
-            [with_mpi=yes],[with_mpi=no])
+            [with_mpi=yes
+             mpiinc=
+             mpilib=${mpi_libflags}],
+            [with_mpi=no])
 
 
 #configure with MPICH
@@ -117,14 +123,14 @@ AC_ARG_WITH([mpich-dir],[AS_HELP_STRING([--with-mpich-dir=path],
             [specify location of single directory installation])],
             [mpich_dir=${withval}],[mpich_dir=no])
 
-with_mpich=no
 AS_IF([test "x${mpich_dir}" != xno],
       [with_mpich=yes
-       mpichinc="-I${mpich_dir}/include"
-       mpichlib="-L${mpich_dir}/lib -lmpi -lmpicxx"])
+       mpiinc="-I${mpich_dir}/include"
+       mpilib="-L${mpich_dir}/lib ${mpi_libflags}"],
+       [with_mpich=no])
 
-AC_SUBST(MPI_CFLAGS,${mpichinc})
-AC_SUBST(MPI_LIBS,${mpichlib})
+AC_SUBST(MPI_CFLAGS,${mpiinc})
+AC_SUBST(MPI_LIBS,${mpilib})
 
 AS_IF([test $with_mpich = yes || test $with_mpi = yes],
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
@@ -134,9 +140,9 @@ AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=${withval}],[petsc_dir=no])
 
-with_petsc=no
 petsc_libflags="-lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
 
+with_petsc=no
 AS_IF([test "x${petsc_dir}" != xno],
       [with_petsc=yes
        petscinc="-I${petsc_dir}/include"
@@ -159,6 +165,40 @@ AM_COND_IF([PETSC_OPT],
                              melting/Makefile
                              crystal/Makefile])])
 
+#configure with BOOST
+AC_ARG_WITH([boost-dir],[AS_HELP_STRING([--with-boost-dir=path],
+            [specify location of single directory installation])],
+            [boost_dir=${withval}],[boost_dir=no])
+
+AC_ARG_WITH([boost-inc],[AS_HELP_STRING([--with-boost-inc=path],
+            [specify location of header files])],
+            [boost_inc=${withval}],[boost_inc=no])
+
+AC_ARG_WITH([boost-lib],[AS_HELP_STRING([--with-boost-lib=path],
+            [specify location of libraries])],
+            [boost_lib=${withval}],[boost_lib=no])
+
+
+boost_libflags=
+
+with_boost=no
+AS_IF([test "x${boost_dir}" != "xno"],
+      [with_boost=yes
+       boostinc="-I${boost_dir}/include"
+       boostlib="-L${boost_dir}/lib ${boost_libflags}"],
+       [test "x${boost_inc}" != xno && test "x${boost_lib}" != xno],
+       [with_boost=yes
+        boostinc="-I${boost_inc}"
+        boostlib="-L${boost_lib} ${boost_libflags}"])
+
+AC_SUBST(BOOST_CFLAGS,${boostinc})
+AC_SUBST(BOOST_LIBS,${boostlib})
+
+AS_IF([test $with_boost = yes],
+      [AC_DEFINE([HAVE_BOOST],[1],[build with boost])])
+
+
+
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
             [specify location of single directory installation])],
@@ -172,9 +212,9 @@ AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
             [specify location of libraries])],
             [cgal_lib=${withval}],[cgal_lib=no])
 
-with_cgal=no
 cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
 
+with_cgal=no
 AS_IF([test "x${cgal_dir}" != "xno"],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
@@ -192,6 +232,7 @@ AS_IF([test $with_cgal = yes],
       [AC_DEFINE([HAVE_CGAL],[1],[build with cgal])])
 
 
+
 #configure with Armadillo
 AC_ARG_WITH([arma-dir],[AS_HELP_STRING([--with-arma-dir=path],
             [specify location of single directory installation])],
@@ -205,9 +246,9 @@ AC_ARG_WITH([arma-lib],[AS_HELP_STRING([--with-arma-lib=path],
             [specify location of libraries])],
             [arma_lib=${withval}],[arma_lib=no])
 
-with_arma=no
 arma_libflags="-larmadillo"
 
+with_arma=no
 AS_IF([test "x${arma_dir}" != xno],
       [with_arma=yes
        armainc="-I${arma_dir}/include"
