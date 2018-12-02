@@ -2785,6 +2785,7 @@ LOCAL void FrontPreAdvance3d(
 
 	if (debugging("rigid_body"))
 	    (void) printf("Entering FrontPreAdvance()\n");
+
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
