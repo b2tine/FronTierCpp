@@ -775,7 +775,7 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	nor_mag = Mag3d(nor);
 	if (nor_mag < MACH_EPS)
 	{
-            printf("Normal vector is nan");
+            printf("Normal vector is NaN:\t");
             printf("a = %f, b = %f\n",a,b);
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i){

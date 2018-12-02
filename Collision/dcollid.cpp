@@ -425,7 +425,7 @@ void CollisionSolver::detectProximity()
         */
         start_clock("dynamic_AABB_proximity");
         aabbProximity();
-        stop_clock("dynamci_AABB_proximity");
+        stop_clock("dynamic_AABB_proximity");
 	updateAverageVelocity();
 	if (debugging("collision"))
 	std::cout << abt_proximity->getCount() 
