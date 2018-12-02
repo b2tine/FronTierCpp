@@ -121,6 +121,7 @@ extern void initParachuteModules(Front *front)
 	    initSingleModule(front);
 	else
 	    initMultiModule(front,num_canopy);
+
 	divideAtGoreBdry(front->interf);
 	setCanopyBodyIndex(front);
 

@@ -32,7 +32,7 @@ Enter gravity: 0 0 0
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
 Enter canopy surface type: FLAT
-Enter type of canopy boundary: C
+Enter type of canopy boundary: Circular
 Enter the height of the plane: 18
 Enter circle center: 6 6
 Enter circle radius: 4.2672
@@ -64,7 +64,7 @@ Enter string point mass: 0.002
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTAT_STATE
+Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 3
 Enter pressure: 0
 For upper boundary in 2-th dimension
