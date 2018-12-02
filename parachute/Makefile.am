@@ -44,6 +44,7 @@ FORCE:
 
 tagsfile:
 	ctags *.h *.cpp \
+		$(top_srcdir)/airfoil/*.h $(top_srcdir)/airfoil/*.cpp \
 		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
 		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
 		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
