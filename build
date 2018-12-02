@@ -3,14 +3,14 @@
 source ~/.bashrc
 
 
-DEBUGFLAGS="-g3 -Og"
-
+DBG=yes
+#DEBUGFLAGS="-g3 -Og"
 
 export CC=mpicc
-export CFLAGS="${DEBUGFLAGS} -w"
+export CFLAGS=-w
 
 export CXX=mpic++
-export CXXFLAGS="${DEBUGFLAGS} -std=c++11 -w"
+export CXXFLAGS="-std=c++11 -w"
 
 
 function config_intruder {
@@ -30,7 +30,7 @@ function config_alpha {
 }
 
 function config_defiant {
-    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --enable-debug=${DBG}"
 }
 
 
