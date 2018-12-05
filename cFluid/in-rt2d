@@ -6,7 +6,7 @@ Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
 Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 
-Max time: 17.5
+Max time: 10
 Max step: 10000
 Print interval: 50
 Movie frame interval: 0.25
@@ -22,7 +22,7 @@ Numerical scheme for interior solver can be
         TVD_1st_ORDER
         TVD_2nd_ORDER
         TVD_4th_ORDER
-Enter numerical scheme for interior solver: TVD_2nd_ORDER
+Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 2
 

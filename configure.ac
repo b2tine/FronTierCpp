@@ -2,7 +2,7 @@ AC_PREREQ([2.69])
 #Initialize autoconf with project name and version number
 AC_INIT([FronTier],[1.1])
 
-#Include macros from the autoconf-archive
+#Include macro directory
 AC_CONFIG_MACRO_DIR([m4])
 #Directory for generated build tools
 AC_CONFIG_AUX_DIR([build-aux])
@@ -15,21 +15,18 @@ AM_INIT_AUTOMAKE([foreign --warnings=none])
 AM_SILENT_RULES([yes])
 
 
-#provides --enable-debug options to configure
-AX_CHECK_ENABLE_DEBUG([yes])
+#--enable-debug option
+#AX_CHECK_ENABLE_DEBUG([info],[DEBUG])
+
 
 
 #Initialize Libtool
 AM_PROG_AR
 LT_INIT([disable-shared])
-LT_LANG([C++])
 
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx g++])
-AC_LANG([C++])
 
-#TODO: check usage of this macro
-#AC_OPENMP
 
 #Check for pthreads
 AX_PTHREAD([have_pthread=yes],[have_pthread=no])
