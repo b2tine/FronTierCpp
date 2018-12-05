@@ -1,0 +1,21 @@
+#!/bin/bash
+#$ -N cFluid
+#$ -q all.q
+#$ -R y
+#$ -pe mpi 8
+#$ -e ./qsubout
+#$ -cwd 
+
+#directory of excutable
+DIR=`pwd`
+echo $DIR
+
+source /etc/profile.d/modules.sh
+source /act/etc/profile.d/actbin.sh
+
+module load mvapich2-2.1/gcc-4.9.2
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/szip/lib:/opt/armadillo-9/lib64:/opt/OpenBLAS/lib:/opt/cgal-4.11.1/lib64:/opt/boost-1.58.0/lib:/opt/petsc3.1-mpich2/lib:/opt/cuda/lib64:/opt/hdf/lib:/opt/gd/lib:/usr/lib64
+
+
+mpirun -np 8 $DIR/cFluid -d 3 -p 2 2 2 -i in-rt3d0 -o out-rt3d0-222
