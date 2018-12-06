@@ -3,13 +3,21 @@
 source ~/.bashrc
 
 
+for arg in $@ ; do
+    if [[ "$arg" == "-d" ]]; then
+        DEBUG_FLAGS="-g"
+    fi
+done
+
+
 #DEBUGFLAGS="-g3 -Og"
 
 export CC=mpicc
-export CFLAGS=-w
+export CFLAGS="-w $DEBUG_FLAGS"
 
 export CXX=mpic++
-export CXXFLAGS="-std=c++11 -w"
+export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS"
+
 
 
 function config_intruder {
