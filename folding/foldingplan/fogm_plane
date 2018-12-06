@@ -1,0 +1,25 @@
+foldingplan OrigamiDrag
+number_of_points: 8
+number_of_creases: 5
+number_of_faces: 5
+number_of_face_points: 17
+number_of_crease_mappings: 10
+
+point_coordinates: 0.5 0.5 0.5    0.85 0.5 0.5    0.85 0.85 0.5    0.5 0.85 0.5    0.15 0.85 0.5    0.15 0.5 0.5    0.15 0.15 0.5    0.85 0.15 0.5
+
+crease_indices: 0 1  0 3  0 5  0 6  0 7
+
+surface center: 0.5 0.5 0.5
+
+face_indices: 
+POLYGON 4 0 1 2 3    
+POLYGON 4 0 3 4 5    
+POLYGON 3 0 5 6    
+POLYGON 3 0 6 7    
+POLYGON 3 0 7 1
+
+crease_to_face: 1 0    2 0 1    3 0 1 2    4 0 1 2 3    0
+
+angles: -1.570796327 3.141592654 -1.570796327 3.141592654 3.141592654
+
+Type of algorithm used in NLopt: LN_NELDERMEAD
