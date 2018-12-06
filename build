@@ -10,11 +10,9 @@
 source ~/.bashrc
 
 
-#debug flag may be causing problems
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
-        DEBUG_FLAGS="-g"
-        #DEBUGFLAGS="-g3 -Og"
+        DEBUG_FLAGS="-g -rdynamic"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     fi
@@ -23,10 +21,10 @@ done
 
 
 export CC=mpicc
-export CFLAGS="-w $DEBUG_FLAGS"
+export CFLAGS="$DEBUG_FLAGS -w"
 
 export CXX=mpic++
-export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS"
+export CXXFLAGS="$DEBUG_FLAGS -std=c++11 -w"
 
 
 
