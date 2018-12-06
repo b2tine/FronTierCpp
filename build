@@ -42,7 +42,7 @@ function config_lambda {
 }
 
 function config_alpha {
-    CONF="--with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc-3.1-p8 --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    CONF="--with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc-3.1-p8 --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-dir=/usr/local/pkg/cvode"
 }
 
 function config_defiant {

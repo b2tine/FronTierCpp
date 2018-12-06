@@ -20,7 +20,7 @@ AM_PROG_AR
 LT_INIT([disable-shared])
 
 #Check for compilers
-AC_PROG_CXX([mpic++ mpicxx g++])
+AC_PROG_CXX([mpic++ mpicxx])
 
 
 #Check for pthreads
@@ -104,7 +104,7 @@ AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 
-mpi_libflags="-lmpi -lmpicxx"
+mpi_libflags="-lmpi"
 
 #configure with MPI present in user environment
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
@@ -114,6 +114,16 @@ AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
              mpilib=${mpi_libflags}],
             [with_mpi=no])
 
+#configure with OpenMPI
+AC_ARG_WITH([openmpi-dir],[AS_HELP_STRING([--with-openmpi-dir=path],
+            [specify location of single directory installation])],
+            [openmpi_dir=${withval}],[openmpi_dir=no])
+
+AS_IF([test "x${openmpi_dir}" != xno],
+      [with_openmpi=yes
+       mpiinc="-I${openmpi_dir}/include"
+       mpilib="-L${openmpi_dir}/lib ${mpi_libflags}"],
+       [with_openmpi=no])
 
 #configure with MPICH
 AC_ARG_WITH([mpich-dir],[AS_HELP_STRING([--with-mpich-dir=path],
@@ -129,7 +139,7 @@ AS_IF([test "x${mpich_dir}" != xno],
 AC_SUBST(MPI_CFLAGS,${mpiinc})
 AC_SUBST(MPI_LIBS,${mpilib})
 
-AS_IF([test $with_mpich = yes || test $with_mpi = yes],
+AS_IF([test $with_mpi = yes || test $with_openmpi = yes || test $with_mpich = yes],
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
 #configure with PETSC (currently, petsc must be built with --download-hypre)
@@ -269,6 +279,41 @@ AC_SUBST(ARMA_LIBS,${armalib})
 
 #enable/disable Collision module ....
 #AC_ARG_ENABLE
+# ... Or add option to build second executable without collision module?
+
+#configure with CVODE
+AC_ARG_WITH([cvode-dir],[AS_HELP_STRING([--with-cvode-dir=path],
+            [specify location of single directory installation])],
+            [cvode_dir=${withval}],[cvode_dir=no])
+
+AC_ARG_WITH([cvode-inc],[AS_HELP_STRING([--with-cvode-inc=path],
+            [specify location of header files])],
+            [cvode_inc=${withval}],[cvode_inc=no])
+
+AC_ARG_WITH([cvode-lib],[AS_HELP_STRING([--with-cvode-lib=path],
+            [specify location of libraries])],
+            [cvode_lib=${withval}],[cvode_lib=no])
+
+cvode_libflags="-lsundials_cvode -lsundials_nvecserial"
+
+with_cvode=no
+AS_IF([test "x${cvode_dir}" != "xno"],
+      [with_cvode=yes
+       cvodeinc="-I${cvode_dir}/include"
+       cvodelib="-L${cvode_dir}/lib ${cvode_libflags}"],
+       [test "x${cvode_inc}" != xno && test "x${cvode_lib}" != xno],
+       [with_cvode=yes
+        cvodeinc="-I${cvode_inc}"
+        cvodelib="-L${cvode_lib} ${cvode_libflags}"])
+
+AC_SUBST(CVODE,${cvodeinc})
+AC_SUBST(CVODE_LIBS,${cvodelib})
+
+#The macro HAVE_CGAL isn't being used right now, but may be useful for debugging
+AS_IF([test $with_cvode = yes],
+      [AC_DEFINE([HAVE_CVODE],[1],[build with cvode])])
+
+
 
 
 #check if airfoil and Collsion should be built
@@ -284,8 +329,6 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/objs/Makefile
                                          parachute/Makefile])])])
 
-
-#Build with CVODE .... for folding module
 
 
 
