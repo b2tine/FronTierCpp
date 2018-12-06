@@ -49,10 +49,10 @@ Enter gravity: 0 0 -0.14
 Enter pressure at interface: 1
 Type yes to track the interface: y
 
-Type y to make movie of density: y
-Type y to make movie of pressure: y
-Type y to make movie of vorticity: y
-Type y to make movie of velocity: y
+Type y to make movie of density: n
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
@@ -62,5 +62,5 @@ Type y to make xy cross section movie: n
 Enter yes for debugging: yes
 Enter the debugging string: trace
 Enter the debugging string: CLOCK
-Enter the debugging string: seg_comp
 Enter the debugging string: step_size
+Enter the debugging string: tseg_comp
