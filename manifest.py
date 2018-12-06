@@ -3,6 +3,7 @@
 import os
 import sys
 
+excludedfiles = tuple('config.h')
 
 docfiles = ('README','LICENSE')
 
@@ -10,9 +11,10 @@ infile_prefixes = ['in-']
 script_prefixes = ['build','mrun','qrun-inputdir']
 prefixes = tuple(infile_prefixes + script_prefixes)
 
+script_suffixes = ['.py']
 autotools_suffixes = ['.ac','.am','.m4']
 src_suffixes = ['.c','.cpp','.h','.hpp','.cu','.cuh']
-suffixes = tuple(autotools_suffixes + src_suffixes)
+suffixes = tuple(script_suffixes + autotools_suffixes + src_suffixes)
 
 
 def createFileList(projdir):
@@ -22,7 +24,8 @@ def createFileList(projdir):
             if( filename.endswith(suffixes)
                     or filename.startswith(prefixes)
                     or filename in docfiles ):
-                filelist.append(os.path.join(root,filename))
+                if( !filename in excludedfiles ):
+                    filelist.append(os.path.join(root,filename))
     return filelist
 
 
