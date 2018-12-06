@@ -10,6 +10,7 @@
 source ~/.bashrc
 
 
+#debug flag may be causing problems
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         DEBUG_FLAGS="-g"
