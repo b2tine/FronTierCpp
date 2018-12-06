@@ -6,6 +6,8 @@ source ~/.bashrc
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         DEBUG_FLAGS="-g"
+    elif [[ "$arg" == "-n" ]]; then
+        NOMAKE=1
     fi
 done
 
@@ -67,4 +69,7 @@ echo "configure options: ${CONF}"
 
 ./configure ${CONF}
 
-make
+if [[ -z "$NOMAKE" ]]; then
+    make
+fi
+
