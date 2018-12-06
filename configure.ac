@@ -15,11 +15,6 @@ AM_INIT_AUTOMAKE([foreign --warnings=none])
 AM_SILENT_RULES([yes])
 
 
-#--enable-debug option
-#AX_CHECK_ENABLE_DEBUG([info],[DEBUG])
-
-
-
 #Initialize Libtool
 AM_PROG_AR
 LT_INIT([disable-shared])
