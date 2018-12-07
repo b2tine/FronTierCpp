@@ -6,10 +6,10 @@
 #define _FT_CRYSTAL_H_
 
 #include <FronTier.h>
-#if defined(IFLUID_STATE)
+//#if defined(IFLUID_STATE)
 #include <ifluid_state.h>
 #else /* defined(IFLUID_STATE) */
-#include "crystal_state.h"
+//#include "crystal_state.h"
 #endif /* defined(IFLUID_STATE) */
 #include <vector>
 #include <petscksp.h>

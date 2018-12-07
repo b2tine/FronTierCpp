@@ -1,11 +1,11 @@
 EXTRA_DIST = input-2d
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/subsurf \
-			  -I$(abs_top_srcdir)/crystal \
-			  -I$(abs_top_srcdir)/iFluid \
-			  -I$(abs_top_srcdir)/solver \
+AM_CPPFLAGS = -I$(top_srcdir)/subsurf \
+			  -I$(top_srcdir)/crystal \
+			  -I$(top_srcdir)/iFluid \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
@@ -14,18 +14,26 @@ noinst_PROGRAMS = subsurf
 
 
 subsurf_SOURCES = subsurf.h \
-				  subsurf.cpp \
-				  subsub.cpp
+				  subsub.cpp \
+				  subsurf.cpp
 
-subsurf_LDADD =	$(abs_top_builddir)/crystal/ccartsn.o \
-				$(abs_top_builddir)/crystal/crysub.o \
-				$(abs_top_builddir)/lib/libiFluid.la \
-				$(abs_top_builddir)/lib/libsolver.la \
-				@CGAL_LIBS@	@PETSC_LIBS@ @MPI_LIBS@ \
-				$(abs_top_builddir)/lib/libFronTier.la \
-				@HDF_LIBS@ @GD_LIBS@
+subsurf_LDADD =	$(top_builddir)/crystal/ccartsn.o \
+				$(top_builddir)/crystal/crysub.o \
+				$(top_builddir)/lib/libiFluid.la
+
+
+$(subsurf_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+	@cd $(top_builddir)/crystal && $(MAKE) all
+
+FORCE:
+
+
 
 tagsfile:
-	ctags *.h *.cpp ../crystal/*.h ../crystal/*.cpp ../iFluid/*.h ../iFluid/*.cpp ../solver/*.h ../solver/*.cpp ../include/*/*.h ../src/*/*.c
-
+	ctags *.h *.cpp \
+		$(top_srcdir)/crystal/*.h $(top_srcdir)/crystal/*.cpp \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
