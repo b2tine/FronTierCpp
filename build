@@ -46,7 +46,8 @@ function config_alpha {
 }
 
 function config_defiant {
-    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    CONF="--with-openmpi-dir=/usr/local/openmpi-2.1.5 --with-petsc-dir=/usr/local/petsc-3.1-openmpi-2.1 --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    #CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
 }
 
 
