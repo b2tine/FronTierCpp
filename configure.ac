@@ -142,8 +142,24 @@ AC_SUBST(MPI_LIBS,${mpilib})
 AS_IF([test $with_mpi = yes || test $with_openmpi = yes || test $with_mpich = yes],
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
-#configure with PETSC (currently, petsc must be built with --download-hypre)
-#TODO: add option for independent HYPRE installations/libraries
+
+#TODO: implement hypre-petsc flexibility
+
+#configure with HYPRE (NOT IN USE YET)
+AC_ARG_WITH([hypre-dir],[AS_HELP_STRING([--with-hypre-dir=path],
+            [specify location of single directory installation])],
+            [hypre_dir=${withval}],[hypre_dir=no])
+
+hypre_libflags="-lHYPRE"
+
+with_hypre=no
+AS_IF([test "x${hypre_dir}" != xno],
+      [with_hypre=yes
+       hypreinc="-I${hypre_dir}/include"
+       hyprelib="-L${hypre_dir}/lib ${hypre_libflags}"])
+
+
+#configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=${withval}],[petsc_dir=no])
