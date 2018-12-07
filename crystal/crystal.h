@@ -2,15 +2,12 @@
  * 		crystal.h					      *
  **********************************************************************/
 
-#ifndef _FT_CRYSTAL_H_
-#define _FT_CRYSTAL_H_
+#ifndef CRYSTAL_H
+#define CRYSTAL_H
 
 #include <FronTier.h>
-//#if defined(IFLUID_STATE)
 #include <ifluid_state.h>
-#else /* defined(IFLUID_STATE) */
-//#include "crystal_state.h"
-#endif /* defined(IFLUID_STATE) */
+
 #include <vector>
 #include <petscksp.h>
 #include <assert.h>

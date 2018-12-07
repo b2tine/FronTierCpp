@@ -9,7 +9,7 @@ MAYBE_SOLVER = solver
 MAYBE_IFLUID = iFluid
 MAYBE_CRYSTAL = crystal
 MAYBE_MELTING = melting
-#MAYBE_SUBSURF = subsurf
+MAYBE_SUBSURF = subsurf
 if CGAL_ARMA_OPT
 MAYBE_COLLISION = Collision
 MAYBE_AIRFOIL = airfoil

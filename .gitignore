@@ -62,6 +62,7 @@ iFluid/iFluid
 iFluid/gv-init
 melting/melting
 crystal/crystal
+subsurf/subsurf
 airfoil/airfoil
 Collision/test
 Collision/init

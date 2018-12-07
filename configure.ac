@@ -143,7 +143,7 @@ AS_IF([test $with_mpi = yes || test $with_openmpi = yes || test $with_mpich = ye
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
 
-#TODO: implement hypre-petsc flexibility
+#TODO: more flexibility in hypre-petsc configuration
 
 #configure with HYPRE (NOT IN USE YET)
 AC_ARG_WITH([hypre-dir],[AS_HELP_STRING([--with-hypre-dir=path],
@@ -158,6 +158,7 @@ AS_IF([test "x${hypre_dir}" != xno],
        hypreinc="-I${hypre_dir}/include"
        hyprelib="-L${hypre_dir}/lib ${hypre_libflags}"])
 
+#--with-hypre-petsc-dir option
 
 #configure with PETSC
 AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
@@ -175,6 +176,7 @@ AS_IF([test "x${petsc_dir}" != xno],
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
 
+#hypre should only be defined if it was specified ... 
 AS_IF([test $with_petsc = yes],
       [AC_DEFINE([HAVE_HYPRE],[1],[build with HYPRE])])
 
@@ -187,7 +189,8 @@ AM_COND_IF([PETSC_OPT],
                              iFluid/Makefile
                              iFluid/objs/Makefile
                              melting/Makefile
-                             crystal/Makefile])])
+                             crystal/Makefile
+                             subsurf/Makefile])])
 
 #configure with BOOST
 AC_ARG_WITH([boost-dir],[AS_HELP_STRING([--with-boost-dir=path],

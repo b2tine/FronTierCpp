@@ -70,9 +70,9 @@ int main(int argc, char **argv)
 	C_CARTESIAN  c_cartesian(front);
 	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
 	if(f_basic.dim == 2)
-	    l_cartesian = new Incompress_Solver_2D_Cartesian(front);
+	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
 	else if(f_basic.dim == 3)
-	    l_cartesian = new Incompress_Solver_3D_Cartesian(front);
+	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
 
 	/* Initialize basic computational data */
 
