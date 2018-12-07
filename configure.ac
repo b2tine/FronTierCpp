@@ -298,7 +298,7 @@ AC_SUBST(ARMA_LIBS,${armalib})
 
 #enable/disable Collision module ....
 #AC_ARG_ENABLE
-# ... Or add option to build second executable without collision module?
+# ... Or add option to build seperate debugging executable?
 
 #configure with CVODE
 AC_ARG_WITH([cvode-dir],[AS_HELP_STRING([--with-cvode-dir=path],
@@ -328,7 +328,7 @@ AS_IF([test "x${cvode_dir}" != "xno"],
 AC_SUBST(CVODE,${cvodeinc})
 AC_SUBST(CVODE_LIBS,${cvodelib})
 
-#The macro HAVE_CGAL isn't being used right now, but may be useful for debugging
+#The macro HAVE_CVODE isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cvode = yes],
       [AC_DEFINE([HAVE_CVODE],[1],[build with cvode])])
 
@@ -348,6 +348,11 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/objs/Makefile
                                          parachute/Makefile])])])
 
+AM_COND_IF([CGAL_ARMA_OPT],
+           [AM_CONDITIONAL([FOLDING_OPT],
+                           [test $with_cvode = yes])])
+
+AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile])])
 
 
 
