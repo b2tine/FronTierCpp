@@ -24,7 +24,7 @@ def createFileList(projdir):
             if( filename.endswith(suffixes)
                     or filename.startswith(prefixes)
                     or filename in docfiles ):
-                if( !filename in excludedfiles ):
+                if( filename not in excludedfiles ):
                     filelist.append(os.path.join(root,filename))
     return filelist
 
