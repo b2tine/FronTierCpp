@@ -348,11 +348,11 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/objs/Makefile
                                          parachute/Makefile])])])
 
-AM_COND_IF([CGAL_ARMA_OPT],
-           [AM_CONDITIONAL([FOLDING_OPT],
-                           [test $with_cvode = yes])])
+#AM_COND_IF([CGAL_ARMA_OPT],
+#           [AM_CONDITIONAL([FOLDING_OPT],
+#                           [test $with_cvode = yes])])
 
-AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile])])
+#AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile])])
 
 
 
