@@ -27,7 +27,7 @@ export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
 export CXX=mpic++
 export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
 
-
+FAKE
 
 function config_intruder {
     CONF="--with-mpi --with-petsc-dir=/opt/petsc3.1-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/opt/cgal-4.11.1/include --with-cgal-lib=/opt/cgal-4.11.1/lib64 --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64"
