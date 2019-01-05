@@ -116,6 +116,7 @@ EXPORT void start_clock(
 	    zero_scalar(cputime,MAX_TIMES*sizeof(double));
 	}
 
+    /*
 	if  (top >= MAX_TIMES)
 	{
 	    double	*new_cputime;
@@ -127,6 +128,14 @@ EXPORT void start_clock(
 	    	new_cputime[i] = cputime[i];
 	    MAX_TIMES = NEW_MAX_TIMES;
 	}
+    */
+
+	if  (top >= MAX_TIMES)
+	{
+        top++;
+	    (void) printf("ERROR: start_clock(%s): CLOCK STACK FULL\n",s);
+        return;
+    }
 
 	for (i = 0; i < top; i++)
 	    (void) printf("  ");
