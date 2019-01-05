@@ -101,11 +101,18 @@ EXPORT void print_execution_times(void)
 	print_rss_usage();
 }		/*end print_execution_times*/
 
+
+EXPORT void reset_clock()
+{
+    top = 0;
+    for( int i = 0; i < MAX_TIMES; ++i )
+        cputime[i] = 0.0;
+}
+
+
 EXPORT void start_clock(
 	const char	*s)
 {
-	int	i;
-
 	if (!debugging("CLOCK"))
 	    return;
 
@@ -116,32 +123,20 @@ EXPORT void start_clock(
 	    zero_scalar(cputime,MAX_TIMES*sizeof(double));
 	}
 
-    /*
-	if  (top >= MAX_TIMES)
-	{
-	    double	*new_cputime;
-	    int	NEW_MAX_TIMES = 2*MAX_TIMES;
-
-	    new_cputime = (double*)malloc(NEW_MAX_TIMES*sizeof(double));
-	    zero_scalar(new_cputime,NEW_MAX_TIMES*sizeof(double));
-	    for (i = 0; i < MAX_TIMES; i++)
-	    	new_cputime[i] = cputime[i];
-	    MAX_TIMES = NEW_MAX_TIMES;
-	}
-    */
-
-	if  (top >= MAX_TIMES)
+	if (top >= MAX_TIMES)
 	{
         top++;
 	    (void) printf("ERROR: start_clock(%s): CLOCK STACK FULL\n",s);
         return;
     }
 
-	for (i = 0; i < top; i++)
-	    (void) printf("  ");
-	(void) printf("CLOCK           (%s)\n",s);
-	cputime[top] = cpu_seconds();
+	for (int i = 0; i < top; ++i)
+        (void) printf("  ");
+    (void) printf("CLOCK           (%s)\n",s);
+	
+    cputime[top] = cpu_seconds();
 	top++;
+
 }		/*end start_clock*/
 
 EXPORT void stop_clock(

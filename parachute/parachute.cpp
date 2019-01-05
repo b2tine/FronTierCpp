@@ -238,6 +238,9 @@ static  void airfoil_driver(
         {
 	    /* Propagating interface for time step dt */
 
+            if(debugging("CLOCK"))
+                reset_clock();
+
 	    start_clock("timeStep");
 	    if (!af_params->no_fluid)
 	    {

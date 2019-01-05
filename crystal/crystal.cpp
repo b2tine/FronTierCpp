@@ -196,6 +196,9 @@ static  void crystal_driver(
 
         for (;;)
         {
+            if(debugging("CLOCK"))
+                reset_clock();
+
 	    FT_Propagate(front);
 	    c_cartesian.solve(front->dt);
 	    FT_AddTimeStepToCounter(front);

@@ -298,6 +298,9 @@ static  void melting_flow_driver(
 
         for (;;)
         {
+            if(debugging("CLOCK"))
+                reset_clock();
+
 	    FT_Propagate(front);
 	    cartesian.solve(front->dt);
 	    if (eqn_params->no_fluid == NO)

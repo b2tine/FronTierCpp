@@ -217,6 +217,9 @@ static  void ifluid_driver(
         {
             /* Propagating interface for time step dt */
 
+	    if (debugging("CLOCK"))
+            reset_clock();
+
 	    if (debugging("trace"))
                 printf("Before FT_Propagate()\n");
             FrontPreAdvance(front);

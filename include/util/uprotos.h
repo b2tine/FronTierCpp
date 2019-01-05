@@ -275,6 +275,7 @@ IMPORT	double	NALegendre(int,int,double);
 
 /* times.c */
 IMPORT	void	print_execution_times(void);
+IMPORT	void	reset_clock();
 IMPORT	void	start_clock(const char*);
 IMPORT	void	stop_clock(const char*);
 IMPORT	void	cpu_time(const char*);

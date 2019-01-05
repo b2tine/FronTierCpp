@@ -254,6 +254,9 @@ static  void airfoil_driver(
         {
 	    /* Propagating interface for time step dt */
 
+	    if (debugging("CLOCK"))
+            reset_clock();
+
 	    start_clock("time_step");
 	    if (debugging("trace"))
                 (void) printf("Before FT_Propagate()\n");

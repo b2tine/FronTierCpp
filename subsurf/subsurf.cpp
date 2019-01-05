@@ -235,6 +235,9 @@ static  void subsurf_main_driver(
 
         for (;;)
         {
+            if(debugging("CLOCK"))
+                reset_clock();
+
 	    FT_Propagate(front);
 	    c_cartesian.solve(front->dt);
 	    l_cartesian->solve(front->dt);

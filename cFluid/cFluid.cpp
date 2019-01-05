@@ -219,79 +219,92 @@ static  void gas_driver(
 			Frequency_of_redistribution(front,GENERAL_WAVE));
 	}
 
-	if (debugging("trace")) printf("Before time loop\n");
-        for (;;)
+	if (debugging("trace"))
+        printf("Before time loop\n");
+        
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
+
+        if(debugging("CLOCK"))
+                reset_clock();
+
+        start_clock("time_loop");
+        print_storage("Storage at start of time step","trace");
+        
+        if (debugging("trace"))
+            printf("Begin a time step\n");
+        
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+
+        g_cartesian.solve(front->dt);
+        
+        print_storage("Storage after time step","trace");
+
+        FT_AddTimeStepToCounter(front);
+            
+        //Next time step determined by maximum speed of previous
+        //step, assuming the propagation is hyperbolic and
+        //is not dependent on second order derivatives of
+        //the interface such as curvature, and etc.
+
+        FT_SetTimeStep(front);
+        if (debugging("step_size"))
         {
-            /* Propagating interface for time step dt */
+            (void) printf("Step size from front:    %20.14f\n",front->dt);
+            (void) printf("Step size from interior: %20.14f\n",
+                        CFL*g_cartesian.max_dt);
+        }
+        
+        front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
 
-	    start_clock("time_loop");
-	    print_storage("Storage at start of time step","trace");
-	    if (debugging("trace")) printf("Begin a time step\n");
-	    FrontPreAdvance(front);
-	    FT_Propagate(front);
-
-	    g_cartesian.solve(front->dt);
-	    if (debugging("trace")) 
-	    {
-		print_storage("Storage after time step","trace");
-	    }
-
-	    FT_AddTimeStepToCounter(front);
-				
-            //Next time step determined by maximum speed of previous
-            //step, assuming the propagation is hyperbolic and
-            //is not dependent on second order derivatives of
-            //the interface such as curvature, and etc.
-
-	    FT_SetTimeStep(front);
-	    if (debugging("step_size"))
-	    {
-		(void) printf("Step size from front:    %20.14f\n",front->dt);
-		(void) printf("Step size from interior: %20.14f\n",
-					CFL*g_cartesian.max_dt);
-	    }
-            front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
-	
             /* Output section */
 
-	    start_clock("output");
-            if (FT_IsSaveTime(front))
-	    {
-            	FT_Save(front);
-		g_cartesian.printFrontInteriorStates(out_name);
-		if (compare_with_base_data(front))
-		{
-		    g_cartesian.compareWithBaseData(out_name);
-		    g_cartesian.freeBaseFront();
-		}
-	    }
-            if (FT_IsDrawTime(front))
-	    {
-            	FT_Draw(front);
-	    }
-	    stop_clock("output");
-
-            if (FT_TimeLimitReached(front))
-	    {
-	    	start_clock("exit-output");
-		if (!FT_IsSaveTime(front))
-		{
-            	    FT_Save(front);
-		    g_cartesian.printFrontInteriorStates(out_name);
-		}
-		if (!FT_IsDrawTime(front))
-		{
-                    FT_Draw(front);
-		}
-		FT_PrintTimeStamp(front);
-	    	stop_clock("exit-output");
-	    	stop_clock("time_loop");
-                break;
-	    }
-	    FT_TimeControlFilter(front);
-	    FT_PrintTimeStamp(front);
-	    stop_clock("time_loop");
+        start_clock("output");
+        if (FT_IsSaveTime(front))
+        {
+            FT_Save(front);
+            g_cartesian.printFrontInteriorStates(out_name);
+        
+            if (compare_with_base_data(front))
+            {
+                g_cartesian.compareWithBaseData(out_name);
+                g_cartesian.freeBaseFront();
+            }
         }
+        
+        if (FT_IsDrawTime(front))
+        {
+            FT_Draw(front);
+        }
+        stop_clock("output");
+
+        if (FT_TimeLimitReached(front))
+        {
+            start_clock("exit-output");
+            if (!FT_IsSaveTime(front))
+            {
+                FT_Save(front);
+                g_cartesian.printFrontInteriorStates(out_name);
+            }
+            
+            if (!FT_IsDrawTime(front))
+            {
+                FT_Draw(front);
+            }
+            
+            FT_PrintTimeStamp(front);
+            stop_clock("exit-output");
+            stop_clock("time_loop");
+            break;
+        }
+        
+        FT_TimeControlFilter(front);
+        FT_PrintTimeStamp(front);
+        stop_clock("time_loop");
+    }
+
 	if (FT_Dimension() == 1)
 	    g_cartesian.errFunction();
 	if (debugging("trace")) printf("After time loop\n");

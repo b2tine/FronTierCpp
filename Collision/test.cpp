@@ -95,7 +95,9 @@ static  void propagation_driver(
         for (;;)
         {
             /* Propagating interface for time step dt */
-
+        
+            if(debugging("CLOCK"))
+                reset_clock();
 
             FT_Propagate(front);
 
