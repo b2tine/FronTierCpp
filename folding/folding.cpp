@@ -15,6 +15,22 @@ bool getString(std::ifstream&, const char*);
 double Folder::m_thickness = 0.001;
 double Folder::max_dt = 0.01;
 
+void Folder::unsort_surf_point(SURFACE* surf) {
+    TRI *tri;
+    POINT *p;
+    int i;
+
+    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
+                    tri = tri->next)
+    {
+        for (i = 0; i < 3; ++i)
+        {
+            p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
+        }
+    }
+}
+
 void Folder::addDragsFromFile(std::string fname) {
     std::ifstream ifs(fname);
     if (!ifs.is_open()) {
@@ -36,6 +52,7 @@ void Folder::addDragsFromFile(std::string fname) {
          foldset.insert((*it) -> id());
     std::string s;
     info.clear();
+    info.outname = outname;
     while (ifs >> s)
     {
 	//three cases: drag name, numeric, garbage
@@ -140,8 +157,10 @@ void Folder3d::deleteLines() {
 }
 
 void Folder3d::doFolding() {
-    SpringSolver* sp_solver = SpringSolver::createSpringSolver(
-						getOdeScheme()); 
+    // change
+    //SpringSolver* sp_solver = SpringSolver::createSpringSolver(
+    //						getOdeScheme()); 
+    SpringSolver* sp_solver = new SpringSolver();	
     CollisionSolver* cd_solver = new CollisionSolver3d();
     
     //configure collision solver
@@ -191,26 +210,33 @@ double Folder3d::computeBendingEnergy() {
         if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
         if (is_bdry(*s)) continue;
         surf_tri_loop(*s, tri) {
+            unsort_surf_point(*s);
+            // help to find opposite vertex in neighbor 
+            // triangle
             std::set<POINT*> pointset;
 
             for (int i = 0; i < 3; i++)
                  pointset.insert(Point_of_tri(tri)[i]);
             for (int i = 0; i < 3; i++) {
+                 if (is_side_bdry(tri, (i+1)%3)) continue;
+                 
                  POINT* p1 = Point_of_tri(tri)[i];
                  TRI* n_tri = Tri_on_side(tri, (i+1)%3);
-
-                 if (is_side_bdry(tri, (i+1)%3)) continue;
-
-                 int index1 = i, index2;
+                 int index1 = i;
+                 int index2;
                  POINT* p2;
 
-                 for (int i = 0; i < 3; i++)
-                      if (pointset.find(Point_of_tri(n_tri)[i]) ==
+                 for (int j = 0; j < 3; j++)
+                      if (pointset.find(Point_of_tri(n_tri)[j]) ==
                                 pointset.end()) {
-                          index2 = i;
-                          p2 = Point_of_tri(n_tri)[i];
+                          index2 = j;
+                          p2 = Point_of_tri(n_tri)[j];
                           break;
                       }
+                 if (sorted(p1) == YES && sorted(p2) == YES)
+                     continue;
+                 sorted(p1) = YES;
+                 sorted(p2) = YES;
 
                  double oriLen = BendingForce::calOriLeng(index1,
                         index2, tri, n_tri);
@@ -220,7 +246,7 @@ double Folder3d::computeBendingEnergy() {
             }
         }
     }
-    return ener*0.5;
+    return ener;
 }
 
 double Folder3d::computePotentialEnergy()
@@ -231,18 +257,64 @@ double Folder3d::computePotentialEnergy()
     {
 	if (wave_type(*s) != ELASTIC_BOUNDARY)
 	    continue;
-	TRI* t;
+	
+        TRI* t;
+        std::set<std::pair<POINT*, POINT*>> edgeSet;
+
 	surf_tri_loop(*s, t)
 	{
 	    for (int i = 0; i < 3; ++i)
 	    {
-		double len = separation(Point_of_tri(t)[i],
-				Point_of_tri(t)[(i+1)%3], 3); 
-		E += 0.5*spring_params.k*pow(len - t->side_length0[i], 2.0);	
-	    }
+                POINT* p1 = Point_of_tri(t)[i];
+                POINT* p2 = Point_of_tri(t)[(i+1)%3];
+                // edge has been traversed 
+                auto edge1 = std::make_pair(p1, p2);
+                auto edge2 = std::make_pair(p2, p1);
+
+                if (!edgeSet.count(edge1))
+                    continue;
+                edgeSet.insert(edge1);
+                edgeSet.insert(edge2);
+
+		double len = separation(p1, p2, 3); 
+
+		E += 0.5*spring_params.k*pow(len - t->side_length0[i], 2.0);
+	    } 
 	}
     } 
-    return E*0.5;
+    return E;
+}
+
+double Folder3d::computeKineticEnergy() {
+    double E = 0;
+    SURFACE** s; 
+
+    intfc_surface_loop(m_intfc, s)
+    {
+        if (wave_type(*s) != ELASTIC_BOUNDARY)
+            continue;
+        
+        TRI* t;
+
+        unsort_surf_point(*s);
+        surf_tri_loop(*s, t)
+        {
+            for (int i = 0; i < 3; ++i) {
+                 POINT* p = Point_of_tri(t)[i];
+
+                 if (sorted(p) == YES)
+                     continue;
+                 sorted(p) = YES;
+                 
+                 STATE* state = static_cast<STATE*>(left_state(p));
+                 double* vel = state->vel;
+
+                 for (int i = 0; i < 3; i++)
+                      E += 0.5*vel[i]*vel[i];
+            }
+        }    
+    }
+    return E;
 }
 
 void Folder3d::doFolding(
@@ -255,7 +327,12 @@ void Folder3d::doFolding(
     
     sp_solver->setTimeStepSize(max_dt);
     sp_solver->setDrag(drag);
-
+    
+    if (drag->id() == "OrigamiDrag")
+        setOdeScheme(SpringSolver::DIRECT);
+    else 
+        setOdeScheme(SpringSolver::IMPLICIT);
+    sp_solver->setSolver(getOdeScheme());
     setCollisionFreePoints3d(m_intfc,drag);
 
     //call spring solver and collision solver
@@ -264,6 +341,7 @@ void Folder3d::doFolding(
     double t0 = 0; 
     static double t = 0;
     double dt = max_dt;
+
     printf("drag = %s, m_t = %f\n", drag->id().c_str(), drag->m_t);
     movie->recordMovieFrame();
     while (t0 < drag->m_t - MACH_EPS) {
@@ -276,11 +354,10 @@ void Folder3d::doFolding(
 	
 	cd_solver->recordOriginPosition();
 	cd_solver->setTimeStepSize(dt);
-
-    	sp_solver->solve(dt);
-	
 	recordData(t,movie->out_dir);
-        
+    	sp_solver->solve(dt);
+        if (drag->id() != "RelaxDrag")
+            sp_solver->resetVelocity();
 	//cd_solver->resolveCollision();
 
 	t += dt;
@@ -383,8 +460,12 @@ void Folder3d::appendDataToFile(double x, double y, std::string fname)
 
 void Folder3d::recordData(double t, std::string out_dir)
 {
-    appendDataToFile(t, computePotentialEnergy(), out_dir+"/"+"energy");
-    appendDataToFile(t, computeBendingEnergy(), out_dir+"/"+"bending_energy");
+    appendDataToFile(t, computePotentialEnergy(), 
+                     out_dir+"/"+"membrane_energy");
+    appendDataToFile(t, computeBendingEnergy(), 
+                     out_dir+"/"+"bending_energy");
+    appendDataToFile(t, computeKineticEnergy(), 
+                     out_dir+"/"+"kinetic_energy");
 }
 
 void Folder3d::setupMovie(std::string dname, std::string oname, 
@@ -459,8 +540,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc, Drag* drag)
         }
 }       /* setCollisionFreePoints3d() */
 
-Folder3d::Folder3d(INTERFACE* intfc, SURFACE* s) : m_intfc(intfc)
-{}
+Folder3d::Folder3d(INTERFACE* intfc, SURFACE* s, std::string out_name) : 
+        Folder(out_name), m_intfc(intfc) {}
 
 Folder3d::~Folder3d() {
     if (movie) delete movie;

@@ -21,6 +21,7 @@ class BendingForce: public SpringSolver::ExtForceInterface
     static const int num = 3; 
     // pointer to member function
     void (BendingForce::*method[num])(POINT*,TRI*, TRI*); 
+    void unsort_surf_point(SURFACE*);
 public: 
     double* getExternalForce(SpringVertex* sv);
     void computeExternalForce();

@@ -21,7 +21,7 @@ static int f(realtype, N_Vector, N_Vector, void*);
                N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);*/
 static int check_flag(void *flagvalue, const char *funcname, int opt);
 
-void IM_SPRING_SOLVER::doSolve(double t) {
+void SpringSolver::doSolveImplicit(double t) {
     int NEQ = pts.size() * 6; //number of equations
     //const int MAX_NB = 7; //number of neighbours
     //create vector
@@ -96,7 +96,7 @@ static void setInitialCondition(N_Vector u, std::vector<SpringVertex*>& pts) {
 
 static int f(realtype t, N_Vector u, N_Vector udot, void* user_data) {
     realtype *dudata;
-    IM_SPRING_SOLVER* sp_solver = (IM_SPRING_SOLVER*)user_data;
+    SpringSolver* sp_solver = (SpringSolver*)user_data;
     std::vector<SpringVertex*>& pts = sp_solver->getSpringMesh();
 
     dudata = N_VGetArrayPointer_Serial(udot);

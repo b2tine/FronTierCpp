@@ -455,16 +455,21 @@ void cgalParaSurf::getSpecialParaFromFile(std::ifstream& fin) {
     if (!findAndLocate(fin, "Enter the number of constraint points " 
         "between two lines:")) {
         std::cout << "use default!\n"; 
-        num_cons = 10; 
+        out_num_cons = 10; 
+        in_num_cons = 2;
     }
-    else 
-        fin >> num_cons; 
+    else {
+        fin >> out_num_cons; 
+        in_num_cons = out_num_cons / 10 + 1;
+    }
+        
 }
 
 void cgalParaSurf::addCgalConst() {
-    numRegConst(num_lines * num_cons); 
+    numRegConst(num_lines * out_num_cons); 
 
-    double theta = 2 * PI / (numRegConst());
+    double out_theta = 2 * PI / (numRegConst());
+    double in_theta = 2 * PI / (num_lines * in_num_cons);
     Vertex_handle v1, v2;
     std::unique_ptr<Vertex_handle[]> v(new Vertex_handle [numRegConst()]); 
     //Vertex_handle *v = new Vertex_handle [numRegConst()]; 
@@ -472,10 +477,20 @@ void cgalParaSurf::addCgalConst() {
   
     for (int i = 0; i < numRegConst(); i++)
          regConPoint.push_back(std::make_pair(getCenter()[0] + 
-		getRadius() * cos(i * theta), getCenter()[1] + 
-		getRadius() * sin(i * theta)));
+		getRadius() * cos(i * out_theta), getCenter()[1] + 
+		getRadius() * sin(i * out_theta)));
     regConPoint.push_back(std::make_pair(getCenter()[0] + getRadius(), 
 		getCenter()[1]));
+
+    std::ofstream fout("point.txt");
+    double theta1 = 2*PI/num_lines;
+
+    for (int i = 0; i < num_lines; i++) {
+         fout << getCenter()[0]+getRadius()*cos(i*theta1) << ' '
+              << getCenter()[1]+getRadius()*sin(i*theta1) << ' '
+              << height() << std::endl;
+    }
+
     for (int i = 0; i < numRegConst(); i++)
     {
          v1 = insertPointToCDT(Cgal_Point(regConPoint[i].first, 
@@ -485,19 +500,35 @@ void cgalParaSurf::addCgalConst() {
          insertConstraintToCDT(v1, v2);
 	 v.get()[i] = v1; 
     }
-
     if (!hole() && num_lines <= 16) {
         v1 = insertPointToCDT(Cgal_Point(getCenter()[0], getCenter()[1]));
         for (int i = 0; i < num_lines; i++) {
-             insertConstraintToCDT(v1, v.get()[i*num_cons]);
+             insertConstraintToCDT(v1, v.get()[i*out_num_cons]);
         }
     }
     else {
+        regConPoint.clear();
+
+        int numInReg = num_lines * in_num_cons;
+        std::unique_ptr<Vertex_handle[]> vi(new Vertex_handle [numInReg]);
+
+        for (int i = 0; i < numInReg; i++)
+             regConPoint.push_back(std::make_pair(getCenter()[0] +
+                    innerRad * cos(i * in_theta), getCenter()[1] +
+                    innerRad * sin(i * in_theta)));
+        regConPoint.push_back(std::make_pair(getCenter()[0] + innerRad,
+                              getCenter()[1]));
+        for (int i = 0; i < numInReg; i++) {
+             v1 = insertPointToCDT(Cgal_Point(regConPoint[i].first,
+                                   regConPoint[i].second));
+             v2 = insertPointToCDT(Cgal_Point(regConPoint[i+1].first,
+                                   regConPoint[i+1].second)); 
+             insertConstraintToCDT(v1, v2);
+             vi.get()[i] = v1;
+        }
         for (int i = 0; i < num_lines; i++) {
-             v1 = insertPointToCDT(Cgal_Point(getCenter()[0]+
-                innerRad*cos(i*num_cons*theta), getCenter()[1]+
-                innerRad*sin(i*num_cons*theta)));
-             insertConstraintToCDT(v.get()[i*num_cons], v1);
+             insertConstraintToCDT(vi.get()[i*in_num_cons], 
+                                   v.get()[i*out_num_cons]);
         }
     }
 }

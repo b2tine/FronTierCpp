@@ -14,7 +14,7 @@ class Drag {
     static double m_tol;
 public:
     double m_t;
-    
+    std::string outname;
     //set point type and register points
     virtual void preprocess(std::vector<SpringVertex*>&){}; 
 
@@ -51,6 +51,7 @@ public:
 	std::string _id;
 	std::vector<double> _data;
      public:
+        std::string outname;
 	Info(std::string ident, std::vector<double> &dat):
 		_id(ident), _data(dat) {}
 	Info() {}
@@ -303,14 +304,15 @@ class AlignDrag: public Drag {
     double dir[3];
     double rotate_angle = 0;
     double R[3][3];
-    AlignDrag(const double[], const double[]);
+    double upDis = 0;
+    AlignDrag(const double[], const double[], double);
 public:
     AlignDrag(){};
     void preprocess(std::vector<SpringVertex*>&);
     void postprocess(std::vector<SpringVertex*>&);
     std::string id() {return "AlignDrag";}
     Drag* clone(const Drag::Info&);
-    virtual size_t dataSize() {return 6;}
+    virtual size_t dataSize() {return 7;}
     void setVel(SpringVertex* sv){}
     void setAccel(SpringVertex* sv){}
 };

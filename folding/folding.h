@@ -11,6 +11,7 @@
 
 class Folder {
 public:
+    std::string outname;
     virtual void doFolding() = 0;
     virtual ~Folder(){}
     void addDrag(Drag* drag) { drags.push_back(drag);}
@@ -27,11 +28,13 @@ public:
     std::string& getInputFile() { return inname; }
 protected:
     Folder(){}
+    Folder(std::string out_name) : outname(out_name) {}
     double getThickness(){return m_thickness;}
     double getFrameStepSize() {return max_dt;}
     std::vector<Drag*> drags;
     SpringSolver::SpringParameter spring_params;
     double bendCoeff = 0;
+    void unsort_surf_point(SURFACE*);
 private:
     static double max_dt;
     static double m_thickness;
@@ -42,7 +45,7 @@ private:
 struct Movie;
 class Folder3d:public Folder {
 public:
-    Folder3d(INTERFACE*, SURFACE*);
+    Folder3d(INTERFACE*, SURFACE*, std::string);
     ~Folder3d();
     void doFolding();
     Folder3d(){}
@@ -53,6 +56,7 @@ private:
     void straightenStrings();
     double computePotentialEnergy();
     double computeBendingEnergy();
+    double computeKineticEnergy();
     void recordData(double, std::string);
     void appendDataToFile(double, double, std::string);
     void deleteLines(); 

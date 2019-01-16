@@ -69,18 +69,21 @@ void SpringSolver::setParameters(SpringSolver::SpringParameter& params) {
 	throw std::invalid_argument("tensile stiffness and mass cannot zero");
     springParameter = params;
 }
-
+/*
 SpringSolver* SpringSolver::createSpringSolver(ODE_SCHEME scheme) {
     switch (scheme) {
 	case EXPLICIT:
 	    return new EX_SPRING_SOLVER();
 	case IMPLICIT:
 	    return new IM_SPRING_SOLVER();
+        // change
+        case DIRECT:
+            return new DI_SPRING_SOLVER();
 	default:
 	    return new EX_SPRING_SOLVER();
     }
 }
-
+*/
 void SpringSolver::computeAccel(SpringVertex* sv) {
         double k = springParameter.k;
         double m = springParameter.m;
@@ -153,7 +156,7 @@ void SpringSolver::solve(double dt)
 	    }
 	}
     }
-    doSolve(dt);
+    (this->*doSolve)(dt);
     if (m_drag)
     { 
 	m_drag->postprocess(pts);
@@ -169,5 +172,21 @@ void SpringSolver::resetVelocity() {
     {
         std::fill(pts[i]->v,pts[i]->v+3,0);
         std::fill(pts[i]->ext_accel,pts[i]->ext_accel+3,0);
+    }
+}
+
+void SpringSolver::setSolver(ODE_SCHEME scheme) {
+    switch (scheme) {
+        case EXPLICIT:
+            doSolve = &SpringSolver::doSolveExplicit;
+            break;
+        case IMPLICIT:
+            doSolve = &SpringSolver::doSolveImplicit;
+            break;
+        case DIRECT:
+            doSolve = &SpringSolver::doSolveDirect;
+            break;
+        default:
+            doSolve = &SpringSolver::doSolveExplicit;
     }
 }

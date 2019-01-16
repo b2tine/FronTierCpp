@@ -57,6 +57,23 @@ double* BendingForce::getExternalForce(SpringVertex* sv)
     	return (static_cast<POINT*>(sv->org_vtx))->force;
 }
 
+void BendingForce::unsort_surf_point(SURFACE* surf) {
+    TRI *tri;
+    POINT *p;
+    int i;
+
+    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
+                    tri = tri->next)
+    {
+        for (i = 0; i < 3; ++i)
+        {
+            p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
+        }
+    }
+
+}
+
 void BendingForce::computeExternalForce()
 {
         SURFACE **surf;
@@ -66,6 +83,7 @@ void BendingForce::computeExternalForce()
         {
             if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
             if (is_bdry(*surf)) continue;
+            unsort_surf_point(*surf);
             clear_surf_point_force(*surf);
             surf_tri_loop(*surf, tri)
             {
@@ -75,7 +93,6 @@ void BendingForce::computeExternalForce()
                 {
                     POINT *p1 = Point_of_tri(tri)[i];
 	            
-		    sorted(p1) = NO;
                     TRI* n_tri = Tri_on_side(tri, (i+1)%3);
 		    if (is_side_bdry(tri, (i+1)%3)) continue; 
 	            (this->*method[methodIndex()])(p1, tri, n_tri); 
@@ -157,7 +174,6 @@ void BendingForce::calculateBendingForce3dparti(POINT* p1,
 		 index2 = i; 
 		 break; 
 	     }
-        
         double length0 = calOriLeng(index1, index2, tri, n_tri); 
 	double length = separation(p1, p2, 3);
 	STATE* state = static_cast<STATE*>(left_state(p1));
@@ -171,16 +187,20 @@ void BendingForce::calculateBendingForce3dparti(POINT* p1,
 */
 	double velr[3] = {0.0}; 
 	double dir[3] = {0.0}; 
+        double dot = 0;
 
 	for (int i = 0; i < 3; i++) {
 	     velr[i] = vel2[i] - vel1[i]; 
 	     dir[i] = Coords(p2)[i] - Coords(p1)[i]; 
+             dot += velr[i]*dir[i];
 	} 
         if (length > 1.0e-10)
 	    for (int i = 0; i < 3; i++) 
 	         dir[i] /= length; 
 	for (int i = 0; i < 3; i++) {
 	     p1->force[i] += bends * (length - length0) * dir[i]; 
+             // bending force excerts along virtual edge
+	     //p1->force[i] -= bendd * dot * dir[i]; 
 	     p1->force[i] += bendd * velr[i]; 
 	}
 }

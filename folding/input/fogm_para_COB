@@ -101,7 +101,7 @@ angles:
 Type of algorithm used in NLopt: LN_COBYLA
 
 folding plan AlignDrag
-0.5 0.5 0.5 0 0 -1
+0.5 0.5 0.5 0 0 -1 0
 
 folding plan RelaxDrag
 1

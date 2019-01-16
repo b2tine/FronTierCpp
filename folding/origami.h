@@ -148,6 +148,7 @@ class OrigamiFold : public Drag
     const double wplus;
     const double wminus;
     double weight = 0.8;
+    std::string outname; 
 public:
     void preprocess(std::vector<SpringVertex*>&);
     void postprocess(std::vector<SpringVertex*>&);
@@ -155,7 +156,7 @@ public:
     void updateVel(std::vector<SpringVertex*>& pts, double t) {}
     void setAccel(SpringVertex*);
     std::string id() {return "OrigamiDrag";}
-    OrigamiFold(const std::vector<std::vector<double>>&,
+    OrigamiFold(std::string outname, const std::vector<std::vector<double>>&,
                 const std::vector<double>&, const std::vector<int>&,
 		const std::vector<std::vector<int>>&,
                 const std::vector<std::pair<int, int>>&,

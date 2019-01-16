@@ -137,6 +137,8 @@ void OrigamiFold::findNextFoldingAngle()
     const int maxIter = 5000;
     static int iter = 0;
     bool success = false;
+    std::ofstream fout(outname+"/angle.txt", 
+            std::ofstream::out | std::ofstream::app);
 
     while (!success && iter++ < maxIter)
     {
@@ -183,6 +185,7 @@ void OrigamiFold::findNextFoldingAngle()
                 std::cout << "Folding process is terminated" << std::endl; 
                 m_t = 0; 
             }
+            fout << rho_delta << std::endl; 
         }
         else
         {
@@ -219,10 +222,13 @@ void OrigamiFold:: setVel(SpringVertex* sv)
 {
     std::vector<double> new_crds(3, 0);
     ogmComputeNewPosition(sv, new_crds);
+    for (int i = 0; i < 3; i++)
+         sv->x[i] = new_crds[i];
+    /*
     double* vel = sv->getVel();
     for (int i = 0; i < 3; ++i)
         vel[i] = (new_crds[i] - sv->getCoords()[i])/getTimeStepSize();
-
+    */
 }
 
 void OrigamiFold::setAccel(SpringVertex*){}
@@ -245,7 +251,7 @@ Drag* OrigamiFold::clone(const Info & info)
                   << "insufficient data is given"
                   << std::endl;
     }
-
+    
     std::vector<double> v = info.data();
     size_t n_pt = (size_t)v[0];
     size_t n_crs = (size_t)v[1];
@@ -305,20 +311,21 @@ Drag* OrigamiFold::clone(const Info & info)
         it++;
     }
     optAlgoType = (int)*it; 
-    return new OrigamiFold(points, cen, typeIdx, faces, creases, mappings, 
-        angles, optAlgoType);
+    return new OrigamiFold(info.outname, points, cen, typeIdx, faces, 
+            creases, mappings, angles, optAlgoType);
 }
 
 OrigamiFold::OrigamiFold(): m_opt(NULL), stepSize(0), wplus(0), wminus(0) {}
 
-OrigamiFold::OrigamiFold(const std::vector<std::vector<double>>& points,
+OrigamiFold::OrigamiFold(std::string str, 
+                         const std::vector<std::vector<double>>& points,
                          const std::vector<double>& cen, 
                          const std::vector<int>& typeIdx, 
 			 const std::vector<std::vector<int>>& fs, 
                          const std::vector<std::pair<int, int>>& creases,
                          const std::vector<std::vector<int>>& mappings, 
                          const std::vector<double>& angles, int optAlgoType) :
-                        stepSize(0.015), wplus(0.2), wminus(0.01)
+                         outname(str), stepSize(0.015), wplus(0.2), wminus(0.01)
 {
     m_t = 3.0;
     m_opt = NULL;
@@ -433,7 +440,7 @@ Crease::Crease(Vertex* v1, Vertex* v2, int idx1, int idx2, double rho) {
 
 void Crease::calRotMatrix(double rho) {
     double a = dir(0), b = dir(1), c = dir(2);
-    arma::vec v = v2_->getCoords(); 
+    arma::vec v = v1_->getCoords(); 
     double x = v(0), y = v(1), z = v(2);
     arma::mat T(4, 4, arma::fill::eye);
     

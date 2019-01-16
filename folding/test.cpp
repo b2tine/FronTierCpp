@@ -29,6 +29,8 @@ int main(int argc, char** argv)
 
         /* Initialize basic computational data */
         char* in_name                 = f_basic.in_name;
+        std::string out_name(f_basic.out_name);
+
 	//initialize interface and velocity
         FT_ReadSpaceDomain(in_name,&f_basic);
         FT_StartUp(&front,&f_basic);
@@ -45,13 +47,18 @@ int main(int argc, char** argv)
 	FT_AddTimeStepToCounter(&front);
 
 	//initialize folding solver
-	Folder* folder = new Folder3d(front.interf,surf);
+	Folder* folder = new Folder3d(front.interf,surf, out_name);
 	
 	//adding folding plan from file
 	std::string inname(in_name); 
 	std::ifstream fin(in_name); 
-	std::string mesg; 
+	std::string mesg(inname);
+	size_t pos = mesg.rfind('/'); 
 
+	if (pos == std::string::npos)
+            mesg.clear();
+	else 
+       	    mesg = mesg.substr(0, pos + 1);
         if (!fin.is_open())
 	{
 	    std::cerr << "Can't open file " << inname << std::endl; 
@@ -60,8 +67,12 @@ int main(int argc, char** argv)
 
         if (!findAndLocate(fin, "Enter file path of folding plan:"))
 	    clean_up(ERROR);
-        fin >> mesg; 
-	std::cout << mesg << std::endl; 
+
+	std::string temp;
+
+        fin >> temp;
+        mesg += temp;
+        std::cout << mesg << std::endl;
 	folder->addDragsFromFile(mesg);
 	folder->setInputFile(inname);
         fin.close(); 
@@ -69,7 +80,9 @@ int main(int argc, char** argv)
 	folder->setupMovie("fold_movie", OutName(&front), 0.05);
 
 	//set numerical scheme for ode EXPLICIT or IMPLICIT
-        folder->setOdeScheme(SpringSolver::IMPLICIT);
+        //folder->setOdeScheme(SpringSolver::IMPLICIT);
+        // change
+        folder->setOdeScheme(SpringSolver::DIRECT);
         //folder->setOdeScheme(SpringSolver::EXPLICIT);
 
 	//set spring parameters: k, lambda, m

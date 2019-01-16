@@ -117,7 +117,8 @@ public :
 
 class cgalParaSurf : public cgalCircleSurf {
     int num_lines; 
-    int num_cons; 
+    int out_num_cons; 
+    int in_num_cons;
     double innerRad;
     void addHole(std::vector<bool>&, int&); 
     void getSpecialParaFromFile(std::ifstream&);

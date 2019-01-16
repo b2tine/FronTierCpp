@@ -1,7 +1,12 @@
 #include "spring_solver.h"
 
-void EX_SPRING_SOLVER::doSolve(double t) {
+void SpringSolver::doSolveExplicit(double t) {
+    std::vector<std::vector<double> > x_old;
+    std::vector<std::vector<double> > x_new;
+    std::vector<std::vector<double> > v_old;
+    std::vector<std::vector<double> > v_new;
     const size_t size = pts.size();
+
     if (x_old.size() < pts.size()) {
         x_old.resize(size,std::vector<double>(3,0));
         x_new.resize(size,std::vector<double>(3,0));
@@ -12,7 +17,7 @@ void EX_SPRING_SOLVER::doSolve(double t) {
     size_t i, j;
     const int dim = 3;
 
-    double dt = getTimeStepSize();
+    double dt = 0.1*sqrt(springParameter.m / springParameter.k);
     int n_loop = t/dt+1;
     dt = t/n_loop;
 
@@ -85,9 +90,7 @@ void EX_SPRING_SOLVER::doSolve(double t) {
     }
 
 }
-
+/*
 double EX_SPRING_SOLVER::getTimeStepSize() {
-    return 0.1*sqrt(springParameter.m
-                /springParameter.k);
 }
-
+*/

@@ -168,9 +168,10 @@ static void setConnection(POINT* p1, POINT* p2, double length0,
 			std::unordered_map<POINT*, size_t>& ht) {
     POINT* points[2] = {p1,p2};
     for (int i = 0; i < 2; ++i) {
-         if (ht.find(points[i]) == ht.end()) {
+         if (!ht.count(points[i])) {
 	     //not inserted yet
-	     ht[points[i]] = pts.size();
+	     ht.insert({points[i], pts.size()});
+	     //ht[points[i]] = pts.size();
              pts.push_back(FT_Point2SpringVertex(points[i]));
         }
     }

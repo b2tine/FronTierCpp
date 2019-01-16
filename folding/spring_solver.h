@@ -55,9 +55,13 @@ public:
 	    m = params.m;
 	}
     };
-    enum ODE_SCHEME {EXPLICIT, IMPLICIT};
+    //enum ODE_SCHEME {EXPLICIT, IMPLICIT};
+    // change
+    enum ODE_SCHEME {EXPLICIT, IMPLICIT,DIRECT};
     void setParameters(double,double,double);
-    static SpringSolver* createSpringSolver(ODE_SCHEME);
+    // change
+    //static SpringSolver* createSpringSolver(ODE_SCHEME);
+    void setSolver(ODE_SCHEME); 
     void resetVelocity();
     void printAdjacencyList(std::string);
     void printPointList(std::string);
@@ -83,17 +87,21 @@ public:
 	virtual double* getExternalForce(SpringVertex*) = 0;	
     };
     std::vector<ExtForceInterface*> ext_forces;
-
+    // change
+    void doSolveExplicit(double);
+    void doSolveImplicit(double);
+    void doSolveDirect(double);
 protected:
-    virtual void doSolve(double) = 0;
+    // change
+    //virtual void doSolve(double) = 0;
+    void (SpringSolver::*doSolve)(double);
     std::vector<SpringVertex*> pts;
     void setPresetVelocity(SpringVertex*);
     SpringParameter springParameter;
     //singleton pattern
     //using virtual constructor: createSpringSolver()
-    SpringSolver(){}
 };
-
+/*
 //solve spring-mass ode system using 
 //4th-order explicit Runge-Kutta method
 class EX_SPRING_SOLVER: public SpringSolver {
@@ -114,4 +122,11 @@ public:
    void doSolve(double);
 };
 
+// directly perform origami transformation
+class DI_SPRING_SOLVER : public SpringSolver {
+public:
+   void doSolve(double);
+
+};
+*/
 #endif

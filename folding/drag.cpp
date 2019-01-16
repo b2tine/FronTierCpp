@@ -1,5 +1,6 @@
 #include "drag.h"
 #include <iostream>
+#include <fstream>
 
 const double EPS = 1e-15;
 static bool isPointInBall(double p[], double c[], double r);
@@ -188,18 +189,21 @@ bool Drag::validateData(const Drag::Info& info) {
 }
 
 Drag* Drag::dragFactory(const Drag::Info& info) {
+    std::ofstream fout(info.outname+"/drag.txt", 
+            std::ofstream::out|std::ofstream::app);
+
     for (size_t i = 0; i < prototypes.size(); ++i) {
 	if (prototypes[i]->id() == info.id()) 
 	{
-	    std::cout << "Adding drag: " 
+	    fout << "Adding drag: " 
 		<< prototypes[i]->id() << std::endl;
 	    for (size_t j = 0; j < info.data().size(); ++j)
-		std::cout << info.data()[j] << " ";
-	    std::cout << std::endl;
+		fout << info.data()[j] << " ";
+	    fout << std::endl;
 	    return prototypes[i]->clone(info);
 	}
     }
-    std::cout << "Warning: unknown drag type: " 
+    fout << "Warning: unknown drag type: " 
 	      << info.id() << std::endl;
     return NULL;
 }
@@ -1089,15 +1093,16 @@ Drag* AlignDrag::clone(const Drag::Info& info)
     else {
         const std::vector<double>& v = info.data();
         const double *it = &(v.front());
-        return new AlignDrag(it, it+3);
+        return new AlignDrag(it, it+3, *(it+6));
     }    
 }
 
 AlignDrag::AlignDrag(const double* rotate_center, 
-		     const double* dir)
+		     const double* dir, double up)
 {
     std::copy(rotate_center, rotate_center+3, this->rotate_center);
     std::copy(dir, dir+3, this->dir);
+    upDis = up;
     m_t = 1;
 }
 
@@ -1148,6 +1153,7 @@ void AlignDrag::postprocess(std::vector<SpringVertex*>& pts)
 	M3xV3(R, crds, new_crds);
 	for (int i = 0; i < 3; ++i)
 	sv->getCoords()[i] = new_crds[i] + rotate_center[i];
+        sv->getCoords()[2] += upDis;
     }
     m_t = 0; // terminate drag
 }
