@@ -3403,7 +3403,7 @@ LOCAL	void cell3d_area_case01_comp0(
 	area[0][0][1] = nb_flag[0][0][1] == YES? 0 : -1.0;
 	area[0][1][0] = nb_flag[0][1][0] == YES? 0 : -1.0;
 	area[0][2][2] = nb_flag[0][2][2] == YES? -0.1 : -1.0;
-	area[0][0][2] = nb_flag[0][2][2] == YES? -0.1 : -1.0;
+	area[0][0][2] = nb_flag[0][0][2] == YES? -0.1 : -1.0;
 	area[0][2][0] = nb_flag[0][2][0] == YES? -0.1 : -1.0;
 	area[0][0][0] = nb_flag[0][0][0] == YES? -0.1 : -1.0;
 
