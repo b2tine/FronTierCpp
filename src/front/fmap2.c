@@ -2723,44 +2723,7 @@ EXPORT void FT_ComputeVolumeFraction(
 		    printf("vol_test is larger than full cell volume\n");
 		    clean_up(ERROR);
 		}
-		/*
-		if (cell3d.orphan != 0.0)
-		{
-		    printf("step = %d\n",front->step);
-		    printf("(i,j,k) = (%d %d %d)\n",i,j,k);
-		    printf("Cell orphan is not zero!\n\n");
-		    
-		    for (ii = i-1; ii <= i+1; ++ii)
-		    for (jj = j-1; jj <= j+1; ++jj)
-		    {
-		    	for (kk = k-1; kk <= k+1; ++kk)
-			{
-			    icn = d_index3d(ii,jj,kk,top_gmax);
-			    printf("Component = %d\t",top_comp[icn]);
-			}
-			printf("\n");
-		    }
-		    printf("Corner component\n");
-		    for (ii = 0; ii < 2; ++ii)
-		    for (jj = 0; jj < 2; ++jj)
-		    {
-		    	for (kk = 0; kk < 2; ++kk)
-		    	{
-			    printf("Corner(%d,%d,%d) comp = %d\t",
-			    	ii,jj,kk,cell3d.comp[ii][jj][kk]);
-		    	}
-			printf("\n");
-		    }
-		    gview_plot_intfc_within_cell3d(out_name,comp_grid_intfc,
-		    	icoords,shift,&cell3d,front->step);
-		    plot_around_cell3d(out_name,front,grid_intfc,
-		     comp_grid_intfc,icoords,shift,top_gmax,top_comp,
-		     comp_gmax,comp_comp,comp_L,comp_h,front->step,comp1);
-		}
-		*/
-		if (i == 9 && j == 38 && k == 30)
-		   gview_plot_intfc_within_cell3d(out_name,comp_grid_intfc,
-		                           icoords,shift,&cell3d,front->step);
+
 		assign_nb_frac3d(front,cell_part,&cell3d,icoords,
 					top_gmax,top_comp,n);
 	      }
