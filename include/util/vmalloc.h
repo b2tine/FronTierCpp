@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define   DOUBLE  sizeof(double)
 
 #define   free(x) f_ree((POINTER)(x),#x)/* Avoids clash with C library free() */
+#define   vmfree(x) f_ree((POINTER)(x),#x)/* Avoids clash with C library free() */
 
 #define	  scalar(a,b)			(void) array_T(#a,(POINTER*)a,1,1,b)
 
