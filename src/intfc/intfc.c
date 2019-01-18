@@ -986,66 +986,66 @@ LOCAL	void	free_interface_addresses_structure(
 	int		i, j;
 
 	if (iaddr->nodes != NULL)
-	    free(iaddr->nodes);
+	    vmfree(iaddr->nodes);
 	if (iaddr->curves != NULL)
-	    free(iaddr->curves);
+	    vmfree(iaddr->curves);
 	if (iaddr->surfaces != NULL)
-	    free(iaddr->surfaces);
+	    vmfree(iaddr->surfaces);
 	if (iaddr->ns != NULL)
-	    free(iaddr->ns);
+	    vmfree(iaddr->ns);
 	if (iaddr->ne != NULL)
-	    free(iaddr->ne);
+	    vmfree(iaddr->ne);
 	if (iaddr->tris != NULL)
 	{
 	    for (i = 0; i < iaddr->num_curves; ++i)
 	    {
 	        for (j = 0; j < iaddr->num_bonds[i]; ++j)
-	            free(iaddr->tris[i][j]);
-	        free(iaddr->tris[i]);
+	            vmfree(iaddr->tris[i][j]);
+	        vmfree(iaddr->tris[i]);
 	    }
-	    free(iaddr->tris);
+	    vmfree(iaddr->tris);
 	}
 	if (iaddr->num_bonds != NULL)
 	{
 	    for (i = 0; i < iaddr->num_curves; ++i)
-	        free(iaddr->bonds[i]);
-	    free(iaddr->bonds);
-	    free(iaddr->num_bonds);
+	        vmfree(iaddr->bonds[i]);
+	    vmfree(iaddr->bonds);
+	    vmfree(iaddr->num_bonds);
 	}
 	if (iaddr->num_psurfs != NULL)
 	{
 	    for (i = 0; i < iaddr->num_curves; ++i)
-	        free(iaddr->psurfs[i]);
-	    free(iaddr->psurfs);
-	    free(iaddr->num_psurfs);
+	        vmfree(iaddr->psurfs[i]);
+	    vmfree(iaddr->psurfs);
+	    vmfree(iaddr->num_psurfs);
 	}
 	if (iaddr->num_nsurfs != NULL)
 	{
 	    for (i = 0; i < iaddr->num_curves; ++i)
-	        free(iaddr->nsurfs[i]);
-	    free(iaddr->nsurfs);
-	    free(iaddr->num_nsurfs);
+	        vmfree(iaddr->nsurfs[i]);
+	    vmfree(iaddr->nsurfs);
+	    vmfree(iaddr->num_nsurfs);
 	}
 	if (iaddr->num_surfs != NULL)
 	{
 	    for (i = 0; i < iaddr->num_curves; ++i)
-	        free(iaddr->surfs[i]);
-	    free(iaddr->surfs);
-	    free(iaddr->num_surfs);
+	        vmfree(iaddr->surfs[i]);
+	    vmfree(iaddr->surfs);
+	    vmfree(iaddr->num_surfs);
 	}
 	if (iaddr->num_pcurves != NULL)
 	{
 	    for (i = 0; i < iaddr->num_surfaces; ++i)
-	        free(iaddr->pcurves[i]);
-	    free(iaddr->pcurves);
-	    free(iaddr->num_pcurves);
+	        vmfree(iaddr->pcurves[i]);
+	    vmfree(iaddr->pcurves);
+	    vmfree(iaddr->num_pcurves);
 	}
 	if (iaddr->num_ncurves != NULL)
 	{
 	    for (i = 0; i < iaddr->num_surfaces; ++i)
-	        free(iaddr->ncurves[i]);
-	    free(iaddr->ncurves);
-	    free(iaddr->num_ncurves);
+	        vmfree(iaddr->ncurves[i]);
+	    vmfree(iaddr->ncurves);
+	    vmfree(iaddr->num_ncurves);
 	}
 	zero_scalar(iaddr,sizeof(INTERFACE_ADDRESSES));
 }		/*end free_interface_addresses_structure*/
@@ -1616,40 +1616,40 @@ EXPORT int i_delete_interface(
 	{
 	    struct Chunk *chunk = T->big_chunks;
 	    T->big_chunks = chunk->prev;
-	    free(chunk);
+	    vmfree(chunk);
 	}
 
 	        /* Free the bond, curve, component lists: */
 	if (T->compon1d)
-	    free(T->compon1d);
+	    vmfree(T->compon1d);
 	if (T->num_of_points)
-	    free(T->num_of_points);
+	    vmfree(T->num_of_points);
 	if (T->pts_in_zone)
-	    free(T->pts_in_zone);
+	    vmfree(T->pts_in_zone);
 	if (T->compon2d)
-	    free(T->compon2d);
+	    vmfree(T->compon2d);
 	if (T->num_of_bonds)
-	    free(T->num_of_bonds);
+	    vmfree(T->num_of_bonds);
 	if (T->bonds)
-	    free(T->bonds);
+	    vmfree(T->bonds);
 	if (T->bondstore)
-	    free(T->bondstore);
+	    vmfree(T->bondstore);
 	if (T->curves)
-	    free(T->curves);
+	    vmfree(T->curves);
 	if (T->curvestore)
-	    free(T->curvestore);
+	    vmfree(T->curvestore);
 	if (T->compon3d)
-	    free(T->compon3d);
+	    vmfree(T->compon3d);
 	if (T->num_of_tris)
-	    free(T->num_of_tris);
+	    vmfree(T->num_of_tris);
 	if (T->tris)
-	    free(T->tris);
+	    vmfree(T->tris);
 	if (T->tristore)
-	    free(T->tristore);
+	    vmfree(T->tristore);
 	if (T->surfaces)
-	    free(T->surfaces);
+	    vmfree(T->surfaces);
 	if (T->surfacestore)
-	    free(T->surfacestore);
+	    vmfree(T->surfacestore);
 	if (T->surf_blocks)
 	{
 	    int i;
@@ -1657,11 +1657,11 @@ EXPORT int i_delete_interface(
 	    {
 		if (T->surf_blocks[i].num_on_blocks != 0)
 		{
-		    free(T->surf_blocks[i].blocks);
+		    vmfree(T->surf_blocks[i].blocks);
 		    T->surf_blocks[i].num_on_blocks = 0;
 		}
 	    }
-	    free(T->surf_blocks);
+	    vmfree(T->surf_blocks);
 	}
 	if (T->curve_blocks)
 	{
@@ -1670,11 +1670,11 @@ EXPORT int i_delete_interface(
 	    {
 		if (T->curve_blocks[i].num_on_blocks != 0)
 		{
-		    free(T->curve_blocks[i].blocks);
+		    vmfree(T->curve_blocks[i].blocks);
 		    T->curve_blocks[i].num_on_blocks = 0;
 		}
 	    }
-	    free(T->curve_blocks);
+	    vmfree(T->curve_blocks);
 	}
 
 	        /* Unlink and Free the Table: */
@@ -3590,7 +3590,7 @@ EXPORT	POINT *i_average_points(
 	      if ((nt+1) > max_num_tris)
 	      {
 	      	if (tris != NULL)
-	      	  free(tris);
+	      	  vmfree(tris);
 	      	max_num_tris = 2*nt + 1;
 	      	uni_array(&tris,max_num_tris,sizeof(TRI*));
 	      }
@@ -4238,11 +4238,11 @@ LOCAL	boolean	reset_tris_at_deleted_bond(
 	if (nt > max_n_t)
 	{
 	    if (v != NULL)
-		free(v);
+		vmfree(v);
 	    if (nb_bond_tri != NULL)
-		free(nb_bond_tri);
+		vmfree(nb_bond_tri);
 	    if (nb_tri != NULL)
-		free(nb_tri);
+		vmfree(nb_tri);
 	    max_n_t = 2*nt;
 	    uni_array(&v,max_n_t+1,sizeof(POINT*));
 	    uni_array(&nb_bond_tri,max_n_t+1,sizeof(BOND_TRI*));
@@ -4476,13 +4476,13 @@ EXPORT	boolean	retriangulate_polygon(
 	if ((nv+ninternal_v) > max_n_v)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    if (p != NULL)
-		free(p);
+		vmfree(p);
 	    if (in.pointlist != NULL)
-		free(in.pointlist);
+		vmfree(in.pointlist);
 	    if (in.segmentlist != NULL)
-		free(in.segmentlist);
+		vmfree(in.segmentlist);
 	    max_n_v = 2*(nv + ninternal_v);
 	    uni_array(&p,max_n_v,sizeof(double*));
 	    uni_array(&pts,max_n_v,sizeof(POINT*));
@@ -4780,7 +4780,7 @@ EXPORT	boolean	retriangulate_polygon(
 	if (num_newtris > max_n_newtris)
 	{
 	    if (newtris != NULL)
-		free(newtris);
+		vmfree(newtris);
 	    max_n_newtris = 2*num_newtris+1;
 	    uni_array(&newtris,max_n_newtris,sizeof(TRI*));
 	}
@@ -5081,13 +5081,13 @@ EXPORT	boolean	delete_vertex_of_tri(
 	if (nt > max_n_t)
 	{
 	    if (v != NULL)
-		free(v);
+		vmfree(v);
 	    if (nb_bond_tri != NULL)
-		free(nb_bond_tri);
+		vmfree(nb_bond_tri);
 	    if (nb_tri != NULL)
-		free(nb_tri);
+		vmfree(nb_tri);
 	    if (oldtris != NULL)
-		free(oldtris);
+		vmfree(oldtris);
 	    max_n_t = 2*nt;
 	    uni_array(&v,max_n_t,sizeof(POINT*));
 	    uni_array(&nb_bond_tri,max_n_t,sizeof(BOND_TRI*));

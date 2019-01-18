@@ -2587,7 +2587,7 @@ EXPORT	void make_grid_surfaces(
 	/* at least one curve is cut into two pieces. */
 	if(tnc != eg_crx->num_curves)
 	{
-	    free(eg_crx->curves);
+	    vmfree(eg_crx->curves);
 	    uni_array(&eg_crx->curves,tnc,sizeof(CURVE*));
 	    for(i = 0; i < tnc; i++)
 		eg_crx->curves[i] = new_c[i];
@@ -2806,7 +2806,7 @@ EXPORT  int  make_curves_from_blk(
 				   alloc_bn += 100;
 				   uni_array(&newb2, alloc_bn, sizeof(BOND*));
 				   ft_assign(newb2, newb,sizeof(BOND*)*num_bonds);
-				   free(newb);
+				   vmfree(newb);
 				   newb = newb2; 
 			       }
 			   }
@@ -2822,7 +2822,7 @@ EXPORT  int  make_curves_from_blk(
 				   alloc_bn += 100;
 				   uni_array(&newb2, alloc_bn, sizeof(BOND*));
 				   ft_assign(newb2, newb,sizeof(BOND*)*num_bonds);
-				   free(newb);
+				   vmfree(newb);
 				   newb = newb2; 
 			       }
 			   }
@@ -2893,7 +2893,7 @@ EXPORT  int  make_curves_from_blk(
 	    }
 	}
 	
-	free(newb);
+	vmfree(newb);
 	
 	DEBUG_LEAVE(stitch_curves_of_blk) 
 	return c_ind;
@@ -2937,7 +2937,7 @@ LOCAL void stitch_curves_of_blk(
 				   alloc_bn += 10;
 				   uni_array(&newb2, alloc_bn, sizeof(BOND*));
 				   ft_assign(newb2, newb,sizeof(BOND*)*num_bonds);
-				   free(newb);
+				   vmfree(newb);
 				   newb = newb2; 
 			       }
 			       /* xcjia fall2006 */
@@ -3158,7 +3158,7 @@ LOCAL void stitch_curves_of_blk(
 
 	    curves[nc]->num_points = num_bonds+1;
 	}
-	free(newb);
+	vmfree(newb);
 
 	DEBUG_LEAVE(stitch_curves_of_blk) 
 }	/* end stitch_curves_of_blk */
@@ -4132,7 +4132,7 @@ LOCAL  int install_grid_curve_crx_from_comp(
 	    }
 	}
 
-	free(face_coords);
+	vmfree(face_coords);
 	return n_curve_crx;
 
 }	/* end install_curve_crx  */
@@ -4266,7 +4266,7 @@ LOCAL	int	make_surfaces_from_crx(
 	        eg_crx->surfaces[i] = news[i];
 	}
 	
-	free(mem_ind);
+	vmfree(mem_ind);
 
 	set_current_interface(sav_intfc);
 	
@@ -4444,7 +4444,7 @@ LOCAL	int  make_curves_from_crx(
 	        eg_crx->curves[i] = newc[i];
 	}
 	
-	free(mem_ind);
+	vmfree(mem_ind);
         
 	DEBUG_LEAVE(make_curves_from_crx)
 	
@@ -4569,7 +4569,7 @@ EXPORT boolean make_surfaces_from_comp(
 	    c[i] = Eg_crx.curves[i];
 	
 	free_grid_crx_mem(&Eg_crx,YES);
-	free(Eg_crx.comp);
+	vmfree(Eg_crx.comp);
 
 	if(is != 0)
 	    free_these(3, Eg_crx.surfaces, blk_info.surfs, blk_info.cur_tris);

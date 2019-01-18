@@ -675,7 +675,7 @@ LOCAL point infpoint1, infpoint2, infpoint3;
 /* Pointer to the `triangle' that occupies all of "outer space".             */
 
 LOCAL triangle *dummytri = NULL;
-LOCAL triangle *dummytribase;/* Keep base address so we can free() it later. */
+LOCAL triangle *dummytribase;/* Keep base address so we can vmfree() it later. */
 LOCAL size_t   size_dummytribase;
 
 /* Pointer to the omnipresent shell edge.  Referenced by any triangle or     */
@@ -683,7 +683,7 @@ LOCAL size_t   size_dummytribase;
 /*   location.                                                               */
 
 LOCAL shelle *dummysh = NULL;
-LOCAL shelle *dummyshbase;   /* Keep base address so we can free() it later. */
+LOCAL shelle *dummyshbase;   /* Keep base address so we can vmfree() it later. */
 LOCAL size_t size_dummyshbase;
 
 /* Pointer to a recently visited triangle.  Improves point location if       */
@@ -1201,7 +1201,7 @@ LOCAL void poolinit(
 	PoolBlock *next, *prev;
 	next = pool->firstblock->next;
 	prev = pool->firstblock->prev;
-	free(pool->firstblock);
+	vmfree(pool->firstblock);
 	scalar(&pool->firstblock,firstblock_size);
         if (pool->firstblock == NULL)
         {
@@ -1317,7 +1317,7 @@ LOCAL void *poolalloc(
 	    else if (newblock_size > pool->nowblock->next->block_size)
 	    {
 		PoolBlock *next = pool->nowblock->next->next;
-		free(pool->nowblock->next);
+		vmfree(pool->nowblock->next);
 	        scalar(&newblock,newblock_size);
                 if (newblock == NULL)
                 {
@@ -1769,11 +1769,11 @@ LOCAL point getpoint(int number)
 LOCAL void triangledeinit(void)
 {
     pooldeinit(&triangles);
-    /*free(dummytribase);JWG*/
+    /*vmfree(dummytribase);JWG*/
     if (useshelles)
     {
 	pooldeinit(&shelles);
-	/*free(dummyshbase);JWG*/
+	/*vmfree(dummyshbase);JWG*/
     }
     pooldeinit(&points);
 }		/*end triangledeinit*/
@@ -5219,7 +5219,7 @@ LOCAL long divconqdelaunay(void)
     }
     /* Form the Delaunay triangulation. */
     divconqrecurse(sortarray, i, 0, &hullleft, &hullright);
-    /*free(sortarray);JWG*/
+    /*vmfree(sortarray);JWG*/
 
     return removeghosts(&hullleft);
 }		/*end divconqdelaunay*/
@@ -6850,7 +6850,7 @@ LOCAL void* allocate_storage(
     if (new_size > *storage_size)
     {
 	if (storage != NULL)
-	    free(storage);
+	    vmfree(storage);
 	*storage_size = new_size;
 	scalar(&storage,new_size);
 	if (storage == NULL)
@@ -7453,7 +7453,7 @@ EXPORT void triangulate(
     {
 	/* Without a PSLG, there can be no holes or regional attributes   */
 	/*   or area constraints.  The following are set to zero to avoid */
-	/*   an accidental free() later.                                  */
+	/*   an accidental vmfree() later.                                  */
 	holes = 0;
 	regions = 0;
     }

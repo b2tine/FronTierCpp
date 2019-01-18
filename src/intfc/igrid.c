@@ -303,7 +303,7 @@ EXPORT	void init_topological_grid(
 	screen_print_long_string(message);
 	(void) sprintf(message,fmt3,dimname);
 	screen_print_long_string(message);
-	free(message);
+	vmfree(message);
 	message = NULL;
 	if (dim == 1)
 	{
@@ -925,7 +925,7 @@ EXPORT	void free_grid_lines(
 	}
 	dim = rgr->dim;
 	if (rgr->glstore != NULL)
-	    free(rgr->glstore);
+	    vmfree(rgr->glstore);
 	rgr->glstore = NULL;
 
 	for (i = 0; i < dim; ++i)

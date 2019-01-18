@@ -517,7 +517,7 @@ EXPORT  int set_tri_list_around_point(
 	    uni_array(&tmp_tris,nmax,sizeof(TRI *));
 	    for (i = 0; i < max_num_tris; ++i)
 	      tmp_tris[i] = tris[i];
-	    free(tris);
+	    vmfree(tris);
 	    tris = tmp_tris;
 	    max_num_tris = nmax;
 	  }
@@ -577,7 +577,7 @@ EXPORT  int set_tri_list_around_point(
 	    uni_array(&tmp_tris,nmax,sizeof(TRI *));
 	    for (i = 0; i < max_num_tris; ++i)
 	      tmp_tris[i] = tris[i];
-	    free(tris);
+	    vmfree(tris);
 	    tris = tmp_tris;
 	    max_num_tris = nmax;
 	  }
@@ -999,7 +999,7 @@ EXPORT  void plane_fit_normal3d(
 	if ((Tri_list_at_vertex.num_tris+2) > num_pts)
 	{
 	    if (pts != NULL)
-	        free(pts);
+	        vmfree(pts);
 	    num_pts = 2*(Tri_list_at_vertex.num_tris+2);
 	    uni_array(&pts,num_pts,sizeof(double*));
 	}

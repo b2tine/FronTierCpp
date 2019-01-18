@@ -726,8 +726,8 @@ LOCAL void right_planar_surface_triangulation(
 
 	surf->interface->num_points = surf->interface->num_points+
 	                              (imax+1)*(jmax+1)+imax*jmax;
-	free(p);
-	free(tri);
+	vmfree(p);
+	vmfree(tri);
 }		/*end right_planar_surface_triangulation*/
 
 LOCAL void strip_curves_in_surface(
@@ -1518,8 +1518,8 @@ EXPORT	void	planar_hole_surface_triangulation(
 	surf->interface->num_points = surf->interface->num_points+ 
 	                              (imax+1)*(jmax+1)+imax*jmax-(jmeu-jmel)*
 	                              (imeu-imel)-(jmeu-jmel-1)*(imeu-imel-1);
-	free(p);
-	free(tri);
+	vmfree(p);
+	vmfree(tri);
 	return;
 }                /*end planar_hole_surface_triangulation*/
 
@@ -2189,8 +2189,8 @@ EXPORT	void	oblique_planar_surface_triangulation(
 	    
 	surf->interface->num_points = surf->interface->num_points+ 
 	                              (imax+1)*(jmax+1)+imax*jmax;
-	free(p);
-	free(tri);
+	vmfree(p);
+	vmfree(tri);
 }		/*end oblique_planar_surface_triangulation*/
 
 

@@ -242,7 +242,7 @@ LIB_LOCAL void threed_interface_plot(
 	    draw_tri(tri_list[i],i,NO,HR,ls);
 	close_frame;
 
-	free(tri_list);
+	vmfree(tri_list);
 }		/* end threed_interface_plot*/
 
 LOCAL   void open_3d_plot_file(void)

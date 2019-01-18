@@ -191,7 +191,7 @@ EXPORT	void i_send_interface(
 
 	pp_send(CHUNK_ADDR_ID+tag_shf,(POINTER)top_addr,
 			nchunks*sizeof(POINTER),dst_id);
-	free(top_addr);
+	vmfree(top_addr);
 		
 	/* send out the chunks */
 

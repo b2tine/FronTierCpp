@@ -567,9 +567,9 @@ EXPORT	POINTER_Q *delete_from_pointer_queue(
 	    while (pq_str->next) pq_str = pq_str->next;
 	    do
 	    {
-	    	free(pq_str->pointer);
+	    	vmfree(pq_str->pointer);
 	    	prev = pq_str->prev;
-	    	free(pq_str);
+	    	vmfree(pq_str);
 	    	pq_str = prev;
 	    }
 	    while (pq_str);
@@ -578,15 +578,15 @@ EXPORT	POINTER_Q *delete_from_pointer_queue(
 	    	while (p2str->next) p2str = p2str->next;
 	    	do
 	    	{
-	    	    free(p2str->pointer);
+	    	    vmfree(p2str->pointer);
 	    	    prev = p2str->prev;
-	    	    free(p2str);
+	    	    vmfree(p2str);
 	    	    p2str = prev;
 	    	}
 	    	while (p2str);
 	    }
 	    zero_scalar(pq_header,sizeof(PQ_HEADER));
-	    free(pq_header);
+	    vmfree(pq_header);
 	    return NULL;
 	}
 	return pq_header->head;

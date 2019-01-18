@@ -1612,7 +1612,7 @@ LOCAL	SIDE	check_closest_point_is_node(
 	/*
          * Make the O_NODE corresponding to node.
          * make_onode() allocates to INTERFACE Table
-         * so no need to free() in this fcn.
+         * so no need to vmfree() in this fcn.
          */
 	oNode = make_onode(node);
 	ang = angle(coords[0] - Coords(p_closest)[0],
@@ -1927,17 +1927,17 @@ LOCAL boolean make_bond_lists(
 			/* Free old storage */
 
 	if (T->num_of_bonds != NULL)
-	    free(T->num_of_bonds);
+	    vmfree(T->num_of_bonds);
 	if (T->bondstore != NULL)
-	    free(T->bondstore);
+	    vmfree(T->bondstore);
 	if (T->curvestore != NULL)
-	    free(T->curvestore);
+	    vmfree(T->curvestore);
 	if (T->compon2d != NULL)
-	    free(T->compon2d);
+	    vmfree(T->compon2d);
 	if (T->bonds != NULL)
-	    free(T->bonds);
+	    vmfree(T->bonds);
 	if (T->curves != NULL)
-	   free(T->curves);
+	   vmfree(T->curves);
 
 			/* Create a Grid if Needed: */
 
@@ -2035,7 +2035,7 @@ LOCAL boolean make_bond_lists(
 	    set_off_front_comp2d(T->compon2d,intfc);
 	}
 
-	free(Bond_blocks);
+	vmfree(Bond_blocks);
 
 	if (DEBUG)
 	{
@@ -2375,7 +2375,7 @@ LOCAL void store_bond(
 	    for (i = 0; i < max_size; ++i)
 		Tmp_bond_blocks[i] = Bond_blocks[i];
 	    max_size *= 2;
-	    free(Bond_blocks);
+	    vmfree(Bond_blocks);
 	    Bond_blocks = Tmp_bond_blocks;
 	    bond_blocks = Bond_blocks + count;
 	}
@@ -2413,7 +2413,7 @@ LOCAL void mark_end_of_bond(void)
 	    for (i = 0; i < max_size; ++i)
 		Tmp_bond_blocks[i] = Bond_blocks[i];
 	    max_size *= 2;
-	    free(Bond_blocks);
+	    vmfree(Bond_blocks);
 	    Bond_blocks = Tmp_bond_blocks;
 	    bond_blocks = Bond_blocks + count;
 	}

@@ -1020,14 +1020,14 @@ LOCAL	void	tecplot_plot_surfaces(
 	if (alloc_len_pts < 3*intfc->num_points)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    alloc_len_pts = 3*intfc->num_points;
 	    uni_array(&pts,alloc_len_pts,FLOAT);
 	}
 	if (alloc_len_verts < 4*num_tris)
 	{
 	    if (verts != NULL)
-		free(verts);
+		vmfree(verts);
 	    alloc_len_verts = 4*num_tris;
 	    uni_array(&verts,alloc_len_verts,INT);
 	}
@@ -1406,14 +1406,14 @@ LOCAL	void	gview_plot_surfaces(
 	if (alloc_len_pts < 3*intfc->num_points)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    alloc_len_pts = 3*intfc->num_points;
 	    uni_array(&pts,alloc_len_pts,FLOAT);
 	}
 	if (alloc_len_verts < 4*num_tris)
 	{
 	    if (verts != NULL)
-		free(verts);
+		vmfree(verts);
 	    alloc_len_verts = 4*num_tris;
 	    uni_array(&verts,alloc_len_verts,INT);
 	}
@@ -1578,21 +1578,21 @@ LOCAL	void	gview_plot_color_scaled_surfaces(
 	if (alloc_len_pts < 3*intfc->num_points)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    alloc_len_pts = 3*intfc->num_points;
 	    uni_array(&pts,alloc_len_pts,FLOAT);
 	}
 	if (alloc_len_verts < 4*num_tris)
 	{
 	    if (verts != NULL)
-		free(verts);
+		vmfree(verts);
 	    alloc_len_verts = 4*num_tris;
 	    uni_array(&verts,alloc_len_verts,INT);
 	}
 	if (alloc_len_color < num_tris)
 	{
 	    if (color_intensity != NULL)
-		free(color_intensity);
+		vmfree(color_intensity);
 	    alloc_len_color = num_tris;
 	    uni_array(&color_intensity,alloc_len_color,FLOAT);
 	}
@@ -2469,7 +2469,7 @@ EXPORT  void    gview_plot_curve(
 	        tri_list[j] = Btris(b)[i]->tri;
 	    gview_plot_tri_list(dname,tri_list,num_bonds);
 	}
-	free(tri_list);
+	vmfree(tri_list);
 }               /*end gview_plot_curve*/
 
 EXPORT  void    gview_polyline(
@@ -3038,7 +3038,7 @@ LOCAL	char   *get_list_file_name(
 	{
 	    *fname_len = len;
 	    if (fname != NULL)
-		free(fname);
+		vmfree(fname);
 	    uni_array(&fname,*fname_len,CHAR);
 	}
 	if (strlen(dname) != 0)
@@ -3068,7 +3068,7 @@ LOCAL	char *set_ppfname(
 	    {
 	        *ppfname_len = len;
 	        if (ppfname != NULL)
-		    free(ppfname);
+		    vmfree(ppfname);
 	        uni_array(&ppfname,*ppfname_len,CHAR);
 	    }
 	    (void) sprintf(ppfname,"%s.%s",fname,nd);
@@ -3082,7 +3082,7 @@ LOCAL	char *set_ppfname(
 	    {
 	        *ppfname_len = len;
 	        if (ppfname != NULL)
-		    free(ppfname);
+		    vmfree(ppfname);
 	        uni_array(&ppfname,*ppfname_len,CHAR);
 	    }
 	    (void) strcpy(ppfname,fname);
@@ -3139,9 +3139,9 @@ LOCAL   void gview_plot_color_surfaces(
         if (alloc_len_pts < 3*intfc->num_points)
         {
             if (pos_pts != NULL)
-                free(pos_pts);
+                vmfree(pos_pts);
             if (neg_pts != NULL)
-                free(neg_pts);
+                vmfree(neg_pts);
             alloc_len_pts = 3*intfc->num_points;
             uni_array(&pos_pts,alloc_len_pts,FLOAT);
             uni_array(&neg_pts,alloc_len_pts,FLOAT);
@@ -3149,7 +3149,7 @@ LOCAL   void gview_plot_color_surfaces(
         if (alloc_len_verts < 4*num_tris)
         {
             if (verts != NULL)
-                free(verts);
+                vmfree(verts);
                 alloc_len_verts = 4*num_tris;
                 uni_array(&verts,alloc_len_verts,INT);
         }
@@ -3754,7 +3754,7 @@ EXPORT	char   *get_vtk_file_name(
 	{
 	    *fname_len = len;
 	    if (fname != NULL)
-		free(fname);
+		vmfree(fname);
 	    uni_array(&fname,*fname_len,CHAR);
 	}
 	if (strlen(dname) != 0)
@@ -3843,14 +3843,14 @@ LOCAL	void	vtk_plot_surfaces(
 	if (alloc_len_pts < 3*intfc->num_points)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    alloc_len_pts = 3*intfc->num_points;
 	    uni_array(&pts,alloc_len_pts,FLOAT);
 	}
 	if (alloc_len_verts < 4*num_tris)
 	{
 	    if (verts != NULL)
-		free(verts);
+		vmfree(verts);
 	    alloc_len_verts = 4*num_tris;
 	    uni_array(&verts,alloc_len_verts,INT);
 	}
@@ -5632,14 +5632,14 @@ LOCAL	void	gview_plot_surfs_and_curves(
 	if (alloc_len_pts < 3*intfc->num_points)
 	{
 	    if (pts != NULL)
-		free(pts);
+		vmfree(pts);
 	    alloc_len_pts = 3*intfc->num_points;
 	    uni_array(&pts,alloc_len_pts,FLOAT);
 	}
 	if (alloc_len_verts < 4*num_tris)
 	{
 	    if (verts != NULL)
-		free(verts);
+		vmfree(verts);
 	    alloc_len_verts = 4*num_tris;
 	    uni_array(&verts,alloc_len_verts,INT);
 	}

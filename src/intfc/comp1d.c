@@ -135,11 +135,11 @@ EXPORT boolean make_point_comp_lists(
 			/* Free old storage if necessary */
 
 	if (T->num_of_points != NULL)
-	    free(T->num_of_points);
+	    vmfree(T->num_of_points);
 	if (T->pts_in_zone != NULL)
-	    free(T->pts_in_zone);
+	    vmfree(T->pts_in_zone);
 	if (T->compon1d != NULL)
-	    free(T->compon1d);
+	    vmfree(T->compon1d);
 
 			/* Create a Grid if Needed: */
 

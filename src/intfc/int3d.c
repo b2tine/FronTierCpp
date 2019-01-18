@@ -506,8 +506,8 @@ LOCAL	void copy_tris(
 				++i, oldtri = oldtri->next)
 	    Tri_workspace(oldtri) = (POINTER) ntris[i];
 	
-	free(ntris);
-	free(hash_table);
+	vmfree(ntris);
+	vmfree(hash_table);
 
 	debug_print("copy_tris","Left copy_tris\n");
 }		/*end copy_tris*/
@@ -576,8 +576,8 @@ LIB_LOCAL void copy_all_surfaces(
 
 	    (void) copy_surface(*ps,npos_curves,nneg_curves,YES);
 	}
-	free(npos_curves);
-	free(nneg_curves);
+	vmfree(npos_curves);
+	vmfree(nneg_curves);
 
 			/* Copy Surface Order Bounding Curves */
 

@@ -2344,32 +2344,32 @@ LIB_LOCAL boolean make_tri_lists(
 
 	if (T->num_of_tris != NULL)
 	{
-	    free(T->num_of_tris);
+	    vmfree(T->num_of_tris);
 	    T->num_of_tris = NULL;
 	}
 	if (T->tristore != NULL)
 	{
-	    free(T->tristore);
+	    vmfree(T->tristore);
 	    T->tristore = NULL;
 	}
 	if (T->surfacestore != NULL)
 	{
-	    free(T->surfacestore);
+	    vmfree(T->surfacestore);
 	    T->surfacestore = NULL;
 	}
 	if (T->compon3d != NULL)
 	{
-	    free(T->compon3d);
+	    vmfree(T->compon3d);
 	    T->compon3d = NULL;
 	}
 	if (T->tris != NULL)
 	{
-	    free(T->tris);
+	    vmfree(T->tris);
 	    T->tris = NULL;
 	}
 	if (T->surfaces != NULL)
 	{
-	    free(T->surfaces);
+	    vmfree(T->surfaces);
 	    T->surfaces = NULL;
 	}
 	if (T->surf_blocks != NULL)
@@ -2378,11 +2378,11 @@ LIB_LOCAL boolean make_tri_lists(
 	    {
 		if (T->surf_blocks[i].num_on_blocks != 0)
                 {
-                    free(T->surf_blocks[i].blocks);
+                    vmfree(T->surf_blocks[i].blocks);
                     T->surf_blocks[i].num_on_blocks = 0;
                 }
 	    }
-	    free(T->surf_blocks);
+	    vmfree(T->surf_blocks);
 	    T->surf_blocks = NULL;
 	}
 
@@ -2563,7 +2563,7 @@ LIB_LOCAL boolean make_tri_lists(
 
 	    	set_off_front_comp3d(intfc);
 	    }
-	    free(Tri_blocks);
+	    vmfree(Tri_blocks);
 	}
 
 	if (max_size == out_cnt || total_num_of_tri_blocks == 0)
@@ -3231,7 +3231,7 @@ LOCAL int **add_to_bls_list(
 	    	new_blocks[i][1] = blocks[i][1];
 	    	new_blocks[i][2] = blocks[i][2];
 	    }
-	    free(blocks);
+	    vmfree(blocks);
 	    blocks = new_blocks;
 	}
 	blocks[*num_bls][0] = ib[0];

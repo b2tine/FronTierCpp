@@ -135,7 +135,7 @@ EXPORT void identify_detached_surface_curve_pair(
 	curv_node_pt = detached_curv->start->posn; 
 	uni_array(&seam.stitch,surface_seam.number_of_stitches,sizeof(STITCH));
 	align_seam_with_point(&surface_seam,curv_node_pt,&seam);
-	free(surface_seam.stitch);
+	vmfree(surface_seam.stitch);
 
 	num_bonds = detached_curv->num_points - 1;
 	uni_array(&curve_seam.stitch,num_bonds,sizeof(STITCH));
@@ -154,8 +154,8 @@ EXPORT void identify_detached_surface_curve_pair(
 
 	sew_surface_to_curve(&surgery);
 
-	free(seam.stitch);
-	free(curve_seam.stitch);
+	vmfree(seam.stitch);
+	vmfree(curve_seam.stitch);
 	DEBUG_LEAVE(identify_detached_surface_curve_pair)
 }		/*end identify_detached_surface_curve_pair*/
 
@@ -243,7 +243,7 @@ LOCAL 	void	sew_surface_to_curve(
 	else				       /*first new_tri was SURF_STITCH*/
 	    Tri_on_side12(surgery->new_tris[0]) = prev_tri;
 
-	free(surgery->new_tris);
+	vmfree(surgery->new_tris);
 	DEBUG_LEAVE(sew_surface_to_curve)
 }		/*end sew_surface_to_curve*/
 
