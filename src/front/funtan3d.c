@@ -1426,7 +1426,7 @@ LOCAL boolean cdt_triangulate_one_tri(
 	if (2*nv > in.size_pointlist)
 	{
 	    if (in.pointlist != NULL)
-		free(in.pointlist);
+		vmfree(in.pointlist);
 	    in.size_pointlist = (size_t)2*nv;
 	    uni_array(&in.pointlist,in.size_pointlist,FLOAT);
 	}
@@ -1438,7 +1438,7 @@ LOCAL boolean cdt_triangulate_one_tri(
 	if (2*nce > in.size_segmentlist)
 	{
 	    if (in.segmentlist != NULL)
-		free(in.segmentlist);
+		vmfree(in.segmentlist);
 	    in.size_segmentlist = (size_t)2*nce;
 	    uni_array(&in.segmentlist,in.size_segmentlist,INT);
 	}
@@ -1680,7 +1680,7 @@ LOCAL void install_tris_from_dtris(
 	if (out->numberoftriangles > max_n_newtris)
 	{
 	    if (newtris != NULL)
-		free(newtris);
+		vmfree(newtris);
 	    max_n_newtris = 2*out->numberoftriangles;
 	    uni_array(&newtris,max_n_newtris,sizeof(TRI*));
 	}

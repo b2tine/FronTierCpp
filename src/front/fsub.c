@@ -156,7 +156,7 @@ LOCAL	void	f_free_front(
 	    return;
 	if (fr->interf != NULL)
 	    (void) delete_interface(fr->interf);
-	free(fr);
+	vmfree(fr);
 }		/*end f_free_front*/
 
 /*
@@ -387,9 +387,9 @@ LOCAL	void	f_copy_MaxFrontSpeed(
 LOCAL	void	f_destroy_MaxFrontSpeed(
 	Front	*fr)
 {
-	free(MaxFrontSpeedState(fr));
-	free(MaxFrontSpeedCoords(fr));
-	free(MaxFrontSpeed(fr));
+	vmfree(MaxFrontSpeedState(fr));
+	vmfree(MaxFrontSpeedCoords(fr));
+	vmfree(MaxFrontSpeed(fr));
 	MaxFrontSpeed(fr) = NULL;
 }		/*end f_destroy_MaxFrontSpeed*/
 
@@ -1358,7 +1358,7 @@ EXPORT	double	f_mean_curvature_at_point3d(
 	nt = min(nt,48);
 	if(nt < 6)
 	{
-	   free(new_coords);
+	   vmfree(new_coords);
 	   return 0.0;
         }
 
@@ -1467,7 +1467,7 @@ EXPORT	double	f_mean_curvature_at_point3d(
 	    {
 	        height[i+k] = height[i+k] - 2.0*tmp4*tmp2[i][k];
 	    }
-	    free(tmp3);
+	    vmfree(tmp3);
 	}
 	   /*Since Rx = b is known, solve the system by back substition*/
 	for(i = 4; i >=0;--i)
@@ -1495,7 +1495,7 @@ EXPORT	double	f_mean_curvature_at_point3d(
 	    curvature = max_curvature*curvature/fabs(curvature);   
 	    printf("Setting to signed limite: %f\n",curvature);
 	}
-	free(new_coords);
+	vmfree(new_coords);
 	return curvature;
 }		/*end f_mean_curvature_at_point3d*/
 

@@ -1662,7 +1662,7 @@ EXPORT  void    FT_StartUp(
 				rect_bdry_type[i][j];
 		    }
 		}
-		free(rect_bdry_type);
+		vmfree(rect_bdry_type);
 	}
 	else 	/* use supplied data to initialize front */
 	{

@@ -1190,7 +1190,7 @@ LOCAL	void detach_and_propagate_curves(
 	    }
 	}
 	
-	free(p_table);
+	vmfree(p_table);
 	/*delete the previous attached surface and associated curves */
 	delete_scn(olds);
 

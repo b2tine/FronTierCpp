@@ -280,7 +280,7 @@ LOCAL 	int append_adj_intfc_to_buffer3(
 	{
 	    len_p_table = p_size;
 	    if (p_table != NULL)
-		free(p_table);
+		vmfree(p_table);
 	    uni_array(&p_table,len_p_table,sizeof(P_LINK));
 	}
 	
@@ -367,14 +367,14 @@ LOCAL int append_buffer_surface3(
 	{
 	    len_tris_s = surf->num_tri;
 	    if (tris_s != NULL)
-		free(tris_s);
+		vmfree(tris_s);
 	    uni_array(&tris_s,len_tris_s,sizeof(TRI *));
 	}
 	if (len_tris_a < adj_surf->num_tri)
 	{
 	    len_tris_a = adj_surf->num_tri;
 	    if (tris_a != NULL)
-		free(tris_a);
+		vmfree(tris_a);
 	    uni_array(&tris_a,len_tris_a,sizeof(TRI *));
 	}
 
@@ -578,14 +578,14 @@ LOCAL boolean match_tris_at_subdomain_bdry(
 	{
 	    ms_len = ns;
 	    if (ms != NULL)
-		free(ms);
+		vmfree(ms);
 	    uni_array(&ms,ms_len,sizeof(boolean));
 	}
 	if (ma_len < na)
 	{
 	    ma_len = na;
 	    if (ma != NULL)
-		free(ma);
+		vmfree(ma);
 	    uni_array(&ma,ma_len,sizeof(boolean));
 	}
 
@@ -857,7 +857,7 @@ LOCAL	POINT_LIST	*set_point_list(
 	if (max_np > plist_store->len)
 	{
 	    if (plist_store->pl != NULL)
-		free(plist_store->pl);
+		vmfree(plist_store->pl);
 	    plist_store->len = max_np;
 	    uni_array(&plist_store->pl,sizeof(POINT_LIST),plist_store->len);
 	}

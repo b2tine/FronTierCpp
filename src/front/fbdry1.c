@@ -594,7 +594,7 @@ EXPORT int f_boundary_untangle(
 	    {
 		(void) printf("WARNING in f_boundary_untangle(), "
 		              "split_curves_at_bdry_cross() failed\n");
-		free(is_irregular_bdry_cross);
+		vmfree(is_irregular_bdry_cross);
 		stop_clock("f_boundary_untangle");
 		debug_print("f_boundary_untangle","Left f_boundary_untangle()\n");
 		return ERROR_IN_UNTANGLE;
@@ -621,13 +621,13 @@ EXPORT int f_boundary_untangle(
 		    (void) printf("WARNING in f_boundary_untangle(),  "
 				  "modify_exterior_curve() failed ");
 		}
-		free(is_irregular_bdry_cross);
+		vmfree(is_irregular_bdry_cross);
 		stop_clock("f_boundary_untangle");
 		debug_print("f_boundary_untangle","Left f_boundary_untangle()\n");
 		return status;
 	    }
 	}
-	free(is_irregular_bdry_cross);
+	vmfree(is_irregular_bdry_cross);
 
 		/*    It is entirely possible that    */
 		/*   intersections() has found other  */

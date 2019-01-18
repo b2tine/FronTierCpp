@@ -1648,11 +1648,11 @@ LOCAL	void alloc_sn_list(
 LOCAL	void free_sn_list(
 	Snlist	*snlist)
 {
-	free(snlist->nc);
-	free(snlist->nopp);
-	free(snlist->pt);
-	free(snlist->ang);
-	free(snlist->orient);
+	vmfree(snlist->nc);
+	vmfree(snlist->nopp);
+	vmfree(snlist->pt);
+	vmfree(snlist->ang);
+	vmfree(snlist->orient);
 	snlist->sn = NULL;
 	snlist->num_c = 0;
 	snlist->nc_set = 0;	snlist->nopp_set = 0;
@@ -2433,7 +2433,7 @@ LOCAL	void set_2d_boxes(
 		    tmp_box = nbox->prev;
 		    tmp_box->next = nbox->next;
 		    if (nbox->next) nbox->next->prev = tmp_box;
-		    free(nbox);
+		    vmfree(nbox);
 		    nbox = tmp_box;
 		    if (debugging("lgb2d"))
 		    {

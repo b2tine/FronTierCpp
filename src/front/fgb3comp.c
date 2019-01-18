@@ -1849,7 +1849,7 @@ LOCAL	void  free_wall_flag_storage(INTERFACE *intfc)
 	RECT_GRID gr = topological_grid(intfc);
 	Table	  *T = table_of_interface(intfc);
 
-	free(T->edge_flag);
+	vmfree(T->edge_flag);
 }
 
 

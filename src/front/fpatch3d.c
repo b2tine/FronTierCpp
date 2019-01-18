@@ -245,7 +245,7 @@ void	check_double_edge_consistent(
 	printf("#check_double_edge_consistent, "
 	       "%d total edges, %d edges pairs\n", num, np);
 
-	free(edges);
+	vmfree(edges);
 
 	DEBUG_LEAVE(check_double_edge_consistent)
 }
@@ -851,7 +851,7 @@ void	bucket_init(
 	    }
 	}
 
-	free(ptcrds);
+	vmfree(ptcrds);
 	
 	DEBUG_LEAVE(bucket_init)
 }
@@ -1246,7 +1246,7 @@ void	merge_surface_points_prev(
 
 	printf("#merged points %d\n", np);
 
-	free(pts);
+	vmfree(pts);
 	
 	DEBUG_LEAVE(merge_surface_points)
 }
@@ -1530,7 +1530,7 @@ void	merge_null_edges(
 	  }
 	}
 
-	free(edges);
+	vmfree(edges);
 	
 	DEBUG_LEAVE(merge_null_edges)
 }
@@ -2179,7 +2179,7 @@ INTERFACE	*rbox_recon_interface(
 	intfc = rfr->interf;
 	rfr->interf = NULL;
 
-	free(rfr->rect_grid);
+	vmfree(rfr->rect_grid);
 	free_front(rfr);
 	
 	set_current_interface(sav_intfc);

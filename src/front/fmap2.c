@@ -1660,7 +1660,7 @@ EXPORT CURVE *FT_MakeParametricCurve(
 	{
 	    if (num_points >= max_num_pts) /* expand memory */
 	    {
-		free(point_array);
+		vmfree(point_array);
 		max_num_pts += 400;
 		bi_array(&point_array,max_num_pts,MAXD,sizeof(double));
 	    }
@@ -1683,7 +1683,7 @@ EXPORT CURVE *FT_MakeParametricCurve(
 
 	wave_type(c) = w_type;
 	if (point_array != NULL)
-	    free(point_array);
+	    vmfree(point_array);
 	return c;
 }	/* end FT_MakeParametricCurve */
 

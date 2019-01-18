@@ -1648,7 +1648,7 @@ tmprst:
 	    	return NO;
 	    }
 	}
-	free(sink_node_list);
+	vmfree(sink_node_list);
 	return YES;
 }		/*end attach_sink_nodes*/
 

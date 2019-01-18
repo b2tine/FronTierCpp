@@ -1344,8 +1344,8 @@ delete_out_oppn:
 		(*c)->start = oppn;
 		(*c)->first->start = oppn->posn;
 	}
-	free(in_curves);
-	free(out_curves);
+	vmfree(in_curves);
+	vmfree(out_curves);
 	if (debugging("shift_node"))
 		(void) printf("Transfer completed\n");
 

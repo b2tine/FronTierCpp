@@ -368,14 +368,14 @@ LOCAL	void	DestroyConstantFlowRegion(
 	FlowSpecifiedRegion	*fsr)
 {
 	ConstantFlowRegion *cfr = (ConstantFlowRegion*)fsr;
-	free(cfr->state);
-	free(cfr);
+	vmfree(cfr->state);
+	vmfree(cfr);
 }		/*end DestroyConstantFlowRegion*/
 
 LOCAL	void	DestroySkipComponentRegion(
 	FlowSpecifiedRegion	*fsr)
 {
-	free(fsr);
+	vmfree(fsr);
 }		/*end DestroySkipComponentRegion*/
 
 LOCAL	FlowSpecifiedRegion *FSR_for_comp(

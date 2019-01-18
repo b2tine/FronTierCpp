@@ -705,8 +705,8 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
                         case COMP2_BLOCK:
 			    if(!construct_comp2_blk(blk_crx,bm))
                             {
-                                free(blk_mem);
-                                free(blk_mem_store);
+                                vmfree(blk_mem);
+                                vmfree(blk_mem_store);
                                 DEBUG_LEAVE(reconstruct_crx_intfc3d)
                                 return FUNCTION_FAILED;
                             }
@@ -725,8 +725,8 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
 			    }
 			    if (!construct_comp3_blk(blk_crx,bm))
                             {
-                                free(blk_mem);
-                                free(blk_mem_store);
+                                vmfree(blk_mem);
+                                vmfree(blk_mem_store);
                                 DEBUG_LEAVE(reconstruct_crx_intfc3d)
                                 return FUNCTION_FAILED;
                             }
@@ -735,8 +735,8 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
                         case BDRY_BLOCK:
                             if (!construct_bdry_blk(blk_crx,bm))
                             {
-                                free(blk_mem);
-                                free(blk_mem_store);
+                                vmfree(blk_mem);
+                                vmfree(blk_mem_store);
                                 DEBUG_LEAVE(reconstruct_crx_intfc3d)
                                 return FUNCTION_FAILED;
                             }
@@ -2845,9 +2845,9 @@ LOCAL 	void 	print_edge_crxings(
 
 	print_crx_sort(crx_sort,crx_count,gp);
 
-	free(crxing);
-	free(crx_sort);
-	free(crxing_point);
+	vmfree(crxing);
+	vmfree(crx_sort);
+	vmfree(crxing_point);
 }		/*end print_edge_crxings*/
 
 LOCAL 	int 	crossings_on_edge(
@@ -3041,7 +3041,7 @@ LOCAL	void	multi_crx_debug(
 			    Coords(crx_sort[unphys_crxing].crx->pt),
 			    0.3*h);/*TOLERANCE*/
 	++error_cnt;
-	free(polyline);
+	vmfree(polyline);
 }		/*end multi_crx_debug*/
 
 LOCAL	int	walk_comp_along_grid_line(

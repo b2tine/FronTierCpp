@@ -95,7 +95,7 @@ LOCAL	DUMMY_ARRAY	*alloc_dummy_array(
 	    dpa->len = len;
 	    dpa->rad = rad;
 	    if (dpa->store != NULL)
-	    	free(dpa->store);
+	    	vmfree(dpa->store);
 	    scalar(&dpa->store,len*size_data);
 	    dpa->da.bytes = dpa->store + rad*size_data;
 	}
@@ -117,7 +117,7 @@ LOCAL	DUMMY_ARRAY	*alloc_dummy_state_array(
 	if (len > olen)
 	{
 	    if (dpa->ststore != NULL)
-	    	free(dpa->ststore);
+	    	vmfree(dpa->ststore);
 	    scalar(&dpa->ststore,len*sizest);
 	}
 	for (i = 0; i < len; i++)

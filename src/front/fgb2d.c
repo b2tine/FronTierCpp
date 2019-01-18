@@ -1799,9 +1799,9 @@ LOCAL   boolean reconstruct_crx_intfc2d(
             }
         }
 
-	free(blk_mem);
-        free(blk_mem_store);
-        free(curves); 
+	vmfree(blk_mem);
+        vmfree(blk_mem_store);
+        vmfree(curves); 
         DEBUG_LEAVE(reconstruct_crx_intfc2d)
         return FUNCTION_SUCCEEDED;
 }	/* end reconstruct_crx_intfc2d */
@@ -1895,7 +1895,7 @@ LOCAL   void init_blk_edges(
 		    		distance_between_positions(coords[0],coords[1],
 				2); 
                 }
-		free(coords);
+		vmfree(coords);
             }
         }
         if(total == 0)

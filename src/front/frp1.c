@@ -665,21 +665,21 @@ LOCAL void init_bdry_ocurves(
 		/* Default settings */
 
 	if (rp_node->neumann1)
-	    free(rp_node->neumann1);
+	    vmfree(rp_node->neumann1);
 	if (rp_node->neumann2)
-	    free(rp_node->neumann2);
+	    vmfree(rp_node->neumann2);
 	rp_node->neumann1   = rp_node->neumann2   = NULL;
 
 	if (rp_node->dirichlet1)
-	    free(rp_node->dirichlet1);
+	    vmfree(rp_node->dirichlet1);
 	if (rp_node->dirichlet2)
-	    free(rp_node->dirichlet2);
+	    vmfree(rp_node->dirichlet2);
 	rp_node->dirichlet1 = rp_node->dirichlet2 = NULL;
 
 	if (rp_node->subdomain1)
-	    free(rp_node->subdomain1);
+	    vmfree(rp_node->subdomain1);
 	if (rp_node->subdomain2)
-	    free(rp_node->subdomain2);
+	    vmfree(rp_node->subdomain2);
 	rp_node->subdomain1  = rp_node->subdomain2  = NULL;
 	
 	find_curves_with_wave_type(rp_node->node,&c1,&orient1,&c2,&orient2,
@@ -953,7 +953,7 @@ LOCAL void substitute_boundary_continuation(
 	    substitute_boundary_continuation(oc,rp);
 	    return;
 	}
-	free(*oc);
+	vmfree(*oc);
 	*oc = NULL;
 }		/*end substitute_boundary_continuation*/
 
@@ -975,7 +975,7 @@ EXPORT void delete_oc_curve_from_family(
 	    return;
 	if ((oc == (*cfamily)->first) && (oc == (*cfamily)->last))
 	{
-	    free(*cfamily);
+	    vmfree(*cfamily);
 	    *cfamily = NULL;
 	}
 	else
@@ -989,7 +989,7 @@ EXPORT void delete_oc_curve_from_family(
 	    if (oc == (*cfamily)->last)
 	        (*cfamily)->last = oc->prev;
 	}
-	free(oc);
+	vmfree(oc);
 	*poc = NULL;
 }		/*end delete_oc_curve_from_family*/
 
@@ -1039,7 +1039,7 @@ EXPORT	void delete_o_curve_with_curve(
 	    (*o_curve)->prev->next = (*o_curve)->next;
 	if ((*o_curve)->next)
 	    (*o_curve)->next->prev = (*o_curve)->prev;
-	free(*o_curve);
+	vmfree(*o_curve);
 	*o_curve = NULL;
 }		/*end delete_ocurve_with_curve*/
 
@@ -1413,7 +1413,7 @@ EXPORT void free_rp(
 	free_o_curve_family(rp->old_ang_ordered_curves);
 	for (rp_node = rp->first_rp_node; rp_node; rp_node = rp_node->next)
 	    free_rp_node(rp_node,rp);
-	free(rp);
+	vmfree(rp);
 }		/*end free_rp*/
 
 /*ARGSUSED*/
@@ -1424,20 +1424,20 @@ LOCAL void f_free_rp_node(
 	if (!rpn)
 	    return;
 	if (rpn->neumann1)
-	    free(rpn->neumann1);
+	    vmfree(rpn->neumann1);
 	if (rpn->neumann2)
-	    free(rpn->neumann2);
+	    vmfree(rpn->neumann2);
 	if (rpn->dirichlet1)
-	    free(rpn->dirichlet1);
+	    vmfree(rpn->dirichlet1);
 	if (rpn->dirichlet2)
-	    free(rpn->dirichlet2);
+	    vmfree(rpn->dirichlet2);
 	if (rpn->subdomain1)
-	    free(rpn->subdomain1);
+	    vmfree(rpn->subdomain1);
 	if (rpn->subdomain2)
-	    free(rpn->subdomain2);
+	    vmfree(rpn->subdomain2);
 
 	user_free_rp_node(rpn,rp);
-	free(rpn);
+	vmfree(rpn);
 }		/*end f_free_rp_node*/
 
 /*ARGSUSED*/
@@ -1471,10 +1471,10 @@ EXPORT void free_o_curve_family(
 	    for (oc = ocf->first; oc; oc = ocnext)
 	    {
 	        ocnext = oc->next;
-		free(oc);
+		vmfree(oc);
 	    }
 	}
-	free(ocf);
+	vmfree(ocf);
 }		/*end free_o_curve_family*/
 
 

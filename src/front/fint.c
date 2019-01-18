@@ -297,7 +297,7 @@ EXPORT	int	add_bstate_to_list(
 	    	new_bstates[i] = NULL;
 	    bstate_list(intfc) = new_bstates;
 	    num_bstates(intfc) = N;
-	    free(old_bstates-1);
+	    vmfree(old_bstates-1);
 	}
 	if (bstate_list(intfc)[index] == NULL)
 	{
@@ -3252,7 +3252,7 @@ boolean		sav_copy;
 	surf = copy_buffer_surface(s, p_table, p_size);
 	/*delete_scn(s); */
 
-	free(p_table);
+	vmfree(p_table);
 	set_copy_intfc_states(sav_copy);
 	
 	return surf;

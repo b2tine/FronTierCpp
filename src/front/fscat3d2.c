@@ -1059,7 +1059,7 @@ LOCAL 	boolean append_adj_intfc_to_buffer2(
 		    {
 			(void) printf("WARNING in append_adj_intfc_to_buffer2(), "
 		              "append surface failed\n");
-			free(p_table);
+			vmfree(p_table);
 			set_current_interface(cur_intfc);
 			
 			DEBUG_LEAVE(append_adj_intfc_to_buffer2)
@@ -1089,7 +1089,7 @@ LOCAL 	boolean append_adj_intfc_to_buffer2(
             matching_curve(*ac,p_table,p_size);
 	*/
 	
-	free(p_table);
+	vmfree(p_table);
 	
 	merge_curves(intfc,adj_intfc,NO);
 	
@@ -1172,7 +1172,7 @@ LOCAL 	boolean append_adj_intfc_to_buffer2_old(
 		Hyper_surf_index(surf) = Hyper_surf_index((*as));
 	    }
 	}
-	free(p_table);
+	vmfree(p_table);
 	set_current_interface(cur_intfc);
 	if (debugging("consistency"))
 	{
@@ -1803,7 +1803,7 @@ LOCAL	boolean append_rfl_intfc_to_buffer(
 		}
 	    }
 	}
-	free(p_table);
+	vmfree(p_table);
 	set_current_interface(cur_intfc);
 	DEBUG_LEAVE(append_rfl_intfc_to_buffer)
 	return FUNCTION_SUCCEEDED;

@@ -311,7 +311,7 @@ EXPORT HYPER_SURF *find_correspond_hyper_surface(
 	else if (Hsl.next->next == NULL) /* Unique candidate */
 	{
 	    corr_hs = Hsl.next->hs;
-	    free(Hsl.next);
+	    vmfree(Hsl.next);
 	    DEBUG_LEAVE(find_correspond_hyper_surface)
 	    return corr_hs;
 	}
@@ -330,7 +330,7 @@ EXPORT HYPER_SURF *find_correspond_hyper_surface(
 	    {
 	    	if (hsl->prev) hsl->prev->next = hsl->next;
 	    	if (hsl->next) hsl->next->prev = hsl->prev;
-	    	free(hsl);
+	    	vmfree(hsl);
 	    	continue;
 	    }
 	    if (DEBUG)
@@ -340,7 +340,7 @@ EXPORT HYPER_SURF *find_correspond_hyper_surface(
 	    {
 	    	if (hsl->prev) hsl->prev->next = hsl->next;
 	    	if (hsl->next) hsl->next->prev = hsl->prev;
-	    	free(hsl);
+	    	vmfree(hsl);
 	    	continue;
 	    }
 	    if (DEBUG)
@@ -358,7 +358,7 @@ EXPORT HYPER_SURF *find_correspond_hyper_surface(
 	else if (Hsl.next->next == NULL) /* Unique candidate */
 	{
 	    corr_hs = Hsl.next->hs;
-	    free(Hsl.next);
+	    vmfree(Hsl.next);
 	    DEBUG_LEAVE(find_correspond_hyper_surface)
 	    return corr_hs;
 	}
@@ -371,7 +371,7 @@ EXPORT HYPER_SURF *find_correspond_hyper_surface(
 	    	error_in_find_correspond_hyper_surface(4,hs,crspd,p_hsb,
 						       n_hsb,fr,intfc);
 	}
-	for (hsl = Hsl.next; hsl; hsl = hsl->next) free(hsl);
+	for (hsl = Hsl.next; hsl; hsl = hsl->next) vmfree(hsl);
 	DEBUG_LEAVE(find_correspond_hyper_surface)
 	return corr_hs;
 }		/*end find_correspond_hyper_surface*/
@@ -1000,11 +1000,11 @@ LOCAL int expand_correspondence_struct(
 
 		/* free old storage and replace with larger uni_arrays/bi_array */
 
-	if (crspd->incmtrx) free(crspd->incmtrx);
+	if (crspd->incmtrx) vmfree(crspd->incmtrx);
 	crspd->incmtrx = new_incmtrx;
-	if (crspd->newhs) free(crspd->newhs);
+	if (crspd->newhs) vmfree(crspd->newhs);
 	crspd->newhs = new_newhs;
-	if (crspd->oldhs) free(crspd->oldhs);
+	if (crspd->oldhs) vmfree(crspd->oldhs);
 	crspd->oldhs = new_oldhs;
 		
 		/* correct space counters */
@@ -1030,10 +1030,10 @@ LOCAL void free_correspondence_struct(
 {
 	if (corrspnd == NULL) return;
 
-	if (corrspnd->incmtrx) free(corrspnd->incmtrx);
-	if (corrspnd->newhs)   free(corrspnd->newhs);
-	if (corrspnd->oldhs)   free(corrspnd->oldhs);
-	free(corrspnd);
+	if (corrspnd->incmtrx) vmfree(corrspnd->incmtrx);
+	if (corrspnd->newhs)   vmfree(corrspnd->newhs);
+	if (corrspnd->oldhs)   vmfree(corrspnd->oldhs);
+	vmfree(corrspnd);
 }		/*end free_correspondence_struct*/
 
 
@@ -1535,7 +1535,7 @@ LOCAL	CURVE *closest_curve_in_list(
 		    {
 			if (hsl->prev) hsl->prev->next = hsl->next;
 			if (hsl->next) hsl->next->prev = hsl->prev;
-			free(hsl);
+			vmfree(hsl);
 		    }
 		}
 		if (Hsl->next == NULL) 
@@ -1545,7 +1545,7 @@ LOCAL	CURVE *closest_curve_in_list(
 		else if (Hsl->next->next == NULL) /* Unique candidate */
 		{
 		    corr_c = Curve_of_hs(Hsl->next->hs);
-		    free(Hsl->next);
+		    vmfree(Hsl->next);
 		    Hsl->next = NULL;
 		    return corr_c;
 		}

@@ -603,7 +603,7 @@ boolean	check_two_tris_cond(TRI*,TRI*,INTERFACE*);
 		tris[i*2+1] = crx2->tri;
 	    }
 
-	    free(tris);
+	    vmfree(tris);
 	}
 
 	reset_tri_order(intfc);
@@ -4454,7 +4454,7 @@ LOCAL  void  pp_send_box(
 
 	pp_send(0, (POINTER)storage, len, dst_id);
 
-	free(storage);
+	vmfree(storage);
 }  /*end pp_send_box */
 
 
@@ -4551,7 +4551,7 @@ LOCAL    void    pp_receive_box(
 
 	buf = storage + sizeof(COMM_BOX);
 
-	free(storage);
+	vmfree(storage);
 
 } /* end pp_receive_box */
 
@@ -5549,7 +5549,7 @@ int	rbox_global_number(
           num++;
         }
 
-        free(procs);
+        vmfree(procs);
 }
 
 /*sign = -1:  decrease rbox

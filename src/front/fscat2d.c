@@ -1084,7 +1084,7 @@ EXPORT	void	cut_interface(
 	{
 	    cr_alloc_len = 2*num_cr;
 	    if (adj_bond_cross != NULL)
-		free(adj_bond_cross);
+		vmfree(adj_bond_cross);
 	    uni_array(&adj_bond_cross,cr_alloc_len,sizeof(boolean));
 	}
 
@@ -3982,7 +3982,7 @@ LOCAL  void    interface_intersection_segment(
         {
             cr_alloc_len = 2*num_cr;
             if (adj_bond_cross != NULL)
-                free(adj_bond_cross);
+                vmfree(adj_bond_cross);
             uni_array(&adj_bond_cross,cr_alloc_len,sizeof(boolean));
         }
 
