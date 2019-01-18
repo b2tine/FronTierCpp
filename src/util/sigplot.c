@@ -845,7 +845,7 @@ EXPORT	void	cray_fwrite_ieee_float(
 	if (buf_len < num)
 	{
 	    if (buf != NULL)
-	    	free(buf);
+	    	vmfree(buf);
 	    buf_len = 2*num;
 	    buf = (void*)malloc(buf_len*size_float);
 	}
@@ -867,7 +867,7 @@ EXPORT	void	cray_fwrite_ieee_int(
 	if (buf_len < num)
 	{
 	    if (buf != NULL)
-	    	free(buf);
+	    	vmfree(buf);
 	    buf_len = 2*num;
 	    buf = (void*)malloc(buf_len*size_int);
 	}

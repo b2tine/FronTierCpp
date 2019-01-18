@@ -261,7 +261,7 @@ EXPORT	void	EnsureSufficientMessageBufferSize(
 	else if (msg_buf != NULL)
 	{
 	    MPI_Buffer_detach(msg_buf,&size);
-	    free(msg_buf);
+	    vmfree(msg_buf);
 	}
 	MSG_BUF_SIZE = min_MSG_BUF_SIZE;
 	uni_array(&msg_buf,MSG_BUF_SIZE,sizeof(byte));
@@ -1257,7 +1257,7 @@ LOCAL	long	*long_work_vector(
 	if (n > work_len)
 	{
 	    if (work != NULL)
-	    	free(work);
+	    	vmfree(work);
 	    work_len = n;
 	    scalar(&lwork,work_len*SizeWork);
 	    work = (void*)lwork;
@@ -1272,7 +1272,7 @@ LOCAL	int	*int_work_vector(
 	if (n > work_len)
 	{
 	    if (work != NULL)
-	    	free(work);
+	    	vmfree(work);
 	    work_len = n;
 	    scalar(&iwork,work_len*SizeWork);
 	    work = (void*)iwork;
@@ -1287,7 +1287,7 @@ LOCAL	double	*float_work_vector(
 	if (n > work_len)
 	{
 	    if (work != NULL)
-	    	free(work);
+	    	vmfree(work);
 	    work_len = n;
 	    scalar(&fwork,work_len*SizeWork);
 	    work = (void*)fwork;
@@ -1668,7 +1668,7 @@ EXPORT	void	pp_f_allgatherv(
 					       MPI_FLOAT_OR_DOUBLE,
 					       FronTier_COMM);
 
-	    free(displs);
+	    vmfree(displs);
 	    if (debugging("pp_clock"))
 	    	stop_clock("MPI_Allgatherv");
 

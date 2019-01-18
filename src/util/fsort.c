@@ -147,8 +147,8 @@ EXPORT	const char ***sort_in_files(
 	    i = k;
 	}
 	/* clean up */
-        for (i = 0; i < nfiles; ++i) free(files[i]);
-	free(files);
+        for (i = 0; i < nfiles; ++i) vmfree(files[i]);
+	vmfree(files);
 	return list;
 }
 
@@ -160,10 +160,10 @@ EXPORT	char ***free_infile_list(
 	for (i = 0; list[i] != NULL; ++i)
 	{
 	    for (j = 0; list[i][j] != NULL; ++j)
-	    	free(list[i][j]);
-	    free(list[i]);
+	    	vmfree(list[i][j]);
+	    vmfree(list[i]);
 	}
-	free(list);
+	vmfree(list);
 	return NULL;
 }
 
@@ -280,7 +280,7 @@ EXPORT	void	CloseAndCleanUpTmpFiles(
 	    	uc->prev->next = uc->next;
 	    if (uc_head == uc)
 	    	uc_head = uc->next;
-	    free(uc);
+	    vmfree(uc);
 	}
 	(void) Fclose(file);
 }
@@ -293,7 +293,7 @@ EXPORT	void	CloseAndCleanUpAllFiles(void)
 	    (void) unlink(uc->fname);
 	    (void) fclose(uc->file);
 	    uc_next = uc->next;
-	    free(uc);
+	    vmfree(uc);
 	}
 	uc_head = NULL;
 }

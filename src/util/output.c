@@ -238,7 +238,7 @@ LOCAL WRITE_LIST *index_of_write_file(
 	        wlist->prev->next = wlist->next;
 	    if (wlist->next)
 	        wlist->next->prev = wlist->prev;
-	    free(wlist);
+	    vmfree(wlist);
 	    return NULL;
 	}
 
@@ -348,7 +348,7 @@ LOCAL IOUTPUT *index_of_read_file(
 	            rlist->prev->next = rlist->next;
 	        if (rlist->next)
 	            rlist->next->prev = rlist->prev;
-	        free(rlist);
+	        vmfree(rlist);
 	    }
 	    debug_print("foutput","Left index_of_read_file()\n");
 	    return NULL;
@@ -834,7 +834,7 @@ EXPORT	const IO_TYPE *open_close_file(
 	            if (olist[i].Io_type.file != NULL)
 	                (void) Fclose(olist[i].Io_type.file);
 	        }
-	        free(olist);
+	        vmfree(olist);
 	        olist = NULL;
 	    }
 	    if (nfiles == NULL)
@@ -918,9 +918,9 @@ EXPORT	boolean	create_directory(
 	    if (alloc_len < strlen(dname))
 	    {
 	        if (dir != NULL)
-	            free(dir);
+	            vmfree(dir);
 	        if (partial_path != NULL)
-	            free(partial_path);
+	            vmfree(partial_path);
 
 	        uni_array(&dir,strlen(dname)+1,sizeof(char));
 	        uni_array(&partial_path,strlen(dname)+1,sizeof(char));
