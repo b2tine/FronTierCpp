@@ -363,9 +363,6 @@ AS_IF([test $with_nlopt = yes],
 
 
 
-#TODO: folding should be added before airfoil and parachute
-#       in the below AC_CONFIG_FILES calls
-
 #check if airfoil and Collsion should be built
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])

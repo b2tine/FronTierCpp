@@ -38,8 +38,8 @@ SUBDIRS = lib \
 		  $(MAYBE_MELTING) \
 		  $(MAYBE_SUBSURF) \
 		  $(MAYBE_COLLISION) \
-		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_FOLDING) \
+		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
