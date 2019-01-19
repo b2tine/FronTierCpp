@@ -329,7 +329,42 @@ AS_IF([test $with_cvode = yes],
       [AC_DEFINE([HAVE_CVODE],[1],[build with cvode])])
 
 
+#configure with NLOPT
+AC_ARG_WITH([nlopt-dir],[AS_HELP_STRING([--with-nlopt-dir=path],
+            [specify location of single directory installation])],
+            [nlopt_dir=${withval}],[nlopt_dir=no])
 
+AC_ARG_WITH([nlopt-inc],[AS_HELP_STRING([--with-nlopt-inc=path],
+            [specify location of header files])],
+            [nlopt_inc=${withval}],[nlopt_inc=no])
+
+AC_ARG_WITH([nlopt-lib],[AS_HELP_STRING([--with-nlopt-lib=path],
+            [specify location of libraries])],
+            [nlopt_lib=${withval}],[nlopt_lib=no])
+
+nlopt_libflags="-lnlopt"
+
+with_nlopt=no
+AS_IF([test "x${nlopt_dir}" != "xno"],
+      [with_nlopt=yes
+       nloptinc="-I${nlopt_dir}/include"
+       nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags}"],
+       [test "x${nlopt_inc}" != xno && test "x${nlopt_lib}" != xno],
+       [with_nlopt=yes
+        nloptinc="-I${nlopt_inc}"
+        nloptlib="-L${nlopt_lib} ${nlopt_libflags}"])
+
+AC_SUBST(NLOPT_CFLAGS,${nloptinc})
+AC_SUBST(NLOPT_LIBS,${nloptlib})
+
+#The macro HAVE_NLOPT isn't being used right now, but may be useful for debugging
+AS_IF([test $with_nlopt = yes],
+      [AC_DEFINE([HAVE_NLOPT],[1],[build with nlopt])])
+
+
+
+#TODO: folding should be added before airfoil and parachute
+#       in the below AC_CONFIG_FILES calls
 
 #check if airfoil and Collsion should be built
 AM_CONDITIONAL([CGAL_ARMA_OPT],
@@ -347,7 +382,7 @@ AM_COND_IF([CGAL_ARMA_OPT],
 #check if folding should be built
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_CONDITIONAL([FOLDING_OPT],
-                           [test $with_cvode = yes])])
+                           [test $with_cvode = yes && test $with_nlopt = yes])])
 
 AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile
                                            folding/objs/Makefile])])

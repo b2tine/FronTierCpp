@@ -66,6 +66,7 @@ subsurf/subsurf
 airfoil/airfoil
 Collision/test
 Collision/init
+folding/test
 parachute/parachute
 */*.xg
 
