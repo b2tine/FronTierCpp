@@ -4,7 +4,7 @@ SUBDIRS = objs
 EXTRA_DIST = input
 
 
-
+#TODO: update nlopt inc/lib
 AM_CPPFLAGS = -I$(top_srcdir)/folding \
 			  -I$(top_srcdir)/folding/nlopt \
 			  -I$(top_srcdir)/Collision \
@@ -16,6 +16,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/folding \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
+AM_LDFLAGS = -L$(top_srcdir)/folding/nlopt -lnlopt
 
 noinst_PROGRAMS = test
 
