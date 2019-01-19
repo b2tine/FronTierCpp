@@ -4,9 +4,9 @@ SUBDIRS = objs
 EXTRA_DIST = input
 
 
-#TODO: need CVODE_FLAGS
 
 AM_CPPFLAGS = -I$(top_srcdir)/folding \
+			  -I$(top_srcdir)/folding/nlopt \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ @CVODE_CFLAGS@ \

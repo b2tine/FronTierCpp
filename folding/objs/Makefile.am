@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/folding \
+			  -I$(top_srcdir)/folding/nlopt \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ @CVODE_CFLAGS@ \
@@ -7,11 +8,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/folding \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-
 AM_CPPFLAGS += -DDAMPING_FORCE -DCOLLISION_DETECTION
 
 
-#TDOD: include/link nlopt header/lib
+AM_LDFLAGS = -L$(top_srcdir)/folding/nlopt -lnlopt
+
+
 
 noinst_LTLIBRARIES = ../../lib/libfolding.la
 
