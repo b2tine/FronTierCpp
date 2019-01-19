@@ -12,10 +12,10 @@ MAYBE_MELTING = melting
 MAYBE_SUBSURF = subsurf
 if CGAL_ARMA_OPT
 MAYBE_COLLISION = Collision
+if FOLDING_OPT
+MAYBE_FOLDING = folding
+endif
 MAYBE_AIRFOIL = airfoil
-#if FOLDING_OPT
-#MAYBE_FOLDING = folding
-#endif
 MAYBE_PARACHUTE = parachute
 endif
 endif

@@ -296,10 +296,6 @@ AC_SUBST(ARMA_CFLAGS,${armainc})
 AC_SUBST(ARMA_LIBS,${armalib})
 
 
-#enable/disable Collision module ....
-#AC_ARG_ENABLE
-# ... Or add option to build seperate debugging executable?
-
 #configure with CVODE
 AC_ARG_WITH([cvode-dir],[AS_HELP_STRING([--with-cvode-dir=path],
             [specify location of single directory installation])],
@@ -348,11 +344,13 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/objs/Makefile
                                          parachute/Makefile])])])
 
-#AM_COND_IF([CGAL_ARMA_OPT],
-#           [AM_CONDITIONAL([FOLDING_OPT],
-#                           [test $with_cvode = yes])])
+#check if folding should be built
+AM_COND_IF([CGAL_ARMA_OPT],
+           [AM_CONDITIONAL([FOLDING_OPT],
+                           [test $with_cvode = yes])])
 
-#AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile])])
+AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile
+                                           folding/objs/Makefile])])
 
 
 
