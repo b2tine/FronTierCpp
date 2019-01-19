@@ -325,7 +325,7 @@ AS_IF([test "x${cvode_dir}" != "xno"],
         cvodeinc="-I${cvode_inc}"
         cvodelib="-L${cvode_lib} ${cvode_libflags}"])
 
-AC_SUBST(CVODE,${cvodeinc})
+AC_SUBST(CVODE_CFLAGS,${cvodeinc})
 AC_SUBST(CVODE_LIBS,${cvodelib})
 
 #The macro HAVE_CVODE isn't being used right now, but may be useful for debugging
