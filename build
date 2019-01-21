@@ -33,23 +33,23 @@ function config_intruder {
 }
 
 function config_omega {
-    CONF="--with-mpich-dir=/usr/local/pkg/mpich2-3.2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    CONF="--with-mpich-dir=/usr/local/pkg/mpich2-3.2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_lambda {
-    CONF="--with-mpich-dir=/usr/local/pkg/mpich2-3.2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib" 
+    CONF="--with-mpich-dir=/usr/local/pkg/mpich2-3.2 --with-petsc-dir=/usr/local/pkg/petsc --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_alpha {
     CONF="--with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc-3.1-p8 --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-function config_defiant {
-    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+function config_grad01 {
+    CONF="--with-mpich-dir=/usr/local/mpich-3.3 --with-petsc-dir=/usr/local/petsc-3.1-p8 --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-function config_grad01 {
-    CONF="--with-mpich-dir=/usr/local/mpich-3.3 --with-petsc-dir=/usr/local/petsc-3.1-p8 --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+function config_defiant {
+    CONF="--with-mpich-dir=/usr/local/mpich-3.2.1 --with-petsc-dir=/usr/local/petsc --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 
