@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 
 //class SpringVeterx
 void SpringVertex::addNeighbor(size_t i_nb, double len0) 
