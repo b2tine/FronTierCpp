@@ -23,3 +23,7 @@ DummyFrontTests_SOURCES = DummyFrontTests.cpp
 DummyFrontTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 						$(top_builddir)/lib/libFronTier.la
 
+
+
+tagsfile:
+	ctags *.cpp $(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

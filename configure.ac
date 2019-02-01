@@ -412,6 +412,7 @@ AC_CONFIG_FILES([Makefile
                  src/front/objs/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
+                 cFluid/tests/Makefile
                  example2d/Makefile
                  example2d/objs/Makefile
                  example3d/Makefile

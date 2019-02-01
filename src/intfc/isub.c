@@ -61,7 +61,7 @@ EXPORT	double separation(
 /*
 *			vector_product_on_bonds():
 *
-*	This routine computes the vector product in 2D and 3D.
+*	This routine computes the cross/vector product in 2D and 3D.
 *	The answer is placed in Pout and is a vector for three dimensions and
 *	a single double (scalar) in two dimensions. 
 *
@@ -104,7 +104,7 @@ EXPORT 	void 	vector_product_on_bonds(
 /*
 *			scalar_product_on_bonds():
 *
-* 	This function returns the scalar product of two bonds 
+* 	This function returns the dot/inner/scalar product of two bonds 
 *	The dimension must be specified when this function is called. 
 *	
 */
@@ -175,13 +175,15 @@ EXPORT	void scaled_tri_params(
 /*
 *			area_of_closed_curve():
 *
-*       Returns the SIGNED area of a closed curve.  The
+*       Returns the SIGNED area enclosed by a closed curve.  The
 *       area will be negative if the inside is on the
 *       right side of the curve.
 *
 *       Returns ERROR_FLOAT if the curve is not closed.
 */
 
+
+//TODO: check for nonplanarity
 EXPORT	double area_of_closed_curve(
 	CURVE		*c)
 {
