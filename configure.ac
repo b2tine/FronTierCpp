@@ -188,6 +188,7 @@ AM_COND_IF([PETSC_OPT],
                              solver/objs/Makefile
                              iFluid/Makefile
                              iFluid/objs/Makefile
+                             iFluid/tests/Makefile
                              melting/Makefile
                              crystal/Makefile
                              subsurf/Makefile])])
