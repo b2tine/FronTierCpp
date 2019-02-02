@@ -373,6 +373,7 @@ AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
                        [AC_CONFIG_FILES([Collision/Makefile
                                          Collision/objs/Makefile
+                                         Collision/tests/Makefile
                                          airfoil/Makefile
                                          airfoil/objs/Makefile
                                          parachute/Makefile])])])

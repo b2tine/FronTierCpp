@@ -26,8 +26,13 @@ iFluidTests_SOURCES = iFluidTests.cpp
 iFluidTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 						$(top_builddir)/lib/libiFluid.la
 
+$(iFluidTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+
+FORCE:
 
 
 tagsfile:
 	ctags $(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

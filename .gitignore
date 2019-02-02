@@ -77,7 +77,7 @@ core.*
 */out-*
 autogen*
 */input*/qrun
-tests/*.trs
+*.trs
 tests/DummyFrontTests
 Manifest.txt
 *.tar.gz

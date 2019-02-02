@@ -25,6 +25,11 @@ cFluidTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 						$(top_builddir)/lib/libcFluid.la
 
 
+$(cFluidTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+
+FORCE:
+
 
 tagsfile:
 	ctags $(top_srcdir)/cFluid/*.h $(top_srcdir)/cFluid/*.cpp \

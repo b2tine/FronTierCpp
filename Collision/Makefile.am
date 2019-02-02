@@ -1,4 +1,4 @@
-SUBDIRS = objs
+SUBDIRS = objs . tests
 
 input_directories = input
 
