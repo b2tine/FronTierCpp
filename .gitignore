@@ -68,7 +68,8 @@ Collision/test
 Collision/init
 folding/test
 parachute/parachute
-*/*.xg
+*.txt
+*.xg
 
 # Others
 *~
@@ -80,5 +81,6 @@ tests/*.trs
 tests/DummyFrontTests
 Manifest.txt
 *.tar.gz
+*.swp
 
 
