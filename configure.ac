@@ -186,6 +186,7 @@ AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
 AM_COND_IF([PETSC_OPT],
            [AC_CONFIG_FILES([solver/Makefile
                              solver/objs/Makefile
+                             solver/tests/Makefile
                              iFluid/Makefile
                              iFluid/objs/Makefile
                              iFluid/tests/Makefile
