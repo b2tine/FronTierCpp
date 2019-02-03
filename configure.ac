@@ -377,6 +377,7 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          Collision/tests/Makefile
                                          airfoil/Makefile
                                          airfoil/objs/Makefile
+                                         airfoil/tests/Makefile
                                          parachute/Makefile])])])
 
 #check if folding should be built
