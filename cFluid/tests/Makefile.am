@@ -22,12 +22,12 @@ check_PROGRAMS += cFluidTests
 cFluidTests_SOURCES = cFluidTests.cpp
 
 cFluidTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-						$(top_builddir)/lib/libcFluid.la
+					$(top_builddir)/lib/libcFluid.la
 
 
 $(cFluidTests_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib/gmock && $(MAKE) check && \
-		cd $(top_builddir)/cFluid/objs && $(MAKE) all
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+	@cd $(top_builddir)/cFluid/objs && $(MAKE) all
 
 FORCE:
 

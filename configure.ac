@@ -411,6 +411,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
                  src/util/objs/Makefile
+                 src/util/tests/Makefile
                  src/intfc/Makefile
                  src/intfc/objs/Makefile
                  src/front/Makefile

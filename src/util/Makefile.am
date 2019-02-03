@@ -1,4 +1,4 @@
-SUBDIRS = objs
+SUBDIRS = objs tests
 
 
 tagsfile:
