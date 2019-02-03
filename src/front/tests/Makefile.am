@@ -15,22 +15,23 @@ TESTS_ENVIRONMENT =
 TESTS =
 check_PROGRAMS =
 
-TESTS += intfcTests
-check_PROGRAMS += intfcTests
+TESTS += frontTests
+check_PROGRAMS += frontTests
 
-intfcTests_SOURCES = intfcTests.cpp
+frontTests_SOURCES = frontTests.cpp
 
-intfcTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-				  $(top_builddir)/src/intfc/objs/libintfc.la
+frontTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
+				  $(top_builddir)/src/front/objs/libfront.la
 
 
-$(intfcTests_DEPENDENCIES): FORCE
+$(frontTests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/src/intfc/objs && $(MAKE) all
+	@cd $(top_builddir)/src/front/objs && $(MAKE) all
 
 FORCE:
 
 
 tagsfile:
-	ctags $(top_srcdir)/src/intfc/*.h $(top_srcdir)/src/intfc/*.c \
+	ctags $(top_srcdir)/src/front/*.h $(top_srcdir)/src/front/*.c \
+		$(top_srcdir)/src/intfc/*.h $(top_srcdir)/src/intfc/*.c \
 		$(top_srcdir)/src/util/*.h $(top_srcdir)/src/util/*.c

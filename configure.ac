@@ -417,6 +417,7 @@ AC_CONFIG_FILES([Makefile
                  src/intfc/tests/Makefile
                  src/front/Makefile
                  src/front/objs/Makefile
+                 src/front/tests/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
                  cFluid/tests/Makefile
