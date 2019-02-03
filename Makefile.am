@@ -42,8 +42,7 @@ SUBDIRS = lib \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_EX2D) \
-		  $(MAYBE_EX3D) \
-		  tests
+		  $(MAYBE_EX3D)
 
 
 

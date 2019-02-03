@@ -15,13 +15,21 @@ TESTS_ENVIRONMENT =
 TESTS =
 check_PROGRAMS =
 
-TESTS += DummyFrontTests
-check_PROGRAMS += DummyFrontTests
+TESTS += libFronTierTests
+check_PROGRAMS += libFronTierTests
 
-DummyFrontTests_SOURCES = DummyFrontTests.cpp
+libFronTierTests_SOURCES = libFronTierTests.cpp
 
-DummyFrontTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-						$(top_builddir)/lib/libFronTier.la
+libFronTierTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
+						 $(top_builddir)/lib/libFronTier.la
+
+
+$(libFronTierTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+	@cd $(top_builddir)/src && $(MAKE) all
+
+FORCE:
+
 
 
 

@@ -2,8 +2,12 @@
 #include <front/dummyfront.hpp>
 #include <gtest/gtest.h>
 
+TEST(FrontTests, CompileTest)
+{
+    Front front;
+}
 
-TEST(DummyFrontTests, CompileTest)
+TEST(cppFrontTests, CompileTest)
 {
     cpp::Front front;
     front.testfunction();

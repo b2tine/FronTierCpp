@@ -1,4 +1,4 @@
-SUBDIRS = util intfc front
+SUBDIRS = util intfc front . tests
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \

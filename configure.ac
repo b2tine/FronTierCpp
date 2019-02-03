@@ -409,6 +409,7 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/gmock/Makefile
                  src/Makefile
+                 src/tests/Makefile
                  src/util/Makefile
                  src/util/objs/Makefile
                  src/util/tests/Makefile
@@ -424,8 +425,7 @@ AC_CONFIG_FILES([Makefile
                  example2d/Makefile
                  example2d/objs/Makefile
                  example3d/Makefile
-                 example3d/objs/Makefile
-                 tests/Makefile])
+                 example3d/objs/Makefile])
 
 #Generate output
 AC_OUTPUT
