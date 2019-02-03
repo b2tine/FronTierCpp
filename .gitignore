@@ -68,6 +68,7 @@ Collision/test
 Collision/init
 folding/test
 parachute/parachute
+*Tests
 *.txt
 *.xg
 
