@@ -26,7 +26,8 @@ solverTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 						$(top_builddir)/lib/libsolver.la
 
 $(solverTests_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check && \
+		cd $(top_builddir)/solver/objs && $(MAKE) all
 
 FORCE:
 

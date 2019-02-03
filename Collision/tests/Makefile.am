@@ -30,7 +30,8 @@ CollisionTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 						$(top_builddir)/lib/libCollision.la
 
 $(CollisionTests_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+	@cd $(top_builddir)/lib/gmock && $(MAKE) check && \
+		cd $(top_builddir)/Collision/objs && $(MAKE) all
 
 FORCE:
 
