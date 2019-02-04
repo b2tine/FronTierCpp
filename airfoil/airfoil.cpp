@@ -101,6 +101,7 @@ int main(int argc, char **argv)
 	if (debugging("trace")) 
 	    (void) printf("Passed FT_StartUp()\n");
 
+
         iFparams.dim = f_basic.dim;
         front.extra1 = (POINTER)&iFparams;
         front.extra2 = (POINTER)&af_params;

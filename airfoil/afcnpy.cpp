@@ -21,7 +21,9 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#ifdef COLLISION_DETECTION
+
+
+#ifndef COLLISION_DETECTION_OFF
 #include "collid.h"
 #endif
 
@@ -1776,8 +1778,11 @@ extern void fourth_order_elastic_set_propagate(
 	static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
-#ifdef COLLISION_DETECTION
+
+#ifndef COLLISION_DETECTION_OFF
 	static CollisionSolver* collision_solver = new CollisionSolver3d();
+#else
+    printf("COLLISION DETECTION OFF\n");
 #endif
 
 	if (debugging("trace"))
@@ -1896,7 +1901,7 @@ extern void fourth_order_elastic_set_propagate(
 
 	if (myid == owner_id)
 	{
-#ifdef COLLISION_DETECTION
+#ifndef COLLISION_DETECTION_OFF
 	    if (FT_Dimension() == 3)
             {
                 // collision setup
@@ -1970,7 +1975,7 @@ extern void fourth_order_elastic_set_propagate(
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
-#ifdef COLLISION_DETECTION
+#ifndef COLLISION_DETECTION_OFF
 	if (myid == owner_id)
         {
             if (FT_Dimension() == 3)
