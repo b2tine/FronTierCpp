@@ -64,6 +64,7 @@ melting/melting
 crystal/crystal
 subsurf/subsurf
 airfoil/airfoil
+airfoil/ginit
 Collision/test
 Collision/init
 folding/test
