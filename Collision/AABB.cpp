@@ -3,37 +3,58 @@
 #include <fstream>
 
 enum class MotionState {STATIC, MOVING};
+
+//TODO: Make factory for creation of AABB's
+//
+//TODO: Why are we using 1e-4 instead of 1e-3?
+//      This could result in less repulsions,
+//      and more costly geometric collisions.
+
 //  for proximity detection
-AABB::AABB(CD_HSE* h, MotionState type) : hse(h), dt(0), abType(type), 
-        lowerbound(3), upperbound(3) {
+AABB::AABB(CD_HSE* h, MotionState type)
+    : hse(h), dt(0), abType(type),
+    lowerbound(3), upperbound(3)
+{
     if (type == MotionState::STATIC)
+    {
         for (int i = 0; i < 3; i++) {
-             lowerbound[i] = h->min_static_coord(i)-1e-4;
-             upperbound[i] = h->max_static_coord(i)+1e-4;
+            lowerbound[i] = h->min_static_coord(i)-1e-4;
+            upperbound[i] = h->max_static_coord(i)+1e-4;
         }
+    }
     else
+    {
         for (int i = 0; i < 3; i++) {
-             lowerbound[i] = h->min_moving_coord(i, dt)-1e-6;
-             upperbound[i] = h->max_moving_coord(i, dt)+1e-6;
+            lowerbound[i] = h->min_moving_coord(i, dt)-1e-6;
+            upperbound[i] = h->max_moving_coord(i, dt)+1e-6;
         }
+    }
+
     for (int i = 0; i < h->num_pts(); i++)
-         indices.push_back(h->Point_of_hse(i)->global_index);
+        indices.push_back(h->Point_of_hse(i)->global_index);
 }
+
 // for collision detection
-AABB::AABB(CD_HSE* h, MotionState type, double t) : hse(h), dt(t), 
-        abType(type), lowerbound(3), upperbound(3) {   
+AABB::AABB(CD_HSE* h, MotionState type, double t)
+    : hse(h), dt(t), abType(type), lowerbound(3), upperbound(3)
+{
     if (type == MotionState::STATIC) 
+    {
         for (int i = 0; i < 3; i++) {
-             lowerbound[i] = h->min_static_coord(i)-1e-4;
-             upperbound[i] = h->max_static_coord(i)+1e-4;
+            lowerbound[i] = h->min_static_coord(i)-1e-4;
+            upperbound[i] = h->max_static_coord(i)+1e-4;
         }
-    else 
+    }
+    else
+    {
         for (int i = 0; i < 3; i++) {
-             lowerbound[i] = h->min_moving_coord(i, dt)-1e-6;
-             upperbound[i] = h->max_moving_coord(i, dt)+1e-6;
+            lowerbound[i] = h->min_moving_coord(i, dt)-1e-6;
+            upperbound[i] = h->max_moving_coord(i, dt)+1e-6;
         }
+    }
+    
     for (int i = 0; i < h->num_pts(); i++) 
-         indices.push_back(h->Point_of_hse(i)->global_index);
+        indices.push_back(h->Point_of_hse(i)->global_index);
 }
 
 AABB::AABB(const CPoint& pl, const CPoint& pu) : lowerbound(pl), upperbound(pu) {

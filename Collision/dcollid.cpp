@@ -171,7 +171,6 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 	}
 }
 
-//TODO: is this a no-op function ??????
 void CollisionSolver::computeAverageVelocity()
 {
     POINT* pt;
@@ -423,7 +422,10 @@ void CollisionSolver::aabbProximity() {
     }
     else {
         abt_proximity->updateAABBTree(hseList);
-        // if current tree structure don't fit for the current 
+        // TODO: review effects of the decision described in
+        // the comment below and the following if statement.
+        
+        // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
         if ((abt_proximity->getVolume() - volume) > 0.2*volume) {
             abt_proximity->updateTreeStructure();
