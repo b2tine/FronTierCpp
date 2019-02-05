@@ -171,73 +171,97 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 	}
 }
 
-void CollisionSolver::computeAverageVelocity(){
-	POINT* pt;
-        STATE* sl; 
+//TODO: is this a no-op function ??????
+void CollisionSolver::computeAverageVelocity()
+{
+    POINT* pt;
+    STATE* sl; 
 	double dt = getTimeStepSize();
-	double max_speed = 0, *max_vel = nullptr;
+	double max_speed = 0;
+    double* max_vel = nullptr;
 	POINT* max_pt=nullptr;
-	//#pragma omp parallel for private(pt,sl)
-        for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-                it < hseList.end(); ++it){
-            for (int i = 0; i < (*it)->num_pts(); ++i){
-                pt = (*it)->Point_of_hse(i);
-                sl = (STATE*)left_state(pt); 
-                for (int j = 0; j < 3; ++j)
-		{
-		    if (dt > ROUND_EPS) {
-                        sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
-                        sl->avgVel_old[j] = sl->avgVel[j];
-                    }
-		    else {
-		        sl->avgVel[j] = 0.0;
-                        sl->avgVel_old[j] = 0.0;
-                    }
-		    if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
-		    {
-			std::cout<<"nan avgVel" << std::endl;
-			printf("dt = %e, x_old = %f, x_new = %f\n",
-			dt,sl->x_old[j],Coords(pt)[j]);
-			clean_up(ERROR);
-		    }
-		}
-		if (debugging("collision"))
-		if (Mag3d(sl->avgVel) >= max_speed){
-		    max_speed = Mag3d(sl->avgVel);
-		    max_vel = sl->avgVel;
-		    max_pt = pt;
-		}
+
+    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
+            it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sl = (STATE*)left_state(pt); 
+            for (int j = 0; j < 3; ++j)
+    		{
+                if (dt > ROUND_EPS)
+                {
+                    sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
+                    sl->avgVel_old[j] = sl->avgVel[j];
+                }
+                else
+                {
+                    sl->avgVel[j] = 0.0;
+                    sl->avgVel_old[j] = 0.0;
+                }
+                
+                if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
+                {
+                    std::cout<<"nan avgVel" << std::endl;
+                    printf("dt = %e, x_old = %f, x_new = %f\n",
+                    dt,sl->x_old[j],Coords(pt)[j]);
+                    clean_up(ERROR);
+                }
+		
             }
+
+            if (debugging("collision"))
+            {
+                if (Mag3d(sl->avgVel) >= max_speed)
+                {
+                    max_speed = Mag3d(sl->avgVel);
+                    max_vel = sl->avgVel;
+                    max_pt = pt;
+                }
+            }
+        
         }
+        
+    }
+
 	if (debugging("collision"))
 	{
-            if (max_vel)
-	        std::cout << "Maximum average velocity is " 
-		          << max_vel[0] << " "
-		          << max_vel[1] << " "
-		          << max_vel[2] << std::endl; 
-            if (max_pt) {
-	        sl = (STATE*)left_state(max_pt);
-	        printf("x_old = [%f %f %f]\n",
-		        sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+        if (max_vel)
+        {
+            std::cout << "Maximum average velocity is "
+                << max_vel[0] << " "
+                << max_vel[1] << " "
+                << max_vel[2] << std::endl; 
+        }
+        
+        if (max_pt)
+        {
+            sl = (STATE*)left_state(max_pt);
+            printf("x_old = [%f %f %f]\n",
+                    sl->x_old[0],sl->x_old[1],sl->x_old[2]);
 	        printf("x_new = [%f %f %f]\n",
-		        Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
+                    Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
 	        printf("dt = %f\n",dt);
-            }
+        }
 	}
-	//restore coords of points to old coords !!!
+	
+    //restore coords of points to old coords !!!
 	//x_old is the only valid coords for each point 
 	//Coords(point) is for temporary judgement
-	//#pragma omp parallel private(pt,sl)
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-                it < hseList.end(); ++it){
-            for (int i = 0; i < (*it)->num_pts(); ++i){
-                pt = (*it)->Point_of_hse(i);
-                sl = (STATE*)left_state(pt);
-                for (int j = 0; j < m_dim; ++j)
-                    Coords(pt)[j] =  sl->x_old[j];
-            }
+	
+    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
+            it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sl = (STATE*)left_state(pt);
+            for (int j = 0; j < m_dim; ++j)
+                Coords(pt)[j] =  sl->x_old[j];
         }
+        
+    }
 }
 
 void CollisionSolver::turnOffImpZone(){s_detImpZone = false;}
