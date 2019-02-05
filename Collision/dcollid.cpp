@@ -395,7 +395,8 @@ void CollisionSolver::resolveCollision()
 	updateFinalPosition();
 	stop_clock("updateFinalPosition");
 
-	// reduceSuperelast();
+    //TODO: implement this function correctly
+	//reduceSuperelast();
 	
 	start_clock("updateFinalVelocity");
 	//detectProximity();
@@ -535,79 +536,98 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 	}
 }
 
+//TODO: Implement this correctly.
+//      jacobi iteration style for strain and
+//      gauss-seidel iteration style for strain rate.
+//      Should be called after collisions have been handled.
 bool CollisionSolver::reduceSuperelastOnce(int& num_edges)
 {
 	double dt = getTimeStepSize();
 	const double superelasTol = 0.10;
 	bool has_superelas = false;
 	num_edges = 0;
-	for (unsigned i = 0; i < hseList.size(); ++i){
+	
+    for (unsigned i = 0; i < hseList.size(); ++i)
+    {
 	    CD_HSE* hse = hseList[i];
-	    int np = hse->num_pts();
 	    if (isRigidBody(hse)) continue;
-	    for (int j = 0; j < ((np == 2) ? 1 : np); ++j){
-		POINT* p[2];
-		STATE* sl[2];
-		p[0] = hse->Point_of_hse(j%np);	
-		p[1] = hse->Point_of_hse((j+1)%np);
-		sl[0]= (STATE*)left_state(p[0]);
-		sl[1]= (STATE*)left_state(p[1]);
+	    
+	    int np = hse->num_pts();
+        for (int j = 0; j < ((np == 2) ? 1 : np); ++j)
+        {
+            POINT* p[2];
+            STATE* sl[2];
+            p[0] = hse->Point_of_hse(j%np);	
+            p[1] = hse->Point_of_hse((j+1)%np);
+            sl[0]= (STATE*)left_state(p[0]);
+            sl[1]= (STATE*)left_state(p[1]);
 
-		double x_cand[2][3];
-		for (int k = 0; k < 2; ++k){
-		    double tmp[3];
-		    scalarMult(dt,sl[k]->avgVel,tmp);
-		    addVec(sl[k]->x_old,tmp,x_cand[k]);
-		}	
-		double len_new = distance_between_positions(x_cand[0],x_cand[1],3);
-		double len_old = distance_between_positions(sl[0]->x_old,sl[1]->x_old,3);
-		double len0;
-		if (CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(hse))
-		    len0 = cd_tri->m_tri->side_length0[j];
-		else if (CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(hse))
-		    len0 = cd_bond->m_bond->length0;
-		else{
-		    std::cout<<"Unknown type"<<std::endl;
-		    clean_up(ERROR);
-		}
-		double vec[3], v_rel[3];
-
-		minusVec(sl[0]->x_old,sl[1]->x_old,vec);
+            double x_cand[2][3];    
+            for (int k = 0; k < 2; ++k)
+            {
+                double tmp[3];
+                scalarMult(dt,sl[k]->avgVel,tmp);
+                addVec(sl[k]->x_old,tmp,x_cand[k]);
+            }
+            
+            double len_new = distance_between_positions(x_cand[0],x_cand[1],3);
+		    double len_old = distance_between_positions(sl[0]->x_old,sl[1]->x_old,3);
+		    double len0;
+		
+            if (CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(hse))
+                len0 = cd_tri->m_tri->side_length0[j];
+            else if (CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(hse))
+                len0 = cd_bond->m_bond->length0;
+            else
+            {
+                std::cout<<"Unknown type"<<std::endl;
+                clean_up(ERROR);
+            }
+            
+            double vec[3], v_rel[3];
+            minusVec(sl[0]->x_old,sl[1]->x_old,vec);
 	        minusVec(sl[0]->avgVel,sl[1]->avgVel,v_rel);
-		if (len_old > ROUND_EPS && len_new > ROUND_EPS)
-		{
-		    scalarMult(1/len_old,vec,vec); //normalize
-		    double strain_rate = (len_new-len_old)/len_old;
-		    double strain = (len_new-len0)/len0;
-		    if (fabs(strain) > superelasTol || fabs(strain_rate) > superelasTol){
-			double v_tmp[3];
-			addVec(sl[0]->avgVel,sl[1]->avgVel,v_tmp);
-                        scalarMult(0.5,v_tmp,v_tmp);
-                        memcpy((void*)sl[0]->avgVel,(void*)v_tmp,3*sizeof(double)); 
-                        memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
-			num_edges ++;
-		        has_superelas = true;
-		    }
-		}
-		else
-		{
-		    	printf("Warning: len0 = %e, len_new = %e, len_old = %e\n",
-			    len0,len_new,len_old);
-			printf("p0 = %p, p1 = %p\n",(void*)p[0],(void*)p[1]);
-			printf("x_old[0] = [%f %f %f]\n",sl[0]->x_old[0],sl[0]->x_old[1],sl[0]->x_old[2]);
-			printf("avgVel[0] = [%f %f %f]\n",sl[0]->avgVel[0],sl[0]->avgVel[1],sl[0]->avgVel[2]);
-			printf("x_old[1] = [%f %f %f]\n",sl[1]->x_old[0],sl[1]->x_old[1],sl[1]->x_old[2]);
-			printf("avgVel[1] = [%f %f %f]\n",sl[1]->avgVel[0],sl[1]->avgVel[1],sl[1]->avgVel[2]);
-		        double v_tmp[3];
-                        addVec(sl[0]->avgVel,sl[1]->avgVel,v_tmp);
-                        scalarMult(0.5,v_tmp,v_tmp);
-                        memcpy((void*)sl[0]->avgVel,(void*)v_tmp,3*sizeof(double)); 
-                        memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
-			num_edges ++;
-		        has_superelas = true;
-		}	
-	    }
-	}
+            
+            if (len_old > ROUND_EPS && len_new > ROUND_EPS)
+            {
+                scalarMult(1/len_old,vec,vec); //normalize
+                double strain_rate = (len_new-len_old)/len_old;
+                double strain = (len_new-len0)/len0;
+                
+                if (fabs(strain) > superelasTol || fabs(strain_rate) > superelasTol)
+                {
+                    double v_tmp[3];
+                    addVec(sl[0]->avgVel,sl[1]->avgVel,v_tmp);
+                    scalarMult(0.5,v_tmp,v_tmp);
+                    memcpy((void*)sl[0]->avgVel,(void*)v_tmp,3*sizeof(double)); 
+                    memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
+                    num_edges++;
+                    has_superelas = true;
+                }
+            }
+            else
+            {
+                printf("Warning: len0 = %e, len_new = %e, len_old = %e\n",
+                        len0,len_new,len_old);
+                printf("p0 = %p, p1 = %p\n",(void*)p[0],(void*)p[1]);
+                printf("x_old[0] = [%f %f %f]\n",sl[0]->x_old[0],sl[0]->x_old[1],sl[0]->x_old[2]);
+                printf("avgVel[0] = [%f %f %f]\n",sl[0]->avgVel[0],sl[0]->avgVel[1],sl[0]->avgVel[2]);
+                printf("x_old[1] = [%f %f %f]\n",sl[1]->x_old[0],sl[1]->x_old[1],sl[1]->x_old[2]);
+                printf("avgVel[1] = [%f %f %f]\n",sl[1]->avgVel[0],sl[1]->avgVel[1],sl[1]->avgVel[2]);
+                
+                double v_tmp[3];
+                addVec(sl[0]->avgVel,sl[1]->avgVel,v_tmp);
+                scalarMult(0.5,v_tmp,v_tmp);
+                memcpy((void*)sl[0]->avgVel,(void*)v_tmp,3*sizeof(double)); 
+                memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
+                num_edges++;
+                has_superelas = true;
+            }	
+	    
+        }
+	
+    }
+
 	return has_superelas;
 }
 
@@ -638,7 +658,8 @@ void CollisionSolver::updateFinalPosition()
 void CollisionSolver::reduceSuperelast()
 {
 	bool has_superelas = true;
-	int niter = 0, num_edges;
+	int niter = 0;
+    int num_edges;
 	const int max_iter = 10;
 	while(has_superelas && niter++ < max_iter){
 	    has_superelas = reduceSuperelastOnce(num_edges);
