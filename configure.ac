@@ -381,9 +381,10 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          parachute/Makefile])])])
 
 #check if folding should be built
-AM_COND_IF([CGAL_ARMA_OPT],
-           [AM_CONDITIONAL([FOLDING_OPT],
-                           [test $with_cvode = yes && test $with_nlopt = yes])])
+
+AM_CONDITIONAL([FOLDING_OPT],
+               [test $with_cgal = yes && test $with_arma = yes \
+                && test $with_cvode = yes && test $with_nlopt = yes])
 
 AM_COND_IF([FOLDING_OPT],[AC_CONFIG_FILES([folding/Makefile
                                            folding/objs/Makefile
