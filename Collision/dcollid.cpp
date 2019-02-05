@@ -367,13 +367,10 @@ void CollisionSolver::resolveCollision()
 	setTraitsDimension();
 
 	start_clock("computeAverageVelocity");
-	//compute average velocity
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
 	start_clock("detectProximity");
-	//test proximity for tris on surfaces
-	//or bond on curves
 	detectProximity();
 	stop_clock("detectProximity");
 

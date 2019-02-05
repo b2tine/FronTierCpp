@@ -1750,9 +1750,8 @@ static void print_elastic_params(
                         geom_set.dt_tol,geom_set.dt);
 }	/* end print_elastic_params */
 
-extern void fourth_order_elastic_set_propagate(
-	Front           *fr,
-        double           fr_dt)
+
+void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int size = 0,owner_size,client_size;
