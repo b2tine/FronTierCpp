@@ -24,7 +24,7 @@ done
 export CC=mpicc
 export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
 
-export CXX=mpic++
+export CXX=mpicxx
 export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
 
 
