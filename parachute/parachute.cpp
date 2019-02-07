@@ -57,9 +57,7 @@ int main(int argc, char **argv)
 	f_basic.size_of_intfc_state = sizeof(STATE);
 
 	//Initialize Petsc before FrontStartUP
-        PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
-
-	/*Construct Incompress Solver l_cartesian*/
+    PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
 	l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
@@ -78,13 +76,15 @@ int main(int argc, char **argv)
 			right_flush(RestartStep,7));
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
 			right_flush(RestartStep,7));
-	if (pp_numnodes() > 1)
-        {
-            sprintf(restart_name,"%s-nd%s",restart_name,
-				right_flush(pp_mynode(),4));
-            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
-				right_flush(pp_mynode(),4));
+	
+    if (pp_numnodes() > 1)
+    {
+        sprintf(restart_name,"%s-nd%s",restart_name,
+                right_flush(pp_mynode(),4));
+        sprintf(restart_state_name,"%s-nd%s",restart_state_name,
+                right_flush(pp_mynode(),4));
 	}
+
 	af_params.num_np = 1;
 	FT_VectorMemoryAlloc((POINTER*)&af_params.node_id,1,sizeof(int));
 	af_params.node_id[0] = 0;
@@ -93,10 +93,10 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-        iFparams.dim = f_basic.dim;
-        front.extra1 = (POINTER)&iFparams;
-        front.extra2 = (POINTER)&af_params;
-        read_iFparams(in_name,&iFparams);
+    iFparams.dim = f_basic.dim;
+    front.extra1 = (POINTER)&iFparams;
+    front.extra2 = (POINTER)&af_params;
+    read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
 	level_func_pack.pos_component = LIQUID_COMP2;
@@ -107,9 +107,9 @@ int main(int argc, char **argv)
 	    initParachuteModules(&front);
 	    if (debugging("trace"))
 	    {
-		if (consistent_interface(front.interf) == NO)
-            	    clean_up(ERROR);
-		gview_plot_interface("ginit",front.interf);
+            if (consistent_interface(front.interf) == NO)
+                clean_up(ERROR);
+            gview_plot_interface("ginit",front.interf);
 	    }
 	}
 	else
@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 	setMotionParams(&front);
 	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
+
 	record_break_strings_gindex(&front);
 	set_unequal_strings(&front);
 
@@ -133,42 +134,45 @@ int main(int argc, char **argv)
 	l_cartesian->getInitialState = zero_state;
 	l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
-	if (debugging("sample_velocity"))
-            l_cartesian->initSampleVelocity(in_name);
 
-        if (RestartRun)
+	if (debugging("sample_velocity"))
+        l_cartesian->initSampleVelocity(in_name);
+
+    if (RestartRun)
 	{
 	    if (ReSetTime)
 	    {
-		readAfExtraDada(&front,restart_state_name);
-                modifyInitialization(&front);
-                read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-                l_cartesian->initMesh();
-                l_cartesian->setInitialCondition();
-	    	if (debugging("trace"))
+		    readAfExtraData(&front,restart_state_name);
+            modifyInitialization(&front);
+            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+            l_cartesian->initMesh();
+            l_cartesian->setInitialCondition();
+	    	
+            if (debugging("trace"))
 	    	{
-		    if (consistent_interface(front.interf) == NO)
-            	    	clean_up(ERROR);
-		    gview_plot_interface("gmodified",front.interf);
+                if (consistent_interface(front.interf) == NO)
+                    clean_up(ERROR);
+                gview_plot_interface("gmodified",front.interf);
 	    	}
 	    }
 	    else
 	    {
-            	l_cartesian->readFrontInteriorStates(restart_state_name);
-	    	readAfExtraDada(&front,restart_state_name);
+            l_cartesian->readFrontInteriorStates(restart_state_name);
+	    	readAfExtraData(&front,restart_state_name);
 	    }
-	}
-        else
+    
+    }
+    else
 	{
-            l_cartesian->setInitialCondition();
+        l_cartesian->setInitialCondition();
 	}
 
 	static_mesh(front.interf) = YES;
-        l_cartesian->initMovieVariables();
+    l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
 	if (!RestartRun || ReSetTime)
-	    resetFrontVelocity(&front);
+        resetFrontVelocity(&front);
 
 	/* Propagate the front */
 
@@ -202,7 +206,7 @@ static  void airfoil_driver(
 	    FT_Save(front);
 
             l_cartesian->printFrontInteriorStates(out_name);
-	    printAfExtraDada(front,out_name);
+	    printAfExtraData(front,out_name);
 
             FT_Draw(front);
 
@@ -230,7 +234,7 @@ static  void airfoil_driver(
 	{
 	    FT_Save(front);
             l_cartesian->printFrontInteriorStates(out_name);
-	    printAfExtraDada(front,out_name);
+	    printAfExtraData(front,out_name);
 	    return;
 	}
 	
@@ -293,7 +297,7 @@ static  void airfoil_driver(
 		setStressColor(front);
 		FT_Save(front);
                 l_cartesian->printFrontInteriorStates(out_name);
-	    	printAfExtraDada(front,out_name);
+	    	printAfExtraData(front,out_name);
 	    }
             if (FT_IsDrawTime(front))
 	    {
