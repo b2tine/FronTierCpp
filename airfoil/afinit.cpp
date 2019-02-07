@@ -28,7 +28,7 @@ static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
 static void setInitialIntfcAF2d(Front*,LEVEL_FUNC_PACK*,char*);
 static void setInitialIntfcAF3d(Front*,LEVEL_FUNC_PACK*,char*);
 
-extern void setInitialIntfcAF(
+void setInitialIntfcAF(
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack,
         char *inname)
@@ -39,8 +39,9 @@ extern void setInitialIntfcAF(
 
 	level_func_pack->wave_type = ELASTIC_BOUNDARY;
 	iFparams->m_comp1 = SOLID_COMP;
-        iFparams->m_comp2 = LIQUID_COMP2;
-	if (CursorAfterStringOpt(infile,
+    iFparams->m_comp2 = LIQUID_COMP2;
+
+    if (CursorAfterStringOpt(infile,
             "Entering yes to set wave type to FIRST_PHYSICS_WAVE_TYPE: "))
 	{
 	    fscanf(infile,"%s",string);
@@ -72,17 +73,18 @@ static void setInitialIntfcAF3d(
 
 	level_func_pack->set_3d_bdry = YES;
 	level_func_pack->neg_component = LIQUID_COMP2;
-        level_func_pack->pos_component = LIQUID_COMP2;	
+    level_func_pack->pos_component = LIQUID_COMP2;	
 	level_func_pack->func_params = NULL;
-        level_func_pack->func = NULL;
+    level_func_pack->func = NULL;
 	af_params->is_parachute_system = NO;
 	af_params->cut_vent = NO;
 	af_params->num_opt_round = 20;
-        af_params->spring_model = MODEL1;	// default
+    af_params->spring_model = MODEL1;	// default
 	af_params->attach_gores = NO;		// default
-	af_params->use_gpu = NO;		// default
+	af_params->use_gpu = NO;		    // default
 	af_params->gore_len_fac = 1.0;		// default
-	CursorAfterString(infile,"Enter number of canopy surfaces:");
+	
+    CursorAfterString(infile,"Enter number of canopy surfaces:");
 	fscanf(infile,"%d",&num_canopy);
 	(void) printf("%d\n",num_canopy);
 	level_func_pack->num_mono_hs = num_canopy;
@@ -92,7 +94,8 @@ static void setInitialIntfcAF3d(
 	(void) printf("\tPlane (P)\n");
 	(void) printf("\tT-10 (T)\n");
 	(void) printf("\tNone (N)\n");
-	CursorAfterString(infile,"Enter initial canopy surface type:");
+	
+    CursorAfterString(infile,"Enter initial canopy surface type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	switch (string[0])
@@ -184,32 +187,34 @@ static void setInitialIntfcAF3d(
 		break;
 	    }
 	}
+
 	if (CursorAfterStringOpt(infile,
             "Entering type of spring model: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        switch (string[0])
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            switch (string[0])
-            {
-            case '1':
-                af_params->spring_model = MODEL1;
-                break;
-            case '2':
-                af_params->spring_model = MODEL2;
-                break;
-            case '3':
-                af_params->spring_model = MODEL3;
-                break;
-            default:
-                break;
-            }
-	}
+        case '1':
+            af_params->spring_model = MODEL1;
+            break;
+        case '2':
+            af_params->spring_model = MODEL2;
+            break;
+        case '3':
+            af_params->spring_model = MODEL3;
+            break;
+        default:
+            break;
+        }
+    }
+
 	if (CursorAfterStringOpt(infile,
             "Entering number of canopy optimization rounds: "))
-        {
-            fscanf(infile,"%d",&af_params->num_opt_round);
-            (void) printf("%d\n",af_params->num_opt_round);
-        }
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
 }	/* end setInitialIntfcAF3d */
 
 static void setInitialIntfcAF2d(

@@ -298,7 +298,9 @@ extern void compute_spring_accel1(
 	}
 }	/* end compute_spring_accel */
 
-extern void generic_spring_solver(
+
+//RK4
+void generic_spring_solver(
 	SPRING_VERTEX *sv,
 	int dim,
 	int size,
@@ -410,8 +412,8 @@ extern void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		sv[i].x[j] = x_new[i][j];
-                sv[i].v[j] = v_new[i][j];
+            sv[i].x[j] = x_new[i][j];
+            sv[i].v[j] = v_new[i][j];
 	    }
 	    for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
