@@ -638,21 +638,21 @@ void CollisionSolver::updateFinalPosition()
 	STATE* sl;
 	double dt = getTimeStepSize();
 
-	//#pragma omp parallel for private(sl,pt)
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
 	     it < hseList.end(); ++it)
-	{
-	    for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-		sl = (STATE*)left_state(pt);
-	    	for (int j = 0; j < 3; ++j)
-		{
-		    Coords(pt)[j] = sl->x_old[j]+sl->avgVel[j]*dt;
-		    if (std::isnan(Coords(pt)[j]))
-			printf("nan coords, x_old = %f, avgVel = %f\n",
-				sl->x_old[j],sl->avgVel[j]);
-		}
-	    }
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sl = (STATE*)left_state(pt);
+            for (int j = 0; j < 3; ++j)
+            {
+                Coords(pt)[j] = sl->x_old[j]+sl->avgVel[j]*dt;
+                if (std::isnan(Coords(pt)[j]))
+                    printf("nan coords, x_old = %f, avgVel = %f\n",
+                            sl->x_old[j],sl->avgVel[j]);
+            }
+        }
 	}
 }
 
@@ -677,7 +677,7 @@ void CollisionSolver::updateFinalVelocity()
     //TODO: if no repulsions or collisions set final velocity
     //      to the original candidate velocity that was computed
     //      by the spring solver. I believe this should be a no-op
-    //      if no repulsions/collisions... double check
+    //      if no repulsions/collisions ... double check
 
     
     //TODO: Otherwise, advance the midstep velocity using spring model.
