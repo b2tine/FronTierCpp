@@ -58,10 +58,9 @@ int main(int argc, char **argv)
 	f_basic.size_of_intfc_state = sizeof(STATE);
 
 	//Initialize Petsc before FrontStartUP
-        PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
-        //if (debugging("trace")) printf("Passed PetscInitialize()\n");
-
-	/*Construct Incompress Solver l_cartesian*/
+        
+    PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
+    if (debugging("trace")) printf("Passed PetscInitialize()\n");
 
 	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
 	if(f_basic.dim == 2)
@@ -83,13 +82,15 @@ int main(int argc, char **argv)
 			right_flush(RestartStep,7));
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
 			right_flush(RestartStep,7));
-	if (pp_numnodes() > 1)
-        {
-            sprintf(restart_name,"%s-nd%s",restart_name,
-				right_flush(pp_mynode(),4));
-            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
-				right_flush(pp_mynode(),4));
+	
+    if (pp_numnodes() > 1)
+    {
+        sprintf(restart_name,"%s-nd%s",restart_name,
+                right_flush(pp_mynode(),4));
+        sprintf(restart_state_name,"%s-nd%s",restart_state_name,
+                right_flush(pp_mynode(),4));
 	}
+
 	af_params.num_np = 1;
         FT_VectorMemoryAlloc((POINTER*)&af_params.node_id,1,sizeof(int));
         af_params.node_id[0] = 0;
@@ -98,16 +99,15 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-	if (debugging("trace")) 
-	    (void) printf("Passed FT_StartUp()\n");
+	if (debugging("trace"))
+        (void) printf("Passed FT_StartUp()\n");
 
-
-        iFparams.dim = f_basic.dim;
-        front.extra1 = (POINTER)&iFparams;
-        front.extra2 = (POINTER)&af_params;
-        read_iFparams(in_name,&iFparams);
-        if (debugging("trace")) 
-	    (void) printf("Passed read_iFparams()\n");
+    iFparams.dim = f_basic.dim;
+    front.extra1 = (POINTER)&iFparams;
+    front.extra2 = (POINTER)&af_params;
+    read_iFparams(in_name,&iFparams);
+    if (debugging("trace")) 
+        (void) printf("Passed read_iFparams()\n");
 
 
 	setInitialIntfcAF(&front,&level_func_pack,in_name);
@@ -115,21 +115,25 @@ int main(int argc, char **argv)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
 	    if (f_basic.dim == 3)
-		initIsolated3dCurves(&front);
-	    initRigidBody(&front);
+            initIsolated3dCurves(&front);
+	    
+        initRigidBody(&front);
 	    rgb_init(&front, rgb_params);
-	    if (f_basic.dim == 3 && debugging("trace"))
+	    
+        if (f_basic.dim == 3 && debugging("trace"))
 	    {
-		gview_plot_interface("ginit",front.interf);
+            gview_plot_interface("ginit",front.interf);
 	    }
+
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    if (f_basic.dim < 3)
-            	FT_ClipIntfcToSubdomain(&front);
+            FT_ClipIntfcToSubdomain(&front);
 	}
 	else
 	{
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
+
 	initMovieStress(in_name,&front);
 
 	/* Time control */
@@ -151,25 +155,28 @@ int main(int argc, char **argv)
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
 	l_cartesian->initMesh();
-        if (RestartRun)
+        
+    if (RestartRun)
 	{
 	    if (ReSetTime) 
 	    {
-		/* forbidden if restart with inherited states */
-	    	readAfExtraDada(&front,restart_state_name);
+		    /* forbidden if restart with inherited states */
+	    	readAfExtraData(&front,restart_state_name);
 	    	modifyInitialization(&front);
 	    	read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-		l_cartesian->initMesh();
-            	l_cartesian->setInitialCondition();
+		    l_cartesian->initMesh();
+            l_cartesian->setInitialCondition();
 	    }
 	    else
 	    {
-            	l_cartesian->readFrontInteriorStates(restart_state_name);
-	    	readAfExtraDada(&front,restart_state_name);
+            l_cartesian->readFrontInteriorStates(restart_state_name);
+	    	readAfExtraData(&front,restart_state_name);
 	    }
 	}
-        else
-            l_cartesian->setInitialCondition();
+    else
+    {
+        l_cartesian->setInitialCondition();
+    }
 
 	if (debugging("sample_velocity"))
             l_cartesian->initSampleVelocity(in_name);
@@ -178,8 +185,8 @@ int main(int argc, char **argv)
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
 
-        if (debugging("trace"))
-            (void) printf("Passed state initialization()\n");
+    if (debugging("trace"))
+        (void) printf("Passed state initialization()\n");
 
 	/* Propagate the front */
 
@@ -220,7 +227,7 @@ static  void airfoil_driver(
             if (debugging("trace"))
                 (void) printf("Calling printFrontInteriorStates()\n");
             l_cartesian->printFrontInteriorStates(out_name);
-	    printAfExtraDada(front,out_name);
+	    printAfExtraData(front,out_name);
 
             if (debugging("trace"))
                 (void) printf("Calling FT_Draw()\n");
@@ -317,7 +324,7 @@ static  void airfoil_driver(
 	    	setStressColor(front);
 		FT_Save(front);
                 l_cartesian->printFrontInteriorStates(out_name);
-	    	printAfExtraDada(front,out_name);
+	    	printAfExtraData(front,out_name);
 	    }
 	    if (debugging("trace"))
                 (void) printf("After print output()\n");

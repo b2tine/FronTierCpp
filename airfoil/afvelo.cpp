@@ -94,8 +94,7 @@ int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
 	return num_str_pts;
 }
 
-extern void setMotionParams(
-	Front *front)
+void setMotionParams(Front* front)
 {
 	FILE *infile = fopen(InName(front),"r");
 	int i,dim = front->rect_grid->dim;

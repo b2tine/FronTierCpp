@@ -30,7 +30,7 @@ static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
-void printAfExtraDada(
+void printAfExtraData(
 	Front *front,
 	char *out_name)
 {
@@ -220,9 +220,9 @@ void printAfExtraDada(
 				p->pshift[1],p->pshift[2]);
 	}
 	fclose(outfile);
-}	/* end printAfExtraDada */
+}	/* end printAfExtraData */
 
-void readAfExtraDada(
+void readAfExtraData(
 	Front *front,
 	char *restart_name)
 {
@@ -441,7 +441,7 @@ void readAfExtraDada(
 	    p = (*n)->posn;
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
-}	/* end readAfExtraDada */
+}	/* end readAfExtraData */
 
 void printHyperSurfQuality(
 	Front *front)

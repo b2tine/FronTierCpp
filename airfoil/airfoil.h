@@ -358,8 +358,8 @@ extern void initParachuteModules(Front*);
 extern void init2DModules(Front*);
 
 // afdata.cpp
-extern void printAfExtraDada(Front*,char*);
-extern void readAfExtraDada(Front*,char*);
+extern void printAfExtraData(Front*,char*);
+extern void readAfExtraData(Front*,char*);
 extern void printHyperSurfQuality(Front*);
 extern void optimizeElasticMesh(Front*);
 extern void modifyInitialization(Front*);

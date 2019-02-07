@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	{
 	    if (ReSetTime)
 	    {
-		readAfExtraDada(&front,restart_state_name);
+		readAfExtraData(&front,restart_state_name);
                 modifyInitialization(&front);
                 read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
                 l_cartesian->initMesh();
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
             	l_cartesian->readFrontInteriorStates(restart_state_name);
 		if (iFparams.scalar_field)
                 t_cartesian->readFrontInteriorState(restart_state_name);
-	    	readAfExtraDada(&front,restart_state_name);
+	    	readAfExtraData(&front,restart_state_name);
 	    }
 	}
         else
@@ -235,7 +235,7 @@ static  void airfoil_driver(
 	    FT_Save(front);
 
             l_cartesian->printFrontInteriorStates(out_name);
-	    printAfExtraDada(front,out_name);
+	    printAfExtraData(front,out_name);
 
             FT_Draw(front);
 
@@ -324,7 +324,7 @@ static  void airfoil_driver(
 		setStressColor(front);
 		FT_Save(front);
                 l_cartesian->printFrontInteriorStates(out_name);
-	    	printAfExtraDada(front,out_name);
+	    	printAfExtraData(front,out_name);
 	    }
             if (FT_IsDrawTime(front))
 	    {
