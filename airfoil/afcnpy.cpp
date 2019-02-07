@@ -1903,7 +1903,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 #ifndef COLLISION_DETECTION_OFF
 	    if (FT_Dimension() == 3)
             {
-                // collision setup
                 setCollisionFreePoints3d(fr->interf);
                 collision_solver->assembleFromInterface(fr->interf,fr->dt);
                 collision_solver->recordOriginPosition();
@@ -1911,7 +1910,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
                 collision_solver->setFrictionConstant(0.0);
                 collision_solver->setPointMass(af_params->m_s);
                 collision_solver->setFabricThickness(1.0e-4);
-		collision_solver->setRestitutionCoef(0.0);
+		        collision_solver->setRestitutionCoef(0.0);
             }
 #endif
 
@@ -1978,7 +1977,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	if (myid == owner_id)
         {
             if (FT_Dimension() == 3)
-                // resolve collision
                 collision_solver->resolveCollision();
         }
 	setSpecialNodeForce(fr, geom_set.kl);

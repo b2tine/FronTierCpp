@@ -30,7 +30,7 @@ static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
-extern void printAfExtraDada(
+void printAfExtraDada(
 	Front *front,
 	char *out_name)
 {
@@ -222,7 +222,7 @@ extern void printAfExtraDada(
 	fclose(outfile);
 }	/* end printAfExtraDada */
 
-extern void readAfExtraDada(
+void readAfExtraDada(
 	Front *front,
 	char *restart_name)
 {
@@ -443,7 +443,7 @@ extern void readAfExtraDada(
 	}
 }	/* end readAfExtraDada */
 
-extern void printHyperSurfQuality(
+void printHyperSurfQuality(
 	Front *front)
 {
 	INTERFACE *intfc = front->interf;
@@ -554,7 +554,7 @@ extern void printHyperSurfQuality(
 	}
 }	/* end printHyperSurfQuality */
 
-extern void optimizeElasticMesh(
+void optimizeElasticMesh(
 	Front *front)
 {
 	INTERFACE *intfc = front->interf;
@@ -658,7 +658,7 @@ extern void optimizeElasticMesh(
 	    (void) printf("Leaving optimizeElasticMesh()\n");
 }	/* end optimizeElasticMesh */
 
-extern void modifyInitialization(
+void modifyInitialization(
 	Front *front)
 {
 	char *inname = InName(front);
@@ -698,7 +698,7 @@ extern void modifyInitialization(
 	    singleCanopyModification(front);
 }	/* end modifyInitialization */
 
-extern void setStressColor(
+void setStressColor(
 	Front *front)
 {
 	INTERFACE *intfc = front->interf;
@@ -744,7 +744,7 @@ extern void setStressColor(
 	}
 }	/* end setStressColor */
 
-extern void initMovieStress(
+void initMovieStress(
 	char *inname,
 	Front *front)
 {
@@ -765,6 +765,45 @@ extern void initMovieStress(
         }
         fclose(infile);
 }	/* end initMovieStress */
+
+void poisson_ratio(
+	Front *front)
+{
+        INTERFACE *intfc = front->interf;
+        SURFACE **s;
+	CURVE **c;
+	BOND *b;
+	double x_min, y_min, x_max, y_max;
+
+        intfc_surface_loop(intfc,s)
+        {
+            if (Boundary(*s)) continue;
+	    surf_pos_curve_loop(*s,c)
+	    {
+		b = (*c)->first;
+		x_min = x_max = b->start->_coords[0];
+		y_min = y_max = b->start->_coords[1];
+		for (b = (*c)->first; b != NULL; b = b->next)
+		{
+		    if (x_min > b->end->_coords[0])
+			x_min = b->end->_coords[0];
+
+		    if (x_max < b->end->_coords[0])
+			x_max = b->end->_coords[0];
+
+		    if (y_min > b->end->_coords[1])
+			y_min = b->end->_coords[1];
+
+		    if (y_max < b->end->_coords[1])
+			y_max = b->end->_coords[1];
+		}
+		printf("curve x-d boundary: x_min: %f\t x_max: %f\n",
+					x_min,x_max);
+		printf("curve y-d boundary: y_min: %f\t y_max: %f\n\n",
+					y_min,y_max);
+	    }
+	}
+}	/* poisson_ratio */
 
 static void naturalStressOfTri(
 	TRI *tri,
@@ -810,45 +849,6 @@ static void naturalStressOfTri(
 	// Use von Mises stress as a measure
 	tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
 }	/* end naturalStressOfTri */
-
-extern void poisson_ratio(
-	Front *front)
-{
-        INTERFACE *intfc = front->interf;
-        SURFACE **s;
-	CURVE **c;
-	BOND *b;
-	double x_min, y_min, x_max, y_max;
-
-        intfc_surface_loop(intfc,s)
-        {
-            if (Boundary(*s)) continue;
-	    surf_pos_curve_loop(*s,c)
-	    {
-		b = (*c)->first;
-		x_min = x_max = b->start->_coords[0];
-		y_min = y_max = b->start->_coords[1];
-		for (b = (*c)->first; b != NULL; b = b->next)
-		{
-		    if (x_min > b->end->_coords[0])
-			x_min = b->end->_coords[0];
-
-		    if (x_max < b->end->_coords[0])
-			x_max = b->end->_coords[0];
-
-		    if (y_min > b->end->_coords[1])
-			y_min = b->end->_coords[1];
-
-		    if (y_max < b->end->_coords[1])
-			y_max = b->end->_coords[1];
-		}
-		printf("curve x-d boundary: x_min: %f\t x_max: %f\n",
-					x_min,x_max);
-		printf("curve y-d boundary: y_min: %f\t y_max: %f\n\n",
-					y_min,y_max);
-	    }
-	}
-}	/* poisson_ratio */
 
 static void singleCanopyModification(
 	Front *front)
