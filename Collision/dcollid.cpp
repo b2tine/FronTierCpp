@@ -189,7 +189,6 @@ void CollisionSolver::computeAverageVelocity()
             sl = (STATE*)left_state(pt); 
             for (int j = 0; j < 3; ++j)
     		{
-                //sl->candidate_vel[j] = pt->vel[j];
                 if (dt > ROUND_EPS)
                 {
                     sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
@@ -677,8 +676,8 @@ void CollisionSolver::updateFinalVelocity()
     //
     //TODO: if no repulsions or collisions set final velocity
     //      to the original candidate velocity that was computed
-    //      by the spring solver. I believe this is a no-op if no
-    //      no repulsions/collisions... double check
+    //      by the spring solver. I believe this should be a no-op
+    //      if no repulsions/collisions... double check
 
     
     //TODO: Otherwise, advance the midstep velocity using spring model.

@@ -410,8 +410,8 @@ extern void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-            sv[i].x[j] = x_new[i][j]; //Candidate position?
-            sv[i].v[j] = v_new[i][j]; //Candidate velocity?
+            sv[i].x[j] = x_new[i][j];
+            sv[i].v[j] = v_new[i][j];
 	    }
 	    for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
