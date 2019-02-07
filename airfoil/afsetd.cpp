@@ -298,7 +298,9 @@ extern void compute_spring_accel1(
 	}
 }	/* end compute_spring_accel */
 
-extern void generic_spring_solver(
+
+//RK4
+void generic_spring_solver(
 	SPRING_VERTEX *sv,
 	int dim,
 	int size,
