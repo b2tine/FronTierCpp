@@ -189,6 +189,7 @@ void CollisionSolver::computeAverageVelocity()
             sl = (STATE*)left_state(pt); 
             for (int j = 0; j < 3; ++j)
     		{
+                //sl->candidate_vel[j] = pt->vel[j];
                 if (dt > ROUND_EPS)
                 {
                     sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
@@ -378,8 +379,7 @@ void CollisionSolver::resolveCollision()
 	    printDebugVariable();
 
 	start_clock("detectCollision");
-	//test collision for tri-tri
-	//or bond-tri or bond-bond
+	//check linear trajectories for collisions
 	detectCollision();
 	stop_clock("detectCollision");
 
@@ -391,18 +391,20 @@ void CollisionSolver::resolveCollision()
 	stop_clock("detectDomainBoundaryCollision");
 
 	start_clock("updateFinalPosition");
-	//update position using average velocity
+	//update position using final midstep velocity
 	updateFinalPosition();
 	stop_clock("updateFinalPosition");
 
     //TODO: implement this function correctly
-	//reduceSuperelast();
-	
 	start_clock("updateFinalVelocity");
-	//detectProximity();
-	//update velocity using average velocity
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
+    
+    //TODO: implement this function correctly
+	//start_clock("reduceSuperelast");
+	//reduceSuperelast();
+	//stop_clock("reduceSuperelast");
+	
 }
 
 // function to perform AABB tree building, updating structure
@@ -462,7 +464,7 @@ void CollisionSolver::aabbCollision() {
     if (!abt_collision.get()) {
         abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
+             AABB* ab = new AABB(*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
@@ -670,30 +672,47 @@ void CollisionSolver::reduceSuperelast()
 
 void CollisionSolver::updateFinalVelocity()
 {
-	//TODO:avgVel is actually the velocity at t(n+1/2)
-	//need to call spring solver to get velocity at t(n+1)
-	//for simplicity now set v(n+1) = v(n+1/2)
-	POINT* pt;
+    //detectProximity();
+	//detectCollision(); 
+    //
+    //TODO: if no repulsions or collisions set final velocity
+    //      to the original candidate velocity that was computed
+    //      by the spring solver. I believe this is a no-op if no
+    //      no repulsions/collisions... double check
+
+    
+    //TODO: Otherwise, advance the midstep velocity using spring model.
+	
+
+    //This is completely wrong.
+	
+    POINT* pt;
 	STATE* sl;
 	double dt = getTimeStepSize();
-	//#pragma omp parallel for private(pt,sl)
+
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
              it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
         {
-            for (int i = 0; i < (*it)->num_pts(); ++i){
-                pt = (*it)->Point_of_hse(i);
-                sl = (STATE*)left_state(pt);
-		if (!sl->has_collsn) 
-		    continue;
-                for (int j = 0; j < 3; ++j){
-                    pt->vel[j] = sl->avgVel[j];
-                    sl->vel[j] = sl->avgVel[j];
-		    if (std::isnan(pt->vel[j]))
-			printf("nan vel and avgVel\n");
-		}
+            pt = (*it)->Point_of_hse(i);
+            sl = (STATE*)left_state(pt);
+            if (!sl->has_collsn) 
+                continue;
+            
+            for (int j = 0; j < 3; ++j)
+            {
+                pt->vel[j] = sl->avgVel[j];
+                sl->vel[j] = sl->avgVel[j];
+                
+                if (std::isnan(pt->vel[j]))
+                    printf("nan vel and avgVel\n");
             }
         }
-	updateFinalForRG();
+        
+    }
+    
+    updateFinalForRG();
 }
 
 void CollisionSolver::updateFinalForRG()
