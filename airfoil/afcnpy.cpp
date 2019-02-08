@@ -173,37 +173,38 @@ static void compute_total_canopy_force3d(
 	    (void) printf("Leaving compute_total_canopy_force3d()\n");
 }	/* end compute_total_canopy_force3d */
 
-extern int airfoil_velo(
-        POINTER params,
-        Front *front,
-        POINT *p,
-        HYPER_SURF_ELEMENT *hse,
-        HYPER_SURF *hs,
-        double *vel)
+int airfoil_velo(
+    POINTER params,
+    Front *front,
+    POINT *p,
+    HYPER_SURF_ELEMENT *hse,
+    HYPER_SURF *hs,
+    double *vel)
 {
 	/*TMP to be written*/
-        vel[0] = vel[1] = vel[2] = 0.0;
+    vel[0] = vel[1] = vel[2] = 0.0;
 	return YES;
-}       /* end airfoil_velo */
+}
 
-extern int af_find_state_at_crossing(
-        Front *front,
-        int *icoords,
-        GRID_DIRECTION dir,
-        int comp,
-        POINTER *state,
-        HYPER_SURF **hs,
-        double *crx_coords)
+int af_find_state_at_crossing(
+    Front *front,
+    int *icoords,
+    GRID_DIRECTION dir,
+    int comp,
+    POINTER *state,
+    HYPER_SURF **hs,
+    double *crx_coords)
 {
-        boolean status;
+    boolean status;
 	HYPER_SURF_ELEMENT *hse;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        status = FT_StateStructAtGridCrossing2(front,icoords,dir,comp,state,hs,
-                                        &hse,crx_coords);
-        if (status == NO) 
-	    return NO_PDE_BOUNDARY;
-        if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE) 
+    status = FT_StateStructAtGridCrossing2(front,icoords,
+            dir,comp,state,hs,&hse,crx_coords);
+    
+    if (status == NO)
+        return NO_PDE_BOUNDARY;
+    if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE) 
 	    return NO_PDE_BOUNDARY;
 	if (wave_type(*hs) == ELASTIC_STRING)//2d string 
 	    return NO_PDE_BOUNDARY;
@@ -215,17 +216,19 @@ extern int af_find_state_at_crossing(
 	if (wave_type(*hs) == DIRICHLET_BOUNDARY)
 	{
 	    if (boundary_state_function(*hs) &&
-             strcmp(boundary_state_function_name(*hs),
+            strcmp(boundary_state_function_name(*hs),
                 "flowThroughBoundaryState") == 0)
-            {
-                return CONST_P_PDE_BOUNDARY;
-            }
-	    else
-	    {
-		return CONST_V_PDE_BOUNDARY;
-	    }
-	}
-        return NEUMANN_PDE_BOUNDARY;
+        {
+            return CONST_P_PDE_BOUNDARY;
+        }
+        else
+        {
+            return CONST_V_PDE_BOUNDARY;
+        }
+    }
+
+    return NEUMANN_PDE_BOUNDARY;
+
 }       /* af_find_state_at_crossing */
 
 static boolean is_pore(
