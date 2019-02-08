@@ -28,9 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <iFluid.h>
 #include <airfoil.h>
 
-	/*  Function Declarations */
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
+static void xgraph_front(Front*,char*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -38,11 +38,6 @@ boolean ReSetTime;
 int RestartStep;
 int constrained_propagate;
 
-/********************************************************************
- *	Level function parameters for the initial interface 	    *
- ********************************************************************/
-
-static void xgraph_front(Front*,char*);
 
 int main(int argc, char **argv)
 {
@@ -56,7 +51,7 @@ int main(int argc, char **argv)
 	f_basic.dim = 3;
 	f_basic.size_of_intfc_state = sizeof(STATE);
 
-	//Initialize Petsc before FrontStartUP
+	//Initialize Petsc before FT_StartUp()
     PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
@@ -117,7 +112,6 @@ int main(int argc, char **argv)
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
-	/* Time control */
 	FT_ReadTimeControl(in_name,&front);
 
 	/* Initialize velocity field function */
@@ -181,15 +175,14 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
-static  void airfoil_driver(
-        Front *front,
-	Incompress_Solver_Smooth_Basis *l_cartesian)
+void airfoil_driver(Front *front,
+        Incompress_Solver_Smooth_Basis *l_cartesian)
 {
-        double CFL;
-        int  dim = front->rect_grid->dim;
+    double CFL;
+    int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        CFL = Time_step_factor(front);
+    CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
 
 	if (!RestartRun || ReSetTime)
@@ -205,20 +198,20 @@ static  void airfoil_driver(
 	    setStressColor(front);
 	    FT_Save(front);
 
-            l_cartesian->printFrontInteriorStates(out_name);
+        l_cartesian->printFrontInteriorStates(out_name);
 	    printAfExtraData(front,out_name);
 
-            FT_Draw(front);
+        FT_Draw(front);
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
 	    if (!af_params->no_fluid)
 	    {
-            	l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    print_airfoil_stat(front,out_name);
 
-            FT_SetOutputCounter(front);
+        FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
 	    front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
@@ -227,23 +220,24 @@ static  void airfoil_driver(
 	    setSpecialNodeForce(front,af_params->kl);
 	    FT_SetOutputCounter(front);
 	}
-	FT_TimeControlFilter(front);
+
+    FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
-	// For restart debugging 
+	
+    // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    FT_Save(front);
-            l_cartesian->printFrontInteriorStates(out_name);
+        l_cartesian->printFrontInteriorStates(out_name);
 	    printAfExtraData(front,out_name);
 	    return;
 	}
-	
-        for (;;)
-        {
-	    /* Propagating interface for time step dt */
-
-            if(debugging("CLOCK"))
-                reset_clock();
+    
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
+        if(debugging("CLOCK"))
+            reset_clock();
 
 	    start_clock("timeStep");
 	    if (!af_params->no_fluid)
@@ -251,9 +245,11 @@ static  void airfoil_driver(
 	    	coating_mono_hyper_surf(front);
 	    	l_cartesian->applicationSetComponent();
 	    }
+
 	    break_strings(front); // test
 	    FrontPreAdvance(front);
-            FT_Propagate(front);
+        FT_Propagate(front);
+
 	    if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
@@ -262,15 +258,18 @@ static  void airfoil_driver(
 
 	    if (!af_params->no_fluid)
 	    {
-            	l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    else
-		l_cartesian->max_dt = HUGE;
-	    if (debugging("trace"))
-            {
-                (void) printf("After solve()\n");
-                (void) print_storage("at end of time step","trace");
-            }
+        {
+            l_cartesian->max_dt = HUGE;
+        }
+
+        if (debugging("trace"))
+        {
+            (void) printf("After solve()\n");
+            (void) print_storage("at end of time step","trace");
+        }
 
 	    FT_AddTimeStepToCounter(front);
 
@@ -280,35 +279,41 @@ static  void airfoil_driver(
 	    //the interface such as curvature, and etc.
 
 	    FT_SetTimeStep(front);
-            if (debugging("step_size"))
-                (void) printf("Time step from FrontHypTimeStep(): %f\n",
-					front->dt);
-            front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-            if (debugging("step_size"))
-                (void) printf("Time step from l_cartesian->max_dt(): %f\n",
-					front->dt);
+        if (debugging("step_size"))
+        {
+            (void) printf("Time step from FrontHypTimeStep(): %f\n",
+                    front->dt);
+        }
+            
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+        if (debugging("step_size"))
+        {
+            (void) printf("Time step from l_cartesian->max_dt(): %f\n",
+                    front->dt);
+        }
 
 	    /* Output section */
 
 	    print_airfoil_stat(front,out_name);
 
-            if (FT_IsSaveTime(front))
+        if (FT_IsSaveTime(front))
 	    {
-		setStressColor(front);
-		FT_Save(front);
-                l_cartesian->printFrontInteriorStates(out_name);
+            setStressColor(front);
+            FT_Save(front);
+            l_cartesian->printFrontInteriorStates(out_name);
 	    	printAfExtraData(front,out_name);
 	    }
-            if (FT_IsDrawTime(front))
+        
+        if (FT_IsDrawTime(front))
 	    {
-                FT_Draw(front);
+            FT_Draw(front);
 	    }
 
-            if (FT_TimeLimitReached(front))
+        if (FT_TimeLimitReached(front))
 	    {
-		FT_PrintTimeStamp(front);
+            FT_PrintTimeStamp(front);
 	    	stop_clock("timeStep");
-                break;
+            break;
 	    }
 
 	    /* Time and step control section */
@@ -317,31 +322,32 @@ static  void airfoil_driver(
 	    print_storage("after time loop","trace");
 
 	    FT_PrintTimeStamp(front);
-            fflush(stdout);
+        fflush(stdout);
 	    stop_clock("timeStep");
-        }
-        FT_FreeMainIntfc(front);
+    }
+    
+    FT_FreeMainIntfc(front);
+
 }       /* end airfoil_driver */
 
-static void xgraph_front(
-	Front *front,
-	char *outname)
+
+void zero_state(
+    COMPONENT comp,
+    double *coords,
+    IF_FIELD *field,
+    int index, int dim,
+    IF_PARAMS *iFparams)
+{
+    for (int i = 0; i < dim; ++i)
+        field->vel[i][index] = 0.0;
+    field->pres[index] = 0.0;
+}
+
+
+void xgraph_front(Front *front,	char *outname)
 {
 	char fname[100];
 	sprintf(fname,"%s/intfc-%s",outname,right_flush(front->step,4));
 	xgraph_2d_intfc(fname,front->interf);
-}	/* end xgraph_front */
+}
 
-static void zero_state(
-        COMPONENT comp,
-        double *coords,
-	IF_FIELD *field,
-	int index,
-        int dim,
-        IF_PARAMS *iFparams)
-{
-        int i;
-        for (i = 0; i < dim; ++i)
-            field->vel[i][index] = 0.0;
-        field->pres[index] = 0.0;
-}       /* end zero_state */
