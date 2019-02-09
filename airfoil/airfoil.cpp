@@ -142,6 +142,7 @@ int main(int argc, char **argv)
 	/* Initialize velocity field function */
 
 	setMotionParams(&front);
+
 	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
 
@@ -174,8 +175,11 @@ int main(int argc, char **argv)
 
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
-        
+    
+    //static_mesh(front.interf) = YES;
+
     l_cartesian->initMovieVariables();
+    initMovieStress(in_name,&front);
 
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
@@ -207,7 +211,6 @@ void airfoil_driver(Front *front,
 	{
 	    FT_ResetTime(front);
 
-	    // Always output the initial interface.
 	    if (dim == 2)
 	    {
 	    	xgraph_front(front,out_name);
@@ -256,9 +259,9 @@ void airfoil_driver(Front *front,
     FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
 
-    /* Propagating interface for time step dt */
     for (;;)
     {
+        /* Propagating interface for time step dt */
 	    if (debugging("CLOCK"))
             reset_clock();
 
