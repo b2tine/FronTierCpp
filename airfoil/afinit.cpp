@@ -76,6 +76,7 @@ static void setInitialIntfcAF3d(
     level_func_pack->pos_component = LIQUID_COMP2;	
 	level_func_pack->func_params = NULL;
     level_func_pack->func = NULL;
+
 	af_params->is_parachute_system = NO;
 	af_params->cut_vent = NO;
 	af_params->num_opt_round = 20;

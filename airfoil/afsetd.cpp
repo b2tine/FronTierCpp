@@ -287,6 +287,7 @@ extern void compute_spring_accel1(
 	    }
 	}
 
+    //TODO: This has not been implemented.
     //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)

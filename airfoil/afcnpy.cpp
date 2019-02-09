@@ -1799,6 +1799,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    first_break_strings = NO;
 	    first = YES;
 	}
+
 	if (first)
         {
             set_elastic_params(&geom_set,fr_dt);
@@ -1815,6 +1816,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             n_sub = af_params->n_sub;
             dt = fr_dt/n_sub;
         }
+
 	if (first)
 	{
             owner[0] = 0;

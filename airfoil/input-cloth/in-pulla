@@ -53,6 +53,7 @@ Enter interior sub step number: 10
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+Enter yes to use GPU solver: no
 Enter fabric spring constant: 5000
 Enter fabric friction constant: 0.5
 Enter fabric point mass: 0.1
@@ -62,7 +63,7 @@ Enter string point mass: 0.1
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0.1
+Enter velocity: 0 0 1
 Enter pressure: 10
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -74,17 +75,15 @@ Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
-Type y to make vector velocity field movie: y
-Type y to plot bullet in gd movie: y
+Type y to make vector velocity field movie: no
+Type y to plot surface stress: no
 
 ************Debugging options*****************
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
 Enter the debugging string: trace
-Enter the debugging string: CLOCK
-Enter the debugging string: step_size
+Enter the debugging string: tCLOCK
+Enter the debugging string: tstep_size
 Enter the debugging string: tsample_velocity
 
-Enter yes to use GPU solver: yes
 
-Type y to plot surface stress: y

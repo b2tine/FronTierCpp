@@ -666,6 +666,7 @@ static void PointToLine(POINT* pts[],double &a)
         a = Dot3d(x13,x12)/Dot3d(x12,x12);
 }
 
+//TODO: Thoroughly test this function
 static bool EdgeToEdge(POINT** pts, double h, double root)
 {
 /*	x1	x3
@@ -682,15 +683,18 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	double v1[3],v2[3];
 	double nor[3], nor_mag, dist;
 
+    //These are pointing in the wrong direction ...
 	Pts2Vec(pts[1],pts[0],x21);    
 	Pts2Vec(pts[3],pts[2],x43);
 	Pts2Vec(pts[2],pts[0],x31);
 	Cross3d(x21,x43,tmp);
 	if (Mag3d(tmp) < ROUND_EPS)
 	{
+        //TODO: This doesn't seem right ...
 	    return false; //ignore the case where two edges are parallel
-	    //degenerate cases to parallel line segments
-	    if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
+	    
+        //degenerate cases to parallel line segments
+        if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
 	    	POINT* plist[3];
 		double tmp_min_dist = HUGE;
 		for (int i = 0; i < 4; ++i){
@@ -724,11 +728,13 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 			else if (i == 3){a = tmp_a; b = 1.0;}
 		    }
 		}		
+
 		if (dist < ROUND_EPS){
 		    memcpy((void*)nor,
 			   (Mag3d(x21) < ROUND_EPS) ? (void*)x43 : (void*)x21,
 			    3*sizeof(double));
 		}
+
 	    }
 	    else{
 	   	//both x21 and x43 degenerate to points
@@ -794,9 +800,10 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
             clean_up(ERROR);
 	}
 	else
-	for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < 3; ++i)
             nor[i] /= nor_mag;
-	EdgeToEdgeImpulse(pts, nor, a, b, dist, root);
+    
+    EdgeToEdgeImpulse(pts, nor, a, b, dist, root);
 	return true;
 }
 
