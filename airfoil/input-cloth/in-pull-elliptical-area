@@ -21,7 +21,7 @@ Enter velocity function: fa
 Enter initial shape of fixed area: ellipse
 Enter center of ellipse: 0.5 0.5
 Enter radii of ellipse: 0.3 0.2
-Enter area velocity: 0 0 0.1
+Enter area velocity: 0 0 2
 Enter interior propagator: p
 Enter interior sub step number: 10
 
@@ -47,18 +47,16 @@ Enter the box upper boundary: 0.9 0.9 0.9
 Entering yes to turn off fluid solver: y
 Enter density and viscosity of the fluid: 1.0 0.00628
 Enter gravity: 0.0 0.0 0.0
-Enter payload: 0.0
 Enter interior sub step number: 10
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+Entering type of spring model: 1
 Enter yes to use GPU solver: no
-Enter fabric spring constant: 5000
-Enter fabric friction constant: 0.5
-Enter fabric point mass: 0.1
-Enter string spring constant: 5000
-Enter string friction constant: 0.5
-Enter string point mass: 0.1
+
+Enter fabric spring constant: 1000
+Enter fabric friction constant: 0.1
+Enter fabric point mass: 0.2
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE

@@ -246,7 +246,7 @@ void setMotionParams(Front* front)
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
             {
-		// default: no porosity
+		        // default: no porosity
                 iFparams->with_porosity = af_params->with_porosity = NO;
                 if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
 		{
