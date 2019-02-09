@@ -202,12 +202,10 @@ void setMotionParams(Front* front)
 	    	case 'e':
 	    	case 'E':
 	    	    if (string[1] == '2')
-	    	    	front->interior_propagate 
-				= second_order_elastic_surf_propagate;
+	    	    	front->interior_propagate = second_order_elastic_surf_propagate;
 	    	    else
 		    {
-	    	    	front->interior_propagate 
-				= fourth_order_elastic_surf_propagate;
+                front->interior_propagate = fourth_order_elastic_surf_propagate;
 				//= fourth_order_elastic_set_propagate;
 #if defined(__GPU__)
             		if (CursorAfterStringOpt(infile,
@@ -223,8 +221,7 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'p':
 	    	case 'P':
-	    	    front->interior_propagate 
-				= fourth_order_elastic_set_propagate;
+	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
