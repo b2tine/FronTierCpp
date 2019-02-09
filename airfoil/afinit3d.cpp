@@ -1852,7 +1852,10 @@ static void initCircularPlaneEdge(
 	fscanf(infile,"%lf",&circle_constr_params.R);
 	(void) printf("%f\n",circle_constr_params.R);
 
-	CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+    if (is_parachute_system == YES)
+    {
+	
+    CursorAfterString(infile,"Enter yes to attach strings to canopy:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
         if (string[0] == 'y' || string[0] == 'Y')
@@ -1896,7 +1899,7 @@ static void initCircularPlaneEdge(
             {
                 string_params[i].cen[0] = cen[0];
                 string_params[i].cen[1] = cen[1];
-		string_params[i].P[2] = plane_params->P[2];
+		        string_params[i].P[2] = plane_params->P[2];
                 CursorAfterString(infile,"Enter number of chords:");
                 fscanf(infile,"%d",&string_params[i].num_strings);
                 (void) printf("%d\n",string_params[i].num_strings);
@@ -1920,19 +1923,22 @@ static void initCircularPlaneEdge(
                 string_params[i].theta *= PI/180.0;
                 string_params[i].phi *= PI/180.0;
             }
-	}
-	else if (CursorAfterStringOpt(infile,
+	    
+        }
+        else if (CursorAfterStringOpt(infile,
 		 "Enter yes to change canopy boundary:"))
-	{
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-	    {
-                level_func_pack->attach_string = YES;
-                level_func_pack->string_func = change_mono_boundary;
-	    	level_func_pack->string_params = NULL;
-	    }
-	}
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+            {
+                    level_func_pack->attach_string = YES;
+                    level_func_pack->string_func = change_mono_boundary;
+                level_func_pack->string_params = NULL;
+            }
+        }
+    }
+
 }	/* end init_circular_edge */
 
 static void initCrossPlaneEdge(
