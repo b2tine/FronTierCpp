@@ -231,6 +231,7 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
+
 	    if (!af_params->no_fluid)
 	    {
             if (debugging("trace")) printf("Calling ifluid solve()\n");
@@ -254,10 +255,10 @@ void airfoil_driver(Front *front,
 	
     FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
-	
+
+    /* Propagating interface for time step dt */
     for (;;)
     {
-	    /* Propagating interface for time step dt */
 	    if (debugging("CLOCK"))
             reset_clock();
 
@@ -275,15 +276,15 @@ void airfoil_driver(Front *front,
 	    FrontPreAdvance(front);
         FT_Propagate(front);
 	    
+        if (debugging("trace"))
+            printf("Passed FT_Propagate()\n");
+
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
 	    	l_cartesian->applicationSetStates();
 	    }
         
-        if (debugging("trace"))
-            printf("Passed FT_Propagate()\n");
-
 	    if (!af_params->no_fluid)
 	    {
             if (debugging("trace")) printf("Calling ifluid solve()\n");
