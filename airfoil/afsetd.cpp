@@ -1733,3 +1733,69 @@ static void set_surf_impulse(
 	}
 }	/* end set_surf_impulse */
 
+#include <algorithm>
+
+static void findPosnOnVector(std::vector<double*>& v, double x[], int index[])
+{
+    int idx = 0; 
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+	 if (v[i][0] = x[0] && v[i][1] == x[1] && v[i][2] == x[2])
+	     index[idx] = i; 
+    }
+}
+
+static void computeElasticForce(SPRING_VERTEX* sv, double *f)
+{
+    int nt = sv->num_nb;
+
+    for (int i = 0; i < nt; i++)
+    {
+	 int indexj[2]; 
+	 double uij[3];
+	 int j;  
+
+	 findPosnOnVector(sv->nbTriPoint, sv->x_nb[i], indexj); 
+         for (j = 0; j < 3; j++)
+	      uij[j] = sv->nbTriPoint[indexj[0]][j] - sv->x[j]; 
+
+	 double lij = Mag3d(uij); 
+
+	 for (j = 0; j < 3; j++)
+	      uij[j] /= lij; 
+
+	 double dlij = lij - sv->len0[i];
+
+	 // tensile force
+	 for (j = 0; j < 3; j++)
+	      f[j] += (sv->nbTenStiff[indexj[0]] + sv->nbTenStiff[indexj[1]]) * dlij
+			* uij[j];  
+	 int indexk1 = indexj[0] % 2 == 0 ? indexj[0] + 1 : indexj[0] - 1; 
+	 int indexk2 = indexj[1] % 2 == 0 ? indexj[1] + 1 : indexj[1] - 1;
+	 
+	 double uik1[3], ujk1[3], uik2[3], ujk2[3]; 
+
+	 for (j = 0; j < 3; j++)
+	 {
+	      uik1[j] = sv->nbTriPoint[indexk1][j] - sv->x[j];
+	      ujk1[j] = sv->nbTriPoint[indexk1][j] - sv->nbTriPoint[indexj[0]][j];
+	      uik2[j] = sv->nbTriPoint[indexk2][j] - sv->x[j];
+              ujk2[j] = sv->nbTriPoint[indexk2][j] - sv->nbTriPoint[indexj[0]][j];
+         }
+	 
+	 double lik1 = Mag3d(uik1), lik2 = Mag3d(uik2);
+	 double ljk1 = Mag3d(ujk1), ljk2 = Mag3d(ujk2);
+	 double dlik1 = lik1 - sv->oriLength[indexk1];
+	 double dlik2 = lik2 - sv->oriLength[indexk2]; 
+	 double dljk1 = ljk1 - sv->oriLength[indexj[0]]; 
+	 double dljk2 = ljk2 - sv->oriLength[indexj[1]];
+
+	 // angular force
+         for (j = 0; j < 3; j++)
+	      f[j] += (sv->nbAngStiff[indexk1] * dlik1 + sv->nbAngStiff[indexk2] 
+		* dlik2 + sv->nbAngStiff[indexj[0]] * dljk1 
+		+ sv->nbAngStiff[indexj[1]] * dljk2) * uij[j]; 
+    } 
+}
+
