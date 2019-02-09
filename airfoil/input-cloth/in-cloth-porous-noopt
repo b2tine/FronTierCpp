@@ -21,8 +21,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 3.0
 Max step: 1000
-Print interval: 0.005
-Movie frame interval: 0.025
+Print interval: 0.01
+Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
