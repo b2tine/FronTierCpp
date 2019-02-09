@@ -54,7 +54,7 @@ static void reorder_string_curves(NODE*);
 static void assembleParachuteSet2d(INTERFACE*,ELASTIC_SET*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
-static void computeElasticForce(SPRING_VERTEX*, double*);
+//static void computeElasticForce(SPRING_VERTEX*, double*);
 
 #define 	MAX_NUM_RING1		30
 
@@ -1733,6 +1733,7 @@ static void set_surf_impulse(
 	}
 }	/* end set_surf_impulse */
 
+/*
 #include <algorithm>
 
 static void findPosnOnVector(std::vector<double*>& v, double x[], int index[])
@@ -1798,4 +1799,4 @@ static void computeElasticForce(SPRING_VERTEX* sv, double *f)
 		+ sv->nbAngStiff[indexj[1]] * dljk2) * uij[j]; 
     } 
 }
-
+*/
