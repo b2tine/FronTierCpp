@@ -54,6 +54,8 @@ static void reorder_string_curves(NODE*);
 static void assembleParachuteSet2d(INTERFACE*,ELASTIC_SET*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
+static void computeElasticForce(SPRING_VERTEX*, double*);
+
 #define 	MAX_NUM_RING1		30
 
 static void count_node_neighbors(
@@ -274,6 +276,7 @@ extern void compute_spring_accel1(
 #endif
 	    }
 	    len = sqrt(len);
+
 	    for (k = 0; k < dim; ++k)
 	    {
 		vec[k] /= len;
@@ -283,6 +286,9 @@ extern void compute_spring_accel1(
 #endif
 	    }
 	}
+
+    //computeElasticForce(sv,f);
+
 	for (k = 0; k < dim; ++k)
 	    sv->f[k] = f[k]*sv->m;
 #ifndef DAMPING_FORCE
