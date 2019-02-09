@@ -16,13 +16,12 @@ Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
-Entering yes to turn off fluid solver: no
 Enter velocity function: vertical_velo
 Enter center velocity: 0.3
 Enter stop motion time: 3.0
 Enter center of vertical motion: 0.5 0.5
-Enter interior propagator: e
-Enter interior sub step number: 10
+Enter interior propagator: p
+Enter interior sub step number: 20
 
 Projection type can be
         SIMPLE
@@ -74,20 +73,21 @@ Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
-Type y to make vector velocity field movie: y
+Type y to make vector velocity field movie: n
 
 ************Debugging options*****************
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
+Enter the debugging string: opt_elastic_mesh
+Enter the debugging string: consistency
 Enter the debugging string: tcoat_comp
 Enter the debugging string: tcanopy_struct
-Enter the debugging string: topt_elastic_mesh
 Enter the debugging string: tstep_size
 Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
-Enter the debugging string: make_grid_intfc
+Enter the debugging string: tmake_grid_intfc
 
 Enter yes to use GPU solver: no
 
-Type y to plot surface stress: y
+Type y to plot surface stress: n

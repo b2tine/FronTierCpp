@@ -162,6 +162,7 @@ int main(int argc, char **argv)
 	}
 
 	static_mesh(front.interf) = YES;
+
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
