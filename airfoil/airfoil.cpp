@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
     
-    //static_mesh(front.interf) = YES;
+    static_mesh(front.interf) = YES;
 
     l_cartesian->initMovieVariables();
     initMovieStress(in_name,&front);
