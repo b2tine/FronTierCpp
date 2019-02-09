@@ -233,7 +233,10 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
+    {
 	    front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
+
 
 	if (af_params->no_fluid == NO)
 	{
@@ -344,10 +347,10 @@ void setMotionParams(Front* front)
             }
 	}
 
-	if (dim == 3)
+	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
 	    af_params->m_g = af_params->m_s;
-            if (af_params->attach_gores == YES)
+        if (af_params->attach_gores == YES)
 	    {
 		CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
@@ -368,20 +371,23 @@ void setMotionParams(Front* front)
 		    (void) printf("%f\n",af_params->m_g);
 		}
 	    }
-	    af_params->unequal_coeff = 1.0;
+	    
+        af_params->unequal_coeff = 1.0;
 	    if (CursorAfterStringOpt(infile,"Enter unequal coefficient:"))
 	    {
 		fscanf(infile,"%lf",&af_params->unequal_coeff);
 		(void) printf("%f\n",af_params->unequal_coeff);
 	    }
-	    af_params->unequal_strings_num = 0;
+	    
+        af_params->unequal_strings_num = 0;
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
 		fscanf(infile,"%d",&af_params->unequal_strings_num);
 		(void) printf("%d\n",af_params->unequal_strings_num);
 	    }
-	    if (af_params->unequal_strings_num > 0)
+	    
+        if (af_params->unequal_strings_num > 0)
 	    {
 		FT_VectorMemoryAlloc(
 				(POINTER*)&af_params->unequal_strings_gindex,
