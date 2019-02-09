@@ -68,7 +68,7 @@ Enter surface tension: 0.0
 Enter area density of canopy: 5.0
 Enter factor of smoothing radius: 1
 
-Enter yes to use porosity: no
+Enter yes to use porosity: yes
 Enter viscous parameter: 30.0
 Enter inertial parameter: 0.0
 
@@ -97,7 +97,7 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 
 Enter the debugging string: trace
-Enter the debugging string: tno_optimize
+Enter the debugging string: no_optimize
 
 Enter the debugging string: tsmooth_canopy_vel
 Enter the debugging string: topt_elastic_mesh
