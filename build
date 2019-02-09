@@ -1,12 +1,5 @@
 #!/bin/bash
 
-#if [ -f /etc/profile.d/modules.sh ]; then
-#    source /etc/profile.d/modules.sh
-#    module load FronTier
-#else
-#    source ~/.bashrc
-#fi
-
 source ~/.bashrc
 
 
@@ -16,9 +9,13 @@ for arg in $@ ; do
         OPT_FLAGS="-Og"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
+    elif [[ "$arg" == "-c" ]]; then
+        CLEAN=1
+    elif [[ "$arg" == "-CD_OFF" ]]; then
+        DISABLED="-DCOLLISION_DETECTION_OFF"
+        echo "Collision detection disabled."
     fi
 done
-
 
 
 export CC=mpicc
@@ -26,6 +23,8 @@ export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
 
 export CXX=mpicxx
 export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
+
+export CPPFLAGS=$DISABLED
 
 
 function config_intruder {
@@ -82,6 +81,10 @@ autoreconf -vif
 echo "configure options: ${CONF}"
 
 ./configure ${CONF}
+
+if [[ -n "$CLEAN" ]]; then
+    make clean
+fi
 
 if [[ -z "$NOMAKE" ]]; then
     make

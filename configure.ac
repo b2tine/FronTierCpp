@@ -211,7 +211,7 @@ AC_ARG_WITH([boost-lib],[AS_HELP_STRING([--with-boost-lib=path],
 boost_libflags=
 
 with_boost=no
-AS_IF([test "x${boost_dir}" != "xno"],
+AS_IF([test "x${boost_dir}" != xno],
       [with_boost=yes
        boostinc="-I${boost_dir}/include"
        boostlib="-L${boost_dir}/lib ${boost_libflags}"],
@@ -244,7 +244,7 @@ AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
 cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
 
 with_cgal=no
-AS_IF([test "x${cgal_dir}" != "xno"],
+AS_IF([test "x${cgal_dir}" != xno],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
        cgallib="-L${cgal_dir}/lib ${cgal_libflags}"],
@@ -314,7 +314,7 @@ AC_ARG_WITH([cvode-lib],[AS_HELP_STRING([--with-cvode-lib=path],
 cvode_libflags="-lsundials_cvode -lsundials_nvecserial"
 
 with_cvode=no
-AS_IF([test "x${cvode_dir}" != "xno"],
+AS_IF([test "x${cvode_dir}" != xno],
       [with_cvode=yes
        cvodeinc="-I${cvode_dir}/include"
        cvodelib="-L${cvode_dir}/lib ${cvode_libflags}"],
@@ -347,7 +347,7 @@ AC_ARG_WITH([nlopt-lib],[AS_HELP_STRING([--with-nlopt-lib=path],
 nlopt_libflags="-lnlopt"
 
 with_nlopt=no
-AS_IF([test "x${nlopt_dir}" != "xno"],
+AS_IF([test "x${nlopt_dir}" != xno],
       [with_nlopt=yes
        nloptinc="-I${nlopt_dir}/include"
        nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags}"],
@@ -380,8 +380,18 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/tests/Makefile
                                          parachute/Makefile])])])
 
-#check if folding should be built
 
+#This method will generally require recompiling the entire project.
+#   Disable collision with the build script option instead.
+#AC_ARG_ENABLE([collision-detection],
+#              AS_HELP_STRING([--disable-collision-detection],
+#                             [disable collision detection for cloth simulation (in development)]))
+#
+#AS_IF([test "x$enable_collision_detection" = xno],
+#      [AC_DEFINE([COLLISION_DETECTION_OFF],[1],[do not link collision library]))
+
+
+#check if folding should be built
 AM_CONDITIONAL([FOLDING_OPT],
                [test $with_cgal = yes && test $with_arma = yes \
                 && test $with_cvode = yes && test $with_nlopt = yes])
