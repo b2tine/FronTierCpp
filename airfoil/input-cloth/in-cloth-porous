@@ -68,7 +68,7 @@ Enter surface tension: 0.0
 Enter area density of canopy: 5.0
 Enter factor of smoothing radius: 1
 
-Enter yes to use porosity: no
+Enter yes to use porosity: yes
 Enter viscous parameter: 30.0
 Enter inertial parameter: 0.0
 

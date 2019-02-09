@@ -97,7 +97,7 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 
 Enter the debugging string: trace
-Enter the debugging string: tno_optimize
+Enter the debugging string: no_optimize
 
 Enter the debugging string: tsmooth_canopy_vel
 Enter the debugging string: topt_elastic_mesh
