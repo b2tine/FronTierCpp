@@ -76,12 +76,14 @@ static void setInitialIntfcAF3d(
     level_func_pack->pos_component = LIQUID_COMP2;	
 	level_func_pack->func_params = NULL;
     level_func_pack->func = NULL;
+	level_func_pack->attach_string = NO;		// default
 
 	af_params->is_parachute_system = NO;
 	af_params->cut_vent = NO;
 	af_params->num_opt_round = 20;
     af_params->spring_model = MODEL1;	// default
 	af_params->attach_gores = NO;		// default
+	//af_params->attach_string = NO;		// default
 	af_params->use_gpu = NO;		    // default
 	af_params->gore_len_fac = 1.0;		// default
 	

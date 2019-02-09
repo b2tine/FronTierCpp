@@ -122,14 +122,15 @@ void setMotionParams(Front* front)
 	}
 #endif
 
-        if (CursorAfterStringOpt(infile,
-            "Entering yes to turn off fluid solver: "))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->no_fluid = YES;
-        }
+    if (CursorAfterStringOpt(infile,
+                "Entering yes to turn off fluid solver: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->no_fluid = YES;
+    }
+
 	if (af_params->no_fluid == YES)
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
@@ -149,7 +150,7 @@ void setMotionParams(Front* front)
 	if (af_params->no_fluid == YES || 
 	    af_params->is_parachute_system == NO)
 	{
-            CursorAfterString(infile,"Enter interior propagator:");
+        CursorAfterString(infile,"Enter interior propagator:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (dim == 2)
@@ -552,7 +553,7 @@ static void initVelocityFunc(
 {
 	static VELO_FUNC_PACK velo_func_pack;
 	static VORTEX_PARAMS *vortex_params; /* velocity function parameters */
-        static BIPOLAR_PARAMS *dv_params;
+    static BIPOLAR_PARAMS *dv_params;
 	static VERTICAL_PARAMS *vert_params;
 	static RANDOMV_PARAMS *randv_params;
 	static TOROIDAL_PARAMS *toro_params;
@@ -579,29 +580,31 @@ static void initVelocityFunc(
 	    (void) printf("\tFixed area velocity (FA)\n");
 	    (void) printf("\tFixed point velocity (FP)\n");
 	    (void) printf("\tFree fall velocity (FF)\n");
-            CursorAfterString(infile,"Enter velocity function: ");
+   
+        CursorAfterString(infile,"Enter velocity function: ");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
-	    switch (string[0])
-            {
+	    
+        switch (string[0])
+        {
             case 'r':
             case 'R':
 		if (string[1] == 'o' || string[1] == 'O')
 		{
-	    	    FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
-				sizeof(VORTEX_PARAMS));
-            	    front->max_time = 0.4;
-            	    front->movie_frame_interval = 0.02;
-            	    vortex_params->dim = 2;
-            	    vortex_params->type[0] = 'M';
-            	    vortex_params->cos_time = 0;
-            	    vortex_params->cen[0] = 0.5;
-            	    vortex_params->cen[1] = 0.25;
-            	    vortex_params->rad = 0.15;
-            	    vortex_params->time = 0.5*front->max_time;
-            	    velo_func_pack.func_params = (POINTER)vortex_params;
-            	    velo_func_pack.func = vortex_vel;
-		}
+            FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
+            sizeof(VORTEX_PARAMS));
+                front->max_time = 0.4;
+                front->movie_frame_interval = 0.02;
+                vortex_params->dim = 2;
+                vortex_params->type[0] = 'M';
+                vortex_params->cos_time = 0;
+                vortex_params->cen[0] = 0.5;
+                vortex_params->cen[1] = 0.25;
+                vortex_params->rad = 0.15;
+                vortex_params->time = 0.5*front->max_time;
+                velo_func_pack.func_params = (POINTER)vortex_params;
+                velo_func_pack.func = vortex_vel;
+    }
 		else if (string[1] == 'a' || string[1] == 'A')
 		{
 	    	    FT_ScalarMemoryAlloc((POINTER*)&randv_params,
@@ -649,8 +652,7 @@ static void initVelocityFunc(
         	fscanf(infile,"%lf",&vert_params->stop_time);
         	(void) printf("%f\n",vert_params->stop_time);
 		CursorAfterString(infile,"Enter center of vertical motion:");
-        	fscanf(infile,"%lf %lf",&vert_params->cen[0],
-				&vert_params->cen[1]);
+        	fscanf(infile,"%lf %lf",&vert_params->cen[0],&vert_params->cen[1]);
             	velo_func_pack.func_params = (POINTER)vert_params;
             	velo_func_pack.func = vertical_velo;
             	break;
@@ -726,24 +728,30 @@ static void initVelocityFunc(
             case 'F':
 	    	FT_ScalarMemoryAlloc((POINTER*)&fixarea_params,
 				sizeof(FIXAREA_PARAMS));
-		if (string[1] == 'a' || string[1] == 'A')
-		    init_fixarea_params(front,infile,fixarea_params);
-		else if (string[1] == 'p' || string[1] == 'P')
-		    init_fixpoint_params(front,infile,fixarea_params);
-		else if (string[1] == 'f' || string[1] == 'F')
-		{
-            	    velo_func_pack.func_params = NULL;
-            	    velo_func_pack.func = NULL;
-		}
-            	velo_func_pack.func_params = (POINTER)fixarea_params;
-            	velo_func_pack.func = marker_velo;
-            	break;
-	    default:
-		(void) printf("Unknown velocity function, use zero_velo()\n");
-            	velo_func_pack.func_params = NULL;
-            	velo_func_pack.func = zero_velo;
-		break;
-            }	
+            if (string[1] == 'a' || string[1] == 'A')
+            {
+                init_fixarea_params(front,infile,fixarea_params);
+            }
+            else if (string[1] == 'p' || string[1] == 'P')
+            {
+                init_fixpoint_params(front,infile,fixarea_params);
+            }
+            else if (string[1] == 'f' || string[1] == 'F')
+            {
+                velo_func_pack.func_params = NULL;
+                velo_func_pack.func = NULL;
+            }
+            
+            velo_func_pack.func_params = (POINTER)fixarea_params;
+            velo_func_pack.func = marker_velo;
+            break;
+            
+            default:
+            (void) printf("Unknown velocity function, use zero_velo()\n");
+            velo_func_pack.func_params = NULL;
+            velo_func_pack.func = zero_velo;
+            break;
+        }	
 	}
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
@@ -798,14 +806,15 @@ static int vertical_velo(
         double *vel)
 {
 	VERTICAL_PARAMS *vert_params = (VERTICAL_PARAMS*)params;
-        double *coords = Coords(p);
-	double dist,v_vert;
+    double* cen = vert_params->cen;
 	double v0 = vert_params->v0;
-	double stop_time = vert_params->stop_time;
 
-	dist = sqrt(sqr(coords[0] - 0.5) + sqr(coords[1] - 0.5));
-	v_vert = (0.15 - dist)/0.15;
+    double *coords = Coords(p);
+	double dist = sqrt(sqr(coords[0] - cen[0]) + sqr(coords[1] - cen[1]));
+	double v_vert = (0.15 - dist)/0.15;
+
 	vel[0] = vel[1] = 0.0;
+	double stop_time = vert_params->stop_time;
 	if (front->time < stop_time)
 	    vel[2] = v_vert*v0;
 	else

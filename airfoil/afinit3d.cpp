@@ -99,11 +99,13 @@ extern void initEllipticSurf(
 	constr_params.N[2] = 1.0;
 	constr_params.P[0] = cen[0];
 	constr_params.P[1] = cen[1];
-	CursorAfterString(infile,"Enter the height of canopy boundary:");
+	
+    CursorAfterString(infile,"Enter the height of canopy boundary:");
 	fscanf(infile,"%lf",&constr_params.P[2]);
 	(void) printf("%f\n",constr_params.P[2]);
 	constr_params.radius = 0.0;
-	CursorAfterString(infile,"Enter yes to cut a vent on canopy:");
+	
+    CursorAfterString(infile,"Enter yes to cut a vent on canopy:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	if (string[0] == 'y' || string[0] == 'Y')
@@ -115,18 +117,21 @@ extern void initEllipticSurf(
 	    fscanf(infile,"%lf",&constr_params.radius);
 	    (void) printf("%f\n",constr_params.radius);
 	}
-	CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
-	if (string[0] == 'y' || string[0] == 'Y')
-	{
-	    level_func_pack->attach_string = YES;
 
-	    level_func_pack->string_params = (POINTER)string_params;
-	    af_params->is_parachute_system = YES;
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
+    {
+	    CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+	
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            level_func_pack->attach_string = YES;
+            level_func_pack->string_params = (POINTER)string_params;
 
-	    if (CursorAfterStringOpt(infile,
-                        "Enter yes to attach gores on canopy:"))
+            if (CursorAfterStringOpt(infile,
+                            "Enter yes to attach gores on canopy:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
@@ -136,55 +141,55 @@ extern void initEllipticSurf(
                                 install_strings_and_rotate_w_gores;
                     af_params->attach_gores = YES;
                     if(CursorAfterStringOpt(infile,"Enter gore length factor:"))
-		    {
-                    	fscanf(infile,"%lf",&(af_params->gore_len_fac));
-                    	(void) printf("%f\n",af_params->gore_len_fac);
-		    }
-		    string[0] = 'r';		// default
-		    if(CursorAfterStringOpt(infile, "Enter gore type:"))
-		    {
-                    	fscanf(infile, "%s", string);
-                    	(void) printf("%s\n", string);
-		    }
-		    if (string[0] == 'r' || string[0] == 'R')
-		    {
+            {
+                        fscanf(infile,"%lf",&(af_params->gore_len_fac));
+                        (void) printf("%f\n",af_params->gore_len_fac);
+            }
+            string[0] = 'r';		// default
+            if(CursorAfterStringOpt(infile, "Enter gore type:"))
+            {
+                        fscanf(infile, "%s", string);
+                        (void) printf("%s\n", string);
+            }
+            if (string[0] == 'r' || string[0] == 'R')
+            {
                         level_func_pack->string_func =
                                 install_strings_and_rotate_w_gores;
-            		for (i = 0; i < num_canopy; ++i)
-            		{
-                	    string_params[i].cen[0] = cen[0];
-                	    string_params[i].cen[1] = cen[1];
-                	    string_params[i].cen[2] = cen[2];
-                	    CursorAfterString(infile,"Enter number of chords:");
-                	    fscanf(infile,"%d",&string_params[i].num_strings);
-                	    (void) printf("%d\n",string_params[i].num_strings);
-                	    CursorAfterString(infile,
-					"Enter start angle of chord:");
-                	    fscanf(infile,"%lf",&string_params[i].start_angle);
-                	    (void) printf("%f\n",string_params[i].start_angle);
-                	    CursorAfterString(infile,
-					"Enter initial position of load:");
-                	    fscanf(infile,"%lf %lf %lf",
+                    for (i = 0; i < num_canopy; ++i)
+                    {
+                        string_params[i].cen[0] = cen[0];
+                        string_params[i].cen[1] = cen[1];
+                        string_params[i].cen[2] = cen[2];
+                        CursorAfterString(infile,"Enter number of chords:");
+                        fscanf(infile,"%d",&string_params[i].num_strings);
+                        (void) printf("%d\n",string_params[i].num_strings);
+                        CursorAfterString(infile,
+                    "Enter start angle of chord:");
+                        fscanf(infile,"%lf",&string_params[i].start_angle);
+                        (void) printf("%f\n",string_params[i].start_angle);
+                        CursorAfterString(infile,
+                    "Enter initial position of load:");
+                        fscanf(infile,"%lf %lf %lf",
                                         &string_params[i].coords_load[0],
                                         &string_params[i].coords_load[1],
                                         &string_params[i].coords_load[2]);
-                	    (void) printf("%f %f %f\n",
+                        (void) printf("%f %f %f\n",
                                         string_params[i].coords_load[0],
                                         string_params[i].coords_load[1],
                                         string_params[i].coords_load[2]);
-                	    CursorAfterString(infile,"Enter rotation angles:");
-                	    fscanf(infile,"%lf %lf",&string_params[i].theta,
+                        CursorAfterString(infile,"Enter rotation angles:");
+                        fscanf(infile,"%lf %lf",&string_params[i].theta,
                                         &string_params[i].phi);
-                	    (void) printf("%f %f\n",string_params[i].theta,
+                        (void) printf("%f %f\n",string_params[i].theta,
                                         string_params[i].phi);
-                	    string_params[i].theta *= PI/180.0;
-                	    string_params[i].phi *= PI/180.0;
-            		}
+                        string_params[i].theta *= PI/180.0;
+                        string_params[i].phi *= PI/180.0;
+                    }
 
-		    }
-		    else if (string[0] == 'p' || string[0] == 'P')
-		    {
-			CursorAfterString(infile,
+            }
+            else if (string[0] == 'p' || string[0] == 'P')
+            {
+            CursorAfterString(infile,
                                 "Enter number of vertical gores:");
                         fscanf(infile, "%d", &parallel_gore_params.gores_n);
                         (void) printf("%d\n", parallel_gore_params.gores_n);
@@ -202,7 +207,7 @@ extern void initEllipticSurf(
                         (void) printf("%f\n",
                                 parallel_gore_params.gores_dis);
                         CursorAfterString(infile,
-				"Enter initial position of load:");
+                "Enter initial position of load:");
                         fscanf(infile,"%lf %lf %lf",
                                 &parallel_gore_params.coords_load[0],
                                 &parallel_gore_params.coords_load[1],
@@ -211,26 +216,26 @@ extern void initEllipticSurf(
                                 parallel_gore_params.coords_load[0],
                                 parallel_gore_params.coords_load[1],
                                 parallel_gore_params.coords_load[2]);
-	
-			level_func_pack->string_func = 
-				install_strings_and_rotate_w_parallel_gores;
+    
+            level_func_pack->string_func = 
+                install_strings_and_rotate_w_parallel_gores;
                         level_func_pack->string_params =
-                        	(POINTER) &parallel_gore_params;
-		    }
-		    else
-		    {
-			(void) printf("Unknown gore type!\n");
-			clean_up(ERROR);
-		    }
+                            (POINTER) &parallel_gore_params;
+            }
+            else
+            {
+            (void) printf("Unknown gore type!\n");
+            clean_up(ERROR);
+            }
                 }
                 else
                     level_func_pack->string_func = install_strings_and_rotate;
             }
-            else
-                level_func_pack->string_func = install_strings_and_rotate;
-	}
-	else
-	    level_func_pack->attach_string = NO;
+                else
+                    level_func_pack->string_func = install_strings_and_rotate;
+        }
+    
+    }
 }	/* end initElllipticSurf */
 
 extern void initParabolicSurf(
@@ -283,67 +288,72 @@ extern void initParabolicSurf(
 	    fscanf(infile,"%lf",&constr_params.radius);
 	    (void) printf("%f\n",constr_params.radius);
 	}
-	CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
-	if (string[0] == 'y' || string[0] == 'Y')
-	{
-	    level_func_pack->attach_string = YES;
-	    level_func_pack->string_params = (POINTER)string_params;
-	    af_params->is_parachute_system = YES;
-	    if (CursorAfterStringOpt(infile,
-		"Enter yes to attach gores on canopy:"))
-	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
-                if (string[0] == 'y' || string[0] == 'Y')
-		{
-		    level_func_pack->string_func = 
-		    		install_strings_and_rotate_w_gores;
-		    af_params->attach_gores = YES;
-		    if(CursorAfterStringOpt(infile,"Enter gore length factor:"))
-		    {
-		    	fscanf(infile,"%lf",&(af_params->gore_len_fac));
-		    	(void) printf("%f\n",af_params->gore_len_fac);
-		    }
-		}
-		else 
-		    level_func_pack->string_func = install_strings_and_rotate;
-	    }
-	    else
-		level_func_pack->string_func = install_strings_and_rotate;
 
-	    for (i = 0; i < num_canopy; ++i)
-	    {
-		string_params[i].cen[0] = cen[0];
-		string_params[i].cen[1] = cen[1];
-		string_params[i].cen[2] = cen[2];
-	    	CursorAfterString(infile,"Enter number of chords:");
-	    	fscanf(infile,"%d",&string_params[i].num_strings);
-	    	(void) printf("%d\n",string_params[i].num_strings);
-	    	CursorAfterString(infile,"Enter start angle of chord:");
-	    	fscanf(infile,"%lf",&string_params[i].start_angle);
-	    	(void) printf("%f\n",string_params[i].start_angle);
-	    	CursorAfterString(infile,"Enter initial position of load:");
-	    	fscanf(infile,"%lf %lf %lf",
-				&string_params[i].coords_load[0],
-				&string_params[i].coords_load[1],
-				&string_params[i].coords_load[2]);
-	    	(void) printf("%f %f %f\n",
-				string_params[i].coords_load[0],
-				string_params[i].coords_load[1],
-				string_params[i].coords_load[2]);
-	    	CursorAfterString(infile,"Enter rotation angles:");
-	    	fscanf(infile,"%lf %lf",&string_params[i].theta,
-				&string_params[i].phi);
-	    	(void) printf("%f %f\n",string_params[i].theta,
-				string_params[i].phi);
-		string_params[i].theta *= PI/180.0;
-		string_params[i].phi *= PI/180.0;
-	    }
-	}
-	else
-	    level_func_pack->attach_string = NO;
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
+    {
+        CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            level_func_pack->attach_string = YES;
+            level_func_pack->string_params = (POINTER)string_params;
+            if (CursorAfterStringOpt(infile,
+            "Enter yes to attach gores on canopy:"))
+            {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+                    if (string[0] == 'y' || string[0] == 'Y')
+            {
+                level_func_pack->string_func = 
+                        install_strings_and_rotate_w_gores;
+                af_params->attach_gores = YES;
+                if(CursorAfterStringOpt(infile,"Enter gore length factor:"))
+                {
+                    fscanf(infile,"%lf",&(af_params->gore_len_fac));
+                    (void) printf("%f\n",af_params->gore_len_fac);
+                }
+            }
+            else 
+                level_func_pack->string_func = install_strings_and_rotate;
+            }
+            else
+            level_func_pack->string_func = install_strings_and_rotate;
+
+            for (i = 0; i < num_canopy; ++i)
+            {
+            string_params[i].cen[0] = cen[0];
+            string_params[i].cen[1] = cen[1];
+            string_params[i].cen[2] = cen[2];
+                CursorAfterString(infile,"Enter number of chords:");
+                fscanf(infile,"%d",&string_params[i].num_strings);
+                (void) printf("%d\n",string_params[i].num_strings);
+                CursorAfterString(infile,"Enter start angle of chord:");
+                fscanf(infile,"%lf",&string_params[i].start_angle);
+                (void) printf("%f\n",string_params[i].start_angle);
+                CursorAfterString(infile,"Enter initial position of load:");
+                fscanf(infile,"%lf %lf %lf",
+                    &string_params[i].coords_load[0],
+                    &string_params[i].coords_load[1],
+                    &string_params[i].coords_load[2]);
+                (void) printf("%f %f %f\n",
+                    string_params[i].coords_load[0],
+                    string_params[i].coords_load[1],
+                    string_params[i].coords_load[2]);
+                CursorAfterString(infile,"Enter rotation angles:");
+                fscanf(infile,"%lf %lf",&string_params[i].theta,
+                    &string_params[i].phi);
+                (void) printf("%f %f\n",string_params[i].theta,
+                    string_params[i].phi);
+            string_params[i].theta *= PI/180.0;
+            string_params[i].phi *= PI/180.0;
+            }
+        }
+
+    }
+
 }	/* end initParabolicSurf */
 	
 extern void initPlaneSurf(
@@ -1852,18 +1862,18 @@ static void initCircularPlaneEdge(
 	fscanf(infile,"%lf",&circle_constr_params.R);
 	(void) printf("%f\n",circle_constr_params.R);
 
-    if (is_parachute_system == YES)
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
     {
-	
-    CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
+        CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+        
         if (string[0] == 'y' || string[0] == 'Y')
         {
-            af_params->is_parachute_system = YES;
             level_func_pack->attach_string = YES;
             level_func_pack->string_params = (POINTER)string_params;
-	    level_func_pack->string_func = install_strings_and_rotate;
+	        level_func_pack->string_func = install_strings_and_rotate;
 	    if (CursorAfterStringOpt(infile,
 			"Enter yes to attach gores on canopy:"))
 	    {
@@ -2005,36 +2015,40 @@ static void initCrossPlaneEdge(
 	level_func_pack->num_points = 12;
 	level_func_pack->direction = 2;
 
-	CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
-	if (string[0] == 'y' || string[0] == 'Y')
-	{
-	    af_params->is_parachute_system = YES;
-	    level_func_pack->attach_string = YES;
-	    level_func_pack->string_func = install_strings;
-	    level_func_pack->string_params = (POINTER)string_params;
-	    for (i = 0; i < num_canopy; ++i)
-	    {
-	    	CursorAfterString(infile,"Enter number of chords:");
-	    	fscanf(infile,"%d",&string_params[i].num_strings);
-	    	(void) printf("%d\n",string_params[i].num_strings);
-	    	CursorAfterString(infile,
-				"Enter initial position of load:");
-	    	fscanf(infile,"%lf %lf %lf",&string_params[i].coords_load[0],
-				&string_params[i].coords_load[1],
-				&string_params[i].coords_load[2]);
-	    	(void) printf("%f %f %f\n",string_params[i].coords_load[0],
-				string_params[i].coords_load[1],
-				string_params[i].coords_load[2]);
-		string_params[i].cen[0] = string_params[i].coords_load[0];
-		string_params[i].cen[1] = string_params[i].coords_load[1];
-		string_params[i].L[0] = rect_constr_params.L[0];
-		string_params[i].L[1] = rect_constr_params.L[1];
-		string_params[i].U[0] = rect_constr_params.U[0];
-		string_params[i].U[1] = rect_constr_params.U[1];
-	    }
-	}
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
+    {
+        CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            level_func_pack->attach_string = YES;
+            level_func_pack->string_func = install_strings;
+            level_func_pack->string_params = (POINTER)string_params;
+            for (i = 0; i < num_canopy; ++i)
+            {
+                CursorAfterString(infile,"Enter number of chords:");
+                fscanf(infile,"%d",&string_params[i].num_strings);
+                (void) printf("%d\n",string_params[i].num_strings);
+                CursorAfterString(infile,
+                    "Enter initial position of load:");
+                fscanf(infile,"%lf %lf %lf",&string_params[i].coords_load[0],
+                    &string_params[i].coords_load[1],
+                    &string_params[i].coords_load[2]);
+                (void) printf("%f %f %f\n",string_params[i].coords_load[0],
+                    string_params[i].coords_load[1],
+                    string_params[i].coords_load[2]);
+            
+                string_params[i].cen[0] = string_params[i].coords_load[0];
+                string_params[i].cen[1] = string_params[i].coords_load[1];
+                string_params[i].L[0] = rect_constr_params.L[0];
+                string_params[i].L[1] = rect_constr_params.L[1];
+                string_params[i].U[0] = rect_constr_params.U[0];
+                string_params[i].U[1] = rect_constr_params.U[1];
+            }
+        }
+    }
 }	/* end initCrossPlaneEdge */
 
 static void initRectangularPlaneEdge(
@@ -2087,132 +2101,148 @@ static void initRectangularPlaneEdge(
 	{
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-	    {
-                level_func_pack->attach_string = YES;
-                level_func_pack->string_func = change_mono_boundary;
-		bdry_params.L[0] = rect_constr_params.L[0];
-		bdry_params.L[1] = rect_constr_params.L[1];
-		bdry_params.U[0] = rect_constr_params.U[0];
-		bdry_params.U[1] = rect_constr_params.U[1];
-		for (i = 0; i < 2; ++i)
-		{
-		    bdry_params.lower_bdry[i] = 
-		    bdry_params.upper_bdry[i] = NO;	
+        
+    if (string[0] == 'y' || string[0] == 'Y')
+    {
+            level_func_pack->attach_string = YES;
+            level_func_pack->string_func = change_mono_boundary;
+    bdry_params.L[0] = rect_constr_params.L[0];
+    bdry_params.L[1] = rect_constr_params.L[1];
+    bdry_params.U[0] = rect_constr_params.U[0];
+    bdry_params.U[1] = rect_constr_params.U[1];
 
-		    sprintf(string,"For direction %d",i);
-		    CursorAfterString(infile,string);
-		    (void) printf("%s\n",string);
-		    CursorAfterString(infile,
-				"Enter yes to fix lower boundary:");
-		    fscanf(infile,"%s",string);
-		    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-			bdry_params.lower_bdry[i] = YES;	
-		    else
+    for (i = 0; i < 2; ++i)
+    {
+        bdry_params.lower_bdry[i] = NO;
+        bdry_params.upper_bdry[i] = NO;	
+
+        sprintf(string,"For direction %d",i);
+        CursorAfterString(infile,string);
+        (void) printf("%s\n",string);
+        CursorAfterString(infile,
+            "Enter yes to fix lower boundary:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+        bdry_params.lower_bdry[i] = YES;	
+        else
+        {
+            bdry_params.lower_side[i] = NO_LOAD;
+            if (CursorAfterStringOpt(infile,"Enter load type:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                switch(string[0])
+                {
+                case 'n':
+                case 'N':
+                    break;
+                case 'f':
+                case 'F':
+                    bdry_params.lower_side[i] = FREE_LOAD;
+                    break;
+                case 'r':
+                case 'R':
+                    bdry_params.lower_side[i] = RIGID_LOAD;
+                    break;
+                }
+        
+            if (bdry_params.lower_side[i] != NO_LOAD)
+            {
+                CursorAfterString(infile,"Enter total mass:");
+                fscanf(infile,"%lf",&bdry_params.lower_mass[i]);
+                (void) printf("%f\n",bdry_params.lower_mass[i]);
+            
+                if (CursorAfterStringOpt(infile,
+                            "Enter external force:"))
+                {
+                    fscanf(infile,"%lf %lf %lf",
+                            &bdry_params.lower_force[i][0],
+                            &bdry_params.lower_force[i][1],
+                            &bdry_params.lower_force[i][2]);
+                    (void) printf("%f %f %f\n",
+                            bdry_params.lower_force[i][0],
+                            bdry_params.lower_force[i][1],
+                            bdry_params.lower_force[i][2]);
+                }
+                else
+                {
+                    bdry_params.lower_force[i][0] = 0.0;
+                    bdry_params.lower_force[i][1] = 0.0;
+                    bdry_params.lower_force[i][2] = 0.0;
+                }
+            }
+            
+            }
+                
+        }
+        
+        CursorAfterString(infile,
+            "Enter yes to fix upper boundary:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            bdry_params.upper_bdry[i] = YES;
+        }
+        else
+        {
+            bdry_params.upper_side[i] = NO_LOAD;
+            if (CursorAfterStringOpt(infile,"Enter load type:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                switch(string[0])
+                {
+                case 'n':
+                case 'N':
+                    break;
+                case 'f':
+                case 'F':
+                    bdry_params.upper_side[i] = FREE_LOAD;
+                    break;
+                case 'r':
+                case 'R':
+                    bdry_params.upper_side[i] = RIGID_LOAD;
+                    break;
+                }
+                
+                if (bdry_params.upper_side[i] != NO_LOAD)
+                {
+                    CursorAfterString(infile,"Enter total mass:");
+                    fscanf(infile,"%lf",&bdry_params.upper_mass[i]);
+                    (void) printf("%f\n",bdry_params.upper_mass[i]);
+                    
+                    if (CursorAfterStringOpt(infile,
+                                "Enter external force:"))
                     {
-                        bdry_params.lower_side[i] = NO_LOAD;
-                        if (CursorAfterStringOpt(infile,"Enter load type:"))
-                        {
-                            fscanf(infile,"%s",string);
-                            (void) printf("%s\n",string);
-                            switch(string[0])
-                            {
-                            case 'n':
-                            case 'N':
-                                break;
-                            case 'f':
-                            case 'F':
-                                bdry_params.lower_side[i] = FREE_LOAD;
-                                break;
-                            case 'r':
-                            case 'R':
-                                bdry_params.lower_side[i] = RIGID_LOAD;
-                                break;
-                            }
-			    if (bdry_params.lower_side[i] != NO_LOAD)
-			    {
-                                CursorAfterString(infile,"Enter total mass:");
-                                fscanf(infile,"%lf",&bdry_params.lower_mass[i]);
-                                (void) printf("%f\n",bdry_params.lower_mass[i]);
-                                if (CursorAfterStringOpt(infile,
-					"Enter external force:"))
-				{
-                                    fscanf(infile,"%lf %lf %lf",
-					&bdry_params.lower_force[i][0],
-					&bdry_params.lower_force[i][1],
-					&bdry_params.lower_force[i][2]);
-                                    (void) printf("%f %f %f\n",
-					bdry_params.lower_force[i][0],
-					bdry_params.lower_force[i][1],
-					bdry_params.lower_force[i][2]);
-				}
-				else
-				{
-					bdry_params.lower_force[i][0] =
-					bdry_params.lower_force[i][1] =
-					bdry_params.lower_force[i][2] = 0.0;
-				}
-			    }
-                        }
+                        fscanf(infile,"%lf %lf %lf",
+                                &bdry_params.upper_force[i][0],
+                                &bdry_params.upper_force[i][1],
+                                &bdry_params.upper_force[i][2]);
+                        (void) printf("%f %f %f\n",
+                                bdry_params.upper_force[i][0],
+                                bdry_params.upper_force[i][1],
+                                bdry_params.upper_force[i][2]);
                     }
-		    CursorAfterString(infile,
-				"Enter yes to fix upper boundary:");
-		    fscanf(infile,"%s",string);
-		    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-			bdry_params.upper_bdry[i] = YES;	
-		    else
+                    else
                     {
-                        bdry_params.upper_side[i] = NO_LOAD;
-                        if (CursorAfterStringOpt(infile,"Enter load type:"))
-                        {
-                            fscanf(infile,"%s",string);
-                            (void) printf("%s\n",string);
-                            switch(string[0])
-                            {
-                            case 'n':
-                            case 'N':
-                                break;
-                            case 'f':
-                            case 'F':
-                                bdry_params.upper_side[i] = FREE_LOAD;
-                                break;
-                            case 'r':
-                            case 'R':
-                                bdry_params.upper_side[i] = RIGID_LOAD;
-                                break;
-                            }
-			    if (bdry_params.upper_side[i] != NO_LOAD)
-			    {
-                                CursorAfterString(infile,"Enter total mass:");
-                                fscanf(infile,"%lf",&bdry_params.upper_mass[i]);
-                                (void) printf("%f\n",bdry_params.upper_mass[i]);
-                                if (CursorAfterStringOpt(infile,
-					"Enter external force:"))
-				{
-                                    fscanf(infile,"%lf %lf %lf",
-					&bdry_params.upper_force[i][0],
-					&bdry_params.upper_force[i][1],
-					&bdry_params.upper_force[i][2]);
-                                    (void) printf("%f %f %f\n",
-					bdry_params.upper_force[i][0],
-					bdry_params.upper_force[i][1],
-					bdry_params.upper_force[i][2]);
-				}
-				else
-				{
-					bdry_params.upper_force[i][0] =
-					bdry_params.upper_force[i][1] =
-					bdry_params.upper_force[i][2] = 0.0;
-				}
-			    }
-                        }
+                        bdry_params.upper_force[i][0] = 0.0;
+                        bdry_params.upper_force[i][1] = 0.0;
+                        bdry_params.upper_force[i][2] = 0.0;
                     }
-		}
-	    	level_func_pack->string_params = (POINTER)&bdry_params;
-	    }
-	}
+    
+                }
+            }
+                
+        }
+    }
+    
+    level_func_pack->string_params = (POINTER)&bdry_params;
+    }
+	
+    }
 }	/* end initRectangularPlaneEdge */
 
 static void initEllipticPlaneEdge(
@@ -2250,12 +2280,16 @@ static void initEllipticPlaneEdge(
         (void) printf("%f %f\n", ellipse_constr_params.x_range[0],
                                 ellipse_constr_params.x_range[1]);
 
-	CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
+
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
+    {
+        CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+	    fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-	if (string[0] == 'y' || string[0] == 'Y')
-	{
-            af_params->is_parachute_system = YES;
+	    
+        if (string[0] == 'y' || string[0] == 'Y')
+	    {
             level_func_pack->attach_string = YES;
             level_func_pack->string_params = (POINTER)string_params;
             if (CursorAfterStringOpt(infile,
@@ -2380,6 +2414,8 @@ static void initEllipticPlaneEdge(
                 level_func_pack->string_params = NULL;
             }
         }
+    }
+
 }	/* end initEllipticPlaneEdge */
 
 static void initWingsPlaneEdge(
