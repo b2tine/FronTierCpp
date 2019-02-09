@@ -10,17 +10,17 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 6.0
-Max step: 100000
-Print interval: 0.1
-Movie frame interval: 0.1
+Max step: 50000
+Print interval: 0.01
+Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
-Entering yes to turn off fluid solver: yes
+
 Enter velocity function: fa
-Enter initial shape of fixed area: rectangle
-Enter rectangle lower bounds: 0.4 0.4
-Enter rectangle upper bounds: 0.6 0.6
+Enter initial shape of fixed area: ellipse
+Enter center of ellipse: 0.5 0.5
+Enter radii of ellipse: 0.3 0.2
 Enter area velocity: 0 0 0.1
 Enter interior propagator: p
 Enter interior sub step number: 10
@@ -40,13 +40,12 @@ Initial surface type can be
 Enter number of canopy surfaces: 1
 Enter initial canopy surface type: P
 Enter the height of the plane: 0.2
-Enter type of plane edge: c
-Enter circle center: 0.5 0.5
-Enter circle radius: 0.4
-Enter yes to attach strings to canopy: n
-Entering yes to turn off fluid solver: y
+Enter type of plane edge: R
+Enter the box lower boundary: 0.1 0.1 0.1
+Enter the box upper boundary: 0.9 0.9 0.9
 
-Enter density and viscosity of the fluid: 1 0.00628
+Entering yes to turn off fluid solver: y
+Enter density and viscosity of the fluid: 1.0 0.00628
 Enter gravity: 0.0 0.0 0.0
 Enter payload: 0.0
 Enter interior sub step number: 10
@@ -63,8 +62,8 @@ Enter string point mass: 0.1
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 1
-Enter pressure: 10
+Enter velocity: 0 0 0
+Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 

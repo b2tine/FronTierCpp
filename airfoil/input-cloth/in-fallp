@@ -9,16 +9,16 @@ Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 0.4
+Max time: 4.0
 Max step: 50000
 Print interval: 0.01
 Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
-Entering yes to turn off fluid solver: yes
+
 Enter velocity function: fp
-Enter initial fixed point coordinates: 0.5 0.5
+Enter initial fixed point coordinates: 0.5 0.5 0.8
 Enter point velocity: 0 0 0
 Enter interior propagator: p
 Enter interior sub step number: 10
@@ -41,9 +41,8 @@ Enter the height of the plane: 0.8
 Enter type of plane edge: c
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
-Enter yes to attach strings to canopy: n
-Entering yes to turn off fluid solver: y
 
+Entering yes to turn off fluid solver: y
 Enter density and viscosity of the fluid: 1 0.00628
 Enter gravity: 0.0 0.0 -9.8
 Enter payload: 0.0
@@ -62,7 +61,7 @@ Enter string point mass: 0.005
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 0
-Enter pressure: 10
+Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 

@@ -9,17 +9,19 @@ Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 8.0
-Max step: 50000
-Print interval: 0.1
-Movie frame interval: 0.1
+Max time: 6.0
+Max step: 100000
+Print interval: 0.01
+Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
-Entering yes to turn off fluid solver: yes
-Enter velocity function: fp
-Enter initial fixed point coordinates: 0.5 0.5
-Enter point velocity: 0 0 0.1
+
+Enter velocity function: fa
+Enter initial shape of fixed area: rectangle
+Enter rectangle lower bounds: 0.4 0.4
+Enter rectangle upper bounds: 0.6 0.6
+Enter area velocity: 0 0 0.1
 Enter interior propagator: p
 Enter interior sub step number: 10
 
@@ -41,9 +43,8 @@ Enter the height of the plane: 0.2
 Enter type of plane edge: c
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
-Enter yes to attach strings to canopy: n
-Entering yes to turn off fluid solver: y
 
+Entering yes to turn off fluid solver: y
 Enter density and viscosity of the fluid: 1 0.00628
 Enter gravity: 0.0 0.0 0.0
 Enter payload: 0.0
@@ -51,6 +52,7 @@ Enter interior sub step number: 10
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+Enter yes to use GPU solver: no
 Enter fabric spring constant: 5000
 Enter fabric friction constant: 0.5
 Enter fabric point mass: 0.1
@@ -60,8 +62,8 @@ Enter string point mass: 0.1
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 1
-Enter pressure: 10
+Enter velocity: 0 0 0
+Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -72,7 +74,8 @@ Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
-Type y to make vector velocity field movie: n
+Type y to make vector velocity field movie: no
+Type y to plot surface stress: no
 
 ************Debugging options*****************
 
@@ -82,6 +85,4 @@ Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
 Enter the debugging string: tsample_velocity
 
-Enter yes to use GPU solver: no
 
-Type y to plot surface stress: n
