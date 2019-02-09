@@ -69,6 +69,8 @@ Collision/test
 Collision/init
 folding/test
 parachute/parachute
+parachute/ginit
+parachute/intfc
 *Tests
 *.txt
 *.xg
