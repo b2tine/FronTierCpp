@@ -11,6 +11,7 @@ MAYBE_CRYSTAL = crystal
 MAYBE_MELTING = melting
 MAYBE_SUBSURF = subsurf
 if CGAL_ARMA_OPT
+MAYBE_BVH = BVH
 MAYBE_COLLISION = Collision
 if FOLDING_OPT
 MAYBE_FOLDING = folding
@@ -37,6 +38,7 @@ SUBDIRS = lib \
 		  $(MAYBE_CRYSTAL) \
 		  $(MAYBE_MELTING) \
 		  $(MAYBE_SUBSURF) \
+		  $(MAYBE_BVH) \
 		  $(MAYBE_COLLISION) \
 		  $(MAYBE_FOLDING) \
 		  $(MAYBE_AIRFOIL) \

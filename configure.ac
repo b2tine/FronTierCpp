@@ -372,7 +372,10 @@ AM_CONDITIONAL([CGAL_ARMA_OPT],
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
-                       [AC_CONFIG_FILES([Collision/Makefile
+                       [AC_CONFIG_FILES([BVH/Makefile
+                                         BVH/objs/Makefile
+                                         BVH/tests/Makefile
+                                         Collision/Makefile
                                          Collision/objs/Makefile
                                          Collision/tests/Makefile
                                          airfoil/Makefile

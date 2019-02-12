@@ -1,0 +1,1 @@
+SUBDIRS = objs tests

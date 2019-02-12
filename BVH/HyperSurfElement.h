@@ -6,7 +6,7 @@
 #include <exception>
 #include <cassert>
 
-#include "FronTier.h"
+#include <FronTier.h>
 
 //Abstract base class for FronTier hypersurface element wrappers
 class Hse
