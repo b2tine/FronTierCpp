@@ -28,14 +28,14 @@ Projection type can be
 Enter projection type: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.0 0.00628
-Enter fluid ambient velocity: 0 0 0
+Enter fluid ambient velocity: 0 0 5
 Enter gravity: 0 0 -9.8
 *********************************************
 
 *************Boundary parameters**************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 4
+Enter velocity: 0 0 5
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -54,7 +54,7 @@ Enter the height of the plane: 8.0
 Enter type of plane edge: Rectangular
 Enter the box lower boundary: 2.5 2.5
 Enter the box upper boundary: 5.5 5.5
-Enter yes to fix lower boundary: yes
+Enter yes to fix lower boundary: no
 
 Enter surface tension: 0.0
 Enter area density of canopy: 1.0
@@ -95,7 +95,7 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 
 Enter the debugging string: trace
-Enter the debugging string: tno_optimize
+Enter the debugging string: no_optimize
 
 Enter the debugging string: tsmooth_canopy_vel
 Enter the debugging string: topt_elastic_mesh
