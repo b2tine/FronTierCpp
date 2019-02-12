@@ -1910,11 +1910,19 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             {
                 setCollisionFreePoints3d(fr->interf);
                 collision_solver->assembleFromInterface(fr->interf,fr->dt);
-                collision_solver->recordOriginPosition();
-                collision_solver->setSpringConstant(af_params->ks);
-                collision_solver->setFrictionConstant(0.0);
+                collision_solver->recordOriginalPosition();
+                
+                //TODO: spring and friction constants can vary between
+                //      different fabric objects
+                collision_solver->setSpringConstant(af_params->ks); 
+                collision_solver->setFrictionConstant(af_params->lambda_s);
+                
                 collision_solver->setPointMass(af_params->m_s);
-                collision_solver->setFabricThickness(1.0e-4);
+                collision_solver->setFabricThickness(1.0e-3);
+                //collision_solver->setFabricThickness(1.0e-4);
+
+                //TODO: coefficient of restitution depends on
+                //      the objects involved in collision
 		        collision_solver->setRestitutionCoef(0.0);
             }
 #endif

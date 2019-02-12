@@ -15,11 +15,14 @@ AABB::AABB(CD_HSE* h, MotionState type)
     : hse(h), dt(0), abType(type),
     lowerbound(3), upperbound(3)
 {
+    //TODO: use fabric thickness for amount enlarged
     if (type == MotionState::STATIC)
     {
         for (int i = 0; i < 3; i++) {
-            lowerbound[i] = h->min_static_coord(i)-1e-4;
-            upperbound[i] = h->max_static_coord(i)+1e-4;
+            lowerbound[i] = h->min_static_coord(i)-1e-3;
+            upperbound[i] = h->max_static_coord(i)+1e-3;
+            //lowerbound[i] = h->min_static_coord(i)-1e-4;
+            //upperbound[i] = h->max_static_coord(i)+1e-4;
         }
     }
     else

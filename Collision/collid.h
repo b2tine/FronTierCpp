@@ -212,7 +212,7 @@ public:
 	bool isProximity(const CD_HSE*,const CD_HSE*);	
 	bool isCollision(const CD_HSE*,const CD_HSE*);
 	void resolveCollision();
-	void recordOriginPosition();	
+	void recordOriginalPosition();	
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}

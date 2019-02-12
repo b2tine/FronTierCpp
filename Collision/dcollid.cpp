@@ -99,10 +99,9 @@ double CollisionSolver::getPointMass(){return s_m;}
 void   CollisionSolver::setRestitutionCoef(double new_cr){s_cr = new_cr;}
 double CollisionSolver::getRestitutionCoef(){return s_cr;}
 
-void CollisionSolver::recordOriginPosition(){
+void CollisionSolver::recordOriginalPosition(){
 	POINT* pt;
 	STATE* sl;
-	//#pragma omp parallel for private(pt,sl)
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
 	     it < hseList.end(); ++it){
 	    for (int i = 0; i < (*it)->num_pts(); ++i){
@@ -413,7 +412,7 @@ void CollisionSolver::aabbProximity() {
     if (!abt_proximity.get()) {
         abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_proximity->getType());
+             AABB* ab = new AABB(*it, abt_proximity->getType());
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
