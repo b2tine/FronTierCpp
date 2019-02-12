@@ -52,7 +52,7 @@ Enter unit shifted displacement: 0.05
 Enter yes to fix the curve ends: yes
 
 Enter the start of curve 1: 0.1 0.5 0.8
-Enter the end of the curve 1: 0.9 0.5 0.8
+Enter the end of curve 1: 0.9 0.5 0.8
 Enter the number of curves in each side: 0
 Enter the shift direction: 1 0 0
 Enter unit shifted displacement: 0.05
