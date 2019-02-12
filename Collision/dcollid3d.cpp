@@ -133,6 +133,16 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	//compute angular velocity w: I*w = L;
 	double w[3], mag_w = 0;
 
+	    for (int i = 0; i < 3; ++i){
+	         memcpy(tmp,I,9*sizeof(double));
+	         for (int j = 0; j < 3; j++)
+		      tmp[j][i] = L[j];
+             if( myDet3d(I) <= ROUND_EPS )
+                 w[i] = myDet3d(tmp)/myDet3d(I);
+             else
+                 w[i] = 0.0;
+            }
+        /*
         if (myDet3d(I) < ROUND_EPS) {
             // I is non-invertible, calculate pseudo-inverse
             arma::mat arI(3, 3);
@@ -167,6 +177,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	         w[i] = myDet3d(tmp)/myDet3d(I);
             }
 	}
+        */
 	mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
