@@ -177,13 +177,15 @@ void AABBTree::addAABB(AABB* ab) {
 }
 
 // reorganize the tree structure
-void AABBTree::updateTreeStructure() {
+void AABBTree::updateTreeStructure()
+{
     root.reset();
-    for (auto node : nodeArray) {
-         if (root.get()) 
-             insertNode(node, root);
-         else 
-             root = node;
+    for (auto node : nodeArray)
+    {
+        if (root.get()) 
+            insertNode(node, root);
+        else 
+            root = node;
     }
 }
 
@@ -281,27 +283,32 @@ double AABBTree::treeHeight(Node* root) {
 }
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
-void AABBTree::query(CollisionSolver* collsn_solver) {
-
+void AABBTree::query(CollisionSolver* collsn_solver)
+{
     Node* cur = root.get();
     std::stack<Node*> sn;
 
-    while (cur || !sn.empty()) {
-        while (cur) {
+    while (cur || !sn.empty())
+    {
+        while (cur)
+        {
             sn.push(cur);
             cur = cur->left.get();
         }
+
         cur = sn.top();
         sn.pop();
         
-        if (cur->isLeaf()) {
+        if (cur->isLeaf())
+        {
             if (type == MotionState::STATIC)
                 queryProximity(cur, collsn_solver);
             else
                 isCollsn = queryCollision(cur, collsn_solver);
+
             nodeSet.insert(cur);
         }
-        
+
         cur = cur->right.get();
     }
 }
@@ -311,15 +318,21 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
 // preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-void AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver) {
+void AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver)
+{
     std::stack<Node*> sn;
-    Node* cur = root.get();
+    Node* cur = this->root.get();
 
-    while (cur || !sn.empty()) {
-        while (cur) {
-            if (cur->isCollid(n)) {
-                if (cur->isLeaf() && n != cur) {
-                    if (nodeSet.find(cur) == nodeSet.end()) {
+    while (cur || !sn.empty())
+    {
+        while (cur)
+        {
+            if (cur->isCollid(n))
+            {
+                if (cur->isLeaf() && n != cur)
+                {
+                    if (nodeSet.find(cur) == nodeSet.end())
+                    {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
@@ -329,12 +342,14 @@ void AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver) {
                 }
                 sn.push(cur);
                 cur = cur->left.get();
-            }   
+            }
             else 
                 break;    
         }
+
         if (sn.empty())
             break;
+
         cur = sn.top();
         sn.pop();
         cur = cur->right.get();

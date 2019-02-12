@@ -426,7 +426,8 @@ void CollisionSolver::aabbProximity() {
         
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
-        if ((abt_proximity->getVolume() - volume) > 0.2*volume) {
+        if ((abt_proximity->getVolume() - volume) > 0.2*volume)
+        {
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
         }
@@ -448,9 +449,10 @@ void CollisionSolver::detectProximity()
                              reportProximity(time, numBox, num_pairs,this),
 			     traitsForProximity());
         */
-        start_clock("dynamic_AABB_proximity");
-        aabbProximity();
-        stop_clock("dynamic_AABB_proximity");
+    start_clock("dynamic_AABB_proximity");
+    aabbProximity();
+    stop_clock("dynamic_AABB_proximity");
+
 	updateAverageVelocity();
 	if (debugging("collision"))
 	std::cout << abt_proximity->getCount() 

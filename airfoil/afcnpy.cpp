@@ -2299,61 +2299,70 @@ extern void collectNodeExtra(
 
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
-        POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
-        SURFACE* surf;
-        if (intfc->dim == 2){
-            printf("ERROR dim = %d\n",intfc->dim);
-            clean_up(ERROR);
-        }
-        next_point(intfc,NULL,NULL,NULL);
-        while(next_point(intfc,&p,&hse,&hs)){
-            STATE* sl = (STATE*)left_state(p);
-            sl->is_fixed = false;
-	    sl->is_movableRG = false;
-            if ((surf = Surface_of_hs(hs)) &&
+    POINT *p;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
+    SURFACE* surf;
+    
+    if (intfc->dim == 2) {
+        printf("ERROR dim = %d\n",intfc->dim);
+        clean_up(ERROR);
+    }
+
+    next_point(intfc,NULL,NULL,NULL);
+    while(next_point(intfc,&p,&hse,&hs))
+    {
+        STATE* sl = (STATE*)left_state(p);
+        sl->is_fixed = false;
+        sl->is_movableRG = false;
+        
+        if ((surf = Surface_of_hs(hs)) &&
                 (is_registered_point(surf,p) ||
                  wave_type(hs) == NEUMANN_BOUNDARY))
-            {
-                sl->is_fixed = true;
-            }
-	    if ((surf = Surface_of_hs(hs)) &&
-		(wave_type(hs) == MOVABLE_BODY_BOUNDARY))
-	    {
-		sl->is_movableRG = true;
-	    }
+        {
+            sl->is_fixed = true;
         }
-
-        CURVE **c;
-        BOND* b;
-        intfc_curve_loop(intfc,c){
-            if (hsbdry_type(*c) != FIXED_HSBDRY)
-                continue;
-            for (b = (*c)->first; b != (*c)->last; b = b->next)
-            {
-                STATE* sl = (STATE*)left_state(b->end);
-                sl->is_fixed = true;
-            }
+    
+        if ((surf = Surface_of_hs(hs)) &&
+                (wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+        {
+            sl->is_movableRG = true;
         }
+    }
 
-        NODE** n;
-        intfc_node_loop(intfc,n){
-            STATE* sl = (STATE*)left_state((*n)->posn);
-            sl->is_fixed = false;
-            AF_NODE_EXTRA* extra;
-            if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
+    CURVE **c;
+    BOND* b;
+    intfc_curve_loop(intfc,c)
+    {
+        if (hsbdry_type(*c) != FIXED_HSBDRY)
+            continue;
+
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+            STATE* sl = (STATE*)left_state(b->end);
+            sl->is_fixed = true;
+        }
+    }
+
+    NODE** n;
+    intfc_node_loop(intfc,n)
+    {
+        STATE* sl = (STATE*)left_state((*n)->posn);
+        sl->is_fixed = false;
+        AF_NODE_EXTRA* extra;
+
+        if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
                 (extra->af_node_type == PRESET_NODE))
-                 //is_load_node(*n) ||
-                 //is_rg_string_node(*n)))
-            {
-                sl->is_fixed = true;
-            }
-            else if ((*n)->hsb && is_fixed_node(*n))
-            {
-                sl->is_fixed = true;
-            }
+             //is_load_node(*n) ||
+             //is_rg_string_node(*n)))
+        {
+            sl->is_fixed = true;
         }
+        else if ((*n)->hsb && is_fixed_node(*n))
+        {
+            sl->is_fixed = true;
+        }
+    }
 }       /* setCollisionFreePoints3d() */
 
 extern void scatterAirfoilExtra(
