@@ -632,6 +632,7 @@ extern void set_node_spring_vertex(
  	    g = iFparams->gravity;
 	else
 	    g = NULL;
+
 	if (dim == 3)
 	{
 	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
@@ -639,7 +640,7 @@ extern void set_node_spring_vertex(
 	    {
 		if (extra->af_node_type == PRESET_NODE)
 		{
-                    mass = geom_set->m_s;
+            mass = geom_set->m_s;
 		    is_fixed = YES;
 		}
 		else if (extra->af_node_type == LOAD_NODE || 
@@ -659,7 +660,7 @@ extern void set_node_spring_vertex(
 		    mass = geom_set->m_l;
 	    }
 	    else
-                mass = geom_set->m_s;
+            mass = geom_set->m_s;
 	}
 	else
 	{
@@ -1456,7 +1457,8 @@ static void assembleParachuteSet3d(
 	    	}
 	    }
 	}
-	/* Change for dealing the cases where there is both canopy surface
+	
+    /* Change for dealing the cases where there is both canopy surface
 	   and isolated 3d curves */
 	intfc_curve_loop(intfc,c)
 	{

@@ -352,7 +352,7 @@ void Folder3d::doFolding(
 	if (t0+dt > drag->m_t) 
 	    dt = drag->m_t-t0;
 	
-	cd_solver->recordOriginPosition();
+	cd_solver->recordOriginalPosition();
 	cd_solver->setTimeStepSize(dt);
 	recordData(t,movie->out_dir);
     	sp_solver->solve(dt);
