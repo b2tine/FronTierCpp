@@ -2330,6 +2330,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
+    //TODO: add ELASTIC_BOUNDARY tag
+
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)
@@ -2353,8 +2355,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
 
         if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
                 (extra->af_node_type == PRESET_NODE))
-             //is_load_node(*n) ||
-             //is_rg_string_node(*n)))
         {
             sl->is_fixed = true;
         }
