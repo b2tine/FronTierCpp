@@ -32,6 +32,11 @@ Enter projection type: SIMPLE
 Enter density and viscosity of the fluid: 1 0.0001
 Enter gravity: 0.0 0.0 0.0
 
+Available turbulence models are:
+    Baldwin-Lomax (B)
+    Moin (M)
+Enter turbulence model: B
+
 Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y

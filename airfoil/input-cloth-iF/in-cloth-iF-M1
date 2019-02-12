@@ -54,7 +54,6 @@ Enter the height of the plane: 8.0
 Enter type of plane edge: Rectangular
 Enter the box lower boundary: 2.5 2.5
 Enter the box upper boundary: 5.5 5.5
-Enter yes to fix lower boundary: no
 
 Enter surface tension: 0.0
 Enter area density of canopy: 1.0

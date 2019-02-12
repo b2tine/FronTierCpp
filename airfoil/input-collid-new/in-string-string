@@ -44,14 +44,15 @@ Entering yes to turn off fluid solver: y
 
 Enter yes to add isolated curves: yes
 Enter the number of curves: 2
-Enter the start of the referential curve: 0.5 0.1 0.6
-Enter the end of the referential curve: 0.5 0.9 0.6
+Enter the start of curve 0: 0.5 0.1 0.6
+Enter the end of curve 0: 0.5 0.9 0.6
 Enter the number of curves in each side: 5
 Enter the shift direction: 1 0 0
 Enter unit shifted displacement: 0.05
 Enter yes to fix the curve ends: yes
-Enter the start of the referential curve: 0.1 0.5 0.8
-Enter the end of the referential curve: 0.9 0.5 0.8
+
+Enter the start of curve 1: 0.1 0.5 0.8
+Enter the end of the curve 1: 0.9 0.5 0.8
 Enter the number of curves in each side: 0
 Enter the shift direction: 1 0 0
 Enter unit shifted displacement: 0.05
@@ -67,6 +68,7 @@ Enter factor of smoothing radius: 1
 Enter fabric spring constant: 5000
 Enter fabric friction constant: 2.0
 Enter fabric point mass: 0.01
+
 Enter string spring constant: 30000
 Enter string friction constant: 2.0
 Enter string point mass: 0.005
@@ -82,7 +84,7 @@ Enter radius of the sphere: 0.2
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 1
+Enter velocity: 0 0 1
 Enter pressure: 10
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -99,8 +101,8 @@ Type y to plot bullet in gd movie: y
 
 ************Debugging options*****************
 
-Enter yes for debugging: no
-Enter the debugging string: ttrace
+Enter yes for debugging: yes 
+Enter the debugging string: trace
 Enter the debugging string: tisect3d
 Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
