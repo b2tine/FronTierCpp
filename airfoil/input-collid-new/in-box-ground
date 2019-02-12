@@ -117,7 +117,7 @@ Type y to plot bullet in gd movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: rigid_body
-Enter the debugging string: ttrace
+Enter the debugging string: trace
 Enter the debugging string: tisect3d
 Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
