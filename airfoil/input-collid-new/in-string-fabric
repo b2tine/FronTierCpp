@@ -44,7 +44,7 @@ Entering yes to turn off fluid solver: y
 
 Enter yes to add isolated curves: yes
 Enter the number of curves: 1
-Enter the start of the curve 0: 0.5 0.1 0.6
+Enter the start of curve 0: 0.5 0.1 0.6
 Enter the end of curve 0: 0.5 0.9 0.6
 Enter the number of curves in each side: 10
 Enter the shift direction: 1 0 0
