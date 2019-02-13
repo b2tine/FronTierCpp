@@ -870,14 +870,15 @@ void CollisionSolver::updateAverageVelocity()
 bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
-        // temp code
-        // skip lines collision and line with rigid body
+        // Should be uncommented -- this turns off collision b/w strings
+        /*
         if (a->name == "lines" && b->name == "lines") {
             return false;
         }
         if (a->name == "lines" && b->name == "tris_rigid" || 
             a->name == "tris_rigid" && b->name == "lines")
             return false;
+       */
 	double h = CollisionSolver3d::getRoundingTolerance();
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
@@ -885,13 +886,13 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t1 = cd_t1->m_tri;
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
-		return false;
+            return false;
 	    return MovingTriToTri(t1,t2,h);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
-            return false;
+        //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
 	    return MovingBondToBond(b1,b2,h);
@@ -899,7 +900,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
-            return false;
+        //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
 	    return MovingTriToBond(t1,b1,h);
@@ -907,7 +908,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
-            return false;
+        //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
 	    return MovingTriToBond(t1,b1,h);

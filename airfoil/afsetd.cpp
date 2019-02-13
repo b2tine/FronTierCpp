@@ -1457,6 +1457,7 @@ static void assembleParachuteSet3d(
 	    }
 	}
 	
+    //TODO: below if finished?
     /* Change for dealing the cases where there is both canopy surface
 	   and isolated 3d curves */
 	intfc_curve_loop(intfc,c)
