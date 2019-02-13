@@ -1,5 +1,5 @@
-#include "gmock/gmock.h"
-#include "../HyperSurfElement.h"
+#include <gmock/gmock.h>
+#include <HyperSurfElement.h>
 
 
 

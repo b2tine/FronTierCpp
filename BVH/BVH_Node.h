@@ -1,8 +1,7 @@
-#include "BoundingVolume.h"
-
 #ifndef BVH_NODE_H
 #define BVH_NODE_H
 
+#include "BoundingVolume.h"
 #include <memory>
 
 //Design Considerations:

@@ -1,17 +1,18 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
-#include "FronTier.h"
+#include "BoundingVolume.h"
+#include "CGAL_Point.h"
 
 #include <assert.h>
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <string>
 #include <cstring>
 #include <algorithm>
 #include <limits>
-#include <unordered_map>
+#include <utility>
+#include <map>
 
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -19,6 +20,9 @@ using Point3 = K::Point_3;
 using Mesh = CGAL::Surface_mesh<Point3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
+
+std::pair<std::vector<double>,std::vector<double>>
+getInputMeshDimensionsWithPad(Mesh*,double);
 
 void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
 void TriMeshOFF2Surf(INTERFACE*, COMPONENT,
@@ -36,27 +40,33 @@ int main(int argc, char* argv[])
     f_basic.dim = 3;
     FT_Init(argc,argv,&f_basic);
 
-    //TODO: Set domain based on input mesh max and min coords.
-    f_basic.L[0] = -4.0;    f_basic.L[1] = -4.0;    f_basic.L[2] = -1.0;
-    f_basic.U[0] = 4.0;     f_basic.U[1] = 4.0;     f_basic.U[2] = 4.0;
+    in_name = f_basic.in_name;
+    out_name = f_basic.out_name;
+
+    Mesh mesh;
+    std::ifstream input(in_name);
+    if (!input || !(input >> mesh) || !CGAL::is_triangle_mesh(mesh))
+    {
+        std::cerr << "Error: input file must be a triangular mesh OFF file\n";
+        return 1;
+    }
+
+    auto Bounds = getInputMeshDimensionsWithPad(&mesh,2.0);
+    auto lb = Bounds.first;
+    auto ub = Bounds.second;
+
+    f_basic.L[0] = lb[0];   f_basic.L[1] = lb[1];    f_basic.L[2] = lb[2];
+    f_basic.U[0] = ub[0];   f_basic.U[1] = ub[1];    f_basic.U[2] = ub[2];
     f_basic.gmax[0] = 32;   f_basic.gmax[1] = 32;   f_basic.gmax[2] = 32;
+
     f_basic.boundary[0][0] = f_basic.boundary[0][1] = DIRICHLET_BOUNDARY;
     f_basic.boundary[1][0] = f_basic.boundary[1][1] = DIRICHLET_BOUNDARY;
     f_basic.boundary[2][0] = f_basic.boundary[2][1] = DIRICHLET_BOUNDARY;
     
     f_basic.size_of_intfc_state = 0;
 
-    in_name = f_basic.in_name;
-    out_name = f_basic.out_name;
     FT_StartUp(&front,&f_basic);
    
-    Mesh mesh;
-    std::ifstream input(in_name);
-    if (!input || !(input >> mesh) || !CGAL::is_triangle_mesh(mesh))
-    {
-        std::cerr << "Error: input file must be a triangular mesh OFF file" << std::endl;
-        return 1;
-    }
 
     //TODO: Add boolean to LEVEL_FUNC_PACK and an execution branch
     //      to FT_InitIntfc() that allows the interface to be read in
@@ -71,12 +81,46 @@ int main(int argc, char* argv[])
     char dname[100];
     sprintf(dname,"%s/off_read",out_name);
     gview_plot_interface(dname,front.interf);
-    print_interface(front.interf);
+    //print_interface(front.interf);
+
+
 
     clean_up(0);
-
 }
 
+std::pair<std::vector<double>,std::vector<double>>
+getInputMeshDimensionsWithPad(Mesh* mesh, double pad)
+{
+    std::vector<double> L(3,HUGE);
+    std::vector<double> U(3,-HUGE);
+    Mesh::Vertex_range vrange = mesh->vertices();
+    Mesh::Vertex_range::iterator vit = vrange.begin();
+    for( vit; vit != vrange.end(); ++vit )
+    {
+        double vcoords[3];
+        Point3 p = mesh->point(*vit);
+        vcoords[0] = p.x();
+        vcoords[1] = p.y();
+        vcoords[2] = p.z();
+        for( int i = 0; i < 3; ++i )
+        {
+            if( vcoords[i] < L[i] )
+                L[i] = vcoords[i];
+            if( vcoords[i] > U[i] )
+                U[i] = vcoords[i];            
+        }
+    }
+
+    for( int i = 0; i < 3; ++i )
+    {
+        L[i] -= pad;
+        U[i] += pad;
+    }
+
+    std::pair<std::vector<double>,
+        std::vector<double>> bdryPair(L,U);
+    return bdryPair;
+}
 
 void TriMeshOFF2MonoCompSurf(Front* front, Mesh* mesh)
 {
@@ -108,7 +152,7 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
     FT_VectorMemoryAlloc((POINTER*)&points, num_vtx, sizeof(POINT*));
 
     //read in the mesh vertices
-    std::unordered_map<Vertex_index,int> vmap;
+    std::map<Vertex_index,int> vmap;
     Mesh::Vertex_range vrange = mesh->vertices();
     Mesh::Vertex_range::iterator vit = vrange.begin();
     for( int i = 0; i < num_vtx; i++ )

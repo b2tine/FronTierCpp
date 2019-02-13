@@ -1,8 +1,8 @@
-#include "HyperSurfElement.h"
-
 #ifndef BOUNDING_VOLUME_H
 #define BOUNDING_VOLUME_H
 
+#include "HyperSurfElement.h"
+#include "CGAL_Point.h"
 #include <vector>
 
 
@@ -31,7 +31,7 @@ class AABB
         ~AABB() = default;
 
         const BV_Type getBvType() const;
-        const BV_Point getCentroid() const;
+        const CGAL_Point getCentroid() const;
 
         bool contains(const AABB&) const;
         bool overlaps(const AABB&) const;

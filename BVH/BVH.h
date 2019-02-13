@@ -1,8 +1,7 @@
-#include "BVH_Node.h"
-
 #ifndef BVH_H
 #define BVH_H
 
+#include "BVH_Node.h"
 
 
 class BVH

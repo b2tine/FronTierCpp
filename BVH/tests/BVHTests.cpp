@@ -1,5 +1,5 @@
-#include "gmock/gmock.h"
-#include "../BVH.h"
+#include <gmock/gmock.h>
+#include <BVH.h>
 
 
 class BVH_Tests : public testing::Test

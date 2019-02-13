@@ -1,5 +1,5 @@
-#include "gmock/gmock.h"
-#include "../BoundingVolume.h"
+#include <gmock/gmock.h>
+#include <BoundingVolume.h>
 
 
 class AABBTests : public testing::Test
@@ -141,7 +141,7 @@ TEST_F(AABBTests, ConstructorTwoAABBs)
 
 TEST_F(AABBTests, ConstructorTwoBV_Points)
 {
-    BV_Point centroid = bbBVPts.getCentroid();
+    CGAL_Point centroid = bbBVPts.getCentroid();
     ASSERT_DOUBLE_EQ(centroid[0],0.0);
     ASSERT_DOUBLE_EQ(centroid[1],0.0);
     ASSERT_DOUBLE_EQ(centroid[2],0.0);
