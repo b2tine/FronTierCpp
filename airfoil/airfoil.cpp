@@ -128,7 +128,6 @@ int main(int argc, char **argv)
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
-
 	initMovieStress(in_name,&front);
 
 	/* Time control */
@@ -187,6 +186,9 @@ int main(int argc, char **argv)
 
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
+
+    //print_interface(front.interf);
+    //exit(0);
 
 	/* Propagate the front */
 

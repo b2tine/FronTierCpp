@@ -58,7 +58,6 @@ class BV_Point
 //additional structures allowing BV_Point to
 //be used in the CGAL function hilbert_sort();
 
-/*
 struct BV_LessX
 {
     bool operator()(const BV_Point& p, const BV_Point& q) const
@@ -105,6 +104,5 @@ struct BV_HilbertSortingTraits
         return Less_z_3();
     }
 };
-*/
 
 #endif

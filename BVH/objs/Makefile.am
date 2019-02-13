@@ -23,7 +23,8 @@ ______lib_libBVH_la_SOURCES = \
 ../BVH_Node.h \
 ../BVH_Node.cpp \
 ../BVH.h \
-../BVH.cpp
+../BVH.cpp \
+../mkdir.cpp
 
 
 ______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libiFluid.la
