@@ -33,6 +33,7 @@ TEST_F(HsPoint_Tests, MaxCoordIsEqualToMinCoord)
 {
     ASSERT_DOUBLE_EQ(A->min_coord(0),A->max_coord(0));
     ASSERT_DOUBLE_EQ(A->min_coord(2),A->max_coord(2));
+    ASSERT_EQ(A->getTag(),HseTag::NONE);
 }
 
 TEST_F(HsPoint_Tests, PointOfHseDefaultArgIsZero)

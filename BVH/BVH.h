@@ -8,8 +8,14 @@ class BVH
 {
     private:
         
-        //std::shared_ptr<InternalNode> root;
-        //std::vector<std::shared_ptr<InternalNode>> Leaves;
+        //std::shared_ptr<InternalNode> root{nullptr};
+        //int lastHseCount{0};
+        //std::vector<Hse*> hseList;
+        int lastCountLeaves{0};
+        std::vector<std::shared_ptr<BVH_Node>> leaves;
+
+        std::vector<CGAL_Point> ctrVec;
+        std::map<CGAL_Point,std::shared_ptr<BVH_Node>> bvMap;
 
     public:
 
@@ -37,6 +43,15 @@ class BVH
         static std::shared_ptr<InternalNode> createInternalNode(
                 std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
 
+        //void assembleHseListFromInterface(const INTERFACE* const intfc);
+        //void clearHseList();
+
+        void constructLeafNodes(const INTERFACE* const intfc);
+        void clearLeafNodes();
+
+        void sortNodes();
+        void writeHilbertCurve(std::string,std::string);
+        
 };
 
 

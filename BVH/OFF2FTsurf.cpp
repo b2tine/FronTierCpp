@@ -1,8 +1,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
-#include "BoundingVolume.h"
-#include "CGAL_Point.h"
+#include "BVH.h"
 
 #include <assert.h>
 #include <iostream>
@@ -28,7 +27,8 @@ void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
 void TriMeshOFF2Surf(INTERFACE*, COMPONENT,
         COMPONENT, Mesh*, SURFACE**);
 
-char *in_name, *out_name;
+extern void createDirectory(std::string);
+
 
 int main(int argc, char* argv[])
 {
@@ -40,8 +40,8 @@ int main(int argc, char* argv[])
     f_basic.dim = 3;
     FT_Init(argc,argv,&f_basic);
 
-    in_name = f_basic.in_name;
-    out_name = f_basic.out_name;
+    char* in_name = f_basic.in_name;
+    char* out_name = f_basic.out_name;
 
     Mesh mesh;
     std::ifstream input(in_name);
@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
     f_basic.size_of_intfc_state = 0;
 
     FT_StartUp(&front,&f_basic);
-   
+    add_to_debug("trace");
+    add_to_debug("BVH");
 
     //TODO: Add boolean to LEVEL_FUNC_PACK and an execution branch
     //      to FT_InitIntfc() that allows the interface to be read in
@@ -82,8 +83,24 @@ int main(int argc, char* argv[])
     sprintf(dname,"%s/off_read",out_name);
     gview_plot_interface(dname,front.interf);
     //print_interface(front.interf);
+    
+    std::string outdir(out_name);
+    outdir += "/";
+    std::string geomdir("OOGL/");
+    createDirectory(outdir + geomdir);
+
+    std::ofstream outfile(outdir + geomdir + "input-mesh.off");
+    outfile << mesh;
+    outfile.close();
 
 
+    BVH bvh;
+    //bvh.assembleHseListFromInterface(front.interf);
+    //bvh.clearHseList();
+    bvh.constructLeafNodes(front.interf);
+    bvh.sortNodes();
+    bvh.writeHilbertCurve(outdir,geomdir);
+    bvh.clearLeafNodes();
 
     clean_up(0);
 }
@@ -270,5 +287,8 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
     set_current_interface(saved_intfc);
     FT_FreeThese(2,tris,points);
 }
+
+
+
 
 

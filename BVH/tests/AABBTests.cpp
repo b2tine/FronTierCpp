@@ -141,7 +141,7 @@ TEST_F(AABBTests, ConstructorTwoAABBs)
 
 TEST_F(AABBTests, ConstructorTwoBV_Points)
 {
-    CGAL_Point centroid = bbBVPts.getCentroid();
+    CGAL_Point centroid = bbBVPts.Centroid();
     ASSERT_DOUBLE_EQ(centroid[0],0.0);
     ASSERT_DOUBLE_EQ(centroid[1],0.0);
     ASSERT_DOUBLE_EQ(centroid[2],0.0);

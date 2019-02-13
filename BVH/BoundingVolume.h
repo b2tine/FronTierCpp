@@ -30,7 +30,7 @@ class AABB
         ~AABB() = default;
 
         const BV_Type getBvType() const;
-        const CGAL_Point getCentroid() const;
+        const CGAL_Point Centroid() const;
 
         bool contains(const AABB&) const;
         bool overlaps(const AABB&) const;

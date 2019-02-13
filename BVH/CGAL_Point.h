@@ -16,12 +16,11 @@ class CGAL_Point
         CGAL_Point();
         CGAL_Point(double, double, double);
 
-        ~CGAL_Point() = default;
         CGAL_Point(const CGAL_Point&) = default;
         CGAL_Point(CGAL_Point&&) = default;
-
-        CGAL_Point& operator=(const CGAL_Point&) = delete;
-        CGAL_Point& operator=(CGAL_Point&&) = delete;
+        CGAL_Point& operator=(const CGAL_Point&) = default;
+        CGAL_Point& operator=(CGAL_Point&&) = default;
+        ~CGAL_Point() = default;
 
         const double& operator[](int i) const;
         double& operator[](int i);

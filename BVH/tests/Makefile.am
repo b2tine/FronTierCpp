@@ -28,6 +28,7 @@ HSETests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(HSETests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
+	@cd $(top_builddir)/BVH/objs && $(MAKE) all
 
 
 TESTS += CGAL_PointTests

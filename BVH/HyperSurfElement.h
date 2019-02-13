@@ -8,9 +8,15 @@
 
 #include <FronTier.h>
 
+enum class HseTag {FABRIC,STRING,RIGIDBODY,NONE};
+
 //Abstract base class for FronTier hypersurface element wrappers
 class Hse
 {
+    protected:
+
+        HseTag tag{HseTag::NONE};
+
     public:
 
         Hse() = default;
@@ -25,6 +31,9 @@ class Hse
         virtual double min_coord(int) const = 0;
         virtual POINT* Point_of_hse(int) const = 0;
         virtual int num_pts() const = 0;
+
+        void setTag(HseTag Tag);
+        HseTag getTag();
 };
 
 //Wrapper for FronTier POINT
@@ -37,9 +46,8 @@ class HsPoint : public Hse
     public:
 
         //TODO: throw exception if p is nullptr
-        explicit HsPoint(POINT* p)
-            : point{p}
-        {}
+        explicit HsPoint(POINT*);
+        HsPoint(POINT*, HseTag);
 
         ~HsPoint() = default;
 
@@ -70,9 +78,8 @@ class HsBond : public Hse
     public:
 
         //TODO: throw exception if b is nullptr
-        explicit HsBond(BOND* b)
-            : bond{b}
-        {}
+        explicit HsBond(BOND*);
+        HsBond(BOND*, HseTag);
 
         ~HsBond() = default;
 
@@ -102,9 +109,8 @@ class HsTri : public Hse
     public:
 
         //TODO: throw exception if t is nullptr
-        explicit HsTri(TRI* t)
-            : tri{t}
-        {}
+        explicit HsTri(TRI*);
+        HsTri(TRI*, HseTag);
 
         ~HsTri() = default;
 
