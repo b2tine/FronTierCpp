@@ -14,8 +14,8 @@
 #include <map>
 
 
-using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-using cgalPoint3 = K::Point_3;
+using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+using cgalPoint3 = Kernel::Point_3;
 using Mesh = CGAL::Surface_mesh<cgalPoint3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
     bvh.constructLeafNodes(front.interf);
     bvh.sortNodes();
     bvh.writeHilbertCurveFile(outdir,geomdir);
-    bvh.constructParentNodes();
+    //bvh.constructParentNodes();
 
     bvh.clearLeafNodes();
 

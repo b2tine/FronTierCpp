@@ -1,7 +1,9 @@
 #ifndef CGAL_POINT_H
 #define CGAL_POINT_H
 
-#include <CGAL/hilbert_sort.h>
+#include <CGAL/spatial_sort.h>
+#include <CGAL/Spatial_sort_traits_adapter_3.h>
+#include <CGAL/property_map.h>
 #include <vector>
 
 

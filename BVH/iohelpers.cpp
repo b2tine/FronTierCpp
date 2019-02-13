@@ -37,8 +37,10 @@ void createDirectory(std::string new_dir)
 
 void BVH::writeHilbertCurveFile(std::string outdir, std::string geomdir)
 {
-    assert(!bvMap.empty());
-    int num_hse = bvMap.size();
+    assert(!centroids.empty());
+    int num_hse = centroids.size();
+    //assert(!bvMap.empty());
+    //int num_hse = bvMap.size();
 
     //Write geomview OOGL file for the curve
     std::ofstream outfile(outdir + geomdir + "hilbert_curve.vect");
@@ -52,10 +54,8 @@ void BVH::writeHilbertCurveFile(std::string outdir, std::string geomdir)
     //coordinates of curve vertices (same as the points/boxcenters)
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point coords = ctrVec[i];
-        for( int k = 0; k < 3; k++ )
-            outfile << coords[k] << " ";
-        outfile << "\n";
+        CGAL_Point p = centroids[i].first;
+        outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n";
     //red, green, blue, alpha(opacity)
@@ -82,10 +82,8 @@ void BVH::writeHilbertCurveFile(std::string outdir, std::string geomdir)
     //coordinates of the curve points
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point coords = ctrVec[i];
-        for( int k = 0; k < 3; k++ )
-            outfile << coords[k] << " ";
-        outfile << "\n";
+        CGAL_Point p = centroids[i].first;
+        outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n";
     //red, green, blue, alpha(opacity)
@@ -101,12 +99,14 @@ void BVH::writeHilbertCurveFile(std::string outdir, std::string geomdir)
         outfile.open(outdir + geomdir + geomfile);
         outfile << "BBOX\n";
 
-        BV_Point lcoords = bvMap[ctrVec[i]]->getBV().lower;
+        BV_Point lcoords = centroids[i].second->getBV().lower;
+        //BV_Point lcoords = bvMap[ctrVec[i]]->getBV().lower;
         for( int k = 0; k < 3; k++ )
             outfile << lcoords[k] << " ";
         outfile << "\n";
 
-        BV_Point ucoords = bvMap[ctrVec[i]]->getBV().upper;
+        BV_Point ucoords = centroids[i].second->getBV().upper;
+        //BV_Point ucoords = bvMap[ctrVec[i]]->getBV().upper;
         for( int k = 0; k < 3; k++ )
             outfile << ucoords[k] << " ";
         outfile.close();

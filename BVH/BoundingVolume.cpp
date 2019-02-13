@@ -37,10 +37,10 @@ const BV_Type AABB::getBvType() const
 
 const CGAL_Point AABB::Centroid() const
 {
-    CGAL_Point centroid;
+    double ctr[3];
     for( int i = 0; i < 3; ++i )
-        centroid[i] = 0.5*(lower[i]+upper[i]);
-    return centroid;
+        ctr[i] = 0.5*(lower[i]+upper[i]);
+    return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 
 bool AABB::contains(const AABB& BB) const
@@ -65,9 +65,9 @@ bool AABB::overlaps(const AABB& BB) const
 
 void AABB::print() const
 {
-    CGAL_Point centroid = this->Centroid();
+    CGAL_Point ctr = this->Centroid();
     printf("\n   upper: (%3g,%3g,%3g) \n", upper[0], upper[1], upper[2]);
-    printf("centroid: (%3g,%3g,%3g) \n", centroid[0], centroid[1], centroid[2]);
+    printf("centroid: (%3g,%3g,%3g) \n", ctr.x(), ctr.y(), ctr.z());
     printf("   lower: (%3g,%3g,%3g) \n\n", lower[0], lower[1], lower[2]);
 }
 

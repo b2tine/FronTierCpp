@@ -17,8 +17,6 @@ noinst_LTLIBRARIES = ../../lib/libBVH.la
 ______lib_libBVH_la_SOURCES = \
 ../HyperSurfElement.h \
 ../HyperSurfElement.cpp \
-../CGAL_Point.h \
-../CGAL_Point.cpp \
 ../BoundingVolume.h \
 ../BoundingVolume.cpp \
 ../BVH_Node.h \

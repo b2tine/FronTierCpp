@@ -61,9 +61,11 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
             }
             
             auto node = leaves.back();
-            ctrVec.push_back(node->getBV().Centroid());
-            bvMap[ctrVec[n_tri++]] = node;
-            //n_tri++;
+            Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
+            centroids.push_back(ctr_bv_pair);
+            //ctrVec.push_back(node->getBV().Centroid());
+            //bvMap[ctrVec[n_tri++]] = node;
+            n_tri++;
 	    }
 	}
 
@@ -77,9 +79,11 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
             //hseList.push_back(new HsBond(b,HseTag::STRING));
             //hseList.push_back(new CD_BOND(b,m_dim, "string_bond"));
             auto node = leaves.back();
-            ctrVec.push_back(node->getBV().Centroid());
-            bvMap[ctrVec[n_tri + n_bond++]] = node;
-		    //n_bond++;
+            Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
+            centroids.push_back(ctr_bv_pair);
+            //ctrVec.push_back(node->getBV().Centroid());
+            //bvMap[ctrVec[n_tri + n_bond++]] = node;
+		    n_bond++;
 	    }
 	}
 
@@ -100,11 +104,12 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 void BVH::clearLeafNodes()
 {
     int lastCountLeaves = leaves.size();
-    ctrVec.clear();
-    bvMap.clear();
     leaves.clear();
     children.clear();
     parents.clear();
+    //ctrVec.clear();
+    //bvMap.clear();
+
     /*
     int lastHseCount = hseList.size();
     for( int i = 0; i < hseList.size(); ++i)
@@ -117,12 +122,12 @@ void BVH::clearLeafNodes()
 
 void BVH::sortNodes()
 {
-    //TODO: perform sort directly on a std::vector<BVH_Node>
     BV_HilbertSortingTraits hst;
-    CGAL::hilbert_sort(ctrVec.begin(),ctrVec.end(),hst);
+    CGAL::hilbert_sort(centroids.begin(),centroids.end(),hst);
 }
 
 
+/*
 void BVH::constructParentNodes()
 {
     assert(!leaves.empty());
@@ -145,7 +150,7 @@ void BVH::constructParentNodes()
 
 
 }
-
+*/
 
 
 

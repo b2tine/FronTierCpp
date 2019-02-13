@@ -3,6 +3,20 @@
 
 #include "BVH_Node.h"
 
+#include <CGAL/hilbert_sort.h>
+//#include <CGAL/spatial_sort.h>
+#include <CGAL/Spatial_sort_traits_adapter_3.h>
+#include <CGAL/property_map.h>
+
+#include <utility>
+
+
+using Point_with_Node = std::pair<CGAL_Point,std::shared_ptr<BVH_Node>>;
+using Point_Node_Vector = std::vector<Point_with_Node>;
+
+using pMap = CGAL::First_of_pair_property_map<Point_with_Node>;
+using BV_HilbertSortingTraits = CGAL::Spatial_sort_traits_adapter_3<K,pMap>;
+
 
 class BVH
 {
@@ -17,8 +31,7 @@ class BVH
         std::vector<std::shared_ptr<BVH_Node>> children;
         std::vector<std::shared_ptr<BVH_Node>> parents;
 
-        std::vector<CGAL_Point> ctrVec;
-        std::map<CGAL_Point,std::shared_ptr<BVH_Node>> bvMap;
+        Point_Node_Vector centroids;
 
     public:
 
@@ -53,7 +66,7 @@ class BVH
         void clearLeafNodes();
 
         void sortNodes();
-        void constructParentNodes();
+        //void constructParentNodes();
 
         //temp function for prototype debugging
         void writeHilbertCurveFile(std::string,std::string);

@@ -2,7 +2,9 @@ SUBDIRS = objs . tests
 
 input_directories = input
 
-EXTRA_DIST = $(input_directories)
+EXTRA_DIST = $(input_directories) \
+			 CGAL_Point.h \
+			 CGAL_Point.cpp
 			 
 
 AM_CPPFLAGS = -I$(top_srcdir)/BVH \
