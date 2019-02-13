@@ -83,7 +83,6 @@ static void setInitialIntfcAF3d(
 	af_params->num_opt_round = 20;
     af_params->spring_model = MODEL1;	// default
 	af_params->attach_gores = NO;		// default
-	//af_params->attach_string = NO;		// default
 	af_params->use_gpu = NO;		    // default
 	af_params->gore_len_fac = 1.0;		// default
 	

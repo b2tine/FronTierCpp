@@ -1429,8 +1429,7 @@ static void assembleParachuteSet3d(
 	/* Assemble canopy surfaces */
 	intfc_surface_loop(intfc,s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY)
-		continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 	    surfs[ns++] = *s;
 	    surf_pos_curve_loop(*s,c)
 	    {
@@ -1462,8 +1461,7 @@ static void assembleParachuteSet3d(
 	   and isolated 3d curves */
 	intfc_curve_loop(intfc,c)
 	{
-	    if (pointer_in_list(*c,nc,(POINTER*)curves))
-                continue;
+	    if (pointer_in_list(*c,nc,(POINTER*)curves)) continue;
 	    if (hsbdry_type(*c) == STRING_HSBDRY ||
 	        hsbdry_type(*c) == MONO_COMP_HSBDRY ||
 	        hsbdry_type(*c) == GORE_HSBDRY)

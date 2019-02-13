@@ -1783,6 +1783,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
 #ifndef COLLISION_DETECTION_OFF
 	static CollisionSolver* collision_solver = new CollisionSolver3d();
+    printf("COLLISION DETECTION ON\n");
 #else
     printf("COLLISION DETECTION OFF\n");
 #endif
@@ -1831,13 +1832,14 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            	elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-				ELASTIC_BOUNDARY);
-		collectNodeExtra(fr,elastic_intfc,owner_id);
+            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
+                    ELASTIC_BOUNDARY);
+            collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
-		elastic_intfc = fr->interf;
-	    start_clock("set_data");
+            elastic_intfc = fr->interf;
+	    
+        start_clock("set_data");
 	    if (myid == owner_id)
             {
 		if (client_size_old != NULL)
@@ -1864,8 +1866,9 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    	count_vertex_neighbors(&geom_set,sv);
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
-		if (elastic_intfc != fr->interf)
-		    delete_interface(elastic_intfc);
+		
+            if (elastic_intfc != fr->interf)
+                delete_interface(elastic_intfc);
 	    }
 	    stop_clock("set_data");
 	    first = NO;
@@ -1915,11 +1918,12 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
                 //TODO: spring and friction constants can vary between
                 //      different fabric objects
                 collision_solver->setSpringConstant(af_params->ks); 
-                collision_solver->setFrictionConstant(af_params->lambda_s);
+                //collision_solver->setFrictionConstant(af_params->lambda_s);
+                collision_solver->setFrictionConstant(0.0);
                 
                 collision_solver->setPointMass(af_params->m_s);
-                collision_solver->setFabricThickness(1.0e-3);
-                //collision_solver->setFabricThickness(1.0e-4);
+                //collision_solver->setFabricThickness(1.0e-3);
+                collision_solver->setFabricThickness(1.0e-4);
 
                 //TODO: coefficient of restitution depends on
                 //      the objects involved in collision

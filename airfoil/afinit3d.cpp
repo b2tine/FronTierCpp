@@ -2856,14 +2856,18 @@ static void init3dCurves(
         INTERFACE *intfc = front->interf;
         string_nodes[0] = make_node(Point(pt_s));
         string_nodes[1] = make_node(Point(pt_e));
+
         curve = make_curve(0,0,string_nodes[0],string_nodes[1]);
         hsbdry_type(curve) = hsb_type;
         double spacing = separation(string_nodes[0]->posn,
                                     string_nodes[1]->posn,3);
         double dir[3];
         for (int j = 0; j < 3; ++j)
+        {
             dir[j] = (Coords(string_nodes[1]->posn)[j] -
                       Coords(string_nodes[0]->posn)[j])/spacing;
+        }
+
         double *h = computational_grid(intfc)->h;
         int nb = (int)(spacing/(0.5*h[0]));
         spacing /= (double)nb;
@@ -2892,7 +2896,6 @@ extern void initIsolated3dCurves(Front* front)
 {
     double pt_s[3];
     double pt_e[3];
-    int num_curves = 0; //default
     int hsb_type = STRING_HSBDRY; //default
     AF_NODE_TYPE nd_type = STRING_NODE; //default
     FILE *infile = fopen(InName(front),"r");
@@ -2908,6 +2911,7 @@ extern void initIsolated3dCurves(Front* front)
     else
         return;
 
+    int num_curves = 0;
 	CursorAfterString(infile,"Enter the number of curves:");
 	fscanf(infile,"%d",&num_curves);
 	(void) printf("%d\n",num_curves);
@@ -2933,10 +2937,12 @@ extern void initIsolated3dCurves(Front* front)
 	    sprintf(string, "Enter yes to fix the endpoints of curve %d:", i);
 	    if (CursorAfterStringOpt(infile, string))
 	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
-		if (string[0] == 'y' || string[0] == 'Y')
-		    nd_type = PRESET_NODE;
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                nd_type = PRESET_NODE;
+            else
+                nd_type = STRING_NODE;
 	    }
 	    init3dCurves(front,pt_s,pt_e,hsb_type,nd_type);
 

@@ -24,7 +24,8 @@ void CollisionSolver3d::assembleFromInterface(
 	int n_tri = 0, n_bond = 0;
 	setTimeStepSize(dt);
 	clearHseList();
-	intfc_surface_loop(intfc,s)
+	
+    intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
 	    unsort_surface_point(*s);
@@ -38,13 +39,14 @@ void CollisionSolver3d::assembleFromInterface(
 		n_tri++;
 	    }
 	}
+
 	intfc_curve_loop(intfc,c)
 	{
 	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
 	    curve_bond_loop(*c,b)
 	    {
-		hseList.push_back(new CD_BOND(b,m_dim, "lines"));
-		n_bond++;
+            hseList.push_back(new CD_BOND(b,m_dim, "lines"));
+		    n_bond++;
 	    }
 	}
 	makeSet(hseList);

@@ -52,7 +52,10 @@ int CollisionSolver::pt_to_tri = 0;
 // To use Pimpl idiom by unique_ptr, special member function 
 // should be explicit declared in header file and defined in 
 // implementation file
-CollisionSolver::CollisionSolver(int dim):m_dim(dim), abt_proximity(nullptr) {}
+CollisionSolver::CollisionSolver(int dim)
+    : m_dim(dim), abt_proximity(nullptr)
+{}
+
 CollisionSolver::CollisionSolver() = default;
 CollisionSolver::CollisionSolver(CollisionSolver&& rhs) = default;
 CollisionSolver& CollisionSolver::operator=(CollisionSolver&& rhs) = default;
@@ -425,11 +428,12 @@ void CollisionSolver::aabbProximity() {
         
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
-        if ((abt_proximity->getVolume() - volume) > 0.2*volume)
-        {
+        
+        //if ((abt_proximity->getVolume() - volume) > 0.2*volume)
+        //{
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
-        }
+        //}
     }
     // query for collision detection of AABB elements
     abt_proximity->query(this);
@@ -473,10 +477,11 @@ void CollisionSolver::aabbCollision() {
     else {
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
-        if ((abt_collision->getVolume() - volume) > 0.2*volume) {
+        
+        //if ((abt_collision->getVolume() - volume) > 0.2*volume) {
             abt_collision->updateTreeStructure();
             volume = abt_collision->getVolume();
-        }
+        //}
     }
     abt_collision->query(this);
 }
@@ -1135,22 +1140,24 @@ inline POINT*& tail(POINT* p){
 	return sl->impZone.tail;
 }
 
-extern void makeSet(std::vector<CD_HSE*>& hseList){
+extern void makeSet(std::vector<CD_HSE*>& hseList)
+{
 	STATE* sl;
 	POINT* pt;
-	//#pragma omp parallel for private(sl,pt)
-        for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-                it < hseList.end(); ++it){
-            for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-                sorted(pt) = NO;
-		sl = (STATE*)left_state(pt);
-		sl->impZone.next_pt = NULL;
-		sl->impZone.tail = pt;
-		sl->impZone.root = pt;
-		sl->impZone.num_pts = 1;
-            }
+    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
+            it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sorted(pt) = NO;
+            sl = (STATE*)left_state(pt);
+            sl->impZone.next_pt = NULL;
+            sl->impZone.tail = pt;
+            sl->impZone.root = pt;
+            sl->impZone.num_pts = 1;
         }
+    }
 }
 
 POINT* findSet(POINT* p){

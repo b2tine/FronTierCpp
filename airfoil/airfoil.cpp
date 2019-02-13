@@ -128,11 +128,12 @@ int main(int argc, char **argv)
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
+
 	initMovieStress(in_name,&front);
 
 	/* Time control */
 	FT_ReadTimeControl(in_name,&front);
-
+        
 	if (!RestartRun)
 	{
 	    optimizeElasticMesh(&front);
