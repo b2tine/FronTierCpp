@@ -16,8 +16,8 @@
 
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-using Point3 = K::Point_3;
-using Mesh = CGAL::Surface_mesh<Point3>;
+using cgalPoint3 = K::Point_3;
+using Mesh = CGAL::Surface_mesh<cgalPoint3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
 
@@ -98,7 +98,7 @@ getInputMeshDimensionsWithPad(Mesh* mesh, double pad)
     for( vit; vit != vrange.end(); ++vit )
     {
         double vcoords[3];
-        Point3 p = mesh->point(*vit);
+        cgalPoint3 p = mesh->point(*vit);
         vcoords[0] = p.x();
         vcoords[1] = p.y();
         vcoords[2] = p.z();
@@ -158,7 +158,7 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
     for( int i = 0; i < num_vtx; i++ )
     {
         double vcoords[3];
-        Point3 p = mesh->point(*vit);
+        cgalPoint3 p = mesh->point(*vit);
         vcoords[0] = p.x();
         vcoords[1] = p.y();
         vcoords[2] = p.z();

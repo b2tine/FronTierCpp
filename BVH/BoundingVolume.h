@@ -10,7 +10,6 @@ enum class BV_Type {AABB};//, OBB, KDOP, SPHERE};
 
 using BV_Point = std::vector<double>;
 
-
 //Axis Aligned Bounding Box (AABB)
 class AABB
 {
