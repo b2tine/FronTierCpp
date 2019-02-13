@@ -12,7 +12,10 @@ class BVH
         //int lastHseCount{0};
         //std::vector<Hse*> hseList;
         int lastCountLeaves{0};
+        //keep leaves in own vector for now
         std::vector<std::shared_ptr<BVH_Node>> leaves;
+        std::vector<std::shared_ptr<BVH_Node>> children;
+        std::vector<std::shared_ptr<BVH_Node>> parents;
 
         std::vector<CGAL_Point> ctrVec;
         std::map<CGAL_Point,std::shared_ptr<BVH_Node>> bvMap;
@@ -50,7 +53,10 @@ class BVH
         void clearLeafNodes();
 
         void sortNodes();
-        void writeHilbertCurve(std::string,std::string);
+        void constructParentNodes();
+
+        //temp function for prototype debugging
+        void writeHilbertCurveFile(std::string,std::string);
         
 };
 

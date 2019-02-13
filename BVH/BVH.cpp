@@ -103,6 +103,8 @@ void BVH::clearLeafNodes()
     ctrVec.clear();
     bvMap.clear();
     leaves.clear();
+    children.clear();
+    parents.clear();
     /*
     int lastHseCount = hseList.size();
     for( int i = 0; i < hseList.size(); ++i)
@@ -115,9 +117,38 @@ void BVH::clearLeafNodes()
 
 void BVH::sortNodes()
 {
+    //TODO: perform sort directly on a std::vector<BVH_Node>
     BV_HilbertSortingTraits hst;
     CGAL::hilbert_sort(ctrVec.begin(),ctrVec.end(),hst);
 }
+
+
+void BVH::constructParentNodes()
+{
+    assert(!leaves.empty());
+    assert(!ctrVec.empty());
+    assert(!bvMap.empty());
+
+    for( int i = 0; i < ctrVec.size(); i += 2 )
+    {
+        auto lc = bvMap[ctrVec[i]];
+        auto rc = bvMap[ctrVec[i+1]];
+        parents.push_back(BVH::createInternalNode(lc,rc));
+    }
+
+    //for odd number of leafnodes
+    if( ctrVec.size() % 2 != 0 )
+    {
+        auto oc = bvMap[ctrVec[ctrVec.size()-1]];
+        parents.push_back(BVH::createInternalNode(oc,oc));
+    }
+
+
+}
+
+
+
+
 
 
 

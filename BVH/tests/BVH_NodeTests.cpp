@@ -111,13 +111,31 @@ TEST_F(DISABLED_BVH_NodeTests, GetSibling)
     //ASSERT_EQ(s,l2);
 }
 
-TEST_F(BVH_NodeTests, ConstructorInternalNodeDeathTest)
+TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
 {
     std::shared_ptr<LeafNode> l6;
     std::shared_ptr<InternalNode> p;
     ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
 }
       
+TEST_F(BVH_NodeTests, InternalNodeCtorOddNumberLeaves)
+{
+    std::shared_ptr<InternalNode> p3 =
+        std::make_shared<InternalNode>(l5,l5);
+    p3->setChildren(l5,l5);
+    ASSERT_EQ(p3->getLeftChild().lock(),l5);
+    ASSERT_EQ(p3->getRightChild().lock(),l5);
+    ASSERT_EQ(l5->getParent().lock(),p3);
+
+    BoundingVolume bvp3 = p3->getBV();
+    ASSERT_DOUBLE_EQ(bvp3.lower[0],-1.0);
+    ASSERT_DOUBLE_EQ(bvp3.lower[1],-1.0);
+    ASSERT_DOUBLE_EQ(bvp3.lower[2],-1.0);
+    ASSERT_DOUBLE_EQ(bvp3.upper[0],0.0);
+    ASSERT_DOUBLE_EQ(bvp3.upper[1],0.0);
+    ASSERT_DOUBLE_EQ(bvp3.upper[2],0.0);
+}
+
 TEST_F(BVH_NodeTests, InternalNodePrototypeFactoryTest)
 {
     //See ../BVH_Node.cpp for why construction of a

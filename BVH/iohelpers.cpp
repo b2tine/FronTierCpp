@@ -35,7 +35,7 @@ void createDirectory(std::string new_dir)
         mkdirTree(new_dir, "");
 }
 
-void BVH::writeHilbertCurve(std::string outdir, std::string geomdir)
+void BVH::writeHilbertCurveFile(std::string outdir, std::string geomdir)
 {
     assert(!bvMap.empty());
     int num_hse = bvMap.size();

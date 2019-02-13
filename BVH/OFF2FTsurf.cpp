@@ -99,7 +99,9 @@ int main(int argc, char* argv[])
     //bvh.clearHseList();
     bvh.constructLeafNodes(front.interf);
     bvh.sortNodes();
-    bvh.writeHilbertCurve(outdir,geomdir);
+    bvh.writeHilbertCurveFile(outdir,geomdir);
+    bvh.constructParentNodes();
+
     bvh.clearLeafNodes();
 
     clean_up(0);
