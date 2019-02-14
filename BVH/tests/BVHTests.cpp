@@ -6,22 +6,16 @@ class BVH_Tests : public testing::Test
 {
     protected:
 
-    //static INTERFACE* intfc;
-
     static TRI *t1, *t2, *t3, *t4,*t5;
     static POINT *a, *b, *c, *d, *e, *f, *g;
 
     static HsTri *T1, *T2, *T3, *T4, *T5;
 
-    //BVH bvh;
     std::shared_ptr<LeafNode>  l1, l2, l3, l4, l5;
     std::shared_ptr<InternalNode> p1, p2, gp;
 
     static void SetUpTestCase()
     {
-        //intfc = make_interface(3);
-        //set_current_interface(intfc);
-
         a = new POINT;         b = new POINT;
         Coords(a)[0] = 0.0;    Coords(b)[0] = 1.0;
         Coords(a)[1] = 0.0;    Coords(b)[1] = 0.0;
@@ -92,7 +86,7 @@ class BVH_Tests : public testing::Test
     ~BVH_Tests() = default;
 };
 
-//INTERFACE* BVH_Tests::intfc = nullptr;
+
 TRI* BVH_Tests::t1 = nullptr;
 TRI* BVH_Tests::t2 = nullptr;
 TRI* BVH_Tests::t3 = nullptr;

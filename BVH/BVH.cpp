@@ -17,7 +17,27 @@ BVH::createInternalNode(std::shared_ptr<BVH_Node> lc,
 }
 
 
-//void BVH::assembleHseListFromInterface(const INTERFACE* const intfc)
+void BVH::sortChildNodes()
+{
+    assert(!children.empty());
+    CGAL::hilbert_sort(children.begin(),children.end(),hst);
+}
+
+
+void BVH::constructBVH(const Front* const front)
+{
+    constructLeafNodes(front->interf);
+    while( children.size() > 2 )
+    {
+        constructParentNodes();
+    }
+
+    constructRootNode();    
+}
+
+
+//Does this need to be called more than once if
+//all hypersurf elements remain in the leaves vector?
 void BVH::constructLeafNodes(const INTERFACE* const intfc)
 {
 	SURFACE** s;
@@ -25,18 +45,11 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	TRI *tri;
 	BOND *b;
 	
+	//clearVectors();
+
     int n_tri = 0;
     int n_bond = 0;
 
-	clearLeafNodes();
-	//clearHseList();
-    //if(lastHseCount != 0) 
-    if(lastCountLeaves != 0) 
-    {
-        leaves.reserve(lastCountLeaves);
-        //hseList.reserve(lastHseCount);
-    }
-	
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
@@ -62,9 +75,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
             
             auto node = leaves.back();
             Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
-            centroids.push_back(ctr_bv_pair);
-            //ctrVec.push_back(node->getBV().Centroid());
-            //bvMap[ctrVec[n_tri++]] = node;
+            children.push_back(ctr_bv_pair);
             n_tri++;
 	    }
 	}
@@ -80,9 +91,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
             //hseList.push_back(new CD_BOND(b,m_dim, "string_bond"));
             auto node = leaves.back();
             Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
-            centroids.push_back(ctr_bv_pair);
-            //ctrVec.push_back(node->getBV().Centroid());
-            //bvMap[ctrVec[n_tri + n_bond++]] = node;
+            children.push_back(ctr_bv_pair);
 		    n_bond++;
 	    }
 	}
@@ -97,62 +106,74 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	    //printf("%lu number of elements is assembled\n",hseList.size());
 	}
 
+    //sortNodes(children,hst);
+    sortChildNodes();
+
 }
-
-
-//void BVH::clearHseList()
-void BVH::clearLeafNodes()
-{
-    int lastCountLeaves = leaves.size();
-    leaves.clear();
-    children.clear();
-    parents.clear();
-    //ctrVec.clear();
-    //bvMap.clear();
-
-    /*
-    int lastHseCount = hseList.size();
-    for( int i = 0; i < hseList.size(); ++i)
-    {
-        delete hseList[i];
-    }
-    hseList.clear();
-    */
-}
-
-void BVH::sortNodes()
-{
-    BV_HilbertSortingTraits hst;
-    CGAL::hilbert_sort(centroids.begin(),centroids.end(),hst);
-}
-
 
 /*
-void BVH::constructParentNodes()
+void BVH::clearVectors()
 {
-    assert(!leaves.empty());
-    assert(!ctrVec.empty());
-    assert(!bvMap.empty());
+    std::vector<std::shared_ptr<BVH_Node>>().swap(leaves);
+    Point_Node_Vector().swap(children);
 
-    for( int i = 0; i < ctrVec.size(); i += 2 )
+    if(numLeaves != 0) 
     {
-        auto lc = bvMap[ctrVec[i]];
-        auto rc = bvMap[ctrVec[i+1]];
-        parents.push_back(BVH::createInternalNode(lc,rc));
+        leaves.reserve(numLeaves);
+        children.reserve(numLeaves);
     }
-
-    //for odd number of leafnodes
-    if( ctrVec.size() % 2 != 0 )
-    {
-        auto oc = bvMap[ctrVec[ctrVec.size()-1]];
-        parents.push_back(BVH::createInternalNode(oc,oc));
-    }
-
-
 }
 */
 
 
+void BVH::constructParentNodes()
+{
+    assert(!children.empty());
+
+    Point_Node_Vector parents;
+
+    //greedily pair off sorted children
+    for( int i = 0; i < children.size(); i += 2 )
+    {
+        auto lc = children[i].second;
+        auto rc = children[i+1].second;
+        auto p = BVH::createInternalNode(lc,rc);
+        Point_with_Node ctr_bv_pair(p->getBV().Centroid(),p);
+        parents.push_back(ctr_bv_pair);
+    }
+
+    //if odd number of leafnodes
+    if( children.size() % 2 != 0 )
+    {
+        auto oc = children[children.size()-1].second;
+        auto p = BVH::createInternalNode(oc,oc);
+        Point_with_Node ctr_bv_pair(p->getBV().Centroid(),p);
+        parents.push_back(ctr_bv_pair);
+    }
+
+    //sortNodes(parents,hst);
+    std::swap(parents,children);
+    sortChildNodes();
+    //Point_Node_Vector().swap(parents);
+}
+
+
+void BVH::constructRootNode()
+{
+    assert(children.size() == 2);
+    auto lc = children[0].second;
+    auto rc = children[1].second;
+    root = BVH::createInternalNode(lc,rc);
+    assert(root);
+}
+
+/*
+void sortNodes(Point_Node_Vector& pn_vec,
+        const BV_HilbertSortingTraits& traits)
+{
+    CGAL::hilbert_sort(pn_vec.begin(),pn_vec.end(),traits);
+}
+*/
 
 
 

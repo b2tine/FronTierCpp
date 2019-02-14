@@ -4,7 +4,6 @@
 #include "BVH_Node.h"
 
 #include <CGAL/hilbert_sort.h>
-//#include <CGAL/spatial_sort.h>
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 #include <CGAL/property_map.h>
 
@@ -22,16 +21,22 @@ class BVH
 {
     private:
         
-        //std::shared_ptr<InternalNode> root{nullptr};
-        //int lastHseCount{0};
-        //std::vector<Hse*> hseList;
-        int lastCountLeaves{0};
-        //keep leaves in own vector for now
+        std::shared_ptr<InternalNode> root{nullptr};
+        
+        int numLeaves{0};
         std::vector<std::shared_ptr<BVH_Node>> leaves;
-        std::vector<std::shared_ptr<BVH_Node>> children;
-        std::vector<std::shared_ptr<BVH_Node>> parents;
 
-        Point_Node_Vector centroids;
+        Point_Node_Vector children;
+        BV_HilbertSortingTraits hst;
+
+        void sortChildNodes();
+        void constructLeafNodes(const INTERFACE* const intfc);
+        void constructParentNodes();
+        void constructRootNode();
+
+        static std::shared_ptr<LeafNode> createLeafNode(Hse* h);
+        static std::shared_ptr<InternalNode> createInternalNode(
+                std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
 
     public:
 
@@ -55,24 +60,17 @@ class BVH
         }
         */
 
-        static std::shared_ptr<LeafNode> createLeafNode(Hse* h);
-        static std::shared_ptr<InternalNode> createInternalNode(
-                std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
+        void constructBVH(const Front* const);
+        //void clearVectors();
 
-        //void assembleHseListFromInterface(const INTERFACE* const intfc);
-        //void clearHseList();
-
-        void constructLeafNodes(const INTERFACE* const intfc);
-        void clearLeafNodes();
-
-        void sortNodes();
-        //void constructParentNodes();
-
-        //temp function for prototype debugging
+        //temp function for testing/debugging
         void writeHilbertCurveFile(std::string,std::string);
         
 };
 
+
+
+void sortNodes(Point_Node_Vector&,const BV_HilbertSortingTraits&);
 
 
 

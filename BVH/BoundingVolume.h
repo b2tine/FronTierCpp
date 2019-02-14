@@ -2,13 +2,12 @@
 #define BOUNDING_VOLUME_H
 
 #include "HyperSurfElement.h"
-//#include "CGAL_Point.h"
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-
 #include <vector>
 
-enum class BV_Type {AABB};//, OBB, KDOP, SPHERE};
+
+enum class BV_Type {AABB, OBB, KDOP, SPHERE};
 
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;

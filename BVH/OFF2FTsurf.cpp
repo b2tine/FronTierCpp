@@ -72,7 +72,8 @@ int main(int argc, char* argv[])
     //TODO: Add boolean to LEVEL_FUNC_PACK and an execution branch
     //      to FT_InitIntfc() that allows the interface to be read in
     //      from a surface mesh OFF file. Would eliminate the need to
-    //      set the LEVEL_FUNC_PACK::pos_component value erroneously.
+    //      set the LEVEL_FUNC_PACK::pos_component value erroneously,
+    //      facilitate testing.
 
     level_func_pack.pos_component = 1;
     FT_InitIntfc(&front,&level_func_pack);
@@ -80,7 +81,7 @@ int main(int argc, char* argv[])
     TriMeshOFF2MonoCompSurf(&front,&mesh);
     
     char dname[100];
-    sprintf(dname,"%s/off_read",out_name);
+    sprintf(dname,"%s/geomview-interface",out_name);
     gview_plot_interface(dname,front.interf);
     //print_interface(front.interf);
     
@@ -95,14 +96,12 @@ int main(int argc, char* argv[])
 
 
     BVH bvh;
-    //bvh.assembleHseListFromInterface(front.interf);
-    //bvh.clearHseList();
-    bvh.constructLeafNodes(front.interf);
-    bvh.sortNodes();
-    bvh.writeHilbertCurveFile(outdir,geomdir);
+    bvh.constructBVH(&front);
+
+    //bvh.constructLeafNodes(front.interf);
+    //bvh.writeHilbertCurveFile(outdir,geomdir);
     //bvh.constructParentNodes();
 
-    bvh.clearLeafNodes();
 
     clean_up(0);
 }
