@@ -70,8 +70,6 @@ class BVH
 
 
 
-void sortNodes(Point_Node_Vector&,const BV_HilbertSortingTraits&);
-
 
 
 #endif

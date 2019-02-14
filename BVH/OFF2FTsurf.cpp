@@ -98,11 +98,6 @@ int main(int argc, char* argv[])
     BVH bvh;
     bvh.constructBVH(&front);
 
-    //bvh.constructLeafNodes(front.interf);
-    //bvh.writeHilbertCurveFile(outdir,geomdir);
-    //bvh.constructParentNodes();
-
-
     clean_up(0);
 }
 

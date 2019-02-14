@@ -62,15 +62,11 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 
                 leaves.push_back(BVH::createLeafNode(
                             new HsTri(tri,HseTag::RIGIDBODY)));
-                //hseList.push_back(new HsTri(tri,HseTag::RIGIDBODY));
-                //hseList.push_back(new CD_TRI(tri, "tris_rigid"));
             }
             else
             {
                 leaves.push_back(BVH::createLeafNode(
                             new HsTri(tri,HseTag::FABRIC)));
-                //hseList.push_back(new HsTri(tri,HseTag::FABRIC));
-                //hseList.push_back(new CD_TRI(tri, "tris"));
             }
             
             auto node = leaves.back();
@@ -87,8 +83,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	    {
             leaves.push_back(BVH::createLeafNode(
                         new HsBond(b,HseTag::STRING)));
-            //hseList.push_back(new HsBond(b,HseTag::STRING));
-            //hseList.push_back(new CD_BOND(b,m_dim, "string_bond"));
+
             auto node = leaves.back();
             Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
             children.push_back(ctr_bv_pair);
@@ -106,9 +101,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	    //printf("%lu number of elements is assembled\n",hseList.size());
 	}
 
-    //sortNodes(children,hst);
     sortChildNodes();
-
 }
 
 /*
@@ -151,7 +144,6 @@ void BVH::constructParentNodes()
         parents.push_back(ctr_bv_pair);
     }
 
-    //sortNodes(parents,hst);
     std::swap(parents,children);
     sortChildNodes();
     //Point_Node_Vector().swap(parents);
@@ -167,13 +159,6 @@ void BVH::constructRootNode()
     assert(root);
 }
 
-/*
-void sortNodes(Point_Node_Vector& pn_vec,
-        const BV_HilbertSortingTraits& traits)
-{
-    CGAL::hilbert_sort(pn_vec.begin(),pn_vec.end(),traits);
-}
-*/
 
 
 
