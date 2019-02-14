@@ -78,6 +78,8 @@ double AABB::volume() {
             (upperbound[2]-lowerbound[2]);
 }
 
+//This is the intersection test for AABB's.
+//Not a collision or geometric primitive check.
 bool AABB::isCollid(const AABB& ab) {
     return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
            (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
@@ -330,6 +332,7 @@ void AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver)
     {
         while (cur)
         {
+            //this is checking if AABBs intersect
             if (cur->isCollid(n))
             {
                 if (cur->isLeaf() && n != cur)
@@ -339,6 +342,7 @@ void AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver)
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
+                        //this is checking if geometric primitives intersect
                         if (collsn_solver->isProximity(a, b))
                             count++; 
                     }
@@ -365,12 +369,13 @@ bool AABBTree::queryCollision(Node* n, CollisionSolver* collsn_solver) {
 
     while (cur || !sn.empty()) {
         while (cur) {
+            //this is checking if trajectories of AABBs intersect
             if (cur->isCollid(n)) {
                 if (cur->isLeaf() && n != cur) {
                     if (nodeSet.find(cur) == nodeSet.end()) {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
-
+                        //this is checking if trajectories of geometric primitives intersect
                         if (collsn_solver->isCollision(a, b)) 
                             count++;
                     }

@@ -870,7 +870,7 @@ void CollisionSolver::updateAverageVelocity()
 bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
-        // Should be uncommented -- this turns off collision b/w strings
+        //Commented code turns off collision detection involving the lines/strings
         /*
         if (a->name == "lines" && b->name == "lines") {
             return false;
@@ -921,6 +921,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 	return false;
 }
 
+//This is checking the geometric primitive for intersection
 bool CollisionSolver::isProximity(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -932,7 +933,7 @@ bool CollisionSolver::isProximity(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t1 = cd_t1->m_tri;
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
-		return false;
+            return false;
 	    return TriToTri(t1,t2,h);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
