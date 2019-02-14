@@ -33,6 +33,7 @@ class BVH
         void constructLeafNodes(const INTERFACE* const intfc);
         void constructParentNodes();
         void constructRootNode();
+        //void clearVectors();
 
         static std::shared_ptr<LeafNode> createLeafNode(Hse* h);
         static std::shared_ptr<InternalNode> createInternalNode(
@@ -40,10 +41,8 @@ class BVH
 
     public:
 
-        //TODO: Will want to enforce the invariant that
-        //      the root is always initialized, but this
-        //      requires a build routine since we are
-        //      performing a bottom up construction.
+        //TODO: add Ctor that implements constructBVH()
+        BVH(const Front* const);
               
         BVH() = default;
         ~BVH() = default;
@@ -53,19 +52,12 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        /*
-        const std::weak_ptr<const InternalNode> getRoot() const
-        {
-            return std::weak_ptr<InternalNode>(root);
-        }
-        */
+        //void constructBVH(const Front* const);
 
-        void constructBVH(const Front* const);
-        //void clearVectors();
+        const std::weak_ptr<const InternalNode> getRoot() const;
 
         //temp function for testing/debugging
         void writeHilbertCurveFile(std::string,std::string);
-        
 };
 
 

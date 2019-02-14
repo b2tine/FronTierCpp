@@ -24,6 +24,19 @@ void BVH::sortChildNodes()
 }
 
 
+BVH::BVH(const Front* const front)
+{
+    constructLeafNodes(front->interf);
+    while( children.size() > 2 )
+    {
+        constructParentNodes();
+    }
+
+    constructRootNode();    
+}
+
+
+/*
 void BVH::constructBVH(const Front* const front)
 {
     constructLeafNodes(front->interf);
@@ -34,6 +47,7 @@ void BVH::constructBVH(const Front* const front)
 
     constructRootNode();    
 }
+*/
 
 
 //Does this need to be called more than once if
@@ -160,6 +174,10 @@ void BVH::constructRootNode()
 }
 
 
+const std::weak_ptr<const InternalNode> BVH::getRoot() const
+{
+    return std::weak_ptr<InternalNode>(root);
+}
 
 
 

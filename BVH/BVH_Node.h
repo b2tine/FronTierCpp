@@ -36,6 +36,7 @@ class BVH_Node
 
         virtual const bool isLeaf() const = 0;
 
+        //TODO: make setBV private if possible
         void setBV(const BoundingVolume& BV);
         const BoundingVolume& getBV() const;
         

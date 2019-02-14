@@ -95,8 +95,12 @@ int main(int argc, char* argv[])
     outfile.close();
 
 
-    BVH bvh;
-    bvh.constructBVH(&front);
+    BVH bvh(&front);
+    //bvh.constructBVH(&front);
+
+    auto root = bvh.getRoot().lock();
+    auto root_bv = root->getBV();
+    root_bv.print();
 
     clean_up(0);
 }
