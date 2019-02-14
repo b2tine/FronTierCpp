@@ -41,7 +41,6 @@ class BVH
 
     public:
 
-        //TODO: add Ctor that implements constructBVH()
         BVH(const Front* const);
               
         BVH() = default;
