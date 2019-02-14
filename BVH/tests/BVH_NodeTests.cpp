@@ -104,13 +104,6 @@ HsTri* BVH_NodeTests::T5 = nullptr;
 using DISABLED_BVH_NodeTests = BVH_NodeTests;
 
 
-
-TEST_F(DISABLED_BVH_NodeTests, GetSibling)
-{
-    //auto s = l1->getSibling();
-    //ASSERT_EQ(s,l2);
-}
-
 TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
 {
     std::shared_ptr<LeafNode> l6;

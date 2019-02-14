@@ -115,6 +115,7 @@ TEST_F(AABBTests, BoxesOverlapVsContain)
 {
     //contains means strictly contained
     EXPECT_TRUE(bbT2.contains(bbT1));
+    EXPECT_TRUE(bbT1.volume() < bbT2.volume());
     EXPECT_FALSE(bbT1.contains(bbB1));
 
     //shared surface is considered overlap
@@ -124,8 +125,6 @@ TEST_F(AABBTests, BoxesOverlapVsContain)
     //      May need to distinguish between:
     //          1. No overlap but share surface.
     //          2. Contained but share a surface
-    //
-    //      Too early to make a call.
 }
 
 TEST_F(AABBTests, ConstructorTwoAABBs)

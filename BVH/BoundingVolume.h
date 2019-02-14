@@ -40,6 +40,8 @@ class AABB
 
         bool contains(const AABB&) const;
         bool overlaps(const AABB&) const;
+        
+        const double volume() const;
         //void inflate();
 
         void print() const;

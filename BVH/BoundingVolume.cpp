@@ -63,6 +63,15 @@ bool AABB::overlaps(const AABB& BB) const
     return true;
 }
 
+const double AABB::volume() const
+{
+    double volume = 1.0;
+    for( int i = 0; i < 3; ++i )
+        volume *= upper[i] - lower[i];
+    return volume;
+
+}
+
 void AABB::print() const
 {
     CGAL_Point ctr = this->Centroid();

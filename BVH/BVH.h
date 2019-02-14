@@ -7,8 +7,6 @@
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 #include <CGAL/property_map.h>
 
-#include <utility>
-
 
 using Point_with_Node = std::pair<CGAL_Point,std::shared_ptr<BVH_Node>>;
 using Point_Node_Vector = std::vector<Point_with_Node>;
@@ -29,6 +27,7 @@ class BVH
         Point_Node_Vector children;
         BV_HilbertSortingTraits hst;
 
+        int sort_iter{0};
         void sortChildNodes();
         void constructLeafNodes(const INTERFACE* const intfc);
         void constructParentNodes();
@@ -51,16 +50,15 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        //void constructBVH(const Front* const);
-
         const std::weak_ptr<const InternalNode> getRoot() const;
 
         //temp function for testing/debugging
         void writeHilbertCurveFile(std::string,std::string);
+        void buildTester(std::vector<Hse*>);
 };
 
 
-
+//const bool queryProximity(BVH*,BVH*);
 
 
 #endif

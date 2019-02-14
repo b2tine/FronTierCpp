@@ -21,6 +21,7 @@ void BVH::sortChildNodes()
 {
     assert(!children.empty());
     CGAL::hilbert_sort(children.begin(),children.end(),hst);
+    sort_iter++;
 }
 
 
@@ -35,11 +36,18 @@ BVH::BVH(const Front* const front)
     constructRootNode();    
 }
 
-
-/*
-void BVH::constructBVH(const Front* const front)
+//Testing function
+void BVH::buildTester(std::vector<Hse*> hseList)
 {
-    constructLeafNodes(front->interf);
+    assert(children.empty());
+    std::vector<Hse*>::iterator it = hseList.begin();
+    for( it; it != hseList.end(); ++it )
+    {
+        auto leaf = BVH::createLeafNode(*it);
+        Point_with_Node ctr_bv_pair(leaf->getBV().Centroid(),leaf);
+        children.push_back(ctr_bv_pair);
+    }
+
     while( children.size() > 2 )
     {
         constructParentNodes();
@@ -47,7 +55,6 @@ void BVH::constructBVH(const Front* const front)
 
     constructRootNode();    
 }
-*/
 
 
 //Does this need to be called more than once if
@@ -115,6 +122,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	    //printf("%lu number of elements is assembled\n",hseList.size());
 	}
 
+    sort_iter = 0;
     sortChildNodes();
 }
 
@@ -136,9 +144,14 @@ void BVH::clearVectors()
 void BVH::constructParentNodes()
 {
     assert(!children.empty());
+    //alternate sweep direction at each level
+    if( sort_iter % 2 == 0 )
+    {
+        std::reverse(children.begin(),children.end());
+    }
 
     Point_Node_Vector parents;
-
+    
     //greedily pair off sorted children
     for( int i = 0; i < children.size()-1; i += 2 )
     {
@@ -149,7 +162,7 @@ void BVH::constructParentNodes()
         parents.push_back(ctr_bv_pair);
     }
 
-    //if odd number of leafnodes
+    //if odd number of leafnodes on the first pass
     if( children.size() % 2 != 0 )
     {
         auto oc = children[children.size()-1].second;
@@ -171,6 +184,7 @@ void BVH::constructRootNode()
     auto rc = children[1].second;
     root = BVH::createInternalNode(lc,rc);
     assert(root);
+    sort_iter = 0;
 }
 
 
@@ -178,6 +192,25 @@ const std::weak_ptr<const InternalNode> BVH::getRoot() const
 {
     return std::weak_ptr<InternalNode>(root);
 }
+
+
+/*
+bool queryProximity(std::shared_ptr<BVH_Node> A,
+       std::shared_ptr<BVH_Node> B)
+{
+    assert(A && B);
+    auto nodeA = A->getRoot().lock();
+    auto nodeB = B->getRoot().lock();
+    assert(nodeA && nodeB);
+
+    if( nodeA->volume() <= nodeB->volume() )
+        return nodeA->queryIntersection(nodeB);
+    else
+        return nodeB->queryIntersection(nodeA);
+
+
+}
+*/
 
 
 

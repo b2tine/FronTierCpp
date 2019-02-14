@@ -23,6 +23,15 @@ const std::weak_ptr<const InternalNode> BVH_Node::getParent() const
     return std::weak_ptr<InternalNode>(parent);
 }
 
+/*
+//preorder traversal
+std::stack<std::shared_ptr<BVH_Node>>
+searchProximityCandidates(std::shared_ptr<BVH_Node>& node)
+{
+
+}
+*/
+
 
 /////////////////////////////////////////////////////////
 ////////         InternalNode Methods           ////////
@@ -32,7 +41,7 @@ InternalNode::InternalNode(std::shared_ptr<BVH_Node> lc,
         std::shared_ptr<BVH_Node> rc)
 {
     assert(lc && rc);
-    setBV(BoundingVolume(lc->getBV(), rc->getBV()));
+    setBV(BoundingVolume(lc->getBV(),rc->getBV()));
 }
 
 //SetChildren() is a temporary solution for testing.
@@ -43,6 +52,8 @@ InternalNode::InternalNode(std::shared_ptr<BVH_Node> lc,
 //inside a static factory function of the BVH class,
 //but setChildren(), unfortunately, remains exposed to the
 //public interface.
+//
+//Explicitly construct the shared_ptr instead?
 void InternalNode::setChildren(std::shared_ptr<BVH_Node> lc,
         std::shared_ptr<BVH_Node> rc)
 {
@@ -76,18 +87,6 @@ const bool InternalNode::isLeaf() const
 {
     return false;
 }
-
-/*
-const InternalNode* const InternalNode::getSibling() const
-{
-    auto p = this->getParent();
-    if( p != nullptr )
-    {
-        return p->getLeft() == this ?
-            p->getRight() : p->getLeft();
-    }
-}
-*/
 
 
 /////////////////////////////////////////////////////////

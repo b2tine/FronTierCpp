@@ -2,7 +2,11 @@
 #define BVH_NODE_H
 
 #include "BoundingVolume.h"
+
 #include <memory>
+#include <utility>
+#include <stack>
+
 
 //Design Considerations:
 //
@@ -36,12 +40,18 @@ class BVH_Node
 
         virtual const bool isLeaf() const = 0;
 
-        //TODO: make setBV private if possible
+        //TODO: make setBV() private if possible
         void setBV(const BoundingVolume& BV);
         const BoundingVolume& getBV() const;
         
         void setParent(std::shared_ptr<InternalNode> P);
         const std::weak_ptr<const InternalNode> getParent() const;
+
+        const double volume() const;
+
+        /*std::stack<std::shared_ptr<BVH_Node>>
+            searchProximityCandidates(std::shared_ptr<BVH_Node>&);*/
+
 };
 
 
