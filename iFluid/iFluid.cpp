@@ -103,21 +103,22 @@ int main(int argc, char **argv)
 	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 	    if (debugging("trace"))
 	    {
-		char test_name[100];
-
-		printf("Passed FT_InitIntfc()\n");
-		switch (f_basic.dim)
-		{
-		case 2:
-		    sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
-		    xgraph_2d_intfc(test_name,front.interf);
-		    break;
-		case 3:
-		    sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
-		    gview_plot_interface("gv-init",front.interf);
-		    break;
-		}
+            char test_name[100];
+            printf("Passed FT_InitIntfc()\n");
+            switch (f_basic.dim)
+            {
+            case 2:
+                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
+                xgraph_2d_intfc(test_name,front.interf);
+                break;
+            case 3:
+                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
+                gview_plot_interface("gv-init",front.interf);
+                break;
+		
+            }
 	    }
+
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
 		printf("Passed read_iF_dirichlet_bdry_data()\n");
 	}
 	else
-            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+        read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 
 	/* Initialize velocity field function */
 

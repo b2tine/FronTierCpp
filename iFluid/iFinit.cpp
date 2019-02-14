@@ -45,9 +45,9 @@ extern void setInitialIntfc(
         IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	iFparams->m_comp1 = LIQUID_COMP1;
 	iFparams->m_comp2 = LIQUID_COMP2;
-        switch (prob_type)
-        {
-	case TWO_FLUID_BUBBLE:
+    switch (prob_type)
+    {
+        case TWO_FLUID_BUBBLE:
         case BUBBLE_SURFACE:
             initCirclePlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
@@ -69,18 +69,18 @@ extern void setInitialIntfc(
         case TWO_FLUID_KH:
             initKHIntfc(front,level_func_pack,inname);
             break;
-	case TAYLOR_GREEN_VORTEX:
+	    case TAYLOR_GREEN_VORTEX:
         case CHANNEL_FLOW:
-	    iFparams->m_comp1 = SOLID_COMP;
+            iFparams->m_comp1 = SOLID_COMP;
             initChannelFlow(front,level_func_pack,inname);
             break;
         case FLUID_SOLID_CYLINDER:
             iFparams->m_comp1 = SOLID_COMP;
             initCylinderPlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
-	default:
-	    (void) printf("In setInitialIntfc unknown type: %d\n",prob_type);
-        }
+	    default:
+            (void) printf("In setInitialIntfc unknown type: %d\n",prob_type);
+    }
 }       /* end setInitialIntfc */
 
 static void initRayleiTaylorIntfc(
