@@ -133,7 +133,7 @@ void BVH::constructParentNodes()
     Point_Node_Vector parents;
 
     //greedily pair off sorted children
-    for( int i = 0; i < children.size(); i += 2 )
+    for( int i = 0; i < children.size()-1; i += 2 )
     {
         auto lc = children[i].second;
         auto rc = children[i+1].second;

@@ -41,13 +41,13 @@ InternalNode::InternalNode(std::shared_ptr<BVH_Node> lc,
 //managing "this" must already exist.
 //The above constructor and SetChildren() are consolidated
 //inside a static factory function of the BVH class,
-//but setChildren(), unforunately, remains exposed to the
+//but setChildren(), unfortunately, remains exposed to the
 //public interface.
 void InternalNode::setChildren(std::shared_ptr<BVH_Node> lc,
         std::shared_ptr<BVH_Node> rc)
 {
-    setLeftChild(lc);
-    setRightChild(rc);
+    setLeftChild(std::move(lc));
+    setRightChild(std::move(rc));
 }
 
 void InternalNode::setLeftChild(std::shared_ptr<BVH_Node> lc)
