@@ -43,7 +43,7 @@ const CGAL_Point AABB::Centroid() const
     return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 
-bool AABB::contains(const AABB& BB) const
+const bool AABB::contains(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
     {
@@ -53,7 +53,7 @@ bool AABB::contains(const AABB& BB) const
     return true;
 }
 
-bool AABB::overlaps(const AABB& BB) const
+const bool AABB::overlaps(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
     {

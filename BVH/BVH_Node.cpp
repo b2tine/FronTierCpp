@@ -18,7 +18,7 @@ void BVH_Node::setParent(std::shared_ptr<InternalNode> P)
     parent = std::move(P);
 }
         
-const std::weak_ptr<const InternalNode> BVH_Node::getParent() const
+const std::weak_ptr<InternalNode> BVH_Node::getParent() const
 {
     return std::weak_ptr<InternalNode>(parent);
 }
@@ -26,7 +26,7 @@ const std::weak_ptr<const InternalNode> BVH_Node::getParent() const
 const bool BVH_Node::overlaps(const std::shared_ptr<BVH_Node>& node) const
 {
     auto bv = getBV();
-    return bv.overlaps(node.getBV());
+    return bv.overlaps(node->getBV());
 }
 
 
@@ -70,12 +70,12 @@ void InternalNode::setRightChild(std::shared_ptr<BVH_Node> rc)
     right = std::move(rc);
 }
 
-const std::weak_ptr<const BVH_Node> InternalNode::getLeftChild() const
+const std::weak_ptr<BVH_Node> InternalNode::getLeftChild() const
 {
     return std::weak_ptr<BVH_Node>(left);
 }
 
-const std::weak_ptr<const BVH_Node> InternalNode::getRightChild() const
+const std::weak_ptr<BVH_Node> InternalNode::getRightChild() const
 {
     return std::weak_ptr<BVH_Node>(right);
 }

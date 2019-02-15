@@ -188,7 +188,7 @@ void BVH::constructRootNode()
 }
 
 
-const std::weak_ptr<const InternalNode> BVH::getRoot() const
+const std::weak_ptr<InternalNode> BVH::getRoot() const
 {
     return std::weak_ptr<InternalNode>(root);
 }

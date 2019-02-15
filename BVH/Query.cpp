@@ -4,7 +4,12 @@ using NodePair = std::pair<std::shared_ptr<BVH_Node>,
                             std::shared_ptr<BVH_Node>>;
 
 
-const bool checkProximity(const BVH* A, const BVH* B)
+void queryProximity(std::shared_ptr<BVH_Node>,
+        std::shared_ptr<BVH_Node>);
+
+
+
+const bool checkProximity(BVH* A, BVH* B)
 {
     assert(A && B);
     auto nodeA = A->getRoot().lock();
@@ -24,7 +29,8 @@ void queryProximity(std::shared_ptr<BVH_Node> nodeA,
 {
     //NodePair pair = std::make_pair(nodeA,nodeB);
     //std::stack<NodePair> stack(pair);
-    std::stack<NodePair> stack(std::make_pair(nodeA,nodeB));
+    std::stack<NodePair> stack;
+    stack.push(std::make_pair(nodeA,nodeB));
 
     while( !stack.empty() )
     {
@@ -41,6 +47,7 @@ void queryProximity(std::shared_ptr<BVH_Node> nodeA,
             }
             else
             {
+                //TODO: bugs below related to get*Children()
                 if( A->volume() < B->volume() )
                 {
                     auto rc = B->getRightChild().lock();

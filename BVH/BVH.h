@@ -50,16 +50,13 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        const std::weak_ptr<const InternalNode> getRoot() const;
+        const std::weak_ptr<InternalNode> getRoot() const;
 
         //temp function for testing/debugging
         void writeHilbertCurveFile(std::string,std::string);
         void buildTester(std::vector<Hse*>);
 };
 
-
-//const bool queryProximity(BVH*,BVH*);
-const bool checkProximity(const BVH*, const BVH*);
 
 
 #endif

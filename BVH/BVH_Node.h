@@ -45,7 +45,7 @@ class BVH_Node
         const BoundingVolume& getBV() const;
         
         void setParent(std::shared_ptr<InternalNode>);
-        const std::weak_ptr<const InternalNode> getParent() const;
+        const std::weak_ptr<InternalNode> getParent() const;
 
         const bool overlaps(const std::shared_ptr<BVH_Node>&) const;
         const double volume() const;
@@ -87,8 +87,8 @@ class InternalNode : public BVH_Node,
         void setChildren(std::shared_ptr<BVH_Node> lc,
                 std::shared_ptr<BVH_Node> rc);
        
-        const std::weak_ptr<const BVH_Node> getLeftChild() const;
-        const std::weak_ptr<const BVH_Node> getRightChild() const;
+        const std::weak_ptr<BVH_Node> getLeftChild() const;
+        const std::weak_ptr<BVH_Node> getRightChild() const;
         
 };
 
