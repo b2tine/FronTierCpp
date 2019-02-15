@@ -19,7 +19,7 @@ class BVH
 {
     private:
         
-        std::shared_ptr<InternalNode> root{nullptr};
+        std::shared_ptr<BVH_Node> root{nullptr};
         
         int numLeaves{0};
         std::vector<std::shared_ptr<BVH_Node>> leaves;
@@ -56,6 +56,11 @@ class BVH
         void writeHilbertCurveFile(std::string,std::string);
         void buildTester(std::vector<Hse*>);
 };
+
+
+
+const bool checkProximity(BVH*, BVH*);
+void queryProximity(std::shared_ptr<BVH_Node>,std::shared_ptr<BVH_Node>);
 
 
 

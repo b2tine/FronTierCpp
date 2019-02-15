@@ -4,10 +4,6 @@ using NodePair = std::pair<std::shared_ptr<BVH_Node>,
                             std::shared_ptr<BVH_Node>>;
 
 
-void queryProximity(std::shared_ptr<BVH_Node>,
-        std::shared_ptr<BVH_Node>);
-
-
 
 const bool checkProximity(BVH* A, BVH* B)
 {
