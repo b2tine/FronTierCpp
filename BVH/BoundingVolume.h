@@ -38,8 +38,11 @@ class AABB
         const BV_Type getBvType() const;
         const CGAL_Point Centroid() const;
 
-        bool contains(const AABB&) const;
-        bool overlaps(const AABB&) const;
+        const bool contains(const AABB&) const;
+        
+        //TODO: need to carefully test this when
+        //      considering self intersection checks
+        const bool overlaps(const AABB&) const;
         
         const double volume() const;
         //void inflate();

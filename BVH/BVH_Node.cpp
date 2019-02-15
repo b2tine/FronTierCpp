@@ -4,9 +4,9 @@
 ////////           BVH_Node Methods             ////////
 ///////////////////////////////////////////////////////
         
-void BVH_Node::setBV(const BoundingVolume& BV)
+void BVH_Node::setBV(BoundingVolume BV)
 {
-    bv = BV;
+    bv = std::move(BV);
 }
 const BoundingVolume& BVH_Node::getBV() const
 {
@@ -23,14 +23,11 @@ const std::weak_ptr<const InternalNode> BVH_Node::getParent() const
     return std::weak_ptr<InternalNode>(parent);
 }
 
-/*
-//preorder traversal
-std::stack<std::shared_ptr<BVH_Node>>
-searchProximityCandidates(std::shared_ptr<BVH_Node>& node)
+const bool BVH_Node::overlaps(const std::shared_ptr<BVH_Node>& node) const
 {
-
+    auto bv = getBV();
+    return bv.overlaps(node.getBV());
 }
-*/
 
 
 /////////////////////////////////////////////////////////
@@ -90,7 +87,7 @@ const bool InternalNode::isLeaf() const
 
 
 /////////////////////////////////////////////////////////
-////////            LeafNode Methods             ////////
+///////            LeafNode Methods             ////////
 ///////////////////////////////////////////////////////
 
 LeafNode::LeafNode(Hse* h)

@@ -41,16 +41,14 @@ class BVH_Node
         virtual const bool isLeaf() const = 0;
 
         //TODO: make setBV() private if possible
-        void setBV(const BoundingVolume& BV);
+        void setBV(BoundingVolume);
         const BoundingVolume& getBV() const;
         
-        void setParent(std::shared_ptr<InternalNode> P);
+        void setParent(std::shared_ptr<InternalNode>);
         const std::weak_ptr<const InternalNode> getParent() const;
 
+        const bool overlaps(const std::shared_ptr<BVH_Node>&) const;
         const double volume() const;
-
-        /*std::stack<std::shared_ptr<BVH_Node>>
-            searchProximityCandidates(std::shared_ptr<BVH_Node>&);*/
 
 };
 
@@ -116,6 +114,8 @@ class LeafNode : public BVH_Node
 
         const Hse* const getHse() const;
 };
+
+
 
 #endif
 

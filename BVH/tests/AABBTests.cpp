@@ -118,13 +118,15 @@ TEST_F(AABBTests, BoxesOverlapVsContain)
     EXPECT_TRUE(bbT1.volume() < bbT2.volume());
     EXPECT_FALSE(bbT1.contains(bbB1));
 
-    //shared surface is considered overlap
+    //shared surface is counted as overlap at the moment ...
     EXPECT_TRUE(bbT1.overlaps(bbB1));
     EXPECT_TRUE(bbT1.overlaps(bbB2));
     //TODO: Is this the behavior we really want?
     //      May need to distinguish between:
     //          1. No overlap but share surface.
     //          2. Contained but share a surface
+    //      This is going to be important when
+    //      self intersection checks are implemented
 }
 
 TEST_F(AABBTests, ConstructorTwoAABBs)

@@ -194,23 +194,5 @@ const std::weak_ptr<const InternalNode> BVH::getRoot() const
 }
 
 
-/*
-bool queryProximity(std::shared_ptr<BVH_Node> A,
-       std::shared_ptr<BVH_Node> B)
-{
-    assert(A && B);
-    auto nodeA = A->getRoot().lock();
-    auto nodeB = B->getRoot().lock();
-    assert(nodeA && nodeB);
-
-    if( nodeA->volume() <= nodeB->volume() )
-        return nodeA->queryIntersection(nodeB);
-    else
-        return nodeB->queryIntersection(nodeA);
-
-
-}
-*/
-
 
 

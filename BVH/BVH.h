@@ -59,6 +59,7 @@ class BVH
 
 
 //const bool queryProximity(BVH*,BVH*);
+const bool checkProximity(const BVH*, const BVH*);
 
 
 #endif
