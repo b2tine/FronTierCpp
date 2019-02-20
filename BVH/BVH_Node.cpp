@@ -13,12 +13,12 @@ const BoundingVolume& BVH_Node::getBV() const
     return bv;
 }
 
-void BVH_Node::setParent(std::shared_ptr<InternalNode> P)
+void BVH_Node::setParent(std::shared_ptr<BVH_Node> P)
 {
     parent = std::move(P);
 }
         
-const std::weak_ptr<InternalNode> BVH_Node::getParent() const
+const std::weak_ptr<BVH_Node> BVH_Node::getParent() const
 {
     return std::weak_ptr<InternalNode>(parent);
 }
