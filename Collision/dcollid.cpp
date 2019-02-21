@@ -429,11 +429,11 @@ void CollisionSolver::aabbProximity() {
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
         
-        //if ((abt_proximity->getVolume() - volume) > 0.2*volume)
-        //{
+        if (abs((abt_proximity->getVolume() - volume)) > volDiffCoef*volume)
+        {
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
-        //}
+        }
     }
     // query for collision detection of AABB elements
     abt_proximity->query(this);
@@ -478,10 +478,10 @@ void CollisionSolver::aabbCollision() {
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
         
-        //if ((abt_collision->getVolume() - volume) > 0.2*volume) {
+        if ((abt_collision->getVolume() - volume) > volDiffCoef*volume) {
             abt_collision->updateTreeStructure();
             volume = abt_collision->getVolume();
-        //}
+        }
     }
     abt_collision->query(this);
 }

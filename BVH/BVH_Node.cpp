@@ -15,12 +15,12 @@ const BoundingVolume& BVH_Node::getBV() const
 
 void BVH_Node::setParent(std::shared_ptr<BVH_Node> P)
 {
-    parent = std::move(P);
+    parent = std::weak_ptr<BVH_Node>(std::move(P));
 }
         
 const std::weak_ptr<BVH_Node> BVH_Node::getParent() const
 {
-    return std::weak_ptr<InternalNode>(parent);
+    return std::weak_ptr<BVH_Node>(parent);
 }
 
 const bool BVH_Node::overlaps(const std::shared_ptr<BVH_Node>& node) const

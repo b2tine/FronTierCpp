@@ -35,7 +35,7 @@ class BVH_Node
 
         BVH_Node(const BVH_Node&) = delete;
         BVH_Node& operator=(const BVH_Node&) = delete;
-        BVH_Node(BVH_Node&&) = delete;
+        BVH_Node(BVH_Node&&) = default;
         BVH_Node& operator=(BVH_Node&&) = delete;
 
         virtual const bool isLeaf() const = 0;
@@ -74,7 +74,7 @@ class InternalNode : public BVH_Node,
 
         InternalNode(const InternalNode&) = delete;
         InternalNode& operator=(const InternalNode&) = delete;
-        InternalNode(InternalNode&&) = delete;
+        InternalNode(InternalNode&&) = default;
         InternalNode& operator=(InternalNode&&) = delete;
         
         const bool isLeaf() const override;
@@ -107,7 +107,7 @@ class LeafNode : public BVH_Node
 
         LeafNode(const LeafNode&) = delete;
         LeafNode& operator=(const LeafNode&) = delete;
-        LeafNode(LeafNode&&) = delete;
+        LeafNode(LeafNode&&) = default;
         LeafNode& operator=(LeafNode&&) = delete;
 
         const bool isLeaf() const override;

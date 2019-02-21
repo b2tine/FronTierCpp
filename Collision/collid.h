@@ -216,6 +216,7 @@ public:
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
+    double volDiffCoef {0.05};
 
 	//for debugging
 	static void printDebugVariable();
