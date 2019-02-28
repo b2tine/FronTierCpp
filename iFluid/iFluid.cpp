@@ -101,6 +101,8 @@ int main(int argc, char **argv)
 	    FT_InitIntfc(&front,&level_func_pack);
             rgb_init(&front,rgb_params);
 	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
+
+        //TODO: xgraph files should be placed in output directory
 	    if (debugging("trace"))
 	    {
 		char test_name[100];

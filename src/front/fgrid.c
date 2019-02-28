@@ -951,6 +951,12 @@ EXPORT	INTERFACE *make_grid_intfc(
 	    stop_clock("make_grid_intfc");
 	    return NULL;
 	}
+
+    //TODO: Is this adjust_grid_intfc_points() ready?
+    //      There is no comment/indication this it
+    //      is not suitable for use.
+    
+
 	/* 
 	   add this function to ensure interface topology 
 	   does not break down due to tolerance 

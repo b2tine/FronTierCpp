@@ -472,6 +472,8 @@ void Incompress_Solver_Smooth_Basis::save(char *filename)
 	fclose(hfile);
 }
 
+//TODO: should be using pure virtual function here,
+//      and override inside the subclasses.
 void Incompress_Solver_Smooth_Basis::setDomain()
 {
 	static int current_size = 0;
