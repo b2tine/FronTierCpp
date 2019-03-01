@@ -472,6 +472,8 @@ void Incompress_Solver_Smooth_Basis::save(char *filename)
 	fclose(hfile);
 }
 
+//TODO: should be using pure virtual function here,
+//      and override inside the subclasses.
 void Incompress_Solver_Smooth_Basis::setDomain()
 {
 	static int current_size = 0;
@@ -2713,10 +2715,11 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 {
 	double **vel = field->vel;
 	double div_tmp,denom;
-	double div_max = -HUGE;
-	double div_min =  HUGE;
-	int i,j,k,l,index;
+        double L1_norm,L2_norm,Li_norm;
+	int i,j,k,l,index,N;
 	int icoords[MAXD];
+
+        L1_norm = L2_norm = Li_norm = 0.0;
 	switch (dim)
 	{
 	case 2:
@@ -2729,9 +2732,11 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		if (!ifluid_comp(top_comp[index]))
 		    continue;
 		div_tmp = computeFieldPointDiv(icoords,vel);
-		if (div_max < div_tmp) div_max = div_tmp;
-                if (div_min > div_tmp) div_min = div_tmp;
+		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
+                L1_norm += fabs(div_tmp);
+                L2_norm += sqr(div_tmp);
 	    }
+            N = (imax - imin + 1)*(jmax - jmin + 1);
 	    break;
 	case 3:
 	    for (k = kmin; k <= kmax; k++)
@@ -2745,20 +2750,25 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		if (!ifluid_comp(top_comp[index]))
 		    continue;
 		div_tmp = computeFieldPointDiv(icoords,vel);
-		if (div_max < div_tmp) div_max = div_tmp;
-                if (div_min > div_tmp) div_min = div_tmp;
+		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
+                L1_norm += fabs(div_tmp);
+                L2_norm += sqr(div_tmp);
 	    }
+            N = (imax - imin + 1)*(jmax - jmin + 1)*(kmax - kmin + 1);
 	    break;
 	}
+        L1_norm /= N;
+        L2_norm = sqrt(L2_norm)/N;
+
 	denom = 0.0;
 	for (l = 0; l < dim; ++l)
 	    denom += fabs((vmax[l] - vmin[l])/(top_U[l] - top_L[l]));
 	if (denom == 0.0) denom = 1.0;
-	(void) printf("Check divergence at %s\n",mesg);
-	(void) printf("Absolute: div_max = %20.14f  div_min = %20.14f\n",
-			div_max,div_min);
-	(void) printf("Relative: div_max = %20.14f  div_min = %20.14f\n",
-			div_max/denom,div_min/denom);
+	(void) printf("\nCheck divergence at %s\n",mesg);
+	(void) printf("Absolute: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
+			L1_norm,L2_norm,Li_norm);
+	(void) printf("Relative: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
+			L1_norm/denom,L2_norm/denom,Li_norm/denom);
 }	/* end checkVelocityDiv */
 
 void Incompress_Solver_Smooth_Basis::setDualDomain()
@@ -2898,7 +2908,7 @@ void Incompress_Solver_Smooth_Basis::setDualIndexMap(void)
 	index = 0;
 	for (i = 0; i < dim; ++i)
 	{
-	    llbuf[i] = lbuf[i] != 0 ? lbuf[i] + 1: 1;
+	    llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
 	    uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
 	}
 	switch (dim)
@@ -2989,6 +2999,17 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
                     u_edge[idir][nb] = u_ref - u0; 
 		}
             }
+            for (nb = 0; nb < 2; nb++)
+            {
+                status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                                comp,&intfc_state,&hs,crx_coords);
+                icnb[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
+                index_nb = d_index(icnb,top_gmax,dim);
+                if (status ==CONST_V_PDE_BOUNDARY &&
+                        wave_type(hs) == NEUMANN_BOUNDARY)
+                    //u_edge[idir][nb] = -field[idir][index_nb];
+                    u_edge[idir][nb] = -u0;
+            }
         }
 
 	div = 0.0;
@@ -3044,7 +3065,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    for (nb = 0; nb < 2; nb++)
 	    {
 		if (refl_side[nb] == YES)
-		    p_edge[idir][nb] += (p0 - p_edge[idir][(nb+1)%2]);
+		    //p_edge[idir][nb] += (p0 - p_edge[idir][(nb+1)%2]);
+		    p_edge[idir][nb] = p0;
 	    }
 	}
 	for (i = 0; i < dim; ++i)

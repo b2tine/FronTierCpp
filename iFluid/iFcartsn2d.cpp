@@ -107,12 +107,18 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
 	{
 	case SIMPLE_ELLIP:
 	case DUAL_ELLIP:
+	    if (debugging("check_div"))
+                printf("Use computeProjectionSimple()\n");
 	    computeProjectionSimple();
 	    return;
 	case DOUBLE_ELLIP:
+	    if (debugging("check_div"))
+                printf("Use computeProjectionDouble()\n");
 	    computeProjectionDouble();
 	    return;
 	case CIM_ELLIP:
+	    if (debugging("check_div"))
+                printf("Use computeProjectionCim()\n");
 	    computeProjectionCim();
 	    return;
 	}
@@ -202,6 +208,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 {
+    //TODO: function name seems misleading 
 	iFparams->total_div_cancellation = YES;
 	computeProjectionSimple(); 
 	return;
@@ -1281,9 +1288,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDual(void)
 	double *d_phi = field->d_phi;
 	double sum_div;
 	double value;
+
 	setDualGlobalIndex();
 	setDualIndexMap();
-
 	updateComponent();
 
 	sum_div = 0.0;

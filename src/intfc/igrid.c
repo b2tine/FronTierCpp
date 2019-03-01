@@ -667,6 +667,9 @@ EXPORT	void	set_dual_grid(
 	    dual_gr->gmax[i] = gr->gmax[i] + 1;
 	    dual_gr->L[i] = gr->L[i] - 0.5*gr->h[i];
 	    dual_gr->U[i] = gr->U[i] + 0.5*gr->h[i];
+
+        //TODO: investigate the comment below
+
 	    /*This is wrong */
 	    dual_gr->GL[i] = gr->GL[i] - 0.5*gr->h[i];
 	    dual_gr->GU[i] = gr->GU[i] + 0.5*gr->h[i];
