@@ -920,7 +920,7 @@ static  void rgbody_point_propagate(
 
         if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
         {
-#ifdef __COLLISION__
+#ifndef COLLISION__DETECTION_OFF
 	    for (i = 0; i < dim; ++i)
 		newst->x_old[i] = Coords(oldp)[i];
 #endif
@@ -1033,7 +1033,7 @@ static  void rgbody_point_propagate(
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
-#ifdef __COLLISION__
+#ifndef COLLISION__DETECTION_OFF
 	/* copy newst to the other STATE; used in collision solver */
         if (ifluid_comp(negative_component(oldhs)))
             std::copy(newst, newst+1, (STATE*)right_state(newp));
