@@ -800,7 +800,17 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	if (debugging("check_div"))
             printf("Entering dsolve2d()\n");
-	solver.Create(ilower, iupper-1, 9, 9);
+    
+    //TODO: Can performance be improved by more accurate
+    //      values for d_nz and o_nz?
+    //      (number of nonzero terms in diagonal block rows,
+    //      and offdiagonal block rows respectively)
+    //      Could we use d_nnz[3] and o_nnz[3] arrays and determine
+    //      their correct values based on the processor rank?.
+    //      Documentation suggests massive speedups are possible
+    //      (up to 50x) with exact number of nonzero terms.
+	
+    solver.Create(ilower, iupper-1, 9, 9);
 	solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -833,6 +843,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     icnb[1] = icoords[1];
                     iknb[0] = icoords[0];
                     iknb[1] = icoords[1];
+                    
                     icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
@@ -872,6 +883,12 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                 }
             }
              
+            //TODO: Value of I = ij_to_I[i][j] does not appear to
+            //      agree with the description of PETSc::Set_A().
+            //      solver.cpp states that this method sets A[i][j] = val.
+            //      However, it appears to be producing the correct results.
+            //      I,I are global indices of matrix?
+                  
             solver.Set_A(I,I,aII); //set diagonal entry
 
             solver.Set_b(I,rhs);

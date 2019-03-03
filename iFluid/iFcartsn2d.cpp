@@ -208,7 +208,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 {
-    //TODO: function name seems misleading 
 	iFparams->total_div_cancellation = YES;
 	computeProjectionSimple(); 
 	return;
@@ -535,6 +534,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocityDual(void)
             checkVelocityDiv("After extractFlowThroughVelocity()");
 }	/* end computeNewVelocityDual */
 
+
+//Computest he source term of the momentum equation (Navier-Stokes)
 void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
@@ -1134,6 +1135,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	}
 }	/* end surfaceTension2d */
 
+// this function should be called before solve()
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
 	int i;
@@ -1894,7 +1896,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeVarIncrement(
 
 	if (use_dual_grid)
 	{
-	    ;	// To add dual grid computation.
+        // To add dual grid computation.
 	}
 	else
 	{

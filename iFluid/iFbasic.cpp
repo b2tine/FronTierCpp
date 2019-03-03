@@ -228,59 +228,63 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
 	    uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
 	}
+
 	switch (dim)
 	{
 	case 2:
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ij_to_I[i][j] = -1;
+
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-		ic = d_index2d(i,j,top_gmax);
-		if (domain_status[ic] != TO_SOLVE)
-		    continue;
-                if (cell_center[ic].comp != SOLID_COMP)
-                {
-                    ij_to_I[i][j] = index + ilower;
-		    I_to_ij[index][0] = i;
-                    I_to_ij[index][1] = j;
-                    index++;
-                }
+		    ic = d_index2d(i,j,top_gmax);
+		    if (domain_status[ic] != TO_SOLVE)
+                continue;
+
+            if (cell_center[ic].comp != SOLID_COMP)
+            {
+                ij_to_I[i][j] = index + ilower;
+                 I_to_ij[index][0] = i;
+                I_to_ij[index][1] = j;
+                index++;
+            }
 	    }
+
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ij_to_I);
 	    break;
-	case 3:
+	
+    case 3:
 	    for (k = 0; k <= top_gmax[2]; k++)
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ijk_to_I[i][j][k] = -1;
-	    for (k = kmin; k <= kmax; k++)
+	    
+        for (k = kmin; k <= kmax; k++)
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-		ic = d_index3d(i,j,k,top_gmax);
-		if (domain_status[ic] != TO_SOLVE)
-		    continue;
-		if (cell_center[ic].comp != SOLID_COMP)
-		{
-                    ijk_to_I[i][j][k] = index + ilower;
-		    I_to_ijk[index][0] = i;
-                    I_to_ijk[index][1] = j;
-                    I_to_ijk[index][2] = k;
-                    index++;
-                }
+            ic = d_index3d(i,j,k,top_gmax);
+		    if (domain_status[ic] != TO_SOLVE)
+                continue;
+            
+            if (cell_center[ic].comp != SOLID_COMP)
+            {
+                ijk_to_I[i][j][k] = index + ilower;
+                I_to_ijk[index][0] = i;
+                I_to_ijk[index][1] = j;
+                I_to_ijk[index][2] = k;
+                index++;
+            }
 	    }
+
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ijk_to_I);
 	    break;
 	}
+
 }	/* end setIndexMap */
 
-// for initial condition: 
-// 		setInitialCondition();	
-// this function should be called before solve()
-// for the source term of the momentum equation: 	
-// 		computeSourceTerm();
 
 void Incompress_Solver_Smooth_Basis::getVelocity(double *p, double *U)
 {
@@ -3679,7 +3683,6 @@ static void initTestParams(Front *front)
             fscanf(infile,"%d",&params->base_step);
 	(void) printf("%d\n",params->base_step);
 	fclose(infile);
-
 }
 
 void Incompress_Solver_Smooth_Basis::compareWithBaseSoln()
@@ -3754,35 +3757,36 @@ void Incompress_Solver_Smooth_Basis::compareWithBaseSoln()
 }
 
 void Incompress_Solver_Smooth_Basis::readBaseFront(
-        IF_PARAMS *iF_params,
-        int i)
+        IF_PARAMS *iF_params, int i)
 {
-        char *dir_name = iF_params->base_dir_name;
-        F_BASIC_DATA *f_basic;
+    char *dir_name = iF_params->base_dir_name;
+    F_BASIC_DATA *f_basic;
 	int RestartStep = iF_params->base_step;
 	int j;
 
-        FT_ScalarMemoryAlloc((POINTER*)&base_front,sizeof(Front));
-        FT_ScalarMemoryAlloc((POINTER*)&f_basic,sizeof(F_BASIC_DATA));
+    FT_ScalarMemoryAlloc((POINTER*)&base_front,sizeof(Front));
+    FT_ScalarMemoryAlloc((POINTER*)&f_basic,sizeof(F_BASIC_DATA));
 	
 	f_basic->RestartRun = YES;
 	f_basic->dim = dim;
-        f_basic->size_of_intfc_state = sizeof(STATE);
-	for (j = 0; j < dim; j++)
+    f_basic->size_of_intfc_state = sizeof(STATE);
+
+    for (j = 0; j < dim; j++)
 	    f_basic->subdomains[j] = front->pp_grid->gmax[j];
 
 	FT_ReadComparisonDomain(InName(front),f_basic);
 
-        sprintf(f_basic->restart_name,"%s/intfc-ts%s",dir_name,
-                        right_flush(RestartStep,7));
-        printf("restart_name = %s\n",f_basic->restart_name);
+    sprintf(f_basic->restart_name,"%s/intfc-ts%s",dir_name,
+            right_flush(RestartStep,7));
+    
+    printf("restart_name = %s\n",f_basic->restart_name);
 
-        FT_StartUp(base_front,f_basic);
+    FT_StartUp(base_front,f_basic);
 
-
-        sprintf(f_basic->restart_state_name,"%s/state.ts%s",dir_name,
-                        right_flush(RestartStep,7));
-        readBaseStates(f_basic->restart_state_name);
+    sprintf(f_basic->restart_state_name,"%s/state.ts%s",dir_name,
+            right_flush(RestartStep,7));
+    
+    readBaseStates(f_basic->restart_state_name);
 	
 }       /* end readBaseFront */
 

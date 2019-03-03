@@ -9,11 +9,11 @@ Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
 Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
-Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHELT_BOUNDARY
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 1
+Enter velocity: 0 1 0
 Enter pressure: 10
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

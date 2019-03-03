@@ -2307,35 +2307,39 @@ static void promptForDirichletBdryState(
 extern void rgb_init(Front *front,
         RG_PARAMS rgb_params)
 {
-        CURVE **c;
-        SURFACE **s;
+    CURVE **c;
+    SURFACE **s;
 
-        rgb_params.no_fluid = NO;       /* default */
-        if (FT_Dimension() == 1) return;
-        else if (FT_Dimension() == 2)
+    rgb_params.no_fluid = NO;       /* default */
+    if (FT_Dimension() == 1)
+    {
+        return;
+    }
+    else if (FT_Dimension() == 2)
+    {
+        for (c = front->interf->curves; c && *c; ++c)
         {
-            for (c = front->interf->curves; c && *c; ++c)
+            if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(front->f_basic->dim,
-                                front->f_basic->in_name,&rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*c));
-                }
+                prompt_for_rigid_body_params(front->f_basic->dim,
+                            front->f_basic->in_name,&rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
-        else
+    }
+    else
+    {
+        for (s = front->interf->surfaces; s && *s; ++s)
         {
-            for (s = front->interf->surfaces; s && *s; ++s)
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(front->f_basic->dim,
-                                front->f_basic->in_name,&rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*s));
-                }
+                prompt_for_rigid_body_params(front->f_basic->dim,
+                            front->f_basic->in_name,&rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
+    }
+
 }       /* end rgb_init */
 
 extern  void prompt_for_rigid_body_params(
