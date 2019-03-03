@@ -93,6 +93,7 @@ ENVIRONMENT
 #include <util/cdecs.h>
 #include <util/vmalloc.h>
 
+//TODO: this should not be hardcoded
 EXPORT	boolean	allow_pp_comm = YES;
 
 #define COMMAND_NOT_IMPLEMENTED(command,arch)				 \

@@ -1,13 +1,22 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
 Domain limit in 2-th dimension: 0 1
+
 Computational grid: 50 50 50
+
 Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
 Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
 Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 1
+Enter pressure: 10
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 2.0
 Max step: 10000
@@ -21,6 +30,11 @@ Entering yes to turn off fluid solver: no
 Enter velocity function: zero
 Enter interior propagator: p
 Enter interior sub step number: 10
+
+Enter yes to use porosity: no
+Enter viscous parameter: 30.0
+Enter inertial parameter: 0.0
+Enter factor of smoothing radius: 1.0
 
 Projection type can be
         SIMPLE
@@ -79,14 +93,6 @@ Enter the total mass for rigid body: 1.0
 Enter the initial center of mass for rigid body: 0.5 0.5 0.5
 Enter the initial center of mass velocity: 0 0 0
 
-
-For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 1
-Enter pressure: 10
-For upper boundary in 2-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-
 Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
@@ -100,11 +106,11 @@ Type y to make vector velocity field movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
-Enter the debugging string: collision
+Enter the debugging string: CLOCK
+Enter the debugging string: tcollision
 
 Enter the debugging string: trigid_body
 Enter the debugging string: tisect3d
-Enter the debugging string: CLOCK
 Enter the debugging string: tstep_size
 Enter the debugging string: ttri_cluster
 Enter the debugging string: tCollisionImpulse

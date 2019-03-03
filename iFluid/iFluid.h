@@ -259,8 +259,8 @@ class Incompress_Solver_Basis;
 class L_RECTANGLE {
 public:
 	int comp;			 
-	double m_coords[MAXD];	
-	int icoords[MAXD];
+	double m_coords[MAXD]; // x,y,z data of mesh block's center
+	int icoords[MAXD];     // i,j,k indices of mesh block
 
 	L_RECTANGLE();
 
@@ -352,7 +352,7 @@ protected:
 	int ***ijk_to_I, **I_to_ijk;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
-	// Sweeping limites
+	// Sweeping limits
 	int imin, jmin, kmin;
 	int imax, jmax, kmax;
 	// for parallel partition

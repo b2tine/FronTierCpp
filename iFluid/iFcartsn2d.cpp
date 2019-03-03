@@ -279,7 +279,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    index  = d_index2d(i,j,top_gmax);
 	    if (!ifluid_comp(top_comp[index]))
 		continue;
-	    source[index] = (source[index])/accum_dt;
+	    
+        //TODO: why are why dividing by accum_dt and not m_dt or dt?
+        source[index] = (source[index])/accum_dt;
+
             /*Compute pressure jump due to porosity*/
             icoords[0] = i; icoords[1] = j;
             source[index] += computeFieldPointPressureJump(icoords,
@@ -323,7 +326,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
-	for (i = 1; i < num_colors; ++i)
+
+    for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);
 	    setGlobalIndex();
@@ -331,12 +335,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
+            
 	    if (iFparams->total_div_cancellation)
+        {   //new function for DB elliptic method
 	    	elliptic_solver.dsolve(array);
-	    else
+        }
+        else
+        {
 	    	elliptic_solver.solve(array);
+        }
+
 	    paintSolvedGridPoint();
 	}
+    
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
 
 	for (j = 0; j <= top_gmax[1]; j++)

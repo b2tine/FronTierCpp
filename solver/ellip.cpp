@@ -101,7 +101,7 @@ void ELLIPTIC_SOLVER::dsolve(double *soln)
 	case 2:
 	    return dsolve2d(soln);
 	case 3:
-	    return dsolve3d(soln);
+	    return dsolve3d(soln); //TODO: compare to dsolve2d and update
 	}
 }	/* end dsolve */
 
@@ -356,10 +356,13 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    for (l = 0; l < 4; ++l)
 	    {
 		refl_side[l] = NO;
+
 		if (num_nb == 0) break;
-		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+		
+        status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
-		if (status == NO_PDE_BOUNDARY)
+		
+        if (status == NO_PDE_BOUNDARY)
                 {
                     solver.Set_A(I,I_nb[l],coeff[l]);
                     aII += -coeff[l];
@@ -384,9 +387,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 		    }
                 }
 	    }
+
 	    for (l = 0; l < 4; ++l)
 	    {
-		break;
+		    break;
+        
 		if (refl_side[l] == YES)
 		{
 		    double alpha = 1.0;
@@ -866,9 +871,11 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     aII += -coeff_nb;
                 }
             }
-            
-            solver.Set_A(I,I,aII);
+             
+            solver.Set_A(I,I,aII); //set diagonal entry
+
             solver.Set_b(I,rhs);
+
             /*
             index_nb[0] = d_index2d(i-2,j,top_gmax);
             index_nb[1] = d_index2d(i+2,j,top_gmax);
@@ -897,8 +904,8 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
             }
             */
 
-            solver.Set_A(I,I,aII);
-            solver.Set_b(I,rhs);
+            //solver.Set_A(I,I,aII);
+            //solver.Set_b(I,rhs);
 	}
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 	

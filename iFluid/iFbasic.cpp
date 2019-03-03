@@ -4045,6 +4045,7 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 	pp_global_min(vmin,dim);
 }	/* end computeMaxSpeed */
 
+
 double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 int *icoords, double alpha, double beta)
 {
@@ -4059,6 +4060,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         double *phi = field->phi;
         double rho;
 
+        //TODO: only a pressure jump if porosity??
         if (!iFparams->with_porosity)
             return 0.0;
 

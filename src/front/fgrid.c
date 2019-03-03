@@ -905,6 +905,8 @@ EXPORT	void free_grid_intfc(
 {
 	int dim = Dimension(grid_intfc);
 	free_crx_storage(grid_intfc);
+
+    //TODO: is this if statement correct?
 	if (dim <= 2)
 	    free_grid_lines(&topological_grid(grid_intfc));
 	delete_interface(grid_intfc);
