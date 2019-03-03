@@ -58,7 +58,6 @@ int main(int argc, char **argv)
 	else if (f_basic.dim == 3)
 	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
 
-    //TODO: can just use the macros for these instead
     in_name                 = f_basic.in_name;
     restart_state_name      = f_basic.restart_state_name;
     out_name                = f_basic.out_name;

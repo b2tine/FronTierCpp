@@ -2960,6 +2960,11 @@ void Incompress_Solver_Smooth_Basis::setDualIndexMap(void)
 	}
 }	/* end setDualIndexMap */
 
+
+//TODO: Rename the argument double** field.
+//      This class already has member variable IF_FIELD *field,
+//      Don't want unexpected hiding or implicit conversions.
+//      All the methods computeField*() use this input; change them all.
 double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         int *icoords,
         double **field)
@@ -2984,6 +2989,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
             u0 = field[idir][index];
             for (j = 0; j < dim; ++j)
                 icnb[j] = icoords[j];
+
             for (nb = 0; nb < 2; nb++)
             {
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
@@ -2998,11 +3004,12 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
                         wave_type(hs) == DIRICHLET_BOUNDARY)
                     u_edge[idir][nb] = getStateVel[idir](intfc_state);
                 else
-		{
+                {
                     u_ref = getStateVel[idir](intfc_state);
-                    u_edge[idir][nb] = u_ref - u0; 
-		}
+                    u_edge[idir][nb] = u_ref - u0;
+                }
             }
+
             for (nb = 0; nb < 2; nb++)
             {
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],

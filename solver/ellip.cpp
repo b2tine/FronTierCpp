@@ -346,7 +346,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 if (status == CONST_V_PDE_BOUNDARY ||
 		    status == CONST_P_PDE_BOUNDARY)
 		    index_nb[l] = index;
-		k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
+		k_nb[l] = 0.5*(k0 + D[index_nb[l]]);//isn't this just D[index]?
 	    	coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
@@ -362,6 +362,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
 		
+        //off-diagonal entries
         if (status == NO_PDE_BOUNDARY)
                 {
                     solver.Set_A(I,I_nb[l],coeff[l]);
@@ -405,18 +406,22 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	     * handle such case. If we have better understanding, this should
 	     * be changed back.
 	     */
-	    if(num_nb > 0)
+	    
+        
+        //diagonal entries
+        if(num_nb > 0)
 	    {
-                solver.Set_A(I,I,aII);
+            solver.Set_A(I,I,aII);
 	    }
-            else
-            {
+        else
+        {
 	    	if (debugging("linear_solver"))
 		    (void) printf("WARNING: isolated value!\n");
-                solver.Set_A(I,I,1.0);
-		rhs = soln[index];
-            }
-            solver.Set_b(I,rhs);
+            solver.Set_A(I,I,1.0);
+		    rhs = soln[index];
+        }
+        //rhs
+        solver.Set_b(I,rhs);
 	}
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 	
@@ -805,10 +810,11 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
     //      values for d_nz and o_nz?
     //      (number of nonzero terms in diagonal block rows,
     //      and offdiagonal block rows respectively)
+    //      Documentation suggests massive speedups are possible
+    //      (up to 50x) with exact number of nonzero terms passed to
+    //      PETSc::Create().
     //      Could we use d_nnz[3] and o_nnz[3] arrays and determine
     //      their correct values based on the processor rank?.
-    //      Documentation suggests massive speedups are possible
-    //      (up to 50x) with exact number of nonzero terms.
 	
     solver.Create(ilower, iupper-1, 9, 9);
 	solver.Reset_A();
@@ -835,8 +841,10 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
             k0 = D[index];
             aII = 0.0;
             rhs = source[index];
+
             for (idir = 0; idir < dim; ++idir)
             {
+                //boundaries normal to direction idir
                 for (nb = 0; nb < 2; ++nb)
                 {
                     icnb[0] = icoords[0];
@@ -877,20 +885,13 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     coeff_nb = k_nb/(4.0*top_h[idir]*top_h[idir]);
 
                     /* Set neighbor at boundary */
-
                     solver.Set_A(I,I_nb,coeff_nb);
                     aII += -coeff_nb;
                 }
             }
-             
-            //TODO: Value of I = ij_to_I[i][j] does not appear to
-            //      agree with the description of PETSc::Set_A().
-            //      solver.cpp states that this method sets A[i][j] = val.
-            //      However, it appears to be producing the correct results.
-            //      I,I are global indices of matrix?
-                  
-            solver.Set_A(I,I,aII); //set diagonal entry
+            
 
+            solver.Set_A(I,I,aII); //set diagonal entry
             solver.Set_b(I,rhs);
 
             /*

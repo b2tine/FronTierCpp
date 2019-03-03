@@ -266,7 +266,7 @@ public:
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
 			            /* div(D*grad)phi = source */
-    double *D; //diff_coeff?
+    double *D; //diff_coeff? ... equals 1/rho
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);
