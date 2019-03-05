@@ -816,7 +816,8 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
     //      Could we use d_nnz[3] and o_nnz[3] arrays and determine
     //      their correct values based on the processor rank?.
 	
-    solver.Create(ilower, iupper-1, 9, 9);
+    solver.Create(ilower, iupper-1, 5, 5);
+    //solver.Create(ilower, iupper-1, 9, 9);
 	solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -1048,11 +1049,13 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 {
-	int index,index_nb,size;
-	double rhs,coeff[3][2];
-	int I,I_nb;
-	int i,j,k,l,icoords[MAXD],icnb[MAXD];
-	int icrds_max[MAXD],icrds_min[MAXD];
+	int index, index_nb, size;
+	double rhs;
+    double k0, k_nb, coeff_nb;
+       //double coeff[3][2];
+	int I, I_nb;
+	int icoords[MAXD], icn[MAXD], icnb[MAXD], iknb[MAXD];
+	int icrds_max[MAXD], icrds_min[MAXD];
 	COMPONENT comp;
 	double aII;
 	GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
@@ -1063,12 +1066,16 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	double crx_coords[MAXD];
 	int status;
 	POINTER intfc_state;
-	int idir,nb;
 	double h2[MAXD];
 	double *x;
 
 	PETSc solver;
-	solver.Create(ilower, iupper-1, 13, 13);
+
+	if (debugging("check_div"))
+            printf("Entering dsolve3d()\n");
+
+	solver.Create(ilower, iupper-1, 7, 7);
+	//solver.Create(ilower, iupper-1, 13, 13);
 	solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -1076,33 +1083,45 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	max_soln = -HUGE;
 	min_soln = HUGE;
 
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	    h2[i] = 4.0*sqr(top_h[i]);
 
-	for (k = kmin; k <= kmax; k++)
-	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+	for (int k = kmin; k <= kmax; k++)
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
 	{
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-	    I = ijk_to_I[i][j][k];
+	
+        I = ijk_to_I[i][j][k];
+	    if (I == -1) continue;
 
 	    index  = d_index(icoords,top_gmax,dim);
 	    comp = top_comp[index];
-	    if (I == -1) continue;
 	
+        k0 = D[index];
 	    rhs = source[index];
 	    aII = 0.0;
 
-	    for (idir = 0; idir < dim; ++idir)
-	    for (nb = 0; nb < 2; ++nb)
-	    {
-	    	for (l = 0; l < dim; ++l)
-	    	    icnb[l] = icoords[l];
-		status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
-				comp,&intfc_state,&hs,crx_coords);
-                if (status == NO_PDE_BOUNDARY)
+	    for (int idir = 0; idir < dim; ++idir)
+        {
+	        for (int nb = 0; nb < 2; ++nb)
+	        {
+	    	    for (int l = 0; l < dim; ++l)
+                {
+                    icnb[l] = icoords[l];
+                    iknb[l] = icoords[l];
+                }
+
+                icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
+                iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+
+            /*
+            status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+            comp,&intfc_state,&hs,crx_coords);
+            
+            if (status == NO_PDE_BOUNDARY)
 		{
 		    icnb[idir] = (nb == 0) ? icoords[idir] - 1 : 
 					icoords[idir] + 1;
@@ -1143,8 +1162,20 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 		    rhs += -coeff[idir][nb]*getStateVar(intfc_state);
 		    use_neumann_solver = NO;
 		}
-	    }
-	    /*
+        */
+	    
+                I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]] ;
+                index_nb = d_index(iknb,top_gmax,dim);
+                k_nb = D[index_nb];
+                coeff_nb = k_nb/(4.0*top_h[idir]*top_h[idir]);
+
+                /* Set neighbor at boundary */
+                solver.Set_A(I,I_nb,coeff_nb);
+                aII += -coeff_nb;
+            }
+        }
+	    
+         /*
 	     * This change reflects the need to treat point with only one
 	     * interior neighbor (a convex point). Not sure why PETSc cannot
 	     * handle such case. If we have better understanding, this should
@@ -1153,7 +1184,8 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
 	}
-	use_neumann_solver = pp_min_status(use_neumann_solver);
+	
+    use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
@@ -1168,8 +1200,8 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 		stop_clock("Petsc Solver");
 		return;
 	    }
-	    (void) printf("Neumann solver not working for dsolve3d()\n");
-	    clean_up(ERROR);
+	        //(void) printf("Neumann solver not working for dsolve3d()\n");
+	        //clean_up(ERROR);
 	    solver.Solve_withPureNeumann();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetFinalRelativeResidualNorm(&rel_residual);
@@ -1212,9 +1244,9 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	       		"num_iter = %d, rel_residual = %g \n", 
 			num_iter, rel_residual);
 	
-	for (k = kmin; k <= kmax; k++)
-	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+	for (int k = kmin; k <= kmax; k++)
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    I = ijk_to_I[i][j][k];
@@ -1250,9 +1282,9 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	if (debugging("elliptic_error"))
         {
             double error,max_error = 0.0;
-            for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+            for (int k = kmin; k <= kmax; k++)
+            for (int j = jmin; j <= jmax; j++)
+            for (int i = imin; i <= imax; i++)
             {
                 icoords[0] = i;
                 icoords[1] = j;

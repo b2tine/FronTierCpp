@@ -1433,17 +1433,20 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 	
 	if (iFparams->with_porosity)
 	{
-	    paintAllGridPoint(TO_SOLVE);
-	    setGlobalIndex();
-	    setIndexMap();
-        elliptic_solver.ijk_to_I = ijk_to_I;
-        elliptic_solver.ilower = ilower;
-        elliptic_solver.iupper = iupper;
-        elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+        //TODO: Check for DB and use here also? I think so...
+        //      Turned off if using DB for now.
+        if( !iFparams->total_div_cancellation )
+        {
+            paintAllGridPoint(TO_SOLVE);
+            setGlobalIndex();
+            setIndexMap();
+            elliptic_solver.ijk_to_I = ijk_to_I;
+            elliptic_solver.ilower = ilower;
+            elliptic_solver.iupper = iupper;
+            elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 
-        //TODO: check for DB and use here also? I think so...
-        elliptic_solver.solve(array);
-
+            elliptic_solver.solve(array);
+        }
 	}
     else
 	{	
