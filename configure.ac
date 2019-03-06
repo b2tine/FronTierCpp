@@ -369,6 +369,13 @@ AS_IF([test $with_nlopt = yes],
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
+#optionally compile the examples (Makefiles always generated)
+AC_ARG_WITH([bvh],[AS_HELP_STRING([--with-bvh],
+              [build the BVH directory])],
+              [buildBVH=yes],[buildBVH=no])
+
+AM_CONDITIONAL([BVH_OPT],[test $buildBVH = yes])
+
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
