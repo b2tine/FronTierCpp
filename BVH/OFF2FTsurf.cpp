@@ -43,15 +43,20 @@ int main(int argc, char* argv[])
     char* in_name = f_basic.in_name;
     char* out_name = f_basic.out_name;
 
-    Mesh mesh;
+    Mesh inmesh;
     std::ifstream input(in_name);
-    if (!input || !(input >> mesh) || !CGAL::is_triangle_mesh(mesh))
+    if (!input || !(input >> inmesh) || !CGAL::is_triangle_mesh(inmesh))
     {
         std::cerr << "Error: input file must be a triangular mesh OFF file\n";
         return 1;
     }
 
-    auto Bounds = getInputMeshDimensionsWithPad(&mesh,2.0);
+    std::ofstream outfile(std::string(out_name) + "input-mesh.off");
+    outfile << inmesh;
+    outfile.close();
+
+    //NOTE: signatureis BVH::BVH(const Front* const front)
+    auto Bounds = getInputMeshDimensionsWithPad(&inmesh,2.0);
     auto lb = Bounds.first;
     auto ub = Bounds.second;
 
@@ -78,29 +83,18 @@ int main(int argc, char* argv[])
     level_func_pack.pos_component = 1;
     FT_InitIntfc(&front,&level_func_pack);
     
-    TriMeshOFF2MonoCompSurf(&front,&mesh);
+    TriMeshOFF2MonoCompSurf(&front,&inmesh);
     
     char dname[100];
     sprintf(dname,"%s/geomview-interface",out_name);
     gview_plot_interface(dname,front.interf);
-    //print_interface(front.interf);
     
-    std::string outdir(out_name);
-    outdir += "/";
-    std::string geomdir("OOGL/");
-    createDirectory(outdir + geomdir);
-
-    std::ofstream outfile(outdir + geomdir + "input-mesh.off");
-    outfile << mesh;
-    outfile.close();
-
-
     BVH bvh(&front);
-    //bvh.constructBVH(&front);
 
-    auto root = bvh.getRoot().lock();
-    auto root_bv = root->getBV();
+    auto root_bv = bvh.getRoot().lock()->getBV();
     root_bv.print();
+
+    bvh.writeHilbertCurveFile(std::string(out_name));
 
     clean_up(0);
 }
@@ -157,8 +151,9 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
         COMPONENT neg_comp, Mesh* mesh, SURFACE** surf)
 {
     //save a copy of the current interface
-    INTERFACE* saved_intfc = current_interface();
+    //INTERFACE* saved_intfc = current_interface();
 
+difiers:
     //create a surface for the current interface
     set_current_interface(intfc);
     SURFACE* newsurf = make_surface(pos_comp,neg_comp,NULL,NULL);
@@ -284,7 +279,7 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
     reset_intfc_num_points(newsurf->interface);
 
     *surf = newsurf;
-    set_current_interface(saved_intfc);
+    //set_current_interface(saved_intfc);
     FT_FreeThese(2,tris,points);
 }
 

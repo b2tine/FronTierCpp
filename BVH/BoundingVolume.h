@@ -27,7 +27,7 @@ class AABB
         AABB();
         explicit AABB(Hse*);
         AABB(const AABB&,const AABB&);
-        AABB(const BV_Point&,const BV_Point&);
+        //AABB(const BV_Point&,const BV_Point&);
 
         AABB(const AABB&) = default;
         AABB& operator=(const AABB&) = default;
@@ -38,14 +38,13 @@ class AABB
         const BV_Type getBvType() const;
         const CGAL_Point Centroid() const;
 
-        const bool contains(const AABB&) const;
-        
         //TODO: need to carefully test this when
         //      considering self intersection checks
         const bool overlaps(const AABB&) const;
+        const bool contains(const AABB&) const;
         
         const double volume() const;
-        //void inflate();
+        void expand(double);
 
         void print() const;
 };

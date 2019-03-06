@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <exception>
 #include <cassert>
 
@@ -13,12 +14,13 @@ enum class HseTag {FABRIC,STRING,RIGIDBODY,NONE};
 //Abstract base class for FronTier hypersurface element wrappers
 class Hse
 {
-    protected:
+    private:
 
         HseTag tag{HseTag::NONE};
 
     public:
 
+        Hse(HseTag);
         Hse() = default;
         virtual ~Hse() = default;
 
@@ -32,8 +34,8 @@ class Hse
         virtual POINT* Point_of_hse(int) const = 0;
         virtual int num_pts() const = 0;
 
-        void setTag(HseTag Tag);
-        HseTag getTag();
+        //void setTag(HseTag Tag);
+        const HseTag getTag() const noexcept;
 };
 
 //Wrapper for FronTier POINT
@@ -60,7 +62,7 @@ class HsPoint : public Hse
         POINT* Point_of_hse(int i = 0) const override;
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const override { return 1; }
+        int num_pts() const noexcept override { return 1; }
 
         //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
         //      is incident to an instance of HsPoint.
@@ -92,7 +94,7 @@ class HsBond : public Hse
         POINT* Point_of_hse(int) const override;
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const override { return 2; }
+        int num_pts() const noexcept override { return 2; }
         
         //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
         //      is incident to an instance of HsBond.
@@ -123,7 +125,7 @@ class HsTri : public Hse
         POINT* Point_of_hse(int) const override;
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const override { return 3; }
+        int num_pts() const noexcept override { return 3; }
 
         //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
         //      is incident to an instance of HsTri.

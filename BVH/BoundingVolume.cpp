@@ -17,9 +17,11 @@ AABB::AABB(Hse* h)
     }
 }
 
+/*
 AABB::AABB(const BV_Point& L, const BV_Point& U)
     : lower{L}, upper{U}
 {}
+*/
 
 AABB::AABB(const AABB& A, const AABB& B)
 {
@@ -43,22 +45,22 @@ const CGAL_Point AABB::Centroid() const
     return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 
-const bool AABB::contains(const AABB& BB) const
-{
-    for( int i = 0; i < 3; ++i )
-    {
-        if( lower[i] >= BB.lower[i] ) return false;
-        if( upper[i] <= BB.upper[i] ) return false;
-    }
-    return true;
-}
-
 const bool AABB::overlaps(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
     {
-        if( lower[i] > BB.upper[i] ) return false;
-        if( upper[i] < BB.lower[i] ) return false;
+        if( BB.upper[i] < lower[i] ) return false;
+        if( BB.lower[i] > upper[i] ) return false;
+    }
+    return true;
+}
+
+const bool AABB::contains(const AABB& BB) const
+{
+    for( int i = 0; i < 3; ++i )
+    {
+        if( BB.lower[i] <= lower[i] ) return false;
+        if( BB.upper[i] >= upper[i] ) return false;
     }
     return true;
 }
@@ -72,10 +74,20 @@ const double AABB::volume() const
 
 }
 
+void AABB::expand(double pad)
+{
+    for( int i = 0; i < 3; ++i )
+    {
+        lower[i] -= pad;
+        upper[i] += pad;
+    }
+}
+
 void AABB::print() const
 {
     CGAL_Point ctr = this->Centroid();
-    printf("\n   upper: (%3g,%3g,%3g) \n", upper[0], upper[1], upper[2]);
+    printf("Axis Aligned Bounding Box:\n");
+    printf("   upper: (%3g,%3g,%3g) \n", upper[0], upper[1], upper[2]);
     printf("centroid: (%3g,%3g,%3g) \n", ctr.x(), ctr.y(), ctr.z());
     printf("   lower: (%3g,%3g,%3g) \n\n", lower[0], lower[1], lower[2]);
 }

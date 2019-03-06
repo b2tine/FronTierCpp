@@ -141,18 +141,21 @@ TEST_F(DISABLED_BVH_Tests, AABBSelfProximity)
 
 }
 
+//TEST_F(BVH_Tests, checkProximityTest)
+//{
+//    ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
+//}
 
-TEST_F(DISABLED_BVH_Tests, checkProximityTest)
+
+TEST_F(BVH_Tests, checkProximityTest)
 {
-    //auto nodestack = queryProximity(&bvh1,&bvh2);
-    //ASSERT_FALSE(nodestack.empty());
     ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
 }
 
 
 TEST_F(BVH_Tests, BuildTest)
 {
-    ASSERT_NE(bvh1.getRoot().lock(),nullptr);
+    ASSERT_FALSE(bvh1.isEmpty());
 }
 
 

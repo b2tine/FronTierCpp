@@ -9,7 +9,7 @@ class BVH_NodeTests : public testing::Test
     static TRI *t1, *t2, *t3, *t4,*t5;
     static HsTri *T1, *T2, *T3, *T4, *T5;
 
-    std::shared_ptr<LeafNode>  l1, l2, l3, l4, l5;
+    std::shared_ptr<BVH_Node>  l1, l2, l3, l4, l5;
 
     static void SetUpTestCase()
     {
@@ -113,7 +113,7 @@ TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
       
 TEST_F(BVH_NodeTests, InternalNodeCtorOddNumberLeaves)
 {
-    std::shared_ptr<InternalNode> p3 =
+    std::shared_ptr<BVH_Node> p3 =
         std::make_shared<InternalNode>(l5,l5);
     p3->setChildren(l5,l5);
     ASSERT_EQ(p3->getLeftChild().lock(),l5);
@@ -134,15 +134,15 @@ TEST_F(BVH_NodeTests, InternalNodePrototypeFactoryTest)
     //See ../BVH_Node.cpp for why construction of a
     //shared_ptr<InternalNode> must be decoupled from
     //the linking of parent and children.
-    std::shared_ptr<InternalNode> p1 =
+    std::shared_ptr<BVH_Node> p1 =
         std::make_shared<InternalNode>(l1,l2);
     p1->setChildren(l1,l2);
     
-    std::shared_ptr<InternalNode> p2 =
+    std::shared_ptr<BVH_Node> p2 =
         std::make_shared<InternalNode>(l3,l4);
     p2->setChildren(l3,l4);
 
-    std::shared_ptr<InternalNode> gp =
+    std::shared_ptr<BVH_Node> gp =
         std::make_shared<InternalNode>(p1,p2);
     gp->setChildren(p1,p2);
     

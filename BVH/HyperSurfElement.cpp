@@ -4,12 +4,18 @@
 //              Hse Methods                     //
 //////////////////////////////////////////////////
 
+Hse::Hse(HseTag Tag)
+    : tag{Tag}
+{}
+
+/*
 void Hse::setTag(HseTag Tag)
 {
     tag = Tag;
 }
+*/
 
-HseTag Hse::getTag()
+const HseTag Hse::getTag() const noexcept
 {
     return tag;
 }
@@ -23,9 +29,9 @@ HsPoint::HsPoint(POINT* p)
 {}
 
 HsPoint::HsPoint(POINT* p, HseTag tag)
-    : point{p}
+    : Hse(tag), point{p}
 {
-    this->setTag(tag);
+    //this->setTag(tag);
 }
 
 POINT* HsPoint::Point_of_hse(int i) const
@@ -56,9 +62,9 @@ HsBond::HsBond(BOND* b)
 {}
 
 HsBond::HsBond(BOND* b, HseTag tag)
-    : bond{b}
+    : Hse(tag), bond{b}
 {
-    this->setTag(tag);
+    //this->setTag(tag);
 }
 
 POINT* HsBond::Point_of_hse(int i) const
@@ -91,9 +97,9 @@ HsTri::HsTri(TRI* t)
 {}
 
 HsTri::HsTri(TRI* t, HseTag tag)
-    : tri{t}
+    : Hse(tag), tri{t}
 {
-    this->setTag(tag);
+    //this->setTag(tag);
 }
 
 POINT* HsTri::Point_of_hse(int i) const

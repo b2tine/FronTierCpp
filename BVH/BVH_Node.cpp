@@ -29,6 +29,40 @@ const bool BVH_Node::overlaps(const std::shared_ptr<BVH_Node>& node) const
     return bv.overlaps(node->getBV());
 }
 
+const double BVH_Node::volume() const
+{
+    return bv.volume();
+}
+
+
+//InternalNode uses these defaults
+const Hse* const BVH_Node::getHse() const
+{
+    return nullptr;
+}
+
+//LeafNode uses these defaults
+
+void BVH_Node::expandBV(double pad)
+{
+    bv.expand(pad);
+}
+
+const std::weak_ptr<BVH_Node> BVH_Node::getLeftChild() const
+{
+    return {};
+}
+
+const std::weak_ptr<BVH_Node> BVH_Node::getRightChild() const
+{
+    return {};
+}
+
+void BVH_Node::setChildren(std::shared_ptr<BVH_Node> lc,
+        std::shared_ptr<BVH_Node> rc)
+{
+    return;
+}
 
 /////////////////////////////////////////////////////////
 ////////         InternalNode Methods           ////////
@@ -39,6 +73,16 @@ InternalNode::InternalNode(std::shared_ptr<BVH_Node> lc,
 {
     assert(lc && rc);
     setBV(BoundingVolume(lc->getBV(),rc->getBV()));
+}
+
+const bool InternalNode::isLeaf() const noexcept
+{
+    return false;
+}
+
+void InternalNode::expandBV(double pad)
+{
+     return;
 }
 
 //SetChildren() is a temporary solution for testing.
@@ -80,12 +124,6 @@ const std::weak_ptr<BVH_Node> InternalNode::getRightChild() const
     return std::weak_ptr<BVH_Node>(right);
 }
 
-const bool InternalNode::isLeaf() const
-{
-    return false;
-}
-
-
 /////////////////////////////////////////////////////////
 ///////            LeafNode Methods             ////////
 ///////////////////////////////////////////////////////
@@ -96,14 +134,14 @@ LeafNode::LeafNode(Hse* h)
     setBV(BoundingVolume(h));
 }
 
+const bool LeafNode::isLeaf() const noexcept
+{
+    return true;
+}
+
 const Hse* const LeafNode::getHse() const
 {
     return hse;
-}
-
-const bool LeafNode::isLeaf() const
-{
-    return true;
 }
 
 

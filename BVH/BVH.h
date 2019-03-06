@@ -21,7 +21,7 @@ class BVH
         
         std::shared_ptr<BVH_Node> root{nullptr};
         
-        int numLeaves{0};
+        int num_leaves{0};
         std::vector<std::shared_ptr<BVH_Node>> leaves;
 
         Point_Node_Vector children;
@@ -33,9 +33,15 @@ class BVH
         void constructParentNodes();
         void constructRootNode();
         //void clearVectors();
+        const Point_Node_Vector getSortedLeafPairs() const;
 
-        static std::shared_ptr<LeafNode> createLeafNode(Hse* h);
-        static std::shared_ptr<InternalNode> createInternalNode(
+        //hard coded for now; too early to tell where/how
+        //this should be set. 1.0e-03 is default for static
+        //proximity boxes, 1.0e-06 is default for kinetic
+        //collision boxes.
+        static double expandBV_width;
+        static std::shared_ptr<BVH_Node> createLeafNode(Hse* h);
+        static std::shared_ptr<BVH_Node> createInternalNode(
                 std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
 
     public:
@@ -51,16 +57,19 @@ class BVH
         BVH& operator=(BVH&&) = delete;
 
         const std::weak_ptr<BVH_Node> getRoot() const;
+        const bool isEmpty() const; 
 
-        //temp function for testing/debugging
-        void writeHilbertCurveFile(std::string,std::string);
+        //temp functions for testing/debugging
         void buildTester(std::vector<Hse*>);
+        void writeHilbertCurveFile(std::string) const;
 };
 
 
-
 const bool checkProximity(BVH*, BVH*);
-void queryProximity(std::shared_ptr<BVH_Node>,std::shared_ptr<BVH_Node>);
+
+std::stack< std::pair<std::shared_ptr<BVH_Node>,
+    std::shared_ptr<BVH_Node>> >
+    queryProximity(std::shared_ptr<BVH_Node>,std::shared_ptr<BVH_Node>);
 
 
 

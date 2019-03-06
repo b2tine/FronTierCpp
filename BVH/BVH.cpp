@@ -1,13 +1,33 @@
 #include "BVH.h"
 
-std::shared_ptr<LeafNode>
-BVH::createLeafNode(Hse* h)
+//TODO: Don't like this here
+double BVH::expandBV_width = 1.0e-03;
+
+
+const bool BVH::isEmpty() const
 {
-    return std::make_shared<LeafNode>(h);
+    return (!this->root) ? true : false;
+}
+
+const std::weak_ptr<BVH_Node> BVH::getRoot() const
+{
+    return std::weak_ptr<BVH_Node>(root);
 }
 
 
-std::shared_ptr<InternalNode>
+//TODO: Is std::move() Hindering RVO in these factory functions?
+//      Or are the RVO conditions not met?
+
+std::shared_ptr<BVH_Node>
+BVH::createLeafNode(Hse* h)
+{
+    auto node = std::make_shared<LeafNode>(h);
+    node->expandBV(expandBV_width);
+    return std::move(node);
+}
+
+
+std::shared_ptr<BVH_Node>
 BVH::createInternalNode(std::shared_ptr<BVH_Node> lc,
         std::shared_ptr<BVH_Node> rc)
 {
@@ -77,6 +97,7 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 	    //unsort_surface_point(*s);
 	    surf_tri_loop(*s,tri)
 	    {
+            //TODO: are these tags correctly matching the boundaries?
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
                     wave_type(*s) == NEUMANN_BOUNDARY)
             {
@@ -132,10 +153,10 @@ void BVH::clearVectors()
     std::vector<std::shared_ptr<BVH_Node>>().swap(leaves);
     Point_Node_Vector().swap(children);
 
-    if(numLeaves != 0) 
+    if(num_leaves != 0) 
     {
-        leaves.reserve(numLeaves);
-        children.reserve(numLeaves);
+        leaves.reserve(num_leaves);
+        children.reserve(num_leaves);
     }
 }
 */
@@ -187,12 +208,22 @@ void BVH::constructRootNode()
     sort_iter = 0;
 }
 
-
-const std::weak_ptr<BVH_Node> BVH::getRoot() const
+const Point_Node_Vector BVH::getSortedLeafPairs() const
 {
-    return std::weak_ptr<BVH_Node>(root);
-}
+    assert(!leaves.empty());
+    Point_Node_Vector leaf_pairs;
 
+    std::vector<std::shared_ptr<BVH_Node>>::const_iterator it;
+    for( it = leaves.cbegin(); it != leaves.cend(); ++it )
+    {
+        auto node = *it;
+        Point_with_Node ctr_bv_pair(node->getBV().Centroid(),node);
+        leaf_pairs.push_back(ctr_bv_pair);
+    }
+
+    CGAL::hilbert_sort(leaf_pairs.begin(),leaf_pairs.end(),hst);
+    return leaf_pairs;
+}
 
 
 
