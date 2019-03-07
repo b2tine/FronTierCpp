@@ -279,7 +279,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    if (!ifluid_comp(top_comp[index]))
 		continue;
 	    
-        //TODO: why are why dividing by accum_dt and not m_dt or dt?
         source[index] = (source[index])/accum_dt;
 
             /*Compute pressure jump due to porosity*/

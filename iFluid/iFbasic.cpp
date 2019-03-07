@@ -476,8 +476,6 @@ void Incompress_Solver_Smooth_Basis::save(char *filename)
 	fclose(hfile);
 }
 
-//TODO: should be using pure virtual function here,
-//      and override inside the subclasses.
 void Incompress_Solver_Smooth_Basis::setDomain()
 {
 	static int current_size = 0;
@@ -2961,10 +2959,6 @@ void Incompress_Solver_Smooth_Basis::setDualIndexMap(void)
 }	/* end setDualIndexMap */
 
 
-//TODO: Rename the argument double** field.
-//      This class already has member variable IF_FIELD *field,
-//      Don't want unexpected hiding or implicit conversions.
-//      All the methods computeField*() use this input; change them all.
 double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         int *icoords,
         double **field)
@@ -4071,7 +4065,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         double *phi = field->phi;
         double rho;
 
-        //TODO: only a pressure jump if porosity??
         if (!iFparams->with_porosity)
             return 0.0;
 

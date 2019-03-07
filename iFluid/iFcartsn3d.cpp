@@ -1433,7 +1433,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 	
 	if (iFparams->with_porosity)
 	{
-        //TODO: Check for DB and use here also? I think so...
+        //TODO: Check for DB and use here also?
         //      Turned off if using DB for now.
         if( !iFparams->total_div_cancellation )
         {

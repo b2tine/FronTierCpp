@@ -28,7 +28,6 @@ static void ifluid_driver(Front*,Incompress_Solver_Smooth_Basis*);
 static int l_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
                         HYPER_SURF*,double*);
 
-//TODO: why are these global?
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
 boolean ReadFromInput;
@@ -52,7 +51,7 @@ int main(int argc, char **argv)
 	PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	/*Construct Incompress Solver l_cartesian*/
-	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
+	Incompress_Solver_Smooth_Basis *l_cartesian = nullptr;
 	if (f_basic.dim == 2)
 	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
 	else if (f_basic.dim == 3)
@@ -92,6 +91,18 @@ int main(int argc, char **argv)
     read_iF_prob_type(in_name,&prob_type);
 	read_iFparams(in_name,&iFparams);
     
+
+    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP )
+    {
+        if( prob_type != TAYLOR_GREEN_VORTEX )
+        {
+            printf("Double Elliptical solver has not been \
+                    implemented yet for this Problem Type.\n");
+            printf("Only working for TAYLOR_GREEN_VORTEX right now.\n");
+        }
+    }
+
+
     if (debugging("trace"))
         printf("Passed read_iFparams()\n");
 
@@ -115,8 +126,6 @@ int main(int argc, char **argv)
 	    {
             printf("Passed FT_InitIntfc()\n");
 
-            //TODO: This should have its own debugging string, not trace.
-            //      Also, do these work in parallel?
 		    char test_name[100];
             switch (f_basic.dim)
             {
@@ -133,11 +142,6 @@ int main(int argc, char **argv)
 
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    
-        //TODO: Is there a bug for dim == 3?
-        //      There's an if statement for dim == 3
-        //      inside FT_ClipIntfcToSubdomain(),
-        //      so why is it being avoided?
-
         if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
 	    
@@ -303,9 +307,6 @@ static void ifluid_driver(Front *front,
             FT_Draw(front);
         }
     
-        //TODO: Whats this supposed to do?
-        //      Does it work?
-              
         //recordBdryEnergyFlux(front,out_name);
 
         if (FT_TimeLimitReached(front))
