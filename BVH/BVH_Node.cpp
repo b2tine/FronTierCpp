@@ -34,6 +34,9 @@ const double BVH_Node::volume() const
     return bv.volume();
 }
 
+//TODO: BVH_Node should probably only provide an interface,
+//      and the no-ops can become overrides in the InternalNode
+//      and LeafNode classes
 
 //InternalNode uses these defaults
 const Hse* const BVH_Node::getHse() const
@@ -93,8 +96,8 @@ void InternalNode::expandBV(double pad)
 //inside a static factory function of the BVH class,
 //but setChildren(), unfortunately, remains exposed to the
 //public interface.
-//
-//Explicitly construct the shared_ptr instead?
+//Explicitly construct the shared_ptr instead, of using
+//the make_shared() function?
 void InternalNode::setChildren(std::shared_ptr<BVH_Node> lc,
         std::shared_ptr<BVH_Node> rc)
 {
@@ -139,7 +142,7 @@ const bool LeafNode::isLeaf() const noexcept
     return true;
 }
 
-const Hse* const LeafNode::getHse() const
+const Hse* const LeafNode::getHse() const noexcept
 {
     return hse;
 }

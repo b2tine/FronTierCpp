@@ -118,7 +118,7 @@ class LeafNode : public BVH_Node
         LeafNode& operator=(const LeafNode&) = delete;
 
         const bool isLeaf() const noexcept override;
-        const Hse* const getHse() const override;
+        const Hse* const getHse() const noexcept override;
 };
 
 

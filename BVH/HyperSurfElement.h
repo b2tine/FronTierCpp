@@ -9,9 +9,13 @@
 
 #include <FronTier.h>
 
+//TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
+//      is incident to an instance of HsTri.
+
+
 enum class HseTag {FABRIC,STRING,RIGIDBODY,NONE};
 
-//Abstract base class for FronTier hypersurface element wrappers
+
 class Hse
 {
     private:
@@ -38,6 +42,7 @@ class Hse
         const HseTag getTag() const noexcept;
 };
 
+
 //Wrapper for FronTier POINT
 class HsPoint : public Hse
 {
@@ -47,10 +52,8 @@ class HsPoint : public Hse
 
     public:
 
-        //TODO: throw exception if p is nullptr
         explicit HsPoint(POINT*);
         HsPoint(POINT*, HseTag);
-
         ~HsPoint() = default;
 
         HsPoint() = delete;
@@ -63,12 +66,8 @@ class HsPoint : public Hse
         double min_coord(int) const override;
         double max_coord(int) const override;
         int num_pts() const noexcept override { return 1; }
-
-        //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
-        //      is incident to an instance of HsPoint.
-        //      May not need this one since we don't associate
-        //      a bounding volume to points.
 };
+
 
 //Wrapper for FronTier BOND
 class HsBond : public Hse
@@ -79,10 +78,8 @@ class HsBond : public Hse
 
     public:
 
-        //TODO: throw exception if b is nullptr
         explicit HsBond(BOND*);
         HsBond(BOND*, HseTag);
-
         ~HsBond() = default;
 
         HsBond() = delete;
@@ -95,9 +92,6 @@ class HsBond : public Hse
         double min_coord(int) const override;
         double max_coord(int) const override;
         int num_pts() const noexcept override { return 2; }
-        
-        //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
-        //      is incident to an instance of HsBond.
 };
 
 
@@ -110,10 +104,8 @@ class HsTri : public Hse
 
     public:
 
-        //TODO: throw exception if t is nullptr
         explicit HsTri(TRI*);
         HsTri(TRI*, HseTag);
-
         ~HsTri() = default;
 
         HsTri() = delete;
@@ -126,9 +118,6 @@ class HsTri : public Hse
         double min_coord(int) const override;
         double max_coord(int) const override;
         int num_pts() const noexcept override { return 3; }
-
-        //TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
-        //      is incident to an instance of HsTri.
 };
 
 

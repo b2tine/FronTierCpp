@@ -21,24 +21,27 @@ class BVH
         
         std::shared_ptr<BVH_Node> root{nullptr};
         
-        int num_leaves{0};
-        std::vector<std::shared_ptr<BVH_Node>> leaves;
-
-        Point_Node_Vector children;
-        BV_HilbertSortingTraits hst;
-
         int sort_iter{0};
-        void sortChildNodes();
+        BV_HilbertSortingTraits hst;
+        std::vector<std::shared_ptr<BVH_Node>> leaves;
+        Point_Node_Vector children;
+
+        void buildHeirarchy();
         void constructLeafNodes(const INTERFACE* const intfc);
         void constructParentNodes();
         void constructRootNode();
         //void clearVectors();
-        const Point_Node_Vector getSortedLeafPairs() const;
+        void initChildren();
+        void sortChildren();
+        Point_Node_Vector getLeafSortingData() const;
 
-        //hard coded for now; too early to tell where/how
-        //this should be set. 1.0e-03 is default for static
-        //proximity boxes, 1.0e-06 is default for kinetic
-        //collision boxes.
+        //this is for IO temporarily
+        const Point_Node_Vector getSortedLeafData() const;
+
+        //hard coded in BVH.cpp, where it must be initialized, for now;
+        //too early to tell where/how this should be set.
+        //1.0e-03 is default for static proximity boxes, and
+        //1.0e-06 is default for kinetic collision boxes.
         static double proximityPad;
         static std::shared_ptr<BVH_Node> createLeafNode(Hse* h);
         static std::shared_ptr<BVH_Node> createInternalNode(
@@ -56,8 +59,8 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        const std::weak_ptr<BVH_Node> getRoot() const;
-        const bool isEmpty() const; 
+        const std::weak_ptr<BVH_Node> getRoot() const noexcept;
+        const bool isEmpty() const noexcept; 
 
         //temp functions for testing/debugging
         void buildTester(std::vector<Hse*>);

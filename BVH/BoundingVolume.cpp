@@ -86,7 +86,7 @@ void AABB::expand(double pad)
 void AABB::print() const
 {
     CGAL_Point ctr = this->Centroid();
-    printf("Axis Aligned Bounding Box:\n");
+    printf("\nAxis Aligned Bounding Box:\n");
     printf("   upper: (%3g,%3g,%3g) \n", upper[0], upper[1], upper[2]);
     printf("centroid: (%3g,%3g,%3g) \n", ctr.x(), ctr.y(), ctr.z());
     printf("   lower: (%3g,%3g,%3g) \n\n", lower[0], lower[1], lower[2]);

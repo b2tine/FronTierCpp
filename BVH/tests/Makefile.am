@@ -35,15 +35,12 @@ $(HSETests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/BVH/objs && $(MAKE) all
 
 
-TESTS += CGAL_PointTests
-check_PROGRAMS += CGAL_PointTests
+#TESTS += CGAL_PointTests
+#check_PROGRAMS += CGAL_PointTests
 
-CGAL_PointTests_SOURCES = CGAL_PointTests.cpp \
-						  ../CGAL_Point.h \
-						  ../CGAL_Point.cpp
+#CGAL_PointTests_SOURCES = CGAL_PointTests.cpp ../CGAL_Point.h ../CGAL_Point.cpp
 
-CGAL_PointTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
-
+#CGAL_PointTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 
 TESTS += AABBTests

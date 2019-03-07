@@ -30,9 +30,7 @@ HsPoint::HsPoint(POINT* p)
 
 HsPoint::HsPoint(POINT* p, HseTag tag)
     : Hse(tag), point{p}
-{
-    //this->setTag(tag);
-}
+{}
 
 POINT* HsPoint::Point_of_hse(int i) const
 {
@@ -63,9 +61,7 @@ HsBond::HsBond(BOND* b)
 
 HsBond::HsBond(BOND* b, HseTag tag)
     : Hse(tag), bond{b}
-{
-    //this->setTag(tag);
-}
+{}
 
 POINT* HsBond::Point_of_hse(int i) const
 {
@@ -98,9 +94,7 @@ HsTri::HsTri(TRI* t)
 
 HsTri::HsTri(TRI* t, HseTag tag)
     : Hse(tag), tri{t}
-{
-    //this->setTag(tag);
-}
+{}
 
 POINT* HsTri::Point_of_hse(int i) const
 {

@@ -21,6 +21,8 @@ class AABB
 {
     public:
 
+        //TODO: would like to make these private,
+        //      but it makes some testing difficult..
         BV_Point lower;
         BV_Point upper;
 
@@ -42,15 +44,13 @@ class AABB
         //      considering self intersection checks
         const bool overlaps(const AABB&) const;
         const bool contains(const AABB&) const;
-        
         const double volume() const;
+
         void expand(double);
 
         void print() const;
 };
 
-
-//TODO: may need notion of containment with shared surfaces
 
 
 #endif

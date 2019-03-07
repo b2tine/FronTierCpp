@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::ofstream outfile(std::string(out_name) + "input-mesh.off");
+    std::ofstream outfile(std::string(out_name) + "/input-mesh.off");
     outfile << inmesh;
     outfile.close();
 

@@ -37,7 +37,7 @@ void createDirectory(std::string new_dir)
 
 void BVH::writeHilbertCurveFile(std::string outdir) const
 {
-    auto leafvec = getSortedLeafPairs();
+    auto leafvec = getSortedLeafData();
     int num_hse = leafvec.size();
     //assert(!bvMap.empty());
     //int num_hse = bvMap.size();
