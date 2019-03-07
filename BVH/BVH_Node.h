@@ -20,6 +20,7 @@
 using BoundingVolume = AABB;
 
 
+
 class BVH_Node :
     public std::enable_shared_from_this<BVH_Node>
 {
@@ -42,15 +43,14 @@ class BVH_Node :
 
         void setBV(BoundingVolume);
         const BoundingVolume& getBV() const;
-        
-        void setParent(std::shared_ptr<BVH_Node>);
-        const std::weak_ptr<BVH_Node> getParent() const;
-
         const bool overlaps(const std::shared_ptr<BVH_Node>&) const;
         const double volume() const;
 
-        virtual const Hse* const getHse() const;
         virtual void expandBV(double);
+        virtual const Hse* const getHse() const;
+
+        void setParent(std::shared_ptr<BVH_Node>);
+        const std::weak_ptr<BVH_Node> getParent() const;
 
         virtual const std::weak_ptr<BVH_Node> getLeftChild() const;
         virtual const std::weak_ptr<BVH_Node> getRightChild() const;
@@ -85,7 +85,7 @@ class InternalNode : public BVH_Node
         InternalNode& operator=(const InternalNode&) = delete;
         
         const bool isLeaf() const noexcept override;
-        void expandBV(double) override;
+        void expandBV(double) noexcept override;
 
         //Would be better if this could be made private,
         //or coupled to the constructor. However, this does

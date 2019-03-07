@@ -124,7 +124,7 @@ void BVH::initChildren()
     sortChildren();
 }
 
-Point_Node_Vector BVH::getLeafSortingData() const
+const Point_Node_Vector BVH::getLeafSortingData() const
 {
     Point_Node_Vector leafdata;
 
@@ -138,14 +138,19 @@ Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
+const Point_Node_Vector BVH::getSortedLeafData() const
+{
+    Point_Node_Vector leafdata(getLeafSortingData());
+    CGAL::hilbert_sort(leafdata.begin(),leafdata.end(),hst);
+    return leafdata;
+}
+
 void BVH::sortChildren()
 {
     assert(!children.empty());
     CGAL::hilbert_sort(children.begin(),children.end(),hst);
     sort_iter++;
 }
-
-
 
 /*
 void BVH::clearVectors()
@@ -160,7 +165,6 @@ void BVH::clearVectors()
     }
 }
 */
-
 
 void BVH::constructParentNodes()
 {
@@ -194,9 +198,9 @@ void BVH::constructParentNodes()
     }
 
     std::swap(parents,children);
-    sortChildren();
-
     Point_Node_Vector().swap(parents);
+
+    sortChildren();
 }
 
 void BVH::constructRootNode()
@@ -204,17 +208,11 @@ void BVH::constructRootNode()
     assert(children.size() == 2);
     auto lc = children[0].second;
     auto rc = children[1].second;
-    root = BVH::createInternalNode(lc,rc);
+    root = BVH::createInternalNode(std::move(lc),std::move(rc));
     assert(root);
     sort_iter = 0;
 }
 
-const Point_Node_Vector BVH::getSortedLeafData() const
-{
-    Point_Node_Vector leafdata(getLeafSortingData());
-    CGAL::hilbert_sort(leafdata.begin(),leafdata.end(),hst);
-    return leafdata;
-}
 
 //Testing function
 void BVH::buildTester(std::vector<Hse*> hseList)

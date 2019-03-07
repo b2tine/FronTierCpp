@@ -31,11 +31,11 @@ class BVH
         void constructParentNodes();
         void constructRootNode();
         //void clearVectors();
+        
         void initChildren();
         void sortChildren();
-        Point_Node_Vector getLeafSortingData() const;
 
-        //this is for IO temporarily
+        const Point_Node_Vector getLeafSortingData() const;
         const Point_Node_Vector getSortedLeafData() const;
 
         //hard coded in BVH.cpp, where it must be initialized, for now;
