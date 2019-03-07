@@ -59,9 +59,10 @@ create-tar: manifest.py
 	@ME=`basename $$PWD` && cp manifest.py ../. && \
 		cd .. && ./manifest.py $$ME && rm -f manifest.py && \
 		tar -cf "`date +FronTier++.%m_%d_%y.tar.gz`" -T Manifest.txt && \
-		mv `date +FronTier++.%m_%d_%y.tar.gz` Manifest.txt $$ME/.
+		mv -f `date +FronTier++.%m_%d_%y.tar.gz` Manifest.txt $$ME/.
 
 clean-local:
 	rm -f Manifest.txt
+	rm -f *.tar.gz
 
 

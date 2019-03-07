@@ -22,6 +22,7 @@ enum {
         MIXED_PDE_BOUNDARY
 };
 
+//TODO: use pure virtuals instead of no-ops
 class SOLVER
 {
 public:
@@ -264,7 +265,8 @@ public:
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
-	double *D;		/* div(D*grad)phi = source */
+			            /* div(D*grad)phi = source */
+    double *D; //diff_coeff? ... equals 1/rho
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);

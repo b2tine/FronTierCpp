@@ -366,141 +366,172 @@ EXPORT	void	FT_Init(
 	char *out_name     = f_basic->out_name;
 	char *restart_name = f_basic->restart_name;
 	int  *subdomains   = f_basic->subdomains;
-        int i,total_num_proc = 1;
-        int num_thread;
+    int i,total_num_proc = 1;
+    int num_thread;
 	char dirname[256];
 	char file_name[256];
 	FILE *ifile;
 
-        pp_init(&argc,&argv);
-	if (f_basic == NULL) return;
+    pp_init(&argc,&argv);
+	
+    if (f_basic == NULL)
+        return;
 
 	f_basic->ReadFromInput = NO;
 	f_basic->RestartRun = NO;
-	if (f_basic->dim == 0)
-    	    f_basic->dim = 1;
+    f_basic->coord_system = IDENTITY_REMAP;
+
+	//if (f_basic->dim == 0)
+    //	    f_basic->dim = 1;
+
+    for (i = 0; i < MAXD; ++i)
+        subdomains[i] = 1;
 
 	argc--;
-	argv++;
-	/* Set for default */
-	strcpy(out_name,"intfc");
-	for (i = 0; i < MAXD; ++i)
-            subdomains[i] = 1;
-	f_basic->coord_system = IDENTITY_REMAP;
-	while (argc >= 1)
+    argv++;
+
+    int dimflag = 0;
+    int outflag = 0;
+
+    while (argc >= 1)
 	{
 	    if (argv[0][0] != '-')
 	    {
-		printf("Usage: example -d dimension -i input -o output\n");
-		exit(1);
+		    printf("Usage: example -d dimension -i input -o output\n");
+		    exit(1);
 	    }
 	    switch(argv[0][1]) {
+        case 'd':
+	    case 'D':
+	    	f_basic->dim = atoi(argv[1]);
+	        if( f_basic->dim < 1 || f_basic->dim > 3 )
+            {
+                screen("Invalid Dimension: dimension must be 1, 2 or 3\n");
+                clean_up(ERROR);
+            }
+            argc -= 2;
+            argv += 2;
+            dimflag = 1;
+            break;
 	    case 'i':
 	    case 'I':
 	    	f_basic->ReadFromInput = YES;
 	    	zero_scalar(in_name,200);
-                strcpy(in_name,argv[1]);
-                argc -= 2;
-		argv += 2;
-		break;
+            strcpy(in_name,argv[1]);
+            argc -= 2;
+	    	argv += 2;
+		    break;
 	    case 'r':
 	    case 'R':
 	    	f_basic->RestartRun = YES;
 	    	zero_scalar(restart_name,200);
-                strcpy(restart_name,argv[1]);
-                argc -= 2;
-		argv += 2;
-		break;
+            strcpy(restart_name,argv[1]);
+            argc -= 2;
+    		argv += 2;
+	    	break;
 	    case 's':
 	    case 'S':
 	    	f_basic->ReSetTime = YES;
-                argc -= 1;
-		argv += 1;
+            argc -= 1;
+	    	argv += 1;
 		break;
 	    case 't':
 	    case 'T':
 	    	f_basic->RestartStep = atoi(argv[1]);
-                argc -= 2;
-                argv += 2;
-                break;
-	    case 'd':
-	    case 'D':
-	    	f_basic->dim = atoi(argv[1]);
-                argc -= 2;
-                argv += 2;
-                break;
+            argc -= 2;
+            argv += 2;
+            break;
 	    case 'c':
 	    case 'C':
-		switch (argv[1][0])
-		{
-		case 'c':
-		case 'C':
-		    f_basic->coord_system = CYLINDRICAL_REMAP;
-		    break;
-		case 's':
-		case 'S':
-		    f_basic->coord_system = SPHERICAL_REMAP;
-		    break;
-		default:
-		    f_basic->coord_system = IDENTITY_REMAP;
-		}
-                argc -= 2;
-                argv += 2;
+            switch (argv[1][0])
+            {
+            case 'c':
+            case 'C':
+                f_basic->coord_system = CYLINDRICAL_REMAP;
                 break;
+            case 's':
+            case 'S':
+                f_basic->coord_system = SPHERICAL_REMAP;
+                break;
+            default:
+                f_basic->coord_system = IDENTITY_REMAP;
+            }
+            argc -= 2;
+            argv += 2;
+            break;
 	    case 'o':
 	    case 'O':
-		zero_scalar(dirname,200);
-		strcpy(dirname,argv[1]);
-		if (pp_min_status(create_directory(dirname,NO)) == NO)
-		{
-		    screen("Cannot create directory %s\n",dirname);
-		    clean_up(ERROR);    
-		}
-		if (pp_numnodes() > 1)
-                    sprintf(file_name,"%s/run-output.%d",dirname,pp_mynode());
-		else
-                    sprintf(file_name,"%s/run-output",dirname);
-		ifile = freopen(file_name,"w",stdout);
-		zero_scalar(out_name,200);
-		strcpy(out_name,argv[1]);
-		argc -= 2;
-		argv += 2;
-		break;
+	    	zero_scalar(dirname,200);
+		    strcpy(dirname,argv[1]);
+		    if (pp_min_status(create_directory(dirname,NO)) == NO)
+            {
+                screen("Cannot create directory %s\n",dirname);
+                clean_up(ERROR);    
+            }
+		    if (pp_numnodes() > 1)
+                sprintf(file_name,"%s/run-output.%d",dirname,pp_mynode());
+		    else
+                sprintf(file_name,"%s/run-output",dirname);
+		    ifile = freopen(file_name,"w",stdout);
+		    
+            //TODO: handle this in main(), out_name is a global variable
+            zero_scalar(out_name,200);
+		    strcpy(out_name,argv[1]);
+
+            argc -= 2;
+		    argv += 2;
+            outflag = 1;
+		    break;
 #if defined(HAVE_MPI)
-            case 'p':
-            case 'P':
-                for (i = 0; i < MAXD; ++i)
-                {
-                    if (argc < 2 || argv[1][0] == '-') break;
-                    argc -= 1;
-                    argv += 1;
-                    subdomains[i] = atoi(argv[0]);
-                    total_num_proc *= subdomains[i];
-                }
+        case 'p':
+        case 'P':
+            for (i = 0; i < MAXD; ++i)
+            {
+                if (argc < 2 || argv[1][0] == '-')
+                    break;
+
                 argc -= 1;
                 argv += 1;
-                if (total_num_proc != pp_numnodes())
-                {
-                    printf("total number of processors for the partition %d "
-                           "does not equal to requested np %d\n",
-                           total_num_proc,pp_numnodes());
-                    clean_up(ERROR);
-                }
-		break;
-            case 'm':
-            case 'M':
-	    	num_thread = atoi(argv[1]);
-                set_num_of_thread(num_thread);
-                argc -= 2;
-                argv += 2;
-		break;
+                subdomains[i] = atoi(argv[0]);
+                total_num_proc *= subdomains[i];
+            }
+            argc -= 1;
+            argv += 1;
+            if (total_num_proc != pp_numnodes())
+            {
+                printf("total number of processors for the partition %d "
+                        "does not equal to requested np %d\n",
+                        total_num_proc, pp_numnodes());
+                clean_up(ERROR);
+            }
+		    break;
+        case 'm':
+        case 'M':
+            num_thread = atoi(argv[1]);
+            set_num_of_thread(num_thread);
+            argc -= 2;
+            argv += 2;
+    		break;
 #endif /* defined(HAVE_MPI) */
 	    default:
-		argc -= 2;
-		argv += 2;
+	    	argc -= 2;
+		    argv += 2;
 	    }
 	}
-}	/* end FrontInitStatndardIO */
+
+    if( dimflag != 1 )
+    {
+        screen("Input Error: dimension was not specified\n");
+        clean_up(ERROR);
+    }
+
+    if( outflag != 1 )
+    {
+        screen("Input Error: output directory was not specified\n");
+        clean_up(ERROR);
+    }
+
+}	/* end FT_Init */
 
 EXPORT	void FT_Draw(
 	Front *front)
@@ -3306,6 +3337,7 @@ EXPORT void FT_AddTimeStepToCounter(Front *front)
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 
+
 EXPORT	void FT_SetTimeStep(
 	Front *front)
 {
@@ -3315,12 +3347,16 @@ EXPORT	void FT_SetTimeStep(
 
 	/* f_max_front_time_step */
 	max_dt = CFL*(*front->max_front_time_step)(front,fcrds);
+
 #if defined(HAVE_MPI)
 	pp_global_min(&max_dt,1);
 #endif /* defined(HAVE_MPI) */
-	front->dt = max_dt;
-	if (debugging("step_size"))
-            printf("Time step from FT_SetTimeStep(): %f\n",front->dt);
+
+    front->dt = max_dt;
+
+    if (debugging("step_size"))
+        printf("Time step from FT_SetTimeStep(): %f\n",front->dt);
+
 }	/* end FT_SetTimeStep */
 
 EXPORT	void FT_InitDebug(char *inname)

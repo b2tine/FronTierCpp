@@ -208,7 +208,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 {
-    //TODO: function name seems misleading 
 	iFparams->total_div_cancellation = YES;
 	computeProjectionSimple(); 
 	return;
@@ -279,7 +278,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    index  = d_index2d(i,j,top_gmax);
 	    if (!ifluid_comp(top_comp[index]))
 		continue;
-	    source[index] = (source[index])/accum_dt;
+	    
+        source[index] = (source[index])/accum_dt;
+
             /*Compute pressure jump due to porosity*/
             icoords[0] = i; icoords[1] = j;
             source[index] += computeFieldPointPressureJump(icoords,
@@ -323,7 +324,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
-	for (i = 1; i < num_colors; ++i)
+
+    for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);
 	    setGlobalIndex();
@@ -331,12 +333,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
+            
 	    if (iFparams->total_div_cancellation)
+        {   //new function for DB elliptic method
 	    	elliptic_solver.dsolve(array);
-	    else
+        }
+        else
+        {
 	    	elliptic_solver.solve(array);
+        }
+
 	    paintSolvedGridPoint();
 	}
+    
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
 
 	for (j = 0; j <= top_gmax[1]; j++)
@@ -524,6 +533,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocityDual(void)
             checkVelocityDiv("After extractFlowThroughVelocity()");
 }	/* end computeNewVelocityDual */
 
+
+//Computest he source term of the momentum equation (Navier-Stokes)
 void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
@@ -1123,6 +1134,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	}
 }	/* end surfaceTension2d */
 
+// this function should be called before solve()
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
 	int i;
@@ -1883,7 +1895,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeVarIncrement(
 
 	if (use_dual_grid)
 	{
-	    ;	// To add dual grid computation.
+        // To add dual grid computation.
 	}
 	else
 	{

@@ -60,9 +60,7 @@ LOCAL   void    reflect_struct_buffer(int,int,int,int*,int*,int*,POINTER,int);
 *	2. extend subdomain intfc and rect_grid up to buffer region;
 *	3. fix boundary curves onto extended subdomain ----
 *	   virtual domain.
-*
 */
-
 
 EXPORT boolean scatter_front(
 	Front		*front)
@@ -219,6 +217,7 @@ EXPORT	void clip_front_to_subdomain(
 	        rect_boundary_type(intfc,i,1) = SUBDOMAIN_BOUNDARY;
 	}
 
+    //TODO: Does this not work in 3d?
 	if (dim == 3)
 	{
 	    RECT_GRID *t_gr = &topological_grid(intfc);

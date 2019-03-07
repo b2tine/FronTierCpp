@@ -93,6 +93,7 @@ ENVIRONMENT
 #include <util/cdecs.h>
 #include <util/vmalloc.h>
 
+//TODO: this should not be hardcoded
 EXPORT	boolean	allow_pp_comm = YES;
 
 #define COMMAND_NOT_IMPLEMENTED(command,arch)				 \
@@ -182,16 +183,14 @@ EXPORT	int	pp_finalize(void)
 /*			
 *			pp_mynode(): 	
 *
-*	Tells node number of present node used. This is a most important
+*	Tells node number of current node. This is the most important
 *	routine that returns the most important number. 
 *	It extracts from the configuration files (set for a particular
 *	computation environment by the operation system automatically.)
 *	the ID number out of the available ID pool.
 *
-*	It asks NO argument. 
+*	It takes NO arguments.
 */
-
-
 
 EXPORT	int	pp_mynode(void)
 {

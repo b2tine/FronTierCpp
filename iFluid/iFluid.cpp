@@ -40,126 +40,155 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static VELO_FUNC_PACK velo_func_pack;
 	static IF_PARAMS iFparams;
-        static RG_PARAMS rgb_params;
+    static RG_PARAMS rgb_params;
 	IF_PROB_TYPE prob_type;
 
-	/* Initialize basic computational data */
-
-	FT_Init(argc,argv,&f_basic);//Read parameters from command line
+    //Read parameters from command line
+	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-	//Initialize Petsc before the FT_StartUp
+	//PetscInitialize() calls MPI_Init();
 	PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	/*Construct Incompress Solver l_cartesian*/
-
-	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
+	Incompress_Solver_Smooth_Basis *l_cartesian = nullptr;
 	if (f_basic.dim == 2)
 	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
 	else if (f_basic.dim == 3)
 	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
-	
-        in_name                 = f_basic.in_name;
-        restart_state_name      = f_basic.restart_state_name;
-        out_name                = f_basic.out_name;
-        restart_name            = f_basic.restart_name;
-        RestartRun              = f_basic.RestartRun;
-        RestartStep             = f_basic.RestartStep;
 
-        sprintf(restart_state_name,"%s/state.ts%s",restart_name,
-                        right_flush(RestartStep,7));
-        sprintf(restart_name,"%s/intfc-ts%s",restart_name,
-			right_flush(RestartStep,7));
-	if (pp_numnodes() > 1)
+    in_name                 = f_basic.in_name;
+    restart_state_name      = f_basic.restart_state_name;
+    out_name                = f_basic.out_name;
+    restart_name            = f_basic.restart_name;
+    RestartRun              = f_basic.RestartRun;
+    RestartStep             = f_basic.RestartStep;
+
+    sprintf(restart_state_name,"%s/state.ts%s",restart_name,
+            right_flush(RestartStep,7));
+    sprintf(restart_name,"%s/intfc-ts%s",restart_name,
+            right_flush(RestartStep,7));
+	
+    if (pp_numnodes() > 1)
 	{
-            sprintf(restart_name,"%s-nd%s",restart_name,
-			right_flush(pp_mynode(),4));
-            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
-                        right_flush(pp_mynode(),4));
+        sprintf(restart_name,"%s-nd%s",restart_name,
+                right_flush(pp_mynode(),4));
+        sprintf(restart_state_name,"%s-nd%s",restart_state_name,
+                right_flush(pp_mynode(),4));
 	}
 
 	FT_ReadSpaceDomain(in_name,&f_basic);
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-	if (debugging("trace")) printf("Passed FT_StartUp()\n");
-	iFparams.dim = f_basic.dim;
+	if (debugging("trace"))
+        printf("Passed FT_StartUp()\n");
+	
+    iFparams.dim = f_basic.dim;
 	front.extra1 = (POINTER)&iFparams;
 	front.extra3 = (POINTER)&rgb_params;
-	read_iF_prob_type(in_name,&prob_type);
+	
+    read_iF_prob_type(in_name,&prob_type);
 	read_iFparams(in_name,&iFparams);
-	if (debugging("trace")) printf("Passed read_iFparams()\n");
+    
+
+    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP )
+    {
+        if( prob_type != TAYLOR_GREEN_VORTEX )
+        {
+            printf("Double Elliptical solver has not been \
+                    implemented yet for this Problem Type.\n");
+            printf("Only working for TAYLOR_GREEN_VORTEX right now.\n");
+        }
+    }
+
+
+    if (debugging("trace"))
+        printf("Passed read_iFparams()\n");
 
 	/* Initialize interface through level function */
 
 	setInitialIntfc(&front,&level_func_pack,in_name,prob_type);
-	if (debugging("trace")) printf("Passed setInitialIntfc()\n");
+
+	if (debugging("trace"))
+        printf("Passed setInitialIntfc()\n");
 
 	if (!RestartRun)
 	{
-	    if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
-	    FT_InitIntfc(&front,&level_func_pack);
-            rgb_init(&front,rgb_params);
+	    if (f_basic.dim == 3)
+            level_func_pack.set_3d_bdry = YES;
+	    
+        FT_InitIntfc(&front,&level_func_pack);
+        rgb_init(&front,rgb_params);
 	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 
-        //TODO: xgraph files should be placed in output directory
 	    if (debugging("trace"))
 	    {
-            char test_name[100];
             printf("Passed FT_InitIntfc()\n");
+
+		    char test_name[100];
             switch (f_basic.dim)
             {
             case 2:
-                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
+                sprintf(test_name,"%s/init_intfc-%d.xg",out_name,pp_mynode());
                 xgraph_2d_intfc(test_name,front.interf);
                 break;
             case 3:
-                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
-                gview_plot_interface("gv-init",front.interf);
+                sprintf(test_name,"%s/gv-init",out_name);
+                gview_plot_interface(test_name,front.interf);
                 break;
-		
             }
 	    }
 
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-	    if (f_basic.dim < 3)
+	    
+        if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
-	    if (debugging("trace")) 
-		printf("Passed read_iF_dirichlet_bdry_data()\n");
+	    
+        if (debugging("trace")) 
+            printf("Passed read_iF_dirichlet_bdry_data()\n");
 	}
 	else
+    {
         read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+    }
 
 	/* Initialize velocity field function */
 
-        front._compute_force_and_torque = ifluid_compute_force_and_torque;
+    front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	velo_func_pack.func_params = (POINTER)l_cartesian;
 	velo_func_pack.func = l_cartesian_vel;
 	velo_func_pack.point_propagate = ifluid_point_propagate;
-	FT_InitFrontVeloFunc(&front,&velo_func_pack);
-	if (debugging("trace"))
+	
+    FT_InitFrontVeloFunc(&front,&velo_func_pack);
+	
+    if (debugging("trace"))
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	l_cartesian->initMesh();
 	l_cartesian->initMovieVariables();
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
-	if (iFparams.num_scheme.ellip_method == DUAL_ELLIP)
-	    l_cartesian->findStateAtCGCrossing = 
-			ifluid_find_state_at_cg_crossing;
-	if (debugging("sample_velocity"))
+	
+    if (iFparams.num_scheme.ellip_method == DUAL_ELLIP)
+	    l_cartesian->findStateAtCGCrossing = ifluid_find_state_at_cg_crossing;
+	
+    if (debugging("sample_velocity"))
 	    l_cartesian->initSampleVelocity(in_name);
 
 	init_fluid_state_func(l_cartesian,prob_type);
 	if (debugging("trace"))
 	    printf("Passed l_cartesian.initMesh()\n");
-	if (RestartRun)
-	    l_cartesian->readFrontInteriorStates(restart_state_name);
-	else
+
+	if (!RestartRun)
 	    l_cartesian->setInitialCondition();
-	if (debugging("trace"))
-            printf("Passed state initialization()\n");
+	else
+	    l_cartesian->readFrontInteriorStates(restart_state_name);
+	
+    if (debugging("trace"))
+        printf("Passed state initialization()\n");
+
 	if (iFparams.surf_tension != 0.0)
-            front._contact_node_propagate = contact_node_propagate;
+        front._contact_node_propagate = contact_node_propagate;
 
 	/* Propagate the front */
 
@@ -169,41 +198,45 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
-static  void ifluid_driver(
-        Front *front,
-	Incompress_Solver_Smooth_Basis *l_cartesian)
+static void ifluid_driver(Front *front,
+        Incompress_Solver_Smooth_Basis *l_cartesian)
 {
-        double CFL;
-
 	Curve_redistribution_function(front) = full_redistribute;
-
 	FT_ReadTimeControl(in_name,front);
-	CFL = Time_step_factor(front);
+	double CFL = Time_step_factor(front);
 
 	if (!RestartRun)
 	{
 	    FT_RedistMesh(front);
 	}
 
-        if (!RestartRun)
-        {
-	    FT_ResetTime(front);
-            FrontPreAdvance(front);
-	    if (debugging("trace"))
-		printf("Before FT_Propagate() front->dt = %f\n",front->dt);
-            FT_Propagate(front);
-	    if (debugging("trace")) printf("Calling ifluid solve()\n");
-            l_cartesian->solve(front->dt);
-	    if (debugging("trace")) printf("Passed ifluid solve()\n");
-	    FT_SetTimeStep(front);
-	    front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-	    FT_Draw(front);
-            FT_SetOutputCounter(front);
-        }
-        else
-        {
-	    FT_SetOutputCounter(front);
-        }
+    if (!RestartRun)
+    {
+        FT_ResetTime(front);
+        FrontPreAdvance(front);
+        
+        if (debugging("trace"))
+            printf("Before FT_Propagate() front->dt = %f\n",front->dt);
+        
+        FT_Propagate(front);
+    
+        if (debugging("trace"))
+            printf("Calling ifluid solve()\n");
+        
+        l_cartesian->solve(front->dt);
+    
+        if (debugging("trace"))
+            printf("Passed ifluid solve()\n");
+    
+        FT_SetTimeStep(front);
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+        FT_Draw(front);
+        FT_SetOutputCounter(front);
+    }
+    else
+    {
+        FT_SetOutputCounter(front);
+    }
 
 	FT_TimeControlFilter(front);
 
@@ -215,80 +248,95 @@ static  void ifluid_driver(
 	}
 
 	if (debugging("step_size"))
-                printf("Time step from start: %f\n",front->dt);
-        for (;;)
-        {
-            /* Propagating interface for time step dt */
+        printf("Time step from start: %f\n",front->dt);
+    
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
 
-	    if (debugging("CLOCK"))
+        if (debugging("CLOCK"))
             reset_clock();
 
-	    if (debugging("trace"))
+        if (debugging("trace"))
                 printf("Before FT_Propagate()\n");
-            FrontPreAdvance(front);
-            FT_Propagate(front);
-	    setContactNodeType(front);
-	    if (debugging("trace")) printf("Passed FT_Propagate()\n");
+        
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        setContactNodeType(front);
+    
+        if (debugging("trace"))
+            printf("Passed FT_Propagate()\n");
 
-            if (debugging("trace")) printf("Calling ifluid solve()\n");
-	    l_cartesian->solve(front->dt);
-	    if (debugging("trace")) printf("Passed ifluid solve()\n");
-	    if (debugging("trace"))
-            {
-                (void) printf("After solve()\n");
-                (void) print_storage("at end of time step","trace");
-            }
-
-	    FT_AddTimeStepToCounter(front);
-				
-            //Next time step determined by maximum speed of previous
-            //step, assuming the propagation is hyperbolic and
-            //is not dependent on second order derivatives of
-            //the interface such as curvature, and etc.
-
-	    FT_SetTimeStep(front);
-	    if (debugging("step_size"))
-                (void) printf("Time step from FT_SetTimeStep(): %20.14f\n",
-					front->dt);
-            front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-	    if (debugging("step_size"))
-                (void) printf("Time step from l_cartesian->max_dt(): %20.14f\n",
-					front->dt);
-	
-            /* Output section */
-
-            if (FT_IsSaveTime(front))
-	    {
-            	FT_Save(front);
-		l_cartesian->printFrontInteriorStates(out_name);
-	    }
-            if (FT_IsDrawTime(front))
-	    {
-            	FT_Draw(front);
-	    }
-	    //recordBdryEnergyFlux(front,out_name);
-
-            if (FT_TimeLimitReached(front))
-	    {
-	    	FT_PrintTimeStamp(front);
-		if (debugging("CAUCHY_ERROR"))
-                    l_cartesian->compareWithBaseSoln();
-                break;
-	    }
-
-	    if (debugging("storage"))
-	    {
-		char s[100];
-		sprintf(s,"Storage at end of time step %d",front->step);
-		print_storage(s,"trace");
-	    }
-	    FT_TimeControlFilter(front);
-	    FT_PrintTimeStamp(front);
-	    if (debugging("step_size"))
-                (void) printf("Time step from FT_TimeControlFilter(): %f\n",
-                                        front->dt);
+        if (debugging("trace"))
+            printf("Calling ifluid solve()\n");
+        
+        l_cartesian->solve(front->dt);
+        
+        if (debugging("trace"))
+            printf("Passed ifluid solve()\n");
+        
+        if (debugging("trace"))
+        {
+            (void) printf("After solve()\n");
+            (void) print_storage("at end of time step","trace");
         }
-	if (debugging("trace")) printf("After time loop\n");
+
+        FT_AddTimeStepToCounter(front);        
+        FT_SetTimeStep(front);
+        
+        if (debugging("step_size"))
+                (void) printf("Time step from FT_SetTimeStep(): %20.14f\n",
+                    front->dt);
+        
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+        
+        if (debugging("step_size"))
+                (void) printf("Time step from l_cartesian->max_dt(): %20.14f\n",
+                    front->dt);
+
+        /* Output section */
+
+        if (FT_IsSaveTime(front))
+        {
+            FT_Save(front);
+            l_cartesian->printFrontInteriorStates(out_name);
+        }
+        
+        if (FT_IsDrawTime(front))
+        {
+            FT_Draw(front);
+        }
+    
+        //recordBdryEnergyFlux(front,out_name);
+
+        if (FT_TimeLimitReached(front))
+        {
+            FT_PrintTimeStamp(front);
+            
+            if (debugging("CAUCHY_ERROR"))
+                l_cartesian->compareWithBaseSoln();
+            
+            break;
+        }
+
+        if (debugging("storage"))
+        {
+            char s[100];
+            sprintf(s,"Storage at end of time step %d",front->step);
+            print_storage(s,"trace");
+        }
+        
+        FT_TimeControlFilter(front);
+        FT_PrintTimeStamp(front);
+        
+        if (debugging("step_size"))
+            (void) printf("Time step from FT_TimeControlFilter(): %f\n",
+                    front->dt);
+    }
+
+    if (debugging("trace"))
+        printf("After time loop\n");
+
 }       /* end ifluid_driver */
 
 static int l_cartesian_vel(
