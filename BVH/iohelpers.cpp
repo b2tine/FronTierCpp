@@ -63,8 +63,8 @@ void BVH::writeHilbertCurveFile(std::string outdir) const
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n";
-            //red,          green,          blue,          alpha(opacity)
-    outfile << 1.0 << " " << 0.0 << " " <<  0.0 << " " <<  1.0;//curve color (red)
+             //red,          green,         blue,     alpha(opacity)
+    outfile << 1.0 << " " << 0.0 << " " <<  0.0 << " " <<  1.0;      //curve color (red)
     outfile.close();
 
 
@@ -90,9 +90,9 @@ void BVH::writeHilbertCurveFile(std::string outdir) const
         CGAL_Point p = datavec[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
-    outfile << "\n";
-    //red, green, blue, alpha(opacity)
-    outfile << 0.0 << " " << 1.0 << " " <<  0.0 << " " <<  1.0;//point color (green)
+    outfile << "\n"; 
+              //red,        green,         blue,        alpha(opacity)
+    outfile << 0.0 << " " << 1.0 << " " <<  0.0 << " " <<  1.0;        //point color (green)
     outfile.close();
 
 
