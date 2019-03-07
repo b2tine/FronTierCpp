@@ -1,7 +1,8 @@
 #include "BVH.h"
 
-//TODO: Don't like this here
-double BVH::expandBV_width = 1.0e-03;
+//TODO: I Don't like this, but it's too early
+//      to tell how these constants should be handled.
+double BVH::proximityPad = 1.0e-03;
 
 
 const bool BVH::isEmpty() const
@@ -17,12 +18,13 @@ const std::weak_ptr<BVH_Node> BVH::getRoot() const
 
 //TODO: Is std::move() Hindering RVO in these factory functions?
 //      Or are the RVO conditions not met?
+//      i.e. does it work for polymorphic types?
 
 std::shared_ptr<BVH_Node>
 BVH::createLeafNode(Hse* h)
 {
     auto node = std::make_shared<LeafNode>(h);
-    node->expandBV(expandBV_width);
+    node->expandBV(proximityPad);
     return std::move(node);
 }
 

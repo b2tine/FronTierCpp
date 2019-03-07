@@ -39,7 +39,7 @@ class BVH
         //this should be set. 1.0e-03 is default for static
         //proximity boxes, 1.0e-06 is default for kinetic
         //collision boxes.
-        static double expandBV_width;
+        static double proximityPad;
         static std::shared_ptr<BVH_Node> createLeafNode(Hse* h);
         static std::shared_ptr<BVH_Node> createInternalNode(
                 std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
