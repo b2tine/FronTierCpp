@@ -104,14 +104,13 @@ HsTri* BVH_NodeTests::T5 = nullptr;
 using DISABLED_BVH_NodeTests = BVH_NodeTests;
 
 
-TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
+
+TEST_F(DISABLED_BVH_NodeTests, CheckAdjacencyOfLeafNodeHses)
 {
-    std::shared_ptr<LeafNode> l6;
-    std::shared_ptr<InternalNode> p;
-    ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
+    //ASSERT_TRUE(l1->hasAdjacenctHSE(l2));
 }
-      
-TEST_F(BVH_NodeTests, InternalNodeCtorOddNumberLeaves)
+
+TEST_F(DISABLED_BVH_NodeTests, SingleChildInternalNodeCtor)
 {
     std::shared_ptr<BVH_Node> p3 =
         std::make_shared<InternalNode>(l5,l5);
@@ -169,6 +168,15 @@ TEST_F(BVH_NodeTests, InternalNodePrototypeFactoryTest)
     ASSERT_DOUBLE_EQ(bvgp.lower[0],-1.0);
     ASSERT_DOUBLE_EQ(bvgp.upper[2],1.0);
 }
+
+
+TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
+{
+    std::shared_ptr<LeafNode> l6;
+    std::shared_ptr<InternalNode> p;
+    ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
+}
+
 
 TEST_F(BVH_NodeTests, ConstructorLeafNode)
 {

@@ -33,6 +33,7 @@ class Hse
         Hse(Hse&&) = delete;
         Hse& operator=(Hse&&) = delete;
 
+        //virtual bool isAdjacent(Hse*) const = 0;
         virtual double max_coord(int) const = 0;
         virtual double min_coord(int) const = 0;
         virtual POINT* Point_of_hse(int) const = 0;

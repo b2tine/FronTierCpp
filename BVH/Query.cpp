@@ -26,7 +26,7 @@ std::stack<NodePair> queryProximity(
         std::shared_ptr<BVH_Node> nodeB)
 {
     std::stack<NodePair> qstack;
-    qstack.push(std::make_pair(std::move(nodeA),std::move(nodeB)));
+    qstack.push(std::make_pair(nodeA,nodeB));
     std::stack<NodePair> proximity_stack;
 
     while( !qstack.empty() )
