@@ -369,7 +369,7 @@ AS_IF([test $with_nlopt = yes],
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
-#optionally compile the examples (Makefiles always generated)
+#check if BVH directory should be built
 AC_ARG_WITH([bvh],[AS_HELP_STRING([--with-bvh],
               [build the BVH directory])],
               [buildBVH=yes],[buildBVH=no])
