@@ -2981,6 +2981,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         for (idir = 0; idir < dim; idir++)
         {
             u0 = field[idir][index];
+
             for (j = 0; j < dim; ++j)
                 icnb[j] = icoords[j];
 
@@ -2988,8 +2989,10 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
             {
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 index_nb = d_index(icnb,top_gmax,dim);
+                
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
+
                 if (status == NO_PDE_BOUNDARY)
                     u_edge[idir][nb] = field[idir][index_nb];
                 else if (status ==CONST_P_PDE_BOUNDARY)
@@ -3357,7 +3360,7 @@ extern int ifluid_find_state_at_cg_crossing(
 	    else
 	    	return CONST_P_PDE_BOUNDARY;
 	}
-}	/* ifluid_find_state_at_crossing */
+}	/* ifluid_find_state_at_cg_crossing */
 
 extern boolean neumann_type_bdry(int w_type)
 {

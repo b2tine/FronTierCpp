@@ -92,13 +92,17 @@ int main(int argc, char **argv)
 	read_iFparams(in_name,&iFparams);
     
 
-    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP )
+    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP
+            && f_basic.dim == 3 )
     {
-        if( prob_type != TAYLOR_GREEN_VORTEX )
+        if( prob_type != TAYLOR_GREEN_VORTEX
+                && prob_type != TWO_FLUID_RT )
         {
             printf("Double Elliptical solver has not been \
-                    implemented yet for this Problem Type.\n");
-            printf("Only working for TAYLOR_GREEN_VORTEX right now.\n");
+                    implemented yet for this Problem Type.\n\n");
+            printf("Currently only working for TAYLOR_GREEN_VORTEX.\n");
+            printf("TWO_FLUID_RT is currently in development.\n");
+            clean_up(ERROR);
         }
     }
 

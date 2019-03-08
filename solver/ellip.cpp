@@ -1116,26 +1116,36 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
                 icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
                 iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
-            /*
             status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
-            comp,&intfc_state,&hs,crx_coords);
+                    comp,&intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY)
-		{
-		    icnb[idir] = (nb == 0) ? icoords[idir] - 1 : 
-					icoords[idir] + 1;
-		    index_nb = d_index(icnb,top_gmax,dim);
-		    status = (*findStateAtCrossing)(front,icnb,dir[idir][nb],
-				    comp,&intfc_state,&hs,crx_coords);
-                    if (status == NO_PDE_BOUNDARY)
+            if (status == CONST_V_PDE_BOUNDARY &&
+                    wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                //take value inside domain (opposite nb)?
+                icnb[idir] = (nb == 0) ? icoords[idir] + 1 : 
+                        icoords[idir] - 1;
+                iknb[idir] = icoords[idir];
+            }
+            else if (status == NO_PDE_BOUNDARY)
 		    {
-		    	coeff[idir][nb] = D[index_nb]/h2[idir];
-			icnb[idir] = (nb == 0) ? icoords[idir] - 2:
-                                        icoords[idir] + 2;
-			I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
-		    	solver.Set_A(I,I_nb,coeff[idir][nb]);
-                    	aII += -coeff[idir][nb];
+                //take value on nb side of interface?
+                icn[idir] = (nb == 0) ? icoords[idir] - 1 : 
+                        icoords[idir] + 1;
+                status = (*findStateAtCrossing)(front,icn,
+                        dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+                if (status == CONST_V_PDE_BOUNDARY &&
+                        wave_type(hs) == NEUMANN_BOUNDARY)
+                {
+                    //why is this not the same + 1 then -1?
+                    icnb[idir] = (nb == 0) ? icoords[idir] - 1 : 
+                        icoords[idir] + 1;
+                }
+            
 		    }
+
+            /*
 		    else if (status == CONST_P_PDE_BOUNDARY)
 		    {
 		    	coeff[idir][nb] = 0.5*(D[index] + D[index_nb])/h2[idir];
@@ -1161,27 +1171,30 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 		    rhs += -coeff[idir][nb]*getStateVar(intfc_state);
 		    use_neumann_solver = NO;
 		}
-        */
-	    
+	    */
+
                 I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]] ;
                 index_nb = d_index(iknb,top_gmax,dim);
                 k_nb = D[index_nb];
                 coeff_nb = k_nb/(4.0*top_h[idir]*top_h[idir]);
 
-                /* Set neighbor at boundary */
+                //Set neighbor at boundary
                 solver.Set_A(I,I_nb,coeff_nb);
                 aII += -coeff_nb;
             }
         }
+            
+        //Set diagonal and rhs
+        solver.Set_A(I,I,aII);
+        solver.Set_b(I,rhs);
 	    
+         //TODO: what is this?
          /*
 	     * This change reflects the need to treat point with only one
 	     * interior neighbor (a convex point). Not sure why PETSc cannot
 	     * handle such case. If we have better understanding, this should
 	     * be changed back.
 	     */
-            solver.Set_A(I,I,aII);
-            solver.Set_b(I,rhs);
 	}
 	
     use_neumann_solver = pp_min_status(use_neumann_solver);
