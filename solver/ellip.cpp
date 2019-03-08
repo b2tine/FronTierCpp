@@ -858,13 +858,17 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                     comp,&intfc_state,&hs,crx_coords);
-                    if (status == CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == NEUMANN_BOUNDARY)
+                    if (status == CONST_V_PDE_BOUNDARY){
+                        if (wave_type(hs) == NEUMANN_BOUNDARY)
                     {
                         icnb[idir] = (nb == 0) ? icoords[idir]+1 : 
                                     icoords[idir]-1;
                         iknb[idir] = icoords[idir];
                     }
+			else if(wave_type(hs) == DIRICHLET_BOUNDARY){
+				icnb[idir] = icoords[idir];
+				iknb[idir] = icoords[idir];
+			}}
                     else if (status == NO_PDE_BOUNDARY)
                     {
                         icn[idir] = (nb == 0) ? icoords[idir]-1 :
@@ -872,11 +876,17 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         status = (*findStateAtCrossing)(front,icn,
                                         dir[idir][nb],comp,&intfc_state,&hs,
                                         crx_coords);
-                        if (status == CONST_V_PDE_BOUNDARY &&
-                            wave_type(hs) == NEUMANN_BOUNDARY)
+                        if (status == CONST_V_PDE_BOUNDARY){
+
+                            if (wave_type(hs) == NEUMANN_BOUNDARY){
                             icnb[idir] = (nb == 0) ? icoords[idir]-1 : 
                                         icoords[idir]+1;
-                    }
+				}
+			else if (wave_type(hs) == DIRICHLET_BOUNDARY){
+				icnb[idir] = icoords[idir];
+				iknb[idir] = icoords[idir];
+			}
+                    }}
 
                     I_nb = ij_to_I[icnb[0]][icnb[1]];
                     //index_nb = d_index(icnb,top_gmax,dim);

@@ -92,17 +92,6 @@ int main(int argc, char **argv)
 	read_iFparams(in_name,&iFparams);
     
 
-    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP )
-    {
-        if( prob_type != TAYLOR_GREEN_VORTEX )
-        {
-            printf("Double Elliptical solver has not been \
-                    implemented yet for this Problem Type.\n");
-            printf("Only working for TAYLOR_GREEN_VORTEX right now.\n");
-        }
-    }
-
-
     if (debugging("trace"))
         printf("Passed read_iFparams()\n");
 
