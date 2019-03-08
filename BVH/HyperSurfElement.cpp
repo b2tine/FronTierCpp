@@ -24,6 +24,7 @@ const HseTag Hse::getTag() const noexcept
 //              HsPoint Methods                 //
 //////////////////////////////////////////////////
 
+/*
 HsPoint::HsPoint(POINT* p)
     : point{p}
 {}
@@ -50,6 +51,7 @@ double HsPoint::max_coord(int dim) const
     assert( dim >= 0 && dim < 3 );
     return Coords(this->Point_of_hse(0))[dim];
 }
+*/
 
 //////////////////////////////////////////////////
 //              HsBond Methods                  //
@@ -129,71 +131,24 @@ double HsTri::max_coord(int dim) const
 
 //////////////////////////////////////////////////////////
 
-//TODO: should probably move this into BVH class
+
+//adjacent elements have at least 1 common point
 const bool areAdjacentHse(Hse* A, Hse* B)
 {
-    assert( A && B )
+    assert( A && B );
+    if( A == B) return true;
 
-    //NOTE: These first 2 conditionals evaluate true
-    //      for the purpose of avoiding false positive
-    //      proximity queries. 
-    if( A == B)
-        return true;
-
-    int n1 = A->num_points();
-    int n2 = A->num_points();
+    int nA = A->num_pts();
+    int nB = A->num_pts();
     
-    //POINTS don't have a BV
-    if( n1 == 1 || n2 == 1 )
-        return true;
-
-    POINT* ptsA[2];
-    POINT* ptsB[2];
-    
-    for( int i = 0; i < 2; ++i )
+    for( int i = 0; i < nA; ++i )
     {
-        ptsA[i] = A->Point_of_hse(i);
-        ptsB[i] = B->Point_of_hse(i);
-    }
-    
-    int count = 0;
-    for( int i = 0; i < 2; ++i )
-    {
-        for( int j = 0; j < 2; ++j )
+        POINT* pA = A->Point_of_hse(i);
+        for( int j = 0; j < nB; ++j )
         {
-            if( ptsA[i] == ptsB[j] )
-                count++;
-        }
-    }
-    
-    if( count == 0 )
-        return false;
-
-    if( n1 == 2 || n2 == 2 )
-    {
-        //bond-bond or bond-tri: 1 common point
-        if( count == 1 )
-        {
-            return true;
-        }
-        return false;
-    }
-    else
-    {
-        //tri-tri: 2 common points
-        if( count == 2 )
-            return true;
-
-        POINT* Ap3 = A->Point_of_hse(3);
-        POINT* Bp3 = B->Point_of_hse(3);
-    
-        for( int i = 0; i < 2; ++i )
-        {
-            if( ptsA[i] == Bp3 || ptsB[i] == Ap3)
+            if( pA == B->Point_of_hse(j) )
                 return true;
         }
-        return false;
     }
-
 }
 

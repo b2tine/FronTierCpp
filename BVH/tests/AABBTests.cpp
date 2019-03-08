@@ -12,9 +12,8 @@ class AABBTests : public testing::Test
 
     static HsTri *T1, *T2, *T3, *T4;
     static HsBond *B1, *B2, *B3;
-    static HsPoint* P;
 
-    AABB bbT1, bbT2, bbT3, bbT4, bbB1, bbB2, bbB3;//, bbBVPts;
+    AABB bbT1, bbT2, bbT3, bbT4, bbB1, bbB2, bbB3;
 
     static void SetUpTestCase()
     {
@@ -57,8 +56,6 @@ class AABBTests : public testing::Test
 
         B1 = new HsBond(s1);   B2 = new HsBond(s2);
         B3 = new HsBond(s3);
-        
-        P = new HsPoint(a);
     }
 
     static void TearDownTestCase()
@@ -72,7 +69,6 @@ class AABBTests : public testing::Test
         delete B1; delete B2; delete B3;
         delete T1; delete T2; delete T3;
         delete T4;
-        delete P;
     }
 
     void SetUp() override
@@ -111,7 +107,6 @@ HsTri* AABBTests::T4 = nullptr;
 HsBond* AABBTests::B1 = nullptr;
 HsBond* AABBTests::B2 = nullptr;
 HsBond* AABBTests::B3 = nullptr;
-HsPoint* AABBTests::P = nullptr;
 
 
 using DISABLED_AABBTests = AABBTests;

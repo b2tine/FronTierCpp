@@ -64,8 +64,10 @@ class BVH
 
         //temp functions for testing/debugging
         void buildTester(std::vector<Hse*>);
-        void writeHilbertCurveFile(std::string) const;
+        void writeHilbertCurveFile(std::string,int) const;
 };
+
+const bool areAdjacentHse(Hse*,Hse*);
 
 
 const bool checkProximity(BVH*, BVH*);

@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     auto root_bv = bvh.getRoot().lock()->getBV();
     root_bv.print();
 
-    bvh.writeHilbertCurveFile(std::string(out_name));
+    //bvh.writeHilbertCurveFile(std::string(out_name));
 
     clean_up(0);
 }

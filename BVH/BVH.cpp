@@ -177,7 +177,7 @@ void BVH::constructParentNodes()
         parents.push_back(bvctr_node_pair);
     }
 
-    //if odd number of children, last one gets bumped up to parents 
+    //if odd number of children, the unpaired one gets bumped up to parents 
     if( children.size() % 2 != 0 )
     {
         auto oc = children[children.size()-1].second;

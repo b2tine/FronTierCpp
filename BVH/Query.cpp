@@ -22,11 +22,11 @@ const bool checkProximity(BVH* A, BVH* B)
 }
 
 std::stack<NodePair> queryProximity(
-        std::shared_ptr<BVH_Node> nodeA,
-        std::shared_ptr<BVH_Node> nodeB)
+        std::shared_ptr<BVH_Node>&& nodeA,
+        std::shared_ptr<BVH_Node>&& nodeB)
 {
     std::stack<NodePair> qstack;
-    qstack.push(std::make_pair(nodeA,nodeB));
+    qstack.push(std::make_pair(nodeA,nodeB);
     std::stack<NodePair> proximity_stack;
 
     while( !qstack.empty() )

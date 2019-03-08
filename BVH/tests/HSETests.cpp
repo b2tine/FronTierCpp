@@ -2,7 +2,7 @@
 #include <HyperSurfElement.h>
 
 
-
+/*
 class HsPoint_Tests : public testing::Test
 {
     protected:
@@ -49,6 +49,7 @@ TEST_F(HsPoint_Tests, OutOfRangeDeathTest)
     ASSERT_DEATH(A->Point_of_hse(1),"");
     ASSERT_DEATH(A->Point_of_hse(-1),"");
 }
+*/
 
 //////////////////////////////////////////////////////
 

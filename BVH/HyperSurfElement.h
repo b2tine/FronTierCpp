@@ -45,6 +45,15 @@ class Hse
 };
 
 
+
+
+//TODO: Can we get rid of HsPoint?
+//      Bounding Volume makes no sense
+//      for a point.
+
+/*  //I think yes
+ *
+ *
 //Wrapper for FronTier POINT
 class HsPoint : public Hse
 {
@@ -69,7 +78,7 @@ class HsPoint : public Hse
         double max_coord(int) const override;
         POINT* Point_of_hse(int i = 0) const override;
 };
-
+*/
 
 //Wrapper for FronTier BOND
 class HsBond : public Hse
@@ -123,7 +132,6 @@ class HsTri : public Hse
 };
 
         
-const bool areAdjacentHse(Hse*,Hse*);
 
 
 
