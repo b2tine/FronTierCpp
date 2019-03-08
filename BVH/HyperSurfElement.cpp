@@ -136,7 +136,7 @@ double HsTri::max_coord(int dim) const
 const bool areAdjacentHse(Hse* A, Hse* B)
 {
     assert( A && B );
-    if( A == B) return true;
+    if( A == B) return true;//this could go in a separate function
 
     int nA = A->num_pts();
     int nB = A->num_pts();

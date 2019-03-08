@@ -67,15 +67,16 @@ class BVH
         void writeHilbertCurveFile(std::string,int) const;
 };
 
-const bool areAdjacentHse(Hse*,Hse*);
+//const bool areAdjacentHse(Hse*,Hse*);
 
 
 const bool checkProximity(BVH*, BVH*);
 
+/*
 std::stack< std::pair<std::shared_ptr<BVH_Node>,
     std::shared_ptr<BVH_Node>> >
-    queryProximity(std::shared_ptr<BVH_Node>,std::shared_ptr<BVH_Node>);
-
+    queryProximity(std::shared_ptr<BVH_Node>&&,std::shared_ptr<BVH_Node>&&);
+*/
 
 
 #endif

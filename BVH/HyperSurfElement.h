@@ -133,6 +133,7 @@ class HsTri : public Hse
 
         
 
+const bool areAdjacentHse(Hse* A, Hse* B);
 
 
 
