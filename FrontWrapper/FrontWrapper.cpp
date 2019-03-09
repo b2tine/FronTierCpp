@@ -5,8 +5,8 @@
 
 //TODO: The function pointers that FT_StartUp() hooks up
 //      should be virtual methods with default implementations.
-//      The user can then inherit from the FrontWrapper
-//      class and override the default methods.
+//      The user can then inherit from the FrontWrapper class
+//      and override the default methods.
 void FrontWrapper::StartUp(F_BASIC_DATA* ft_basic)
 {
     ResetTime();
@@ -47,8 +47,7 @@ void FrontWrapper::InitFrontVeloFunc(VELO_FUNC_PACK* velo_func_pack)
 }
 
 
-//Setters
-
+//Temporary manual setters
 
 //TODO: These should go in a separate testing subclass.
 //      Production code should parse from input file only.
@@ -81,36 +80,20 @@ void FrontWrapper::setFrequencyOfRedistribution(double val, int i)
 
 //Getters
 
-int FrontWrapper::Dim()
+const int FrontWrapper::Dim() const
 {
     return current_interface()->dim;
 }
 
-double FrontWrapper::TimeStepFactor()
+const double FrontWrapper::TimeStepFactor() const
 {
     return cfront.Tstep.time_step_factor;
 }
 
 
-//Memory
-
-void FrontWrapper::FreeMainIntfc()
-{
-    FT_FreeMainIntfc(&cfront);
-}
-
-
-//Mesh/Interface
-        
-void FrontWrapper::RedistMesh()
-{
-    FT_RedistMesh(&cfront);
-}
-
-
 //Output
 
-bool FrontWrapper::IsSaveTime()
+const bool FrontWrapper::IsSaveTime()
 {
     if( FT_IsSaveTime(&cfront) )
         return true;
@@ -123,7 +106,7 @@ void FrontWrapper::Save()
     FT_Save(&cfront);
 }
 
-bool FrontWrapper::IsDrawTime()
+const bool FrontWrapper::IsDrawTime()
 {
     if( FT_IsDrawTime(&cfront) )
         return true;
@@ -169,11 +152,27 @@ void FrontWrapper::AddTimeStepToCounter()
     FT_AddTimeStepToCounter(&cfront);
 }
 
-bool FrontWrapper::TimeLimitReached()
+const bool FrontWrapper::TimeLimitReached()
 {
     if( FT_TimeLimitReached(&cfront) )
         return true;
     else
         return false;
+}
+
+
+//Memory
+
+void FrontWrapper::FreeMainIntfc()
+{
+    FT_FreeMainIntfc(&cfront);
+}
+
+
+//Mesh/Interface
+        
+void FrontWrapper::RedistMesh()
+{
+    FT_RedistMesh(&cfront);
 }
 
