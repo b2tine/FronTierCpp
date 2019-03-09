@@ -144,9 +144,9 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
              else
                  w[i] = 0.0;
             }
-        /*
+
         if (myDet3d(I) < ROUND_EPS) {
-            // I is non-invertible, calculate pseudo-inverse
+            //I is non-invertible, calculate pseudoinverse with SVD
             arma::mat arI(3, 3);
             arma::vec arL(3);
 
@@ -179,7 +179,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	         w[i] = myDet3d(tmp)/myDet3d(I);
             }
 	}
-        */
 	mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
@@ -241,10 +240,8 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	    }
 	    p = next_pt(p);
 	}
-	//done!!!
 }
 
-//helper function to detect collision between elements 
 bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h){
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 	POINT* pts[4];

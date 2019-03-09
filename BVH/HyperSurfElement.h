@@ -33,16 +33,27 @@ class Hse
         Hse(Hse&&) = delete;
         Hse& operator=(Hse&&) = delete;
 
+        virtual int num_pts() const = 0;
         virtual double max_coord(int) const = 0;
         virtual double min_coord(int) const = 0;
+        
+        //TODO: make this return unique_ptr?
         virtual POINT* Point_of_hse(int) const = 0;
-        virtual int num_pts() const = 0;
-
+        
         //void setTag(HseTag Tag);
         const HseTag getTag() const noexcept;
 };
 
 
+
+
+//TODO: Can we get rid of HsPoint?
+//      Bounding Volume makes no sense
+//      for a point.
+
+/*  //I think yes
+ *
+ *
 //Wrapper for FronTier POINT
 class HsPoint : public Hse
 {
@@ -62,12 +73,12 @@ class HsPoint : public Hse
         HsPoint(HsPoint&&) = delete;
         HsPoint& operator=(HsPoint&&) = delete;
 
-        POINT* Point_of_hse(int i = 0) const override;
+        int num_pts() const noexcept override { return 1; }
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const noexcept override { return 1; }
+        POINT* Point_of_hse(int i = 0) const override;
 };
-
+*/
 
 //Wrapper for FronTier BOND
 class HsBond : public Hse
@@ -88,10 +99,10 @@ class HsBond : public Hse
         HsBond(HsBond&&) = delete;
         HsBond& operator=(HsBond&&) = delete;
         
-        POINT* Point_of_hse(int) const override;
+        int num_pts() const noexcept override { return 2; }
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const noexcept override { return 2; }
+        POINT* Point_of_hse(int) const override;
 };
 
 
@@ -114,11 +125,16 @@ class HsTri : public Hse
         HsTri(HsTri&&) = delete;
         HsTri& operator=(HsTri&&) = delete;
         
-        POINT* Point_of_hse(int) const override;
+        int num_pts() const noexcept override { return 3; }
         double min_coord(int) const override;
         double max_coord(int) const override;
-        int num_pts() const noexcept override { return 3; }
+        POINT* Point_of_hse(int) const override;
 };
+
+        
+
+const bool areAdjacentHse(Hse* A, Hse* B);
+
 
 
 

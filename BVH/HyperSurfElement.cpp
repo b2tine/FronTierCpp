@@ -24,6 +24,7 @@ const HseTag Hse::getTag() const noexcept
 //              HsPoint Methods                 //
 //////////////////////////////////////////////////
 
+/*
 HsPoint::HsPoint(POINT* p)
     : point{p}
 {}
@@ -50,6 +51,7 @@ double HsPoint::max_coord(int dim) const
     assert( dim >= 0 && dim < 3 );
     return Coords(this->Point_of_hse(0))[dim];
 }
+*/
 
 //////////////////////////////////////////////////
 //              HsBond Methods                  //
@@ -125,5 +127,28 @@ double HsTri::max_coord(int dim) const
                 Coords(this->Point_of_hse(i))[dim]);
     }
     return val;
+}
+
+//////////////////////////////////////////////////////////
+
+
+//adjacent elements have at least 1 common point
+const bool areAdjacentHse(Hse* A, Hse* B)
+{
+    assert( A && B );
+    if( A == B) return true;//this could go in a separate function
+
+    int nA = A->num_pts();
+    int nB = A->num_pts();
+    
+    for( int i = 0; i < nA; ++i )
+    {
+        POINT* pA = A->Point_of_hse(i);
+        for( int j = 0; j < nB; ++j )
+        {
+            if( pA == B->Point_of_hse(j) )
+                return true;
+        }
+    }
 }
 

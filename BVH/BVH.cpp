@@ -105,20 +105,21 @@ void BVH::constructLeafNodes(const INTERFACE* const intfc)
 
 void BVH::buildHeirarchy()
 {
-    assert(!leaves.empty());
+    assert( !leaves.empty() );
 
     initChildren();
     while( children.size() > 2 )
     {
         constructParentNodes();
     }
+    
     constructRootNode();    
+    Point_Node_Vector().swap(children);
 }
 
 void BVH::initChildren()
 {
     sort_iter = 0;
-    Point_Node_Vector().swap(children);
     children.reserve(leaves.size());
     children = getLeafSortingData();
     sortChildren();
@@ -138,6 +139,7 @@ const Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
+//
 const Point_Node_Vector BVH::getSortedLeafData() const
 {
     Point_Node_Vector leafdata(getLeafSortingData());
@@ -147,36 +149,23 @@ const Point_Node_Vector BVH::getSortedLeafData() const
 
 void BVH::sortChildren()
 {
-    assert(!children.empty());
+    assert( !children.empty() );
     CGAL::hilbert_sort(children.begin(),children.end(),hst);
     sort_iter++;
+    //TODO: add option and function to write the children to
+    //      output file at each level of the heirarchy.
 }
-
-/*
-void BVH::clearVectors()
-{
-    std::vector<std::shared_ptr<BVH_Node>>().swap(leaves);
-    Point_Node_Vector().swap(children);
-
-    if(num_leaves != 0) 
-    {
-        leaves.reserve(num_leaves);
-        children.reserve(num_leaves);
-    }
-}
-*/
 
 void BVH::constructParentNodes()
 {
-    assert(!children.empty());
-
-    //alternate sweep direction at each level
+    //alternate sorting direction at each level
     if( sort_iter % 2 == 0 )
     {
         std::reverse(children.begin(),children.end());
     }
 
     Point_Node_Vector parents;
+    parents.reserve(children.size()/2 + 1);
     
     //greedily pair off sorted children
     for( int i = 0; i < children.size()-1; i += 2 )
@@ -188,29 +177,26 @@ void BVH::constructParentNodes()
         parents.push_back(bvctr_node_pair);
     }
 
-    //if odd number of leafnodes on the first pass
+    //if odd number of children, the unpaired one gets bumped up to parents 
     if( children.size() % 2 != 0 )
     {
         auto oc = children[children.size()-1].second;
-        auto p = BVH::createInternalNode(oc,oc);
-        Point_with_Node bvctr_node_pair(p->getBV().Centroid(),p);
+        Point_with_Node bvctr_node_pair(oc->getBV().Centroid(),oc);
         parents.push_back(bvctr_node_pair);
     }
 
     std::swap(parents,children);
     Point_Node_Vector().swap(parents);
-
+    children.shrink_to_fit();
     sortChildren();
 }
 
 void BVH::constructRootNode()
 {
-    assert(children.size() == 2);
+    assert( children.size() == 2 );
     auto lc = children[0].second;
     auto rc = children[1].second;
     root = BVH::createInternalNode(std::move(lc),std::move(rc));
-    assert(root);
-    sort_iter = 0;
 }
 
 

@@ -35,12 +35,13 @@ void createDirectory(std::string new_dir)
         mkdirTree(new_dir, "");
 }
 
-void BVH::writeHilbertCurveFile(std::string outdir) const
+//TODO: Need to come up with a file index scheme to write the
+//      bounding volumes and hilbert curves to file at each
+//      level of the heirarchy. Pass the current height as parameter.
+void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 {
-    auto leafvec = getSortedLeafData();
-    int num_hse = leafvec.size();
-    //assert(!bvMap.empty());
-    //int num_hse = bvMap.size();
+    auto datavec = getSortedLeafData();
+    int num_hse = datavec.size();
 
     outdir += "/";
     std::string geomdir("OOGL/");
@@ -58,12 +59,12 @@ void BVH::writeHilbertCurveFile(std::string outdir) const
     //coordinates of curve vertices (same as the points/boxcenters)
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point p = leafvec[i].first;
+        CGAL_Point p = datavec[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n";
-    //red, green, blue, alpha(opacity)
-    outfile << 1.0 << " " << 0.0 << " " <<  0.0 << " " <<  1.0;//curve color (red)
+             //red,          green,         blue,     alpha(opacity)
+    outfile << 1.0 << " " << 0.0 << " " <<  0.0 << " " <<  1.0;      //curve color (red)
     outfile.close();
 
 
@@ -86,12 +87,12 @@ void BVH::writeHilbertCurveFile(std::string outdir) const
     //coordinates of the curve points
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point p = leafvec[i].first;
+        CGAL_Point p = datavec[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
-    outfile << "\n";
-    //red, green, blue, alpha(opacity)
-    outfile << 0.0 << " " << 1.0 << " " <<  0.0 << " " <<  1.0;//point color (green)
+    outfile << "\n"; 
+              //red,        green,         blue,        alpha(opacity)
+    outfile << 0.0 << " " << 1.0 << " " <<  0.0 << " " <<  1.0;        //point color (green)
     outfile.close();
 
 
@@ -103,14 +104,12 @@ void BVH::writeHilbertCurveFile(std::string outdir) const
         outfile.open(outdir + geomdir + geomfile);
         outfile << "BBOX\n";
 
-        BV_Point lcoords = leafvec[i].second->getBV().lower;
-        //BV_Point lcoords = bvMap[ctrVec[i]]->getBV().lower;
+        BV_Point lcoords = datavec[i].second->getBV().lower;
         for( int k = 0; k < 3; k++ )
             outfile << lcoords[k] << " ";
         outfile << "\n";
 
-        BV_Point ucoords = leafvec[i].second->getBV().upper;
-        //BV_Point ucoords = bvMap[ctrVec[i]]->getBV().upper;
+        BV_Point ucoords = datavec[i].second->getBV().upper;
         for( int k = 0; k < 3; k++ )
             outfile << ucoords[k] << " ";
         outfile.close();
