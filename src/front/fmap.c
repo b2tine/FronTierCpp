@@ -474,7 +474,6 @@ EXPORT	void	FT_Init(
                 sprintf(file_name,"%s/run-output",dirname);
 		    ifile = freopen(file_name,"w",stdout);
 		    
-            //TODO: handle this in main(), out_name is a global variable
             zero_scalar(out_name,200);
 		    strcpy(out_name,argv[1]);
 

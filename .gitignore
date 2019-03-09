@@ -72,6 +72,7 @@ folding/test
 parachute/parachute
 parachute/ginit
 parachute/intfc
+FrontWrapper/example00
 *Tests
 *.txt
 *.xg

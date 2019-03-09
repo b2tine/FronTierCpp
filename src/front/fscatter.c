@@ -218,6 +218,8 @@ EXPORT	void clip_front_to_subdomain(
 	}
 
     //TODO: Does this not work in 3d?
+    //      Does it have anything to do with
+    //      delete_subdomain_boundaries() above?
 	if (dim == 3)
 	{
 	    RECT_GRID *t_gr = &topological_grid(intfc);

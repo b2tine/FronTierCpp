@@ -33,11 +33,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *
 */
 
-#include <vector>
-#include <FronTier.h>
+#include <FrontWrapper.h>
 
 	/*  Function Declarations */
-static void test_propagate(Front*);
+static void test_propagate(FrontWrapper*);
+//static void test_propagate(Front*);
 static int rotation_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
 	                       HYPER_SURF*,double*);
 
@@ -49,22 +49,28 @@ int RestartStep;
  *	Velocity function parameters for the front	 	    *
  ********************************************************************/
 
-typedef struct {
-        double omega_0;          /* angular velocity */
-        double domega_dr;
-        double cen[2];
-} ROTATION_VEL_PARAMS;
+struct ROTATION_VEL_PARAMS
+{
+    double omega_0;     //angular velocity
+    double domega_dr;   //?
+    double cen[2];      //center coords
+};
+
 
 int main(int argc, char **argv)
 {
-	static Front front;
+	static FrontWrapper front;
+	//static Front front;
+
 	static RECT_GRID comp_grid;
 	static F_BASIC_DATA f_basic;
-	static LEVEL_FUNC_PACK level_func_pack;
+	
+    static LEVEL_FUNC_PACK level_func_pack;
 	static VELO_FUNC_PACK velo_func_pack;
-	TDISK_PARAMS disk_params;	/* level function parameters */
-	ROTATION_VEL_PARAMS rv_params; /* velocity function parameters */
-	Locstate  sl;
+	TDISK_PARAMS disk_params;       //level function parameters
+	ROTATION_VEL_PARAMS rv_params;  //velocity function parameters
+    Locstate  sl;
+
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.dim = 2;	
@@ -91,7 +97,10 @@ int main(int argc, char **argv)
             sprintf(restart_name,"%s-nd%s",restart_name, 
                                 right_flush(pp_mynode(),4));
 
-	FT_StartUp(&front,&f_basic);
+
+	front.StartUp(&f_basic);
+	//FT_StartUp(&front,&f_basic);
+
 
 	if (!RestartRun)
 	{
@@ -108,10 +117,16 @@ int main(int argc, char **argv)
 	    level_func_pack.func_params = (POINTER)&disk_params;
 	    level_func_pack.func = slotted_disk_func;
 	    level_func_pack.wave_type = FIRST_PHYSICS_WAVE_TYPE;
-	    FT_InitIntfc(&front,&level_func_pack);
-	    if (f_basic.dim < 3)
-                FT_ClipIntfcToSubdomain(&front);
-	}
+	
+        front.InitIntfc(&level_func_pack);
+        //FT_InitIntfc(&front,&level_func_pack);
+	    /*
+        if (f_basic.dim < 3)
+        {
+            FT_ClipIntfcToSubdomain(&front);
+        }
+        */
+    }
 
 
 	/* Initialize velocity field function */
@@ -125,94 +140,134 @@ int main(int argc, char **argv)
 	velo_func_pack.func = rotation_vel;
 	velo_func_pack.point_propagate = fourth_order_point_propagate;
 
-	FT_InitFrontVeloFunc(&front,&velo_func_pack);
+	front.InitFrontVeloFunc(&velo_func_pack);
+	//FT_InitFrontVeloFunc(&front,&velo_func_pack);
+
 
 	/* Propagate the front */
-
+	
 	test_propagate(&front);
 
 	clean_up(0);
 	return 0;
 }
 
-static  void test_propagate(
-        Front *front)
+//void test_propagate(Front *front)
+void test_propagate(FrontWrapper* front)
 {
-        double CFL;
+	front->setMaxTime(3);
+	front->setMaxStep(10000);
+	front->setPrintTimeInterval(2.0);
+	front->setMovieFrameInterval(0.1);
+	
+    printf("CFL = %g\n",front->TimeStepFactor());
 
-	front->max_time = 3;
-	front->max_step = 10000;
-	front->print_time_interval = 2.0;
-	front->movie_frame_interval = 0.1;
+    //double CFL = Time_step_factor(front);
+	//Frequency_of_redistribution(front,GENERAL_WAVE) = 1000;
 
-        CFL = Time_step_factor(front);
-	Frequency_of_redistribution(front,GENERAL_WAVE) = 1000;
-
+    /*
 	printf("CFL = %f\n",CFL);
-	printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
+    printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
+    */
+
+
 
 	if (!RestartRun)
 	{
-            FT_RedistMesh(front);
-	    FT_ResetTime(front);
+        front->RedistMesh();
+        //FT_RedistMesh(front);
+	    //FT_ResetTime(front);
 
 	    // Always output the initial interface.
-	    FT_Save(front);
-            FT_Draw(front);
+	    front->Save();
+        front->Draw();
+	    //FT_Save(front);
+        //FT_Draw(front);
 
 	    // This is a virtual propagation to get maximum front 
 	    // speed to determine the first time step.
-
-            FT_Propagate(front);
-            FT_SetTimeStep(front);
-            FT_SetOutputCounter(front);
+        front->Propagate();
+        front->SetNextTimeStep();
+        front->SetOutputCounter();
+        //FT_Propagate(front);
+        //FT_SetTimeStep(front);
+        //FT_SetOutputCounter(front);
 	}
 	else
 	{
-            FT_SetOutputCounter(front);
+        front->SetOutputCounter();
+        //FT_SetOutputCounter(front);
 	}
 
-	FT_TimeControlFilter(front);
+	front->TimeControlFilter();
+	//FT_TimeControlFilter(front);
 
-        for (;;)
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
+
+        front->Propagate();
+        front->AddTimeStepToCounter();
+        //FT_Propagate(front);
+        //FT_AddTimeStepToCounter(front);
+
+        //Next time step determined by maximum speed of previous
+        //step, assuming the propagation is hyperbolic and
+        //is not dependent on second order derivatives of
+        //the interface such as curvature, and etc.
+
+        front->SetNextTimeStep();
+        //FT_SetTimeStep(front);
+
+
+        //Output section
+        
+        if (front->IsSaveTime())
+            front->Save();
+        if (front->IsDrawTime())
+            front->Draw();
+        
+        /*
+        if (FT_IsSaveTime(front))
+            FT_Save(front);
+        if (FT_IsDrawTime(front))
+            FT_Draw(front);
+        */
+
+        if (front->TimeLimitReached())
         {
-	    /* Propagating interface for time step dt */
-
-            FT_Propagate(front);
-            FT_AddTimeStepToCounter(front);
-
-	    //Next time step determined by maximum speed of previous
-	    //step, assuming the propagation is hyperbolic and
-	    //is not dependent on second order derivatives of
-	    //the interface such as curvature, and etc.
-
-            FT_SetTimeStep(front);
-
-            if (FT_IsSaveTime(front))
-                FT_Save(front);
-            if (FT_IsDrawTime(front))
-                FT_Draw(front);
-
-            if (FT_TimeLimitReached(front))
-	    {
-                FT_PrintTimeStamp(front);
-                break;
-	    }
-
-	    /* Output section, next dt may be modified */
-
-	    FT_TimeControlFilter(front);
-            FT_PrintTimeStamp(front);
+            front->PrintTimeStamp();
+            break;
         }
-        (void) delete_interface(front->interf);
-}       /* end test_propagate */
+
+        /*
+        if (FT_TimeLimitReached(front))
+        {
+            FT_PrintTimeStamp(front);
+            break;
+        }
+        */
+        
+
+        //next dt may be modified
+        
+        front->TimeControlFilter();
+        front->PrintTimeStamp();
+        //FT_TimeControlFilter(front);
+        //FT_PrintTimeStamp(front);
+    }
+        
+    front->FreeMainIntfc();
+}
+/* end test_propagate */
+
 
 /********************************************************************
  *	Sample (rotation) velocity function for the front    *
  ********************************************************************/
 
-static int rotation_vel(
+int rotation_vel(
 	POINTER params,
 	Front *front,
 	POINT *p,

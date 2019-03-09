@@ -9,7 +9,8 @@ noinst_LTLIBRARIES = ../../lib/libFronTierCpp.la
 
 
 ______lib_libFronTierCpp_la_SOURCES = \
-../FrontWrapper.h
+../FrontWrapper.h \
+../FrontWrapper.cpp
 
 
 
