@@ -425,6 +425,16 @@ AC_ARG_WITH([example3d],[AS_HELP_STRING([--with-example3d],
 
 AM_CONDITIONAL([EX3D_OPT],[test $exThreeD = yes])
 
+
+#option to compile FrontWrapper directory (Makfiles always generated)
+AC_ARG_WITH([libcpp],[AS_HELP_STRING([--with-libcpp],
+              [build the FrontWrapper directory])],
+              [libCpp=yes],[libCpp=no])
+
+AM_CONDITIONAL([LIBCPP_OPT],[test $libCpp = yes])
+
+
+
 #Output files
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
@@ -446,7 +456,11 @@ AC_CONFIG_FILES([Makefile
                  example2d/Makefile
                  example2d/objs/Makefile
                  example3d/Makefile
-                 example3d/objs/Makefile])
+                 example3d/objs/Makefile
+                 FrontWrapper/Makefile
+                 FrontWrapper/objs/Makefile
+                 FrontWrapper/tests/Makefile])
+
 
 #Generate output
 AC_OUTPUT

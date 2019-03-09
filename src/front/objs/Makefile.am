@@ -13,8 +13,7 @@ noinst_HEADERS = \
 ../../../include/front/fprotos.h \
 ../../../include/front/frp.h \
 ../../../include/front/fuserint.h \
-../../../include/front/fvelo.h \
-../../../include/front/dummyfront.hpp
+../../../include/front/fvelo.h
 
 
 noinst_LTLIBRARIES = libfront.la

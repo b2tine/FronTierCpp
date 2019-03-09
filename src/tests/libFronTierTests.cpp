@@ -1,14 +1,6 @@
 #include <FronTier.h>
-#include <front/dummyfront.hpp>
 #include <gtest/gtest.h>
 
-TEST(FrontTests, CompileTest)
+TEST(FrontTierTests, testname)
 {
-    Front front;
-}
-
-TEST(cppFrontTests, CompileTest)
-{
-    cpp::Front front;
-    front.testfunction();
 }

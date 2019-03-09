@@ -1,14 +1,16 @@
-#include <front/dummyfront.hpp>
-#include <iostream>
+//#include <front/dummyfront.hpp>
+//#include <iostream>
 
 
-namespace cpp {
+//namespace cpp {
 
 
+/*
 void Front::testfunction()
 {
     std::cout << "called testfunction()\n";
 }
+*/
 
 
 
@@ -21,5 +23,4 @@ void Front::testfunction()
 
 
 
-
-}
+//}

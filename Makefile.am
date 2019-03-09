@@ -32,6 +32,9 @@ if EX3D_OPT
 MAYBE_EX3D = example3d
 endif
 
+if LIBCPP_OPT
+MAYBE_LIBCPP = FrontWrapper
+endif
 
 SUBDIRS = lib \
 		  cFluid \
@@ -46,7 +49,8 @@ SUBDIRS = lib \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_EX2D) \
-		  $(MAYBE_EX3D)
+		  $(MAYBE_EX3D) \
+		  $(MAYBE_LIBCPP)
 
 
 
