@@ -1,7 +1,6 @@
 #ifndef BVH_H
 #define BVH_H
 
-/*
 #include "BVH_Node.h"
 
 #include <CGAL/hilbert_sort.h>
@@ -9,7 +8,7 @@
 #include <CGAL/property_map.h>
 
 
-using Point_with_Node = std::pair<CGAL_Point,const BVH_Node* const>;
+using Point_with_Node = std::pair<CGAL_Point,BVH_Node*>;
 using Point_Node_Vector = std::vector<Point_with_Node>;
 
 using pMap = CGAL::First_of_pair_property_map<Point_with_Node>;
@@ -22,7 +21,7 @@ class BVH
        
         //TODO: consider unique_ptr for root
         BVH_Node* root{nullptr};
-        std::vector<const BVH_Node*> leaves;
+        std::vector<BVH_Node* const> leaves;
         
         int sort_iter{0};
         BV_HilbertSortingTraits hst;
@@ -46,9 +45,9 @@ class BVH
         //1.0e-06 is default for kinetic collision boxes.
         static double proximityPad;
         
-        static BVH_Node* createLeafNode(Hse* h);
+        static BVH_Node* createLeafNode(Hse* const h);
         static BVH_Node* createInternalNode(
-                const BVH_Node* lc, const BVH_Node* rc);
+                BVH_Node* const lc, BVH_Node* const rc);
 
     public:
 
@@ -66,14 +65,13 @@ class BVH
         const bool isEmpty() const noexcept; 
 
         //temp functions for testing/debugging
-        void buildTester(std::vector<Hse*>);
-        void writeHilbertCurveFile(std::string,int) const;
+        void buildTester(std::vector<Hse* const>);
+            //void writeHilbertCurveFile(std::string, int) const;
 };
 
 
 
 const bool checkProximity(const BVH* const , const BVH* const);
-*/
 
 
 #endif

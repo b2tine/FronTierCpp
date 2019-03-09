@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <BVH.h>
 
-/*
 class BVH_Tests : public testing::Test
 {
     protected:
@@ -9,7 +8,7 @@ class BVH_Tests : public testing::Test
     static TRI *t1, *t2, *t3, *t4,*t5, *t6, *t7, *t8;
     static POINT *a, *b, *c, *d, *e, *f, *g, *h, *i, *j, *k, *l;
 
-    static HsTri *T1, *T2, *T3, *T4, *T5, *T6, *T7, *T8;
+    static Hse *T1, *T2, *T3, *T4, *T5, *T6, *T7, *T8;
 
     BVH bvh1;
     BVH bvh2;
@@ -121,15 +120,15 @@ POINT* BVH_Tests::j = nullptr;
 POINT* BVH_Tests::k = nullptr;
 POINT* BVH_Tests::l = nullptr;
 
-HsTri* BVH_Tests::T1 = nullptr;
-HsTri* BVH_Tests::T2 = nullptr;
-HsTri* BVH_Tests::T3 = nullptr;
-HsTri* BVH_Tests::T4 = nullptr;
-HsTri* BVH_Tests::T5 = nullptr;
-HsTri* BVH_Tests::T6 = nullptr;
-HsTri* BVH_Tests::T7 = nullptr;
-HsTri* BVH_Tests::T8 = nullptr;
-//HsTri* BVH_Tests::T9 = nullptr;
+Hse* BVH_Tests::T1 = nullptr;
+Hse* BVH_Tests::T2 = nullptr;
+Hse* BVH_Tests::T3 = nullptr;
+Hse* BVH_Tests::T4 = nullptr;
+Hse* BVH_Tests::T5 = nullptr;
+Hse* BVH_Tests::T6 = nullptr;
+Hse* BVH_Tests::T7 = nullptr;
+Hse* BVH_Tests::T8 = nullptr;
+//Hse* BVH_Tests::T9 = nullptr;
 
 
 
@@ -141,21 +140,19 @@ TEST_F(DISABLED_BVH_Tests, AABBSelfProximity)
 
 }
 
-//TEST_F(BVH_Tests, checkProximityTest)
-//{
-//    ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
-//}
-
-
-TEST_F(BVH_Tests, checkProximityTest)
+TEST_F(DISABLED_BVH_Tests, checkProximityTest)
 {
-    ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
+    //ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
 }
 
 
-TEST_F(BVH_Tests, BuildTest)
+TEST_F(DISABLED_BVH_Tests, checkProximityTest)
 {
-    ASSERT_FALSE(bvh1.isEmpty());
+    //ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
 }
-*/
+
+TEST_F(DISABLED_BVH_Tests, BuildTest)
+{
+    //ASSERT_FALSE(bvh1.isEmpty());
+}
 

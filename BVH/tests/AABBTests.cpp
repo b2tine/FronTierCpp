@@ -9,8 +9,8 @@ class AABBTests : public testing::Test
     static BOND *s1, *s2, *s3;
     static POINT *a, *b, *c, *d, *e, *f, *g, *h;
 
-    static HsTri *T1, *T2, *T3, *T4;
-    static HsBond *B1, *B2, *B3;
+    static Hse *T1, *T2, *T3, *T4;
+    static Hse *B1, *B2, *B3;
 
     AABB bbT1, bbT2, bbT3, bbT4, bbB1, bbB2, bbB3;
 
@@ -99,13 +99,13 @@ POINT* AABBTests::e = nullptr;
 POINT* AABBTests::f = nullptr;
 POINT* AABBTests::g = nullptr;
 POINT* AABBTests::h = nullptr;
-HsTri* AABBTests::T1 = nullptr;
-HsTri* AABBTests::T2 = nullptr;
-HsTri* AABBTests::T3 = nullptr;
-HsTri* AABBTests::T4 = nullptr;
-HsBond* AABBTests::B1 = nullptr;
-HsBond* AABBTests::B2 = nullptr;
-HsBond* AABBTests::B3 = nullptr;
+Hse* AABBTests::T1 = nullptr;
+Hse* AABBTests::T2 = nullptr;
+Hse* AABBTests::T3 = nullptr;
+Hse* AABBTests::T4 = nullptr;
+Hse* AABBTests::B1 = nullptr;
+Hse* AABBTests::B2 = nullptr;
+Hse* AABBTests::B3 = nullptr;
 
 
 using DISABLED_AABBTests = AABBTests;
@@ -121,8 +121,9 @@ TEST_F(DISABLED_AABBTests, BoxesOverlapVsContain)
     EXPECT_TRUE(bbT2.overlaps(bbT3));
     //but not containment
     EXPECT_FALSE(bbT2.contains(bbT4));
-    //TODO: This may not be an issue if preconditions
-    //      can be checked at node level.
+    //TODO: This shouldn't be an issue when the boxes
+    //      are padded, and we can check for adjacency/self
+    //      at the node level before calling.
 }
 
 TEST_F(AABBTests, ConstructorTwoAABBs)

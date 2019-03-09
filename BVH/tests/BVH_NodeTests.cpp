@@ -1,16 +1,15 @@
 #include <gmock/gmock.h>
 #include <BVH_Node.h>
 
-/*
 class BVH_NodeTests : public testing::Test
 {
     protected:
 
     static POINT *a, *b, *c, *d, *e, *f, *g;
     static TRI *t1, *t2, *t3, *t4,*t5;
-    static HsTri *T1, *T2, *T3, *T4, *T5;
+    static Hse *T1, *T2, *T3, *T4, *T5;
 
-    std::shared_ptr<BVH_Node>  l1, l2, l3, l4, l5;
+    BVH_Node *l1, *l2, *l3, *l4, *l5;
 
     static void SetUpTestCase()
     {
@@ -67,15 +66,18 @@ class BVH_NodeTests : public testing::Test
 
     void SetUp() override
     {
-        l1 = std::make_shared<LeafNode>(T1);
-        l2 = std::make_shared<LeafNode>(T2);
-        l3 = std::make_shared<LeafNode>(T3);
-        l4 = std::make_shared<LeafNode>(T4);
-        l5 = std::make_shared<LeafNode>(T5);
+        l1 = new LeafNode(T1);
+        l2 = new LeafNode(T2);
+        l3 = new LeafNode(T3);
+        l4 = new LeafNode(T4);
+        l5 = new LeafNode(T5);
     }
 
     void TearDown() override
     {
+        delete l1;   delete l2;
+        delete l3;   delete l4;
+        delete l5;
 
     }
 
@@ -94,11 +96,11 @@ POINT* BVH_NodeTests::d = nullptr;
 POINT* BVH_NodeTests::e = nullptr;
 POINT* BVH_NodeTests::f = nullptr;
 POINT* BVH_NodeTests::g = nullptr;
-HsTri* BVH_NodeTests::T1 = nullptr;
-HsTri* BVH_NodeTests::T2 = nullptr;
-HsTri* BVH_NodeTests::T3 = nullptr;
-HsTri* BVH_NodeTests::T4 = nullptr;
-HsTri* BVH_NodeTests::T5 = nullptr;
+Hse* BVH_NodeTests::T1 = nullptr;
+Hse* BVH_NodeTests::T2 = nullptr;
+Hse* BVH_NodeTests::T3 = nullptr;
+Hse* BVH_NodeTests::T4 = nullptr;
+Hse* BVH_NodeTests::T5 = nullptr;
 
 
 
@@ -113,6 +115,7 @@ TEST_F(DISABLED_BVH_NodeTests, CheckAdjacencyOfLeafNodeHses)
 
 TEST_F(DISABLED_BVH_NodeTests, SingleChildInternalNodeCtor)
 {
+    /*
     std::shared_ptr<BVH_Node> p3 =
         std::make_shared<InternalNode>(l5,l5);
     p3->setChildren(l5,l5);
@@ -127,13 +130,12 @@ TEST_F(DISABLED_BVH_NodeTests, SingleChildInternalNodeCtor)
     ASSERT_DOUBLE_EQ(bvp3.upper[0],0.0);
     ASSERT_DOUBLE_EQ(bvp3.upper[1],0.0);
     ASSERT_DOUBLE_EQ(bvp3.upper[2],0.0);
+    */
 }
 
-TEST_F(BVH_NodeTests, InternalNodePrototypeFactoryTest)
+TEST_F(DISABLED_BVH_NodeTests, InternalNodePrototypeFactoryTest)
 {
-    //See ../BVH_Node.cpp for why construction of a
-    //shared_ptr<InternalNode> must be decoupled from
-    //the linking of parent and children.
+    /*
     std::shared_ptr<BVH_Node> p1 =
         std::make_shared<InternalNode>(l1,l2);
     p1->setChildren(l1,l2);
@@ -168,14 +170,15 @@ TEST_F(BVH_NodeTests, InternalNodePrototypeFactoryTest)
     BoundingVolume bvgp = gp->getBV();
     ASSERT_DOUBLE_EQ(bvgp.lower[0],-1.0);
     ASSERT_DOUBLE_EQ(bvgp.upper[2],1.0);
+    */
 }
 
 
-TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
+TEST_F(DISABLED_BVH_NodeTests, InternalNodeCtorDeathTest)
 {
-    std::shared_ptr<LeafNode> l6;
-    std::shared_ptr<InternalNode> p;
-    ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
+    //std::shared_ptr<LeafNode> l6;
+    //std::shared_ptr<InternalNode> p;
+    //ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
 }
 
 
@@ -183,12 +186,11 @@ TEST_F(BVH_NodeTests, ConstructorLeafNode)
 {
     ASSERT_TRUE(l5->isLeaf());
     ASSERT_NE(l5->getHse(),nullptr);
-    ASSERT_EQ(l5->getParent().lock(),nullptr);
+    ASSERT_EQ(l5->getParent(),nullptr);
 
     BoundingVolume bv5 = l5->getBV();
     ASSERT_DOUBLE_EQ(bv5.upper[0],0.0);
     ASSERT_DOUBLE_EQ(bv5.lower[1],-1.0);
 }
-*/
 
 

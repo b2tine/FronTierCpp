@@ -1,6 +1,5 @@
 #include "BVH.h"
 
-/*
 
 //TODO: I Don't like this, but it's too early
 //      to tell how/where these constants should
@@ -19,7 +18,7 @@ const BVH_Node* const BVH::getRoot() const noexcept
     return root;
 }
 
-BVH_Node* BVH::createLeafNode(Hse* h)
+BVH_Node* BVH::createLeafNode(Hse* const h)
 {
     assert(h);
     BVH_Node* node = new LeafNode(h);
@@ -27,11 +26,11 @@ BVH_Node* BVH::createLeafNode(Hse* h)
     return node;
 }
 
-BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
+BVH_Node* BVH::createInternalNode(BVH_Node* const lc, BVH_Node* const rc)
 {
     assert(lc && rc);
     BVH_Node* node = new InternalNode(lc,rc);
-    node->setChildren(lc,rc);
+    //node->setChildren(lc,rc);
     return node;
 }
 
@@ -190,12 +189,12 @@ void BVH::constructRootNode()
     assert( children.size() == 2 );
     auto lc = children[0].second;
     auto rc = children[1].second;
-    root = BVH::createInternalNode(std::move(lc),std::move(rc));
+    root = BVH::createInternalNode(lc,rc);
 }
 
 
 //Testing function
-void BVH::buildTester(std::vector<Hse*> hseList)
+void BVH::buildTester(std::vector<Hse* const> hseList)
 {
     assert(children.empty());
     std::vector<Hse*>::iterator it = hseList.begin();
@@ -214,4 +213,3 @@ void BVH::buildTester(std::vector<Hse*> hseList)
 }
 
 
-*/

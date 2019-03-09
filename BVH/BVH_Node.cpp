@@ -1,15 +1,12 @@
 #include "BVH_Node.h"
-/*
 
 /////////////////////////////////////////////////////////
 ////////           BVH_Node Methods             ////////
 ///////////////////////////////////////////////////////
 
-
-//TODO: may be able to get rid of this now that we're using raw pointers
 void BVH_Node::setBV(BoundingVolume BV)
 {
-    bv = BV
+    bv = BV;
 }
 const BoundingVolume BVH_Node::getBV() const noexcept
 {
@@ -60,7 +57,7 @@ const BVH_Node* const BVH_Node::getRightChild() const noexcept
 }
 
 void BVH_Node::setChildren(
-        const BVH_Node* lc, const BVH_Node* rc) noexcept
+        BVH_Node* const lc, BVH_Node* const rc) noexcept
 {
     return;
 }
@@ -69,10 +66,10 @@ void BVH_Node::setChildren(
 ////////         InternalNode Methods           ////////
 ///////////////////////////////////////////////////////
 
-//TODO: Probably need a separate unpaired child constructor
+//TODO: Fix this constructor; never will get nullptr.
 InternalNode::InternalNode(BVH_Node* const lc, BVH_Node* const rc)
 {
-    //check in case of unpaired node
+    /*
     if( rc == nullptr )
     {
         assert( lc != nullptr );
@@ -86,6 +83,7 @@ InternalNode::InternalNode(BVH_Node* const lc, BVH_Node* const rc)
         setRightChild(rc);
 
     }
+    */
     setBV(BoundingVolume(lc->getBV(),rc->getBV()));
     setChildren(lc,rc);
 }
@@ -101,19 +99,19 @@ void InternalNode::expandBV(double pad) noexcept
 }
 
 void InternalNode::setChildren(
-        const BVH_Node* lc, const BVH_Node* rc) noexcept
+        BVH_Node* const lc, BVH_Node* const rc) noexcept
 {
     setLeftChild(lc);
     setRightChild(rc);
 }
 
-void InternalNode::setLeftChild(const BVH_Node* lc) noexcept
+void InternalNode::setLeftChild(BVH_Node* const lc) noexcept
 {
     lc->setParent(this);
     left = lc;
 }
 
-void InternalNode::setRightChild(const BVH_Node* rc) noexcept
+void InternalNode::setRightChild(BVH_Node* const rc) noexcept
 {
     rc->setParent(this);
     right = rc;
@@ -149,5 +147,3 @@ const Hse* const LeafNode::getHse() const noexcept
     return hse;
 }
 
-
-*/

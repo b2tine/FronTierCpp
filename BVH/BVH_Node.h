@@ -1,7 +1,6 @@
 #ifndef BVH_NODE_H
 #define BVH_NODE_H
 
-/*
 #include "BoundingVolume.h"
 
 #include <utility>
@@ -16,7 +15,6 @@ class BVH_Node
 {
     private:
 
-        //TODO: consider unique_ptr for BoundingVolume
         BoundingVolume bv;
         BVH_Node* parent{nullptr};
         
@@ -35,7 +33,7 @@ class BVH_Node
         void setBV(BoundingVolume);
         const BoundingVolume getBV() const noexcept;
         const bool overlaps(const BVH_Node* const) const;
-        const double volume() const;
+        const double volume() const noexcept;
 
         virtual const Hse* const getHse() const noexcept;
         virtual void expandBV(double);
@@ -63,7 +61,7 @@ class InternalNode : public BVH_Node
 
     public:
 
-        InternalNode(const BVH_Node* lc, const BVH_Node* rc);
+        InternalNode(BVH_Node* const lc, BVH_Node* const rc);
 
         InternalNode(InternalNode&&) = default;
         InternalNode& operator=(InternalNode&&) = default;
@@ -76,14 +74,9 @@ class InternalNode : public BVH_Node
         const bool isLeaf() const noexcept override;
         void expandBV(double) noexcept override;
 
-        //Would be better if this could be made private,
-        //or coupled to the constructor. However, this does
-        //not seem possible given the use of smart_ptrs for
-        //node linkage. See InternalNode constructor in
-        //BVH_Node.cpp for details.
-        void setChildren(const BVH_Node* lc, const BVH_Node* rc) override;
-        const BVH_Node* const getLeftChild() const override;
-        const BVH_Node* const getRightChild() const override;
+        void setChildren(BVH_Node* const lc, BVH_Node* const rc) noexcept override;
+        const BVH_Node* const getLeftChild() const noexcept override;
+        const BVH_Node* const getRightChild() const noexcept override;
 };
 
 
@@ -91,6 +84,7 @@ class LeafNode : public BVH_Node
 {
     private:
 
+        //TODO: consider unique_ptr<Hse> hse
         Hse* hse{nullptr};
 
     public:
@@ -107,7 +101,6 @@ class LeafNode : public BVH_Node
         const bool isLeaf() const noexcept override;
         const Hse* const getHse() const noexcept override;
 };
-*/
 
 
 #endif

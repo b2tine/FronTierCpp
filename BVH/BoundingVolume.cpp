@@ -44,7 +44,6 @@ const CGAL_Point AABB::Centroid() const
     return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 
-//TODO: handle self check 
 const bool AABB::overlaps(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
@@ -55,7 +54,6 @@ const bool AABB::overlaps(const AABB& BB) const
     return true;
 }
 
-//TODO: handle self check 
 const bool AABB::contains(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
@@ -74,9 +72,9 @@ const double AABB::volume() const noexcept
     return volume;
 }
 
-//TODO: check if pad negative
 void AABB::expand(double pad)
 {
+    assert(pad >= 0);
     for( int i = 0; i < 3; ++i )
     {
         lower[i] -= pad;
