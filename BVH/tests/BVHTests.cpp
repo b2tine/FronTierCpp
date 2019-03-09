@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <BVH.h>
 
-
+/*
 class BVH_Tests : public testing::Test
 {
     protected:
@@ -157,5 +157,5 @@ TEST_F(BVH_Tests, BuildTest)
 {
     ASSERT_FALSE(bvh1.isEmpty());
 }
-
+*/
 

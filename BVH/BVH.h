@@ -1,6 +1,7 @@
 #ifndef BVH_H
 #define BVH_H
 
+/*
 #include "BVH_Node.h"
 
 #include <CGAL/hilbert_sort.h>
@@ -8,7 +9,7 @@
 #include <CGAL/property_map.h>
 
 
-using Point_with_Node = std::pair<CGAL_Point,std::shared_ptr<BVH_Node>>;
+using Point_with_Node = std::pair<CGAL_Point,const BVH_Node* const>;
 using Point_Node_Vector = std::vector<Point_with_Node>;
 
 using pMap = CGAL::First_of_pair_property_map<Point_with_Node>;
@@ -18,12 +19,13 @@ using BV_HilbertSortingTraits = CGAL::Spatial_sort_traits_adapter_3<K,pMap>;
 class BVH
 {
     private:
-        
-        std::shared_ptr<BVH_Node> root{nullptr};
+       
+        //TODO: consider unique_ptr for root
+        BVH_Node* root{nullptr};
+        std::vector<const BVH_Node*> leaves;
         
         int sort_iter{0};
         BV_HilbertSortingTraits hst;
-        std::vector<std::shared_ptr<BVH_Node>> leaves;
         Point_Node_Vector children;
 
         void buildHeirarchy();
@@ -43,13 +45,14 @@ class BVH
         //1.0e-03 is default for static proximity boxes, and
         //1.0e-06 is default for kinetic collision boxes.
         static double proximityPad;
-        static std::shared_ptr<BVH_Node> createLeafNode(Hse* h);
-        static std::shared_ptr<BVH_Node> createInternalNode(
-                std::shared_ptr<BVH_Node> lc, std::shared_ptr<BVH_Node> rc);
+        
+        static BVH_Node* createLeafNode(Hse* h);
+        static BVH_Node* createInternalNode(
+                const BVH_Node* lc, const BVH_Node* rc);
 
     public:
 
-        BVH(const Front* const);
+        explicit BVH(const Front* const);
               
         BVH() = default;
         ~BVH() = default;
@@ -59,7 +62,7 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        const std::weak_ptr<BVH_Node> getRoot() const noexcept;
+        const BVH_Node* const getRoot() const noexcept;
         const bool isEmpty() const noexcept; 
 
         //temp functions for testing/debugging
@@ -67,15 +70,9 @@ class BVH
         void writeHilbertCurveFile(std::string,int) const;
 };
 
-//const bool areAdjacentHse(Hse*,Hse*);
 
 
-const bool checkProximity(BVH*, BVH*);
-
-/*
-std::stack< std::pair<std::shared_ptr<BVH_Node>,
-    std::shared_ptr<BVH_Node>> >
-    queryProximity(std::shared_ptr<BVH_Node>&&,std::shared_ptr<BVH_Node>&&);
+const bool checkProximity(const BVH* const , const BVH* const);
 */
 
 

@@ -21,6 +21,7 @@ TESTS_ENVIRONMENT =
 TESTS =
 check_PROGRAMS =
 
+
 TESTS += HSETests
 check_PROGRAMS += HSETests
 
@@ -60,7 +61,6 @@ BVH_NodeTests_SOURCES = BVH_NodeTests.cpp
 
 BVH_NodeTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 					  $(top_builddir)/lib/libBVH.la
-
 
 
 

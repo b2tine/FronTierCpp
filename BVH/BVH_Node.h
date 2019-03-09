@@ -1,33 +1,24 @@
 #ifndef BVH_NODE_H
 #define BVH_NODE_H
 
+/*
 #include "BoundingVolume.h"
 
-#include <memory>
 #include <utility>
 #include <stack>
 
-
-//Design Considerations:
-//
-//  1. Do we really need smart_ptrs for Node linkage?
-//     No deletion or rotations are going to be performed,
-//     and the objects will persist for the entirety of
-//     the program.
-//  2. How much of an impact will the use of smart_ptrs
-//     have on performance?
 
 using BoundingVolume = AABB;
 
 
 
-class BVH_Node :
-    public std::enable_shared_from_this<BVH_Node>
+class BVH_Node
 {
     private:
 
+        //TODO: consider unique_ptr for BoundingVolume
         BoundingVolume bv;
-        std::weak_ptr<BVH_Node> parent;
+        BVH_Node* parent{nullptr};
         
     public:
 
@@ -42,21 +33,20 @@ class BVH_Node :
         virtual const bool isLeaf() const = 0;
 
         void setBV(BoundingVolume);
-        const BoundingVolume& getBV() const;
-        const bool overlaps(const std::shared_ptr<BVH_Node>&) const;
+        const BoundingVolume getBV() const noexcept;
+        const bool overlaps(const BVH_Node* const) const;
         const double volume() const;
 
+        virtual const Hse* const getHse() const noexcept;
         virtual void expandBV(double);
-        virtual const Hse* const getHse() const;
 
-        void setParent(std::shared_ptr<BVH_Node>);
-        const std::weak_ptr<BVH_Node> getParent() const;
+        void setParent(BVH_Node* const p) noexcept;
+        virtual void setChildren(BVH_Node* const lc,
+                                 BVH_Node* const rc) noexcept;
 
-        virtual const std::weak_ptr<BVH_Node> getLeftChild() const;
-        virtual const std::weak_ptr<BVH_Node> getRightChild() const;
-
-        virtual void setChildren(std::shared_ptr<BVH_Node> lc,
-                std::shared_ptr<BVH_Node> rc);
+        const BVH_Node* getParent() const noexcept;
+        virtual const BVH_Node* const getLeftChild() const noexcept;
+        virtual const BVH_Node* const getRightChild() const noexcept;
        
 };
 
@@ -65,16 +55,15 @@ class InternalNode : public BVH_Node
 {
     private:
 
-        std::shared_ptr<BVH_Node> left;
-        std::shared_ptr<BVH_Node> right;
+        BVH_Node* left{nullptr};
+        BVH_Node* right{nullptr};
         
-        void setLeftChild(std::shared_ptr<BVH_Node> lc);
-        void setRightChild(std::shared_ptr<BVH_Node> rc);
+        void setLeftChild(BVH_Node* lc) noexcept;
+        void setRightChild(BVH_Node* rc) noexcept;
 
     public:
 
-        InternalNode(std::shared_ptr<BVH_Node> lc,
-                std::shared_ptr<BVH_Node> rc);
+        InternalNode(const BVH_Node* lc, const BVH_Node* rc);
 
         InternalNode(InternalNode&&) = default;
         InternalNode& operator=(InternalNode&&) = default;
@@ -92,11 +81,9 @@ class InternalNode : public BVH_Node
         //not seem possible given the use of smart_ptrs for
         //node linkage. See InternalNode constructor in
         //BVH_Node.cpp for details.
-        void setChildren(std::shared_ptr<BVH_Node> lc,
-                std::shared_ptr<BVH_Node> rc) override;
-       
-        const std::weak_ptr<BVH_Node> getLeftChild() const override;
-        const std::weak_ptr<BVH_Node> getRightChild() const override;
+        void setChildren(const BVH_Node* lc, const BVH_Node* rc) override;
+        const BVH_Node* const getLeftChild() const override;
+        const BVH_Node* const getRightChild() const override;
 };
 
 
@@ -120,7 +107,7 @@ class LeafNode : public BVH_Node
         const bool isLeaf() const noexcept override;
         const Hse* const getHse() const noexcept override;
 };
-
+*/
 
 
 #endif

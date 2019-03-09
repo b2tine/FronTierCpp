@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <BoundingVolume.h>
 
-
 class AABBTests : public testing::Test
 {
     protected:
@@ -137,21 +136,10 @@ TEST_F(AABBTests, ConstructorTwoAABBs)
     ASSERT_DOUBLE_EQ(upper[2],10.0);
 }
 
-TEST_F(DISABLED_AABBTests, ConstructorTwoBV_Points)
-{
-    /*
-    CGAL_Point centroid = bbBVPts.Centroid();
-    ASSERT_DOUBLE_EQ(centroid.x(),0.0);
-    ASSERT_DOUBLE_EQ(centroid.y(),0.0);
-    ASSERT_DOUBLE_EQ(centroid.z(),0.0);
-    */
-}
-
 TEST_F(AABBTests, ConstructorOneHse)
 {
     ASSERT_DOUBLE_EQ(bbT1.upper[0],9.0);
     ASSERT_DOUBLE_EQ(bbT1.lower[2],1.0);
 }
-
 
 

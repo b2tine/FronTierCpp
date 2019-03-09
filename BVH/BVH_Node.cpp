@@ -1,41 +1,44 @@
 #include "BVH_Node.h"
+/*
 
 /////////////////////////////////////////////////////////
 ////////           BVH_Node Methods             ////////
 ///////////////////////////////////////////////////////
-        
+
+
+//TODO: may be able to get rid of this now that we're using raw pointers
 void BVH_Node::setBV(BoundingVolume BV)
 {
-    bv = std::move(BV);
+    bv = BV
 }
-const BoundingVolume& BVH_Node::getBV() const
+const BoundingVolume BVH_Node::getBV() const noexcept
 {
     return bv;
 }
 
-const bool BVH_Node::overlaps(const std::shared_ptr<BVH_Node>& node) const
+const bool BVH_Node::overlaps(const BVH_Node* const node) const
 {
-    auto bv = getBV();
+    BoundingVolume bv = getBV();
     return bv.overlaps(node->getBV());
 }
 
-const double BVH_Node::volume() const
+const double BVH_Node::volume() const noexcept
 {
     return bv.volume();
 }
-
-void BVH_Node::setParent(std::shared_ptr<BVH_Node> P)
-{
-    parent = std::weak_ptr<BVH_Node>(std::move(P));
-}
         
-const std::weak_ptr<BVH_Node> BVH_Node::getParent() const
+const BVH_Node* BVH_Node::getParent() const noexcept
 {
-    return std::weak_ptr<BVH_Node>(parent);
+    return parent;
+}
+
+void BVH_Node::setParent(BVH_Node* const p) noexcept
+{
+    parent = p;
 }
 
 //InternalNode uses these default implementations
-const Hse* const BVH_Node::getHse() const
+const Hse* const BVH_Node::getHse() const noexcept
 {
     return {};
 }
@@ -46,18 +49,18 @@ void BVH_Node::expandBV(double pad)
     bv.expand(pad);
 }
 
-const std::weak_ptr<BVH_Node> BVH_Node::getLeftChild() const
+const BVH_Node* const BVH_Node::getLeftChild() const noexcept
 {
     return {};
 }
 
-const std::weak_ptr<BVH_Node> BVH_Node::getRightChild() const
+const BVH_Node* const BVH_Node::getRightChild() const noexcept
 {
     return {};
 }
 
-void BVH_Node::setChildren(std::shared_ptr<BVH_Node> lc,
-        std::shared_ptr<BVH_Node> rc)
+void BVH_Node::setChildren(
+        const BVH_Node* lc, const BVH_Node* rc) noexcept
 {
     return;
 }
@@ -66,11 +69,25 @@ void BVH_Node::setChildren(std::shared_ptr<BVH_Node> lc,
 ////////         InternalNode Methods           ////////
 ///////////////////////////////////////////////////////
 
-InternalNode::InternalNode(std::shared_ptr<BVH_Node> lc,
-        std::shared_ptr<BVH_Node> rc)
+//TODO: Probably need a separate unpaired child constructor
+InternalNode::InternalNode(BVH_Node* const lc, BVH_Node* const rc)
 {
-    assert(lc && rc);
+    //check in case of unpaired node
+    if( rc == nullptr )
+    {
+        assert( lc != nullptr );
+        setBV(BoundingVolume(lc->getBV()));
+        setLeftChild(lc);
+    }
+    else if( lc == nullptr )
+    {
+        assert( rc != nullptr );
+        setBV(BoundingVolume(rc->getBV()));
+        setRightChild(rc);
+
+    }
     setBV(BoundingVolume(lc->getBV(),rc->getBV()));
+    setChildren(lc,rc);
 }
 
 const bool InternalNode::isLeaf() const noexcept
@@ -83,43 +100,33 @@ void InternalNode::expandBV(double pad) noexcept
      return;
 }
 
-//SetChildren() is a temporary solution for testing.
-//It is not possible to call shared_from_this() in the
-//constructor of InternalNode since an existing shared_ptr
-//managing "this" must already exist.
-//The above constructor and SetChildren() are consolidated
-//inside a static factory function of the BVH class,
-//but setChildren(), unfortunately, remains exposed to the
-//public interface.
-//Explicitly construct the shared_ptr instead, of using
-//the make_shared() function?
-void InternalNode::setChildren(std::shared_ptr<BVH_Node> lc,
-        std::shared_ptr<BVH_Node> rc)
+void InternalNode::setChildren(
+        const BVH_Node* lc, const BVH_Node* rc) noexcept
 {
-    setLeftChild(std::move(lc));
-    setRightChild(std::move(rc));
+    setLeftChild(lc);
+    setRightChild(rc);
 }
 
-void InternalNode::setLeftChild(std::shared_ptr<BVH_Node> lc)
+void InternalNode::setLeftChild(const BVH_Node* lc) noexcept
 {
-    lc->setParent(shared_from_this());
-    left = std::move(lc);
+    lc->setParent(this);
+    left = lc;
 }
 
-void InternalNode::setRightChild(std::shared_ptr<BVH_Node> rc)
+void InternalNode::setRightChild(const BVH_Node* rc) noexcept
 {
-    rc->setParent(shared_from_this());
-    right = std::move(rc);
+    rc->setParent(this);
+    right = rc;
 }
 
-const std::weak_ptr<BVH_Node> InternalNode::getLeftChild() const
+const BVH_Node* const InternalNode::getLeftChild() const noexcept
 {
-    return std::weak_ptr<BVH_Node>(left);
+    return left;
 }
 
-const std::weak_ptr<BVH_Node> InternalNode::getRightChild() const
+const BVH_Node* const InternalNode::getRightChild() const noexcept
 {
-    return std::weak_ptr<BVH_Node>(right);
+    return right;
 }
 
 /////////////////////////////////////////////////////////
@@ -143,4 +150,4 @@ const Hse* const LeafNode::getHse() const noexcept
 }
 
 
-
+*/

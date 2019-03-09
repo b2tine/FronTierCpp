@@ -2,6 +2,7 @@
 #define HYPER_SURF_ELEMENT_H
 
 #include <algorithm>
+#include <memory>
 #include <iostream>
 #include <limits>
 #include <exception>
@@ -9,11 +10,14 @@
 
 #include <FronTier.h>
 
-//TODO: Add method to check if a Hse (HsPoint, HsBond, or HsTri)
-//      is incident to an instance of HsTri.
 
-
-enum class HseTag {FABRIC,STRING,RIGIDBODY,NONE};
+enum class HseTag
+{
+    FABRIC,
+    STRING,
+    RIGIDBODY,
+    NONE
+};
 
 
 class Hse
@@ -34,51 +38,15 @@ class Hse
         Hse& operator=(Hse&&) = delete;
 
         virtual int num_pts() const = 0;
-        virtual double max_coord(int) const = 0;
-        virtual double min_coord(int) const = 0;
-        
-        //TODO: make this return unique_ptr?
-        virtual POINT* Point_of_hse(int) const = 0;
+        virtual double max_coord(int i) const = 0;
+        virtual double min_coord(int i) const = 0;
+        virtual const POINT* const Point_of_hse(int i) const = 0;
         
         //void setTag(HseTag Tag);
         const HseTag getTag() const noexcept;
 };
 
 
-
-
-//TODO: Can we get rid of HsPoint?
-//      Bounding Volume makes no sense
-//      for a point.
-
-/*  //I think yes
- *
- *
-//Wrapper for FronTier POINT
-class HsPoint : public Hse
-{
-    private:
-
-        POINT* point{nullptr};
-
-    public:
-
-        explicit HsPoint(POINT*);
-        HsPoint(POINT*, HseTag);
-        ~HsPoint() = default;
-
-        HsPoint() = delete;
-        HsPoint(const HsPoint&) = delete;
-        HsPoint& operator=(const HsPoint&) = delete;
-        HsPoint(HsPoint&&) = delete;
-        HsPoint& operator=(HsPoint&&) = delete;
-
-        int num_pts() const noexcept override { return 1; }
-        double min_coord(int) const override;
-        double max_coord(int) const override;
-        POINT* Point_of_hse(int i = 0) const override;
-};
-*/
 
 //Wrapper for FronTier BOND
 class HsBond : public Hse
@@ -100,9 +68,9 @@ class HsBond : public Hse
         HsBond& operator=(HsBond&&) = delete;
         
         int num_pts() const noexcept override { return 2; }
-        double min_coord(int) const override;
-        double max_coord(int) const override;
-        POINT* Point_of_hse(int) const override;
+        double min_coord(int dim) const override;
+        double max_coord(int dim) const override;
+        const POINT* const Point_of_hse(int i) const override;
 };
 
 
@@ -126,14 +94,14 @@ class HsTri : public Hse
         HsTri& operator=(HsTri&&) = delete;
         
         int num_pts() const noexcept override { return 3; }
-        double min_coord(int) const override;
-        double max_coord(int) const override;
-        POINT* Point_of_hse(int) const override;
+        double min_coord(int dim) const override;
+        double max_coord(int dim) const override;
+        const POINT* const Point_of_hse(int i) const override;
 };
 
         
 
-const bool areAdjacentHse(Hse* A, Hse* B);
+const bool areAdjacentHse(const Hse* const A, const Hse* const B);
 
 
 

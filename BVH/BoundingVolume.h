@@ -7,7 +7,13 @@
 #include <vector>
 
 
-enum class BV_Type {AABB, OBB, KDOP, SPHERE};
+enum class BV_Type
+{
+    AABB,
+    OBB,
+    KDOP,
+    SPHERE
+};
 
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -29,7 +35,6 @@ class AABB
         AABB();
         explicit AABB(Hse*);
         AABB(const AABB&,const AABB&);
-        //AABB(const BV_Point&,const BV_Point&);
 
         AABB(const AABB&) = default;
         AABB& operator=(const AABB&) = default;
@@ -37,20 +42,18 @@ class AABB
         AABB& operator=(AABB&&) = default;
         ~AABB() = default;
 
-        const BV_Type getBvType() const;
+        //const BV_Type getBvType() const noexcept;
         const CGAL_Point Centroid() const;
+        const double volume() const noexcept;
+        void expand(double pad);
 
         //TODO: need to carefully test this when
         //      considering self intersection checks
         const bool overlaps(const AABB&) const;
         const bool contains(const AABB&) const;
-        const double volume() const;
-
-        void expand(double);
 
         void print() const;
 };
-
 
 
 #endif

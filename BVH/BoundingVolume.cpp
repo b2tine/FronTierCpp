@@ -9,33 +9,32 @@ AABB::AABB()
 {}
 
 AABB::AABB(Hse* h)
+    : AABB()
 {
+    assert(h != nullptr);
     for( int i = 0; i < 3; ++i )
     {
-        lower.push_back(h->min_coord(i));
-        upper.push_back(h->max_coord(i));
+        lower[i] = h->min_coord(i);
+        upper[i] = h->max_coord(i);
     }
 }
-
-/*
-AABB::AABB(const BV_Point& L, const BV_Point& U)
-    : lower{L}, upper{U}
-{}
-*/
 
 AABB::AABB(const AABB& A, const AABB& B)
+    : AABB()
 {
     for( int i = 0; i < 3; ++i )
     {
-        lower.push_back(std::min(A.lower[i],B.lower[i]));
-        upper.push_back(std::max(A.upper[i],B.upper[i]));
+        lower[i] = std::min(A.lower[i],B.lower[i]);
+        upper[i] = std::max(A.upper[i],B.upper[i]);
     }
 }
 
-const BV_Type AABB::getBvType() const
-{
-    return BV_Type::AABB;
-}
+
+//const BV_Type AABB::getBvType() const noexcept
+//{
+//    return BV_Type::AABB;
+//}
+//
 
 const CGAL_Point AABB::Centroid() const
 {
@@ -45,6 +44,7 @@ const CGAL_Point AABB::Centroid() const
     return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 
+//TODO: handle self check 
 const bool AABB::overlaps(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
@@ -55,6 +55,7 @@ const bool AABB::overlaps(const AABB& BB) const
     return true;
 }
 
+//TODO: handle self check 
 const bool AABB::contains(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
@@ -65,15 +66,15 @@ const bool AABB::contains(const AABB& BB) const
     return true;
 }
 
-const double AABB::volume() const
+const double AABB::volume() const noexcept
 {
     double volume = 1.0;
     for( int i = 0; i < 3; ++i )
         volume *= upper[i] - lower[i];
     return volume;
-
 }
 
+//TODO: check if pad negative
 void AABB::expand(double pad)
 {
     for( int i = 0; i < 3; ++i )
@@ -91,5 +92,4 @@ void AABB::print() const
     printf("centroid: (%3g,%3g,%3g) \n", ctr.x(), ctr.y(), ctr.z());
     printf("   lower: (%3g,%3g,%3g) \n\n", lower[0], lower[1], lower[2]);
 }
-
 

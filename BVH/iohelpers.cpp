@@ -35,9 +35,7 @@ void createDirectory(std::string new_dir)
         mkdirTree(new_dir, "");
 }
 
-//TODO: Need to come up with a file index scheme to write the
-//      bounding volumes and hilbert curves to file at each
-//      level of the heirarchy. Pass the current height as parameter.
+/*
 void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 {
     auto datavec = getSortedLeafData();
@@ -165,5 +163,5 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 
 }
 
-
+*/
 

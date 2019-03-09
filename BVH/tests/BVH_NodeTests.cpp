@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <BVH_Node.h>
 
+/*
 class BVH_NodeTests : public testing::Test
 {
     protected:
@@ -188,6 +189,6 @@ TEST_F(BVH_NodeTests, ConstructorLeafNode)
     ASSERT_DOUBLE_EQ(bv5.upper[0],0.0);
     ASSERT_DOUBLE_EQ(bv5.lower[1],-1.0);
 }
-
+*/
 
 

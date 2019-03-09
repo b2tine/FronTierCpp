@@ -1,5 +1,7 @@
 #include "BVH.h"
 
+/*
+
 //TODO: I Don't like this, but it's too early
 //      to tell how/where these constants should
 //      be set, and need it for testing in the
@@ -12,32 +14,25 @@ const bool BVH::isEmpty() const noexcept
     return (!this->root) ? true : false;
 }
 
-const std::weak_ptr<BVH_Node> BVH::getRoot() const noexcept
+const BVH_Node* const BVH::getRoot() const noexcept
 {
-    return std::weak_ptr<BVH_Node>(root);
+    return root;
 }
 
-
-//TODO: Is std::move() Hindering RVO in these factory functions?
-//      Or are the RVO conditions not met?
-//      i.e. does it work for polymorphic types?
-
-std::shared_ptr<BVH_Node>
-BVH::createLeafNode(Hse* h)
+BVH_Node* BVH::createLeafNode(Hse* h)
 {
-    auto node = std::make_shared<LeafNode>(h);
+    assert(h);
+    BVH_Node* node = new LeafNode(h);
     node->expandBV(proximityPad);
-    return std::move(node);
+    return node;
 }
 
-
-std::shared_ptr<BVH_Node>
-BVH::createInternalNode(std::shared_ptr<BVH_Node> lc,
-        std::shared_ptr<BVH_Node> rc)
+BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
 {
-    auto node = std::make_shared<InternalNode>(lc,rc);
+    assert(lc && rc);
+    BVH_Node* node = new InternalNode(lc,rc);
     node->setChildren(lc,rc);
-    return std::move(node);
+    return node;
 }
 
 
@@ -129,7 +124,7 @@ const Point_Node_Vector BVH::getLeafSortingData() const
 {
     Point_Node_Vector leafdata;
 
-    std::vector<std::shared_ptr<BVH_Node>>::const_iterator it;
+    std::vector<BVH_Node*>::const_iterator it;
     for( it = leaves.cbegin(); it != leaves.cend(); ++it )
     {
         auto node = *it;
@@ -139,7 +134,6 @@ const Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
-//
 const Point_Node_Vector BVH::getSortedLeafData() const
 {
     Point_Node_Vector leafdata(getLeafSortingData());
@@ -220,4 +214,4 @@ void BVH::buildTester(std::vector<Hse*> hseList)
 }
 
 
-
+*/
