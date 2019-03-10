@@ -1,19 +1,19 @@
 #include "BVH.h"
-/*
 
 using NodePair = std::pair<BVH_Node*,BVH_Node*>;
 
+static std::stack<NodePair> queryProximity(
+        BVH_Node* nodeA, BVH_Node* nodeB);
 
 
 const bool checkProximity(BVH* A, BVH* B)
 {
     assert(A && B);
-    auto rootA = A->getRoot().lock();
-    auto rootB = B->getRoot().lock();
+    BVH_Node* rootA = A->getRoot();
+    BVH_Node* rootB = B->getRoot();
     assert(rootA && rootB);
     
-    auto proximity_stack = queryProximity(
-            std::move(rootA),std::move(rootB));
+    auto proximity_stack = queryProximity(rootA,rootB);
 
     if( !proximity_stack.empty() )
         return true;
@@ -21,18 +21,18 @@ const bool checkProximity(BVH* A, BVH* B)
         return false;
 }
 
-static std::stack<NodePair> queryProximity(
-        std::shared_ptr<BVH_Node> nodeA,
-        std::shared_ptr<BVH_Node> nodeB)
+std::stack<NodePair> queryProximity(
+        BVH_Node* nodeA,
+        BVH_Node* nodeB)
 {
     std::stack<NodePair> qstack;
-    qstack.push(std::make_pair(std::move(nodeA),std::move(nodeB));
+    qstack.push(std::make_pair(nodeA,nodeB));
     std::stack<NodePair> proximity_stack;
 
     while( !qstack.empty() )
     {
-        auto A = std::move(qstack.top().first);
-        auto B = std::move(qstack.top().second);
+        auto A = qstack.top().first;
+        auto B = qstack.top().second;
         qstack.pop();
 
         if( A->overlaps(B) )
@@ -43,32 +43,32 @@ static std::stack<NodePair> queryProximity(
             }
             else if( A->isLeaf() )
             {
-                auto rc = B->getRightChild().lock();
+                auto rc = B->getRightChild();
                 qstack.push(std::make_pair(A,rc));
-                auto lc = B->getLeftChild().lock();
+                auto lc = B->getLeftChild();
                 qstack.push(std::make_pair(A,lc));
             }
             else if( B->isLeaf() )
             {
-                auto rc = A->getRightChild().lock();
+                auto rc = A->getRightChild();
                 qstack.push(std::make_pair(rc,B));
-                auto lc = A->getLeftChild().lock();
+                auto lc = A->getLeftChild();
                 qstack.push(std::make_pair(lc,B));
             }
             else
             {
                 if( A->volume() < B->volume() )
                 {
-                    auto rc = B->getRightChild().lock();
+                    auto rc = B->getRightChild();
                     qstack.push(std::make_pair(A,rc));
-                    auto lc = B->getLeftChild().lock();
+                    auto lc = B->getLeftChild();
                     qstack.push(std::make_pair(A,lc));
                 }
                 else
                 {
-                    auto rc = A->getRightChild().lock();
+                    auto rc = A->getRightChild();
                     qstack.push(std::make_pair(rc,B));
-                    auto lc = A->getLeftChild().lock();
+                    auto lc = A->getLeftChild();
                     qstack.push(std::make_pair(lc,B));
                 }
             }
@@ -78,5 +78,3 @@ static std::stack<NodePair> queryProximity(
     return proximity_stack;
 }
 
-
-*/

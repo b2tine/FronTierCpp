@@ -24,7 +24,7 @@ const double BVH_Node::volume() const noexcept
     return bv.volume();
 }
         
-const BVH_Node* BVH_Node::getParent() const noexcept
+BVH_Node* BVH_Node::getParent() const noexcept
 {
     return parent;
 }
@@ -46,18 +46,18 @@ void BVH_Node::expandBV(double pad)
     bv.expand(pad);
 }
 
-const BVH_Node* const BVH_Node::getLeftChild() const noexcept
+BVH_Node* BVH_Node::getLeftChild() const noexcept
 {
     return {};
 }
 
-const BVH_Node* const BVH_Node::getRightChild() const noexcept
+BVH_Node* BVH_Node::getRightChild() const noexcept
 {
     return {};
 }
 
 void BVH_Node::setChildren(
-        BVH_Node* const lc, BVH_Node* const rc) noexcept
+        BVH_Node* lc, BVH_Node* rc) noexcept
 {
     return;
 }
@@ -66,8 +66,7 @@ void BVH_Node::setChildren(
 ////////         InternalNode Methods           ////////
 ///////////////////////////////////////////////////////
 
-//TODO: Fix this constructor; never will get nullptr.
-InternalNode::InternalNode(BVH_Node* const lc, BVH_Node* const rc)
+InternalNode::InternalNode(BVH_Node* lc, BVH_Node* rc)
 {
     /*
     if( rc == nullptr )
@@ -99,30 +98,30 @@ void InternalNode::expandBV(double pad) noexcept
 }
 
 void InternalNode::setChildren(
-        BVH_Node* const lc, BVH_Node* const rc) noexcept
+        BVH_Node* lc, BVH_Node* rc) noexcept
 {
     setLeftChild(lc);
     setRightChild(rc);
 }
 
-void InternalNode::setLeftChild(BVH_Node* const lc) noexcept
+void InternalNode::setLeftChild(BVH_Node* lc) noexcept
 {
     lc->setParent(this);
     left = lc;
 }
 
-void InternalNode::setRightChild(BVH_Node* const rc) noexcept
+void InternalNode::setRightChild(BVH_Node* rc) noexcept
 {
     rc->setParent(this);
     right = rc;
 }
 
-const BVH_Node* const InternalNode::getLeftChild() const noexcept
+BVH_Node* InternalNode::getLeftChild() const noexcept
 {
     return left;
 }
 
-const BVH_Node* const InternalNode::getRightChild() const noexcept
+BVH_Node* InternalNode::getRightChild() const noexcept
 {
     return right;
 }

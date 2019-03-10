@@ -174,11 +174,10 @@ TEST_F(DISABLED_BVH_NodeTests, InternalNodePrototypeFactoryTest)
 }
 
 
-TEST_F(DISABLED_BVH_NodeTests, InternalNodeCtorDeathTest)
+TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
 {
-    //std::shared_ptr<LeafNode> l6;
-    //std::shared_ptr<InternalNode> p;
-    //ASSERT_DEATH(p = std::make_shared<InternalNode>(l1,l6),"");
+    BVH_Node* l6;
+    ASSERT_DEATH(auto p = new InternalNode(l1,l6),"");
 }
 
 

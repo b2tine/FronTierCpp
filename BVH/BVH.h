@@ -21,14 +21,14 @@ class BVH
        
         //TODO: consider unique_ptr for root
         BVH_Node* root{nullptr};
-        std::vector<BVH_Node* const> leaves;
+        std::vector<BVH_Node*> leaves;
         
         int sort_iter{0};
         BV_HilbertSortingTraits hst;
         Point_Node_Vector children;
 
         void buildHeirarchy();
-        void constructLeafNodes(const INTERFACE* const intfc);
+        void constructLeafNodes(INTERFACE* intfc);
         void constructParentNodes();
         void constructRootNode();
         //void clearVectors();
@@ -45,13 +45,12 @@ class BVH
         //1.0e-06 is default for kinetic collision boxes.
         static double proximityPad;
         
-        static BVH_Node* createLeafNode(Hse* const h);
-        static BVH_Node* createInternalNode(
-                BVH_Node* const lc, BVH_Node* const rc);
+        static BVH_Node* createLeafNode(Hse* h);
+        static BVH_Node* createInternalNode(BVH_Node* lc, BVH_Node* rc);
 
     public:
 
-        explicit BVH(const Front* const);
+        explicit BVH(Front* front);
               
         BVH() = default;
         ~BVH() = default;
@@ -61,17 +60,17 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        const BVH_Node* const getRoot() const noexcept;
+        BVH_Node* getRoot() const noexcept;
         const bool isEmpty() const noexcept; 
 
         //temp functions for testing/debugging
-        void buildTester(std::vector<Hse* const>);
+        void buildTester(std::vector<Hse*>);
             //void writeHilbertCurveFile(std::string, int) const;
 };
 
 
 
-const bool checkProximity(const BVH* const , const BVH* const);
+const bool checkProximity(BVH* A, BVH* B);
 
 
 #endif
