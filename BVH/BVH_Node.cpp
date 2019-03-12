@@ -40,6 +40,11 @@ const Hse* const BVH_Node::getHse() const noexcept
     return {};
 }
 
+const bool BVH_Node::hasAdjacentHse(BVH_Node* node) const noexcept
+{
+    return false;
+}
+
 //LeafNode uses these default implementations
 void BVH_Node::expandBV(double pad)
 {
@@ -68,21 +73,6 @@ void BVH_Node::setChildren(
 
 InternalNode::InternalNode(BVH_Node* lc, BVH_Node* rc)
 {
-    /*
-    if( rc == nullptr )
-    {
-        assert( lc != nullptr );
-        setBV(BoundingVolume(lc->getBV()));
-        setLeftChild(lc);
-    }
-    else if( lc == nullptr )
-    {
-        assert( rc != nullptr );
-        setBV(BoundingVolume(rc->getBV()));
-        setRightChild(rc);
-
-    }
-    */
     setBV(BoundingVolume(lc->getBV(),rc->getBV()));
     setChildren(lc,rc);
 }
@@ -144,5 +134,12 @@ const bool LeafNode::isLeaf() const noexcept
 const Hse* const LeafNode::getHse() const noexcept
 {
     return hse;
+}
+
+const bool LeafNode::hasAdjacentHse(BVH_Node* node) const noexcept
+{
+    if( !node->isLeaf() )
+        return false;
+    return areAdjacentHse(this->getHse(),node->getHse());
 }
 

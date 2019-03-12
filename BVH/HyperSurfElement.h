@@ -42,8 +42,9 @@ class Hse
         virtual double min_coord(int i) const = 0;
         virtual const POINT* const Point_of_hse(int i) const = 0;
         
-        //void setTag(HseTag Tag);
+        const bool isAdjacentOrSelf(const Hse* const H) const noexcept;
         const HseTag getTag() const noexcept;
+        //void setTag(HseTag Tag);
 };
 
 

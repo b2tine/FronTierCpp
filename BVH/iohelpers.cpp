@@ -35,18 +35,26 @@ void createDirectory(std::string new_dir)
         mkdirTree(new_dir, "");
 }
 
-/*
-void BVH::writeHilbertCurveFile(std::string outdir, int level) const
+void BVH::writeHilbertCurveFiles(int level) const
 {
-    auto datavec = getSortedLeafData();
-    int num_hse = datavec.size();
+    assert(outdir != "nowrite");
 
-    outdir += "/";
+    std::string outputdir = outdir + "/";
+    std::string lvlid = std::string(2,'0').append(std::to_string(level));
+    std::string lvldir = outputdir + "level-" + lvlid;
+    lvldir += "/";
+
+    createDirectory(lvldir);
+
     std::string geomdir("OOGL/");
-    createDirectory(outdir + geomdir);
+    createDirectory(lvldir + geomdir);
+
+    int num_hse = children.size();
+    //auto datavec = getSortedLeafData();
+    //int num_hse = datavec.size();
 
     //Write geomview OOGL file for the curve
-    std::ofstream outfile(outdir + geomdir + "hilbert_curve.vect");
+    std::ofstream outfile(lvldir + geomdir + "hilbert_curve.vect");
     outfile << "VECT\n\n";
     //num_polylines total_num_vertices num_colors
     outfile << 1 << " " << num_hse << " " << 1 << "\n\n";
@@ -57,7 +65,7 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
     //coordinates of curve vertices (same as the points/boxcenters)
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point p = datavec[i].first;
+        CGAL_Point p = children[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n";
@@ -68,7 +76,7 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 
     //Write geomview OOGL file for the points of the hilbert
     //curve so we can display in a different color
-    outfile.open(outdir + geomdir + "hilbert_curve_points.vect");
+    outfile.open(lvldir + geomdir + "hilbert_curve_points.vect");
     outfile << "VECT\n\n";
     //num_polylines total_num_vertices num_colors
     outfile << num_hse << " " << num_hse << " " << 1 << "\n\n";
@@ -85,7 +93,7 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
     //coordinates of the curve points
     for( int i = 0; i < num_hse; i++ )
     {
-        CGAL_Point p = datavec[i].first;
+        CGAL_Point p = children[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
     }
     outfile << "\n"; 
@@ -94,20 +102,20 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
     outfile.close();
 
 
-    //write sorted bboxes to geomview OOOGL files
+    //write sorted bboxes to geomview OOGL files
     char geomfile[100];
     for( int i = 0; i < num_hse; i++ )
     {
         sprintf(geomfile, "aabb%05d.bbox", i);
-        outfile.open(outdir + geomdir + geomfile);
+        outfile.open(lvldir + geomdir + geomfile);
         outfile << "BBOX\n";
 
-        BV_Point lcoords = datavec[i].second->getBV().lower;
+        BV_Point lcoords = children[i].second->getBV().lower;
         for( int k = 0; k < 3; k++ )
             outfile << lcoords[k] << " ";
         outfile << "\n";
 
-        BV_Point ucoords = datavec[i].second->getBV().upper;
+        BV_Point ucoords = children[i].second->getBV().upper;
         for( int k = 0; k < 3; k++ )
             outfile << ucoords[k] << " ";
         outfile.close();
@@ -115,7 +123,7 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 
 
     //OOGL file to display mesh + curve + points
-    outfile.open(outdir + "hcurve.list");
+    outfile.open(lvldir + "hcurve.list");
     outfile << "LIST\n\n";
 
     //input mesh
@@ -137,7 +145,7 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 
 
     //OOGL file display the bounding boxes + curve + points
-    outfile.open(outdir + "hcurve_bbox.list");
+    outfile.open(lvldir + "hcurve_bbox.list");
     outfile << "LIST\n\n";
 
     //hilbert curve
@@ -163,5 +171,4 @@ void BVH::writeHilbertCurveFile(std::string outdir, int level) const
 
 }
 
-*/
 

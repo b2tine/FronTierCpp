@@ -89,12 +89,12 @@ int main(int argc, char* argv[])
     sprintf(dname,"%s/geomview-interface",out_name);
     gview_plot_interface(dname,front.interf);
     
-    BVH bvh(&front);
+    BVH bvh(&front,std::string(out_name));
 
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
 
-    //bvh.writeHilbertCurveFile(std::string(out_name));
+    //bvh.writeHilbertCurveFile(std::string(out_name),0);
 
     clean_up(0);
 }

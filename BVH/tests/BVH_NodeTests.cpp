@@ -108,71 +108,12 @@ using DISABLED_BVH_NodeTests = BVH_NodeTests;
 
 
 
-TEST_F(DISABLED_BVH_NodeTests, CheckAdjacencyOfLeafNodeHses)
+TEST_F(BVH_NodeTests, CheckIfLeafNodeIsSelfOrHasAdjacentHse)
 {
-    //ASSERT_TRUE(l1->hasAdjacenctHSE(l2));
+    ASSERT_TRUE(l1->hasAdjacentHse(l1));
+    ASSERT_TRUE(l1->hasAdjacentHse(l2));
+    ASSERT_FALSE(l2->hasAdjacentHse(l5));
 }
-
-TEST_F(DISABLED_BVH_NodeTests, SingleChildInternalNodeCtor)
-{
-    /*
-    std::shared_ptr<BVH_Node> p3 =
-        std::make_shared<InternalNode>(l5,l5);
-    p3->setChildren(l5,l5);
-    ASSERT_EQ(p3->getLeftChild().lock(),l5);
-    ASSERT_EQ(p3->getRightChild().lock(),l5);
-    ASSERT_EQ(l5->getParent().lock(),p3);
-
-    BoundingVolume bvp3 = p3->getBV();
-    ASSERT_DOUBLE_EQ(bvp3.lower[0],-1.0);
-    ASSERT_DOUBLE_EQ(bvp3.lower[1],-1.0);
-    ASSERT_DOUBLE_EQ(bvp3.lower[2],-1.0);
-    ASSERT_DOUBLE_EQ(bvp3.upper[0],0.0);
-    ASSERT_DOUBLE_EQ(bvp3.upper[1],0.0);
-    ASSERT_DOUBLE_EQ(bvp3.upper[2],0.0);
-    */
-}
-
-TEST_F(DISABLED_BVH_NodeTests, InternalNodePrototypeFactoryTest)
-{
-    /*
-    std::shared_ptr<BVH_Node> p1 =
-        std::make_shared<InternalNode>(l1,l2);
-    p1->setChildren(l1,l2);
-    
-    std::shared_ptr<BVH_Node> p2 =
-        std::make_shared<InternalNode>(l3,l4);
-    p2->setChildren(l3,l4);
-
-    std::shared_ptr<BVH_Node> gp =
-        std::make_shared<InternalNode>(p1,p2);
-    gp->setChildren(p1,p2);
-    
-    ASSERT_FALSE(p1->isLeaf());
-    ASSERT_EQ(p1->getLeftChild().lock(),l1);
-    ASSERT_EQ(p1->getRightChild().lock(),l2);
-    ASSERT_EQ(l1->getParent().lock(),p1);
-    ASSERT_EQ(l2->getParent().lock(),p1);
-
-    BoundingVolume bvp1 = p1->getBV();
-    ASSERT_DOUBLE_EQ(bvp1.lower[0],0.0);
-    ASSERT_DOUBLE_EQ(bvp1.upper[0],1.0);
-
-    BoundingVolume bvp2 = p2->getBV();
-    ASSERT_DOUBLE_EQ(bvp2.lower[1],-1.0);
-    ASSERT_DOUBLE_EQ(bvp2.upper[1],1.0);
-
-    ASSERT_EQ(gp->getLeftChild().lock(),p1);
-    ASSERT_EQ(gp->getRightChild().lock(),p2);
-    ASSERT_EQ(p1->getParent().lock(),gp);
-    ASSERT_EQ(p2->getParent().lock(),gp);
-
-    BoundingVolume bvgp = gp->getBV();
-    ASSERT_DOUBLE_EQ(bvgp.lower[0],-1.0);
-    ASSERT_DOUBLE_EQ(bvgp.upper[2],1.0);
-    */
-}
-
 
 TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
 {

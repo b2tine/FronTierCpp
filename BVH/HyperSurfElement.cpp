@@ -8,18 +8,18 @@ Hse::Hse(HseTag Tag)
     : tag{Tag}
 {}
 
-/*
-void Hse::setTag(HseTag Tag)
-{
-    tag = Tag;
-}
-*/
 
 const HseTag Hse::getTag() const noexcept
 {
     return tag;
 }
 
+/*
+void Hse::setTag(HseTag Tag)
+{
+    tag = Tag;
+}
+*/
 //////////////////////////////////////////////////
 //              HsBond Methods                  //
 //////////////////////////////////////////////////
@@ -99,7 +99,7 @@ double HsTri::max_coord(int dim) const
 //////////////////////////////////////////////////////////
 
 
-//adjacent elements have at least 1 common point
+//adjacent elements (includes self) have at least 1 common point,
 const bool areAdjacentHse(const Hse* const A, const Hse* const B)
 {
     assert( A && B );
@@ -118,4 +118,3 @@ const bool areAdjacentHse(const Hse* const A, const Hse* const B)
     }
     return false;
 }
-

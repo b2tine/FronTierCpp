@@ -19,7 +19,7 @@ class BVH
 {
     private:
        
-        //TODO: consider unique_ptr for root
+        //TODO: unique_ptr for root
         BVH_Node* root{nullptr};
         std::vector<BVH_Node*> leaves;
         
@@ -39,6 +39,9 @@ class BVH
         const Point_Node_Vector getLeafSortingData() const;
         const Point_Node_Vector getSortedLeafData() const;
 
+        std::string outdir{"nowrite"};
+        void writeHilbertCurveFiles(int level) const;
+
         //hard coded in BVH.cpp, where it must be initialized, for now;
         //too early to tell where/how this should be set.
         //1.0e-03 is default for static proximity boxes, and
@@ -51,6 +54,8 @@ class BVH
     public:
 
         explicit BVH(Front* front);
+        //TODO: make a diagnostic/visualization subclass
+        BVH(Front* front, std::string out_name);
               
         BVH() = default;
         ~BVH() = default;
@@ -60,17 +65,16 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        BVH_Node* getRoot() const noexcept;
+        BVH_Node* const getRoot() const noexcept;
         const bool isEmpty() const noexcept; 
 
         //temp functions for testing/debugging
         void buildTester(std::vector<Hse*>);
-            //void writeHilbertCurveFile(std::string, int) const;
 };
 
 
 
-const bool checkProximity(BVH* A, BVH* B);
+const bool checkProximity(const BVH* A, const BVH* B);
 
 
 #endif

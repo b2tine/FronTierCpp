@@ -3,10 +3,10 @@
 using NodePair = std::pair<BVH_Node*,BVH_Node*>;
 
 static std::stack<NodePair> queryProximity(
-        BVH_Node* nodeA, BVH_Node* nodeB);
+        BVH_Node* const nodeA, BVH_Node* const nodeB);
 
 
-const bool checkProximity(BVH* A, BVH* B)
+const bool checkProximity(const BVH* A, const BVH* B)
 {
     assert(A && B);
     BVH_Node* rootA = A->getRoot();
@@ -22,8 +22,8 @@ const bool checkProximity(BVH* A, BVH* B)
 }
 
 std::stack<NodePair> queryProximity(
-        BVH_Node* nodeA,
-        BVH_Node* nodeB)
+        BVH_Node* const nodeA,
+        BVH_Node* const nodeB)
 {
     std::stack<NodePair> qstack;
     qstack.push(std::make_pair(nodeA,nodeB));
@@ -39,6 +39,8 @@ std::stack<NodePair> queryProximity(
         {
             if( A->isLeaf() && B->isLeaf() )
             {
+                if( A->hasAdjacentHse(B) )
+                    continue;
                 proximity_stack.push(std::make_pair(A,B));
             }
             else if( A->isLeaf() )

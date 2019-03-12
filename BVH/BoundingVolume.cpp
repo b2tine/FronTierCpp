@@ -22,6 +22,7 @@ AABB::AABB(Hse* h)
 AABB::AABB(const AABB& A, const AABB& B)
     : AABB()
 {
+    assert(A.volume() > 0 && B.volume() > 0);
     for( int i = 0; i < 3; ++i )
     {
         lower[i] = std::min(A.lower[i],B.lower[i]);
@@ -34,7 +35,6 @@ AABB::AABB(const AABB& A, const AABB& B)
 //{
 //    return BV_Type::AABB;
 //}
-//
 
 const CGAL_Point AABB::Centroid() const
 {

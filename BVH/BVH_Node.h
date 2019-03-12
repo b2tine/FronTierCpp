@@ -36,11 +36,11 @@ class BVH_Node
         const double volume() const noexcept;
 
         virtual const Hse* const getHse() const noexcept;
+        virtual const bool hasAdjacentHse(BVH_Node*) const noexcept;
         virtual void expandBV(double);
 
-        void setParent(BVH_Node* p) noexcept;
-        virtual void setChildren(BVH_Node* lc,
-                                 BVH_Node* rc) noexcept;
+        void setParent(BVH_Node* const p) noexcept;
+        virtual void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept;
 
         BVH_Node* getParent() const noexcept;
         virtual BVH_Node* getLeftChild() const noexcept;
@@ -84,7 +84,7 @@ class LeafNode : public BVH_Node
 {
     private:
 
-        //TODO: consider unique_ptr<Hse> hse
+        //TODO: unique_ptr<Hse> hse
         Hse* hse{nullptr};
 
     public:
@@ -100,6 +100,7 @@ class LeafNode : public BVH_Node
 
         const bool isLeaf() const noexcept override;
         const Hse* const getHse() const noexcept override;
+        const bool hasAdjacentHse(BVH_Node*) const noexcept override;
 };
 
 

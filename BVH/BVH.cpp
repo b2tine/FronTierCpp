@@ -13,7 +13,7 @@ const bool BVH::isEmpty() const noexcept
     return (!this->root) ? true : false;
 }
 
-BVH_Node* BVH::getRoot() const noexcept
+BVH_Node* const BVH::getRoot() const noexcept
 {
     return root;
 }
@@ -32,34 +32,41 @@ BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
     return new InternalNode(lc,rc);
 }
 
-
 BVH::BVH(Front* front)
 {
     constructLeafNodes(front->interf);
     buildHeirarchy();
 }
 
+//TODO: make a diagnostic/visualization subclass
+BVH::BVH(Front* front, std::string out_name)
+    : outdir{out_name}
+{
+    constructLeafNodes(front->interf);
+    buildHeirarchy();
+}
 
 void BVH::constructLeafNodes(INTERFACE* intfc)
 {
-	SURFACE** s;
-	CURVE** c;
+	SURFACE** surf;
+	CURVE** curve;
 	TRI *tri;
-	BOND *b;
+	BOND *bond;
 	
     int n_tri = 0;
     int n_bond = 0;
 
-    intfc_surface_loop(intfc,s)
+    //TODO: Need factory for Hses'?
+    intfc_surface_loop(intfc,surf)
 	{
-	    if (is_bdry(*s)) continue;
+	    if (is_bdry(*surf)) continue;
 	    
-        surf_tri_loop(*s,tri)
+        surf_tri_loop(*surf,tri)
 	    {
             //TODO: what other wave_types/boundaries need
             //      to be considered?
-            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
-                    wave_type(*s) == NEUMANN_BOUNDARY)
+            if (wave_type(*surf) == MOVABLE_BODY_BOUNDARY || 
+                    wave_type(*surf) == NEUMANN_BOUNDARY)
             {
                 Hse* h = new HsTri(tri,HseTag::RIGIDBODY); 
                 leaves.push_back(BVH::createLeafNode(h));
@@ -75,13 +82,13 @@ void BVH::constructLeafNodes(INTERFACE* intfc)
 	    }
 	}
 
-	intfc_curve_loop(intfc,c)
+	intfc_curve_loop(intfc,curve)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
-	    curve_bond_loop(*c,b)
-	    {
-            leaves.push_back(BVH::createLeafNode(
-                        new HsBond(b,HseTag::STRING)));
+	    if (hsbdry_type(*curve) != STRING_HSBDRY) continue; 
+	    curve_bond_loop(*curve,bond)
+	    {                        
+            Hse* b = new HsBond(bond,HseTag::STRING);
+            leaves.push_back(BVH::createLeafNode(b));
 		    n_bond++;
 	    }
 	}
@@ -142,8 +149,6 @@ void BVH::sortChildren()
     assert( !children.empty() );
     CGAL::hilbert_sort(children.begin(),children.end(),hst);
     sort_iter++;
-    //TODO: add option and function to write the children to
-    //      output file at each level of the heirarchy.
 }
 
 void BVH::constructParentNodes()
@@ -153,6 +158,9 @@ void BVH::constructParentNodes()
     {
         std::reverse(children.begin(),children.end());
     }
+
+    if( outdir != "nowrite" )
+        writeHilbertCurveFiles(sort_iter);
 
     Point_Node_Vector parents;
     parents.reserve(children.size()/2 + 1);
@@ -187,6 +195,9 @@ void BVH::constructRootNode()
     auto lc = children[0].second;
     auto rc = children[1].second;
     root = BVH::createInternalNode(lc,rc);
+    
+    if( outdir != "nowrite" )
+        writeHilbertCurveFiles(sort_iter);
 }
 
 
