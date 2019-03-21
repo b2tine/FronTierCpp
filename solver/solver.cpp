@@ -310,9 +310,9 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
-	MatNullSpaceRemove(nullsp,b,PETSC_NULL);
-
+    KSPSetNullSpace(ksp,nullsp);
+	MatNullSpaceRemove(nullsp,b);
+	//MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 	
     KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
@@ -350,7 +350,8 @@ void PETSc::Solve_withPureNeumann_HYPRE(void)
 
         MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
         KSPSetNullSpace(ksp,nullsp);
-        MatNullSpaceRemove(nullsp,b,PETSC_NULL);
+        MatNullSpaceRemove(nullsp,b);
+        //MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 
         KSPSetType(ksp,KSPBCGS);
         KSPSetOperators(ksp,A,A);
@@ -406,7 +407,7 @@ void PETSc::Print_A(const char *filename)
         ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
         PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
         MatView(A, viewer);
-        PetscViewerDestroy(viewer);
+        PetscViewerDestroy(&viewer);
 }	/* end Print_A */
 
 void PETSc::Print_b(const char *filename)
