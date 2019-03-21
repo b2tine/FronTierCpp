@@ -8,7 +8,10 @@
 #include <FronTier.h>
 #include <vector>
 #include <petscksp.h>
-#include <petscmg.h>
+
+//#include <petscmg.h>
+#include <petscmat.h>
+
 #include <petscpc.h>
 #include <assert.h>
 

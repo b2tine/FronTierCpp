@@ -74,12 +74,14 @@ void PETSc::Create(
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-	MatCreateMPIAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+	MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
 				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);	
-	ierr = PetscObjectSetName((PetscObject) A, "A");
+	/*MatCreateMPIAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);*/
+	
+    ierr = PetscObjectSetName((PetscObject) A, "A");
 	ierr = MatSetFromOptions(A);		
 	
-	// b
 	ierr = VecCreate(PETSC_COMM_WORLD, &b);	
 	ierr = PetscObjectSetName((PetscObject) b, "b");
 	ierr = VecSetSizes(b, n, PETSC_DECIDE);	
@@ -95,27 +97,32 @@ PETSc::~PETSc()
 {
 	if(x!=NULL)
 	{
-		VecDestroy(x);
+		VecDestroy(&x);
+		//VecDestroy(x);
 		x = NULL;
 	}
 	if(b!=NULL)
 	{
-		VecDestroy(b);
+		VecDestroy(&b);
+		//VecDestroy(b);
 		b = NULL;
 	}
 	if(A!=NULL)
 	{
-		MatDestroy(A);
+		MatDestroy(&A);
+		//MatDestroy(A);
 		A = NULL;
 	}
 	if(ksp!=NULL)
 	{
-		KSPDestroy(ksp);
+		KSPDestroy(&ksp);
+		//KSPDestroy(ksp);
 		ksp = NULL;
 	}
 	if(nullsp!=NULL)
 	{
-		MatNullSpaceDestroy(nullsp);
+		MatNullSpaceDestroy(&nullsp);
+		//MatNullSpaceDestroy(nullsp);
 		nullsp = NULL;
 	}
 }
