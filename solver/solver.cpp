@@ -76,8 +76,6 @@ void PETSc::Create(
 	
 	MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
 				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);	
-	/*MatCreateMPIAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);*/
 	
     ierr = PetscObjectSetName((PetscObject) A, "A");
 	ierr = MatSetFromOptions(A);		
@@ -98,31 +96,26 @@ PETSc::~PETSc()
 	if(x!=NULL)
 	{
 		VecDestroy(&x);
-		//VecDestroy(x);
 		x = NULL;
 	}
 	if(b!=NULL)
 	{
 		VecDestroy(&b);
-		//VecDestroy(b);
 		b = NULL;
 	}
 	if(A!=NULL)
 	{
 		MatDestroy(&A);
-		//MatDestroy(A);
 		A = NULL;
 	}
 	if(ksp!=NULL)
 	{
 		KSPDestroy(&ksp);
-		//KSPDestroy(ksp);
 		ksp = NULL;
 	}
 	if(nullsp!=NULL)
 	{
 		MatNullSpaceDestroy(&nullsp);
-		//MatNullSpaceDestroy(nullsp);
 		nullsp = NULL;
 	}
 }
@@ -254,11 +247,11 @@ void PETSc::Solve_GMRES(void)
 	stop_clock("Assembly matrix and vector");
 
 
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("KSPSolve");
         KSPSolve(ksp,b,x);
@@ -290,15 +283,15 @@ void PETSc::Solve_BCGSL(void)
 	stop_clock("Assembly matrix and vector");
 
 
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        KSPSetType(ksp,KSPBCGSL);
+    KSPSetOperators(ksp,A,A);
+    KSPSetType(ksp,KSPBCGSL);
 	KSPBCGSLSetEll(ksp,2);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
+    KSPSolve(ksp,b,x);
 	stop_clock("KSPSolve");
 }
 
@@ -321,12 +314,12 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 	MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 
 	
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        
+    KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
+
 	start_clock("Petsc Solve in pure neumann solver");
         KSPSolve(ksp,b,x);
 	stop_clock("Petsc Solve in pure neumann solver");
@@ -360,7 +353,7 @@ void PETSc::Solve_withPureNeumann_HYPRE(void)
         MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 
         KSPSetType(ksp,KSPBCGS);
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+        KSPSetOperators(ksp,A,A);
         KSPGetPC(ksp,&pc);
         PCSetType(pc,PCHYPRE);
         PCHYPRESetType(pc,"boomeramg");
@@ -389,15 +382,15 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
+    KSPSetNullSpace(ksp,nullsp);
 	
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(ksp,A,A);
         
 	KSPSetType(ksp,KSPBCGSL);
 	KSPBCGSLSetEll(ksp,2);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("Petsc Solve in pure neumann solver");
         KSPSolve(ksp,b,x);
@@ -464,29 +457,29 @@ extern void viewTopVariable(
 #if defined HAVE_HYPRE
 void PETSc::Solve_HYPRE(void)
 {
-        PC pc;
-        start_clock("Assemble matrix and vector");
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    PC pc;
+    start_clock("Assemble matrix and vector");
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-        ierr = VecAssemblyBegin(x);
-        ierr = VecAssemblyEnd(x);
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
 
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
-        stop_clock("Assembly matrix and vector");
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
+    stop_clock("Assembly matrix and vector");
 
 	KSPSetType(ksp,KSPBCGS);
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        KSPGetPC(ksp,&pc);
+    KSPSetOperators(ksp,A,A);
+    KSPGetPC(ksp,&pc);
 	PCSetType(pc,PCHYPRE);
-        PCHYPRESetType(pc,"boomeramg");
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    PCHYPRESetType(pc,"boomeramg");
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
-        start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
-        stop_clock("KSPSolve");
+    start_clock("KSPSolve");
+    KSPSolve(ksp,b,x);
+    stop_clock("KSPSolve");
 
 }
 #endif // defined HAVE_HYPRE
@@ -494,26 +487,26 @@ void PETSc::Solve_HYPRE(void)
 void PETSc::Solve_LU(void)
 {
 	PC pc;
-        start_clock("Assemble matrix and vector");
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    start_clock("Assemble matrix and vector");
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-        ierr = VecAssemblyBegin(x);
-        ierr = VecAssemblyEnd(x);
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
 
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
-        stop_clock("Assembly matrix and vector");
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
+    stop_clock("Assembly matrix and vector");
 
 
-        KSPSetType(ksp,KSPPREONLY);
+    KSPSetType(ksp,KSPPREONLY);
 	KSPGetPC(ksp,&pc);
 	PCSetType(pc,PCLU);
-        KSPSetOperators(ksp,A,A,SAME_PRECONDITIONER);
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetOperators(ksp,A,A);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
-        start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
-        stop_clock("KSPSolve");
+    start_clock("KSPSolve");
+    KSPSolve(ksp,b,x);
+    stop_clock("KSPSolve");
 } /*direct solver, usually give exact solution for comparison*/

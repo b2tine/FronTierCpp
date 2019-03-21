@@ -15,14 +15,15 @@
 #include <petscpc.h>
 #include <assert.h>
 
-enum {
-        NO_PDE_BOUNDARY                 = 0,
-        CONST_V_PDE_BOUNDARY            = 1,
-        CONST_P_PDE_BOUNDARY,
-        NEUMANN_PDE_BOUNDARY,
-        DIRICHLET_PDE_BOUNDARY,
-        MOVING_BOUNDARY,
-        MIXED_PDE_BOUNDARY
+enum
+{
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
 };
 
 //TODO: use pure virtuals instead of no-ops
