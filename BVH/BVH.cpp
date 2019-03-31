@@ -40,21 +40,38 @@ BVH::BVH(Front* front, bool draw)
     buildHeirarchy();
 }
 
+void BVH::constructLeafNodes(std::vector<Hse*> hseList)
+{
+    assert(leaves.empty());
+    std::vector<Hse*>::iterator it = hseList.begin();
+    for( it; it != hseList.end(); ++it )
+    {
+        BVH_Node* leaf = BVH::createLeafNode(*it);
+        leaves.push_back(leaf);
+    }
+}
+
 void BVH::constructLeafNodes(INTERFACE* intfc)
 {
-	SURFACE** surf;
-	CURVE** curve;
-	TRI *tri;
-	BOND *bond;
-	
-    int n_tri = 0;
-    int n_bond = 0;
+	SURFACE** surfaces = intfc->surfaces;
+    processSurfaces(surfaces);
 
-    //TODO: Need factory for Hses'?
-    intfc_surface_loop(intfc,surf)
+    CURVE** curves = intfc->curves;
+    processCurves(curves);
+}
+
+//TODO: Would a Hse factory provide any real benefit?
+//      At this point I don't think so, but keep
+//      the option open. Could become important for
+//      future generalization of the BVH and or
+//      Collision Solver classes and internal algorithms
+void BVH::processSurfaces(SURFACE** surf)
+{
+    for( surf; surf && *surf; ++surf )
 	{
 	    if (is_bdry(*surf)) continue;
 	    
+        TRI* tri;
         surf_tri_loop(*surf,tri)
 	    {
             //TODO: what other wave_types/boundaries need
@@ -72,27 +89,27 @@ void BVH::constructLeafNodes(INTERFACE* intfc)
                 Hse* h = new HsTri(tri,HseTag::FABRIC); 
                 leaves.push_back(BVH::createLeafNode(h));
             }
-            n_tri++;
+
+            num_tris++;
 	    }
 	}
+}
 
-	intfc_curve_loop(intfc,curve)
+void BVH::processCurves(CURVE** curve)
+{
+	for( curve; curve && *curve; ++curve ) 
 	{
-	    if (hsbdry_type(*curve) != STRING_HSBDRY) continue; 
+	    if (hsbdry_type(*curve) != STRING_HSBDRY)
+            continue; 
+
+        BOND* bond;
 	    curve_bond_loop(*curve,bond)
 	    {                        
             Hse* b = new HsBond(bond,HseTag::STRING);
             leaves.push_back(BVH::createLeafNode(b));
-		    n_bond++;
+		    num_bonds++;
 	    }
 	}
-
-	if( debugging("BVH") )
-    {
-	    printf("%d num tris, %d num bonds\n",n_tri,n_bond);
-	    printf("%lu total elements\n",leaves.size());
-	}
-
 }
 
 void BVH::buildHeirarchy()
@@ -137,12 +154,14 @@ const Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
+/*
 const Point_Node_Vector BVH::getSortedLeafData() const
 {
     Point_Node_Vector leafdata(getLeafSortingData());
     CGAL::hilbert_sort(leafdata.begin(),leafdata.end(),hst);
     return leafdata;
 }
+*/
 
 void BVH::sortChildren()
 {
@@ -175,8 +194,8 @@ void BVH::constructParentNodes()
         parents.push_back(bvctr_node_pair);
     }
 
-    //if an odd number of children,
-    //the unpaired node moves up to parent level
+    //if an odd number of children, move the unpaired
+    //node up to parent level unchanged
     if( children.size() % 2 != 0 )
     {
         auto oc = children[children.size()-1].second;
@@ -204,33 +223,4 @@ void BVH::setDrawDirectory(std::string dir)
 {
     drawdir = dir;
 }
-
-
-//Testing functions
-void BVH::constructRootNode()
-{
-    assert( children.size() == 2 );
-    auto lc = children[0].second;
-    auto rc = children[1].second;
-    root = BVH::createInternalNode(lc,rc);
-}
-
-void BVH::buildTester(std::vector<Hse*> hseList)
-{
-    assert(children.empty());
-    std::vector<Hse*>::iterator it = hseList.begin();
-    for( it; it != hseList.end(); ++it )
-    {
-        BVH_Node* leaf = BVH::createLeafNode(*it);
-        Point_with_Node ctr_bv_pair(leaf->getBV().Centroid(),leaf);
-        children.push_back(ctr_bv_pair);
-    }
-
-    while( children.size() > 2 )
-    {
-        constructParentNodes();
-    }
-    constructRootNode();    
-}
-
 

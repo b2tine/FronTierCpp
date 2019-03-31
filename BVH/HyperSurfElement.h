@@ -54,6 +54,7 @@ class HsBond : public Hse
 {
     private:
 
+        //TODO: consider unique_ptr<BOND>
         BOND* bond{nullptr};
 
     public:
@@ -80,6 +81,7 @@ class HsTri : public Hse
 {
     private:
 
+        //TODO: consider unique_ptr<TRI>
         TRI* tri{nullptr};
 
     public:

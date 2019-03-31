@@ -67,7 +67,8 @@ BVH_NodeTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 TESTS += BVHTests
 check_PROGRAMS += BVHTests
 
-BVHTests_SOURCES = BVHTests.cpp
+BVHTests_SOURCES = BVHTests.cpp \
+				   BVH_Tester.h
 
 BVHTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 					   $(top_builddir)/lib/libBVH.la

@@ -1,19 +1,21 @@
 #include <gmock/gmock.h>
-#include <BVH.h>
+#include "BVH_Tester.h"
 
 class BVH_Tests : public testing::Test
 {
     protected:
 
-    static TRI *t1, *t2, *t3, *t4,*t5, *t6, *t7, *t8;
     static POINT *a, *b, *c, *d, *e, *f, *g, *h, *i, *j, *k, *l;
+    //static BOND *s1, *s2, *s3;
+    static TRI *t1, *t2, *t3, *t4,*t5, *t6, *t7, *t8;
 
     static Hse *T1, *T2, *T3, *T4, *T5, *T6, *T7, *T8;
-
-    BVH bvh1;
-    BVH bvh2;
+    
     std::vector<Hse*> hseList1;
     std::vector<Hse*> hseList2;
+
+    BVH_Tester bvh1;
+    BVH_Tester bvh2;
 
     static void SetUpTestCase()
     {
@@ -38,6 +40,9 @@ class BVH_Tests : public testing::Test
         Coords(j)[1] = 1.5;    Coords(k)[1] = 1.0;    Coords(l)[1] = 5.0;
         Coords(j)[2] = 1.0;    Coords(k)[2] = 0.0;    Coords(l)[2] = 0.25;
 
+
+        //TODO: Test construction with HsBonds also
+        
 
         t1 = new TRI;                t2 = new TRI;              t3 = new TRI;
         Point_of_tri(t1)[0] = a;     Point_of_tri(t2)[0] = a;   Point_of_tri(t3)[0] = d;
@@ -79,19 +84,21 @@ class BVH_Tests : public testing::Test
         hseList1.push_back(T2);
         hseList1.push_back(T3);
         hseList1.push_back(T4);
-        bvh1.buildTester(hseList1);
+        bvh1.buildFromHseVector(hseList1);
         
         hseList2.push_back(T5);
         hseList2.push_back(T6);
         hseList2.push_back(T7);
         hseList2.push_back(T8);
-        bvh2.buildTester(hseList2);
+        bvh2.buildFromHseVector(hseList2);
     }
 
+    /*
     void TearDown() override
     {
 
     }
+    */
 
     ~BVH_Tests() = default;
 };

@@ -35,9 +35,10 @@ static void createDirectory(std::string new_dir)
         mkdirTree(new_dir, "");
 }
 
+//TODO: Break out into several functions for reuse/flexibility
 void BVH::writeHilbertCurveFiles(int level) const
 {
-    assert( !drawdir.empty() );
+    assert(!drawdir.empty() && drawbool == true);
 
     std::string outputdir = drawdir + "/";
     std::string lvlid = std::string(2,'0').append(std::to_string(level));
@@ -50,18 +51,21 @@ void BVH::writeHilbertCurveFiles(int level) const
     createDirectory(lvldir + geomdir);
 
     int num_hse = children.size();
-    //auto datavec = getSortedLeafData();
-    //int num_hse = datavec.size();
 
     //Write geomview OOGL file for the curve
     std::ofstream outfile(lvldir + geomdir + "hilbert_curve.vect");
+    
     outfile << "VECT\n\n";
+    
     //num_polylines total_num_vertices num_colors
     outfile << 1 << " " << num_hse << " " << 1 << "\n\n";
+
     //number vertices in each polyline (would be a list if more than one polyline)
     outfile << num_hse << "\n\n";
+    
     //number of colors in each polyline (would be a list if more than one polyline)
     outfile << 1 << "\n";
+    
     //coordinates of curve vertices (same as the points/boxcenters)
     for( int i = 0; i < num_hse; i++ )
     {
@@ -77,19 +81,25 @@ void BVH::writeHilbertCurveFiles(int level) const
     //Write geomview OOGL file for the points of the hilbert
     //curve so we can display in a different color
     outfile.open(lvldir + geomdir + "hilbert_curve_points.vect");
+    
     outfile << "VECT\n\n";
+    
     //num_polylines total_num_vertices num_colors
     outfile << num_hse << " " << num_hse << " " << 1 << "\n\n";
+    
     //number vertices in each polyline (degenerate polyline is a point)
     for( int i = 0; i < num_hse; i++ )
         outfile << 1 << "\n";
     outfile << "\n";
+    
     //first point is assigned the color (indexed by 1) given below
     outfile << 1 << "\n";
+    
     //remaining points get same color as first point (indicated by 0)
     for( int i = 1; i < num_hse; i++ )
         outfile << 0 << "\n";
     outfile << "\n";
+    
     //coordinates of the curve points
     for( int i = 0; i < num_hse; i++ )
     {
@@ -122,6 +132,9 @@ void BVH::writeHilbertCurveFiles(int level) const
     }
 
 
+    //TODO: Generalize this next output routine to the case
+    //      where there is no input mesh provided.
+
     //OOGL file to display mesh + curve + points
     outfile.open(lvldir + "hcurve.list");
     outfile << "LIST\n\n";
@@ -142,6 +155,8 @@ void BVH::writeHilbertCurveFiles(int level) const
     outfile <<  "{ < " << geomdir << "hilbert_curve_points.vect }\n";
     outfile << "\n}\n";
     outfile.close();
+
+    //END TODO
 
 
     //OOGL file display the bounding boxes + curve + points

@@ -6,6 +6,10 @@ static std::stack<NodePair> queryProximity(
         BVH_Node* const nodeA, BVH_Node* const nodeB);
 
 
+//TODO: Return type of this function is temporary for testing.
+//      Need to actually perform distance computations for the
+//      candidate Hse's corresponding to the nodes/BVs returned
+//      in the stack by queryProximity().
 const bool checkProximity(const BVH* A, const BVH* B)
 {
     assert(A && B);
@@ -15,6 +19,7 @@ const bool checkProximity(const BVH* A, const BVH* B)
     
     auto proximity_stack = queryProximity(rootA,rootB);
 
+    //Distance Computations Here
     if( !proximity_stack.empty() )
         return true;
     else

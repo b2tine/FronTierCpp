@@ -19,43 +19,53 @@ class BVH
 {
     private:
        
-        //TODO: consider unique_ptr for root
         BVH_Node* root{nullptr};
-        std::vector<BVH_Node*> leaves;
-        
-        int sort_iter{0};
-        BV_HilbertSortingTraits hst;
-        Point_Node_Vector children;
 
-        void buildHeirarchy();
-        void constructLeafNodes(INTERFACE* intfc);
+        int num_tris{0};
+        int num_bonds{0};
+        std::vector<BVH_Node*> leaves;
+
+        Point_Node_Vector children;
+        BV_HilbertSortingTraits hst;
+        int sort_iter{0};
+
+        void processSurfaces(SURFACE**);
+        void processCurves(CURVE**);
+
         void constructParentNodes();
         void constructRootNode();
-        
+
         void initChildren();
         void sortChildren();
 
         const Point_Node_Vector getLeafSortingData() const;
-        const Point_Node_Vector getSortedLeafData() const;
+        //const Point_Node_Vector getSortedLeafData() const;
 
-        bool drawbool;
+        bool drawbool{false};
         std::string drawdir;
         void drawHeirarchyLevel() const;
         void writeHilbertCurveFiles(int level) const;
 
-        //hard coded in BVH.cpp, where it must be initialized, for now;
-        //too early to tell where/how this should be set.
-        //1.0e-03 is default for static proximity boxes, and
-        //1.0e-06 is default for kinetic collision boxes.
-        static double proximityPad;
+    protected:
+        
+        void buildHeirarchy();
+        void constructLeafNodes(INTERFACE*);
+        void constructLeafNodes(std::vector<Hse*>);
         
         static BVH_Node* createLeafNode(Hse* h);
         static BVH_Node* createInternalNode(BVH_Node* lc, BVH_Node* rc);
 
+        static double proximityPad;
+        //proximityPad is hardcoded in BVH.cpp,
+        //where it must be initialized for now (static member data).
+        //Too early to tell where/how this should be set.
+        //1.0e-03 is default for static proximity boxes, and
+        //1.0e-06 is default for kinetic collision boxes.
+
     public:
 
         explicit BVH(Front* front, bool draw = false);
-              
+
         BVH() = default;
         ~BVH() = default;
 
@@ -69,9 +79,6 @@ class BVH
 
         void setDrawBool(bool draw);
         void setDrawDirectory(std::string dir);
-
-        //temp functions for testing/debugging
-        void buildTester(std::vector<Hse*>);
 };
 
 
