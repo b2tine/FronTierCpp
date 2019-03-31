@@ -27,7 +27,7 @@ static void mkdirTree(std::string sub, std::string dir)
 }
 
 
-void createDirectory(std::string new_dir)
+static void createDirectory(std::string new_dir)
 {
     struct stat st;
     int status = stat(new_dir.c_str(), &st);
@@ -37,9 +37,9 @@ void createDirectory(std::string new_dir)
 
 void BVH::writeHilbertCurveFiles(int level) const
 {
-    assert(outdir != "nowrite");
+    assert( !drawdir.empty() );
 
-    std::string outputdir = outdir + "/";
+    std::string outputdir = drawdir + "/";
     std::string lvlid = std::string(2,'0').append(std::to_string(level));
     std::string lvldir = outputdir + "level-" + lvlid;
     lvldir += "/";
@@ -130,7 +130,7 @@ void BVH::writeHilbertCurveFiles(int level) const
     outfile << "{\n" << "appearance {\n\t+edge +face +transparent\n\t";
     outfile << "material {\n\t\tedgecolor 0 0 1\n\t\t";
     outfile << "ambient 0 0 0.5\n\t\talpha 0.45\n \t\t}\n\n}";
-    outfile << "\n\n{ < input-mesh.off }\n\n}\n\n";
+    outfile << "\n\n{ < ../input-mesh.off }\n\n}\n\n";
 
     //hilbert curve
     outfile << "{\n" << "appearance {linewidth 2}\n\n";

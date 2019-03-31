@@ -27,8 +27,6 @@ void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
 void TriMeshOFF2Surf(INTERFACE*, COMPONENT,
         COMPONENT, Mesh*, SURFACE**);
 
-extern void createDirectory(std::string);
-
 
 int main(int argc, char* argv[])
 {
@@ -55,10 +53,14 @@ int main(int argc, char* argv[])
     outfile << inmesh;
     outfile.close();
 
-    //NOTE: signatureis BVH::BVH(const Front* const front)
     auto Bounds = getInputMeshDimensionsWithPad(&inmesh,2.0);
     auto lb = Bounds.first;
     auto ub = Bounds.second;
+
+    std::cout << "Domain Lower Bound: ";
+    std::cout << lb[0] << " " << lb[1] << " " << lb[2] << "\n";
+    std::cout << "Domain Upper Bound: ";
+    std::cout << ub[0] << " " << ub[1] << " " << ub[2] << "\n";
 
     f_basic.L[0] = lb[0];   f_basic.L[1] = lb[1];    f_basic.L[2] = lb[2];
     f_basic.U[0] = ub[0];   f_basic.U[1] = ub[1];    f_basic.U[2] = ub[2];
@@ -89,12 +91,9 @@ int main(int argc, char* argv[])
     sprintf(dname,"%s/geomview-interface",out_name);
     gview_plot_interface(dname,front.interf);
     
-    BVH bvh(&front,std::string(out_name));
-
+    BVH bvh(&front,true);
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
-
-    //bvh.writeHilbertCurveFile(std::string(out_name),0);
 
     clean_up(0);
 }

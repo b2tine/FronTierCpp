@@ -32,15 +32,9 @@ BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
     return new InternalNode(lc,rc);
 }
 
-BVH::BVH(Front* front)
-{
-    constructLeafNodes(front->interf);
-    buildHeirarchy();
-}
-
-//TODO: make a diagnostic/visualization subclass
-BVH::BVH(Front* front, std::string out_name)
-    : outdir{out_name}
+BVH::BVH(Front* front, bool draw)
+    : drawdir{std::string(OutName(front))},
+    drawbool{draw}
 {
     constructLeafNodes(front->interf);
     buildHeirarchy();
@@ -106,13 +100,19 @@ void BVH::buildHeirarchy()
     assert( !leaves.empty() );
 
     initChildren();
-    while( children.size() > 2 )
+    while( children.size() != 1 )
     {
+        //alternate sorting direction at each level
+        if( sort_iter % 2 == 0 )
+        {
+            std::reverse(children.begin(),children.end());
+        }
+        drawHeirarchyLevel();
         constructParentNodes();
     }
-    
-    constructRootNode();    
+   
     Point_Node_Vector().swap(children);
+    assert( root != nullptr );
 }
 
 void BVH::initChildren()
@@ -147,21 +147,21 @@ const Point_Node_Vector BVH::getSortedLeafData() const
 void BVH::sortChildren()
 {
     assert( !children.empty() );
-    CGAL::hilbert_sort(children.begin(),children.end(),hst);
+        
     sort_iter++;
+    if( children.size() == 1 )
+    {
+        root = children[0].second;
+        drawHeirarchyLevel();
+    }
+    else
+    {
+        CGAL::hilbert_sort(children.begin(),children.end(),hst);
+    }
 }
 
 void BVH::constructParentNodes()
 {
-    //alternate sorting direction at each level
-    if( sort_iter % 2 == 0 )
-    {
-        std::reverse(children.begin(),children.end());
-    }
-
-    if( outdir != "nowrite" )
-        writeHilbertCurveFiles(sort_iter);
-
     Point_Node_Vector parents;
     parents.reserve(children.size()/2 + 1);
     
@@ -175,7 +175,8 @@ void BVH::constructParentNodes()
         parents.push_back(bvctr_node_pair);
     }
 
-    //if odd number of children, the unpaired one gets bumped up to parents 
+    //if an odd number of children,
+    //the unpaired node moves up to parent level
     if( children.size() % 2 != 0 )
     {
         auto oc = children[children.size()-1].second;
@@ -184,24 +185,36 @@ void BVH::constructParentNodes()
     }
 
     std::swap(parents,children);
-    Point_Node_Vector().swap(parents);
     children.shrink_to_fit();
     sortChildren();
 }
 
+void BVH::drawHeirarchyLevel() const
+{
+    if( drawbool == true )
+        writeHilbertCurveFiles(sort_iter);
+}
+
+void BVH::setDrawBool(bool draw)
+{
+    drawbool = draw;
+}
+
+void BVH::setDrawDirectory(std::string dir)
+{
+    drawdir = dir;
+}
+
+
+//Testing functions
 void BVH::constructRootNode()
 {
     assert( children.size() == 2 );
     auto lc = children[0].second;
     auto rc = children[1].second;
     root = BVH::createInternalNode(lc,rc);
-    
-    if( outdir != "nowrite" )
-        writeHilbertCurveFiles(sort_iter);
 }
 
-
-//Testing function
 void BVH::buildTester(std::vector<Hse*> hseList)
 {
     assert(children.empty());

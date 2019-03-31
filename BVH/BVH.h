@@ -19,7 +19,7 @@ class BVH
 {
     private:
        
-        //TODO: unique_ptr for root
+        //TODO: consider unique_ptr for root
         BVH_Node* root{nullptr};
         std::vector<BVH_Node*> leaves;
         
@@ -31,7 +31,6 @@ class BVH
         void constructLeafNodes(INTERFACE* intfc);
         void constructParentNodes();
         void constructRootNode();
-        //void clearVectors();
         
         void initChildren();
         void sortChildren();
@@ -39,7 +38,9 @@ class BVH
         const Point_Node_Vector getLeafSortingData() const;
         const Point_Node_Vector getSortedLeafData() const;
 
-        std::string outdir{"nowrite"};
+        bool drawbool;
+        std::string drawdir;
+        void drawHeirarchyLevel() const;
         void writeHilbertCurveFiles(int level) const;
 
         //hard coded in BVH.cpp, where it must be initialized, for now;
@@ -53,9 +54,7 @@ class BVH
 
     public:
 
-        explicit BVH(Front* front);
-        //TODO: make a diagnostic/visualization subclass
-        BVH(Front* front, std::string out_name);
+        explicit BVH(Front* front, bool draw = false);
               
         BVH() = default;
         ~BVH() = default;
@@ -67,6 +66,9 @@ class BVH
 
         BVH_Node* const getRoot() const noexcept;
         const bool isEmpty() const noexcept; 
+
+        void setDrawBool(bool draw);
+        void setDrawDirectory(std::string dir);
 
         //temp functions for testing/debugging
         void buildTester(std::vector<Hse*>);
