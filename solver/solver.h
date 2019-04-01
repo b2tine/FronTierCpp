@@ -262,15 +262,21 @@ public:
 	int ilower;
 	int iupper;
 
+    double dt;          //time step
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
+    double **vel;       /* velocity field */
 			            /* div(D*grad)phi = source */
-    double *D; //diff_coeff? ... equals 1/rho
+    double *D;          //D = 1.0/rho
+
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);
-	double (*getStateVar)(POINTER);
+	
+    double (*getStateVar)(POINTER);
+    double (*getStateVel[3])(POINTER);
+
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
