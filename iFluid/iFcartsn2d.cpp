@@ -311,16 +311,25 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 					max_value);
 	    max_value = 0.0;
 	}
-	if (debugging("check_div"))
-        {
-	    checkVelocityDiv("Before computeProjection()");
-        }
-        elliptic_solver.D = diff_coeff;
-        elliptic_solver.source = source;
-        elliptic_solver.soln = array;
+	
+    if (debugging("check_div"))
+    {
+        checkVelocityDiv("Before computeProjection()");
+    }
+
+    elliptic_solver.dt = accum_dt;
+    elliptic_solver.D = diff_coeff;
+    elliptic_solver.source = source;
+    elliptic_solver.soln = array;
 	elliptic_solver.set_solver_domain();
-	elliptic_solver.getStateVar = getStatePhi;
-	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
+
+    elliptic_solver.getStateVar = getStatePhi;
+    elliptic_solver.getStateVel[0] = getStateXvel;
+    elliptic_solver.getStateVel[1] = getStateYvel;
+    elliptic_solver.getStateVel[2] = getStateZvel;
+    elliptic_solver.vel = vel;
+	
+    elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
@@ -329,13 +338,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	{
 	    paintToSolveGridPoint2(i);
 	    setGlobalIndex();
-            setIndexMap();
-            elliptic_solver.ij_to_I = ij_to_I;
-            elliptic_solver.ilower = ilower;
-            elliptic_solver.iupper = iupper;
+        setIndexMap();
+    
+        elliptic_solver.ij_to_I = ij_to_I;
+        elliptic_solver.ilower = ilower;
+        elliptic_solver.iupper = iupper;
             
 	    if (iFparams->total_div_cancellation)
-        {   //new function for DB elliptic method
+        {
 	    	elliptic_solver.dsolve(array);
         }
         else
@@ -353,7 +363,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    phi[index] = array[index];
+
+        if (i == top_gmax[0]/2 && j >= jmin && j <= jmax)
+            printf("phi[%d] = %f\n",j,phi[index]);
 	}
+
 	if (debugging("field_var"))
 	{
 	    printf("\nIn computeProjectionSimple()\n");
@@ -399,13 +413,22 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	    rho = field->rho[index];
 	    icoords[0] = i;
 	    icoords[1] = j;
-	    if (iFparams->with_porosity)
+	   
+        if (iFparams->with_porosity)
                 computeFieldPointGradJump(icoords,phi,grad_phi);
-            else
+        else
                 computeFieldPointGrad(icoords,phi,grad_phi);
-	    vel[0][index] -= accum_dt/rho*grad_phi[0];
+	    
+        vel[0][index] -= accum_dt/rho*grad_phi[0];
 	    vel[1][index] -= accum_dt/rho*grad_phi[1];
+
+        if( debugging("check_div") )
+        {
+            if (i == (imin+imax)/2)
+                printf("vel[%d] = %f\n",j,vel[1][index]);
+        }
 	}
+
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
 	extractFlowThroughVelocity();
 	computeVelDivergence();
@@ -1134,7 +1157,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	}
 }	/* end surfaceTension2d */
 
-// this function should be called before solve()
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
 	int i;
