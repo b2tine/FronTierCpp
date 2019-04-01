@@ -7,13 +7,11 @@
 
 #include <FronTier.h>
 #include <vector>
-#include <petscksp.h>
-
-//#include <petscmg.h>
-#include <petscmat.h>
-
-#include <petscpc.h>
 #include <assert.h>
+
+#include <petscksp.h>
+#include <petscmat.h>
+#include <petscpc.h>
 
 enum
 {
@@ -26,7 +24,6 @@ enum
     MIXED_PDE_BOUNDARY
 };
 
-//TODO: use pure virtuals instead of no-ops
 class SOLVER
 {
 public:
