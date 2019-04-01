@@ -797,7 +797,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	if (debugging("check_div"))
             printf("Entering dsolve2d()\n");
-	solver.Create(ilower, iupper-1, 9, 9);
+	solver.Create(ilower, iupper-1, 5, 5);
 	solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -821,8 +821,10 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
             k0 = D[index];
             aII = 0.0;
+            
             //rhs = source[index];
             rhs = 1.0;
+
             for (idir = 0; idir < dim; ++idir)
             {
                 for (nb = 0; nb < 2; ++nb)
