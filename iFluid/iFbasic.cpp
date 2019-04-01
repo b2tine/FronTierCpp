@@ -2779,6 +2779,7 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 			L1_norm,L2_norm,Li_norm);
 	(void) printf("Relative: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm/denom,L2_norm/denom,Li_norm/denom);
+    fflush(stdout);
 }	/* end checkVelocityDiv */
 
 void Incompress_Solver_Smooth_Basis::setDualDomain()

@@ -621,8 +621,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
 	computeAdvection();
-	if (debugging("check_div"))
-            checkVelocityDiv("After computeAdvection()");
+	//if (debugging("check_div"))
+      //      checkVelocityDiv("After computeAdvection()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -636,8 +636,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	    sampleVelocity();
 	start_clock("computeDiffusion");
 	computeDiffusion();
-	if (debugging("check_div"))
-            checkVelocityDiv("After computeDiffusion()");
+	//if (debugging("check_div"))
+      //      checkVelocityDiv("After computeDiffusion()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
