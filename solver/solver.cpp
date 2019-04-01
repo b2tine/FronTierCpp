@@ -310,7 +310,8 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-    KSPSetNullSpace(ksp,nullsp);
+    //KSPSetNullSpace(ksp,nullsp);
+    MatSetNullSpace(A,nullsp);
 	MatNullSpaceRemove(nullsp,b);
 	//MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 	
@@ -349,7 +350,8 @@ void PETSc::Solve_withPureNeumann_HYPRE(void)
 
 
         MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
+        //KSPSetNullSpace(ksp,nullsp);
+        MatSetNullSpace(A,nullsp);
         MatNullSpaceRemove(nullsp,b);
         //MatNullSpaceRemove(nullsp,b,PETSC_NULL);
 
@@ -383,7 +385,8 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-    KSPSetNullSpace(ksp,nullsp);
+    //KSPSetNullSpace(ksp,nullsp);
+    MatSetNullSpace(A,nullsp);
 	
     KSPSetOperators(ksp,A,A);
         
