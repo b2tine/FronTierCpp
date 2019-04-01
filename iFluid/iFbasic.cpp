@@ -228,63 +228,59 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
 	    uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
 	}
-
 	switch (dim)
 	{
 	case 2:
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ij_to_I[i][j] = -1;
-
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-		    ic = d_index2d(i,j,top_gmax);
-		    if (domain_status[ic] != TO_SOLVE)
-                continue;
-
-            if (cell_center[ic].comp != SOLID_COMP)
-            {
-                ij_to_I[i][j] = index + ilower;
-                 I_to_ij[index][0] = i;
-                I_to_ij[index][1] = j;
-                index++;
-            }
+		ic = d_index2d(i,j,top_gmax);
+		if (domain_status[ic] != TO_SOLVE)
+		    continue;
+                if (cell_center[ic].comp != SOLID_COMP)
+                {
+                    ij_to_I[i][j] = index + ilower;
+		    I_to_ij[index][0] = i;
+                    I_to_ij[index][1] = j;
+                    index++;
+                }
 	    }
-
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ij_to_I);
 	    break;
-	
-    case 3:
+	case 3:
 	    for (k = 0; k <= top_gmax[2]; k++)
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ijk_to_I[i][j][k] = -1;
-	    
-        for (k = kmin; k <= kmax; k++)
+	    for (k = kmin; k <= kmax; k++)
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-            ic = d_index3d(i,j,k,top_gmax);
-		    if (domain_status[ic] != TO_SOLVE)
-                continue;
-            
-            if (cell_center[ic].comp != SOLID_COMP)
-            {
-                ijk_to_I[i][j][k] = index + ilower;
-                I_to_ijk[index][0] = i;
-                I_to_ijk[index][1] = j;
-                I_to_ijk[index][2] = k;
-                index++;
-            }
+		ic = d_index3d(i,j,k,top_gmax);
+		if (domain_status[ic] != TO_SOLVE)
+		    continue;
+		if (cell_center[ic].comp != SOLID_COMP)
+		{
+                    ijk_to_I[i][j][k] = index + ilower;
+		    I_to_ijk[index][0] = i;
+                    I_to_ijk[index][1] = j;
+                    I_to_ijk[index][2] = k;
+                    index++;
+                }
 	    }
-
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ijk_to_I);
 	    break;
 	}
-
 }	/* end setIndexMap */
 
+// for initial condition: 
+// 		setInitialCondition();	
+// this function should be called before solve()
+// for the source term of the momentum equation: 	
+// 		computeSourceTerm();
 
 void Incompress_Solver_Smooth_Basis::getVelocity(double *p, double *U)
 {
@@ -2721,9 +2717,10 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	int i,j,k,l,index,N;
 	int icoords[MAXD];
 
-    L1_norm = L2_norm = Li_norm = 0.0;
-	
-    switch (dim)
+	(void) printf("\nCheck divergence at %s\n",mesg);
+        printf("Entering checkVelocityDiv()\n");
+        L1_norm = L2_norm = Li_norm = 0.0;
+	switch (dim)
 	{
 	case 2:
             for (j = jmin; j <= jmax; j++)
@@ -2734,15 +2731,10 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		index = d_index2d(i,j,top_gmax);
 		if (!ifluid_comp(top_comp[index]))
 		    continue;
-
 		div_tmp = computeFieldPointDiv(icoords,vel);
-        if( debugging("check_div") )
-        {
-            if( i == (imin + imax)/2 )
-                printf("div[%d] = %6.3g\n",j,div_tmp);
-        }
-		
-            if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
+                if (i == (imin+imax)/2)
+                    printf("div[%d] = %6.3g\n",j,div_tmp);
+		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
                 L1_norm += fabs(div_tmp);
                 L2_norm += sqr(div_tmp);
 	    }
@@ -2779,7 +2771,7 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 			L1_norm,L2_norm,Li_norm);
 	(void) printf("Relative: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm/denom,L2_norm/denom,Li_norm/denom);
-    fflush(stdout);
+        fflush(stdout);
 }	/* end checkVelocityDiv */
 
 void Incompress_Solver_Smooth_Basis::setDualDomain()
@@ -2967,7 +2959,6 @@ void Incompress_Solver_Smooth_Basis::setDualIndexMap(void)
 	}
 }	/* end setDualIndexMap */
 
-
 double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         int *icoords,
         double **field)
@@ -2990,51 +2981,26 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         for (idir = 0; idir < dim; idir++)
         {
             u0 = field[idir][index];
-
             for (j = 0; j < dim; ++j)
                 icnb[j] = icoords[j];
-
             for (nb = 0; nb < 2; nb++)
             {
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 index_nb = d_index(icnb,top_gmax,dim);
-                
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
-
                 if (status == NO_PDE_BOUNDARY)
-                {
                     u_edge[idir][nb] = field[idir][index_nb];
-                }
-                /*
-                else if (status ==CONST_P_PDE_BOUNDARY)
-                    u_edge[idir][nb] = u0;
                 else if (status ==CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == DIRICHLET_BOUNDARY)
-                    u_edge[idir][nb] = getStateVel[idir](intfc_state);*/
+                    wave_type(hs) == DIRICHLET_BOUNDARY)
+                    u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                else if (status ==CONST_V_PDE_BOUNDARY &&
+                    wave_type(hs) == NEUMANN_BOUNDARY)
+                    u_edge[idir][nb] = -u0; 
                 else
-                {
-                    //u_ref = getStateVel[idir](intfc_state);
-                    //u_edge[idir][nb] = u_ref - u0;
-                    u_edge[idir][nb] = u0;
-                    if( debugging("check_div") )
-                    {
-                        if( icoords[0] == (imin + imax)/2 )
-                            printf("icoords[%d] = %d else\n",idir,icoords[idir]);
-                    }
-                }
-            }
-
-            for (nb = 0; nb < 2; nb++)
-            {
-                status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
-                                comp,&intfc_state,&hs,crx_coords);
-                icnb[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
-                index_nb = d_index(icnb,top_gmax,dim);
-                if (status ==CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == NEUMANN_BOUNDARY)
-                    //u_edge[idir][nb] = -field[idir][index_nb];
-                    u_edge[idir][nb] = -u0;
+		{
+                    u_edge[idir][nb] = u0; 
+		}
             }
         }
 
@@ -3075,34 +3041,31 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    	index_nb = d_index(icnb,top_gmax,dim);
 	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
 				comp,&intfc_state,&hs,crx_coords);
-
 	    	if (status == NO_PDE_BOUNDARY)
-            {
-                p_edge[idir][nb] = field[index_nb];
-            }
-            else if (status == CONST_P_PDE_BOUNDARY)
-            {
-                p_edge[idir][nb] = p0;
-                //p_edge[idir][nb] = getStatePhi(intfc_state);
-            }
+		    p_edge[idir][nb] = field[index_nb];
+	    	else if (status ==CONST_P_PDE_BOUNDARY)
+                {
+		    //p_edge[idir][nb] = getStatePhi(intfc_state);
+		    p_edge[idir][nb] = p0;
+                }
 	    	else if (status ==CONST_V_PDE_BOUNDARY &&
                         wave_type(hs) == DIRICHLET_BOUNDARY)
-            {
-                p_edge[idir][nb] = 1.0;
-                //p_edge[idir][nb] = p0;
-            }
+                {
+		    p_edge[idir][nb] = 1.0;
+                }
 		else 
 		{
-		    refl_side[nb] = YES;
+		    //refl_side[nb] = YES;
 		    p_edge[idir][nb] = p0;
 		}
 	    }
+            /*
 	    for (nb = 0; nb < 2; nb++)
 	    {
 		if (refl_side[nb] == YES)
-		    //p_edge[idir][nb] += (p0 - p_edge[idir][(nb+1)%2]);
 		    p_edge[idir][nb] = p0;
 	    }
+            */
 	}
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
@@ -3387,7 +3350,7 @@ extern int ifluid_find_state_at_cg_crossing(
 	    else
 	    	return CONST_P_PDE_BOUNDARY;
 	}
-}	/* ifluid_find_state_at_cg_crossing */
+}	/* ifluid_find_state_at_crossing */
 
 extern boolean neumann_type_bdry(int w_type)
 {
@@ -3714,6 +3677,7 @@ static void initTestParams(Front *front)
             fscanf(infile,"%d",&params->base_step);
 	(void) printf("%d\n",params->base_step);
 	fclose(infile);
+
 }
 
 void Incompress_Solver_Smooth_Basis::compareWithBaseSoln()
@@ -3788,36 +3752,35 @@ void Incompress_Solver_Smooth_Basis::compareWithBaseSoln()
 }
 
 void Incompress_Solver_Smooth_Basis::readBaseFront(
-        IF_PARAMS *iF_params, int i)
+        IF_PARAMS *iF_params,
+        int i)
 {
-    char *dir_name = iF_params->base_dir_name;
-    F_BASIC_DATA *f_basic;
+        char *dir_name = iF_params->base_dir_name;
+        F_BASIC_DATA *f_basic;
 	int RestartStep = iF_params->base_step;
 	int j;
 
-    FT_ScalarMemoryAlloc((POINTER*)&base_front,sizeof(Front));
-    FT_ScalarMemoryAlloc((POINTER*)&f_basic,sizeof(F_BASIC_DATA));
+        FT_ScalarMemoryAlloc((POINTER*)&base_front,sizeof(Front));
+        FT_ScalarMemoryAlloc((POINTER*)&f_basic,sizeof(F_BASIC_DATA));
 	
 	f_basic->RestartRun = YES;
 	f_basic->dim = dim;
-    f_basic->size_of_intfc_state = sizeof(STATE);
-
-    for (j = 0; j < dim; j++)
+        f_basic->size_of_intfc_state = sizeof(STATE);
+	for (j = 0; j < dim; j++)
 	    f_basic->subdomains[j] = front->pp_grid->gmax[j];
 
 	FT_ReadComparisonDomain(InName(front),f_basic);
 
-    sprintf(f_basic->restart_name,"%s/intfc-ts%s",dir_name,
-            right_flush(RestartStep,7));
-    
-    printf("restart_name = %s\n",f_basic->restart_name);
+        sprintf(f_basic->restart_name,"%s/intfc-ts%s",dir_name,
+                        right_flush(RestartStep,7));
+        printf("restart_name = %s\n",f_basic->restart_name);
 
-    FT_StartUp(base_front,f_basic);
+        FT_StartUp(base_front,f_basic);
 
-    sprintf(f_basic->restart_state_name,"%s/state.ts%s",dir_name,
-            right_flush(RestartStep,7));
-    
-    readBaseStates(f_basic->restart_state_name);
+
+        sprintf(f_basic->restart_state_name,"%s/state.ts%s",dir_name,
+                        right_flush(RestartStep,7));
+        readBaseStates(f_basic->restart_state_name);
 	
 }       /* end readBaseFront */
 
@@ -4079,7 +4042,6 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 	pp_global_max(vmax,dim);
 	pp_global_min(vmin,dim);
 }	/* end computeMaxSpeed */
-
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 int *icoords, double alpha, double beta)
