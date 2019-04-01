@@ -2721,8 +2721,9 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	int i,j,k,l,index,N;
 	int icoords[MAXD];
 
-        L1_norm = L2_norm = Li_norm = 0.0;
-	switch (dim)
+    L1_norm = L2_norm = Li_norm = 0.0;
+	
+    switch (dim)
 	{
 	case 2:
             for (j = jmin; j <= jmax; j++)
@@ -2733,8 +2734,15 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		index = d_index2d(i,j,top_gmax);
 		if (!ifluid_comp(top_comp[index]))
 		    continue;
+
 		div_tmp = computeFieldPointDiv(icoords,vel);
-		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
+        if( debugging("check_div") )
+        {
+            if( i == (imin + imax)/2 )
+                printf("div[%d] = %6.3g\n",j,div_tmp);
+        }
+		
+            if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
                 L1_norm += fabs(div_tmp);
                 L2_norm += sqr(div_tmp);
 	    }
@@ -2994,16 +3002,25 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
                                 comp,&intfc_state,&hs,crx_coords);
 
                 if (status == NO_PDE_BOUNDARY)
+                {
                     u_edge[idir][nb] = field[idir][index_nb];
+                }
+                /*
                 else if (status ==CONST_P_PDE_BOUNDARY)
                     u_edge[idir][nb] = u0;
                 else if (status ==CONST_V_PDE_BOUNDARY &&
                         wave_type(hs) == DIRICHLET_BOUNDARY)
-                    u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                    u_edge[idir][nb] = getStateVel[idir](intfc_state);*/
                 else
                 {
-                    u_ref = getStateVel[idir](intfc_state);
-                    u_edge[idir][nb] = u_ref - u0;
+                    //u_ref = getStateVel[idir](intfc_state);
+                    //u_edge[idir][nb] = u_ref - u0;
+                    u_edge[idir][nb] = u0;
+                    if( debugging("check_div") )
+                    {
+                        if( icoords[0] == (imin + imax)/2 )
+                            printf("icoords[%d] = %d else\n",idir,icoords[idir]);
+                    }
                 }
             }
 
@@ -3057,13 +3074,22 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    	index_nb = d_index(icnb,top_gmax,dim);
 	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
 				comp,&intfc_state,&hs,crx_coords);
+
 	    	if (status == NO_PDE_BOUNDARY)
-		    p_edge[idir][nb] = field[index_nb];
-	    	else if (status ==CONST_P_PDE_BOUNDARY)
-		    p_edge[idir][nb] = getStatePhi(intfc_state);
+            {
+                p_edge[idir][nb] = field[index_nb];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                p_edge[idir][nb] = p0;
+                //p_edge[idir][nb] = getStatePhi(intfc_state);
+            }
 	    	else if (status ==CONST_V_PDE_BOUNDARY &&
                         wave_type(hs) == DIRICHLET_BOUNDARY)
-		    p_edge[idir][nb] = p0;
+            {
+                p_edge[idir][nb] = 1.0;
+                //p_edge[idir][nb] = p0;
+            }
 		else 
 		{
 		    refl_side[nb] = YES;
