@@ -165,7 +165,7 @@ AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
             [specify location of single directory installation])],
             [petsc_dir=${withval}],[petsc_dir=no])
 
-petsc_libflags="-lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
+petsc_libflags="-lpetsc -lHYPRE -lssl -lcrypto -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
 
 with_petsc=no
 AS_IF([test "x${petsc_dir}" != xno],
