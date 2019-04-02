@@ -268,8 +268,7 @@ public:
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
     double **vel;       /* velocity field */
-			            /* div(D*grad)phi = source */
-    double *D;          //D = 1.0/rho
+    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
 
 	void set_solver_domain(void);
 	void solve(double *soln);

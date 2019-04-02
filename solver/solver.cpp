@@ -328,9 +328,13 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 
 void PETSc::Solve_withPureNeumann(void)
 {
+    //TODO: #ifdef HAVE_HYPRE ...
+    //      but need to make sure the commented out
+    //      BCGSL function works first.
+    
 	Solve_withPureNeumann_HYPRE();
 	//Solve_withPureNeumann_BCGSL();
-}	/* end Solve_withPureNeumann */
+}
 
 void PETSc::Solve_withPureNeumann_HYPRE(void)
 {
@@ -382,6 +386,7 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
     MatSetNullSpace(A,nullsp);
+    //TODO: Need to call MatNullSpaceRemove() ?
 	
     KSPSetOperators(ksp,A,A);
         
