@@ -29,7 +29,7 @@ export CPPFLAGS=$DISABLED
 
 function config_intruder {
     CFLAGS="-std=gnu11 $CFLAGS"
-    CONF="--with-mpi --with-petsc-dir=/opt/petsc3.5.4-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/opt/cgal-4.11.1/include --with-cgal-lib=/opt/cgal-4.11.1/lib64 --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
+    CONF="--with-mpi --with-petsc-dir=/opt/petsc-3.11.0-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/opt/cgal-4.11.1/include --with-cgal-lib=/opt/cgal-4.11.1/lib64 --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
 }
 
 function config_omega {

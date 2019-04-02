@@ -63,7 +63,7 @@ echo -e '#$ -cwd\n' >> $QRUNHEADER
 echo 'source /etc/profile.d/modules.sh' >> $QRUNHEADER
 echo -e 'source /act/etc/profile.d/actbin.sh\n' >> $QRUNHEADER
 echo -e 'module load mvapich2-2.1/gcc-4.9.2\n' >> $QRUNHEADER
-echo -e 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/szip/lib:/opt/armadillo-9/lib64:/opt/OpenBLAS/lib:/opt/cgal-4.11.1/lib64:/opt/boost-1.58.0/lib:/opt/petsc3.5.4-mpich2/lib:/opt/cuda/lib64:/opt/hdf/lib:/opt/gd/lib:/usr/lib64\n' >> $QRUNHEADER
+echo -e 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/szip/lib:/opt/armadillo-9/lib64:/opt/OpenBLAS/lib:/opt/cgal-4.11.1/lib64:/opt/boost-1.58.0/lib:/opt/petsc-3.11.0-mpich2/lib:/opt/cuda/lib64:/opt/hdf/lib:/opt/gd/lib:/usr/lib64\n' >> $QRUNHEADER
 
 for infile in "$INDIR"/in-* ; do
     infile=`basename "$infile"`
