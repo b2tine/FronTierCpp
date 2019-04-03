@@ -907,8 +907,9 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
     }
 
-    //solver.Solve_PetscDecide();
+    solver.Solve_PetscDecide();
 
+    /*
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 
 	solver.SetMaxIter(40000);
@@ -957,14 +958,17 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	}
 	stop_clock("Petsc Solver");
+    */
 
 	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 	solver.Get_x(x);
 
+    /*
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
 	       		"num_iter = %d, rel_residual = %g \n", 
 			num_iter, rel_residual);
+    */
 
 	for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)
@@ -1000,6 +1004,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
     pp_global_max(&max_soln,1);
 	pp_global_min(&min_soln,1);
 
+    /*
 	if (debugging("step_size"))
 	{
 	    (void) printf("Max solution = %20.14f occuring at: %d %d\n",
@@ -1034,6 +1039,8 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
 	if (debugging("check_div"))
             printf("Leaving dsolve2d()\n");
+        */
+
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 
