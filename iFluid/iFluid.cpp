@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-	//PetscInitialize() calls MPI_Init();
+    //Default is PETSC_COMM_WORLD = FronTier_COMM_WORLD = MPI_COMM_WORLD
 	PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	/*Construct Incompress Solver l_cartesian*/

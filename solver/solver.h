@@ -60,7 +60,8 @@ public:
 	virtual void test(void){};
 };
 
-class PETSc: public SOLVER
+//class PETSc: public SOLVER
+class PETSc
 {
 public:	
 	MPI_Comm  comm;			// set to be MPI_COMM_WORLD.
@@ -92,6 +93,7 @@ public:
 	void Reset_b();
 	void Reset_x();
 	void Set_A(PetscInt i, PetscInt j, double val);	// A[i][j]=val;
+    //void Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals);
 	void Add_A(PetscInt i, PetscInt j, double val);	// A[i][j]=A[i][j]+val;
 	void Get_row_of_A(PetscInt i, PetscInt *ncol, PetscInt **cols, double **row);
 	void Set_x(PetscInt i, double val);		// x[i]=val;
@@ -109,7 +111,9 @@ public:
 	void GetNumIterations(PetscInt *num_iterations);	
 			// Return the number of iterations taken 
 	void GetFinalRelativeResidualNorm(double *rel_resid_norm);
-	void Solve(void);
+	
+    void Solve_PetscDecide();
+    void Solve(void);
 	void Solve_GMRES(void);
 	void Solve_BCGSL(void);
 	void Solve_LU(void);

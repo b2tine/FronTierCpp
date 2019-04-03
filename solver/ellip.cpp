@@ -768,27 +768,18 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 {
-	//int index,index_nb[4],num_nb,size;
 	int index,index_nb,num_nb,size;
-	double rhs;
-    
-    //double k0,k_nb[4],coeff[4];
-    double k0,k_nb,coeff_nb;
-	//int I,I_nb[4];
 
 	int I,I_nb;
-	int i,j,l,icoords[MAXD],icn[MAXD],icnb[MAXD],iknb[MAXD];
+	int icoords[MAXD],icnb[MAXD];
 	int icrds_max[MAXD],icrds_min[MAXD];
 
 	COMPONENT comp;
-	double aII;
 	GRID_DIRECTION dir[2][2] = {{WEST,EAST},{SOUTH,NORTH}};
-	boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
 	double rel_residual = 0.0;
 	HYPER_SURF *hs;
 	double crx_coords[MAXD];
-	int status;
 	POINTER intfc_state;
 	double *x;
         
@@ -797,8 +788,8 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
     //TODO: The solver.Reset_XXX() calls below are no-ops
     //      Since the SPARSE Mat and Vec data members of the
-    //      PETSc class are allocated on every call to dsolve2d()
-    //      and their entries initialize to zero.
+    //      PETSc class are allocated by its constructor on
+    //      every call to dsolve2d() and initialize to zero.
     //
     //      I assume the intent was to allocate a single instance of
     //      the PETSc class for the duration of the simulation, then
@@ -814,88 +805,101 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
     //      from the previous timestep, which provides the potential for
     //      improving the convergence properties of the iterative solver,
     //      (e.g. by providing previous solution as a nonzero intial guess)
-    //      and may be useful, or even necessary, for the development/design
-    //      of a sufficiently accurate numerical method for the projection
-    //      on a non-staggered grid (e.g. interpolation, extrapolation etc.)
     
 	PETSc solver;
-	solver.Create(ilower, iupper-1, 5, 5);
-    solver.Reset_A();
-	solver.Reset_b();
-	solver.Reset_x();
+	solver.Create(ilower,iupper-1,5,5);
+    //solver.Reset_A();
+	//solver.Reset_b();
+	//solver.Reset_x();
 
 	size = iupper - ilower;
 	max_soln = -HUGE;
 	min_soln = HUGE;
 
-    /*
-	double h2[MAXD];
-	for (i = 0; i < dim; ++i)
-	    h2[i] = 4.0*sqr(top_h[i]);
-    */
+    int buff = 4;
+    double domainRHSval = 1.0;
+    double virtualRHSval = 0.0;
+    double DirichletBdryVal = 0.0;
+    double NeumannBdryVal = 0.0;
+    
+    double alpha[MAXD];
+	for (int i = 0; i < dim; ++i)
+	    alpha[i] = 1.0/top_h[i]/top_h[i];
 
-    //NOTE: h2 commented out to make code below more
-    //      readable on first implementation attempt
+	boolean use_neumann_solver = YES;
 
-	for (j = jmin; j <= jmax; j++)
+	for( int j = jmin; j <= jmax; j++ )
     {
-        for (i = imin; i <= imax; i++)
+        for( int i = imin; i <= imax; i++ )
 	    {
             index  = d_index2d(i,j,top_gmax);
-            comp = top_comp[index];
-            I = ij_to_I[i][j];
+
             icoords[0] = i;
             icoords[1] = j;
-
+            I = ij_to_I[i][j];
+            
             if (I == -1) continue;
 
-            k0 = D[index];
-            aII = 0.0;
+            double rhs = 0.0;
+            bool virtualDomain = false;
+            double alphaCoeff = 0.25;
+            int hop = 2;
 
             //RHS Entries
-            if (j > jmin + 10 && j < jmax - 10)
+            if( j >= buff && j <= top_gmax[1] - buff )
             {
                 //Domain Interior
-                rhs = 1.0;
+                rhs = domainRHSval;
             }
             else
             {
                 //Virtual Domain beyond the physical boundary
-                rhs = 0.0;
+                rhs = virtualRHSval;
+                virtualDomain = true;
+                alphaCoeff = 1.0;
+                hop = 1;
             }
             
+	        double aII = 0.0;
+
             for (int idir = 0; idir < dim; ++idir)
             {
+                double coeff_nb = alphaCoeff*alpha[idir];
+
                 for (int nb = 0; nb < 2; ++nb)
                 {
                     icnb[0] = icoords[0];
                     icnb[1] = icoords[1];
-                    iknb[0] = icoords[0];
-                    iknb[1] = icoords[1];
 
-                    icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
-                    iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+                    icnb[idir] = (nb == 0) ? 
+                        icoords[idir] - hop : icoords[idir] + hop;
 
                     I_nb = ij_to_I[icnb[0]][icnb[1]];
-                    index_nb = d_index(iknb,top_gmax,dim);
-                    coeff_nb = 0.25/top_h[idir]/top_h[idir];
 
-                    
-                    //Off-Diagonal Coefficients
-                    if(  )
+	                int status = (*findStateAtCrossing)(front,icoords,
+                            dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+                    if( status == NO_PDE_BOUNDARY )
                     {
-                        //NOTE: may contain non-dirichlet boundary coeffs
                         solver.Set_A(I,I_nb,coeff_nb);
+                        aII += -coeff_nb;
                     }
-                    else
+                    else if( status == CONST_V_PDE_BOUNDARY )
                     {
-                        //Move Dirichlet Boundary Values to RHS
-                        rhs += -coeff_nb;
+                        if( wave_type(hs) == DIRICHLET_BOUNDARY )
+                        {
+                            use_neumann_solver = NO;
+                            rhs -= DirichletBdryVal;
+                            aII += -coeff_nb;
+                        }
                     }
-                    
-                    //On-Diagonal Coefficients
-                    aII += -coeff_nb;
+                    else if( status == CONST_P_PDE_BOUNDARY )
+                    {
+                        rhs -= NeumannBdryVal;
+                    }
+                   
                 }
+
             }
             
             solver.Set_A(I,I,aII);
@@ -903,10 +907,10 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
     }
 
-    //use_neumann_solver = NO (zero) if a Dirichlet Boundary
-    //is present on any subdomain of the parallel decomposition.
+    //solver.Solve_PetscDecide();
+
 	use_neumann_solver = pp_min_status(use_neumann_solver);
-	
+
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
 
@@ -961,9 +965,9 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	    (void) printf("In poisson_solver(): "
 	       		"num_iter = %d, rel_residual = %g \n", 
 			num_iter, rel_residual);
-	
-	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+
+	for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    I = ij_to_I[i][j];
@@ -971,27 +975,29 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	    soln[index] = x[I-ilower];
 	    if (max_soln < soln[index]) 
 	    {
-		max_soln = soln[index];
-		icrds_max[0] = i;
-		icrds_max[1] = j;
+            max_soln = soln[index];
+            icrds_max[0] = i;
+            icrds_max[1] = j;
 	    }
 	    if (min_soln > soln[index]) 
 	    {
-		min_soln = soln[index];
-		icrds_min[0] = i;
-		icrds_min[1] = j;
+            min_soln = soln[index];
+            icrds_min[0] = i;
+            icrds_min[1] = j;
 	    }
 	}
-        FILE *xfile = fopen("test1.xg","w");
-	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    
+    FILE *xfile = fopen("test1.xg","w");
+	for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
 	{
             index = d_index2d(i,j,top_gmax);
             if (i == 10)
                 fprintf(xfile,"%f %f\n",j*top_h[1],soln[index]);
-        }
-        fclose(xfile);
-	pp_global_max(&max_soln,1);
+    }
+    fclose(xfile);
+	
+    pp_global_max(&max_soln,1);
 	pp_global_min(&min_soln,1);
 
 	if (debugging("step_size"))
@@ -1003,11 +1009,12 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         min_soln,icrds_min[0],icrds_min[1]);
             dcheckSolver(icrds_min,YES);
 	}
+
 	if (debugging("elliptic_error"))
         {
             double error,max_error = 0.0;
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+            for (int j = jmin; j <= jmax; j++)
+            for (int i = imin; i <= imax; i++)
             {
                 icoords[0] = i;
                 icoords[1] = j;
@@ -1027,7 +1034,6 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
 	if (debugging("check_div"))
             printf("Leaving dsolve2d()\n");
-
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 

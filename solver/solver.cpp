@@ -61,6 +61,8 @@ void PETSc::Create(int ilower, int iupper, int d_nz, int o_nz)
 	Create(PETSC_COMM_WORLD, ilower, iupper, d_nz, o_nz);	
 }
 
+//TODO: just make MPI_Comm comm = PETSC_COMM_WORLD
+//      the default parameter and git rid of the function above
 void PETSc::Create(
 	MPI_Comm Comm, 
 	int ilower, 
@@ -68,55 +70,64 @@ void PETSc::Create(
 	int d_nz, 
 	int o_nz)
 {	
-	int n	= iupper - ilower +1;
+
+    //TODO: Figure out if there is a good reason iupper is passed
+    //      in as 'iupper -1' (see solve() functions in ellip.cpp)
+    //      just to have 1 added back here, everywhere else a range
+    //      of indices is calculated (e.g. see get_X()).
+    //      If not, simplify. We should not have to do index bookkeeping
+    //      both inside and outside the class. Preferably only inside
+    //      class member functions.
+	int n	= iupper - ilower + 1;
 	
 	comm 	= Comm;
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-	MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);	
+	 MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
 	
-    ierr = PetscObjectSetName((PetscObject) A, "A");
-	ierr = MatSetFromOptions(A);		
+    PetscObjectSetName((PetscObject) A, "A");
+	MatSetFromOptions(A);
 	
-	ierr = VecCreate(PETSC_COMM_WORLD, &b);	
-	ierr = PetscObjectSetName((PetscObject) b, "b");
-	ierr = VecSetSizes(b, n, PETSC_DECIDE);	
-	ierr = VecSetFromOptions(b);
+    //TODO: Figure out how to use VecCreateMpi()
+	VecCreate(PETSC_COMM_WORLD, &b);
+	PetscObjectSetName((PetscObject) b, "b");
+	VecSetSizes(b, n, PETSC_DECIDE);
+	VecSetFromOptions(b);
 	
-	ierr = VecCreate(PETSC_COMM_WORLD,&x);
-	ierr = PetscObjectSetName((PetscObject) x, "X");
-	ierr = VecSetSizes(x, n, PETSC_DECIDE);	
-	ierr = VecSetFromOptions(x);
+	VecCreate(PETSC_COMM_WORLD,&x);
+	PetscObjectSetName((PetscObject) x, "X"); 
+	VecSetSizes(x, n, PETSC_DECIDE);
+	VecSetFromOptions(x);
 }
 
 PETSc::~PETSc()
 {
-	if(x!=NULL)
+	if(x!=nullptr)
 	{
 		VecDestroy(&x);
-		x = NULL;
+		x = nullptr;
 	}
-	if(b!=NULL)
+	if(b!=nullptr)
 	{
-		VecDestroy(&b);
-		b = NULL;
+		ierr =VecDestroy(&b);
+		b = nullptr;
 	}
-	if(A!=NULL)
+	if(A!=nullptr)
 	{
 		MatDestroy(&A);
-		A = NULL;
+		A = nullptr;
 	}
-	if(ksp!=NULL)
+	if(ksp!=nullptr)
 	{
 		KSPDestroy(&ksp);
-		ksp = NULL;
+		ksp = nullptr;
 	}
-	if(nullsp!=NULL)
+	if(nullsp!=nullptr)
 	{
 		MatNullSpaceDestroy(&nullsp);
-		nullsp = NULL;
+		nullsp = nullptr;
 	}
 }
 
@@ -126,14 +137,21 @@ void PETSc::Reset_A()	// Reset all entries to zero ;
 }
 void PETSc::Reset_b()  //  Reset all entries to zero ;
 {
-        VecZeroEntries(b);
+    VecZeroEntries(b);
 }
 void PETSc::Reset_x()
 {
-        VecZeroEntries(x);
+    VecZeroEntries(x);
 }
 
-// A
+
+/*
+void PETSc::Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals)
+{
+	ierr = MatSetValues(A,m,Iids,n,Jindices,vals,INSERT_VALUES);
+}
+*/
+
 void PETSc::Set_A(PetscInt i, PetscInt j, double val)	// A[i][j]=val;
 {
 	ierr = MatSetValues(A,1,&i,1,&j,&val,INSERT_VALUES);
@@ -231,6 +249,18 @@ void PETSc::GetFinalRelativeResidualNorm(double *rel_resid_norm)
 {
 	KSPGetResidualNorm(ksp,rel_resid_norm);
 }	/* end GetFinalRelativeResidualNorm */
+
+
+void PETSc::Solve_PetscDecide()
+{
+    MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    VecAssemblyBegin(b);
+    VecAssemblyEnd(b);
+
+    KSPSetOperators(ksp,A,A);
+    KSPSolve(ksp,b,x);
+}
 
 void PETSc::Solve_GMRES(void)
 {

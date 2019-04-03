@@ -234,7 +234,8 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ij_to_I[i][j] = -1;
-	    for (j = jmin; j <= jmax; j++)
+	    
+        for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
 		ic = d_index2d(i,j,top_gmax);
