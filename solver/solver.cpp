@@ -32,26 +32,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 PETSc::PETSc()
 {
-	x = NULL;			/* approx solution, RHS*/
-	b = NULL;
-  	A = NULL;            		/* linear system matrix */
+	x = nullptr;			/* approx solution, RHS*/
+	b = nullptr;
+  	A = nullptr;            		/* linear system matrix */
   	
-  	ksp = NULL;        		/* Krylov subspace method context */
-	nullsp = NULL;
-	pc = NULL;
+  	ksp = nullptr;        		/* Krylov subspace method context */
+	nullsp = nullptr;
+	pc = nullptr;
 	
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 }
 
 PETSc::PETSc(int ilower, int iupper, int d_nz, int o_nz)
 {	
-	x = NULL;      			/* approx solution, RHS*/
-	b = NULL;
-  	A = NULL;            		/* linear system matrix */
+	x = nullptr;      			/* approx solution, RHS*/
+	b = nullptr;
+  	A = nullptr;            		/* linear system matrix */
   	
-  	ksp = NULL;          		/* Krylov subspace method context */
-	nullsp = NULL;
-	pc = NULL;
+  	ksp = nullptr;          		/* Krylov subspace method context */
+	nullsp = nullptr;
+	pc = nullptr;
 	Create(ilower, iupper, d_nz, o_nz);	
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 }

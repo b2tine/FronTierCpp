@@ -840,24 +840,25 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
             
             if (I == -1) continue;
 
-            double rhs = 0.0;
-            bool virtualDomain = false;
-            double alphaCoeff = 0.25;
-            int hop = 2;
+            int hop;
+            double alphaCoeff;
+            double rhs;
 
             //RHS Entries
-            if( j >= buff && j <= top_gmax[1] - buff )
+            if( j > buff && j < top_gmax[1] - buff )
             {
-                //Domain Interior
+                //Domain Interior using sparse laplacian discretization
+                hop = 2;
+                alphaCoeff = 0.25;
                 rhs = domainRHSval;
             }
             else
             {
-                //Virtual Domain beyond the physical boundary
-                rhs = virtualRHSval;
-                virtualDomain = true;
-                alphaCoeff = 1.0;
+                //Virtual Domain beyond the physical boundary using compact laplacian
+                //discretization
                 hop = 1;
+                alphaCoeff = 1.0;
+                rhs = virtualRHSval;
             }
             
 	        double aII = 0.0;
@@ -895,6 +896,8 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     }
                     else if( status == CONST_P_PDE_BOUNDARY )
                     {
+                        printf("CONST_P_PDE_BOUNDARY\n");
+                        //Inside Virtual Domain using compact laplacian discretization
                         rhs -= NeumannBdryVal;
                     }
                    
@@ -958,17 +961,15 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	}
 	stop_clock("Petsc Solver");
-    */
 
-	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-	solver.Get_x(x);
-
-    /*
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
 	       		"num_iter = %d, rel_residual = %g \n", 
 			num_iter, rel_residual);
     */
+
+	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+	solver.Get_x(x);
 
 	for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)
@@ -990,21 +991,21 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
             icrds_min[1] = j;
 	    }
 	}
-    
+
     FILE *xfile = fopen("test1.xg","w");
 	for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)
 	{
             index = d_index2d(i,j,top_gmax);
-            if (i == 10)
+            if (i == (imin + imax)/2)
                 fprintf(xfile,"%f %f\n",j*top_h[1],soln[index]);
     }
     fclose(xfile);
 	
+    /*
     pp_global_max(&max_soln,1);
 	pp_global_min(&min_soln,1);
 
-    /*
 	if (debugging("step_size"))
 	{
 	    (void) printf("Max solution = %20.14f occuring at: %d %d\n",
@@ -1039,8 +1040,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
 	if (debugging("check_div"))
             printf("Leaving dsolve2d()\n");
-        */
-
+    */
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 
