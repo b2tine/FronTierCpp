@@ -106,7 +106,7 @@ AC_SUBST(HDF_LIBS,${hdflib})
 
 mpi_libflags="-lmpi"
 
-#configure with MPI present in user environment
+#configure with MPI present in user environment (or in petsc installation)
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
             [use when mpi provided by user environment])],
             [with_mpi=yes
@@ -163,6 +163,7 @@ AS_IF([test "x${petsc_dir}" != xno],
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
 
+#TODO: add a --with-hypre just like --with-mpi above
 
 #configure with HYPRE (NOT IN USE YET)
 AC_ARG_WITH([hypre-dir],[AS_HELP_STRING([--with-hypre-dir=path],

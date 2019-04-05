@@ -26,7 +26,6 @@ noinst_PROGRAMS = iFluid
 iFluid_SOURCES = iFluid.cpp
 
 
-
 iFluid_LDADD = $(top_builddir)/lib/libiFluid.la
 
 

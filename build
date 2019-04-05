@@ -2,11 +2,13 @@
 
 source ~/.bashrc
 
+PETSC_ARCH="opt"
 
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
-        DEBUG_FLAGS="-g3 -rdynamic"
+        PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
+        DEBUG_FLAGS="-g3 -rdynamic"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
@@ -17,11 +19,10 @@ for arg in $@ ; do
     fi
 done
 
-
-export CC=mpicc
+#export CC=mpicc
 export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
 
-export CXX=mpicxx
+#export CXX=mpicxx
 export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
 
 export CPPFLAGS=$DISABLED
@@ -41,7 +42,10 @@ function config_lambda {
 }
 
 function config_alpha {
-    CONF="--with-mpich-dir=/usr/local/pkg/mpich-3.2.1 --with-petsc-dir=/usr/local/pkg/petsc-3.11.0 --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${PETSC_ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_grad01 {
