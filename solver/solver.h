@@ -7,22 +7,23 @@
 
 #include <FronTier.h>
 #include <vector>
-#include <petscksp.h>
-#include <petscmg.h>
-#include <petscpc.h>
 #include <assert.h>
 
-enum {
-        NO_PDE_BOUNDARY                 = 0,
-        CONST_V_PDE_BOUNDARY            = 1,
-        CONST_P_PDE_BOUNDARY,
-        NEUMANN_PDE_BOUNDARY,
-        DIRICHLET_PDE_BOUNDARY,
-        MOVING_BOUNDARY,
-        MIXED_PDE_BOUNDARY
+#include <petscksp.h>
+#include <petscmat.h>
+#include <petscpc.h>
+
+enum
+{
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
 };
 
-//TODO: use pure virtuals instead of no-ops
 class SOLVER
 {
 public:
@@ -59,7 +60,8 @@ public:
 	virtual void test(void){};
 };
 
-class PETSc: public SOLVER
+//class PETSc: public SOLVER
+class PETSc
 {
 public:	
 	MPI_Comm  comm;			// set to be MPI_COMM_WORLD.
@@ -91,6 +93,7 @@ public:
 	void Reset_b();
 	void Reset_x();
 	void Set_A(PetscInt i, PetscInt j, double val);	// A[i][j]=val;
+    //void Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals);
 	void Add_A(PetscInt i, PetscInt j, double val);	// A[i][j]=A[i][j]+val;
 	void Get_row_of_A(PetscInt i, PetscInt *ncol, PetscInt **cols, double **row);
 	void Set_x(PetscInt i, double val);		// x[i]=val;
@@ -108,7 +111,9 @@ public:
 	void GetNumIterations(PetscInt *num_iterations);	
 			// Return the number of iterations taken 
 	void GetFinalRelativeResidualNorm(double *rel_resid_norm);
-	void Solve(void);
+	
+    void Solve_PetscDecide();
+    void Solve(void);
 	void Solve_GMRES(void);
 	void Solve_BCGSL(void);
 	void Solve_LU(void);
@@ -262,15 +267,20 @@ public:
 	int ilower;
 	int iupper;
 
+    double dt;          //time step
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
-			            /* div(D*grad)phi = source */
-    double *D; //diff_coeff? ... equals 1/rho
+    double **vel;       /* velocity field */
+    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);
-	double (*getStateVar)(POINTER);
+	
+    double (*getStateVar)(POINTER);
+    double (*getStateVel[3])(POINTER);
+
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);

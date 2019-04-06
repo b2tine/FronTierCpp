@@ -38,6 +38,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	static HYPERB_SOLVER hyperb_solver(*front);
 	static double *rho;
 	double **vel = field->vel;
+        static int count = 0;
 
 	if (rho == NULL)
 	{
@@ -49,7 +50,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    rho[index] = field->rho[index];
+            if (j >= jmax-6)
+                vel[1][index] = -20; 
 	}
+        count++;
 	if (debugging("field_var"))
 	{
 	    for (j = jmin; j <= jmax; j++)
@@ -278,9 +282,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    index  = d_index2d(i,j,top_gmax);
 	    if (!ifluid_comp(top_comp[index]))
 		continue;
-	    
-        source[index] = (source[index])/accum_dt;
-
+	    source[index] = (source[index])/accum_dt;
             /*Compute pressure jump due to porosity*/
             icoords[0] = i; icoords[1] = j;
             source[index] += computeFieldPointPressureJump(icoords,
@@ -315,17 +317,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         {
 	    checkVelocityDiv("Before computeProjection()");
         }
+        elliptic_solver.dt = accum_dt;
         elliptic_solver.D = diff_coeff;
         elliptic_solver.source = source;
         elliptic_solver.soln = array;
 	elliptic_solver.set_solver_domain();
 	elliptic_solver.getStateVar = getStatePhi;
+	elliptic_solver.getStateVel[0] = getStateXvel;
+	elliptic_solver.getStateVel[1] = getStateYvel;
+	elliptic_solver.getStateVel[2] = getStateZvel;
+	elliptic_solver.vel = vel;
 	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
-
-    for (i = 1; i < num_colors; ++i)
+	for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);
 	    setGlobalIndex();
@@ -333,19 +339,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
-            
 	    if (iFparams->total_div_cancellation)
-        {   //new function for DB elliptic method
 	    	elliptic_solver.dsolve(array);
-        }
-        else
-        {
+	    else
 	    	elliptic_solver.solve(array);
-        }
-
 	    paintSolvedGridPoint();
 	}
-    
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
 
 	for (j = 0; j <= top_gmax[1]; j++)
@@ -353,6 +352,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    phi[index] = array[index];
+            if (i == top_gmax[0]/2 && j >= jmin && j <= jmax)
+                printf("phi[%d] = %f\n",j,phi[index]);
 	}
 	if (debugging("field_var"))
 	{
@@ -405,9 +406,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
                 computeFieldPointGrad(icoords,phi,grad_phi);
 	    vel[0][index] -= accum_dt/rho*grad_phi[0];
 	    vel[1][index] -= accum_dt/rho*grad_phi[1];
+            if (i == (imin+imax)/2)
+                printf("vel[%d] = %f\n",j,vel[1][index]);
 	}
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	extractFlowThroughVelocity();
+	//extractFlowThroughVelocity();
 	computeVelDivergence();
 
 	if (debugging("check_div"))
@@ -533,8 +536,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocityDual(void)
             checkVelocityDiv("After extractFlowThroughVelocity()");
 }	/* end computeNewVelocityDual */
 
-
-//Computest he source term of the momentum equation (Navier-Stokes)
 void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
@@ -598,8 +599,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
 	computeAdvection();
-	if (debugging("check_div"))
-            checkVelocityDiv("After computeAdvection()");
+	//if (debugging("check_div"))
+            //checkVelocityDiv("After computeAdvection()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -613,8 +614,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	    sampleVelocity();
 	start_clock("computeDiffusion");
 	computeDiffusion();
-	if (debugging("check_div"))
-            checkVelocityDiv("After computeDiffusion()");
+	//if (debugging("check_div"))
+            //checkVelocityDiv("After computeDiffusion()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -1134,7 +1135,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	}
 }	/* end surfaceTension2d */
 
-// this function should be called before solve()
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
 	int i;
@@ -1895,7 +1895,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeVarIncrement(
 
 	if (use_dual_grid)
 	{
-        // To add dual grid computation.
+	    ;	// To add dual grid computation.
 	}
 	else
 	{

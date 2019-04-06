@@ -768,153 +768,239 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 {
+	//int index,index_nb[4],num_nb,size;
 	int index,index_nb,num_nb,size;
-
+	double rhs;
+        //double k0,k_nb[4],coeff[4];
+        double k0,k_nb,coeff_nb;
+	//int I,I_nb[4];
 	int I,I_nb;
-	int icoords[MAXD],icnb[MAXD];
+	int i,j,l,icoords[MAXD],icn[MAXD],icnb[MAXD],iknb[MAXD];
 	int icrds_max[MAXD],icrds_min[MAXD];
-
 	COMPONENT comp;
+	double aII;
 	GRID_DIRECTION dir[2][2] = {{WEST,EAST},{SOUTH,NORTH}};
+	boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
 	double rel_residual = 0.0;
 	HYPER_SURF *hs;
 	double crx_coords[MAXD];
+	int status;
 	POINTER intfc_state;
+	int idir,nb;
+	double h2[MAXD];
 	double *x;
-        
+        double u;
+        double b;
+
+	PETSc solver;
+
 	if (debugging("check_div"))
             printf("Entering dsolve2d()\n");
-
-    //TODO: The solver.Reset_XXX() calls below are no-ops
-    //      Since the SPARSE Mat and Vec data members of the
-    //      PETSc class are allocated by its constructor on
-    //      every call to dsolve2d() and initialize to zero.
-    //
-    //      I assume the intent was to allocate a single instance of
-    //      the PETSc class for the duration of the simulation, then
-    //      the instance should either be made a private data member
-    //      of ELLIPTIC_SOLVER, or have ELLIPTIC_SOLVER publicly
-    //      inherit the PETSc class.
-    
-    //      Correctly implement this resource allocation scheme.
-    //      Potential for significant performance improvements for
-    //      multiprocessor runs.
-    //
-    //      Will also allow access to the computed solution and RHS Vec's
-    //      from the previous timestep, which provides the potential for
-    //      improving the convergence properties of the iterative solver,
-    //      (e.g. by providing previous solution as a nonzero intial guess)
-    
-	PETSc solver;
-	solver.Create(ilower,iupper-1,5,5);
-    //solver.Reset_A();
-	//solver.Reset_b();
-	//solver.Reset_x();
-
+	solver.Create(ilower, iupper-1, 5, 5);
+	solver.Reset_A();
+	solver.Reset_b();
+	solver.Reset_x();
 	size = iupper - ilower;
 	max_soln = -HUGE;
 	min_soln = HUGE;
 
-    int buff = 4;
-    double domainRHSval = 1.0;
-    double virtualRHSval = 0.0;
-    double DirichletBdryVal = 0.0;
-    double NeumannBdryVal = 0.0;
-    
-    double alpha[MAXD];
-	for (int i = 0; i < dim; ++i)
-	    alpha[i] = 1.0/top_h[i]/top_h[i];
+	for (i = 0; i < dim; ++i)
+	    h2[i] = 4.0*sqr(top_h[i]);
 
-	boolean use_neumann_solver = YES;
-
-	for( int j = jmin; j <= jmax; j++ )
-    {
-        for( int i = imin; i <= imax; i++ )
-	    {
+	for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+	{
             index  = d_index2d(i,j,top_gmax);
-
+            comp = top_comp[index];
+            I = ij_to_I[i][j];
             icoords[0] = i;
             icoords[1] = j;
-            I = ij_to_I[i][j];
-            
+
             if (I == -1) continue;
 
-            int hop;
-            double alphaCoeff;
-            double rhs;
-
-            //RHS Entries
-            if( j > buff && j < top_gmax[1] - buff )
-            {
-                //Domain Interior using sparse laplacian discretization
-                hop = 2;
-                alphaCoeff = 0.25;
-                rhs = domainRHSval;
-            }
-            else
-            {
-                //Virtual Domain beyond the physical boundary using compact laplacian
-                //discretization
-                hop = 1;
-                alphaCoeff = 1.0;
-                rhs = virtualRHSval;
-            }
+            k0 = D[index];
+            aII = 0.0;
             
-	        double aII = 0.0;
+            //rhs = source[index];
+            rhs = 1.0;
 
-            for (int idir = 0; idir < dim; ++idir)
+            for (idir = 0; idir < dim; ++idir)
             {
-                double coeff_nb = alphaCoeff*alpha[idir];
-
-                for (int nb = 0; nb < 2; ++nb)
+                for (nb = 0; nb < 2; ++nb)
                 {
                     icnb[0] = icoords[0];
                     icnb[1] = icoords[1];
+                    iknb[0] = icoords[0];
+                    iknb[1] = icoords[1];
+                    icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
+                    iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+                    b = 1.0;
 
-                    icnb[idir] = (nb == 0) ? 
-                        icoords[idir] - hop : icoords[idir] + hop;
-
-                    I_nb = ij_to_I[icnb[0]][icnb[1]];
-
-	                int status = (*findStateAtCrossing)(front,icoords,
-                            dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
-
-                    if( status == NO_PDE_BOUNDARY )
+                    status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                                    comp,&intfc_state,&hs,crx_coords);
+                    if (status == CONST_V_PDE_BOUNDARY)
                     {
-                        solver.Set_A(I,I_nb,coeff_nb);
-                        aII += -coeff_nb;
-                    }
-                    else if( status == CONST_V_PDE_BOUNDARY )
-                    {
-                        if( wave_type(hs) == DIRICHLET_BOUNDARY )
+                        if (wave_type(hs) == NEUMANN_BOUNDARY)
                         {
+                            icnb[idir] = (nb == 0) ? icoords[idir]+1 : 
+                                    icoords[idir]-1;
+                            iknb[idir] = icoords[idir];
+                        }
+                        else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                        {
+                            b = 0.0;
+                            /*
                             use_neumann_solver = NO;
-                            rhs -= DirichletBdryVal;
+                            iknb[idir] = icoords[idir];
+                            */
+                            use_neumann_solver = NO;
+                            iknb[idir] = icoords[idir];
+                            k_nb = D[index];
+                            coeff_nb = k_nb/(top_h[idir]*top_h[idir]);
+                            rhs += -coeff_nb;
                             aII += -coeff_nb;
+                            icnb[idir] = (nb == 0) ? icoords[idir]+1 :
+                                        icoords[idir]-1;
+                            I_nb = ij_to_I[icnb[0]][icnb[1]];
+                            solver.Set_A(I,I_nb,coeff_nb);
+                            aII += -coeff_nb;
+                            if (nb == 1)
+                            {
+                                icnb[idir] = icoords[idir]-2;
+                                I_nb = ij_to_I[icnb[0]][icnb[1]];
+                                solver.Set_A(I,I_nb,0.0);
+                                coeff_nb = k_nb/(4*top_h[idir]*top_h[idir]);
+                                aII -= -coeff_nb;
+                            }
+                            break;
                         }
                     }
-                    else if( status == CONST_P_PDE_BOUNDARY )
+                    else if (status == CONST_P_PDE_BOUNDARY)
                     {
-                        printf("CONST_P_PDE_BOUNDARY\n");
-                        //Inside Virtual Domain using compact laplacian discretization
-                        rhs -= NeumannBdryVal;
+                        icnb[idir] = icoords[idir];
+                        iknb[idir] = icoords[idir];
+                        iknb[idir] = icoords[idir];
+                        k_nb = D[index];
+                        coeff_nb = k_nb/(top_h[idir]*top_h[idir]);
+                        rhs += -coeff_nb;
+                        aII += -coeff_nb;
+                        icnb[idir] = (nb == 0) ? icoords[idir]+1 :
+                                icoords[idir]-1;
+                        I_nb = ij_to_I[icnb[0]][icnb[1]];
+                        solver.Set_A(I,I_nb,coeff_nb);
+                        aII += -coeff_nb;
+                        if (nb == 1)
+                        {
+                            icnb[idir] = icoords[idir]-2;
+                            I_nb = ij_to_I[icnb[0]][icnb[1]];
+                            solver.Set_A(I,I_nb,0.0);
+                            coeff_nb = k_nb/(4*top_h[idir]*top_h[idir]);
+                            aII -= -coeff_nb;
+                        }
+                        break;
                     }
-                   
-                }
+                    else if (status == NO_PDE_BOUNDARY)
+                    {
+                        icn[idir] = (nb == 0) ? icoords[idir]-1 :
+                                    icoords[idir]+1;
+                        status = (*findStateAtCrossing)(front,icn,
+                                        dir[idir][nb],comp,&intfc_state,&hs,
+                                        crx_coords);
+                        if (status == CONST_V_PDE_BOUNDARY)
+                        {
+                            if (wave_type(hs) == NEUMANN_BOUNDARY)
+                            {
+                                icnb[idir] = (nb == 0) ? icoords[idir]-1 : 
+                                        icoords[idir]+1;
+                            }
+                            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                            {
+                                /*
+                                icnb[idir] = (nb == 0) ? icoords[idir]-1 : 
+                                        icoords[idir]+1;
+                                iknb[idir] = (nb == 0) ? icoords[idir]-1 : 
+                                        icoords[idir]+1;
+                                use_neumann_solver = NO;
+                                */
+                                iknb[idir] = icoords[idir];
+                                k_nb = D[index];
+                                coeff_nb = k_nb/(top_h[idir]*top_h[idir]);
+                                rhs += -coeff_nb;
+                                aII += -coeff_nb;
+                                icnb[idir] = (nb == 0) ? icoords[idir]+1 :
+                                        icoords[idir]-1;
+                                I_nb = ij_to_I[icnb[0]][icnb[1]];
+                                solver.Set_A(I,I_nb,coeff_nb);
+                                aII += -coeff_nb;
+                                if (nb == 1)
+                                {
+                                    icnb[idir] = icoords[idir]-2;
+                                    I_nb = ij_to_I[icnb[0]][icnb[1]];
+                                    solver.Set_A(I,I_nb,0.0);
+                                    coeff_nb = k_nb/(4*top_h[idir]*top_h[idir]);
+                                    aII -= -coeff_nb;
+                                }
+                                break;
+                            }
+                        }
+                        else if (status == CONST_P_PDE_BOUNDARY)
+                        {
+                            /*
+                            icnb[idir] = (nb == 0) ? icoords[idir]-1 : 
+                                        icoords[idir]+1;
+                            iknb[idir] = (nb == 0) ? icoords[idir]-1 : 
+                                        icoords[idir]+1;
+                            */
+                                iknb[idir] = icoords[idir];
+                                k_nb = D[index];
+                                coeff_nb = k_nb/(top_h[idir]*top_h[idir]);
+                                rhs += -coeff_nb;
+                                aII += -coeff_nb;
+                                icnb[idir] = (nb == 0) ? icoords[idir]+1 :
+                                        icoords[idir]-1;
+                                I_nb = ij_to_I[icnb[0]][icnb[1]];
+                                solver.Set_A(I,I_nb,coeff_nb);
+                                aII += -coeff_nb;
+                                if (nb == 1)
+                                {
+                                    icnb[idir] = icoords[idir]-2;
+                                    I_nb = ij_to_I[icnb[0]][icnb[1]];
+                                    coeff_nb = k_nb/(4*top_h[idir]*top_h[idir]);
+                                    aII -= -coeff_nb;
+                                }
+                                break;
+                        }
+                    }
 
+                    I_nb = ij_to_I[icnb[0]][icnb[1]];
+                    index_nb = d_index(iknb,top_gmax,dim);
+                    k_nb = D[index_nb];
+                    coeff_nb = k_nb/(4.0*top_h[idir]*top_h[idir]);
+
+                    if (b == 1.0)
+                    {
+                        //Off-Diagonal Coefficients
+                        //NOTE: may contain non-dirichlet boundary coeffs
+                        solver.Set_A(I,I_nb,coeff_nb);
+                    }
+                    else
+                    {
+                        //Move Dirichlet Boundary Values to RHS
+                        rhs += -coeff_nb;
+                    }
+
+                    //On-Diagonal Coefficient
+                    aII += -coeff_nb;
+                }
             }
             
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
-        }
-    }
+	}
 
-    solver.Solve_PetscDecide();
-
-    /*
 	use_neumann_solver = pp_min_status(use_neumann_solver);
-
+	
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
 
@@ -928,6 +1014,10 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 		stop_clock("Petsc Solver");
 		return;
 	    }
+            /*
+	    (void) printf("Neumann solver is not yet working for dsolve2d()\n");
+	    clean_up(ERROR);
+            */
 	    solver.Solve_withPureNeumann();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetFinalRelativeResidualNorm(&rel_residual);
@@ -962,17 +1052,16 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	}
 	stop_clock("Petsc Solver");
 
+	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+	solver.Get_x(x);
+
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
 	       		"num_iter = %d, rel_residual = %g \n", 
 			num_iter, rel_residual);
-    */
-
-	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-	solver.Get_x(x);
-
-	for (int j = jmin; j <= jmax; j++)
-        for (int i = imin; i <= imax; i++)
+	
+	for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    I = ij_to_I[i][j];
@@ -980,30 +1069,96 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	    soln[index] = x[I-ilower];
 	    if (max_soln < soln[index]) 
 	    {
-            max_soln = soln[index];
-            icrds_max[0] = i;
-            icrds_max[1] = j;
+		max_soln = soln[index];
+		icrds_max[0] = i;
+		icrds_max[1] = j;
 	    }
 	    if (min_soln > soln[index]) 
 	    {
-            min_soln = soln[index];
-            icrds_min[0] = i;
-            icrds_min[1] = j;
+		min_soln = soln[index];
+		icrds_min[0] = i;
+		icrds_min[1] = j;
 	    }
 	}
-
-    FILE *xfile = fopen("test1.xg","w");
-	for (int j = jmin; j <= jmax; j++)
-        for (int i = imin; i <= imax; i++)
+        FILE *xfile = fopen("test1.xg","w");
+	for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
 	{
             index = d_index2d(i,j,top_gmax);
-            if (i == (imin + imax)/2)
+            if (i == 10)
                 fprintf(xfile,"%f %f\n",j*top_h[1],soln[index]);
-    }
-    fclose(xfile);
-	
-    /*
-    pp_global_max(&max_soln,1);
+            if (j > jmin+1 && j < jmax-1 && i == 10)
+            {
+                int index_nb1 = d_index2d(i+2,j,top_gmax);
+                int index_nb2 = d_index2d(i-2,j,top_gmax);
+                int index_nb3 = d_index2d(i,j+2,top_gmax);
+                int index_nb4 = d_index2d(i,j-2,top_gmax);
+                double LHS = D[index]*(soln[index_nb1] + soln[index_nb2]
+                        + soln[index_nb3] + soln[index_nb4] 
+                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
+                double RHS = source[index];
+                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                                j,LHS,RHS,LHS-RHS);
+            }
+            if (j == jmin && i == 10)
+            {
+                index = d_index2d(i,j,top_gmax);
+                int index_nb1 = d_index2d(i+2,j,top_gmax);
+                int index_nb2 = d_index2d(i-2,j,top_gmax);
+                int index_nb3 = d_index2d(i,j+2,top_gmax);
+                int index_nb4 = d_index2d(i,j,top_gmax);
+                double LHS = D[index]*(soln[index_nb1] + soln[index_nb2]
+                        + soln[index_nb3] + soln[index_nb4] 
+                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
+                double RHS = source[index];
+                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                                j,LHS,RHS,LHS-RHS);
+            } 
+            if (j == jmin+1 && i == 10)
+            {
+                index = d_index2d(i,j,top_gmax);
+                int index_nb1 = d_index2d(i+2,j,top_gmax);
+                int index_nb2 = d_index2d(i-2,j,top_gmax);
+                int index_nb3 = d_index2d(i,j+2,top_gmax);
+                int index_nb4 = d_index2d(i,j-1,top_gmax);
+                double LHS = D[index]*(soln[index_nb1] + soln[index_nb2]
+                        + soln[index_nb3] + soln[index_nb4] 
+                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
+                double RHS = source[index];
+                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                                j,LHS,RHS,LHS-RHS);
+            } 
+            if (j == jmax && i == 10)
+            {
+                index = d_index2d(i,j,top_gmax);
+                int index_nb1 = d_index2d(i+2,j,top_gmax);
+                int index_nb2 = d_index2d(i-2,j,top_gmax);
+                int index_nb3 = d_index2d(i,j+2,top_gmax);
+                int index_nb4 = d_index2d(i,j-2,top_gmax);
+                double LHS = D[index]*(soln[index_nb1] + soln[index_nb2]
+                        + 1.0 + soln[index_nb4] 
+                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
+                double RHS = source[index];
+                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                                j,LHS,RHS,LHS-RHS);
+            } 
+            if (j == jmax-1 && i == 10)
+            {
+                index = d_index2d(i,j,top_gmax);
+                int index_nb1 = d_index2d(i+2,j,top_gmax);
+                int index_nb2 = d_index2d(i-2,j,top_gmax);
+                int index_nb3 = d_index2d(i,j+2,top_gmax);
+                int index_nb4 = d_index2d(i,j-2,top_gmax);
+                double LHS = D[index]*(soln[index_nb1] + soln[index_nb2]
+                        + 1.0 + soln[index_nb4] 
+                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
+                double RHS = source[index];
+                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                                j,LHS,RHS,LHS-RHS);
+            } 
+        }
+        fclose(xfile);
+	pp_global_max(&max_soln,1);
 	pp_global_min(&min_soln,1);
 
 	if (debugging("step_size"))
@@ -1015,12 +1170,11 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         min_soln,icrds_min[0],icrds_min[1]);
             dcheckSolver(icrds_min,YES);
 	}
-
 	if (debugging("elliptic_error"))
         {
             double error,max_error = 0.0;
-            for (int j = jmin; j <= jmax; j++)
-            for (int i = imin; i <= imax; i++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
             {
                 icoords[0] = i;
                 icoords[1] = j;
@@ -1040,7 +1194,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
 	if (debugging("check_div"))
             printf("Leaving dsolve2d()\n");
-    */
+
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 

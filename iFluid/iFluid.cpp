@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-	//PetscInitialize() calls MPI_Init();
+    //Default is PETSC_COMM_WORLD = FronTier_COMM_WORLD = MPI_COMM_WORLD
 	PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
 
 	/*Construct Incompress Solver l_cartesian*/
@@ -90,22 +90,6 @@ int main(int argc, char **argv)
 	
     read_iF_prob_type(in_name,&prob_type);
 	read_iFparams(in_name,&iFparams);
-    
-
-    if( iFparams.num_scheme.ellip_method == DOUBLE_ELLIP
-            && f_basic.dim == 3 )
-    {
-        if( prob_type != TAYLOR_GREEN_VORTEX
-                && prob_type != TWO_FLUID_RT )
-        {
-            printf("Double Elliptical solver has not been \
-                    implemented yet for this Problem Type.\n\n");
-            printf("Currently only working for TAYLOR_GREEN_VORTEX.\n");
-            printf("TWO_FLUID_RT is currently in development.\n");
-            clean_up(ERROR);
-        }
-    }
-
 
     if (debugging("trace"))
         printf("Passed read_iFparams()\n");

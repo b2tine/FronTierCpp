@@ -32,26 +32,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 PETSc::PETSc()
 {
-	x = NULL;			/* approx solution, RHS*/
-	b = NULL;
-  	A = NULL;            		/* linear system matrix */
+	x = nullptr;			/* approx solution, RHS*/
+	b = nullptr;
+  	A = nullptr;            		/* linear system matrix */
   	
-  	ksp = NULL;        		/* Krylov subspace method context */
-	nullsp = NULL;
-	pc = NULL;
+  	ksp = nullptr;        		/* Krylov subspace method context */
+	nullsp = nullptr;
+	pc = nullptr;
 	
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 }
 
 PETSc::PETSc(int ilower, int iupper, int d_nz, int o_nz)
 {	
-	x = NULL;      			/* approx solution, RHS*/
-	b = NULL;
-  	A = NULL;            		/* linear system matrix */
+	x = nullptr;      			/* approx solution, RHS*/
+	b = nullptr;
+  	A = nullptr;            		/* linear system matrix */
   	
-  	ksp = NULL;          		/* Krylov subspace method context */
-	nullsp = NULL;
-	pc = NULL;
+  	ksp = nullptr;          		/* Krylov subspace method context */
+	nullsp = nullptr;
+	pc = nullptr;
 	Create(ilower, iupper, d_nz, o_nz);	
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 }
@@ -61,6 +61,8 @@ void PETSc::Create(int ilower, int iupper, int d_nz, int o_nz)
 	Create(PETSC_COMM_WORLD, ilower, iupper, d_nz, o_nz);	
 }
 
+//TODO: just make MPI_Comm comm = PETSC_COMM_WORLD
+//      the default parameter and git rid of the function above
 void PETSc::Create(
 	MPI_Comm Comm, 
 	int ilower, 
@@ -68,55 +70,64 @@ void PETSc::Create(
 	int d_nz, 
 	int o_nz)
 {	
-	int n	= iupper - ilower +1;
+
+    //TODO: Figure out if there is a good reason iupper is passed
+    //      in as 'iupper -1' (see solve() functions in ellip.cpp)
+    //      just to have 1 added back here, everywhere else a range
+    //      of indices is calculated (e.g. see get_X()).
+    //      If not, simplify. We should not have to do index bookkeeping
+    //      both inside and outside the class. Preferably only inside
+    //      class member functions.
+	int n	= iupper - ilower + 1;
 	
 	comm 	= Comm;
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-	MatCreateMPIAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);	
-	ierr = PetscObjectSetName((PetscObject) A, "A");
-	ierr = MatSetFromOptions(A);		
+	 MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
 	
-	// b
-	ierr = VecCreate(PETSC_COMM_WORLD, &b);	
-	ierr = PetscObjectSetName((PetscObject) b, "b");
-	ierr = VecSetSizes(b, n, PETSC_DECIDE);	
-	ierr = VecSetFromOptions(b);
+    PetscObjectSetName((PetscObject) A, "A");
+	MatSetFromOptions(A);
 	
-	ierr = VecCreate(PETSC_COMM_WORLD,&x);
-	ierr = PetscObjectSetName((PetscObject) x, "X");
-	ierr = VecSetSizes(x, n, PETSC_DECIDE);	
-	ierr = VecSetFromOptions(x);
+    //TODO: Figure out how to use VecCreateMpi()
+	VecCreate(PETSC_COMM_WORLD, &b);
+	PetscObjectSetName((PetscObject) b, "b");
+	VecSetSizes(b, n, PETSC_DECIDE);
+	VecSetFromOptions(b);
+	
+	VecCreate(PETSC_COMM_WORLD,&x);
+	PetscObjectSetName((PetscObject) x, "X"); 
+	VecSetSizes(x, n, PETSC_DECIDE);
+	VecSetFromOptions(x);
 }
 
 PETSc::~PETSc()
 {
-	if(x!=NULL)
+	if(x!=nullptr)
 	{
-		VecDestroy(x);
-		x = NULL;
+		VecDestroy(&x);
+		x = nullptr;
 	}
-	if(b!=NULL)
+	if(b!=nullptr)
 	{
-		VecDestroy(b);
-		b = NULL;
+		ierr =VecDestroy(&b);
+		b = nullptr;
 	}
-	if(A!=NULL)
+	if(A!=nullptr)
 	{
-		MatDestroy(A);
-		A = NULL;
+		MatDestroy(&A);
+		A = nullptr;
 	}
-	if(ksp!=NULL)
+	if(ksp!=nullptr)
 	{
-		KSPDestroy(ksp);
-		ksp = NULL;
+		KSPDestroy(&ksp);
+		ksp = nullptr;
 	}
-	if(nullsp!=NULL)
+	if(nullsp!=nullptr)
 	{
-		MatNullSpaceDestroy(nullsp);
-		nullsp = NULL;
+		MatNullSpaceDestroy(&nullsp);
+		nullsp = nullptr;
 	}
 }
 
@@ -126,14 +137,21 @@ void PETSc::Reset_A()	// Reset all entries to zero ;
 }
 void PETSc::Reset_b()  //  Reset all entries to zero ;
 {
-        VecZeroEntries(b);
+    VecZeroEntries(b);
 }
 void PETSc::Reset_x()
 {
-        VecZeroEntries(x);
+    VecZeroEntries(x);
 }
 
-// A
+
+/*
+void PETSc::Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals)
+{
+	ierr = MatSetValues(A,m,Iids,n,Jindices,vals,INSERT_VALUES);
+}
+*/
+
 void PETSc::Set_A(PetscInt i, PetscInt j, double val)	// A[i][j]=val;
 {
 	ierr = MatSetValues(A,1,&i,1,&j,&val,INSERT_VALUES);
@@ -232,6 +250,18 @@ void PETSc::GetFinalRelativeResidualNorm(double *rel_resid_norm)
 	KSPGetResidualNorm(ksp,rel_resid_norm);
 }	/* end GetFinalRelativeResidualNorm */
 
+
+void PETSc::Solve_PetscDecide()
+{
+    MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    VecAssemblyBegin(b);
+    VecAssemblyEnd(b);
+
+    KSPSetOperators(ksp,A,A);
+    KSPSolve(ksp,b,x);
+}
+
 void PETSc::Solve_GMRES(void)
 {
         
@@ -247,11 +277,11 @@ void PETSc::Solve_GMRES(void)
 	stop_clock("Assembly matrix and vector");
 
 
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("KSPSolve");
         KSPSolve(ksp,b,x);
@@ -283,15 +313,15 @@ void PETSc::Solve_BCGSL(void)
 	stop_clock("Assembly matrix and vector");
 
 
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        KSPSetType(ksp,KSPBCGSL);
+    KSPSetOperators(ksp,A,A);
+    KSPSetType(ksp,KSPBCGSL);
 	KSPBCGSLSetEll(ksp,2);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
+    KSPSolve(ksp,b,x);
 	stop_clock("KSPSolve");
 }
 
@@ -310,16 +340,15 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
-	MatNullSpaceRemove(nullsp,b,PETSC_NULL);
-
+    MatSetNullSpace(A,nullsp);
+	MatNullSpaceRemove(nullsp,b);
 	
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        
+    KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
+
 	start_clock("Petsc Solve in pure neumann solver");
         KSPSolve(ksp,b,x);
 	stop_clock("Petsc Solve in pure neumann solver");
@@ -329,9 +358,13 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 
 void PETSc::Solve_withPureNeumann(void)
 {
+    //TODO: #ifdef HAVE_HYPRE ...
+    //      but need to make sure the commented out
+    //      BCGSL function works first.
+    
 	Solve_withPureNeumann_HYPRE();
 	//Solve_withPureNeumann_BCGSL();
-}	/* end Solve_withPureNeumann */
+}
 
 void PETSc::Solve_withPureNeumann_HYPRE(void)
 {
@@ -349,11 +382,11 @@ void PETSc::Solve_withPureNeumann_HYPRE(void)
 
 
         MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
-        MatNullSpaceRemove(nullsp,b,PETSC_NULL);
+        MatSetNullSpace(A,nullsp);
+        MatNullSpaceRemove(nullsp,b);
 
         KSPSetType(ksp,KSPBCGS);
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+        KSPSetOperators(ksp,A,A);
         KSPGetPC(ksp,&pc);
         PCSetType(pc,PCHYPRE);
         PCHYPRESetType(pc,"boomeramg");
@@ -382,15 +415,16 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
   	
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        KSPSetNullSpace(ksp,nullsp);
+    MatSetNullSpace(A,nullsp);
+    //TODO: Need to call MatNullSpaceRemove() ?
 	
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(ksp,A,A);
         
 	KSPSetType(ksp,KSPBCGSL);
 	KSPBCGSLSetEll(ksp,2);
 
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
 	start_clock("Petsc Solve in pure neumann solver");
         KSPSolve(ksp,b,x);
@@ -406,7 +440,7 @@ void PETSc::Print_A(const char *filename)
         ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
         PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
         MatView(A, viewer);
-        PetscViewerDestroy(viewer);
+        PetscViewerDestroy(&viewer);
 }	/* end Print_A */
 
 void PETSc::Print_b(const char *filename)
@@ -457,29 +491,29 @@ extern void viewTopVariable(
 #if defined HAVE_HYPRE
 void PETSc::Solve_HYPRE(void)
 {
-        PC pc;
-        start_clock("Assemble matrix and vector");
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    PC pc;
+    start_clock("Assemble matrix and vector");
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-        ierr = VecAssemblyBegin(x);
-        ierr = VecAssemblyEnd(x);
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
 
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
-        stop_clock("Assembly matrix and vector");
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
+    stop_clock("Assembly matrix and vector");
 
 	KSPSetType(ksp,KSPBCGS);
-        KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);
-        KSPGetPC(ksp,&pc);
+    KSPSetOperators(ksp,A,A);
+    KSPGetPC(ksp,&pc);
 	PCSetType(pc,PCHYPRE);
-        PCHYPRESetType(pc,"boomeramg");
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    PCHYPRESetType(pc,"boomeramg");
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
-        start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
-        stop_clock("KSPSolve");
+    start_clock("KSPSolve");
+    KSPSolve(ksp,b,x);
+    stop_clock("KSPSolve");
 
 }
 #endif // defined HAVE_HYPRE
@@ -487,26 +521,26 @@ void PETSc::Solve_HYPRE(void)
 void PETSc::Solve_LU(void)
 {
 	PC pc;
-        start_clock("Assemble matrix and vector");
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    start_clock("Assemble matrix and vector");
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-        ierr = VecAssemblyBegin(x);
-        ierr = VecAssemblyEnd(x);
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
 
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
-        stop_clock("Assembly matrix and vector");
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
+    stop_clock("Assembly matrix and vector");
 
 
-        KSPSetType(ksp,KSPPREONLY);
+    KSPSetType(ksp,KSPPREONLY);
 	KSPGetPC(ksp,&pc);
 	PCSetType(pc,PCLU);
-        KSPSetOperators(ksp,A,A,SAME_PRECONDITIONER);
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
+    KSPSetOperators(ksp,A,A);
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
 
-        start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
-        stop_clock("KSPSolve");
+    start_clock("KSPSolve");
+    KSPSolve(ksp,b,x);
+    stop_clock("KSPSolve");
 } /*direct solver, usually give exact solution for comparison*/

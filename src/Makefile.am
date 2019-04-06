@@ -6,7 +6,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 
 AM_LDFLAGS = @MPI_LIBS@ @HDF_LIBS@ @GD_LIBS@
 
-
 noinst_LTLIBRARIES = ../lib/libFronTier.la
 
 

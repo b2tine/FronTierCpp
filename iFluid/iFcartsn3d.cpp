@@ -1210,9 +1210,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjection(void)
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDouble(void)
 {
-    //TODO: implement downstream dsolve3d() called inside computeProjectionSimple()
-	iFparams->total_div_cancellation = YES;
-	computeProjectionSimple(); 
 }	/* end computeProjectionDouble */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDual(void)
@@ -1433,49 +1430,35 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 	
 	if (iFparams->with_porosity)
 	{
-        //TODO: Check for DB and use here also?
-        //      Turned off if using DB for now.
-        if( !iFparams->total_div_cancellation )
-        {
-            paintAllGridPoint(TO_SOLVE);
-            setGlobalIndex();
-            setIndexMap();
+	    paintAllGridPoint(TO_SOLVE);
+	    setGlobalIndex();
+	    setIndexMap();
             elliptic_solver.ijk_to_I = ijk_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
             elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-
             elliptic_solver.solve(array);
-        }
 	}
-    else
+        else
 	{	
 	    int num_colors = drawColorMap();
-        paintAllGridPoint(NOT_SOLVED);
-
-        for (i = 1; i < num_colors; ++i)
-        {
-            paintToSolveGridPoint2(i);
-            setGlobalIndex();
-            setIndexMap();
-            elliptic_solver.ijk_to_I = ijk_to_I;
-            elliptic_solver.ilower = ilower;
-            elliptic_solver.iupper = iupper;
-
-            if (iFparams->total_div_cancellation)
+            paintAllGridPoint(NOT_SOLVED);
+            for (i = 1; i < num_colors; ++i)
             {
-                elliptic_solver.dsolve(array);
+                paintToSolveGridPoint2(i);
+                setGlobalIndex();
+                setIndexMap();
+                elliptic_solver.ijk_to_I = ijk_to_I;
+                elliptic_solver.ilower = ilower;
+                elliptic_solver.iupper = iupper;
+                if (iFparams->total_div_cancellation)
+                    elliptic_solver.dsolve(array);
+                else
+                    elliptic_solver.solve(array);
+                paintSolvedGridPoint();
             }
-            else
-            {
-                elliptic_solver.solve(array);
-            }
-
-            paintSolvedGridPoint();
-        }
 
 	}
-
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
 
 	min_phi =  HUGE;

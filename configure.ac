@@ -106,7 +106,7 @@ AC_SUBST(HDF_LIBS,${hdflib})
 
 mpi_libflags="-lmpi"
 
-#configure with MPI present in user environment
+#configure with MPI present in user environment (or in petsc installation)
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
             [use when mpi provided by user environment])],
             [with_mpi=yes
@@ -143,7 +143,27 @@ AS_IF([test $with_mpi = yes || test $with_openmpi = yes || test $with_mpich = ye
       [AC_DEFINE([HAVE_MPI],[1],[build with mpi])])
 
 
-#TODO: more flexibility in hypre-petsc configuration
+#NOTE: Currently it is assumed that HYPRE was installed along with
+#      the petsc by using the configure option --download-hypre
+#      when configuring the petsc installation.
+
+#configure with PETSC
+AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
+            [specify location of single directory installation])],
+            [petsc_dir=${withval}],[petsc_dir=no])
+
+petsc_libflags="-lpetsc -lHYPRE -lssl -lcrypto -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
+
+with_petsc=no
+AS_IF([test "x${petsc_dir}" != xno],
+      [with_petsc=yes
+       petscinc="-I${petsc_dir}/include"
+       petsclib="-L${petsc_dir}/lib ${petsc_libflags}"])
+
+AC_SUBST(PETSC_CFLAGS,${petscinc})
+AC_SUBST(PETSC_LIBS,${petsclib})
+
+#TODO: add a --with-hypre just like --with-mpi above
 
 #configure with HYPRE (NOT IN USE YET)
 AC_ARG_WITH([hypre-dir],[AS_HELP_STRING([--with-hypre-dir=path],
@@ -158,27 +178,14 @@ AS_IF([test "x${hypre_dir}" != xno],
        hypreinc="-I${hypre_dir}/include"
        hyprelib="-L${hypre_dir}/lib ${hypre_libflags}"])
 
-#--with-hypre-petsc-dir option
+AC_SUBST(HYPRE_CFLAGS,${hypreinc})
+AC_SUBST(HYPRE_LIBS,${hyprelib})
 
-#configure with PETSC
-AC_ARG_WITH([petsc-dir],[AS_HELP_STRING([--with-petsc-dir=path],
-            [specify location of single directory installation])],
-            [petsc_dir=${withval}],[petsc_dir=no])
-
-petsc_libflags="-lpetsc -lHYPRE -llapack -lblas -ldl -fopenmp -lm -L/usr/X11R6/lib -lX11"
-
-with_petsc=no
-AS_IF([test "x${petsc_dir}" != xno],
-      [with_petsc=yes
-       petscinc="-I${petsc_dir}/include"
-       petsclib="-L${petsc_dir}/lib ${petsc_libflags}"])
-
-AC_SUBST(PETSC_CFLAGS,${petscinc})
-AC_SUBST(PETSC_LIBS,${petsclib})
 
 #hypre should only be defined if it was specified ... 
 AS_IF([test $with_petsc = yes],
       [AC_DEFINE([HAVE_HYPRE],[1],[build with HYPRE])])
+
 
 #check if PETSC dependent modules should be built
 AM_CONDITIONAL([PETSC_OPT],[test $with_petsc = yes])
