@@ -896,7 +896,6 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     }
                     else if( status == CONST_P_PDE_BOUNDARY )
                     {
-                        printf("CONST_P_PDE_BOUNDARY\n");
                         //Inside Virtual Domain using compact laplacian discretization
                         rhs -= NeumannBdryVal;
                     }
