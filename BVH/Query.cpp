@@ -2,8 +2,10 @@
 
 using NodePair = std::pair<BVH_Node*,BVH_Node*>;
 
-static std::stack<NodePair> queryProximity(
+static std::stack<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA, BVH_Node* const nodeB);
+
+static void ProcessProximityCandidates(std::stack<NodePair>& candidates);
 
 
 //TODO: Return type of this function is temporary for testing.
@@ -17,16 +19,29 @@ const bool checkProximity(const BVH* A, const BVH* B)
     BVH_Node* rootB = B->getRoot();
     assert(rootA && rootB);
     
-    auto proximity_stack = queryProximity(rootA,rootB);
+    auto proximity_stack = GetProximityCandidates(rootA,rootB);
+    ProcessProximityCandidates(proximity_stack);
+    //NOTE: at this point the CollisionSolver can apply the
+    //      necessary repulsion forces to the nodes remaining
+    //      in the stack i.e. the ones that are actually in
+    //      proximity of each other.
+    //      
+    //      Could have the function return the stack, but that could be
+    //      an expensive copy/move.
+    //
+    //      
+    //
 
-    //Distance Computations Here
+
+    /*
     if( !proximity_stack.empty() )
         return true;
     else
         return false;
+    */
 }
 
-std::stack<NodePair> queryProximity(
+std::stack<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA,
         BVH_Node* const nodeB)
 {
@@ -84,4 +99,14 @@ std::stack<NodePair> queryProximity(
 
     return proximity_stack;
 }
+
+
+void ProcessProximityCandidates(std::stack<NodePair> candidates)
+{
+    //TODO: Compute distance between each candidate pair,
+    //and remove from the stack
+
+}
+
+
 
