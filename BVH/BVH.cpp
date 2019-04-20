@@ -61,10 +61,6 @@ void BVH::constructLeafNodes(INTERFACE* intfc)
 }
 
 //TODO: Would a Hse factory provide any real benefit?
-//      At this point I don't think so, but keep
-//      the option open. Could become important for
-//      future generalization of the BVH and or
-//      Collision Solver classes and internal algorithms
 void BVH::processSurfaces(SURFACE** surf)
 {
     for( surf; surf && *surf; ++surf )

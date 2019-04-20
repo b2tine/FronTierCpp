@@ -24,7 +24,8 @@ ______lib_libBVH_la_SOURCES = \
 ../BVH.h \
 ../BVH.cpp \
 ../BVH_Visualization.cpp \
-../Query.cpp
+../Query.cpp \
+../LSQ.h
 
 
 ______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libiFluid.la

@@ -7,6 +7,7 @@
 #include <limits>
 #include <exception>
 #include <cassert>
+#include <vector>
 
 #include <FronTier.h>
 
@@ -41,6 +42,7 @@ class Hse
         virtual double max_coord(int i) const = 0;
         virtual double min_coord(int i) const = 0;
         virtual const POINT* const Point_of_hse(int i) const = 0;
+        virtual std::vector<POINT*> getHsePoints() = 0;
         
         const bool isAdjacentOrSelf(const Hse* const H) const noexcept;
         const HseTag getTag() const noexcept;
@@ -73,6 +75,7 @@ class HsBond : public Hse
         double min_coord(int dim) const override;
         double max_coord(int dim) const override;
         const POINT* const Point_of_hse(int i) const override;
+        std::vector<POINT*> getHsePoints() override;
 };
 
 
@@ -100,6 +103,7 @@ class HsTri : public Hse
         double min_coord(int dim) const override;
         double max_coord(int dim) const override;
         const POINT* const Point_of_hse(int i) const override;
+        std::vector<POINT*> getHsePoints() override;
 };
 
         

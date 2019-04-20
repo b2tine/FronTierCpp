@@ -91,7 +91,12 @@ TEST_F(HseTests, AdjacencyTest)
     ASSERT_TRUE(areAdjacentHse(T0,T0));
 }
 
-
-
+TEST_F(HseTests, getHsePointsTest)
+{
+    auto pointvec = T0->getHsePoints();
+    ASSERT_TRUE(pointvec[0] == a);
+    ASSERT_TRUE(pointvec[1] == b);
+    ASSERT_TRUE(pointvec[2] == c);
+}
 
 

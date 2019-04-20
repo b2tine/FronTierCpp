@@ -147,9 +147,9 @@ TEST_F(DISABLED_BVH_Tests, AABBSelfProximity)
 
 }
 
-TEST_F(DISABLED_BVH_Tests, checkProximityTest)
+TEST_F(BVH_Tests, checkProximityTest)
 {
-    //ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
+    ASSERT_TRUE(checkProximity(&bvh1,&bvh2));
 }
 
 TEST_F(BVH_Tests, BuildTest)

@@ -20,6 +20,7 @@ void Hse::setTag(HseTag Tag)
     tag = Tag;
 }
 */
+
 //////////////////////////////////////////////////
 //              HsBond Methods                  //
 //////////////////////////////////////////////////
@@ -51,6 +52,13 @@ double HsBond::max_coord(int dim) const
     assert( dim >= 0 && dim < 3 );
     return std::max(Coords(this->Point_of_hse(0))[dim],
             Coords(this->Point_of_hse(1))[dim]);
+}
+
+std::vector<POINT*> HsBond::getHsePoints()
+{
+    assert(this->bond);
+    std::vector<POINT*> pts = {bond->start, bond->end};
+    return pts;
 }
 
 //////////////////////////////////////////////////
@@ -94,6 +102,15 @@ double HsTri::max_coord(int dim) const
                 Coords(this->Point_of_hse(i))[dim]);
     }
     return val;
+}
+        
+std::vector<POINT*> HsTri::getHsePoints()
+{
+    assert(this->tri);
+    std::vector<POINT*> pts(3);
+    for( int i = 0; i < 3; ++i )
+        pts[i] = Point_of_tri(tri)[i];
+    return pts;
 }
 
 //////////////////////////////////////////////////////////
