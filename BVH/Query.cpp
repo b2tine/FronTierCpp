@@ -19,14 +19,22 @@ static double PointToTriDistance(POINT* p, std::vector<POINT*> TriPoints);
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                 const std::vector<POINT*>& ptsB);
 
-static std::vector<double> Pt2Vec(const POINT* p)
+static std::vector<double> Pt2Vec(const POINT* p);
+
 static std::vector<double> Pts2Vec(const POINT* p1, const POINT* p2);
 
-static double DotVec(const std::vector<double>& u, const std::vector<double>& v);
-static std::vector<double> CrossVec(const std::vector<double>& u, const std::vector<double>& v);
-static double MagVec(const std::vector<double>& v);
+static std::vector<double> CrossVec(const std::vector<double>& u,
+                                    const std::vector<double>& v);
+
 static std::vector<double> ScalarVec(const std::vector<double>& u);
+
+static std::vector<double> AddVec(const std::vector<double>& u,
+                                  const std::vector<double>& v);
+
 static std::vector<double> NormalizeVec(std::vector<double>& u);
+
+static double DotVec(const std::vector<double>& u, const std::vector<double>& v);
+static double MagVec(const std::vector<double>& v);
 
 
 //TODO: Return type of this function is temporary for testing.
@@ -170,26 +178,26 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
 {
     double TOL = 1.0e-06;
 
+    auto x12 = Pts2Vec(triPts[0],triPts[1]);
     auto x13 = Pts2Vec(triPts[0],triPts[2]);
-    auto x23 = Pts2Vec(triPts[1],triPts[2]);
-    auto x43 = Pts2Vec(p,triPts[2]);
+    auto x14 = Pts2Vec(triPts[0],p]);
     
-    auto ntri = CrossVec(x13,x23);
+    auto ntri = CrossVec(x12,x13);
     auto unormal = Normalize(ntri);
-    double distToPlaneOfTri = fabs(DotVec(x4,unormal));
+    double distToPlaneOfTri = fabs(DotVec(x14,unormal));
     
     if( distTriPlane > TOL )
         return -1;
 
     LeastSquares2d Lsq;
 
-    Lsq.setA( DotVec(x13,x13), DotVec(x13,x23),
-              DotVec(x23,x13), DotVec(x23,x23) );
+    Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
+              DotVec(x12,x13), DotVec(x13,x13) );
     
-    Lsq.setRHS( DotVec(x13,x43), DotVec(x23,x43) );
+    Lsq.setRHS( DotVec(x12,x14), DotVec(x13,x14) );
 
     auto W = Lsq.solve();
-    W.push_back(1.0 - W[0] - W[1]);
+    W.push_front(1.0 - W[0] - W[1]);
 
     double triArea = 0.5*MagVec(ntri);
     double charLength = std::sqrt(triArea);
@@ -201,9 +209,19 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
             return -1;
     }
 
-    //TODO: convert from barycentric coords back to cartesian
-    //      and compute the distance from p.
+    auto x1 = Pt2Vec(triPts[0]);
+    auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
+    auto projx4 = AddVec(x1,v);
 
+    //TODO: 
+    //      1. Check if projx4 is in the triangle interior with
+    //         the LeftTurn() function. If projx4 is an interior
+    //         point, then it is the closest of the triangle to x4.
+    //
+    //      2. Otherwise, find the edge visible (closest) to projx4
+    //         using the LeftTurn() function. Project projx4 onto
+    //         the visible edge to obtain the closest of the triangle
+    //         to x4.
 }
 
 std::vector<double> Pt2Vec(const POINT* p)
@@ -252,6 +270,15 @@ std::vector<double> ScalarVec(double c, const std::vector<double>& u)
     for( int i = 0; i < 3; ++i )
         cu[i] /= c;
     return cu;
+}
+
+std::vector<double> AddVec(const std::vector<double>& u,
+                            const std::vector<double>& v)
+{
+    std::vector<double> w(u);
+    for( int i = 0; i < 3; ++i )
+        w[i] += v[i];
+    return w;
 }
 
 std::vector<double> NormalizeVec(std::vector<double>& u)
