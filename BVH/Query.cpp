@@ -189,6 +189,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     if( distTriPlane > TOL )
         return -1;
 
+    //TODO: change LeastSquares2d to CramersMethod2d
     LeastSquares2d Lsq;
 
     Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
@@ -220,8 +221,10 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     //
     //      2. Otherwise, find the edge visible (closest) to projx4
     //         using the LeftTurn() function. Project projx4 onto
-    //         the visible edge to obtain the closest of the triangle
-    //         to x4.
+    //         the visible edge to obtain the closest point of the
+    //         triangle to x4.
+    //
+    //      3. Compute the the displacement vector and its magnitude.
 }
 
 std::vector<double> Pt2Vec(const POINT* p)
@@ -273,7 +276,7 @@ std::vector<double> ScalarVec(double c, const std::vector<double>& u)
 }
 
 std::vector<double> AddVec(const std::vector<double>& u,
-                            const std::vector<double>& v)
+                           const std::vector<double>& v)
 {
     std::vector<double> w(u);
     for( int i = 0; i < 3; ++i )
