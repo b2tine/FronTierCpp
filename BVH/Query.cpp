@@ -20,10 +20,6 @@ static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                 const std::vector<POINT*>& ptsB);
 
 static std::vector<double> Pt2Vec(const POINT* p);
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 static std::vector<double> Pts2Vec(const POINT* p1, const POINT* p2);
 
 static std::vector<double> CrossVec(const std::vector<double>& u,
@@ -36,8 +32,13 @@ static std::vector<double> AddVec(const std::vector<double>& u,
 
 static std::vector<double> NormalizeVec(std::vector<double>& u);
 
-static double DotVec(const std::vector<double>& u, const std::vector<double>& v);
+static double DotVec(const std::vector<double>& u,
+                     const std::vector<double>& v);
 static double MagVec(const std::vector<double>& v);
+
+static bool LeftTurn(const std::vector<double>& a,
+                     const std::vector<double>& b,
+                     const std::vector<double>& c);
 
 
 //TODO: Return type of this function is temporary for testing.
@@ -128,6 +129,7 @@ std::vector<NodePair> GetProximityCandidates(
     return candidates;
 }
 
+/*
 void ProcessProximityCandidates(std::vector<NodePair>& candidates)
 {
     for( auto& pair : candidates  )
@@ -135,7 +137,6 @@ void ProcessProximityCandidates(std::vector<NodePair>& candidates)
         auto hseA = pair.first->getHse();
         auto hseB = pair.second->getHse();
         
-        //TODO: const correctness
         double distAB = HseToHseDistance(hseA,hseB);
 
             //auto ptsA = hseA->getHsePoints();
@@ -229,6 +230,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     //
     //      3. Compute the the displacement vector and its magnitude.
 }
+*/
 
 std::vector<double> Pt2Vec(const POINT* p)
 {
@@ -290,5 +292,14 @@ std::vector<double> AddVec(const std::vector<double>& u,
 std::vector<double> NormalizeVec(std::vector<double>& u)
 {
     return ScalarVec(1.0/MagVec(u),u);
+}
+
+bool LeftTurn(const std::vector<double>& a,
+              const std::vector<double>& b,
+              const std::vector<double>& c)
+{
+    double parllelrogramArea = (b[0] - a[0])*(c[1] - a[1])
+                                - (c[0] - a[0])*(b[1] - a[1]);
+    return parallelogramArea > 0.0;
 }
 
