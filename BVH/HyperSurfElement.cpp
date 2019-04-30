@@ -54,7 +54,7 @@ double HsBond::max_coord(int dim) const
             Coords(this->Point_of_hse(1))[dim]);
 }
 
-std::vector<POINT*> HsBond::getHsePoints()
+const std::vector<POINT*> HsBond::getHsePoints() const
 {
     assert(this->bond);
     std::vector<POINT*> pts = {bond->start, bond->end};
@@ -104,7 +104,7 @@ double HsTri::max_coord(int dim) const
     return val;
 }
         
-std::vector<POINT*> HsTri::getHsePoints()
+const std::vector<POINT*> HsTri::getHsePoints() const
 {
     assert(this->tri);
     std::vector<POINT*> pts(3);

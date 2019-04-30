@@ -10,7 +10,7 @@ static std::vector<NodePair> GetProximityCandidates(
 
 static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
-static double HseToHseDistance(Hse* A, Hse* B);
+static double HseToHseDistance(const Hse* A, const Hse* B);
 
 static double TriToTriDistance(std::vector<POINT*> ptsA, std::vector<POINT*> ptsB);
 
@@ -20,7 +20,10 @@ static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                 const std::vector<POINT*>& ptsB);
 
 static std::vector<double> Pt2Vec(const POINT* p);
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 static std::vector<double> Pts2Vec(const POINT* p1, const POINT* p2);
 
 static std::vector<double> CrossVec(const std::vector<double>& u,
@@ -132,21 +135,22 @@ void ProcessProximityCandidates(std::vector<NodePair>& candidates)
         auto hseA = pair.first->getHse();
         auto hseB = pair.second->getHse();
         
-        double distAB = HseToHseDistance(ptsA,ptsB);
-        //auto ptsA = hseA->getHsePoints();
-        //auto ptsB = hseB->getHsePoints();
-        //double distAB = TriToTriDistance(ptsA,ptsB);
+        //TODO: const correctness
+        double distAB = HseToHseDistance(hseA,hseB);
+
+            //auto ptsA = hseA->getHsePoints();
+            //auto ptsB = hseB->getHsePoints();
+            //double distAB = TriToTriDistance(ptsA,ptsB);
     }
 
 }
 
-/*
-double HseToHseDistance(Hse* A, Hse* B)
+double HseToHseDistance(const Hse* A, const Hse* B)
 {
     int nA = A->num_pts();
     int nB = B->num_pts();
-    auto ptsA->getHsePoints();
-    auto ptsB->getHsePoints();
+    auto ptsA = A->getHsePoints();
+    auto ptsB = B->getHsePoints();
 
     if( nA == 2 )
     {
@@ -163,7 +167,6 @@ double HseToHseDistance(Hse* A, Hse* B)
             return TriToTriDistance(ptsA,ptsB);
     }
 }
-*/
 
 double TriToTriDistance(
         const std::vector<POINT*>& ptsA,
@@ -182,8 +185,8 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto x13 = Pts2Vec(triPts[0],triPts[2]);
     auto x14 = Pts2Vec(triPts[0],p]);
     
-    auto ntri = CrossVec(x12,x13);
-    auto unormal = Normalize(ntri);
+    auto ntri = CrossVec(x13,x23);
+    auto unormal = NormalizeVec(ntri);
     double distToPlaneOfTri = fabs(DotVec(x14,unormal));
     
     if( distTriPlane > TOL )
