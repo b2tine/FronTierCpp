@@ -1,9 +1,5 @@
 #include "BVH.h"
-#include "LSQ.h"
-
-
-using NodePair = std::pair<BVH_Node*,BVH_Node*>;
-
+#include "CramersRule2d.h"
 
 static std::vector<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA, BVH_Node* const nodeB);
@@ -36,10 +32,22 @@ static double DotVec(const std::vector<double>& u,
                      const std::vector<double>& v);
 static double MagVec(const std::vector<double>& v);
 
+static double SignedParallelogramArea(const std::vector<double>& a,
+                                      const std::vector<double>& b,
+                                      const std::vector<double>& c);
+
 static bool LeftTurn(const std::vector<double>& a,
                      const std::vector<double>& b,
                      const std::vector<double>& c);
 
+static bool LeftTurnOrCollinear(const std::vector<double>& a,
+                                const std::vector<double>& b,
+                                const std::vector<double>& c);
+
+
+using NodePair = std::pair<BVH_Node*,BVH_Node*>;
+
+//NOTE: checkProximity() is the only externally callable function.
 
 //TODO: Return type of this function is temporary for testing.
 //      Need to actually perform distance computations for the
@@ -69,6 +77,11 @@ const bool checkProximity(const BVH* A, const BVH* B)
     else
         return false;
 }
+
+///////////////////////////////////////////////
+////    All functions below are static    ////
+////       i.e. local to this file       ////
+////////////////////////////////////////////
 
 std::vector<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA,
@@ -177,6 +190,7 @@ double TriToTriDistance(
     //9 EdgeToEdgeDistance() checks
 
 }
+*/
 
 double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
 {
@@ -193,8 +207,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     if( distTriPlane > TOL )
         return -1;
 
-    //TODO: change LeastSquares2d to CramersMethod2d
-    LeastSquares2d Lsq;
+    CramersRule2d Lsq;
 
     Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
               DotVec(x12,x13), DotVec(x13,x13) );
@@ -230,7 +243,6 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     //
     //      3. Compute the the displacement vector and its magnitude.
 }
-*/
 
 std::vector<double> Pt2Vec(const POINT* p)
 {
@@ -294,12 +306,25 @@ std::vector<double> NormalizeVec(std::vector<double>& u)
     return ScalarVec(1.0/MagVec(u),u);
 }
 
+double SignedParallelogramArea(const std::vector<double>& a,
+                               const std::vector<double>& b,
+                               const std::vector<double>& c)
+{
+    return (b[0] - a[0])*(c[1] - a[1])
+            - (c[0] - a[0])*(b[1] - a[1]);
+}
+
 bool LeftTurn(const std::vector<double>& a,
               const std::vector<double>& b,
               const std::vector<double>& c)
 {
-    double parllelrogramArea = (b[0] - a[0])*(c[1] - a[1])
-                                - (c[0] - a[0])*(b[1] - a[1]);
-    return parallelogramArea > 0.0;
+    return SignedParallelogramArea(a,b,c) > 0.0;
+}
+
+bool LeftTurnOrCollinear(const std::vector<double>& a,
+                         const std::vector<double>& b,
+                         const std::vector<double>& c)
+{
+    return SignedParallelogramArea(a,b,c) >= 0.0;
 }
 
