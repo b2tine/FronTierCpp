@@ -104,6 +104,7 @@ double HsTri::max_coord(int dim) const
     return val;
 }
         
+//TODO: Verify points are in CCW order.
 const std::vector<POINT*> HsTri::getHsePoints() const
 {
     assert(this->tri);

@@ -1,6 +1,8 @@
 #include "BVH.h"
 #include "CramersRule2d.h"
 
+using NodePair = std::pair<BVH_Node*,BVH_Node*>;
+
 static std::vector<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA, BVH_Node* const nodeB);
 
@@ -8,12 +10,10 @@ static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
 static double HseToHseDistance(const Hse* A, const Hse* B);
 
-static double TriToTriDistance(std::vector<POINT*> ptsA, std::vector<POINT*> ptsB);
-
 static double PointToTriDistance(POINT* p, std::vector<POINT*> TriPoints);
 
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
-                                const std::vector<POINT*>& ptsB);
+                               const std::vector<POINT*>& ptsB);
 
 static std::vector<double> Pt2Vec(const POINT* p);
 static std::vector<double> Pts2Vec(const POINT* p1, const POINT* p2);
@@ -25,6 +25,9 @@ static std::vector<double> ScalarVec(const std::vector<double>& u);
 
 static std::vector<double> AddVec(const std::vector<double>& u,
                                   const std::vector<double>& v);
+
+static std::vector<double> MinusVec(const std::vector<double>& u,
+                                    const std::vector<double>& v);
 
 static std::vector<double> NormalizeVec(std::vector<double>& u);
 
@@ -40,12 +43,21 @@ static bool LeftTurn(const std::vector<double>& a,
                      const std::vector<double>& b,
                      const std::vector<double>& c);
 
-static bool LeftTurnOrCollinear(const std::vector<double>& a,
+static bool CollinearOrLeftTurn(const std::vector<double>& a,
                                 const std::vector<double>& b,
                                 const std::vector<double>& c);
 
+static bool PointInTri(const std::vector<double>& p,
+                       const std::vector<double>& a,
+                       const std::vector<double>& b,
+                       const std::vector<double>& c);
 
-using NodePair = std::pair<BVH_Node*,BVH_Node*>;
+static std::pair<std::vector< std::vector<double>>, std::vector<double> >
+TangentPointsOfTriDecomposition(const std::vector<double>& p,
+                                const std::vector<double>& a,
+                                const std::vector<double>& b,
+                                const std::vector<double>& c);
+
 
 //NOTE: checkProximity() is the only externally callable function.
 
@@ -142,7 +154,6 @@ std::vector<NodePair> GetProximityCandidates(
     return candidates;
 }
 
-/*
 void ProcessProximityCandidates(std::vector<NodePair>& candidates)
 {
     for( auto& pair : candidates  )
@@ -163,6 +174,8 @@ double HseToHseDistance(const Hse* A, const Hse* B)
 {
     int nA = A->num_pts();
     int nB = B->num_pts();
+
+    //TODO: Verify these are given in CCW order.
     auto ptsA = A->getHsePoints();
     auto ptsB = B->getHsePoints();
 
@@ -182,18 +195,28 @@ double HseToHseDistance(const Hse* A, const Hse* B)
     }
 }
 
+/*
 double TriToTriDistance(
         const std::vector<POINT*>& ptsA,
         const std::vector<POINT*>& ptsB)
 {
     //6 PointToTriDistance() checks
     //9 EdgeToEdgeDistance() checks
-
 }
 */
 
+//TODO: Should we return a distance and vector pair?
+//         i.e. std::pair<double,std::vector<double>>
+//      Or should we just return the closest point, and
+//      compute the rest external to this function?
+//
+//TODO: Const Correctness
 double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
 {
+    //TODO: TOL should be given as argument or set within
+    //      the class, that this becomes a member function of.
+    //      The CollisionSolver class or some component member
+    //      class thereof.
     double TOL = 1.0e-06;
 
     auto x12 = Pts2Vec(triPts[0],triPts[1]);
@@ -202,10 +225,21 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     
     auto ntri = CrossVec(x13,x23);
     auto unormal = NormalizeVec(ntri);
-    double distToPlaneOfTri = fabs(DotVec(x14,unormal));
+    double distToPlaneOfTri = DotVec(x14,unormal);
     
-    if( distTriPlane > TOL )
+    //Check if point is close enough to the plane to
+    //warrant computing the actual distance to the triangle.
+    if( fabs(distTriPlane) > TOL )
+    {
         return -1;
+    }
+
+    //Correct the normal vector to point in the direction of p
+    //TODO: is this necessary?
+    if( distToPlaneOfTri < 0.0 )
+    {
+        unormal = ScalarVec(-1.0,unormal);
+    }
 
     CramersRule2d Lsq;
 
@@ -217,6 +251,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto W = Lsq.solve();
     W.push_front(1.0 - W[0] - W[1]);
 
+    //TODO: determine geometric significance of this calculation (delta)
     double triArea = 0.5*MagVec(ntri);
     double charLength = std::sqrt(triArea);
     double delta = TOL/charLength;
@@ -228,20 +263,43 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     }
 
     auto x1 = Pt2Vec(triPts[0]);
+    auto x2 = Pt2Vec(triPts[1]);
+    auto x3 = Pt2Vec(triPts[2]);
+
+    //Compute the closest point in the plane to p
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
     auto projx4 = AddVec(x1,v);
+    
+    //If projx4 is in the triangle interior,
+    //then it is the closest point of the triangle.
+    if( PointInTri(projx4,x1,x2,x3) )
+    {
+        auto triToPointVec = MinusVec(Pt2Vec(p),projx4);
+        double distance = MagVec(triToPointVec);
+        //return distance;
+    }
 
-    //TODO: 
-    //      1. Check if projx4 is in the triangle interior with
-    //         the LeftTurn() function. If projx4 is an interior
-    //         point, then it is the closest of the triangle to x4.
-    //
-    //      2. Otherwise, find the edge visible (closest) to projx4
-    //         using the LeftTurn() function. Project projx4 onto
-    //         the visible edge to obtain the closest point of the
-    //         triangle to x4.
-    //
-    //      3. Compute the the displacement vector and its magnitude.
+    //Compute tangent points of triangle from p
+    auto tangencyDecomp = TangentPointsOfTriDecomposition(projx4,x1,x2,x3);
+    auto tanPts = tangencyDecomp.first;
+    auto nontanPoint = tangencyDecomp.second;
+
+    //If the nontangent point and p are on same side of the edge
+    //joining the tangent points, then the nontangent point is the
+    //closest point of the triangle.
+    if( LeftTurn(tanPts[0],tanPts[1],projx4) ==
+            LeftTurn(tanPts[0],tanPts[1],nontanPoint) )
+    {
+        auto triToPointVec = MinusVec(Pt2Vec(p),nontanPoint);
+        double distance = MagVec(triToPointVec);
+        //return distance;
+    }
+
+    //TODO: Now implement PointToEdgeDistance() and test it.
+    //      Then figure out what needs to be done in order to
+    //      get the direction vector.
+
+
 }
 
 std::vector<double> Pt2Vec(const POINT* p)
@@ -267,7 +325,7 @@ double MagVec(const std::vector<double>& v)
 }
 
 double DotVec(const std::vector<double>& u,
-                const std::vector<double>& v)
+              const std::vector<double>& v)
 {
     double val = 0.0;
     for( int i = 0; i < 3; ++i )
@@ -288,7 +346,7 @@ std::vector<double> ScalarVec(double c, const std::vector<double>& u)
 {
     std::vector<double> cu(u);
     for( int i = 0; i < 3; ++i )
-        cu[i] /= c;
+        cu[i] *= c;
     return cu;
 }
 
@@ -299,6 +357,12 @@ std::vector<double> AddVec(const std::vector<double>& u,
     for( int i = 0; i < 3; ++i )
         w[i] += v[i];
     return w;
+}
+
+std::vector<double> MinusVec(const std::vector<double>& u,
+                             const std::vector<double>& v)
+{
+    return AddVec(u,ScalarVec(-1.0,v));
 }
 
 std::vector<double> NormalizeVec(std::vector<double>& u)
@@ -321,10 +385,57 @@ bool LeftTurn(const std::vector<double>& a,
     return SignedParallelogramArea(a,b,c) > 0.0;
 }
 
-bool LeftTurnOrCollinear(const std::vector<double>& a,
+bool CollinearOrLeftTurn(const std::vector<double>& a,
                          const std::vector<double>& b,
                          const std::vector<double>& c)
 {
     return SignedParallelogramArea(a,b,c) >= 0.0;
 }
+
+//TODO: Verify a,b,c given in CCW order for below functions
+bool PointInTri(const std::vector<double>& p,
+                const std::vector<double>& a,
+                const std::vector<double>& b,
+                const std::vector<double>& c)
+{
+    if( !LeftTurn(a,b,p) || !LeftTurn(b,c,p) || !LeftTurn(c,a,p) )
+        return false;
+    else
+        return true;
+}
+
+std::pair<std::vector< std::vector<double>>, std::vector<double> >
+TangentPointsOfTriDecomposition(const std::vector<double>& p,
+                                const std::vector<double>& a,
+                                const std::vector<double>& b,
+                                const std::vector<double>& c)
+{
+    std::vector<double> nontangentPoint;
+    std::vector<std::vector<double>> tangentPts;
+    std::vector<std::vector<double>> triPts = {a,b,c};
+
+    for( int i = 0; i < 3; ++i )
+    {
+        int iminus1 = (i+2)%3;
+        int iplus1 = (i+1)%3;
+
+        if( CollinearOrLeftTurn(triPts[iminus1],triPts[i],p)
+                != CollinearOrLeftTurn(triPts[i],triPts[iplus1],p) )
+        {
+            tangentPts.push_back(triPts[i]);
+        }
+        else
+        {
+            nontangentPoint = triPts[i];
+        }
+    }
+
+    assert( tangentPts.size() == 2 && !nontangentPoint.empty() );
+    
+    tangentPts.shrink_to_fit();
+    nontangentPoint.shrink_to_fit();
+    return std::make_pair(tangentPts,nontangentPoint);
+}
+
+
 
