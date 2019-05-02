@@ -223,6 +223,12 @@ double TriToTriDistance(
 }
 */
 
+//If the point and triangle are within proximity of each other,
+//the returned vector is directed from the point p to the closest
+//point of the triangle. If they are not within proximity of each
+//other, the returned vector is a default constructed (i.e. empty)
+//std::vector<double>. Use the  vector<double>::empty() method to
+//determine which is the case.
 std::vector<double> PointToClosestPointOfTriVec(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts)
@@ -248,9 +254,6 @@ std::vector<double> PointToClosestPointOfTriVec(
     if( fabs(distTriPlane) > TOL )
     {
         return {};
-        //Returns default constructed std::vector<double>,
-        //check if vector<double>::empty() in the calling function
-        //to detect if point not in proximity to the triangle.
     }
 
     //Correct the normal vector to point in the direction of p
@@ -271,7 +274,8 @@ std::vector<double> PointToClosestPointOfTriVec(
     W.push_front(1.0 - W[0] - W[1]);
 
     //TODO: Determine geometric significance of this calculation (delta).
-    //      See wikipedia page on barycentric coordinates.
+    //      See wikipedia page on barycentric coordinates,
+    //      https://en.wikipedia.org/wiki/Barycentric_coordinate_system
     double triArea = 0.5*MagVec(ntri);
     double charLength = std::sqrt(triArea);
     double delta = TOL/charLength;
@@ -322,17 +326,32 @@ std::vector<double> PointToClosestPointOfTriVec(
     //Case 3: The nontangent point and projx4 are on opposite
     //        sides of the edge joining the two tangent points.
     std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
-    auto ClosestPoint = ClosestPointOfEdgeToPoint(projx4,tanPts);
-    auto PointToTriVec = MinusVec(ClosestPoint,p);
+    auto ClosestPointOfEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
+    auto PointToTriVec = MinusVec(ClosestPointOfEdge,p);
     return PointToTriVec;
         //double distance = MagVec(PointToTriVec);
 }
 
+//for details of implementation see
+//http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts)
 {
-    //TODO: implementation
+    auto u = MinusVec(p,edgePts[0]);
+    auto v = MinusVec(edgePts[1],edgePts[0]);
+
+    double uDotv = DotVec(u,v);
+    if( uDotv <= 0.0 ) 
+        return edgePts[0];
+
+    double vsquared = DotVec(v,v);
+    if( vsquared <= uDotv )
+        return edgePts[1];
+
+    auto projv_u = ScalarVec(uDotv/vsquared,v);
+    auto point_of_proj = AddVec(edgePts[0],projv_u);
+    return point_of_proj;
 }
 
 std::vector<double> Pt2Vec(const POINT* p)
@@ -395,6 +414,7 @@ std::vector<double> AddVec(const std::vector<double>& u,
 std::vector<double> MinusVec(const std::vector<double>& u,
                              const std::vector<double>& v)
 {
+    //vector pointing from v to u
     return AddVec(u,ScalarVec(-1.0,v));
 }
 
