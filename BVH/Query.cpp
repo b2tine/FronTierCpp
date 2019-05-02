@@ -53,7 +53,7 @@ static bool PointInTri(const std::vector<double>& p,
                        const std::vector<double>& c);
 
 static std::pair<std::vector< std::vector<double>>, std::vector<double> >
-TangentPointsOfTriDecomposition(const std::vector<double>& p,
+PointToTriTangencyDecomposition(const std::vector<double>& p,
                                 const std::vector<double>& a,
                                 const std::vector<double>& b,
                                 const std::vector<double>& c);
@@ -223,6 +223,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto x13 = Pts2Vec(triPts[0],triPts[2]);
     auto x14 = Pts2Vec(triPts[0],p]);
     
+    //TODO: Check if triangle is degenerate
     auto ntri = CrossVec(x13,x23);
     auto unormal = NormalizeVec(ntri);
     double distToPlaneOfTri = DotVec(x14,unormal);
@@ -280,7 +281,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     }
 
     //Compute tangent points of triangle from p
-    auto tangencyDecomp = TangentPointsOfTriDecomposition(projx4,x1,x2,x3);
+    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,x1,x2,x3);
     auto tanPts = tangencyDecomp.first;
     auto nontanPoint = tangencyDecomp.second;
 
@@ -405,7 +406,7 @@ bool PointInTri(const std::vector<double>& p,
 }
 
 std::pair<std::vector< std::vector<double>>, std::vector<double> >
-TangentPointsOfTriDecomposition(const std::vector<double>& p,
+PointToTriTangencyDecomposition(const std::vector<double>& p,
                                 const std::vector<double>& a,
                                 const std::vector<double>& b,
                                 const std::vector<double>& c)
