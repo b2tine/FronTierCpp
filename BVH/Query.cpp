@@ -235,9 +235,8 @@ std::vector<double> PointToClosestPointOfTriVec(
 {
     //TODO: TOL should be given as argument or possibly set within
     //      a class that this becomes a member function of.
-    //      The CollisionSolver class or some component member
-    //      class thereof maybe...
-    double TOL = 1.0e-06;
+    //      This value will typically be the width of the cloth.
+    double TOL = 1.0e-03;
 
     auto x12 = MinusVec(triPts[1],triPts[0]);
     auto x13 = MinusVec(triPts[2],triPts[0]);
@@ -246,21 +245,16 @@ std::vector<double> PointToClosestPointOfTriVec(
     //TODO: Need to check if triangle is degenerate?
     //      Eventually probably...
     auto ntri = CrossVec(x13,x23);
-    auto unormal = NormalizeVec(ntri);
-    double distToPlaneOfTri = DotVec(x14,unormal);
+    auto unitnormal = NormalizeVec(ntri);
+    double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
     
-    //Check if point is close enough to the plane to
-    //warrant computing the actual distance to the triangle.
-    if( fabs(distTriPlane) > TOL )
+    //Check if the point, p, is close enough to the plane of the
+    //triangle for it to be possible for the point, p, and the triangle
+    //to be within the prescribed proximity tolerance of each other.
+    if( fabs(signedDistToPlaneOfTri) > TOL )
     {
+        //Return default constructed std::vector<double> if not.
         return {};
-    }
-
-    //Correct the normal vector to point in the direction of p
-    //TODO: Is this necessary? Do we use unormal?
-    if( distToPlaneOfTri < 0.0 )
-    {
-        unormal = ScalarVec(-1.0,unormal);
     }
 
     CramersRule2d Lsq;
@@ -280,15 +274,16 @@ std::vector<double> PointToClosestPointOfTriVec(
     double charLength = std::sqrt(triArea);
     double delta = TOL/charLength;
 
+    //Check if the projected point in the plane is close enough to the
+    //triangle for it to be possible for the point, p, and the triangle
+    //to be within the prescribed proximity tolerance of each other.
     for( int i = 0; i < 3; ++i )
     {
         if( W[i] < -1.0*delta || W[i] > 1.0 + delta )
         {
+            //Return default constructed std::vector<double> if not.
             return {};
         }
-        //Returns default constructed std::vector<double>,
-        //check if vector<double>::empty() in the calling function
-        //to detect if point not in proximity to the triangle.
     }
 
     //Compute the closest point in the plane to p
