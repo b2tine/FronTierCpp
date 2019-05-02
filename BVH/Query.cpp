@@ -10,11 +10,19 @@ static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
 static double HseToHseDistance(const Hse* A, const Hse* B);
 
-static std::vector<double>
-PointToClosestPointOfTriVec(POINT* p, std::vector<POINT*> triPts);
+static std::vector<double> PointToClosestPointOfTriVec(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& triPts);
 
-static std::vector<double>
-PointToClosestPointOfEdgeVec(POINT* p, std::vector<POINT*> edgePts);
+static std::vector<double> ClosestPointOfEdgeToPoint(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& edgePts);
+
+/*
+static std::vector<double> PointToClosestPointOfEdgeVec(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& edgePts);
+*/
 
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                const std::vector<POINT*>& ptsB);
@@ -37,6 +45,7 @@ static std::vector<double> NormalizeVec(std::vector<double>& u);
 
 static double DotVec(const std::vector<double>& u,
                      const std::vector<double>& v);
+
 static double MagVec(const std::vector<double>& v);
 
 static double SignedParallelogramArea(const std::vector<double>& a,
@@ -201,12 +210,20 @@ double TriToTriDistance(
 {
     //6 PointToTriDistance() checks
     //9 EdgeToEdgeDistance() checks
+    
+    //TODO: convert to vector<double> equivalents and pass into functions.
+    //      Something like this...
+    auto x1 = Pt2Vec(triPts[0]);
+    auto x2 = Pt2Vec(triPts[1]);
+    auto x3 = Pt2Vec(triPts[2]);
+    std::vector<std::vector<double>> tpts = {x1,x2,x3};
+    and a for loop with Pt2Vec(otherTri[i])
 }
 */
 
-//TODO: Const Correctness
 std::vector<double> PointToClosestPointOfTriVec(
-        POINT* p, std::vector<POINT*> triPts)
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& triPts)
 {
     //TODO: TOL should be given as argument or set within
     //      the class, that this becomes a member function of.
@@ -214,11 +231,12 @@ std::vector<double> PointToClosestPointOfTriVec(
     //      class thereof.
     double TOL = 1.0e-06;
 
-    auto x12 = Pts2Vec(triPts[0],triPts[1]);
-    auto x13 = Pts2Vec(triPts[0],triPts[2]);
-    auto x14 = Pts2Vec(triPts[0],p]);
+    auto x12 = MinusVec(triPts[1],triPts[0]);
+    auto x13 = MinusVec(triPts[2],triPts[0]);
+    auto x14 = MinusVec(p,triPts[0]);
     
     //TODO: Need to check if triangle is degenerate?
+    //      Eventually probably...
     auto ntri = CrossVec(x13,x23);
     auto unormal = NormalizeVec(ntri);
     double distToPlaneOfTri = DotVec(x14,unormal);
@@ -234,7 +252,7 @@ std::vector<double> PointToClosestPointOfTriVec(
     }
 
     //Correct the normal vector to point in the direction of p
-    //TODO: is this necessary?
+    //TODO: Is this necessary? Do we use unormal?
     if( distToPlaneOfTri < 0.0 )
     {
         unormal = ScalarVec(-1.0,unormal);
@@ -267,53 +285,50 @@ std::vector<double> PointToClosestPointOfTriVec(
         //to detect if point not in proximity to the triangle.
     }
 
-    auto x1 = Pt2Vec(triPts[0]);
-    auto x2 = Pt2Vec(triPts[1]);
-    auto x3 = Pt2Vec(triPts[2]);
-    std::vector<std::vector<double>> tpts = {x1,x2,x3};
-
     //Compute the closest point in the plane to p
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
     auto projx4 = AddVec(x1,v);
     
     //Case 1: projx4 is in the triangle interior, then
     //        it is the closest point of the triangle.
-    if( PointInTri(projx4,tpts) )
+    if( PointInTri(projx4,triPts) )
     {
-        auto PointToTriVec = MinusVec(projx4,Pt2Vec(p));
+        auto PointToTriVec = MinusVec(projx4,p);
         return PointToTriVec;
             //double distance = MagVec(PointToTriVec);
     }
 
     //Compute indices of tangent and nontangent points of
     //triangle from projx4's line of sight.
-    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,tpts);
+    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,triPts);
     auto tanIndices = tangencyDecomp.first;
     int tan0 = tanIndices[0];
     int tan1 = tanIndices[1];
     int nontan = tangencyDecomp.second;
 
-    //Case 2: The nontangent point and p are on same side of
+    //Case 2: The nontangent point and projx4 are on same side of
     //        the edge joining the two tangent points, then the
     //        nontangent point is the closest point of the triangle.
-    if( LeftTurn(tpts[tan0],tpts[tan1],projx4) ==
-            LeftTurn(tpts[tan0],tpts[tan1],tpts[nontan]) )
+    if( LeftTurn(triPts[tan0],triPts[tan1],projx4) ==
+            LeftTurn(triPts[tan0],triPts[tan1],triPts[nontan]) )
     {
-        auto PointToTriVec = MinusVec(tpts[nontan],Pt2Vec(p));
+        auto PointToTriVec = MinusVec(triPts[nontan],p);
         return PointToTriVec;
             //double distance = MagVec(PointToTriVec);
     }
 
-    //Case 3: The nontangent point and p are on opposite
+    //Case 3: The nontangent point and projx4 are on opposite
     //        sides of the edge joining the two tangent points.
     std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
-    auto PointToTriVec = PointToClosestPointOfEdgeVec(p,tanPts);
+    auto ClosestPoint = ClosestPointOfEdgeToPoint(projx4,tanPts);
+    auto PointToTriVec = MinusVec(ClosestPoint,p);
     return PointToTriVec;
-        //double distance = MagVec(triToPointVec);
+        //double distance = MagVec(PointToTriVec);
 }
 
-std::vector<double> PointToClosestPointOfEdgeVec(
-        POINT* p, std::vector<POINT*> edgePts)
+std::vector<double> ClosestPointOfEdgeToPoint(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& edgePts)
 {
     //TODO: implementation
 }
@@ -390,6 +405,7 @@ double SignedParallelogramArea(const std::vector<double>& a,
                                const std::vector<double>& b,
                                const std::vector<double>& c)
 {
+    //Magnitude of ab cross ac, where a, b and c points in plane
     return (b[0] - a[0])*(c[1] - a[1])
             - (c[0] - a[0])*(b[1] - a[1]);
 }
