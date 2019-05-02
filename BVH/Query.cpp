@@ -204,11 +204,6 @@ double TriToTriDistance(
 }
 */
 
-//TODO: Should we return a distance and vector pair?
-//         i.e. std::pair<double,std::vector<double>>
-//      Or should we just return the closest point, and
-//      compute the rest external to this function?
-//
 //TODO: Const Correctness
 std::vector<double> PointToClosestPointOfTriVec(
         POINT* p, std::vector<POINT*> triPts)
@@ -232,7 +227,10 @@ std::vector<double> PointToClosestPointOfTriVec(
     //warrant computing the actual distance to the triangle.
     if( fabs(distTriPlane) > TOL )
     {
-        return -1;
+        return {};
+        //Returns default constructed std::vector<double>,
+        //check if vector<double>::empty() in the calling function
+        //to detect if point not in proximity to the triangle.
     }
 
     //Correct the normal vector to point in the direction of p
@@ -252,7 +250,8 @@ std::vector<double> PointToClosestPointOfTriVec(
     auto W = Lsq.solve();
     W.push_front(1.0 - W[0] - W[1]);
 
-    //TODO: determine geometric significance of this calculation (delta)
+    //TODO: Determine geometric significance of this calculation (delta).
+    //      See wikipedia page on barycentric coordinates.
     double triArea = 0.5*MagVec(ntri);
     double charLength = std::sqrt(triArea);
     double delta = TOL/charLength;
@@ -260,7 +259,12 @@ std::vector<double> PointToClosestPointOfTriVec(
     for( int i = 0; i < 3; ++i )
     {
         if( W[i] < -1.0*delta || W[i] > 1.0 + delta )
-            return -1;
+        {
+            return {};
+        }
+        //Returns default constructed std::vector<double>,
+        //check if vector<double>::empty() in the calling function
+        //to detect if point not in proximity to the triangle.
     }
 
     auto x1 = Pt2Vec(triPts[0]);
@@ -278,10 +282,11 @@ std::vector<double> PointToClosestPointOfTriVec(
     {
         auto PointToTriVec = MinusVec(projx4,Pt2Vec(p));
         return PointToTriVec;
-        //double distance = MagVec(triToPointVec);
+            //double distance = MagVec(PointToTriVec);
     }
 
-    //Compute tangent points of triangle from p
+    //Compute indices of tangent and nontangent points of
+    //triangle from projx4's line of sight.
     auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,tpts);
     auto tanIndices = tangencyDecomp.first;
     int tan0 = tanIndices[0];
@@ -296,24 +301,22 @@ std::vector<double> PointToClosestPointOfTriVec(
     {
         auto PointToTriVec = MinusVec(tpts[nontan],Pt2Vec(p));
         return PointToTriVec;
-        //double distance = MagVec(triToPointVec);
+            //double distance = MagVec(PointToTriVec);
     }
 
-    //TODO: Now implement
     //Case 3: The nontangent point and p are on opposite
     //        sides of the edge joining the two tangent points.
-
     std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
-    return PointToClosestPointOfEdgeVec(p,tanPts);
-
+    auto PointToTriVec = PointToClosestPointOfEdgeVec(p,tanPts);
+    return PointToTriVec;
+        //double distance = MagVec(triToPointVec);
 }
 
-/*
 std::vector<double> PointToClosestPointOfEdgeVec(
         POINT* p, std::vector<POINT*> edgePts)
 {
+    //TODO: implementation
 }
-*/
 
 std::vector<double> Pt2Vec(const POINT* p)
 {
@@ -430,8 +433,8 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
         int iminus1 = (i+2)%3;
         int iplus1 = (i+1)%3;
 
-        if( CollinearOrLeftTurn(triPts[iminus1],triPts[i],p)
-                != CollinearOrLeftTurn(triPts[i],triPts[iplus1],p) )
+        if( CollinearOrLeftTurn(triPts[iminus1],triPts[i],p) !=
+                CollinearOrLeftTurn(triPts[i],triPts[iplus1],p) )
         {
             tangentPtsIndices.push_back(i);
         }
