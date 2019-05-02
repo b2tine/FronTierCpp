@@ -10,7 +10,11 @@ static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
 static double HseToHseDistance(const Hse* A, const Hse* B);
 
-static double PointToTriDistance(POINT* p, std::vector<POINT*> TriPoints);
+static std::vector<double>
+PointToClosestPointOfTriVec(POINT* p, std::vector<POINT*> triPts);
+
+static std::vector<double>
+PointToClosestPointOfEdgeVec(POINT* p, std::vector<POINT*> edgePts);
 
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                const std::vector<POINT*>& ptsB);
@@ -48,16 +52,11 @@ static bool CollinearOrLeftTurn(const std::vector<double>& a,
                                 const std::vector<double>& c);
 
 static bool PointInTri(const std::vector<double>& p,
-                       const std::vector<double>& a,
-                       const std::vector<double>& b,
-                       const std::vector<double>& c);
+        const std::vector<std::vector<double>>& triPts);
 
-static std::pair<std::vector< std::vector<double>>, std::vector<double> >
+static std::pair<std::vector<int>,int>
 PointToTriTangencyDecomposition(const std::vector<double>& p,
-                                const std::vector<double>& a,
-                                const std::vector<double>& b,
-                                const std::vector<double>& c);
-
+        const std::vector<std::vector<double>>& triPts)
 
 //NOTE: checkProximity() is the only externally callable function.
 
@@ -211,7 +210,8 @@ double TriToTriDistance(
 //      compute the rest external to this function?
 //
 //TODO: Const Correctness
-double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
+std::vector<double> PointToClosestPointOfTriVec(
+        POINT* p, std::vector<POINT*> triPts)
 {
     //TODO: TOL should be given as argument or set within
     //      the class, that this becomes a member function of.
@@ -223,7 +223,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto x13 = Pts2Vec(triPts[0],triPts[2]);
     auto x14 = Pts2Vec(triPts[0],p]);
     
-    //TODO: Check if triangle is degenerate
+    //TODO: Need to check if triangle is degenerate?
     auto ntri = CrossVec(x13,x23);
     auto unormal = NormalizeVec(ntri);
     double distToPlaneOfTri = DotVec(x14,unormal);
@@ -266,6 +266,7 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto x1 = Pt2Vec(triPts[0]);
     auto x2 = Pt2Vec(triPts[1]);
     auto x3 = Pt2Vec(triPts[2]);
+    std::vector<std::vector<double>> tpts = {x1,x2,x3};
 
     //Compute the closest point in the plane to p
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
@@ -273,34 +274,46 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     
     //Case 1: projx4 is in the triangle interior, then
     //        it is the closest point of the triangle.
-    if( PointInTri(projx4,x1,x2,x3) )
+    if( PointInTri(projx4,tpts) )
     {
-        auto triToPointVec = MinusVec(Pt2Vec(p),projx4);
-        double distance = MagVec(triToPointVec);
-        //return distance;
+        auto PointToTriVec = MinusVec(projx4,Pt2Vec(p));
+        return PointToTriVec;
+        //double distance = MagVec(triToPointVec);
     }
 
     //Compute tangent points of triangle from p
-    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,x1,x2,x3);
-    auto tanPts = tangencyDecomp.first;
-    auto nontanPoint = tangencyDecomp.second;
+    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,tpts);
+    auto tanIndices = tangencyDecomp.first;
+    int tan0 = tanIndices[0];
+    int tan1 = tanIndices[1];
+    int nontan = tangencyDecomp.second;
 
     //Case 2: The nontangent point and p are on same side of
     //        the edge joining the two tangent points, then the
     //        nontangent point is the closest point of the triangle.
-    if( LeftTurn(tanPts[0],tanPts[1],projx4) ==
-            LeftTurn(tanPts[0],tanPts[1],nontanPoint) )
+    if( LeftTurn(tpts[tan0],tpts[tan1],projx4) ==
+            LeftTurn(tpts[tan0],tpts[tan1],tpts[nontan]) )
     {
-        auto triToPointVec = MinusVec(Pt2Vec(p),nontanPoint);
-        double distance = MagVec(triToPointVec);
-        //return distance;
+        auto PointToTriVec = MinusVec(tpts[nontan],Pt2Vec(p));
+        return PointToTriVec;
+        //double distance = MagVec(triToPointVec);
     }
 
-    //TODO: Now implement Case 3 with 
-    //      PointToEdgeDistance() etc.
+    //TODO: Now implement
+    //Case 3: The nontangent point and p are on opposite
+    //        sides of the edge joining the two tangent points.
 
+    std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
+    return PointToClosestPointOfEdgeVec(p,tanPts);
 
 }
+
+/*
+std::vector<double> PointToClosestPointOfEdgeVec(
+        POINT* p, std::vector<POINT*> edgePts)
+{
+}
+*/
 
 std::vector<double> Pt2Vec(const POINT* p)
 {
@@ -392,27 +405,25 @@ bool CollinearOrLeftTurn(const std::vector<double>& a,
     return SignedParallelogramArea(a,b,c) >= 0.0;
 }
 
-//TODO: Verify a,b,c given in CCW order for below functions
+//TODO: Verify triPts given in CCW order for below functions
 bool PointInTri(const std::vector<double>& p,
-                const std::vector<double>& a,
-                const std::vector<double>& b,
-                const std::vector<double>& c)
+        const std::vector<std::vector<double>>& triPts)
 {
-    if( !LeftTurn(a,b,p) || !LeftTurn(b,c,p) || !LeftTurn(c,a,p) )
-        return false;
-    else
-        return true;
+    for( int i = 0; i < 3; ++i )
+    {
+        int iplus1 = (i+1)%3;
+        if( !LeftTurn(triPts[i],triPts[iplus1],p) )
+            return false;
+    }
+    return true;
 }
 
-std::pair<std::vector< std::vector<double>>, std::vector<double> >
+std::pair<std::vector<int>,int>
 PointToTriTangencyDecomposition(const std::vector<double>& p,
-                                const std::vector<double>& a,
-                                const std::vector<double>& b,
-                                const std::vector<double>& c)
+        const std::vector<std::vector<double>>& triPts)
 {
-    std::vector<double> nontangentPoint;
-    std::vector<std::vector<double>> tangentPts;
-    std::vector<std::vector<double>> triPts = {a,b,c};
+    std::vector<int> tangentPtsIndices;
+    std::vector<int> nontangentPointIndex;
 
     for( int i = 0; i < 3; ++i )
     {
@@ -422,20 +433,20 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
         if( CollinearOrLeftTurn(triPts[iminus1],triPts[i],p)
                 != CollinearOrLeftTurn(triPts[i],triPts[iplus1],p) )
         {
-            tangentPts.push_back(triPts[i]);
+            tangentPtsIndices.push_back(i);
         }
         else
         {
-            nontangentPoint = triPts[i];
+            nontangentPointIndex.push_back(i);
         }
     }
 
-    assert( tangentPts.size() == 2 && !nontangentPoint.empty() );
+    assert( nontangentPointIndex.size() == 1
+            && tangentPtsIndices.size() == 2 );
     
-    tangentPts.shrink_to_fit();
-    nontangentPoint.shrink_to_fit();
-    return std::make_pair(tangentPts,nontangentPoint);
+    tangentPtsIndices.shrink_to_fit();
+    nontangentPointIndex.shrink_to_fit();
+    return std::make_pair(tangentPtsIndices,nontangentPointIndex[0]);
 }
-
 
 
