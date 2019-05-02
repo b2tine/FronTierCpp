@@ -217,7 +217,9 @@ double TriToTriDistance(
     auto x2 = Pt2Vec(triPts[1]);
     auto x3 = Pt2Vec(triPts[2]);
     std::vector<std::vector<double>> tpts = {x1,x2,x3};
-    and a for loop with Pt2Vec(otherTri[i])
+
+    and a for loop with Pt2Vec(otherTri[i]) and tpts passed as args
+    to PointToClosestPointOfTriVec()
 }
 */
 
@@ -225,10 +227,10 @@ std::vector<double> PointToClosestPointOfTriVec(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts)
 {
-    //TODO: TOL should be given as argument or set within
-    //      the class, that this becomes a member function of.
+    //TODO: TOL should be given as argument or possibly set within
+    //      a class that this becomes a member function of.
     //      The CollisionSolver class or some component member
-    //      class thereof.
+    //      class thereof maybe...
     double TOL = 1.0e-06;
 
     auto x12 = MinusVec(triPts[1],triPts[0]);
@@ -405,7 +407,8 @@ double SignedParallelogramArea(const std::vector<double>& a,
                                const std::vector<double>& b,
                                const std::vector<double>& c)
 {
-    //Magnitude of ab cross ac, where a, b and c points in plane
+    //Magnitude of ab cross ac, where a, b and c are 2d points
+    //embedded in the in the xy plane of R3
     return (b[0] - a[0])*(c[1] - a[1])
             - (c[0] - a[0])*(b[1] - a[1]);
 }
