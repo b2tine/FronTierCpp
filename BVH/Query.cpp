@@ -271,8 +271,8 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
     auto projx4 = AddVec(x1,v);
     
-    //If projx4 is in the triangle interior,
-    //then it is the closest point of the triangle.
+    //Case 1: projx4 is in the triangle interior, then
+    //        it is the closest point of the triangle.
     if( PointInTri(projx4,x1,x2,x3) )
     {
         auto triToPointVec = MinusVec(Pt2Vec(p),projx4);
@@ -285,9 +285,9 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
     auto tanPts = tangencyDecomp.first;
     auto nontanPoint = tangencyDecomp.second;
 
-    //If the nontangent point and p are on same side of the edge
-    //joining the tangent points, then the nontangent point is the
-    //closest point of the triangle.
+    //Case 2: The nontangent point and p are on same side of
+    //        the edge joining the two tangent points, then the
+    //        nontangent point is the closest point of the triangle.
     if( LeftTurn(tanPts[0],tanPts[1],projx4) ==
             LeftTurn(tanPts[0],tanPts[1],nontanPoint) )
     {
@@ -296,9 +296,8 @@ double PointToTriDistance(POINT* p, std::vector<POINT*> triPts)
         //return distance;
     }
 
-    //TODO: Now implement PointToEdgeDistance() and test it.
-    //      Then figure out what needs to be done in order to
-    //      get the direction vector.
+    //TODO: Now implement Case 3 with 
+    //      PointToEdgeDistance() etc.
 
 
 }
