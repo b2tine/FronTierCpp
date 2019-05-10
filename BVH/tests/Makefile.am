@@ -22,10 +22,10 @@ TESTS =
 check_PROGRAMS =
 
 
-TESTS += HSETests
-check_PROGRAMS += HSETests
+TESTS += HseTests
+check_PROGRAMS += HseTests
 
-HSETests_SOURCES = HSETests.cpp \
+HSETests_SOURCES = HseTests.cpp \
 				   ../HyperSurfElement.h \
 				   ../HyperSurfElement.cpp
 
@@ -73,6 +73,15 @@ BVHTests_SOURCES = BVHTests.cpp \
 BVHTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
 					   $(top_builddir)/lib/libBVH.la
 
+
+
+TESTS += QueryTests
+check_PROGRAMS += QueryTests
+
+HSETests_SOURCES = QueryTests.cpp \
+				   ../Query.cpp
+
+HSETests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 
 

@@ -67,7 +67,8 @@ static std::pair<std::vector<int>,int>
 PointToTriTangencyDecomposition(const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts)
 
-//NOTE: checkProximity() is the only externally callable function.
+
+//NOTE: checkProximity() is the entry point for simulation runs
 
 //TODO: Return type of this function is temporary for testing.
 //      Need to actually perform distance computations for the
@@ -98,7 +99,7 @@ const bool checkProximity(const BVH* A, const BVH* B)
 }
 
 ///////////////////////////////////////////////
-////    All functions below are static    ////
+////      Functions below are static      ////
 ////       i.e. local to this file       ////
 ////////////////////////////////////////////
 
@@ -161,6 +162,7 @@ std::vector<NodePair> GetProximityCandidates(
     return candidates;
 }
 
+/*
 void ProcessProximityCandidates(std::vector<NodePair>& candidates)
 {
     for( auto& pair : candidates  )
@@ -176,7 +178,9 @@ void ProcessProximityCandidates(std::vector<NodePair>& candidates)
     }
 
 }
+*/
 
+/*
 double HseToHseDistance(const Hse* A, const Hse* B)
 {
     int nA = A->num_pts();
@@ -201,6 +205,7 @@ double HseToHseDistance(const Hse* A, const Hse* B)
             return TriToTriDistance(ptsA,ptsB);
     }
 }
+*/
 
 /*
 double TriToTriDistance(
@@ -256,6 +261,8 @@ std::vector<double> PointToClosestPointOfTriVec(
         return {};
     }
 
+    //Compute barycentric coordinates of the closest point in the plane
+    //by solving a linear least squares problem
     CramersRule2d Lsq;
 
     Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
@@ -286,7 +293,7 @@ std::vector<double> PointToClosestPointOfTriVec(
         }
     }
 
-    //Compute the closest point in the plane to p
+    //Compute the closest point in the plane to p, projx4
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
     auto projx4 = AddVec(x1,v);
     
@@ -321,13 +328,13 @@ std::vector<double> PointToClosestPointOfTriVec(
     //Case 3: The nontangent point and projx4 are on opposite
     //        sides of the edge joining the two tangent points.
     std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
-    auto ClosestPointOfEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
-    auto PointToTriVec = MinusVec(ClosestPointOfEdge,p);
+    auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
+    auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
     return PointToTriVec;
         //double distance = MagVec(PointToTriVec);
 }
 
-//for details of the implementation below see
+//For details of this implementation below see
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
@@ -487,3 +494,21 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
 }
 
 
+//////////////////////////////////////////////////
+//           Functions for Testing              //
+//////////////////////////////////////////////////
+
+
+std::vector<double> TestPointToTriVec(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& triPts)
+{
+    return PointToClosestPointOfTriVec(p,triPts);
+}
+
+std::vector<double> TestPointToEdgePt(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& edgePts)
+{
+    return ClosestPointOfEdgeToPoint(p,edgePts);
+}

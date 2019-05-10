@@ -68,6 +68,10 @@ class HseTests : public HseTestData
 };
 
 
+
+using DISABLED_HseTests = HseTests;
+
+
 TEST_F(HseTests, HsBondOutOfRangeDeathTest)
 {
     ASSERT_DEATH(B0->Point_of_hse(2),"");
