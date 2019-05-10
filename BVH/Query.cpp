@@ -72,7 +72,7 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
 //TODO: Return type of this function is temporary for testing.
 //      Need to actually perform distance computations for the
 //      candidate Hse's corresponding to the nodes/BVs returned
-//      in the stack by queryProximity().
+//      in the stack by GetProximityCandidates().
 const bool checkProximity(const BVH* A, const BVH* B)
 {
     assert(A && B);
@@ -82,16 +82,15 @@ const bool checkProximity(const BVH* A, const BVH* B)
     
     auto proximity_candidates = GetProximityCandidates(rootA,rootB);
     
-    //TODO: implement this
+    //TODO: Implement this
     //ProcessProximityCandidates(proximity_candidates);
     
     //NOTE: at this point the CollisionSolver can apply the
     //      necessary repulsion forces to the nodes remaining
-    //      in the stack i.e. the ones that are actually in
+    //      in the stack i.e. the ones that are actually within
     //      proximity of each other.
-    //      
 
-
+    //Temp return type for testing.
     if( !proximity_candidates.empty() )
         return true;
     else
@@ -275,8 +274,9 @@ std::vector<double> PointToClosestPointOfTriVec(
     double delta = TOL/charLength;
 
     //Check if the projected point in the plane is close enough to the
-    //triangle for it to be possible for the point, p, and the triangle
-    //to be within the prescribed proximity tolerance of each other.
+    //triangle (via its barycentric coordinates W[i]) for it to be
+    //possible for the point, p, and the triangle to be within the
+    //prescribed proximity tolerance of each other.
     for( int i = 0; i < 3; ++i )
     {
         if( W[i] < -1.0*delta || W[i] > 1.0 + delta )
@@ -327,7 +327,7 @@ std::vector<double> PointToClosestPointOfTriVec(
         //double distance = MagVec(PointToTriVec);
 }
 
-//for details of implementation see
+//for details of the implementation below see
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
