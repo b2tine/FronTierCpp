@@ -1,4 +1,4 @@
-SUBDIRS = ../../lib/gmock ../objs
+SUBDIRS = ../objs ../../lib/gmock
 
 AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 			 -I$(top_srcdir)/BVH \

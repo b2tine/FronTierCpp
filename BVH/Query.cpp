@@ -54,9 +54,19 @@ static double DotVec(const std::vector<double>& u,
 
 static double MagVec(const std::vector<double>& v);
 
-static double SignedParallelogramArea(const std::vector<double>& a,
-                                      const std::vector<double>& b,
-                                      const std::vector<double>& c);
+static int LargestComponentIndexVec(const std::vector<double>& v);
+
+static std::pair<std::vector<double>, std::vector<std::vector<double>> >
+ProjectOutComponentPointAndTri(int index,
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& triPts);
+
+static bool PointInTri(const std::vector<double>& pp,
+        const std::vector<std::vector<double>>& ptriPts);
+
+static std::pair<std::vector<int>,int>
+PointToTriTangencyDecomposition(const std::vector<double>& pp,
+        const std::vector<std::vector<double>>& ptriPts);
 
 static bool LeftTurn(const std::vector<double>& a,
                      const std::vector<double>& b,
@@ -66,13 +76,9 @@ static bool CollinearOrLeftTurn(const std::vector<double>& a,
                                 const std::vector<double>& b,
                                 const std::vector<double>& c);
 
-static bool PointInTri(const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts);
-
-static std::pair<std::vector<int>,int>
-PointToTriTangencyDecomposition(const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts);
-
+static double SignedParallelogramArea(const std::vector<double>& a,
+                                      const std::vector<double>& b,
+                                      const std::vector<double>& c);
 
 //NOTE: checkProximity() is the entry point for simulation runs
 
@@ -251,8 +257,9 @@ std::vector<double> ClosestPointOfTriToPoint(
     auto x13 = MinusVec(triPts[2],triPts[0]);
     auto x14 = MinusVec(p,triPts[0]);
     
-    //TODO: Need to check if triangle is degenerate outside
-    //      of NormalizeVec()?
+    //TODO: Need to check if triangle is degenerate here,
+    //      or is fine inside of NormalizeVec()?
+    //      Maybe just do both for safety and immediate clarity
     auto ntri = CrossVec(x12,x13);
     auto unitnormal = NormalizeVec(ntri);
     double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
@@ -267,7 +274,7 @@ std::vector<double> ClosestPointOfTriToPoint(
     }
 
     //Compute barycentric coordinates of the closest point in the plane
-    //of the triangle by solving the following linear system
+    //of the triangle by solving the following linear system.
     CramersRule2d Lsq;
 
     Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
@@ -298,45 +305,70 @@ std::vector<double> ClosestPointOfTriToPoint(
         }
     }
 
-    //Compute the closest point in the plane to p, projx4
+    //Compute the closest point in the plane of the triangle to p, projx4.
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
     auto projx4 = AddVec(triPts[0],v);
     
-    //Case 1: projx4 is in the triangle interior, then
-    //        it is the closest point of the triangle.
-    if( PointInTri(projx4,triPts) )
+    //Project out the dimension corresponding to the largest component
+    //of the triangle's normal vector to obtain Pprojx4 and PtriPts.
+    //Prevents degeneracy that can result using a single projection plane.
+    int proj_index = LargestComponentIndexVec(ntri);
+    auto ProjectedPointTriPair =
+        ProjectOutComponentPointAndTri(proj_index,projx4,triPts);
+    auto Pprojx4 = ProjectedPointTriPair.first;    
+    auto PtriPts = ProjectedPointTriPair.second;    
+
+    std::cout << "proj_index = " << proj_index << "\n\n";
+    for( int i = 0; i < 2; ++i )
+    {
+        std::cout << "Pprojx4[" << i << "] = " << Pprojx4[i] << "\n"; 
+    }
+    std::cout << "\n\n";
+    for( int k = 0; k < 3; ++k )
+    {
+        for( int i = 0; i < 2; ++i )
+        {
+            std::cout << "PtriPts[" << k << "][" << i << "] = ";
+            std::cout << PtriPts[k][i] << "\n"; 
+        }
+        std::cout << "\n\n";
+    }
+
+    //Case 1: Pprojx4 is in the projected triangle interior,
+    //        then projx4 is the closest point of the triangle.
+    if( PointInTri(Pprojx4,PtriPts) )
     {
         return projx4;
         //auto PointToTriVec = MinusVec(projx4,p);
         //return PointToTriVec;
     }
 
-    //TODO: see TODO-TODO below
-
-    //Compute indices of tangent and nontangent points of
-    //triangle from projx4's line of sight.
-    auto tangencyDecomp = PointToTriTangencyDecomposition(projx4,triPts);
+    //Compute indices of tangent and nontangent points of the
+    //projected triangle from Pprojx4's line of sight.
+    auto tangencyDecomp = PointToTriTangencyDecomposition(Pprojx4,PtriPts);
     auto tanIndices = tangencyDecomp.first;
     int tan0 = tanIndices[0];
     int tan1 = tanIndices[1];
     int nontan = tangencyDecomp.second;
 
-    //Case 2: The nontangent point and projx4 are on same side of
-    //        the edge joining the two tangent points, then the
-    //        nontangent point is the closest point of the triangle.
-    if( LeftTurn(triPts[tan0],triPts[tan1],projx4) ==
-            LeftTurn(triPts[tan0],triPts[tan1],triPts[nontan]) )
+    //Case 2: The nontangent point of the projected triangle and Pprojx4
+    //        are on same side of the edge joining the two tangent points,
+    //        then the nontangent point's unprojected preimage is the closest
+    //        point of the triangle.
+    if( LeftTurn(PtriPts[tan0],PtriPts[tan1],Pprojx4) ==
+            LeftTurn(PtriPts[tan0],PtriPts[tan1],PtriPts[nontan]) )
     {
         return triPts[nontan];
         //auto PointToTriVec = MinusVec(triPts[nontan],p);
         //return PointToTriVec;
     }
 
-    //Case 3: The nontangent point and projx4 are on opposite
-    //        sides of the edge joining the two tangent points.
-    std::vector<std::vector<double>> tanPts = {triPts[tan0],triPts[tan1]};
-    //auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
-    return ClosestPointOfEdgeToPoint(projx4,tanPts);
+    //Case 3: The nontangent point of the projected triangle and Pprojx4 are
+    //        on opposite sides of the edge joining the two tangent points.
+    //        Find closest point to projx4 on the unprojected edge corresponding
+    //        to the tangent points
+    std::vector<std::vector<double>> closestTriEdge = {triPts[tan0],triPts[tan1]};
+    return ClosestPointOfEdgeToPoint(projx4,closestTriEdge);
 
     //auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
     //return PointToTriVec;
@@ -441,52 +473,77 @@ std::vector<double> MinusVec(const std::vector<double>& u,
 std::vector<double> NormalizeVec(std::vector<double>& u)
 {
     auto mag = MagVec(u);
-    //temporary assertion for debugging
+    //TODO: Temporary assertion/tolerance for debugging.
+    //      Unsure if this should be here or outside of function.
+    //      Tolerance should be defined in a variable.
     assert(mag > 1.0e-12);
     return ScalarVec(1.0/mag,u);
 }
 
-//TODO-TODO: Need to project to a plane before calling these
-//           next 5 functions.
-double SignedParallelogramArea(const std::vector<double>& a,
-                               const std::vector<double>& b,
-                               const std::vector<double>& c)
+int LargestComponentIndexVec(const std::vector<double>& v)
 {
-    //Magnitude of ab cross ac, where a, b and c are ...
-    return (b[0] - a[0])*(c[1] - a[1])
-            - (c[0] - a[0])*(b[1] - a[1]);
+    int index = -1;
+    double largest = 0.0;
+    for( int i = 0; i < 3; ++i )
+    {
+        if( fabs(v[i]) > largest )
+            index = i;
+    }
+    assert( index >= 0 );
+    return index;
 }
 
-bool LeftTurn(const std::vector<double>& a,
-              const std::vector<double>& b,
-              const std::vector<double>& c)
-{
-    return SignedParallelogramArea(a,b,c) > 0.0;
-}
-
-bool CollinearOrLeftTurn(const std::vector<double>& a,
-                         const std::vector<double>& b,
-                         const std::vector<double>& c)
-{
-    return SignedParallelogramArea(a,b,c) >= 0.0;
-}
-
-//TODO: Verify triPts given in CCW order for below functions
-bool PointInTri(const std::vector<double>& p,
+std::pair<std::vector<double>, std::vector<std::vector<double>> >
+ProjectOutComponentPointAndTri(int index,
+        const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts)
+{
+    std::vector<double> Pp;
+    std::vector<std::vector<double>> PtriPts(3);
+    for( int i = 0; i < 3; ++i )
+    {
+        if( i != index )
+        {
+            std::cout << "i != index \n\n";
+
+            Pp.push_back(p[i]);
+            for( int k = 0; k < 3; ++k )
+            {
+                PtriPts[k].push_back(triPts[k][i]);
+            }
+        }
+    }
+            
+    std::cout << "Pp.size() = " << Pp.size() << "\n\n";
+
+    Pp.shrink_to_fit();
+    for( int k = 0; k < 3; ++k )
+    {
+        PtriPts[k].shrink_to_fit();
+    }
+
+    return std::make_pair(Pp,PtriPts);
+}
+
+//NOTE: Need to use ProjectOutComponentPointAndTri() before
+//      calling any of these functions.
+    
+//TODO: Verify triPts given in CCW order for below functions
+bool PointInTri(const std::vector<double>& pp,
+        const std::vector<std::vector<double>>& ptriPts)
 {
     for( int i = 0; i < 3; ++i )
     {
         int iplus1 = (i+1)%3;
-        if( !LeftTurn(triPts[i],triPts[iplus1],p) )
+        if( !LeftTurn(ptriPts[i],ptriPts[iplus1],pp) )
             return false;
     }
     return true;
 }
 
 std::pair<std::vector<int>,int>
-PointToTriTangencyDecomposition(const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts)
+PointToTriTangencyDecomposition(const std::vector<double>& pp,
+        const std::vector<std::vector<double>>& ptriPts)
 {
     std::vector<int> tangentPtsIndices;
     std::vector<int> nontangentPointIndex;
@@ -496,8 +553,8 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
         int iminus1 = (i+2)%3;
         int iplus1 = (i+1)%3;
 
-        if( CollinearOrLeftTurn(triPts[iminus1],triPts[i],p) !=
-                CollinearOrLeftTurn(triPts[i],triPts[iplus1],p) )
+        if( CollinearOrLeftTurn(ptriPts[iminus1],ptriPts[i],pp) !=
+                CollinearOrLeftTurn(ptriPts[i],ptriPts[iplus1],pp) )
         {
             tangentPtsIndices.push_back(i);
         }
@@ -514,7 +571,29 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
     nontangentPointIndex.shrink_to_fit();
     return std::make_pair(tangentPtsIndices,nontangentPointIndex[0]);
 }
-//TODO-TODO END
+
+bool LeftTurn(const std::vector<double>& a,
+              const std::vector<double>& b,
+              const std::vector<double>& c)
+{
+    return SignedParallelogramArea(a,b,c) > 0.0;
+}
+
+bool CollinearOrLeftTurn(const std::vector<double>& a,
+                         const std::vector<double>& b,
+                         const std::vector<double>& c)
+{
+    return SignedParallelogramArea(a,b,c) >= 0.0;
+}
+
+//Magnitude of ab cross ac, where a, b and c are 2d points in the plane.
+double SignedParallelogramArea(const std::vector<double>& a,
+                               const std::vector<double>& b,
+                               const std::vector<double>& c)
+{
+    return (b[0] - a[0])*(c[1] - a[1])
+            - (c[0] - a[0])*(b[1] - a[1]);
+}
 
 //////////////////////////////////////////////////
 //           Functions for Testing              //
