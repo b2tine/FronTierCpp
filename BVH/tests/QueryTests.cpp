@@ -16,6 +16,7 @@ class QueryTestData : public testing::Test
     std::vector<double> Upert = {1.05,1,1};
 
     std::vector<std::vector<double>> edge_KnU = {Kn,U}; 
+    std::vector<std::vector<double>> edge_JK = {J,K}; 
     std::vector<double> c = {0,3,0};
     std::vector<double> d = {0,4,0};
     std::vector<double> dpert = {0,4.1,0};
@@ -59,34 +60,6 @@ class QueryTests : public QueryTestData
 
 
 using DISABLED_QueryTests = QueryTests;
-
-//TODO: Split into individual tests for each case.
-TEST_F(QueryTests, ClosestPointOfEdgeToPointTest)
-{
-    //Projected point is an interior point of edge
-    auto ClosestPointToOrigin = TestPointToEdge(O,edge_KnU);
-    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[0],1.0/3.0);
-    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[1],1.0/3.0);
-    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[2],-1.0/3.0);
-
-    //Projected point is an interior point of edge
-    auto ClosestPointToC = TestPointToEdge(c,edge_KnU);
-    ASSERT_DOUBLE_EQ(ClosestPointToC[0],5.0/6.0);
-    ASSERT_DOUBLE_EQ(ClosestPointToC[1],5.0/6.0);
-    ASSERT_DOUBLE_EQ(ClosestPointToC[2],2.0/3.0);
-
-    //Projected point is an endpoint of edge
-    auto ClosestPointToD = TestPointToEdge(d,edge_KnU);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[0],U[0]);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[1],U[1]);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[2],U[2]);
-
-    //Projected point is outside of edge
-    auto ClosestPointToDP = TestPointToEdge(dpert,edge_KnU);
-    ASSERT_DOUBLE_EQ(ClosestPointToDP[0],U[0]);
-    ASSERT_DOUBLE_EQ(ClosestPointToDP[1],U[1]);
-    ASSERT_DOUBLE_EQ(ClosestPointToDP[2],U[2]);
-}
 
 //TODO: Split into individual tests for each case.
 TEST_F(QueryTests, ClosestPointOfTriToPointTest)
@@ -137,3 +110,37 @@ TEST_F(QueryTests, ClosestPointOfTriToPointTest)
 
 }
 
+//TODO: Split into individual tests for each case.
+TEST_F(QueryTests, ClosestPointOfEdgeToPointTest)
+{
+    //Projected point is an interior point of edge
+    auto ClosestPointToOrigin = TestPointToEdge(O,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[0],1.0/3.0);
+    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[1],1.0/3.0);
+    ASSERT_DOUBLE_EQ(ClosestPointToOrigin[2],-1.0/3.0);
+
+    //Projected point is an interior point of edge
+    auto ClosestPointToC = TestPointToEdge(c,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToC[0],5.0/6.0);
+    ASSERT_DOUBLE_EQ(ClosestPointToC[1],5.0/6.0);
+    ASSERT_DOUBLE_EQ(ClosestPointToC[2],2.0/3.0);
+
+    //Projected point is an endpoint of edge
+    auto ClosestPointToD = TestPointToEdge(d,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[0],U[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[1],U[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[2],U[2]);
+
+    //Projected point is outside of edge
+    auto ClosestPointToDP = TestPointToEdge(dpert,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[0],U[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[1],U[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[2],U[2]);
+}
+
+TEST_F(QueryTests, ClosestPointPairLineToLineTest)
+{
+    auto ClosestPoints = TestLineToLine(edge_JK,edge_KnU);
+    auto ClosestOnLineJK = ClosestPoints.first;
+    auto ClosestOnLineKnU = ClosestPoints.second;
+}

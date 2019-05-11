@@ -18,11 +18,13 @@ static double EdgeToEdgeDistance(const std::vector<POINT*>& ptsA,
                                  const std::vector<POINT*>& ptsB);
 */
 
-static std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
+static std::pair<std::vector<double>,std::vector<double> >
+ClosestPointPairEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB);
 
-static std::vector<std::vector<double>> ClosestPointPairLineToLine(
+static std::pair<std::vector<double>,std::vector<double> >
+ClosestPointPairLineToLine(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB);
 
@@ -62,7 +64,7 @@ static double MagVec(const std::vector<double>& v);
 
 static int LargestComponentIndexVec(const std::vector<double>& v);
 
-static std::pair<std::vector<double>, std::vector<std::vector<double>> >
+static std::pair<std::vector<double>,std::vector<std::vector<double>> >
 ProjectOutComponentPointAndTri(int index,
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts);
@@ -249,17 +251,19 @@ double EdgeToEdgeDistance(
 }
 */
 
-std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
+std::pair<std::vector<double>,std::vector<double> >
+ClosestPointPairEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB)
 {
     auto ABpair = ClosestPointPairLineToLine(edgeA,edgeB);
     //TODO: Rest of implementation;
     //      temp return value for skeleton code to compile.
-    return {};
+    return ABpair;
 }
 
-std::vector<std::vector<double>> ClosestPointPairLineToLine(
+std::pair<std::vector<double>,std::vector<double> >
+ClosestPointPairLineToLine(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB)
 {
@@ -285,11 +289,13 @@ std::vector<double> ClosestPointOfTriToPoint(
     auto x13 = MinusVec(triPts[2],triPts[0]);
     auto x14 = MinusVec(p,triPts[0]);
     
-    //TODO: Need to check if triangle is degenerate here,
-    //      or is fine inside of NormalizeVec()?
-    //      Maybe just do both for safety and immediate clarity
+    //Compute triangle's normal vector and check for degeneracy.
     auto ntri = CrossVec(x12,x13);
-    auto unitnormal = NormalizeVec(ntri);
+    auto magnormal = MagVec(ntri);
+    assert(magnormal > 1.0e-08);
+
+    //Compute distance from the point, p, to the plane of the triangle.
+    auto unitnormal = ScalarVec(1.0/magnormal,ntri);
     double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
     
     //Check if the point, p, is close enough to the plane of the
@@ -378,9 +384,6 @@ std::vector<double> ClosestPointOfTriToPoint(
     //        to the tangent points.
     std::vector<std::vector<double>> closestTriEdge = {triPts[tan0],triPts[tan1]};
     return ClosestPointOfEdgeToPoint(projx4,closestTriEdge);
-
-    //auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
-    //return PointToTriVec;
 }
 
 //For details of this implementation see
@@ -593,7 +596,8 @@ double SignedParallelogramArea(const std::vector<double>& a,
 //   Needed to test the above static methods    //
 //////////////////////////////////////////////////
 
-std::vector<std::vector<double>> TestLineToLine(
+std::pair<std::vector<double>,std::vector<double> >
+TestLineToLine(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB)
 {

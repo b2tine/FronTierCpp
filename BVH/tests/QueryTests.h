@@ -1,7 +1,8 @@
 #ifndef QUERY_TESTS_H
 #define QUERY_TESTS_H
 
-std::vector<std::vector<double>> TestLineToLine(
+std::pair<std::vector<double>,std::vector<double> >
+TestLineToLine(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB);
 
