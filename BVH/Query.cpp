@@ -6,9 +6,25 @@ using NodePair = std::pair<BVH_Node*,BVH_Node*>;
 static std::vector<NodePair> GetProximityCandidates(
         BVH_Node* const nodeA, BVH_Node* const nodeB);
 
+/*
 static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
 static double HseToHseDistance(const Hse* A, const Hse* B);
+
+static double TriToTriDistance(const std::vector<POINT*>& ptsA,
+                               const std::vector<POINT*>& ptsB);
+
+static double EdgeToEdgeDistance(const std::vector<POINT*>& ptsA,
+                                 const std::vector<POINT*>& ptsB);
+*/
+
+static std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
+        const std::vector<POINT*>& ptsA,
+        const std::vector<POINT*>& ptsB);
+
+static std::vector<std::vector<double>> ClosestPointPairLineToLine(
+        const std::vector<POINT*>& ptsA,
+        const std::vector<POINT*>& ptsB);
 
 static std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
@@ -19,18 +35,8 @@ static std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts);
 
-/*
-static std::vector<double> PointToClosestPointOfEdgeVec(
-        const std::vector<double>& p,
-        const std::vector<std::vector<double>>& edgePts);
-*/
-
-static double TriToTriDistance(const std::vector<POINT*>& ptsA,
-                               const std::vector<POINT*>& ptsB);
-
-
-//TODO: Move these primitive functions into their own file
-//      and make globally available.
+//TODO: Move below functions into their own file and make
+//      globally available. Just to reduce clutter here.
 
 static std::vector<double> Pt2Vec(const POINT* p);
 
@@ -79,6 +85,7 @@ static bool CollinearOrLeftTurn(const std::vector<double>& a,
 static double SignedParallelogramArea(const std::vector<double>& a,
                                       const std::vector<double>& b,
                                       const std::vector<double>& c);
+
 
 //NOTE: checkProximity() is the entry point for simulation runs
 
@@ -181,14 +188,9 @@ void ProcessProximityCandidates(std::vector<NodePair>& candidates)
     {
         auto hseA = pair.first->getHse();
         auto hseB = pair.second->getHse();
-        
         double distAB = HseToHseDistance(hseA,hseB);
-
-            //auto ptsA = hseA->getHsePoints();
-            //auto ptsB = hseB->getHsePoints();
-            //double distAB = TriToTriDistance(ptsA,ptsB);
+        //store distAB somewhere
     }
-
 }
 */
 
@@ -198,7 +200,6 @@ double HseToHseDistance(const Hse* A, const Hse* B)
     int nA = A->num_pts();
     int nB = B->num_pts();
 
-    //TODO: Verify these are given in CCW order.
     auto ptsA = A->getHsePoints();
     auto ptsB = B->getHsePoints();
 
@@ -238,6 +239,30 @@ double TriToTriDistance(
     to PointToClosestPointOfTriVec()
 }
 */
+
+/*
+double EdgeToEdgeDistance(
+        const std::vector<POINT*>& ptsA,
+        const std::vector<POINT*>& ptsB)
+{
+
+}
+*/
+
+std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
+        const std::vector<POINT*>& ptsA,
+        const std::vector<POINT*>& ptsB)
+{
+    //TODO: Implementation
+    //      Calls ClosestPointPairLineToLine()
+}
+
+std::vector<std::vector<double>> ClosestPointPairLineToLine(
+        const std::vector<POINT*>& ptsA,
+        const std::vector<POINT*>& ptsB)
+{
+    //TODO: Implementation
+}
 
 //If the point and triangle are within proximity (function of TOL)
 //of each other, the returned vector corresponds to the closest point
@@ -310,7 +335,8 @@ std::vector<double> ClosestPointOfTriToPoint(
     
     //Project out the dimension corresponding to the largest component
     //of the triangle's normal vector to obtain Pprojx4 and PtriPts.
-    //Prevents degeneracy that can result using a single projection plane.
+    //Prevents degeneracy that can result when the normal vector is
+    //parallel to the projection plane.
     int proj_index = LargestComponentIndexVec(ntri);
     auto ProjectedPointTriPair =
         ProjectOutComponentPointAndTri(proj_index,projx4,triPts);
@@ -322,8 +348,6 @@ std::vector<double> ClosestPointOfTriToPoint(
     if( PointInTri(Pprojx4,PtriPts) )
     {
         return projx4;
-        //auto PointToTriVec = MinusVec(projx4,p);
-        //return PointToTriVec;
     }
 
     //Compute indices of tangent and nontangent points of the
@@ -342,30 +366,18 @@ std::vector<double> ClosestPointOfTriToPoint(
             LeftTurn(PtriPts[tan0],PtriPts[tan1],PtriPts[nontan]) )
     {
         return triPts[nontan];
-        //auto PointToTriVec = MinusVec(triPts[nontan],p);
-        //return PointToTriVec;
     }
 
     //Case 3: The nontangent point of the projected triangle and Pprojx4 are
     //        on opposite sides of the edge joining the two tangent points.
     //        Find closest point to projx4 on the unprojected edge corresponding
-    //        to the tangent points
+    //        to the tangent points.
     std::vector<std::vector<double>> closestTriEdge = {triPts[tan0],triPts[tan1]};
     return ClosestPointOfEdgeToPoint(projx4,closestTriEdge);
 
     //auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
     //return PointToTriVec;
 }
-
-/*
-//Not sure if we need this yet ...
-std::vector<double> PointToClosestPointOfEdgeVec(
-        const std::vector<double>& p,
-        const std::vector<std::vector<double>>& edgePts)
-{
-    auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(p,edgePts);
-}
-*/
 
 //For details of this implementation see
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
@@ -459,7 +471,7 @@ std::vector<double> NormalizeVec(std::vector<double>& u)
     //      Unsure if this should be here or outside of function.
     //      Tolerance should be defined in a variable.
     auto mag = MagVec(u);
-    assert(mag > 1.0e-12);
+    assert(mag > 1.0e-08);
     return ScalarVec(1.0/mag,u);
 }
 
@@ -505,7 +517,7 @@ ProjectOutComponentPointAndTri(int index,
 }
 
 //NOTE: Need to use ProjectOutComponentPointAndTri() before
-//      calling any of these functions.
+//      calling any of these 2d functions.
     
 bool PointInTri(const std::vector<double>& pp,
         const std::vector<std::vector<double>>& ptriPts)

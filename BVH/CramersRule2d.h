@@ -30,7 +30,7 @@ class CramersRule2d
 
             //TODO: Temporary tolerance for debugging.
             //      Should be defined in a variable.
-            assert( D > 1.0e-12 );
+            assert( D > 1.0e-08 );
 
             double D1 = Determinant2d(b[0], A[0][1],
                                       b[1], A[1][1]);
