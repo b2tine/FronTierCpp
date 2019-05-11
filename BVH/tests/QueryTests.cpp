@@ -11,21 +11,24 @@ class QueryTestData : public testing::Test
     std::vector<double> J = {0,1,0};
     std::vector<double> K = {0,0,1};
     
-    std::vector<double> p1 = {0,0,-1};
-    std::vector<double> p2 = {1,1,1};
+    std::vector<double> Kn = {0,0,-1};
+    std::vector<double> U = {1,1,1};
+    std::vector<double> Upert = {1.05,1,1};
 
-    std::vector<std::vector<double>> edge12 = {p1,p2}; 
+    std::vector<std::vector<double>> edge_KnU = {Kn,U}; 
     std::vector<double> c = {0,3,0};
     std::vector<double> d = {0,4,0};
-    std::vector<double> dd = {0,4.1,0};
+    std::vector<double> dpert = {0,4.1,0};
 
     std::vector<std::vector<double>> tri_OIJ = {O,I,J}; 
     std::vector<double> e = {0.25,0.25,1};
 
     std::vector<std::vector<double>> tri_OJK = {O,J,K}; 
-    std::vector<std::vector<double>> tri_Op2J = {O,p2,J}; 
+    std::vector<std::vector<double>> tri_OUJ = {O,U,J}; 
+    std::vector<std::vector<double>> tri_OUJpert = {O,Upert,J}; 
     std::vector<double> f = {5.0,0.5,0.25};
     std::vector<double> g = {2.0,0.5,0.25};
+    std::vector<double> h = {-0.5,1.5,-0.5};
 
 
     QueryTestData() 
@@ -57,34 +60,35 @@ class QueryTests : public QueryTestData
 
 using DISABLED_QueryTests = QueryTests;
 
-
+//TODO: Split into individual tests for each case.
 TEST_F(QueryTests, ClosestPointOfEdgeToPointTest)
 {
     //Projected point is an interior point of edge
-    auto ClosestPointToOrigin = TestPointToEdge(O,edge12);
+    auto ClosestPointToOrigin = TestPointToEdge(O,edge_KnU);
     ASSERT_DOUBLE_EQ(ClosestPointToOrigin[0],1.0/3.0);
     ASSERT_DOUBLE_EQ(ClosestPointToOrigin[1],1.0/3.0);
     ASSERT_DOUBLE_EQ(ClosestPointToOrigin[2],-1.0/3.0);
 
     //Projected point is an interior point of edge
-    auto ClosestPointToC = TestPointToEdge(c,edge12);
+    auto ClosestPointToC = TestPointToEdge(c,edge_KnU);
     ASSERT_DOUBLE_EQ(ClosestPointToC[0],5.0/6.0);
     ASSERT_DOUBLE_EQ(ClosestPointToC[1],5.0/6.0);
     ASSERT_DOUBLE_EQ(ClosestPointToC[2],2.0/3.0);
 
     //Projected point is an endpoint of edge
-    auto ClosestPointToD = TestPointToEdge(d,edge12);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[0],p2[0]);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[1],p2[1]);
-    ASSERT_DOUBLE_EQ(ClosestPointToD[2],p2[2]);
+    auto ClosestPointToD = TestPointToEdge(d,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[0],U[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[1],U[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointToD[2],U[2]);
 
     //Projected point is outside of edge
-    auto ClosestPointToDD = TestPointToEdge(dd,edge12);
-    ASSERT_DOUBLE_EQ(ClosestPointToDD[0],p2[0]);
-    ASSERT_DOUBLE_EQ(ClosestPointToDD[1],p2[1]);
-    ASSERT_DOUBLE_EQ(ClosestPointToDD[2],p2[2]);
+    auto ClosestPointToDP = TestPointToEdge(dpert,edge_KnU);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[0],U[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[1],U[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointToDP[2],U[2]);
 }
 
+//TODO: Split into individual tests for each case.
 TEST_F(QueryTests, ClosestPointOfTriToPointTest)
 {
     //Project to xy plane, Ppoint in Ptriangle interior
@@ -99,16 +103,37 @@ TEST_F(QueryTests, ClosestPointOfTriToPointTest)
     ASSERT_DOUBLE_EQ(ClosestPointOJK_ToF[1],f[1]);
     ASSERT_DOUBLE_EQ(ClosestPointOJK_ToF[2],f[2]);
 
-    //Project to xy plane (tie goes to first one encountered)
-    auto ClosestPointOp2J_ToF = TestPointToTri(f,tri_Op2J);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToF[0],p2[0]);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToF[1],p2[1]);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToF[2],p2[2]);
+    //Project to yz plane (tie goes to comp with lower index),
+    //Ppoint is outside Ptriangle, on the opposite side of the
+    //nontangent vertex, and outside of the near edge.
+    auto ClosestPointOUJ_ToF = TestPointToTri(f,tri_OUJ);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToF[0],U[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToF[1],U[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToF[2],U[2]);
 
-    //Project to xy plane (tie goes to first one encountered)
-    auto ClosestPointOp2J_ToG = TestPointToTri(g,tri_Op2J);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToG[0],11.0/12.0);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToG[1],11.0/12.0);
-    ASSERT_DOUBLE_EQ(ClosestPointOp2J_ToG[2],11.0/12.0);
+    //Project to xy plane, Ppoint is outside Ptriangle,
+    //on the opposite side of the nontangent vertex, and
+    //outside of the near edge.
+    auto ClosestPointOUJpert_ToF = TestPointToTri(f,tri_OUJpert);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJpert_ToF[0],Upert[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJpert_ToF[1],Upert[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJpert_ToF[2],Upert[2]);
+
+    //Project to yz plane (tie goes to comp with lower index),
+    //Ppoint is outside Ptriangle, on the opposite side of the
+    //nontangent vertex, and is an interior point of the near edge.
+    auto ClosestPointOUJ_ToG = TestPointToTri(g,tri_OUJ);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToG[0],11.0/12.0);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToG[1],11.0/12.0);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToG[2],11.0/12.0);
+
+    //Project to yz plane (tie goes to comp with lower index),
+    //Ppoint is outside Ptriangle, and on the same side as the
+    //nontangent vertex.
+    auto ClosestPointOUJ_ToH = TestPointToTri(h,tri_OUJ);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToH[0],J[0]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToH[1],J[1]);
+    ASSERT_DOUBLE_EQ(ClosestPointOUJ_ToH[2],J[2]);
+
 }
 

@@ -19,12 +19,12 @@ static double EdgeToEdgeDistance(const std::vector<POINT*>& ptsA,
 */
 
 static std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
-        const std::vector<POINT*>& ptsA,
-        const std::vector<POINT*>& ptsB);
+        const std::vector<std::vector<double>>& edgeA,
+        const std::vector<std::vector<double>>& edgeB);
 
 static std::vector<std::vector<double>> ClosestPointPairLineToLine(
-        const std::vector<POINT*>& ptsA,
-        const std::vector<POINT*>& ptsB);
+        const std::vector<std::vector<double>>& edgeA,
+        const std::vector<std::vector<double>>& edgeB);
 
 static std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
@@ -250,18 +250,22 @@ double EdgeToEdgeDistance(
 */
 
 std::vector<std::vector<double>> ClosestPointPairEdgeToEdge(
-        const std::vector<POINT*>& ptsA,
-        const std::vector<POINT*>& ptsB)
+        const std::vector<std::vector<double>>& edgeA,
+        const std::vector<std::vector<double>>& edgeB)
 {
-    //TODO: Implementation
-    //      Calls ClosestPointPairLineToLine()
+    auto ABpair = ClosestPointPairLineToLine(edgeA,edgeB);
+    //TODO: Rest of implementation;
+    //      temp return value for skeleton code to compile.
+    return {};
 }
 
 std::vector<std::vector<double>> ClosestPointPairLineToLine(
-        const std::vector<POINT*>& ptsA,
-        const std::vector<POINT*>& ptsB)
+        const std::vector<std::vector<double>>& edgeA,
+        const std::vector<std::vector<double>>& edgeB)
 {
-    //TODO: Implementation
+    //TODO: Implementation;
+    //      temp return value for skeleton code to compile.
+    return {};
 }
 
 //If the point and triangle are within proximity (function of TOL)
@@ -481,10 +485,14 @@ int LargestComponentIndexVec(const std::vector<double>& v)
     double largest = 0.0;
     for( int i = 0; i < 3; ++i )
     {
-        if( fabs(v[i]) > largest )
+        double abscomp = fabs(v[i]);
+        if( abscomp > largest )
+        {
             index = i;
+            largest = abscomp;
+        }
     }
-    assert( index >= 0 );
+    assert( index > -1 );
     return index;
 }
 
@@ -493,31 +501,26 @@ ProjectOutComponentPointAndTri(int index,
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts)
 {
+    auto p0 = p.cbegin();
     std::vector<double> Pp;
+    Pp.assign(p0,p0+index);
+    Pp.insert(Pp.end(),p0+index+1,p.cend());
+
     std::vector<std::vector<double>> PtriPts(3);
     for( int i = 0; i < 3; ++i )
     {
-        if( i != index )
-        {
-            Pp.push_back(p[i]);
-            for( int k = 0; k < 3; ++k )
-            {
-                PtriPts[k].push_back(triPts[k][i]);
-            }
-        }
-    }
-            
-    Pp.shrink_to_fit();
-    for( int k = 0; k < 3; ++k )
-    {
-        PtriPts[k].shrink_to_fit();
+        auto t0 = triPts[i].cbegin();
+        auto t2 = triPts[i].cend();
+        PtriPts[i].assign(t0,t0+index);
+        PtriPts[i].insert(PtriPts[i].end(),t0+index+1,t2);
     }
 
     return std::make_pair(Pp,PtriPts);
 }
 
-//NOTE: Need to use ProjectOutComponentPointAndTri() before
-//      calling any of these 2d functions.
+//NOTE: Need to use LargestComponentIndexVec() and
+//      ProjectOutComponentPointAndTri() before passing
+//      any points/triangles to the functions below.
     
 bool PointInTri(const std::vector<double>& pp,
         const std::vector<std::vector<double>>& ptriPts)
@@ -589,6 +592,13 @@ double SignedParallelogramArea(const std::vector<double>& a,
 //           Functions for Testing              //
 //   Needed to test the above static methods    //
 //////////////////////////////////////////////////
+
+std::vector<std::vector<double>> TestLineToLine(
+        const std::vector<std::vector<double>>& edgeA,
+        const std::vector<std::vector<double>>& edgeB)
+{
+    return ClosestPointPairLineToLine(edgeA,edgeB);
+}
 
 std::vector<double> TestPointToEdge(
         const std::vector<double>& p,
