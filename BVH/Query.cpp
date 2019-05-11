@@ -244,15 +244,14 @@ double TriToTriDistance(
 //of the triangle. If they are not within proximity of each other, the
 //returned vector is a default constructed (i.e. empty) std::vector<double>.
 //Use the  vector<double>::empty() method to determine which is the case.
+//NOTE: TOL has default value of HUGE, and if not specified
+//      the closest point of the triangle will be returned regardless
+//      of how far it is from the point, p.
 std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts,
         double TOL)
 {
-    //NOTE: TOL has default value of HUGE, and if not specified
-    //      the closest point of the triangle will be returned regardless
-    //      of how far it is from the point, p.
-
     auto x12 = MinusVec(triPts[1],triPts[0]);
     auto x13 = MinusVec(triPts[2],triPts[0]);
     auto x14 = MinusVec(p,triPts[0]);
@@ -317,22 +316,6 @@ std::vector<double> ClosestPointOfTriToPoint(
         ProjectOutComponentPointAndTri(proj_index,projx4,triPts);
     auto Pprojx4 = ProjectedPointTriPair.first;    
     auto PtriPts = ProjectedPointTriPair.second;    
-
-    std::cout << "proj_index = " << proj_index << "\n\n";
-    for( int i = 0; i < 2; ++i )
-    {
-        std::cout << "Pprojx4[" << i << "] = " << Pprojx4[i] << "\n"; 
-    }
-    std::cout << "\n\n";
-    for( int k = 0; k < 3; ++k )
-    {
-        for( int i = 0; i < 2; ++i )
-        {
-            std::cout << "PtriPts[" << k << "][" << i << "] = ";
-            std::cout << PtriPts[k][i] << "\n"; 
-        }
-        std::cout << "\n\n";
-    }
 
     //Case 1: Pprojx4 is in the projected triangle interior,
     //        then projx4 is the closest point of the triangle.
@@ -472,10 +455,10 @@ std::vector<double> MinusVec(const std::vector<double>& u,
 
 std::vector<double> NormalizeVec(std::vector<double>& u)
 {
-    auto mag = MagVec(u);
     //TODO: Temporary assertion/tolerance for debugging.
     //      Unsure if this should be here or outside of function.
     //      Tolerance should be defined in a variable.
+    auto mag = MagVec(u);
     assert(mag > 1.0e-12);
     return ScalarVec(1.0/mag,u);
 }
@@ -504,8 +487,6 @@ ProjectOutComponentPointAndTri(int index,
     {
         if( i != index )
         {
-            std::cout << "i != index \n\n";
-
             Pp.push_back(p[i]);
             for( int k = 0; k < 3; ++k )
             {
@@ -514,8 +495,6 @@ ProjectOutComponentPointAndTri(int index,
         }
     }
             
-    std::cout << "Pp.size() = " << Pp.size() << "\n\n";
-
     Pp.shrink_to_fit();
     for( int k = 0; k < 3; ++k )
     {
@@ -528,7 +507,6 @@ ProjectOutComponentPointAndTri(int index,
 //NOTE: Need to use ProjectOutComponentPointAndTri() before
 //      calling any of these functions.
     
-//TODO: Verify triPts given in CCW order for below functions
 bool PointInTri(const std::vector<double>& pp,
         const std::vector<std::vector<double>>& ptriPts)
 {
