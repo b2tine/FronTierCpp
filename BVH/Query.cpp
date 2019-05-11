@@ -10,17 +10,20 @@ static void ProcessProximityCandidates(std::vector<NodePair>& candidates);
 
 static double HseToHseDistance(const Hse* A, const Hse* B);
 
-static std::vector<double> PointToClosestPointOfTriVec(
+static std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts);
+        const std::vector<std::vector<double>>& triPts,
+        double TOL = HUGE);
 
 static std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts);
 
+/*
 static std::vector<double> PointToClosestPointOfEdgeVec(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts);
+*/
 
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                const std::vector<POINT*>& ptsB);
@@ -230,27 +233,26 @@ double TriToTriDistance(
 }
 */
 
-//If the point and triangle are within proximity of each other,
-//the returned vector is directed from the point p to the closest
-//point of the triangle. If they are not within proximity of each
-//other, the returned vector is a default constructed (i.e. empty)
-//std::vector<double>. Use the  vector<double>::empty() method to
-//determine which is the case.
-std::vector<double> PointToClosestPointOfTriVec(
+//If the point and triangle are within proximity (function of TOL)
+//of each other, the returned vector corresponds to the closest point
+//of the triangle. If they are not within proximity of each other, the
+//returned vector is a default constructed (i.e. empty) std::vector<double>.
+//Use the  vector<double>::empty() method to determine which is the case.
+std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts)
+        const std::vector<std::vector<double>>& triPts,
+        double TOL)
 {
-    //TODO: TOL should be given as argument or possibly set within
-    //      a class that this becomes a member function of.
-    //      This value will typically be the width of the cloth.
-    double TOL = 1.0e-03;
+    //NOTE: TOL has default value of HUGE, and if not specified
+    //      the closest point of the triangle will be returned regardless
+    //      of how far it is from the point, p.
 
     auto x12 = MinusVec(triPts[1],triPts[0]);
     auto x13 = MinusVec(triPts[2],triPts[0]);
     auto x14 = MinusVec(p,triPts[0]);
     
-    //TODO: Need to check if triangle is degenerate?
-    //      Eventually probably...
+    //TODO: Need to check if triangle is degenerate outside
+    //      of NormalizeVec()?
     auto ntri = CrossVec(x12,x13);
     auto unitnormal = NormalizeVec(ntri);
     double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
@@ -304,8 +306,9 @@ std::vector<double> PointToClosestPointOfTriVec(
     //        it is the closest point of the triangle.
     if( PointInTri(projx4,triPts) )
     {
-        auto PointToTriVec = MinusVec(projx4,p);
-        return PointToTriVec;
+        return projx4;
+        //auto PointToTriVec = MinusVec(projx4,p);
+        //return PointToTriVec;
     }
 
     //TODO: see TODO-TODO below
@@ -324,26 +327,32 @@ std::vector<double> PointToClosestPointOfTriVec(
     if( LeftTurn(triPts[tan0],triPts[tan1],projx4) ==
             LeftTurn(triPts[tan0],triPts[tan1],triPts[nontan]) )
     {
-        auto PointToTriVec = MinusVec(triPts[nontan],p);
-        return PointToTriVec;
+        return triPts[nontan];
+        //auto PointToTriVec = MinusVec(triPts[nontan],p);
+        //return PointToTriVec;
     }
 
     //Case 3: The nontangent point and projx4 are on opposite
     //        sides of the edge joining the two tangent points.
     std::vector<std::vector<double>> tanPts = {triPts[tan0],triPts[tan1]};
-    auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
-    auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
-    return PointToTriVec;
+    //auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
+    return ClosestPointOfEdgeToPoint(projx4,tanPts);
+
+    //auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
+    //return PointToTriVec;
 }
 
+/*
+//Not sure if we need this yet ...
 std::vector<double> PointToClosestPointOfEdgeVec(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts)
 {
-
+    auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(p,edgePts);
 }
+*/
 
-//For details of this implementation below see
+//For details of this implementation see
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
@@ -431,7 +440,10 @@ std::vector<double> MinusVec(const std::vector<double>& u,
 
 std::vector<double> NormalizeVec(std::vector<double>& u)
 {
-    return ScalarVec(1.0/MagVec(u),u);
+    auto mag = MagVec(u);
+    //temporary assertion for debugging
+    assert(mag > 1.0e-12);
+    return ScalarVec(1.0/mag,u);
 }
 
 //TODO-TODO: Need to project to a plane before calling these
@@ -509,17 +521,17 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
 //   Needed to test the above static methods    //
 //////////////////////////////////////////////////
 
-
-std::vector<double> TestPointToTriVec(
-        const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts)
-{
-    return PointToClosestPointOfTriVec(p,triPts);
-}
-
-std::vector<double> TestPointToEdgePt(
+std::vector<double> TestPointToEdge(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts)
 {
     return ClosestPointOfEdgeToPoint(p,edgePts);
 }
+
+std::vector<double> TestPointToTri(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& triPts)
+{
+    return ClosestPointOfTriToPoint(p,triPts);
+}
+
