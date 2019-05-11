@@ -18,22 +18,25 @@ static std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts);
 
-/*
 static std::vector<double> PointToClosestPointOfEdgeVec(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& edgePts);
-*/
 
 static double TriToTriDistance(const std::vector<POINT*>& ptsA,
                                const std::vector<POINT*>& ptsB);
 
+
+//TODO: Move these primitive functions into their own file
+//      and make globally available.
+
 static std::vector<double> Pt2Vec(const POINT* p);
+
 static std::vector<double> Pts2Vec(const POINT* p1, const POINT* p2);
 
 static std::vector<double> CrossVec(const std::vector<double>& u,
                                     const std::vector<double>& v);
 
-static std::vector<double> ScalarVec(const std::vector<double>& u);
+static std::vector<double> ScalarVec(double c, const std::vector<double>& u);
 
 static std::vector<double> AddVec(const std::vector<double>& u,
                                   const std::vector<double>& v);
@@ -65,7 +68,7 @@ static bool PointInTri(const std::vector<double>& p,
 
 static std::pair<std::vector<int>,int>
 PointToTriTangencyDecomposition(const std::vector<double>& p,
-        const std::vector<std::vector<double>>& triPts)
+        const std::vector<std::vector<double>>& triPts);
 
 
 //NOTE: checkProximity() is the entry point for simulation runs
@@ -248,7 +251,7 @@ std::vector<double> PointToClosestPointOfTriVec(
     
     //TODO: Need to check if triangle is degenerate?
     //      Eventually probably...
-    auto ntri = CrossVec(x13,x23);
+    auto ntri = CrossVec(x12,x13);
     auto unitnormal = NormalizeVec(ntri);
     double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
     
@@ -262,7 +265,7 @@ std::vector<double> PointToClosestPointOfTriVec(
     }
 
     //Compute barycentric coordinates of the closest point in the plane
-    //by solving a linear least squares problem
+    //of the triangle by solving the following linear system
     CramersRule2d Lsq;
 
     Lsq.setA( DotVec(x12,x12), DotVec(x12,x13),
@@ -271,7 +274,7 @@ std::vector<double> PointToClosestPointOfTriVec(
     Lsq.setRHS( DotVec(x12,x14), DotVec(x13,x14) );
 
     auto W = Lsq.solve();
-    W.push_front(1.0 - W[0] - W[1]);
+    W.insert(W.begin(),1.0 - W[0] - W[1]);
 
     //TODO: Determine geometric significance of this calculation (delta).
     //      See wikipedia page on barycentric coordinates,
@@ -295,7 +298,7 @@ std::vector<double> PointToClosestPointOfTriVec(
 
     //Compute the closest point in the plane to p, projx4
     auto v = AddVec(ScalarVec(W[1],x12),ScalarVec(W[2],x13));
-    auto projx4 = AddVec(x1,v);
+    auto projx4 = AddVec(triPts[0],v);
     
     //Case 1: projx4 is in the triangle interior, then
     //        it is the closest point of the triangle.
@@ -303,8 +306,9 @@ std::vector<double> PointToClosestPointOfTriVec(
     {
         auto PointToTriVec = MinusVec(projx4,p);
         return PointToTriVec;
-            //double distance = MagVec(PointToTriVec);
     }
+
+    //TODO: see TODO-TODO below
 
     //Compute indices of tangent and nontangent points of
     //triangle from projx4's line of sight.
@@ -322,16 +326,21 @@ std::vector<double> PointToClosestPointOfTriVec(
     {
         auto PointToTriVec = MinusVec(triPts[nontan],p);
         return PointToTriVec;
-            //double distance = MagVec(PointToTriVec);
     }
 
     //Case 3: The nontangent point and projx4 are on opposite
     //        sides of the edge joining the two tangent points.
-    std::vector<POINT*> tanPts = {triPts[tan0],triPts[tan1]};
+    std::vector<std::vector<double>> tanPts = {triPts[tan0],triPts[tan1]};
     auto ClosestPointOnEdge = ClosestPointOfEdgeToPoint(projx4,tanPts);
     auto PointToTriVec = MinusVec(ClosestPointOnEdge,p);
     return PointToTriVec;
-        //double distance = MagVec(PointToTriVec);
+}
+
+std::vector<double> PointToClosestPointOfEdgeVec(
+        const std::vector<double>& p,
+        const std::vector<std::vector<double>>& edgePts)
+{
+
 }
 
 //For details of this implementation below see
@@ -413,10 +422,10 @@ std::vector<double> AddVec(const std::vector<double>& u,
     return w;
 }
 
+//Returns the vector u-v (i.e. the vector from v to u)
 std::vector<double> MinusVec(const std::vector<double>& u,
                              const std::vector<double>& v)
 {
-    //vector pointing from v to u
     return AddVec(u,ScalarVec(-1.0,v));
 }
 
@@ -425,12 +434,13 @@ std::vector<double> NormalizeVec(std::vector<double>& u)
     return ScalarVec(1.0/MagVec(u),u);
 }
 
+//TODO-TODO: Need to project to a plane before calling these
+//           next 5 functions.
 double SignedParallelogramArea(const std::vector<double>& a,
                                const std::vector<double>& b,
                                const std::vector<double>& c)
 {
-    //Magnitude of ab cross ac, where a, b and c are 2d points
-    //embedded in the in the xy plane of R3
+    //Magnitude of ab cross ac, where a, b and c are ...
     return (b[0] - a[0])*(c[1] - a[1])
             - (c[0] - a[0])*(b[1] - a[1]);
 }
@@ -492,10 +502,11 @@ PointToTriTangencyDecomposition(const std::vector<double>& p,
     nontangentPointIndex.shrink_to_fit();
     return std::make_pair(tangentPtsIndices,nontangentPointIndex[0]);
 }
-
+//TODO-TODO END
 
 //////////////////////////////////////////////////
 //           Functions for Testing              //
+//   Needed to test the above static methods    //
 //////////////////////////////////////////////////
 
 

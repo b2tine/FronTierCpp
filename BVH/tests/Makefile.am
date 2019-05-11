@@ -1,3 +1,5 @@
+SUBDIRS = ../../lib/gmock ../objs
+
 AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 			 -I$(top_srcdir)/BVH \
 			 @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
@@ -11,37 +13,39 @@ AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 
 
-# Build rules for tests.
-# TESTS_ENVIRONMENT: Set environment variables for the test run
-# TESTS: Define programs run automatically by "make check"
-# check_PROGRAMS: Define programs built by "make check" but not necessarily run
 
+# TESTS_ENVIRONMENT: Set environment variables for the test run
 TESTS_ENVIRONMENT = 
 
+# TESTS: Define programs run automatically by "make check"
 TESTS =
+
+# check_PROGRAMS: Define programs built by "make check" but not necessarily run
 check_PROGRAMS =
+
 
 
 TESTS += HseTests
 check_PROGRAMS += HseTests
 
-HSETests_SOURCES = HseTests.cpp \
-				   ../HyperSurfElement.h \
-				   ../HyperSurfElement.cpp
+HseTests_SOURCES = HseTests.cpp
 
-HSETests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
+HseTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
+				 $(top_builddir)/lib/libBVH.la
 
-$(HSETests_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/BVH/objs && $(MAKE) all
 
+
+#NOTE: CGAL_Point.h and CGAL_Point.cpp no longer used
 
 #TESTS += CGAL_PointTests
 #check_PROGRAMS += CGAL_PointTests
 
-#CGAL_PointTests_SOURCES = CGAL_PointTests.cpp ../CGAL_Point.h ../CGAL_Point.cpp
+#CGAL_PointTests_SOURCES = CGAL_PointTests.cpp \
+#						  ../CGAL_Point.h \
+#						  ../CGAL_Point.cpp
 
 #CGAL_PointTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
+
 
 
 TESTS += AABBTests
@@ -71,17 +75,19 @@ BVHTests_SOURCES = BVHTests.cpp \
 				   BVH_Tester.h
 
 BVHTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-					   $(top_builddir)/lib/libBVH.la
+				 $(top_builddir)/lib/libBVH.la
 
 
 
 TESTS += QueryTests
 check_PROGRAMS += QueryTests
 
-HSETests_SOURCES = QueryTests.cpp \
-				   ../Query.cpp
+QueryTests_SOURCES = QueryTests.cpp \
+					 QueryTests.h
 
-HSETests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la
+QueryTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
+				 $(top_builddir)/lib/libBVH.la
+
 
 
 
@@ -90,7 +96,8 @@ FORCE:
 
 
 tagsfile:
-	ctags $(top_srcdir)/BVH/*.h $(top_srcdir)/BVH/*.cpp \
+	ctags *.h *.cpp \
+		$(top_srcdir)/BVH/*.h $(top_srcdir)/BVH/*.cpp \
 		$(top_srcdir)/iFluid/ifluid_state.h \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
