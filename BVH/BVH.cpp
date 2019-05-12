@@ -80,7 +80,7 @@ void BVH::constructLeafNodes(INTERFACE* intfc)
     processCurves(curves);
 }
 
-//TODO: Would a Hse factory provide any real benefit?
+//TODO: Do we need a Hse factory?
 void BVH::processSurfaces(SURFACE** surf)
 {
     for( surf; surf && *surf; ++surf )
@@ -90,23 +90,19 @@ void BVH::processSurfaces(SURFACE** surf)
         TRI* tri;
         surf_tri_loop(*surf,tri)
 	    {
-            //TODO: what other wave_types/boundaries need
-            //      to be considered?
             if (wave_type(*surf) == MOVABLE_BODY_BOUNDARY || 
                     wave_type(*surf) == NEUMANN_BOUNDARY)
             {
                 Hse* h = new HsTri(tri,HseTag::RIGIDBODY); 
                 leaves.push_back(BVH::createLeafNode(h));
+                num_tris++;
             }
-            else
+            else if( wave_type(*surf) == ELASTIC_BOUNDARY )
             {
-                //TODO: what is the wave_type for fabric?
-                //      MONO_COMP_HSBDRY? ELASTIC?
                 Hse* h = new HsTri(tri,HseTag::FABRIC); 
                 leaves.push_back(BVH::createLeafNode(h));
+                num_tris++;
             }
-
-            num_tris++;
 	    }
 	}
 }
@@ -115,15 +111,25 @@ void BVH::processCurves(CURVE** curve)
 {
 	for( curve; curve && *curve; ++curve ) 
 	{
-	    if (hsbdry_type(*curve) != STRING_HSBDRY)
+	    if (hsbdry_type(*curve) != STRING_HSBDRY
+                && hsbdry_type(*curve) != MONO_COMP_HSBDRY )
             continue; 
 
         BOND* bond;
 	    curve_bond_loop(*curve,bond)
 	    {                        
-            Hse* b = new HsBond(bond,HseTag::STRING);
-            leaves.push_back(BVH::createLeafNode(b));
-		    num_bonds++;
+            if( hsbdry_type(*curve) == STRING_HSBDRY )
+            {
+                Hse* b = new HsBond(bond,HseTag::STRING);
+                leaves.push_back(BVH::createLeafNode(b));
+		        num_bonds++;
+            }
+            else if( hsbdry_type(*curve) == MONO_COMP_HSBDRY )
+            {
+                Hse* b = new HsBond(bond,HseTag::FABRIC);
+                leaves.push_back(BVH::createLeafNode(b));
+		        num_bonds++;
+            }
 	    }
 	}
 }

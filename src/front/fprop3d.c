@@ -1019,7 +1019,7 @@ EXPORT void second_order_point_propagate(
 	    vfunc = front->vfunc;
 	}
 
-        /* Use fourth order Runge Kutta method */
+        /* Use the second order Runge Kutta method */
 
         (*vfunc)(vparams,front,oldp,oldhse,oldhs,vel);
         for (i = 0; i < dim; ++i)
@@ -1053,14 +1053,15 @@ EXPORT void fourth_order_point_propagate(
         int (*vfunc)(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
                                 double*);
 
-        if (wave_type(oldhs) < MOVABLE_BODY_BOUNDARY)
+    if (wave_type(oldhs) < MOVABLE_BODY_BOUNDARY)
+    {
+        for (i = 0; i < dim; ++i)
         {
-            for (i = 0; i < dim; ++i)
-	    {
-                Coords(newp)[i] = Coords(oldp)[i];
-	    }
-            return;
+            Coords(newp)[i] = Coords(oldp)[i];
         }
+        return;
+    }
+
 	if (front->vfunc == NULL)
 	{
 	    VELO_FUNC_PACK *vel_func_pack;

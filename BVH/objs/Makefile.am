@@ -25,7 +25,9 @@ ______lib_libBVH_la_SOURCES = \
 ../BVH.cpp \
 ../BVH_Visualization.cpp \
 ../Query.cpp \
-../CramersRule2d.h
+../CramersRule2d.h \
+../BVH_util.cpp \
+../BVH_util.h
 
 
 ______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libiFluid.la

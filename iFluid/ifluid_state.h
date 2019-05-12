@@ -1,9 +1,9 @@
-/**********************************************************************
- * 		ifluid_state.h
- **********************************************************************/
-
 #ifndef IFLUID_STATE_H
 #define IFLUID_STATE_H
+
+//TODO: Split into individual classes for iFluid and Collision.
+//      Then can make an FSI class for airfoil via composition
+//      of the iFluid and Collision STATE structures.
 
 
 struct STATE {
@@ -23,7 +23,8 @@ struct STATE {
 
     double impulse[MAXD];            /* Accum impact from external force */
 
-	/* for collisioin */
+
+	/* for collision */
 	struct UF   {
         POINT* next_pt;
         POINT* root;

@@ -145,10 +145,8 @@ extern void elastic_point_propagate(
 	}
 }       /* elastic_point_propagate */
 
-/*	Given string node, the function finds the corresponding
-*	canopy surface.
-*/
 
+//Given string node, the function finds the corresponding canopy surface.
 static SURFACE *canopy_of_string_node(NODE *n)
 {
 	SURFACE *canopy,**s;

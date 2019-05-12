@@ -1,31 +1,12 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Surface_mesh.h>
+#include "BVH_util.h"
+#include <ifluid_state.h>
 
-#include "BVH.h"
-
-#include <assert.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <cstring>
-#include <algorithm>
-#include <limits>
-#include <utility>
-#include <map>
-
-
-using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-using cgalPoint3 = Kernel::Point_3;
-using Mesh = CGAL::Surface_mesh<cgalPoint3>;
-using Vertex_index = Mesh::Vertex_index;
-using Face_index = Mesh::Face_index;
-
-static std::pair<std::vector<double>,std::vector<double> >
-getInputMeshDimensionsWithPad(Mesh*,double);
-
-static void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
-static void TriMeshOFF2Surf(INTERFACE*,
-        COMPONENT, COMPONENT, Mesh*, SURFACE**);
+static void initSTATEvelocity(Front*, double*);
+static void dummySpringSolver(Front*);
+static void elastic_point_propagate(Front*, POINTER, POINT*,
+        POINT*, HYPER_SURF_ELEMENT*, HYPER_SURF*, double, double*);
+static void mono_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
+static void propagation_driver(Front*);
 
 
 int main(int argc, char* argv[])
@@ -86,202 +67,207 @@ int main(int argc, char* argv[])
     FT_InitIntfc(&front,&level_func_pack);
     
     TriMeshOFF2MonoCompSurf(&front,&inmesh);
-    
+
     char dname[100];
     sprintf(dname,"%s/geomview-interface",out_name);
     gview_plot_interface(dname,front.interf);
     
-    BVH bvh(&front,true);
+    bool drawBVH = true;
+    BVH bvh(&front,drawBVH);
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
 
+    /*
+    //velocity function parameters
+    TRANS_PARAMS trans_params;
+    trans_params.dim = 3;
+    trans_params.vel[0] = 0.25;
+    trans_params.vel[1] = 0.0;
+    trans_params.vel[2] = -0.5;
+
+    front.vparams = &trans_params;
+    front.vfunc = translation_vel;
+    */
+
+    double vel[3] = {3.0,0.0,3.0};
+    initSTATEvelocity(&front,vel);
+    
+    front.vfunc = NULL;
+    front.curve_propagate = mono_curve_propagate;
+    PointPropagationFunction(&front) = fourth_order_point_propagate;
+    //PointPropagationFunction(&front) = second_order_point_propagate;
+
+    propagation_driver(&front);
     clean_up(0);
 }
 
-std::pair<std::vector<double>,std::vector<double>>
-getInputMeshDimensionsWithPad(Mesh* mesh, double pad)
+void propagation_driver(Front* front)
 {
-    std::vector<double> L(3,HUGE);
-    std::vector<double> U(3,-HUGE);
-    Mesh::Vertex_range vrange = mesh->vertices();
-    Mesh::Vertex_range::iterator vit = vrange.begin();
-    for( vit; vit != vrange.end(); ++vit )
+	front->max_time = 15.0; 
+	front->max_step = 10000;
+	front->print_time_interval = 0.5;
+	front->movie_frame_interval = 0.1;
+
+    double CFL = Time_step_factor(front) = 0.5;
+    Tracking_algorithm(front) = STRUCTURE_TRACKING;
+
+    FT_RedistMesh(front);
+    FT_ResetTime(front);
+
+    //Output the initial interface.
+    FT_Save(front);
+    FT_Draw(front);
+
+    //Startup procedure
+    //TODO: This function computes the force and torque
+    //      exerted on rigid bodies by the fluid.
+    //FrontPreAdvance(front);
+    
+    FT_Propagate(front);
+    FT_SetTimeStep(front);
+    FT_SetOutputCounter(front);
+
+	FT_TimeControlFilter(front);
+	FT_PrintTimeStamp(front);
+
+	for (;;)
     {
-        double vcoords[3];
-        cgalPoint3 p = mesh->point(*vit);
-        vcoords[0] = p.x();
-        vcoords[1] = p.y();
-        vcoords[2] = p.z();
-        for( int i = 0; i < 3; ++i )
+	    /* Propagating interface for time step dt */
+	    FT_Propagate(front);
+        dummySpringSolver(front);
+	    FT_AddTimeStepToCounter(front);
+
+	    //Next time step determined by maximum speed of previous
+	    //step, assuming the propagation is hyperbolic and
+	    //is not dependent on second order derivatives of
+	    //the interface such as curvature, and etc.
+        FT_SetTimeStep(front);
+
+	    /* Output section */
+	    FT_TimeControlFilter(front);
+	    FT_PrintTimeStamp(front);
+
+        if (FT_IsSaveTime(front))
+            FT_Save(front);
+
+        if (FT_IsDrawTime(front))
+            FT_Draw(front);
+
+        if (FT_TimeLimitReached(front))
+            break;
+	}
+
+}
+
+void mono_curve_propagate(Front* front, POINTER wave,
+        CURVE* oldc, CURVE* newc, double dt)
+{
+    POINT* oldp, *newp;
+	BOND *oldb,*newb;
+	double V[MAXD];
+	BOND_TRI **btris;
+	HYPER_SURF_ELEMENT *oldhse;
+	HYPER_SURF         *oldhs;
+
+	for (oldb = oldc->first, newb = newc->first;
+            oldb != NULL; oldb = oldb->next, newb = newb->next)
+	{
+	    oldp = oldb->end;
+	    newp = newb->end;
+	    for (btris = Btris(oldb); btris && *btris; ++btris)
+	    {
+	    	oldp->hse = oldhse = Hyper_surf_element((*btris)->tri);
+	    	oldp->hs = oldhs = Hyper_surf((*btris)->surface);
+		    elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+	    }
+	}
+}
+
+
+void elastic_point_propagate(
+        Front *front,
+        POINTER wave,
+        POINT *oldp,
+        POINT *newp,
+        HYPER_SURF_ELEMENT *oldhse,
+        HYPER_SURF         *oldhs,
+        double              dt,
+        double              *V)
+{
+    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+    ft_assign(left_state(newp),left_state(oldp),front->sizest);
+    ft_assign(right_state(newp),right_state(oldp),front->sizest);
+}
+
+//Forward Euler
+void dummySpringSolver(Front* front)
+{
+	INTERFACE *intfc = front->interf;
+	POINT *p;
+	HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
+	
+    (void) next_point(intfc,NULL,NULL,NULL);
+	while (next_point(intfc,&p,&hse,&hs)) 
+    {
+        if(Boundary_point(p))
+            continue;
+        
+        STATE* sl = (STATE*)left_state(p);
+        for (int i = 0; i < FT_Dimension(); ++i)
+            Coords(p)[i] = sl->x_old[i] + front->dt*(sl->vel[i]);
+    }
+
+	CURVE**c;
+	BOND* bond;
+	intfc_curve_loop(intfc,c)
+    {
+        for ((bond) = (*c)->first; (bond) != (*c)->last; 
+                (bond) = (bond)->next)
         {
-            if( vcoords[i] < L[i] )
-                L[i] = vcoords[i];
-            if( vcoords[i] > U[i] )
-                U[i] = vcoords[i];            
-        }
-    }
+            p = bond->end;
+            STATE* sl = (STATE*)left_state(p);
+            for (int i = 0; i < FT_Dimension(); ++i)	
+                Coords(p)[i] = sl->x_old[i] + front->dt*(sl->vel[i]);
+	    }
+	}
 
-    for( int i = 0; i < 3; ++i )
+	NODE** n;
+	intfc_node_loop(intfc,n)
     {
-        L[i] -= pad;
-        U[i] += pad;
-    }
-
-    std::pair<std::vector<double>,
-        std::vector<double>> bdryPair(L,U);
-    return bdryPair;
+        p = (*n)->posn;
+        STATE* sl = (STATE*)left_state(p);
+        for (int i = 0; i < FT_Dimension(); ++i)
+            Coords(p)[i] = sl->x_old[i] + front->dt*(sl->vel[i]);
+	}
 }
 
-void TriMeshOFF2MonoCompSurf(Front* front, Mesh* mesh)
+void initSTATEvelocity(Front* front, double* vel)
 {
-    SURFACE* surf;
-    INTERFACE* intfc = front->interf;
-    COMPONENT amb_comp = intfc->default_comp;
-    TriMeshOFF2Surf(intfc,amb_comp,amb_comp,mesh,&surf);
-    wave_type(surf) = ELASTIC_BOUNDARY;
-    FT_InstallSurfEdge(surf,MONO_COMP_HSBDRY);
-    if( consistent_interface(front->interf) == NO )
-        clean_up(ERROR);
-}
-
-//TODO: Rewrite as a CGALSurfaceMesh2FTSurf function, and make a seperate
-//      function that reads the OFF file directly into FronTier.
-void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
-        COMPONENT neg_comp, Mesh* mesh, SURFACE** surf)
-{
-    //save a copy of the current interface
-    //INTERFACE* saved_intfc = current_interface();
-
-    //create a surface for the current interface
-    set_current_interface(intfc);
-    SURFACE* newsurf = make_surface(pos_comp,neg_comp,NULL,NULL);
-
-    //allocate memory for the mesh vertices
-    POINT** points;
-    const unsigned int num_vtx = mesh->number_of_vertices();
-    FT_VectorMemoryAlloc((POINTER*)&points, num_vtx, sizeof(POINT*));
-
-    //read in the mesh vertices
-    std::map<Vertex_index,int> vmap;
-    Mesh::Vertex_range vrange = mesh->vertices();
-    Mesh::Vertex_range::iterator vit = vrange.begin();
-    for( int i = 0; i < num_vtx; i++ )
-    {
-        double vcoords[3];
-        cgalPoint3 p = mesh->point(*vit);
-        vcoords[0] = p.x();
-        vcoords[1] = p.y();
-        vcoords[2] = p.z();
-
-        points[i] = Point(vcoords);
-        points[i]->num_tris = 0;
-        vmap[*vit] = i;
-        vit++;
-    }
+    STATE* sl;
+    STATE* sr;
     
-    //allocate memory for the mesh triangles
-    TRI** tris;
-    const unsigned int num_faces = mesh->number_of_faces();
-    FT_VectorMemoryAlloc((POINTER*)&tris, num_faces, sizeof(TRI*));
-
-    //read in the mesh triangles
-    Mesh::Face_range frange = mesh->faces();
-    Mesh::Face_range::iterator fit = frange.begin();
-    for( int i = 0; i < num_faces; i++ )
-    { 
-        CGAL::Vertex_around_face_circulator<Mesh> vb(mesh->halfedge(*fit), *mesh); 
-        CGAL::Vertex_around_face_circulator<Mesh> ve(vb);
-        std::vector<Vertex_index> vidx;
-
-        do {            
-            vidx.push_back(*vb);
-            vb++;
-        } while( vb != ve );
-
-        int i0 = vmap[vidx[0]];
-        int i1 = vmap[vidx[1]];
-        int i2 = vmap[vidx[2]];
-
-        tris[i] = make_tri(points[i0], points[i1], points[i2],
-                NULL, NULL, NULL, NO);
-
-        tris[i]->surf = newsurf;
-        points[i0]->num_tris++;
-        points[i1]->num_tris++;
-        points[i2]->num_tris++;
-
-        fit++;
-    }
-    
-    //allocate storage in current interface table
-    intfc->point_tri_store = (TRI**)store(3*num_faces*sizeof(TRI*));
-
-    //distribute the storage to the points
-    TRI** ptris = intfc->point_tri_store;
-    for( int i = 0; i < num_vtx; i++ )
-    {
-        points[i]->tris = ptris;
-        ptris += points[i]->num_tris;
-        points[i]->num_tris = 0;
-    }
-
-    //build the DCEL corresponding to the surface mesh
+    TRI* tri;
     POINT* p;
-    for( int j = 0; j < 3; j++ )
-    {
-        p = Point_of_tri(tris[0])[j];
-        p->tris[p->num_tris++] = tris[0];
-    }//Note: i = 0 in the for loop below
 
-    for( int i = 1; i < num_faces; i++ )
+    SURFACE** s;
+    INTERFACE* intfc = front->interf;
+    intfc_surface_loop(intfc,s)
     {
-        tris[i]->prev = tris[i-1];
-        tris[i-1]->next = tris[i];
-        for( int j = 0; j < 3; j++ )
+        if( is_bdry(*s) ) continue;
+        surf_tri_loop(*s,tri)
         {
-            p = Point_of_tri(tris[i])[j];
-            p->tris[p->num_tris++] = tris[i];
-        }
-    }
-    
-    for( int i = 0; i < num_vtx; i++ )
-    {
-        ptris = points[i]->tris;
-        int num_ptris = points[i]->num_tris;
-        for( int j = 0; j < num_ptris; j++ )
-        {
-            for( int k = 0; k < j; k++ )
+            for( int i = 0; i < 3; ++i )
             {
-                TRI* tri1 = ptris[j];
-                TRI* tri2 = ptris[k];
-                for( int m = 0; m < 3; m++ )
-                for( int l = 0; l < 3; l++ )
+                p = Point_of_tri(tri)[i];
+                sl = (STATE*)left_state(p);
+                sr = (STATE*)right_state(p);
+                for( int j = 0; j < 3; ++j )
                 {
-                    if( Point_of_tri(tri1)[m] == Point_of_tri(tri2)[(l+1)%3] &&
-                        Point_of_tri(tri2)[l] == Point_of_tri(tri1)[(m+1)%3] )
-                    {
-                        Tri_on_side(tri1,m) = tri2;
-                        Tri_on_side(tri2,l) = tri1;
-                    }
+                    sl->vel[j] = sr->vel[j] = vel[j];
+                    sl->x_old[j] = Coords(p)[j];
                 }
             }
         }
     }
-
-    //build the tri list for the surface
-    newsurf->num_tri = num_faces;
-    first_tri(newsurf) = tris[0];
-    last_tri(newsurf) = tris[num_faces-1];
-    last_tri(newsurf)->next = tail_of_tri_list(newsurf);
-    first_tri(newsurf)->prev = head_of_tri_list(newsurf);
-    reset_intfc_num_points(newsurf->interface);
-
-    *surf = newsurf;
-    //set_current_interface(saved_intfc);
-    FT_FreeThese(2,tris,points);
 }
-
-
-
-
-

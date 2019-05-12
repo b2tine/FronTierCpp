@@ -41,8 +41,9 @@ class BVH
         const Point_Node_Vector getLeafSortingData() const;
         //const Point_Node_Vector getSortedLeafData() const;
 
-        bool drawbool{false};
         std::string drawdir;
+        bool drawbool{false};
+
         void drawHeirarchyLevel() const;
         void writeHilbertCurveFiles(int level) const;
 
