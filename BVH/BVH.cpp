@@ -126,6 +126,8 @@ void BVH::processCurves(CURVE** curve)
             }
             else if( hsbdry_type(*curve) == MONO_COMP_HSBDRY )
             {
+                //TODO: Is this getting counted twice,
+                //      first time being with the triangles?
                 Hse* b = new HsBond(bond,HseTag::FABRIC);
                 leaves.push_back(BVH::createLeafNode(b));
 		        num_bonds++;

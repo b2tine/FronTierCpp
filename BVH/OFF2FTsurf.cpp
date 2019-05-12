@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     outfile << inmesh;
     outfile.close();
 
-    auto Bounds = getInputMeshDimensionsWithPad(&inmesh,0.25);
+    auto Bounds = getInputMeshDimensionsWithPad(&inmesh,1.0);
     auto lb = Bounds.first;
     auto ub = Bounds.second;
 
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 
     f_basic.L[0] = lb[0];   f_basic.L[1] = lb[1];    f_basic.L[2] = lb[2];
     f_basic.U[0] = ub[0];   f_basic.U[1] = ub[1];    f_basic.U[2] = ub[2];
-    f_basic.gmax[0] = 80;   f_basic.gmax[1] = 80;   f_basic.gmax[2] = 60;
+    f_basic.gmax[0] = 50;   f_basic.gmax[1] = 50;   f_basic.gmax[2] = 40;
 
     f_basic.boundary[0][0] = f_basic.boundary[0][1] = DIRICHLET_BOUNDARY;
     f_basic.boundary[1][0] = f_basic.boundary[1][1] = DIRICHLET_BOUNDARY;
@@ -55,20 +55,14 @@ int main(int argc, char* argv[])
 
     FT_StartUp(&front,&f_basic);
     add_to_debug("trace");
-    add_to_debug("optimize_intfc");
+    //add_to_debug("optimize_intfc");
     add_to_debug("BVH");
-
-    //TODO: Add boolean to LEVEL_FUNC_PACK and an execution branch
-    //      to FT_InitIntfc() that allows the interface to be read in
-    //      from a surface mesh OFF file. Would eliminate the need to
-    //      set the LEVEL_FUNC_PACK::pos_component value erroneously,
-    //      and facilitate testing.
 
     level_func_pack.pos_component = 1;
     FT_InitIntfc(&front,&level_func_pack);
     
     TriMeshOFF2MonoCompSurf(&front,&inmesh);
-    optimizeElasticMesh(&front);
+    //optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
     char dname[100];
@@ -80,25 +74,18 @@ int main(int argc, char* argv[])
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
 
-    /*
     //velocity function parameters
     TRANS_PARAMS trans_params;
     trans_params.dim = 3;
     trans_params.vel[0] = 0.25;
-    trans_params.vel[1] = 0.0;
+    trans_params.vel[1] = 1.0/3.0;
     trans_params.vel[2] = -0.5;
 
     front.vparams = &trans_params;
     front.vfunc = translation_vel;
-    */
 
-    double vel[3] = {0.0,0.0,1.0};
-    initSTATEvelocity(&front,vel);
-    
-    front.vfunc = NULL;
     front.curve_propagate = mono_curve_propagate;
     PointPropagationFunction(&front) = elastic_point_propagate;
-    //PointPropagationFunction(&front) = fourth_order_point_propagate;
 
     propagation_driver(&front);
     clean_up(0);
@@ -106,7 +93,7 @@ int main(int argc, char* argv[])
 
 void propagation_driver(Front* front)
 {
-	front->max_time = 5.0; 
+	front->max_time = 1.0; 
 	front->max_step = 1000;
 	front->print_time_interval = 0.001;
 	front->movie_frame_interval = 0.001;
@@ -120,7 +107,7 @@ void propagation_driver(Front* front)
     FT_Save(front);
     FT_Draw(front);
 
-    //Startup procedure
+    //Startup
     //TODO: This function computes the force and torque
     //      exerted on rigid bodies by the fluid.
     //FrontPreAdvance(front);
@@ -136,7 +123,6 @@ void propagation_driver(Front* front)
     {
 	    /* Propagating interface for time step dt */
 	    FT_Propagate(front);
-        dummySpringSolver(front);
 	    FT_AddTimeStepToCounter(front);
 
 	    //Next time step determined by maximum speed of previous
@@ -197,8 +183,10 @@ void elastic_point_propagate(
         double              *V)
 {
     fourth_order_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
-    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-    ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    ft_assign(left_state(oldp),left_state(newp),front->sizest);
+    ft_assign(right_state(oldp),right_state(newp),front->sizest);
+    //ft_assign(left_state(newp),left_state(oldp),front->sizest);
+    //ft_assign(right_state(newp),right_state(oldp),front->sizest);
 }
 
 //Forward Euler

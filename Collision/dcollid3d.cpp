@@ -49,18 +49,20 @@ void CollisionSolver3d::assembleFromInterface(
 		    n_bond++;
 	    }
 	}
+
 	makeSet(hseList);
 	createImpZoneForRG(intfc);
-	setDomainBoundary(intfc->table->rect_grid.L,
-			  intfc->table->rect_grid.U);
+	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
+
 	if (debugging("collision")){
 	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
 	    printf("%lu number of elements is assembled\n",hseList.size());
 	}
 }
 
+// test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
-{	// test function for creating impact zone for each movable RG
+{
 	SURFACE** s;
 	TRI* tri;
 
@@ -68,9 +70,10 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 	{
 	    if (is_bdry(*s)) continue;
 	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
-	    surf_tri_loop(*s, tri)
+
+        surf_tri_loop(*s, tri)
 	    {
-		createImpZone(Point_of_tri(tri), 3, YES);
+    		createImpZone(Point_of_tri(tri), 3, YES);
 	    }
 	}
 }

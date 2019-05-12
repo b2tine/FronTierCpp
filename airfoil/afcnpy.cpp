@@ -1799,18 +1799,19 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-	if (first)
+	    if (first)
         {
             set_elastic_params(&geom_set,fr_dt);
             if (debugging("step_size"))
                 print_elastic_params(geom_set);
         }
+
         if (fr_dt > geom_set.dt_tol)
         {
             n_sub = (int)(fr_dt/geom_set.dt_tol);
             dt = fr_dt/n_sub;
         }
-	else
+	    else
         {
             n_sub = af_params->n_sub;
             dt = fr_dt/n_sub;
@@ -1911,22 +1912,34 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
     {
 	    if (FT_Dimension() == 3)
         {
+            //TODO: This function just identifies which triangles and edges
+            //      have the potential to collide with each other based on their
+            //      the material/boundary type alone. We already know this from
+            //      initialization of the interface, so this is either an expensive
+            //      no-op, or the boundary type/condition of hypersurface elements
+            //      are artificially being changed midrun for some reason.
             setCollisionFreePoints3d(fr->interf);
+
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
             collision_solver->recordOriginalPosition();
             
-            collision_solver->setSpringConstant(af_params->ks); 
-            //collision_solver->setFrictionConstant(af_params->lambda_s);
+            //TODO: Is friction component working?
             collision_solver->setFrictionConstant(0.0);
+            //collision_solver->setFrictionConstant(af_params->lambda_s);
             
+            collision_solver->setSpringConstant(af_params->ks); 
             collision_solver->setPointMass(af_params->m_s);
 
-            //TODO: What is going on here?
-            //collision_solver->setFabricThickness(1.0e-3);
+            //TODO: What is goin on here?
+            //      Unphysical penetration using the thicker 1.0e-03 m
+            //      leads me to believe that bugs in the collision code is
+            //      outweighing any potential rounding errors currently.
             collision_solver->setFabricThickness(1.0e-4);
+            //collision_solver->setFabricThickness(1.0e-3);
 
-            //TODO: coefficient of restitution depends on
-            //      the objects involved in collision
+            //TODO: coefficient of restitution varies between materials,
+            //      and should be determined at runtime using the STATE
+            //      data of the colliding pairs. 
             collision_solver->setRestitutionCoef(0.0);
         }
     }
@@ -1958,29 +1971,31 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             {
             	if (debugging("trace"))
                     (void) printf("Enter gpu_spring_solver()\n");
-            	gpu_spring_solver(sv,dim,size,n_sub,dt);
-            	if (debugging("trace"))
+                gpu_spring_solver(sv,dim,size,n_sub,dt);
+                if (debugging("trace"))
                     (void) printf("Left gpu_spring_solver()\n");
             }
             else
 #endif
-            	generic_spring_solver(sv,dim,size,n_sub,dt);
+                generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
 	    for (i = 0; i < pp_numnodes(); i++)
-	    {
-		if (i == myid) continue;
-		copy_to_client_point_set(point_set,client_point_set_store[i],
-				client_size_new[i]);
-		pp_send(3,client_point_set_store[i],
-                        client_size_new[i]*sizeof(GLOBAL_POINT),i);
-	    }
-	}
-	if (myid != owner_id)
         {
-            pp_recv(3,owner_id,point_set_store,
-				client_size*sizeof(GLOBAL_POINT));
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                    client_point_set_store[i], client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                            client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
+	}
+
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,
+            client_size*sizeof(GLOBAL_POINT));
+    }
+
 	/* Owner send and patch point_set_store from other processors */	
 	put_point_set_to(&geom_set,point_set);
 	/* Calculate the real force on load_node and rg_string_node */
@@ -2310,6 +2325,12 @@ extern void collectNodeExtra(
 	}
 }	/* end collectNodeExtra */
 
+
+//TODO: Is this function as useless as it looks?
+//      Unless hypersurface elements need to be able
+//      to change their boundary (wave) type in the
+//      middle of a run, this can just be done during
+//      initialization and cached in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;

@@ -30,7 +30,7 @@ typedef Kernel::Triangle_3                                    Triangle_3;
 //define default parameters for collision detection
 bool   CollisionSolver::s_detImpZone = false;
 double CollisionSolver::s_eps = EPS;
-double CollisionSolver::s_thickness = 0.0001;
+double CollisionSolver::s_thickness = 0.001;
 double CollisionSolver::s_dt = DT;
 double CollisionSolver::s_k = 1000;
 double CollisionSolver::s_m = 0.01;
@@ -135,7 +135,8 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 		POINT* pt = (*it)->Point_of_hse(i);
 		//if (isMovableRigidBody(pt)) continue;
                 STATE* sl = (STATE*)left_state(pt);
-		double cand_coords[3]; //candidate position
+
+        double cand_coords[3]; //candidate position
 		//try to modify the average velocity 
 		//according to the new candidate position
 		double dv = 0;
@@ -317,21 +318,23 @@ void CollisionSolver::updateImpactZoneVelocityForRG()
 	unsortHseList(hseList);
 
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it){
-	    for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-		//skip traversed or isolated pts
-		if (sorted(pt) ||
-		    weight(findSet(pt)) == 1) continue;
-		else if (!isMovableRigidBody(pt))
-		{
-		    sorted(pt) = YES;
-		    continue;
-		}
-		else
-		    updateImpactListVelocity(findSet(pt));
+	     it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(findSet(pt)) == 1) continue;
+            else if (!isMovableRigidBody(pt))
+            {
+                sorted(pt) = YES;
+                continue;
+            }
+            else
+                updateImpactListVelocity(findSet(pt));
 	    }
-	}	
+	}
 }
 
 void CollisionSolver::updateImpactZoneVelocity(int &nZones)
@@ -403,7 +406,7 @@ void CollisionSolver::resolveCollision()
     
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
-	//reduceSuperelast();
+	reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
 }
@@ -489,7 +492,7 @@ void CollisionSolver::aabbCollision() {
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
-	const int MAX_ITER = 5;
+	const int MAX_ITER = 8;
 	int niter = 1;
 
 	std::cout<<"Starting collision handling: "<<std::endl;
@@ -512,8 +515,9 @@ void CollisionSolver::detectCollision()
 	    aabbCollision();
             is_collision = abt_collision->getCollsnState();
 	    stop_clock("dynamic_AABB_collision");
-	    if (cd_count++ == 0 && is_collision) 
-		setHasCollision(true);
+
+	    if (cd_count++ == 0 && is_collision)
+            setHasCollision(true);
 
 	    updateAverageVelocity();
 	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
@@ -521,6 +525,7 @@ void CollisionSolver::detectCollision()
 		     << " pair of collision tris" << std::endl;
 	    if (++niter > MAX_ITER) break;
 	}
+
 	start_clock("computeImpactZone");
 	if (is_collision) 
 	    computeImpactZone();
@@ -667,14 +672,17 @@ void CollisionSolver::reduceSuperelast()
 	bool has_superelas = true;
 	int niter = 0;
     int num_edges;
-	const int max_iter = 10;
-	while(has_superelas && niter++ < max_iter){
+	const int max_iter = 3;
+	while(has_superelas && niter++ < max_iter)
+    {
 	    has_superelas = reduceSuperelastOnce(num_edges);
 	}
+
 	if (debugging("collision"))
-	printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
+        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
 }
 
+//TODO: This is not the correct update
 void CollisionSolver::updateFinalVelocity()
 {
     //detectProximity();
@@ -785,18 +793,21 @@ void CollisionSolver::updateAverageVelocity()
 	double maxSpeed = 0;
 	double* maxVel = nullptr;
 
-#ifdef __VTK__
-	if (debugging("CollisionImpulse")){
-       	  char fname[200] = "vtk_test";
-       	  static int count = 0;
-	  updateFinalPosition();
-       	  if (create_directory(fname,NO)){
-       	  	sprintf(fname,"%s/surf-%03d.vtp",fname,count++);
-       		vtkplotVectorSurface(hseList,fname);	
-       	  }
+#ifdef HAVE_VTK
+	if (debugging("CollisionImpulse"))
+    {
+        char fname[200] = "vtk_test";
+        static int count = 0;
+        updateFinalPosition();
+        if (create_directory(fname,NO))
+        {
+            sprintf(fname,"%s/surf-%03d.vtp",fname,count++);
+            vtkplotVectorSurface(hseList,fname);
+        }
 	}
 #endif
-	unsortHseList(hseList);
+
+    unsortHseList(hseList);
 	for (unsigned i = 0; i < hseList.size(); ++i)
 	{
 	    CD_HSE* hse = hseList[i];
@@ -805,8 +816,10 @@ void CollisionSolver::updateAverageVelocity()
 	    for (int j = 0; j < np; ++j)
 	    {
 		p = hse->Point_of_hse(j);
-		if (isStaticRigidBody(p)) continue;
-		if (sorted(p)) continue;
+		
+        if (isStaticRigidBody(p)) continue;
+        if (sorted(p)) continue;
+
 		sl = (STATE*)left_state(p);
 		if (sl->collsn_num > 0)
 		{
@@ -826,17 +839,18 @@ void CollisionSolver::updateAverageVelocity()
 		    }
 		    sl->collsn_num = 0;
 		}
+
 		/* test for RG */
 		if (sl->collsn_num_RG > 0)
 		{
 		    sl->has_collsn = true;
 		    for (int k = 0; k < 3; ++k)
-			sl->avgVel[k] += sl->collsnImpulse_RG[k]/
-							sl->collsn_num_RG;
+			sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
 		    sl->collsn_num_RG = 0;
 		}
 
-		if (debugging("collision")){
+		if (debugging("collision"))
+        {
 		    //debugging: print largest speed
 		    double speed = Mag3d(sl->avgVel);
 		    if (speed > maxSpeed) {
@@ -844,11 +858,14 @@ void CollisionSolver::updateAverageVelocity()
                         maxSpeed = speed;
                     }
 		}
+
 		sorted(p) = YES;
 	    }
 	}
-	if (getTimeStepSize() > 0.0)
+	
+    if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
+
 	if (debugging("collision"))
 	if (maxVel != nullptr)
 	    printf("    max velocity = [%f %f %f]\n",maxVel[0],maxVel[1],maxVel[2]);
