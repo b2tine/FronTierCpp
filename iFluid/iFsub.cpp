@@ -920,19 +920,20 @@ static  void rgbody_point_propagate(
 
         if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
         {
-#ifndef COLLISION_DETECTION_OFF
-	    for (i = 0; i < dim; ++i)
-		newst->x_old[i] = Coords(oldp)[i];
-#endif
+            if(!debugging("collision_off"))
+            {
+                for (i = 0; i < dim; ++i)
+                    newst->x_old[i] = Coords(oldp)[i];
+            }
+            
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
-	    // test
             for (i = 0; i < dim; ++i)
-	    {
+    	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
                 crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
 				*0.5 - rotation_center(oldhs)[i];
-	    }
+	        }
             if (dim == 2)
             {
 		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
@@ -1033,14 +1034,16 @@ static  void rgbody_point_propagate(
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
-#ifndef COLLISION_DETECTION_OFF
-	/* copy newst to the other STATE; used in collision solver */
+    
+    if(!debugging("collision_off"))
+    {
+        /* copy newst to the other STATE; used in collision solver */
         if (ifluid_comp(negative_component(oldhs)))
             std::copy(newst, newst+1, (STATE*)right_state(newp));
         else if (ifluid_comp(positive_component(oldhs)))
             std::copy(newst, newst+1, (STATE*)left_state(newp));
-#endif
-        return;
+    }
+    return;
 }	/* end rgbody_point_propagate */
 
 extern void fluid_print_front_states(

@@ -23,9 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 
-#ifndef COLLISION_DETECTION_OFF
+//#ifndef COLLISION_DETECTION_OFF
 #include "collid.h"
-#endif
+//#endif
 
 #include "iFluid.h"
 #include "airfoil.h"
@@ -1781,12 +1781,15 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
 
-#ifndef COLLISION_DETECTION_OFF
-	static CollisionSolver* collision_solver = new CollisionSolver3d();
-    printf("COLLISION DETECTION ON\n");
-#else
-    printf("COLLISION DETECTION OFF\n");
-#endif
+	if (!debugging("collision_off"))
+    {
+        printf("COLLISION DETECTION ON\n");
+        static CollisionSolver* collision_solver = new CollisionSolver3d();
+    }
+    else
+    {
+        printf("COLLISION DETECTION OFF\n");
+    }
 
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
@@ -1908,26 +1911,28 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
 	if (myid == owner_id)
 	{
-#ifndef COLLISION_DETECTION_OFF
+	
+    if (!debugging("collision_off"))
+    {
 	    if (FT_Dimension() == 3)
-            {
-                setCollisionFreePoints3d(fr->interf);
-                collision_solver->assembleFromInterface(fr->interf,fr->dt);
-                collision_solver->recordOriginalPosition();
-                
-                collision_solver->setSpringConstant(af_params->ks); 
-                //collision_solver->setFrictionConstant(af_params->lambda_s);
-                collision_solver->setFrictionConstant(0.0);
-                
-                collision_solver->setPointMass(af_params->m_s);
-                //collision_solver->setFabricThickness(1.0e-3);
-                collision_solver->setFabricThickness(1.0e-4);
+        {
+            setCollisionFreePoints3d(fr->interf);
+            collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            collision_solver->recordOriginalPosition();
+            
+            collision_solver->setSpringConstant(af_params->ks); 
+            //collision_solver->setFrictionConstant(af_params->lambda_s);
+            collision_solver->setFrictionConstant(0.0);
+            
+            collision_solver->setPointMass(af_params->m_s);
+            //collision_solver->setFabricThickness(1.0e-3);
+            collision_solver->setFabricThickness(1.0e-3);
 
-                //TODO: coefficient of restitution depends on
-                //      the objects involved in collision
-		        collision_solver->setRestitutionCoef(0.0);
-            }
-#endif
+            //TODO: coefficient of restitution depends on
+            //      the objects involved in collision
+            collision_solver->setRestitutionCoef(0.0);
+        }
+    }
 
 	    get_point_set_from(&geom_set,point_set);
 	    for (i = 0; i < pp_numnodes(); i++)
@@ -1988,14 +1993,15 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
-#ifndef COLLISION_DETECTION_OFF
-	if (myid == owner_id)
-        {
-            if (FT_Dimension() == 3)
-                collision_solver->resolveCollision();
-        }
-	setSpecialNodeForce(fr, geom_set.kl);
-#endif
+	if(!debugging("collision_off"))
+    {
+        if (myid == owner_id)
+            {
+                if (FT_Dimension() == 3)
+                    collision_solver->resolveCollision();
+            }
+        setSpecialNodeForce(fr, geom_set.kl);
+    }
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
