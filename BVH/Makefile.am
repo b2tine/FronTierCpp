@@ -9,6 +9,8 @@ EXTRA_DIST = $(input_directories) \
 			 
 
 AM_CPPFLAGS = -I$(top_srcdir)/BVH \
+			  -I$(top_srcdir)/airfoil \
+			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
@@ -19,18 +21,26 @@ AM_CPPFLAGS = -I$(top_srcdir)/BVH \
 
 
 
-noinst_PROGRAMS = OFF2FTsurf
+noinst_PROGRAMS = 
 
-				  
+
+noinst_PROGRAMS += airfoil
+airfoil_SOURCES = airfoil.cpp
+airfoil_LDADD = $(top_builddir)/lib/libBVH.la
+
+
+noinst_PROGRAMS += OFF2FTsurf			  
 OFF2FTsurf_SOURCES = OFF2FTsurf.cpp
-
 OFF2FTsurf_LDADD = $(top_builddir)/lib/libBVH.la
 
 
 
 tagsfile:
 	ctags *.h *.cpp \
-		$(top_srcdir)/iFluid/ifluid_state.h \
+		$(top_srcdir)/airfoil/*.h $(top_srcdir)/airfoil/*.cpp \
+		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 

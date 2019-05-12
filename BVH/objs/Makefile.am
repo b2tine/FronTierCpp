@@ -1,4 +1,6 @@
 AM_CPPFLAGS = -I$(top_srcdir)/BVH \
+			  -I$(top_srcdir)/airfoil \
+			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \

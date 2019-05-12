@@ -68,6 +68,7 @@ airfoil/ginit
 Collision/test
 Collision/init
 BVH/OFF2FTsurf
+BVH/airfoil
 folding/test
 parachute/parachute
 parachute/ginit
