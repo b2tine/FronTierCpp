@@ -30,12 +30,12 @@ ______lib_libBVH_la_SOURCES = \
 ../BVH_util.h
 
 
-______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libiFluid.la
+______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libairfoil.la
 
 
 
 $(______lib_libBVH_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+	@cd $(top_builddir)/airfoil/objs && $(MAKE) all
 
 
 FORCE:

@@ -95,8 +95,8 @@ void propagation_driver(Front* front)
 {
 	front->max_time = 1.0; 
 	front->max_step = 1000;
-	front->print_time_interval = 0.001;
-	front->movie_frame_interval = 0.001;
+	front->print_time_interval = 0.01;
+	front->movie_frame_interval = 0.01;
 
     double CFL = Time_step_factor(front) = 0.75;
     Tracking_algorithm(front) = STRUCTURE_TRACKING;
