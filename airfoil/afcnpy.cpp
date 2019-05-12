@@ -23,10 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 
-//#ifndef COLLISION_DETECTION_OFF
 #include "collid.h"
-//#endif
-
 #include "iFluid.h"
 #include "airfoil.h"
 #include "solver.h"
@@ -1781,15 +1778,13 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
 
+
+    static CollisionSolver* collision_solver = new CollisionSolver3d();
 	if (!debugging("collision_off"))
-    {
         printf("COLLISION DETECTION ON\n");
-        static CollisionSolver* collision_solver = new CollisionSolver3d();
-    }
     else
-    {
         printf("COLLISION DETECTION OFF\n");
-    }
+
 
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
@@ -1925,8 +1920,10 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             collision_solver->setFrictionConstant(0.0);
             
             collision_solver->setPointMass(af_params->m_s);
+
+            //TODO: What is going on here?
             //collision_solver->setFabricThickness(1.0e-3);
-            collision_solver->setFabricThickness(1.0e-3);
+            collision_solver->setFabricThickness(1.0e-4);
 
             //TODO: coefficient of restitution depends on
             //      the objects involved in collision

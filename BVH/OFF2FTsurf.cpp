@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
     
     front.vfunc = NULL;
     front.curve_propagate = mono_curve_propagate;
-    PointPropagationFunction(&front) = second_order_point_propagate;
+    PointPropagationFunction(&front) = elastic_point_propagate;
     //PointPropagationFunction(&front) = fourth_order_point_propagate;
 
     propagation_driver(&front);

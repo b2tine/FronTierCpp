@@ -398,16 +398,6 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          parachute/Makefile])])])
 
 
-#This method will generally require recompiling the entire project.
-#   Disable collision with the build script option instead.
-#AC_ARG_ENABLE([collision-detection],
-#              AS_HELP_STRING([--disable-collision-detection],
-#                             [disable collision detection for cloth simulation (in development)]))
-#
-#AS_IF([test "x$enable_collision_detection" = xno],
-#      [AC_DEFINE([COLLISION_DETECTION_OFF],[1],[do not link collision library]))
-
-
 #check if folding should be built
 AM_CONDITIONAL([FOLDING_OPT],
                [test $with_cgal = yes && test $with_arma = yes \

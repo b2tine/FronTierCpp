@@ -13,15 +13,11 @@ for arg in $@ ; do
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
         CLEAN=1
-    elif [[ "$arg" == "-CD_OFF" ]]; then
-        DISABLED="-DCOLLISION_DETECTION_OFF"
-        echo "Collision detection disabled."
     fi
 done
 
 
 
-export CPPFLAGS=$DISABLED
 export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
 export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
 
