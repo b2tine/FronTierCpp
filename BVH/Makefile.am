@@ -1,6 +1,7 @@
 SUBDIRS = objs tests
 
-input_directories = input
+input_directories = input-OFF\
+					input-collid-new
 
 EXTRA_DIST = $(input_directories) \
 			 CGAL_Point.h \
