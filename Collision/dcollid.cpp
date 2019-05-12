@@ -679,17 +679,6 @@ void CollisionSolver::updateFinalVelocity()
 {
     //detectProximity();
 	//detectCollision(); 
-    //
-    //TODO: if no repulsions or collisions set final velocity
-    //      to the original candidate velocity that was computed
-    //      by the spring solver. I believe this should be a no-op
-    //      if no repulsions/collisions ... double check
-
-    
-    //TODO: Otherwise, advance the midstep velocity using spring model.
-	
-
-    //This is completely wrong.
 	
     POINT* pt;
 	STATE* sl;

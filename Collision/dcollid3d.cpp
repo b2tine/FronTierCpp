@@ -676,7 +676,6 @@ static void PointToLine(POINT* pts[],double &a)
         a = Dot3d(x13,x12)/Dot3d(x12,x12);
 }
 
-//TODO: Thoroughly test this function
 static bool EdgeToEdge(POINT** pts, double h, double root)
 {
 /*	x1	x3
@@ -693,7 +692,8 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	double v1[3],v2[3];
 	double nor[3], nor_mag, dist;
 
-    //These are pointing in the wrong direction ...
+    //Variable names don't match the behavior of Pts2Vec().
+    //Pointing in the wron direction.
 	Pts2Vec(pts[1],pts[0],x21);    
 	Pts2Vec(pts[3],pts[2],x43);
 	Pts2Vec(pts[2],pts[0],x31);
@@ -701,7 +701,7 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	if (Mag3d(tmp) < ROUND_EPS)
 	{
         //TODO: This doesn't seem right ...
-	    return false; //ignore the case where two edges are parallel
+	    return false; //ignore the case where two edges are parallel??
 	    
         //degenerate cases to parallel line segments
         if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
@@ -1170,7 +1170,6 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 	double rigid_impulse[2] = {0.0};
 	double wa[2] = {1.0 - a, a}, wb[2] = {1.0 - b, b};
 
-	/* it is supposed to use the average velocity*/
 	for (int j = 0; j < 3; ++j)
 	{
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];

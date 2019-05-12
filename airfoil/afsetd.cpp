@@ -287,7 +287,8 @@ extern void compute_spring_accel1(
 	    }
 	}
 
-    //TODO: This has not been implemented.
+    //TODO: This isn't being used currently.
+    //      Figure out why.
     //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
@@ -1457,7 +1458,7 @@ static void assembleParachuteSet3d(
 	    }
 	}
 	
-    //TODO: below if finished?
+    //TODO: below unfinished?
     /* Change for dealing the cases where there is both canopy surface
 	   and isolated 3d curves */
 	intfc_curve_loop(intfc,c)

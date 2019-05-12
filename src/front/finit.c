@@ -1984,6 +1984,7 @@ LOCAL   void FT_InitIntfc3d(
 	}
 	else if (level_func_pack->read_vtk_input)
 	{
+        //TODO: add another function like this for geomview OFF files
 	    neg_comp = level_func_pack->neg_component;
 	    pos_comp = level_func_pack->pos_component;
 	    if (!read_vtk_surface(intfc,neg_comp,pos_comp,

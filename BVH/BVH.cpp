@@ -40,6 +40,26 @@ BVH::BVH(Front* front, bool draw)
     buildHeirarchy();
 }
 
+void BVH::buildHeirarchy()
+{
+    assert( !leaves.empty() );
+
+    initChildren();
+    while( children.size() != 1 )
+    {
+        //alternate sorting direction at each level
+        if( sort_iter % 2 == 0 )
+        {
+            std::reverse(children.begin(),children.end());
+        }
+        drawHeirarchyLevel();
+        constructParentNodes();
+    }
+   
+    Point_Node_Vector().swap(children);
+    assert( root != nullptr );
+}
+
 void BVH::constructLeafNodes(std::vector<Hse*> hseList)
 {
     assert(leaves.empty());
@@ -106,26 +126,6 @@ void BVH::processCurves(CURVE** curve)
 		    num_bonds++;
 	    }
 	}
-}
-
-void BVH::buildHeirarchy()
-{
-    assert( !leaves.empty() );
-
-    initChildren();
-    while( children.size() != 1 )
-    {
-        //alternate sorting direction at each level
-        if( sort_iter % 2 == 0 )
-        {
-            std::reverse(children.begin(),children.end());
-        }
-        drawHeirarchyLevel();
-        constructParentNodes();
-    }
-   
-    Point_Node_Vector().swap(children);
-    assert( root != nullptr );
 }
 
 void BVH::initChildren()

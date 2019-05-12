@@ -608,8 +608,8 @@ ProjectOutComponentPointAndTri(int index,
 }
 
 //NOTE: Need to use LargestComponentIndexVec() and
-//      ProjectOutComponentPointAndTri() before passing
-//      any points/triangles to the functions below.
+//      ProjectOutComponentPointAndTri() before passing any
+//      points/triangles to the strictly 2d functions below.
     
 bool PointInTri(const std::vector<double>& pp,
         const std::vector<std::vector<double>>& ptriPts)

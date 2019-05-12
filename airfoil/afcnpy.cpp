@@ -1915,8 +1915,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
                 collision_solver->assembleFromInterface(fr->interf,fr->dt);
                 collision_solver->recordOriginalPosition();
                 
-                //TODO: spring and friction constants can vary between
-                //      different fabric objects
                 collision_solver->setSpringConstant(af_params->ks); 
                 //collision_solver->setFrictionConstant(af_params->lambda_s);
                 collision_solver->setFrictionConstant(0.0);
@@ -2341,8 +2339,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
             sl->is_movableRG = true;
         }
     }
-
-    //TODO: add ELASTIC_BOUNDARY tag
 
     CURVE **c;
     BOND* b;

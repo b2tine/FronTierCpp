@@ -20,12 +20,12 @@ using Mesh = CGAL::Surface_mesh<cgalPoint3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
 
-std::pair<std::vector<double>,std::vector<double>>
+static std::pair<std::vector<double>,std::vector<double> >
 getInputMeshDimensionsWithPad(Mesh*,double);
 
-void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
-void TriMeshOFF2Surf(INTERFACE*, COMPONENT,
-        COMPONENT, Mesh*, SURFACE**);
+static void TriMeshOFF2MonoCompSurf(Front*, Mesh*);
+static void TriMeshOFF2Surf(INTERFACE*,
+        COMPONENT, COMPONENT, Mesh*, SURFACE**);
 
 
 int main(int argc, char* argv[])
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     f_basic.boundary[1][0] = f_basic.boundary[1][1] = DIRICHLET_BOUNDARY;
     f_basic.boundary[2][0] = f_basic.boundary[2][1] = DIRICHLET_BOUNDARY;
     
-    f_basic.size_of_intfc_state = 0;
+    f_basic.size_of_intfc_state = sizeof(STATE);
 
     FT_StartUp(&front,&f_basic);
     add_to_debug("trace");
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     //      to FT_InitIntfc() that allows the interface to be read in
     //      from a surface mesh OFF file. Would eliminate the need to
     //      set the LEVEL_FUNC_PACK::pos_component value erroneously,
-    //      facilitate testing.
+    //      and facilitate testing.
 
     level_func_pack.pos_component = 1;
     FT_InitIntfc(&front,&level_func_pack);
@@ -152,7 +152,6 @@ void TriMeshOFF2Surf(INTERFACE* intfc, COMPONENT pos_comp,
     //save a copy of the current interface
     //INTERFACE* saved_intfc = current_interface();
 
-difiers:
     //create a surface for the current interface
     set_current_interface(intfc);
     SURFACE* newsurf = make_surface(pos_comp,neg_comp,NULL,NULL);
