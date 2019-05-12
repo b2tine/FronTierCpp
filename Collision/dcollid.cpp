@@ -382,8 +382,8 @@ void CollisionSolver::resolveCollision()
 	if (debugging("collision"))
 	    printDebugVariable();
 
-	start_clock("detectCollision");
 	//check linear trajectories for collisions
+	start_clock("detectCollision");
 	detectCollision();
 	stop_clock("detectCollision");
 
@@ -394,21 +394,20 @@ void CollisionSolver::resolveCollision()
 	detectDomainBoundaryCollision();
 	stop_clock("detectDomainBoundaryCollision");
 
-	start_clock("updateFinalPosition");
 	//update position using final midstep velocity
+	start_clock("updateFinalPosition");
 	updateFinalPosition();
 	stop_clock("updateFinalPosition");
 
-    //TODO: implement this function correctly
-	start_clock("updateFinalVelocity");
-	updateFinalVelocity();
-	stop_clock("updateFinalVelocity");
-    
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
 	reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
+    //TODO: implement this function correctly
+	start_clock("updateFinalVelocity");
+	updateFinalVelocity();
+	stop_clock("updateFinalVelocity");
 }
 
 // function to perform AABB tree building, updating structure
