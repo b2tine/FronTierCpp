@@ -23,11 +23,6 @@ ClosestPointPairEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB);
 
-static std::pair<std::vector<double>,std::vector<double> >
-ClosestPointPairLineToLine(
-        const std::vector<std::vector<double>>& edgeA,
-        const std::vector<std::vector<double>>& edgeB);
-
 static std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts,
@@ -251,25 +246,114 @@ double EdgeToEdgeDistance(
 }
 */
 
+//For details of this implementation see:
+//http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
 std::pair<std::vector<double>,std::vector<double> >
 ClosestPointPairEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB)
 {
-    auto ABpair = ClosestPointPairLineToLine(edgeA,edgeB);
-    //TODO: Rest of implementation;
-    //      temp return value for skeleton code to compile.
-    return ABpair;
-}
+    //Set up the constrained minimization problem for the
+    //squared distance between the lines containing the edges.
+    auto u = MinusVec(edgeA[1],edgeA[0]);
+    auto v = MinusVec(edgeB[1],edgeB[0]);
+    auto w = MinusVec(edgeA[0],edgeB[0]);
 
-std::pair<std::vector<double>,std::vector<double> >
-ClosestPointPairLineToLine(
-        const std::vector<std::vector<double>>& edgeA,
-        const std::vector<std::vector<double>>& edgeB)
-{
-    //TODO: Implementation;
-    //      temp return value for skeleton code to compile.
-    return {};
+    //Unsigned Matrix entries
+    double a = DotVec(u,u);
+    double b = DotVec(u,v);
+    double c = DotVec(v,v);
+
+    //RHS
+    double d = DotVec(u,w);
+    double e = DotVec(v,w);
+
+    //Matrix Determinant
+    double D = a*c - b*b;
+
+    //Solution numerators and denominators
+    double sN;  double sD = D;
+    double tN;  double tD = D;
+
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
+    double sC;  double tC;
+
+    if( D < 1.0e-08 )
+    {
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
+        {
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
+
+        }
+        else if( sN > sD )
+        {
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
+        }
+    }
+
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if( -1.0*d < 0.0 )
+            sN = 0.0;
+        else if( -1.0*d > a )
+            sN = sD;
+        else
+        {
+            sN = -d;
+            sD = a;
+        }
+    }
+    else if( tN > tD )
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if( (b - d)  < 0.0 )
+            sN = 0.0;
+        else if( (b - d) > a )
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
+
+    //Compute the solution and obtain the closest pair of points.
+    sC = fabs(sN) < 1.0e-08 ? 0.0 : sN/sD;
+    tC = fabs(tN) < 1.0e-08 ? 0.0 : tN/tD;
+
+    auto PointOnA = AddVec(edgeA[0],ScalarVec(sC,u));
+    auto PointOnB = AddVec(edgeB[0],ScalarVec(tC,v));
+    return std::make_pair(PointOnA,PointOnB);
 }
 
 //If the point and triangle are within proximity (function of TOL)
@@ -277,14 +361,15 @@ ClosestPointPairLineToLine(
 //of the triangle. If they are not within proximity of each other, the
 //returned vector is a default constructed (i.e. empty) std::vector<double>.
 //Use the  vector<double>::empty() method to determine which is the case.
-//NOTE: TOL has default value of HUGE, and if not specified
-//      the closest point of the triangle will be returned regardless
-//      of how far it is from the point, p.
 std::vector<double> ClosestPointOfTriToPoint(
         const std::vector<double>& p,
         const std::vector<std::vector<double>>& triPts,
         double TOL)
 {
+    //NOTE: TOL has default value of HUGE, and if not specified
+    //      the closest point of the triangle will be returned regardless
+    //      of how far it is from the point, p.
+    
     auto x12 = MinusVec(triPts[1],triPts[0]);
     auto x13 = MinusVec(triPts[2],triPts[0]);
     auto x14 = MinusVec(p,triPts[0]);
@@ -293,7 +378,7 @@ std::vector<double> ClosestPointOfTriToPoint(
     auto ntri = CrossVec(x12,x13);
     auto magnormal = MagVec(ntri);
     assert(magnormal > 1.0e-08);
-
+    
     //Compute distance from the point, p, to the plane of the triangle.
     auto unitnormal = ScalarVec(1.0/magnormal,ntri);
     double signedDistToPlaneOfTri = DotVec(x14,unitnormal);
@@ -317,6 +402,7 @@ std::vector<double> ClosestPointOfTriToPoint(
     Lsq.setRHS( DotVec(x12,x14), DotVec(x13,x14) );
 
     auto W = Lsq.solve();
+    assert(!W.empty());
     W.insert(W.begin(),1.0 - W[0] - W[1]);
 
     //TODO: Determine geometric significance of this calculation (delta).
@@ -386,7 +472,7 @@ std::vector<double> ClosestPointOfTriToPoint(
     return ClosestPointOfEdgeToPoint(projx4,closestTriEdge);
 }
 
-//For details of this implementation see
+//For details of this implementation see:
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,
@@ -597,11 +683,11 @@ double SignedParallelogramArea(const std::vector<double>& a,
 //////////////////////////////////////////////////
 
 std::pair<std::vector<double>,std::vector<double> >
-TestLineToLine(
+TestEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB)
 {
-    return ClosestPointPairLineToLine(edgeA,edgeB);
+    return ClosestPointPairEdgeToEdge(edgeA,edgeB);
 }
 
 std::vector<double> TestPointToEdge(

@@ -2,7 +2,7 @@
 #define QUERY_TESTS_H
 
 std::pair<std::vector<double>,std::vector<double> >
-TestLineToLine(
+TestEdgeToEdge(
         const std::vector<std::vector<double>>& edgeA,
         const std::vector<std::vector<double>>& edgeB);
 

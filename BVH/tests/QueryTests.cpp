@@ -15,8 +15,9 @@ class QueryTestData : public testing::Test
     std::vector<double> U = {1,1,1};
     std::vector<double> Upert = {1.05,1,1};
 
-    std::vector<std::vector<double>> edge_KnU = {Kn,U}; 
+    std::vector<std::vector<double>> edge_OK = {O,K}; 
     std::vector<std::vector<double>> edge_JK = {J,K}; 
+    std::vector<std::vector<double>> edge_KnU = {Kn,U}; 
     std::vector<double> c = {0,3,0};
     std::vector<double> d = {0,4,0};
     std::vector<double> dpert = {0,4.1,0};
@@ -138,9 +139,20 @@ TEST_F(QueryTests, ClosestPointOfEdgeToPointTest)
     ASSERT_DOUBLE_EQ(ClosestPointToDP[2],U[2]);
 }
 
-TEST_F(QueryTests, ClosestPointPairLineToLineTest)
+//TODO: Need to test more cases
+TEST_F(QueryTests, ClosestPointPairEdgeToEdgeTest)
 {
-    auto ClosestPoints = TestLineToLine(edge_JK,edge_KnU);
-    auto ClosestOnLineJK = ClosestPoints.first;
-    auto ClosestOnLineKnU = ClosestPoints.second;
+    auto ClosestPoints = TestEdgeToEdge(edge_OK,edge_KnU);
+
+    auto ClosestOnEdgeOK = ClosestPoints.first;
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeOK[0],0.0);
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeOK[1],0.0);
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeOK[2],0.0);
+
+    auto ClosestOnEdgeKnU = ClosestPoints.second;
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeKnU[0],1.0/3.0);
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeKnU[1],1.0/3.0);
+    ASSERT_DOUBLE_EQ(ClosestOnEdgeKnU[2],-1.0/3.0);
 }
+
+
