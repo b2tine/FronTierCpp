@@ -24,8 +24,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/BVH \
 noinst_PROGRAMS = 
 
 
-noinst_PROGRAMS += airfoil
-airfoil_SOURCES = airfoil.cpp
+noinst_PROGRAMS += cloth
+airfoil_SOURCES = cloth.cpp
 airfoil_LDADD = $(top_builddir)/lib/libBVH.la
 
 

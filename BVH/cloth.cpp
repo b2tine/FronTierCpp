@@ -116,7 +116,9 @@ int main(int argc, char **argv)
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {
-            gview_plot_interface("ginit",front.interf);
+            char gvdir[100];
+            sprintf(gvdir,"%s/gv-init",out_name);
+            gview_plot_interface(gvdir,front.interf);
 	    }
 
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
