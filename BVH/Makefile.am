@@ -25,8 +25,8 @@ noinst_PROGRAMS =
 
 
 noinst_PROGRAMS += cloth
-airfoil_SOURCES = cloth.cpp
-airfoil_LDADD = $(top_builddir)/lib/libBVH.la
+cloth_SOURCES = cloth.cpp
+cloth_LDADD = $(top_builddir)/lib/libBVH.la
 
 
 noinst_PROGRAMS += OFF2FTsurf			  

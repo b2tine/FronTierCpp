@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <iFluid.h>
 #include <airfoil.h>
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
@@ -189,10 +188,6 @@ int main(int argc, char **argv)
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
 
-    //print_interface(front.interf);
-    //exit(0);
-
-	/* Propagate the front */
 
 	airfoil_driver(&front,l_cartesian);
 
@@ -202,11 +197,10 @@ int main(int argc, char **argv)
 void airfoil_driver(Front *front,
         Incompress_Solver_Smooth_Basis *l_cartesian)
 {
-    double CFL;
     int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    CFL = Time_step_factor(front);
+    double CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
 
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",

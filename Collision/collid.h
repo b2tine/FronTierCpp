@@ -227,7 +227,8 @@ public:
 	static int pt_to_tri;
 };
 
-//derived 2D-class for collision detection and handling
+//derived 2D-class for collision detection and handling.
+//NOTE: This has not implementation, and should probably just be deleted.
 class CollisionSolver2d : public CollisionSolver {
 private:
 	void updateImpactListVelocity(POINT*);
