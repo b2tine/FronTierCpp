@@ -115,8 +115,8 @@ static void setInitialIntfcAF3d(
 	    initPlaneSurf(infile,front,level_func_pack);
 	    break;
 	case 'A':
-        case 'a':
-            initAirbag(infile,front,level_func_pack);
+    case 'a':
+        initAirbag(infile,front,level_func_pack);
 	    break;
 	case 'N':
 	case 'n':

@@ -108,6 +108,7 @@ typedef struct {
 	double unequal_coeff;		/* the unequal coefficient */
 	int    unequal_strings_num;	/* number of unequal strings */
 	int    *unequal_strings_gindex; /* gindex of unequal strings */
+
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
@@ -231,9 +232,11 @@ struct _ELASTIC_SET{
 typedef struct _ELASTIC_SET ELASTIC_SET;
 
 void read_iFparams(char*,IF_PARAMS*);
+void restart_set_dirichlet_bdry_function(Front*);
+
+//NOTE: these have no definition
 void read_movie_options(char*,IF_PARAMS*);
 void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
-void restart_set_dirichlet_bdry_function(Front*);
 void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
@@ -270,6 +273,8 @@ extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
 extern boolean is_string_node(NODE*);
+//NOTE: there is only a is_rg_string_node() function not is_string_node()
+
 extern double springCharTimeStep(Front*);	// spring characteristic time
 extern void assembleParachuteSet(INTERFACE*,ELASTIC_SET*);
 

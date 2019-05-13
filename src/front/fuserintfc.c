@@ -106,7 +106,6 @@ EXPORT	F_USER_INTERFACE *f_user_hook(
 	    /* Set default values for Fuser_hooks fields*/
 
 	    /* fields valid for all dimensions */
-
 	    for (i = 0; i < 3; ++i)
 	    {
 	        zero_scalar(&Fuser_hooks[i]._computational_grid,

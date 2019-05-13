@@ -71,6 +71,12 @@ void BVH::constructLeafNodes(std::vector<Hse*> hseList)
     }
 }
 
+//TODO: Add debugging printouts to determine what
+//      the wave/hsbdry types for each element.
+//      When we figure out all the correct types,
+//      should put all the type enums into scoped
+//      enum classes. Otherwise it is impossible to
+//      distinguish the two (is there a difference?).
 void BVH::constructLeafNodes(INTERFACE* intfc)
 {
 	SURFACE** surfaces = intfc->surfaces;
@@ -111,6 +117,7 @@ void BVH::processCurves(CURVE** curve)
 {
 	for( curve; curve && *curve; ++curve ) 
 	{
+        //TODO: What about ELASTIC_STRING?
 	    if (hsbdry_type(*curve) != STRING_HSBDRY
                 && hsbdry_type(*curve) != MONO_COMP_HSBDRY )
             continue; 

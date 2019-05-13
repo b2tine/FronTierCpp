@@ -237,6 +237,8 @@ extern void airfoil_curve_propagate(
 	}
 }	/* end airfoil_curve_propagate */
 
+
+//Only copies the old curve to the new curve?
 static void string_curve_propagation(
         Front *front,
         POINTER wave,

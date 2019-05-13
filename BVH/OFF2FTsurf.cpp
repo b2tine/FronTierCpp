@@ -55,14 +55,14 @@ int main(int argc, char* argv[])
 
     FT_StartUp(&front,&f_basic);
     add_to_debug("trace");
-    //add_to_debug("optimize_intfc");
+    add_to_debug("optimize_intfc");
     add_to_debug("BVH");
 
     level_func_pack.pos_component = 1;
     FT_InitIntfc(&front,&level_func_pack);
     
     TriMeshOFF2MonoCompSurf(&front,&inmesh);
-    //optimizeElasticMesh(&front);
+    optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
     char dname[100];

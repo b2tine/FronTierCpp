@@ -1,6 +1,8 @@
 #include "BVH_util.h"
 
-
+//TODO: This function should also determine and return
+//      the necessary number of grid blocks, gmax, in order
+//      for the interface to propagate correctly. 
 std::pair<std::vector<double>,std::vector<double> >
 getInputMeshDimensionsWithPad(Mesh* mesh, double pad)
 {
