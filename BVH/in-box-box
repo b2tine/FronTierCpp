@@ -41,7 +41,7 @@ Enter projection type: SIMPLE
 Entering yes to turn off fluid solver: yes
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 10
+Enter interior sub step number: 100
 
 Enter number of canopy surfaces: 0
 Initial surface type can be
@@ -123,12 +123,12 @@ Type y to plot bullet in gd movie: n
 Enter yes for debugging: yes
 Enter the debugging string: trace
 Enter the debugging string: rigid_body
-Enter the debugging string: no_optimize 
+Enter the debugging string: Xcollision
+Enter the debugging string: CollisionImpulse
 Enter the debugging string: Xcollision_off 
+Enter the debugging string: Xno_optimize 
 
 Enter the debugging string: Xisect3d
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size
 Enter the debugging string: Xtri_cluster
-Enter the debugging string: Xcollision
-Enter the debugging string: XCollisionImpulse

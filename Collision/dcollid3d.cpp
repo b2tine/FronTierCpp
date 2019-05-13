@@ -60,6 +60,9 @@ void CollisionSolver3d::assembleFromInterface(
 	}
 }
 
+//TODO: This fails in the simple case of 2 rigid boxes making
+//      face to face contact.
+//      
 // test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 {
@@ -967,7 +970,8 @@ static bool PointToTri(POINT** pts, double h, double root)
 }
 
 /* repulsion and friction functions, update velocity functions */
-static void PointToTriImpulse(POINT** pts, double* nor, double* w, double dist, double root)
+static void PointToTriImpulse(POINT** pts, double* nor,
+        double* w, double dist, double root)
 {
 	if (debugging("collision"))
 	    CollisionSolver::pt_to_tri++;
@@ -975,7 +979,12 @@ static void PointToTriImpulse(POINT** pts, double* nor, double* w, double dist, 
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
-	double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
+    //TODO: Select the coefficient of restitution (COR) based
+    //      on the material type of the points. Simplest solution
+    //      is to set COR = 0 for any interactions that involve cloth,
+    //      and set COR = 1 for the case of 2 rigid bodies.
+
+    double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
 	double impulse = 0.0, m_impulse = 0.0;
 	double k, m, lambda, dt, h, cr, sum_w = 0.0;
 	k      = CollisionSolver::getSpringConstant();
@@ -987,7 +996,7 @@ static void PointToTriImpulse(POINT** pts, double* nor, double* w, double dist, 
 	dist   = h - dist;
 	double rigid_impulse[2] = {0.0};
 
-	/* it is supposed to use the average velocity*/
+	/* apply impulses to the average (linear trajectory) velocity */
 	for (int i = 0; i < 3; ++i)
 	{
 	    v_rel[i] += sl[3]->avgVel[i];
@@ -1011,10 +1020,10 @@ static void PointToTriImpulse(POINT** pts, double* nor, double* w, double dist, 
 	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
 		&& isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
 	    {
-		double m1 = total_mass(pts[0]->hs);
-		double m2 = total_mass(pts[3]->hs);
-		rigid_impulse[0] = vn * m2 / (m1 + m2);
-		rigid_impulse[1] = vn * m1 / (m1 + m2);
+		    double m1 = total_mass(pts[0]->hs);
+		    double m2 = total_mass(pts[3]->hs);
+		    rigid_impulse[0] = vn * m2 / (m1 + m2);
+		    rigid_impulse[1] = vn * m1 / (m1 + m2);
 	    }
 	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
 		&& isMovableRigidBody(pts[2]))
@@ -1028,23 +1037,28 @@ static void PointToTriImpulse(POINT** pts, double* nor, double* w, double dist, 
 		rigid_impulse[1] = 0.5 * vn;
 	    }
 	    else
+        {
 	        impulse = vn * 0.5;
+        }
+
 	    for (int i = 0; i < 3; ++i)
 	    {
-		if (isStaticRigidBody(pts[i]))
-		        w[i] = 0.0;
-		sum_w += w[i];
+		    if (isStaticRigidBody(pts[i]))
+                w[i] = 0.0;
+            sum_w += w[i];
 	    }
 	    if (fabs(sum_w) > MACH_EPS)
 	        scalarMult(1.0/sum_w,w,w);
 	}
+
 	if (vn * dt < 0.1 * dist)
 	{
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
 		isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	    {
-		rigid_impulse[0] *= 1.0 + cr;
-		rigid_impulse[1] *= 1.0 + cr;
+            //cr = 1.0;
+		    rigid_impulse[0] *= 1.0 + cr;
+		    rigid_impulse[1] *= 1.0 + cr;
 	    }
 	    else
 	    {
@@ -1095,6 +1109,7 @@ if (fabs(m_impulse) > 0.0){
 		SpreadImpactZoneImpulse(pts[3], -1.0 * rigid_impulse[1], nor);
 	    return;
 	}
+
 	for (int i = 0; i < 3; ++i)
 	{
 	    if (isStaticRigidBody(pts[i])) continue;
@@ -1223,12 +1238,13 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
 		isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	    {
-		rigid_impulse[0] *= 1.0 + cr;
-		rigid_impulse[1] *= 1.0 + cr;
+            //cr = 1.0;
+            rigid_impulse[0] *= 1.0 + cr;
+            rigid_impulse[1] *= 1.0 + cr;
 	    }
 	    else
 	    {
-		double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+		double tmp = -1.0*std::min(dt*k*dist/m, (0.1*dist/dt - vn));
 		impulse += tmp;
 		rigid_impulse[0] += tmp;
 		rigid_impulse[1] += tmp;

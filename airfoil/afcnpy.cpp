@@ -1940,7 +1940,14 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             //TODO: coefficient of restitution varies between materials,
             //      and should be determined at runtime using the STATE
             //      data of the colliding pairs. 
-            collision_solver->setRestitutionCoef(0.0);
+            collision_solver->setRestitutionCoef(1.0);
+                
+            //Default value is 0.0, so only worry about setting it
+            //(to 1.0 for example) when the collision is between two
+            //rigid bodies. Alternatively could set it the value for
+            //rigid-rigid collision here, because it appears that it was
+            //ommitted from all the cloth impulse calculations making it
+            //effectively 0.0 by default again.
         }
     }
 
