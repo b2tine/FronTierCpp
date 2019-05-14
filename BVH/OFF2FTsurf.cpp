@@ -5,9 +5,10 @@ extern void optimizeElasticMesh(Front*);
 
 static void initSTATEvelocity(Front*, double*);
 static void dummySpringSolver(Front*);
-static void elastic_point_propagate(Front*, POINTER, POINT*,
-        POINT*, HYPER_SURF_ELEMENT*, HYPER_SURF*, double, double*);
-static void mono_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
+static void collision_point_propagate(Front*, POINTER, POINT*,
+                                    POINT*, HYPER_SURF_ELEMENT*,
+                                    HYPER_SURF*, double, double*);
+static void collision_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
 static void propagation_driver(Front*);
 
 
@@ -72,6 +73,7 @@ int main(int argc, char* argv[])
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
 
+    /*
     //velocity function parameters
     TRANS_PARAMS trans_params;
     trans_params.dim = 3;
@@ -81,96 +83,170 @@ int main(int argc, char* argv[])
 
     front.vparams = &trans_params;
     front.vfunc = translation_vel;
+    */
 
-    front.curve_propagate = mono_curve_propagate;
-    PointPropagationFunction(&front) = elastic_point_propagate;
+    double initvel[3] = {0.0, 0.0, -0.75};
+    initSTATEvelocity(&front, initvel);
+    front.vfunc = NULL;
+
+    front.curve_propagate = collision_curve_propagate;
+    PointPropagationFunction(&front) = collision_point_propagate;
 
     propagation_driver(&front);
     clean_up(0);
 }
 
-void propagation_driver(Front* front)
+
+void propagation_driver(Front *front)
 {
 	front->max_time = 1.0; 
-	front->max_step = 1000;
+	front->max_step = 100;
 	front->print_time_interval = 0.01;
 	front->movie_frame_interval = 0.01;
+    double CFL = 0.75;
 
-    double CFL = Time_step_factor(front) = 0.75;
-    Tracking_algorithm(front) = STRUCTURE_TRACKING;
+	//CollisionSolver *collision_solver = new CollisionSolver3d();
 
+    Time_step_factor(front) = CFL;
+	Tracking_algorithm(front) = STRUCTURE_TRACKING;
+
+	Frequency_of_redistribution(front,GENERAL_WAVE) = 100000;
+    printf("CFL = %f\n",CFL);
+    printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
+            Frequency_of_redistribution(front,GENERAL_WAVE));
+
+    //FT_RedistMesh(front);
     FT_ResetTime(front);
 
-    //Output the initial interface.
+    // Always output the initial interface.
     FT_Save(front);
     FT_Draw(front);
 
-    //Startup
-    //TODO: This function computes the force and torque
-    //      exerted on rigid bodies by the fluid.
-    //FrontPreAdvance(front);
-    
+    // This is a virtual propagation to get maximum front 
+    // speed to determine the first time step.
+
     FT_Propagate(front);
     FT_SetTimeStep(front);
     FT_SetOutputCounter(front);
 
-	FT_TimeControlFilter(front);
-	FT_PrintTimeStamp(front);
+    FT_TimeControlFilter(front);
+    FT_PrintTimeStamp(front);
 
-	for (;;)
+
+    for (;;)
     {
-	    /* Propagating interface for time step dt */
-	    FT_Propagate(front);
-	    FT_AddTimeStepToCounter(front);
+        /* Propagating interface for time step dt */
+    
+        if(debugging("CLOCK"))
+            reset_clock();
 
-	    //Next time step determined by maximum speed of previous
-	    //step, assuming the propagation is hyperbolic and
-	    //is not dependent on second order derivatives of
-	    //the interface such as curvature, and etc.
+        FT_Propagate(front);
+
+        dummySpringSolver(front);
+
+        //collision detect and handling
+        /*
+        collision_solver->assembleFromInterface(front->interf,front->dt);
+        collision_solver->setFrictionConstant(0.0);
+        collision_solver->resolveCollision();
+        */
+
+        FT_AddTimeStepToCounter(front);
+
+        //Next time step determined by maximum speed of previous
+        //step, assuming the propagation is hyperbolic and
+        //is not dependent on second order derivatives of
+        //the interface such as curvature, and etc.
+
         FT_SetTimeStep(front);
 
-	    /* Output section */
-	    FT_TimeControlFilter(front);
-	    FT_PrintTimeStamp(front);
+        /* Output section */
+
+        FT_TimeControlFilter(front);
+        FT_PrintTimeStamp(front);
 
         if (FT_IsSaveTime(front))
             FT_Save(front);
-
+        
         if (FT_IsDrawTime(front))
             FT_Draw(front);
 
         if (FT_TimeLimitReached(front))
             break;
-	}
 
-}
+    }
 
-void mono_curve_propagate(Front* front, POINTER wave,
-        CURVE* oldc, CURVE* newc, double dt)
+	//delete collision_solver;
+
+}       /* end propagation_driver */
+
+
+void collision_curve_propagate(
+	Front* front,
+	POINTER wave,
+	CURVE* oldc,
+	CURVE* newc,
+	double dt)
 {
-    POINT* oldp, *newp;
-	BOND *oldb,*newb;
-	double V[MAXD];
-	BOND_TRI **btris;
-	HYPER_SURF_ELEMENT *oldhse;
-	HYPER_SURF         *oldhs;
+	int dim = 3;
 
-	for (oldb = oldc->first, newb = newc->first;
-            oldb != NULL; oldb = oldb->next, newb = newb->next)
-	{
-	    oldp = oldb->end;
-	    newp = newb->end;
-	    for (btris = Btris(oldb); btris && *btris; ++btris)
-	    {
-	    	oldp->hse = oldhse = Hyper_surf_element((*btris)->tri);
-	    	oldp->hs = oldhs = Hyper_surf((*btris)->surface);
-		    elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
-	    }
-	}
+    POINT* oldp = oldc->start->posn;
+    POINT* newp = newc->start->posn;
+
+    ft_assign(left_state(newp),left_state(oldp),front->sizest);
+    ft_assign(right_state(newp),right_state(oldp),front->sizest);
+
+    STATE* newsl = (STATE*)left_state(newp);
+	STATE* oldsl = (STATE*)left_state(oldp);
+	
+    for (int i = 0; i < dim; ++i)
+    {
+        newsl->vel[i] = oldsl->vel[i];
+        Coords(newp)[i] = Coords(oldp)[i] + dt*oldsl->vel[i];
+        newsl->collsnImpulse[i] = 0.0;
+        newsl->x_old[i] = Coords(oldp)[i];
+    }
+
+	oldp = oldc->end->posn;
+    newp = newc->end->posn;
+    newsl = (STATE*)left_state(newp);
+	oldsl = (STATE*)left_state(oldp);
+    ft_assign(left_state(newp),left_state(oldp),front->sizest);
+    ft_assign(right_state(newp),right_state(oldp),front->sizest);
+
+    for (int i = 0; i < dim; ++i)
+    {
+        newsl->vel[i] = oldsl->vel[i];
+        Coords(newp)[i] = Coords(oldp)[i] + dt*oldsl->vel[i];
+        newsl->collsnImpulse[i] = 0.0;
+        newsl->x_old[i] = Coords(oldp)[i];
+    }
+
+	BOND* oldb;
+    BOND* newb;
+
+	for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
+                oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+        newsl = (STATE*)left_state(newp);
+        oldsl = (STATE*)left_state(oldp);
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    
+        for (int i = 0; i < dim; ++i)
+        {
+            newsl->vel[i] = oldsl->vel[i];
+            Coords(newp)[i] = Coords(oldp)[i] + dt*oldsl->vel[i];
+            newsl->collsnImpulse[i] = 0.0;
+            newsl->x_old[i] = Coords(oldp)[i];
+        }
+    }
 }
 
 
-void elastic_point_propagate(
+void collision_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -180,12 +256,70 @@ void elastic_point_propagate(
         double              dt,
         double              *V)
 {
-    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
-    ft_assign(left_state(oldp),left_state(newp),front->sizest);
-    ft_assign(right_state(oldp),right_state(newp),front->sizest);
-    //ft_assign(left_state(newp),left_state(oldp),front->sizest);
-    //ft_assign(right_state(newp),right_state(oldp),front->sizest);
+
+	STATE* sl = (STATE*)left_state(oldp);
+    STATE* newsl = (STATE*)left_state(newp);
+    ft_assign(left_state(newp),left_state(oldp),front->sizest);
+
+    double vel[MAXD],s;
+    int dim = front->rect_grid->dim;
+
+	for (int i = 0; i < dim; ++i)
+        vel[i] = sl->vel[i];
+
+	for (int i = 0; i < dim; ++i)
+	{
+	    newsl->vel[i] = vel[i];
+        Coords(newp)[i] = Coords(oldp)[i];
+	    newsl->collsnImpulse[i] = 0.0;
+	    newsl->x_old[i] = Coords(oldp)[i];
+	}
+
+	newsl->collsn_num = 0;
+    s = mag_vector(V,dim);
+    set_max_front_speed(dim,s,NULL,Coords(newp),front);
 }
+
+
+
+
+void initSTATEvelocity(Front* front, double* vel)
+{
+    STATE* sl;
+    STATE* sr;
+    
+    TRI* tri;
+    POINT* p;
+
+    SURFACE** s;
+    INTERFACE* intfc = front->interf;
+    intfc_surface_loop(intfc,s)
+    {
+        int tid = 0;
+        if( is_bdry(*s) ) continue;
+        surf_tri_loop(*s,tri)
+        {
+            Tri_index(tri) = tid;
+            std::cout << "tri_index: " << tid << "\n";
+            for( int i = 0; i < 3; ++i )
+            {
+                p = Point_of_tri(tri)[i];
+                sl = (STATE*)left_state(p);
+                sr = (STATE*)right_state(p);
+                for( int j = 0; j < 3; ++j )
+                {
+                    sl->x_old[j] = Coords(p)[j];
+                        
+                    sl->vel[j] = 0.0;
+                    if( tid >= 250 && tid <= 300 )
+                        sl->vel[j] = vel[j];
+                }
+            }
+            tid++;
+        }
+    }
+}
+
 
 //Forward Euler
 void dummySpringSolver(Front* front)
@@ -228,34 +362,4 @@ void dummySpringSolver(Front* front)
         for (int i = 0; i < FT_Dimension(); ++i)
             Coords(p)[i] = sl->x_old[i] + front->dt*(sl->vel[i]);
 	}
-}
-
-void initSTATEvelocity(Front* front, double* vel)
-{
-    STATE* sl;
-    STATE* sr;
-    
-    TRI* tri;
-    POINT* p;
-
-    SURFACE** s;
-    INTERFACE* intfc = front->interf;
-    intfc_surface_loop(intfc,s)
-    {
-        if( is_bdry(*s) ) continue;
-        surf_tri_loop(*s,tri)
-        {
-            for( int i = 0; i < 3; ++i )
-            {
-                p = Point_of_tri(tri)[i];
-                sl = (STATE*)left_state(p);
-                sr = (STATE*)right_state(p);
-                for( int j = 0; j < 3; ++j )
-                {
-                    sl->vel[j] = sr->vel[j] = vel[j];
-                    sl->x_old[j] = Coords(p)[j];
-                }
-            }
-        }
-    }
 }
