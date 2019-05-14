@@ -557,6 +557,9 @@ void printHyperSurfQuality(
 void optimizeElasticMesh(
 	Front *front)
 {
+	if (debugging("no_optimize")) return;
+	if (FT_Dimension() != 3) return;
+
 	INTERFACE *intfc = front->interf;
 	RECT_GRID *gr = computational_grid(intfc);
 	boolean nothing_done;
@@ -565,11 +568,11 @@ void optimizeElasticMesh(
 	SURFACE **s,*surf;
 	SCALED_REDIST_PARAMS scaled_redist_params;
 	int old_string_pts,new_string_pts,old_canopy_pts,new_canopy_pts;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	int num_opt_round;
 
 	if (debugging("trace"))
 	    (void) printf("Entering optimizeElasticMesh()\n");
+
+    char gvdir[100];
 	if (debugging("optimize_intfc"))
 	{
 	    (void) printf("Quality of mesh before optimization:\n");
@@ -577,15 +580,18 @@ void optimizeElasticMesh(
 	    (void) printf("Checking consistency of interface\n");
 	    consistent_interface(front->interf);
 	    (void) printf("Checking completed\n");
-	    gview_plot_interface("gview-before-optimize",intfc);
-	    if (debugging("no_optimize"))
-		clean_up(0);
+        sprintf(gvdir,"%s/gview-before-optimize",OutName(front));
+	    gview_plot_interface(gvdir,intfc);
 	}
-	if (debugging("no_optimize")) return;
-	if (gr->dim == 2) return;
 
-	num_opt_round = af_params->num_opt_round;
-	scaled_redist_params.min_scaled_bond_length = 0.45/2.0;
+    int num_opt_round = 1;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    if(af_params)
+    {
+        num_opt_round = af_params->num_opt_round;
+    }
+	
+    scaled_redist_params.min_scaled_bond_length = 0.45/2.0;
 	scaled_redist_params.max_scaled_bond_length = 1.05/2.0;
 
 	scaled_redist_params.min_scaled_tri_area = 0.1083;
@@ -604,8 +610,8 @@ void optimizeElasticMesh(
 	    if (hsbdry_type(*c) == STRING_HSBDRY)
 		old_string_pts += I_NumOfCurvePoints(*c) - 2;
 
-	printf("num_opt_round = %d\n",num_opt_round);
-	num_opt_round = 20;
+	printf("num_opt_round = %d\n\n",num_opt_round);
+	
 	for (i = 0; i < num_opt_round; ++i)
 	{
 	    status = YES;
@@ -652,7 +658,8 @@ void optimizeElasticMesh(
 		new_string_pts += I_NumOfCurvePoints(*c) - 2;
 	if (debugging("optimize_intfc"))
 	{
-	    gview_plot_interface("gview-after-optimize",intfc);
+        sprintf(gvdir,"%s/gview-after-optimize",OutName(front));
+	    gview_plot_interface(gvdir,intfc);
 	}
 	if (debugging("trace"))
 	    (void) printf("Leaving optimizeElasticMesh()\n");

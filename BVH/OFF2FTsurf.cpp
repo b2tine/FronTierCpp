@@ -1,6 +1,8 @@
 #include "BVH_util.h"
 #include <ifluid_state.h>
 
+extern void optimizeElasticMesh(Front*);
+
 static void initSTATEvelocity(Front*, double*);
 static void dummySpringSolver(Front*);
 static void elastic_point_propagate(Front*, POINTER, POINT*,
@@ -65,10 +67,6 @@ int main(int argc, char* argv[])
     optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
-    char dname[100];
-    sprintf(dname,"%s/geomview-interface",out_name);
-    gview_plot_interface(dname,front.interf);
-    
     bool drawBVH = true;
     BVH bvh(&front,drawBVH);
     auto root_bv = bvh.getRoot()->getBV();
