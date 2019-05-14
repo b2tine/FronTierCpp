@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     front.vfunc = translation_vel;
     */
 
-    double initvel[3] = {0.0, 0.0, -0.75};
+    double initvel[3] = {0.0, 0.0, -2.5};
     initSTATEvelocity(&front, initvel);
     front.vfunc = NULL;
 
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 void propagation_driver(Front *front)
 {
 	front->max_time = 1.0; 
-	front->max_step = 100;
+	front->max_step = 10;
 	front->print_time_interval = 0.01;
 	front->movie_frame_interval = 0.01;
     double CFL = 0.75;

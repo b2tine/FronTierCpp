@@ -60,7 +60,7 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the total mass for rigid body: 1.0
 Enter the initial center of mass for rigid body: 0.3 0.5 0.5
-Enter the initial center of mass velocity: 0.5 0 0
+Enter the initial center of mass velocity: 1.0 0 0
 
 For rigid body 2
 Enter type of rigid body: Sphere

@@ -24,9 +24,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/BVH \
 noinst_PROGRAMS = 
 
 
-noinst_PROGRAMS += cloth
-cloth_SOURCES = cloth.cpp
-cloth_LDADD = $(top_builddir)/lib/libBVH.la
+noinst_PROGRAMS += collision
+collision_SOURCES = collision.cpp
+collision_LDADD = $(top_builddir)/lib/libBVH.la
 
 
 noinst_PROGRAMS += OFF2FTsurf			  
