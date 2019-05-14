@@ -114,7 +114,7 @@ enum { MAX_BYTES = 500 };	/* Max Number of characters in names (total) */
 #endif /*!defined(MAX_BYTES)*/
 
 #if !defined(MAX_CHARS)
-enum { MAX_CHARS = 8 };	/* Max Number of characters used per name */
+enum { MAX_CHARS = 15 };	/* Max Number of characters used per name */
 #endif /*!defined(MAX_CHARS)*/
 
 #if !defined(MAX_TRACE)

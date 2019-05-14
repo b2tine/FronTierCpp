@@ -136,8 +136,8 @@ Enter the debugging string: rgbody
 Enter the debugging string: rigid_body
 Enter the debugging string: collision
 Enter the debugging string: CollisionImpulse
-Enter the debugging string: Xcollision_off 
 Enter the debugging string: no_optimize 
+Enter the debugging string: Xcollision_off 
 
 Enter the debugging string: Xisect3d
 Enter the debugging string: Xstep_size
