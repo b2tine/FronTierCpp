@@ -145,7 +145,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	         memcpy(tmp,I,9*sizeof(double));
 	         for (int j = 0; j < 3; j++)
 		      tmp[j][i] = L[j];
-             if( myDet3d(I) <= ROUND_EPS )
+             if( myDet3d(I) >= ROUND_EPS )
                  w[i] = myDet3d(tmp)/myDet3d(I);
              else
                  w[i] = 0.0;
