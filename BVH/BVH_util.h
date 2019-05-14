@@ -3,6 +3,8 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
+//NOTE: CGAL/Surface_mesh.h has macro conflict with the 
+//      fdecs.h macro "node_type"
 
 #include "BVH.h"
 

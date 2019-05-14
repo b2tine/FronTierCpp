@@ -41,7 +41,7 @@ class BVH
         const Point_Node_Vector getLeafSortingData() const;
         //const Point_Node_Vector getSortedLeafData() const;
 
-        std::string drawdir;
+        std::string outdir;
         bool drawbool{false};
 
         void drawHeirarchyLevel() const;
@@ -65,7 +65,8 @@ class BVH
 
     public:
 
-        explicit BVH(Front* front, bool draw = false);
+        explicit BVH(Front* front);
+        //explicit BVH(Front* front, bool draw = false);
 
         BVH() = default;
         ~BVH() = default;
@@ -80,6 +81,8 @@ class BVH
 
         void setDrawBool(bool draw);
         void setDrawDirectory(std::string dir);
+        
+        void DrawHeirarchy(std::string dir);
 };
 
 

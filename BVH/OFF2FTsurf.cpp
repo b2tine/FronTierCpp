@@ -68,8 +68,9 @@ int main(int argc, char* argv[])
     optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
-    bool drawBVH = true;
-    BVH bvh(&front,drawBVH);
+    //bool drawBVH = true;
+    //BVH bvh(&front,drawBVH);
+    BVH bvh;
     auto root_bv = bvh.getRoot()->getBV();
     root_bv.print();
 

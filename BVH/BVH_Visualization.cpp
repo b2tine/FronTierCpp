@@ -38,11 +38,11 @@ static void createDirectory(std::string new_dir)
 //TODO: Break out into several functions for reuse/flexibility
 void BVH::writeHilbertCurveFiles(int level) const
 {
-    assert(!drawdir.empty() && drawbool == true);
+    assert(!outdir.empty() && drawbool == true);
 
-    std::string outputdir = drawdir + "/";
+    std::string drawdir = outdir + "/";
     std::string lvlid = std::string(2,'0').append(std::to_string(level));
-    std::string lvldir = outputdir + "level-" + lvlid;
+    std::string lvldir = drawdir + "level-" + lvlid;
     lvldir += "/";
 
     createDirectory(lvldir);

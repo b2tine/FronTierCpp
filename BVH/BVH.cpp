@@ -32,12 +32,31 @@ BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
     return new InternalNode(lc,rc);
 }
 
+/*
 BVH::BVH(Front* front, bool draw)
-    : drawdir{std::string(OutName(front))},
+    : outdir{std::string(OutName(front))},
     drawbool{draw}
 {
     constructLeafNodes(front->interf);
     buildHeirarchy();
+}
+*/
+
+BVH::BVH(Front* front)
+    : outdir{std::string(OutName(front))}
+{
+    constructLeafNodes(front->interf);
+}
+
+void BVH::constructLeafNodes(std::vector<Hse*> hseList)
+{
+    assert(leaves.empty());
+    std::vector<Hse*>::iterator it = hseList.begin();
+    for( it; it != hseList.end(); ++it )
+    {
+        BVH_Node* leaf = BVH::createLeafNode(*it);
+        leaves.push_back(leaf);
+    }
 }
 
 void BVH::buildHeirarchy()
@@ -58,17 +77,6 @@ void BVH::buildHeirarchy()
    
     Point_Node_Vector().swap(children);
     assert( root != nullptr );
-}
-
-void BVH::constructLeafNodes(std::vector<Hse*> hseList)
-{
-    assert(leaves.empty());
-    std::vector<Hse*>::iterator it = hseList.begin();
-    for( it; it != hseList.end(); ++it )
-    {
-        BVH_Node* leaf = BVH::createLeafNode(*it);
-        leaves.push_back(leaf);
-    }
 }
 
 //TODO: Add debugging printouts to determine what
@@ -232,6 +240,6 @@ void BVH::setDrawBool(bool draw)
 
 void BVH::setDrawDirectory(std::string dir)
 {
-    drawdir = dir;
+    outdir = dir;
 }
 
