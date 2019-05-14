@@ -97,7 +97,7 @@ typedef struct {
 	double gamma;			/* canopy porosity */
 	double area_dens;		/* canopy area density */
 	int    n_sub;			/* number of sub-steps for tan prop */
-	int    num_opt_round{0};		/* number of mesh optimizations rounds*/
+	int    num_opt_round;		/* number of mesh optimizations rounds*/
 	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */
 	int    num_np;			/* number of master node to run spring model */
 	int    *node_id;		/* master node id */

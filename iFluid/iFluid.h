@@ -618,8 +618,6 @@ extern double grad_p_jump_n(POINTER,int,double*,double*);
 extern double grad_p_jump_t(POINTER,int,int,double*,double*);
 extern boolean neumann_type_bdry(int);
 
-extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
 extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
                         double*);
 extern void initInnerBoundary(Front*,LEVEL_FUNC_PACK*);
@@ -637,9 +635,11 @@ extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
 extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
+
 extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
 extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
 extern void rgb_init(Front*,RG_PARAMS);
+
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);
 extern int contact_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,

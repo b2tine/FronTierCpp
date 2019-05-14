@@ -58,9 +58,9 @@ Enter edges of the box: 0.2 0.1 0.1
 Type yes if the rigid body is fixed: no
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
-Enter the initial center of mass for rigid body: 0.3 0.5 0.5
-Enter the initial center of mass velocity: 0.1 0 0
 Enter the total mass for rigid body: 1.0
+Enter the initial center of mass for rigid body: 0.3 0.5 0.5
+Enter the initial center of mass velocity: 0.15 0 0
 
 For rigid body 2
 Enter type of rigid body: Sphere
@@ -69,9 +69,9 @@ Enter radius of the sphere: 0.15
 Type yes if the rigid body is fixed: no
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
-Enter the initial center of mass for rigid body: 0.7 0.5 0.5
-Enter the initial center of mass velocity: 0.0 0.0 0.0
 Enter the total mass for rigid body: 1.0
+Enter the initial center of mass for rigid body: 0.7 0.5 0.5
+Enter the initial center of mass velocity: -0.15 0.0 0.0
 
 ************airfoil/parachute parameters*****************
 
@@ -132,12 +132,12 @@ Enter yes for debugging: yes
 
 Enter the debugging string: trace
 Enter the debugging string: CLOCK
-Enter the debugging string: rd_body
+Enter the debugging string: rgbody
 Enter the debugging string: rigid_body
 Enter the debugging string: collision
 Enter the debugging string: CollisionImpulse
 Enter the debugging string: Xcollision_off 
-Enter the debugging string: Xno_optimize 
+Enter the debugging string: no_optimize 
 
 Enter the debugging string: Xisect3d
 Enter the debugging string: Xstep_size
