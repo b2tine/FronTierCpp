@@ -42,6 +42,7 @@ class BVH
         //const Point_Node_Vector getSortedLeafData() const;
 
         std::string outdir;
+        std::string drawdir;
         bool drawbool{false};
 
         void drawHeirarchyLevel() const;
@@ -49,7 +50,6 @@ class BVH
 
     protected:
         
-        void buildHeirarchy();
         void constructLeafNodes(INTERFACE*);
         void constructLeafNodes(std::vector<Hse*>);
         
@@ -76,13 +76,16 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        BVH_Node* const getRoot() const noexcept;
-        const bool isEmpty() const noexcept; 
+        void buildHeirarchy();
+        void updateHeirarchy();
+        //void drawHeirarchy() const;
 
-        void setDrawBool(bool draw);
-        void setDrawDirectory(std::string dir);
+        const bool isEmpty() const noexcept; 
+        BVH_Node* const getRoot() const noexcept;
+
+        void setToDraw() noexcept;
+        void setDrawDirectory(std::string dir) noexcept;
         
-        void DrawHeirarchy(std::string dir);
 };
 
 

@@ -7,45 +7,46 @@
 #include <string>
 
 
-static void mkdirTree(std::string sub, std::string dir)
+static void mkdirTree(std::string sub, std::string dir);
+static void createDirectory(std::string new_dir);
+
+
+/*
+void BVH::drawHeirarchy() const
 {
-    if(sub.length() == 0)
-        return;
+    //TODO: Need to write a SpaceFillingCurve class.
+    //      Can't just postorder traverse because the
+    //      order depends on the type of curve.
+    //      Want to be able to use different curves on
+    //      each level of the heirarchy also.
+}
+*/
 
-    int i = 0;
-    for( i; i < sub.length(); i++)
-    {
-        dir += sub[i];
-        if (sub[i] == '/')
-            break;
-    }
 
-    mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+void BVH::setToDraw() noexcept
+{
+    drawbool = true;
+}
 
-    if(i+1 < sub.length())
-        mkdirTree(sub.substr(i+1), dir);
+void BVH::setDrawDirectory(std::string dir) noexcept
+{
+    outdir = dir;
 }
 
 
-static void createDirectory(std::string new_dir)
+void BVH::drawHeirarchyLevel() const
 {
-    struct stat st;
-    int status = stat(new_dir.c_str(), &st);
-    if( status != 0 && !S_ISDIR(st.st_mode) )
-        mkdirTree(new_dir, "");
+    if( drawbool == true )
+        writeHilbertCurveFiles(sort_iter);
 }
+
 
 //TODO: Break out into several functions for reuse/flexibility
 void BVH::writeHilbertCurveFiles(int level) const
 {
-    assert(!outdir.empty() && drawbool == true);
-
-    std::string drawdir = outdir + "/";
+    assert(!drawdir.empty());
     std::string lvlid = std::string(2,'0').append(std::to_string(level));
-    std::string lvldir = drawdir + "level-" + lvlid;
-    lvldir += "/";
-
-    createDirectory(lvldir);
+    std::string lvldir = drawdir + "level-" + lvlid + "/";
 
     std::string geomdir("OOGL/");
     createDirectory(lvldir + geomdir);
@@ -186,4 +187,32 @@ void BVH::writeHilbertCurveFiles(int level) const
 
 }
 
+
+void mkdirTree(std::string sub, std::string dir)
+{
+    if(sub.length() == 0)
+        return;
+
+    int i = 0;
+    for( i; i < sub.length(); i++)
+    {
+        dir += sub[i];
+        if (sub[i] == '/')
+            break;
+    }
+
+    mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    if(i+1 < sub.length())
+        mkdirTree(sub.substr(i+1), dir);
+}
+
+
+void createDirectory(std::string new_dir)
+{
+    struct stat st;
+    int status = stat(new_dir.c_str(), &st);
+    if( status != 0 && !S_ISDIR(st.st_mode) )
+        mkdirTree(new_dir, "");
+}
 
