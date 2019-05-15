@@ -15,9 +15,9 @@ class BVH_Node
 {
     private:
 
-        BoundingVolume bv;
         BVH_Node* parent{nullptr};
-        
+        BoundingVolume bv;
+
     public:
 
         BVH_Node() = default;
@@ -31,13 +31,15 @@ class BVH_Node
         virtual const bool isLeaf() const = 0;
 
         void setBV(BoundingVolume);
-        const BoundingVolume getBV() const noexcept;
+        BoundingVolume& getBV() noexcept;
+        //const BoundingVolume getBV() const noexcept;
         const bool overlaps(const BVH_Node* const) const;
         const double volume() const noexcept;
+        virtual void expandBV(double);
+        virtual void refitBV() = 0;
 
         virtual const Hse* const getHse() const noexcept;
         virtual const bool hasAdjacentHse(BVH_Node*) const noexcept;
-        virtual void expandBV(double);
 
         void setParent(BVH_Node* const p) noexcept;
         virtual void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept;
@@ -72,11 +74,14 @@ class InternalNode : public BVH_Node
         InternalNode& operator=(const InternalNode&) = delete;
         
         const bool isLeaf() const noexcept override;
-        void expandBV(double) noexcept override;
 
         void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept override;
         BVH_Node* getLeftChild() const noexcept override;
         BVH_Node* getRightChild() const noexcept override;
+
+        //TODO: maybe should go with the traditional "inflateBV"
+        void expandBV(double) noexcept override;
+        void refitBV() override;
 };
 
 
@@ -86,6 +91,7 @@ class LeafNode : public BVH_Node
 
         //TODO: unique_ptr<Hse> hse
         Hse* hse{nullptr};
+        void refitHseBV();
 
     public:
 
@@ -101,6 +107,8 @@ class LeafNode : public BVH_Node
         const bool isLeaf() const noexcept override;
         const Hse* const getHse() const noexcept override;
         const bool hasAdjacentHse(BVH_Node*) const noexcept override;
+
+        void refitBV() override;
 };
 
 

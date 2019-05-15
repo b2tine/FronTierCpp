@@ -42,7 +42,8 @@ class AABB
         AABB& operator=(AABB&&) = default;
         ~AABB() = default;
 
-        //const BV_Type getBvType() const noexcept;
+        void computeHseBV(const Hse* h);
+
         const CGAL_Point Centroid() const;
         const double volume() const noexcept;
         void expand(double pad);
@@ -52,6 +53,7 @@ class AABB
         const bool overlaps(const AABB&) const;
         const bool contains(const AABB&) const;
 
+        //const BV_Type getBvType() const noexcept;
         void print() const;
 };
 

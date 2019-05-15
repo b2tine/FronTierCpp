@@ -39,19 +39,21 @@ class BVH
         void sortChildren();
 
         const Point_Node_Vector getLeafSortingData() const;
-        //const Point_Node_Vector getSortedLeafData() const;
 
         std::string outdir;
         std::string drawdir;
-        bool drawbool{false};
+        bool isDrawTime{false};
+        int* timestep{nullptr};
 
         void drawHeirarchyLevel() const;
-        void writeHilbertCurveFiles(int level) const;
+        void writeHilbertCurveFiles(int tstep) const;
 
     protected:
         
         void constructLeafNodes(INTERFACE*);
         void constructLeafNodes(std::vector<Hse*>);
+        
+        void buildHeirarchy();
         
         static BVH_Node* createLeafNode(Hse* h);
         static BVH_Node* createInternalNode(BVH_Node* lc, BVH_Node* rc);
@@ -76,16 +78,14 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
-        void buildHeirarchy();
         void updateHeirarchy();
         //void drawHeirarchy() const;
 
         const bool isEmpty() const noexcept; 
         BVH_Node* const getRoot() const noexcept;
 
-        void setToDraw() noexcept;
+        void DrawUnlock() noexcept;
         void setDrawDirectory(std::string dir) noexcept;
-        
 };
 
 

@@ -8,7 +8,11 @@ void BVH_Node::setBV(BoundingVolume BV)
 {
     bv = BV;
 }
-const BoundingVolume BVH_Node::getBV() const noexcept
+
+//TODO: this should be a reference.
+//      Need to overload nonconst?
+//const BoundingVolume BVH_Node::getBV() const noexcept
+BoundingVolume& BVH_Node::getBV() noexcept
 {
     return bv;
 }
@@ -84,7 +88,17 @@ const bool InternalNode::isLeaf() const noexcept
 
 void InternalNode::expandBV(double pad) noexcept
 {
-     return;
+    //TODO: what was the reason for no-op?
+    //      or just didn't get around to it?
+    return;
+}
+
+void InternalNode::refitBV()
+{
+    //TODO: The most simple refit would be to refit
+    //      the children BVs first and then just merge
+    //      them here.
+    return; 
 }
 
 void InternalNode::setChildren(
@@ -123,7 +137,7 @@ BVH_Node* InternalNode::getRightChild() const noexcept
 LeafNode::LeafNode(Hse* h)
     : hse{h} 
 {
-    setBV(BoundingVolume(h));
+    setBV(BoundingVolume(hse));
 }
 
 const bool LeafNode::isLeaf() const noexcept
@@ -142,4 +156,15 @@ const bool LeafNode::hasAdjacentHse(BVH_Node* node) const noexcept
         return false;
     return areAdjacentHse(this->getHse(),node->getHse());
 }
+        
+void LeafNode::refitBV()
+{
+    refitHseBV();
+}
+
+void LeafNode::refitHseBV()
+{
+    getBV().computeHseBV(getHse());
+}
+
 

@@ -23,9 +23,9 @@ void BVH::drawHeirarchy() const
 */
 
 
-void BVH::setToDraw() noexcept
+void BVH::DrawUnlock() noexcept
 {
-    drawbool = true;
+    isDrawTime = true;
 }
 
 void BVH::setDrawDirectory(std::string dir) noexcept
@@ -36,17 +36,20 @@ void BVH::setDrawDirectory(std::string dir) noexcept
 
 void BVH::drawHeirarchyLevel() const
 {
-    if( drawbool == true )
-        writeHilbertCurveFiles(sort_iter);
+    int dummytstep = 0;
+    if( isDrawTime == true )
+        writeHilbertCurveFiles(dummytstep);
 }
 
 
 //TODO: Break out into several functions for reuse/flexibility
-void BVH::writeHilbertCurveFiles(int level) const
+void BVH::writeHilbertCurveFiles(int tstep) const
 {
     assert(!drawdir.empty());
+    int level = this->sort_iter;
+
     std::string lvlid = std::string(2,'0').append(std::to_string(level));
-    std::string lvldir = drawdir + "level-" + lvlid + "/";
+    std::string lvldir = drawdir + "/level-" + lvlid + "/";
 
     std::string geomdir("OOGL/");
     createDirectory(lvldir + geomdir);

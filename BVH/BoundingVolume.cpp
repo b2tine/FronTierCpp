@@ -11,12 +11,15 @@ AABB::AABB()
 AABB::AABB(Hse* h)
     : AABB()
 {
+    /*
     assert(h != nullptr);
     for( int i = 0; i < 3; ++i )
     {
         lower[i] = h->min_coord(i);
         upper[i] = h->max_coord(i);
     }
+    */
+    computeHseBV(h);
 }
 
 AABB::AABB(const AABB& A, const AABB& B)
@@ -35,6 +38,16 @@ AABB::AABB(const AABB& A, const AABB& B)
 //{
 //    return BV_Type::AABB;
 //}
+
+void AABB::computeHseBV(const Hse* h)
+{
+    assert(h != nullptr);
+    for( int i = 0; i < 3; ++i )
+    {
+        lower[i] = h->min_coord(i);
+        upper[i] = h->max_coord(i);
+    }
+}
 
 const CGAL_Point AABB::Centroid() const
 {

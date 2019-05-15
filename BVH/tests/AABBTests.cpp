@@ -12,7 +12,13 @@ class AABBTests : public testing::Test
     static Hse *T1, *T2, *T3, *T4;
     static Hse *B1, *B2, *B3;
 
-    AABB bbT1, bbT2, bbT3, bbT4, bbB1, bbB2, bbB3;
+    AABB bbT1, bbT2, bbT3, bbT4;
+    AABB bbB1, bbB2, bbB3;
+
+    AABB bbTijk;
+    POINT *I, *J, *K;
+    TRI* tijk;
+    Hse* Tijk;
 
     static void SetUpTestCase()
     {
@@ -75,9 +81,29 @@ class AABBTests : public testing::Test
         bbT1 = AABB(T1);
         bbT2 = AABB(T2);
         bbT3 = AABB(T3);
+        bbT4 = AABB(T4);
         bbB1 = AABB(B1);
         bbB2 = AABB(B2);
         bbB3 = AABB(B3);
+
+        I = new POINT;         J = new POINT;         K = new POINT;
+        Coords(I)[0] = 1.0;    Coords(J)[0] = 0.0;    Coords(K)[0] = 0.0;
+        Coords(I)[1] = 0.0;    Coords(J)[1] = 1.0;    Coords(K)[1] = 0.0;
+        Coords(I)[2] = 0.0;    Coords(J)[2] = 0.0;    Coords(K)[2] = 1.0;
+        
+        tijk = new TRI;
+        Point_of_tri(tijk)[0] = I;
+        Point_of_tri(tijk)[1] = J;
+        Point_of_tri(tijk)[2] = K;
+
+        Tijk = new HsTri(tijk);
+        bbTijk = AABB(Tijk);
+    }
+
+    void TearDown() override
+    {
+        delete I; delete J; delete K;
+        delete tijk; delete Tijk;
     }
   
     ~AABBTests() = default;
@@ -110,6 +136,13 @@ Hse* AABBTests::B3 = nullptr;
 
 using DISABLED_AABBTests = AABBTests;
 
+
+TEST_F(AABBTests, ResizeAABB)
+{
+    //Coords(I)[0] = 2.0;
+    ASSERT_DOUBLE_EQ(bbTijk.upper[0],1.0);
+    ASSERT_DOUBLE_EQ(bbTijk.lower[2],0.0);
+}
 
 TEST_F(DISABLED_AABBTests, BoxesOverlapVsContain)
 {

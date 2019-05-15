@@ -118,8 +118,6 @@ void propagation_driver(Front *front)
     FT_Draw(front);
     
     BVH bvh(front);
-    bvh.setToDraw();
-    bvh.buildHeirarchy();
 
     // This is a virtual propagation to get maximum front 
     // speed to determine the first time step.
@@ -129,7 +127,6 @@ void propagation_driver(Front *front)
 
     FT_TimeControlFilter(front);
     FT_PrintTimeStamp(front);
-
 
     for (;;)
     {
@@ -141,8 +138,9 @@ void propagation_driver(Front *front)
         dummySpringSolver(front);
         FT_Propagate(front);
         
-        bvh.setToDraw();
-        bvh.updateHeirarchy();
+        //bvh.drawUnlock();
+        //bvh.updateHeirarchy();
+
 
         //collision detect and handling
         /*
@@ -164,6 +162,7 @@ void propagation_driver(Front *front)
 
         FT_TimeControlFilter(front);
         FT_PrintTimeStamp(front);
+        clean_up(0);
 
         if (FT_IsSaveTime(front))
             FT_Save(front);

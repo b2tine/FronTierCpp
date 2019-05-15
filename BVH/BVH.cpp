@@ -43,12 +43,17 @@ BVH::BVH(Front* front, bool draw)
 */
 
 BVH::BVH(Front* front)
-    : outdir{std::string(OutName(front))}
+    : outdir{std::string(OutName(front))},
+    timestep{&front->step}
 {
     drawdir = outdir + "/BVH/";
     constructLeafNodes(front->interf);
+    DrawUnlock();
+    buildHeirarchy();
 }
 
+//TODO: For testing only right now, but may be a
+//      good starting point for rebuilding/refitting.
 void BVH::constructLeafNodes(std::vector<Hse*> hseList)
 {
     assert(leaves.empty());
@@ -68,11 +73,13 @@ void BVH::constructLeafNodes(std::vector<Hse*> hseList)
 //      distinguish the two (is there a difference?).
 void BVH::constructLeafNodes(INTERFACE* intfc)
 {
+    assert(leaves.empty());
 	SURFACE** surfaces = intfc->surfaces;
     processSurfaces(surfaces);
 
     CURVE** curves = intfc->curves;
     processCurves(curves);
+    assert(!leaves.empty());
 }
 
 //TODO: Do we need a Hse factory?
@@ -132,34 +139,6 @@ void BVH::processCurves(CURVE** curve)
 	}
 }
 
-void BVH::buildHeirarchy()
-{
-    assert( !leaves.empty() );
-
-    initChildren();
-    while( children.size() != 1 )
-    {
-        //alternate sorting direction at each level
-        if( sort_iter % 2 == 0 )
-        {
-            std::reverse(children.begin(),children.end());
-        }
-        drawHeirarchyLevel();
-        constructParentNodes();
-    }
-   
-    assert( root != nullptr );
-    Point_Node_Vector().swap(children);
-    drawbool = false;
-}
-
-void BVH::initChildren()
-{
-    sort_iter = 0;
-    children = getLeafSortingData();
-    sortChildren();
-}
-
 const Point_Node_Vector BVH::getLeafSortingData() const
 {
     Point_Node_Vector leafdata;
@@ -175,24 +154,56 @@ const Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
-/*
-const Point_Node_Vector BVH::getSortedLeafData() const
+void BVH::updateHeirarchy()
 {
-    Point_Node_Vector leafdata(getLeafSortingData());
-    CGAL::hilbert_sort(leafdata.begin(),leafdata.end(),hst);
-    return leafdata;
+    //TODO: Refit bounding volumes etc.
+    std::vector<BVH_Node*>::iterator it;
+    for( it = leaves.begin(); it != leaves.end(); ++it )
+    {
+        auto node = *it;
+        node->refitHseBV();
+    }    
+    initChildren();
+    sortChildren();
 }
-*/
+
+//TODO: Need to a version of constructParentNodes()
+//       that reuses the memory initially allocated
+//       on the first build.
+void BVH::buildHeirarchy()
+{
+    initChildren();
+    while( children.size() != 1 )
+    {
+        //alternate sorting direction at each level
+        if( sort_iter % 2 == 0 )
+        {
+            std::reverse(children.begin(),children.end());
+        }
+        drawHeirarchyLevel();
+        constructParentNodes();
+        sortChildren();
+        sort_iter++;
+    }
+    constructRootNode();
+    Point_Node_Vector().swap(children);
+}
+
+void BVH::initChildren()
+{
+    sort_iter = 0;
+    children = getLeafSortingData();
+    sortChildren();
+}
 
 void BVH::sortChildren()
 {
-    assert( !children.empty() );
-        
-    sort_iter++;
+    //sort_iter++;
     if( children.size() == 1 )
     {
-        root = children[0].second;
-        drawHeirarchyLevel();
+        return;
+        //root = children[0].second;
+        //drawHeirarchyLevel();
     }
     else
     {
@@ -226,7 +237,13 @@ void BVH::constructParentNodes()
 
     std::swap(parents,children);
     children.shrink_to_fit();
-    sortChildren();
 }
 
 
+void BVH::constructRootNode()
+{
+    root = children[0].second;
+    assert( root != nullptr );
+    drawHeirarchyLevel();
+    isDrawTime = false;
+}
