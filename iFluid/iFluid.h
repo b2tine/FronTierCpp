@@ -350,11 +350,13 @@ protected:
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
 
+    int **ij_to_I,***ijk_to_I;
+
+    /*
 	int **ij_to_I, **I_to_ij;
-	
-    //TODO: should be triple pointer for I_to_ijk?
     int ***ijk_to_I, **I_to_ijk;
-	
+	*/
+
     int *domain_status;
 	int smin[MAXD],smax[MAXD];
 	// Sweeping limits

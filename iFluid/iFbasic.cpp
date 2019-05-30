@@ -87,9 +87,15 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
             (void) printf("Entering initMesh()\n");
 	iFparams = (IF_PARAMS*)front->extra1;
 	FT_MakeGridIntfc(front);
-	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    FT_MakeCompGridIntfc(front);
-	setDomain();
+	
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //FT_MakeCompGridIntfc(front);
+    }
+
+    setDomain();
 
 	num_cells = 1;
 	for (i = 0; i < dim; ++i)
@@ -132,8 +138,14 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	}
 	setComponent();
 	FT_FreeGridIntfc(front);
+
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    FT_FreeCompGridIntfc(front);
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //FT_FreeCompGridIntfc(front);
+    }
+
 	if (debugging("trace"))
             (void) printf("Leaving initMesh()\n");
 }
@@ -196,18 +208,19 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    case 2:
 	    	FT_MatrixMemoryAlloc((POINTER*)&ij_to_I,top_gmax[0]+1,
 				top_gmax[1]+1,INT);
-		FT_MatrixMemoryAlloc((POINTER*)&I_to_ij,size,2,INT);
+		//FT_MatrixMemoryAlloc((POINTER*)&I_to_ij,size,2,INT);
 	    	break;
 	    case 3:
 	    	FT_TriArrayMemoryAlloc((POINTER*)&ijk_to_I,top_gmax[0]+1,
 				top_gmax[1]+1,top_gmax[2]+1,INT);
-		FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
+		//FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
 	    	break;
 	    }
 	    old_size = size;
 	}
 	else if (old_size < size)
 	{
+        /*
 	    switch (dim)
 	    {
 	    case 2:
@@ -219,6 +232,7 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 		FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
 	    	break;
 	    }
+        */
 	    old_size = size;
 	}
 
@@ -244,8 +258,8 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
                 if (cell_center[ic].comp != SOLID_COMP)
                 {
                     ij_to_I[i][j] = index + ilower;
-		    I_to_ij[index][0] = i;
-                    I_to_ij[index][1] = j;
+		            //I_to_ij[index][0] = i;
+                    //I_to_ij[index][1] = j;
                     index++;
                 }
 	    }
@@ -260,17 +274,17 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-		ic = d_index3d(i,j,k,top_gmax);
-		if (domain_status[ic] != TO_SOLVE)
-		    continue;
-		if (cell_center[ic].comp != SOLID_COMP)
-		{
-                    ijk_to_I[i][j][k] = index + ilower;
-		    I_to_ijk[index][0] = i;
-                    I_to_ijk[index][1] = j;
-                    I_to_ijk[index][2] = k;
-                    index++;
-                }
+            ic = d_index3d(i,j,k,top_gmax);
+	    	if (domain_status[ic] != TO_SOLVE)
+                continue;
+            if (cell_center[ic].comp != SOLID_COMP)
+            {
+                ijk_to_I[i][j][k] = index + ilower;
+                //I_to_ijk[index][0] = i;
+                //I_to_ijk[index][1] = j;
+                //I_to_ijk[index][2] = k;
+                index++;
+            }
 	    }
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ijk_to_I);
 	    break;
@@ -596,8 +610,18 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
 	    break;
 	}
+
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    setDualDomain();
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //setDualDomain();
+    }
+
+	if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+    {
+	    setDoubleDomain();
+    }
 }
 
 void Incompress_Solver_Smooth_Basis::setGlobalIndex()
@@ -745,7 +769,12 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 
 	FT_MakeGridIntfc(front);
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    FT_MakeCompGridIntfc(front);
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //FT_MakeCompGridIntfc(front);
+    }
+
 	setDomain();
 
 	next_output_line_containing_string(infile,"Interior ifluid states:");
@@ -2719,9 +2748,9 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	int icoords[MAXD];
 
 	(void) printf("\nCheck divergence at %s\n",mesg);
-        printf("Entering checkVelocityDiv()\n");
-        L1_norm = L2_norm = Li_norm = 0.0;
-	switch (dim)
+    L1_norm = L2_norm = Li_norm = 0.0;
+
+    switch (dim)
 	{
 	case 2:
             for (j = jmin; j <= jmax; j++)
@@ -2767,12 +2796,12 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	for (l = 0; l < dim; ++l)
 	    denom += fabs((vmax[l] - vmin[l])/(top_U[l] - top_L[l]));
 	if (denom == 0.0) denom = 1.0;
-	(void) printf("\nCheck divergence at %s\n",mesg);
 	(void) printf("Absolute: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm,L2_norm,Li_norm);
 	(void) printf("Relative: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm/denom,L2_norm/denom,Li_norm/denom);
-        fflush(stdout);
+    (void) printf("\n");
+    fflush(stdout);
 }	/* end checkVelocityDiv */
 
 void Incompress_Solver_Smooth_Basis::setDualDomain()
@@ -4360,4 +4389,372 @@ void Incompress_Solver_Smooth_Basis::makeGlobalColorMap(int &num_colors)
 	if (debugging("paint_color"))
 	    (void) printf("Final number of colors = %d\n",num_colors);
 }	/* end makeGlobalColorMap */
+
+void Incompress_Solver_Smooth_Basis::setDoubleDomain()
+{
+	static boolean first = YES;
+	INTERFACE *grid_intfc;
+	Table *T;
+	int i,j,k,ic,id,size,icoords[MAXD];
+        COMPONENT copy_comp;
+
+        /* TO REMOVE
+        printf("Entering setDoubleDomain()\n");
+        */
+        grid_intfc = front->grid_intfc;
+	if (first)
+	{
+            dim = grid_intfc->dim;
+            D_extension = 5;
+
+            for (i = 0; i < dim; ++i)
+            {
+                ext_gmax[i] = top_gmax[i];
+                ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+                ext_l[i] = ext_u[i] = 0;
+                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                {
+                    ext_l[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                {
+                    ext_u[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
+                            ext_gmax[i] - ubuf[i];
+            }
+            /* TO REMOVE
+            printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
+            printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
+            printf("ext_imin = %d %d\n",ext_imin[0],ext_imin[1]);
+            printf("ext_imax = %d %d\n",ext_imax[0],ext_imax[1]);
+            */
+
+	    size = ext_gmax[0]+1;
+            for (i = 1; i < dim; ++i)
+                size *= (ext_gmax[i]+1);
+
+            FT_VectorMemoryAlloc((POINTER*)&dtop_comp,size,sizeof(COMPONENT));
+	    first = NO;
+	}
+        switch(dim)
+        {
+        case 2:
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+	    {
+                id = d_index2d(i,j,ext_gmax);
+                dtop_comp[id] = FILL_COMP;
+            }
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index2d(i,j,top_gmax);
+                id = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
+                dtop_comp[id] = top_comp[ic];
+            }
+            /* TO REMOVE
+            if (ext_l[1] != 0)
+            {
+                printf("Before patching buffer:\n");
+	        for (j = 0; j <= ext_gmax[1]; j++)
+                {
+                    id = d_index2d(5,j,ext_gmax);
+                    printf("dtop_comp[%d] = %d\n",j,dtop_comp[id]);
+                }
+                printf("\n");
+            }
+            */
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+            {
+                icoords[0] = i;
+                if (ext_l[1] != 0)
+                {
+                    icoords[1] = jmin + ext_l[1];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = dtop_comp[id];
+                    for (j = 0; j <= ext_l[1]; ++j)
+                    {
+                        icoords[1] = j;
+                        id = d_index(icoords,ext_gmax,2);
+                        dtop_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[1] != 0)
+                {
+                    icoords[1] = ext_gmax[1] - ext_u[1] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = dtop_comp[id];
+                    for (j = 0; j <= ext_u[1]; ++j)
+                    {
+                        icoords[1] = ext_gmax[1] - j;
+                        id = d_index(icoords,ext_gmax,2);
+                        dtop_comp[id] = copy_comp;
+                    }
+                }
+            }
+            /* TO REMOVE
+            if (ext_l[1] != 0)
+            {
+                printf("After patching buffer:\n");
+	        for (j = 0; j <= ext_gmax[1]; j++)
+                {
+                    id = d_index2d(5,j,ext_gmax);
+                    printf("dtop_comp[%d] = %d\n",j,dtop_comp[id]);
+                }
+            }
+
+            if (ext_l[0] != 0)
+            {
+                printf("Before patching buffer:\n");
+	        for (i = 0; i <= ext_gmax[0]; i++)
+                {
+                    id = d_index2d(i,5,ext_gmax);
+                    printf("dtop_comp[%d] = %d\n",i,dtop_comp[id]);
+                }
+                printf("\n");
+            }
+            */
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+            {
+                icoords[1] = j;
+                if (ext_l[0] != 0)
+                {
+                    icoords[0] = imin + ext_l[0];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = dtop_comp[id];
+                    for (i = 0; i <= ext_l[0]; ++i)
+                    {
+                        icoords[0] = i;
+                        id = d_index(icoords,ext_gmax,2);
+                        dtop_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[0] != 0)
+                {
+                    icoords[0] = ext_gmax[0] - ext_u[0] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = dtop_comp[id];
+                    for (i = 0; i <= ext_u[0]; ++i)
+                    {
+                        icoords[0] = ext_gmax[0] - i;
+                        id = d_index(icoords,ext_gmax,2);
+                        dtop_comp[id] = copy_comp;
+                    }
+                }
+            }
+            /* TO REMOVE
+            if (ext_l[0] != 0)
+            {
+                printf("After patching buffer:\n");
+	        for (i = 0; i <= ext_gmax[0]; i++)
+                {
+                    id = d_index2d(i,5,ext_gmax);
+                    printf("dtop_comp[%d] = %d\n",i,dtop_comp[id]);
+                }
+                printf("\n");
+            }
+            */
+            break;
+        case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+                id = d_index3d(i,j,k,ext_gmax);
+                dtop_comp[id] = FILL_COMP;
+            }
+	    for (k = kmin; k <= kmax; k++)
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index3d(i,j,k,top_gmax);
+                id = d_index3d(i+ext_l[0],j+ext_l[1],k+ext_l[2],ext_gmax);
+                dtop_comp[id] = top_comp[ic];
+            }
+            break;
+        }
+}	/* end setDoubleDomain */
+
+void Incompress_Solver_Smooth_Basis::setDoubleGlobalIndex()
+{
+	int i,j,k,id;
+	int num_nodes = pp_numnodes();
+	int myid = pp_mynode();
+	static boolean first = YES;
+
+	if (first)
+	{
+	    first = NO;
+	    FT_VectorMemoryAlloc((POINTER*)&dn_dist,num_nodes,sizeof(int));
+	}
+	dNLblocks = 0;
+	switch (dim)
+	{
+	case 2:
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index2d(i,j,ext_gmax);
+		if (dtop_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index3d(i,j,k,ext_gmax);
+		if (dtop_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	}
+
+	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
+	dn_dist[myid] = dNLblocks;
+	pp_global_imax(dn_dist,num_nodes);
+	eilower = 0;
+        eiupper = dn_dist[0];
+
+        for (i = 1; i <= myid; i++)
+        {
+            eilower += dn_dist[i-1];
+            eiupper += dn_dist[i];
+        }	
+}	/* setDoubleGlobalIndex */
+
+void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
+{
+	static boolean first = YES;
+        static int com_gmax[MAXD];
+        INTERFACE *grid_intfc = front->grid_intfc;
+	int i,j,k,ic,index;
+	int size = eiupper - eilower;
+        int llbuf[MAXD],uubuf[MAXD];
+
+        /* TO REMOVE
+        printf("Entering setDoubleIndexMap()\n");
+        */
+	if (first)
+	{
+	    first = NO;
+	    switch (dim)
+	    {
+	    case 2:
+	    	FT_MatrixMemoryAlloc((POINTER*)&dij_to_I,ext_gmax[0]+1,
+				ext_gmax[1]+1,INT);
+	    	break;
+	    case 3:
+	    	FT_TriArrayMemoryAlloc((POINTER*)&dijk_to_I,ext_gmax[0]+1,
+				ext_gmax[1]+1,ext_gmax[2]+1,INT);
+	    	break;
+	    }
+            for (i = 0; i < dim; ++i)
+            {
+                com_gmax[i] = front->rect_grid->gmax[i];
+                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                    com_gmax[i] += D_extension;
+                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                    com_gmax[i] += D_extension;
+            }
+            /* TO REMOVE
+            printf("rect_gmax = %d %d\n",front->rect_grid->gmax[0],
+                            front->rect_grid->gmax[1]);
+            printf(" com_gmax = %d %d\n",com_gmax[0],com_gmax[1]);
+            printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
+            printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
+            */
+	}
+
+	index = 0;
+        for (i = 0; i < dim; ++i)
+        {
+            llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
+            uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
+        }
+	switch (dim)
+	{
+	case 2:
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+		    dij_to_I[i][j] = -1;
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		ic = d_index2d(i,j,ext_gmax);
+                if (dtop_comp[ic] != SOLID_COMP)
+                {
+                    dij_to_I[i][j] = index + eilower;
+                    index++;
+                }
+	    }
+            printf("Before parallel communication:\n");
+            /* TO REMOVE
+	    for (j = 0; j <= ext_gmax[1]; j++)
+            {
+                printf("dij_to_I[5][%d] = %d\n",j,dij_to_I[5][j]);
+            }
+            printf("\n");
+            */
+	    for (i = 0; i <= ext_gmax[0]; i++)
+            {
+                j = ext_imin[1];
+                printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
+            }
+            printf("\n");
+	    for (i = 0; i <= ext_gmax[0]; i++)
+            {
+                j = ext_imax[1];
+                printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
+            }
+	    FT_ParallelExchExtendedCellIndex(front,llbuf,uubuf,
+				com_gmax,(POINTER)dij_to_I);
+            printf("\nAfter parallel communication:\n");
+            /* TO REMOVE
+	    for (j = 0; j <= ext_gmax[1]; j++)
+            {
+                printf("dij_to_I[5][%d] = %d\n",j,dij_to_I[5][j]);
+            }
+            */
+	    for (i = 0; i <= ext_gmax[0]; i++)
+            {
+                j = ext_imin[1];
+                printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
+            }
+            printf("\n");
+	    for (i = 0; i <= ext_gmax[0]; i++)
+            {
+                j = ext_imax[1];
+                printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
+            }
+	    break;
+	case 3:
+	    for (k = 0; k <= ext_gmax[2]; k++)
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+		    dijk_to_I[i][j][k] = -1;
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		ic = d_index3d(i,j,k,ext_gmax);
+		/*
+		if (domain_status[ic] != TO_SOLVE)
+		    continue;
+		*/
+                if (dtop_comp[ic] != SOLID_COMP)
+		{
+                    dijk_to_I[i][j][k] = index + eilower;
+                    index++;
+                }
+	    }
+	    FT_ParallelExchCellIndex(front,llbuf,uubuf,
+				(POINTER)dijk_to_I);
+	    break;
+	}
+}	/* end setDoubleIndexMap */
 
