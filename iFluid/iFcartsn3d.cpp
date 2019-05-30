@@ -98,10 +98,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	int icrds_max[MAXD];
 
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-        {
-            computeNewVelocityDual();
-            return;
-        }
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+        //computeNewVelocityDual();
+        //return;
+    }
+
 	max_grad_phi = ave_grad_phi = 0.0;
 
 	for (k = 0; k <= top_gmax[2]; k++)
@@ -312,10 +315,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 
 	start_clock("solve");
 	setDomain();
-
 	setComponent();
+
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    updateComponent();
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //updateComponent();
+    }
+
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
@@ -1144,9 +1152,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	double *phi = field->phi;
 
 	FT_MakeGridIntfc(front);
-	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-            FT_MakeCompGridIntfc(front);
-	setDomain();
+
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+        FT_MakeCompGridIntfc(front);
+    }
+
+    setDomain();
 
         m_rho[0] = iFparams->rho1;
         m_rho[1] = iFparams->rho2;
@@ -1187,7 +1201,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionCim(void)
 {
-	(void) printf("Not implemented yet!\n");
+    printf("ERROR: CIM_ELLIP not implemented, exiting\n");
 	clean_up(ERROR);
 }	/* end computeProjectionCim */
 
@@ -1196,20 +1210,28 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjection(void)
         switch (iFparams->num_scheme.ellip_method)
         {
         case SIMPLE_ELLIP:
-        case DUAL_ELLIP:
             computeProjectionSimple();
             return;
         case DOUBLE_ELLIP:
             computeProjectionDouble();
             return;
+        case DUAL_ELLIP:
+            printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+            clean_up(ERROR);
+            //computeProjectionDual();
+            //return;
         case CIM_ELLIP:
-            computeProjectionCim();
-            return;
+            printf("ERROR: CIM_ELLIP not implemented, exiting\n");
+            clean_up(ERROR);
+            //computeProjectionCim();
+            //return;
         }
 }       /* end computeProjection */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDouble(void)
 {
+    printf("ERROR: 3d DOUBLE_ELLIP not implemented, exiting\n");
+    clean_up(ERROR);
 }	/* end computeProjectionDouble */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDual(void)
@@ -1451,9 +1473,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
                 elliptic_solver.ijk_to_I = ijk_to_I;
                 elliptic_solver.ilower = ilower;
                 elliptic_solver.iupper = iupper;
+                
+                /*
                 if (iFparams->total_div_cancellation)
                     elliptic_solver.dsolve(array);
                 else
+                */
                     elliptic_solver.solve(array);
                 paintSolvedGridPoint();
             }
@@ -1970,6 +1995,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::extractFlowThroughVelocity()
 
 }	/* end extractFlowThroughVelocity */
 
+//NOTE: this function is associated with dual ellip method.
 void Incompress_Solver_Smooth_3D_Cartesian::updateComponent(void)
 {
         int i,j,k,l,icoords[MAXD];
