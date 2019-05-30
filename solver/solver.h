@@ -255,6 +255,59 @@ private:
 	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
 };
 
+
+class DOUBLE_ELLIPTIC_SOLVER{
+        Front *front;
+public:
+        DOUBLE_ELLIPTIC_SOLVER(Front &front);
+        ~DOUBLE_ELLIPTIC_SOLVER();
+
+        // On topological grid
+	int **dij_to_I;
+	int ***dijk_to_I;
+	int eilower;
+	int eiupper;
+        int *ext_gmax;
+        int *ext_l,*ext_u;
+        int *ext_imin,*ext_imax;
+        COMPONENT *dtop_comp;
+
+        double dt;              //time step
+	double porosity;
+	double *soln;	        // field variable of new step
+	double *source;	        // source field
+        double *D;              // div(D*grad)phi = source,  where D = 1.0/rho
+        double *ext_array;
+
+	void set_solver_domain(void);
+        void set_extension(void);
+	void dsolve(double *soln);
+	
+        double (*getStateVar)(POINTER);
+        double (*getStateVel[3])(POINTER);
+
+	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+                                POINTER*,HYPER_SURF**,double*);
+	double checkSolver(int *icoords,boolean print_details);
+	int skip_neumann_solver;
+private:
+        // Dimension
+        int dim;
+        COMPONENT *top_comp;
+	double *top_h;
+        int *top_gmax;
+	int imin[MAXD],imax[MAXD];
+        double *ext_source;             // for extended source;
+        double *ext_D;                  // for extended D;
+	int array_size;
+	double max_soln;
+	double min_soln;
+	void dsolve2d(double *soln);
+	void dsolve3d(double *soln);
+        double dcheckSolver(int*,boolean);
+};
+
+//NOTE: This class is now for testing/comparison only.
 class ELLIPTIC_SOLVER{
         Front *front;
 public:

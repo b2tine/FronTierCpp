@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "solver.h"
 
+//NOTE: this is now for testing/comparison only
+
 ELLIPTIC_SOLVER::ELLIPTIC_SOLVER(Front &front):front(&front)
 {
 	porosity = 0.0;

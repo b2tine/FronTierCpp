@@ -14,6 +14,7 @@ ______lib_libsolver_la_SOURCES = \
 ../cim_ellip.cpp \
 ../cim_parab.cpp \
 ../dual_ellip.cpp \
+../double_ellip.cpp \
 ../ellip.cpp \
 ../hyperb.cpp \
 ../parab.cpp \
