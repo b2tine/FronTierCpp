@@ -366,7 +366,6 @@ protected:
 	int NLblocks, ilower, iupper;
 	int *n_dist;
 
-/*
 	// for dual/comp overlapping
 	int offset[MAXD];
 
@@ -387,7 +386,6 @@ protected:
 	// for parallel partition
 	int cNLblocks, cilower, ciupper;
 	int *cn_dist;
-*/
 
 	// On Double solver
 	COMPONENT *dtop_comp;

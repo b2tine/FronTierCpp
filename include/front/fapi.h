@@ -1033,6 +1033,24 @@ extern "C" {
    				Front* front ,
 				int* symmetry);
 
+/*! \fn void FT_ParallelExchExtendedCellIndex(Front *front, int *lbuf, int *ubuf, int *gmax, POINTER ijk_to_I)
+ *  \ingroup PARALLEL
+    \brief This is a parallel communication function for the cell index
+     on the specially extended dual grid of the grid_intfc in front. The 
+     cell index translate the nD (n=2,3) icoordinates to a one dimensional 
+     index sequence. The indices are parallely globalized.
+    \param front @b in	Pointer to Front.
+    \param lbuf @b in size of buffer on the lower side.
+    \param ubuf @b in size of buffer on the upper side.
+    \param gmax @b in extended mesh limits.
+    \param ijk_to_I @b inout Pointer to array of indices on the expanded dual grid (ij_to_I for 2D).
+ */
+   IMPORT  void FT_ParallelExchExtendedCellIndex(Front* front ,
+				int *lbuf,
+				int *ubuf,
+                                int *gmax,
+				POINTER ijk_to_I);
+
 /*! \fn void FT_ParallelExchCellIndex(Front *front, int *lbuf, int *ubuf, POINTER ijk_to_I)
  *  \ingroup PARALLEL
     \brief This is a parallel communication function for the cell index

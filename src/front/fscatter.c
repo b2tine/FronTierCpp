@@ -1480,26 +1480,37 @@ LOCAL void pack_index_in_dir3d(Front*,int***,int*,int*,int*,int*,int,int);
 LOCAL void unpack_index_in_dir3d(Front*,int***,int*,int*,int*,int*,int,int);
 LOCAL void reflect_index_in_dir3d(Front*,int***,int*,int*,int*,int,int);
 
+/*
 EXPORT 	void scatter_cell_index(
 	Front *fr,
 	int *lbuf,
 	int *ubuf,
 	GRID_TYPE grid_type,
 	POINTER ijk_to_I)
+*/
+EXPORT 	void scatter_cell_index(
+	Front *fr,
+	int *lbuf,
+	int *ubuf,
+	int *gmax,
+	POINTER ijk_to_I)
 {
 	INTERFACE *intfc = fr->interf;
 	int       me[MAXD], him[MAXD];
 	int       myid, dst_id;
+	//RECT_GRID *gr = fr->rect_grid;
 	PP_GRID   *pp_grid = fr->pp_grid;
-	RECT_GRID *gr = fr->rect_grid;
 	int       *G = pp_grid->gmax;
+
 	int       i, j, k;
-        int       dim = gr->dim;
-	int 	  gmax[MAXD];
+    int       dim = fr->rect_grid->dim;
+    //int       dim = gr->dim;
+	//int 	  gmax[MAXD];
 	int       *bfs,*bfr;
 	int	  size,max_size,max_buf;
 	int	  index_tag = 8;
 
+/*
 	for (i = 0; i < dim; ++i) 
 	{
 	    gmax[i] = gr->gmax[i];
@@ -1510,6 +1521,8 @@ EXPORT 	void scatter_cell_index(
 			gmax[i] -= 1;
 	    }
 	}
+*/
+
 	max_size = max_buf = 0;
 	for (i = 0; i < dim; ++i) 
 	{
