@@ -246,7 +246,7 @@ double EdgeToEdgeDistance(
 }
 */
 
-//For details of this implementation see:
+//For details of this function's implementation see:
 //http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
 std::pair<std::vector<double>,std::vector<double> >
 ClosestPointPairEdgeToEdge(
@@ -472,7 +472,7 @@ std::vector<double> ClosestPointOfTriToPoint(
     return ClosestPointOfEdgeToPoint(projx4,closestTriEdge);
 }
 
-//For details of this implementation see:
+//For details of this function's implementation see:
 //http://geomalgorithms.com/a02-_lines.html#Distance-to-Ray-or-Segment
 std::vector<double> ClosestPointOfEdgeToPoint(
         const std::vector<double>& p,

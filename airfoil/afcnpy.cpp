@@ -1934,7 +1934,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             //      Unphysical penetration using the thicker 1.0e-03 m
             //      leads me to believe that bugs in the collision code is
             //      outweighing any potential rounding errors currently.
-            collision_solver->setFabricThickness(1.0e-4);
+            collision_solver->setFabricThickness(1.0e-3);
             //collision_solver->setFabricThickness(1.0e-3);
 
             //TODO: coefficient of restitution varies between materials,

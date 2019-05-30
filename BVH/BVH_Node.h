@@ -16,6 +16,9 @@ class BVH_Node
     private:
 
         BVH_Node* parent{nullptr};
+    
+    protected:
+
         BoundingVolume bv;
 
     public:
@@ -31,11 +34,10 @@ class BVH_Node
         virtual const bool isLeaf() const = 0;
 
         void setBV(BoundingVolume);
-        BoundingVolume& getBV() noexcept;
-        //const BoundingVolume getBV() const noexcept;
+        const BoundingVolume getBV() const noexcept;
         const bool overlaps(const BVH_Node* const) const;
         const double volume() const noexcept;
-        virtual void expandBV(double);
+        void expandBV(double);
         virtual void refitBV() = 0;
 
         virtual const Hse* const getHse() const noexcept;
@@ -79,8 +81,6 @@ class InternalNode : public BVH_Node
         BVH_Node* getLeftChild() const noexcept override;
         BVH_Node* getRightChild() const noexcept override;
 
-        //TODO: maybe should go with the traditional "inflateBV"
-        void expandBV(double) noexcept override;
         void refitBV() override;
 };
 
@@ -89,9 +89,8 @@ class LeafNode : public BVH_Node
 {
     private:
 
-        //TODO: unique_ptr<Hse> hse
+        //TODO: consider unique_ptr<Hse> hse
         Hse* hse{nullptr};
-        void refitHseBV();
 
     public:
 

@@ -9,17 +9,14 @@ void BVH_Node::setBV(BoundingVolume BV)
     bv = BV;
 }
 
-//TODO: this should be a reference.
-//      Need to overload nonconst?
-//const BoundingVolume BVH_Node::getBV() const noexcept
-BoundingVolume& BVH_Node::getBV() noexcept
+const BoundingVolume BVH_Node::getBV() const noexcept
 {
     return bv;
 }
 
 const bool BVH_Node::overlaps(const BVH_Node* const node) const
 {
-    BoundingVolume bv = getBV();
+    BoundingVolume bv = this->getBV();
     return bv.overlaps(node->getBV());
 }
 
@@ -38,7 +35,12 @@ void BVH_Node::setParent(BVH_Node* const p) noexcept
     parent = p;
 }
 
-//InternalNode uses these default implementations
+void BVH_Node::expandBV(double pad)
+{
+    bv.expand(pad);
+}
+
+//InternalNode uses the following default implementations
 const Hse* const BVH_Node::getHse() const noexcept
 {
     return {};
@@ -49,12 +51,8 @@ const bool BVH_Node::hasAdjacentHse(BVH_Node* node) const noexcept
     return false;
 }
 
-//LeafNode uses these default implementations
-void BVH_Node::expandBV(double pad)
-{
-    bv.expand(pad);
-}
 
+//LeafNode uses the following default implementations
 BVH_Node* BVH_Node::getLeftChild() const noexcept
 {
     return {};
@@ -86,16 +84,10 @@ const bool InternalNode::isLeaf() const noexcept
     return false;
 }
 
-void InternalNode::expandBV(double pad) noexcept
-{
-    //TODO: what was the reason for no-op?
-    //      or just didn't get around to it?
-    return;
-}
-
 void InternalNode::refitBV()
 {
-    //TODO: The most simple refit would be to refit
+    //TODO: Implementation.
+    //      The most simple refit would be to refit
     //      the children BVs first and then just merge
     //      them here.
     return; 
@@ -159,12 +151,7 @@ const bool LeafNode::hasAdjacentHse(BVH_Node* node) const noexcept
         
 void LeafNode::refitBV()
 {
-    refitHseBV();
-}
-
-void LeafNode::refitHseBV()
-{
-    getBV().computeHseBV(getHse());
+    bv.computeHseBV(this->getHse());
 }
 
 

@@ -161,15 +161,12 @@ void BVH::updateHeirarchy()
     for( it = leaves.begin(); it != leaves.end(); ++it )
     {
         auto node = *it;
-        node->refitHseBV();
+        node->refitBV();
     }    
     initChildren();
     sortChildren();
 }
 
-//TODO: Need to a version of constructParentNodes()
-//       that reuses the memory initially allocated
-//       on the first build.
 void BVH::buildHeirarchy()
 {
     initChildren();
