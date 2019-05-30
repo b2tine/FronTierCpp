@@ -1,0 +1,9 @@
+Added:
+setDoubleDomain()
+setDoubleGlobalIndex()
+setDoubleIndexMap()
+
+Independent class:
+DOUBLE_ELLIP_SOLVER and associated data/functions.
+
+Anything concerning extended domain use ext_...
