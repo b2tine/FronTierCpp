@@ -934,6 +934,7 @@ static  void rgbody_point_propagate(
                 crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
 				*0.5 - rotation_center(oldhs)[i];
 	        }
+
             if (dim == 2)
             {
 		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
