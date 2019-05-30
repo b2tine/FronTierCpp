@@ -32,32 +32,21 @@ BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
     return new InternalNode(lc,rc);
 }
 
+/*
 BVH::BVH(Front* front, bool draw)
-    : drawdir{std::string(OutName(front))},
+    : outdir{std::string(OutName(front))},
     drawbool{draw}
 {
     constructLeafNodes(front->interf);
     buildHeirarchy();
 }
+*/
 
-void BVH::buildHeirarchy()
+BVH::BVH(Front* front)
+    : outdir{std::string(OutName(front))}
 {
-    assert( !leaves.empty() );
-
-    initChildren();
-    while( children.size() != 1 )
-    {
-        //alternate sorting direction at each level
-        if( sort_iter % 2 == 0 )
-        {
-            std::reverse(children.begin(),children.end());
-        }
-        drawHeirarchyLevel();
-        constructParentNodes();
-    }
-   
-    Point_Node_Vector().swap(children);
-    assert( root != nullptr );
+    drawdir = outdir + "/BVH/";
+    constructLeafNodes(front->interf);
 }
 
 void BVH::constructLeafNodes(std::vector<Hse*> hseList)
@@ -143,10 +132,30 @@ void BVH::processCurves(CURVE** curve)
 	}
 }
 
+void BVH::buildHeirarchy()
+{
+    assert( !leaves.empty() );
+
+    initChildren();
+    while( children.size() != 1 )
+    {
+        //alternate sorting direction at each level
+        if( sort_iter % 2 == 0 )
+        {
+            std::reverse(children.begin(),children.end());
+        }
+        drawHeirarchyLevel();
+        constructParentNodes();
+    }
+   
+    assert( root != nullptr );
+    Point_Node_Vector().swap(children);
+    drawbool = false;
+}
+
 void BVH::initChildren()
 {
     sort_iter = 0;
-    children.reserve(leaves.size());
     children = getLeafSortingData();
     sortChildren();
 }
@@ -154,6 +163,7 @@ void BVH::initChildren()
 const Point_Node_Vector BVH::getLeafSortingData() const
 {
     Point_Node_Vector leafdata;
+    leafdata.reserve(leaves.size());
 
     std::vector<BVH_Node*>::const_iterator it;
     for( it = leaves.cbegin(); it != leaves.cend(); ++it )
@@ -209,8 +219,8 @@ void BVH::constructParentNodes()
     //node up to parent level unchanged
     if( children.size() % 2 != 0 )
     {
-        auto oc = children[children.size()-1].second;
-        Point_with_Node bvctr_node_pair(oc->getBV().Centroid(),oc);
+        auto orphan = children[children.size()-1].second;
+        Point_with_Node bvctr_node_pair(orphan->getBV().Centroid(),orphan);
         parents.push_back(bvctr_node_pair);
     }
 
@@ -219,19 +229,4 @@ void BVH::constructParentNodes()
     sortChildren();
 }
 
-void BVH::drawHeirarchyLevel() const
-{
-    if( drawbool == true )
-        writeHilbertCurveFiles(sort_iter);
-}
-
-void BVH::setDrawBool(bool draw)
-{
-    drawbool = draw;
-}
-
-void BVH::setDrawDirectory(std::string dir)
-{
-    drawdir = dir;
-}
 

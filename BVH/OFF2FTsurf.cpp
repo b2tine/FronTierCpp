@@ -68,11 +68,6 @@ int main(int argc, char* argv[])
     optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
-    bool drawBVH = true;
-    BVH bvh(&front,drawBVH);
-    auto root_bv = bvh.getRoot()->getBV();
-    root_bv.print();
-
     /*
     //velocity function parameters
     TRANS_PARAMS trans_params;
@@ -121,10 +116,13 @@ void propagation_driver(Front *front)
     // Always output the initial interface.
     FT_Save(front);
     FT_Draw(front);
+    
+    BVH bvh(front);
+    bvh.setToDraw();
+    bvh.buildHeirarchy();
 
     // This is a virtual propagation to get maximum front 
     // speed to determine the first time step.
-
     FT_Propagate(front);
     FT_SetTimeStep(front);
     FT_SetOutputCounter(front);
@@ -140,9 +138,11 @@ void propagation_driver(Front *front)
         if(debugging("CLOCK"))
             reset_clock();
 
-        FT_Propagate(front);
-
         dummySpringSolver(front);
+        FT_Propagate(front);
+        
+        bvh.setToDraw();
+        bvh.updateHeirarchy();
 
         //collision detect and handling
         /*

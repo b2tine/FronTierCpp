@@ -5,6 +5,10 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
+using K = CGAL::Exact_predicates_inexact_constructions_kernel;
+using CGAL_Point = K::Point_3;
+
+
 
 enum class BV_Type
 {
@@ -14,9 +18,6 @@ enum class BV_Type
     SPHERE
 };
 
-
-using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-using CGAL_Point = K::Point_3;
 
 using BV_Point = std::vector<double>;
 

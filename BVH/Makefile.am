@@ -44,4 +44,7 @@ tagsfile:
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 
+out-clean:
+	rm -rf out-* 
+
 
