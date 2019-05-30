@@ -50,10 +50,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    rho[index] = field->rho[index];
+        /*
             if (j >= jmax-6)
                 vel[1][index] = -20; 
+        */
 	}
-        count++;
+
+    count++;
 	if (debugging("field_var"))
 	{
 	    for (j = jmin; j <= jmax; j++)
@@ -106,11 +109,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
 {
-	setIndexMap();
+	//setIndexMap();
 	switch (iFparams->num_scheme.ellip_method)
 	{
 	case SIMPLE_ELLIP:
-	case DUAL_ELLIP:
 	    if (debugging("check_div"))
                 printf("Use computeProjectionSimple()\n");
 	    computeProjectionSimple();
@@ -120,13 +122,179 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
                 printf("Use computeProjectionDouble()\n");
 	    computeProjectionDouble();
 	    return;
+	case DUAL_ELLIP:
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+        //computeProjectionDual();
+        //return;
 	case CIM_ELLIP:
-	    if (debugging("check_div"))
-                printf("Use computeProjectionCim()\n");
-	    computeProjectionCim();
-	    return;
+        printf("ERROR: CIM_ELLIP not implemented, exiting\n");
+	    //computeProjectionCim();
+	    //return;
 	}
 }	/* end computeProjection */
+
+
+void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
+{
+	static DOUBLE_ELLIPTIC_SOLVER elliptic_solver(*front);
+	int index;
+	int i,j,l,icoords[MAXD];
+	double **vel = field->vel;
+	double *phi = field->phi;
+	double *div_U = field->div_U;
+	double sum_div;
+	double value;
+	int num_colors;
+
+        printf("Entering computeProjectionDouble()\n");
+	sum_div = 0.0;
+	max_value = 0.0;
+	for (l = 0; l < dim; ++l)
+	{
+	    vmin[l] = HUGE;
+	    vmax[l] = -HUGE;
+	}
+
+	if (debugging("field_var"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+	    	index  = d_index2d(i,j,top_gmax);
+		field->old_var[0][index] = field->phi[index];
+	    }
+	}
+	/* Compute velocity divergence */
+	for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    index  = d_index(icoords,top_gmax,dim);
+	    if (!ifluid_comp(top_comp[index]))
+		continue;
+	    source[index] = computeFieldPointDiv(icoords,vel);
+	    diff_coeff[index] = 1.0/field->rho[index];
+	    if (debugging("check_div"))
+	    {
+		for (l = 0; l < dim; ++l)
+		{
+		    if (vmin[l] > field->vel[l][index])
+			vmin[l] = field->vel[l][index];
+		    if (vmax[l] < field->vel[l][index])
+			vmax[l] = field->vel[l][index];
+		}
+	    }
+	}
+	if (debugging("field_var"))
+	{
+	    (void) printf("\nCheck one step increment of div_U:\n");
+	    computeVarIncrement(field->div_U,source,NO);
+	    (void) printf("\n");
+	}
+	FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+	for (j = 0; j <= top_gmax[1]; j++)
+        for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    if (!ifluid_comp(top_comp[index]))
+		continue;
+	    source[index] = (source[index])/accum_dt;
+            /*Compute pressure jump due to porosity*/
+            icoords[0] = i; icoords[1] = j;
+            source[index] += computeFieldPointPressureJump(icoords,
+                             iFparams->porous_coeff[0],
+                             iFparams->porous_coeff[1]);
+            /*end of computing pressure jump*/
+	    array[index] = phi[index];
+	}
+
+	if(debugging("step_size"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+		index = d_index2d(i,j,top_gmax);
+	        if (!ifluid_comp(top_comp[index]))
+		    continue;
+	        value = fabs(div_U[index]);
+		sum_div = sum_div + div_U[index];
+		if (max_value < value)
+		    max_value = value;
+	    }
+	    pp_global_sum(&sum_div,1);
+	    (void) printf("\nThe summation of divergence of U is %.16g\n",
+					sum_div);
+	    pp_global_max(&max_value,1);
+	    (void) printf("\nThe max value of divergence of U is %.16g\n",
+					max_value);
+	    max_value = 0.0;
+	}
+	if (debugging("check_div"))
+        {
+	    checkVelocityDiv("Before computeProjection()");
+        }
+        elliptic_solver.dt = accum_dt;
+        elliptic_solver.D = diff_coeff;
+        elliptic_solver.source = source;
+        elliptic_solver.soln = array;
+        elliptic_solver.ext_gmax = ext_gmax;
+	elliptic_solver.set_solver_domain();
+	elliptic_solver.getStateVar = getStatePhi;
+	elliptic_solver.getStateVel[0] = getStateXvel;
+	elliptic_solver.getStateVel[1] = getStateYvel;
+	elliptic_solver.getStateVel[2] = getStateZvel;
+	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
+	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+	num_colors = drawColorMap();
+	paintAllGridPoint(NOT_SOLVED);
+	for (i = 1; i < num_colors; ++i)
+	{
+	    paintToSolveGridPoint2(i);
+	    setDoubleGlobalIndex();
+            setDoubleIndexMap();
+            elliptic_solver.dij_to_I = dij_to_I;
+            elliptic_solver.eilower = eilower;
+            elliptic_solver.eiupper = eiupper;
+            elliptic_solver.ext_l = ext_l;
+            elliptic_solver.ext_u = ext_u;
+            elliptic_solver.ext_imin = ext_imin;
+            elliptic_solver.ext_imax = ext_imax;
+            elliptic_solver.dtop_comp = dtop_comp;
+	    elliptic_solver.set_extension();
+	    elliptic_solver.dsolve(array);
+	    paintSolvedGridPoint();
+	}
+	FT_ParallelExchGridArrayBuffer(array,front,NULL);
+
+	for (j = 0; j <= top_gmax[1]; j++)
+	for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    phi[index] = array[index];
+	}
+	if (debugging("field_var"))
+	{
+	    printf("\nIn computeProjectionDouble()\n");
+	    printf("Check one step increment of phi:\n");
+	    computeVarIncrement(field->old_var[0],phi,NO);
+	    printf("\n");
+	    
+	}
+	return;
+}	/* end computeProjectionDouble */
+
+/*
+void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
+{
+	iFparams->total_div_cancellation = YES;
+	computeProjectionSimple(); 
+	return;
+}
+*/
+
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
 {
@@ -209,13 +377,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
 	    phi[index] = array[index];
 	}
 }	/* end computeProjectionCim */
-
-void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
-{
-	iFparams->total_div_cancellation = YES;
-	computeProjectionSimple(); 
-	return;
-}	/* end computeProjectionDouble */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 {
@@ -339,10 +500,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
-	    if (iFparams->total_div_cancellation)
+	    /*
+        if (iFparams->total_div_cancellation)
 	    	elliptic_solver.dsolve(array);
 	    else
-	    	elliptic_solver.solve(array);
+        */
+            elliptic_solver.solve(array);
 	    paintSolvedGridPoint();
 	}
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
@@ -376,8 +539,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
 	{
-	    computeNewVelocityDual();
-	    return;
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //computeNewVelocityDual();
+	    //return;
 	}
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
@@ -579,10 +744,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 
 	start_clock("solve");
 	setDomain();
-
 	setComponent();
+
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    updateComponent();
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //updateComponent();
+    }
+
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
@@ -1143,8 +1313,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	int size = (int)cell_center.size();
 
 	FT_MakeGridIntfc(front);
+
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
-	    FT_MakeCompGridIntfc(front);
+    {
+        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+        clean_up(ERROR);
+	    //FT_MakeCompGridIntfc(front);
+    }
+
 	setDomain();
 
         m_rho[0] = iFparams->rho1;
@@ -1813,6 +1989,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::extractFlowThroughVelocity()
 }	/* end extractFlowThroughVelocity */
 
 
+//NOTE: this function is associated with the dual projection method.
 void Incompress_Solver_Smooth_2D_Cartesian::updateComponent(void)
 {
 	int i,j,l,icoords[MAXD];
