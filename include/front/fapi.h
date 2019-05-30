@@ -1045,11 +1045,9 @@ extern "C" {
     \param gmax @b in extended mesh limits.
     \param ijk_to_I @b inout Pointer to array of indices on the expanded dual grid (ij_to_I for 2D).
  */
-   IMPORT  void FT_ParallelExchExtendedCellIndex(Front* front ,
-				int *lbuf,
-				int *ubuf,
-                                int *gmax,
-				POINTER ijk_to_I);
+   IMPORT  void FT_ParallelExchExtendedCellIndex(
+           Front* front, int *lbuf,	int *ubuf,
+           int *gmax, POINTER ijk_to_I);
 
 /*! \fn void FT_ParallelExchCellIndex(Front *front, int *lbuf, int *ubuf, POINTER ijk_to_I)
  *  \ingroup PARALLEL

@@ -350,8 +350,12 @@ protected:
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
 
-    int **ij_to_I,***ijk_to_I;
+    //int **ij_to_I,***ijk_to_I;
+    int **ij_to_I;
+	int **I_to_ij;
 
+    int ***ijk_to_I;
+    int **I_to_ijk;
     /*
 	int **ij_to_I, **I_to_ij;
     int ***ijk_to_I, **I_to_ijk;

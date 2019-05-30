@@ -122,16 +122,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
                 printf("Use computeProjectionDouble()\n");
 	    computeProjectionDouble();
 	    return;
-	case DUAL_ELLIP:
-        printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
+	case ERROR_ELLIP_SCHEME:
+        printf("ERROR: ELLIP SCHEME not implemented, exiting\n");
         clean_up(ERROR);
-        //computeProjectionDual();
-        //return;
+    /*
+	case DUAL_ELLIP:
+        computeProjectionDual();
+        return;
 	case CIM_ELLIP:
-        printf("ERROR: CIM_ELLIP not implemented, exiting\n");
-	    //computeProjectionCim();
-	    //return;
+	    computeProjectionCim();
+	    return;
+    */
 	}
+
 }	/* end computeProjection */
 
 

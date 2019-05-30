@@ -3399,13 +3399,25 @@ EXPORT void FT_RecordMaxFrontSpeed(
 	set_max_front_speed(dir,speed,state,coords,front);
 }	/* end FT_RecordMaxFrontSpeed */
 
+EXPORT void FT_ParallelExchExtendedCellIndex(
+	Front *front,
+	int *lbuf,
+	int *ubuf,
+        int *gmax,
+	POINTER ijk_to_I)
+{
+	scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
+}	/* end FT_ParallelExchCellIndex */
+
 EXPORT void FT_ParallelExchCellIndex(
 	Front *front,
 	int *lbuf,
 	int *ubuf,
 	POINTER ijk_to_I)
 {
-	scatter_cell_index(front,lbuf,ubuf,DUAL_GRID,ijk_to_I);
+	//scatter_cell_index(front,lbuf,ubuf,DUAL_GRID,ijk_to_I);
+    int *gmax = front->rect_grid->gmax;
+    scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
 }	/* end FT_ParallelExchCellIndex */
 
 EXPORT void FT_ParallelExchCompGridCellIndex(
