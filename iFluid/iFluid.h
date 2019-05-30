@@ -13,10 +13,11 @@
 #include <solver.h>
 #include "ifluid_state.h"
 
-#define         SOLID_COMP		0
-#define         LIQUID_COMP1		2
-#define         LIQUID_COMP2		3
-#define		LIQUID_COMP		3
+#define SOLID_COMP 0
+#define LIQUID_COMP1 2
+#define LIQUID_COMP2 3
+#define	LIQUID_COMP	3
+#define	FILL_COMP 10
 
 #define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
@@ -100,9 +101,9 @@ typedef enum _ADVEC_METHOD ADVEC_METHOD;
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
-	DUAL_ELLIP,
 	DOUBLE_ELLIP,
-	CIM_ELLIP
+	DUAL_ELLIP = ERROR_ELLIP_SCHEME,
+	CIM_ELLIP = ERROR_ELLIP_SCHEME
 };
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
 
@@ -348,9 +349,13 @@ protected:
 	int *top_gmax;
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
+
 	int **ij_to_I, **I_to_ij;
-	int ***ijk_to_I, **I_to_ijk;
-	int *domain_status;
+	
+    //TODO: should be triple pointer for I_to_ijk?
+    int ***ijk_to_I, **I_to_ijk;
+	
+    int *domain_status;
 	int smin[MAXD],smax[MAXD];
 	// Sweeping limits
 	int imin, jmin, kmin;
@@ -358,6 +363,8 @@ protected:
 	// for parallel partition
 	int NLblocks, ilower, iupper;
 	int *n_dist;
+
+/*
 	// for dual/comp overlapping
 	int offset[MAXD];
 
@@ -378,6 +385,20 @@ protected:
 	// for parallel partition
 	int cNLblocks, cilower, ciupper;
 	int *cn_dist;
+*/
+
+	// On Double solver
+	COMPONENT *dtop_comp;
+	int ext_gmax[MAXD];
+        int ext_l[MAXD],ext_u[MAXD];
+        int D_extension;
+	int **dij_to_I,***dijk_to_I;
+	// Sweeping limites
+	int ext_imin[MAXD];
+	int ext_imax[MAXD];
+	// for parallel partition
+	int dNLblocks, eilower, eiupper;
+	int *dn_dist;
 
 	// Index shift between dual and comp grids 
 	int ishift[MAXD];
@@ -410,14 +431,20 @@ protected:
 	void setComponent(void); //init components;
 	void setDomain();
 	void setDualDomain();
+	void setDoubleDomain();
 
 	// parallelization related functions
 	void scatMeshArray(void);
 	void setGlobalIndex(void);
-	void setDualGlobalIndex(void);
 	void setIndexMap(void);
+
+	void setDualGlobalIndex(void);
 	void setDualIndexMap(void);
-	void paintAllGridPoint(int status);
+	
+	void setDoubleGlobalIndex(void);
+	void setDoubleIndexMap(void);
+	
+    void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
 	void setReferencePressure();
 	boolean paintToSolveGridPoint();
@@ -442,16 +469,19 @@ protected:
 	int    getComponent(int *icoords);	
 	int    getComponent(double *coords);	
 	void   save(char *filename);
+
+	void   checkVelocityDiv(const char*);
+	void   computeFieldPointGrad(int*, double*, double*);
 	double computeFieldPointDiv(int*, double**);
+
+	void   computeDualFieldPointGrad(int*, double*, double*);
 	double computeDualFieldPointDiv(int*, double**);
+	void   computeDualFieldPointrho(int*);
 	double computeDualMu(int*, double*);
-	double computeMuOfBaldwinLomax(int*, double, boolean);
+	
+    double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
-	void   computeFieldPointGrad(int*, double*, double*);
-	void   computeDualFieldPointGrad(int*, double*, double*);
-	void   checkVelocityDiv(const char*);
-	void   computeDualFieldPointrho(int*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
@@ -513,32 +543,40 @@ public:
 	void solve(double dt);
         void vtk_plot_scalar(char*, const char*);
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+
 	void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	void computeProjectionDual(void);
-	void computePressure(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
-	void computeGradientQ(void);
+	
+    void computeGradientQ(void);
 	void computeNewVelocity(void);
 	void computeNewVelocityDual(void);
-	void extractFlowThroughVelocity(void);
+	
+    void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
 				double*, double);
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
-	void updateComponent(void);
+	
+    void updateComponent(void);
 
 	/***************   Low level computation functions  *************/
 	double getVorticity(int i, int j);
@@ -558,24 +596,30 @@ public:
         void vtk_plot_scalar(char*, const char*);
 protected:
 	void copyMeshStates(void);
+
 	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	void computeProjectionDual(void);
-	void computePressure(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
-	void computeGradientQ(void);
+	
+    void computeGradientQ(void);
 	void computeNewVelocity(void);
 	void computeNewVelocityDual(void);
+
 	void updateComponent(void);
 	boolean InsideSolid(int*);
 	void extractFlowThroughVelocity(void);
