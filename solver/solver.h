@@ -290,16 +290,22 @@ public:
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
 	int skip_neumann_solver;
+
 private:
-        // Dimension
-        int dim;
-        COMPONENT *top_comp;
+
+    int dim;    // Dimension
+    COMPONENT *top_comp;
 	double *top_h;
-        int *top_gmax;
+    int *top_gmax;
+
 	int imin[MAXD],imax[MAXD];
-        double *ext_source;             // for extended source;
-        double *ext_D;                  // for extended D;
-	int array_size;
+    //int imin,jmin,kmin;
+	//int imax,jmax,kmax;
+    
+    double *ext_source;             // for extended source
+    double *ext_D;                  // for extended D (= 1.0/rho)
+
+    int array_size;
 	double max_soln;
 	double min_soln;
 	void dsolve2d(double *soln);
@@ -307,7 +313,6 @@ private:
         double dcheckSolver(int*,boolean);
 };
 
-//NOTE: This class is now for testing/comparison only.
 class ELLIPTIC_SOLVER{
         Front *front;
 public:
@@ -329,7 +334,10 @@ public:
 
 	void set_solver_domain(void);
 	void solve(double *soln);
-	void dsolve(double *soln);
+
+    //for testing DOUBLE_ELLIPTIC_SOLVER without expanding grid
+	void test_dsolve(double *soln);
+	void poissontest_dsolve2d(double *soln);
 	
     double (*getStateVar)(POINTER);
     double (*getStateVel[3])(POINTER);
@@ -355,8 +363,7 @@ private:
 	void solve1d(double *soln);
 	void solve2d(double *soln);
 	void solve3d(double *soln);
-	void dsolve2d(double *soln);
-	void dsolve3d(double *soln);
+	//void dsolve3d(double *soln);
 };
 
 struct _SWEEP {

@@ -38,11 +38,11 @@ Enter projection type: SIMPLE
 
 Available elliptic methods are:
         Simple elliptic (S)
+        PoissonTest Double elliptic (P)
         Double elliptic (DB)
-        PoissonTest Double (P)
         Dual elliptic (DU)
         CIM elliptic (C)
-Enter elliptic method: DB
+Enter elliptic method: P
 
 Enter density and viscosity of the fluid: 1.0 0.0628
 Enter gravity: 0.0 0.0

@@ -1176,9 +1176,10 @@ extern void read_iFparams(
 
 	(void) printf("Available elliptic methods are:\n");
 	(void) printf("\tSimple elliptic (S)\n");
-	(void) printf("\tCIM elliptic (C)\n");
+	(void) printf("\tPoissonTest Double elliptic (P)\n");
 	(void) printf("\tDouble elliptic (DB)\n");
 	(void) printf("\tDual elliptic (DU)\n");
+	(void) printf("\tCIM elliptic (C)\n");
 	if (CursorAfterStringOpt(infile,"Enter elliptic method:"))
 	{
 	    fscanf(infile,"%s",string);
@@ -1189,16 +1190,20 @@ extern void read_iFparams(
 	    case 's':
 	    	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 	    	break;
-	    case 'c':
-	    case 'C':
-	    	iFparams->num_scheme.ellip_method = CIM_ELLIP;
-	    	break;
+	    case 'p':
+	    case 'P':
+            iFparams->num_scheme.ellip_method = POISSONTEST_DOUBLE_ELLIP;
+            break;
 	    case 'd':
 	    case 'D':
 		if (string[1] == 'b' || string[1] == 'B')
 	    	    iFparams->num_scheme.ellip_method = DOUBLE_ELLIP;
 		else if (string[1] == 'u' || string[1] == 'U')
 	    	    iFparams->num_scheme.ellip_method = DUAL_ELLIP;
+	    	break;
+	    case 'c':
+	    case 'C':
+	    	iFparams->num_scheme.ellip_method = CIM_ELLIP;
 	    	break;
 	    }
 	}
@@ -1219,6 +1224,8 @@ extern void read_iFparams(
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);
 	}
+
+    /*
 	iFparams->total_div_cancellation = NO;
         if (CursorAfterStringOpt(infile,	
 		"Enter yes to use total divergence cancellation:"))
@@ -1228,6 +1235,7 @@ extern void read_iFparams(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    	iFparams->total_div_cancellation = YES;
 	}
+    */
         if (CursorAfterStringOpt(infile,
 		"Enter density and viscosity of the fluid:"))
         {

@@ -93,20 +93,6 @@ void ELLIPTIC_SOLVER::solve(double *soln)
 	}
 }	/* end solve */
 
-void ELLIPTIC_SOLVER::dsolve(double *soln)
-{
-	switch (dim)
-	{
-	case 1:
-	    (void) printf("dsolve1d() not implemented!\n");
-	    clean_up(ERROR);
-	case 2:
-	    return dsolve2d(soln);
-	case 3:
-	    return dsolve3d(soln);
-	}
-}	/* end dsolve */
-
 void ELLIPTIC_SOLVER::solve1d(double *soln)
 {
 	int index,index_nb[2],size;
@@ -768,7 +754,23 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end solve3d */
 
-void ELLIPTIC_SOLVER::dsolve2d(double *soln)
+//TODO: can get rid of this now I think
+void ELLIPTIC_SOLVER::test_dsolve(double *soln)
+{
+	switch (dim)
+	{
+	case 1:
+	    (void) printf("2d test only, exiting\n");
+	    clean_up(ERROR);
+	case 2:
+	    return poissontest_dsolve2d(soln);
+	case 3:
+	    (void) printf("2d test only, exiting\n");
+	    clean_up(ERROR);
+	}
+}	/* end test_dsolve */
+
+void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 {
 	int index,index_nb,num_nb,size;
 
@@ -992,8 +994,10 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
             icrds_min[1] = j;
 	    }
 	}
-
-    FILE *xfile = fopen("test1.xg","w");
+    
+    char xname[100];
+    sprintf(xname,"%s/test.xg",OutName(this->front));
+    FILE *xfile = fopen(xname,"w");
 	for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)
 	{
@@ -1045,6 +1049,7 @@ void ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 
+/*
 void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 {
 	int index,index_nb,size;
@@ -1143,12 +1148,6 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
 		    use_neumann_solver = NO;
 		}
 	    }
-	    /*
-	     * This change reflects the need to treat point with only one
-	     * interior neighbor (a convex point). Not sure why PETSc cannot
-	     * handle such case. If we have better understanding, this should
-	     * be changed back.
-	     */
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
 	}
@@ -1274,7 +1273,8 @@ void ELLIPTIC_SOLVER::dsolve3d(double *soln)
         }
 
 	FT_FreeThese(1,x);
-}	/* end dsolve3d */
+}
+*/
 
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,

@@ -117,6 +117,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
                 printf("Use computeProjectionSimple()\n");
 	    computeProjectionSimple();
 	    return;
+	case POISSONTEST_DOUBLE_ELLIP:
+        PoissonTestProjectionDouble();
+        return;
 	case DOUBLE_ELLIP:
 	    if (debugging("check_div"))
                 printf("Use computeProjectionDouble()\n");
@@ -289,97 +292,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	return;
 }	/* end computeProjectionDouble */
 
-/*
-void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
+
+
+void Incompress_Solver_Smooth_2D_Cartesian::PoissonTestProjectionDouble(void)
 {
-	iFparams->total_div_cancellation = YES;
+	//iFparams->total_div_cancellation = YES;
+	iFparams->poisson_test = YES;
 	computeProjectionSimple(); 
 	return;
 }
-*/
-
-
-void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
-{
-	static CIM_ELLIPTIC_SOLVER elliptic_solver(*front);
-	int index;
-	int i,j,l,icoords[MAXD];
-	double **vel = field->vel;
-	double *phi = field->phi;
-	double *div_U = field->div_U;
-	double sum_div;
-	double value;
-
-	sum_div = 0.0;
-	max_value = 0.0;
-
-	/* Compute velocity divergence */
-	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
-	{
-	    icoords[0] = i;
-	    icoords[1] = j;
-	    index  = d_index(icoords,top_gmax,dim);
-	    source[index] = computeFieldPointDiv(icoords,vel);
-	    diff_coeff[index] = 1.0/field->rho[index];
-	}
-	FT_ParallelExchGridArrayBuffer(source,front,NULL);
-	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
-	{
-	    index  = d_index2d(i,j,top_gmax);
-	    div_U[index] = source[index];
-	    source[index] /= -accum_dt;
-	    array[index] = phi[index];
-	}
-
-	if(debugging("step_size"))
-	{
-	    for (j = jmin; j <= jmax; j++)
-	    for (i = imin; i <= imax; i++)
-	    {
-		index = d_index2d(i,j,top_gmax);
-	        value = fabs(div_U[index]);
-		sum_div = sum_div + div_U[index];
-	    }
-	    pp_global_sum(&sum_div,1);
-	    (void) printf("\nThe summation of divergence of U is %.16g\n",
-					sum_div);
-	    pp_global_max(&max_value,1);
-	    (void) printf("\nThe max value of divergence of U is %.16g\n",
-					max_value);
-	    max_value = 0.0;
-	}
-	elliptic_solver.w_type = FIRST_PHYSICS_WAVE_TYPE;
-	elliptic_solver.neg_comp = LIQUID_COMP2;
-	elliptic_solver.pos_comp = LIQUID_COMP1;
-	elliptic_solver.solutionJump = p_jump;
-        elliptic_solver.gradJumpDotN = grad_p_jump_n;
-        elliptic_solver.gradJumpDotT = grad_p_jump_t;
-
-        elliptic_solver.diff_coeff[0] = 1.0/m_rho[0];
-        elliptic_solver.diff_coeff[1] = 1.0/m_rho[1];
-        elliptic_solver.kappa = diff_coeff;
-        elliptic_solver.source = source;
-        elliptic_solver.ilower = ilower;
-        elliptic_solver.iupper = iupper;
-        elliptic_solver.soln = array;
-        elliptic_solver.ij_to_I = ij_to_I;
-        elliptic_solver.I_to_ij = I_to_ij;
-	elliptic_solver.getStateVar = getStatePhi;
-	elliptic_solver.findStateAtCrossing = ifluid_find_state_at_crossing;
-	elliptic_solver.size = iupper - ilower;
-	elliptic_solver.set_solver_domain();
-	elliptic_solver.solve(array);
-
-	for (j = 0; j <= top_gmax[1]; j++)
-	for (i = 0; i <= top_gmax[0]; i++)
-	{
-	    index  = d_index2d(i,j,top_gmax);
-	    phi[index] = array[index];
-	}
-}	/* end computeProjectionCim */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 {
@@ -503,12 +424,17 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
-	    /*
-        if (iFparams->total_div_cancellation)
-	    	elliptic_solver.dsolve(array);
+
+        if (iFparams->poisson_test)
+        {
+	    	elliptic_solver.poissontest_dsolve2d(array);
+	    	//elliptic_solver.test_dsolve(array);
+        }
 	    else
-        */
+        {
             elliptic_solver.solve(array);
+        }
+
 	    paintSolvedGridPoint();
 	}
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
@@ -530,6 +456,88 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    
 	}
 }	/* end computeProjectionSimple */
+
+void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionCim(void)
+{
+	static CIM_ELLIPTIC_SOLVER elliptic_solver(*front);
+	int index;
+	int i,j,l,icoords[MAXD];
+	double **vel = field->vel;
+	double *phi = field->phi;
+	double *div_U = field->div_U;
+	double sum_div;
+	double value;
+
+	sum_div = 0.0;
+	max_value = 0.0;
+
+	/* Compute velocity divergence */
+	for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    index  = d_index(icoords,top_gmax,dim);
+	    source[index] = computeFieldPointDiv(icoords,vel);
+	    diff_coeff[index] = 1.0/field->rho[index];
+	}
+	FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+	for (j = 0; j <= top_gmax[1]; j++)
+        for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    div_U[index] = source[index];
+	    source[index] /= -accum_dt;
+	    array[index] = phi[index];
+	}
+
+	if(debugging("step_size"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+		index = d_index2d(i,j,top_gmax);
+	        value = fabs(div_U[index]);
+		sum_div = sum_div + div_U[index];
+	    }
+	    pp_global_sum(&sum_div,1);
+	    (void) printf("\nThe summation of divergence of U is %.16g\n",
+					sum_div);
+	    pp_global_max(&max_value,1);
+	    (void) printf("\nThe max value of divergence of U is %.16g\n",
+					max_value);
+	    max_value = 0.0;
+	}
+	elliptic_solver.w_type = FIRST_PHYSICS_WAVE_TYPE;
+	elliptic_solver.neg_comp = LIQUID_COMP2;
+	elliptic_solver.pos_comp = LIQUID_COMP1;
+	elliptic_solver.solutionJump = p_jump;
+        elliptic_solver.gradJumpDotN = grad_p_jump_n;
+        elliptic_solver.gradJumpDotT = grad_p_jump_t;
+
+        elliptic_solver.diff_coeff[0] = 1.0/m_rho[0];
+        elliptic_solver.diff_coeff[1] = 1.0/m_rho[1];
+        elliptic_solver.kappa = diff_coeff;
+        elliptic_solver.source = source;
+        elliptic_solver.ilower = ilower;
+        elliptic_solver.iupper = iupper;
+        elliptic_solver.soln = array;
+        elliptic_solver.ij_to_I = ij_to_I;
+        elliptic_solver.I_to_ij = I_to_ij;
+	elliptic_solver.getStateVar = getStatePhi;
+	elliptic_solver.findStateAtCrossing = ifluid_find_state_at_crossing;
+	elliptic_solver.size = iupper - ilower;
+	elliptic_solver.set_solver_domain();
+	elliptic_solver.solve(array);
+
+	for (j = 0; j <= top_gmax[1]; j++)
+	for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    phi[index] = array[index];
+	}
+}	/* end computeProjectionCim */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 {

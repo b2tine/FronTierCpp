@@ -157,6 +157,7 @@ int main(int argc, char **argv)
 	l_cartesian->initMovieVariables();
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
 	
+    //
     if (iFparams.num_scheme.ellip_method == DUAL_ELLIP)
     {
         printf("ERROR: DUAL_ELLIP not implemented, exiting\n");
@@ -172,6 +173,7 @@ int main(int argc, char **argv)
         printf("ERROR: CIM_ELLIP not implemented, exiting\n");
         clean_up(ERROR);
     }
+    //
 
     if (debugging("sample_velocity"))
 	    l_cartesian->initSampleVelocity(in_name);

@@ -4625,7 +4625,8 @@ void Incompress_Solver_Smooth_Basis::setDoubleGlobalIndex()
 	    break;
 	}
 
-	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
+	for (i = 0; i < num_nodes; ++i) dn_dist[i] = 0;
+	//for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
 	dn_dist[myid] = dNLblocks;
 	pp_global_imax(dn_dist,num_nodes);
 	eilower = 0;

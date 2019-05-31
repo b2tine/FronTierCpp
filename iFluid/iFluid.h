@@ -102,6 +102,7 @@ enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
+    POISSONTEST_DOUBLE_ELLIP,
 	DUAL_ELLIP = ERROR_ELLIP_SCHEME,
 	CIM_ELLIP = ERROR_ELLIP_SCHEME
 };
@@ -148,7 +149,11 @@ typedef struct {
 	COMPONENT m_comp2;
 	IF_FIELD *field;
 	int adv_order;
-	boolean total_div_cancellation;
+	
+    //These flags are for testing the nonstaggered grid projection functions.
+    boolean total_div_cancellation {NO};
+    boolean poisson_test {NO};
+
 	boolean buoyancy_flow;
 	boolean if_buoyancy;
 	double  ref_temp;
@@ -559,10 +564,11 @@ protected:
 	void computeDiffusionParab(void);
 	
     void computeProjection(void);
-	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
+    void PoissonTestProjectionDouble(void);
 	void computeProjectionDouble(void);
 	void computeProjectionDual(void);
+	void computeProjectionCim(void);
 	
     void computePressure(void);
 	void computePressurePmI(void);

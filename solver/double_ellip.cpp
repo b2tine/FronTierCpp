@@ -278,7 +278,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             aII = 0.0;
             rhs = source[index];
             rhs = 1.0;
-            if (i == 5) printf("j = %d k0 = %f rhs = %f\n",j+ext_l[1],k0,rhs);
+
+            if (i == 5)
+                printf("j = %d k0 = %f rhs = %f\n",j+ext_l[1],k0,rhs);
+
             for (idir = 0; idir < dim; ++idir)
             {
                 for (nb = 0; nb < 2; ++nb)
@@ -445,7 +448,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
         
         //////////////////
         if (extended_domain)
-            exit(0);
+        {
+            printf("line 452 in double_ellip.cpp...exiting\n");
+            clean_up(0);
+        }
         //////////////////
 
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
