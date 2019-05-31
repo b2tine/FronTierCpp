@@ -442,7 +442,12 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             fprintf(xfile,"%f %f\n",(double)j,x[I-eilower]);
         }
         fclose(xfile);
-        if (extended_domain) exit(0);
+        
+        //////////////////
+        if (extended_domain)
+            exit(0);
+        //////////////////
+
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
         for (i = ext_imin[0]; i <= ext_imax[0]; i++)
 	{

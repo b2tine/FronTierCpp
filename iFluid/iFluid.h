@@ -391,6 +391,9 @@ protected:
 	int cNLblocks, cilower, ciupper;
 	int *cn_dist;
 
+	// Index shift between dual and comp grids 
+	int ishift[MAXD];
+
 	// On Double solver
 	COMPONENT *dtop_comp;
 	int ext_gmax[MAXD];
@@ -403,9 +406,6 @@ protected:
 	// for parallel partition
 	int dNLblocks, eilower, eiupper;
 	int *dn_dist;
-
-	// Index shift between dual and comp grids 
-	int ishift[MAXD];
 
 	//member data: mesh storage
 	std::vector<L_RECTANGLE>   cell_center;

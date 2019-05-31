@@ -4404,9 +4404,9 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
         grid_intfc = front->grid_intfc;
 	if (first)
 	{
-            dim = grid_intfc->dim;
             D_extension = 5;
 
+            dim = grid_intfc->dim;
             for (i = 0; i < dim; ++i)
             {
                 ext_gmax[i] = top_gmax[i];
@@ -4425,21 +4425,23 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
                             ext_gmax[i] - ubuf[i];
             }
-            /* TO REMOVE
+            
+            /* TO REMOVE   */
             printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
             printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
             printf("ext_imin = %d %d\n",ext_imin[0],ext_imin[1]);
             printf("ext_imax = %d %d\n",ext_imax[0],ext_imax[1]);
-            */
+         //
 
-	    size = ext_gmax[0]+1;
-            for (i = 1; i < dim; ++i)
-                size *= (ext_gmax[i]+1);
+	    size = ext_gmax[0] + 1;
+        for (i = 1; i < dim; ++i)
+            size *= (ext_gmax[i]+1);
 
-            FT_VectorMemoryAlloc((POINTER*)&dtop_comp,size,sizeof(COMPONENT));
+        FT_VectorMemoryAlloc((POINTER*)&dtop_comp,size,sizeof(COMPONENT));
 	    first = NO;
 	}
-        switch(dim)
+
+    switch(dim)
         {
         case 2:
 	    for (j = 0; j <= ext_gmax[1]; j++)
@@ -4447,14 +4449,21 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
 	    {
                 id = d_index2d(i,j,ext_gmax);
                 dtop_comp[id] = FILL_COMP;
-            }
-	    for (j = jmin; j <= jmax; j++)
+        }
+
+        //
+        printf("jmin = %d \t jmax = %d\n",jmin,jmax);
+        printf("imin = %d \t imax = %d\n",imin,imax);
+        printf("ext_l[0] = %d \t ext_l[1] = %d\n",ext_l[0],ext_l[1]);
+        //
+	    
+        for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
                 ic = d_index2d(i,j,top_gmax);
                 id = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
                 dtop_comp[id] = top_comp[ic];
-            }
+        }
             /* TO REMOVE
             if (ext_l[1] != 0)
             {
@@ -4467,6 +4476,8 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 printf("\n");
             }
             */
+       
+
 	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
             {
                 icoords[0] = i;
