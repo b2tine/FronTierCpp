@@ -4451,11 +4451,11 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 dtop_comp[id] = FILL_COMP;
         }
 
-        //
+        /*
         printf("jmin = %d \t jmax = %d\n",jmin,jmax);
         printf("imin = %d \t imax = %d\n",imin,imax);
         printf("ext_l[0] = %d \t ext_l[1] = %d\n",ext_l[0],ext_l[1]);
-        //
+        */
 	    
         for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)

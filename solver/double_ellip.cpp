@@ -72,17 +72,6 @@ void DOUBLE_ELLIPTIC_SOLVER::set_solver_domain(void)
 
 }	/* end set_solver_domain */
 
-void DOUBLE_ELLIPTIC_SOLVER::dsolve(double *soln)
-{
-        switch (dim)
-        {
-        case 2:
-            return dsolve2d(soln);
-        case 3:
-            return dsolve3d(soln);
-        }
-}       /* end solve */
-
 void DOUBLE_ELLIPTIC_SOLVER::set_extension()
 {
         int i,j,k,l,ic,id;
@@ -221,6 +210,17 @@ void DOUBLE_ELLIPTIC_SOLVER::set_extension()
         
 }       /* end set_extension */
 
+void DOUBLE_ELLIPTIC_SOLVER::dsolve(double *soln)
+{
+        switch (dim)
+        {
+        case 2:
+            return dsolve2d(soln);
+        case 3:
+            return dsolve3d(soln);
+        }
+}       /* end dsolve */
+
 void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 {
 	int index,index_nb,num_nb,size,ic;
@@ -296,6 +296,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                     comp,&intfc_state,&hs,crx_coords);
+
                     if (status == CONST_V_PDE_BOUNDARY)
                     {
                         if (wave_type(hs) == NEUMANN_BOUNDARY)
