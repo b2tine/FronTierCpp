@@ -283,6 +283,8 @@ public:
         void set_extension(void);
 	void dsolve(double *soln);
 	
+    //void prototype_dsolve2d(double *soln);
+
         double (*getStateVar)(POINTER);
         double (*getStateVel[3])(POINTER);
 
@@ -308,6 +310,7 @@ private:
     int array_size;
 	double max_soln;
 	double min_soln;
+
 	void dsolve2d(double *soln);
 	void dsolve3d(double *soln);
         double dcheckSolver(int*,boolean);

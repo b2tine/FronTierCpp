@@ -23,14 +23,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "solver.h"
 
-DOUBLE_ELLIPTIC_SOLVER::DOUBLE_ELLIPTIC_SOLVER(Front &front):front(&front)
+DOUBLE_ELLIPTIC_SOLVER::DOUBLE_ELLIPTIC_SOLVER(Front &front)
+    : front(&front)
 {
-        porosity = 0.0;
+    porosity = 0.0;
 }
 
 DOUBLE_ELLIPTIC_SOLVER::~DOUBLE_ELLIPTIC_SOLVER()
 {
-        FT_FreeThese(3,ext_source,ext_D,ext_array);
+    FT_FreeThese(3,ext_source,ext_D,ext_array);
 }
 
 void DOUBLE_ELLIPTIC_SOLVER::set_solver_domain(void)
@@ -221,6 +222,96 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve(double *soln)
         }
 }       /* end dsolve */
 
+/*
+void DOUBLE_ELLIPTIC_SOLVER::prototype_dsolve2d(double *soln)
+{
+	if (debugging("check_div"))
+    {
+        printf("Entering prototype_dsolve2d()\n");
+        printf("eilower = %d  eiupper = %d\n",eilower,eiupper);
+    }
+
+	PETSc solver;
+	solver.Create(eilower, eiupper-1, 5, 5);
+
+    //boolean extended_domain = NO;
+	for (int j = ext_imin[1]; j <= ext_imax[1]; ++j)
+    {
+        for (int i = ext_imin[0]; i <= ext_imax[0]; ++i)
+        {
+
+            int hop;
+            double rhs;
+            double alphaCoeff;
+
+            if (i >= ext_imin[0]+ext_l[0] && i <= ext_imax[0]-ext_u[0] &&
+                j >= ext_imin[1]+ext_l[1] && j <= ext_imax[1]-ext_u[1])
+            {
+                //Domain interior: sparse laplacian discretization, RHS = 1 
+                hop = 2;
+                alphaCoeff = 0.25;
+                rhs = 1.0;
+                //rhs = source[index];
+            }
+            else
+            {
+                //Extended virtual domain: compact laplacian discretization, RHS = 0
+                hop = 1;
+                alphaCoeff = 1.0;
+                rhs = 0.0;
+            }
+
+            double aII = 0.0;
+        
+            for (int idir = 0; idir < dim; ++idir)
+            {
+                for (nb = 0; nb < 2; ++nb)
+                {
+
+                }
+            }
+        
+        }
+    }
+
+
+    ////
+    int icoords[MAXD];
+	for (int j = imin[1]; j <= imax[1]; j++)
+    {
+        for (int i = imin[0]; i <= imax[0]; i++)
+        {
+            int index  = d_index2d(i,j,top_gmax);
+            COMPONENT comp = top_comp[index];
+
+            icoords[0] = i;
+            icoords[1] = j;
+
+            int I = dij_to_I[i+ext_l[0]][j+ext_l[1]];
+            if (I == -1) continue;
+
+
+            for (idir = 0; idir < dim; ++idir)
+            {
+                for (nb = 0; nb < 2; ++nb)
+                {
+
+                }
+            }
+
+        }
+    }
+
+
+
+    int size = eiupper - eilower;
+	this->max_soln = -HUGE;
+	this->min_soln = HUGE;
+
+}
+*/
+
+
 void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 {
 	int index,index_nb,num_nb,size,ic;
@@ -236,7 +327,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	double rel_residual = 0.0;
 	double h2[MAXD];
 	double *x;
-        double b;
+
 	COMPONENT comp;
 	GRID_DIRECTION dir[2][2] = {{WEST,EAST},{SOUTH,NORTH}};
 	boolean use_neumann_solver = YES;
@@ -266,21 +357,25 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	for (j = imin[1]; j <= imax[1]; j++)
         for (i = imin[0]; i <= imax[0]; i++)
 	{
-            index  = d_index2d(i,j,top_gmax);
-            comp = top_comp[index];
-            I = dij_to_I[i+ext_l[0]][j+ext_l[1]];
             icoords[0] = i;
             icoords[1] = j;
 
+            index  = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+
+            I = dij_to_I[i+ext_l[0]][j+ext_l[1]];
             if (I == -1) continue;
 
-            k0 = D[index];
-            aII = 0.0;
-            rhs = source[index];
+            k0 = 1.0;
             rhs = 1.0;
+            //k0 = D[index];
+            //rhs = source[index];
 
             if (i == 5)
                 printf("j = %d k0 = %f rhs = %f\n",j+ext_l[1],k0,rhs);
+
+
+            aII = 0.0;
 
             for (idir = 0; idir < dim; ++idir)
             {
@@ -292,7 +387,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     iknb[1] = icoords[1];
                     icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
-                    b = 1.0;
+             
+                    //TODO: keep working on this
+                    bool b = true;
+                    //b = 1.0;
 
                     status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                     comp,&intfc_state,&hs,crx_coords);
@@ -307,24 +405,25 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     }
                     else if (status == NO_PDE_BOUNDARY)
                     {
-                        icn[idir] = (nb == 0) ? icoords[idir]-1 :
-                                    icoords[idir]+1;
-                        status = (*findStateAtCrossing)(front,icn,
-                                        dir[idir][nb],comp,&intfc_state,&hs,
-                                        crx_coords);
+                        icn[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+
+                        status = (*findStateAtCrossing)(front,icn,dir[idir][nb],
+                                comp,&intfc_state,&hs,crx_coords);
+
                         if (status == CONST_V_PDE_BOUNDARY)
                         {
                             if (wave_type(hs) == NEUMANN_BOUNDARY)
                             {
-                                icnb[idir] = (nb == 0) ? icoords[idir]-1 : 
-                                        icoords[idir]+1;
+                                icnb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
                             }
                         }
                     }
 
                     I_nb = dij_to_I[icnb[0]+ext_l[0]][icnb[1]+ext_l[1]];
                     index_nb = d_index(iknb,top_gmax,dim);
-                    k_nb = D[index_nb];
+                    
+                    k_nb = 1.0;
+                    //k_nb = D[index_nb];
                     coeff_nb = k_nb/h2[idir];
 
                     /* Set neighbor at boundary */
@@ -349,15 +448,22 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             if (i >= ext_imin[0]+ext_l[0] && i <= ext_imax[0]-ext_u[0] &&
                 j >= ext_imin[1]+ext_l[1] && j <= ext_imax[1]-ext_u[1])
                 continue;
+
             extended_domain = YES;
             index  = d_index2d(i,j,ext_gmax);
+            
             icoords[0] = i;
             icoords[1] = j;
+            
             I = dij_to_I[i][j];
             if (I == -1) exit(0);
+            
             k0 = ext_D[index];
             aII = 0.0;
-            rhs = ext_source[index];
+            
+            rhs = 0.0;
+            //rhs = ext_source[index];
+
             if (i == 5) printf("j = %d k0 = %f rhs = %f\n",j,k0,rhs);
             //printf("(%2d %2d) I: %d  I_nb: ",i,j,I);
             for (idir = 0; idir < dim; ++idir)

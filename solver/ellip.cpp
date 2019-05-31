@@ -772,7 +772,7 @@ void ELLIPTIC_SOLVER::test_dsolve(double *soln)
 
 void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 {
-	int index,index_nb,num_nb,size;
+	int index,index_nb,num_nb;
 
 	int I,I_nb;
 	int icoords[MAXD],icnb[MAXD];
@@ -816,9 +816,6 @@ void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 	//solver.Reset_b();
 	//solver.Reset_x();
 
-	size = iupper - ilower;
-	max_soln = -HUGE;
-	min_soln = HUGE;
 
     int buff = 4;
     double domainRHSval = 1.0;
@@ -915,6 +912,7 @@ void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 
     solver.Solve_PetscDecide();
 
+	int size = iupper - ilower;
     /*
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 
@@ -973,6 +971,9 @@ void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 
 	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 	solver.Get_x(x);
+
+	max_soln = -HUGE;
+	min_soln = HUGE;
 
 	for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)

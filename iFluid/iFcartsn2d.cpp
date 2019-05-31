@@ -238,17 +238,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 					max_value);
 	    max_value = 0.0;
 	}
-	if (debugging("check_div"))
-        {
-	    checkVelocityDiv("Before computeProjection()");
-        }
-        elliptic_solver.dt = accum_dt;
-        elliptic_solver.D = diff_coeff;
-        elliptic_solver.source = source;
-        elliptic_solver.soln = array;
-        elliptic_solver.ext_gmax = ext_gmax;
+	
+    if (debugging("check_div"))
+    {
+        checkVelocityDiv("Before computeProjection()");
+    }
+
+    elliptic_solver.dt = accum_dt;
+    elliptic_solver.D = diff_coeff;
+    elliptic_solver.source = source;
+    elliptic_solver.soln = array;
+    elliptic_solver.ext_gmax = ext_gmax;
+
 	elliptic_solver.set_solver_domain();
-	elliptic_solver.getStateVar = getStatePhi;
+	
+    elliptic_solver.getStateVar = getStatePhi;
 	elliptic_solver.getStateVel[0] = getStateXvel;
 	elliptic_solver.getStateVel[1] = getStateYvel;
 	elliptic_solver.getStateVel[2] = getStateZvel;
@@ -256,6 +260,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
+
 	for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);

@@ -4682,27 +4682,29 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
             */
 	}
 
+    for (i = 0; i < dim; ++i)
+    {
+        llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
+        uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
+    }
+
 	index = 0;
-        for (i = 0; i < dim; ++i)
-        {
-            llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
-            uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
-        }
 	switch (dim)
 	{
 	case 2:
 	    for (j = 0; j <= ext_gmax[1]; j++)
 	    for (i = 0; i <= ext_gmax[0]; i++)
 		    dij_to_I[i][j] = -1;
+
 	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
 	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
 	    {
-		ic = d_index2d(i,j,ext_gmax);
-                if (dtop_comp[ic] != SOLID_COMP)
-                {
-                    dij_to_I[i][j] = index + eilower;
-                    index++;
-                }
+		    ic = d_index2d(i,j,ext_gmax);
+            if (dtop_comp[ic] != SOLID_COMP)
+            {
+                dij_to_I[i][j] = index + eilower;
+                index++;
+            }
 	    }
             printf("Before parallel communication:\n");
             /* TO REMOVE
@@ -4723,9 +4725,11 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
                 j = ext_imax[1];
                 printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
             }
+
 	    FT_ParallelExchExtendedCellIndex(front,llbuf,uubuf,
 				com_gmax,(POINTER)dij_to_I);
-            printf("\nAfter parallel communication:\n");
+        
+        printf("\nAfter parallel communication:\n");
             /* TO REMOVE
 	    for (j = 0; j <= ext_gmax[1]; j++)
             {
