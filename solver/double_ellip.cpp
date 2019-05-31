@@ -300,8 +300,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     {
                         if (wave_type(hs) == NEUMANN_BOUNDARY)
                         {
-                            icnb[idir] = (nb == 0) ? icoords[idir]+1 : 
-                                    icoords[idir]-1;
+                            icnb[idir] = (nb == 0) ? icoords[idir]+1 : icoords[idir]-1;
                             iknb[idir] = icoords[idir];
                         }
                     }
@@ -385,10 +384,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             solver.Set_b(I,rhs);
         }
 
-	use_neumann_solver = pp_min_status(use_neumann_solver);
+	//use_neumann_solver = pp_min_status(use_neumann_solver);
 	
-	solver.SetMaxIter(40000);
-	solver.SetTol(1e-10);
+	//solver.SetMaxIter(40000);
+	//solver.SetTol(1e-10);
 
 	start_clock("Petsc Solver");
         solver.Solve_PetscDecide();
