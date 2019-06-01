@@ -4412,6 +4412,8 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 ext_gmax[i] = top_gmax[i];
                 ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
                 ext_l[i] = ext_u[i] = 0;
+
+                //TODO: Need to mark which boundary is the inlet.
                 if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
                 {
                     ext_l[i] = D_extension;
@@ -4444,6 +4446,8 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
     switch(dim)
         {
         case 2:
+            
+        //Initialize the dtop_comp array
 	    for (j = 0; j <= ext_gmax[1]; j++)
 	    for (i = 0; i <= ext_gmax[0]; i++)
 	    {
@@ -4457,6 +4461,7 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
         printf("ext_l[0] = %d \t ext_l[1] = %d\n",ext_l[0],ext_l[1]);
         */
 	    
+        //Insert top_comp into the corresponding interior of dtop_comp
         for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
@@ -4477,7 +4482,7 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
             }
             */
        
-
+        //Patch buffers to preserve periodicity where needed.
 	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
             {
                 icoords[0] = i;

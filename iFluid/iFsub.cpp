@@ -171,6 +171,7 @@ extern void read_iF_dirichlet_bdry_data(
 		    sprintf(msg,"For upper boundary in %d-th dimension",i);
 		CursorAfterString(infile,msg);
 		(void) printf("\n");
+
 		promptForDirichletBdryState(infile,front,&hs,i_hs);
 		i_hs++;
 	    }

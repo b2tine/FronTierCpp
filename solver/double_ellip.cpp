@@ -213,104 +213,14 @@ void DOUBLE_ELLIPTIC_SOLVER::set_extension()
 
 void DOUBLE_ELLIPTIC_SOLVER::dsolve(double *soln)
 {
-        switch (dim)
-        {
+    switch (dim)
+    {
         case 2:
             return dsolve2d(soln);
         case 3:
             return dsolve3d(soln);
-        }
+    }
 }       /* end dsolve */
-
-/*
-void DOUBLE_ELLIPTIC_SOLVER::prototype_dsolve2d(double *soln)
-{
-	if (debugging("check_div"))
-    {
-        printf("Entering prototype_dsolve2d()\n");
-        printf("eilower = %d  eiupper = %d\n",eilower,eiupper);
-    }
-
-	PETSc solver;
-	solver.Create(eilower, eiupper-1, 5, 5);
-
-    //boolean extended_domain = NO;
-	for (int j = ext_imin[1]; j <= ext_imax[1]; ++j)
-    {
-        for (int i = ext_imin[0]; i <= ext_imax[0]; ++i)
-        {
-
-            int hop;
-            double rhs;
-            double alphaCoeff;
-
-            if (i >= ext_imin[0]+ext_l[0] && i <= ext_imax[0]-ext_u[0] &&
-                j >= ext_imin[1]+ext_l[1] && j <= ext_imax[1]-ext_u[1])
-            {
-                //Domain interior: sparse laplacian discretization, RHS = 1 
-                hop = 2;
-                alphaCoeff = 0.25;
-                rhs = 1.0;
-                //rhs = source[index];
-            }
-            else
-            {
-                //Extended virtual domain: compact laplacian discretization, RHS = 0
-                hop = 1;
-                alphaCoeff = 1.0;
-                rhs = 0.0;
-            }
-
-            double aII = 0.0;
-        
-            for (int idir = 0; idir < dim; ++idir)
-            {
-                for (nb = 0; nb < 2; ++nb)
-                {
-
-                }
-            }
-        
-        }
-    }
-
-
-    ////
-    int icoords[MAXD];
-	for (int j = imin[1]; j <= imax[1]; j++)
-    {
-        for (int i = imin[0]; i <= imax[0]; i++)
-        {
-            int index  = d_index2d(i,j,top_gmax);
-            COMPONENT comp = top_comp[index];
-
-            icoords[0] = i;
-            icoords[1] = j;
-
-            int I = dij_to_I[i+ext_l[0]][j+ext_l[1]];
-            if (I == -1) continue;
-
-
-            for (idir = 0; idir < dim; ++idir)
-            {
-                for (nb = 0; nb < 2; ++nb)
-                {
-
-                }
-            }
-
-        }
-    }
-
-
-
-    int size = eiupper - eilower;
-	this->max_soln = -HUGE;
-	this->min_soln = HUGE;
-
-}
-*/
-
 
 void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 {
@@ -342,9 +252,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
         printf("eilower = %d  eiupper = %d\n",eilower,eiupper);
 
 	solver.Create(eilower, eiupper-1, 5, 5);
-	//solver.Reset_A();
-	//solver.Reset_b();
-	//solver.Reset_x();
 
 	size = eiupper - eilower;
 	max_soln = -HUGE;
@@ -388,9 +295,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
              
-                    //TODO: keep working on this
-                    bool b = true;
-                    //b = 1.0;
 
                     status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                     comp,&intfc_state,&hs,crx_coords);
@@ -419,20 +323,29 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         }
                     }
 
-                    I_nb = dij_to_I[icnb[0]+ext_l[0]][icnb[1]+ext_l[1]];
-                    index_nb = d_index(iknb,top_gmax,dim);
                     
-                    k_nb = 1.0;
+                    //index_nb = d_index(iknb,top_gmax,dim);
                     //k_nb = D[index_nb];
+                    k_nb = 1.0;
                     coeff_nb = k_nb/h2[idir];
 
-                    /* Set neighbor at boundary */
+                    //Set neighbor
+                    I_nb = dij_to_I[icnb[0]+ext_l[0]][icnb[1]+ext_l[1]];
+                    solver.Set_A(I,I_nb,coeff_nb);
 
+                    aII += -coeff_nb;
+
+                    //NOTE: Using sparse laplacian discretization,
+                    //      no cancellation occurs when enforcing
+                    //      Neumann boundary
+                    
+                    /*
                     if (b == 1.0)
                         solver.Set_A(I,I_nb,coeff_nb);
                     else
                         rhs += -coeff_nb;
-                    aII += -coeff_nb;
+                    */
+
                 }
             }
             
@@ -458,14 +371,15 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             I = dij_to_I[i][j];
             if (I == -1) exit(0);
             
-            k0 = ext_D[index];
-            aII = 0.0;
-            
+            k0 = 1.0;
+            //k0 = ext_D[index];
             rhs = 0.0;
             //rhs = ext_source[index];
 
             if (i == 5) printf("j = %d k0 = %f rhs = %f\n",j,k0,rhs);
             //printf("(%2d %2d) I: %d  I_nb: ",i,j,I);
+            
+            aII = 0.0;
             for (idir = 0; idir < dim; ++idir)
             {
                 for (nb = 0; nb < 2; ++nb)
@@ -473,6 +387,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     icn[0] = i;
                     icn[1] = j;
                     icn[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+
+                    //TODO: Only one side should be treated as the
+                    //      Neumann boundary (outlet).
+                    //      The other side should be treated as Dirichlet (inlet).
                     if ((ext_l[idir] != 0 && icn[idir] < ext_imin[idir]) || 
                         (ext_u[idir] != 0 && icn[idir] > ext_imax[idir]))
                         continue;       // treat as Neumann boundary
@@ -480,7 +398,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     /* Single spacing discretizatin */
                     I_nb = dij_to_I[icn[0]][icn[1]];
                     if (I_nb == -1) exit(0);
-                    coeff_nb = ext_D[index]/sqr(top_h[idir]);
+                    
+                    coeff_nb = k0/sqr(top_h[idir]);
+                    //coeff_nb = ext_D[index]/sqr(top_h[idir]);
+                    
                     solver.Set_A(I,I_nb,coeff_nb);
                     aII += -coeff_nb;
                     //printf("%d ",I_nb);
