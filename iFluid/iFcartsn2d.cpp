@@ -251,6 +251,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
     elliptic_solver.ext_gmax = ext_gmax;
 
 	elliptic_solver.set_solver_domain();
+
+    IF_PARAMS* ifparams = (IF_PARAMS*) front->extra1;
+    elliptic_solver.ConstantBdryPosition = ifparams->ConstantBdryPosition;
 	
     elliptic_solver.getStateVar = getStatePhi;
 	elliptic_solver.getStateVel[0] = getStateXvel;

@@ -240,7 +240,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	COMPONENT comp;
 	GRID_DIRECTION dir[2][2] = {{WEST,EAST},{SOUTH,NORTH}};
-	boolean use_neumann_solver = YES;
+	//boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
 	HYPER_SURF *hs;
 	POINTER intfc_state;
@@ -379,6 +379,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             if (i == 5) printf("j = %d k0 = %f rhs = %f\n",j,k0,rhs);
             //printf("(%2d %2d) I: %d  I_nb: ",i,j,I);
             
+
             aII = 0.0;
             for (idir = 0; idir < dim; ++idir)
             {
@@ -388,16 +389,29 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     icn[1] = j;
                     icn[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
-                    //TODO: Only one side should be treated as the
-                    //      Neumann boundary (outlet).
-                    //      The other side should be treated as Dirichlet (inlet).
+
                     if ((ext_l[idir] != 0 && icn[idir] < ext_imin[idir]) || 
                         (ext_u[idir] != 0 && icn[idir] > ext_imax[idir]))
-                        continue;       // treat as Neumann boundary
+                    {
+                        int bdryface = 2*idir + nb;
+                        
+                        if (bdryface == ConstantBdryPosition)
+                        {
+                            //Dirichlet Boundary (inlet)
+                            // equal 0 for test
+                            //rhs -= 0.0;
+                        }
+                        else
+                        {
+                            //Neumann boundary (outlet)
+                            // equal 0
+                            continue;
+                        }
+                    }
 
                     /* Single spacing discretizatin */
                     I_nb = dij_to_I[icn[0]][icn[1]];
-                    if (I_nb == -1) exit(0);
+                    if (I_nb == -1) continue;//exit(0);
                     
                     coeff_nb = k0/sqr(top_h[idir]);
                     //coeff_nb = ext_D[index]/sqr(top_h[idir]);

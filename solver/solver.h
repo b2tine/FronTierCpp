@@ -283,7 +283,7 @@ public:
         void set_extension(void);
 	void dsolve(double *soln);
 	
-    //void prototype_dsolve2d(double *soln);
+    int ConstantBdryPosition {-1};
 
         double (*getStateVar)(POINTER);
         double (*getStateVel[3])(POINTER);

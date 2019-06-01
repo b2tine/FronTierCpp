@@ -8,7 +8,7 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 -20
+Enter velocity: 0 20
 Enter pressure: 10
 
 For upper boundary in 1-th dimension

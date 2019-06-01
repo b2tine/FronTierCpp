@@ -2183,7 +2183,7 @@ EXPORT  void FT_InsertDirichletBoundary(
 	}
 	if (state != NULL)
 	{
-            Bstate._boundary_state = state;
+        Bstate._boundary_state = state;
 	}
 	Bstate._fprint_boundary_state_data = f_fprint_boundary_state_data;
 	index = add_bstate_to_list(&Bstate,intfc,istate);

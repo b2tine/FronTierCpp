@@ -44,7 +44,7 @@ static void get_split_state_params(Front*,FILE*,POINTER*);
 static void get_parabolic_state_params(Front*,FILE*,POINTER*);
 static void addToEnergyFlux(RECT_GRID*,HYPER_SURF*,double*,double*,int,int,
 			boolean);
-static void promptForDirichletBdryState(FILE*,Front*,HYPER_SURF**,int);
+static void promptForDirichletBdryState(FILE*,Front*,HYPER_SURF**,int,int,int);
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
@@ -172,7 +172,7 @@ extern void read_iF_dirichlet_bdry_data(
 		CursorAfterString(infile,msg);
 		(void) printf("\n");
 
-		promptForDirichletBdryState(infile,front,&hs,i_hs);
+		promptForDirichletBdryState(infile,front,&hs,i_hs,i,j);
 		i_hs++;
 	    }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
@@ -194,7 +194,7 @@ extern void read_iF_dirichlet_bdry_data(
                                   Coords(c->start->posn)[1],
                                   Coords(c->end->posn)[0],
                                   Coords(c->end->posn)[1]);
-                        promptForDirichletBdryState(infile,front,hss+k,i_hs);
+                        promptForDirichletBdryState(infile,front,hss+k,i_hs,i,j);
                         i_hs++;
                     }
                 }
@@ -2257,13 +2257,17 @@ static void promptForDirichletBdryState(
 	FILE *infile,
 	Front *front,
 	HYPER_SURF **hs,
-        int i_hs)
+    int i_hs,
+    int idir,
+    int nb)
 {
 	static STATE *state;
 	char s[100];
 	POINTER func_params;
 	int dim = FT_Dimension();
 	int k;
+
+    IF_PARAMS* ifparams = (IF_PARAMS*) front->extra1;
 
 	CursorAfterString(infile,"Enter type of Dirichlet boundary:");
 	fscanf(infile,"%s",s);
@@ -2284,8 +2288,11 @@ static void promptForDirichletBdryState(
 	    fscanf(infile,"%lf",&state->pres);
 	    (void) printf("%f\n",state->pres);
 	    state->phi = getPhiFromPres(front,state->pres);
-	    FT_InsertDirichletBoundary(front,NULL,NULL,
+	    
+        ifparams->ConstantBdryPosition = 2*idir + nb;
+        FT_InsertDirichletBoundary(front,NULL,NULL,
 			NULL,(POINTER)state,*hs,i_hs);
+        
 	    break;
 	case 'f':			// Flow through state
 	case 'F':

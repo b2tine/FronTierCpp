@@ -153,6 +153,7 @@ typedef struct {
     //These flags are for testing the nonstaggered grid projection functions.
     boolean total_div_cancellation {NO};
     boolean poisson_test {NO};
+    int ConstantBdryPosition {-1};
 
 	boolean buoyancy_flow;
 	boolean if_buoyancy;
