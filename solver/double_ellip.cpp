@@ -254,8 +254,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	solver.Create(eilower, eiupper-1, 5, 5);
 
 	size = eiupper - eilower;
-	max_soln = -HUGE;
-	min_soln = HUGE;
 
 	for (i = 0; i < dim; ++i)
 	    h2[i] = 4.0*sqr(top_h[i]);
@@ -339,13 +337,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     //      no cancellation occurs when enforcing
                     //      Neumann boundary
                     
-                    /*
-                    if (b == 1.0)
-                        solver.Set_A(I,I_nb,coeff_nb);
-                    else
-                        rhs += -coeff_nb;
-                    */
-
                 }
             }
             
@@ -383,41 +374,46 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             aII = 0.0;
             for (idir = 0; idir < dim; ++idir)
             {
+                coeff_nb = 1.0/sqr(top_h[idir]);
+
                 for (nb = 0; nb < 2; ++nb)
                 {
                     icn[0] = i;
                     icn[1] = j;
-                    icn[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
+                    /* Single spacing discretizatin */
+                    icn[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
                     if ((ext_l[idir] != 0 && icn[idir] < ext_imin[idir]) || 
                         (ext_u[idir] != 0 && icn[idir] > ext_imax[idir]))
                     {
                         int bdryface = 2*idir + nb;
-                        
                         if (bdryface == ConstantBdryPosition)
                         {
                             //Dirichlet Boundary (inlet)
                             // equal 0 for test
-                            //rhs -= 0.0;
+                            rhs -= 0.0;
+                            aII += -coeff_nb;
                         }
                         else
                         {
                             //Neumann boundary (outlet)
                             // equal 0
-                            continue;
+                            rhs -= 0.0;
                         }
                     }
+                    else
+                    {
+                        I_nb = dij_to_I[icn[0]][icn[1]];
+                        solver.Set_A(I,I_nb,coeff_nb);
+                        aII += -coeff_nb;
+                    }
 
-                    /* Single spacing discretizatin */
-                    I_nb = dij_to_I[icn[0]][icn[1]];
-                    if (I_nb == -1) continue;//exit(0);
-                    
-                    coeff_nb = k0/sqr(top_h[idir]);
+                    //coeff_nb = k0/sqr(top_h[idir]);
                     //coeff_nb = ext_D[index]/sqr(top_h[idir]);
                     
-                    solver.Set_A(I,I_nb,coeff_nb);
-                    aII += -coeff_nb;
+                    //solver.Set_A(I,I_nb,coeff_nb);
+                    //aII += -coeff_nb;
                     //printf("%d ",I_nb);
                 }
             }
@@ -437,6 +433,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 	solver.Get_x(x);
+
+	max_soln = -HUGE;
+	min_soln = HUGE;
 
         /* Move to solver */
 	if (debugging("PETSc"))

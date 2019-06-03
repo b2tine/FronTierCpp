@@ -4413,7 +4413,6 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
                 ext_l[i] = ext_u[i] = 0;
 
-                //TODO: Need to mark which boundary is the inlet.
                 if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
                 {
                     ext_l[i] = D_extension;
