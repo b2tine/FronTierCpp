@@ -494,7 +494,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	    if (I == -1) continue;
 	    ext_array[index] = x[I-eilower];
 	}
-        /* Extracting solution from ext_arrat */
+        /* Extracting solution from ext_array */
 	for (j = imin[1]; j <= imax[1]; j++)
         for (i = imin[0]; i <= imax[0]; i++)
 	{
@@ -529,6 +529,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
         fclose(xfile);
         
 
+    //This is prototype for dcheckSolver()
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
     {
         for (i = ext_imin[0]; i <= ext_imax[0]; i++)
@@ -605,6 +606,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                 printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
                                 j,LHS,RHS,residual);
             }
+        //End prototype for dchecksolve()
 
 
             /*
@@ -960,6 +962,19 @@ boolean DOUBLE_ELLIPTIC_SOLVER::icoordsInterior(int *icoords)
     return YES;
 }
 
+/*
+double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
+        int *icoords,
+        boolean print_details)
+{
+    if( icoordsInterior(icoords) )
+        return dcheckSolverInterior(icoords,print_details);
+    else
+        return dcheckSolverExtended(icoords,print_details);
+}
+*/
+
+//TODO: Implement
 double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 	int *icoords,
 	boolean print_details)
