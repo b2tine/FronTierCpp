@@ -829,7 +829,10 @@ void ELLIPTIC_SOLVER::poissontest_dsolve2d(double *soln)
 
 	boolean use_neumann_solver = YES;
 
-	for( int j = jmin; j <= jmax; j++ )
+    printf("imin = %d \t imax = %d\n",imin,imax);
+    printf("jmin = %d \t jmax = %d\n",jmin,jmax);
+	
+    for( int j = jmin; j <= jmax; j++ )
     {
         for( int i = imin; i <= imax; i++ )
 	    {
