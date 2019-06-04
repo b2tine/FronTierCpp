@@ -974,7 +974,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 }
 */
 
-//TODO: Implement
+//TODO: Implement dcheckSolver
 double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 	int *icoords,
 	boolean print_details)
@@ -1026,6 +1026,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
             status = (*findStateAtCrossing)(front,icoords,dir[l][m],comp,
                                 &intfc_state,&hs,crx_coords);
 
+            //TODO: keep working from here
             if (status == CONST_V_PDE_BOUNDARY)
             {
                 if (wave_type(hs) == NEUMANN_BOUNDARY)
@@ -1043,6 +1044,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 
             }
 
+////////////////////////////
 		if (status == NO_PDE_BOUNDARY)
 		{
 		    icnb[l] = (m == 0) ? icoords[l] - 1 : icoords[l] + 1;
