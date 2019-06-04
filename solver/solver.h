@@ -301,8 +301,6 @@ private:
     int *top_gmax;
 
 	int imin[MAXD],imax[MAXD];
-    //int imin,jmin,kmin;
-	//int imax,jmax,kmax;
     
     double *ext_source;             // for extended source
     double *ext_D;                  // for extended D (= 1.0/rho)
@@ -313,7 +311,11 @@ private:
 
 	void dsolve2d(double *soln);
 	void dsolve3d(double *soln);
-        double dcheckSolver(int*,boolean);
+    
+    boolean icoordsInterior(int*);
+    double dcheckSolver(int*,boolean);
+    double dcheckSolverInterior(int*,boolean);
+    double dcheckSolverExtended(int*,boolean);
 };
 
 class ELLIPTIC_SOLVER{

@@ -841,6 +841,18 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end dsolve3d */
 
+boolean DOUBLE_ELLIPTIC_SOLVER:icoordsInterior(int *icoords)
+{
+    for (int i = 0; i < dim; ++i)
+    {
+        if (ext_l[i] != 0 && icoords[i] < ext_l[i])
+            return NO;
+        if (ext_u[i] != 0 && icoords[i] > ext_gmax[i]+ext_u[i])
+            return NO;
+    }
+    return YES;
+}
+
 double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 	int *icoords,
 	boolean print_details)
