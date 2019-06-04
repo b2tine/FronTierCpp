@@ -523,43 +523,84 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
         {
             i = (ext_imin[0] + ext_imax[0])/2;
-	    I = dij_to_I[i][j];
-            fprintf(xfile,"%f %f\n",(double)j,x[I-eilower]);
+	        I = dij_to_I[i][j];
+            fprintf(xfile,"%f %f\n",j*top_h[1],x[I-eilower]);
         }
         fclose(xfile);
         
 
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+    {
         for (i = ext_imin[0]; i <= ext_imax[0]; i++)
-	{
-            index = d_index2d(i,j,ext_gmax);
-            if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == 10)
-            {
-                int index_nb1 = d_index2d(i+2,j,ext_gmax);
-                int index_nb2 = d_index2d(i-2,j,ext_gmax);
-                int index_nb3 = d_index2d(i,j+2,ext_gmax);
-                int index_nb4 = d_index2d(i,j-2,ext_gmax);
+	    {
+            double LHS = 0.0;
+            double RHS = 0.0;
 
-                double LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+            index = d_index2d(i,j,ext_gmax);
+
+            int imid = (ext_imin[0]+ext_imax[0])/2; 
+            if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
+            {
+                if( j >= ext_imin[1]+ext_l[1] &&
+                        j <= ext_imax[1]-ext_u[1] )
+                {
+                    int index_nb1 = d_index2d(i+2,j,ext_gmax);
+                    int index_nb2 = d_index2d(i-2,j,ext_gmax);
+                    int index_nb3 = d_index2d(i,j+2,ext_gmax);
+                    int index_nb4 = d_index2d(i,j-2,ext_gmax);
+                    
+                    int index_knb1 = d_index2d(i+1,j,ext_gmax);
+                    int index_knb2 = d_index2d(i-1,j,ext_gmax);
+                    int index_knb3 = d_index2d(i,j+1,ext_gmax);
+                    int index_knb4 = d_index2d(i,j-1,ext_gmax);
+
+                    LHS = (ext_array[index_nb1] - ext_array[index])/ext_D[index_knb1]
+                        +  (ext_array[index_nb2] - ext_array[index])/ext_D[index_knb2]
+                        +  (ext_array[index_nb3] - ext_array[index])/ext_D[index_knb3]
+                        +  (ext_array[index_nb4] - ext_array[index])/ext_D[index_knb4];
+                    
+                    LHS *= 0.25/top_h[1]/top_h[1];
+
+                    /*
+                    LHS = (ext_array[index_nb1] + ext_array[index_nb2]
                         + ext_array[index_nb3] + ext_array[index_nb4] 
                         - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
+                    */
 
-                double RHS = 1.0;
-                if( j < ext_imin[1] + ext_l[1] ||
-                        j > ext_imax[1] - ext_u[1] )
+                    //TODO: include ext_source
+                    //double RHS = ext_source[index];
+                    RHS = 1.0;
+                }
+                else
                 {
+                    int index_nb1 = d_index2d(i+1,j,ext_gmax);
+                    int index_nb2 = d_index2d(i-1,j,ext_gmax);
+                    int index_nb3 = d_index2d(i,j+1,ext_gmax);
+                    int index_nb4 = d_index2d(i,j-1,ext_gmax);
+
+                    double k0 = ext_D[index];
+                    double knb1 = 0.5*(k0 + ext_D[index_nb1]);
+                    double knb2 = 0.5*(k0 + ext_D[index_nb2]);
+                    double knb3 = 0.5*(k0 + ext_D[index_nb3]);
+                    double knb4 = 0.5*(k0 + ext_D[index_nb4]);
+
+                    LHS = (ext_array[index_nb1] - ext_array[index])/knb1
+                        +  (ext_array[index_nb2] - ext_array[index])/knb2
+                        +  (ext_array[index_nb3] - ext_array[index])/knb3
+                        +  (ext_array[index_nb4] - ext_array[index])/knb4;
+                    
+                    LHS *= 1.0/top_h[1]/top_h[1];
+
+                    /*
+                    LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                        + ext_array[index_nb3] + ext_array[index_nb4] 
+                        - 4.0*ext_array[index])/top_h[1]/top_h[1];
+                    */
+
                     RHS = 0.0;
                 }
 
                 double residual = LHS - RHS;
-                
-                /*
-                double LHS = ext_D[index]*(soln[index_nb1] + soln[index_nb2]
-                        + soln[index_nb3] + soln[index_nb4] 
-                        - 4.0*soln[index])/4.0/top_h[1]/top_h[1];
-
-                double RHS = ext_source[index];
-                */
 
                 printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
                                 j,LHS,RHS,residual);
@@ -625,6 +666,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             } 
             */
         }
+    }
 
     //////////////////
     if (extended_domain)
