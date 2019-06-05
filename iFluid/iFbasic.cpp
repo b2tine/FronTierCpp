@@ -4751,6 +4751,14 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
                 j = ext_imax[1];
                 printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
             }
+            printf("\n");
+	    for (j = 0; j <= ext_gmax[1]; j++)
+            {
+                i = (ext_imin[0]+ext_imax[0])/2;
+                printf("dij_to_I[%d][%d] = %d\n",i,j,dij_to_I[i][j]);
+            }
+            printf("\n");
+
 	    break;
 	case 3:
 	    for (k = 0; k <= ext_gmax[2]; k++)

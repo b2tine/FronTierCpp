@@ -401,10 +401,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             double k0 = ext_D[index];
             //rhs = 0.0;
             rhs = ext_source[index];
-
-            if (i == 5)
-                printf("j = %d rhs = %g\n",j,rhs);
-            //printf("(%2d %2d) I: %d  I_nb: ",i,j,I);
             
 
             aII = 0.0;
@@ -426,8 +422,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     coeff_nb = k0/sqr(top_h[idir]);
                     //coeff_nb = 1.0/sqr(top_h[idir]);
 
-                    //Need rho itself to evaluate at half index,
-                    //      can't just adverage D = 1/rho.
+                    //TODO: Evaluate rho at 1/2 index in the single scheme?
+                    //      If so, need rho itself not D = 1/rho;
+                    //      can't just average D = 1/rho.
 
                     //coeff_nb = 1.0/k_half/sqr(top_h[idir]);
                     //double k_half = 0.5*(k0 + k_nb);
@@ -533,10 +530,12 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                 icrds_min[1] = j;
             }
 
+            /*
             if (i == (imin[0] + imax[0])/2+1)
             {
                 printf("soln[%d][%d] = %f\n",i,j,soln[ic]);
             }
+            */
         }
     }
 
@@ -572,7 +571,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                 index = d_index2d(i,j,ext_gmax);
 
-                if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
+                //if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
+                if (j > ext_imin[1] && j < ext_imax[1] && i == imid)
                 {
                     if( j >= ext_imin[1]+ext_l[1] &&
                             j <= ext_imax[1]-ext_u[1] )
@@ -1074,7 +1074,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 
 	if (print_details)
 	{
-	    (void) printf("\nEntering dcheckSolver()\n");
+	    (void) printf("\nEntering dcheckSolverInterior()\n");
 	    (void) printf("icoords = ");
 	    for (i = 0; i < dim; ++i)
 	    	(void) printf("%d ",icoords[i]);
@@ -1115,7 +1115,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
                 if (wave_type(hs) == NEUMANN_BOUNDARY)
                 {
                     if (print_details)
-                        (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY\n",m);
+                        (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY -- NEUMANN\n",m);
                 
                     icnb[l] = (m == 0) ? icoords[l] + 1 : icoords[l] - 1;
                     iknb[l] = icoords[l];
@@ -1138,7 +1138,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
                     if (wave_type(hs) == NEUMANN_BOUNDARY)
                     {
                         if (print_details)
-                            (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY\n",m);
+                            (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY -- NEUMANN\n",m);
                     
                         icnb[l] = (m == 0) ? icoords[l] - 1 : icoords[l] + 1;
                         index_nb = d_index(icnb,ext_gmax,dim);
@@ -1173,7 +1173,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	    (void) printf("LHS - RHS = %20.14f\n",lhs-rhs);
 	    (void) printf("Relative error = %20.14g\n",fabs(lhs-rhs)/fabs(rhs));
 	    //(void) printf("Relative error = %20.14g\n",fabs(lhs-rhs)/denom);
-	    (void) printf("Leaving dcheckSolver()\n\n");
+	    (void) printf("Leaving dcheckSolverInterior()\n\n");
 	}
 	
     return fabs(lhs-rhs)/fabs(rhs);
