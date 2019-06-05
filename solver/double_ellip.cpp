@@ -538,95 +538,97 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	if (debugging("elliptic_error"))
     {
     //This is prototype for dcheckSolver()
-	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
-    {
-        for (i = ext_imin[0]; i <= ext_imax[0]; i++)
-	    {
-            double LHS = 0.0;
-            double RHS = 0.0;
-
-            index = d_index2d(i,j,ext_gmax);
-
-            int imid = (ext_imin[0]+ext_imax[0])/2; 
-            if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
+            
+        int imid = (ext_imin[0]+ext_imax[0])/2; 
+        printf("line: i = %d\n",imid);
+        for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+        {
+            for (i = ext_imin[0]; i <= ext_imax[0]; i++)
             {
-                if( j >= ext_imin[1]+ext_l[1] &&
-                        j <= ext_imax[1]-ext_u[1] )
+                double LHS = 0.0;
+                double RHS = 0.0;
+
+                index = d_index2d(i,j,ext_gmax);
+
+                if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
                 {
-                    int index_nb1 = d_index2d(i+2,j,ext_gmax);
-                    int index_nb2 = d_index2d(i-2,j,ext_gmax);
-                    int index_nb3 = d_index2d(i,j+2,ext_gmax);
-                    int index_nb4 = d_index2d(i,j-2,ext_gmax);
-                    
-                    int index_knb1 = d_index2d(i+1,j,ext_gmax);
-                    int index_knb2 = d_index2d(i-1,j,ext_gmax);
-                    int index_knb3 = d_index2d(i,j+1,ext_gmax);
-                    int index_knb4 = d_index2d(i,j-1,ext_gmax);
+                    if( j >= ext_imin[1]+ext_l[1] &&
+                            j <= ext_imax[1]-ext_u[1] )
+                    {
+                        int index_nb1 = d_index2d(i+2,j,ext_gmax);
+                        int index_nb2 = d_index2d(i-2,j,ext_gmax);
+                        int index_nb3 = d_index2d(i,j+2,ext_gmax);
+                        int index_nb4 = d_index2d(i,j-2,ext_gmax);
+                        
+                        int index_knb1 = d_index2d(i+1,j,ext_gmax);
+                        int index_knb2 = d_index2d(i-1,j,ext_gmax);
+                        int index_knb3 = d_index2d(i,j+1,ext_gmax);
+                        int index_knb4 = d_index2d(i,j-1,ext_gmax);
 
-                    LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
-                        +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
-                        +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
-                        +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
-                    
-                    LHS *= 0.25/top_h[1]/top_h[1];
+                        LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
+                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
+                            +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
+                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
+                        
+                        LHS *= 0.25/top_h[1]/top_h[1];
 
-                    /*
-                    LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                        + ext_array[index_nb3] + ext_array[index_nb4] 
-                        - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
-                    */
+                        /*
+                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                            + ext_array[index_nb3] + ext_array[index_nb4] 
+                            - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
+                        */
 
-                    RHS = 1.0;
-                    //RHS = ext_source[index];
+                        RHS = 1.0;
+                        //RHS = ext_source[index];
+                    }
+                    else
+                    {
+                        int index_nb1 = d_index2d(i+1,j,ext_gmax);
+                        int index_nb2 = d_index2d(i-1,j,ext_gmax);
+                        int index_nb3 = d_index2d(i,j+1,ext_gmax);
+                        int index_nb4 = d_index2d(i,j-1,ext_gmax);
+
+                        //TODO: Evaluate rho at 1/2 index in the single scheme?
+                        //      If so, need rho itself not D = 1/rho
+                        /*
+                        double k0 = ext_D[index];
+                        double knb1 = 0.5*(k0 + ext_D[index_nb1]);
+                        double knb2 = 0.5*(k0 + ext_D[index_nb2]);
+                        double knb3 = 0.5*(k0 + ext_D[index_nb3]);
+                        double knb4 = 0.5*(k0 + ext_D[index_nb4]);
+
+                        LHS = (ext_array[index_nb1] - ext_array[index])/knb1
+                            +  (ext_array[index_nb2] - ext_array[index])/knb2
+                            +  (ext_array[index_nb3] - ext_array[index])/knb3
+                            +  (ext_array[index_nb4] - ext_array[index])/knb4;
+                        */
+                        
+                        //double k0 = 1.0;
+                        double k0 = ext_D[index];
+
+                        LHS = (ext_array[index_nb1] - ext_array[index])
+                            +  (ext_array[index_nb2] - ext_array[index])
+                            +  (ext_array[index_nb3] - ext_array[index])
+                            +  (ext_array[index_nb4] - ext_array[index]);
+
+                        LHS *= k0/top_h[1]/top_h[1];
+
+                        /*
+                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                            + ext_array[index_nb3] + ext_array[index_nb4] 
+                            - 4.0*ext_array[index])/top_h[1]/top_h[1];
+                        */
+
+                        RHS = 0.0;
+                        //RHS = ext_source[index];
+                    }
+
+                    double residual = LHS - RHS;
+
+                    printf("j = %d  LHS = %g  RHS = %g  res = %8.6g\n",
+                                    j,LHS,RHS,residual);
                 }
-                else
-                {
-                    int index_nb1 = d_index2d(i+1,j,ext_gmax);
-                    int index_nb2 = d_index2d(i-1,j,ext_gmax);
-                    int index_nb3 = d_index2d(i,j+1,ext_gmax);
-                    int index_nb4 = d_index2d(i,j-1,ext_gmax);
-
-                    //TODO: Evaluate rho at 1/2 index in the single scheme?
-                    //      If so, need rho itself not D = 1/rho
-                    /*
-                    double k0 = ext_D[index];
-                    double knb1 = 0.5*(k0 + ext_D[index_nb1]);
-                    double knb2 = 0.5*(k0 + ext_D[index_nb2]);
-                    double knb3 = 0.5*(k0 + ext_D[index_nb3]);
-                    double knb4 = 0.5*(k0 + ext_D[index_nb4]);
-
-                    LHS = (ext_array[index_nb1] - ext_array[index])/knb1
-                        +  (ext_array[index_nb2] - ext_array[index])/knb2
-                        +  (ext_array[index_nb3] - ext_array[index])/knb3
-                        +  (ext_array[index_nb4] - ext_array[index])/knb4;
-                    */
-                    
-                    //double k0 = 1.0;
-                    double k0 = ext_D[index];
-
-                    LHS = (ext_array[index_nb1] - ext_array[index])
-                        +  (ext_array[index_nb2] - ext_array[index])
-                        +  (ext_array[index_nb3] - ext_array[index])
-                        +  (ext_array[index_nb4] - ext_array[index]);
-
-                    LHS *= k0/top_h[1]/top_h[1];
-
-                    /*
-                    LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                        + ext_array[index_nb3] + ext_array[index_nb4] 
-                        - 4.0*ext_array[index])/top_h[1]/top_h[1];
-                    */
-
-                    RHS = 0.0;
-                    //RHS = ext_source[index];
-                }
-
-                double residual = LHS - RHS;
-
-                printf("j = %d  LHS = %g  RHS = %g  res = %8.6g\n",
-                                j,LHS,RHS,residual);
-            }
-        //End prototype for dchecksolve()
+            //End prototype for dchecksolve()
 
 
             /*
@@ -687,10 +689,113 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                                 j,LHS,RHS,LHS-RHS);
             } 
             */
+        
+            }
+        }
+
+    }
+
+
+	if (debugging("elliptic_error"))
+    {
+    //This is prototype for dcheckSolver()
+                    
+        int jmid = 6;
+        //int jmid = (ext_imin[1]+ext_imax[1])/2; 
+        printf("\n line: j = %d\n",jmid);
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+        {
+            for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+            {
+                double LHS = 0.0;
+                double RHS = 0.0;
+
+                index = d_index2d(i,j,ext_gmax);
+
+                //if (i > ext_imin[0]+1 && i < ext_imax[0]-1 && j == jmid)
+                if (i >= ext_imin[0] && i <= ext_imax[0] && j == jmid)
+                {
+                    if( i >= ext_imin[0]+ext_l[0] &&
+                            i <= ext_imax[0]-ext_u[0] )
+                    {
+                        int index_nb1 = d_index2d(i+2,j,ext_gmax);
+                        int index_nb2 = d_index2d(i-2,j,ext_gmax);
+                        int index_nb3 = d_index2d(i,j+2,ext_gmax);
+                        int index_nb4 = d_index2d(i,j-2,ext_gmax);
+                        
+                        int index_knb1 = d_index2d(i+1,j,ext_gmax);
+                        int index_knb2 = d_index2d(i-1,j,ext_gmax);
+                        int index_knb3 = d_index2d(i,j+1,ext_gmax);
+                        int index_knb4 = d_index2d(i,j-1,ext_gmax);
+
+                        LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
+                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
+                            +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
+                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
+                        
+                        LHS *= 0.25/top_h[1]/top_h[1];
+
+                        /*
+                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                            + ext_array[index_nb3] + ext_array[index_nb4] 
+                            - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
+                        */
+
+                        RHS = 1.0;
+                        //RHS = ext_source[index];
+                    }
+                    else
+                    {
+                        int index_nb1 = d_index2d(i+1,j,ext_gmax);
+                        int index_nb2 = d_index2d(i-1,j,ext_gmax);
+                        int index_nb3 = d_index2d(i,j+1,ext_gmax);
+                        int index_nb4 = d_index2d(i,j-1,ext_gmax);
+
+                        //TODO: Evaluate rho at 1/2 index in the single scheme?
+                        //      If so, need rho itself not D = 1/rho
+                        /*
+                        double k0 = ext_D[index];
+                        double knb1 = 0.5*(k0 + ext_D[index_nb1]);
+                        double knb2 = 0.5*(k0 + ext_D[index_nb2]);
+                        double knb3 = 0.5*(k0 + ext_D[index_nb3]);
+                        double knb4 = 0.5*(k0 + ext_D[index_nb4]);
+
+                        LHS = (ext_array[index_nb1] - ext_array[index])/knb1
+                            +  (ext_array[index_nb2] - ext_array[index])/knb2
+                            +  (ext_array[index_nb3] - ext_array[index])/knb3
+                            +  (ext_array[index_nb4] - ext_array[index])/knb4;
+                        */
+                        
+                        //double k0 = 1.0;
+                        double k0 = ext_D[index];
+
+                        LHS = (ext_array[index_nb1] - ext_array[index])
+                            +  (ext_array[index_nb2] - ext_array[index])
+                            +  (ext_array[index_nb3] - ext_array[index])
+                            +  (ext_array[index_nb4] - ext_array[index]);
+
+                        LHS *= k0/top_h[1]/top_h[1];
+
+                        /*
+                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                            + ext_array[index_nb3] + ext_array[index_nb4] 
+                            - 4.0*ext_array[index])/top_h[1]/top_h[1];
+                        */
+
+                        RHS = 0.0;
+                        //RHS = ext_source[index];
+                    }
+
+                    double residual = LHS - RHS;
+
+                    printf("i = %d  LHS = %g  RHS = %g  res = %8.6g\n",
+                                    i,LHS,RHS,residual);
+                }
+            //End prototype for dchecksolve()
+            }
         }
     }
 
-    }
 
     //////////////////
     if (extended_domain)
