@@ -354,8 +354,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     //k_nb = 1.0;
                     k_nb = ext_D[index_nb];
-                    coeff_nb = 1.0/k_nb/h2[idir];
-                    //coeff_nb = k_nb/h2[idir];
+                    //coeff_nb = 1.0/k_nb/h2[idir];
+                    coeff_nb = k_nb/h2[idir];
 
                     //Set neighbor
                     I_nb = dij_to_I[icnb[0]+ext_l[0]][icnb[1]+ext_l[1]];
@@ -395,8 +395,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             I = dij_to_I[i][j];
             if (I == -1) exit(0);
             
-            //double k0 = 1.0;
-            double k0 = ext_D[index];
+            double k0 = 1.0;
+            //double k0 = ext_D[index];
             rhs = 0.0;
             //rhs = ext_source[index];
 
@@ -418,12 +418,15 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
                     //k_nb = 1.0;
-                    index_nb = d_index(iknb,ext_gmax,dim);
-                    k_nb = ext_D[index_nb];
-                    double k_half = 0.5*(k0 + k_nb);
+                    //index_nb = d_index(iknb,ext_gmax,dim);
+                    //k_nb = ext_D[index_nb];
+                    coeff_nb = 1.0/sqr(top_h[idir]);
 
-                    coeff_nb = 1.0/k_half/sqr(top_h[idir]);
-                    //coeff_nb = k_half/sqr(top_h[idir]);
+                    //Need rho itself to evaluate at half index,
+                    //      can't just adverage D = 1/rho.
+
+                    //coeff_nb = 1.0/k_half/sqr(top_h[idir]);
+                    //double k_half = 0.5*(k0 + k_nb);
 
                     if ((ext_l[idir] != 0 && icnb[idir] < ext_imin[idir]) || 
                         (ext_u[idir] != 0 && icnb[idir] > ext_imax[idir]))

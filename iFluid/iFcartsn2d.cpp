@@ -250,6 +250,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
     elliptic_solver.dt = accum_dt;
     
     elliptic_solver.D = diff_coeff;
+    //elliptic_solver.D = field->rho;
     
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
