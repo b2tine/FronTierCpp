@@ -6,12 +6,12 @@ Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
-For lower boundary in 1-th dimension
+For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 20
+Enter velocity: 0 -20
 Enter pressure: 10
 
-For upper boundary in 1-th dimension
+For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 1.0
@@ -56,10 +56,10 @@ Type y to make vector velocity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: trace
-Enter the debugging string: elliptic_error
 Enter the debugging string: check_div
+Enter the debugging string: elliptic_error
 
+Enter the debugging string: ttrace
 Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
 

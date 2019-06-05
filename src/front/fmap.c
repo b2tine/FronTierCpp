@@ -3426,8 +3426,19 @@ EXPORT void FT_ParallelExchCompGridCellIndex(
 	int *ubuf,
 	POINTER ijk_to_I)
 {
-	scatter_cell_index(front,lbuf,ubuf,COMP_GRID,ijk_to_I);
-}	/* end FT_ParallelExchCellIndex */
+    int i,gmax[MAXD];
+    INTERFACE *intfc = front->interf;
+    RECT_GRID *gr = front->rect_grid;
+
+    for (i = 0; i < gr->dim; ++i)
+    {
+        gmax[i] = gr->gmax[i];
+        if (rect_boundary_type(intfc,i,0) != SUBDOMAIN_BOUNDARY &&
+                rect_boundary_type(intfc,i,1) != SUBDOMAIN_BOUNDARY)
+            gmax[i] -= 1;
+    }
+	scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
+}	/* end FT_ParallelExchCompGridCellIndex */
 
 EXPORT	void FT_GetStatesAtPoint(
 	POINT *p,

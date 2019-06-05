@@ -110,6 +110,8 @@ void DOUBLE_ELLIPTIC_SOLVER::set_extension()
                 ic = d_index2d(i,j,ext_gmax);
                 ext_D[ic] = ext_source[ic] = 0.0;
             }
+
+            //TODO: is this off by an index?
             for (i = 0; i <= top_gmax[0]; ++i)
             for (j = 0; j <= top_gmax[1]; ++j)
             {
@@ -395,10 +397,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             I = dij_to_I[i][j];
             if (I == -1) exit(0);
             
-            double k0 = 1.0;
-            //double k0 = ext_D[index];
-            rhs = 0.0;
-            //rhs = ext_source[index];
+            //double k0 = 1.0;
+            double k0 = ext_D[index];
+            //rhs = 0.0;
+            rhs = ext_source[index];
 
             if (i == 5)
                 printf("j = %d rhs = %g\n",j,rhs);
@@ -420,7 +422,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     //k_nb = 1.0;
                     //index_nb = d_index(iknb,ext_gmax,dim);
                     //k_nb = ext_D[index_nb];
-                    coeff_nb = 1.0/sqr(top_h[idir]);
+                    
+                    coeff_nb = k0/sqr(top_h[idir]);
+                    //coeff_nb = 1.0/sqr(top_h[idir]);
 
                     //Need rho itself to evaluate at half index,
                     //      can't just adverage D = 1/rho.
@@ -434,16 +438,15 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         int bdryface = 2*idir + nb;
                         if (bdryface == ConstantBdryPosition)
                         {
-                            //Dirichlet Boundary (inlet)
-                            // equal 0 for test
-                            rhs -= 0.0;
+                            //Dirichlet Boundary (inlet) equal 0
+                            double dirichletVal = 0.0;
+                            rhs -= coeff_nb*dirichletVal;
                             aII += -coeff_nb;
                         }
                         else
                         {
-                            //Neumann boundary (outlet)
-                            // equal 0
-                            rhs -= 0.0;
+                            //Neumann boundary (outlet) equal 0
+                            //rhs -= 0.0;
                             continue;
                         }
                     }
@@ -470,8 +473,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	//use_neumann_solver = pp_min_status(use_neumann_solver);
 	
-	//solver.SetMaxIter(40000);
-	//solver.SetTol(1e-10);
+	solver.SetMaxIter(40000);
+	solver.SetTol(1.0e-10);
 
 	start_clock("Petsc Solver");
         solver.Solve_PetscDecide();
@@ -486,22 +489,31 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
         /* Move to solver */
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
-	       		"num_iter = %d, rel_residual = %g \n", 
-			num_iter, rel_residual);
+	       		"num_iter = %d, rel_residual = %g \n",num_iter,rel_residual);
 	
+    
         /* Extracting ext_array from Petsc solver */
-	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
-        for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+    
+    //Need to bring the periodic buffer with ext_array (extended solution vector),
+    //in order to check the the error in dcheckSolver().
+    int* lbuf = front->rect_grid->lbuf;
+    int* ubuf = front->rect_grid->ubuf;
+
+    for (j = ext_imin[1] - lbuf[1]; j <= ext_imax[1] + ubuf[1]; j++)
+        for (i = ext_imin[0] - lbuf[0]; i <= ext_imax[0] + ubuf[0]; i++)
 	{
 	    index = d_index2d(i,j,ext_gmax);
 	    I = dij_to_I[i][j];
 	    if (I == -1) continue;
 	    ext_array[index] = x[I-eilower];
 	}
+    
+
         /* Extracting solution from ext_array */
-	for (j = imin[1]; j <= imax[1]; j++)
+
+    for (j = imin[1]; j <= imax[1]; j++)
         for (i = imin[0]; i <= imax[0]; i++)
-	{
+    {
             ic = d_index2d(i,j,top_gmax); 
             index = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
             soln[ic] = ext_array[index];
@@ -565,12 +577,11 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         int index_knb3 = d_index2d(i,j+1,ext_gmax);
                         int index_knb4 = d_index2d(i,j-1,ext_gmax);
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
-                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
-                            +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
-                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
+                        LHS = ( (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
+                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2] )/h2[0]
+                            +  ( (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
+                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4] )/h2[1];
                         
-                        LHS *= 0.25/top_h[1]/top_h[1];
 
                         /*
                         LHS = (ext_array[index_nb1] + ext_array[index_nb2]
@@ -606,12 +617,11 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         //double k0 = 1.0;
                         double k0 = ext_D[index];
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])
-                            +  (ext_array[index_nb2] - ext_array[index])
-                            +  (ext_array[index_nb3] - ext_array[index])
-                            +  (ext_array[index_nb4] - ext_array[index]);
+                        LHS = ( (ext_array[index_nb1] - ext_array[index])
+                            +  (ext_array[index_nb2] - ext_array[index]) )*k0/sqr(top_h[0])
+                            +  ( (ext_array[index_nb3] - ext_array[index])
+                            +  (ext_array[index_nb4] - ext_array[index]) )*k0/sqr(top_h[1]);
 
-                        LHS *= k0/top_h[1]/top_h[1];
 
                         /*
                         LHS = (ext_array[index_nb1] + ext_array[index_nb2]
@@ -700,9 +710,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
     {
     //This is prototype for dcheckSolver()
                     
-        int jmid = 6;
+        int jline = 6;
         //int jmid = (ext_imin[1]+ext_imax[1])/2; 
-        printf("\n line: j = %d\n",jmid);
+        printf("\n line: j = %d\n",jline);
 	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
         {
             for (j = ext_imin[1]; j <= ext_imax[1]; j++)
@@ -713,7 +723,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                 index = d_index2d(i,j,ext_gmax);
 
                 //if (i > ext_imin[0]+1 && i < ext_imax[0]-1 && j == jmid)
-                if (i >= ext_imin[0] && i <= ext_imax[0] && j == jmid)
+                if (i >= ext_imin[0] && i <= ext_imax[0] && j == jline)
                 {
                     if( i >= ext_imin[0]+ext_l[0] &&
                             i <= ext_imax[0]-ext_u[0] )
@@ -728,12 +738,11 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         int index_knb3 = d_index2d(i,j+1,ext_gmax);
                         int index_knb4 = d_index2d(i,j-1,ext_gmax);
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
-                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
-                            +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
-                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
+                        LHS = ( (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
+                            +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2] )/h2[0]
+                            +  ( (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
+                            +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4] )/h2[1];
                         
-                        LHS *= 0.25/top_h[1]/top_h[1];
 
                         /*
                         LHS = (ext_array[index_nb1] + ext_array[index_nb2]
@@ -768,13 +777,12 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         
                         //double k0 = 1.0;
                         double k0 = ext_D[index];
+                        
+                        LHS = ( (ext_array[index_nb1] - ext_array[index])
+                            +  (ext_array[index_nb2] - ext_array[index]) )*k0/sqr(top_h[0])
+                            +  ( (ext_array[index_nb3] - ext_array[index])
+                            +  (ext_array[index_nb4] - ext_array[index]) )*k0/sqr(top_h[1]);
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])
-                            +  (ext_array[index_nb2] - ext_array[index])
-                            +  (ext_array[index_nb3] - ext_array[index])
-                            +  (ext_array[index_nb4] - ext_array[index]);
-
-                        LHS *= k0/top_h[1]/top_h[1];
 
                         /*
                         LHS = (ext_array[index_nb1] + ext_array[index_nb2]
@@ -845,7 +853,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end dsolve2d */
 
-//TODO: Implement dsolve3d
+//TODO: Implement dsolve3d when dsolve2d complete
 void DOUBLE_ELLIPTIC_SOLVER::dsolve3d(double *soln)
 {
 	int index,index_nb,size;

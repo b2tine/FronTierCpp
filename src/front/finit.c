@@ -1686,7 +1686,8 @@ EXPORT  void    FT_StartUp(
 				ft_basic->size_of_intfc_state;
 		set_size_of_intfc_state(front->sizest);
 
-        	f_set_interface_hooks(dim,init_data(&Init));
+        f_set_interface_hooks(dim,init_data(&Init));
+
 		if (ft_basic->RestartRun)
 		{
 		    IO_TYPE io_type;
