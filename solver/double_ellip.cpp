@@ -978,7 +978,7 @@ boolean DOUBLE_ELLIPTIC_SOLVER::icoordsInterior(int *icoords)
     {
         if (ext_l[i] != 0 && icoords[i] < ext_l[i])
             return NO;
-        if (ext_u[i] != 0 && icoords[i] > ext_gmax[i]+ext_u[i])
+        if (ext_u[i] != 0 && icoords[i] > ext_imax[i]-ext_u[i])
             return NO;
     }
     return YES;
@@ -1124,14 +1124,18 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 		dw[m] = (w[1] - w[0])/2.0/top_h[l];
 		if (denom < fabs(coefs[m]*dw[m]/2.0/top_h[l]))
 		    denom = fabs(coefs[m]*dw[m]/2.0/top_h[l]);
-	    }
+	    
+        }
 	    if (print_details)
             {
 	    	(void) printf("Coefs: %f %f\n",coefs[0],coefs[1]);
 	    	(void) printf("C*dw: %f %f\n",coefs[0]*dw[0],coefs[1]*dw[1]);
 	    }
-	    lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/2.0/top_h[l];
-	}
+	
+        lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/2.0/top_h[l];
+	
+    }
+
 	rhs = source[id0];
 	if (print_details)
         {
