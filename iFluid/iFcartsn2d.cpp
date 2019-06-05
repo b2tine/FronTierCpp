@@ -181,8 +181,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	    if (!ifluid_comp(top_comp[index]))
 		continue;
 	    source[index] = computeFieldPointDiv(icoords,vel);
+
 	    diff_coeff[index] = 1.0/field->rho[index];
-	    if (debugging("check_div"))
+
+	    
+        if (debugging("check_div"))
 	    {
 		for (l = 0; l < dim; ++l)
 		{
@@ -245,7 +248,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
     }
 
     elliptic_solver.dt = accum_dt;
+    
     elliptic_solver.D = diff_coeff;
+    
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.ext_gmax = ext_gmax;

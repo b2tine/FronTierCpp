@@ -240,7 +240,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
 	COMPONENT comp;
 	GRID_DIRECTION dir[2][2] = {{WEST,EAST},{SOUTH,NORTH}};
-	//boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
 	HYPER_SURF *hs;
 	POINTER intfc_state;
@@ -258,31 +257,33 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	for (i = 0; i < dim; ++i)
 	    h2[i] = 4.0*sqr(top_h[i]);
 
+    /*
     ///////////////////////////////////////////////
-    printf("J RANGE\n\n");
-    printf("\next_gmax[1] = %d\n",ext_gmax[1]);
-    for( int j = 0; j <= ext_gmax[1]; ++j )
-    {
-        printf("j = %d",j);
-        
-        if( j == 0 || j == ext_gmax[1] )
-            printf("\t\tpast boundary");
-        if( j == ext_imin[1] )
-            printf("\t\text_imin[1]");
-        if( j == ext_imin[1]+ext_l[1] )
-            printf("\t\text_imin[1]+ext_l[1]");
-        if( j == imin[1] )
-            printf("\t\timin[1]");
-        if( j == imax[1] )
-            printf("\t\timax[1]");
-        if( j == ext_imax[1]-ext_u[1] )
-            printf("\t\text_imax[1]-ext_u[1]");
-        if( j == ext_imax[1] )
-            printf("\t\text_imax[1]");
+        printf("J RANGE\n\n");
+        printf("\next_gmax[1] = %d\n",ext_gmax[1]);
+        for( int j = 0; j <= ext_gmax[1]; ++j )
+        {
+            printf("j = %d",j);
+            
+            if( j == 0 || j == ext_gmax[1] )
+                printf("\t\tpast boundary");
+            if( j == ext_imin[1] )
+                printf("\t\text_imin[1]");
+            if( j == ext_imin[1]+ext_l[1] )
+                printf("\t\text_imin[1]+ext_l[1]");
+            if( j == imin[1] )
+                printf("\t\timin[1]");
+            if( j == imax[1] )
+                printf("\t\timax[1]");
+            if( j == ext_imax[1]-ext_u[1] )
+                printf("\t\text_imax[1]-ext_u[1]");
+            if( j == ext_imax[1] )
+                printf("\t\text_imax[1]");
+            printf("\n");
+        }
         printf("\n");
-    }
-    printf("\n");
     ///////////////////////////////////////////////
+    */
 
     /* Set original layer coefficients */
 	for (j = imin[1]; j <= imax[1]; j++)
@@ -298,13 +299,14 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             I = dij_to_I[i+ext_l[0]][j+ext_l[1]];
             if (I == -1) continue;
 
-            double k0 = D[index];
             //k0 = 1.0;
+            //double k0 = D[index];
+            
             rhs = 1.0;
             //rhs = source[index];
 
             if (i == 5)
-                printf("j = %d k0 = %f rhs = %f\n",j+ext_l[1],k0,rhs);
+                printf("j = %d rhs = %g\n",j+ext_l[1],rhs);
 
 
             aII = 0.0;
@@ -313,14 +315,11 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             {
                 for (nb = 0; nb < 2; ++nb)
                 {
-                    icnb[0] = icoords[0];
-                    icnb[1] = icoords[1];
-                    iknb[0] = icoords[0];
-                    iknb[1] = icoords[1];
+                    icnb[0] = icoords[0];   iknb[0] = icoords[0];
+                    icnb[1] = icoords[1];   iknb[1] = icoords[1];
 
                     icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
-             
 
                     status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                     comp,&intfc_state,&hs,crx_coords);
@@ -355,7 +354,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     //k_nb = 1.0;
                     k_nb = ext_D[index_nb];
-                    coeff_nb = k_nb/h2[idir];
+                    coeff_nb = 1.0/k_nb/h2[idir];
+                    //coeff_nb = k_nb/h2[idir];
 
                     //Set neighbor
                     I_nb = dij_to_I[icnb[0]+ext_l[0]][icnb[1]+ext_l[1]];
@@ -365,7 +365,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     //NOTE: Using sparse laplacian discretization,
                     //      no cancellation occurs when enforcing
-                    //      Neumann boundary
+                    //      Neumann boundary.
+                    //      i.e. Always set neighbor, and add -coeff_nb to aII.
                     
                 }
             }
@@ -394,36 +395,35 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             I = dij_to_I[i][j];
             if (I == -1) exit(0);
             
+            //double k0 = 1.0;
             double k0 = ext_D[index];
-            //k0 = 1.0;
             rhs = 0.0;
             //rhs = ext_source[index];
 
-            if (i == 5) printf("j = %d k0 = %f rhs = %f\n",j,k0,rhs);
+            if (i == 5)
+                printf("j = %d rhs = %g\n",j,rhs);
             //printf("(%2d %2d) I: %d  I_nb: ",i,j,I);
             
 
             aII = 0.0;
             for (idir = 0; idir < dim; ++idir)
             {
-                //coeff_nb = 1.0/sqr(top_h[idir]);
-
                 for (nb = 0; nb < 2; ++nb)
                 {
-                    icnb[0] = i;
-                    icnb[1] = j;
-                    iknb[0] = i;
-                    iknb[1] = j;
+                    icnb[0] = i;    iknb[0] = i;
+                    icnb[1] = j;    iknb[1] = j;
 
                     /* Single spacing discretizatin */
                     icnb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
                     iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
+                    //k_nb = 1.0;
                     index_nb = d_index(iknb,ext_gmax,dim);
                     k_nb = ext_D[index_nb];
-                    double k_half = 0.5*(k0+k_nb);
+                    double k_half = 0.5*(k0 + k_nb);
 
-                    coeff_nb = k_half/sqr(top_h[idir]);
+                    coeff_nb = 1.0/k_half/sqr(top_h[idir]);
+                    //coeff_nb = k_half/sqr(top_h[idir]);
 
                     if ((ext_l[idir] != 0 && icnb[idir] < ext_imin[idir]) || 
                         (ext_u[idir] != 0 && icnb[idir] > ext_imax[idir]))
@@ -441,6 +441,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                             //Neumann boundary (outlet)
                             // equal 0
                             rhs -= 0.0;
+                            continue;
                         }
                     }
                     else
@@ -519,16 +520,20 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             }
         }
 
+    if (extended_domain)
+    {
         FILE *xfile = fopen("test1.xg","w");
-	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
         {
             i = (ext_imin[0] + ext_imax[0])/2;
 	        I = dij_to_I[i][j];
             fprintf(xfile,"%f %f\n",j*top_h[1],x[I-eilower]);
         }
         fclose(xfile);
-        
+    }   
 
+	if (debugging("elliptic_error"))
+    {
     //This is prototype for dcheckSolver()
 	for (j = ext_imin[1]; j <= ext_imax[1]; j++)
     {
@@ -555,10 +560,10 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     int index_knb3 = d_index2d(i,j+1,ext_gmax);
                     int index_knb4 = d_index2d(i,j-1,ext_gmax);
 
-                    LHS = (ext_array[index_nb1] - ext_array[index])/ext_D[index_knb1]
-                        +  (ext_array[index_nb2] - ext_array[index])/ext_D[index_knb2]
-                        +  (ext_array[index_nb3] - ext_array[index])/ext_D[index_knb3]
-                        +  (ext_array[index_nb4] - ext_array[index])/ext_D[index_knb4];
+                    LHS = (ext_array[index_nb1] - ext_array[index])*ext_D[index_knb1]
+                        +  (ext_array[index_nb2] - ext_array[index])*ext_D[index_knb2]
+                        +  (ext_array[index_nb3] - ext_array[index])*ext_D[index_knb3]
+                        +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4];
                     
                     LHS *= 0.25/top_h[1]/top_h[1];
 
@@ -568,9 +573,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
                     */
 
-                    //TODO: include ext_source
-                    //double RHS = ext_source[index];
                     RHS = 1.0;
+                    //RHS = ext_source[index];
                 }
                 else
                 {
@@ -579,6 +583,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     int index_nb3 = d_index2d(i,j+1,ext_gmax);
                     int index_nb4 = d_index2d(i,j-1,ext_gmax);
 
+                    //TODO: Evaluate rho at 1/2 index in the single scheme?
+                    //      If so, need rho itself not D = 1/rho
+                    /*
                     double k0 = ext_D[index];
                     double knb1 = 0.5*(k0 + ext_D[index_nb1]);
                     double knb2 = 0.5*(k0 + ext_D[index_nb2]);
@@ -589,8 +596,17 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         +  (ext_array[index_nb2] - ext_array[index])/knb2
                         +  (ext_array[index_nb3] - ext_array[index])/knb3
                         +  (ext_array[index_nb4] - ext_array[index])/knb4;
+                    */
                     
-                    LHS *= 1.0/top_h[1]/top_h[1];
+                    //double k0 = 1.0;
+                    double k0 = ext_D[index];
+
+                    LHS = (ext_array[index_nb1] - ext_array[index])
+                        +  (ext_array[index_nb2] - ext_array[index])
+                        +  (ext_array[index_nb3] - ext_array[index])
+                        +  (ext_array[index_nb4] - ext_array[index]);
+
+                    LHS *= k0/top_h[1]/top_h[1];
 
                     /*
                     LHS = (ext_array[index_nb1] + ext_array[index_nb2]
@@ -599,11 +615,12 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                     */
 
                     RHS = 0.0;
+                    //RHS = ext_source[index];
                 }
 
                 double residual = LHS - RHS;
 
-                printf("j = %d  LHS = %f  RHS = %f  res = %5.2g\n",
+                printf("j = %d  LHS = %g  RHS = %g  res = %8.6g\n",
                                 j,LHS,RHS,residual);
             }
         //End prototype for dchecksolve()
@@ -668,6 +685,8 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
             } 
             */
         }
+    }
+
     }
 
     //////////////////

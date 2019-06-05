@@ -56,8 +56,10 @@ Type y to make vector velocity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: check_div
 Enter the debugging string: trace
+Enter the debugging string: elliptic_error
+Enter the debugging string: check_div
+
 Enter the debugging string: tCLOCK
 Enter the debugging string: tstep_size
 
