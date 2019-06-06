@@ -413,10 +413,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                     /* Single spacing discretizatin */
                     icnb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
-                    iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
                     //k_nb = 1.0;
-                    //index_nb = d_index(iknb,ext_gmax,dim);
+                    //index_nb = d_index(icnb,ext_gmax,dim);
                     //k_nb = ext_D[index_nb];
                     
                     coeff_nb = k0/sqr(top_h[idir]);
@@ -454,12 +453,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         aII += -coeff_nb;
                     }
 
-                    //coeff_nb = k0/sqr(top_h[idir]);
-                    //coeff_nb = ext_D[index]/sqr(top_h[idir]);
-                    
-                    //solver.Set_A(I,I_nb,coeff_nb);
-                    //aII += -coeff_nb;
-                    //printf("%d ",I_nb);
                 }
             }
             
@@ -495,7 +488,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
     //in order to check the the error in dcheckSolver().
     int* lbuf = front->rect_grid->lbuf;
     int* ubuf = front->rect_grid->ubuf;
-
     for (j = ext_imin[1] - lbuf[1]; j <= ext_imax[1] + ubuf[1]; j++)
         for (i = ext_imin[0] - lbuf[0]; i <= ext_imax[0] + ubuf[0]; i++)
 	{
@@ -530,12 +522,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                 icrds_min[1] = j;
             }
 
-            /*
-            if (i == (imin[0] + imax[0])/2+1)
-            {
-                printf("soln[%d][%d] = %f\n",i,j,soln[ic]);
-            }
-            */
         }
     }
 
@@ -571,7 +557,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                 index = d_index2d(i,j,ext_gmax);
 
-                //if (j > ext_imin[1]+1 && j < ext_imax[1]-1 && i == imid)
                 if (j > ext_imin[1] && j < ext_imax[1] && i == imid)
                 {
                     if( j >= ext_imin[1]+ext_l[1] &&
@@ -760,18 +745,16 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                         min_soln,icrds_min[0],icrds_min[1]);
             dcheckSolver(icrds_min,YES);
 	}
+
 	if (debugging("elliptic_error"))
         {
             double error,max_error = 0.0;
             for (j = ext_imin[1]; j <= ext_imax[1]; j++)
             for (i = ext_imin[0]; i <= ext_imax[0]; i++)
             {
-                icoords[0] = i;
-                icoords[1] = j;
-                if (dij_to_I[i][j] == -1) continue;
-
-                //TODO: Implement dcheckSolverExtended()
-                if( !icoordsInterior(icoords) ) continue;
+                icoords[0] = i; icoords[1] = j;
+                if (icoordsBoundary(icoords))
+                    continue;
 
                 error = dcheckSolver(icoords,NO);
                 if (error > max_error)
@@ -1029,29 +1012,48 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve3d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end dsolve3d */
 
-boolean DOUBLE_ELLIPTIC_SOLVER::icoordsInterior(int *icoords)
+double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
+	int *icoords,
+	boolean print_details)
+{
+    if (icoordsInterior(icoords))
+        return dcheckSolverInterior(icoords,print_details);
+    else
+        return dcheckSolverExtended(icoords,print_details);
+}
+
+bool DOUBLE_ELLIPTIC_SOLVER::icoordsInterior(int *icoords)
 {
     for (int i = 0; i < dim; ++i)
     {
-        if (ext_l[i] != 0 && icoords[i] < ext_imin[i] + ext_l[i])
-            return NO;
-        if (ext_u[i] != 0 && icoords[i] > ext_imax[i] - ext_u[i])
-            return NO;
+        if (ext_l[i] != 0 & ext_u[i] != 0)
+        {
+            if (icoords[i] < ext_imin[i] + ext_l[i] ||
+                icoords[i] > ext_imax[i] - ext_u[i])
+            {
+                return false;
+            }
+        }
     }
-    return YES;
+    return true;
 }
 
-double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
-        int *icoords,
-        boolean print_details)
+bool DOUBLE_ELLIPTIC_SOLVER::icoordsBoundary(int *icoords)
 {
-    if( icoordsInterior(icoords) )
-        return dcheckSolverInterior(icoords,print_details);
-    else
-        return -1;
-        //return dcheckSolverExtended(icoords,print_details);
+    for (int i = 0; i < dim; ++i)
+    { 
+        if ( ext_l[i] != 0 & ext_u[i] != 0)
+        {
+            if (icoords[i] <= ext_imin[i] || icoords[i] >= ext_imax[i])
+                return true;
+        }
+        else if (icoords[i] < ext_imin[i] || icoords[i] > ext_imax[i] )
+        {
+            return true;
+        }
+    }
+    return false;
 }
-
 
 double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	int *icoords,
@@ -1085,10 +1087,10 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	comp = dtop_comp[id0];
 	lhs = 0.0;
 
-	for (l = 0; l < dim; ++l)
+	for (int idir = 0; idir < dim; ++idir)
 	{
 	    if (print_details)
-	    	printf("Direction %d:\n",l);
+	    	printf("Direction %d:\n",idir);
 	    
         for (i = 0; i < dim; ++i)
         {
@@ -1096,18 +1098,18 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	    	iknb[i] = icoords[i];
         }
 
-	    for (m = 0; m < 2; ++m)
+	    for (int nb = 0; nb < 2; ++nb)
 	    {
         
-            icnb[l] = (m == 0) ? icoords[l]-2 : icoords[l]+2;
-            iknb[l] = (m == 0) ? icoords[l]-1 : icoords[l]+1;
+            icnb[idir] = (nb == 0) ? icoords[idir]-2 : icoords[idir]+2;
+            iknb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
 
             index_nb = d_index(icnb,ext_gmax,dim);
 	        index_knb = d_index(iknb,ext_gmax,dim);
             
-            coefs[m] = ext_D[index_knb];
+            coefs[nb] = ext_D[index_knb];
             
-            status = (*findStateAtCrossing)(front,icoords,dir[l][m],
+            status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                     comp,&intfc_state,&hs,crx_coords);
 
             if (status == CONST_V_PDE_BOUNDARY)
@@ -1117,20 +1119,20 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
                     if (print_details)
                         (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY -- NEUMANN\n",m);
                 
-                    icnb[l] = (m == 0) ? icoords[l] + 1 : icoords[l] - 1;
-                    iknb[l] = icoords[l];
+                    icnb[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
+                    iknb[idir] = icoords[idir];
 
                     index_knb = d_index(iknb,ext_gmax,dim);
-                    coefs[m] = ext_D[id0];
+                    coefs[nb] = ext_D[id0];
 
                     index_nb = d_index(icnb,ext_gmax,dim);
                 }
             }
             else if (status == NO_PDE_BOUNDARY)
             {
-                icn[l] = (m == 0) ? icoords[l] - 1 : icoords[l] + 1;
+                icn[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 
-                status = (*findStateAtCrossing)(front,icn,dir[l][m],
+                status = (*findStateAtCrossing)(front,icn,dir[idir][nb],
                         comp,&intfc_state,&hs,crx_coords);
 
                 if (status == CONST_V_PDE_BOUNDARY)
@@ -1140,7 +1142,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
                         if (print_details)
                             (void) printf("Side %d-0 CONST_V_PDE_BOUNDARY -- NEUMANN\n",m);
                     
-                        icnb[l] = (m == 0) ? icoords[l] - 1 : icoords[l] + 1;
+                        icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                         index_nb = d_index(icnb,ext_gmax,dim);
                     }
                 }
@@ -1149,7 +1151,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 
             w[0] = ext_array[id0];
             w[1] = ext_array[index_nb];
-            dw[m] = (w[1] - w[0])/2.0/top_h[l];
+            dw[nb] = (w[1] - w[0])/2.0/top_h[idir];
         
         }
 
@@ -1160,7 +1162,7 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
         }
   
 
-	    lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/2.0/top_h[l];
+	    lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/2.0/top_h[idir];
     }
 
     rhs = 1.0;
@@ -1177,19 +1179,24 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	}
 	
     return fabs(lhs-rhs)/fabs(rhs);
+
+}  /* end dcheckSolverInterior */
+
+
+bool absmax(double a, double b)
+{
+    a = fabs(a);
+    b = fabs(b);
+    return a < b;
 }
 
-
-    /* Old/incorrect -- keep for reference */
-/*
-double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
+double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverExtended(
 	int *icoords,
 	boolean print_details)
 {
-	int i,j,l,m;
 	int comp;
 	double w[2];
-	int id0,index_nb;
+	int id0,index_nb,index_knb;
 	double dw[2],coefs[2],lhs,rhs;
 	GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
 	HYPER_SURF *hs;
@@ -1199,13 +1206,12 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 	int icn[MAXD];
 	int icnb[MAXD];
 	int iknb[MAXD];
-	double denom = 0.0;
 
 	if (print_details)
 	{
-	    (void) printf("\nEntering dcheckSolver()\n");
+	    (void) printf("\nEntering dcheckSolverExtended()\n");
 	    (void) printf("icoords = ");
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
 	    	(void) printf("%d ",icoords[i]);
 	    (void) printf("\n");
 	}
@@ -1214,106 +1220,68 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolver(
 	comp = dtop_comp[id0];
 	lhs = 0.0;
 
-	for (l = 0; l < dim; ++l)
+	for (int idir = 0; idir < dim; ++idir)
 	{
 	    if (print_details)
-	    	printf("Direction %d:\n",l);
-
-	    for (i = 0; i < dim; ++i)
-        {
-            icnb[i] = icoords[i];
-            iknb[i] = icoords[i];
-        }
+	    	printf("Direction %d:\n",idir);
 	    
-        for (m = 0; m < 2; ++m)
+        for (int i = 0; i < dim; ++i)
+        {
+	    	icnb[i] = icoords[i];
+	    	iknb[i] = icoords[i];
+        }
+
+	    for (int nb = 0; nb < 2; ++nb)
 	    {
-            iknb[l] = (m == 0) ? icoords[l]-1 : icoords[l]+1;
-            icnb[l] = (m == 0) ? icoords[l]-2 : icoords[l]+2;
-		
-            status = (*findStateAtCrossing)(front,icoords,dir[l][m],comp,
-                                &intfc_state,&hs,crx_coords);
+        
+            icnb[idir] = (nb == 0) ? icoords[idir]-1 : icoords[idir]+1;
+            index_nb = d_index(icnb,ext_gmax,dim);
+	        
+            //TODO: Not using the half indices for rho right now.
+            coefs[nb] = ext_D[id0];
+            //index_knb = d_index(icnb,ext_gmax,dim);
 
-		if (status == NO_PDE_BOUNDARY)
-		{
-		    icnb[l] = (m == 0) ? icoords[l] - 1 : icoords[l] + 1;
-		    index_nb = d_index(icnb,top_gmax,dim);
-		    status = (*findStateAtCrossing)(front,icnb,dir[l][m],comp,
-                                &intfc_state,&hs,crx_coords);
-		
-            if (status == NO_PDE_BOUNDARY)
-		    {
-		    	if (print_details)
-		    	    (void) printf("Side %d NO_PDE_BOUNDARY\n",m);
-		    	
-                coefs[m] = D[index_nb];
-		    	icnb[l] = (m == 0) ? icoords[l] - 2 : icoords[l] + 2;
-		    	index_nb = d_index(icnb,top_gmax,dim);
-			
-                w[0] = soln[id0];
-			    w[1] = soln[index_nb];
-		    }
-		    else if (status == CONST_V_PDE_BOUNDARY)
-		    {
-		    	if (print_details)
-		    	    (void) printf("Side %d-1 CONST_V_PDE_BOUNDARY\n",m);
-		    	coefs[m] = 0.5*(D[id0] + D[index_nb]);
-			w[0] = soln[id0];
-			w[1] = soln[index_nb];
-		    }
-		    else if (status == CONST_P_PDE_BOUNDARY)
-		    {
-		    	if (print_details)
-		    	    (void) printf("Side %d-1 CONST_P_PDE_BOUNDARY\n",m);
-		    	coefs[m] = 0.5*(D[id0] + D[index_nb]);
-			w[0] = soln[id0];
-		    	w[1] = getStateVar(intfc_state);
-		    }
-		}
-		else if (status == CONST_V_PDE_BOUNDARY)
-		{
-		    if (print_details)
-		    	(void) printf("Side %d-0 CONST_V_PDE_BOUNDARY\n",m);
-		    coefs[m] = D[id0];
-		    w[0] = soln[id0];
-		    w[1] = soln[id0];
-		}
-		else if (status == CONST_P_PDE_BOUNDARY)
-		{
-		    if (print_details)
-		    	(void) printf("Side %d-0 CONST_P_PDE_BOUNDARY\n",m);
-		    icnb[l] = (m == 0) ? icoords[l] + 1 : icoords[l] - 1;
-		    index_nb = d_index(icnb,top_gmax,dim);
-		    coefs[m] = D[id0];
-		    w[0] = soln[index_nb];
-		    w[1] = getStateVar(intfc_state);
-		}
+            w[0] = ext_array[id0];
+            w[1] = ext_array[index_nb];
+            dw[nb] = (w[1] - w[0])/top_h[idir];
 
-		dw[m] = (w[1] - w[0])/2.0/top_h[l];
-		if (denom < fabs(coefs[m]*dw[m]/2.0/top_h[l]))
-		    denom = fabs(coefs[m]*dw[m]/2.0/top_h[l]);
-	    
         }
 
-	    if (print_details)
+        if (print_details)
         {
-	    	(void) printf("Coefs: %f %f\n",coefs[0],coefs[1]);
-	    	(void) printf("C*dw: %f %f\n",coefs[0]*dw[0],coefs[1]*dw[1]);
-	    }
-	
-        lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/2.0/top_h[l];
-	
+            (void) printf("Coefs: %f %f\n",coefs[0],coefs[1]);
+            (void) printf("C*dw: %f %f\n",coefs[0]*dw[0],coefs[1]*dw[1]);
+        }
+  
+
+	    lhs += (coefs[1]*dw[1] + coefs[0]*dw[0])/top_h[idir];
     }
 
-	rhs = source[id0];
+    rhs = 0.0;
+	//rhs = ext_source[id0];
+
+    int idmax = d_index2d(ext_gmax[0],ext_gmax[1],ext_gmax);
+    double absmax_src = *std::max_element(ext_source,ext_source+idmax,absmax);
+    
+    if (absmax_src == 0)
+    {
+        printf("ext_source array is zero vector\n");
+        clean_up(1);
+    }
+
+    double rel_error = fabs(lhs-rhs)/absmax_src;
+
 	if (print_details)
-        {
-	    (void) printf("Solution = %20.14f\n",soln[id0]);
+    {
+	    (void) printf("Solution = %20.14f\n",ext_array[id0]);
 	    (void) printf("LHS = %20.14f  RHS = %20.14f\n",lhs,rhs);
 	    (void) printf("LHS - RHS = %20.14f\n",lhs-rhs);
-	    (void) printf("Relative error = %20.14g\n",fabs(lhs-rhs)/denom);
-	    (void) printf("Leaving dcheckSolver()\n\n");
+	    (void) printf("Relative error = %20.14g\n",rel_error);
+	    (void) printf("Leaving dcheckSolverExtended()\n\n");
 	}
-	return fabs(lhs-rhs)/denom;
+	
+    //return fabs(lhs-rhs)/fabs(rhs);
+    return rel_error;
 }
-*/
+
 

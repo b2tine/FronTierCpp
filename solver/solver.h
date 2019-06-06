@@ -13,6 +13,9 @@
 #include <petscmat.h>
 #include <petscpc.h>
 
+#include <algorithm>
+
+
 enum
 {
     NO_PDE_BOUNDARY = 0,
@@ -312,7 +315,9 @@ private:
 	void dsolve2d(double *soln);
 	void dsolve3d(double *soln);
     
-    boolean icoordsInterior(int*);
+    bool icoordsInterior(int*);
+    bool icoordsBoundary(int*);
+
     double dcheckSolver(int*,boolean);
     double dcheckSolverInterior(int*,boolean);
     double dcheckSolverExtended(int*,boolean);
