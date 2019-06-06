@@ -15,7 +15,7 @@ For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 1.0
-Max step: 10
+Max step: 1
 Print interval: 0.1
 Movie frame interval: 0.01
 CFL factor: 0.75

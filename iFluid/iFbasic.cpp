@@ -4404,35 +4404,35 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
         grid_intfc = front->grid_intfc;
 	if (first)
 	{
-            D_extension = 5;
+        D_extension = 2;
 
-            dim = grid_intfc->dim;
-            for (i = 0; i < dim; ++i)
+        dim = grid_intfc->dim;
+        for (i = 0; i < dim; ++i)
+        {
+            ext_gmax[i] = top_gmax[i];
+            ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+            ext_l[i] = ext_u[i] = 0;
+
+            if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
             {
-                ext_gmax[i] = top_gmax[i];
-                ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
-                ext_l[i] = ext_u[i] = 0;
-
-                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
-                {
-                    ext_l[i] = D_extension;
-                    ext_gmax[i] += D_extension;
-                }
-                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
-                {
-                    ext_u[i] = D_extension;
-                    ext_gmax[i] += D_extension;
-                }
-                ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
-                            ext_gmax[i] - ubuf[i];
+                ext_l[i] = D_extension;
+                ext_gmax[i] += D_extension;
             }
-            
-            /* TO REMOVE   */
-            printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
-            printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
-            printf("ext_imin = %d %d\n",ext_imin[0],ext_imin[1]);
-            printf("ext_imax = %d %d\n",ext_imax[0],ext_imax[1]);
-         //
+            if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+            {
+                ext_u[i] = D_extension;
+                ext_gmax[i] += D_extension;
+            }
+            ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
+                        ext_gmax[i] - ubuf[i];
+        }
+        
+        /* TO REMOVE   */
+        printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
+        printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
+        printf("ext_imin = %d %d\n",ext_imin[0],ext_imin[1]);
+        printf("ext_imax = %d %d\n",ext_imax[0],ext_imax[1]);
+        //
 
 	    size = ext_gmax[0] + 1;
         for (i = 1; i < dim; ++i)
@@ -4454,12 +4454,6 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 dtop_comp[id] = FILL_COMP;
         }
 
-        /*
-        printf("jmin = %d \t jmax = %d\n",jmin,jmax);
-        printf("imin = %d \t imax = %d\n",imin,imax);
-        printf("ext_l[0] = %d \t ext_l[1] = %d\n",ext_l[0],ext_l[1]);
-        */
-	    
         //Insert top_comp into the corresponding interior of dtop_comp
         for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
@@ -4468,20 +4462,8 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                 id = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
                 dtop_comp[id] = top_comp[ic];
         }
-            /* TO REMOVE
-            if (ext_l[1] != 0)
-            {
-                printf("Before patching buffer:\n");
-	        for (j = 0; j <= ext_gmax[1]; j++)
-                {
-                    id = d_index2d(5,j,ext_gmax);
-                    printf("dtop_comp[%d] = %d\n",j,dtop_comp[id]);
-                }
-                printf("\n");
-            }
-            */
        
-        //Patch buffers to preserve periodicity where needed.
+        //Fill in buffers with correct components
 	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
             {
                 icoords[0] = i;
@@ -4560,18 +4542,6 @@ void Incompress_Solver_Smooth_Basis::setDoubleDomain()
                     }
                 }
             }
-            /* TO REMOVE
-            if (ext_l[0] != 0)
-            {
-                printf("After patching buffer:\n");
-	        for (i = 0; i <= ext_gmax[0]; i++)
-                {
-                    id = d_index2d(i,5,ext_gmax);
-                    printf("dtop_comp[%d] = %d\n",i,dtop_comp[id]);
-                }
-                printf("\n");
-            }
-            */
             break;
         case 3:
 	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
@@ -4669,21 +4639,15 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 				ext_gmax[1]+1,ext_gmax[2]+1,INT);
 	    	break;
 	    }
-            for (i = 0; i < dim; ++i)
-            {
-                com_gmax[i] = front->rect_grid->gmax[i];
-                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
-                    com_gmax[i] += D_extension;
-                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
-                    com_gmax[i] += D_extension;
-            }
-            /* TO REMOVE
-            printf("rect_gmax = %d %d\n",front->rect_grid->gmax[0],
-                            front->rect_grid->gmax[1]);
-            printf(" com_gmax = %d %d\n",com_gmax[0],com_gmax[1]);
-            printf(" top_gmax = %d %d\n",top_gmax[0],top_gmax[1]);
-            printf("ext_gmax = %d %d\n",ext_gmax[0],ext_gmax[1]);
-            */
+
+        for (i = 0; i < dim; ++i)
+        {
+            com_gmax[i] = front->rect_grid->gmax[i];
+            if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                com_gmax[i] += D_extension;
+            if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                com_gmax[i] += D_extension;
+        }
 	}
 
     for (i = 0; i < dim; ++i)
@@ -4774,14 +4738,13 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 		if (domain_status[ic] != TO_SOLVE)
 		    continue;
 		*/
-                if (dtop_comp[ic] != SOLID_COMP)
-		{
-                    dijk_to_I[i][j][k] = index + eilower;
-                    index++;
-                }
+            if (dtop_comp[ic] != SOLID_COMP)
+		    {
+                dijk_to_I[i][j][k] = index + eilower;
+                index++;
+            }
 	    }
-	    FT_ParallelExchCellIndex(front,llbuf,uubuf,
-				(POINTER)dijk_to_I);
+	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)dijk_to_I);
 	    break;
 	}
 }	/* end setDoubleIndexMap */

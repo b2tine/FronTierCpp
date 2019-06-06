@@ -259,33 +259,29 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	for (i = 0; i < dim; ++i)
 	    h2[i] = 4.0*sqr(top_h[i]);
 
-    /*
-    ///////////////////////////////////////////////
-        printf("J RANGE\n\n");
-        printf("\next_gmax[1] = %d\n",ext_gmax[1]);
-        for( int j = 0; j <= ext_gmax[1]; ++j )
-        {
-            printf("j = %d",j);
-            
-            if( j == 0 || j == ext_gmax[1] )
-                printf("\t\tpast boundary");
-            if( j == ext_imin[1] )
-                printf("\t\text_imin[1]");
-            if( j == ext_imin[1]+ext_l[1] )
-                printf("\t\text_imin[1]+ext_l[1]");
-            if( j == imin[1] )
-                printf("\t\timin[1]");
-            if( j == imax[1] )
-                printf("\t\timax[1]");
-            if( j == ext_imax[1]-ext_u[1] )
-                printf("\t\text_imax[1]-ext_u[1]");
-            if( j == ext_imax[1] )
-                printf("\t\text_imax[1]");
-            printf("\n");
-        }
+    printf("J RANGE\n\n");
+    printf("\next_gmax[1] = %d\n",ext_gmax[1]);
+    for( int j = 0; j <= ext_gmax[1]; ++j )
+    {
+        printf("j = %d",j);
+        
+        if( j == 0 || j == ext_gmax[1] )
+            printf("\t\tpast boundary");
+        if( j == ext_imin[1] )
+            printf("\t\text_imin[1]");
+        if( j == ext_imin[1]+ext_l[1] )
+            printf("\t\text_imin[1]+ext_l[1]");
+        if( j == imin[1] )
+            printf("\t\timin[1]");
+        if( j == imax[1] )
+            printf("\t\timax[1]");
+        if( j == ext_imax[1]-ext_u[1] )
+            printf("\t\text_imax[1]-ext_u[1]");
+        if( j == ext_imax[1] )
+            printf("\t\text_imax[1]");
         printf("\n");
-    ///////////////////////////////////////////////
-    */
+    }
+    printf("\n");
 
     /* Set original layer coefficients */
 	for (j = imin[1]; j <= imax[1]; j++)
@@ -578,11 +574,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                             +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4] )/h2[1];
                         
 
-                        /*
-                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                            + ext_array[index_nb3] + ext_array[index_nb4] 
-                            - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
-                        */
+                        //LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                        //    + ext_array[index_nb3] + ext_array[index_nb4] 
+                        //    - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
 
                         RHS = 1.0;
                         //RHS = ext_source[index];
@@ -596,18 +590,17 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                         //TODO: Evaluate rho at 1/2 index in the single scheme?
                         //      If so, need rho itself not D = 1/rho
-                        /*
-                        double k0 = ext_D[index];
-                        double knb1 = 0.5*(k0 + ext_D[index_nb1]);
-                        double knb2 = 0.5*(k0 + ext_D[index_nb2]);
-                        double knb3 = 0.5*(k0 + ext_D[index_nb3]);
-                        double knb4 = 0.5*(k0 + ext_D[index_nb4]);
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])/knb1
-                            +  (ext_array[index_nb2] - ext_array[index])/knb2
-                            +  (ext_array[index_nb3] - ext_array[index])/knb3
-                            +  (ext_array[index_nb4] - ext_array[index])/knb4;
-                        */
+                        //double k0 = ext_D[index];
+                        //double knb1 = 0.5*(k0 + ext_D[index_nb1]);
+                        //double knb2 = 0.5*(k0 + ext_D[index_nb2]);
+                        //double knb3 = 0.5*(k0 + ext_D[index_nb3]);
+                        //double knb4 = 0.5*(k0 + ext_D[index_nb4]);
+
+                        //LHS = (ext_array[index_nb1] - ext_array[index])/knb1
+                        //    +  (ext_array[index_nb2] - ext_array[index])/knb2
+                        //    +  (ext_array[index_nb3] - ext_array[index])/knb3
+                        //    +  (ext_array[index_nb4] - ext_array[index])/knb4;
                         
                         //double k0 = 1.0;
                         double k0 = ext_D[index];
@@ -618,11 +611,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                             +  (ext_array[index_nb4] - ext_array[index]) )*k0/sqr(top_h[1]);
 
 
-                        /*
-                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                            + ext_array[index_nb3] + ext_array[index_nb4] 
-                            - 4.0*ext_array[index])/top_h[1]/top_h[1];
-                        */
+                        //LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                        //    + ext_array[index_nb3] + ext_array[index_nb4] 
+                        //    - 4.0*ext_array[index])/top_h[1]/top_h[1];
 
                         RHS = 0.0;
                         //RHS = ext_source[index];
@@ -676,11 +667,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                             +  (ext_array[index_nb4] - ext_array[index])*ext_D[index_knb4] )/h2[1];
                         
 
-                        /*
-                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                            + ext_array[index_nb3] + ext_array[index_nb4] 
-                            - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
-                        */
+                        //LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                        //    + ext_array[index_nb3] + ext_array[index_nb4] 
+                        //    - 4.0*ext_array[index])/4.0/top_h[1]/top_h[1];
 
                         RHS = 1.0;
                         //RHS = ext_source[index];
@@ -694,18 +683,17 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 
                         //TODO: Evaluate rho at 1/2 index in the single scheme?
                         //      If so, need rho itself not D = 1/rho
-                        /*
-                        double k0 = ext_D[index];
-                        double knb1 = 0.5*(k0 + ext_D[index_nb1]);
-                        double knb2 = 0.5*(k0 + ext_D[index_nb2]);
-                        double knb3 = 0.5*(k0 + ext_D[index_nb3]);
-                        double knb4 = 0.5*(k0 + ext_D[index_nb4]);
 
-                        LHS = (ext_array[index_nb1] - ext_array[index])/knb1
-                            +  (ext_array[index_nb2] - ext_array[index])/knb2
-                            +  (ext_array[index_nb3] - ext_array[index])/knb3
-                            +  (ext_array[index_nb4] - ext_array[index])/knb4;
-                        */
+                        //double k0 = ext_D[index];
+                        //double knb1 = 0.5*(k0 + ext_D[index_nb1]);
+                        //double knb2 = 0.5*(k0 + ext_D[index_nb2]);
+                        //double knb3 = 0.5*(k0 + ext_D[index_nb3]);
+                        //double knb4 = 0.5*(k0 + ext_D[index_nb4]);
+
+                        //LHS = (ext_array[index_nb1] - ext_array[index])/knb1
+                        //    +  (ext_array[index_nb2] - ext_array[index])/knb2
+                        //    +  (ext_array[index_nb3] - ext_array[index])/knb3
+                        //    +  (ext_array[index_nb4] - ext_array[index])/knb4;
                         
                         //double k0 = 1.0;
                         double k0 = ext_D[index];
@@ -716,11 +704,9 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
                             +  (ext_array[index_nb4] - ext_array[index]) )*k0/sqr(top_h[1]);
 
 
-                        /*
-                        LHS = (ext_array[index_nb1] + ext_array[index_nb2]
-                            + ext_array[index_nb3] + ext_array[index_nb4] 
-                            - 4.0*ext_array[index])/top_h[1]/top_h[1];
-                        */
+                        //LHS = (ext_array[index_nb1] + ext_array[index_nb2]
+                        //    + ext_array[index_nb3] + ext_array[index_nb4] 
+                        //    - 4.0*ext_array[index])/top_h[1]/top_h[1];
 
                         RHS = 0.0;
                         //RHS = ext_source[index];
@@ -735,7 +721,6 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
         }
     }
 
-
 	if (debugging("step_size"))
 	{
 	    (void) printf("Max solution = %20.14f occuring at: %d %d\n",
@@ -747,31 +732,31 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
 	}
 
 	if (debugging("elliptic_error"))
+    {
+        double error,max_error = 0.0;
+        for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+        for (i = ext_imin[0]; i <= ext_imax[0]; i++)
         {
-            double error,max_error = 0.0;
-            for (j = ext_imin[1]; j <= ext_imax[1]; j++)
-            for (i = ext_imin[0]; i <= ext_imax[0]; i++)
-            {
-                icoords[0] = i; icoords[1] = j;
-                if (icoordsBoundary(icoords))
-                    continue;
+            icoords[0] = i; icoords[1] = j;
+            if (icoordsBoundary(icoords))
+                continue;
 
-                error = dcheckSolver(icoords,NO);
-                if (error > max_error)
-                {
-                    max_error = error;
-                    icrds_max[0] = i;
-                    icrds_max[1] = j;
-                }
+            error = dcheckSolver(icoords,NO);
+            if (error > max_error)
+            {
+                max_error = error;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
             }
-            (void) printf("In double elliptic solver:\n");
-            (void) printf("Max relative elliptic error: %20.14f\n",max_error);
-            (void) printf("Occuring at (%d %d)\n",icrds_max[0],icrds_max[1]);
-            error = dcheckSolver(icrds_max,YES);
         }
+        (void) printf("In double elliptic solver:\n");
+        (void) printf("Max relative elliptic error: %20.14f\n",max_error);
+        (void) printf("Occuring at (%d %d)\n",icrds_max[0],icrds_max[1]);
+        error = dcheckSolver(icrds_max,YES);
+    }
     
             ///////////////////////////////////
-            if (extended_domain) exit(0);
+//            if (extended_domain) exit(0);
             ///////////////////////////////////
     
 	if (debugging("check_div"))
@@ -1038,6 +1023,7 @@ bool DOUBLE_ELLIPTIC_SOLVER::icoordsInterior(int *icoords)
     return true;
 }
 
+//TODO: thesse don't work for parallel runs
 bool DOUBLE_ELLIPTIC_SOLVER::icoordsBoundary(int *icoords)
 {
     for (int i = 0; i < dim; ++i)
@@ -1054,6 +1040,32 @@ bool DOUBLE_ELLIPTIC_SOLVER::icoordsBoundary(int *icoords)
     }
     return false;
 }
+
+/*
+bool DOUBLE_ELLIPTIC_SOLVER::icoordsBoundary(int *icoords)
+{
+
+    if (dij_to_I[icoords[0]][icoords[1]] == -1)
+        return true;
+
+    int inb[dim];
+    for (int idir = 0; idir < dim; ++idir)
+    {
+        for (int i = 0; i < dim; ++i)
+            inb[i] = icoords[i];
+
+        for (int nb = 0; nb < 2; ++nb)
+        {
+            inb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+            int I_nb = dij_to_I[inb[0]][inb[1]];
+            
+            if (I_nb == -1)
+                return true;
+        }
+    }
+    return false;
+}
+*/
 
 double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	int *icoords,
@@ -1174,13 +1186,12 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverInterior(
 	    (void) printf("LHS = %20.14f  RHS = %20.14f\n",lhs,rhs);
 	    (void) printf("LHS - RHS = %20.14f\n",lhs-rhs);
 	    (void) printf("Relative error = %20.14g\n",fabs(lhs-rhs)/fabs(rhs));
-	    //(void) printf("Relative error = %20.14g\n",fabs(lhs-rhs)/denom);
 	    (void) printf("Leaving dcheckSolverInterior()\n\n");
 	}
 	
     return fabs(lhs-rhs)/fabs(rhs);
 
-}  /* end dcheckSolverInterior */
+}
 
 
 bool absmax(double a, double b)
@@ -1280,7 +1291,6 @@ double DOUBLE_ELLIPTIC_SOLVER::dcheckSolverExtended(
 	    (void) printf("Leaving dcheckSolverExtended()\n\n");
 	}
 	
-    //return fabs(lhs-rhs)/fabs(rhs);
     return rel_error;
 }
 
