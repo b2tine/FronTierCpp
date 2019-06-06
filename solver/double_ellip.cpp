@@ -756,7 +756,7 @@ void DOUBLE_ELLIPTIC_SOLVER::dsolve2d(double *soln)
     }
     
             ///////////////////////////////////
-//            if (extended_domain) exit(0);
+            if (extended_domain) exit(0);
             ///////////////////////////////////
     
 	if (debugging("check_div"))
