@@ -2216,6 +2216,12 @@ LOCAL boolean blocks_on_bond(
 	coords1[0] = Coords(b->start)[0];     coords1[1] = Coords(b->start)[1];
 	if (rect_in_which(coords1,icoords1,grid) == FUNCTION_FAILED)
 	{
+        if (rect_in_which(Coords(b->end),icoords1,grid) == FUNCTION_FAILED)
+        {
+            mark_end_of_bond();
+            return FUNCTION_SUCCEEDED;
+        }
+
 	    n[0] = Coords(b->end)[0] - Coords(b->start)[0];
 	    n[1] = Coords(b->end)[1] - Coords(b->start)[1];
 
