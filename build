@@ -11,8 +11,6 @@ for arg in $@ ; do
         DEBUG_FLAGS="-g3 -rdynamic"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
-    elif [[ "$arg" == "-c" ]]; then
-        CLEAN=1
     fi
 done
 
@@ -47,9 +45,10 @@ function config_lambda {
 
 function config_alpha {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${PETSC_ARCH}"
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${PETSC_ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=$(CGAL_DIR) --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_grad01 {
@@ -95,10 +94,6 @@ autoreconf -vif
 echo "configure options: ${CONF}"
 
 ./configure ${CONF}
-
-if [[ -n "$CLEAN" ]]; then
-    make clean
-fi
 
 if [[ -z "$NOMAKE" ]]; then
     make

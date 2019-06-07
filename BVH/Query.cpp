@@ -99,7 +99,8 @@ const bool checkProximity(const BVH* A, const BVH* B)
     
     auto proximity_candidates = GetProximityCandidates(rootA,rootB);
     
-    //TODO: Implement this
+    //TODO: Implement this after updateHeirarchy() is complete.
+    
     //ProcessProximityCandidates(proximity_candidates);
     
     //NOTE: at this point the CollisionSolver can apply the

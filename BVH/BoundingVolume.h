@@ -42,7 +42,8 @@ class AABB
         AABB& operator=(AABB&&) = default;
         ~AABB() = default;
 
-        void computeHseBV(const Hse* h);
+        void encloseHse(const Hse* h);
+        void encloseBVs(const AABB&, const AABB&);
 
         const CGAL_Point Centroid() const;
         const double volume() const noexcept;
@@ -56,6 +57,7 @@ class AABB
         //const BV_Type getBvType() const noexcept;
         void print() const;
 };
+
 
 
 #endif

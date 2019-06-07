@@ -154,19 +154,6 @@ const Point_Node_Vector BVH::getLeafSortingData() const
     return leafdata;
 }
 
-void BVH::updateHeirarchy()
-{
-    //TODO: Refit bounding volumes etc.
-    std::vector<BVH_Node*>::iterator it;
-    for( it = leaves.begin(); it != leaves.end(); ++it )
-    {
-        auto node = *it;
-        node->refitBV();
-    }    
-    initChildren();
-    sortChildren();
-}
-
 void BVH::buildHeirarchy()
 {
     initChildren();
@@ -202,9 +189,9 @@ void BVH::sortChildren()
         //root = children[0].second;
         //drawHeirarchyLevel();
     }
-    //CGAL::hilbert_sort(children.begin(),children.end(),hst);
-    CGAL::spatial_sort(children.begin(),children.end(),
-            hst,CGAL::Hilbert_sort_median_policy());
+    CGAL::hilbert_sort(children.begin(),children.end(),hst);
+    /*CGAL::spatial_sort(children.begin(),children.end(),
+            hst,CGAL::Hilbert_sort_median_policy());*/
 }
 
 void BVH::constructParentNodes()
@@ -243,3 +230,24 @@ void BVH::constructRootNode()
     drawHeirarchyLevel();
     isDrawTime = false;
 }
+
+/*
+void BVH::updateHeirarchy()
+{
+    std::vector<BVH_Node*>::iterator it;
+    for( it = leaves.begin(); it != leaves.end(); ++it )
+    {
+        auto node = *it;
+        node->refitBV();
+    }
+    //TODO: Refit parent bounding volumes
+    //      (Postorder traversal)
+}
+*/
+
+//TODO: iterative post order traversal + update
+void BVH::updateHeirarchy()
+{
+
+}
+

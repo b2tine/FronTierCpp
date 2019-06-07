@@ -11,19 +11,16 @@ AABB::AABB()
 AABB::AABB(Hse* h)
     : AABB()
 {
-    /*
-    assert(h != nullptr);
-    for( int i = 0; i < 3; ++i )
-    {
-        lower[i] = h->min_coord(i);
-        upper[i] = h->max_coord(i);
-    }
-    */
-    computeHseBV(h);
+    this->encloseHse(h);
 }
 
 AABB::AABB(const AABB& A, const AABB& B)
     : AABB()
+{
+    this->encloseBVs(A,B);
+}
+
+void AABB::encloseBVs(const AABB& A, const AABB& B)
 {
     assert(A.volume() > 0 && B.volume() > 0);
     for( int i = 0; i < 3; ++i )
@@ -33,13 +30,12 @@ AABB::AABB(const AABB& A, const AABB& B)
     }
 }
 
-
 //const BV_Type AABB::getBvType() const noexcept
 //{
 //    return BV_Type::AABB;
 //}
 
-void AABB::computeHseBV(const Hse* h)
+void AABB::encloseHse(const Hse* h)
 {
     assert(h != nullptr);
     for( int i = 0; i < 3; ++i )

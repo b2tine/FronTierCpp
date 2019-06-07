@@ -19,9 +19,11 @@ class BVH_Node
     
     protected:
 
-        BoundingVolume bv;
+        //BoundingVolume bv;
 
     public:
+
+        BoundingVolume bv;
 
         BVH_Node() = default;
         BVH_Node(BVH_Node&&) = default;

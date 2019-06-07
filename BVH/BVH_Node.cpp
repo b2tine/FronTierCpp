@@ -84,15 +84,6 @@ const bool InternalNode::isLeaf() const noexcept
     return false;
 }
 
-void InternalNode::refitBV()
-{
-    //TODO: Implementation.
-    //      The most simple refit would be to refit
-    //      the children BVs first and then just merge
-    //      them here.
-    return; 
-}
-
 void InternalNode::setChildren(
         BVH_Node* lc, BVH_Node* rc) noexcept
 {
@@ -120,6 +111,11 @@ BVH_Node* InternalNode::getLeftChild() const noexcept
 BVH_Node* InternalNode::getRightChild() const noexcept
 {
     return right;
+}
+
+void InternalNode::refitBV()
+{
+    bv.encloseBVs(getLeftChild()->bv,getRightChild()->bv);
 }
 
 /////////////////////////////////////////////////////////
@@ -151,7 +147,7 @@ const bool LeafNode::hasAdjacentHse(BVH_Node* node) const noexcept
         
 void LeafNode::refitBV()
 {
-    bv.computeHseBV(this->getHse());
+    bv.encloseHse(this->getHse());
 }
 
 
