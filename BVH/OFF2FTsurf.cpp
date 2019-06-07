@@ -65,7 +65,9 @@ int main(int argc, char* argv[])
     FT_InitIntfc(&front,&level_func_pack);
     
     TriMeshOFF2MonoCompSurf(&front,&inmesh);
-    optimizeElasticMesh(&front);
+
+    FT_RedistMesh(&front);
+    //optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
     /*
@@ -118,6 +120,7 @@ void propagation_driver(Front *front)
     FT_Draw(front);
     
     BVH bvh(front);
+    exit(0);
 
     // This is a virtual propagation to get maximum front 
     // speed to determine the first time step.
@@ -138,6 +141,7 @@ void propagation_driver(Front *front)
         dummySpringSolver(front);
         FT_Propagate(front);
         
+        //TODO:
         //bvh.drawUnlock();
         //bvh.updateHeirarchy();
 

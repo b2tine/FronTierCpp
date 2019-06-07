@@ -173,7 +173,7 @@ void BVH::buildHeirarchy()
     while( children.size() != 1 )
     {
         //alternate sorting direction at each level
-        if( sort_iter % 2 == 0 )
+        if( sort_iter % 2 == 1 )
         {
             std::reverse(children.begin(),children.end());
         }
@@ -202,10 +202,9 @@ void BVH::sortChildren()
         //root = children[0].second;
         //drawHeirarchyLevel();
     }
-    else
-    {
-        CGAL::hilbert_sort(children.begin(),children.end(),hst);
-    }
+    //CGAL::hilbert_sort(children.begin(),children.end(),hst);
+    CGAL::spatial_sort(children.begin(),children.end(),
+            hst,CGAL::Hilbert_sort_median_policy());
 }
 
 void BVH::constructParentNodes()

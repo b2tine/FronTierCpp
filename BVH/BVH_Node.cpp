@@ -129,7 +129,7 @@ BVH_Node* InternalNode::getRightChild() const noexcept
 LeafNode::LeafNode(Hse* h)
     : hse{h} 
 {
-    setBV(BoundingVolume(hse));
+    bv = BoundingVolume(hse);
 }
 
 const bool LeafNode::isLeaf() const noexcept

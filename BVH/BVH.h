@@ -1,12 +1,11 @@
 #ifndef BVH_H
 #define BVH_H
 
-#include "BVH_Node.h"
-
-#include <CGAL/hilbert_sort.h>
+#include <CGAL/spatial_sort.h>
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 #include <CGAL/property_map.h>
 
+#include "BVH_Node.h"
 
 using Point_with_Node = std::pair<CGAL_Point,BVH_Node*>;
 using Point_Node_Vector = std::vector<Point_with_Node>;
