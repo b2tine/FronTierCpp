@@ -41,6 +41,7 @@ void BVH_Node::expandBV(double pad)
 }
 
 //InternalNode uses the following default implementations
+
 const Hse* const BVH_Node::getHse() const noexcept
 {
     return {};
@@ -54,13 +55,11 @@ const bool BVH_Node::hasAdjacentHse(BVH_Node* node) const noexcept
 
 //LeafNode uses the following default implementations
 
-//BVH_Node* BVH_Node::getLeftChild() const noexcept
 BVH_Node* BVH_Node::getLeftChild() noexcept
 {
     return {};
 }
 
-//BVH_Node* BVH_Node::getRightChild() const noexcept
 BVH_Node* BVH_Node::getRightChild() noexcept
 {
     return {};
@@ -106,13 +105,11 @@ void InternalNode::setRightChild(BVH_Node* rc) noexcept
     right = rc;
 }
 
-//BVH_Node* InternalNode::getLeftChild() const noexcept
 BVH_Node* InternalNode::getLeftChild() noexcept
 {
     return left;
 }
 
-//BVH_Node* InternalNode::getRightChild() const noexcept
 BVH_Node* InternalNode::getRightChild() noexcept
 {
     return right;

@@ -51,8 +51,6 @@ class BVH_Node
         virtual void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept;
 
         BVH_Node* getParent() const noexcept;
-        //virtual BVH_Node* getLeftChild() const noexcept;
-        //virtual BVH_Node* getRightChild() const noexcept;
         virtual BVH_Node* getLeftChild() noexcept;
         virtual BVH_Node* getRightChild() noexcept;
        
@@ -84,8 +82,6 @@ class InternalNode : public BVH_Node
         const bool isLeaf() const noexcept override;
 
         void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept override;
-        //BVH_Node* getLeftChild() const noexcept override;
-        //BVH_Node* getRightChild() const noexcept override;
         BVH_Node* getLeftChild() noexcept override;
         BVH_Node* getRightChild() noexcept override;
 
