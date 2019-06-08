@@ -70,7 +70,7 @@ void BVH::constructLeafNodes(std::vector<Hse*> hseList)
 //      When we figure out all the correct types,
 //      should put all the type enums into scoped
 //      enum classes. Otherwise it is impossible to
-//      distinguish the two (is there a difference?).
+//      distinguish the two in some cases.
 void BVH::constructLeafNodes(INTERFACE* intfc)
 {
     assert(leaves.empty());
@@ -231,7 +231,6 @@ void BVH::constructRootNode()
     isDrawTime = false;
 }
 
-/*
 void BVH::updateHeirarchy()
 {
     std::vector<BVH_Node*>::iterator it;
@@ -240,14 +239,41 @@ void BVH::updateHeirarchy()
         auto node = *it;
         node->refitBV();
     }
-    //TODO: Refit parent bounding volumes
-    //      (Postorder traversal)
+    //TODO: Update parents at next level.
+    //      Need a getSibling() function to do this.
+}
+
+//iterative post order traversal,
+//could be used for deleting heirarchy.
+/*
+void BVH::postOrderTraverse()
+{
+    std::stack<BVH_Node*> outstack;
+    std::stack<BVH_Node*> instack;
+
+    BVH_Node* node;
+    instack.push(this->root);
+    
+    while (!instack.empty())
+    {
+        BVH_Node* node = instack.top();
+        instack.pop();
+
+        outstack.push(node);
+
+        if (node->getLeftChild())
+            instack.push(node->getLeftChild());
+
+        if (node->getRightChild())
+            instack.push(node->getRightChild());
+    }
+
+    while (!outstack.empty())
+    {
+        //delete node
+    }
 }
 */
 
-//TODO: iterative post order traversal + update
-void BVH::updateHeirarchy()
-{
 
-}
 
