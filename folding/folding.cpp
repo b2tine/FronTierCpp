@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <iomanip>
 #include <cstdlib>
+#include <cassert>
 
 static void setCollisionFreePoints3d(INTERFACE*, Drag*);
 bool findAndLocate(std::ifstream&, const char*);

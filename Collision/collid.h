@@ -1,8 +1,8 @@
 #ifndef COLLID_H
 #define COLLID_H
 
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/box_intersection_d.h>
+//#include <CGAL/Simple_cartesian.h>
+//#include <CGAL/box_intersection_d.h>
 
 #include <FronTier.h>
 #include <ifluid_state.h>
@@ -11,6 +11,13 @@
 #include <map>
 #include <fstream>
 #include <memory>
+#include <cfenv>
+#include <vector>
+
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <algorithm>
 
 #if defined(isnan)
 #undef isnan

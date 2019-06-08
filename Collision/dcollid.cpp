@@ -1,12 +1,6 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/box_intersection_d.h>
-#include <CGAL/intersections.h>
-
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <algorithm>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/box_intersection_d.h>
+//#include <CGAL/intersections.h>
 
 #include <FronTier.h>
 #include "AABB.h"
@@ -23,9 +17,11 @@ inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
 
+/*
 typedef CGAL::Exact_predicates_inexact_constructions_kernel   Kernel;
 typedef Kernel::Point_3                                       Point_3;
 typedef Kernel::Triangle_3                                    Triangle_3;
+*/
 
 //define default parameters for collision detection
 bool   CollisionSolver::s_detImpZone = false;

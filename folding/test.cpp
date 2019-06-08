@@ -3,7 +3,7 @@
 #include <string>
 #include "folding.h"
 #include "spring_solver.h"
-#include <fenv.h>
+#include <cfenv>
 #include <fstream>
 #include <cstdlib>
 
