@@ -3,8 +3,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/cFluid \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-noinst_LTLIBRARIES = libcFluid.la
+LIB_FT = $(top_builddir)/lib/libFronTier.la
 
+
+noinst_LTLIBRARIES = libcFluid.la
 
 
 libcFluid_la_SOURCES = \
@@ -20,12 +22,12 @@ libcFluid_la_SOURCES = \
 ../cFweno.cpp
 								
 
-libcFluid_la_LIBADD = $(top_builddir)/lib/libFronTier.la
+libcFluid_la_LIBADD = $(LIB_FT)
 
 
+$(LIB_FT): libraries
 
-$(libcFluid_la_DEPENDENCIES): FORCE
+libraries:
 	@$(MAKE) -C $(top_builddir)/lib libFronTier.la
 
-FORCE:
 

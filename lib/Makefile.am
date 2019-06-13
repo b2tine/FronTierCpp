@@ -12,7 +12,7 @@ FT_LIBS = $(top_builddir)/src/front/objs/libfront.la \
 
 lib_LTLIBRARIES = libFronTier.la
 
-libFronTier_la_SOURCES = $(top_srcdir)/include/FronTier.h \
+libFronTier_la_SOURCES = ../include/FronTier.h \
 						 dummy.cpp
 
 libFronTier_la_LIBADD = $(FT_LIBS)
