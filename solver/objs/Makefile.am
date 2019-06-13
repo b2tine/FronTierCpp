@@ -6,10 +6,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/solver \
 AM_LDFLAGS = @PETSC_LIBS@
 
 
-noinst_LTLIBRARIES = ../../lib/libsolver.la
+LIB_FT = $(top_builddir)/lib/libFronTier.la
 
 
-______lib_libsolver_la_SOURCES = \
+noinst_LTLIBRARIES = libsolver.la
+
+
+libsolver_la_SOURCES = \
 ../solver.h \
 ../cim_ellip.cpp \
 ../cim_parab.cpp \
@@ -20,15 +23,12 @@ ______lib_libsolver_la_SOURCES = \
 ../solver.cpp
 
 
-______lib_libsolver_la_LIBADD = $(top_builddir)/lib/libFronTier.la
+libsolver_la_LIBADD = $(LIB_FT)
 								
 
+$(LIB_FT): libraries
+
+libraries:
+	@$(MAKE) -C $(top_builddir)/lib libFronTier.la
 
 
-$(______lib_libsolver_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/src && $(MAKE) all
-
-FORCE:
-
-
-clean-libtool:

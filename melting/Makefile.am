@@ -23,12 +23,12 @@ melting_SOURCES = melting.h \
  				  melting.cpp
 
 
-melting_LDADD = $(top_builddir)/lib/libiFluid.la
+melting_LDADD = $(top_builddir)/iFluid/objs/libiFluid.la
 
 
 
 $(melting_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+	@$(MAKE) -C $(top_builddir)/iFluid/objs libiFluid.la
 
 FORCE:
 

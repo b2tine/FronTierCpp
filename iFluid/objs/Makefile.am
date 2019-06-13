@@ -4,13 +4,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+LIB_SOLVER = $(top_builddir)/solver/objs/libsolver.la
 
 
-noinst_LTLIBRARIES = ../../lib/libiFluid.la
+noinst_LTLIBRARIES = libiFluid.la
 
 
 
-______lib_libiFluid_la_SOURCES = \
+libiFluid_la_SOURCES = \
 ../iFluid.h \
 ../ifluid_state.h \
 ../iFbasic.cpp \
@@ -20,16 +21,20 @@ ______lib_libiFluid_la_SOURCES = \
 ../iFsub.cpp
 								
 
-______lib_libiFluid_la_LIBADD = $(top_builddir)/lib/libsolver.la
+libiFluid_la_LIBADD = $(LIB_SOLVER)
+
+$(LIB_SOLVER): libraries
+
+libraries:
+	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
 
 
-
-$(______lib_libiFluid_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/solver && $(MAKE) all
-
-FORCE:
-
-
-clean-libtool:
+#$(______lib_libiFluid_la_DEPENDENCIES): FORCE
+#	@cd $(top_builddir)/solver && $(MAKE) all
+#
+#FORCE:
+#
+#
+#clean-libtool:
 
 
