@@ -23,7 +23,7 @@ check_PROGRAMS += iFluidTests
 
 iFluidTests_SOURCES = iFluidTests.cpp
 
-iFluidTests_LDADD = $(top_builddir)/lib/libiFluid.la \
+iFluidTests_LDADD = $(top_builddir)/iFluid/objs/libiFluid.la \
 				   	$(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(iFluidTests_DEPENDENCIES): FORCE
