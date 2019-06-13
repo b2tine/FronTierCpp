@@ -39,6 +39,9 @@ class BVH
 
         const Point_Node_Vector getLeafSortingData() const;
 
+        std::stack<BVH_Node*> reverseLevelOrderTraversal();
+        std::stack<BVH_Node*> postOrderTraversal();
+
         std::string outdir;
         std::string drawdir;
         bool isDrawTime{false};
@@ -78,6 +81,8 @@ class BVH
         BVH(BVH&&) = delete;
         BVH& operator=(BVH&&) = delete;
 
+        std::vector<BVH_Node*> getLeaves() {return leaves;}
+
         void updateHeirarchy();
         //void drawHeirarchy() const;
 
@@ -86,7 +91,8 @@ class BVH
 
         void DrawUnlock() noexcept;
         void setDrawDirectory(std::string dir) noexcept;
-        void printHeirarchy() const;
+        
+        void printHeirarchy();
 };
 
 

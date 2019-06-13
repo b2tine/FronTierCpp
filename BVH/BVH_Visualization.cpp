@@ -36,6 +36,14 @@ void BVH::setDrawDirectory(std::string dir) noexcept
 
 void BVH::drawHeirarchyLevel() const
 {
+    printf("\nnumnodes = %d\n",children.size());
+    for (int i = 0; i < children.size(); ++i)
+    {
+        auto node = children[i].second;
+        printf("node->level = %d\n",node->level);
+    }
+    printf("\n\n");
+
     int dummytstep = 0;
     if( isDrawTime == true )
         writeHilbertCurveFiles(dummytstep);

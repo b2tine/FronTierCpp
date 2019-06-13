@@ -68,6 +68,7 @@ EXPORT	void FT_Propagate(
                                 (POINTER)NULL);
 
     assign_interface_and_free_front(front,newfront);
+
 	if (front->grid_intfc != NULL)
 	{
 	    if (TwoStepIntfc(front) == YES)

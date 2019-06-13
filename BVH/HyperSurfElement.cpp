@@ -86,10 +86,8 @@ double HsTri::min_coord(int dim) const
     double val = HUGE;
     for( int i = 0; i < 3; ++i )
     {
-        double crd = Coords(this->Point_of_hse(i))[dim];
-        val = std::min(val,crd);
-        //val = std::min(val,
-          //      Coords(this->Point_of_hse(i))[dim]);
+        val = std::min(val,
+                Coords(this->Point_of_hse(i))[dim]);
     }
     return val;
 }

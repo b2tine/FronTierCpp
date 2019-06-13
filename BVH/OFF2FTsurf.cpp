@@ -129,6 +129,7 @@ void propagation_driver(Front *front)
     FT_PrintTimeStamp(front);
 
     BVH bvh(front);
+    //bvh.printHeirarchy();
     //exit(0);
 
     for (;;)
@@ -145,8 +146,10 @@ void propagation_driver(Front *front)
         //      when FT_Propagate calls this function?
         //          assign_interface_and_free_front(front,newfront);
         //      The Hse pointers in the leaf nodes become invalid after this call.
-        
+        std::vector<BVH_Node*> leaves = bvh.getLeaves();
+        leaves[0]->refitBV(); 
 
+        exit(0);
         //collision detect and handling
         /*
         collision_solver->assembleFromInterface(front->interf,front->dt);
@@ -156,8 +159,8 @@ void propagation_driver(Front *front)
 
         FT_AddTimeStepToCounter(front);
         //bvh.drawUnlock();
-        bvh.updateHeirarchy();
-        exit(0);
+        //bvh.updateHeirarchy();
+        //exit(0);
 
 
         //Next time step determined by maximum speed of previous
