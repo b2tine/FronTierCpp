@@ -118,7 +118,7 @@ TEST_F(BVH_NodeTests, CheckIfLeafNodeIsSelfOrHasAdjacentHse)
 TEST_F(BVH_NodeTests, InternalNodeCtorDeathTest)
 {
     BVH_Node* l6;
-    ASSERT_DEATH(auto p = new InternalNode(l1,l6),"");
+    ASSERT_DEATH(auto p = new InternalNode(l1,l6,1),"");
 }
 
 

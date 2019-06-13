@@ -19,12 +19,11 @@ class BVH_Node
     
     protected:
 
-        bool visited;
         //BoundingVolume bv;
 
     public:
-
-
+        
+        int level {-1};
         BoundingVolume bv;
 
         BVH_Node() = default;
@@ -50,10 +49,10 @@ class BVH_Node
         void setParent(BVH_Node* const p) noexcept;
         virtual void setChildren(BVH_Node* lc, BVH_Node* rc) noexcept;
 
-        BVH_Node* getParent() const noexcept;
+        BVH_Node* getParent() noexcept;
         virtual BVH_Node* getLeftChild() noexcept;
         virtual BVH_Node* getRightChild() noexcept;
-       
+        BVH_Node* getSibling();
 };
 
 
@@ -69,7 +68,7 @@ class InternalNode : public BVH_Node
 
     public:
 
-        InternalNode(BVH_Node* const lc, BVH_Node* const rc);
+        InternalNode(BVH_Node* const lc, BVH_Node* const rc, int lvl);
 
         InternalNode(InternalNode&&) = default;
         InternalNode& operator=(InternalNode&&) = default;

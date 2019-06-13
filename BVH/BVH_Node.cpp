@@ -25,7 +25,7 @@ const double BVH_Node::volume() const noexcept
     return bv.volume();
 }
         
-BVH_Node* BVH_Node::getParent() const noexcept
+BVH_Node* BVH_Node::getParent() noexcept
 {
     return parent;
 }
@@ -38,6 +38,15 @@ void BVH_Node::setParent(BVH_Node* const p) noexcept
 void BVH_Node::expandBV(double pad)
 {
     bv.expand(pad);
+}
+
+BVH_Node* BVH_Node::getSibling()
+{
+    auto p = this->getParent();
+    assert(p);
+
+    return (p->getLeftChild() == this) ?
+        p->getRightChild() : p->getLeftChild();
 }
 
 //InternalNode uses the following default implementations
@@ -75,8 +84,9 @@ void BVH_Node::setChildren(
 ////////         InternalNode Methods           ////////
 ///////////////////////////////////////////////////////
 
-InternalNode::InternalNode(BVH_Node* lc, BVH_Node* rc)
+InternalNode::InternalNode(BVH_Node* lc, BVH_Node* rc, int lvl)
 {
+    level = lvl;
     setBV(BoundingVolume(lc->getBV(),rc->getBV()));
     setChildren(lc,rc);
 }
@@ -125,8 +135,9 @@ void InternalNode::refitBV()
 ///////////////////////////////////////////////////////
 
 LeafNode::LeafNode(Hse* h)
-    : hse{h} 
+    : hse{h}
 {
+    level = 0; 
     bv = BoundingVolume(hse);
 }
 

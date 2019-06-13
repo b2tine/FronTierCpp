@@ -43,7 +43,7 @@ void BVH::drawHeirarchyLevel() const
 
 
 //TODO: Break out into several functions for reuse/flexibility
-void BVH::writeHilbertCurveFiles(int tstep) const
+void BVH::writeHilbertCurveFiles(int step) const
 {
     assert(!drawdir.empty());
     int level = this->sort_iter;
@@ -54,7 +54,7 @@ void BVH::writeHilbertCurveFiles(int tstep) const
     std::string geomdir("OOGL/");
     createDirectory(lvldir + geomdir);
 
-    int num_hse = children.size();
+    int numBV = children.size();
 
     //Write geomview OOGL file for the curve
     std::ofstream outfile(lvldir + geomdir + "hilbert_curve.vect");
@@ -62,16 +62,16 @@ void BVH::writeHilbertCurveFiles(int tstep) const
     outfile << "VECT\n\n";
     
     //num_polylines total_num_vertices num_colors
-    outfile << 1 << " " << num_hse << " " << 1 << "\n\n";
+    outfile << 1 << " " << numBV << " " << 1 << "\n\n";
 
     //number vertices in each polyline (would be a list if more than one polyline)
-    outfile << num_hse << "\n\n";
+    outfile << numBV << "\n\n";
     
     //number of colors in each polyline (would be a list if more than one polyline)
     outfile << 1 << "\n";
     
     //coordinates of curve vertices (same as the points/boxcenters)
-    for( int i = 0; i < num_hse; i++ )
+    for( int i = 0; i < numBV; i++ )
     {
         CGAL_Point p = children[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
@@ -89,10 +89,10 @@ void BVH::writeHilbertCurveFiles(int tstep) const
     outfile << "VECT\n\n";
     
     //num_polylines total_num_vertices num_colors
-    outfile << num_hse << " " << num_hse << " " << 1 << "\n\n";
+    outfile << numBV << " " << numBV << " " << 1 << "\n\n";
     
     //number vertices in each polyline (degenerate polyline is a point)
-    for( int i = 0; i < num_hse; i++ )
+    for( int i = 0; i < numBV; i++ )
         outfile << 1 << "\n";
     outfile << "\n";
     
@@ -100,12 +100,12 @@ void BVH::writeHilbertCurveFiles(int tstep) const
     outfile << 1 << "\n";
     
     //remaining points get same color as first point (indicated by 0)
-    for( int i = 1; i < num_hse; i++ )
+    for( int i = 1; i < numBV; i++ )
         outfile << 0 << "\n";
     outfile << "\n";
     
     //coordinates of the curve points
-    for( int i = 0; i < num_hse; i++ )
+    for( int i = 0; i < numBV; i++ )
     {
         CGAL_Point p = children[i].first;
         outfile << p.x() << " " << p.y() << " " << p.z() << "\n";
@@ -118,7 +118,7 @@ void BVH::writeHilbertCurveFiles(int tstep) const
 
     //write sorted bboxes to geomview OOGL files
     char geomfile[100];
-    for( int i = 0; i < num_hse; i++ )
+    for( int i = 0; i < numBV; i++ )
     {
         sprintf(geomfile, "aabb%05d.bbox", i);
         outfile.open(lvldir + geomdir + geomfile);
@@ -180,7 +180,7 @@ void BVH::writeHilbertCurveFiles(int tstep) const
     //bounding boxes
     outfile << "{\n" << "appearance {+edge}\n\n";
     outfile << "LIST\n";
-    for( int i = 0; i < num_hse; i++ )
+    for( int i = 0; i < numBV; i++ )
     {
         sprintf(geomfile, "aabb%05d.bbox", i);
         outfile << "{ < " << geomdir + geomfile << " }\n";

@@ -42,7 +42,8 @@ class BVH
         std::string outdir;
         std::string drawdir;
         bool isDrawTime{false};
-        int* timestep{nullptr};
+        int* tstep {nullptr};
+        int timestep() const noexcept;
 
         void drawHeirarchyLevel() const;
         void writeHilbertCurveFiles(int tstep) const;
@@ -55,7 +56,7 @@ class BVH
         void buildHeirarchy();
         
         static BVH_Node* createLeafNode(Hse* h);
-        static BVH_Node* createInternalNode(BVH_Node* lc, BVH_Node* rc);
+        static BVH_Node* createInternalNode(BVH_Node* lc, BVH_Node* rc, int level);
 
         static double proximityPad;
         //proximityPad is hardcoded in BVH.cpp,
@@ -85,6 +86,7 @@ class BVH
 
         void DrawUnlock() noexcept;
         void setDrawDirectory(std::string dir) noexcept;
+        void printHeirarchy() const;
 };
 
 

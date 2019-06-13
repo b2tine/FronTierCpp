@@ -26,10 +26,10 @@ BVH_Node* BVH::createLeafNode(Hse* h)
     return node;
 }
 
-BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc)
+BVH_Node* BVH::createInternalNode(BVH_Node* lc, BVH_Node* rc, int level)
 {
     assert(lc && rc);
-    return new InternalNode(lc,rc);
+    return new InternalNode(lc,rc,level);
 }
 
 /*
@@ -44,12 +44,19 @@ BVH::BVH(Front* front, bool draw)
 
 BVH::BVH(Front* front)
     : outdir{std::string(OutName(front))},
-    timestep{&front->step}
+    tstep{&front->step}
 {
-    drawdir = outdir + "/BVH/";
-    constructLeafNodes(front->interf);
     DrawUnlock();
+    drawdir = outdir + "/BVH/ts-" +
+        std::string(2,'0').append(std::to_string(timestep()));
+
+    constructLeafNodes(front->interf);
     buildHeirarchy();
+}
+
+int BVH::timestep() const noexcept
+{
+    return *tstep;
 }
 
 //TODO: For testing only right now, but may be a
@@ -167,7 +174,6 @@ void BVH::buildHeirarchy()
         drawHeirarchyLevel();
         constructParentNodes();
         sortChildren();
-        sort_iter++;
     }
     constructRootNode();
     Point_Node_Vector().swap(children);
@@ -175,23 +181,16 @@ void BVH::buildHeirarchy()
 
 void BVH::initChildren()
 {
-    sort_iter = 0;
+    sort_iter = -1;
     children = getLeafSortingData();
     sortChildren();
 }
 
 void BVH::sortChildren()
 {
-    //sort_iter++;
-    if( children.size() == 1 )
-    {
-        return;
-        //root = children[0].second;
-        //drawHeirarchyLevel();
-    }
+    sort_iter++;
+    if( children.size() == 1 ) return;
     CGAL::hilbert_sort(children.begin(),children.end(),hst);
-    /*CGAL::spatial_sort(children.begin(),children.end(),
-            hst,CGAL::Hilbert_sort_median_policy());*/
 }
 
 void BVH::constructParentNodes()
@@ -199,12 +198,13 @@ void BVH::constructParentNodes()
     Point_Node_Vector parents;
     parents.reserve(children.size()/2 + 1);
     
+    int level = sort_iter + 1;
     //greedily pair off sorted children
     for( int i = 0; i < children.size()-1; i += 2 )
     {
         auto lc = children[i].second;
         auto rc = children[i+1].second;
-        auto p = BVH::createInternalNode(lc,rc);
+        auto p = BVH::createInternalNode(lc,rc,level);
         Point_with_Node bvctr_node_pair(p->getBV().Centroid(),p);
         parents.push_back(bvctr_node_pair);
     }
@@ -231,6 +231,7 @@ void BVH::constructRootNode()
     isDrawTime = false;
 }
 
+/*
 void BVH::updateHeirarchy()
 {
     std::vector<BVH_Node*>::iterator it;
@@ -240,13 +241,74 @@ void BVH::updateHeirarchy()
         node->refitBV();
     }
     //TODO: Update parents at next level.
-    //      Need a getSibling() function to do this.
+    
+    BVH_Node* lastleft = nullptr;
+    auto p = leaves.begin()->getParent();
+    while (p != nullptr && p !=lastleft)
+    {
+        lastleft = p;
+        p->refitBV();
+        p = p->getSibling();
+        if (!p) break;
+        p->refitBV();
+        p = p->getParent()->getSibling()->getLeftChild();
+    }
+}
+*/
+
+//TODO:make postOrderTraverse() return outstack
+//
+//iterative post order traversal,
+//could be used for deleting heirarchy,
+//void BVH::postOrderTraverse()
+void BVH::updateHeirarchy()
+{
+    std::stack<BVH_Node*> outstack;
+    std::stack<BVH_Node*> instack;
+
+    BVH_Node* node;
+    instack.push(this->root);
+    
+    while (!instack.empty())
+    {
+        BVH_Node* node = instack.top();
+        instack.pop();
+
+        outstack.push(node);
+
+        if (node->getLeftChild())
+            instack.push(node->getLeftChild());
+
+        if (node->getRightChild())
+            instack.push(node->getRightChild());
+    }
+
+    //TODO: print other levels, and place into printHeirarchy function,
+    //      reuse the postorder traversal somehow...
+    //      Can return the outstack and then operate on that seperately.
+    //
+
+    //int level = 0;
+    Point_Node_Vector printdata;
+    printdata.reserve(leaves.size());
+    while (!outstack.empty())
+    {
+        BVH_Node* node = outstack.top();
+        outstack.pop();
+        node->refitBV();
+        if (node->level == 0)
+        {
+            Point_with_Node bvctr_node_pair(node->getBV().Centroid(),node);
+            printdata.push_back(bvctr_node_pair);
+        }
+    }
+    children = printdata;
+    drawdir = outdir + "/BVH/ts-" + "1000";
+        //std::string(2,'0').append(std::to_string(timestep()));
+    writeHilbertCurveFiles(0);
 }
 
-//iterative post order traversal,
-//could be used for deleting heirarchy.
-/*
-void BVH::postOrderTraverse()
+void BVH::printHeirarchy() const
 {
     std::stack<BVH_Node*> outstack;
     std::stack<BVH_Node*> instack;
@@ -270,10 +332,11 @@ void BVH::postOrderTraverse()
 
     while (!outstack.empty())
     {
-        //delete node
+        auto node = outstack.top();
+        outstack.pop();
+        node->refitBV();
     }
-}
-*/
 
+}
 
 

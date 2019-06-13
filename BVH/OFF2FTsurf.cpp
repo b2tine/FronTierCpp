@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
     
     TriMeshOFF2MonoCompSurf(&front,&inmesh);
 
-    FT_RedistMesh(&front);
-    //optimizeElasticMesh(&front);
+    //FT_RedistMesh(&front);
+    optimizeElasticMesh(&front);
     static_mesh(front.interf) = YES;
 
     /*
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 void propagation_driver(Front *front)
 {
 	front->max_time = 1.0; 
-	front->max_step = 10;
+	front->max_step = 2;
 	front->print_time_interval = 0.01;
 	front->movie_frame_interval = 0.01;
     double CFL = 0.75;
@@ -119,9 +119,6 @@ void propagation_driver(Front *front)
     FT_Save(front);
     FT_Draw(front);
     
-    BVH bvh(front);
-    exit(0);
-
     // This is a virtual propagation to get maximum front 
     // speed to determine the first time step.
     FT_Propagate(front);
@@ -130,6 +127,9 @@ void propagation_driver(Front *front)
 
     FT_TimeControlFilter(front);
     FT_PrintTimeStamp(front);
+
+    BVH bvh(front);
+    //exit(0);
 
     for (;;)
     {
@@ -141,10 +141,11 @@ void propagation_driver(Front *front)
         dummySpringSolver(front);
         FT_Propagate(front);
         
-        //TODO:
-        //bvh.drawUnlock();
-        //bvh.updateHeirarchy();
-
+        //TODO: How can we update the hypersurf elements in the heirarchy
+        //      when FT_Propagate calls this function?
+        //          assign_interface_and_free_front(front,newfront);
+        //      The Hse pointers in the leaf nodes become invalid after this call.
+        
 
         //collision detect and handling
         /*
@@ -154,6 +155,10 @@ void propagation_driver(Front *front)
         */
 
         FT_AddTimeStepToCounter(front);
+        //bvh.drawUnlock();
+        bvh.updateHeirarchy();
+        exit(0);
+
 
         //Next time step determined by maximum speed of previous
         //step, assuming the propagation is hyperbolic and
@@ -166,7 +171,6 @@ void propagation_driver(Front *front)
 
         FT_TimeControlFilter(front);
         FT_PrintTimeStamp(front);
-        clean_up(0);
 
         if (FT_IsSaveTime(front))
             FT_Save(front);
@@ -303,7 +307,7 @@ void initSTATEvelocity(Front* front, double* vel)
         surf_tri_loop(*s,tri)
         {
             Tri_index(tri) = tid;
-            std::cout << "tri_index: " << tid << "\n";
+            //std::cout << "tri_index: " << tid << "\n";
             for( int i = 0; i < 3; ++i )
             {
                 p = Point_of_tri(tri)[i];

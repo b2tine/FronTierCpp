@@ -11,7 +11,6 @@
 
 #include <FronTier.h>
 
-
 enum class HseTag
 {
     FABRIC,
