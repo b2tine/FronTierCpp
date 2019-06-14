@@ -27,12 +27,12 @@ check_PROGRAMS += airfoilTests
 
 airfoilTests_SOURCES = airfoilTests.cpp
 
-airfoilTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-					 $(top_builddir)/lib/libairfoil.la
+airfoilTests_LDADD = $(top_builddir)/airfoil/objs/libairfoil.la \
+					 $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(airfoilTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/airfoil/objs && $(MAKE) libairfoil.la
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/airfoil/objs && $(MAKE) all
 
 FORCE:
 

@@ -1,4 +1,4 @@
-SUBDIRS = . gmock tests
+SUBDIRS = ../src . gmock tests
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
@@ -17,9 +17,3 @@ libFronTier_la_SOURCES = ../include/FronTier.h \
 
 libFronTier_la_LIBADD = $(FT_LIBS)
 
-
-
-$(FT_LIBS): libraries
-
-libraries:
-	@$(MAKE) -C $(top_builddir)/src libraries

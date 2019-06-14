@@ -25,9 +25,9 @@ libcFluid_la_SOURCES = \
 libcFluid_la_LIBADD = $(LIB_FT)
 
 
-$(LIB_FT): libraries
+$(libcFluid_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/lib all
 
-libraries:
-	@$(MAKE) -C $(top_builddir)/lib libFronTier.la
+FORCE:
 
 

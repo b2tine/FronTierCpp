@@ -1,4 +1,4 @@
-SUBDIRS = ../objs ../../lib/gmock
+#SUBDIRS = ../objs ../../lib/gmock
 
 AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 			 -I$(top_srcdir)/BVH \
@@ -12,6 +12,8 @@ AM_CPPFLAGS= $(GTEST_CPPFLAGS) \
 
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 
+TEST_LIBS = $(top_builddir)/BVH/objs/libBVH.la \
+			$(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 
 # TESTS_ENVIRONMENT: Set environment variables for the test run
@@ -30,9 +32,7 @@ check_PROGRAMS += HseTests
 
 HseTests_SOURCES = HseTests.cpp
 
-HseTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-				 $(top_builddir)/lib/libBVH.la
-
+HseTests_LDADD = $(TEST_LIBS)
 
 
 #NOTE: CGAL_Point.h and CGAL_Point.cpp no longer used
@@ -53,9 +53,7 @@ check_PROGRAMS += AABBTests
 
 AABBTests_SOURCES = AABBTests.cpp
 
-AABBTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-				  $(top_builddir)/lib/libBVH.la
-
+AABBTests_LDADD = $(TEST_LIBS)
 
 
 TESTS += BVH_NodeTests
@@ -63,9 +61,7 @@ check_PROGRAMS += BVH_NodeTests
 
 BVH_NodeTests_SOURCES = BVH_NodeTests.cpp
 
-BVH_NodeTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-					  $(top_builddir)/lib/libBVH.la
-
+BVH_NodeTests_LDADD = $(TEST_LIBS)
 
 
 TESTS += BVHTests
@@ -74,9 +70,7 @@ check_PROGRAMS += BVHTests
 BVHTests_SOURCES = BVHTests.cpp \
 				   BVH_Tester.h
 
-BVHTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-				 $(top_builddir)/lib/libBVH.la
-
+BVHTests_LDADD = $(TEST_LIBS)
 
 
 TESTS += QueryTests
@@ -85,14 +79,15 @@ check_PROGRAMS += QueryTests
 QueryTests_SOURCES = QueryTests.cpp \
 					 QueryTests.h
 
-QueryTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-				 $(top_builddir)/lib/libBVH.la
+QueryTests_LDADD = $(TEST_LIBS)
 
 
+$(TEST_LIBS): libraries
 
+libraries:
+	@$(MAKE) -C $(top_builddir)/BVH/objs libBVH.la
+	@$(MAKE) -C $(top_builddir)/lib/gmock check
 
-
-FORCE:
 
 
 tagsfile:

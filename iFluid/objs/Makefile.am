@@ -23,18 +23,10 @@ libiFluid_la_SOURCES = \
 
 libiFluid_la_LIBADD = $(LIB_SOLVER)
 
-$(LIB_SOLVER): libraries
 
-libraries:
+$(libiFluid_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
 
-
-#$(______lib_libiFluid_la_DEPENDENCIES): FORCE
-#	@cd $(top_builddir)/solver && $(MAKE) all
-#
-#FORCE:
-#
-#
-#clean-libtool:
+FORCE:
 
 

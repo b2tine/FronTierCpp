@@ -26,9 +26,9 @@ libsolver_la_SOURCES = \
 libsolver_la_LIBADD = $(LIB_FT)
 								
 
-$(LIB_FT): libraries
+$(libsolver_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/lib all
 
-libraries:
-	@$(MAKE) -C $(top_builddir)/lib libFronTier.la
+FORCE:
 
 

@@ -22,7 +22,7 @@ check_PROGRAMS += solverTests
 
 solverTests_SOURCES = solverTests.cpp
 
-solverTests_LDADD = $(top_builddir)/lib/libsolver.la \
+solverTests_LDADD = $(top_builddir)/solver/objs/libsolver.la \
 					$(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(solverTests_DEPENDENCIES): FORCE

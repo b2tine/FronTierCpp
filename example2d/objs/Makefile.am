@@ -60,7 +60,7 @@ $(PROGRAMS): $(top_builddir)/lib/libFronTier.la
 
 
 $(top_builddir)/lib/libFronTier.la: FORCE
-	@cd $(top_builddir)/lib && $(MAKE) all
+	@cd $(top_builddir)/lib && $(MAKE) libFronTier.la
 
 FORCE:
 

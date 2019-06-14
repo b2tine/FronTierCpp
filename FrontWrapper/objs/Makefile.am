@@ -4,25 +4,23 @@ AM_CPPFLAGS = -I$(top_srcdir)/FrontWrapper \
 
 
 
-noinst_LTLIBRARIES = ../../lib/libFronTierCpp.la
+noinst_LTLIBRARIES = libFronTierCpp.la
 
 
 
-______lib_libFronTierCpp_la_SOURCES = \
+libFronTierCpp_la_SOURCES = \
 ../FrontWrapper.h \
 ../FrontWrapper.cpp
 
 
 
-______lib_libFronTierCpp_la_LIBADD = $(top_builddir)/lib/libFronTier.la
+libFronTierCpp_la_LIBADD = $(top_builddir)/lib/libFronTier.la
 
 
 
 
-$(______lib_libFronTierCpp_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/src && $(MAKE) all
+$(libFronTierCpp_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/lib libFronTier.la
 
 FORCE:
 
-
-clean-libtool:

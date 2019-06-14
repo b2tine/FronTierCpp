@@ -28,12 +28,12 @@ check_PROGRAMS += foldingTests
 
 foldingTests_SOURCES = foldingTests.cpp
 
-foldingTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-					 $(top_builddir)/lib/libfolding.la
+foldingTests_LDADD = $(top_builddir)/folding/objs/libfolding.la \
+					 $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(foldingTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/folding/objs && $(MAKE) libfolding.la
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/folding/objs && $(MAKE) all
 
 FORCE:
 
