@@ -50,8 +50,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    rho[index] = field->rho[index];
-            if (j >= jmax-6)
-                vel[1][index] = -20; 
 	}
         count++;
 	if (debugging("field_var"))
