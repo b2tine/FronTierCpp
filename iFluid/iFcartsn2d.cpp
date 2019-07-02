@@ -350,8 +350,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    phi[index] = array[index];
-            if (i == top_gmax[0]/2 && j >= jmin && j <= jmax)
-                printf("phi[%d] = %f\n",j,phi[index]);
 	}
 	if (debugging("field_var"))
 	{
@@ -398,17 +396,18 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	    rho = field->rho[index];
 	    icoords[0] = i;
 	    icoords[1] = j;
-	    if (iFparams->with_porosity)
+
+        if (iFparams->with_porosity)
                 computeFieldPointGradJump(icoords,phi,grad_phi);
-            else
-                computeFieldPointGrad(icoords,phi,grad_phi);
-	    vel[0][index] -= accum_dt/rho*grad_phi[0];
+        else
+            computeFieldPointGrad(icoords,phi,grad_phi);
+
+        vel[0][index] -= accum_dt/rho*grad_phi[0];
 	    vel[1][index] -= accum_dt/rho*grad_phi[1];
-            if (i == (imin+imax)/2)
-                printf("vel[%d] = %f\n",j,vel[1][index]);
 	}
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	//extractFlowThroughVelocity();
+	
+    //extractFlowThroughVelocity();
 	computeVelDivergence();
 
 	if (debugging("check_div"))
