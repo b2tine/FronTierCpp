@@ -1,0 +1,104 @@
+Domain limit in 0-th dimension: 0.000000 1.000000
+Domain limit in 1-th dimension: 0.000000 4.000000
+Computational grid: 50 200 
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Enter yes for debugging: yes
+Enter the debugging string: integration_test
+Enter problem type: TWO_FLUID_RT
+Enter projection type: SIMPLE
+The default advection order is WENO-Runge-Kutta 4
+Enter advection order: 
+Cannot find the string, using default
+Available elliptic methods are:
+	Simple elliptic (S)
+	CIM elliptic (C)
+	Double elliptic (DB)
+	Dual elliptic (DU)
+Enter elliptic method: 
+Cannot find the string, using default
+Enter fluid ambient velocity: 
+Cannot find the string, using default
+Enter upper bound for speed: 
+Cannot find the string, using default
+Enter yes to use total divergence cancellation: 
+Cannot find the string, using default
+Enter density and viscosity of the fluid: 
+Cannot find the string, using default
+Enter yes to use eddy viscosity: 
+Cannot find the string, using default
+Enter gravity: 0.000000 -100.000000 
+Enter yes to consider scalar field: 
+Cannot find the string, using default
+Enter minimum speed to limit time step: 
+Cannot find the string, using default
+Enter mean position of fluid interface: 2.600000
+Enter number of sine modes: 1
+Enter frequency of mode 1: 1.000000 0.000000 
+Enter amplitude of mode 1: 0.050000
+Enter phase of mode 1: 270.000000
+Enter density and viscosity of fluid 1: 0.100000 0.006280
+Enter density and viscosity of fluid 2: 1.000000 0.006280
+Enter gravity: 0.000000 -100.000000 
+Enter surface tension: 0.000000
+Enter factor of smoothing radius: 1.000000
+Available type of Dirichlet boundary include: 
+	Constant state (C)
+	Flow through (F)
+	Time dependent (T)
+	Split state (S)
+Type y to set movie bounds: 
+Cannot find the string, using default
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make movie of viscosity: 
+Cannot find the string, using default
+Type y to make vector velocity field movie: n
+Max time: 0.380000
+Max step: 10
+Print interval: 0.100000
+Movie frame interval: 0.010000
+CFL factor: 0.750000
+Redistribution interval: 5
+Type yes to turn off auto-redistribution: 
+Cannot find the string, using default
+In first call to u_pp_send(), setting the buffer size to 100000000 bytes.
+
+time =     0.01000000000000   step =     1   next dt =     0.01000000000000
+
+time =     0.02000000000000   step =     2   next dt =     0.01000000000000
+
+time =     0.03000000000000   step =     3   next dt =     0.00757021495168
+
+time =     0.03757021495168   step =     4   next dt =     0.00242978504832
+
+time =     0.04000000000000   step =     5   next dt =     0.00468192281343
+
+time =     0.04468192281343   step =     6   next dt =     0.00444890033727
+
+time =     0.04913082315071   step =     7   next dt =     0.00086917684929
+
+time =     0.05000000000000   step =     8   next dt =     0.00339119464612
+
+time =     0.05339119464612   step =     9   next dt =     0.00334724518404
+
+time =     0.05673843983015   step =    10   next dt =     0.00306892785564
+
+iFluid.cpp:186: error: calling clean_up
+
+		CLEAN_UP, error = 0
+
+Storage used 113462344 bytes
+
+
+		EXECUTION TIME DATA:
+
+		CPU TIME: 1 Second
+		SYS TIME: 0 Seconds
+		MAX RSS = 142640 Kilobytes
+
+		TERMINATION TIME OF RUN:   Mon Jul  1 22:11:07 2019
+
