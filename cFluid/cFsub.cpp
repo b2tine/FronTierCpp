@@ -797,7 +797,7 @@ static  void contact_point_propagate(
 	*newst = *oldst;
 	newst->dim = dim;
 	newst->eos = &eos[positive_component(oldhs)];
-	FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_dens,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_dens,getStateDens,&newst->dens,&default_var);
