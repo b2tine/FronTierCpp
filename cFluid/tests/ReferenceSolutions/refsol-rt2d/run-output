@@ -1,0 +1,93 @@
+Domain limit in 0-th dimension: 0.000000 1.000000
+Domain limit in 1-th dimension: 0.000000 4.000000
+Computational grid: 50 200 
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Enter yes for debugging: yes
+Enter the debugging string: integration_test
+Enter problem type: TWO_FLUID_RT
+Available numerical schemes are:
+	TVD_1st_order
+	TVD_2nd_order
+	TVD_4th_order
+	WENO_1st_order
+	WENO_2nd_order
+	WENO_4th_order
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Enter yes to use artificial compression: 
+Cannot find the string, using default
+Enter order of point propagator: 2
+Enter yes for comparison with base data: 
+Cannot find the string, using default
+Enter gamma, pinf, einf of the fluid with comp 2: 1.670000 0.000000 0.000000
+Enter gamma, pinf, einf of the fluid with comp 3: 1.670000 0.000000 0.000000
+Enter density of top fluid: 2.000000
+Enter density of bottom fluid: 1.000000
+Enter gravity: 0.000000 -0.140000 
+Enter pressure at interface: 1.000000
+Type yes to track the interface: y
+Enter mean position of fluid interface: 2.200000
+Enter number of sine modes: 1
+Enter frequency of mode 1: 1.000000 
+Enter amplitude of mode 1: 0.050000
+Enter phase of mode 1: 270.000000
+Type y to set movie bounds: 
+Cannot find the string, using default
+Type y to make movie of density: n
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make vector velocity field movie: 
+Cannot find the string, using default
+Type y to make scalar density field movie: 
+Cannot find the string, using default
+Type y to make scalar pressure field movie: 
+Cannot find the string, using default
+Max time: 10.000000
+Max step: 10
+Print interval: 0.010000
+Movie frame interval: 1.000000
+CFL factor: 0.750000
+Redistribution interval: 5
+Type yes to turn off auto-redistribution: 
+Cannot find the string, using default
+
+time =     0.00000000000000   step =     0   next dt =     0.00369113681919
+
+time =     0.00369113681919   step =     1   next dt =     0.00369113681919
+
+time =     0.00738227363838   step =     2   next dt =     0.00261772636162
+
+time =     0.01000000000000   step =     3   next dt =     0.00368947699285
+
+time =     0.01368947699285   step =     4   next dt =     0.00368909408758
+
+time =     0.01737857108043   step =     5   next dt =     0.00262142891957
+
+time =     0.02000000000000   step =     6   next dt =     0.00368813079352
+
+time =     0.02368813079352   step =     7   next dt =     0.00368774819352
+
+time =     0.02737587898704   step =     8   next dt =     0.00262412101296
+
+time =     0.03000000000000   step =     9   next dt =     0.00368686424684
+
+time =     0.03368686424684   step =    10   next dt =     0.00368658974035
+
+cFluid.cpp:174: error: calling clean_up
+
+		CLEAN_UP, error = 0
+
+Storage used 13328184 bytes
+
+
+		EXECUTION TIME DATA:
+
+		CPU TIME: 1 Second
+		SYS TIME: 0 Seconds
+		MAX RSS = 29156 Kilobytes
+
+		TERMINATION TIME OF RUN:   Tue Jul  2 15:12:38 2019
+
