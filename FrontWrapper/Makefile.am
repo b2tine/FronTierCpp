@@ -11,7 +11,7 @@ noinst_PROGRAMS = example00
 
 example00_SOURCES = example00.cpp
 
-example00_LDADD = $(top_builddir)/lib/libFronTierCpp.la
+example00_LDADD = $(builddir)/objs/libFronTierCpp.la
 
 
 

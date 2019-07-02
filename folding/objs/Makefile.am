@@ -18,11 +18,11 @@ AM_LDFLAGS = @CVODE_LIBS@ \
 			 @ARMA_LIBS@
 
 
-noinst_LTLIBRARIES = ../../lib/libfolding.la
+noinst_LTLIBRARIES = libfolding.la
 
 
 
-______lib_libfolding_la_SOURCES = \
+libfolding_la_SOURCES = \
 ../bending.cpp \
 ../bending.h \
 ../cgal.cpp \
@@ -45,16 +45,13 @@ ______lib_libfolding_la_SOURCES = \
 
 
 
-______lib_libfolding_la_LIBADD = $(top_builddir)/lib/libCollision.la
+libfolding_la_LIBADD = $(top_builddir)/Collision/objs/libCollision.la
 
 
 
-
-$(______lib_libfolding_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/Collision/objs && $(MAKE) all
+$(libfolding_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/Collision/objs libCollision.la
 
 FORCE:
 
 
-
-clean-libtool:

@@ -31,12 +31,12 @@ parachute_SOURCES = modules.cpp \
 					parachute.cpp
 
 
-parachute_LDADD = $(top_builddir)/lib/libairfoil.la
+parachute_LDADD = $(top_builddir)/airfoil/objs/libairfoil.la
 
 
 
 $(parachute_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/airfoil/objs && $(MAKE) all
+	@$(MAKE) -C $(top_builddir)/airfoil/objs libairfoil.la
 
 FORCE:
 

@@ -1,4 +1,4 @@
-SUBDIRS = objs . tests
+SUBDIRS = objs tests
 
 input_directories = input
 
@@ -24,7 +24,7 @@ noinst_PROGRAMS = test
 				  
 test_SOURCES = test.cpp
 
-test_LDADD = $(top_builddir)/lib/libCollision.la
+test_LDADD = $(builddir)/objs/libCollision.la
 
 
 

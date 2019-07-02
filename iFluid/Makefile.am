@@ -1,4 +1,4 @@
-SUBDIRS = objs
+SUBDIRS = objs tests
 
 input_directories = input-bubble \
 				   	input-cauchy \
@@ -26,7 +26,7 @@ noinst_PROGRAMS = iFluid
 iFluid_SOURCES = iFluid.cpp
 
 
-iFluid_LDADD = $(top_builddir)/lib/libiFluid.la
+iFluid_LDADD = $(builddir)/objs/libiFluid.la
 
 
 

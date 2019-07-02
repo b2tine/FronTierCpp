@@ -17,8 +17,9 @@ noinst_HEADERS = \
 
 noinst_LTLIBRARIES = libutil.la
 
+libutil_la_SOURCES = $(noinst_HEADERS)
 
-libutil_la_SOURCES = \
+libutil_la_SOURCES += \
 ../cleanup.c \
 ../debug.c \
 ../error.c \
@@ -42,8 +43,8 @@ libutil_la_SOURCES = \
 ../uinit.c \
 ../umap.c \
 ../vectormalloc.c \
-../vtk.c \
-../dummyutil.cpp
+../vtk.c
 
-
+#Add a dummy c++ source file so the linker behaves properly.
+libutil_la_SOURCES += ../dummyutil.cpp
 

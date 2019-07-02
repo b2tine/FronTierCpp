@@ -21,13 +21,13 @@ crystal_SOURCES = crystal.h \
 				  crystal.cpp
 
 
-crystal_LDADD = $(top_builddir)/lib/libsolver.la
+crystal_LDADD = $(top_builddir)/solver/objs/libsolver.la
 
 
 
 
 $(crystal_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/solver && $(MAKE) all
+	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
 
 FORCE:
 

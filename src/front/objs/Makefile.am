@@ -18,7 +18,9 @@ noinst_HEADERS = \
 
 noinst_LTLIBRARIES = libfront.la
 
-libfront_la_SOURCES = \
+libfront_la_SOURCES = $(noinst_HEADERS)
+
+libfront_la_SOURCES += \
 ../fadv3d.c \
 ../fadv.c \
 ../fbdry1.c \
@@ -69,7 +71,9 @@ libfront_la_SOURCES = \
 ../funtan3d.c \
 ../fuserhooks.c \
 ../fuserintfc.c \
-../fvelo.c \
-../dummyfront.cpp
+../fvelo.c
+
+#Add a dummy c++ source file so the linker behaves properly.
+libfront_la_SOURCES += ../dummyfront.cpp
 
 

@@ -7,5 +7,10 @@ EXTRA_DIST = input \
  			 front_gpu.cuh
 
 
+libraries:
+	@$(MAKE) -C objs libfront.la
+
+
+
 tagsfile:
 	ctags $(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

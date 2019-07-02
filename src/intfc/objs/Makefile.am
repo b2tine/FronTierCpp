@@ -25,8 +25,9 @@ noinst_HEADERS = \
 
 noinst_LTLIBRARIES = libintfc.la
 
+libintfc_la_SOURCES = $(noinst_HEADERS)
 
-libintfc_la_SOURCES = \
+libintfc_la_SOURCES += \
 ../arrayutils.c \
 ../comp1d.c \
 ../comp2d.c \
@@ -74,6 +75,8 @@ libintfc_la_SOURCES = \
 ../triangle.c \
 ../trisurf.c \
 ../userhooks.c \
-../zoom.c \
-../dummyintfc.cpp
+../zoom.c
+
+#Add a dummy c++ source file so the linker behaves properly.
+libintfc_la_SOURCES += ../dummyintfc.cpp
 

@@ -1,4 +1,4 @@
-SUBDIRS = objs . tests
+SUBDIRS = objs tests
 
 
 input_directories = input-2d \
@@ -37,7 +37,7 @@ noinst_PROGRAMS = airfoil
 airfoil_SOURCES = airfoil.cpp
 
 
-airfoil_LDADD =	$(top_builddir)/lib/libairfoil.la
+airfoil_LDADD =	$(builddir)/objs/libairfoil.la
 
 
 

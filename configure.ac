@@ -437,8 +437,8 @@ AM_CONDITIONAL([LIBCPP_OPT],[test $libCpp = yes])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/gmock/Makefile
+                 lib/tests/Makefile
                  src/Makefile
-                 src/tests/Makefile
                  src/util/Makefile
                  src/util/objs/Makefile
                  src/util/tests/Makefile

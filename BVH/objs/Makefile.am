@@ -12,11 +12,11 @@ AM_CPPFLAGS = -I$(top_srcdir)/BVH \
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
-noinst_LTLIBRARIES = ../../lib/libBVH.la
+noinst_LTLIBRARIES = libBVH.la
 
 
 
-______lib_libBVH_la_SOURCES = \
+libBVH_la_SOURCES = \
 ../HyperSurfElement.h \
 ../HyperSurfElement.cpp \
 ../BoundingVolume.h \
@@ -32,15 +32,13 @@ ______lib_libBVH_la_SOURCES = \
 ../BVH_util.h
 
 
-______lib_libBVH_la_LIBADD = $(top_builddir)/lib/libairfoil.la
+libBVH_la_LIBADD = $(top_builddir)/airfoil/objs/libairfoil.la
 
 
 
-$(______lib_libBVH_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/airfoil/objs && $(MAKE) all
+$(libBVH_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/airfoil/objs libairfoil.la
 
 
 FORCE:
 
-
-clean-libtool:

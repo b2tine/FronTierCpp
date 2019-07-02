@@ -10,11 +10,11 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
-noinst_LTLIBRARIES = ../../lib/libCollision.la
+noinst_LTLIBRARIES = libCollision.la
 
 
 
-______lib_libCollision_la_SOURCES = \
+libCollision_la_SOURCES = \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
@@ -23,14 +23,12 @@ ______lib_libCollision_la_SOURCES = \
 ../AABB.h
 
 
-______lib_libCollision_la_LIBADD = $(top_builddir)/lib/libiFluid.la
+libCollision_la_LIBADD = $(top_builddir)/iFluid/objs/libiFluid.la
 
 
 
-$(______lib_libCollision_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
+$(libCollision_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/iFluid/objs libiFluid.la
 
 FORCE:
 
-
-clean-libtool:

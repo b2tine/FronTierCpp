@@ -19,12 +19,12 @@ subsurf_SOURCES = subsurf.h \
 
 subsurf_LDADD =	$(top_builddir)/crystal/ccartsn.o \
 				$(top_builddir)/crystal/crysub.o \
-				$(top_builddir)/lib/libiFluid.la
+				$(top_builddir)/iFluid/objs/libiFluid.la
 
 
 $(subsurf_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/iFluid/objs && $(MAKE) all
-	@cd $(top_builddir)/crystal && $(MAKE) all
+	@$(MAKE) -C $(top_builddir)/crystal all
+	@$(MAKE) -C $(top_builddir)/iFluid/objs libiFluid.la
 
 FORCE:
 

@@ -1,14 +1,12 @@
 #!/bin/bash
 
-source ~/.bashrc
-
 PETSC_ARCH="opt"
 
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
-        DEBUG_FLAGS="-g3 -rdynamic"
+        DEBUG_FLAGS="-g3"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     fi
@@ -26,7 +24,7 @@ function config_intruder {
     export CC=mpicc
     export CXX=mpicxx
     export CFLAGS="-std=gnu11 $CFLAGS"
-    CONF="--with-mpi --with-petsc-dir=/opt/petsc-3.11.0-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=/opt/cgal-4.11.1/include --with-cgal-lib=/opt/cgal-4.11.1/lib64 --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
+    CONF="--with-mpi --with-petsc-dir=/opt/petsc-3.11.0-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-dir=/opt/cgal --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
 }
 
 function config_omega {
@@ -65,7 +63,6 @@ function config_defiant {
     export CXX=${PETSC_DIR}/bin/mpicxx
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
-
 
 HOST=`uname -n`
 

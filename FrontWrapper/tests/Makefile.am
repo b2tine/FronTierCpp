@@ -21,17 +21,14 @@ check_PROGRAMS += FrontWrapperTests
 
 FrontWrapperTests_SOURCES = FrontWrapperTests.cpp
 
-FrontWrapperTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-						 $(top_builddir)/lib/libFronTierCpp.la
-
+FrontWrapperTests_LDADD = $(top_builddir)/FrontWrapper/objs/libFronTierCpp.la \
+						  $(top_builddir)/lib/gmock/lib/libgmock_main.la
 
 $(FrontWrapperTests_DEPENDENCIES): FORCE
+	@cd $(top_builddir)/FrontWrapper/objs && $(MAKE) libFronTierCpp.la
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/FrontWrapper/objs && $(MAKE) all
 
 FORCE:
-
-
 
 
 tagsfile:

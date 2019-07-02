@@ -26,12 +26,12 @@ noinst_PROGRAMS =
 
 noinst_PROGRAMS += collision
 collision_SOURCES = collision.cpp
-collision_LDADD = $(top_builddir)/lib/libBVH.la
+collision_LDADD = $(builddir)/objs/libBVH.la
 
 
 noinst_PROGRAMS += OFF2FTsurf			  
 OFF2FTsurf_SOURCES = OFF2FTsurf.cpp
-OFF2FTsurf_LDADD = $(top_builddir)/lib/libBVH.la
+OFF2FTsurf_LDADD = $(builddir)/objs/libBVH.la
 
 
 

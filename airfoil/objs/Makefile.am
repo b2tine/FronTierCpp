@@ -13,11 +13,11 @@ AM_CPPFLAGS += -DDAMPING_FORCE
 
 
 
-noinst_LTLIBRARIES = ../../lib/libairfoil.la
+noinst_LTLIBRARIES = libairfoil.la
 
 
 
-______lib_libairfoil_la_SOURCES = \
+libairfoil_la_SOURCES = \
 ../airfoil.h \
 ../airfoil_sv.h \
 ../afcnpy.cpp \
@@ -32,16 +32,12 @@ ______lib_libairfoil_la_SOURCES = \
 
 
 
-______lib_libairfoil_la_LIBADD = $(top_builddir)/lib/libCollision.la
+libairfoil_la_LIBADD = $(top_builddir)/Collision/objs/libCollision.la
 
 
 
-
-$(______lib_libairfoil_la_DEPENDENCIES): FORCE
-	@cd $(top_builddir)/Collision/objs && $(MAKE) all
+$(libairfoil_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/Collision/objs libCollision.la
 
 FORCE:
 
-
-
-clean-libtool:

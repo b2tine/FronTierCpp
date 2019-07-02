@@ -1,0 +1,1 @@
+//so linker behaves properly

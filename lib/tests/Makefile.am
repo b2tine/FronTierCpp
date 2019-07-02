@@ -20,13 +20,14 @@ check_PROGRAMS += libFronTierTests
 
 libFronTierTests_SOURCES = libFronTierTests.cpp
 
-libFronTierTests_LDADD = $(top_builddir)/lib/gmock/lib/libgmock_main.la \
-						 $(top_builddir)/lib/libFronTier.la
+libFronTierTests_LDADD = $(top_builddir)/lib/libFronTier.la \
+						 $(top_builddir)/lib/gmock/lib/libgmock_main.la
+
 
 
 $(libFronTierTests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
-	@cd $(top_builddir)/src && $(MAKE) all
+	@cd $(top_builddir)/lib && $(MAKE) libFronTier.la
 
 FORCE:
 

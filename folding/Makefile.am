@@ -1,4 +1,4 @@
-SUBDIRS = objs . tests
+SUBDIRS = objs tests
 
 
 EXTRA_DIST = input
@@ -22,7 +22,7 @@ noinst_PROGRAMS = test
 test_SOURCES = test.cpp
 
 
-test_LDADD = $(top_builddir)/lib/libfolding.la
+test_LDADD = $(builddir)/objs/libfolding.la
 
 
 
