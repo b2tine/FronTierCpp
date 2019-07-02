@@ -11,7 +11,7 @@ infile_prefixes = ['in-']
 script_prefixes = ['build','mrun','qrun-inputdir']
 prefixes = tuple(infile_prefixes + script_prefixes)
 
-script_suffixes = ['.py']
+script_suffixes = ['.py','sh']
 autotools_suffixes = ['.ac','.am','.m4']
 src_suffixes = ['.c','.cpp','.h','.hpp','.cu','.cuh']
 suffixes = tuple(script_suffixes + autotools_suffixes + src_suffixes)

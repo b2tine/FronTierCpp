@@ -79,6 +79,7 @@ FrontWrapper/example00
 #Others
 *~
 core.*
+test-*
 */out-*
 autogen*
 */input*/qrun

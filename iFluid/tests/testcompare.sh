@@ -1,9 +1,9 @@
 #!/bin/bash
 
-testcase=$1
+casename=$1
 
-testdir="test-$testcase"
-refdir="refsol-$testcase"
+testdir="ReferenceSolutions/test-$casename"
+refdir="ReferenceSolutions/refsol-$casename"
 
 for refsol in $refdir/{intfc,state}*; do
     filename=$(basename $refsol)
@@ -19,5 +19,5 @@ for refsol in $refdir/{intfc,state}*; do
     fi
 done
 
-echo "PASS: $testcase"
+echo "PASS: $casename"
 exit 0

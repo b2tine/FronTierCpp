@@ -8,8 +8,8 @@ Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 
 Max time: 0.38
 Max step: 10
-Print interval: 0.1
-Movie frame interval: 0.01
+Print interval: 0.01
+Movie frame interval: 1
 CFL factor: 0.75
 Redistribution interval: 5
 

@@ -538,22 +538,25 @@ EXPORT	void FT_Draw(
 {
 	char *out_name = OutName(front);
 	
-        if (debugging("trace"))
-            (void) printf("Entering FT_Draw()\n");
-	show_front_output(front,out_name,YES);
-        if (debugging("trace"))
-            (void) printf("Leaving FT_Draw()\n");
+    if (debugging("trace"))
+        (void) printf("Entering FT_Draw()\n");
+
+    if (!debugging("integration_test"))
+        show_front_output(front,out_name,YES);
+    
+    if (debugging("trace"))
+        (void) printf("Leaving FT_Draw()\n");
 }	/* end FT_Draw */
 
 EXPORT	void FT_Save(
 	Front *front)
 {
 	char *out_name = OutName(front);
-        if (debugging("trace"))
-            (void) printf("Entering FT_Save()\n");
+    if (debugging("trace"))
+        (void) printf("Entering FT_Save()\n");
 	print_front_output(front,out_name);
-        if (debugging("trace"))
-            (void) printf("Leaving FT_Save()\n");
+    if (debugging("trace"))
+        (void) printf("Leaving FT_Save()\n");
 }	/* end FT_Save */
 
 EXPORT	void FrontFreeAll(

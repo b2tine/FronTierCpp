@@ -59,8 +59,8 @@ Cannot find the string, using default
 Type y to make vector velocity field movie: n
 Max time: 0.380000
 Max step: 10
-Print interval: 0.100000
-Movie frame interval: 0.010000
+Print interval: 0.010000
+Movie frame interval: 1.000000
 CFL factor: 0.750000
 Redistribution interval: 5
 Type yes to turn off auto-redistribution: 
@@ -91,14 +91,14 @@ iFluid.cpp:186: error: calling clean_up
 
 		CLEAN_UP, error = 0
 
-Storage used 113462360 bytes
+Storage used 111531648 bytes
 
 
 		EXECUTION TIME DATA:
 
-		CPU TIME: 1 Second
-		SYS TIME: 0 Seconds
-		MAX RSS = 142584 Kilobytes
+		CPU TIME: 2 Seconds
+		SYS TIME: 1 Second
+		MAX RSS = 141252 Kilobytes
 
-		TERMINATION TIME OF RUN:   Mon Jul  1 21:46:24 2019
+		TERMINATION TIME OF RUN:   Tue Jul  2 06:44:20 2019
 

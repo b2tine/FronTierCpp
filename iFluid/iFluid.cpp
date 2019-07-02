@@ -218,7 +218,11 @@ static void ifluid_driver(Front *front,
     
         FT_SetTimeStep(front);
         front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+    
         FT_Draw(front);
+        FT_Save(front);
+        l_cartesian->printFrontInteriorStates(out_name);
+        
         FT_SetOutputCounter(front);
     }
     else
