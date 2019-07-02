@@ -1641,11 +1641,13 @@ EXPORT	void f_user_fprint_curve(
 	    fprint_wave_type(file,"\n\tcurve->wave_type = ",
 			     wave_type(curve),"\n",curve->interface);
             /* FIXME. Implementation of boolean is compiler dependent. */
-	    fprintf(file,"\tHs_flag(curve) = %p\n",(void*)&Hs_flag(curve));
-	    fprint_redistribution_direction(file,
-					    "\n\tredistribution_direction = ",
-					    redistribution_direction(curve),
-					    "\n");
+	    
+    if (!debugging("integration_test"))
+        fprintf(file,"\tHs_flag(curve) = %p\n", (void*)&Hs_flag(curve));
+
+    fprint_redistribution_direction(file,
+            "\n\tredistribution_direction = ",redistribution_direction(curve),"\n");
+
 	    (void) fprintf(file,"\tSpecialized curve normal function = ");
 	    if (hypersurface_normal(curve))
 	        (void) fprintf(file,"%s\n",hypersurface_normal_name(curve));

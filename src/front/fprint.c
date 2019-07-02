@@ -1162,8 +1162,10 @@ EXPORT void print_front_output(
 	    sprintf(intfc_name,"%s-nd%s",intfc_name,right_flush(pp_mynode(),4));
 
 	out_file = fopen(intfc_name,"w");
-	print_title(out_file,"");
-	fprint_front_time_stamp(out_file,front);
+    if (!debugging("integration_test"))
+        print_title(out_file,"");
+	
+    fprint_front_time_stamp(out_file,front);
 	fprintf(out_file,"\n#");
 	fprint_interface(out_file,front->interf);
 	fclose(out_file);
