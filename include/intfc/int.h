@@ -129,6 +129,7 @@ struct _BOND
 	double length;
 	double length0;			/* for fixed length bond */
 	double dir0[MAXD];		/* initial direction */
+        long global_index;
 
 	struct _BOND_TRI **_btris;	/* Bounding triangles in angle order */
 };
@@ -258,6 +259,7 @@ struct _TRI
 	int boundary;		/* tri bonds on interface curves? */
 	int order;		/* used as an identification for a tri, avoid 
 				   the conflict with _index in private_data. */
+        long global_index;
 	boolean	constrained;	/* If yes will not free to move */
 	union
 	{
@@ -468,6 +470,7 @@ struct _INTERFACE
 	int		dim;		/* Dimension of Imbedding Space */
 	int		num_points;	/* Total from curves */
 	long		max_point_gindex;
+	long		max_tri_gindex;
 	long		max_curve_gindex;
 	long		max_surf_gindex;
 

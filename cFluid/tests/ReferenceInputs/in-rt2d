@@ -1,15 +1,16 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 4
 Computational grid: 50 200
+
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
 Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 
-Max time: 10
-Max step: 10
+Max time: 16
+Max step: 100
 Print interval: 0.01
-Movie frame interval: 1
+Movie frame interval: 0.25
 CFL factor: 0.75
 Redistribution interval: 5
 
@@ -18,11 +19,13 @@ Problem type can be
 	TWO_FLUID_RT
 	FLUID_SOLID_CIRCLE
 Enter problem type: TWO_FLUID_RT
+
 Numerical scheme for interior solver can be
         TVD_1st_ORDER
         TVD_2nd_ORDER
         TVD_4th_ORDER
 Enter numerical scheme for interior solver: WENO_4th_ORDER
+
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 2
 

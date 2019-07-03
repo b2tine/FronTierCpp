@@ -426,6 +426,7 @@ EXPORT void scatter_top_grid_float_array(
 	GRID_TYPE grid_type,
 	double *array,
 	Front *front,
+    int *gmax,
 	int *symmetry)
 {
 	INTERFACE *intfc;
@@ -437,7 +438,7 @@ EXPORT void scatter_top_grid_float_array(
 	int myid,dst_id,*G;
 	int me[3],him[3];
 	RECT_GRID *comp_grid,*top_grid;
-	int lbuf[MAXD],ubuf[MAXD],*gmax;
+	int lbuf[MAXD],ubuf[MAXD];
 	static int max_buf = 0;
 	static int storage_size = 0;
 	static int min_gmax;
@@ -467,8 +468,8 @@ EXPORT void scatter_top_grid_float_array(
 	}
 
 	comp_grid = computational_grid(intfc);
-	top_grid = &topological_grid(intfc);
-	gmax = top_grid->gmax;
+	//top_grid = &topological_grid(intfc);
+	//gmax = top_grid->gmax;
 	for (i = 0; i < dim; ++i)
 	{
 	    lbuf[i] = comp_grid->lbuf[i];
@@ -1484,22 +1485,22 @@ EXPORT 	void scatter_cell_index(
 	Front *fr,
 	int *lbuf,
 	int *ubuf,
-	GRID_TYPE grid_type,
+	int *gmax,
 	POINTER ijk_to_I)
 {
 	INTERFACE *intfc = fr->interf;
 	int       me[MAXD], him[MAXD];
 	int       myid, dst_id;
 	PP_GRID   *pp_grid = fr->pp_grid;
-	RECT_GRID *gr = fr->rect_grid;
-	int       *G = pp_grid->gmax;
+	
+    int       *G = pp_grid->gmax;
 	int       i, j, k;
-        int       dim = gr->dim;
-	int 	  gmax[MAXD];
+    int       dim = fr->rect_grid->dim;
 	int       *bfs,*bfr;
 	int	  size,max_size,max_buf;
 	int	  index_tag = 8;
 
+    /*
 	for (i = 0; i < dim; ++i) 
 	{
 	    gmax[i] = gr->gmax[i];
@@ -1510,6 +1511,8 @@ EXPORT 	void scatter_cell_index(
 			gmax[i] -= 1;
 	    }
 	}
+    */
+
 	max_size = max_buf = 0;
 	for (i = 0; i < dim; ++i) 
 	{

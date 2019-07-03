@@ -801,13 +801,13 @@ static  void contact_point_propagate(
 			m_dens,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_dens,getStateDens,&newst->dens,&default_var);
-	FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_engy,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_engy,getStateEngy,&newst->engy,&default_var);
 	for (i = 0; i < dim; ++i)
 	{
-	    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+	    FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_mom[i],2,&default_var);
 	    FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		    m_mom[i],getStateMom[i],&newst->momn[i],&default_var);

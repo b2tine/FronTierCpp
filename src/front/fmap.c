@@ -645,7 +645,18 @@ EXPORT	void FT_ParallelExchGridArrayBuffer(
 	Front *front,
 	int *symmetry)
 {
-	scatter_top_grid_float_array(DUAL_GRID,grid_array,front,symmetry);
+    RECT_GRID *top_grid = &topological_grid(front->grid_intfc);
+    int *gmax = top_grid->gmax;
+	scatter_top_grid_float_array(DUAL_GRID,grid_array,front,gmax,symmetry);
+}	/* end FT_ParallelExchGridArrayBuffer */
+
+EXPORT	void FT_ParallelExchExtendedGridArrayBuffer(
+	double *grid_array,
+	Front *front,
+        int *gmax,
+	int *symmetry)
+{
+	scatter_top_grid_float_array(DUAL_GRID,grid_array,front,gmax,symmetry);
 }	/* end FT_ParallelExchGridArrayBuffer */
 
 EXPORT	void FT_ParallelExchGridStructArrayBuffer(
@@ -675,7 +686,9 @@ EXPORT  void FT_ParallelExchCompGridArrayBuffer(
         Front *front,
 	int *symmetry)
 {
-	scatter_top_grid_float_array(COMP_GRID,grid_array,front,symmetry);
+    RECT_GRID *top_grid = &topological_grid(front->comp_grid_intfc);
+    int *gmax = top_grid->gmax;
+	scatter_top_grid_float_array(COMP_GRID,grid_array,front,gmax,symmetry);
 }       /* end FT_ParallelExchCompGridArrayBuffer */
 
 EXPORT	HYPER_SURF *FT_HyperSurfAtGridCrossing(
@@ -3402,13 +3415,24 @@ EXPORT void FT_RecordMaxFrontSpeed(
 	set_max_front_speed(dir,speed,state,coords,front);
 }	/* end FT_RecordMaxFrontSpeed */
 
+EXPORT void FT_ParallelExchExtendedCellIndex(
+	Front *front,
+	int *lbuf,
+	int *ubuf,
+        int *gmax,
+	POINTER ijk_to_I)
+{
+	scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
+}	/* end FT_ParallelExchCellIndex */
+
 EXPORT void FT_ParallelExchCellIndex(
 	Front *front,
 	int *lbuf,
 	int *ubuf,
 	POINTER ijk_to_I)
 {
-	scatter_cell_index(front,lbuf,ubuf,DUAL_GRID,ijk_to_I);
+    int *gmax = front->rect_grid->gmax;
+	scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
 }	/* end FT_ParallelExchCellIndex */
 
 EXPORT void FT_ParallelExchCompGridCellIndex(
@@ -3417,7 +3441,20 @@ EXPORT void FT_ParallelExchCompGridCellIndex(
 	int *ubuf,
 	POINTER ijk_to_I)
 {
-	scatter_cell_index(front,lbuf,ubuf,COMP_GRID,ijk_to_I);
+    int i,gmax[MAXD];
+    INTERFACE *intfc = front->interf;
+    RECT_GRID *gr = front->rect_grid;
+
+    for (i = 0; i < gr->dim; ++i)
+    {
+        gmax[i] = gr->gmax[i];
+        if (rect_boundary_type(intfc,i,0) != SUBDOMAIN_BOUNDARY &&
+            rect_boundary_type(intfc,i,1) != SUBDOMAIN_BOUNDARY)
+        {
+            gmax[i] -= 1;
+        }
+    }
+	scatter_cell_index(front,lbuf,ubuf,gmax,ijk_to_I);
 }	/* end FT_ParallelExchCellIndex */
 
 EXPORT	void FT_GetStatesAtPoint(

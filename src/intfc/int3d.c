@@ -422,6 +422,8 @@ LOCAL	void copy_tris(
 	    for (j = 0; j < 3; ++j)
 	    	ntris[i]->side_length0[j] = oldtri->side_length0[j];
 
+        Gindex(ntris[i]) = Gindex(oldtri);
+
 	    if (i)
 	    {
 	    	ntris[i]->prev = ntris[i-1];

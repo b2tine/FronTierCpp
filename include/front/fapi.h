@@ -974,6 +974,25 @@ extern "C" {
    				Front* front ,
 				int* symmetry);
 
+/*! \fn void FT_ParallelExchExtendedGridArrayBuffer(double *grid_array, Front *front, int, *ext_gmax, int *symmetry)
+ *  \ingroup PARALLEL
+    \brief This is a parallel communication function for a double array
+     on the expanded dual grid of the grid_intfc in front. It will cut 
+     the old buffer parts of the array and patch it with new buffer parts 
+     received from other subdomains or periodically shifted sides. This is a 
+     synchronous function and must be called synchronously by every processor.
+     This function differs from FT_ParallelExchGridArrayBuffer() in that
+     it uses ext_gmax instead of the gmax in grid_intfc's top grid.
+    \param grid_array @b inout A double array of variable on expanded duel grid.
+    \param front @b in	Pointer to Front.
+    \param ext_gmax @b in extended size of the domain.
+    \param symmetry @b in Flag of symmetry in each direction (in reflection).
+ */
+   IMPORT  void FT_ParallelExchExtendedGridArrayBuffer(double *grid_array ,
+   				Front* front ,
+                                int *ext_gmax,
+				int* symmetry);
+
 /*! \fn void FT_ParallelExchGridStructArrayBuffer(POINTER pstruct, Front *front, int psize)
  *  \ingroup PARALLEL
     \brief This is a parallel communication function for a struct array
@@ -1032,6 +1051,24 @@ extern "C" {
    IMPORT  void FT_ParallelExchCompGridArrayBuffer(double *grid_array ,
    				Front* front ,
 				int* symmetry);
+
+/*! \fn void FT_ParallelExchExtendedCellIndex(Front *front, int *lbuf, int *ubuf, int *gmax, POINTER ijk_to_I)
+ *  \ingroup PARALLEL
+    \brief This is a parallel communication function for the cell index
+     on the specially extended dual grid of the grid_intfc in front. The 
+     cell index translate the nD (n=2,3) icoordinates to a one dimensional 
+     index sequence. The indices are parallely globalized.
+    \param front @b in	Pointer to Front.
+    \param lbuf @b in size of buffer on the lower side.
+    \param ubuf @b in size of buffer on the upper side.
+    \param gmax @b in extended mesh limits.
+    \param ijk_to_I @b inout Pointer to array of indices on the expanded dual grid (ij_to_I for 2D).
+ */
+   IMPORT  void FT_ParallelExchExtendedCellIndex(Front* front ,
+				int *lbuf,
+				int *ubuf,
+                                int *gmax,
+				POINTER ijk_to_I);
 
 /*! \fn void FT_ParallelExchCellIndex(Front *front, int *lbuf, int *ubuf, POINTER ijk_to_I)
  *  \ingroup PARALLEL

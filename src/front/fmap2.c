@@ -524,8 +524,15 @@ EXPORT	void FT_SetGlobalIndex(
 	Front *front)
 {
 	set_point_gindex(front);
+	set_tri_gindex(front);
 	set_surface_gindex(front);
 	set_curve_gindex(front);
+        if (debugging("global_index"))
+        {
+            (void) printf("This run is to check global index only\n");
+            (void) printf("To continue, turn off debugging global_index\n");
+            clean_up(0);
+        }
 }	/* end FT_SetGlobalIndex */
 
 EXPORT void FT_SetSurfGlobalIndex(
