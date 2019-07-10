@@ -7,16 +7,14 @@ The FronTier++ README
 INDEX
 	1. Introduction
 	2. How to get it
-	3. Unpacking
-	4. Contents
-	5. Configuring and Building 
-	6. Running the test programs
-	7. Viewing the output
-	8. Parallel version of FronTier++
-	9. Selecting built-in interface initialization and velocity fields
-	10. Build your own initial interface
-	11. Build your own velocity field function
-        12. Propagating the interface
+	3. Contents
+	4. Configuring and Building 
+	5. Running the test programs
+	6. Viewing the output
+	7. Selecting built-in interface initialization and velocity fields
+	8. Build your own initial interface
+	9. Build your own velocity field function
+    10. Propagating the interface
 
 ---------------
 1. Introduction
@@ -33,16 +31,15 @@ dimensions.
 2. How to get it
 ----------------
 
-Send email to xiaolin.li@stonybrook.edu to request this package.
+The 1.1 release of FronTier++ (released May 2016) is available at: 
+http://www.ams.sunysb.edu/~chenx/FronTier++_Manual/download/index.html.  
+The most recent branch of the library is in active development and 
+available on github: https://github.com/b2tine/FronTierCpp.
 
-------------
-3. Unpacking 
-------------
-
-The FronTier++ library package is available in the .tar.gz format. 
+git clone https://github.com/b2tine/FronTierCpp.git
 
 -----------
-4. Contents
+3. Contents
 -----------
 
 If the archive is unpacked correctly, you should have the following files and
@@ -59,110 +56,141 @@ src/util/           code for utility functions in FronTier++
 example2d/        2d examples showing usage of the FronTier++ API.
 example3d/        3d examples showing usage of the FronTier++ API.
 
+The above source code and examples encapsulate the core of FronTier++.  But,
+in practice, this library is used as the foundation for more tailored 
+applications.  This includes the simulation of various problems in compressible 
+and incompressible fluid flow.  Software for these purposes is included in:
+
+iFluid/         code tailoried to problems of incompressible fluids
+cFluid/                                   ...  compressible ...
+solver/         numerical solvers
+
+The following folders again contain applications of the core software that are
+specialized to certain problems.
+
+airfoil/        code for coupled cloth and fluid interactions
+Collision/ 	    auxilliary code for cloth and fluid interactions
+folding/        code for applications in origami and computational geometry
+parachute/      3d code for parachute simulations
+parachute2d/    2d ...
+
+crystal/        code for applications in the surface physics of crystals
+melting/        additional code for ...
+subsurf/        ...
+
 ------------
-5. Configuring and  Building 
+4. Configuring and  Building 
 ------------
 
-FronTier++ is configured and built using autoconf, configure, and make. 
-For most users, it is the easiest to build FronTier++ using the wrapper 
-shell script. For machines already registered, the autoconf is very easy,
-simply type:
+FronTier++ is configured and built using autoconf, configure, and make.
+
+For new users, it is easiest to build FronTier++ with two specifically
+configured versions of PETSc.  This design ensures that MPI is configured
+correctly and PETSc is optimzed both for performance and debugging.
+
+Configuring FronTier++ with PETSc:
+   To download the PETSc package, go to:
+	https://www.mcs.anl.gov/petsc/download/index.html
+	
+   FronTier++ works with PETSc 3.11.  Most users use two separate builds of 
+   PETSc: one optimized for performance and one for debugging.  The 
+   instructions below install PETSc correcty in the /usrl/local/pkg/ 
+   directory as petsc-3.11.0-opt and petsc-3.11.0-dbg.  This can be modified 
+   by changing the directory given in the --prefix configuration option.
+	
+   Full PETSc installation instructions can be found at:
+	http://www.mcs.anl.gov/petsc/documentation/installation.html
+	
+   Once PETSc has been unpacked, from the root dir run:
+   
+   ./configure --prefix=/usr/local/pkg/petsc-3.11.0-opt --PETSC_ARCH=opt \
+     --with-cc=gcc --with-cxx=g++ --with-fc=gfortran --with-debugging=0 \
+     COPTFLAGS="-O3 -march=native -mtune=native" \
+     FOPTFLAGS="-O3 -march=native -mtune=natuve" --download-mpich --download-hypre
+ 
+   ./configure --prefix=/usr/local/pkg/petsc-3.11.0-dbg \
+     --with-cc=gcc --with-cxx=g++ --with-fc=gfortran \
+     --download-mpich --download-hypre
+
+   Now, in the FronTier++/ directory simply type "./build" or "./build -d" for debug
+   mode.  If the machine is unrecognized, it will prompt the user for the path to the
+   correct PETSc version.  The build script recognizes a few systems commonly used by FronTier++
+   developers and users. For these platforms, the script should work
+   automatically in batch mode without user intervention.
+   
    ./build
-This script sets some environment variables, calls autoconf and configure,
-and then optionally calls make. The build script has some command options 
-to control the modules to compile, which can be seen by running 
-"./build -h".
+   Unreognized machine.
+   Type the PETSc directory to use (opt, dbg):
+   /usr/local/pkg/petsc-3.11.0-opt
+   using /usr/local/pkg/petsc-3.11.0-opt
+   
+   ./build
+   Machine recognized as Hilbert.
 
-The build script recognizes a few systems commonly used by FronTier++
-developers and users. For these platforms, the script should work
-automatically in batch mode without user intervention, assuming the
-user's environment has set up correctly.
+   Note: FronTier++ will automatically be configured for parallel support with OpenMPI.
+   
 
-For an unrecognized system, the build script will run in an
-interactive mode and prompts the user to enter some options for the
-compilers, PETSc, and HDF. The most basic set of environment variables
-is the compilers. In general you should specify proper MPI wrappers
-for C, C++, and FORTRAN compilers. If you specify the plain C or
-FORTRAN compilers instead of MPI wrappers, then FronTier++ will be
-compiled with MPI disabled. The most complex part of the configuration
-process is the specification for PETSc, since it may be platform and
-version dependent. In general, you should specify the root path for
-PETSc, the PETSC_ARCH variable, and PETSC_LIB. It is important that
-the PETSC_ARCH you specified matches with the MPI wrappers you
-specified; otherwise there may be compilation or runtime errors.
-After obtaining these options, build prints out the commands it
-would use to configure and build. You can copy and paste these
-commands for later use, or use them as a template for modification.
+Advanced FronTier++ Configuration: 
+   The build script has some command options that control which modules compile.  These can
+   be seen by running "./build -h".
 
-For more advanced users, you may want to configure and build FronTier++ 
-manually, following three steps:
-  1. Set environment variables;
-  2. Call autoconf
-  3. Call ./configure with additional options.
+  In general you should specify proper MPI wrappers for C, C++, and FORTRAN compilers. 
+  If you specify the plain C or FORTRAN compilers instead of MPI wrappers, then FronTier++ 
+  will be compiled with MPI disabled. The most complex part of the configuration
+  process is the specification for PETSc, since it may be platform and
+  version dependent. In general, you should specify the root path for
+  PETSc, the PETSC_ARCH variable, and PETSC_LIB. It is important that
+  the PETSC_ARCH you specified matches with the MPI wrappers you
+  specified; otherwise there may be compilation or runtime errors.
+  After obtaining these options, build prints out the commands it
+  would use to configure and build. You can copy and paste these
+  commands for later use, or use them as a template for modification.
 
-FronTier++ has a configure.in file, which will produce the configure file when
-"autoconf" is run in the FronTier++ directory.
+  For more advanced users, you may want to configure and build FronTier++ 
+  manually, following three steps:
+    1. Set environment variables;
+    2. Call autoconf
+    3. Call ./configure with additional options.
+
+  FronTier++ has a configure.in file, which will produce the configure file when
+  "autoconf" is run in the FronTier++ directory.
 
   Configuring and building FronTier++ requires support for sh, GNU make, and
   the necessary compilers for C, and optionally MPI, PETSc and HDF.
 
-Configuring for the FronTier++ Lite library:
-   In the FronTier++ directory simply type "./configure", if you are unsure
-   how to use this configuration script, or what configurations options 
-   are available, type "./configure --help". With this default configuration, 
-   all output will be in the VTK file format. 
-
-Configuring for parallel:
-   FronTier++ supports parallel operation using the MPI protocol. The preferred
-   implementation is openmpi(http://www.open-mpi.org/). To build with parallel
-   support and openmpi just type "./configure --with-openmpi=path_to_mpi" where
-   path_to_mpi is the path in which openmpi is located. There is also support
-   mpich which can be configured using "./configure --with-mpich=path_to_mpich".
-   To build with generic MPI support you can use:
-./configure --with-mpi --with-extra-incs=inc_flags --with-extra-libs=lib_flags
-
-Building the FronTier++ with PETSc package:
-   FronTier++ uses PETSc as linear solver in some applications. To download 
-   this package, go to:
-	http://www.mcs.anl.gov/petsc/petsc-2/
-   In the FronTier++/ directory simply type "./configure --with-petsc=petsc_path".
-   where petsc_path is the directory the PETSc is installed. The inclusion
-   of PETSc package enables FronTier++ to use elliptic solvers, parabolic
-   solvers using implicit and Crank-Nicolson schemes. FronTier++ applications
-   such as liquid, frgb, subsurf, crystal, finance, all call for PETSc solvers.
-   Note that you may need to specify PETSC_ARCH, PETSC_INCLUDE, and PETSC_LIB
-   variables on some platforms and/or for some PETSc builds.
 
 Building the FronTier++ with HDF4 package:
-   FronTier++ uses HDF4.2r1 for 2D animation. To download this package, go to:
+   With the default configuration, all output will be in the VTK file format. 
+   But FronTier++ does support HDF4.2r1 for 2D animation. To download this package, go to:
         http://hdf.ncsa.uiuc.edu/release4/obtain.html
-   In the FronTier++/ directory simply type "./configure --with-hdf=hdf_path".
-   where hdf_path is the directory the HDF is installed. The inclusion
-   of HDF package gives user capability of producing HDF files as output.
+   
+   Set the environment variables CC=petsc_dir/bin/mpicc and CXX=petsc_dir/bin/mpicxx
+   
+   Then in the FronTier++/ directory simply type
+     "./configure -with-mpi --with-petsc-dir=petsc_path --with-hdf=hdf_path".
+   where hdf_path is the directory the HDF is installed and petsc_path is the
+   path to your chosen PETSc configuration.  
+   
+   The inclusion of HDF package gives user capability of producing HDF files as output.
+
 
 Building the FronTier++ with GD package:
    FronTier++ uses GD graphics library for 1D and 2D animations. To download 
    this package, go to:
 	http://www.boutell.com/gd/
-   In the FronTier++/ directory simply type "./configure --with-gd=gd_path".
-   where gd_path is the directory the GD is installed. The inclusion
+	
+   Set the environment variables CC=petsc_dir/bin/mpicc and CXX=petsc_dir/bin/mpicxx
+   
+   Then in the FronTier++/ directory simply type
+     "./configure -with-mpi --with-petsc-dir=petsc_path --with-gd=gd_path".
+   where gd_path is the directory the GD is installed and petsc_path is the
+   path to your chosen PETSc configuration.  The inclusion
    of GD package gives user capability of producing animated gif files as 
    output in some of the 1D and 2D problems.
 
-To to compile what you have configured, in the FronTier++/ directory 
-type "make".
-
-After make has finished there will be a new subdirectory in FronTier++ called
-lib/ which will contain all libraries built in the distribution which were 
-chosen, the FronTier++ version has four libraries:
-
-libutil.a: utility functions and macros for FronTier++
-libintfc.a: interface geometry functions and related calls for FronTier++
-libfront.a: propagation related functions and related calls for FronTier++
-libFronTier.a: a convenience library including the previous three
 
 ------------
-6. Running the test programs 
+5. Running the test programs 
 ------------
 
 After compiling the libFronTier++.a, one can test the library by running
@@ -243,7 +271,7 @@ just as with a serial run, which can be viewed in the exact same way.
 
 
 ------------
-7. Viewing the output
+6. Viewing the output
 ------------
 
 To view VTK files, we prefer LLNL's vis package: VisIt. It can be found at:
@@ -265,7 +293,7 @@ FronTier++ also support Geomview files. Geomview is located at:
         http://www.geomview.org/
 
 ------------
-8. Selecting built-in interface initialization and velocity fields
+7. Selecting built-in interface initialization and velocity fields
 ------------
 
 The testfront.c driver in the testfront directory uses FronTier++'s built-in
@@ -293,7 +321,7 @@ stdin for the control sequence ': ' which indicates that the proceeding entry
 is a response to one of the control fields in the order in which they appear.
 
 ------------
-9. Build your own initial interface
+8. Build your own initial interface
 ------------
 The built in functions are very simplistic and most users of FronTier++ 
 will usually require something not provided by the the built in functions 
@@ -384,7 +412,7 @@ FrontInitIntfc(&front,&level_func_pack);
 
 
 ------------
-10. Build your own velocity field function
+9. Build your own velocity field function
 ------------
 
 To build your own velocity field, you need to have a data structure
@@ -456,7 +484,7 @@ FrontInitVelo(&front,&velo_func_pack);
 
 
 ------------
-11. Propagating the interface
+10. Propagating the interface
 ------------
 
 The interface is propagated via the FrontAdvance() function. This function has

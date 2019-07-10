@@ -91,11 +91,18 @@ elif [[ "$HOST" == defiant ]]; then
 elif [[ "$HOST" == grad01 ]]; then
     echo "Machine recognized as grad01."
     config_grad01
-elif [[ "$HOST" == jarret-MacBookAir ]]; then
+elif [[ "$HOST" == jarret-MacBookAir2 ]]; then
 	echo "Jarret RECOGNIZED"
 	config_jarretlaptop
+else 
+    echo Unreognized machine.
+    echo "Type the PETSc directory to use (opt, dbg):"
+    read PETSC_DIR
+    echo using ${PETSC_DIR} 
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR}"
 fi
-
 
 
 autoreconf -vif
