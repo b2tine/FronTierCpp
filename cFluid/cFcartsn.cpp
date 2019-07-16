@@ -1131,8 +1131,8 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
     int DEC = 18;
     if (debugging("integration_test"))
     {
-        WID = 18;
-        DEC = 12;
+        WID = 15;
+        DEC = 9;
     }
 
         /* Initialize states at the interface */
