@@ -125,7 +125,7 @@ typedef float   TRUEfloat;
 #define REAL double
 
 #   define SFMT "22s"
-#   define FFMT "24.18g"
+#   define FFMT "18.12g"
 
 typedef	double 	ALIGN;	/* Strictest alignment type of all data types */
 #define	num_aligns(size)	(((size) + sizeof(ALIGN)-1)/sizeof(ALIGN))
