@@ -2,7 +2,7 @@
 
 casename=$1
 
-if [ -d "test-$casename" ]; then
+if [ -d "ReferenceSolutions/test-$casename" ]; then
     rm -rf "ReferenceSolutions/test-$casename"
 fi
 

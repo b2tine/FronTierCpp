@@ -1131,7 +1131,6 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
     int DEC = 18;
     if (debugging("integration_test"))
     {
-        WID = 18;
         DEC = 9;
     }
 
