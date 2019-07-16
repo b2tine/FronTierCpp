@@ -1,7 +1,5 @@
 #!/bin/bash
 
-rm -rf ReferenceSolutions/test-*
-
 for infile in ReferenceInputs/in-*; do
 
     infile=$(basename $infile)
