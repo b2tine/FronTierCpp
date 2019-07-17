@@ -539,6 +539,29 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	FT_FreeThese(1,x);
 }	/* end solve2d */
 
+void ELLIPTIC_SOLVER::printIsolatedCells()
+{
+        int i,j,k,I,index,num_cells;
+
+        num_cells = 0;
+        switch (dim)
+        {
+        case 3:
+	    for (k = kmin; k <= kmax; k++)
+	    for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+	    {
+	        I = ijk_to_I[i][j][k];
+	        if (I == -1) continue;
+                index = d_index3d(i,j,k,top_gmax);
+                printf("Isolated cell: (%d,%d,%d) soln = %f\n",
+                                i,j,k,soln[index]);
+                num_cells++;
+            }
+            break;
+        }
+}       /* end printIsolatedCells */
+
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	int index,index_nb[6],size;
@@ -643,7 +666,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 solver.Set_A(I,I,1.0);
 		rhs = soln[index];
             }
-	    if (num_nb == 1 && rhs < 0.0) rhs *= -1.0;
             solver.Set_b(I,rhs);
 	}
 	use_neumann_solver = pp_min_status(use_neumann_solver);
@@ -656,7 +678,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	{
 	    if (skip_neumann_solver)
 	    {
-	    	(void) printf("Skip isolated small region for solve3d()\n");
+	        if (debugging("PETSc"))
+                {
+	    	    (void) printf("Skip isolated small region for solve3d()\n");
+                    printIsolatedCells();
+                }
 		stop_clock("Petsc Solver");
 		return;
 	    }
