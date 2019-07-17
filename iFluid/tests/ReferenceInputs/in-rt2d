@@ -1,6 +1,7 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 4
 Computational grid: 50 200
+
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
@@ -19,6 +20,7 @@ Problem type can be
 	TWO_FLUID_KH
 	FLUID_SOLID_CIRCLE
 Enter problem type: TWO_FLUID_RT
+
 Projection type can be
         SIMPLE
         BELL_COLELLA

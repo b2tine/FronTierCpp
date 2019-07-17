@@ -58,9 +58,9 @@ Type y to make movie of viscosity:
 Cannot find the string, using default
 Type y to make vector velocity field movie: n
 Max time: 0.380000
-Max step: 10
+Max step: 100
 Print interval: 0.010000
-Movie frame interval: 1.000000
+Movie frame interval: 0.010000
 CFL factor: 0.750000
 Redistribution interval: 5
 Type yes to turn off auto-redistribution: 
@@ -69,36 +69,216 @@ In first call to u_pp_send(), setting the buffer size to 100000000 bytes.
 
 time =     0.01000000000000   step =     1   next dt =     0.01000000000000
 
-time =     0.02000000000000   step =     2   next dt =     0.01000000000000
+time =     0.02000000000000   step =     2   next dt =     0.00531205628119
 
-time =     0.03000000000000   step =     3   next dt =     0.00757021495168
+time =     0.02531205628119   step =     3   next dt =     0.00328152786976
 
-time =     0.03757021495168   step =     4   next dt =     0.00242978504832
+time =     0.02859358415094   step =     4   next dt =     0.00140641584906
 
-time =     0.04000000000000   step =     5   next dt =     0.00468192281343
+time =     0.03000000000000   step =     5   next dt =     0.00338660723082
 
-time =     0.04468192281343   step =     6   next dt =     0.00444890033727
+time =     0.03338660723082   step =     6   next dt =     0.00355436611730
 
-time =     0.04913082315071   step =     7   next dt =     0.00086917684929
+time =     0.03694097334812   step =     7   next dt =     0.00305902665188
 
-time =     0.05000000000000   step =     8   next dt =     0.00339119464612
+time =     0.04000000000000   step =     8   next dt =     0.00317035115205
 
-time =     0.05339119464612   step =     9   next dt =     0.00334724518404
+time =     0.04317035115205   step =     9   next dt =     0.00301875949331
 
-time =     0.05673843983015   step =    10   next dt =     0.00306892785564
+time =     0.04618911064536   step =    10   next dt =     0.00281119059089
 
-iFluid.cpp:186: error: calling clean_up
+time =     0.04900030123625   step =    11   next dt =     0.00099969876375
+
+time =     0.05000000000000   step =    12   next dt =     0.00260103461366
+
+time =     0.05260103461366   step =    13   next dt =     0.00263424940459
+
+time =     0.05523528401825   step =    14   next dt =     0.00248047639137
+
+time =     0.05771576040962   step =    15   next dt =     0.00228423959038
+
+time =     0.06000000000000   step =    16   next dt =     0.00225465078138
+
+time =     0.06225465078138   step =    17   next dt =     0.00218223363765
+
+time =     0.06443688441903   step =    18   next dt =     0.00209283761328
+
+time =     0.06652972203231   step =    19   next dt =     0.00200968745828
+
+time =     0.06853940949060   step =    20   next dt =     0.00146059050940
+
+time =     0.07000000000000   step =    21   next dt =     0.00189627001140
+
+time =     0.07189627001140   step =    22   next dt =     0.00185724863858
+
+time =     0.07375351864998   step =    23   next dt =     0.00178548024609
+
+time =     0.07553899889607   step =    24   next dt =     0.00173574714680
+
+time =     0.07727474604287   step =    25   next dt =     0.00169245562802
+
+time =     0.07896720167089   step =    26   next dt =     0.00103279832911
+
+time =     0.08000000000000   step =    27   next dt =     0.00158861788783
+
+time =     0.08158861788783   step =    28   next dt =     0.00157227508288
+
+time =     0.08316089297072   step =    29   next dt =     0.00153908673747
+
+time =     0.08469997970819   step =    30   next dt =     0.00150030498841
+
+time =     0.08620028469660   step =    31   next dt =     0.00145292321135
+
+time =     0.08765320790795   step =    32   next dt =     0.00142254350477
+
+time =     0.08907575141272   step =    33   next dt =     0.00092424858728
+
+time =     0.09000000000000   step =    34   next dt =     0.00137225328585
+
+time =     0.09137225328585   step =    35   next dt =     0.00135143686063
+
+time =     0.09272369014649   step =    36   next dt =     0.00131749739948
+
+time =     0.09404118754597   step =    37   next dt =     0.00130100982814
+
+time =     0.09534219737411   step =    38   next dt =     0.00128112746589
+
+time =     0.09662332484000   step =    39   next dt =     0.00125270284748
+
+time =     0.09787602768748   step =    40   next dt =     0.00122303957912
+
+time =     0.09909906726661   step =    41   next dt =     0.00090093273339
+
+time =     0.10000000000000   step =    42   next dt =     0.00119756459752
+
+time =     0.10119756459752   step =    43   next dt =     0.00118178548891
+
+time =     0.10237935008644   step =    44   next dt =     0.00115337632882
+
+time =     0.10353272641526   step =    45   next dt =     0.00113993954840
+
+time =     0.10467266596366   step =    46   next dt =     0.00113106350367
+
+time =     0.10580372946734   step =    47   next dt =     0.00111578943558
+
+time =     0.10691951890292   step =    48   next dt =     0.00109317647460
+
+time =     0.10801269537751   step =    49   next dt =     0.00107957599399
+
+time =     0.10909227137150   step =    50   next dt =     0.00090772862850
+
+time =     0.11000000000000   step =    51   next dt =     0.00106206005222
+
+time =     0.11106206005222   step =    52   next dt =     0.00104709569416
+
+time =     0.11210915574638   step =    53   next dt =     0.00102983475170
+
+time =     0.11313899049807   step =    54   next dt =     0.00102525327905
+
+time =     0.11416424377713   step =    55   next dt =     0.00101784903689
+
+time =     0.11518209281401   step =    56   next dt =     0.00100354060270
+
+time =     0.11618563341671   step =    57   next dt =     0.00098653156040
+
+time =     0.11717216497711   step =    58   next dt =     0.00097988615308
+
+time =     0.11815205113019   step =    59   next dt =     0.00097508493209
+
+time =     0.11912713606228   step =    60   next dt =     0.00087286393772
+
+time =     0.12000000000000   step =    61   next dt =     0.00094687557890
+
+time =     0.12094687557890   step =    62   next dt =     0.00094406566353
+
+time =     0.12189094124243   step =    63   next dt =     0.00094147788522
+
+time =     0.12283241912765   step =    64   next dt =     0.00093370531941
+
+time =     0.12376612444706   step =    65   next dt =     0.00091942284692
+
+time =     0.12468554729398   step =    66   next dt =     0.00091266410800
+
+time =     0.12559821140198   step =    67   next dt =     0.00091082132875
+
+time =     0.12650903273073   step =    68   next dt =     0.00090484184938
+
+time =     0.12741387458011   step =    69   next dt =     0.00089288073551
+
+time =     0.12830675531562   step =    70   next dt =     0.00088447215435
+
+time =     0.12919122746998   step =    71   next dt =     0.00080877253002
+
+time =     0.13000000000000   step =    72   next dt =     0.00087924981020
+
+time =     0.13087924981020   step =    73   next dt =     0.00087097357529
+
+time =     0.13175022338550   step =    74   next dt =     0.00086033582103
+
+time =     0.13261055920653   step =    75   next dt =     0.00085962321961
+
+time =     0.13347018242614   step =    76   next dt =     0.00085722898193
+
+time =     0.13432741140806   step =    77   next dt =     0.00084971043863
+
+time =     0.13517712184670   step =    78   next dt =     0.00083806233310
+
+time =     0.13601518417980   step =    79   next dt =     0.00083753513431
+
+time =     0.13685271931411   step =    80   next dt =     0.00083611514348
+
+time =     0.13768883445759   step =    81   next dt =     0.00083020584767
+
+time =     0.13851904030526   step =    82   next dt =     0.00081880723471
+
+time =     0.13933784753997   step =    83   next dt =     0.00066215246003
+
+time =     0.14000000000000   step =    84   next dt =     0.00081816861608
+
+time =     0.14081816861608   step =    85   next dt =     0.00081530598265
+
+time =     0.14163347459872   step =    86   next dt =     0.00080656621518
+
+time =     0.14244004081390   step =    87   next dt =     0.00080112439489
+
+time =     0.14324116520880   step =    88   next dt =     0.00080087562381
+
+time =     0.14404204083260   step =    89   next dt =     0.00079860313725
+
+time =     0.14484064396985   step =    90   next dt =     0.00079144755802
+
+time =     0.14563209152787   step =    91   next dt =     0.00078454265653
+
+time =     0.14641663418440   step =    92   next dt =     0.00078476912931
+
+time =     0.14720140331371   step =    93   next dt =     0.00078315880812
+
+time =     0.14798456212183   step =    94   next dt =     0.00077740836562
+
+time =     0.14876197048745   step =    95   next dt =     0.00076935689917
+
+time =     0.14953132738663   step =    96   next dt =     0.00046867261337
+
+time =     0.15000000000000   step =    97   next dt =     0.00076903633844
+
+time =     0.15076903633844   step =    98   next dt =     0.00076475384265
+
+time =     0.15153379018109   step =    99   next dt =     0.00075747876026
+
+time =     0.15229126894135   step =   100   next dt =     0.00075307524386
+
+iFluid.cpp:183: error: calling clean_up
 
 		CLEAN_UP, error = 0
 
-Storage used 111531648 bytes
+Storage used 111786600 bytes
 
 
 		EXECUTION TIME DATA:
 
-		CPU TIME: 2 Seconds
+		CPU TIME: 10 Seconds
 		SYS TIME: 1 Second
-		MAX RSS = 141252 Kilobytes
+		MAX RSS = 141868 Kilobytes
 
-		TERMINATION TIME OF RUN:   Tue Jul  2 06:44:20 2019
+		TERMINATION TIME OF RUN:   Tue Jul 16 23:12:15 2019
 
