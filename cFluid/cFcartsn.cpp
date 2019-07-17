@@ -1140,12 +1140,12 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%*.*g %*.*g\n",WID,DEC,getStateDens(sl),
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
 				WID,DEC,getStateDens(sr));
-            fprintf(outfile,"%*.*g %*.*g\n",WID,DEC,getStateEngy(sl),
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
 				WID,DEC,getStateEngy(sr));
 	    for (i = 0; i < dim; ++i)
-            	fprintf(outfile,"%*.*g %*.*g\n",WID,DEC,getStateMom[i](sl),
+            	fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
 				WID,DEC,getStateMom[i](sr));
         }
 	
@@ -1156,10 +1156,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		index = d_index1d(i,top_gmax);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,dens[index]);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%*.*g\n",WID,DEC,momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	    break;
 	case 2:
@@ -1167,10 +1167,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
 		index = d_index2d(i,j,top_gmax);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,dens[index]);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%*.*g\n",WID,DEC,momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	    break;
 	case 3:
@@ -1179,10 +1179,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
 		index = d_index3d(i,j,k,top_gmax);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,dens[index]);
-	        fprintf(outfile,"%*.*g\n",WID,DEC,engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%*.*g\n",WID,DEC,momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	}
 	fclose(outfile);
