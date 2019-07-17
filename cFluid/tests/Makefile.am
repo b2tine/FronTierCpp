@@ -35,6 +35,7 @@ check-unit-tests:
 
 $(cFluidTests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/cFluid/objs && $(MAKE) libcFluid.la
+	@cd $(top_builddir)/cFluid && $(MAKE) cFluid
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
 
 FORCE:
