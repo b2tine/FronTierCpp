@@ -675,7 +675,15 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	sprintf(filename,"%s-ifluid",filename);
 	outfile = fopen(filename,"w");
 
-	fluid_print_front_states(outfile,front);
+    int WID = 24;
+    int DEC = 18;
+    if (debugging("integration_test"))
+    {
+        DEC = 1;
+    }
+
+	//fluid_print_front_states(outfile,front);
+	fluid_print_front_states(outfile,front,WID,DEC);
 	
 	fprintf(outfile,"\nInterior ifluid states:\n");
 	switch (dim)
@@ -685,12 +693,12 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
 		index = d_index2d(i,j,top_gmax);
-	        fprintf(outfile,"%24.18g\n",field->rho[index]);
-	        fprintf(outfile,"%24.18g\n",field->pres[index]);
-	        fprintf(outfile,"%24.18g\n",field->phi[index]);
-	        fprintf(outfile,"%24.18g\n",field->mu[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->rho[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->pres[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->phi[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->mu[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",vel[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,vel[l][index]);
 	    }
 	    break;
 	case 3:
@@ -699,12 +707,12 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
 		index = d_index3d(i,j,k,top_gmax);
-	        fprintf(outfile,"%24.18g\n",field->rho[index]);
-	        fprintf(outfile,"%24.18g\n",field->pres[index]);
-	        fprintf(outfile,"%24.18g\n",field->phi[index]);
-	        fprintf(outfile,"%24.18g\n",field->mu[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->rho[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->pres[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->phi[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->mu[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",vel[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,vel[l][index]);
 	    }
 	}
 	fclose(outfile);
