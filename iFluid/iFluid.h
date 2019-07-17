@@ -17,6 +17,7 @@
 #define         LIQUID_COMP1		2
 #define         LIQUID_COMP2		3
 #define		LIQUID_COMP		3
+#define		FILL_COMP		10
 
 #define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
@@ -420,6 +421,7 @@ protected:
 	void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
 	void setReferencePressure();
+        void setIsolatedSoln(int,double*);
 	boolean paintToSolveGridPoint();
 	boolean nextConnectedPoint(int*,GRID_DIRECTION,int*,int,int*,int*);
 
@@ -604,7 +606,6 @@ extern double getPhiFromPres(Front*,double);
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
 extern void fluid_print_front_states(FILE*,Front*,int,int);
-//extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);

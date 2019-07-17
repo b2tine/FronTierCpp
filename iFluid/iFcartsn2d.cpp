@@ -104,7 +104,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
 {
-	setIndexMap();
 	switch (iFparams->num_scheme.ellip_method)
 	{
 	case SIMPLE_ELLIP:

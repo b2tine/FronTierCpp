@@ -928,6 +928,8 @@ static  void rgbody_point_propagate(
             
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
+
+            //TODO: test/verify
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
