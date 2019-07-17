@@ -2727,7 +2727,7 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	double **vel = field->vel;
 	double div_tmp,denom;
     double L1_norm,L2_norm,Li_norm;
-    double mas_div;	
+    double max_div;	
     int i,j,k,l,index,N;
 	int icoords[MAXD], icoords_max[MAXD];
 
@@ -4411,6 +4411,188 @@ void Incompress_Solver_Smooth_Basis::makeGlobalColorMap(int &num_colors)
 	if (debugging("paint_color"))
 	    (void) printf("Final number of colors = %d\n",num_colors);
 }	/* end makeGlobalColorMap */
+
+void Incompress_Solver_Smooth_Basis::setDoubleDomain()
+{
+	static boolean first = YES;
+	INTERFACE *grid_intfc;
+	Table *T;
+	int i,j,k,ic,id,size,icoords[MAXD];
+        COMPONENT copy_comp;
+
+        grid_intfc = front->grid_intfc;
+	if (first)
+	{
+            dim = grid_intfc->dim;
+            D_extension = 2;
+
+            for (i = 0; i < dim; ++i)
+            {
+                ext_gmax[i] = top_gmax[i];
+                ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+                ext_l[i] = ext_u[i] = 0;
+                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                {
+                    ext_l[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                {
+                    ext_u[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
+                            ext_gmax[i] - ubuf[i];
+            }
+
+	    size = ext_gmax[0]+1;
+            for (i = 1; i < dim; ++i)
+                size *= (ext_gmax[i]+1);
+
+            FT_VectorMemoryAlloc((POINTER*)&ext_comp,size,sizeof(COMPONENT));
+	    first = NO;
+	}
+        switch(dim)
+        {
+        case 2:
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+	    {
+                id = d_index2d(i,j,ext_gmax);
+                ext_comp[id] = FILL_COMP;
+            }
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index2d(i,j,top_gmax);
+                id = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
+                ext_comp[id] = top_comp[ic];
+            }
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+            {
+                icoords[0] = i;
+                if (ext_l[1] != 0)
+                {
+                    icoords[1] = jmin + ext_l[1];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (j = 0; j <= ext_l[1]; ++j)
+                    {
+                        icoords[1] = j;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[1] != 0)
+                {
+                    icoords[1] = ext_gmax[1] - ext_u[1] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (j = 0; j <= ext_u[1]; ++j)
+                    {
+                        icoords[1] = ext_gmax[1] - j;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+            }
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+            {
+                icoords[1] = j;
+                if (ext_l[0] != 0)
+                {
+                    icoords[0] = imin + ext_l[0];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (i = 0; i <= ext_l[0]; ++i)
+                    {
+                        icoords[0] = i;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[0] != 0)
+                {
+                    icoords[0] = ext_gmax[0] - ext_u[0] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (i = 0; i <= ext_u[0]; ++i)
+                    {
+                        icoords[0] = ext_gmax[0] - i;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+            }
+            break;
+        case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+                id = d_index3d(i,j,k,ext_gmax);
+                ext_comp[id] = FILL_COMP;
+            }
+	    for (k = kmin; k <= kmax; k++)
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index3d(i,j,k,top_gmax);
+                id = d_index3d(i+ext_l[0],j+ext_l[1],k+ext_l[2],ext_gmax);
+                ext_comp[id] = top_comp[ic];
+            }
+            break;
+        }
+}	/* end setDoubleDomain */
+
+void Incompress_Solver_Smooth_Basis::setDoubleGlobalIndex()
+{
+	int i,j,k,id;
+	int num_nodes = pp_numnodes();
+	int myid = pp_mynode();
+	static boolean first = YES;
+
+	if (first)
+	{
+	    first = NO;
+	    FT_VectorMemoryAlloc((POINTER*)&dn_dist,num_nodes,sizeof(int));
+	}
+	dNLblocks = 0;
+	switch (dim)
+	{
+	case 2:
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index2d(i,j,ext_gmax);
+		if (ext_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index3d(i,j,k,ext_gmax);
+		if (ext_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	}
+
+	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
+	dn_dist[myid] = dNLblocks;
+	pp_global_imax(dn_dist,num_nodes);
+	eilower = 0;
+        eiupper = dn_dist[0];
+
+        for (i = 1; i <= myid; i++)
+        {
+            eilower += dn_dist[i-1];
+            eiupper += dn_dist[i];
+        }	
+}	/* setDoubleGlobalIndex */
 
 void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 {
