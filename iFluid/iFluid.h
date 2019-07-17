@@ -17,6 +17,7 @@
 #define         LIQUID_COMP1		2
 #define         LIQUID_COMP2		3
 #define		LIQUID_COMP		3
+#define		FILL_COMP		10
 
 #define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
@@ -348,8 +349,8 @@ protected:
 	int *top_gmax;
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
-	int **ij_to_I, **I_to_ij;
-	int ***ijk_to_I, **I_to_ijk;
+	int **ij_to_I, ***ijk_to_I;
+	int **I_to_ij, **I_to_ijk;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
 	// Sweeping limits
@@ -382,6 +383,19 @@ protected:
 	// Index shift between dual and comp grids 
 	int ishift[MAXD];
 
+	// On Double solver
+	COMPONENT *ext_comp;
+	int ext_gmax[MAXD];
+        int ext_l[MAXD],ext_u[MAXD];
+        int D_extension;
+	int **dij_to_I,***dijk_to_I;
+	// Sweeping limites
+	int ext_imin[MAXD];
+	int ext_imax[MAXD];
+	// for parallel partition
+	int dNLblocks, eilower, eiupper;
+	int *dn_dist;
+
 	//member data: mesh storage
 	std::vector<L_RECTANGLE>   cell_center;
 
@@ -410,16 +424,20 @@ protected:
 	void setComponent(void); //init components;
 	void setDomain();
 	void setDualDomain();
+	void setDoubleDomain();
 
 	// parallelization related functions
 	void scatMeshArray(void);
 	void setGlobalIndex(void);
 	void setDualGlobalIndex(void);
+	void setDoubleGlobalIndex(void);
 	void setIndexMap(void);
 	void setDualIndexMap(void);
+	void setDoubleIndexMap(void);
 	void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
 	void setReferencePressure();
+        void setIsolatedSoln(int,double*);
 	boolean paintToSolveGridPoint();
 	boolean nextConnectedPoint(int*,GRID_DIRECTION,int*,int,int*,int*);
 
@@ -603,7 +621,7 @@ extern double getPressure(Front*,double*,double*);
 extern double getPhiFromPres(Front*,double);
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
-extern void fluid_print_front_states(FILE*,Front*);
+extern void fluid_print_front_states(FILE*,Front*,int,int);
 extern void fluid_read_front_states(FILE*,Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);

@@ -659,7 +659,8 @@ extern double getStateTemp(POINTER state)
 
 extern void fluid_print_front_states(
         FILE *outfile,
-        Front *front)
+        Front *front,
+        int WID, int DEC)
 {
         INTERFACE *intfc = front->interf;
         STATE *sl,*sr;
@@ -673,25 +674,25 @@ extern void fluid_print_front_states(
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl),
-                                getStatePres(sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStatePres(sl),
+                                WID,DEC,getStatePres(sr));
             if (dim == 2)
             {
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
-                                getStateXvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYvel(sl),
-                                getStateYvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateVort(sl),
-                                getStateVort(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXvel(sl),
+                                WID,DEC,getStateXvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYvel(sl),
+                                WID,DEC,getStateYvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateVort(sl),
+                                WID,DEC,getStateVort(sr));
             }
             if (dim == 3)
             {
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
-                                getStateXvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYvel(sl),
-                                getStateYvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateZvel(sl),
-                                getStateZvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXvel(sl),
+                                WID,DEC,getStateXvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYvel(sl),
+                                WID,DEC,getStateYvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateZvel(sl),
+                                WID,DEC,getStateZvel(sr));
             }
         }
 }       /* end fluid_print_front_states */

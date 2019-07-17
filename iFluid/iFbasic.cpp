@@ -196,18 +196,19 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    case 2:
 	    	FT_MatrixMemoryAlloc((POINTER*)&ij_to_I,top_gmax[0]+1,
 				top_gmax[1]+1,INT);
-		FT_MatrixMemoryAlloc((POINTER*)&I_to_ij,size,2,INT);
+		//FT_MatrixMemoryAlloc((POINTER*)&I_to_ij,size,2,INT);
 	    	break;
 	    case 3:
 	    	FT_TriArrayMemoryAlloc((POINTER*)&ijk_to_I,top_gmax[0]+1,
 				top_gmax[1]+1,top_gmax[2]+1,INT);
-		FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
+		//FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
 	    	break;
 	    }
 	    old_size = size;
 	}
 	else if (old_size < size)
 	{
+        /*
 	    switch (dim)
 	    {
 	    case 2:
@@ -219,6 +220,7 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 		FT_MatrixMemoryAlloc((POINTER*)&I_to_ijk,size,3,INT);
 	    	break;
 	    }
+        */
 	    old_size = size;
 	}
 
@@ -244,8 +246,8 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
                 if (cell_center[ic].comp != SOLID_COMP)
                 {
                     ij_to_I[i][j] = index + ilower;
-		    I_to_ij[index][0] = i;
-                    I_to_ij[index][1] = j;
+		                //I_to_ij[index][0] = i;
+                        //I_to_ij[index][1] = j;
                     index++;
                 }
 	    }
@@ -266,9 +268,9 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 		if (cell_center[ic].comp != SOLID_COMP)
 		{
                     ijk_to_I[i][j][k] = index + ilower;
-		    I_to_ijk[index][0] = i;
-                    I_to_ijk[index][1] = j;
-                    I_to_ijk[index][2] = k;
+		                //I_to_ijk[index][0] = i;
+                        //I_to_ijk[index][1] = j;
+                        //I_to_ijk[index][2] = k;
                     index++;
                 }
 	    }
@@ -598,6 +600,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	}
 	if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
 	    setDualDomain();
+    else if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+	    setDoubleDomain();
 }
 
 void Incompress_Solver_Smooth_Basis::setGlobalIndex()
@@ -675,7 +679,15 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	sprintf(filename,"%s-ifluid",filename);
 	outfile = fopen(filename,"w");
 
-	fluid_print_front_states(outfile,front);
+    int WID = 24;
+    int DEC = 18;
+    if (debugging("integration_test"))
+    {
+        DEC = 1;
+    }
+
+	//fluid_print_front_states(outfile,front);
+	fluid_print_front_states(outfile,front,WID,DEC);
 	
 	fprintf(outfile,"\nInterior ifluid states:\n");
 	switch (dim)
@@ -685,12 +697,12 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
 		index = d_index2d(i,j,top_gmax);
-	        fprintf(outfile,"%24.18g\n",field->rho[index]);
-	        fprintf(outfile,"%24.18g\n",field->pres[index]);
-	        fprintf(outfile,"%24.18g\n",field->phi[index]);
-	        fprintf(outfile,"%24.18g\n",field->mu[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->rho[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->pres[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->phi[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->mu[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",vel[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,vel[l][index]);
 	    }
 	    break;
 	case 3:
@@ -699,12 +711,12 @@ void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
 		index = d_index3d(i,j,k,top_gmax);
-	        fprintf(outfile,"%24.18g\n",field->rho[index]);
-	        fprintf(outfile,"%24.18g\n",field->pres[index]);
-	        fprintf(outfile,"%24.18g\n",field->phi[index]);
-	        fprintf(outfile,"%24.18g\n",field->mu[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->rho[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->pres[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->phi[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,field->mu[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",vel[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,vel[l][index]);
 	    }
 	}
 	fclose(outfile);
@@ -2714,12 +2726,12 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 {
 	double **vel = field->vel;
 	double div_tmp,denom;
-        double L1_norm,L2_norm,Li_norm;
-	int i,j,k,l,index,N;
-	int icoords[MAXD];
+    double L1_norm,L2_norm,Li_norm;
+    double max_div;	
+    int i,j,k,l,index,N;
+	int icoords[MAXD], icoords_max[MAXD];
 
 	(void) printf("\nCheck divergence at %s\n",mesg);
-        printf("Entering checkVelocityDiv()\n");
         L1_norm = L2_norm = Li_norm = 0.0;
 	switch (dim)
 	{
@@ -2733,11 +2745,15 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		if (!ifluid_comp(top_comp[index]))
 		    continue;
 		div_tmp = computeFieldPointDiv(icoords,vel);
-                if (i == (imin+imax)/2)
-                    printf("div[%d] = %6.3g\n",j,div_tmp);
 		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
                 L1_norm += fabs(div_tmp);
                 L2_norm += sqr(div_tmp);
+                if (max_div < fabs(div_tmp))
+                {
+                    max_div = fabs(div_tmp);
+                    icoords_max[0] = i;
+                    icoords_max[1] = j;
+                }
 	    }
             N = (imax - imin + 1)*(jmax - jmin + 1);
 	    break;
@@ -2756,6 +2772,13 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 		if (Li_norm < fabs(div_tmp)) Li_norm = fabs(div_tmp);
                 L1_norm += fabs(div_tmp);
                 L2_norm += sqr(div_tmp);
+                if (max_div < fabs(div_tmp))
+                {
+                    max_div = fabs(div_tmp);
+                    icoords_max[0] = i;
+                    icoords_max[1] = j;
+                    icoords_max[2] = k;
+                }
 	    }
             N = (imax - imin + 1)*(jmax - jmin + 1)*(kmax - kmin + 1);
 	    break;
@@ -2767,11 +2790,14 @@ void Incompress_Solver_Smooth_Basis::checkVelocityDiv(
 	for (l = 0; l < dim; ++l)
 	    denom += fabs((vmax[l] - vmin[l])/(top_U[l] - top_L[l]));
 	if (denom == 0.0) denom = 1.0;
-	(void) printf("\nCheck divergence at %s\n",mesg);
 	(void) printf("Absolute: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm,L2_norm,Li_norm);
 	(void) printf("Relative: L1 = %5.3g  L2 = %5.3g  Li =  %5.3g\n",
 			L1_norm/denom,L2_norm/denom,Li_norm/denom);
+        (void) printf("Max divergence: %6.4g occured at: ");
+	for (l = 0; l < dim; ++l)
+            printf("%d ",icoords_max[l]);
+        printf("\n");
         fflush(stdout);
 }	/* end checkVelocityDiv */
 
@@ -2979,6 +3005,9 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
 	index = d_index(icoords,top_gmax,dim);
         comp = top_comp[index];
 
+        if (iFparams->num_scheme.ellip_method != DOUBLE_ELLIP &&
+            !ifluid_comp(comp)) return 0.0;
+
         for (idir = 0; idir < dim; idir++)
         {
             u0 = field[idir][index];
@@ -2986,22 +3015,43 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
                 icnb[j] = icoords[j];
             for (nb = 0; nb < 2; nb++)
             {
+                u_edge[idir][nb] = 0.0;
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 index_nb = d_index(icnb,top_gmax,dim);
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
                 if (status == NO_PDE_BOUNDARY)
+                {
                     u_edge[idir][nb] = field[idir][index_nb];
-                else if (status ==CONST_V_PDE_BOUNDARY &&
-                    wave_type(hs) == DIRICHLET_BOUNDARY)
-                    u_edge[idir][nb] = getStateVel[idir](intfc_state);
-                else if (status ==CONST_V_PDE_BOUNDARY &&
-                    wave_type(hs) == NEUMANN_BOUNDARY)
-                    u_edge[idir][nb] = -u0; 
-                else
-		{
-                    u_edge[idir][nb] = u0; 
-		}
+                }
+                else if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+                        return 0.0;
+                    else
+                        u_edge[idir][nb] = u0; 
+                }
+                else if (status == CONST_V_PDE_BOUNDARY)
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+                            return 0.0;
+                        u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    {
+                        if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+                            u_edge[idir][nb] = -u0; 
+                        else
+                            u_edge[idir][nb] = u0;
+                    }
+                    else
+                    {
+                        //u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                        u_edge[idir][nb] = u0;
+                    }
+                }
             }
         }
 
@@ -3043,34 +3093,35 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
 				comp,&intfc_state,&hs,crx_coords);
 	    	if (status == NO_PDE_BOUNDARY)
+                {
 		    p_edge[idir][nb] = field[index_nb];
+                }
 	    	else if (status ==CONST_P_PDE_BOUNDARY)
                 {
-		    //p_edge[idir][nb] = getStatePhi(intfc_state);
-		    p_edge[idir][nb] = p0;
+                    if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+		        p_edge[idir][nb] = field[index_nb];
+                    else
+		        p_edge[idir][nb] = getStatePhi(intfc_state);
                 }
-	    	else if (status ==CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == DIRICHLET_BOUNDARY)
+	    	else if (status == CONST_V_PDE_BOUNDARY)
                 {
-		    p_edge[idir][nb] = 1.0;
+                    if(wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+		            p_edge[idir][nb] = field[index_nb];
+                        else
+                            p_edge[idir][nb] = p0;
+                    }
+                    else
+                    {
+		        p_edge[idir][nb] = p0;
+                    }
                 }
-		else 
-		{
-		    //refl_side[nb] = YES;
-		    p_edge[idir][nb] = p0;
-		}
 	    }
-            /*
-	    for (nb = 0; nb < 2; nb++)
-	    {
-		if (refl_side[nb] == YES)
-		    p_edge[idir][nb] = p0;
-	    }
-            */
 	}
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
-}
+}       /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::computeDualFieldPointGrad(
         int *icoords,
@@ -4360,4 +4411,270 @@ void Incompress_Solver_Smooth_Basis::makeGlobalColorMap(int &num_colors)
 	if (debugging("paint_color"))
 	    (void) printf("Final number of colors = %d\n",num_colors);
 }	/* end makeGlobalColorMap */
+
+void Incompress_Solver_Smooth_Basis::setDoubleDomain()
+{
+	static boolean first = YES;
+	INTERFACE *grid_intfc;
+	Table *T;
+	int i,j,k,ic,id,size,icoords[MAXD];
+        COMPONENT copy_comp;
+
+        grid_intfc = front->grid_intfc;
+	if (first)
+	{
+            dim = grid_intfc->dim;
+            D_extension = 2;
+
+            for (i = 0; i < dim; ++i)
+            {
+                ext_gmax[i] = top_gmax[i];
+                ext_imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+                ext_l[i] = ext_u[i] = 0;
+                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                {
+                    ext_l[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                {
+                    ext_u[i] = D_extension;
+                    ext_gmax[i] += D_extension;
+                }
+                ext_imax[i] = (ubuf[i] == 0) ? ext_gmax[i] - 1 : 
+                            ext_gmax[i] - ubuf[i];
+            }
+
+	    size = ext_gmax[0]+1;
+            for (i = 1; i < dim; ++i)
+                size *= (ext_gmax[i]+1);
+
+            FT_VectorMemoryAlloc((POINTER*)&ext_comp,size,sizeof(COMPONENT));
+	    first = NO;
+	}
+        switch(dim)
+        {
+        case 2:
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+	    {
+                id = d_index2d(i,j,ext_gmax);
+                ext_comp[id] = FILL_COMP;
+            }
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index2d(i,j,top_gmax);
+                id = d_index2d(i+ext_l[0],j+ext_l[1],ext_gmax);
+                ext_comp[id] = top_comp[ic];
+            }
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+            {
+                icoords[0] = i;
+                if (ext_l[1] != 0)
+                {
+                    icoords[1] = jmin + ext_l[1];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (j = 0; j <= ext_l[1]; ++j)
+                    {
+                        icoords[1] = j;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[1] != 0)
+                {
+                    icoords[1] = ext_gmax[1] - ext_u[1] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (j = 0; j <= ext_u[1]; ++j)
+                    {
+                        icoords[1] = ext_gmax[1] - j;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+            }
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+            {
+                icoords[1] = j;
+                if (ext_l[0] != 0)
+                {
+                    icoords[0] = imin + ext_l[0];
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (i = 0; i <= ext_l[0]; ++i)
+                    {
+                        icoords[0] = i;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+                if (ext_u[0] != 0)
+                {
+                    icoords[0] = ext_gmax[0] - ext_u[0] - 1;
+                    id = d_index(icoords,ext_gmax,2);
+                    copy_comp = ext_comp[id];
+                    for (i = 0; i <= ext_u[0]; ++i)
+                    {
+                        icoords[0] = ext_gmax[0] - i;
+                        id = d_index(icoords,ext_gmax,2);
+                        ext_comp[id] = copy_comp;
+                    }
+                }
+            }
+            break;
+        case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+                id = d_index3d(i,j,k,ext_gmax);
+                ext_comp[id] = FILL_COMP;
+            }
+	    for (k = kmin; k <= kmax; k++)
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+                ic = d_index3d(i,j,k,top_gmax);
+                id = d_index3d(i+ext_l[0],j+ext_l[1],k+ext_l[2],ext_gmax);
+                ext_comp[id] = top_comp[ic];
+            }
+            break;
+        }
+}	/* end setDoubleDomain */
+
+void Incompress_Solver_Smooth_Basis::setDoubleGlobalIndex()
+{
+	int i,j,k,id;
+	int num_nodes = pp_numnodes();
+	int myid = pp_mynode();
+	static boolean first = YES;
+
+	if (first)
+	{
+	    first = NO;
+	    FT_VectorMemoryAlloc((POINTER*)&dn_dist,num_nodes,sizeof(int));
+	}
+	dNLblocks = 0;
+	switch (dim)
+	{
+	case 2:
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index2d(i,j,ext_gmax);
+		if (ext_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	case 3:
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		id = d_index3d(i,j,k,ext_gmax);
+		if (ext_comp[id] == SOLID_COMP) continue;
+		dNLblocks++;
+	    }
+	    break;
+	}
+
+	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
+	dn_dist[myid] = dNLblocks;
+	pp_global_imax(dn_dist,num_nodes);
+	eilower = 0;
+        eiupper = dn_dist[0];
+
+        for (i = 1; i <= myid; i++)
+        {
+            eilower += dn_dist[i-1];
+            eiupper += dn_dist[i];
+        }	
+}	/* setDoubleGlobalIndex */
+
+void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
+{
+	static boolean first = YES;
+        static int com_gmax[MAXD];
+        INTERFACE *grid_intfc = front->grid_intfc;
+	int i,j,k,ic,index;
+	int size = eiupper - eilower;
+        int llbuf[MAXD],uubuf[MAXD];
+
+	if (first)
+	{
+	    first = NO;
+	    switch (dim)
+	    {
+	    case 2:
+	    	FT_MatrixMemoryAlloc((POINTER*)&dij_to_I,ext_gmax[0]+1,
+				ext_gmax[1]+1,INT);
+	    	break;
+	    case 3:
+	    	FT_TriArrayMemoryAlloc((POINTER*)&dijk_to_I,ext_gmax[0]+1,
+				ext_gmax[1]+1,ext_gmax[2]+1,INT);
+	    	break;
+	    }
+            for (i = 0; i < dim; ++i)
+            {
+                com_gmax[i] = front->rect_grid->gmax[i];
+                if (grid_intfc->rect_bdry_type[i][0] == DIRICHLET_BOUNDARY)
+                    com_gmax[i] += D_extension;
+                if (grid_intfc->rect_bdry_type[i][1] == DIRICHLET_BOUNDARY)
+                    com_gmax[i] += D_extension;
+            }
+	}
+
+	index = 0;
+        for (i = 0; i < dim; ++i)
+        {
+            llbuf[i] = lbuf[i] != 0 ? lbuf[i] : 1;
+            uubuf[i] = ubuf[i] != 0 ? ubuf[i] : 1;
+        }
+	switch (dim)
+	{
+	case 2:
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+		    dij_to_I[i][j] = -1;
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		ic = d_index2d(i,j,ext_gmax);
+                if (ext_comp[ic] != SOLID_COMP)
+                {
+                    dij_to_I[i][j] = index + eilower;
+                    index++;
+                }
+	    }
+	    FT_ParallelExchExtendedCellIndex(front,llbuf,uubuf,
+				com_gmax,(POINTER)dij_to_I);
+	    break;
+	case 3:
+	    for (k = 0; k <= ext_gmax[2]; k++)
+	    for (j = 0; j <= ext_gmax[1]; j++)
+	    for (i = 0; i <= ext_gmax[0]; i++)
+		    dijk_to_I[i][j][k] = -1;
+	    for (k = ext_imin[2]; k <= ext_imax[2]; k++)
+	    for (j = ext_imin[1]; j <= ext_imax[1]; j++)
+	    for (i = ext_imin[0]; i <= ext_imax[0]; i++)
+	    {
+		ic = d_index3d(i,j,k,ext_gmax);
+		/*
+		if (domain_status[ic] != TO_SOLVE)
+		    continue;
+		*/
+                if (ext_comp[ic] != SOLID_COMP)
+		{
+                    dijk_to_I[i][j][k] = index + eilower;
+                    index++;
+                }
+	    }
+	    FT_ParallelExchCellIndex(front,llbuf,uubuf,
+				(POINTER)dijk_to_I);
+	    break;
+	}
+}	/* end setDoubleIndexMap */
 

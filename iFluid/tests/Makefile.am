@@ -37,6 +37,7 @@ check-unit-tests:
 
 $(iFluidTests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/iFluid/objs && $(MAKE) libiFluid.la
+	@cd $(top_builddir)/iFluid && $(MAKE) iFluid
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
 
 FORCE:

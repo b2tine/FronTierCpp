@@ -104,7 +104,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
 {
-	setIndexMap();
 	switch (iFparams->num_scheme.ellip_method)
 	{
 	case SIMPLE_ELLIP:
@@ -337,9 +336,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.ij_to_I = ij_to_I;
             elliptic_solver.ilower = ilower;
             elliptic_solver.iupper = iupper;
-	    if (iFparams->total_div_cancellation)
-	    	elliptic_solver.dsolve(array);
-	    else
 	    	elliptic_solver.solve(array);
 	    paintSolvedGridPoint();
 	}

@@ -1,4 +1,4 @@
-SUBDIRS = objs tests
+SUBDIRS = objs . tests
 
 input_directories = input-bubble \
 				   	input-cauchy \

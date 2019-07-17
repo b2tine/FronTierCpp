@@ -13,6 +13,8 @@
 #include <petscmat.h>
 #include <petscpc.h>
 
+#include <algorithm>
+
 enum
 {
     NO_PDE_BOUNDARY = 0,
@@ -284,7 +286,8 @@ public:
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
-	double dcheckSolver(int *icoords,boolean print_details);
+    void printIsolatedCells();
+	    double dcheckSolver(int *icoords,boolean print_details);
 	int skip_neumann_solver;
 private:
         // Dimension

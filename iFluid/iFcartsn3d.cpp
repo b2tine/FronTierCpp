@@ -39,6 +39,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 {
 	int i,j,k,l,index;
 	static HYPERB_SOLVER hyperb_solver(*front);
+    double speed;
 
 	static double *rho;
 	if (rho == NULL)
@@ -83,6 +84,33 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 	hyperb_solver.getStateVel[2] = getStateZvel;
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.solveRungeKutta();
+
+        for (k = 0; k <= top_gmax[2]; k++)
+        for (j = 0; j <= top_gmax[1]; j++)
+        for (i = 0; i <= top_gmax[0]; i++)
+        {
+            index = d_index3d(i,j,k,top_gmax);
+            speed = sqrt(sqr(field->vel[0][index]) +
+                         sqr(field->vel[1][index]) +
+                         sqr(field->vel[2][index]));
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+                icrds_max[2] = k;
+            }
+            for (l = 0; l < dim; ++l)
+            {
+                if (vmin[l] > field->vel[l][index])
+                    vmin[l] = field->vel[l][index];
+                if (vmax[l] < field->vel[l][index])
+                    vmax[l] = field->vel[l][index];
+            }
+        }
+        pp_global_max(&max_speed,1);
+        pp_global_min(vmin,dim);
+        pp_global_max(vmax,dim);
 }
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
@@ -1442,6 +1470,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         else
 	{	
 	    int num_colors = drawColorMap();
+            std::vector<int> ncell;
+            ncell.resize(num_colors);
             paintAllGridPoint(NOT_SOLVED);
             for (i = 1; i < num_colors; ++i)
             {
@@ -1451,12 +1481,20 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
                 elliptic_solver.ijk_to_I = ijk_to_I;
                 elliptic_solver.ilower = ilower;
                 elliptic_solver.iupper = iupper;
-                if (iFparams->total_div_cancellation)
-                    elliptic_solver.dsolve(array);
-                else
-                    elliptic_solver.solve(array);
+
+                ncell[i] = iupper - ilower;
+                printf("ilower = %d  iupper = %d\n",ilower,iupper);
+                
+                elliptic_solver.solve(array);
                 paintSolvedGridPoint();
             }
+            /*
+            for (i = 1; i < num_colors; ++i)
+            {
+                if (ncell[i] > 10) continue;
+                setIsolatedSoln(i,array);
+            }
+            */
 
 	}
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
@@ -2168,3 +2206,79 @@ void Incompress_Solver_Smooth_3D_Cartesian::appendOpenEndStates()
         return;
 }       /* end appendOpenEndStates */
 
+void Incompress_Solver_Smooth_Basis::setIsolatedSoln(
+        int color, 
+        double *soln)
+{
+	int i,j,k,l,ic,count;
+        int ib_min,ib_max,jb_min,jb_max,kb_min,kb_max;
+        double ave_soln;
+        std::vector<int> iso_cell;
+        COMPONENT c;
+
+        ib_min = imax;  ib_max = imin;
+        jb_min = jmax;  jb_max = jmin;
+        kb_min = kmax;  kb_max = kmin;
+        switch(dim)
+        {
+        case 2:
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+                ic = d_index2d(i,j,top_gmax);
+		if (color_map[ic] == color)
+                    iso_cell.push_back(ic);
+            }
+            break;
+        case 3:
+            for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+                ic = d_index3d(i,j,k,top_gmax);
+		if (color_map[ic] == color)
+                {
+                    if (ib_min > i) ib_min = i;
+                    if (jb_min > j) jb_min = j;
+                    if (kb_min > k) kb_min = k;
+                    if (ib_max < i) ib_max = i;
+                    if (jb_max < j) jb_max = j;
+                    if (kb_max < k) kb_max = k;
+                    iso_cell.push_back(ic);
+                }
+            }
+            printf("Entering setIsolatedSoln()\n");
+            printf("size = %d\n",iso_cell.size());
+            printf("ib_min = %d  ib_max = %d\n",ib_min,ib_max);
+            printf("jb_min = %d  jb_max = %d\n",jb_min,jb_max);
+            printf("kb_min = %d  kb_max = %d\n",kb_min,kb_max);
+            ib_min = (ib_min == imin) ? ib_min : ib_min - 1;
+            jb_min = (jb_min == jmin) ? jb_min : jb_min - 1;
+            kb_min = (kb_min == kmin) ? kb_min : kb_min - 1;
+            ib_max = (ib_max == imax) ? ib_max : ib_max + 1;
+            jb_max = (jb_max == jmax) ? jb_max : jb_max + 1;
+            kb_max = (kb_max == kmax) ? kb_max : kb_max + 1;
+            printf("Revised:\n");
+            printf("ib_min = %d  ib_max = %d\n",ib_min,ib_max);
+            printf("jb_min = %d  jb_max = %d\n",jb_min,jb_max);
+            printf("kb_min = %d  kb_max = %d\n",kb_min,kb_max);
+            ave_soln = 0.0;
+            count = 0;
+            for (k = kb_min; k <= kb_max; k++)
+            for (j = jb_min; j <= jb_max; j++)
+            for (i = ib_min; i <= ib_max; i++)
+            {
+                ic = d_index3d(i,j,k,top_gmax);
+                for (l = 0; l < iso_cell.size(); ++l)
+                    if (ic == iso_cell[l]) break;
+                if (l < iso_cell.size()) continue; 
+                if (!ifluid_comp(top_comp[ic])) continue;
+                ave_soln += soln[ic];
+                count++;
+            }
+            ave_soln /= count;
+            printf("count = %d  ave_soln = %f\n",count,ave_soln);
+            //clean_up(0);
+            break;
+        }
+}       /* end setIsolatedSoln */
