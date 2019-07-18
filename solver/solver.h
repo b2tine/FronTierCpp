@@ -212,49 +212,60 @@ private:
         double checkSolver(int *icoords,boolean print_details,double *var_in);
 };
 
-class DUAL_ELLIPTIC_SOLVER{
+class DOUBLE_ELLIPTIC_SOLVER{
         Front *front;
 public:
-        DUAL_ELLIPTIC_SOLVER(Front &front);
+        DOUBLE_ELLIPTIC_SOLVER(Front &front);
+        ~DOUBLE_ELLIPTIC_SOLVER();
 
         // On topological grid
-	int *i_to_I;
-	int **ij_to_I;
-	int ***ijk_to_I;
-	int ilower;
-	int iupper;
+	int **dij_to_I;
+	int ***dijk_to_I;
+	int eilower;
+	int eiupper;
+        int *ext_gmax;
+        int *ext_l,*ext_u;
+        int *ext_imin,*ext_imax;
+        COMPONENT *ext_comp;
 
-	double obst_comp;
-	double *soln;		/* field variable of new step */
-	double *source;		/* source field */
-	double *D;		/* div(D*grad)phi = source */
+        double dt;              //time step
+	double porosity;
+	double *soln;	        // field variable of new step
+	double *source;	        // source field
+        double *D;              // div(D*grad)phi = source,  where D = 1.0/rho
+        double *ext_array;
+
 	void set_solver_domain(void);
-	void solve(double *soln);
-	double (*getStateVar)(POINTER);
+        void set_extension(void);
+	void dsolve(double *soln);
+	
+        double (*getStateVar)(POINTER);
+        double (*getStateVel[3])(POINTER);
+
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-	double checkSolver(int *icoords, boolean print_details);
+	double checkSolver(int *icoords,boolean print_details);
+	int skip_neumann_solver;
 private:
         // Dimension
         int dim;
-        COMPONENT *top_comp,*ctop_comp;
-	int *top_gmax;
+        COMPONENT *top_comp;
 	double *top_h;
-	double *ctop_L;
-        int *ctop_gmax;
-	int cimin,cjmin,ckmin;
-	int cimax,cjmax,ckmax;
-	int offset[MAXD];
-        double *array;          // for scatter states;
+        int *top_gmax;
+	int imin[MAXD],imax[MAXD];
+        double *ext_source;             // for extended source;
+        double *ext_D;                  // for extended D;
 	int array_size;
 	double max_soln;
 	double min_soln;
-	void solve1d(double *soln);
-	void solve2d(double *soln);
-	void solve3d(double *soln);
-	void get_dual_D(int*,double*);
-	double dual_average_D_2d(int dir, int nb, int**,COMPONENT**);
-	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
+        double max_rhs;
+	void dsolve2d(double *soln);
+	void dsolve3d(double *soln);
+        bool icoordsInterior(int*);
+        bool icoordsBoundary(int*);
+        double dcheckSolver(int*,boolean);
+        double dcheckSolverInterior(int*,boolean);
+        double dcheckSolverExtended(int*,boolean);
 };
 
 class ELLIPTIC_SOLVER{
@@ -269,25 +280,24 @@ public:
 	int ilower;
 	int iupper;
 
-    double dt;          //time step
+        double dt;          //time step
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
-    double **vel;       /* velocity field */
-    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+        double **vel;       /* velocity field */
+        double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
 
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);
 	
-    double (*getStateVar)(POINTER);
-    double (*getStateVel[3])(POINTER);
+        double (*getStateVar)(POINTER);
+        double (*getStateVel[3])(POINTER);
 
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
-    void printIsolatedCells();
-	    double dcheckSolver(int *icoords,boolean print_details);
+        void printIsolatedCells();
 	int skip_neumann_solver;
 private:
         // Dimension
@@ -305,8 +315,6 @@ private:
 	void solve1d(double *soln);
 	void solve2d(double *soln);
 	void solve3d(double *soln);
-	void dsolve2d(double *soln);
-	void dsolve3d(double *soln);
 };
 
 struct _SWEEP {
@@ -388,200 +396,6 @@ private:
 
 extern	void upwind_flux(SWEEP*,FSWEEP*,double,int,int,int);
 extern	void weno5_flux(SWEEP*,FSWEEP*,double,int,int,int);
-
-/* For CIM solver */
-
-#define CIM_TOL 1e-8
-
-typedef struct {
-	int N[MAXD], NA;
-	double *u;
-} Unknown;
-
-typedef struct {
-	int	N;		/* row size of matrix */
-	int 	K;		/* nonzero elements of A */
-	int	*i, *j;		/* (i,j) <-> [k], 1<= k <= K	*/
-	double  *a;		/* a[k] -> a(i,j) */
-} MTX;
-
-typedef struct {
-	int	N;		/* grid size */
-	MTX	P;		/* prolongation matrix */
-	MTX	A;		/* sparse matrix */
-	double	*x;		/* vector structure */
-	double	*b;		/* vector structure */
-} GRID;
-
-#define tr(s) ((s) == 1 ? 0 : 1)
-
-typedef struct {
-	int s[2*MAXD];		// indicator of intersections
-	double a[2*MAXD];	// relative locations of intersections
-	double n[2*MAXD][MAXD];	// normal vectors at the intersections
-	int c[MAXD][MAXD];	// use only in cim2, cross derivative indicator
-} CIM_STRUCT;
-
-typedef struct {
-	int    indx[MAXD][5*MAXD-1];
-	double coef[MAXD][5*MAXD-1];
-	double J[MAXD][6*MAXD];
-} CIM_COEF;
-
-typedef struct {
-    	int indx[MAXD][6*MAXD+4];
-    	double coef[MAXD][6*MAXD+4];
-    	double v[MAXD];
-} CIM_GRAD;
-
-typedef struct {
-    	int ID, ID_S[2], ID_R, R_dir, R[6*MAXD];
-    	double C[6*MAXD];
-} GHOST_VALUE;
-
-typedef struct {
-	int s[MAXD];
-	double a[MAXD];
-	double n[MAXD][MAXD];
-	int c[MAXD][MAXD];
-} CIM2_STRUCT;
-
-typedef struct {
-	int    indx[MAXD][6*MAXD-1];
-	double coef[MAXD][6*MAXD-1];
-	double J[MAXD][3*MAXD];
-} CIM2_COEF;
-
-class CIM_ELLIPTIC_SOLVER{
-        Front *front;
-public:
-        CIM_ELLIPTIC_SOLVER(Front &front);
-
-        int *i_to_I,*I_to_i;            // Index mapping for 1D
-        int **ij_to_I,**I_to_ij;        // Index mapping for 2D
-        int ***ijk_to_I,**I_to_ijk;     // Index mapping for 3D
-	int ilower;
-	int iupper;
-	int size;
-	boolean solve_front_state;
-
-	POINTER jparams;	/* Params for jump functions */
-	double *soln;		/* field variable of new step */
-	double *source;		/* source field */
-	double diff_coeff[2];	/* div(diff_coeff*grad)phi = source */
-	double *kappa;
-	int w_type;
-	COMPONENT pos_comp,neg_comp;
-	void set_solver_domain(void);
-	void solve(double *soln);
-	void (*assignStateVar)(double,POINTER);
-	double (*getStateVar)(POINTER);
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
-                                POINTER*,HYPER_SURF**,double*);
-	double (*solutionJump)(POINTER jparams,int D,double *coords);
-	double (*gradJumpDotN)(POINTER jparams,int D,double *N,double *P);
-	double (*gradJumpDotT)(POINTER jparams,int D,int i,double *N,double *P);
-	double (*exactSolution)(POINTER jparams,int D,double *P);
-private:
-        // On topological grid
-        int dim;
-        RECT_GRID *top_grid;
-        COMPONENT *top_comp;
-	double *top_h;
-	double *top_L;
-        int *top_gmax;
-	int imin,jmin,kmin;
-	int imax,jmax,kmax;
-
-	// CIM specific variables
-	int  *NB[2*MAXD],Ord[5];
-	char *D, *S[2*MAXD], *Order;
-	MTX A;
-	double *b, *V;
-	Unknown u;
-	int NEWCIM;
-
-	// CIM specific functions
-	int HCIM_Matrix_Generation();    
-	int HCIM_Matrix_Generation_k(int k,int *n);    
-	int Generate_Domain_and_NB();
-	int Check_Type();
-	int Check_Type_k(int k);
-	void Set_Intersection();
-	int Search_Ghost_Value(int k);
-	void cimSolveFrontState();
-	void cimIntfcPointState(double*,int,double*,double*);
-
-	void solve1d(double *soln);
-	void solve2d(double *soln);
-	void solve3d(double *soln);
-};
-
-class CIM_PARAB_SOLVER{
-        Front *front;
-public:
-        CIM_PARAB_SOLVER(Front &front);
-
-        int *i_to_I,*I_to_i;            // Index mapping for 1D
-        int **ij_to_I,**I_to_ij;        // Index mapping for 2D
-        int ***ijk_to_I,**I_to_ijk;     // Index mapping for 3D
-	int ilower;
-	int iupper;
-	int size;
-	boolean solve_front_state;
-
-	POINTER jparams;	/* Params for jump functions */
-	double m_dt;		/* Time step for parabolic equation */
-	double *soln;		/* field variable of new step */
-	double *source;		/* source field */
-	double diff_coeff[2];	/* div(diff_coeff*grad)phi = source */
-	double *kappa;
-	int w_type;
-	COMPONENT pos_comp,neg_comp;
-	void set_solver_domain(void);
-	void solve(double *soln);
-	void (*assignStateVar)(double,POINTER);
-	double (*getStateVar)(POINTER);
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
-                                POINTER*,HYPER_SURF**,double*);
-	double (*solutionJump)(POINTER jparams,int D,double *coords);
-	double (*gradJumpDotN)(POINTER jparams,int D,double *N,double *P);
-	double (*gradJumpDotT)(POINTER jparams,int D,int i,double *N,double *P);
-	double (*exactSolution)(POINTER jparams,int D,double *P);
-private:
-        // On topological grid
-        int dim;
-        RECT_GRID *top_grid;
-        COMPONENT *top_comp;
-	double *top_h;
-	double *top_L;
-        int *top_gmax;
-	int imin,jmin,kmin;
-	int imax,jmax,kmax;
-
-	// CIM specific variables
-	int  *NB[2*MAXD],Ord[5];
-	char *D, *S[2*MAXD], *Order;
-	MTX A;
-	double *b, *V;
-	Unknown u;
-	int NEWCIM;
-
-	// CIM specific functions
-	int HCIM_Matrix_Generation();    
-	int HCIM_Matrix_Generation_k(int k,int *n);    
-	int Generate_Domain_and_NB();
-	int Check_Type();
-	int Check_Type_k(int k);
-	void Set_Intersection();
-	int Search_Ghost_Value(int k);
-	void cimSolveFrontState();
-	void cimIntfcPointState(double*,int,double*,double*);
-
-	void solve1d(double *soln);
-	void solve2d(double *soln);
-	void solve3d(double *soln);
-};
 
 extern void viewTopVariable(Front*,double*,boolean,double,double,char*,char*);
 extern double   compBdryFlux(Front*,double*,double,int,double,

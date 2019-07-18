@@ -76,7 +76,6 @@ struct _IF_FIELD {
 	double **old_var;		// For debugging purpose
 
 	double *div_U;
-	double *d_phi;			/* Dual grid phi */
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
 };
@@ -101,9 +100,7 @@ typedef enum _ADVEC_METHOD ADVEC_METHOD;
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
-	DUAL_ELLIP,
 	DOUBLE_ELLIP,
-	CIM_ELLIP
 };
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
 
@@ -350,7 +347,6 @@ protected:
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
 	int **ij_to_I, ***ijk_to_I;
-	int **I_to_ij, **I_to_ijk;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
 	// Sweeping limits
@@ -359,31 +355,8 @@ protected:
 	// for parallel partition
 	int NLblocks, ilower, iupper;
 	int *n_dist;
-	// for dual/comp overlapping
-	int offset[MAXD];
-
-	// On comp topological grid
-	RECT_GRID *ctop_grid;
-	double *carray;
-	double *csource;
-	COMPONENT *ctop_comp;
-	int *ctop_gmax;
-	int *clbuf, *cubuf;
-	double *ctop_L, *ctop_U;
-	int **cij_to_I, **cI_to_ij;
-	int ***cijk_to_I, **cI_to_ijk;
-	int csmin[MAXD],csmax[MAXD];
-	// Sweeping limites
-	int cimin, cjmin, ckmin;
-	int cimax, cjmax, ckmax;
-	// for parallel partition
-	int cNLblocks, cilower, ciupper;
-	int *cn_dist;
-
-	// Index shift between dual and comp grids 
-	int ishift[MAXD];
-
-	// On Double solver
+	
+    // On Double solver
 	COMPONENT *ext_comp;
 	int ext_gmax[MAXD];
         int ext_l[MAXD],ext_u[MAXD];
@@ -395,6 +368,9 @@ protected:
 	// for parallel partition
 	int dNLblocks, eilower, eiupper;
 	int *dn_dist;
+
+	// Index shift between dual and comp grids 
+	int ishift[MAXD];
 
 	//member data: mesh storage
 	std::vector<L_RECTANGLE>   cell_center;
@@ -423,16 +399,13 @@ protected:
 protected:
 	void setComponent(void); //init components;
 	void setDomain();
-	void setDualDomain();
 	void setDoubleDomain();
 
 	// parallelization related functions
 	void scatMeshArray(void);
 	void setGlobalIndex(void);
-	void setDualGlobalIndex(void);
 	void setDoubleGlobalIndex(void);
 	void setIndexMap(void);
-	void setDualIndexMap(void);
 	void setDoubleIndexMap(void);
 	void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
@@ -461,15 +434,11 @@ protected:
 	int    getComponent(double *coords);	
 	void   save(char *filename);
 	double computeFieldPointDiv(int*, double**);
-	double computeDualFieldPointDiv(int*, double**);
-	double computeDualMu(int*, double*);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	void   computeFieldPointGrad(int*, double*, double*);
-	void   computeDualFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);
-	void   computeDualFieldPointrho(int*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
@@ -542,21 +511,18 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
 	void computeNewVelocity(void);
-	void computeNewVelocityDual(void);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
 				double*, double);
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
-	void updateComponent(void);
 
 	/***************   Low level computation functions  *************/
 	double getVorticity(int i, int j);
@@ -586,16 +552,13 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
 	void computeNewVelocity(void);
-	void computeNewVelocityDual(void);
 	void updateComponent(void);
-	boolean InsideSolid(int*);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 

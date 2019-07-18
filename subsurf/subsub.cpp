@@ -670,10 +670,9 @@ extern void read_fluid_params(
             case 's':
                 iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
                 break;
-            case 'c':
-            case 'C':
-                iFparams->num_scheme.ellip_method = CIM_ELLIP;
-                break;
+            default:
+                printf("Elliptic Method Not Implemented\n");
+                clean_up(1);
             }
         }
 	iFparams->ub_speed = HUGE;

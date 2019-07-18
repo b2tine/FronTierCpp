@@ -1178,9 +1178,7 @@ extern void read_iFparams(
 
 	(void) printf("Available elliptic methods are:\n");
 	(void) printf("\tSimple elliptic (S)\n");
-	(void) printf("\tCIM elliptic (C)\n");
 	(void) printf("\tDouble elliptic (DB)\n");
-	(void) printf("\tDual elliptic (DU)\n");
 	if (CursorAfterStringOpt(infile,"Enter elliptic method:"))
 	{
 	    fscanf(infile,"%s",string);
@@ -1191,17 +1189,13 @@ extern void read_iFparams(
 	    case 's':
 	    	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 	    	break;
-	    case 'c':
-	    case 'C':
-	    	iFparams->num_scheme.ellip_method = CIM_ELLIP;
-	    	break;
 	    case 'd':
 	    case 'D':
-		if (string[1] == 'b' || string[1] == 'B')
-	    	    iFparams->num_scheme.ellip_method = DOUBLE_ELLIP;
-		else if (string[1] == 'u' || string[1] == 'U')
-	    	    iFparams->num_scheme.ellip_method = DUAL_ELLIP;
+            iFparams->num_scheme.ellip_method = DOUBLE_ELLIP;
 	    	break;
+        default:
+            printf("Elliptic Method Not Implemented\n");
+            clean_up(1);
 	    }
 	}
 
