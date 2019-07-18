@@ -14,10 +14,8 @@ noinst_LTLIBRARIES = libsolver.la
 
 libsolver_la_SOURCES = \
 ../solver.h \
-../cim_ellip.cpp \
-../cim_parab.cpp \
-../dual_ellip.cpp \
 ../ellip.cpp \
+../double_ellip.cpp \
 ../hyperb.cpp \
 ../parab.cpp \
 ../solver.cpp
