@@ -190,43 +190,22 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
-boolean Incompress_Solver_Smooth_3D_Cartesian::InsideSolid(int* icoords)
-{
-	int icu[MAXD],icl[MAXD];
-	for (int m = 0; m < dim; ++m)
-	    icl[m] = icoords[m] - offset[m];
-	for (int i = 0; i < 2; ++i)
-        for (int j = 0; j < 2; ++j)
-        for (int k = 0; k < 2; ++k)
-        {
-            icu[0] = icl[0] + i;
-            icu[1] = icl[1] + j;
-            icu[2] = icl[2] + k;
-            int index = d_index(icu,ctop_gmax,dim);
-	    if (ifluid_comp(ctop_comp[index]))
-		return NO;
-	}
-	return YES;
-}
-
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
-        int i;
-	
-        if(iFparams->if_buoyancy)
-        {
-	    int ic[MAXD],index;
-            rect_in_which(coords,ic,top_grid);
-            index = d_index(ic,top_gmax,dim);
-            for (i = 0; i < dim; ++i)
-                source[i] = field->ext_accel[i][index];
-        }
-        else
-        {
-            for (i = 0; i < dim; ++i)
-                source[i] = iFparams->gravity[i];
-        }
+    if(iFparams->if_buoyancy)
+    {
+        int ic[MAXD],index;
+        rect_in_which(coords,ic,top_grid);
+        index = d_index(ic,top_gmax,dim);
+        for (int i = 0; i < dim; ++i)
+            source[i] = field->ext_accel[i][index];
+    }
+    else
+    {
+        for (int i = 0; i < dim; ++i)
+            source[i] = iFparams->gravity[i];
+    }
 } 	/* computeSourceTerm */
 
 #include<fstream>
