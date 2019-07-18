@@ -78,9 +78,9 @@ crystal/        code for applications in the surface physics of crystals
 melting/        additional code for ...
 subsurf/        ...
 
-------------
+----------------------------
 4. Configuring and  Building 
-------------
+----------------------------
 
 FronTier++ is configured and built using autoconf, configure, and make.
 
@@ -92,30 +92,43 @@ Configuring FronTier++ with PETSc:
    To download the PETSc package, go to:
 	https://www.mcs.anl.gov/petsc/download/index.html
 	
-   FronTier++ works with PETSc 3.11.  Most users use two separate builds of 
+   FronTier++ requires PETSc 3.11.3  Most users use two separate builds of 
    PETSc: one optimized for performance and one for debugging.  The 
    instructions below install PETSc correcty in the /usrl/local/pkg/ 
-   directory as petsc-3.11.0-opt and petsc-3.11.0-dbg.  This can be modified 
-   by changing the directory given in the --prefix configuration option.
+   directory in dirs petsc-3.11.3-opt and petsc-3.11.3-dbg.  The location can 
+   be modified by varying the --prefix configuration option.
 	
    Full PETSc installation instructions can be found at:
 	http://www.mcs.anl.gov/petsc/documentation/installation.html
 	
-   Once PETSc has been unpacked, from the root dir run:
+   Installing and configuring follows the standard GNU procedure.
+   Once PETSc has been unpacked, all of the commands below are run from 
+   inside the new directory.  The following assumes PETSc is unpacked
+   into /usr/local/pkg/petsc.  To configure the optimized build run 1.a 
+   followed by steps 2, 3, and 4.a.  When configuring the debug build 
+   run 1.b, 2, 3, and 4.b.  Step 4 tests the build is configured correctly.
    
-   ./configure --prefix=/usr/local/pkg/petsc-3.11.0-opt --PETSC_ARCH=opt \
+   1.a  ./configure --prefix=/usr/local/pkg/petsc-3.11.3-opt --PETSC_ARCH=opt \
      --with-cc=gcc --with-cxx=g++ --with-fc=gfortran --with-debugging=0 \
      COPTFLAGS="-O3 -march=native -mtune=native" \
      FOPTFLAGS="-O3 -march=native -mtune=natuve" --download-mpich --download-hypre
  
-   ./configure --prefix=/usr/local/pkg/petsc-3.11.0-dbg \
+   1.b  ./configure --prefix=/usr/local/pkg/petsc-3.11.3-dbg \
      --with-cc=gcc --with-cxx=g++ --with-fc=gfortran \
      --download-mpich --download-hypre
+     
+   2. make PETSC_DIR=/usr/local/pkg/petsc-3.11.3 PETSC_ARCH=arch-linux2-c-debug all
+   
+   3. make PETSC_DIR=/usr/local/pkg/petsc-3.11.3 PETSC_ARCH=arch-linux2-c-debug install
+   
+   4.a  make PETSC_DIR=/usr/local/pkg/petsc-3.11.3-opt PETSC_ARCH='' test
+   
+   4.b  make PETSC_DIR=/usr/local/pkg/petsc-3.11.3-dbg PETSC_ARCH='' test
 
    Now, in the FronTier++/ directory simply type "./build" or "./build -d" for debug
    mode.  If the machine is unrecognized, it will prompt the user for the path to the
-   correct PETSc version.  The build script recognizes a few systems commonly used by FronTier++
-   developers and users. For these platforms, the script should work
+   correct PETSc version.  The build script recognizes a few systems commonly used by 
+   FronTier++ developers and users. For these platforms, the script should work
    automatically in batch mode without user intervention.
    
    ./build
@@ -127,7 +140,10 @@ Configuring FronTier++ with PETSc:
    ./build
    Machine recognized as Hilbert.
 
-   Note: FronTier++ will automatically be configured for parallel support with OpenMPI.
+   Note: FronTier++ will automatically be configured for parallel support with OpenMPI,
+   and as such it requires ssl.  This can be installed on ubuntu with: 
+   
+   sudo apt-get install libssl-dev
    
 
 Advanced FronTier++ Configuration: 
@@ -171,7 +187,8 @@ Building the FronTier++ with HDF4 package:
    where hdf_path is the directory the HDF is installed and petsc_path is the
    path to your chosen PETSc configuration.  
    
-   The inclusion of HDF package gives user capability of producing HDF files as output.
+   The inclusion of HDF package gives a user the capability of producing HDF files 
+   as output.
 
 
 Building the FronTier++ with GD package:
@@ -188,17 +205,16 @@ Building the FronTier++ with GD package:
    of GD package gives user capability of producing animated gif files as 
    output in some of the 1D and 2D problems.
 
-
-------------
+----------------------------
 5. Running the test programs 
-------------
+----------------------------
 
 After compiling the libFronTier++.a, one can test the library by running
 example code calling the software.
 
----
+--------------------
 a) Running in serial
----
+--------------------
 
 Template code for application of FronTier++-Lite library are stored in
 FronTier++/example2d (for 2D) and FronTier/example3d (3D) directories.
@@ -270,9 +286,9 @@ If HDF output is enabled, the parallel example will produce a single HDF file,
 just as with a serial run, which can be viewed in the exact same way.
 
 
-------------
+---------------------
 6. Viewing the output
-------------
+---------------------
 
 To view VTK files, we prefer LLNL's vis package: VisIt. It can be found at:
         https://wci.llnl.gov/codes/visit/
@@ -292,9 +308,9 @@ files. It is located at:
 FronTier++ also support Geomview files. Geomview is located at:
         http://www.geomview.org/
 
-------------
+------------------------------------------------------------------
 7. Selecting built-in interface initialization and velocity fields
-------------
+------------------------------------------------------------------
 
 The testfront.c driver in the testfront directory uses FronTier++'s built-in
 interface initialization function and velocity field function. 
@@ -320,9 +336,10 @@ is redirected from the input file in testfront.c. FrontInitVelo() parses
 stdin for the control sequence ': ' which indicates that the proceeding entry
 is a response to one of the control fields in the order in which they appear.
 
-------------
+-----------------------------------
 8. Build your own initial interface
-------------
+-----------------------------------
+
 The built in functions are very simplistic and most users of FronTier++ 
 will usually require something not provided by the the built in functions 
 when using FronTier++ for their research purposes. Therefore, a short example
@@ -411,9 +428,9 @@ level_func_pack.func = circle_level_func;
 FrontInitIntfc(&front,&level_func_pack);
 
 
-------------
+-----------------------------------------
 9. Build your own velocity field function
-------------
+-----------------------------------------
 
 To build your own velocity field, you need to have a data structure
 containing the parameters for the velocity function and a function that
@@ -483,9 +500,9 @@ velo_func_pack.func = double_vortex_vel;
 FrontInitVelo(&front,&velo_func_pack);
 
 
-------------
+-----------------------------
 10. Propagating the interface
-------------
+-----------------------------
 
 The interface is propagated via the FrontAdvance() function. This function has
 the following prototype:
