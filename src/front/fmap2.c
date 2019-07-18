@@ -524,7 +524,7 @@ EXPORT	void FT_SetGlobalIndex(
 	Front *front)
 {
 	set_point_gindex(front);
-	set_tri_gindex(front);
+	//set_tri_gindex(front);
 	set_surface_gindex(front);
 	set_curve_gindex(front);
         if (debugging("global_index"))
@@ -534,6 +534,12 @@ EXPORT	void FT_SetGlobalIndex(
             clean_up(0);
         }
 }	/* end FT_SetGlobalIndex */
+
+EXPORT  void FT_SetTriGlobalIndex(
+        Front *front)
+{
+	set_tri_gindex(front);
+}       /* end FT_SetTriGlobalIndex */
 
 EXPORT void FT_SetSurfGlobalIndex(
         Front *front)   

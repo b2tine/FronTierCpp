@@ -102,6 +102,7 @@ extern void initParachuteModules(Front *front)
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
 	static RG_PARAMS rgb_params;
+        boolean complex_set = NO;
 
 	if (debugging("trace"))
 	    (void) printf("Entering initParachuteModules()\n");
@@ -115,9 +116,18 @@ extern void initParachuteModules(Front *front)
 	CursorAfterString(infile,"Enter number of canopy surfaces:");
         fscanf(infile,"%d",&num_canopy);
         (void) printf("%d\n",num_canopy);
+        if (num_canopy == 1)
+        {
+            char string[100];
+	    CursorAfterString(infile,"Enter yes for complet connection:");
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                complex_set = YES;
+        }
 	fclose(infile);
 
-	if (num_canopy == 1)
+	if (num_canopy == 1 && !complex_set)
 	    initSingleModule(front);
 	else
 	    initMultiModule(front,num_canopy);

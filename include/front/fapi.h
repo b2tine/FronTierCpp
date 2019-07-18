@@ -1245,33 +1245,36 @@ extern "C" {
  *  \ingroup INITIALIZATION
     \brief This function set global index for all point, curves, surfaces 
      in the interface.
-    \param n @b in Number of items whose memory are to be freed.
-    \param ... @b Pointers to the addresses of these items.
+    \param front @b Pointers to the front.
  */
    IMPORT  void FT_SetGlobalIndex(Front *front);
 
 /*! \fn void FT_SetSurfGlobalIndex(Front *front)
  *  \ingroup INITIALIZATION
     \brief This function set global index for all surfaces in the interface.
-    \param n @b in Number of items whose memory are to be freed.
-    \param ... @b Pointers to the addresses of these items.
  */
    IMPORT  void FT_SetSurfGlobalIndex(Front *front);
 
 /*! \fn void FT_SetCurveGlobalIndex(Front *front)
  *  \ingroup INITIALIZATION
     \brief This function set global index for all curves in the interface.
-    \param n @b in Number of items whose memory are to be freed.
-    \param ... @b Pointers to the addresses of these items.
  */
    IMPORT  void FT_SetCurveGlobalIndex(Front *front);
+
+/*! \fn void FT_SetTriGlobalIndex(Front *front)
+ *  \ingroup INITIALIZATION
+    \brief This function set global index for all triangles in the interface.
+    \param front @b Pointers to the front.
+ */
+   IMPORT  void FT_SetTriGlobalIndex(Front *front);
 
 /*! \fn void FT_FreeThese(int n, ...)
  *  \ingroup MEMORY
     \brief This function free memory of items allocated by FT_...MemoryAlloc()
      functions. The number of arguments is flexible, but needs to equal to
      the input integer n.
-    \param front @b inout front in which the interfac global index is to be set.
+    \param n @b in Number of items whose memory are to be freed.
+    \param ... @b Pointers to the addresses of these items.
  */
    IMPORT  void FT_FreeThese(int n,...);
 
@@ -1481,6 +1484,22 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
 */
 
     IMPORT void FT_MakeCuboidSurf(Front *front,double *center,double *edge,COMPONENT neg_comp,COMPONENT pos_comp,int w_type,int refinement_level,SURFACE **surf);
+
+/*! \fn void FT_MakeCylinderShell(Front *front,double *center,double radius, double height, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf)
+ *  \ingroup INSERT
+    \brief This function inserts a cylinder surface into the front with given
+     information of its parameters, components, and wave type.
+    \param front @b inout Pointer to the front in which surface is inserted.
+    \param center @b in center of the cylinder.
+    \param edge @b in radius of the cylinder.
+    \param height @b in height of the cylinder.
+    \param neg_comp @b in index for negative side of the surface (inner side).
+    \param pos_comp @b in index for positive side of the surface (outer side).
+    \param w_type @b in wave type of the surface.
+    \param surf @b out surface made by this function
+*/
+
+    IMPORT void FT_MakeCylinderShell(Front *front,double *center,double radius, double height, int idir, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf);
 
 /*! \fn void FT_MakeCylinderSurf(Front *front,double *center,double radius, double height, COMPONENT neg_comp,COMPONENT pos_comp,int w_type,SURFACE **surf)
  *  \ingroup INSERT
