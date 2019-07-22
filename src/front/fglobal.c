@@ -196,6 +196,221 @@ EXPORT	void set_point_gindex(
 	}
 }	/* end set_point_gindex */
 
+/*      If two vertices are below the coordinate, it is considered that
+        the tri is below the coordinate. */
+
+LOCAL   boolean tri_below_coord_in_dir(
+        TRI *tri,
+        double coords,
+        int idir)
+{
+        int i;
+        int nabove,nbelow;
+        POINT *p;
+
+        nabove = nbelow = 0;
+        for (i = 0; i < 3; ++i)
+        {
+            p = Point_of_tri(tri)[i];
+            if (Coords(p)[idir] >= coords) nabove++;
+            else nbelow++;
+        }
+        if (nbelow >= 2)
+            return YES;
+        else
+            return NO;
+}       /* end tri_below_coord_in_dir */
+
+/*      If two vertices are above the coordinate, it is considered that
+        the tri is below the coordinate. */
+
+LOCAL   boolean tri_above_coord_in_dir(
+        TRI *tri,
+        double coords,
+        int idir)
+{
+        int i;
+        int nabove,nbelow;
+        POINT *p;
+
+        nabove = nbelow = 0;
+        for (i = 0; i < 3; ++i)
+        {
+            p = Point_of_tri(tri)[i];
+            if (Coords(p)[idir] >= coords) nabove++;
+            else nbelow++;
+        }
+        if (nbelow >= 2)
+            return NO;
+        else
+            return YES;
+}       /* end tri_above_coord_in_dir */
+
+LOCAL   boolean same_tri(
+        TRI *t1,
+        TRI *t2)
+{
+        int i,j;
+        boolean match_found;
+        for (i = 0; i < 3; ++i)
+        {
+            match_found = NO;
+            for (j = 0; j < 3; ++j)
+            {
+                if (Gindex(Point_of_tri(t1)[i]) == Gindex(Point_of_tri(t2)[j]))
+                    match_found = YES;
+            }
+            if (!match_found) return NO;
+        }
+        return YES;
+}       /* end same_tri */
+
+LOCAL   void check_tri_global_index(INTERFACE *intfc)
+{
+        SURFACE **s;
+        TRI *t1,*t2;
+        int i,num_set,num_unset,num_repeat,num_empty;
+        num_set = num_unset = num_repeat = 0;
+        long *gindex_nt;
+
+
+        FT_VectorMemoryAlloc(&gindex_nt,intfc->max_tri_gindex,sizeof(long));
+        for (i = 0; i < intfc->max_tri_gindex; ++i)
+            gindex_nt[i] = 0;
+	intfc_surface_loop(intfc,s)
+	{
+	    surf_tri_loop(*s,t1)
+	    {
+                if (Gindex(t1) == -1)
+                {
+                    printf("Tri %p unset\n",t1);
+                    print_tri_coords(t1);
+                    num_unset++;
+                }
+                else
+                {
+                    num_set++;
+                    gindex_nt[Gindex(t1)]++;
+                }
+            }
+        }
+        printf("num_set = %d  num_unset = %d\n",num_set,num_unset);
+	intfc_surface_loop(intfc,s)
+	{
+	    for (t1 = first_tri(*s); !at_end_of_tri_list(t1->next,*s); 
+                                t1 = t1->next)
+	    {
+                for (t2 = t1->next; !at_end_of_tri_list(t2,*s); t2 = t2->next)
+                {
+                    if (same_tri(t1,t2)) 
+                    {
+                        gindex_nt[Gindex(t1)]--;
+                        continue;
+                    }
+                    if (Gindex(t1) == Gindex(t2))
+                    {
+                        printf("Tri %p and tri %p have same Gindex: %d\n",
+                                        t1,t2,Gindex(t1));
+                        num_repeat++;
+                    }
+                }
+            }
+        }
+        printf("num_repeat = %d\n",num_repeat);
+	pp_global_lmax(gindex_nt,intfc->max_tri_gindex);
+        num_empty = 0;
+        num_repeat = 0;
+        for (i = 0; i < intfc->max_tri_gindex; ++i)
+        {
+            if (gindex_nt[i] == 0) num_empty++;
+            if (gindex_nt[i] > 1) num_repeat++;
+        }
+        printf("num_empty = %d\n",num_empty);
+        printf("num_over_fill = %d\n",num_repeat);
+}       /* end check_tri_global_index */
+
+EXPORT	void set_tri_gindex(
+	Front *front)
+{
+	INTERFACE *intfc = front->interf;
+	RECT_GRID *gr = front->rect_grid;
+	SURFACE **s;
+	TRI *t;
+	double *L = gr->L;
+	double *U = gr->U;
+	int i,j,iv,dim = gr->dim;
+	long gindex = 0;
+	long ilower,iupper,*n_dist;
+	int num_nodes = pp_numnodes();
+	int myid = pp_mynode();
+
+	if (debugging("global_index"))
+	    (void) printf("Entering set_tri_gindex()\n");
+
+        FT_VectorMemoryAlloc((POINTER*)&n_dist,num_nodes,sizeof(long));
+
+	intfc_surface_loop(intfc,s)
+	{
+	    surf_tri_loop(*s,t)
+	    {
+                Gindex(t) = -1;
+                for (i = 0; i < dim; ++i)
+                {
+                    if (rect_boundary_type(intfc,i,0) == SUBDOMAIN_BOUNDARY &&
+                        tri_below_coord_in_dir(t,L[i],i))
+                        break;
+                    if (rect_boundary_type(intfc,i,1) == SUBDOMAIN_BOUNDARY &&
+                        tri_above_coord_in_dir(t,U[i],i)) 
+                        break;
+                }
+                if (i < dim) continue;
+		Gindex(t) = gindex++;
+	    }
+	}
+
+	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
+	n_dist[myid] = gindex;
+	pp_global_lmax(n_dist,num_nodes);
+	ilower = 0;
+        iupper = n_dist[0];
+	for (i = 1; i <= myid; i++)
+        {
+            ilower += n_dist[i-1];
+            iupper += n_dist[i];
+        }
+	intfc_surface_loop(intfc,s)
+	{
+	    surf_tri_loop(*s,t)
+	    {
+                for (i = 0; i < dim; ++i)
+                {
+                    if (rect_boundary_type(intfc,i,0) == SUBDOMAIN_BOUNDARY &&
+                        tri_below_coord_in_dir(t,L[i],i))
+                        break;
+                    if (rect_boundary_type(intfc,i,1) == SUBDOMAIN_BOUNDARY &&
+                        tri_above_coord_in_dir(t,U[i],i)) 
+                        break;
+                }
+                if (i < dim) continue;
+	    	Gindex(t) += ilower;
+	    }
+	}
+	free_these(1,n_dist);
+	intfc->max_tri_gindex = iupper;
+	pp_global_lmax(&intfc->max_tri_gindex,1);
+
+	static_mesh(intfc) = NO;
+	scatter_front(front);
+	if (debugging("global_index"))
+	{
+            (void) printf("ilower = %d iupper = %d\n",ilower,iupper);
+            (void) printf("intfc->max_tri_gindex = %d\n",intfc->max_tri_gindex);
+	    (void) printf("Call check_global_index()\n");
+	    check_tri_global_index(intfc);
+	    (void) printf("Leaving set_tri_gindex()\n");
+	}
+}	/* end set_tri_gindex */
+
 EXPORT	void set_surface_gindex(
 	Front *front)
 {

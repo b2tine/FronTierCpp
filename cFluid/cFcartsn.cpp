@@ -1127,19 +1127,26 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	sprintf(filename,"%s-gas",filename);
 	outfile = fopen(filename,"w");
 
+    int WID = 24;
+    int DEC = 18;
+    if (debugging("integration_test"))
+    {
+        DEC = 1;
+    }
+
         /* Initialize states at the interface */
         fprintf(outfile,"Interface gas states:\n");
         next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%24.18g %24.18g\n",getStateDens(sl),
-				getStateDens(sr));
-            fprintf(outfile,"%24.18g %24.18g\n",getStateEngy(sl),
-				getStateEngy(sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
+				WID,DEC,getStateDens(sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
+				WID,DEC,getStateEngy(sr));
 	    for (i = 0; i < dim; ++i)
-            	fprintf(outfile,"%24.18g %24.18g\n",getStateMom[i](sl),
-				getStateMom[i](sr));
+            	fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
+				WID,DEC,getStateMom[i](sr));
         }
 	
 	fprintf(outfile,"\nInterior gas states:\n");
@@ -1149,10 +1156,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		index = d_index1d(i,top_gmax);
-	        fprintf(outfile,"%24.18g\n",dens[index]);
-	        fprintf(outfile,"%24.18g\n",engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	    break;
 	case 2:
@@ -1160,10 +1167,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
 		index = d_index2d(i,j,top_gmax);
-	        fprintf(outfile,"%24.18g\n",dens[index]);
-	        fprintf(outfile,"%24.18g\n",engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	    break;
 	case 3:
@@ -1172,10 +1179,10 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
 		index = d_index3d(i,j,k,top_gmax);
-	        fprintf(outfile,"%24.18g\n",dens[index]);
-	        fprintf(outfile,"%24.18g\n",engy[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
+	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
-	            fprintf(outfile,"%24.18g\n",momn[l][index]);
+	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
 	    }
 	}
 	fclose(outfile);

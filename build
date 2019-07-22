@@ -105,15 +105,16 @@ else
 fi
 
 
+
+if [[ -n "$CLEAN" ]]; then
+    make clean
+fi
+
 autoreconf -vif
 
 echo "configure options: ${CONF}"
 
 ./configure ${CONF}
-
-if [[ -n "$CLEAN" ]]; then
-    make clean
-fi
 
 if [[ -z "$NOMAKE" ]]; then
     make

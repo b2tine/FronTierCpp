@@ -1,0 +1,273 @@
+Domain limit in 0-th dimension: 0.000000 1.000000
+Domain limit in 1-th dimension: 0.000000 4.000000
+Computational grid: 50 200 
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Enter yes for debugging: yes
+Enter the debugging string: integration_test
+Enter problem type: TWO_FLUID_RT
+Available numerical schemes are:
+	TVD_1st_order
+	TVD_2nd_order
+	TVD_4th_order
+	WENO_1st_order
+	WENO_2nd_order
+	WENO_4th_order
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Enter yes to use artificial compression: 
+Cannot find the string, using default
+Enter order of point propagator: 2
+Enter yes for comparison with base data: 
+Cannot find the string, using default
+Enter gamma, pinf, einf of the fluid with comp 2: 1.670000 0.000000 0.000000
+Enter gamma, pinf, einf of the fluid with comp 3: 1.670000 0.000000 0.000000
+Enter density of top fluid: 2.000000
+Enter density of bottom fluid: 1.000000
+Enter gravity: 0.000000 -0.140000 
+Enter pressure at interface: 1.000000
+Type yes to track the interface: y
+Enter mean position of fluid interface: 2.200000
+Enter number of sine modes: 1
+Enter frequency of mode 1: 1.000000 
+Enter amplitude of mode 1: 0.050000
+Enter phase of mode 1: 270.000000
+Type y to set movie bounds: 
+Cannot find the string, using default
+Type y to make movie of density: n
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make vector velocity field movie: 
+Cannot find the string, using default
+Type y to make scalar density field movie: 
+Cannot find the string, using default
+Type y to make scalar pressure field movie: 
+Cannot find the string, using default
+Max time: 16.000000
+Max step: 100
+Print interval: 0.010000
+Movie frame interval: 0.250000
+CFL factor: 0.750000
+Redistribution interval: 5
+Type yes to turn off auto-redistribution: 
+Cannot find the string, using default
+
+time =     0.00000000000000   step =     0   next dt =     0.00369113681919
+
+time =     0.00369113681919   step =     1   next dt =     0.00369113681919
+
+time =     0.00738227363838   step =     2   next dt =     0.00261772636162
+
+time =     0.01000000000000   step =     3   next dt =     0.00368947699285
+
+time =     0.01368947699285   step =     4   next dt =     0.00368909408758
+
+time =     0.01737857108043   step =     5   next dt =     0.00262142891957
+
+time =     0.02000000000000   step =     6   next dt =     0.00368813079352
+
+time =     0.02368813079352   step =     7   next dt =     0.00368774819352
+
+time =     0.02737587898704   step =     8   next dt =     0.00262412101296
+
+time =     0.03000000000000   step =     9   next dt =     0.00368686424684
+
+time =     0.03368686424684   step =    10   next dt =     0.00368658974035
+
+time =     0.03737345398719   step =    11   next dt =     0.00262654601281
+
+time =     0.04000000000000   step =    12   next dt =     0.00368589160430
+
+time =     0.04368589160430   step =    13   next dt =     0.00368566312140
+
+time =     0.04737155472570   step =    14   next dt =     0.00262844527430
+
+time =     0.05000000000000   step =    15   next dt =     0.00368505310076
+
+time =     0.05368505310076   step =    16   next dt =     0.00368483753869
+
+time =     0.05736989063945   step =    17   next dt =     0.00263010936055
+
+time =     0.06000000000000   step =    18   next dt =     0.00368421031203
+
+time =     0.06368421031203   step =    19   next dt =     0.00368397644452
+
+time =     0.06736818675655   step =    20   next dt =     0.00263181324345
+
+time =     0.07000000000000   step =    21   next dt =     0.00368330234286
+
+time =     0.07368330234286   step =    22   next dt =     0.00368305911140
+
+time =     0.07736636145426   step =    23   next dt =     0.00263363854574
+
+time =     0.08000000000000   step =    24   next dt =     0.00368238929554
+
+time =     0.08368238929554   step =    25   next dt =     0.00368215807735
+
+time =     0.08736454737289   step =    26   next dt =     0.00263545262711
+
+time =     0.09000000000000   step =    27   next dt =     0.00368154716853
+
+time =     0.09368154716853   step =    28   next dt =     0.00368134298110
+
+time =     0.09736289014964   step =    29   next dt =     0.00263710985036
+
+time =     0.10000000000000   step =    30   next dt =     0.00368081261420
+
+time =     0.10368081261420   step =    31   next dt =     0.00368063565923
+
+time =     0.10736144827343   step =    32   next dt =     0.00263855172657
+
+time =     0.11000000000000   step =    33   next dt =     0.00368017081032
+
+time =     0.11368017081032   step =    34   next dt =     0.00368001280068
+
+time =     0.11736018361100   step =    35   next dt =     0.00263981638900
+
+time =     0.12000000000000   step =    36   next dt =     0.00367959056581
+
+time =     0.12367959056581   step =    37   next dt =     0.00367944490225
+
+time =     0.12735903546806   step =    38   next dt =     0.00264096453194
+
+time =     0.13000000000000   step =    39   next dt =     0.00367905504894
+
+time =     0.13367905504894   step =    40   next dt =     0.00367892210838
+
+time =     0.13735797715732   step =    41   next dt =     0.00264202284268
+
+time =     0.14000000000000   step =    42   next dt =     0.00367857807298
+
+time =     0.14367857807298   step =    43   next dt =     0.00367846573614
+
+time =     0.14735704380913   step =    44   next dt =     0.00264295619087
+
+time =     0.15000000000000   step =    45   next dt =     0.00367818854777
+
+time =     0.15367818854777   step =    46   next dt =     0.00367810239341
+
+time =     0.15735629094118   step =    47   next dt =     0.00264370905882
+
+time =     0.16000000000000   step =    48   next dt =     0.00367790082884
+
+time =     0.16367790082884   step =    49   next dt =     0.00367784210575
+
+time =     0.16735574293459   step =    50   next dt =     0.00264425706541
+
+time =     0.17000000000000   step =    51   next dt =     0.00367771606896
+
+time =     0.17367771606896   step =    52   next dt =     0.00367768385543
+
+time =     0.17735539992439   step =    53   next dt =     0.00264460007561
+
+time =     0.18000000000000   step =    54   next dt =     0.00367762901924
+
+time =     0.18367762901924   step =    55   next dt =     0.00367762135861
+
+time =     0.18735525037785   step =    56   next dt =     0.00264474962215
+
+time =     0.19000000000000   step =    57   next dt =     0.00367683891494
+
+time =     0.19367683891494   step =    58   next dt =     0.00367539135997
+
+time =     0.19735223027491   step =    59   next dt =     0.00264776972509
+
+time =     0.20000000000000   step =    60   next dt =     0.00367619138466
+
+time =     0.20367619138466   step =    61   next dt =     0.00367530992935
+
+time =     0.20735150131401   step =    62   next dt =     0.00264849868599
+
+time =     0.21000000000000   step =    63   next dt =     0.00367529786703
+
+time =     0.21367529786703   step =    64   next dt =     0.00367530326512
+
+time =     0.21735060113215   step =    65   next dt =     0.00264939886785
+
+time =     0.22000000000000   step =    66   next dt =     0.00367534500583
+
+time =     0.22367534500583   step =    67   next dt =     0.00367536957595
+
+time =     0.22735071458178   step =    68   next dt =     0.00264928541822
+
+time =     0.23000000000000   step =    69   next dt =     0.00367546355057
+
+time =     0.23367546355057   step =    70   next dt =     0.00367550684776
+
+time =     0.23735097039833   step =    71   next dt =     0.00264902960167
+
+time =     0.24000000000000   step =    72   next dt =     0.00367565513242
+
+time =     0.24367565513242   step =    73   next dt =     0.00367571916687
+
+time =     0.24735137429929   step =    74   next dt =     0.00264862570071
+
+time =     0.25000000000000   step =    75   next dt =     0.00367592673076
+
+time =     0.25367592673076   step =    76   next dt =     0.00367601213704
+
+time =     0.25735193886780   step =    77   next dt =     0.00264806113220
+
+time =     0.26000000000000   step =    78   next dt =     0.00367627742766
+
+time =     0.26367627742766   step =    79   next dt =     0.00367638270344
+
+time =     0.26735266013111   step =    80   next dt =     0.00264733986889
+
+time =     0.27000000000000   step =    81   next dt =     0.00367669996471
+
+time =     0.27367669996471   step =    82   next dt =     0.00367682264608
+
+time =     0.27735352261079   step =    83   next dt =     0.00264647738921
+
+time =     0.28000000000000   step =    84   next dt =     0.00367718502032
+
+time =     0.28367718502032   step =    85   next dt =     0.00367732273846
+
+time =     0.28735450775878   step =    86   next dt =     0.00264549224122
+
+time =     0.29000000000000   step =    87   next dt =     0.00367771266495
+
+time =     0.29367771266495   step =    88   next dt =     0.00367774600615
+
+time =     0.29735545867111   step =    89   next dt =     0.00264454132889
+
+time =     0.30000000000000   step =    90   next dt =     0.00367783255513
+
+time =     0.30367783255513   step =    91   next dt =     0.00367785972326
+
+time =     0.30735569227839   step =    92   next dt =     0.00264430772161
+
+time =     0.31000000000000   step =    93   next dt =     0.00367791749248
+
+time =     0.31367791749248   step =    94   next dt =     0.00367793004842
+
+time =     0.31735584754090   step =    95   next dt =     0.00264415245910
+
+time =     0.32000000000000   step =    96   next dt =     0.00367793473797
+
+time =     0.32367793473797   step =    97   next dt =     0.00367792354518
+
+time =     0.32735585828315   step =    98   next dt =     0.00264414171685
+
+time =     0.33000000000000   step =    99   next dt =     0.00367784855987
+
+time =     0.33367784855987   step =   100   next dt =     0.00367780392944
+
+cFluid.cpp:174: error: calling clean_up
+
+		CLEAN_UP, error = 0
+
+Storage used 13328216 bytes
+
+
+		EXECUTION TIME DATA:
+
+		CPU TIME: 14 Seconds
+		SYS TIME: 0 Seconds
+		MAX RSS = 29336 Kilobytes
+
+		TERMINATION TIME OF RUN:   Wed Jul 17 14:43:39 2019
+

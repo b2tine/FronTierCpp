@@ -14,9 +14,10 @@ AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 TESTS_ENVIRONMENT = 
 
 TESTS =
+UNIT_TESTS = 
 check_PROGRAMS =
 
-TESTS += cFluidTests
+UNIT_TESTS += cFluidTests
 check_PROGRAMS += cFluidTests
 
 cFluidTests_SOURCES = cFluidTests.cpp
@@ -24,9 +25,17 @@ cFluidTests_SOURCES = cFluidTests.cpp
 cFluidTests_LDADD = $(top_builddir)/cFluid/objs/libcFluid.la \
 					$(top_builddir)/lib/gmock/lib/libgmock_main.la
 
+TESTS += $(UNIT_TESTS)
+TESTS += integrationtests.sh
+
+.PHONY: check-unit-tests
+check-unit-tests:
+	$(MAKE) $(AM_MAKEFLAGS) check TESTS=$(UNIT_TESTS)
+
 
 $(cFluidTests_DEPENDENCIES): FORCE
 	@cd $(top_builddir)/cFluid/objs && $(MAKE) libcFluid.la
+	@cd $(top_builddir)/cFluid && $(MAKE) cFluid
 	@cd $(top_builddir)/lib/gmock && $(MAKE) check
 
 FORCE:

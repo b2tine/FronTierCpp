@@ -165,13 +165,9 @@ public:
 
 	void computeAdvection();
 
-	void computeAdvectionExplicitCim(COMPONENT);
 	void computeAdvectionExplicit(COMPONENT);
 	void computeAdvectionImplicit(COMPONENT);
 	void computeAdvectionCN(COMPONENT);
-	void computeAdvectionCim();
-
-	void pointExplicitCimSolver(int*,COMPONENT);
 
 	// interface functions
 	void makeGridIntfc();

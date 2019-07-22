@@ -928,6 +928,8 @@ static  void rgbody_point_propagate(
             
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
+
+            //TODO: test/verify
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
@@ -1048,7 +1050,8 @@ static  void rgbody_point_propagate(
 
 extern void fluid_print_front_states(
 	FILE *outfile,
-	Front *front)
+	Front *front,
+    int WID, int DEC)
 {
 	INTERFACE *intfc = front->interf;
         STATE *sl,*sr;
@@ -1062,37 +1065,37 @@ extern void fluid_print_front_states(
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl),
-                                getStatePres(sr));
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePhi(sl),
-                                getStatePhi(sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStatePres(sl),
+                                WID,DEC,getStatePres(sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStatePhi(sl),
+                                WID,DEC,getStatePhi(sr));
             if (dim == 2)
             {
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
-                                getStateXvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYvel(sl),
-                                getStateYvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateVort(sl),
-                                getStateVort(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXimp(sl),
-                                getStateXimp(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYimp(sl),
-                                getStateYimp(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXvel(sl),
+                                WID,DEC,getStateXvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYvel(sl),
+                                WID,DEC,getStateYvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateVort(sl),
+                                WID,DEC,getStateVort(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXimp(sl),
+                                WID,DEC,getStateXimp(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYimp(sl),
+                                WID,DEC,getStateYimp(sr));
             }
             if (dim == 3)
             {
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
-                                getStateXvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYvel(sl),
-                                getStateYvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateZvel(sl),
-                                getStateZvel(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateXimp(sl),
-                                getStateXimp(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateYimp(sl),
-                                getStateYimp(sr));
-                fprintf(outfile,"%24.18g %24.18g\n",getStateZimp(sl),
-                                getStateZimp(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXvel(sl),
+                                WID,DEC,getStateXvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYvel(sl),
+                                WID,DEC,getStateYvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateZvel(sl),
+                                WID,DEC,getStateZvel(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateXimp(sl),
+                                WID,DEC,getStateXimp(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateYimp(sl),
+                                WID,DEC,getStateYimp(sr));
+                fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateZimp(sl),
+                                WID,DEC,getStateZimp(sr));
             }
         }
 }	/* end fluid_print_front_states */
@@ -1175,9 +1178,7 @@ extern void read_iFparams(
 
 	(void) printf("Available elliptic methods are:\n");
 	(void) printf("\tSimple elliptic (S)\n");
-	(void) printf("\tCIM elliptic (C)\n");
 	(void) printf("\tDouble elliptic (DB)\n");
-	(void) printf("\tDual elliptic (DU)\n");
 	if (CursorAfterStringOpt(infile,"Enter elliptic method:"))
 	{
 	    fscanf(infile,"%s",string);
@@ -1188,17 +1189,13 @@ extern void read_iFparams(
 	    case 's':
 	    	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 	    	break;
-	    case 'c':
-	    case 'C':
-	    	iFparams->num_scheme.ellip_method = CIM_ELLIP;
-	    	break;
 	    case 'd':
 	    case 'D':
-		if (string[1] == 'b' || string[1] == 'B')
-	    	    iFparams->num_scheme.ellip_method = DOUBLE_ELLIP;
-		else if (string[1] == 'u' || string[1] == 'U')
-	    	    iFparams->num_scheme.ellip_method = DUAL_ELLIP;
+            iFparams->num_scheme.ellip_method = DOUBLE_ELLIP;
 	    	break;
+        default:
+            printf("Elliptic Method Not Implemented\n");
+            clean_up(1);
 	    }
 	}
 

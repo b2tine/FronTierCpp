@@ -263,6 +263,7 @@ IMPORT	int	idir_of_dir(GRID_DIRECTION);
         /* fglobal.c*/
 IMPORT	void  	set_point_gindex(Front*);
 IMPORT	void  	set_surface_gindex(Front*);
+IMPORT	void  	set_tri_gindex(Front*);
 IMPORT	void  	set_curve_gindex(Front*);
 IMPORT  void	exchange_curve_gindex(Front*);
 
@@ -688,11 +689,11 @@ IMPORT	void	delete_subdomain_boundaries(INTERFACE*);
 IMPORT	void 	clip_front_to_subdomain(Front*);
 IMPORT  void    clip_front_to_rect_boundary_type(Front*);
 IMPORT	void 	set_front_pp_grid(INIT_DATA*,Front*);
-IMPORT  void    scatter_top_grid_float_array(GRID_TYPE,double*,Front*,int*);
+IMPORT  void    scatter_top_grid_float_array(GRID_TYPE,double*,Front*,int*,int*);
 IMPORT  void    scatter_top_grid_int_array(GRID_TYPE,int*,Front*);
 IMPORT  void    scatter_top_grid_struct_array(GRID_TYPE,POINTER,Front*,int);
 IMPORT  void    scatter_top_grid_vec_float_array(GRID_TYPE,double**,Front*);
-IMPORT  void    scatter_cell_index(Front*,int*,int*,GRID_TYPE,POINTER);
+IMPORT  void    scatter_cell_index(Front*,int*,int*,int*,POINTER);
 IMPORT  void    scatter_comp_grid_cell_index(Front*,POINTER);
 IMPORT	boolean	cpu_adapt_front(Front*,double,int*,int*);
 IMPORT	boolean	f_intfc_communication1d(Front*);

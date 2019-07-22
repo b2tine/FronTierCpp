@@ -17,6 +17,7 @@
 #define         LIQUID_COMP1		2
 #define         LIQUID_COMP2		3
 #define		LIQUID_COMP		3
+#define		FILL_COMP		10
 
 #define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
@@ -75,7 +76,6 @@ struct _IF_FIELD {
 	double **old_var;		// For debugging purpose
 
 	double *div_U;
-	double *d_phi;			/* Dual grid phi */
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
 };
@@ -100,9 +100,7 @@ typedef enum _ADVEC_METHOD ADVEC_METHOD;
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
-	DUAL_ELLIP,
 	DOUBLE_ELLIP,
-	CIM_ELLIP
 };
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
 
@@ -348,8 +346,7 @@ protected:
 	int *top_gmax;
 	int *lbuf, *ubuf;
 	double *top_L, *top_U;
-	int **ij_to_I, **I_to_ij;
-	int ***ijk_to_I, **I_to_ijk;
+	int **ij_to_I, ***ijk_to_I;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
 	// Sweeping limits
@@ -358,26 +355,19 @@ protected:
 	// for parallel partition
 	int NLblocks, ilower, iupper;
 	int *n_dist;
-	// for dual/comp overlapping
-	int offset[MAXD];
-
-	// On comp topological grid
-	RECT_GRID *ctop_grid;
-	double *carray;
-	double *csource;
-	COMPONENT *ctop_comp;
-	int *ctop_gmax;
-	int *clbuf, *cubuf;
-	double *ctop_L, *ctop_U;
-	int **cij_to_I, **cI_to_ij;
-	int ***cijk_to_I, **cI_to_ijk;
-	int csmin[MAXD],csmax[MAXD];
+	
+    // On Double solver
+	COMPONENT *ext_comp;
+	int ext_gmax[MAXD];
+        int ext_l[MAXD],ext_u[MAXD];
+        int D_extension;
+	int **dij_to_I,***dijk_to_I;
 	// Sweeping limites
-	int cimin, cjmin, ckmin;
-	int cimax, cjmax, ckmax;
+	int ext_imin[MAXD];
+	int ext_imax[MAXD];
 	// for parallel partition
-	int cNLblocks, cilower, ciupper;
-	int *cn_dist;
+	int dNLblocks, eilower, eiupper;
+	int *dn_dist;
 
 	// Index shift between dual and comp grids 
 	int ishift[MAXD];
@@ -409,17 +399,18 @@ protected:
 protected:
 	void setComponent(void); //init components;
 	void setDomain();
-	void setDualDomain();
+	void setDoubleDomain();
 
 	// parallelization related functions
 	void scatMeshArray(void);
 	void setGlobalIndex(void);
-	void setDualGlobalIndex(void);
+	void setDoubleGlobalIndex(void);
 	void setIndexMap(void);
-	void setDualIndexMap(void);
+	void setDoubleIndexMap(void);
 	void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
 	void setReferencePressure();
+        void setIsolatedSoln(int,double*);
 	boolean paintToSolveGridPoint();
 	boolean nextConnectedPoint(int*,GRID_DIRECTION,int*,int,int*,int*);
 
@@ -443,15 +434,11 @@ protected:
 	int    getComponent(double *coords);	
 	void   save(char *filename);
 	double computeFieldPointDiv(int*, double**);
-	double computeDualFieldPointDiv(int*, double**);
-	double computeDualMu(int*, double*);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	void   computeFieldPointGrad(int*, double*, double*);
-	void   computeDualFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);
-	void   computeDualFieldPointrho(int*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
@@ -524,21 +511,18 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
 	void computeNewVelocity(void);
-	void computeNewVelocityDual(void);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
 				double*, double);
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
-	void updateComponent(void);
 
 	/***************   Low level computation functions  *************/
 	double getVorticity(int i, int j);
@@ -568,16 +552,13 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
 	void computeNewVelocity(void);
-	void computeNewVelocityDual(void);
 	void updateComponent(void);
-	boolean InsideSolid(int*);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
@@ -603,7 +584,7 @@ extern double getPressure(Front*,double*,double*);
 extern double getPhiFromPres(Front*,double);
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
-extern void fluid_print_front_states(FILE*,Front*);
+extern void fluid_print_front_states(FILE*,Front*,int,int);
 extern void fluid_read_front_states(FILE*,Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);

@@ -157,9 +157,6 @@ int main(int argc, char **argv)
 	l_cartesian->initMovieVariables();
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
 	
-    if (iFparams.num_scheme.ellip_method == DUAL_ELLIP)
-	    l_cartesian->findStateAtCGCrossing = ifluid_find_state_at_cg_crossing;
-	
     if (debugging("sample_velocity"))
 	    l_cartesian->initSampleVelocity(in_name);
 
@@ -218,7 +215,11 @@ static void ifluid_driver(Front *front,
     
         FT_SetTimeStep(front);
         front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+    
         FT_Draw(front);
+        FT_Save(front);
+        l_cartesian->printFrontInteriorStates(out_name);
+        
         FT_SetOutputCounter(front);
     }
     else

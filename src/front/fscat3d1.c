@@ -2535,6 +2535,8 @@ EXPORT	void merge_two_tris(
 	    print_tri(ta,as->interface);
 	}
 
+        if (Gindex(ts) == -1) Gindex(ts) = Gindex(ta);
+        if (Gindex(ta) == -1) Gindex(ta) = Gindex(ts);
 	/* Set the links on the null side of ts by corresponding links to ta*/
 	for (i = 0; i < 3; ++i)
 	{
