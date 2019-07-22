@@ -36,197 +36,171 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <vector>
 #include <FronTier.h>
 
-	/*  Function Declarations */
 static void test_propagate(Front*);
 static int rotation_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
 	                       HYPER_SURF*,double*);
-
-char *in_name,*restart_state_name,*restart_name,*out_name;
-boolean RestartRun;
-int RestartStep;
-
-/********************************************************************
- *	Velocity function parameters for the front	 	    *
- ********************************************************************/
-
 typedef struct {
-        double omega_0;          /* angular velocity */
-        double domega_dr;
-        double cen[2];
+        double omega_0;  // angular velocity
+        double cen[2];  // rotation center's coordinates
 } ROTATION_VEL_PARAMS;
 
 int main(int argc, char **argv)
 {
-	static Front front;
-	static RECT_GRID comp_grid;
+//  STEP 1) Process the command line arguments and
+//  store parameters in an instance of F_BASIC_DATA
 	static F_BASIC_DATA f_basic;
-	static LEVEL_FUNC_PACK level_func_pack;
-	static VELO_FUNC_PACK velo_func_pack;
-	TDISK_PARAMS disk_params;	/* level function parameters */
-	ROTATION_VEL_PARAMS rv_params; /* velocity function parameters */
-	Locstate  sl;
-
 	FT_Init(argc,argv,&f_basic);
-	f_basic.dim = 2;	
 
-	/* Initialize basic computational data */
+//  2) Store information on the computational grid in f_basic.
+	f_basic.L[0] = 0.0;	f_basic.L[1] = 0.0; // lower bounds on dim x and dim y
+	f_basic.U[0] = 1.0;	f_basic.U[1] = 1.0; // upper bounds on dim x and dim y
+	f_basic.gmax[0] = 128;	f_basic.gmax[1] = 128; // number of grids for each dimension
+	f_basic.boundary[0][0] = f_basic.boundary[0][1] = PERIODIC_BOUNDARY; // x-dim bottom, x-dim top
+	f_basic.boundary[1][0] = f_basic.boundary[1][1] = PERIODIC_BOUNDARY; // y-dim bottom, y-dim top
+	f_basic.size_of_intfc_state = 0; // pass value, required but unused
 
-	f_basic.L[0] = 0.0;	f_basic.L[1] = 0.0;
-	f_basic.U[0] = 1.0;	f_basic.U[1] = 1.0;
-	f_basic.gmax[0] = 128;	f_basic.gmax[1] = 128;
-	f_basic.boundary[0][0] = f_basic.boundary[0][1] = PERIODIC_BOUNDARY;
-	f_basic.boundary[1][0] = f_basic.boundary[1][1] = PERIODIC_BOUNDARY;
-	f_basic.size_of_intfc_state = 0;
+//  3) Construct the Front object from these initial settings.
+	static Front front;
+	FT_StartUp(&front,&f_basic); // initialize
 
-        in_name                 = f_basic.in_name;
-        restart_state_name      = f_basic.restart_state_name;
-        out_name                = f_basic.out_name;
-        restart_name            = f_basic.restart_name;
-        RestartRun              = f_basic.RestartRun;
-        RestartStep             = f_basic.RestartStep;
+//	4) Initialize the disk pre-made interface
+	TDISK_PARAMS disk_params;
+	disk_params.x0 = 0.5; // center of disk
+	disk_params.y0 = 0.5; // y coordinate of disk center
+	disk_params.r = 0.3;  // disk radius
+	disk_params.w = 0.1; // slot width
+	disk_params.h = 0.2;  // slot height
 
-        sprintf(restart_name,"%s/intfc-ts%s",restart_name,
-                        right_flush(RestartStep,7));
-        if (pp_numnodes() > 1)
-            sprintf(restart_name,"%s-nd%s",restart_name, 
-                                right_flush(pp_mynode(),4));
+//   Note: an interface is described by a level function and its
+//   parameters.  disk_params is the paramter object for the
+//	 slotted_disk_func level function (below).
 
-	FT_StartUp(&front,&f_basic);
+//   double slotted_disk_func(
+//	     POINTER func_params,
+//       double *coords)
+//   {
 
-	if (!RestartRun)
-	{
-	    /* Initialize interface through level function */
+//   returns a positive number on the outside of the interface,
+//   and a negative number on the inside.  Function output
+//   decreases to 0.0 at the interface boundary.
 
-	    disk_params.x0 = 0.5;
-	    disk_params.y0 = 0.5;
-	    disk_params.r = 0.3;
-	    disk_params.w = 0.01;
-	    disk_params.h = 0.4;
+//   For a 3D rendering see:
+//   http://www.ams.stonybrook.edu/~jpetrill/experiments/10/index.html
 
-	    level_func_pack.neg_component = 1;
-	    level_func_pack.pos_component = 2;
-	    level_func_pack.func_params = (POINTER)&disk_params;
-	    level_func_pack.func = slotted_disk_func;
-	    level_func_pack.wave_type = FIRST_PHYSICS_WAVE_TYPE;
-	    FT_InitIntfc(&front,&level_func_pack);
-	    if (f_basic.dim < 3)
-                FT_ClipIntfcToSubdomain(&front);
-	}
+//  5) attach the level function and parameters to a LEVEL_FUNC_PACK
+	static LEVEL_FUNC_PACK level_func_pack;
+	level_func_pack.func_params = (POINTER)&disk_params; // attach parameters
+	level_func_pack.func = slotted_disk_func; // attach level function
 
+//  label inside and outside.  Must be nonnegative, nonequal integers.
+	level_func_pack.neg_component = 1; // inside of the interface
+	level_func_pack.pos_component = 2; // outside of the interface
 
-	/* Initialize velocity field function */
+	level_func_pack.wave_type = FIRST_PHYSICS_WAVE_TYPE;  // required
+	FT_InitIntfc(&front,&level_func_pack);  // initialize
 
-        rv_params.cen[0] = 0.5;
-        rv_params.cen[1] = 0.5;
-        rv_params.omega_0 = -2.0*PI;
-        rv_params.domega_dr = 0.0;
+//  6) Set parameters for velocity field
+	ROTATION_VEL_PARAMS rv_params;
+	rv_params.cen[0] = 0.5;
+	rv_params.cen[1] = 0.5;
+	rv_params.omega_0 = -2.0*PI;
 
-	velo_func_pack.func_params = (POINTER)&rv_params;
+//  7) Combine velocity field parameters with velocity function in a VELO_FUNC_PACK
+	static VELO_FUNC_PACK velo_func_pack;
+	velo_func_pack.func_params = (POINTER)&rv_params; // cast as POINTER (void*)
 	velo_func_pack.func = rotation_vel;
 	velo_func_pack.point_propagate = fourth_order_point_propagate;
+	FT_InitFrontVeloFunc(&front,&velo_func_pack); // initialize
 
-	FT_InitFrontVeloFunc(&front,&velo_func_pack);
-
-	/* Propagate the front */
-
+//  8) Propagate the front and save images
 	test_propagate(&front);
 
 	clean_up(0);
 	return 0;
 }
 
+
 static  void test_propagate(
         Front *front)
 {
-        double CFL;
+    double CFL;
 
 	front->max_time = 3;
 	front->max_step = 10000;
 	front->print_time_interval = 2.0;
-	front->movie_frame_interval = 0.1;
+	front->movie_frame_interval = 0.1; // 31 frames over time
 
-        CFL = Time_step_factor(front);
+    CFL = Time_step_factor(front);
 	Frequency_of_redistribution(front,GENERAL_WAVE) = 1000;
 
 	printf("CFL = %f\n",CFL);
 	printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
 
-	if (!RestartRun)
-	{
-            FT_RedistMesh(front);
-	    FT_ResetTime(front);
+    FT_RedistMesh(front);
+	FT_ResetTime(front);
 
-	    // Always output the initial interface.
-	    FT_Save(front);
-            FT_Draw(front);
+	// Always output the initial interface.
+	FT_Save(front);
+    FT_Draw(front);
 
-	    // This is a virtual propagation to get maximum front 
-	    // speed to determine the first time step.
+	// This is a virtual propagation to get maximum front
+	// speed to determine the first time step.
 
-            FT_Propagate(front);
-            FT_SetTimeStep(front);
-            FT_SetOutputCounter(front);
-	}
-	else
-	{
-            FT_SetOutputCounter(front);
-	}
+    FT_Propagate(front);
+    FT_SetTimeStep(front);
+    FT_SetOutputCounter(front);
 
 	FT_TimeControlFilter(front);
 
-        for (;;)
-        {
-	    /* Propagating interface for time step dt */
+   for (;;)
+   {
+		/* Propagating interface for time step dt */
 
-            FT_Propagate(front);
-            FT_AddTimeStepToCounter(front);
+		FT_Propagate(front);
+		FT_AddTimeStepToCounter(front);
 
-	    //Next time step determined by maximum speed of previous
-	    //step, assuming the propagation is hyperbolic and
-	    //is not dependent on second order derivatives of
-	    //the interface such as curvature, and etc.
+		//Next time step determined by maximum speed of previous
+		//step, assuming the propagation is hyperbolic and
+		//is not dependent on second order derivatives of
+		//the interface such as curvature, and etc.
 
-            FT_SetTimeStep(front);
+		FT_SetTimeStep(front);
 
-            if (FT_IsSaveTime(front))
-                FT_Save(front);
-            if (FT_IsDrawTime(front))
-                FT_Draw(front);
+		if (FT_IsSaveTime(front))
+			FT_Save(front);
+		if (FT_IsDrawTime(front))
+			FT_Draw(front);
 
-            if (FT_TimeLimitReached(front))
-	    {
-                FT_PrintTimeStamp(front);
-                break;
-	    }
+		if (FT_TimeLimitReached(front))
+		{
+		   FT_PrintTimeStamp(front);
+		   break;
+		}
 
 	    /* Output section, next dt may be modified */
 
 	    FT_TimeControlFilter(front);
-            FT_PrintTimeStamp(front);
-        }
-        (void) delete_interface(front->interf);
-}       /* end test_propagate */
+        FT_PrintTimeStamp(front);
+     }
+     (void) delete_interface(front->interf);
+} /* end test_propagate */
 
-/********************************************************************
- *	Sample (rotation) velocity function for the front    *
- ********************************************************************/
 
 static int rotation_vel(
-	POINTER params,
+	POINTER params, // void* pointer to the input data structure
 	Front *front,
-	POINT *p,
-	HYPER_SURF_ELEMENT *hse,
-	HYPER_SURF *hs,
-	double *vel)
+	POINT *p, // function is applied pointwise.  The next two inputs are unused
+	HYPER_SURF_ELEMENT *hse, // but required for the rotation function to
+	HYPER_SURF *hs,          // have the proper footprint.
+	double *vel)	// vel to be updated with x,y velocity of point p
 {
-	ROTATION_VEL_PARAMS *rv_params = (ROTATION_VEL_PARAMS*)params;
-	double *coords = Coords(p);
+	ROTATION_VEL_PARAMS *rv_params = (ROTATION_VEL_PARAMS*)params; // recast to data structure
+	double *coords = Coords(p); // vel
 	double V,xcomp,ycomp;
 	double rad;
 	double *cen = rv_params->cen;
 	double omega_0 = rv_params->omega_0;
-	double domega_dr = rv_params->domega_dr;
 	double dx,dy;
 
 	dx = coords[0] - cen[0]; 
@@ -234,37 +208,36 @@ static int rotation_vel(
 
 	rad = sqrt(sqr(dx) + sqr(dy));
 	if (rad == 0.0)
-        {
-            vel[0] = vel[1] = 0.0;
-            return 1;
-        }
-	xcomp = fabs(coords[1]-cen[0])/rad;
-        ycomp = fabs(coords[0]-cen[1])/rad;
-        V = rad*(omega_0 + domega_dr*rad);
-        if (coords[0]-cen[0] >= 0.0 && 
-	    coords[1]-cen[1] >= 0.0) /*1st quadrant*/
-        {
-            vel[0] = -V*xcomp;
-            vel[1] =  V*ycomp;
-        }
-        else if (coords[0]-cen[0] <= 0.0 && 
-	    coords[1]-cen[1] >= 0.0) /*2nd quadrant*/
-        {
-            vel[0] = -V*xcomp;
-            vel[1] = -V*ycomp;
-        }
-        else if (coords[0]-cen[0] <= 0.0 && 
-	    coords[1]-cen[1] <= 0.0) /*3rd quadrant*/
-        {
-            vel[0] =  V*xcomp;
-            vel[1] = -V*ycomp;
-        }
-        else if (coords[0]-cen[0] >= 0.0 && 
-	    coords[1]-cen[1] <= 0.0) /*4th quadrant*/
-        {
-            vel[0] =  V*xcomp;
-            vel[1] =  V*ycomp;
-        }
-	
+    {
+        vel[0] = vel[1] = 0.0;
+        return 1;
+    }
 
+	xcomp = fabs(coords[1]-cen[0])/rad;
+    ycomp = fabs(coords[0]-cen[1])/rad;
+    V = rad*(omega_0);
+    if (coords[0]-cen[0] >= 0.0 &&
+	coords[1]-cen[1] >= 0.0) /*1st quadrant*/
+    {
+        vel[0] = -V*xcomp;
+        vel[1] =  V*ycomp;
+    }
+    else if (coords[0]-cen[0] <= 0.0 &&
+	coords[1]-cen[1] >= 0.0) /*2nd quadrant*/
+    {
+        vel[0] = -V*xcomp;
+        vel[1] = -V*ycomp;
+    }
+    else if (coords[0]-cen[0] <= 0.0 &&
+	coords[1]-cen[1] <= 0.0) /*3rd quadrant*/
+    {
+        vel[0] =  V*xcomp;
+        vel[1] = -V*ycomp;
+    }
+    else if (coords[0]-cen[0] >= 0.0 &&
+	coords[1]-cen[1] <= 0.0) /*4th quadrant*/
+    {
+        vel[0] =  V*xcomp;
+        vel[1] =  V*ycomp;
+    }
 }	/* end rotation_vel */
