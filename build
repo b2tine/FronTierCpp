@@ -57,6 +57,13 @@ function config_grad01 {
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
+function config_jarretlaptop {
+	PETSC_DIR="/home/jarret/petsc-3.11.0-dbg"
+    	export CC=${PETSC_DIR}/bin/mpicc
+    	export CXX=${PETSC_DIR}/bin/mpicxx
+    	CONF="--with-mpi --with-petsc-dir=${PETSC_DIR}"
+}
+
 function config_defiant {
     PETSC_DIR="/opt/petsc-3.11.0-${PETSC_ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
@@ -84,6 +91,17 @@ elif [[ "$HOST" == defiant ]]; then
 elif [[ "$HOST" == grad01 ]]; then
     echo "Machine recognized as grad01."
     config_grad01
+elif [[ "$HOST" == jarret-MacBookAir ]]; then
+	echo "Jarret RECOGNIZED"
+	config_jarretlaptop
+else 
+    echo Unreognized machine.
+    echo "Type the PETSc directory to use (opt, dbg):"
+    read PETSC_DIR
+    echo using ${PETSC_DIR} 
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR}"
 fi
 
 
