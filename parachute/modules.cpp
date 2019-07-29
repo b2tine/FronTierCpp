@@ -119,7 +119,7 @@ extern void initParachuteModules(Front *front)
         if (num_canopy == 1)
         {
             char string[100];
-	    CursorAfterString(infile,"Enter yes for complet connection:");
+	    CursorAfterStringOpt(infile,"Enter yes for complet connection:");
             fscanf(infile,"%s",string);
             printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
