@@ -524,7 +524,7 @@ EXPORT	void FT_SetGlobalIndex(
 	Front *front)
 {
 	set_point_gindex(front);
-	set_tri_gindex(front);
+	//set_tri_gindex(front);
 	set_surface_gindex(front);
 	set_curve_gindex(front);
         if (debugging("global_index"))
@@ -534,6 +534,12 @@ EXPORT	void FT_SetGlobalIndex(
             clean_up(0);
         }
 }	/* end FT_SetGlobalIndex */
+
+EXPORT  void FT_SetTriGlobalIndex(
+        Front *front)
+{
+	set_tri_gindex(front);
+}       /* end FT_SetTriGlobalIndex */
 
 EXPORT void FT_SetSurfGlobalIndex(
         Front *front)   
@@ -813,6 +819,69 @@ EXPORT  void FT_MakeCuboidSurf(
         front->interf->modified = YES;
 	interface_reconstructed(front->interf) = NO;
 }	 /*end FT_MakeCuboidSurf*/
+
+EXPORT  void FT_MakeCylinderShell(
+        Front *front,
+        double *center,
+        double radius,
+	double height,
+	int idir,
+        COMPONENT neg_comp,
+        COMPONENT pos_comp,
+        int w_type,
+        SURFACE **surf)
+{
+        PLANE_PARAMS params;
+        double *h = front->rect_grid->h;
+        double L[MAXD],U[MAXD];
+        int dim = front->rect_grid->dim;
+        int i,gmax[MAXD];
+        COMPONENT save_comp = pos_comp;
+        RECT_GRID box_rg;
+        CYLINDER_PARAMS cylinder_params;
+
+        for (i = 0; i < dim; ++i)
+        {
+            cylinder_params.center[i] = center[i];
+            cylinder_params.radius = radius;
+	    cylinder_params.height = height;	   
+	    cylinder_params.idir = idir;	   
+        }
+	for (i = 0; i < dim; ++i)
+	{
+	    L[i] = center[i] - height;
+            U[i] = center[i] + height;
+            if (L[i] > center[i] - radius) L[i] = center[i] - radius;
+            if (U[i] < center[i] + radius) U[i] = center[i] + radius;
+            L[i] -= 5.0*h[i];
+            U[i] += 5.0*h[i];
+            L[i] -= sqrt(0.5)*h[i];
+            U[i] += sqrt(0.5)*h[i];
+            gmax[i] = rint((U[i] - L[i])/h[i]);
+	}
+	set_box_rect_grid(L,U,gmax,NULL,NULL,dim,&box_rg);
+        if (pos_comp == neg_comp) pos_comp += 1;
+        if (make_level_surface(&box_rg,front->interf,neg_comp,pos_comp,
+                        cylinder_func,(POINTER)&cylinder_params,surf))
+        {
+            wave_type(*surf) = w_type;
+            positive_component(*surf) = save_comp;
+        }
+        front->interf->modified = YES;
+
+        params.N[0] = params.N[1] = params.N[2] = 0.0;
+        params.P[0] = center[0];
+        params.P[1] = center[1];
+        params.P[2] = center[2];
+
+        params.N[idir] = -1.0;
+        params.P[idir] = center[idir] + 0.5*height;
+        FT_CutSurfBdry(*surf,plane_constr_func,(POINTER)&params,NULL,0,0);
+        params.N[idir] = 1.0;
+        params.P[idir] = center[idir] - 0.5*height;
+        FT_CutSurfBdry(*surf,plane_constr_func,(POINTER)&params,NULL,0,0);
+	interface_reconstructed(front->interf) = NO;
+}       /* end FT_MakeCylinderShell */
 
 EXPORT  void FT_MakeCylinderSurf(
         Front *front,

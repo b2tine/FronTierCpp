@@ -47,6 +47,7 @@ static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
 static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
+static void linkGlobalIndexToTri(INTERFACE*,TRI***);
 
 #define 	MAX_NUM_RING1		30
 
@@ -209,6 +210,8 @@ int af_find_state_at_crossing(
 		af_params->with_porosity)
 	    return NO_PDE_BOUNDARY;
 	if (wave_type(*hs) == ELASTIC_BOUNDARY) //TMP
+	    return CONST_V_PDE_BOUNDARY;
+	if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY) //TMP
 	    return CONST_V_PDE_BOUNDARY;
 	if (wave_type(*hs) == DIRICHLET_BOUNDARY)
 	{
@@ -1930,7 +1933,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             collision_solver->setSpringConstant(af_params->ks); 
             collision_solver->setPointMass(af_params->m_s);
 
-            //TODO: What is goin on here?
+            //TODO: What is going on here?
             //      Unphysical penetration using the thicker 1.0e-03 m
             //      leads me to believe that bugs in the collision code is
             //      outweighing any potential rounding errors currently.
@@ -2371,6 +2374,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
+    //TODO: add ELASTIC_BOUNDARY tag
+    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)
@@ -2759,3 +2764,36 @@ extern void set_unequal_strings(Front *front)
 	if (debugging("trace"))
 	    printf("Leaving record_break_strings_gindex()\n");
 }	/* end set_unequal_strings */
+
+static void linkGlobalIndexToTri(
+        INTERFACE *intfc,
+        TRI ***gtri)
+{
+        SURFACE **s;
+        TRI *tri;
+        int i;
+
+        if (*gtri == NULL)
+        {
+            FT_VectorMemoryAlloc((POINTER*)gtri,intfc->max_tri_gindex,
+                                    sizeof(TRI*));
+        }
+        for (i = 0; i < intfc->max_tri_gindex; ++i)
+            (*gtri)[i] = NULL;
+        intfc_surface_loop(intfc,s)
+        {
+            surf_tri_loop(*s,tri)
+            {
+                if (Gindex(tri) >= intfc->max_tri_gindex)
+                {
+                    (void) printf("ERROR: Tri global index exceeds "
+                                  "max_tri_gindex!\n");
+                    (void) printf("Tri gindex: %d  max_tri_gindex: %d\n",
+                                Gindex(tri),intfc->max_tri_gindex);
+                    clean_up(ERROR);
+                }
+                (*gtri)[Gindex(tri)] = tri;
+            }
+        }
+}       /* end linkGlobalIndexToTri */
+

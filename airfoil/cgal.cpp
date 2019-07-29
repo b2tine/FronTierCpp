@@ -48,6 +48,7 @@ static void CgalFlatSurface(FILE*,Front*,SURFACE**);
 static void CgalParabolicSurface(FILE*,Front*,SURFACE**);
 static void CgalCross(FILE*,Front*,SURFACE**);
 static void CgalCircle(FILE*,Front*,SURFACE**);
+static void CgalCircleBelt(FILE*,Front*,SURFACE**);
 static void CgalRectangular(FILE*,Front*,SURFACE**);
 static void CgalEllipse(FILE*,Front*,SURFACE**);
 static void GenerateCgalSurf(Front*,SURFACE**,CDT*,int*,double);
@@ -72,6 +73,12 @@ static void linkSurfaceTriPoint(INTERFACE*,SURFACE*);
 static void findPointsonRGB(Front*,SURFACE*,std::vector<POINT*>&);
 static void vector_extreme(std::vector<POINT*>&,int,std::vector<POINT*>&);
 static void checkReducedTri(SURFACE*);
+static void findBeltNodePoints(SURFACE*,CURVE**,double*,POINT**,POINT**,int,
+                    double);
+static void setNodePoints(CURVE*,double*,int,POINT**,double);
+static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,
+                    int);
+static void connectTwoStringNodes(Front*,NODE*,NODE*);
 
 extern void CgalCanopySurface(
 	FILE *infile,
@@ -83,6 +90,7 @@ extern void CgalCanopySurface(
         (void) printf("\tFLAT (F)\n");
         (void) printf("\tPARABOLIC (P)\n");
         (void) printf("\tELLIPTIC (E)\n");
+        (void) printf("\tDGB (D)\n");
         CursorAfterString(infile,"Enter canopy surface type:");
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
@@ -95,7 +103,7 @@ extern void CgalCanopySurface(
 	    case 'P':
 	    case 'p':
 		CgalParabolicSurface(infile,front,surf);
-            break;
+                break;
 	    default:
 		(void) printf("Unknown canopy surface type\n");
 		clean_up(ERROR);
@@ -153,6 +161,7 @@ static void CgalFlatSurface(
         (void) printf("\tElliptic (E)\n");
         (void) printf("\tCross (X)\n");
         (void) printf("\tWing (W)\n");
+        (void) printf("\tCircular with belt (S)\n");
         CursorAfterString(infile,"Enter type of canopy boundary:");
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
@@ -173,6 +182,10 @@ static void CgalFlatSurface(
         case 'R':
         case 'r':
             CgalRectangular(infile,front,surf);
+            break;
+        case 'S':
+        case 's':
+            CgalCircleBelt(infile,front,surf);
             break;
         }
 }	/* end CgalFlatSurface */
@@ -1516,7 +1529,7 @@ static void installString(
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 			Coords(string_nodes[i]->posn)[j])/spacing;
-	    nb = (int)spacing/(0.40*h[0]);
+	    nb = rint(spacing/(0.40*h[0])) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
@@ -1873,7 +1886,7 @@ static void connectStringtoRGB(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])
 							/ spacing;
-		nb = (int)spacing/(0.40 * h[0]);
+		nb = rint(spacing/(0.40 * h[0])) + 1;
 		spacing /= (double)nb;
 		b = string_curves[k]->first;
 		for (i = 1; i < nb; ++i)
@@ -2188,7 +2201,7 @@ extern void InstallNewLoadNode(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(sec_nload->posn)[j] - 
 					Coords((*n)->posn)[j])/spacing;
-		nb = (int)spacing/(0.40*h[0]);
+		nb = rint(spacing/(0.40*h[0])) + 1;
 		spacing /= (double)nb;
 		bond = string_curves[i]->first;
 		for (j = 1; j < nb; ++j)
@@ -2259,7 +2272,7 @@ extern void InstallNewLoadNode(
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 				Coords(sec_nload->posn)[j])/spacing;
-	    nb = (int)spacing/(0.40*h[0]);
+	    nb = rint(spacing/(0.40*h[0])) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
@@ -2315,3 +2328,400 @@ static void checkReducedTri(SURFACE* s)
 	    }
 	}
 }	/* end checkReducedTri */
+
+static void CgalCircleBelt(
+	FILE *infile,
+	Front *front,
+	SURFACE **surf)
+{
+	double height;
+	double CirCenter[2];
+	double CirR[2];
+	int num_strings;
+	CDT cdt;
+	CDT::Finite_faces_iterator fit;
+        Vertex_handle *v_out, *v_in;
+        int num_out_vtx,num_in_vtx;
+	POINT **circle_node_pts,**ubelt_node_pts,**lbelt_node_pts;
+        double *out_nodes_coords,*in_nodes_coords;
+	double *out_vtx_coords,*in_vtx_coords;
+	double ang_out, ang_in;
+	int out_vtx_oneside = 15, in_vtx_oneside = 2;
+	char vent_bool[10], string_bool[10];
+	std::list<Cgal_Point> list_of_seeds;
+	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	int i;
+	CURVE *cbdry,*curves[2];
+
+        printf("Entering CgalCircleBelt()\n");
+        CursorAfterString(infile,"Enter the height of the plane:");
+        fscanf(infile,"%lf",&height);
+        (void) printf("%f\n",height);
+        CursorAfterString(infile,"Enter circle center:");
+        fscanf(infile,"%lf %lf",&CirCenter[0],&CirCenter[1]);
+        (void) printf("%f %f\n",CirCenter[0],CirCenter[1]);
+        CursorAfterString(infile,"Enter circle radius:");
+        fscanf(infile,"%lf",&CirR[0]);
+        (void) printf("%f\n",CirR[0]);
+
+	CirR[1] = 0;
+	CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:");
+	fscanf(infile,"%s",vent_bool);
+	(void) printf("%s\n",vent_bool);
+	if (vent_bool[0]=='y' || vent_bool[0]=='Y')
+        {
+            CursorAfterString(infile,"Enter radius of the vent:");
+	    fscanf(infile,"%lf",&CirR[1]);
+	    (void) printf("%f\n",CirR[1]);
+        }
+
+	num_strings = 28;   //default
+	CursorAfterStringOpt(infile,"Enter yes to attach strings to canopy:");
+	fscanf(infile,"%s",string_bool);
+	(void) printf("%s\n",string_bool);
+	if (string_bool[0]=='y' || string_bool[0]=='Y')
+	{
+	    CursorAfterString(infile,"Enter number of chords:");
+	    fscanf(infile,"%d",&num_strings);
+	    (void) printf("%d\n",num_strings);
+	}
+	FT_VectorMemoryAlloc((POINTER*)&circle_node_pts,num_strings,
+                                sizeof(POINT*));
+	FT_VectorMemoryAlloc((POINTER*)&ubelt_node_pts,num_strings,
+                                sizeof(POINT*));
+	FT_VectorMemoryAlloc((POINTER*)&lbelt_node_pts,num_strings,
+                                sizeof(POINT*));
+
+	double offset = PI/num_strings;
+	num_out_vtx = num_strings*out_vtx_oneside;
+	num_in_vtx = num_strings*in_vtx_oneside;
+	ang_out = 2*PI/num_out_vtx;
+	ang_in = 2*PI/num_in_vtx;
+
+	v_out = new Vertex_handle[num_out_vtx];
+	v_in = new Vertex_handle[num_in_vtx];
+	out_nodes_coords = new double[num_strings*2];
+	in_nodes_coords = new double[num_strings*2];
+
+	for (i = 0; i < num_out_vtx; i++)
+	{
+	    v_out[i] = cdt.insert(Cgal_Point(
+				CirCenter[0]+CirR[0]*cos(i*ang_out+offset),
+				CirCenter[1]+CirR[0]*sin(i*ang_out+offset)));
+	    if (0 == i%out_vtx_oneside)
+	    {
+		out_nodes_coords[i/out_vtx_oneside] = CirCenter[0]+
+				CirR[0]*cos(i*ang_out+offset);
+		out_nodes_coords[i/out_vtx_oneside+num_strings] = 
+				CirCenter[1]+CirR[0]*sin(i*ang_out+offset);
+	    }
+	}
+
+	for (i = 0; i < num_out_vtx-1; i++)
+		cdt.insert_constraint(v_out[i],v_out[i+1]);
+	cdt.insert_constraint(v_out[0],v_out[num_out_vtx-1]);
+
+
+	if (CirR[1] != 0)
+	{
+	    for (i = 0; i < num_in_vtx; i++)
+	    {
+	        v_in[i] = cdt.insert(Cgal_Point(CirCenter[0]+
+				CirR[1]*cos(i*ang_in+offset),
+				CirCenter[1]+CirR[1]*sin(i*ang_in+offset)));
+	        if (0 == i%in_vtx_oneside)
+	        {
+		    in_nodes_coords[i/in_vtx_oneside] = CirCenter[0]+
+				CirR[1]*cos(i*ang_in+offset);
+		    in_nodes_coords[i/in_vtx_oneside+num_strings] = 
+				CirCenter[1]+CirR[1]*sin(i*ang_in+offset);
+	        }
+	    }
+	    for (i = 0; i < num_in_vtx-1; i++)
+		cdt.insert_constraint(v_in[i],v_in[i+1]);
+	    cdt.insert_constraint(v_in[0],v_in[num_in_vtx-1]);
+
+	    if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
+	    {
+		list_of_seeds.push_back(Cgal_Point(CirCenter[0], CirCenter[1]));
+	    }
+	}
+	
+	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+			list_of_seeds.end(),Criteria(0.3, cri_dx));
+
+	int *flag;
+	flag = new int[cdt.number_of_faces()];
+	double tri_center[2];
+
+        i=0;
+	if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
+	{
+            for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end();
+				 ++fit)
+            {
+                tri_center[0] = (fit->vertex(0)->point()[0] + 
+				fit->vertex(1)->point()[0]
+                    + fit->vertex(2)->point()[0]) / 3.0;
+                tri_center[1] = (fit->vertex(0)->point()[1] + 
+				fit->vertex(1)->point()[1]
+                    + fit->vertex(2)->point()[1]) / 3.0;
+
+                if (ptoutcircle(tri_center, CirCenter, CirR[1]))
+                    flag[i] = 1;
+                else
+                    flag[i] = 0;
+                i++;
+            }
+	}
+	else
+	{
+            for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end();
+				++fit)
+	    	flag[i++] = 1;	
+	}
+
+	GenerateCgalSurf(front,surf,&cdt,flag,height);
+	checkReducedTri(*surf);
+        wave_type(*surf) = ELASTIC_BOUNDARY;
+        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+	setMonoCompBdryZeroLength(*surf);
+
+        double center[MAXD],length,gap;
+        SURFACE *belt;
+	COMPONENT amb_comp = front->interf->default_comp;
+
+        CursorAfterString(infile,"Enter the length of the drape:");
+        fscanf(infile,"%lf",&length);
+        printf("%f\n",length);
+        CursorAfterString(infile,"Enter the gap between canopy and drape:");
+        fscanf(infile,"%lf",&gap);
+        printf("%f\n",gap);
+
+        center[0] = CirCenter[0];
+        center[1] = CirCenter[1];
+        center[2] = height - 0.5*length - gap;
+        FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,
+                                    &belt);
+        wave_type(belt) = ELASTIC_BOUNDARY;
+        FT_InstallSurfEdge(belt,MONO_COMP_HSBDRY);
+	setMonoCompBdryZeroLength(belt);
+
+	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
+	{
+            findBeltNodePoints(belt,curves,center,ubelt_node_pts,
+                                lbelt_node_pts,num_strings,offset);
+	    findStringNodePoints(*surf,out_nodes_coords,circle_node_pts,
+                                num_strings,&cbdry);
+	    installString(infile,front,belt,curves[1],lbelt_node_pts,
+                                num_strings);
+            installCircleBeltString(front,*surf,belt,circle_node_pts,
+                                ubelt_node_pts,num_strings);
+	}
+	setSurfZeroMesh(*surf);
+	setSurfZeroMesh(belt);
+	setMonoCompBdryZeroLength(*surf);
+	setMonoCompBdryZeroLength(belt);
+        gview_plot_interface("test",front->interf);
+	FT_FreeThese(3,circle_node_pts,ubelt_node_pts,lbelt_node_pts);
+	if (consistent_interface(front->interf) == NO)
+	    clean_up(ERROR);
+}	/* end CgalCircleBelt */
+
+static void findBeltNodePoints(
+        SURFACE *surf,
+        CURVE **curves,
+        double *center,
+        POINT **ubelt_node_pts,
+        POINT **lbelt_node_pts,
+        int num_strings,
+        double offset)
+{
+        int i,n;
+        double x,y,ang,ang0,ang1;
+        CURVE **c;
+        BOND *b;
+        POINT *p;
+
+        n = 0;
+	surf_pos_curve_loop(surf,c)
+            curves[n++] = *c;
+	surf_neg_curve_loop(surf,c)
+            curves[n++] = *c;
+        if (Coords(curves[0]->start->posn)[2] < 
+            Coords(curves[1]->start->posn)[2])
+        {
+            /* make curves[0] the upper curve */
+            CURVE *ctmp = curves[0];
+            curves[0] = curves[1];
+            curves[1] = ctmp;
+        }
+        setNodePoints(curves[0],center,num_strings,ubelt_node_pts,offset);
+        setNodePoints(curves[1],center,num_strings,lbelt_node_pts,offset);
+}       /* end findBeltNodePoints */
+
+static void setNodePoints(
+        CURVE *c,
+        double *center,
+        int num_nodes,
+        POINT **node_pts,
+        double offset)
+{
+        int i,n;
+        double x,y,ang,ang0,ang1;
+        BOND *b;
+        POINT *p;
+
+        curve_bond_loop(c,b)
+        {
+            double r0,r1,d0,d1;
+            x = Coords(b->start)[0] - center[0];
+            y = Coords(b->start)[1] - center[1];
+            r0 = sqrt(sqr(x) + sqr(y));
+            ang0 = atan2(y,x);
+            if (ang0 < 0.0) ang0 = 2*PI + ang0;
+            x = Coords(b->end)[0] - center[0];
+            y = Coords(b->end)[1] - center[1];
+            r1 = sqrt(sqr(x) + sqr(y));
+            ang1 = atan2(y,x);
+            if (ang1 < 0.0) ang1 = 2*PI + ang1;
+            if (ang1-ang0 > PI) ang1 -= 2*PI;
+            if (ang0-ang1 > PI) ang0 -= 2*PI;
+            for (i = 0; i < num_nodes; ++i)
+            {
+                ang = i*2*PI/num_nodes + offset;
+                if ((ang0 > ang && ang >= ang1) ||
+                    (ang0 < ang && ang <= ang1))
+                {
+                    d0 = fabs(ang0 - ang);
+                    d1 = fabs(ang1 - ang);
+                    if (d0 < 0.1*fabs(ang0 - ang1))
+                    {
+                        node_pts[i] = b->start;
+                        Coords(node_pts[i])[0] = center[0] + r0*cos(ang);
+                        Coords(node_pts[i])[1] = center[1] + r0*sin(ang);
+                    }
+                    else if (d1 < 0.1*fabs(ang0 - ang1))
+                    {
+                        node_pts[i] = b->end;
+                        Coords(node_pts[i])[0] = center[0] + r0*cos(ang);
+                        Coords(node_pts[i])[1] = center[1] + r0*sin(ang);
+                    }
+                    else
+                    {
+                        double coords[MAXD];
+                        coords[0] = center[0] + r0*cos(ang);
+                        coords[1] = center[1] + r0*sin(ang);
+                        coords[2] = Coords(b->start)[2];
+                        p = Point(coords);
+                        insert_point_in_bond(p,b,c);
+                        node_pts[i] = p;
+                    }
+                    x = Coords(node_pts[i])[0] - center[0];
+                    y = Coords(node_pts[i])[1] - center[1];
+                    ang0 = atan2(y,x);
+                    if (ang0 < 0.0) ang0 = 2*PI + ang0;
+                }
+            }
+        }
+}       /* end setNodePoints */
+
+static void installCircleBeltString(
+        Front *front,
+        SURFACE *surf1,
+        SURFACE *surf2,
+        POINT **node_pts1,
+        POINT **node_pts2,
+        int num_strings)
+{
+        int i;
+        boolean node_moved[2];
+        BOND *b1,*b2;
+        NODE **nodes1,**nodes2;
+        CURVE *c1,*c2;
+        AF_NODE_EXTRA *extra;
+        INTERFACE *intfc = surf1->interface;
+
+        FT_VectorMemoryAlloc((POINTER*)&nodes1,num_strings,sizeof(NODE*));
+        FT_VectorMemoryAlloc((POINTER*)&nodes2,num_strings,sizeof(NODE*));
+        for (i = 1; i < num_strings; ++i)
+            nodes1[i] = nodes2[i] = NULL;
+
+        c1 = I_CurveOfPoint(intfc,node_pts1[0],&b1);
+        if (b1->start == node_pts1[0])
+            move_closed_loop_node(c1,b1);
+        nodes1[0] = I_NodeOfPoint(intfc,node_pts1[0]);
+        FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+        extra->af_node_type = STRING_NODE;
+        nodes1[0]->extra = (POINTER)extra;
+        nodes1[0]->size_of_extra = sizeof(AF_NODE_EXTRA);
+
+        c2 = I_CurveOfPoint(intfc,node_pts2[0],&b2);
+        if (b2->start == node_pts2[0])
+            move_closed_loop_node(c2,b2);
+        nodes2[0] = I_NodeOfPoint(intfc,node_pts2[0]);
+        FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+        extra->af_node_type = STRING_NODE;
+        nodes2[0]->extra = (POINTER)extra;
+        nodes2[0]->size_of_extra = sizeof(AF_NODE_EXTRA);
+
+        for (i = 1; i < num_strings; ++i)
+        {
+            c1 = I_CurveOfPoint(intfc,node_pts1[i],&b1);
+            if (b1->start == node_pts1[i])
+            {
+                split_curve(b1->start,b1,c1,0,0,0,0);
+                nodes1[i] = I_NodeOfPoint(intfc,node_pts1[i]);
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                extra->af_node_type = STRING_NODE;
+                nodes1[i]->extra = (POINTER)extra;
+                nodes1[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+            }
+            c2 = I_CurveOfPoint(intfc,node_pts2[i],&b2);
+            if (b2->start == node_pts2[i])
+            {
+                split_curve(b2->start,b2,c2,0,0,0,0);
+                nodes2[i] = I_NodeOfPoint(intfc,node_pts2[i]);
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                extra->af_node_type = STRING_NODE;
+                nodes2[i]->extra = (POINTER)extra;
+                nodes2[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+            }
+        }
+        for (i = 0; i < num_strings; ++i)
+            connectTwoStringNodes(front,nodes1[i],nodes2[i]); 
+        FT_FreeThese(2,nodes1,nodes2);
+}       /* end installCircleBeltString */
+
+static void connectTwoStringNodes(
+        Front *front,
+        NODE *start,
+        NODE *end)
+{
+        CURVE *string_curve;
+        BOND *b;
+        double *h = front->rect_grid->h;
+        double spacing,dir[MAXD],coords[MAXD];
+        int i,j,nb;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+	string_curve = make_curve(0,0,start,end);
+	hsbdry_type(string_curve) = STRING_HSBDRY;
+	spacing = separation(start->posn,end->posn,3);
+	for (j = 0; j < 3; ++j)
+	    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
+	nb = rint(spacing/(0.40*h[0])) + 1;
+	spacing /= (double)nb;
+	b = string_curve->first;
+	for (i = 1; i < nb; ++i)
+	{
+	    for (j = 0; j < 3; ++j)
+		coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
+	    insert_point_in_bond(Point(coords),b,string_curve);
+	    b->length0 = spacing;
+	    b = b->next;
+	}
+	b->length0 = spacing;
+	af_params->string_curves.push_back(string_curve);
+}       /* end connectTwoStringNodes */

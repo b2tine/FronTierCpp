@@ -145,7 +145,6 @@ extern void elastic_point_propagate(
 	}
 }       /* elastic_point_propagate */
 
-
 //Given string node, the function finds the corresponding canopy surface.
 static SURFACE *canopy_of_string_node(NODE *n)
 {
@@ -237,8 +236,6 @@ extern void airfoil_curve_propagate(
 	}
 }	/* end airfoil_curve_propagate */
 
-
-//Only copies the old curve to the new curve?
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
