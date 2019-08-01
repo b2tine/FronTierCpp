@@ -19,12 +19,10 @@ EXTRA_DIST = $(input_directories) airfoil_gpu.cuh airfoil_gpu.cu
 
 
 
-AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
+AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ \
-			  -I$(top_srcdir)/iFluid \
-			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(abs_top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@

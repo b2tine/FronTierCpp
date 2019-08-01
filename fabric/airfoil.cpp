@@ -26,8 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
@@ -44,7 +43,7 @@ int main(int argc, char **argv)
 	static Front front;
 	static F_BASIC_DATA f_basic;
 	static LEVEL_FUNC_PACK level_func_pack;
-	static IF_PARAMS iFparams;
+	    //static IF_PARAMS iFparams;
 	static AF_PARAMS af_params;
 	static RG_PARAMS rgb_params;
 
@@ -96,9 +95,9 @@ int main(int argc, char **argv)
         (void) printf("Passed FT_StartUp()\n");
 
     iFparams.dim = f_basic.dim;
-    front.extra1 = (POINTER)&iFparams;
+        //front.extra1 = (POINTER)&iFparams;
     front.extra2 = (POINTER)&af_params;
-    read_iFparams(in_name,&iFparams);
+        //read_iFparams(in_name,&iFparams);
     
     if (debugging("trace")) 
         (void) printf("Passed read_iFparams()\n");

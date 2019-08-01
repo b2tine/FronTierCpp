@@ -24,9 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include "collid.h"
-#include "iFluid.h"
 #include "airfoil.h"
-#include "solver.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
@@ -184,6 +182,7 @@ int airfoil_velo(
 	return YES;
 }
 
+/*
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -229,7 +228,8 @@ int af_find_state_at_crossing(
 
     return NEUMANN_PDE_BOUNDARY;
 
-}       /* af_find_state_at_crossing */
+}       // af_find_state_at_crossing //
+*/
 
 static boolean is_pore(
 	Front *front,
@@ -1522,8 +1522,10 @@ extern void propagate_surface(
         HYPER_SURF         *hs;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
+	
+    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	//double *g = iFparams->gravity;
+    double g[MAXD] = {0,0,0};
 
 	hs = Hyper_surf(surf);
 	unsort_surf_point(surf);
@@ -1570,9 +1572,12 @@ extern void propagate_node(
         STATE *sl,*sr;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
-	int dim = front->rect_grid->dim;
+	
+    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	//double *g = iFparams->gravity;
+    double g[MAXD] = {0,0,0};
+	
+    int dim = front->rect_grid->dim;
 
         sl = (STATE*)left_state(node->posn);
         sr = (STATE*)right_state(node->posn);
@@ -1596,9 +1601,12 @@ extern void propagate_curve(
         STATE *sl,*sr;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
-	int dim = front->rect_grid->dim;
+	
+    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	//double *g = iFparams->gravity;
+    double g[MAXD] = {0,0,0};
+	
+    int dim = front->rect_grid->dim;
 
 	for (b = curve->first; b != curve->last; b = b->next)
         {

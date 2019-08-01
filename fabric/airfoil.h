@@ -2,7 +2,10 @@
 #define AIRFOIL_H
 
 #include <FronTier.h>
-#include <iFluid.h>
+
+//#include <iFluid.h>
+#include "ifluid_state.h"
+
 #include "airfoil_sv.h"
 #include "airfoil_gpu.cuh"
 
@@ -231,11 +234,11 @@ struct _ELASTIC_SET{
 
 typedef struct _ELASTIC_SET ELASTIC_SET;
 
-void read_iFparams(char*,IF_PARAMS*);
+    //void read_iFparams(char*,IF_PARAMS*);
 void restart_set_dirichlet_bdry_function(Front*);
 
 //NOTE: these have no definition
-void read_movie_options(char*,IF_PARAMS*);
+    //void read_movie_options(char*,IF_PARAMS*);
 void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
