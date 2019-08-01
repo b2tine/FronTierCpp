@@ -395,6 +395,9 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/Makefile
                                          airfoil/objs/Makefile
                                          airfoil/tests/Makefile
+                                         fabric/Makefile
+                                         fabric/objs/Makefile
+                                         fabric/tests/Makefile
                                          parachute/Makefile])])])
 
 

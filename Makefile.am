@@ -19,6 +19,7 @@ if FOLDING_OPT
 MAYBE_FOLDING = folding
 endif
 MAYBE_AIRFOIL = airfoil
+MAYBE_FABRIC = fabric
 MAYBE_PARACHUTE = parachute
 endif
 endif
@@ -47,6 +48,7 @@ SUBDIRS = lib \
 		  $(MAYBE_COLLISION) \
 		  $(MAYBE_FOLDING) \
 		  $(MAYBE_AIRFOIL) \
+		  $(MAYBE_FABRIC) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
