@@ -9,6 +9,7 @@
 #include "airfoil_sv.h"
 #include "airfoil_gpu.cuh"
 
+#include <cassert>
 #include <vector>
 #include <map>
 

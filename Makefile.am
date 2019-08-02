@@ -48,8 +48,8 @@ SUBDIRS = lib \
 		  $(MAYBE_COLLISION) \
 		  $(MAYBE_FOLDING) \
 		  $(MAYBE_AIRFOIL) \
-		  $(MAYBE_FABRIC) \
 		  $(MAYBE_PARACHUTE) \
+		  $(MAYBE_FABRIC) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
 		  $(MAYBE_LIBCPP)

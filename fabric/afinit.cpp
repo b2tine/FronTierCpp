@@ -50,6 +50,7 @@ void setInitialIntfcAF(
 	}
 	fclose(infile);
 
+    /*
 	switch (front->rect_grid->dim)
 	{
 	case 2:
@@ -57,6 +58,9 @@ void setInitialIntfcAF(
 	case 3:
 	    return setInitialIntfcAF3d(front,level_func_pack,inname);
 	}
+    */
+    assert(front->rect_grid->dim == 3);
+    return setInitialIntfcAF3d(front,level_func_pack,inname);
 }	/* end setInitialIntfcAF */
 
 static void setInitialIntfcAF3d(
@@ -73,9 +77,13 @@ static void setInitialIntfcAF3d(
 	int num_canopy;
 
 	level_func_pack->set_3d_bdry = YES;
-	level_func_pack->neg_component = LIQUID_COMP2;
-    level_func_pack->pos_component = LIQUID_COMP2;	
-	level_func_pack->func_params = NULL;
+	
+	//level_func_pack->neg_component = LIQUID_COMP2;
+    //level_func_pack->pos_component = LIQUID_COMP2;	
+        level_func_pack->neg_component = 3;
+        level_func_pack->pos_component = 3;
+	
+    level_func_pack->func_params = NULL;
     level_func_pack->func = NULL;
 	level_func_pack->attach_string = NO;		// default
 

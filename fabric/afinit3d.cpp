@@ -59,10 +59,12 @@ static void surf_enlargement(SURFACE*,double);
 
 static void initSingleRigidBody(FILE*,Front*);
 static void initMultiRigidBodies(FILE*,Front*,int);
+/*
 static void init_rigid_sphere(FILE*,Front*);
 static void init_rigid_box(FILE*,Front*);
 static void init_rigid_human(FILE*,Front*);
 static void init_rigid_cylinder(FILE*,Front*);
+*/
 
 extern void initEllipticSurf(
 	FILE *infile,
@@ -414,6 +416,7 @@ extern void initPlaneSurf(
 	}
 }	/* end initPlaneSurf */
 
+/*
 extern void initAirbag(FILE *infile,
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack)
@@ -438,7 +441,8 @@ extern void initAirbag(FILE *infile,
                                     ellip_params.rad+1,ellip_params.rad+2);
         (void) printf("%f %f %f\n",ellip_params.rad[0],
                                       ellip_params.rad[1],ellip_params.rad[2]);
-} 
+}
+*/
 
 // Yan Li
 static boolean insert_vertical_gore(
@@ -2562,6 +2566,7 @@ extern void initRigidBody(
 	fclose(infile);
 }
 
+/*
 static void initSingleRigidBody(
 	FILE *infile,
 	Front *front)
@@ -2598,8 +2603,9 @@ static void initSingleRigidBody(
             (void) printf("Unknow type of rigid body!\n");
             clean_up(ERROR);
         }
-}	/* end initSingleRigidBody */
+}*/	/* end initSingleRigidBody */
 
+/*
 static void initMultiRigidBodies(
 	FILE *infile,
 	Front *front,
@@ -2617,8 +2623,9 @@ static void initMultiRigidBodies(
 	    initSingleRigidBody(infile,front);
 	}
 	set_current_interface(cur_intfc);
-}	/* initMultiRigidBodies */
+}*/	/* initMultiRigidBodies */
 
+/*
 static void init_rigid_sphere(
 	FILE *infile,
 	Front *front)
@@ -2654,8 +2661,9 @@ static void init_rigid_sphere(
         FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,
                             w_type,2.0,&surf);
 	return;
-}	/* end init_rigid_sphere */
+}*/	/* end init_rigid_sphere */
 
+/*
 static void init_rigid_box(
 	FILE *infile,
 	Front *front)
@@ -2687,8 +2695,9 @@ static void init_rigid_box(
         }
         FT_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,2,&surf);
 	return;
-}	/* end init_rigid_box */
+}*/	/* end init_rigid_box */
 
+/*
 static void init_rigid_human(
 	FILE *infile,
 	Front *front)
@@ -2730,8 +2739,9 @@ static void init_rigid_human(
 	        wave_type(surf) = NEUMANN_BOUNDARY;
 	}
 	return;
-}	/* end init_rigid_human */
+}*/	/* end init_rigid_human */
 
+/*
 static void init_rigid_cylinder(
 	FILE *infile,
 	Front *front)
@@ -2767,7 +2777,7 @@ static void init_rigid_cylinder(
 	FT_MakeCylinderSurf(front,cen,radius,height/2,2,neg_comp,pos_comp,
 					w_type,&surf);
 	return;
-}	/* end init_rigid_cylinder */
+}*/	/* end init_rigid_cylinder */
 
 static void surf_com_translation(
 	SURFACE *surf,
