@@ -119,7 +119,7 @@ extern void initParachuteModules(Front *front)
         if (num_canopy == 1)
         {
             char string[100];
-	    CursorAfterStringOpt(infile,"Enter yes for complet connection:");
+	    CursorAfterStringOpt(infile,"Enter yes for complex connection:");
             fscanf(infile,"%s",string);
             printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
@@ -152,6 +152,7 @@ extern void initParachuteDefault(
 	af_params->num_opt_round = 20;
         af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
+    af_params->attach_gores = NO;
 	if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))
         {

@@ -2523,7 +2523,7 @@ static void CgalCircleBelt(
 	setSurfZeroMesh(belt);
 	setMonoCompBdryZeroLength(*surf);
 	setMonoCompBdryZeroLength(belt);
-        gview_plot_interface("test",front->interf);
+        //gview_plot_interface("test",front->interf);
 	FT_FreeThese(3,circle_node_pts,ubelt_node_pts,lbelt_node_pts);
 	if (consistent_interface(front->interf) == NO)
 	    clean_up(ERROR);
