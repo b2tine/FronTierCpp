@@ -29,7 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #if !defined(_FNAMEDEBUG_H)
 #define _FNAMEDEBUG_H
-#include <util/cdecs.h>
+
+//#include <util/cdecs.h>
 
 #if defined(IGNORE_ERRORS)
 #define	Check_return(func,fname)					\
@@ -51,7 +52,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define DEBUG_LEAVE(fname)						\
 	debug_print(fname,"Left %s()\n",#fname);
 #undef DEBUG
-#define	DEBUG		debugging(DEBUG_STRING)
+//#define	DEBUG       YES	
+#define	DEBUG       NO	
 #else /* defined(DEBUG_STRING) */
 #define DEBUG_ENTER(fname)
 #define DEBUG_LEAVE(fname)
