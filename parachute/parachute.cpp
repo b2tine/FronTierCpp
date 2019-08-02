@@ -102,9 +102,12 @@ int main(int argc, char **argv)
 	    initParachuteModules(&front);
 	    if (debugging("trace"))
 	    {
-                if (consistent_interface(front.interf) == NO)
-                    clean_up(ERROR);
-                gview_plot_interface("ginit",front.interf);
+            if (consistent_interface(front.interf) == NO)
+                clean_up(ERROR);
+
+            char gvdir[100];
+            sprintf(gvdir,"%s/gv-init",out_name);
+            gview_plot_interface(gvdir,front.interf);
 	    }
 	}
 	else
