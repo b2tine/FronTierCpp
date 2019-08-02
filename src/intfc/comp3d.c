@@ -2969,8 +2969,10 @@ LOCAL void blocks_on_tri(
 	}
 	
 	if(is_tri_outside(intfc, t, grid))
+    {
 	    for(i=0; i<3; ++i)
-		i_diff[i] = 0;
+            i_diff[i] = 0;
+    }
 
 	if (i_diff[0] > 6)
 	{
