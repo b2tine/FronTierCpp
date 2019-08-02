@@ -74,27 +74,6 @@ extern  double getStateSolute(
         return solute_state->solute;
 }       /* end getStateSolute */
 
-extern  double getStateXvel(
-        POINTER state)
-{
-        STATE *solute_state = (STATE*)state;
-        return solute_state->vel[0];
-}       /* end getStateXvel */
-
-extern  double getStateYvel(
-        POINTER state)
-{
-        STATE *solute_state = (STATE*)state;
-        return solute_state->vel[1];
-}       /* end getStateYvel */
-
-extern  double getStateZvel(
-        POINTER state)
-{
-        STATE *solute_state = (STATE*)state;
-        return solute_state->vel[2];
-}       /* end getStateZvel */
-
 extern  void crystal_point_propagate(
         Front *front,
         POINTER wave,
