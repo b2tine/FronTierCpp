@@ -2383,7 +2383,7 @@ LOCAL	INTERFACE*   make_surfaces_on_wall(
 	int	   sizest = front->sizest, comp;
 	int        comp1, comp2;
 
-	DEBUG_ENTER(merge_surfaces_on_wall);
+	DEBUG_ENTER(make_surfaces_on_wall);
 
 	/*#bjet ASSUME */
 	get_default_fluid_comp(&comp1,&comp2,front->interf);
@@ -2451,10 +2451,8 @@ LOCAL	INTERFACE*   make_surfaces_on_wall(
 	set_copy_intfc_states(sav_copy_st);
 	set_current_interface(sav_intfc);
 	
-	DEBUG_LEAVE(merge_surfaces_on_wall)
-
+	DEBUG_LEAVE(make_surfaces_on_wall)
 	return intfc;
-
 }	/*merge surfaces on wall */
 
 

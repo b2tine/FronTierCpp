@@ -47,9 +47,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #if defined(DEBUG_STRING)
 #define DEBUG_ENTER(fname)						\
-	debug_print(DEBUG_STRING,"Entered %s()\n",#fname);
+	debug_print(fname,"Entered %s()\n",#fname);
 #define DEBUG_LEAVE(fname)						\
-	debug_print(DEBUG_STRING,"Left %s()\n",#fname);
+	debug_print(fname,"Left %s()\n",#fname);
 #undef DEBUG
 #define	DEBUG		debugging(DEBUG_STRING)
 #else /* defined(DEBUG_STRING) */

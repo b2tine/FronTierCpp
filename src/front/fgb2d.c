@@ -1140,6 +1140,8 @@ LOCAL   boolean remove_unphysical_crossings2d_on_grid(
         int        i, ix, iy, n_reg_node, ip[2];
         CURVE      **cc;
 
+        DEBUG_ENTER(remove_unphysical_crossings2d_on_grid)
+
         gmax = T->aug_comp_grid.gmax;
         comp = T->c_components;
         n_reg_node = (gmax[0]+1)*(gmax[1]+1);
@@ -1174,7 +1176,7 @@ LOCAL   boolean remove_unphysical_crossings2d_on_grid(
         if (!track_comp_through_crxings2d_on_grid(smin,smax,gmax,grid_intfc,
 					SINGLE))
         {
-            DEBUG_LEAVE(remove_unphysical_crossings2d)
+            DEBUG_LEAVE(remove_unphysical_crossings2d_on_grid)
             return FUNCTION_FAILED;
         }
 
@@ -1188,8 +1190,8 @@ LOCAL   boolean remove_unphysical_crossings2d_on_grid(
             }
         }
 
+        DEBUG_LEAVE(remove_unphysical_crossings2d_on_grid)
         return FUNCTION_SUCCEEDED;
-        DEBUG_LEAVE(remove_unphysical_crossings2d)
 }
 
 
@@ -1207,7 +1209,7 @@ LOCAL  boolean track_comp_through_crxings2d_on_grid(
         COMPONENT       c,cn;
         CURVE           **cc;
 
-        DEBUG_ENTER(track_comp_through_crxings2d)
+        DEBUG_ENTER(track_comp_through_crxings2d_on_grid)
 
         comp = T->c_components;
 
@@ -1321,14 +1323,14 @@ LOCAL  boolean track_comp_through_crxings2d_on_grid(
             }
         }
 
-	/*
+	    /*
         if (! check_grid_comp_and_crx2d(grid_intfc,smin,smax,which_grid))
         {
             DEBUG_LEAVE(track_comp_through_crxings3d)
             return FUNCTION_FAILED;
         }*/
 
-        DEBUG_LEAVE(track_comp_through_crxings2d)
+        DEBUG_ENTER(track_comp_through_crxings2d_on_grid)
         return FUNCTION_SUCCEEDED;
 }
 

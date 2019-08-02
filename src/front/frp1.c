@@ -2343,7 +2343,7 @@ EXPORT void f_init_2drproblem(
 	RPROBLEM	*rp,
 	Front		*front)
 {
-	DEBUG_ENTER(g_init_2drproblem)
+	DEBUG_ENTER(f_init_2drproblem)
 	f_init_rp_nodes(rp);
 	init_ocurve_lists(rp,front);
 	f_init_physical_ocurves(rp);

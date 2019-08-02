@@ -1494,7 +1494,7 @@ int cut_buffer_tris(
 	static int len_tris_s = 0;
 	POINT	   **p;
 
-	DEBUG_ENTER(cut_bubber_tris)
+	DEBUG_ENTER(cut_buffer_tris)
 	
 	if (len_tris_s < surf->num_tri)
 	{

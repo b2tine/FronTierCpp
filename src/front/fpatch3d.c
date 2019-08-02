@@ -1964,7 +1964,7 @@ EXPORT	INTERFACE  *bboxes_intfc_sect(
 	INTERFACE	*sav_intfc, *tmp_intfc, *buf_intfc;
 	boolean		sav_copy;
 
-	DEBUG_ENTER(bboxes_intfc_intersection)
+	DEBUG_ENTER(bboxes_intfc_sect)
 
 	sav_copy = copy_intfc_states();
 	sav_intfc = current_interface();
@@ -1984,7 +1984,7 @@ EXPORT	INTERFACE  *bboxes_intfc_sect(
 	set_copy_intfc_states(sav_copy);
 	set_current_interface(sav_intfc);
 
-	DEBUG_LEAVE(bboxes_intfc_intersection)
+	DEBUG_ENTER(bboxes_intfc_sect)
 	
 	return buf_intfc;
 }

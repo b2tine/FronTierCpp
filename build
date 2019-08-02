@@ -7,6 +7,7 @@ for arg in $@ ; do
         PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
         DEBUG_FLAGS="-g3"
+        DEBUG_CONF_OPT="--enable-debug=yes"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
@@ -68,7 +69,8 @@ function config_defiant {
     PETSC_DIR="/opt/petsc-3.11.0-${PETSC_ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu ${DEBUG_CONF_OPT}"
+    #CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu --enable-debug=yes"
 }
 
 HOST=`uname -n`

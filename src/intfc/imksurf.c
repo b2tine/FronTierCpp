@@ -208,7 +208,7 @@ EXPORT	boolean make_bdry_surfaces(
 	free_these(4,Eg_crx.comp,corners,edges,faces);
 	free_these(3,blk_info.surfs,blk_info.curves,blk_info.cur_tris);
 
-	DEBUG_LEAVE(install_faces)
+	DEBUG_LEAVE(make_bdry_surfaces)
 	return YES;
 }	/* end make_bdry_surfaces */
 

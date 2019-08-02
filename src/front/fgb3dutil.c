@@ -445,8 +445,9 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
 	static CURVE    **new_c=NULL;
 	static int      tnc, *n_c = NULL;
 	
-	if (debugging("trace"))
-	    (void) printf("Entering reconstruct_intfc3d_in_box()\n");
+    DEBUG_ENTER(reconstruct_intfc3d_in_box)
+	//if (debugging("trace"))
+	//    (void) printf("Entering reconstruct_intfc3d_in_box()\n");
         
 	sgmax[0] = smax[0]-smin[0];
         sgmax[1] = smax[1]-smin[1];
@@ -707,7 +708,7 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
                             {
                                 vmfree(blk_mem);
                                 vmfree(blk_mem_store);
-                                DEBUG_LEAVE(reconstruct_crx_intfc3d)
+                                DEBUG_LEAVE(reconstruct_intfc3d_in_box)
                                 return FUNCTION_FAILED;
                             }
                             break;
@@ -727,17 +728,17 @@ EXPORT 	boolean reconstruct_intfc3d_in_box(
                             {
                                 vmfree(blk_mem);
                                 vmfree(blk_mem_store);
-                                DEBUG_LEAVE(reconstruct_crx_intfc3d)
+                                DEBUG_LEAVE(reconstruct_intfc3d_in_box)
                                 return FUNCTION_FAILED;
                             }
-			    /*reomve_from_debug("chk_bm"); */
+			    /*remove_from_debug("chk_bm"); */
                             break;
                         case BDRY_BLOCK:
                             if (!construct_bdry_blk(blk_crx,bm))
                             {
                                 vmfree(blk_mem);
                                 vmfree(blk_mem_store);
-                                DEBUG_LEAVE(reconstruct_crx_intfc3d)
+                                DEBUG_LEAVE(reconstruct_intfc3d_in_box)
                                 return FUNCTION_FAILED;
                             }
                             break;
@@ -857,8 +858,9 @@ redo_delete_s:
 	free_these(5, blk_mem, blk_mem_store,
 	    blk_info.surfs, blk_info.cur_tris, blk_info.curves);
 	
-	if (debugging("trace"))
-	    (void) printf("Leaving reconstruct_intfc3d_in_box()\n");
+	//if (debugging("trace"))
+	//    (void) printf("Leaving reconstruct_intfc3d_in_box()\n");
+    DEBUG_LEAVE(reconstruct_intfc3d_in_box)
 	return FUNCTION_SUCCEEDED;
 }	/* end reconstruct_intfc3d_in_box */
 
@@ -3805,7 +3807,8 @@ EXPORT	int count_grid_intfc_crossings3d(
 	int		n_crx = 0;
 	int             xmax, ymax, zmax;
 	int		*seg_crx_count = T->seg_crx_count;
-	DEBUG_ENTER(count_grid_intfc_crossings3d)
+	
+    DEBUG_ENTER(count_grid_intfc_crossings3d)
 
 	if (grid_intfc->surfaces == NULL || 
 	    is_outside_surfaces(grid_intfc, rgr)) 
@@ -3827,7 +3830,8 @@ EXPORT	int count_grid_intfc_crossings3d(
 	    icrds[0] = i; icrds[1] = j; icrds[2] = k;
 	    n_crx += count_block_crossings(rgr,seg_crx_count,s,t,nt,icrds);
 	}
-	DEBUG_LEAVE(count_grid_crossings3d)
+
+    DEBUG_LEAVE(count_grid_intfc_crossings3d)
 	return n_crx;
 }		/* end count_grid_intfc_crossings3d */
 

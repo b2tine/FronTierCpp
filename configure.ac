@@ -43,6 +43,17 @@ AC_SUBST([GTEST_CXXFLAGS])
 AC_SUBST([GTEST_LDFLAGS])
 AC_SUBST([GTEST_LIBS])
 
+
+#enable debug macros
+AC_ARG_ENABLE([debug],[AS_HELP_STRING([--enable-debug=yes/no],
+              [define debugging macros DEBUG_ENTER and DEBUG_LEAVE])],
+              [enable_debug=${enableval}],[enable_debug=no])
+
+AS_IF([test "x${enable_debug}" != xno],
+      [AC_DEFINE([DEBUG_STRING],[1],[enable regular debugging macros])
+       AC_DEFINE([DEBUG_CLEAN_UP],[1],[enable clean_up debugging macros])])
+
+
 #configure with GD
 AC_ARG_WITH([gd-dir],[AS_HELP_STRING([--with-gd-dir=path],
             [specify location of single directory installation])],
