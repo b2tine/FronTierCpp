@@ -44,7 +44,7 @@ Enter the initial center of mass velocity: 0 0 0
 
 ******************Parachute Parameters*****************
 Enter number of canopy surfaces: 1
-Enter yes for complex connection: yes
+Enter yes for complex connection: no
 
 For module 1
 Enter canopy surface type: FLAT
