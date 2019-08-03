@@ -49,7 +49,6 @@ static void set_curve_impulse(ELASTIC_SET*,CURVE*,GLOBAL_POINT**);
 static void set_surf_impulse(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**);
 
 static void reorder_string_curves(NODE*);
-static void assembleParachuteSet2d(INTERFACE*,ELASTIC_SET*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
 //static void computeElasticForce(SPRING_VERTEX*, double*);
@@ -230,7 +229,7 @@ static void count_surf_neighbors(
 	*n = i;
 }	/* end count_surf_neighbors */
 
-extern void set_spring_vertex_memory(
+EXPORT void set_spring_vertex_memory(
 	SPRING_VERTEX *sv,
 	int size)
 {
@@ -246,12 +245,12 @@ extern void set_spring_vertex_memory(
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
-	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
+	    for (j = 0; j < MAXD; ++j)	// reset EXPORTal acceleration
 		sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
 
-extern void compute_spring_accel1(
+EXPORT void compute_spring_accel1(
 	SPRING_VERTEX *sv,
 	double *f,
 	int dim)
@@ -447,7 +446,7 @@ void generic_spring_solver(
 	    (void) printf("Leaving generic_spring_solver()\n");
 }	/* end generic_spring_solver */
 
-extern void count_vertex_neighbors(
+EXPORT void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv)
 {
@@ -471,7 +470,7 @@ extern void count_vertex_neighbors(
 	    (void) printf("Leaving count_vertex_neighbors()\n");
 }	/* end  count_vertex_neighbors */
 
-extern void link_point_set(
+EXPORT void link_point_set(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *point_set_store)
@@ -574,7 +573,7 @@ static void link_node_point_set(
 	(*n)++;
 }	/* end link_node_point_set */
 
-extern void set_vertex_neighbors(
+EXPORT void set_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv,
 	GLOBAL_POINT **point_set)
@@ -602,7 +601,7 @@ extern void set_vertex_neighbors(
 	    (void) printf("Leaving set_vertex_neighbors()\n");
 }	/* end  set_vertex_neighbors */
 
-extern void set_node_spring_vertex(
+EXPORT void set_node_spring_vertex(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	SPRING_VERTEX *sv,
@@ -843,7 +842,7 @@ extern void set_node_spring_vertex(
 	(*n)++;
 }	/* end set_node_spring_vertex */
 
-extern void set_curve_spring_vertex(
+EXPORT void set_curve_spring_vertex(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	SPRING_VERTEX *sv,
@@ -1021,7 +1020,7 @@ extern void set_curve_spring_vertex(
 	*n = i;
 }	/* end set_curve_spring_vertex */
 
-extern void set_surf_spring_vertex(
+EXPORT void set_surf_spring_vertex(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	SPRING_VERTEX *sv,
@@ -1140,7 +1139,7 @@ static void put_point_value_to(
 	}
 }	/* end put_point_value_to */
 	
-extern void get_point_set_from(
+EXPORT void get_point_set_from(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -1163,7 +1162,7 @@ extern void get_point_set_from(
 	    (void) printf("Leaving get_point_set_from()\n");
 }	/* end  get_point_set_from */
 
-extern void put_point_set_to(
+EXPORT void put_point_set_to(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -1273,7 +1272,7 @@ static void node_put_point_set_to(
 	put_point_value_to(p,point_set);
 }	/* end node_put_point_set_to */
 
-extern void set_elastic_params(
+EXPORT void set_elastic_params(
 	ELASTIC_SET *geom_set,
 	double fr_dt)
 {
@@ -1304,7 +1303,7 @@ extern void set_elastic_params(
 	geom_set->dt_tol = dt_tol;
 }	/* end set_elastic_params */
 
-extern void merge_global_point_set(
+EXPORT void merge_global_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *gpoint_store,
 	int num_gpoint)
@@ -1317,100 +1316,12 @@ extern void merge_global_point_set(
 	}
 }	/* end merge_global_point_set */
 
-extern void assembleParachuteSet(
+EXPORT void assembleParachuteSet(
 	INTERFACE *intfc,
 	ELASTIC_SET *geom_set)
 {
-	int dim = Dimension(intfc);
-	switch(dim)
-	{
-	case 2:
-	    assembleParachuteSet2d(intfc,geom_set);
-	    return;
-	case 3:
-	    assembleParachuteSet3d(intfc,geom_set);
-	    return;
-	}
+    assembleParachuteSet3d(intfc,geom_set);
 }	/* end assembleParachuteSet */
-
-static void assembleParachuteSet2d(
-	INTERFACE *intfc,
-	ELASTIC_SET *geom_set)
-{
-	CURVE **c = NULL;
-	NODE **n = NULL;
-	int i,l,nc,nn;
-	CURVE **curves = geom_set->curves;
-	NODE **nodes = geom_set->nodes;
-	int num_layers = 3;
-
-	nc = nn = 0;
-	/* Assemble elastic curves */
-	intfc_curve_loop(intfc,c)
-	{
-	    if (wave_type(*c) == ELASTIC_STRING ||
-		wave_type(*c) == ELASTIC_BOUNDARY)
-	    {
-		curves[nc++] = *c;
-		if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-                    nodes[nn++] = (*c)->start;
-                if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-                    nodes[nn++] = (*c)->end;
-	    }
-	}	
-
-	/* Assemble curves and nodes */
-	for (l = 0; l < num_layers; ++l)
-	{
-	    for (i = 0; i < nn; ++i)
-	    {
-	    	node_in_curve_loop(nodes[i],c)
-	    	{
-	    	    if (wave_type(*c) != ELASTIC_STRING &&
-			wave_type(*c) != ELASTIC_BOUNDARY)
-			continue;
-		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
-		    {
-		    	curves[nc++] = *c;
-		    	if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->start;
-		    	if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->end;
-		    }
-	    	}
-	    	node_out_curve_loop(nodes[i],c)
-	    	{
-	    	    if (wave_type(*c) != ELASTIC_STRING &&
-			wave_type(*c) != ELASTIC_BOUNDARY)
-			continue;
-		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
-		    {
-		    	curves[nc++] = *c;
-		    	if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->start;
-		    	if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->end;
-		    }
-	    	}
-	    }
-	}
-	geom_set->num_surfs = 0;
-	geom_set->num_curves = nc;
-	geom_set->num_nodes = nn;
-	geom_set->num_verts = 0;
-	for (i = 0; i < nc; ++i)
-	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-	geom_set->num_verts += nn;
-	geom_set->load_node = NULL;
-	for (i = 0; i < nn; ++i)
-	    if (is_load_node(nodes[i]))
-	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
-	    }
-	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", 0, nc, nn, 
-		geom_set->num_verts);
-}	/* end assembleParachuteSet2d */
 
 static void assembleParachuteSet3d(
 	INTERFACE *intfc,
@@ -1532,7 +1443,7 @@ static void assembleParachuteSet3d(
 		geom_set->num_verts);
 }	/* end assembleParachuteSet */
 
-extern void copy_from_client_point_set(
+EXPORT void copy_from_client_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *client_point_set,
 	int client_size,
@@ -1565,7 +1476,7 @@ extern void copy_from_client_point_set(
         }
 }	/* end copy_from_client_point_set */
 
-extern void copy_to_client_point_set(
+EXPORT void copy_to_client_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *client_point_set,
 	int client_size)
@@ -1641,21 +1552,21 @@ static void reorder_string_curves(NODE *node)
 	FT_FreeThese(2,string_curves,nb_points);
 }	/* end reorder_string_curves */
 
-extern void set_vertex_impulse(
+EXPORT void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)
 {
-        int i,ns,nc,nn;
+    int i,ns,nc,nn;
 
-        ns = geom_set->num_surfs;
-        nc = geom_set->num_curves;
-        nn = geom_set->num_nodes;
-        for (i = 0; i < ns; ++i)
-            set_surf_impulse(geom_set,geom_set->surfs[i],point_set);
-        for (i = 0; i < nc; ++i)
-            set_curve_impulse(geom_set,geom_set->curves[i],point_set);
-        for (i = 0; i < nn; ++i)
-            set_node_impulse(geom_set,geom_set->nodes[i],point_set);
+    ns = geom_set->num_surfs;
+    nc = geom_set->num_curves;
+    nn = geom_set->num_nodes;
+    for (i = 0; i < ns; ++i)
+        set_surf_impulse(geom_set,geom_set->surfs[i],point_set);
+    for (i = 0; i < nc; ++i)
+        set_curve_impulse(geom_set,geom_set->curves[i],point_set);
+    for (i = 0; i < nn; ++i)
+        set_node_impulse(geom_set,geom_set->nodes[i],point_set);
 
 }       /* end set_vertex_impulse */
 

@@ -95,7 +95,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
-extern void compute_total_canopy_force(
+EXPORT void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
 	double *neg_force)
@@ -265,7 +265,7 @@ static boolean is_pore(
 	return (Tri_index(tri) == 0) ? YES : NO;
 }	/* end is_pore */
 
-extern void assign_node_field(
+EXPORT void assign_node_field(
 	NODE *node,
 	double **x,
 	double **v,
@@ -286,7 +286,7 @@ extern void assign_node_field(
 	(*n)++;
 }	/* end assign_node_field */
 	
-extern void assign_curve_field(
+EXPORT void assign_curve_field(
 	CURVE *curve,
 	double **x,
 	double **v,
@@ -311,7 +311,7 @@ extern void assign_curve_field(
 	*n = i;
 }	/* end assign_curve_field */
 	
-extern void assign_surf_field(
+EXPORT void assign_surf_field(
 	SURFACE *surf,
 	double **x,
 	double **v,
@@ -345,7 +345,7 @@ extern void assign_surf_field(
 	*n = i;
 }	/* end assign_surf_field */
 	
-extern void compute_surf_accel1(
+EXPORT void compute_surf_accel1(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	double **f,
@@ -386,7 +386,7 @@ extern void compute_surf_accel1(
 	}
 }	/* end compute_surf_accel1 */
 
-extern void compute_curve_accel1(
+EXPORT void compute_curve_accel1(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -506,7 +506,7 @@ extern void compute_curve_accel1(
 	*n = i;
 }	/* end compute_curve_accel1 */
 
-extern void compute_node_accel1(
+EXPORT void compute_node_accel1(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -817,7 +817,7 @@ static void smooth_vel(
 	    vel[k] /= (double)np;
 }	/* end smooth_vel */
 
-extern void compute_node_accel2(
+EXPORT void compute_node_accel2(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -989,7 +989,7 @@ extern void compute_node_accel2(
 	(*n)++;
 }	/* end compute_node_accel2 */
 
-extern void compute_curve_accel2(
+EXPORT void compute_curve_accel2(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -1106,7 +1106,7 @@ extern void compute_curve_accel2(
 	*n = i;
 }	/* end compute_curve_accel2 */
 
-extern void compute_surf_accel2(
+EXPORT void compute_surf_accel2(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	double **f,
@@ -1190,7 +1190,7 @@ static void spring_force_at_point2(
 	}
 }	/* end spring_force_at_point2 */
 
-extern void compute_node_accel3(
+EXPORT void compute_node_accel3(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -1363,7 +1363,7 @@ extern void compute_node_accel3(
 	(*n)++;
 }	/* end compute_node_accel3 */
 
-extern void compute_curve_accel3(
+EXPORT void compute_curve_accel3(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -1488,7 +1488,7 @@ static boolean curve_in_pointer_list(
 	return NO;
 }	/* end curve_in_pointer_list */
 
-extern boolean is_registered_point(
+EXPORT boolean is_registered_point(
 	SURFACE *surf,
 	POINT *p)
 {
@@ -1508,7 +1508,7 @@ extern boolean is_registered_point(
 	return NO;
 }	/* end is_registered_point */
 
-extern void propagate_surface(
+EXPORT void propagate_surface(
         ELASTIC_SET *geom_set,
         SURFACE *surf,
         double **x,
@@ -1523,9 +1523,8 @@ extern void propagate_surface(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	//double *g = iFparams->gravity;
-    double g[MAXD] = {0,0,0};
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	double *g = iFparams->gravity;
 
 	hs = Hyper_surf(surf);
 	unsort_surf_point(surf);
@@ -1561,7 +1560,7 @@ extern void propagate_surface(
         }
 }       /* propagate_surface */
 
-extern void propagate_node(
+EXPORT void propagate_node(
         ELASTIC_SET *geom_set,
 	NODE *node,
         double **x,
@@ -1573,9 +1572,8 @@ extern void propagate_node(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	//double *g = iFparams->gravity;
-    double g[MAXD] = {0,0,0};
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	double *g = iFparams->gravity;
 	
     int dim = front->rect_grid->dim;
 
@@ -1589,7 +1587,7 @@ extern void propagate_node(
         ++(*n);
 }	/* end propagate_node */
 
-extern void propagate_curve(
+EXPORT void propagate_curve(
         ELASTIC_SET *geom_set,
 	CURVE *curve,
         double **x,
@@ -1602,9 +1600,8 @@ extern void propagate_curve(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	//double *g = iFparams->gravity;
-    double g[MAXD] = {0,0,0};
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	double *g = iFparams->gravity;
 	
     int dim = front->rect_grid->dim;
 
@@ -2253,7 +2250,7 @@ static void new_setNodeVelocity3d(
         }
 }	/* end setNodeVelocity3d */
 
-extern void set_geomset_velocity(
+EXPORT void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -2274,7 +2271,7 @@ extern void set_geomset_velocity(
 
 }	/* end set_geomset_velocity */
 
-extern void collectNodeExtra(
+EXPORT void collectNodeExtra(
 	Front *front,
 	INTERFACE *host_intfc,
 	int owner_id)
@@ -2417,7 +2414,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 }       /* setCollisionFreePoints3d() */
 
-extern void scatterAirfoilExtra(
+EXPORT void scatterAirfoilExtra(
 	Front *front)
 {
 	NODE **n;
@@ -2483,7 +2480,7 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
-extern void setSpecialNodeForce(
+EXPORT void setSpecialNodeForce(
 	Front *front,
 	double kl)
 {
@@ -2565,7 +2562,7 @@ extern void setSpecialNodeForce(
 	    printf("Leaving setSpecialNodeForce() \n");
 }	/* end setSpecialNodeForce */
 
-extern void break_strings(Front *front)
+EXPORT void break_strings(Front *front)
 {
         INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -2708,7 +2705,7 @@ static void break_string_curve(CURVE* c, double height)
 	    printf("Leaving split_string_curve()\n");
 }	/* end split_string_curve */
 
-extern void record_break_strings_gindex(Front *front)
+EXPORT void record_break_strings_gindex(Front *front)
 {
 	INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -2742,7 +2739,7 @@ extern void record_break_strings_gindex(Front *front)
 	    printf("Leaving record_break_strings_gindex()\n");
 }	/* end record_break_strings_gindex */
 
-extern void set_unequal_strings(Front *front)
+EXPORT void set_unequal_strings(Front *front)
 {
 	INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;

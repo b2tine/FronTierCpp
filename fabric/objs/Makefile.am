@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
+AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ \
@@ -20,11 +20,11 @@ noinst_LTLIBRARIES = libairfoil.la
 libairfoil_la_SOURCES = \
 ../airfoil.h \
 ../airfoil_sv.h \
+../afprop.cpp \
 ../afcnpy.cpp \
 ../afdata.cpp \
 ../afinit3d.cpp \
 ../afinit.cpp \
-../afprop.cpp \
 ../afsetd.cpp \
 ../aftest.cpp \
 ../afvelo.cpp \

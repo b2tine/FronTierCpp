@@ -54,7 +54,7 @@ static void print_rgb3d(Front *,char *);
 static void print_drag3d(Front *,char *);
 static void print_strings(Front *,char *);
 
-extern void second_order_elastic_curve_propagate(
+EXPORT void second_order_elastic_curve_propagate(
 	Front           *fr,
         Front           *newfr,
         INTERFACE       *intfc,
@@ -188,7 +188,7 @@ extern void second_order_elastic_curve_propagate(
 			"second_order_elastic_curve_propagate()\n");
 }	/* end second_order_elastic_curve_propagate */
 
-extern void second_order_elastic_surf_propagate(
+EXPORT void second_order_elastic_surf_propagate(
         Front           *newfr,
         double           fr_dt)
 {
@@ -418,7 +418,7 @@ extern void second_order_elastic_surf_propagate(
 			"second_order_elastic_surf_propagate()\n");
 }	/* end second_order_elastic_surf_propagate */
 
-extern void set_equilibrium_mesh(
+EXPORT void set_equilibrium_mesh(
 	Front *front)
 {
 	switch (front->rect_grid->dim)
@@ -694,7 +694,7 @@ static void set_equilibrium_mesh3d(
 	printf("ave_len = %16.12f\n",ave_len/count);
 }	/* end set_equilibrium_mesh3d */
 
-extern void unsort_surf_point(SURFACE *surf)
+EXPORT void unsort_surf_point(SURFACE *surf)
 {
 	TRI *tri;
 	POINT *p;
@@ -713,7 +713,7 @@ extern void unsort_surf_point(SURFACE *surf)
 
 #define 	MAX_NUM_RING1		30
 
-extern void print_airfoil_stat(
+EXPORT void print_airfoil_stat(
 	Front *front,
 	char *out_name)
 {
@@ -806,7 +806,7 @@ static void print_airfoil_stat2d_1(
             sfile = fopen(fname,"w");
             fprintf(ekfile,"\"Kinetic enegy vs. time\"\n");
             fprintf(epfile,"\"Potential enegy vs. time\"\n");
-            fprintf(exfile,"\"External enegy vs. time\"\n");
+            fprintf(exfile,"\"EXPORTal enegy vs. time\"\n");
             fprintf(efile,"\"Total enegy vs. time\"\n");
             fprintf(sfile,"\"String length vs. time\"\n");
         }
@@ -1507,7 +1507,7 @@ static void print_airfoil_stat3d_2(
 	fflush(vcom_file);
 }	/* end print_airfoil_stat3d_2 */
 
-extern void fourth_order_elastic_curve_propagate(
+EXPORT void fourth_order_elastic_curve_propagate(
 	Front           *fr,
         Front           *newfr,
         INTERFACE       *intfc,
@@ -1630,7 +1630,7 @@ extern void fourth_order_elastic_curve_propagate(
 			"fourth_order_elastic_curve_propagate()\n");
 }	/* end fourth_order_elastic_curve_propagate */
 
-extern void fixed_length_tan_curve_propagate(
+EXPORT void fixed_length_tan_curve_propagate(
 	Front           *fr,
         Front           *newfr,
         INTERFACE       *intfc,
@@ -1718,7 +1718,7 @@ extern void fixed_length_tan_curve_propagate(
 	    (void) printf("Leaving fixed_length_tan_curve_propagate()\n");
 }	/* end fixed_length_tan_curve_propagate */
 
-extern void fourth_order_elastic_surf_propagate(
+EXPORT void fourth_order_elastic_surf_propagate(
         Front           *newfr,
         double           fr_dt)
 {
@@ -2115,7 +2115,7 @@ static void print_airfoil_stat2d_2(
             sfile = fopen(fname,"w");
             fprintf(ekfile,"\"Kinetic enegy vs. time\"\n");
             fprintf(epfile,"\"Potential enegy vs. time\"\n");
-            fprintf(exfile,"\"External enegy vs. time\"\n");
+            fprintf(exfile,"\"EXPORTal enegy vs. time\"\n");
             fprintf(efile,"\"Total enegy vs. time\"\n");
             fprintf(sfile,"\"String length vs. time\"\n");
         }
@@ -2282,7 +2282,7 @@ static void set_special_node_type(
 	}
 }	/* set_special_node_type */
 
-extern void resolve_wall_collision(
+EXPORT void resolve_wall_collision(
         Front* front,
         SPRING_VERTEX* sv,
         int size)

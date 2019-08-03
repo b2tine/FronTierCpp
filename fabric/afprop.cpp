@@ -39,7 +39,7 @@ static	int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
 static	int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
 static 	int getGoreNodes(INTERFACE*,NODE**);
 
-extern void elastic_point_propagate(
+EXPORT void elastic_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -53,12 +53,14 @@ extern void elastic_point_propagate(
 	STATE *sl,*sr;
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-        IF_FIELD *field = iFparams->field;
 	int i, dim = front->rect_grid->dim;
+        
+    IF_FIELD *field = iFparams->field;
 	double *vort = field->vort;
 	double **vel = field->vel;
 	double *pres = field->pres;
-	COMPONENT base_comp = positive_component(oldhs);
+	
+    COMPONENT base_comp = positive_component(oldhs);
 	double pp[MAXD],pm[MAXD],nor[MAXD],h;
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
@@ -73,7 +75,7 @@ extern void elastic_point_propagate(
 	    return;
 	}
 
-	//FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
+	    //FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);
@@ -87,61 +89,31 @@ extern void elastic_point_propagate(
 	    pp[i] = Coords(oldp)[i] + h*nor[i];
 	}
 
-	if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
-	{
-            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-			getStatePres,&newsl->pres,&sl->pres);
-            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-			getStatePres,&newsr->pres,&sr->pres);
-	}
-	else
-	{
-            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
-			getStatePres,&newsl->pres,&sl->pres);
-            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
-			getStatePres,&newsr->pres,&sr->pres);
-	}
+    //Interpolate grid pressure to fabric points
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
+    getStatePres,&newsl->pres,&sl->pres);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
+    getStatePres,&newsr->pres,&sr->pres);
+
 	/* Impulse is incremented by the fluid pressure force */
 	for (i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
-		dv[i] = 0.0;
-	    else if (front->step > 5)
-		dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
-	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+        {
+            dv[i] = 0.0;
+        }
+        else if (front->step > 5)
+        {
+            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+            newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+            newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+            newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+        }
 	}
 
-	/* Interpolating vorticity for the hyper surface point */
-	if (dim == 2)
-	{
-	    if (wave_type(oldhs) == ELASTIC_STRING)
-	    {
-	        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                        getStateVort,&newsl->vort,&sl->vort);
-                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                        getStateVort,&newsr->vort,&sr->vort);
-	        for (i = 0; i < dim; ++i)
-	        {
-	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-		    FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-			vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
-		    FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-			vel[i],getStateVel[i],&newsr->vel[i],&sr->vel[i]);
-	        }
-	    }
-	    else
-            {
-                FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vort,
-				getStateVort,&newsl->vort,&sl->vort);
-                FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vort,
-				getStateVort,&newsr->vort,&sr->vort);
-            }
-	}
 }       /* elastic_point_propagate */
 
 //Given string node, the function finds the corresponding canopy surface.
@@ -162,29 +134,32 @@ static SURFACE *canopy_of_string_node(NODE *n)
 	    c = curves[i];
 	    for (s = c->pos_surfaces; s && *s; ++s)
 	    {
-		if (wave_type(*s) == ELASTIC_BOUNDARY)
-		{
-		    canopy_found = YES;
-		    canopy = *s;
-		    break;
-		}
+            if (wave_type(*s) == ELASTIC_BOUNDARY)
+            {
+                canopy_found = YES;
+                canopy = *s;
+                break;
+            }
 	    }
-	   if (canopy_found) break;
-	    for (s = c->neg_surfaces; s && *s; ++s)
+
+        if (canopy_found) break;
+
+        for (s = c->neg_surfaces; s && *s; ++s)
 	    {
-		if (wave_type(*s) == ELASTIC_BOUNDARY)
-		{
-		    canopy_found = YES;
-		    canopy = *s;
-		    break;
-		}
+    		if (wave_type(*s) == ELASTIC_BOUNDARY)
+            {
+                canopy_found = YES;
+                canopy = *s;
+                break;
+            }
 	    }
 	}
+
 	FT_FreeThese(1,curves);
 	return (canopy_found == YES) ? canopy : NULL;
 }	/* end canopy_of_string_node */
 
-extern void airfoil_point_propagate(
+EXPORT void airfoil_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -203,7 +178,7 @@ extern void airfoil_point_propagate(
                                         dt,V);
 }       /* airfoil_point_propagate */
 
-extern void airfoil_curve_propagate(
+EXPORT void airfoil_curve_propagate(
         Front *front,
         POINTER wave,
 	CURVE *oldc,
@@ -211,28 +186,19 @@ extern void airfoil_curve_propagate(
         double dt)
 {
 	int dim = front->rect_grid->dim;
-
-	if (dim == 3)
-	{
-	    switch (hsbdry_type(oldc))
-	    {
-		case STRING_HSBDRY:
-	    	    return string_curve_propagation(front,wave,oldc,newc,dt);
-		case MONO_COMP_HSBDRY:
-	    	    return mono_curve_propagation(front,wave,oldc,newc,dt);
-		case GORE_HSBDRY:
-	    	    return gore_curve_propagation(front,wave,oldc,newc,dt);
-		case PASSIVE_HSBDRY:
-		    return passive_curve_propagation(front,wave,oldc,newc,dt);
-		default:
-	    	    return;
-	    }
-	}
-	else if (dim == 2)
-	{
-	    if (wave_type(oldc) == ELASTIC_BOUNDARY)
-		string_curve_propagation(front,wave,oldc,newc,dt);
-	}
+    switch (hsbdry_type(oldc))
+    {
+    case STRING_HSBDRY:
+        return string_curve_propagation(front,wave,oldc,newc,dt);
+    case MONO_COMP_HSBDRY:
+        return mono_curve_propagation(front,wave,oldc,newc,dt);
+    case GORE_HSBDRY:
+        return gore_curve_propagation(front,wave,oldc,newc,dt);
+    case PASSIVE_HSBDRY:
+        return passive_curve_propagation(front,wave,oldc,newc,dt);
+    default:
+        return;
+    }
 }	/* end airfoil_curve_propagate */
 
 static void string_curve_propagation(
@@ -401,7 +367,7 @@ static void gore_point_propagate(
 	}
 }	/* end gore_point_propagate */
 
-extern int numOfMonoHsbdry(
+EXPORT int numOfMonoHsbdry(
 	INTERFACE *intfc)
 {
 	CURVE **c;
@@ -413,7 +379,7 @@ extern int numOfMonoHsbdry(
 	return nc;
 }	/* end numOfMonoBdry */
 
-extern int numOfGoreHsbdry(
+EXPORT int numOfGoreHsbdry(
 	INTERFACE *intfc)
 {
 	CURVE **c;
@@ -459,7 +425,7 @@ static int arrayOfGoreHsbdry(
 	return nc;
 }	/* end arrayOfGoreBdry */
 
-extern int numOfGoreNodes(
+EXPORT int numOfGoreNodes(
 	INTERFACE *intfc)
 {
 	NODE **n;
@@ -487,7 +453,7 @@ extern int numOfGoreNodes(
 	return num_gore_nodes;
 }	/* numOfGoreNodes */
 
-extern boolean is_bdry_node(
+EXPORT boolean is_bdry_node(
 	NODE *node)
 {
 	CURVE **c;
@@ -512,7 +478,7 @@ extern boolean is_bdry_node(
 	return NO;
 }	/* is_bdry_node */
 
-extern boolean is_gore_node(
+EXPORT boolean is_gore_node(
 	NODE *node)
 {
 	CURVE **c;
@@ -533,7 +499,7 @@ extern boolean is_gore_node(
 	    return NO;
 }	/* end is_gore_node */
 
-extern boolean is_load_node(NODE *n)
+EXPORT boolean is_load_node(NODE *n)
 {
         AF_NODE_EXTRA *af_node_extra;
         if (n->extra == NULL) return NO;
@@ -542,7 +508,7 @@ extern boolean is_load_node(NODE *n)
         return NO;
 }       /* end is_load_node */
 
-extern boolean is_rg_string_node(NODE *n)
+EXPORT boolean is_rg_string_node(NODE *n)
 {
         AF_NODE_EXTRA *af_node_extra;
         if (n->extra == NULL) return NO;
@@ -566,7 +532,7 @@ static int getGoreNodes(
 	return num_nodes;
 }	/* getGoreNodes */
 
-extern boolean goreInIntfc(
+EXPORT boolean goreInIntfc(
 	INTERFACE *intfc)
 {
 	NODE **n;
@@ -628,7 +594,7 @@ static void mono_curve_propagation(
 	}
 }	/* end mono_curve_propagation */
 
-extern double springCharTimeStep(
+EXPORT double springCharTimeStep(
 	Front *fr)
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
@@ -643,101 +609,11 @@ extern double springCharTimeStep(
 	return dt_tol;
 }	/* end springCharTimeStep */
 
-extern void coating_mono_hyper_surf(
+EXPORT void coating_mono_hyper_surf(
 	Front *front)
 {
-	int dim = front->rect_grid->dim;
-	switch (dim)
-	{
-	case 2:
-	    coating_mono_hyper_surf2d(front);
-	    return;
-	case 3:
-	    coating_mono_hyper_surf3d(front);
-	    return;
-	}
+    coating_mono_hyper_surf3d(front);
 }	/* end coating_mono_hyper_surf */
-
-static void coating_mono_hyper_surf2d(
-	Front *front)
-{
-	INTERFACE *grid_intfc = front->grid_intfc;
-	RECT_GRID *top_grid = &topological_grid(grid_intfc);
-	struct Table *T = table_of_interface(grid_intfc);
-	COMPONENT *top_comp = T->components;
-        COMPONENT          comp;
-        INTERFACE          *intfc = front->interf;
-	double 		   *L = top_grid->L;
-	double 		   *h = top_grid->h;
-	double             coords[MAXD];
-        double             t[MAXD],p[MAXD],vec[MAXD];
-	const double 	   *nor;
-	CURVE **c,*immersed_curve;
-        HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
-	BOND *b;
-	COMPONENT base_comp;
-	int i,index,nb,index_nb,*top_gmax = top_grid->gmax;
-	int dim = top_grid->dim;
-	int icoords[MAXD],icn[MAXD],smin[MAXD],smax[MAXD];
-	GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
-
-	if (debugging("trace"))
-	    (void) printf("Entering coating_mono_hyper_surf2d()\n");
-
-	immersed_curve = NULL;
-	for (c = grid_intfc->curves; c && *c; ++c)
-	{
-	    if (wave_type(*c) == ELASTIC_BOUNDARY)
-	    {
-		immersed_curve = *c;
-		comp = base_comp = negative_component(*c);
-		hs = Hyper_surf(immersed_curve);
-		break;
-	    }
-	}
-	if (immersed_curve == NULL)
-	    return;
-
-	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
-	for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
-	{
-	    index = d_index(icoords,top_gmax,dim);
-	    for (i = 0; i < dim; ++i)
-		coords[i] = L[i] + icoords[i]*h[i];
-	    if (nearest_interface_point_within_range(coords,comp,grid_intfc,
-			NO_BOUNDARIES,hs,p,t,&hse,&hs,3))
-	    {
-		if (wave_type(hs) != ELASTIC_BOUNDARY) 
-		    continue;
-		b = Bond_of_hse(hse);
-	    	t[1] = Coords(b->start)[0] - Coords(b->end)[0]; // t is normal
-	    	t[0] = Coords(b->end)[1] - Coords(b->start)[1];
-	    	for (i = 0; i < dim; ++i)
-		    vec[i] = coords[i] - p[i];
-	    	if (scalar_product(vec,t,dim) > 0.0)
-		    top_comp[index] = base_comp + 1;
-	    	else
-		    top_comp[index] = base_comp - 1;
-	    }
-	}
-	negative_component(immersed_curve) = base_comp - 1;
-	positive_component(immersed_curve) = base_comp + 1;
-	if (debugging("coat_comp"))
-	{
-	    for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
-	    {
-	    	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
-	    	{
-		    index = d_index(icoords,top_gmax,dim);
-		    (void) printf("%d",top_comp[index]);
-	    	}
-	    	(void) printf("\n");
-	    }
-	}
-	if (debugging("trace"))
-	    (void) printf("Leaving coating_mono_hyper_surf2d()\n");
-}	/* end coating_mono_hyper_surf2d */
 
 static void coating_mono_hyper_surf3d(
 	Front *front)
@@ -1119,7 +995,7 @@ static void rg_string_node_propagate(
         }
 }	/* end rg_string_node_propagate */
 
-extern int airfoil_node_propagate(
+EXPORT int airfoil_node_propagate(
 	Front *front,
 	POINTER wave,
 	NODE *oldn,

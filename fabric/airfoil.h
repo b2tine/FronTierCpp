@@ -4,60 +4,62 @@
 #include <FronTier.h>
 
 //#include <iFluid.h>
-#include "ifluid_state.h"
+#include "state.h"
 
 #include "airfoil_sv.h"
-#include "airfoil_gpu.cuh"
+//#include "airfoil_gpu.cuh"
 
 #include <cassert>
 #include <vector>
 #include <map>
 
-typedef struct {
-        double N[MAXD];         /* normal of the plane */
-        double P[MAXD];         /* a point on the plane */
-        double cen[MAXD];       /* center of the vent */
-        double radius;          /* radius of the vent */
-} CONSTR_PARAMS;
+struct CONSTR_PARAMS
+{
+    double N[MAXD];         /* normal of the plane */
+    double P[MAXD];         /* a point on the plane */
+    double cen[MAXD];       /* center of the vent */
+    double radius;          /* radius of the vent */
+};
 
-enum _PERTURBATION_TYPE {
-	NO_PERT		=	1,
+enum PERTURBATION_TYPE
+{
+	NO_PERT	= 1,
 	PARALLEL_RAND_PERT,
 	ORTHOGONAL_RAND_PERT,
 	LINEAR_PERT,
 	RADIAL_PERT,
 	SINE_PERT
 };
-typedef enum _PERTURBATION_TYPE PERTURBATION_TYPE;
 
-enum _STRING_NODE_TYPE {
-	FIXED_END		=	1,
+enum STRING_NODE_TYPE
+{
+	FIXED_END =	1,
 	FREE_END,
 	LOADED_END
 };
-typedef enum _STRING_NODE_TYPE STRING_NODE_TYPE;
 
-enum _AF_NODE_TYPE {
+enum AF_NODE_TYPE
+{
 	UNKNOWN_AF_NODE = -1,
-	LOAD_NODE	= 1,
+	LOAD_NODE = 1,
 	RG_STRING_NODE,
 	GORE_NODE,
 	STRING_NODE,
 	PRESET_NODE,
 	SEC_LOAD_NODE,
-        THR_LOAD_NODE
+    THR_LOAD_NODE
 };
-typedef enum _AF_NODE_TYPE AF_NODE_TYPE;
 
-enum _SPRING_MODEL {
+enum SPRING_MODEL
+{
 	UNKNOWN_MODEL 	= -1,
 	MODEL1	= 1,
 	MODEL2,
 	MODEL3
 };
-typedef enum _SPRING_MODEL SPRING_MODEL;
 
-struct _PERT_PARAMS {
+struct PERT_PARAMS
+{
 	PERTURBATION_TYPE pert_type;
 	int dir;
 	double x0,xl,xu;
@@ -65,9 +67,9 @@ struct _PERT_PARAMS {
 	double cen[MAXD];
 	double pert_radius;
 };
-typedef struct _PERT_PARAMS PERT_PARAMS;
 
-typedef struct {
+struct AF_PARAMS
+{
     int dim;
     SPRING_MODEL spring_model;
 	boolean no_fluid;
@@ -116,37 +118,42 @@ typedef struct {
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
-} AF_PARAMS;
+}; 
 
 /*	airfoil.cpp functions */
 
-typedef struct {
-        double i1,i2;
-        double cen1[2],cen2[2];
-} DOUBLE_VORTEX_PARAMS;
+struct DOUBLE_VORTEX_PARAMS
+{
+    double i1,i2;
+    double cen1[2],cen2[2];
+};
 
-typedef struct {
-        double tcen[MAXD]; /* toroidal center */
+struct TOROIDAL_PARAMS
+{
+    double tcen[MAXD]; /* toroidal center */
 	double R0;	/* distance between poloidal and toroidal centers */
 	double v0;	/* amplitude of velocity */
 	double stop_time;
-} TOROIDAL_PARAMS;
+};
 
-typedef struct {
-        double cen[MAXD]; /* parabolic center */
+struct PARABOLIC_PARAMS
+{
+    double cen[MAXD]; /* parabolic center */
 	double v0;	  /* velocity at center */
 	double a;	  /* concavity (downward) */
 	double stop_time;
-} PARABOLIC_PARAMS;
+};
 
-typedef struct {
-        double cen[MAXD]; /* parabolic center */
+struct SINGULAR_PARAMS
+{
+    double cen[MAXD]; /* parabolic center */
 	double R;	  /* radius of for v0 */
 	double v0;	  /* velocity at center */
 	double stop_time;
-} SINGULAR_PARAMS;
+};
 
-struct _STRING_PARAMS {
+struct STRING_PARAMS
+{
 	int num_strings;
 	double start_angle;
 	double coords_load[MAXD];
@@ -157,62 +164,62 @@ struct _STRING_PARAMS {
 	double L[MAXD],U[MAXD];
 	double P[MAXD];
 };
-typedef struct _STRING_PARAMS STRING_PARAMS;
 
-struct _PARALLEL_GORE_PARAMS {
-        int gores_n;
-        double gores_start_x;
-        double gores_dis;
-
-        double coords_load[MAXD];
+struct PARALLEL_GORE_PARAMS
+{
+    int gores_n;
+    double gores_start_x;
+    double gores_dis;
+    double coords_load[MAXD];
 };
 
-typedef struct _PARALLEL_GORE_PARAMS PARALLEL_GORE_PARAMS;
-
-enum _LOAD_TYPE {
-	NO_LOAD 	= 0,
+enum LOAD_TYPE
+{
+	NO_LOAD = 0,
 	FREE_LOAD,
 	RIGID_LOAD
 };
-typedef enum _LOAD_TYPE LOAD_TYPE;
 
-typedef struct {
-        boolean lower_bdry[MAXD];
-        boolean upper_bdry[MAXD];
-        double L[MAXD];         /* Lower bounds of box */
-        double U[MAXD];         /* Upper bounds of box */
+struct BDRY_PARAMS
+{
+    boolean lower_bdry[MAXD];
+    boolean upper_bdry[MAXD];
+    double L[MAXD];         /* Lower bounds of box */
+    double U[MAXD];         /* Upper bounds of box */
 	LOAD_TYPE lower_side[MAXD];
 	LOAD_TYPE upper_side[MAXD];
 	double lower_mass[MAXD];
 	double upper_mass[MAXD];
 	double lower_force[MAXD][MAXD];
 	double upper_force[MAXD][MAXD];
-} BDRY_PARAMS;
+}; 
 
-typedef struct {
+struct C_PARAMS
+{
 	LOAD_TYPE load_type;
 	int dir;
 	double load_mass;
 	double point_mass;
 	double force[MAXD];
 	double ave_accel;
-} C_PARAMS;
+};
 
-struct _AF_NODE_EXTRA {
+struct AF_NODE_EXTRA
+{
 	AF_NODE_TYPE af_node_type;
 	double accum_impulse;
 };
-typedef struct _AF_NODE_EXTRA AF_NODE_EXTRA;
 
-struct _REGISTERED_PTS {
+struct REGISTERED_PTS
+{
 	int num_pts;
 	int *global_ids;
 };
-typedef struct _REGISTERED_PTS REGISTERED_PTS;
 
-struct _ELASTIC_SET{
+struct ELASTIC_SET
+{
 	Front *front;
-        NODE *load_node;
+    NODE *load_node;
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
@@ -232,8 +239,6 @@ struct _ELASTIC_SET{
 	double dt_tol;
 	double dt;
 };
-
-typedef struct _ELASTIC_SET ELASTIC_SET;
 
     //void read_iFparams(char*,IF_PARAMS*);
 void restart_set_dirichlet_bdry_function(Front*);
@@ -276,8 +281,6 @@ extern boolean is_load_node(NODE*);
 extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
-extern boolean is_string_node(NODE*);
-//NOTE: there is only a is_rg_string_node() function not is_string_node()
 
 extern double springCharTimeStep(Front*);	// spring characteristic time
 extern void assembleParachuteSet(INTERFACE*,ELASTIC_SET*);
@@ -361,10 +364,9 @@ extern void set_geomset_velocity(ELASTIC_SET*,GLOBAL_POINT**);
 extern void setMotionParams(Front*);
 extern void resetFrontVelocity(Front*);
 
-// afmodule.cpp
+// afmodule.cpp -- in parachute/modules.cpp
 extern void initParachuteDefault(Front*);
 extern void initParachuteModules(Front*);
-extern void init2DModules(Front*);
 
 // afdata.cpp
 extern void printAfExtraData(Front*,char*);
@@ -377,10 +379,7 @@ extern void vtkPlotSurfaceStress(Front*);
 extern void poisson_ratio(Front*);
 extern void initMovieStress(char*,Front*);
 
-// sprModel/modules.cpp
-extern void initSpringModel(Front*);
-
-// sprModel/cgal.cpp
+// cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 

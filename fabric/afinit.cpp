@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
-//static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
+static void zero_state(IF_FIELD*,int,int);
 static void setInitialIntfcAF3d(Front*,LEVEL_FUNC_PACK*,char*);
 
 void setInitialIntfcAF(
@@ -36,9 +36,9 @@ void setInitialIntfcAF(
 
 	level_func_pack->wave_type = ELASTIC_BOUNDARY;
 	
-    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	//iFparams->m_comp1 = SOLID_COMP;
-    //iFparams->m_comp2 = LIQUID_COMP2;
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	iFparams->m_comp1 = SOLID_COMP;
+    iFparams->m_comp2 = LIQUID_COMP2;
 
     if (CursorAfterStringOpt(infile,
             "Entering yes to set wave type to FIRST_PHYSICS_WAVE_TYPE: "))
@@ -50,15 +50,6 @@ void setInitialIntfcAF(
 	}
 	fclose(infile);
 
-    /*
-	switch (front->rect_grid->dim)
-	{
-	case 2:
-	    return setInitialIntfcAF2d(front,level_func_pack,inname);
-	case 3:
-	    return setInitialIntfcAF3d(front,level_func_pack,inname);
-	}
-    */
     assert(front->rect_grid->dim == 3);
     return setInitialIntfcAF3d(front,level_func_pack,inname);
 }	/* end setInitialIntfcAF */
@@ -71,7 +62,7 @@ static void setInitialIntfcAF3d(
 	char string[100];
 	FILE *infile = fopen(inname,"r");
 	
-    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int num_canopy;
@@ -228,18 +219,11 @@ static void setInitialIntfcAF3d(
     }
 }	/* end setInitialIntfcAF3d */
 
-/*
 static void zero_state(
-        COMPONENT comp,
-        double *coords,
 	IF_FIELD *field,
-	int index,
-        int dim,
-        IF_PARAMS *af_params)
+    int index,
+    int dim)
 {
-        int i;
-        for (i = 0; i < dim; ++i)
-            field->vel[i][index] = 0.0;
-        field->vel[1][index] = 0.0;
-}       // end zero_state //
-*/
+    for (int i = 0; i < dim; ++i)
+        field->vel[i][index] = 0.0;
+}   /* end zero_state */

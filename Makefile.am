@@ -19,8 +19,8 @@ if FOLDING_OPT
 MAYBE_FOLDING = folding
 endif
 MAYBE_AIRFOIL = airfoil
-MAYBE_FABRIC = fabric
 MAYBE_PARACHUTE = parachute
+MAYBE_FABRIC = fabric
 endif
 endif
 
