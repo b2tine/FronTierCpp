@@ -281,7 +281,6 @@ extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void second_order_elastic_surf_propagate(Front*,double);
 extern void set_equilibrium_mesh(Front*);
-//extern void unsort_surf_point(SURFACE*);
 extern void print_airfoil_stat(Front*,char*);
 extern void fixed_length_tan_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
