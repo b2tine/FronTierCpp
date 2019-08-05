@@ -8,12 +8,12 @@
 #Must be run in the directory of the executable
 
 #example:
-#           ./qrun-inputdir3d.sh input-rt3d 2 2 2
+#           ./qrun-inputdir3d.sh input-C9 2 2 4
 #
 #       Will run the executable for every input file
-#       prefixed with "in-" in the directory input-rt3d
-#       with 2 x partitions, 2 y partitions, and 2 z partitions
-#       with 2*2*2 = 8 total cores.
+#       prefixed with "in-" in the directory input-C9
+#       with 2 x partitions, 2 y partitions, and 4 z partitions
+#       with 2*2*4 = 16 total cores.
         
 
 #executable
@@ -56,7 +56,7 @@ mkdir -p $PARENTOUTDIR
 
 QRUNHEADER="$QRUNDIR/qrunheader.txt"
 echo '#!/bin/bash' > $QRUNHEADER
-echo '#$ -q all.q' >> $QRUNHEADER
+echo '#$ -q nodes.q' >> $QRUNHEADER
 echo '#$ -R y' >> $QRUNHEADER
 echo '#$ -pe mpi' "$NP" >> $QRUNHEADER
 echo -e '#$ -cwd\n' >> $QRUNHEADER

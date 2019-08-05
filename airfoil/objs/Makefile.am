@@ -9,7 +9,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_CPPFLAGS += -DDAMPING_FORCE
+#AM_CPPFLAGS += -DDAMPING_FORCE
 
 
 

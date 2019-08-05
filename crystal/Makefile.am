@@ -15,19 +15,19 @@ noinst_PROGRAMS = crystal
 
 
 crystal_SOURCES = crystal.h \
-				  crystal_state.h \
 				  crysub.cpp \
 				  ccartsn.cpp \
 				  crystal.cpp
 
 
-crystal_LDADD = $(top_builddir)/solver/objs/libsolver.la
+crystal_LDADD = $(top_builddir)/iFluid/objs/libiFluid.la
 
 
 
 
 $(crystal_DEPENDENCIES): FORCE
-	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
+	@$(MAKE) -C $(top_builddir)/iFluid/objs libiFluid.la
+	
 
 FORCE:
 
@@ -36,7 +36,7 @@ FORCE:
 tagsfile:
 	ctags *.h *.cpp \
 		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
-		$(top_srcdir)/iFluid/*.h \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 
