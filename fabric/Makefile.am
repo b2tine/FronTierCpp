@@ -1,4 +1,5 @@
 SUBDIRS = objs
+#SUBDIRS += tests
 
 
 input_directories = input-2d \
@@ -39,8 +40,6 @@ fabric_LDADD = $(builddir)/objs/libfabric.la
 
 tagsfile:
 	ctags *.h *.cpp \
-		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
-		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 
