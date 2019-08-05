@@ -168,7 +168,7 @@ struct F_PARAMS
 	double min_speed;	/* Limit time step in zero ambient velocity */
 	COMPONENT m_comp1;
 	COMPONENT m_comp2;
-	IF_FIELD *field;
+	F_FIELD *field;
 	int adv_order;
     boolean total_div_cancellation;
 	boolean buoyancy_flow;
@@ -315,13 +315,13 @@ struct ELASTIC_SET
 
 //NOTE: these never had a definition
 /*
-void read_movie_options(char*,IF_PARAMS*);
+void read_movie_options(char*,F_PARAMS*);
 void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 */
 
 // afinit.cpp
-void read_Fparams(char*,IF_PARAMS*);
+void read_Fparams(char*,F_PARAMS*);
 void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 void restart_set_dirichlet_bdry_function(Front*);
 extern void setInitialIntfcAF(Front*,LEVEL_FUNC_PACK*,char*);

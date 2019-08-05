@@ -399,11 +399,11 @@ EXPORT void elastic_point_propagate(
 {
 	STATE *newsl,*newsr;
 	STATE *sl,*sr;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i, dim = front->rect_grid->dim;
         
-    IF_FIELD *field = iFparams->field;
+    F_FIELD *field = Fparams->field;
 	double *vort = field->vort;
 	double **vel = field->vel;
 	double *pres = field->pres;
@@ -594,9 +594,9 @@ static void gore_point_propagate(
 	STATE *sl,*sr,*newsl,*newsr;
 	double mag_nor,branch_nor[MAXD],nor[MAXD];
 	double pm[MAXD],pp[MAXD],h;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	IF_FIELD *field = iFparams->field;
+	F_FIELD *field = Fparams->field;
 	double **vel = field->vel;
         double *pres = field->pres;
 	double area_dens = af_params->area_dens;
@@ -728,10 +728,10 @@ static void load_node_propagate(
 	NODE *newn,
 	double dt)
 {
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	POINT *oldp,*newp;
-	double *g = iFparams->gravity;
+	double *g = Fparams->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
 	double mass = af_params->payload;
@@ -809,11 +809,11 @@ static void rg_string_node_propagate(
         NODE *newn,
         double dt)
 {
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
         AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	RECT_GRID *gr = computational_grid(front->interf);
         POINT *oldp,*newp;
-        double *g = iFparams->gravity;
+        double *g = Fparams->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
         double mass = af_params->payload;

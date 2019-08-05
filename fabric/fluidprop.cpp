@@ -10,6 +10,7 @@ static void contact_point_propagate(Front*,POINTER,POINT*,POINT*,
 static void rgbody_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
+static void setStateViscosity(F_PARAMS *Fparams, STATE *state, int comp);
 
 
 EXPORT double getStatePres(POINTER state)
@@ -334,7 +335,7 @@ static void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
-static  void rgbody_point_propagate(
+static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -485,17 +486,17 @@ static  void rgbody_point_propagate(
             fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
                                     oldhs,dt,vel);
         }
-	for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
-			getStatePres,&newst->pres,&oldst->pres);
-	if (m_temp != NULL)
-            FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-                        getStateTemp,&newst->temperature,&oldst->temperature);
-	if (dim == 2)
-	{
-	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
-			getStateVort,&newst->vort,&oldst->vort);
-	}
+	
+    for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
+            getStatePres,&newst->pres,&oldst->pres);
+	
+    if (m_temp != NULL)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
+                getStateTemp,&newst->temperature,&oldst->temperature);
+    }
     
     if(!debugging("collision_off"))
     {
@@ -508,6 +509,23 @@ static  void rgbody_point_propagate(
     return;
 }	/* end rgbody_point_propagate */
 
+static void setStateViscosity(
+	F_PARAMS *Fparams,
+	STATE *state,
+	int comp)
+{
+	switch (comp)
+	{
+	case LIQUID_COMP1:
+	    state->mu = iFparams->mu1;
+	    break;
+	case LIQUID_COMP2:
+	    state->mu = iFparams->mu2;
+	    break;
+	default:
+	    state->mu = 0.0;
+	}
+}
 
 EXPORT  void fluid_compute_force_and_torque(
         Front *fr,
