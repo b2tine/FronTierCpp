@@ -512,7 +512,6 @@ void G_CARTESIAN::addFluxInDirection(
 	    }
 	    break;
 	case 3:
-            #pragma omp parallel for num_threads(num_thread)
 	    for (i = imin[(dir+1)%dim]; i <= imax[(dir+1)%dim]; ++i)
 	    for (j = imin[(dir+2)%dim]; j <= imax[(dir+2)%dim]; ++j)
 	    {
