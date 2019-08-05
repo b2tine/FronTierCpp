@@ -13,6 +13,16 @@
 #include <vector>
 #include <map>
 
+#define SOLID_COMP 0
+#define LIQUID_COMP1 2
+#define LIQUID_COMP2 3
+#define LIQUID_COMP	3
+#define	FILL_COMP 10
+
+#define fluid_comp(comp) (((comp) == LIQUID_COMP1 || \
+            comp == LIQUID_COMP2) ? YES : NO)
+
+
 struct CONSTR_PARAMS
 {
     double N[MAXD];         /* normal of the plane */
@@ -160,6 +170,7 @@ struct F_PARAMS
 	COMPONENT m_comp2;
 	IF_FIELD *field;
 	int adv_order;
+    boolean total_div_cancellation;
 	boolean buoyancy_flow;
 	boolean if_buoyancy;
 	double  ref_temp;
@@ -301,16 +312,18 @@ struct ELASTIC_SET
 	double dt;
 };
 
-    //void read_iFparams(char*,IF_PARAMS*);
-void restart_set_dirichlet_bdry_function(Front*);
 
-//NOTE: these have no definition
-    //void read_movie_options(char*,IF_PARAMS*);
-void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
+//NOTE: these never had a definition
+/*
+void read_movie_options(char*,IF_PARAMS*);
 void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
+*/
 
 // afinit.cpp
+void read_Fparams(char*,IF_PARAMS*);
+void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
+void restart_set_dirichlet_bdry_function(Front*);
 extern void setInitialIntfcAF(Front*,LEVEL_FUNC_PACK*,char*);
 
 /* afinit3d.cpp */
@@ -326,25 +339,15 @@ extern void airfoil_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void elastic_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
+extern void fluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void fourth_order_elastic_set_propagate(Front*,double);
 extern void airfoil_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
 extern int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG,POINTER);
 extern void coating_mono_hyper_surf(Front*);
-extern  int numOfGoreHsbdry(INTERFACE*);
-extern  int numOfMonoHsbdry(INTERFACE*);
-extern  int numOfGoreNodes(INTERFACE*);
-extern 	int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
+extern int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
 			double,double*,NODE_FLAG,POINTER);
-extern boolean is_load_node(NODE*);
-extern boolean is_rg_string_node(NODE*);
-extern boolean is_gore_node(NODE*);
-extern boolean is_bdry_node(NODE*);
-
-extern double springCharTimeStep(Front*);	// spring characteristic time
-extern void assembleParachuteSet(INTERFACE*,ELASTIC_SET*);
 
 // aftest.cpp
 extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
@@ -359,6 +362,23 @@ extern void fourth_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void fourth_order_elastic_surf_propagate(Front*,double);
 extern void resolve_wall_collision(Front*,SPRING_VERTEX*,int);
+
+// fluidprop.cpp
+extern double getStatePres(POINTER);
+extern double getStatePhi(POINTER);
+extern double getStateVort(POINTER);
+extern double getStateXvel(POINTER);
+extern double getStateYvel(POINTER);
+extern double getStateZvel(POINTER);
+extern double getStateXimp(POINTER);
+extern double getStateYimp(POINTER);
+extern double getStateZimp(POINTER);
+extern double getStateComp(POINTER);
+extern double getStateMu(POINTER);
+extern double getStateTemp(POINTER);
+extern double getPressure(Front*,double*,double*);
+extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
+                        double*);
 
 // afcnpy.cpp
 extern void compute_total_canopy_force(Front*,double*,double*);
@@ -397,6 +417,7 @@ extern void set_unequal_strings(Front*);
 extern void collectNodeExtra(Front*,INTERFACE*,int);
 
 // afsetd.cpp
+extern void assembleParachuteSet(INTERFACE*,ELASTIC_SET*);
 extern void count_vertex_neighbors(ELASTIC_SET*,SPRING_VERTEX*);
 extern void set_spring_vertex_memory(SPRING_VERTEX*,int);
 extern void compute_spring_accel1(SPRING_VERTEX*,double*,int);
@@ -439,6 +460,18 @@ extern void setStressColor(Front*);
 extern void vtkPlotSurfaceStress(Front*);
 extern void poisson_ratio(Front*);
 extern void initMovieStress(char*,Front*);
+extern int numOfGoreHsbdry(INTERFACE*);
+extern int numOfMonoHsbdry(INTERFACE*);
+extern int numOfGoreNodes(INTERFACE*);
+extern int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
+extern int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
+extern int getGoreNodes(INTERFACE*,NODE**);
+extern boolean is_load_node(NODE*);
+extern boolean is_rg_string_node(NODE*);
+extern boolean is_gore_node(NODE*);
+extern boolean is_bdry_node(NODE*);
+extern double springCharTimeStep(Front*);	// spring characteristic time
+
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);

@@ -98,7 +98,7 @@ void setMotionParams(Front* front)
 	FILE *infile = fopen(InName(front),"r");
 	int i,dim = front->rect_grid->dim;
 	char string[100];
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	INTERFACE *intfc = front->interf;
 	boolean status;
@@ -235,26 +235,30 @@ void setMotionParams(Front* front)
     }
 
 
+    //TODO: Assignments to Fparams (formerly iFparams) likely
+    //      won't be necessary. It appears the only real value
+    //      that is read from it is gravity, which can just be
+    //      read directly into the af_params.
 	if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
 	    {
             	CursorAfterString(infile,"Enter surface tension:");
-            	fscanf(infile,"%lf",&iFparams->surf_tension);
-            	(void) printf("%f\n",iFparams->surf_tension);
+            	fscanf(infile,"%lf",&Fparams->surf_tension);
+            	(void) printf("%f\n",Fparams->surf_tension);
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
             {
 		        // default: no porosity
-                iFparams->with_porosity = af_params->with_porosity = NO;
+                Fparams->with_porosity = af_params->with_porosity = NO;
                 if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
 		{
                     fscanf(infile,"%s",string);
                     (void) printf("%s\n",string);
                     if (string[0] == 'y' || string[0] == 'Y')
-                	iFparams->with_porosity=af_params->with_porosity=YES;
+                	Fparams->with_porosity=af_params->with_porosity=YES;
 		}
-                if (iFparams->with_porosity == YES)
+                if (Fparams->with_porosity == YES)
                 {
                     CursorAfterString(infile,"Enter viscous parameter:");
                     fscanf(infile,"%lf",&af_params->porous_coeff[0]);
@@ -262,8 +266,8 @@ void setMotionParams(Front* front)
                     CursorAfterString(infile,"Enter inertial parameter:");
                     fscanf(infile,"%lf",&af_params->porous_coeff[1]);
                     (void) printf("%f\n",af_params->porous_coeff[1]);
-                    iFparams->porous_coeff[0] = af_params->porous_coeff[0];
-                    iFparams->porous_coeff[1] = af_params->porous_coeff[1];
+                    Fparams->porous_coeff[0] = af_params->porous_coeff[0];
+                    Fparams->porous_coeff[1] = af_params->porous_coeff[1];
                 }
                 CursorAfterString(infile,"Enter area density of canopy:");
                 fscanf(infile,"%lf",&af_params->area_dens);
@@ -271,12 +275,12 @@ void setMotionParams(Front* front)
 
             }
             CursorAfterString(infile,"Enter factor of smoothing radius:");
-            fscanf(infile,"%lf",&iFparams->smoothing_radius);
-            (void) printf("%f\n",iFparams->smoothing_radius);
+            fscanf(infile,"%lf",&Fparams->smoothing_radius);
+            (void) printf("%f\n",Fparams->smoothing_radius);
 	}
 
 	for (i = 0; i < dim; ++i)
-	    af_params->gravity[i] = iFparams->gravity[i];
+	    af_params->gravity[i] = Fparams->gravity[i];
 
 	if (af_params->is_parachute_system == YES)
 	{

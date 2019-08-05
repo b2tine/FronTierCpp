@@ -1106,3 +1106,198 @@ static void rotateParachuteSet(
 					center,phi,theta,NO);
 	}
 }	/* end rotateParachuteSet */
+
+EXPORT int numOfMonoHsbdry(
+	INTERFACE *intfc)
+{
+	CURVE **c;
+	int nc = 0;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == MONO_COMP_HSBDRY) nc++;
+	} 
+	return nc;
+}	/* end numOfMonoBdry */
+
+EXPORT int numOfGoreHsbdry(
+	INTERFACE *intfc)
+{
+	CURVE **c;
+	int nc = 0;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == GORE_HSBDRY) nc++;
+	} 
+	return nc;
+}	/* end numOfMonoBdry */
+
+EXPORT int numOfGoreNodes(
+	INTERFACE *intfc)
+{
+	NODE **n;
+	CURVE **c;
+	int num_gore_nodes = 0;
+	AF_NODE_EXTRA *extra;
+	boolean is_string_node;
+
+	intfc_node_loop(intfc,n)
+	{
+	    if ((*n)->extra == NULL)
+		continue;
+	    is_string_node = NO;
+	    for (c = (*n)->in_curves; c && *c; ++c)
+		if (hsbdry_type(*c) == STRING_HSBDRY)
+		    is_string_node = YES;
+	    for (c = (*n)->out_curves; c && *c; ++c)
+		if (hsbdry_type(*c) == STRING_HSBDRY)
+		    is_string_node = YES;
+	    if (is_string_node) continue;
+	    extra = (AF_NODE_EXTRA*)(*n)->extra;
+	    if (extra->af_node_type == GORE_NODE)
+		num_gore_nodes++;
+	}
+	return num_gore_nodes;
+}	/* numOfGoreNodes */
+
+EXPORT int arrayOfMonoHsbdry(
+	INTERFACE *intfc,
+	CURVE **mono_curves)
+{
+	CURVE **c;
+	int nc = 0;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == MONO_COMP_HSBDRY) 
+	    {
+		mono_curves[nc] = *c;
+		nc++;
+	    }
+	} 
+	return nc;
+}	/* end arrayOfMonoBdry */
+
+EXPORT int arrayOfGoreHsbdry(
+	INTERFACE *intfc,
+	CURVE **gore_curves)
+{
+	CURVE **c;
+	int nc = 0;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == GORE_HSBDRY) 
+	    {
+		gore_curves[nc] = *c;
+		nc++;
+	    }
+	} 
+	return nc;
+}	/* end arrayOfGoreBdry */
+
+EXPORT int getGoreNodes(
+	INTERFACE *intfc,
+	NODE **gore_nodes)
+{
+	NODE **n;
+	int num_nodes = 0;
+
+	intfc_node_loop(intfc,n)
+	{
+	    if (is_gore_node(*n))
+		gore_nodes[num_nodes++] = *n;
+	}
+	return num_nodes;
+}	/* getGoreNodes */
+
+EXPORT boolean is_bdry_node(
+	NODE *node)
+{
+	CURVE **c;
+	for (c = node->in_curves; c && *c; ++c)
+	{
+	    if (hsbdry_type(*c) == NEUMANN_HSBDRY ||
+		hsbdry_type(*c) == DIRICHLET_HSBDRY ||
+		hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
+	    {
+		return YES;
+	    }
+	} 
+	for (c = node->out_curves; c && *c; ++c)
+	{
+	    if (hsbdry_type(*c) == NEUMANN_HSBDRY ||
+		hsbdry_type(*c) == DIRICHLET_HSBDRY ||
+		hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
+	    {
+		return YES;
+	    }
+	} 
+	return NO;
+}	/* is_bdry_node */
+
+EXPORT boolean is_gore_node(
+	NODE *node)
+{
+	CURVE **c;
+	AF_NODE_EXTRA *extra;
+
+	if (node->extra == NULL)
+	    return NO;
+	for (c = node->in_curves; c && *c; ++c)
+	    if (hsbdry_type(*c) == STRING_HSBDRY)
+		return NO;
+	for (c = node->out_curves; c && *c; ++c)
+	    if (hsbdry_type(*c) == STRING_HSBDRY)
+		return NO;
+	extra = (AF_NODE_EXTRA*)(node)->extra;
+	if (extra->af_node_type == GORE_NODE)
+	    return YES;
+	else 
+	    return NO;
+}	/* end is_gore_node */
+
+EXPORT boolean is_load_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == LOAD_NODE) return YES;
+        return NO;
+}       /* end is_load_node */
+
+EXPORT boolean is_rg_string_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == RG_STRING_NODE) return YES;
+        return NO;
+}       /* end is_rg_string_node */
+
+EXPORT boolean goreInIntfc(
+	INTERFACE *intfc)
+{
+	NODE **n;
+
+	for (n = intfc->nodes; n && *n; ++n)
+	{
+	    if (is_gore_node(*n))
+		return YES;
+	}
+	return NO;
+}	/* end goreInIntfc */
+
+EXPORT double springCharTimeStep(
+	Front *fr)
+{
+	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+	double dt_tol;
+	dt_tol = sqrt((af_params->m_s)/(af_params->ks));
+        if (af_params->m_l != 0.0 &&
+            dt_tol > sqrt((af_params->m_l)/(af_params->kl)))
+            dt_tol = sqrt((af_params->m_l)/(af_params->kl));
+        if (af_params->m_g != 0.0 &&
+            dt_tol > sqrt((af_params->m_g)/(af_params->kg)))
+            dt_tol = sqrt((af_params->m_g)/(af_params->kg));
+	return dt_tol;
+}	/* end springCharTimeStep */
+
+

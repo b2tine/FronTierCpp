@@ -2,8 +2,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ \
-			  -I$(top_srcdir)/iFluid \
-			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
@@ -28,7 +26,8 @@ libairfoil_la_SOURCES = \
 ../afsetd.cpp \
 ../aftest.cpp \
 ../afvelo.cpp \
-../cgal.cpp
+../cgal.cpp \
+../fluidprop.cpp
 
 
 

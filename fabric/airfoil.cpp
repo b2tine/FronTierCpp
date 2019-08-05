@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "airfoil.h"
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
+static void zero_state(F_FIELD*,int index,int dim);
 static void xgraph_front(Front*,char*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 	static Front front;
 	static F_BASIC_DATA f_basic;
 	static LEVEL_FUNC_PACK level_func_pack;
-	    //static IF_PARAMS iFparams;
+    static F_PARAMS Fparams;
 	static AF_PARAMS af_params;
 	static RG_PARAMS rgb_params;
 
@@ -94,13 +94,13 @@ int main(int argc, char **argv)
 	if (debugging("trace"))
         (void) printf("Passed FT_StartUp()\n");
 
-    iFparams.dim = f_basic.dim;
-        //front.extra1 = (POINTER)&iFparams;
+    Fparams.dim = f_basic.dim;
+    front.extra1 = (POINTER)&Fparams;
     front.extra2 = (POINTER)&af_params;
-        //read_iFparams(in_name,&iFparams);
+    read_Fparams(in_name,&Fparams);
     
     if (debugging("trace")) 
-        (void) printf("Passed read_iFparams()\n");
+        (void) printf("Passed read_Fparams()\n");
 
 
 	setInitialIntfcAF(&front,&level_func_pack,in_name);
@@ -141,13 +141,12 @@ int main(int argc, char **argv)
 	}
 	    
 	/* Initialize velocity field function */
-
 	setMotionParams(&front);
 
 	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
 
-	front._compute_force_and_torque = ifluid_compute_force_and_torque;
+	front._compute_force_and_torque = fluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
 	l_cartesian->initMesh();
@@ -366,12 +365,9 @@ void airfoil_driver(Front *front,
 }       /* end airfoil_driver */
 
 
-void zero_state(
-    COMPONENT comp,
-    double *coords,
-	IF_FIELD *field,
-	int index, int dim,
-    IF_PARAMS *iFparams)
+static void zero_state(
+	F_FIELD *field,
+	int index, int dim)
 {
     for (int i = 0; i < dim; ++i)
         field->vel[i][index] = 0.0;
@@ -379,7 +375,7 @@ void zero_state(
 }
 
 
-void xgraph_front(Front *front,	char *outname)
+static void xgraph_front(Front *front, char *outname)
 {
 	char fname[100];
 	sprintf(fname,"%s/intfc-%s",outname,right_flush(front->step,4));

@@ -623,12 +623,12 @@ EXPORT void set_node_spring_vertex(
 	double lambda_g = geom_set->lambda_g;
 	boolean is_fixed = NO;
 	STATE *sl,*sr;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	double *g;
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
+	if (Fparams != NULL)
+ 	    g = Fparams->gravity;
 	else
 	    g = NULL;
 
@@ -854,12 +854,12 @@ EXPORT void set_curve_spring_vertex(
 	BOND *b;
 	double kl,m_l,lambda_l;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
         double *g;
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
-	    g = iFparams->gravity;
+	if (Fparams != NULL)
+	    g = Fparams->gravity;
 	else
 	    g = NULL;
 	if (dim == 3)
@@ -1037,15 +1037,15 @@ EXPORT void set_surf_spring_vertex(
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
         double *g;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
+	if (Fparams != NULL)
+ 	    g = Fparams->gravity;
 	else g = NULL;
 
 	unsort_surf_point(surf);
