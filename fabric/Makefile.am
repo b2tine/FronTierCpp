@@ -1,4 +1,4 @@
-SUBDIRS = objs tests
+SUBDIRS = objs
 
 
 input_directories = input-2d \
@@ -15,27 +15,25 @@ input_directories = input-2d \
 					input-T10 \
 					input-young3d
 
-EXTRA_DIST = $(input_directories) airfoil_gpu.cuh airfoil_gpu.cu
+EXTRA_DIST = $(input_directories) airfoil_gpu.cuh  airfoil_gpu.cu
 
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/fabric \
-			  -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
-			  @ARMA_CFLAGS@ \
-			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
+			  @ARMA_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(abs_top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 
-noinst_PROGRAMS = airfoil
+noinst_PROGRAMS = fabric
 
 				  
-airfoil_SOURCES = airfoil.cpp
+fabric_SOURCES = fabric.cpp
 
 
-airfoil_LDADD =	$(builddir)/objs/libairfoil.la
+fabric_LDADD =	$(builddir)/objs/libfabric.la
 
 
 

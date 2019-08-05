@@ -5,7 +5,7 @@
 struct STATE {
     double dens;                    /* Density */
     double pres;                    /* Pressure */
-    double phi;                     /* Potential */
+        //double phi;                     /* Potential */
     double vel[MAXD];               /* Velocities */
     double vort;                    /* Vorticity in 2D */
 

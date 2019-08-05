@@ -10,7 +10,18 @@ static void contact_point_propagate(Front*,POINTER,POINT*,POINT*,
 static void rgbody_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
+static void zero_state(F_FIELD*,int index,int dim);
 static void setStateViscosity(F_PARAMS *Fparams, STATE *state, int comp);
+static void fluid_compute_force_and_torque3d(Front*,HYPER_SURF*,double,double*,double*);
+
+static boolean force_on_hse(HYPER_SURF_ELEMENT*,HYPER_SURF*,RECT_GRID*,
+        double*,double*,double*,boolean);
+static boolean force_on_hse3d(HYPER_SURF_ELEMENT*,HYPER_SURF*,RECT_GRID*,
+        double*,double*,double*,boolean);
+
+
+
+static boolean coords_in_subdomain(double*,RECT_GRID*);
 
 
 EXPORT double getStatePres(POINTER state)
@@ -18,12 +29,6 @@ EXPORT double getStatePres(POINTER state)
 	STATE *fstate = (STATE*)state;
 	return fstate->pres;
 }	/* end getStatePres */
-
-EXPORT double getStatePhi(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->phi;
-}	/* end getStatePhi */
 
 EXPORT double getStateVort(POINTER state)
 {
@@ -157,17 +162,17 @@ static void neumann_point_propagate(
 
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i];
+        Coords(newp)[i] = Coords(oldp)[i];
 	    newst->vel[i] = 0.0;
-            FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
 	}
 	
     FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
 	
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
-			getStatePhi,&newst->phi,&oldst->phi);
-	if (dim == 2)
+    //FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,getStatePhi,&newst->phi,&oldst->phi);
+
+    if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
@@ -223,9 +228,10 @@ static void dirichlet_point_propagate(
 	    }
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
-            newst->pres = bstate->pres;
-	    newst->phi = bstate->phi;
-            newst->vort = 0.0;
+        
+        //newst->phi = bstate->phi;
+        newst->pres = bstate->pres;
+        newst->vort = 0.0;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
@@ -237,42 +243,17 @@ static void dirichlet_point_propagate(
 	}
 	else if (boundary_state_function(oldhs))
 	{
-	    if (strcmp(boundary_state_function_name(oldhs),
-		       "flowThroughBoundaryState") == 0)
-	    {
-		FLOW_THROUGH_PARAMS ft_params;
-		oldp->hse = oldhse;
-		oldp->hs = oldhs;
-	    	ft_params.oldp = oldp;
-	    	ft_params.comp = comp;
-	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)&ft_params,(POINTER)newst);	
-	    }
-	    else if (strcmp(boundary_state_function_name(oldhs),
-		       "iF_timeDependBoundaryState") == 0)
-	    {
-		TIME_DEPENDENT_PARAMS *td_params = (TIME_DEPENDENT_PARAMS*)
-				boundary_state_function_params(oldhs);
-	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)td_params,(POINTER)newst);	
-	    }
-	    else if (strcmp(boundary_state_function_name(oldhs),
-		       "iF_splitBoundaryState") == 0)
-	    {
-		SPLIT_STATE_PARAMS *sparams = (SPLIT_STATE_PARAMS*)
-				boundary_state_function_params(oldhs);
-	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)sparams,(POINTER)newst);	
-	    }
-            for (i = 0; i < dim; ++i)
-		FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),
-					front);
+        for (i = 0; i < dim; ++i)
+        {
+            FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),front);
+        }
+
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
 	}
+
 	if (debugging("dirichlet_bdry"))
 	    (void) printf("Leaving dirichlet_point_propagate()\n");
-        return;
 }	/* end dirichlet_point_propagate */
 
 static void contact_point_propagate(
@@ -509,6 +490,15 @@ static void rgbody_point_propagate(
     return;
 }	/* end rgbody_point_propagate */
 
+static void zero_state(
+	F_FIELD *field,
+	int index, int dim)
+{
+    for (int i = 0; i < dim; ++i)
+        field->vel[i][index] = 0.0;
+    field->pres[index] = 0.0;
+}
+
 static void setStateViscosity(
 	F_PARAMS *Fparams,
 	STATE *state,
@@ -517,17 +507,17 @@ static void setStateViscosity(
 	switch (comp)
 	{
 	case LIQUID_COMP1:
-	    state->mu = iFparams->mu1;
+	    state->mu = Fparams->mu1;
 	    break;
 	case LIQUID_COMP2:
-	    state->mu = iFparams->mu2;
+	    state->mu = Fparams->mu2;
 	    break;
 	default:
 	    state->mu = 0.0;
 	}
 }
 
-EXPORT  void fluid_compute_force_and_torque(
+EXPORT void fluid_compute_force_and_torque(
         Front *fr,
         HYPER_SURF *hs,
         double dt,
@@ -680,3 +670,127 @@ static void fluid_compute_force_and_torque3d(
         if (debugging("rigid_body"))
 	    (void) printf("Leaving fluid_compute_force_and_torque3d()\n"); 
 }       /* end fluid_compute_force_and_torque3d */
+
+static boolean force_on_hse(
+        HYPER_SURF_ELEMENT *hse,        /* Bond (2D) or tri (3D) */
+        HYPER_SURF *hs,                 /* Curve (2D) or surface (3D) */
+        RECT_GRID *gr,                  /* Rectangular grid */
+        double *pres,           /* Average pressure */
+        double *area,           /* Area as a vector, pointing onto body */
+        double *posn,           /* Position of the pressure */
+        boolean pos_side)       /* Is the body on the positive side of hs? */
+{
+    return force_on_hse3d(hse,hs,gr,pres,area,posn,pos_side);
+}       /* end force_on_hse */
+
+static boolean force_on_hse3d(
+        HYPER_SURF_ELEMENT *hse,
+        HYPER_SURF *hs,
+        RECT_GRID *gr,
+        double *pres,
+        double *area,
+        double *posn,
+        boolean pos_side)
+{
+        TRI *t = Tri_of_hse(hse);
+        POINT *point;
+        Locstate sl,sr;
+        int i,j,dim = gr->dim;
+
+        *pres = 0.0;
+        for (i = 0; i < 3; ++i)
+            posn[i] = 0.0;
+        for (i = 0; i < 3; ++i)
+        {
+            point = Point_of_tri(t)[i];
+            for (j = 0; j < dim; ++j)
+                posn[j] += Coords(point)[j];
+            FT_GetStatesAtPoint(point,hse,hs,&sl,&sr);
+            if (pos_side)
+                *pres += getStatePres(sr);
+            else
+                *pres += getStatePres(sl);
+        }
+        *pres /= 3.0;
+        for (i = 0; i < dim; ++i)
+        {
+            area[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
+	    area[i] *= 0.5; /*Tri_normal is the twice of the area vector */
+            posn[i] /= 3.0;
+        }
+        /* Need to treat subdomain boundary */
+        return YES;
+}       /* end force_on_hse3d */
+
+EXPORT double getPressure(
+        Front *front,
+        double *coords,
+        double *base_coords)
+{
+        INTERFACE *intfc = front->interf;
+        int i,dim = Dimension(intfc);
+        POINT *p0;
+        double pres,pres0;
+        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+        double *g = Fparams->gravity;
+        double rho = Fparams->rho2;
+        boolean hyper_surf_found = NO;
+
+        return 0.0;
+        pres0 = 1.0;
+        if (dim == 2)
+        {
+            CURVE **c;
+            for (c = intfc->curves; c && *c; ++c)
+            {
+                if (wave_type(*c) == DIRICHLET_BOUNDARY &&
+                    boundary_state(*c) != NULL)
+                {
+                    p0 = (*c)->first->start;
+                    pres0 = getStatePres(boundary_state(*c));
+                    hyper_surf_found = YES;
+                }
+            }
+        }
+        else if (dim == 3)
+        {
+            SURFACE **s;
+            for (s = intfc->surfaces; s && *s; ++s)
+            {
+                if (wave_type(*s) == DIRICHLET_BOUNDARY &&
+                    boundary_state(*s) != NULL)
+                {
+                    p0 = Point_of_tri(first_tri(*s))[0];
+                    pres0 = getStatePres(boundary_state(*s));
+                    hyper_surf_found = YES;
+                }
+            }
+        }
+        pres = pres0;
+        if (hyper_surf_found)
+        {
+            for (i = 0; i < dim; ++i)
+                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+        }
+        else if (base_coords != NULL)
+        {
+            for (i = 0; i < dim; ++i)
+                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+        }
+        return pres;
+}       /* end getPressure */
+
+static boolean coords_in_subdomain(
+	double *coords,
+	RECT_GRID *gr)
+{
+	int dim = gr->dim;
+	for (int i = 0; i < dim; ++i)
+	{
+	    if (coords[i] < gr->L[i] || coords[i] >= gr->U[i])
+		return NO;
+	}
+	return YES;
+}	/* end coords_in_subdomain */
+
+

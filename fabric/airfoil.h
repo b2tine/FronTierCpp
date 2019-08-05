@@ -3,24 +3,14 @@
 
 #include <FronTier.h>
 
-//#include <iFluid.h>
+#include "fluid.h"
 #include "state.h"
 
 #include "airfoil_sv.h"
-//#include "airfoil_gpu.cuh"
 
 #include <cassert>
 #include <vector>
 #include <map>
-
-#define SOLID_COMP 0
-#define LIQUID_COMP1 2
-#define LIQUID_COMP2 3
-#define LIQUID_COMP	3
-#define	FILL_COMP 10
-
-#define fluid_comp(comp) (((comp) == LIQUID_COMP1 || \
-            comp == LIQUID_COMP2) ? YES : NO)
 
 
 struct CONSTR_PARAMS
@@ -129,67 +119,6 @@ struct AF_PARAMS
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
 }; 
-
-struct F_FIELD
-{
-	double **vel;			/* Velocities */
-	double *temperature;    /* Temperature */
-	double *phi;
-	double *q;
-	double *pres;			/* Pressure */
-	double *vort;			/* Vorticity in 2D */
-	double *mu;
-	double *rho;
-	double **grad_q;
-	double **f_surf;		// Surface force (such as tension)
-	double **old_var;		// For debugging purpose
-
-	double *div_U;
-	double *nu_t;			/* Turbulent viscosity */
-	double **ext_accel;		/*external forcing from other field*/
-};
-
-struct F_PARAMS
-{
-    int dim;
-    POINTER level_func_params;
-	NS_SCHEME num_scheme;
-    double rho1;
-    double rho2;
-	double mu1;
-	double mu2;
-	double U1[MAXD];
-	double U2[MAXD];
-	double gravity[MAXD];
-	double U_ambient[MAXD];
-	double surf_tension;
-	double smoothing_radius;
-	double ub_speed;
-	double min_speed;	/* Limit time step in zero ambient velocity */
-	COMPONENT m_comp1;
-	COMPONENT m_comp2;
-	F_FIELD *field;
-	int adv_order;
-    boolean total_div_cancellation;
-	boolean buoyancy_flow;
-	boolean if_buoyancy;
-	double  ref_temp;
-	boolean if_ref_pres;
-	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
-	double  ref_pres;
-	EDDY_VISC eddy_visc_model;
-	POINTER eddy_params;
-	double  Amplitute; 	/*Amplitute of velocity*/
-	double	ymax;	   	/* Maximum distance in Baldwin-Lomax model */
-	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
-    double  porous_coeff[2];   /*dp = a*v + b*v^2*/
-	double	porosity;
-	char base_dir_name[200];
-    int base_step;
-	boolean scalar_field; /*include scalar field or not*/
-	boolean skip_neumann_solver;
-};
-
 
 
 /*	airfoil.cpp functions */
@@ -363,23 +292,6 @@ extern void fourth_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
 extern void fourth_order_elastic_surf_propagate(Front*,double);
 extern void resolve_wall_collision(Front*,SPRING_VERTEX*,int);
 
-// fluidprop.cpp
-extern double getStatePres(POINTER);
-extern double getStatePhi(POINTER);
-extern double getStateVort(POINTER);
-extern double getStateXvel(POINTER);
-extern double getStateYvel(POINTER);
-extern double getStateZvel(POINTER);
-extern double getStateXimp(POINTER);
-extern double getStateYimp(POINTER);
-extern double getStateZimp(POINTER);
-extern double getStateComp(POINTER);
-extern double getStateMu(POINTER);
-extern double getStateTemp(POINTER);
-extern double getPressure(Front*,double*,double*);
-extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
-                        double*);
-
 // afcnpy.cpp
 extern void compute_total_canopy_force(Front*,double*,double*);
 extern int airfoil_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
@@ -405,6 +317,7 @@ extern void compute_curve_accel3(ELASTIC_SET*,CURVE*,double**,double**,
 				double**,int*);
 extern void compute_node_accel3(ELASTIC_SET*,NODE*,double**,double**,double**,
 				int*);
+extern void compute_center_of_mass_velo(ELASTIC_SET*);
 extern void propagate_surface(ELASTIC_SET*,SURFACE*,double**,int*);
 extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
@@ -454,6 +367,7 @@ extern void initParachuteModules(Front*);
 extern void printAfExtraData(Front*,char*);
 extern void readAfExtraData(Front*,char*);
 extern void printHyperSurfQuality(Front*);
+extern void print_elastic_params(ELASTIC_SET);
 extern void optimizeElasticMesh(Front*);
 extern void modifyInitialization(Front*);
 extern void setStressColor(Front*);
@@ -471,7 +385,6 @@ extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
 extern double springCharTimeStep(Front*);	// spring characteristic time
-
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);

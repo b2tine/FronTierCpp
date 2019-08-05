@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "airfoil.h"
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static void zero_state(F_FIELD*,int index,int dim);
 static void xgraph_front(Front*,char*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;

@@ -5,7 +5,7 @@
 #include <CGAL/box_intersection_d.h>
 
 #include <FronTier.h>
-#include <state.h>
+#include "state.h"
 
 #include <functional>
 #include <map>

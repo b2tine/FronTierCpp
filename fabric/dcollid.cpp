@@ -11,7 +11,6 @@
 #include <FronTier.h>
 #include "AABB.h"
 #include "collid.h"
-#include <ifluid_state.h>
 
 #include <omp.h>
 

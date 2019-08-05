@@ -31,6 +31,7 @@ libfabric_la_SOURCES = \
 ../dcollid3d.cpp \
 ../AABB.h \
 ../AABB.cpp \
+../fluidinit.cpp \
 ../fluidprop.cpp
 
 
@@ -39,7 +40,7 @@ libfabric_la_LIBADD = $(top_builddir)/lib/libFronTier.la
 
 
 
-$(libairfoil_la_DEPENDENCIES): FORCE
+$(libfabric_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/lib all
 
 FORCE:

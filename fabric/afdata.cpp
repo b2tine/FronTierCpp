@@ -553,6 +553,36 @@ void printHyperSurfQuality(
 	}
 }	/* end printHyperSurfQuality */
 
+EXPORT void print_elastic_params(ELASTIC_SET geom_set)
+{
+	double *spfr;
+	Front *fr = geom_set.front;
+
+	spfr = Spfr(fr);
+    for (int i = 0; i <= 3; ++i)
+    {
+        printf("Max front speed(%d) = %f\n",i,spfr[i]);
+    }
+    
+    (void) printf("Input surface parameters:\n");
+    (void) printf("ks = %f  m_s = %f  lambda_s = %f\n",
+                    geom_set.ks,
+                    geom_set.m_s,
+                    geom_set.lambda_s);
+    (void) printf("Input string parameters:\n");
+    (void) printf("kl = %f  m_l = %f  lambda_l = %f\n",
+                    geom_set.kl,
+                    geom_set.m_l,
+                    geom_set.lambda_l);
+    (void) printf("Input gore parameters:\n");
+    (void) printf("kg = %f  m_g = %f  lambda_g = %f\n",
+                    geom_set.kg,
+                    geom_set.m_g,
+                    geom_set.lambda_g);
+	(void) printf("\ndt_tol = %20.14f  dt = %20.14f\n",
+                        geom_set.dt_tol,geom_set.dt);
+}	/* end print_elastic_params */
+
 void optimizeElasticMesh(
 	Front *front)
 {

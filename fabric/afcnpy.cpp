@@ -29,7 +29,6 @@ static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
 static boolean is_pore(Front*,HYPER_SURF_ELEMENT*,double*);
 static void compute_total_canopy_force2d(Front*,double*,double*);
 static void compute_total_canopy_force3d(Front*,double*,double*);
-static void compute_center_of_mass_velo(ELASTIC_SET*);
 static void reduce_high_freq_vel(Front*,SURFACE*);
 static void smooth_vel(double*,POINT*,TRI*,SURFACE*);
 static boolean curve_in_pointer_list(CURVE*,CURVE**);
@@ -690,7 +689,7 @@ EXPORT void compute_node_accel1(
 	(*n)++;
 }	/* end compute_node_accel1 */
 
-static void compute_center_of_mass_velo(
+EXPORT void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)
 {
 	int i,j,n;
@@ -1726,35 +1725,6 @@ static void reduce_high_freq_vel(
 	FT_FreeThese(1,vv);
 }	/* end reduce_high_freq_vel */
 
-static void print_elastic_params(
-	ELASTIC_SET geom_set)
-{
-	int i;
-	double *spfr;
-	Front *fr = geom_set.front;
-
-	spfr = Spfr(fr);
-        for (i = 0; i <= 3; ++i)
-            printf("Max front speed(%d) = %f\n",i,spfr[i]);
-        (void) printf("Input surface parameters:\n");
-        (void) printf("ks = %f  m_s = %f  lambda_s = %f\n",
-                    	geom_set.ks,
-                        geom_set.m_s,
-                        geom_set.lambda_s);
-        (void) printf("Input string parameters:\n");
-        (void) printf("kl = %f  m_l = %f  lambda_l = %f\n",
-                        geom_set.kl,
-                        geom_set.m_l,
-                        geom_set.lambda_l);
-        (void) printf("Input gore parameters:\n");
-        (void) printf("kg = %f  m_g = %f  lambda_g = %f\n",
-                        geom_set.kg,
-                        geom_set.m_g,
-                        geom_set.lambda_g);
-	(void) printf("\ndt_tol = %20.14f  dt = %20.14f\n",
-                        geom_set.dt_tol,geom_set.dt);
-}	/* end print_elastic_params */
-
 static void setSurfVelocity(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
@@ -2460,21 +2430,26 @@ EXPORT void set_unequal_strings(Front *front)
 	    printf("Leaving record_break_strings_gindex()\n");
 }	/* end set_unequal_strings */
 
+
+//TODO: Is this dead code? Not being called by anything and is static.
+//      Should also be in afset.cpp, where similiar functions are.
 static void linkGlobalIndexToTri(
         INTERFACE *intfc,
         TRI ***gtri)
 {
         SURFACE **s;
         TRI *tri;
-        int i;
 
         if (*gtri == NULL)
         {
             FT_VectorMemoryAlloc((POINTER*)gtri,intfc->max_tri_gindex,
                                     sizeof(TRI*));
         }
-        for (i = 0; i < intfc->max_tri_gindex; ++i)
+        for (int i = 0; i < intfc->max_tri_gindex; ++i)
+        {
             (*gtri)[i] = NULL;
+        }
+
         intfc_surface_loop(intfc,s)
         {
             surf_tri_loop(*s,tri)
