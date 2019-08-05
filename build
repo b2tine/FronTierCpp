@@ -6,7 +6,7 @@ for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
-        DEBUG_FLAGS="-g3"
+        DEBUG_FLAGS="-g3 -rdynamic"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
