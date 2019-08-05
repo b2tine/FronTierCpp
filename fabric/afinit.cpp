@@ -62,17 +62,18 @@ static void setInitialIntfcAF3d(
 	char string[100];
 	FILE *infile = fopen(inname,"r");
 	
-    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    //not even used in this function
+        //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int num_canopy;
 
 	level_func_pack->set_3d_bdry = YES;
 	
-	//level_func_pack->neg_component = LIQUID_COMP2;
-    //level_func_pack->pos_component = LIQUID_COMP2;	
-        level_func_pack->neg_component = 3;
-        level_func_pack->pos_component = 3;
+	level_func_pack->neg_component = LIQUID_COMP2;
+    level_func_pack->pos_component = LIQUID_COMP2;	
+    //    level_func_pack->neg_component = 3;
+    //    level_func_pack->pos_component = 3;
 	
     level_func_pack->func_params = NULL;
     level_func_pack->func = NULL;
