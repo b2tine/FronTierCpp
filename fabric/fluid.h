@@ -133,6 +133,8 @@ extern double getStateTemp(POINTER);
 extern double getPressure(Front*,double*,double*);
 extern void fluid_compute_force_and_torque(Front*,HYPER_SURF*,
         double,double*,double*);
+extern void fluid_point_propagate(Front*,POINTER,POINT*,POINT*,
+                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
 
 

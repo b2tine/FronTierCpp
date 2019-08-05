@@ -694,6 +694,7 @@ static void set_equilibrium_mesh3d(
 	printf("ave_len = %16.12f\n",ave_len/count);
 }	/* end set_equilibrium_mesh3d */
 
+/*
 EXPORT void unsort_surf_point(SURFACE *surf)
 {
 	TRI *tri;
@@ -709,7 +710,7 @@ EXPORT void unsort_surf_point(SURFACE *surf)
 		sorted(p) = NO;
 	    }
 	}
-}	/* end unsort_surf_point */
+}*/	/* end unsort_surf_point */
 
 #define 	MAX_NUM_RING1		30
 

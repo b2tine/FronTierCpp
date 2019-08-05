@@ -71,6 +71,7 @@ folding/test
 parachute/parachute
 parachute/ginit
 parachute/intfc
+fabric/fabric
 FrontWrapper/example00
 *Tests
 *.txt

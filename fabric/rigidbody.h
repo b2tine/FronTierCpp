@@ -2,6 +2,7 @@
 #define RIGIDBODY_H
 
 #include <FronTier.h>
+#include "fluid.h"
 
 struct RG_PARAMS
 {
@@ -27,9 +28,9 @@ struct RG_PARAMS
 
 
 // rigidbody.cpp
+extern void initRigidBody(Front *front);
 extern void rgb_init(Front*,RG_PARAMS*);
-//extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-//extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
+extern void unsort_surf_point(SURFACE*);
 
 
 
