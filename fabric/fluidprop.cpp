@@ -1,4 +1,5 @@
-#include "airfoil.h"
+//#include "airfoil.h"
+#include "fluid.h"
 
 
 static void neumann_point_propagate(Front*,POINTER,POINT*,POINT*,
@@ -18,9 +19,6 @@ static boolean force_on_hse(HYPER_SURF_ELEMENT*,HYPER_SURF*,RECT_GRID*,
         double*,double*,double*,boolean);
 static boolean force_on_hse3d(HYPER_SURF_ELEMENT*,HYPER_SURF*,RECT_GRID*,
         double*,double*,double*,boolean);
-
-
-
 static boolean coords_in_subdomain(double*,RECT_GRID*);
 
 

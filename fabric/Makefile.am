@@ -33,7 +33,7 @@ noinst_PROGRAMS = fabric
 fabric_SOURCES = fabric.cpp
 
 
-fabric_LDADD =	$(builddir)/objs/libfabric.la
+fabric_LDADD = $(builddir)/objs/libfabric.la
 
 
 

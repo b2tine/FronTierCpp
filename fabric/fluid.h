@@ -1,7 +1,10 @@
 #ifndef FLUID_H
 #define FLUID_H
 
+#include <FronTier.h>
 #include "state.h"
+
+#include <algorithm>
 
 
 #define SOLID_COMP 0

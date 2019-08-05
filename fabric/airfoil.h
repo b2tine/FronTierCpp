@@ -5,6 +5,7 @@
 
 #include "fluid.h"
 #include "state.h"
+#include "rigidbody.h"
 
 #include "airfoil_sv.h"
 

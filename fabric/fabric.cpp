@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
-static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
+static void airfoil_driver(Front*);
 static void xgraph_front(Front*,char*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
@@ -50,8 +50,10 @@ int main(int argc, char **argv)
 	f_basic.size_of_intfc_state = sizeof(STATE);
 
 	//Initialize Petsc before FT_StartUp()      
+    /*
     PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
     if (debugging("trace")) printf("Passed PetscInitialize()\n");
+    */
 
         /*
         Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
@@ -121,13 +123,13 @@ int main(int argc, char **argv)
             gview_plot_interface(gvdir,front.interf);
 	    }
 
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_dirichlet_bdry_data(in_name,&front,f_basic);
 	    if (f_basic.dim < 3)
             FT_ClipIntfcToSubdomain(&front);
 	}
 	else
 	{
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
 	initMovieStress(in_name,&front);
@@ -162,7 +164,7 @@ int main(int argc, char **argv)
 		    /* forbidden if restart with inherited states */
 	    	readAfExtraData(&front,restart_state_name);
 	    	modifyInitialization(&front);
-	    	read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    	read_dirichlet_bdry_data(in_name,&front,f_basic);
 		        //l_cartesian->initMesh();
                 //l_cartesian->setInitialCondition();
 	    }

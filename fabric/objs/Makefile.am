@@ -32,7 +32,9 @@ libfabric_la_SOURCES = \
 ../AABB.h \
 ../AABB.cpp \
 ../fluidinit.cpp \
-../fluidprop.cpp
+../fluidprop.cpp \
+../rigidbody.h \
+../rigidbody.cpp
 
 
 
