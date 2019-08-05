@@ -4,6 +4,7 @@
 static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 
 static void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
 static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
+//static void sine_vel_func(Front*,POINTER,double*,double*);
 
 
 
@@ -22,7 +23,7 @@ EXPORT void rgb_init(Front*front, RG_PARAMS* rgb_params)
         {
             if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
@@ -33,7 +34,7 @@ EXPORT void rgb_init(Front*front, RG_PARAMS* rgb_params)
         {
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
@@ -357,7 +358,6 @@ static void prompt_for_rigid_body_params(
         }
         (void) fseek(infile,idpos,SEEK_SET);
     }
-
     fclose(infile);
 
     if (debugging("rgbody"))
@@ -366,37 +366,37 @@ static void prompt_for_rigid_body_params(
 
 static void set_rgbody_params(
         RG_PARAMS* rg_params,
-        HYPER_SURF *hs)
+        HYPER_SURF* hs)
 {
-        int i,dim = rg_params.dim;
-	body_index(hs) = rg_params.body_index;
-        total_mass(hs) = rg_params.total_mass;
-        mom_inertial(hs) = rg_params.moment_of_inertial;
-        angular_velo(hs) = rg_params.angular_velo;
-        motion_type(hs) = rg_params.motion_type;
-        vparams(hs) = rg_params.vparams;
-        vel_func(hs) = rg_params.vel_func;
-        surface_tension(hs) = 0.0;
-        for (i = 0; i < dim; ++i)
-        {
-            center_of_mass(hs)[i] = rg_params.center_of_mass[i];
-            center_of_mass_velo(hs)[i] =
-                                rg_params.cen_of_mass_velo[i];
-            rotation_center(hs)[i] =
-                                rg_params.rotation_cen[i];
-            translation_dir(hs)[i] = rg_params.translation_dir[i];
-            if (dim == 3)
-            {
-                rotation_direction(hs)[i] = rg_params.rotation_dir[i];
-                p_mom_inertial(hs)[i] = rg_params.p_moment_of_inertial[i];
-                p_angular_velo(hs)[i] = rg_params.p_angular_velo[i];
-            }
-        }
+    int i,dim = rg_params->dim;
+	body_index(hs) = rg_params->body_index;
+    total_mass(hs) = rg_params->total_mass;
+    mom_inertial(hs) = rg_params->moment_of_inertial;
+    angular_velo(hs) = rg_params->angular_velo;
+    motion_type(hs) = rg_params->motion_type;
+    vparams(hs) = rg_params->vparams;
+    vel_func(hs) = rg_params->vel_func;
+    surface_tension(hs) = 0.0;
+    for (i = 0; i < dim; ++i)
+    {
+        center_of_mass(hs)[i] = rg_params->center_of_mass[i];
+        center_of_mass_velo(hs)[i] =
+                            rg_params->cen_of_mass_velo[i];
+        rotation_center(hs)[i] =
+                            rg_params->rotation_cen[i];
+        translation_dir(hs)[i] = rg_params->translation_dir[i];
         if (dim == 3)
         {
-            for (i = 0; i < 4; i++)
-                euler_params(hs)[i] = rg_params.euler_params[i];
+            rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+            p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+            p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
         }
+    }
+    if (dim == 3)
+    {
+        for (i = 0; i < 4; i++)
+            euler_params(hs)[i] = rg_params->euler_params[i];
+    }
 }       /* end set_rgbody_params */
 
 static void prompt_for_velocity_func(
@@ -404,48 +404,56 @@ static void prompt_for_velocity_func(
         char *inname,
         RG_PARAMS *rgb_params)
 {
-        FILE *infile = fopen(inname,"r");
-        char s[100];
-        int i;
-        static TIME_DEPENDENT_PARAMS *td_params;
+    checkpoint("Not Implemented, Exiting");
+    clean_up(1);
 
-        FT_ScalarMemoryAlloc((POINTER*)&td_params,
-                        sizeof(TIME_DEPENDENT_PARAMS));
-        (void) printf("Available prescribed velocity function types are:\n");
-        (void) printf("\tSINE:\n");
-        CursorAfterString(infile,
-                "Enter the prescribed velocity function type:");
-        fscanf(infile,"%s",s);
-        (void)printf("%s\n",s);
-        if (s[0] == 's' || s[0] == 'S')
+    /*
+    FILE *infile = fopen(inname,"r");
+    char s[100];
+    int i;
+    
+    static TIME_DEPENDENT_PARAMS *td_params;
+
+    FT_ScalarMemoryAlloc((POINTER*)&td_params,
+                    sizeof(TIME_DEPENDENT_PARAMS));
+    (void) printf("Available prescribed velocity function types are:\n");
+    (void) printf("\tSINE:\n");
+    CursorAfterString(infile,
+            "Enter the prescribed velocity function type:");
+    fscanf(infile,"%s",s);
+    (void)printf("%s\n",s);
+    if (s[0] == 's' || s[0] == 'S')
+    {
+        td_params->td_type = SINE_FUNC;
+        CursorAfterString(infile,"Enter velocity amplitude:");
+        for (i = 0; i < dim; ++i)
         {
-            td_params->td_type = SINE_FUNC;
-            CursorAfterString(infile,"Enter velocity amplitude:");
-            for (i = 0; i < dim; ++i)
-            {
-                fscanf(infile,"%lf ",&td_params->v_amp[i]);
-                (void) printf("%f ",td_params->v_amp[i]);
-            }
-            (void) printf("\n");
-            CursorAfterString(infile,"Enter oscillation frequency:");
-            fscanf(infile,"%lf ",&td_params->omega);
-            (void) printf("%f\n",td_params->omega);
-            td_params->omega *= 2.0*PI;
-            CursorAfterString(infile,"Enter initial phase:");
-            fscanf(infile,"%lf ",&td_params->phase);
-            (void) printf("%f\n",td_params->phase);
-            td_params->phase *= PI/180.0;
-            rgb_params->vparams = (POINTER)td_params;
-            rgb_params->vel_func = sine_vel_func;
+            fscanf(infile,"%lf ",&td_params->v_amp[i]);
+            (void) printf("%f ",td_params->v_amp[i]);
         }
-        else
-        {
-            (void) printf("Unknown type of time-dependent function!\n");
-            clean_up(ERROR);
-        }
-        fclose(infile);
+        (void) printf("\n");
+        CursorAfterString(infile,"Enter oscillation frequency:");
+        fscanf(infile,"%lf ",&td_params->omega);
+        (void) printf("%f\n",td_params->omega);
+        td_params->omega *= 2.0*PI;
+        CursorAfterString(infile,"Enter initial phase:");
+        fscanf(infile,"%lf ",&td_params->phase);
+        (void) printf("%f\n",td_params->phase);
+        td_params->phase *= PI/180.0;
+        rgb_params->vparams = (POINTER)td_params;
+        rgb_params->vel_func = sine_vel_func;
+    }
+    else
+    {
+        (void) printf("Unknown type of time-dependent function!\n");
+        clean_up(ERROR);
+    }
+    fclose(infile);
+    */
+
 }       /* end prompt_for_velocity_func */
 
+/*
 static void sine_vel_func(
         Front* front,
         POINTER vparams,
@@ -461,5 +469,5 @@ static void sine_vel_func(
         for (i = 0; i < dim; ++i)
             velo[i] = td_params->v_amp[i] * sin(td_params->omega*time
                         + td_params->phase);
-}       /* end sine_vel_func */
+}*/       /* end sine_vel_func */
 

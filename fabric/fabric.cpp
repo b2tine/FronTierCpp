@@ -114,7 +114,7 @@ int main(int argc, char **argv)
             initIsolated3dCurves(&front);
 	    
         initRigidBody(&front);
-	    rgb_init(&front, rgb_params);
+	    rgb_init(&front,&rgb_params);
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {
