@@ -56,7 +56,7 @@ mkdir -p $PARENTOUTDIR
 
 QRUNHEADER="$QRUNDIR/qrunheader.txt"
 echo '#!/bin/bash' > $QRUNHEADER
-echo '#$ -q all.q' >> $QRUNHEADER
+echo '#$ -q nodes.q' >> $QRUNHEADER
 echo '#$ -R y' >> $QRUNHEADER
 echo '#$ -pe mpi' "$NP" >> $QRUNHEADER
 echo -e '#$ -cwd\n' >> $QRUNHEADER
