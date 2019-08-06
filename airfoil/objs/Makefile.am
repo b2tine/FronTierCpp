@@ -55,7 +55,7 @@ libaircuda_a_SOURCES = ../airfoil_gpu.cu \
 	$(NVCC) -c $<
 
 
-libairfoil_la_LIBADD += $(builddir)/libaircuda.a
+libairfoil_la_LIBADD += $(top_builddir)/airfoil/objs/libaircuda.a
 
 endif
 

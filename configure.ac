@@ -139,7 +139,7 @@ AC_SUBST(CUDA_CFLAGS,${cudainc})
 AC_SUBST(CUDA_LIBS,${cudalib})
 AC_SUBST(NVCC,${cudanvcc})
 
-AM_CONDITIONAL([CUDA_OPT],[test $with_petsc = yes])
+AM_CONDITIONAL([CUDA_OPT],[test $with_cuda = yes])
 
 AS_IF([test $with_cuda = yes],
       [AC_DEFINE([USE_GPU],[1],[build with cuda])])
