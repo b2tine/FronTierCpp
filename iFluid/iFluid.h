@@ -6,10 +6,8 @@
 #define FT_IFLUID_H
 
 #include <vector>
-//#include <petscksp.h>
 #include <assert.h>
 
-//#include <FronTier.h>
 #include <solver.h>
 #include "ifluid_state.h"
 

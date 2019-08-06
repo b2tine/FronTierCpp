@@ -8,14 +8,19 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+if CUDA_OPT
+
+NVCC = @NVCC@
+AM_CPPFLAGS += @CUDA_CFLAGS@ 
+AM_LDFLAGS = @CUDA_LIBS@
+
+endif
 
 #AM_CPPFLAGS += -DDAMPING_FORCE
 
 
 
 noinst_LTLIBRARIES = libairfoil.la
-
-
 
 libairfoil_la_SOURCES = \
 ../airfoil.h \
@@ -30,14 +35,30 @@ libairfoil_la_SOURCES = \
 ../afvelo.cpp \
 ../cgal.cpp
 
-
-
 libairfoil_la_LIBADD = $(top_builddir)/Collision/objs/libCollision.la
-
 
 
 $(libairfoil_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/Collision/objs libCollision.la
 
 FORCE:
+
+
+if CUDA_OPT
+
+noinst_LIBRARIES = libaircuda.a
+
+libaircuda_a_SOURCES = ../airfoil_gpu.cu \
+					   ../airfoil_gpu.cuh
+
+.cu.o:
+	$(NVCC) -c $<
+
+
+libairfoil_la_LIBADD += $(builddir)/libaircuda.a
+
+endif
+
+
+
 

@@ -15,7 +15,7 @@ input_directories = input-2d \
 					input-T10 \
 					input-young3d
 
-EXTRA_DIST = $(input_directories) airfoil_gpu.cuh airfoil_gpu.cu
+EXTRA_DIST = $(input_directories)
 
 
 

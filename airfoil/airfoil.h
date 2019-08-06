@@ -4,7 +4,10 @@
 #include <FronTier.h>
 #include <iFluid.h>
 #include "airfoil_sv.h"
+
+#if defined(USE_GPU)
 #include "airfoil_gpu.cuh"
+#endif
 
 #include <vector>
 #include <map>

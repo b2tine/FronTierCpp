@@ -104,11 +104,6 @@ AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 
-#AC_ARG_WITH([cuda],[AS_HELP_STRING([--with-cuda-dir=path],
-#              [specify location of single directory installation])],
-#              [cuda_dir=${withval}],[cuda_dir=no])
-#
-
 #configure with CUDA
 AC_ARG_WITH([cuda-dir],[AS_HELP_STRING([--with-cuda-dir=path],
             [specify location of single directory installation])],
@@ -144,8 +139,10 @@ AC_SUBST(CUDA_CFLAGS,${cudainc})
 AC_SUBST(CUDA_LIBS,${cudalib})
 AC_SUBST(NVCC,${cudanvcc})
 
+AM_CONDITIONAL([CUDA_OPT],[test $with_petsc = yes])
+
 AS_IF([test $with_cuda = yes],
-      [AC_DEFINE([HAVE_cuda],[1],[build with cuda])])
+      [AC_DEFINE([USE_GPU],[1],[build with cuda])])
 
 
 mpi_libflags="-lmpi"

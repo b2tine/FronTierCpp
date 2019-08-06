@@ -1976,7 +1976,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    } 
 
 	    start_clock("spring_model");
-#if defined(__GPU__)
+#if defined(USE_GPU)
             if (af_params->use_gpu)
             {
             	if (debugging("trace"))
