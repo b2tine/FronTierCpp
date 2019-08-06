@@ -104,6 +104,50 @@ AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 
+#AC_ARG_WITH([cuda],[AS_HELP_STRING([--with-cuda-dir=path],
+#              [specify location of single directory installation])],
+#              [cuda_dir=${withval}],[cuda_dir=no])
+#
+
+#configure with CUDA
+AC_ARG_WITH([cuda-dir],[AS_HELP_STRING([--with-cuda-dir=path],
+            [specify location of single directory installation])],
+            [cuda_dir=${withval}],[cuda_dir=no])
+
+AC_ARG_WITH([cuda-inc],[AS_HELP_STRING([--with-cuda-inc=path],
+            [specify location of header files])],
+            [cuda_inc=${withval}],[cuda_inc=no])
+
+AC_ARG_WITH([cuda-lib],[AS_HELP_STRING([--with-cuda-lib=path],
+            [specify location of libraries])],
+            [cuda_lib=${withval}],[cuda_lib=no])
+
+AC_ARG_WITH([cuda-nvcc],[AS_HELP_STRING([--with-cuda-nvcc=path],
+            [specify location of nvcc compiler])],
+            [cuda_nvcc=${withval}],[cuda_nvcc=no])
+
+cuda_libflags="-lcudart"
+
+with_cuda=no
+AS_IF([test "x${cuda_dir}" != xno],
+      [with_cuda=yes
+       cudainc="-I${cuda_dir}/include"
+       cudalib="-L${cuda_dir}/lib ${cuda_libflags}"
+       cudanvcc="${cuda_dir}/bin/nvcc"],
+       [test "x${cuda_inc}" != xno && test "x${cuda_lib}" != xno && test "x{cuda_nvcc}" != xno],
+       [with_cuda=yes
+        cudainc="-I${cuda_inc}"
+        cudalib="-L${cuda_lib} ${cuda_libflags}"
+        cudanvcc="${cuda_nvcc}"])
+
+AC_SUBST(CUDA_CFLAGS,${cudainc})
+AC_SUBST(CUDA_LIBS,${cudalib})
+AC_SUBST(NVCC,${cudanvcc})
+
+AS_IF([test $with_cuda = yes],
+      [AC_DEFINE([HAVE_cuda],[1],[build with cuda])])
+
+
 mpi_libflags="-lmpi"
 
 #configure with MPI present in user environment (or in petsc installation)
