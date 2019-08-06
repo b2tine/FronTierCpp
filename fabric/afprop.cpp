@@ -403,6 +403,15 @@ EXPORT void elastic_point_propagate(
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i, dim = front->rect_grid->dim;
         
+	if (af_params->no_fluid)
+	{
+	    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,
+				oldhs,dt,V);
+	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
+	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
+	    return;
+	}
+
     F_FIELD *field = Fparams->field;
 	double *vort = field->vort;
 	double **vel = field->vel;
@@ -413,15 +422,6 @@ EXPORT void elastic_point_propagate(
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
-
-	if (af_params->no_fluid)
-	{
-	    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,
-				oldhs,dt,V);
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	    return;
-	}
 
 	    //FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
@@ -475,6 +475,7 @@ EXPORT void airfoil_point_propagate(
         double              dt,
         double              *V)
 {
+        printf("Entering airfoil_point_propagate()\n");
         if (wave_type(oldhs) == ELASTIC_BOUNDARY ||
 	    wave_type(oldhs) == ELASTIC_STRING)
             return elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,

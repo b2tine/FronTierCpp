@@ -339,6 +339,7 @@ void generic_spring_solver(
 	}
 	old_size = size;
 
+        //printf("n_loop = %d  dt = %f\n",n_loop,dt);
 	for (i = 0; i < size; ++i)
 	{
 	    compute_spring_accel1(&sv[i],accel[i],dim);

@@ -461,7 +461,7 @@ void setMotionParams(Front* front)
 		"string points count = %d\n",
 	countSurfPoints(front->interf), 
 	countStringPoints(front->interf, af_params->is_parachute_system));
-	printf("fabric point mass  = %f, string point mass = %f, "
+	printf("fabric point mass  = %f,\nstring point mass = %f,\n"
 		"gore point mass = %f\n", af_params->m_s, af_params->m_l, 
 		af_params->m_g);
 
@@ -571,7 +571,7 @@ static void initVelocityFunc(
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
 	    front->node_propagate = airfoil_node_propagate;
-	    velo_func_pack.point_propagate = airfoil_point_propagate;
+	    velo_func_pack.point_propagate = elastic_point_propagate;
 	    (void) printf("Available velocity functions are:\n");
 	    (void) printf("\tVortex velocity (R)\n");
 	    (void) printf("\tDouble vortex velocity (D)\n");

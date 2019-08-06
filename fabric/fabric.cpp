@@ -123,13 +123,13 @@ int main(int argc, char **argv)
             gview_plot_interface(gvdir,front.interf);
 	    }
 
-	    read_dirichlet_bdry_data(in_name,&front,f_basic);
+	    //read_dirichlet_bdry_data(in_name,&front,f_basic);
 	    if (f_basic.dim < 3)
             FT_ClipIntfcToSubdomain(&front);
 	}
 	else
 	{
-	    read_dirichlet_bdry_data(in_name,&front,f_basic);
+	    //read_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
 	initMovieStress(in_name,&front);
@@ -195,8 +195,6 @@ int main(int argc, char **argv)
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
 
-    //print_interface(front.interf);
-    //exit(0);
 
 	/* Propagate the front */
 

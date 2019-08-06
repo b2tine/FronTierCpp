@@ -1925,17 +1925,17 @@ static void initCircularPlaneEdge(
             }
 	    
         }
-        else if (CursorAfterStringOpt(infile,
-		 "Enter yes to change canopy boundary:"))
+    }
+    else if (CursorAfterStringOpt(infile,
+                "Enter yes to change canopy boundary:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-                if (string[0] == 'y' || string[0] == 'Y')
-            {
-                    level_func_pack->attach_string = YES;
-                    level_func_pack->string_func = change_mono_boundary;
-                level_func_pack->string_params = NULL;
-            }
+                level_func_pack->attach_string = YES;
+                level_func_pack->string_func = change_mono_boundary;
+            level_func_pack->string_params = NULL;
         }
     }
 

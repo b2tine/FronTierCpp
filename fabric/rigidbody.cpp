@@ -745,7 +745,7 @@ static void prompt_for_velocity_func(
         char *inname,
         RG_PARAMS *rgb_params)
 {
-    checkpoint("prompt_for_veclocity_func Not Implemented, Exiting");
+    //checkpoint("prompt_for_veclocity_func Not Implemented, Exiting");
     clean_up(1);
 
     /*

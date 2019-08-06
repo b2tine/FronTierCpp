@@ -694,24 +694,6 @@ static void set_equilibrium_mesh3d(
 	printf("ave_len = %16.12f\n",ave_len/count);
 }	/* end set_equilibrium_mesh3d */
 
-/*
-EXPORT void unsort_surf_point(SURFACE *surf)
-{
-	TRI *tri;
-	POINT *p;
-	int i;
-
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (i = 0; i < 3; ++i)
-	    {
-		p = Point_of_tri(tri)[i];
-		sorted(p) = NO;
-	    }
-	}
-}*/	/* end unsort_surf_point */
-
 #define 	MAX_NUM_RING1		30
 
 EXPORT void print_airfoil_stat(
@@ -904,6 +886,8 @@ static void print_airfoil_stat3d(
 	default:
 	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
 	}
+        if (af_params->no_fluid) return;
+
 	print_drag3d(front,out_name);
 	print_strings(front,out_name);
 	if (pp_numnodes() == 1)
