@@ -5,6 +5,8 @@ loose_infiles = in-test in-rt2d in-rt3d0 in-rt3d1 in-rt3d2
 
 EXTRA_DIST = $(input_directories) \
 			 $(loose_infiles) \
+			 cFweno_gpu.cu \
+			 cFweno_gpu.cuh \
 			 cFweno-save.cpp
 
 

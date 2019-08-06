@@ -26,9 +26,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <ctime>
 #include <time.h>
 
+/*
 #if defined(USE_GPU)
 #include "cFweno_gpu.cuh"
 #endif
+*/
 
 static double weno5_scal(double *f);
 static void matmvec(double *b, double L[5][5], std::vector<double> x);
@@ -64,15 +66,17 @@ extern void WENO_flux(
 	ghost_size = 3;
 	extend_size = n + 2*ghost_size;
 
+/*
 #if defined(USE_GPU)
-	//startClock("Total_time_flux_gpu");
 	weno5_get_flux_gpu(scheme_params->gamma,scheme_params->lambda,
 				extend_size,ghost_size,u_old,flux);
-	//stopClock("Total_time_flux_gpu");
 #else
 	weno5_get_flux(params,extend_size,ghost_size,u_old,flux);
 #endif
-	for (i = ghost_size; i < n+ghost_size; ++i)
+*/	
+    weno5_get_flux(params,extend_size,ghost_size,u_old,flux);
+	
+    for (i = ghost_size; i < n+ghost_size; ++i)
 	{
 	    vflux->dens_flux[i] = -lambda*(flux[0][i+1] - flux[0][i]);
 	    vflux->momn_flux[0][i] = -lambda*(flux[1][i+1] - flux[1][i]);
