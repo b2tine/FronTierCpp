@@ -35,6 +35,11 @@ libairfoil_la_SOURCES = \
 ../afvelo.cpp \
 ../cgal.cpp
 
+if CUDA_OPT
+libairfoil_la_SOURCES = ../airfoil_gpu.cu \
+					   ../airfoil_gpu.cuh
+endif
+
 libairfoil_la_LIBADD = $(top_builddir)/Collision/objs/libCollision.la
 
 
@@ -44,23 +49,13 @@ $(libairfoil_la_DEPENDENCIES): FORCE
 FORCE:
 
 
-if CUDA_OPT
 
-noinst_LTLIBRARIES += libaircuda.la
-
-libaircuda_la_SOURCES = ../airfoil_gpu.cu \
-					   ../airfoil_gpu.cuh
 
 .cu.o:
 	$(NVCC) -c $<
 
 .cu.lo:
 	$(top_srcdir)/cudalt.py $@ $(NVCC) -c $<
-
-
-libairfoil_la_LIBADD += $(top_builddir)/airfoil/objs/libaircuda.a
-
-endif
 
 
 
