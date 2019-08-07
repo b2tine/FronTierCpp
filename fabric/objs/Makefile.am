@@ -5,7 +5,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-#AM_CPPFLAGS += -DDAMPING_FORCE
+AM_CPPFLAGS += -DDAMPING_FORCE
 
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
@@ -34,7 +34,9 @@ libfabric_la_SOURCES = \
 ../fluidinit.cpp \
 ../fluidprop.cpp \
 ../rigidbody.h \
-../rigidbody.cpp
+../rigidbody.cpp \
+../modules.cpp \
+../fabric_api.cpp
 
 
 

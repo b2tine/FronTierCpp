@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include "fabric.h"
 
 typedef struct {
 	double cen[MAXD];
@@ -121,14 +121,14 @@ void setMotionParams(Front* front)
 	}
 #endif
 
-    if (CursorAfterStringOpt(infile,
+        if (CursorAfterStringOpt(infile,
                 "Entering yes to turn off fluid solver: "))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->no_fluid = YES;
-    }
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                af_params->no_fluid = YES;
+        }
 
 	if (af_params->no_fluid == YES)
 	{
@@ -149,7 +149,7 @@ void setMotionParams(Front* front)
 	if (af_params->no_fluid == YES || 
 	    af_params->is_parachute_system == NO)
 	{
-        CursorAfterString(infile,"Enter interior propagator:");
+            CursorAfterString(infile,"Enter interior propagator:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (dim == 2)
@@ -202,10 +202,12 @@ void setMotionParams(Front* front)
 	    	case 'e':
 	    	case 'E':
 	    	    if (string[1] == '2')
-	    	    	front->interior_propagate = second_order_elastic_surf_propagate;
+	    	    	front->interior_propagate = 
+                                    second_order_elastic_surf_propagate;
 	    	    else
 		    {
-                front->interior_propagate = fourth_order_elastic_surf_propagate;
+                        front->interior_propagate = 
+                                    fourth_order_elastic_surf_propagate;
 				//= fourth_order_elastic_set_propagate;
 #if defined(__GPU__)
             		if (CursorAfterStringOpt(infile,
@@ -230,15 +232,15 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-    {
+        {
 	    front->interior_propagate = fourth_order_elastic_set_propagate;
-    }
+        }
 
 
-    //TODO: Assignments to Fparams (formerly iFparams) likely
-    //      won't be necessary. It appears the only real value
-    //      that is read from it is gravity, which can just be
-    //      read directly into the af_params.
+        //TODO: Assignments to Fparams (formerly iFparams) likely
+        //      won't be necessary. It appears the only real value
+        //      that is read from it is gravity, which can just be
+        //      read directly into the af_params.
 	if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
@@ -325,8 +327,8 @@ void setMotionParams(Front* front)
 	    }
 	}
 
-	if ( (dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
-	     (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
+	if ((dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
+	    (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
 	    CursorAfterString(infile,"Enter string spring constant:");
             fscanf(infile,"%lf",&af_params->kl);
@@ -373,14 +375,14 @@ void setMotionParams(Front* front)
 		}
 	    }
 	    
-        af_params->unequal_coeff = 1.0;
+            af_params->unequal_coeff = 1.0;
 	    if (CursorAfterStringOpt(infile,"Enter unequal coefficient:"))
 	    {
 		fscanf(infile,"%lf",&af_params->unequal_coeff);
 		(void) printf("%f\n",af_params->unequal_coeff);
 	    }
 	    
-        af_params->unequal_strings_num = 0;
+            af_params->unequal_strings_num = 0;
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
@@ -388,7 +390,7 @@ void setMotionParams(Front* front)
 		(void) printf("%d\n",af_params->unequal_strings_num);
 	    }
 	    
-        if (af_params->unequal_strings_num > 0)
+            if (af_params->unequal_strings_num > 0)
 	    {
 		FT_VectorMemoryAlloc(
 				(POINTER*)&af_params->unequal_strings_gindex,
@@ -556,7 +558,7 @@ static void initVelocityFunc(
 {
 	static VELO_FUNC_PACK velo_func_pack;
 	static VORTEX_PARAMS *vortex_params; /* velocity function parameters */
-    static BIPOLAR_PARAMS *dv_params;
+        static BIPOLAR_PARAMS *dv_params;
 	static VERTICAL_PARAMS *vert_params;
 	static RANDOMV_PARAMS *randv_params;
 	static TOROIDAL_PARAMS *toro_params;

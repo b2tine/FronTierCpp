@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include "fabric.h"
 
 static void setInitialIntfcAF3d(Front*,LEVEL_FUNC_PACK*,char*);
 
@@ -36,11 +36,11 @@ void setInitialIntfcAF(
 
 	level_func_pack->wave_type = ELASTIC_BOUNDARY;
 	
-    F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	Fparams->m_comp1 = SOLID_COMP;
-    Fparams->m_comp2 = LIQUID_COMP2;
+        Fparams->m_comp2 = LIQUID_COMP2;
 
-    if (CursorAfterStringOpt(infile,
+        if (CursorAfterStringOpt(infile,
             "Entering yes to set wave type to FIRST_PHYSICS_WAVE_TYPE: "))
 	{
 	    fscanf(infile,"%s",string);
@@ -50,8 +50,8 @@ void setInitialIntfcAF(
 	}
 	fclose(infile);
 
-    assert(front->rect_grid->dim == 3);
-    return setInitialIntfcAF3d(front,level_func_pack,inname);
+        assert(front->rect_grid->dim == 3);
+        return setInitialIntfcAF3d(front,level_func_pack,inname);
 }	/* end setInitialIntfcAF */
 
 static void setInitialIntfcAF3d(

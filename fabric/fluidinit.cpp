@@ -1,4 +1,4 @@
-#include "airfoil.h"
+#include "fabric.h"
 
 static void promptForDirichletBdryState(FILE*,Front*,HYPER_SURF**,int);
 static void flowThroughBoundaryState3d( double*,HYPER_SURF*,Front*,POINTER,POINTER); 

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 
-#include "airfoil.h"
+#include "fabric.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);

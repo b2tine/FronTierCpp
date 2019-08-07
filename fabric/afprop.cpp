@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include "fabric.h"
 #include "collid.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
@@ -67,11 +67,11 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	static int break_strings_num = af_params->break_strings_num;
 
 
-    static CollisionSolver* collision_solver = new CollisionSolver3d();
+        static CollisionSolver* collision_solver = new CollisionSolver3d();
 	if (!debugging("collision_off"))
-        printf("COLLISION DETECTION ON\n");
-    else
-        printf("COLLISION DETECTION OFF\n");
+            printf("COLLISION DETECTION ON\n");
+        else
+            printf("COLLISION DETECTION OFF\n");
 
 
 	if (debugging("trace"))
@@ -119,14 +119,14 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                    ELASTIC_BOUNDARY);
-            collectNodeExtra(fr,elastic_intfc,owner_id);
+                elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
+                                ELASTIC_BOUNDARY);
+                collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
             elastic_intfc = fr->interf;
 	    
-        start_clock("set_data");
+            start_clock("set_data");
 	    if (myid == owner_id)
             {
 		if (client_size_old != NULL)
@@ -154,8 +154,8 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
 		
-            if (elastic_intfc != fr->interf)
-                delete_interface(elastic_intfc);
+                if (elastic_intfc != fr->interf)
+                    delete_interface(elastic_intfc);
 	    }
 	    stop_clock("set_data");
 	    first = NO;
@@ -196,10 +196,10 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	if (myid == owner_id)
 	{
 	
-    if (!debugging("collision_off"))
-    {
-	    if (FT_Dimension() == 3)
-        {
+            if (!debugging("collision_off"))
+            {
+	        if (FT_Dimension() == 3)
+                {
             //TODO: This function just identifies which triangles and edges
             //      have the potential to collide with each other based on their
             //      the material/boundary type alone. We already know this from
@@ -236,8 +236,8 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             //rigid-rigid collision here, because it appears that it was
             //ommitted from all the cloth impulse calculations making it
             //effectively 0.0 by default again.
+            }
         }
-    }
 
 	    get_point_set_from(&geom_set,point_set);
 	    for (i = 0; i < pp_numnodes(); i++)
@@ -412,18 +412,18 @@ EXPORT void elastic_point_propagate(
 	    return;
 	}
 
-    F_FIELD *field = Fparams->field;
+        F_FIELD *field = Fparams->field;
 	double *vort = field->vort;
 	double **vel = field->vel;
 	double *pres = field->pres;
 	
-    COMPONENT base_comp = positive_component(oldhs);
+        COMPONENT base_comp = positive_component(oldhs);
 	double pp[MAXD],pm[MAXD],nor[MAXD],h;
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
 
-	    //FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
+	//FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);
@@ -437,11 +437,11 @@ EXPORT void elastic_point_propagate(
 	    pp[i] = Coords(oldp)[i] + h*nor[i];
 	}
 
-    //Interpolate grid pressure to fabric points
-    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
-    getStatePres,&newsl->pres,&sl->pres);
-    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
-    getStatePres,&newsr->pres,&sr->pres);
+        //Interpolate grid pressure to fabric points
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
+        getStatePres,&newsl->pres,&sl->pres);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
+        getStatePres,&newsr->pres,&sr->pres);
 
 	/* Impulse is incremented by the fluid pressure force */
 	for (i = 0; i < dim; ++i)
@@ -449,19 +449,18 @@ EXPORT void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
-        {
-            dv[i] = 0.0;
-        }
-        else if (front->step > 5)
-        {
-            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-            newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
-            newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-            newsr->vel[i] = newsl->vel[i] = sl->vel[i];
-        }
+            {
+                dv[i] = 0.0;
+            }
+            else if (front->step > 5)
+            {
+                dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+                newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+                newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+                newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+                newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+            }
 	}
-
 }       /* elastic_point_propagate */
 
 

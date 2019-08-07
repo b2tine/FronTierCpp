@@ -11,9 +11,9 @@ if ( $#argv != 1 ) then
 	echo "Multi-threads"
 	echo output directory $DIR/out-$1-$2$3$4
 	@ n = $2 * $3 * $4
-	mpirun -np $n $DIR/airfoil -d 3 -p $2 $3 $4 -i $DIR/in-$1 -o $DIR/out-$1-$2$3$4
+	mpirun -np $n $DIR/fabric -d 3 -p $2 $3 $4 -i $DIR/in-$1 -o $DIR/out-$1-$2$3$4
 else
 	echo "Single-thread"
 	echo output directory $DIR/out-$1
-	$DIR/airfoil -d 3 -i $DIR/in-$1 -o $DIR/out-$1
+	$DIR/fabric -d 3 -i $DIR/in-$1 -o $DIR/out-$1
 endif

@@ -30,8 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <iostream>
 #include <fstream>
-
-#include "airfoil.h"
+#include "fabric.h"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned, K> Vb;
@@ -89,8 +88,6 @@ extern void CgalCanopySurface(
         (void) printf("Available canopy surface types are:\n");
         (void) printf("\tFLAT (F)\n");
         (void) printf("\tPARABOLIC (P)\n");
-        (void) printf("\tELLIPTIC (E)\n");
-        (void) printf("\tDGB (D)\n");
         CursorAfterString(infile,"Enter canopy surface type:");
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
@@ -160,7 +157,6 @@ static void CgalFlatSurface(
         (void) printf("\tRectangular (R)\n");
         (void) printf("\tElliptic (E)\n");
         (void) printf("\tCross (X)\n");
-        (void) printf("\tWing (W)\n");
         (void) printf("\tCircular with belt (S)\n");
         CursorAfterString(infile,"Enter type of canopy boundary:");
         fscanf(infile,"%s",string);

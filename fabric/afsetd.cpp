@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "airfoil.h"
+#include "fabric.h"
 
 static void link_surf_point_set(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**,
 				GLOBAL_POINT*,int*);
@@ -268,9 +268,11 @@ EXPORT void compute_spring_accel1(
 	    {
 		vec[k] = sv->x_nb[i][k] - sv->x[k];
 		len += sqr(vec[k]);
-/*#ifdef DAMPING_FORCE
+/*
+#ifdef DAMPING_FORCE
 		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
-#endif*/
+#endif
+*/
 	    }
 	    len = sqrt(len);
 
@@ -278,25 +280,29 @@ EXPORT void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-/*#ifdef DAMPING_FORCE
+/*
+#ifdef DAMPING_FORCE
 		f[k] += sv->lambda*v_rel[k]/sv->m;
-#endif*/
+#endif
+*/
 	    }
 	}
 
-    //TODO: This isn't being used currently.
-    //      Figure out why.
+        //TODO: This isn't being used currently.
+        //      Figure out why.
     
-    //computeElasticForce(sv,f);
+        //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
 	    sv->f[k] = f[k]*sv->m;
-/*#ifndef DAMPING_FORCE
+        /*
+#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
 	}
-#endif*/
+#endif
+        */
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
@@ -339,7 +345,7 @@ void generic_spring_solver(
 	}
 	old_size = size;
 
-        //printf("n_loop = %d  dt = %f\n",n_loop,dt);
+        printf("n_loop = %d  dt = %f\n",n_loop,dt);
 	for (i = 0; i < size; ++i)
 	{
 	    compute_spring_accel1(&sv[i],accel[i],dim);

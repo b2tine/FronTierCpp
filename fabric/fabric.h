@@ -242,7 +242,6 @@ struct ELASTIC_SET
 	double dt;
 };
 
-
 //NOTE: these never had a definition
 /*
 void read_movie_options(char*,F_PARAMS*);
@@ -386,5 +385,9 @@ extern double springCharTimeStep(Front*);	// spring characteristic time
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
+
+// fabric_api.cpp
+extern void Fabric_InitFronTier(Front*,F_BASIC_DATA*);
+extern void Fabric_InitModules(Front*);
 
 #endif

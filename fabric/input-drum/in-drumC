@@ -9,7 +9,7 @@ Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 1.0
+Max time: 5.0
 Max step: 2000
 Print interval: 0.1
 Movie frame interval: 0.1
@@ -82,6 +82,7 @@ Type y to plot bullet in gd movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
+Enter the debugging string: collision_off
 Enter the debugging string: CLOCK
 Enter the debugging string: step_size
 Enter the debugging string: no_optimize

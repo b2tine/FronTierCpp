@@ -28,19 +28,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "fabric.h"
 
-int main(int argc, char **argv)
+extern void Fabric_InitFronTier(
+        Front *front,
+        F_BASIC_DATA *f_basic)
 {
-	static Front front;
-	static F_BASIC_DATA f_basic;
+        static LEVEL_FUNC_PACK level_func_pack;
+        static AF_PARAMS af_params;
 
-	FT_Init(argc,argv,&f_basic);
+        front->extra2 = (POINTER)&af_params;
+        FT_ReadSpaceDomain(f_basic->in_name,f_basic);
+        FT_StartUp(front,f_basic);
+        FT_InitIntfc(front,&level_func_pack);
+}       /* end Fabric_InitFronTier */
 
-	/* Initialize basic computational data */
+extern void Fabric_InitModules(
+        Front *front)
+{
+        FILE *infile = fopen(InName(front),"r");
 
-        Fabric_InitFronTier(&front,&f_basic);
-        Fabric_InitModules(&front);
-	    
-        FT_Draw(&front);
+        CursorAfterString(infile,"Start parameters for modules");
+        printf("\n");
 
-	clean_up(0);
-}
+        initParachuteModules(front);
+        optimizeElasticMesh(front);
+        set_equilibrium_mesh(front);
+
+        fclose(infile);
+}       /* end Fabric_InitModules */
