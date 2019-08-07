@@ -46,13 +46,16 @@ FORCE:
 
 if CUDA_OPT
 
-noinst_LIBRARIES = libaircuda.a
+noinst_LTLIBRARIES += libaircuda.la
 
-libaircuda_a_SOURCES = ../airfoil_gpu.cu \
+libaircuda_la_SOURCES = ../airfoil_gpu.cu \
 					   ../airfoil_gpu.cuh
 
 .cu.o:
 	$(NVCC) -c $<
+
+.cu.lo:
+	$(top_srcdir)/cudalt.py $@ $(NVCC) -c $<
 
 
 libairfoil_la_LIBADD += $(top_builddir)/airfoil/objs/libaircuda.a
