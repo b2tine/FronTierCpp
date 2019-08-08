@@ -4,6 +4,28 @@ module fdecs
     implicit none
     private
 
+    !boolean
+    enum, bind(c)
+        enumerator :: false = 0
+        enumerator :: no = false
+        enumerator :: function_failed = false
+        enumerator :: true = 1
+        enumerator :: yes = true
+        enumerator :: function_succeeded = true
+    end enum
+
+    public false, no, function_failed, true, yes, function_succeeded
+
+    !GEOMETRY_REMAP
+    enum, bind(c)
+        enumerator :: invalid_remap = 0
+        enumerator :: identity_remap = 1
+        enumerator :: cylindrical_remap = 2
+        enumerator :: spherical_remap = 3
+    end enum
+
+
+    !F_BASIC_DATA
     type, public, bind(c) :: f_basic_data
         
         integer(kind=c_int) :: dim
@@ -11,11 +33,9 @@ module fdecs
         character(LEN=*,kind=c_char) :: out_name
         integer(kind=c_int), dimension(0:2) :: subdomains
 
-        !TODO: need to deal with enum types
-
-        !integer(kind=c_int) :: ReadFromInput !boolean
-        !integer(kind=c_int) :: RestartRun    !boolean
-        !integer(kind=c_int) :: ResetTime     !boolean
+        integer(kind(true)) :: ReadFromInput
+        integer(kind(false)) :: RestartRun
+        integer(kind(false)) :: ResetTime
         
         integer(kind=c_int) :: RestartStep
         character(LEN=*,kind=c_char) :: restart_name
@@ -26,7 +46,7 @@ module fdecs
         real(kind=c_double), dimension(0:2,0:1) :: boundary
 
         integer(kind=c_size_t) :: size_of_intfc_state
-        !GEOMETRY_REMAP enum
+        integer(kind(identity_remap)) :: ReadFromInput
     
     end type f_basic_data
 
