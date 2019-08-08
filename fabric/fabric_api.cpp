@@ -33,10 +33,18 @@ extern "C" {
 #endif
 
 
-void fabric_init()
+void Fabric_Init(int argc, char* argv[])
 {
     static Front front;
 	static F_BASIC_DATA f_basic;
+
+    //argc++;
+
+    for int(i = 0; i < argc; ++i)
+    {
+        printf("%s\n",argv[i]);    
+    }
+    exit(0);
 
 	FT_Init(argc,argv,&f_basic);
 

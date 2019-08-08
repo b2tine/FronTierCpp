@@ -390,4 +390,8 @@ extern void InstallNewLoadNode(Front*,int);
 extern void Fabric_InitFronTier(Front*,F_BASIC_DATA*);
 extern void Fabric_InitModules(Front*);
 
+// fabric_api.cpp
+    //extern void Fabric_Init(int argc, char* argv[]);
+
+
 #endif

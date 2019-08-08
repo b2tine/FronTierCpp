@@ -29,7 +29,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 
 
 noinst_PROGRAMS = fabric \
-				  test1
+				  test1 \
+				  fortrantest
 
 				  
 fabric_SOURCES = fabric.cpp
@@ -38,6 +39,10 @@ fabric_LDADD = $(builddir)/objs/libfabric.la
 
 test1_SOURCES = test1.cpp
 test1_LDADD = $(builddir)/objs/libfabric.la
+
+
+fortrantest_SOURCES = fabric.F90
+#fortrantest_LDADD =
 
 
 
