@@ -26,7 +26,8 @@ program fabric_test
 
     !print *, argv
     
-    character(kind=c_char,len=20), parameter :: in_name = "init.txt"
+    character(kind=c_char,len=20), parameter :: in_name = &
+        "ftinit.txt"//c_null_char
 
     call fabric_init(in_name)
     !call fabric_init(argc,argv)

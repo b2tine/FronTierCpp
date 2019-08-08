@@ -77,7 +77,7 @@ void Fabric_Init(char* inname)
     {
         std::cout << args[i] << " ";
     }
-
+    std::cout << "\n";
     
     checkpoint("Leaving Fabric_Init()");
     return;
