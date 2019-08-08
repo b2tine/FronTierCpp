@@ -41,8 +41,8 @@ test1_SOURCES = test1.cpp
 test1_LDADD = $(builddir)/objs/libfabric.la
 
 
-fortrantest_SOURCES = fabric.F90
-#fortrantest_LDADD =
+fortrantest_SOURCES = fortran_driver.F90
+fortrantest_LDADD = $(builddir)/objs/libfabric.la -lstdc++
 
 
 

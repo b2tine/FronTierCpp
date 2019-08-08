@@ -28,34 +28,70 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "fabric.h"
 
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cstring>
+#include <string>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-void Fabric_Init(int argc, char* argv[])
+//void Fabric_Init(int argc, char* argv[])
+void Fabric_Init(char* inname)
 {
+    checkpoint("Entering Fabric_Init()");
+
     static Front front;
 	static F_BASIC_DATA f_basic;
 
-    //argc++;
+    std::ifstream infile(inname);
+    std::vector<std::string> argstrings;
 
-    for int(i = 0; i < argc; ++i)
+    //TODO: need to make sure file is open
+    //      getting stuck in read loop
+    checkpoint(1);
+    int nargs = 0;
+    while (!infile.eof())
     {
-        printf("%s\n",argv[i]);    
+        std::string curr;
+        infile >> curr;
+        argstrings.push_back(curr);
+        nargs++;
     }
-    exit(0);
+    checkpoint(2);
 
-	FT_Init(argc,argv,&f_basic);
+    argstrings.insert(argstrings.begin(),"dummyarg");
+    
+    char* args[nargs];
+    for (int i = 0; i < nargs; ++i)
+    {
+        args[i] = new char[argstrings[i].length()+1];
+        std::strcpy(args[i],argstrings[i].c_str());
+    }
+    
+    for (int i = 0; i < nargs; ++i)
+    {
+        std::cout << args[i] << " ";
+    }
+
+    
+    checkpoint("Leaving Fabric_Init()");
+    return;
+
+	//FT_Init(argc,argv,&f_basic);
 
 	/* Initialize basic computational data */
 
-        Fabric_InitFronTier(&front,&f_basic);
-        Fabric_InitModules(&front);
+        //Fabric_InitFronTier(&front,&f_basic);
+        //Fabric_InitModules(&front);
 	    
-        FT_Draw(&front);
+        //FT_Draw(&front);
 
-	clean_up(0);
+	//clean_up(0);
 }
 
 
