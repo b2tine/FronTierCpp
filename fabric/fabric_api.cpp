@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 extern "C" {
 #endif
 
-extern void Fabric_InitFronTier(
+void Fabric_InitFronTier(
         Front *front,
         F_BASIC_DATA *f_basic)
 {
@@ -45,7 +45,7 @@ extern void Fabric_InitFronTier(
         FT_InitIntfc(front,&level_func_pack);
 }       /* end Fabric_InitFronTier */
 
-extern void Fabric_InitModules(
+void Fabric_InitModules(
         Front *front)
 {
         FILE *infile = fopen(InName(front),"r");
