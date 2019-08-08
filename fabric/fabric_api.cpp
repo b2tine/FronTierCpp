@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "fabric.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void Fabric_InitFronTier(
         Front *front,
         F_BASIC_DATA *f_basic)
@@ -55,3 +59,10 @@ extern void Fabric_InitModules(
 
         fclose(infile);
 }       /* end Fabric_InitModules */
+
+
+#ifdef __cplusplus
+}
+#endif
+
+

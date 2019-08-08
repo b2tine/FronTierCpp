@@ -80,6 +80,7 @@ FrontWrapper/example00
 #Others
 *~
 core.*
+test*
 test-*
 */out-*
 autogen*
