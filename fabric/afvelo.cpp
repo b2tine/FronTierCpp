@@ -40,7 +40,6 @@ typedef struct {
 	double vel[MAXD];
 } FIXAREA_PARAMS;
 
-static void initVelocityFunc(FILE*,Front*);
 static int zero_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
                                 double*);
 static int toroidal_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
@@ -57,11 +56,11 @@ static int marker_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
                                 double*);
 static void init_fixarea_params(Front*,FILE*,FIXAREA_PARAMS*);
 static void init_fixpoint_params(Front*,FILE*,FIXAREA_PARAMS*);
-static void convert_to_point_mass(Front*, AF_PARAMS*);
 static void checkSetGoreNodes(INTERFACE*);
 static void set_gore_node(NODE*);
 
-int countSurfPoints(INTERFACE* intfc) {
+extern  int countSurfPoints(INTERFACE* intfc) 
+{
 	int num_fabric_pts  = 0;
 	int surf_count = 0;
 	for (SURFACE** s = intfc->surfaces; s && *s; ++s)
@@ -75,7 +74,8 @@ int countSurfPoints(INTERFACE* intfc) {
 	return num_fabric_pts;
 }
 
-int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
+extern  int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) 
+{
 	int num_str_pts = 0;
         for (CURVE** c = intfc->curves; c && *c; ++c)
         {
@@ -167,24 +167,18 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'e':
 	    	case 'E':
-	    	    if (string[1] == '2')
-	    	    	front->tan_curve_propagate 
-				= second_order_elastic_curve_propagate;
-	    	    else
-		    {
-	    	    	front->tan_curve_propagate 
+	    	    front->tan_curve_propagate 
 				= fourth_order_elastic_curve_propagate;
 #if defined(__GPU__)
-            		if (CursorAfterStringOpt(infile,
-				"Enter yes to use GPU solver:"))
-			{
-	    		    fscanf(infile,"%s",string);
-	    		    (void) printf("%s\n",string);
-			    if (string[0] == 'y' || string[0] == 'Y')
-				af_params->use_gpu = YES;
-			}
-#endif
+            	    if (CursorAfterStringOpt(infile,
+			"Enter yes to use GPU solver:"))
+		    {
+	    	        fscanf(infile,"%s",string);
+	    		(void) printf("%s\n",string);
+		        if (string[0] == 'y' || string[0] == 'Y')
+			    af_params->use_gpu = YES;
 		    }
+#endif
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -201,29 +195,23 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'e':
 	    	case 'E':
-	    	    if (string[1] == '2')
-	    	    	front->interior_propagate = 
-                                    second_order_elastic_surf_propagate;
-	    	    else
-		    {
-                        front->interior_propagate = 
-                                    fourth_order_elastic_surf_propagate;
-				//= fourth_order_elastic_set_propagate;
+                    front->interior_propagate = 
+                                fourth_order_elastic_surf_propagate;
 #if defined(__GPU__)
-            		if (CursorAfterStringOpt(infile,
+            	    if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
-			{
-	    		    fscanf(infile,"%s",string);
-	    		    (void) printf("%s\n",string);
-			    if (string[0] == 'y' || string[0] == 'Y')
-				af_params->use_gpu = YES;
-			}
-#endif
+		    {
+	    		fscanf(infile,"%s",string);
+	    		(void) printf("%s\n",string);
+			if (string[0] == 'y' || string[0] == 'Y')
+			    af_params->use_gpu = YES;
 		    }
+#endif
 	    	    break;
 	    	case 'p':
 	    	case 'P':
-	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
+	    	    front->interior_propagate = 
+                                fourth_order_elastic_set_propagate;
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -477,7 +465,7 @@ void setMotionParams(Front* front)
 	fclose(infile);
 }	/* end setMotionParams */
 
-static void convert_to_point_mass(
+extern  void convert_to_point_mass(
         Front *front,
         AF_PARAMS *af_params)
 {
@@ -552,7 +540,7 @@ static void convert_to_point_mass(
 }       /* end convert_to_point_mass */
 
 
-static void initVelocityFunc(
+extern void initVelocityFunc(
 	FILE *infile,
 	Front *front)
 {

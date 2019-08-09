@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 
 	/* Initialize basic computational data */
 
-        Fabric_InitFronTier(&front,&f_basic);
-        Fabric_InitModules(&front);
+        SMM_InitFronTier(&front,&f_basic);
+        SMM_InitModules(&front);
 	    
         FT_Draw(&front);
 

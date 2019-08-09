@@ -29,6 +29,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 
 noinst_PROGRAMS = fabric \
 				  test1 \
+				  test2 \
 				  fortrantest
 
 				  
@@ -38,6 +39,9 @@ fabric_LDADD = $(builddir)/objs/libfabric.la
 
 test1_SOURCES = test1.cpp
 test1_LDADD = $(builddir)/objs/libfabric.la
+
+test2_SOURCES = test2.cpp
+test2_LDADD = $(builddir)/objs/libfabric.la
 
 
 fortrantest_SOURCES = fortran_driver.F90

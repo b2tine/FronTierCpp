@@ -21,7 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "fabric.h"
+#include <fabric.h>
 
 static void initSingleModule(Front*);
 static void initMultiModule(Front*,int);
@@ -109,8 +109,8 @@ extern void initParachuteModules(Front *front)
 	if (debugging("set_module"))
 	    gview_plot_interface("module-step-1",front->interf);
 
-        /*
 	initRigidBody(front);
+        /*
 	rgb_init(front,rgb_params);
         */
 
@@ -120,11 +120,14 @@ extern void initParachuteModules(Front *front)
         if (num_canopy == 1)
         {
             char string[100];
-	    CursorAfterStringOpt(infile,"Enter yes for complex connection:");
-            fscanf(infile,"%s",string);
-            printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                complex_set = YES;
+	    if (CursorAfterStringOpt(infile,
+                "Enter yes for complex connection:"))
+            {
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    complex_set = YES;
+            }
         }
 	fclose(infile);
 
@@ -173,7 +176,8 @@ static void initSingleModule(
 	CgalCanopySurface(infile,front,&surf);
 	fclose(infile);
 
-	InstallNewLoadNode(front,1);
+        if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
+	    InstallNewLoadNode(front,1);
 }	/* end initSingleModule */
 
 static void initMultiModule(

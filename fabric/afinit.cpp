@@ -62,30 +62,30 @@ static void setInitialIntfcAF3d(
 	char string[100];
 	FILE *infile = fopen(inname,"r");
 	
-    //not even used in this function
+        //not even used in this function
         //F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	
-    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int num_canopy;
 
 	level_func_pack->set_3d_bdry = YES;
 	
 	level_func_pack->neg_component = LIQUID_COMP2;
-    level_func_pack->pos_component = LIQUID_COMP2;	
+        level_func_pack->pos_component = LIQUID_COMP2;	
 	
-    level_func_pack->func_params = NULL;
-    level_func_pack->func = NULL;
+        level_func_pack->func_params = NULL;
+        level_func_pack->func = NULL;
 	level_func_pack->attach_string = NO;		// default
 
 	af_params->is_parachute_system = NO;
 	af_params->cut_vent = NO;
 	af_params->num_opt_round = 20;
-    af_params->spring_model = MODEL1;	// default
+        af_params->spring_model = MODEL1;	// default
 	af_params->attach_gores = NO;		// default
 	af_params->use_gpu = NO;		    // default
 	af_params->gore_len_fac = 1.0;		// default
 	
-    CursorAfterString(infile,"Enter number of canopy surfaces:");
+        CursorAfterString(infile,"Enter number of canopy surfaces:");
 	fscanf(infile,"%d",&num_canopy);
 	(void) printf("%d\n",num_canopy);
 	level_func_pack->num_mono_hs = num_canopy;
@@ -96,7 +96,7 @@ static void setInitialIntfcAF3d(
 	(void) printf("\tT-10 (T)\n");
 	(void) printf("\tNone (N)\n");
 	
-    CursorAfterString(infile,"Enter initial canopy surface type:");
+        CursorAfterString(infile,"Enter initial canopy surface type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	switch (string[0])
@@ -114,7 +114,7 @@ static void setInitialIntfcAF3d(
 	    initPlaneSurf(infile,front,level_func_pack);
 	    break;
 	case 'A':
-    case 'a':
+        case 'a':
         initAirbag(infile,front,level_func_pack);
 	    break;
 	case 'N':
@@ -190,31 +190,97 @@ static void setInitialIntfcAF3d(
 	}
 
 	if (CursorAfterStringOpt(infile,
-            "Entering type of spring model: "))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        switch (string[0])
-        {
-        case '1':
-            af_params->spring_model = MODEL1;
-            break;
-        case '2':
-            af_params->spring_model = MODEL2;
-            break;
-        case '3':
-            af_params->spring_model = MODEL3;
-            break;
-        default:
-            break;
-        }
-    }
-
-	if (CursorAfterStringOpt(infile,
             "Entering number of canopy optimization rounds: "))
-    {
-        fscanf(infile,"%d",&af_params->num_opt_round);
-        (void) printf("%d\n",af_params->num_opt_round);
-    }
+        {
+            fscanf(infile,"%d",&af_params->num_opt_round);
+            (void) printf("%d\n",af_params->num_opt_round);
+        }
 }	/* end setInitialIntfcAF3d */
 
+extern void initPerturbation3d(
+        Front *front)
+{
+	char string[100];
+        FILE *infile = fopen(InName(front),"r");
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+	af_params->gore_len_fac = 1.0;		// default
+	af_params->pert_params.pert_type = NO_PERT;
+
+        if (!CursorAfterStringOpt(infile,"Type yes to perturb the surface: "))
+            return;
+        else
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+            if (string[0] != 'y' && string[0] != 'Y')
+                return;
+        }
+
+	(void) printf("Available perturbation types are:\n");
+	(void) printf("\tNo perturbation (N)\n");
+	(void) printf("\tParallel random perturbation (P)\n");
+	(void) printf("\tOrthogonal random perturbation (O)\n");
+	(void) printf("\tRadial perturbation (R)\n");
+	(void) printf("\tLinear perturbation (L)\n");
+	(void) printf("\tSine perturbation (S)\n");
+	(void) printf("\tDefault is no perturbation\n");
+	if (CursorAfterStringOpt(infile,
+	    "Entering perturbation type: "))
+	{
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+	    switch (string[0])
+	    {
+	    case 'n':
+	    case 'N':
+		break;
+	    case 'p':
+	    case 'P':
+		af_params->pert_params.pert_type = PARALLEL_RAND_PERT;
+		break;
+	    case 'o':
+	    case 'O':
+		af_params->pert_params.pert_type = ORTHOGONAL_RAND_PERT;
+		break;
+	    case 'r':
+	    case 'R':
+		af_params->pert_params.pert_type = RADIAL_PERT;
+	    	CursorAfterString(infile,"Enter perturbation center:");
+	        fscanf(infile,"%lf %lf",&af_params->pert_params.cen[0],
+				&af_params->pert_params.cen[1]);
+		(void) printf("%f %f\n",af_params->pert_params.cen[0],
+				af_params->pert_params.cen[1]);
+	    	CursorAfterString(infile,"Enter perturbation radius:");
+	        fscanf(infile,"%lf",&af_params->pert_params.pert_radius);
+		(void) printf("%f\n",af_params->pert_params.pert_radius);
+	    	CursorAfterString(infile,"Enter perturbation amplitude:");
+	        fscanf(infile,"%lf",&af_params->pert_params.pert_amp);
+		(void) printf("%f\n",af_params->pert_params.pert_amp);
+		break;
+	    case 'l':
+	    case 'L':
+		af_params->pert_params.pert_type = LINEAR_PERT;
+	    	CursorAfterString(infile,"Enter perturbation direction:");
+	        fscanf(infile,"%d",&af_params->pert_params.dir);
+		(void) printf("%d\n",af_params->pert_params.dir);
+	    	CursorAfterString(infile,"Enter perturbation center:");
+	        fscanf(infile,"%lf",&af_params->pert_params.x0);
+		(void) printf("%f\n",af_params->pert_params.x0);
+	    	CursorAfterString(infile,"Enter perturbation lower end:");
+	        fscanf(infile,"%lf",&af_params->pert_params.xl);
+		(void) printf("%f\n",af_params->pert_params.xl);
+	    	CursorAfterString(infile,"Enter perturbation upper end:");
+	        fscanf(infile,"%lf",&af_params->pert_params.xu);
+		(void) printf("%f\n",af_params->pert_params.xu);
+	    	CursorAfterString(infile,"Enter perturbation amplitude:");
+	        fscanf(infile,"%lf",&af_params->pert_params.pert_amp);
+		(void) printf("%f\n",af_params->pert_params.pert_amp);
+		break;
+	    case 's':
+	    case 'S':
+		af_params->pert_params.pert_type = SINE_PERT;
+		break;
+	    }
+	}
+}       /* end initPerturbation */

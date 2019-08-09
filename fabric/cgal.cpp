@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <iostream>
 #include <fstream>
-#include "fabric.h"
+#include <fabric.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned, K> Vb;
@@ -261,7 +261,8 @@ static void CgalCircle(
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;
-	char gore_bool[10],vent_bool[10], string_bool[10];
+        bool set_gore,set_vent,set_string;
+        char string[100];
 	std::list<Cgal_Point> list_of_seeds;
 	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -279,35 +280,43 @@ static void CgalCircle(
         (void) printf("%f\n",CirR[0]);
 
 	CirR[1] = 0;
+
+        set_gore = false;
+        set_vent = false;
+        set_string = false;
+
 	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
-        fscanf(infile,"%s",gore_bool);
-        (void) printf("%s\n",gore_bool);
-        if (gore_bool[0]=='y' || gore_bool[0]=='Y')
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
         {
 	    CirR[1] = 0.1 * CirR[0];
 	    af_params->attach_gores = YES;
+            set_gore = true;
 	}
 	else
 	    af_params->attach_gores = NO;
 	CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:");
-	fscanf(infile,"%s",vent_bool);
-	(void) printf("%s\n",vent_bool);
-	if (vent_bool[0]=='y' || vent_bool[0]=='Y')
+	fscanf(infile,"%s",string);
+	(void) printf("%s\n",string);
+	if (string[0]=='y' || string[0]=='Y')
         {
             CursorAfterString(infile,"Enter radius of the vent:");
 	    fscanf(infile,"%lf",&CirR[1]);
 	    (void) printf("%f\n",CirR[1]);
+            set_vent = true;
         }
 
 	num_strings = 28;   //default
 	CursorAfterStringOpt(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string_bool);
-	(void) printf("%s\n",string_bool);
-	if (string_bool[0]=='y' || string_bool[0]=='Y')
+	fscanf(infile,"%s",string);
+	(void) printf("%s\n",string);
+	if (string[0]=='y' || string[0]=='Y')
 	{
 	    CursorAfterString(infile,"Enter number of chords:");
 	    fscanf(infile,"%d",&num_strings);
 	    (void) printf("%d\n",num_strings);
+            set_string = true;
 	}
 	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,
                                 sizeof(POINT*));
@@ -361,13 +370,13 @@ static void CgalCircle(
 		cdt.insert_constraint(v_in[i],v_in[i+1]);
 	    cdt.insert_constraint(v_in[0],v_in[num_in_vtx-1]);
 
-	    if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
+            if (set_gore == true)
 	    {
 	    	for (i = 0; i < num_strings; i++)
 		    cdt.insert_constraint(v_out[i*out_vtx_oneside],
 				v_in[i*in_vtx_oneside]);
 	    }
-	    if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
+            if (set_vent == true)
 	    {
 		list_of_seeds.push_back(Cgal_Point(CirCenter[0], CirCenter[1]));
 	    }
@@ -381,7 +390,7 @@ static void CgalCircle(
 	double tri_center[2];
 
         i=0;
-	if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
+        if (set_vent == true)
 	{
             for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end();
 				 ++fit)
@@ -410,24 +419,40 @@ static void CgalCircle(
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
 	checkReducedTri(*surf);
         wave_type(*surf) = ELASTIC_BOUNDARY;
-        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+        if (set_string == false && set_gore == false && set_vent == false)
+        {
+            /* Could be used for non-parachute tests */
+            if (CursorAfterStringOpt(infile,"Enter yes to fix the boundary curve: "))
+            {
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+                }
+            }
+            else
+                FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+        }
+        else
+            FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(*surf);
-	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
+        if (set_string == true)
 	{
 	    findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
                                 num_strings,&cbdry);
 	    installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	}
-	if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
+        if (set_gore == true)
         {
-            if (vent_bool[0] !='y' && vent_bool[0] !='Y')
+            if (set_vent == true)
 		InstallInCurve(front,*surf,in_nodes_coords[0],
 				in_nodes_coords[num_strings],
 				CirCenter,num_in_vtx);
 
 	    SplitCirBdry(front,*surf,num_strings,in_nodes_coords,
 			POSITIVE_ORIENTATION);
-	    if (string_bool[0] !='y' && string_bool[0] !='Y')
+            if (set_string == true)
 	    {
 	    	SplitCirBdry(front,*surf,num_strings,out_nodes_coords,
 			NEGATIVE_ORIENTATION);

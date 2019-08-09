@@ -71,21 +71,21 @@ struct PERT_PARAMS
 
 struct AF_PARAMS
 {
-    int dim;
-    SPRING_MODEL spring_model;
+        int dim;
+        SPRING_MODEL spring_model;
 	boolean no_fluid;
 	boolean is_parachute_system;
 	boolean attach_gores;
 	boolean attach_fixer;
 	boolean cut_vent;
-    boolean use_total_mass;
+        boolean use_total_mass;
 	boolean use_gpu;
 	PERT_PARAMS pert_params;
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
-    double gore_len_fac;
-    double gravity[MAXD];		/* gravitational force */
+        double gore_len_fac;
+        double gravity[MAXD];		/* gravitational force */
 	double payload;
 	double ks;			/* spring constant of surface */
 	double kl;			/* spring constant of string curves */
@@ -98,7 +98,7 @@ struct AF_PARAMS
 	double m_g;                     /* point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
-    double total_gore_mass;         /* Total mass of gore */
+        double total_gore_mass;         /* Total mass of gore */
 	boolean with_porosity;          /* with or without porosity*/
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double gamma;			/* canopy porosity */
@@ -107,9 +107,9 @@ struct AF_PARAMS
 	int    num_opt_round;		/* number of mesh optimizations rounds*/
 	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */
 	int    num_np;			/* number of master node to run spring model */
-	int    *node_id;		/* master node id */
+	int    node_id[10];		/* master node id */
 	
-    double break_strings_time;	/* time to break some strings */
+        double break_strings_time;	/* time to break some strings */
 	int    break_strings_num;	/* number of strings to break */
 	int    *break_strings_gindex;	/* gindex of strings to break */
 	double unequal_coeff;		/* the unequal coefficient */
@@ -250,10 +250,11 @@ void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
 */
 
 // afinit.cpp
-void read_Fparams(char*,F_PARAMS*);
-void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
-void restart_set_dirichlet_bdry_function(Front*);
+extern void read_Fparams(char*,F_PARAMS*);
+extern void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
+extern void restart_set_dirichlet_bdry_function(Front*);
 extern void setInitialIntfcAF(Front*,LEVEL_FUNC_PACK*,char*);
+extern void initPerturbation3d(Front*);
 
 /* afinit3d.cpp */
 extern void initEllipticSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
@@ -354,6 +355,10 @@ extern void set_geomset_velocity(ELASTIC_SET*,GLOBAL_POINT**);
 // afvelo.cpp
 extern void setMotionParams(Front*);
 extern void resetFrontVelocity(Front*);
+extern void convert_to_point_mass(Front*, AF_PARAMS*);
+extern void initVelocityFunc(FILE*,Front*);
+extern int countSurfPoints(INTERFACE*);
+extern int countStringPoints(INTERFACE*,boolean);
 
 // afmodule.cpp -- in parachute/modules.cpp
 extern void initParachuteDefault(Front*);
@@ -386,12 +391,13 @@ extern double springCharTimeStep(Front*);	// spring characteristic time
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 
-// fabric_api_internal.cpp
-extern void Fabric_InitFronTier(Front*,F_BASIC_DATA*);
-extern void Fabric_InitModules(Front*);
-
 // fabric_api.cpp
-    //extern void Fabric_Init(int argc, char* argv[]);
-
+extern void SMM_InitFronTier(Front*,F_BASIC_DATA*);
+extern void SMM_InitModules(Front*);
+extern void SMM_InitPerturbation(Front*);
+extern void SMM_InitPropagator(Front*);
+extern void SMM_InitSpringMassParams(Front*);
+extern void SMM_InitTestVelFunc(Front*);
+extern void SMM_InitTestTimeContrl(Front*);
 
 #endif

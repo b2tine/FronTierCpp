@@ -87,7 +87,6 @@ int main(int argc, char **argv)
 	}
 
 	af_params.num_np = 1;
-        FT_VectorMemoryAlloc((POINTER*)&af_params.node_id,1,sizeof(int));
         af_params.node_id[0] = 0;
 
 	FT_ReadSpaceDomain(in_name,&f_basic);
@@ -100,7 +99,7 @@ int main(int argc, char **argv)
         Fparams.dim = f_basic.dim;
         front.extra1 = (POINTER)&Fparams;
         front.extra2 = (POINTER)&af_params;
-        read_Fparams(in_name,&Fparams);
+        //read_Fparams(in_name,&Fparams);
     
         if (debugging("trace")) 
             (void) printf("Passed read_Fparams()\n");
