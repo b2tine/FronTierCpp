@@ -27,7 +27,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-
 noinst_PROGRAMS = fabric \
 				  test1 \
 				  fortrantest

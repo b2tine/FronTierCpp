@@ -21,9 +21,12 @@ LT_INIT([disable-shared])
 
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx])
-AC_PROG_FC([gfortran])
+AC_PROG_FC
 AC_FC_SRCEXT([F90])
 AC_FC_LIBRARY_LDFLAGS
+AC_FC_FREEFORM
+AC_FC_WRAPPERS
+AC_FC_MAIN
 
 #Check for pthreads
 AX_PTHREAD([have_pthread=yes],[have_pthread=no])

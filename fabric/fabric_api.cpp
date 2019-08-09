@@ -41,9 +41,10 @@ extern "C" {
 
 
 //void Fabric_Init(int argc, char* argv[])
-void Fabric_Init(char* inname)
+void Fabric_Init(char inname[])
 {
     checkpoint("Entering Fabric_Init()");
+    std::cout << inname << "\n";
 
     static Front front;
 	static F_BASIC_DATA f_basic;
