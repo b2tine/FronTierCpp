@@ -43,16 +43,12 @@ extern "C" {
 //void Fabric_Init(int argc, char* argv[])
 void Fabric_Init(char inname[])
 {
-    checkpoint(Entering Fabric_Init());
-    std::cout << inname << "\n";
-
     static Front front;
 	static F_BASIC_DATA f_basic;
 
     std::ifstream infile(inname);
     std::vector<std::string> argstrings;
 
-    checkpoint(1);
     int argc = 0;
     while (!infile.eof())
     {
@@ -61,7 +57,6 @@ void Fabric_Init(char inname[])
         argstrings.push_back(curr);
         argc++;
     }
-    checkpoint(2);
 
     argstrings.insert(argstrings.begin(),"dummyarg");
     
@@ -72,25 +67,14 @@ void Fabric_Init(char inname[])
         std::strcpy(argv[i],argstrings[i].c_str());
     }
     
-    for (int i = 0; i < argc; ++i)
-    {
-        std::cout << argv[i] << " ";
-    }
-    std::cout << "\n";
-    
-
-    checkpoint(Before FT_Init());
-	
     FT_Init(argc,argv,&f_basic);
-    
-    checkpoint(After FT_Init());
 
 	/* Initialize basic computational data */
 
-        //Fabric_InitFronTier(&front,&f_basic);
-        //Fabric_InitModules(&front);
+    Fabric_InitFronTier(&front,&f_basic);
+    Fabric_InitModules(&front);
 	    
-        //FT_Draw(&front);
+    //FT_Draw(&front);
 
 	clean_up(0);
     checkpoint(Leaving Fabric_Init());
