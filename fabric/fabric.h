@@ -391,7 +391,7 @@ extern double springCharTimeStep(Front*);	// spring characteristic time
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 
-// fabric_api.cpp
+// fabric_api_internal.cpp
 extern void SMM_InitFronTier(Front*,F_BASIC_DATA*);
 extern void SMM_InitModules(Front*);
 extern void SMM_InitPerturbation(Front*);

@@ -67,7 +67,7 @@ EXPORT	void FT_Propagate(
 	FrontAdvance(front->dt,&dt_frac,front,&newfront,
                                 (POINTER)NULL);
 
-    assign_interface_and_free_front(front,newfront);
+        assign_interface_and_free_front(front,newfront);
 	if (front->grid_intfc != NULL)
 	{
 	    if (TwoStepIntfc(front) == YES)
@@ -92,16 +92,19 @@ EXPORT	void FT_Propagate(
 	    (void) printf("Leaving FT_Propagate()\n");
 }	/* end FT_Propagate */
 
-EXPORT	void FT_Propagate2(
-	Front *front,
-	Front **newfront)
+EXPORT	void FT_InteriorPropagate(
+	Front *front)
 {
-	double dt_frac;
-	FT_MakeGridIntfc(front);
-	FrontAdvance(front->dt,&dt_frac,front,newfront,
-                                (POINTER)NULL);
-	FT_FreeGridIntfc(front);
-}	/* end FT_Propagate */
+        if (front->interior_propagate != NULL)
+        {
+            interior_advance_front(front);
+	    if (front->grid_intfc != NULL)
+            {
+	    	FT_FreeGridIntfc(front);
+	    	FT_MakeGridIntfc(front);
+            }
+        }
+}	/* end FT_InteriorPropagate */
 
 EXPORT	void FrontSwapAndFree(
 	Front *front,
@@ -367,34 +370,34 @@ EXPORT	void	FT_Init(
 	char *out_name     = f_basic->out_name;
 	char *restart_name = f_basic->restart_name;
 	int  *subdomains   = f_basic->subdomains;
-    int i,total_num_proc = 1;
-    int num_thread;
+        int i,total_num_proc = 1;
+        int num_thread;
 	char dirname[256];
 	char file_name[256];
 	FILE *ifile;
 
-    pp_init(&argc,&argv);
+        pp_init(&argc,&argv);
 	
-    if (f_basic == NULL)
-        return;
+        if (f_basic == NULL)
+            return;
 
 	f_basic->ReadFromInput = NO;
 	f_basic->RestartRun = NO;
-    f_basic->coord_system = IDENTITY_REMAP;
+        f_basic->coord_system = IDENTITY_REMAP;
 
 	//if (f_basic->dim == 0)
-    //	    f_basic->dim = 1;
+        //    f_basic->dim = 1;
 
-    for (i = 0; i < MAXD; ++i)
-        subdomains[i] = 1;
+        for (i = 0; i < MAXD; ++i)
+            subdomains[i] = 1;
 
 	argc--;
-    argv++;
+        argv++;
 
-    int dimflag = 0;
-    int outflag = 0;
+        int dimflag = 0;
+        int outflag = 0;
 
-    while (argc >= 1)
+        while (argc >= 1)
 	{
 	    if (argv[0][0] != '-')
 	    {
@@ -402,135 +405,135 @@ EXPORT	void	FT_Init(
 		    exit(1);
 	    }
 	    switch(argv[0][1]) {
-        case 'd':
+            case 'd':
 	    case 'D':
 	    	f_basic->dim = atoi(argv[1]);
 	        if( f_basic->dim < 1 || f_basic->dim > 3 )
-            {
-                screen("Invalid Dimension: dimension must be 1, 2 or 3\n");
-                clean_up(ERROR);
-            }
-            argc -= 2;
-            argv += 2;
-            dimflag = 1;
-            break;
+                {
+                    screen("Invalid Dimension: dimension must be 1, 2 or 3\n");
+                    clean_up(ERROR);
+                }
+                argc -= 2;
+                argv += 2;
+                dimflag = 1;
+                break;
 	    case 'i':
 	    case 'I':
 	    	f_basic->ReadFromInput = YES;
 	    	zero_scalar(in_name,200);
-            strcpy(in_name,argv[1]);
-            argc -= 2;
+                strcpy(in_name,argv[1]);
+                argc -= 2;
 	    	argv += 2;
-		    break;
+		break;
 	    case 'r':
 	    case 'R':
 	    	f_basic->RestartRun = YES;
 	    	zero_scalar(restart_name,200);
-            strcpy(restart_name,argv[1]);
-            argc -= 2;
+                strcpy(restart_name,argv[1]);
+                argc -= 2;
     		argv += 2;
 	    	break;
 	    case 's':
 	    case 'S':
 	    	f_basic->ReSetTime = YES;
-            argc -= 1;
+                argc -= 1;
 	    	argv += 1;
 		break;
 	    case 't':
 	    case 'T':
 	    	f_basic->RestartStep = atoi(argv[1]);
-            argc -= 2;
-            argv += 2;
-            break;
+                argc -= 2;
+                argv += 2;
+                break;
 	    case 'c':
 	    case 'C':
-            switch (argv[1][0])
-            {
-            case 'c':
-            case 'C':
-                f_basic->coord_system = CYLINDRICAL_REMAP;
+                switch (argv[1][0])
+                {
+                case 'c':
+                case 'C':
+                    f_basic->coord_system = CYLINDRICAL_REMAP;
+                    break;
+                case 's':
+                case 'S':
+                    f_basic->coord_system = SPHERICAL_REMAP;
+                    break;
+                default:
+                    f_basic->coord_system = IDENTITY_REMAP;
+                }
+                argc -= 2;
+                argv += 2;
                 break;
-            case 's':
-            case 'S':
-                f_basic->coord_system = SPHERICAL_REMAP;
-                break;
-            default:
-                f_basic->coord_system = IDENTITY_REMAP;
-            }
-            argc -= 2;
-            argv += 2;
-            break;
 	    case 'o':
 	    case 'O':
 	    	zero_scalar(dirname,200);
-		    strcpy(dirname,argv[1]);
-		    if (pp_min_status(create_directory(dirname,NO)) == NO)
-            {
-                screen("Cannot create directory %s\n",dirname);
-                clean_up(ERROR);    
-            }
-		    if (pp_numnodes() > 1)
-                sprintf(file_name,"%s/run-output.%d",dirname,pp_mynode());
-		    else
-                sprintf(file_name,"%s/run-output",dirname);
-		    ifile = freopen(file_name,"w",stdout);
+		strcpy(dirname,argv[1]);
+		if (pp_min_status(create_directory(dirname,NO)) == NO)
+                {
+                    screen("Cannot create directory %s\n",dirname);
+                    clean_up(ERROR);    
+                }
+		if (pp_numnodes() > 1)
+                    sprintf(file_name,"%s/run-output.%d",dirname,pp_mynode());
+		else
+                    sprintf(file_name,"%s/run-output",dirname);
+		ifile = freopen(file_name,"w",stdout);
 		    
-            zero_scalar(out_name,200);
-		    strcpy(out_name,argv[1]);
+                zero_scalar(out_name,200);
+		strcpy(out_name,argv[1]);
 
-            argc -= 2;
-		    argv += 2;
-            outflag = 1;
-		    break;
+                argc -= 2;
+		argv += 2;
+                outflag = 1;
+                fflush(stdout);
+		break;
 #if defined(HAVE_MPI)
-        case 'p':
-        case 'P':
-            for (i = 0; i < MAXD; ++i)
-            {
-                if (argc < 2 || argv[1][0] == '-')
-                    break;
+            case 'p':
+            case 'P':
+                for (i = 0; i < MAXD; ++i)
+                {
+                    if (argc < 2 || argv[1][0] == '-')
+                        break;
 
+                    argc -= 1;
+                    argv += 1;
+                    subdomains[i] = atoi(argv[0]);
+                    total_num_proc *= subdomains[i];
+                }
                 argc -= 1;
                 argv += 1;
-                subdomains[i] = atoi(argv[0]);
-                total_num_proc *= subdomains[i];
-            }
-            argc -= 1;
-            argv += 1;
-            if (total_num_proc != pp_numnodes())
-            {
-                printf("total number of processors for the partition %d "
+                if (total_num_proc != pp_numnodes())
+                {
+                    printf("total number of processors for the partition %d "
                         "does not equal to requested np %d\n",
                         total_num_proc, pp_numnodes());
-                clean_up(ERROR);
-            }
-		    break;
-        case 'm':
-        case 'M':
-            num_thread = atoi(argv[1]);
-            set_num_of_thread(num_thread);
-            argc -= 2;
-            argv += 2;
+                    clean_up(ERROR);
+                }
+		break;
+            case 'm':
+            case 'M':
+                num_thread = atoi(argv[1]);
+                set_num_of_thread(num_thread);
+                argc -= 2;
+                argv += 2;
     		break;
 #endif /* defined(HAVE_MPI) */
 	    default:
 	    	argc -= 2;
-		    argv += 2;
+		argv += 2;
 	    }
 	}
 
-    if( dimflag != 1 )
-    {
-        screen("Input Error: dimension was not specified\n");
-        clean_up(ERROR);
-    }
+        if( dimflag != 1 )
+        {
+            screen("Input Error: dimension was not specified\n");
+            clean_up(ERROR);
+        }
 
-    if( outflag != 1 )
-    {
-        screen("Input Error: output directory was not specified\n");
-        clean_up(ERROR);
-    }
-
+        if( outflag != 1 )
+        {
+            screen("Input Error: output directory was not specified\n");
+            clean_up(ERROR);
+        }
 }	/* end FT_Init */
 
 EXPORT	void FT_Draw(
@@ -2069,6 +2072,7 @@ EXPORT void FT_ReadTimeControl(
 	int status;
 
 	infile = fopen(in_name,"r");
+
         CursorAfterString(infile,"Max time:");
         status = fscanf(infile,"%lf",&front->max_time);
         (void) printf("%f\n",front->max_time);
@@ -2084,14 +2088,19 @@ EXPORT void FT_ReadTimeControl(
         CursorAfterString(infile,"CFL factor:");
         status = fscanf(infile,"%lf",&(Time_step_factor(front)));
         (void) printf("%f\n",Time_step_factor(front));
-        CursorAfterString(infile,"Redistribution interval:");
-        status = fscanf(infile,"%d",&(Frequency_of_redistribution(front,GENERAL_WAVE)));
-        (void) printf("%d\n",Frequency_of_redistribution(front,GENERAL_WAVE));
-	sprintf(msg,"Type yes to turn off auto-redistribution:");
+
+        /* Optional control parameters */
+        Frequency_of_redistribution(front,GENERAL_WAVE) = 1000;
 	front->Auto_Redist = YES;	
+        if (CursorAfterStringOpt(infile,"Redistribution interval:"))
+        {
+            fscanf(infile,"%d",&(Frequency_of_redistribution(front,GENERAL_WAVE)));
+            printf("%d\n",Frequency_of_redistribution(front,GENERAL_WAVE));
+        }
+	sprintf(msg,"Type yes to turn off auto-redistribution:");
         if (CursorAfterStringOpt(infile,msg))
 	{
-            status = fscanf(infile,"%s",s);
+            fscanf(infile,"%s",s);
 	    (void) printf("%s\n",s);
 	    if (s[0] == 'y' || s[0] == 'Y')
 		front->Auto_Redist = NO;	

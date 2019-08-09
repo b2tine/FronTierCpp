@@ -28,48 +28,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "fabric.h"
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <cstring>
-#include <string>
+static  void fabric_driver(Front*);
 
-
-static void fabric_driver(Front*);
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void Fabric_test(char inname[])
+int main(int argc, char **argv)
 {
 	static Front front;
 	static F_BASIC_DATA f_basic;
 
-    std::ifstream infile(inname);
-    std::vector<std::string> argstrings;
-
-    int argc = 0;
-    while (!infile.eof())
-    {
-        std::string curr;
-        infile >> curr;
-        argstrings.push_back(curr);
-        argc++;
-    }
-
-    argstrings.insert(argstrings.begin(),"dummyarg");
-    
-    char* argv[argc];
-    for (int i = 0; i < argc; ++i)
-    {
-        argv[i] = new char[argstrings[i].length()+1];
-        std::strcpy(argv[i],argstrings[i].c_str());
-    }
-    
-    FT_Init(argc,argv,&f_basic);
-
+	FT_Init(argc,argv,&f_basic);
 
 	/* Initialize basic computational data */
 
@@ -86,19 +52,13 @@ void Fabric_test(char inname[])
 	clean_up(0);
 }
 
-
-#ifdef __cplusplus
-}
-#endif
-
-
-static void fabric_driver(Front *front)
+static  void fabric_driver(Front *front)
 {
-    double CFL;
-    int  dim = front->rect_grid->dim;
+        double CFL;
+        int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    CFL = Time_step_factor(front);
+        CFL = Time_step_factor(front);
 
 	FT_ResetTime(front);
 
@@ -183,7 +143,3 @@ static void fabric_driver(Front *front)
     
         FT_FreeMainIntfc(front);
 }       /* end fabric_driver */
-
-
-
-

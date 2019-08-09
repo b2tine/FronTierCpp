@@ -85,6 +85,7 @@ IMPORT	int	modify_exterior_curve(CURVE*,CURVE*,CURVE**,ORIENTATION,
 				      RPROBLEM*,CROSS*,int,Front*);
 IMPORT  void    debug_show_boundary_curve_states(const char*,
                                        CURVE*,ORIENTATION);
+IMPORT  void    interior_advance_front(Front*);
 
 	/* fbdry2.c*/
 IMPORT	SIDE	physical_side_of_bdry_curve(CURVE*);
