@@ -1,1 +1,1 @@
--d 3 -i in-drumC -o out-drumC
+-d 3 -i in-drumR -o out-drumR

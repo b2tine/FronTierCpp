@@ -43,7 +43,7 @@ extern "C" {
 //void Fabric_Init(int argc, char* argv[])
 void Fabric_Init(char inname[])
 {
-    checkpoint("Entering Fabric_Init()");
+    checkpoint(Entering Fabric_Init());
     std::cout << inname << "\n";
 
     static Front front;
@@ -52,38 +52,38 @@ void Fabric_Init(char inname[])
     std::ifstream infile(inname);
     std::vector<std::string> argstrings;
 
-    //TODO: need to make sure file is open
-    //      getting stuck in read loop
     checkpoint(1);
-    int nargs = 0;
+    int argc = 0;
     while (!infile.eof())
     {
         std::string curr;
         infile >> curr;
         argstrings.push_back(curr);
-        nargs++;
+        argc++;
     }
     checkpoint(2);
 
     argstrings.insert(argstrings.begin(),"dummyarg");
     
-    char* args[nargs];
-    for (int i = 0; i < nargs; ++i)
+    char* argv[argc];
+    for (int i = 0; i < argc; ++i)
     {
-        args[i] = new char[argstrings[i].length()+1];
-        std::strcpy(args[i],argstrings[i].c_str());
+        argv[i] = new char[argstrings[i].length()+1];
+        std::strcpy(argv[i],argstrings[i].c_str());
     }
     
-    for (int i = 0; i < nargs; ++i)
+    for (int i = 0; i < argc; ++i)
     {
-        std::cout << args[i] << " ";
+        std::cout << argv[i] << " ";
     }
     std::cout << "\n";
     
-    checkpoint("Leaving Fabric_Init()");
-    return;
 
-	//FT_Init(argc,argv,&f_basic);
+    checkpoint(Before FT_Init());
+	
+    FT_Init(argc,argv,&f_basic);
+    
+    checkpoint(After FT_Init());
 
 	/* Initialize basic computational data */
 
@@ -92,7 +92,8 @@ void Fabric_Init(char inname[])
 	    
         //FT_Draw(&front);
 
-	//clean_up(0);
+	clean_up(0);
+    checkpoint(Leaving Fabric_Init());
 }
 
 
