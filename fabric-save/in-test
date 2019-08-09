@@ -1,0 +1,28 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 60 60 60
+Lower boundary in 0-th dimension: PASSIVE_BOUNDARY
+Upper boundary in 0-th dimension: PASSIVE_BOUNDARY
+Lower boundary in 1-th dimension: PASSIVE_BOUNDARY
+Upper boundary in 1-th dimension: PASSIVE_BOUNDARY
+Lower boundary in 2-th dimension: PASSIVE_BOUNDARY
+Upper boundary in 2-th dimension: PASSIVE_BOUNDARY
+
+Initial surface type can be
+	PLANE
+	ELLIPSE
+	SINE_WAVE
+	CIRCULAR_PERT
+Enter number of canopy surfaces: 1
+Enter initial canopy surface type: P
+Enter the height of the plane: 0.533
+Enter type of plane edge: c
+Enter circle center: 0.5 0.5
+Enter circle radius: 0.4
+Enter yes to attach strings to canopy: n
+Enter yes to change canopy boundary: y
+Entering perturbation type: radial
+Enter perturbation center: 0.5 0.5
+Enter perturbation radius: 0.4
+Enter perturbation amplitude: 0.2
