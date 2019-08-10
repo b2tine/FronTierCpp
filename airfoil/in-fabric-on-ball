@@ -91,11 +91,11 @@ Type y to plot bullet in gd movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
-Enter the debugging string: trigid_body
-Enter the debugging string: tisect3d
 Enter the debugging string: CLOCK
-Enter the debugging string: tstep_size
-Enter the debugging string: ttri_cluster
-Enter the debugging string: tcollision
-Enter the debugging string: tCollisionImpulse
-Enter the debugging string: tno_optimize
+Enter the debugging string: Xrigid_body
+Enter the debugging string: Xtisect3d
+Enter the debugging string: Xstep_size
+Enter the debugging string: Xtri_cluster
+Enter the debugging string: Xcollision
+Enter the debugging string: XCollisionImpulse
+Enter the debugging string: Xno_optimize
