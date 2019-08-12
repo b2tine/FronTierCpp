@@ -4787,11 +4787,15 @@ EXPORT 	int insert_grid_intfc_crossings3d(
 	}
 	if (crx_index != T->n_crx)
 	{
-	    (void) printf("ERROR: counted number of crossings does not"
+	    (void) printf("WARNING: counted number of crossings does not"
 			  " equal to inserted number of crossings!\n");
 	    (void) printf(" Counted number of crossings: %d\n",T->n_crx);
 	    (void) printf("Inserted number of crossings: %d\n",crx_index);
-	    clean_up(ERROR);
+            if (crx_index > T->n_crx)
+            {
+                printf("Counted number > Inserted number, exit!\n");
+	        clean_up(ERROR);
+            }
 	}
 	
 	DEBUG_LEAVE(insert_grid_intfc_crossings)
