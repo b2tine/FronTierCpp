@@ -244,6 +244,7 @@ void airfoil_driver(Front *front)
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
+	    FT_InteriorPropagate(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -291,6 +292,7 @@ void airfoil_driver(Front *front)
 	    break_strings(front);
 	    FrontPreAdvance(front);
             FT_Propagate(front);
+	    FT_InteriorPropagate(front);
 	    
             if (debugging("trace"))
                 printf("Passed FT_Propagate()\n");
