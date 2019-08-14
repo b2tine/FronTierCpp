@@ -401,7 +401,7 @@ void CollisionSolver::resolveCollision()
 
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
-	reduceSuperelast();
+	    //reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
     //TODO: implement this function correctly
