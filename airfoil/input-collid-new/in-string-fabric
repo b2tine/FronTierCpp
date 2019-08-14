@@ -49,7 +49,7 @@ Enter the end of curve 0: 0.5 0.9 0.6
 Enter the number of curves in each side: 10
 Enter the shift direction: 1 0 0
 Enter unit shifted displacement: 0.002
-Enter yes to fix the curve ends: yes
+Enter yes to fix the endpoints of curve 0: yes
 
 Enter density and viscosity of the fluid: 1 0.00628
 Enter gravity: 0.0 0.0 -9.8
