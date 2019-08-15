@@ -283,7 +283,7 @@ void setMotionParams(Front* front)
 
 	if (af_params->is_parachute_system == YES)
 	{
-	    CursorAfterString(infile,"Enter payload:");
+	    CursorAfterStringOpt(infile,"Enter payload:");
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
