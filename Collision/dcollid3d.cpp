@@ -150,7 +150,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
             w[i] = myDet3d(tmp)/myDet3d(I);
     }
 
-    /*
     if (myDet3d(I) < ROUND_EPS) {
         //I is non-invertible, calculate pseudoinverse with SVD
         arma::mat arI(3, 3);
@@ -188,7 +187,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
         }
 
     }
-    */
 
     mag_w = Mag3d(w);
 	
