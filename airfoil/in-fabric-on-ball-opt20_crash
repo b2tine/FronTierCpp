@@ -25,15 +25,16 @@ Initial surface type can be
         CIRCULAR_PERT
 Enter initial canopy surface type: P
 Enter the height of the plane: 0.8
-Enter type of plane edge: c
+Enter type of plane eXXXXXXXXXXXXXXXXXdge: c
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
 Enter yes to attach strings to canopy: no
 
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 16
+Enter interior sub step number: 10
 
+Entering number of canopy optimization rounds: 20
 Enter fabric spring constant: 5000
 Enter fabric friction constant: 1
 Enter fabric point mass: 0.002
@@ -91,11 +92,11 @@ Type y to plot bullet in gd movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
+Enter the debugging string: trigid_body
+Enter the debugging string: tisect3d
 Enter the debugging string: CLOCK
-Enter the debugging string: Xrigid_body
-Enter the debugging string: Xtisect3d
-Enter the debugging string: Xstep_size
-Enter the debugging string: Xtri_cluster
-Enter the debugging string: Xcollision
-Enter the debugging string: XCollisionImpulse
-Enter the debugging string: Xno_optimize
+Enter the debugging string: tstep_size
+Enter the debugging string: ttri_cluster
+Enter the debugging string: tcollision
+Enter the debugging string: tCollisionImpulse
+Enter the debugging string: tno_optimize

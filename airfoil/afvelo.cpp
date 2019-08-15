@@ -288,6 +288,18 @@ void setMotionParams(Front* front)
             (void) printf("%f\n",af_params->payload);
 	}
 
+    /*
+        CursorAfterString(infile,"Enter preximity test tolerance:");
+        fscanf(infile,"%lf",&af_params->pre_tol);
+        (void) printf("%f\n",af_params->pre_tol);
+        CursorAfterString(infile,"Enter volume diff criteria:");
+        fscanf(infile,"%lf",&af_params->vol_diff);
+        (void) printf("%f\n",af_params->vol_diff);
+        CursorAfterString(infile,"Enter restitution coefficient:");
+        fscanf(infile,"%lf",&af_params->rest);
+        (void) printf("%f\n",af_params->rest);
+    */
+
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);

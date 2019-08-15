@@ -66,8 +66,8 @@ Enter the end of curve 0: 0.5 0.9 0.6
 Enter yes to fix the endpoints of curve 0: yes
 Enter yes to have parallel curves for curve 0: no
 
-Enter the start of curve 1: 0.1 0.5 0.8
-Enter the end of curve 1: 0.9 0.5 0.8
+Enter the start of curve 1: 0.1 0.4 0.8
+Enter the end of curve 1: 0.9 0.6 0.8
 Enter yes to fix the endpoints of curve 1: no
 Enter yes to have parallel curves for curve 1: no
 
