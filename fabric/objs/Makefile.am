@@ -35,7 +35,6 @@ libfabric_la_SOURCES = \
 ../rigidbody.h \
 ../rigidbody.cpp \
 ../modules.cpp \
-../fabric_api_internal.cpp \
 ../fabric_api.cpp
 
 

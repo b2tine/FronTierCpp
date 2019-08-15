@@ -268,9 +268,11 @@ EXPORT void compute_spring_accel1(
 	    {
 		vec[k] = sv->x_nb[i][k] - sv->x[k];
 		len += sqr(vec[k]);
-//#ifdef DAMPING_FORCE
+/*
+#ifdef DAMPING_FORCE
 		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
-//#endif
+#endif
+*/
 	    }
 	    len = sqrt(len);
 
@@ -278,9 +280,11 @@ EXPORT void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-//#ifdef DAMPING_FORCE
+/*
+#ifdef DAMPING_FORCE
 		f[k] += sv->lambda*v_rel[k]/sv->m;
-//#endif
+#endif
+*/
 	    }
 	}
 
@@ -341,7 +345,6 @@ void generic_spring_solver(
 	}
 	old_size = size;
 
-        printf("n_loop = %d  dt = %f\n",n_loop,dt);
 	for (i = 0; i < size; ++i)
 	{
 	    compute_spring_accel1(&sv[i],accel[i],dim);
@@ -421,8 +424,8 @@ void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-            sv[i].x[j] = x_new[i][j];
-            sv[i].v[j] = v_new[i][j];
+                sv[i].x[j] = x_new[i][j];
+                sv[i].v[j] = v_new[i][j];
 	    }
 	    for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
@@ -626,12 +629,12 @@ EXPORT void set_node_spring_vertex(
 	double lambda_g = geom_set->lambda_g;
 	boolean is_fixed = NO;
 	STATE *sl,*sr;
-	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	double *g;
 	long gindex,gindex_nb;
 
-	if (Fparams != NULL)
- 	    g = Fparams->gravity;
+	if (af_params != NULL)
+ 	    g = af_params->gravity;
 	else
 	    g = NULL;
 
@@ -727,7 +730,12 @@ EXPORT void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-		sv[*n].k[nn] = kl;
+            {
+                if (wave_type(*c) == ELASTIC_STRING)
+                    sv[*n].k[nn] = kl;
+                else if (wave_type(*c) == ELASTIC_BOUNDARY)
+                    sv[*n].k[nn] = ks;
+            }
 	    ++nn;
 	}
 	for (c = node->in_curves; c && *c; ++c)
@@ -754,8 +762,13 @@ EXPORT void set_node_spring_vertex(
 		else if (hsbdry_type(*c) == FIXED_HSBDRY)
 		    is_fixed = YES;
 	    }
-	    else
-		sv[*n].k[nn] = kl;
+            else
+            {
+                if (wave_type(*c) == ELASTIC_STRING)
+                    sv[*n].k[nn] = kl;
+                else if (wave_type(*c) == ELASTIC_BOUNDARY)
+                    sv[*n].k[nn] = ks;
+            }
 	    ++nn;
 	}
 	if (dim == 3)
@@ -857,12 +870,12 @@ EXPORT void set_curve_spring_vertex(
 	BOND *b;
 	double kl,m_l,lambda_l;
 	int dim = front->rect_grid->dim;
-        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
         double *g;
 	long gindex,gindex_nb;
 
-	if (Fparams != NULL)
-	    g = Fparams->gravity;
+	if (af_params != NULL)
+	    g = af_params->gravity;
 	else
 	    g = NULL;
 	if (dim == 3)
@@ -1040,15 +1053,15 @@ EXPORT void set_surf_spring_vertex(
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
 	int dim = front->rect_grid->dim;
-        F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
         double *g;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-	if (Fparams != NULL)
- 	    g = Fparams->gravity;
+	if (af_params != NULL)
+ 	    g = af_params->gravity;
 	else g = NULL;
 
 	unsort_surf_point(surf);

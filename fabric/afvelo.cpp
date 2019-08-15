@@ -272,9 +272,8 @@ void setMotionParams(Front* front)
 	for (i = 0; i < dim; ++i)
 	    af_params->gravity[i] = Fparams->gravity[i];
 
-	if (af_params->is_parachute_system == YES)
+        if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
-	    CursorAfterString(infile,"Enter payload:");
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
@@ -563,10 +562,7 @@ extern void initVelocityFunc(
 	    front->node_propagate = airfoil_node_propagate;
 	    velo_func_pack.point_propagate = elastic_point_propagate;
 	    (void) printf("Available velocity functions are:\n");
-	    (void) printf("\tVortex velocity (R)\n");
-	    (void) printf("\tDouble vortex velocity (D)\n");
 	    (void) printf("\tVertical velocity (V)\n");
-	    (void) printf("\tToroidal velocity (T)\n");
 	    (void) printf("\tParabolic velocity (P)\n");
 	    (void) printf("\tSingular velocity (S)\n");
 	    (void) printf("\tZero velocity (Z)\n");
@@ -574,66 +570,12 @@ extern void initVelocityFunc(
 	    (void) printf("\tFixed point velocity (FP)\n");
 	    (void) printf("\tFree fall velocity (FF)\n");
    
-        CursorAfterString(infile,"Enter velocity function: ");
+            CursorAfterString(infile,"Enter velocity function: ");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    
-        switch (string[0])
-        {
-            case 'r':
-            case 'R':
-		if (string[1] == 'o' || string[1] == 'O')
-		{
-            FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
-            sizeof(VORTEX_PARAMS));
-                front->max_time = 0.4;
-                front->movie_frame_interval = 0.02;
-                vortex_params->dim = 2;
-                vortex_params->type[0] = 'M';
-                vortex_params->cos_time = 0;
-                vortex_params->cen[0] = 0.5;
-                vortex_params->cen[1] = 0.25;
-                vortex_params->rad = 0.15;
-                vortex_params->time = 0.5*front->max_time;
-                velo_func_pack.func_params = (POINTER)vortex_params;
-                velo_func_pack.func = vortex_vel;
-    }
-		else if (string[1] == 'a' || string[1] == 'A')
-		{
-	    	    FT_ScalarMemoryAlloc((POINTER*)&randv_params,
-				sizeof(RANDOMV_PARAMS));
-		    CursorAfterString(infile,"Enter random amplitude:");
-		    for (i = 0; i < dim; ++i)
-		    {
-        	    	fscanf(infile,"%lf",&randv_params->v0[i]);
-        	    	(void) printf("%fi ",randv_params->v0[i]);
-		    }
-        	    (void) printf("\n");
-		    CursorAfterString(infile,"Enter stop motion time:");
-        	    fscanf(infile,"%lf",&randv_params->stop_time);
-        	    (void) printf("%f\n",randv_params->stop_time);
-            	    velo_func_pack.func_params = (POINTER)randv_params;
-            	    velo_func_pack.func = random_velo;
-		}
-		else
-		{
-		    (void) printf("ERROR: need either RO or RA\n");
-		    clean_up(ERROR);
-		}
-            	break;
-            case 'd':
-            case 'D':
-	    	FT_ScalarMemoryAlloc((POINTER*)&dv_params,
-				sizeof(BIPOLAR_PARAMS));
-            	dv_params->cen1[0] = 0.25;
-            	dv_params->cen1[1] = 0.25;
-            	dv_params->cen2[0] = 0.75;
-            	dv_params->cen2[1] = 0.25;
-            	dv_params->i1 = -0.5;
-            	dv_params->i2 =  0.5;
-            	velo_func_pack.func_params = (POINTER)dv_params;
-            	velo_func_pack.func = double_vortex_vel;
-            	break;
+            switch (string[0])
+            {
             case 'v':
             case 'V':
 	    	FT_ScalarMemoryAlloc((POINTER*)&vert_params,
@@ -645,30 +587,10 @@ extern void initVelocityFunc(
         	fscanf(infile,"%lf",&vert_params->stop_time);
         	(void) printf("%f\n",vert_params->stop_time);
 		CursorAfterString(infile,"Enter center of vertical motion:");
-        	fscanf(infile,"%lf %lf",&vert_params->cen[0],&vert_params->cen[1]);
+        	fscanf(infile,"%lf %lf",&vert_params->cen[0],
+                                &vert_params->cen[1]);
             	velo_func_pack.func_params = (POINTER)vert_params;
             	velo_func_pack.func = vertical_velo;
-            	break;
-            case 't':
-            case 'T':
-	    	FT_ScalarMemoryAlloc((POINTER*)&toro_params,
-				sizeof(TOROIDAL_PARAMS));
-		CursorAfterString(infile,"Enter center of toroidal motion:");
-        	fscanf(infile,"%lf %lf %lf",&toro_params->tcen[0],
-				&toro_params->tcen[1],&toro_params->tcen[2]);
-        	(void) printf("%f %f %f\n",toro_params->tcen[0],
-				toro_params->tcen[1],toro_params->tcen[2]);
-		CursorAfterString(infile,"Enter distance to poloidal center:");
-        	fscanf(infile,"%lf",&toro_params->R0);
-        	(void) printf("%f\n",toro_params->R0);
-		CursorAfterString(infile,"Enter velocity magnitude:");
-        	fscanf(infile,"%lf",&toro_params->v0);
-        	(void) printf("%f\n",toro_params->v0);
-		CursorAfterString(infile,"Enter stop motion time:");
-        	fscanf(infile,"%lf",&toro_params->stop_time);
-        	(void) printf("%f\n",toro_params->stop_time);
-            	velo_func_pack.func_params = (POINTER)toro_params;
-            	velo_func_pack.func = toroidal_velo;
             	break;
             case 'p':
             case 'P':
@@ -721,31 +643,40 @@ extern void initVelocityFunc(
             case 'F':
 	    	FT_ScalarMemoryAlloc((POINTER*)&fixarea_params,
 				sizeof(FIXAREA_PARAMS));
-            if (string[1] == 'a' || string[1] == 'A')
-            {
-                init_fixarea_params(front,infile,fixarea_params);
-            }
-            else if (string[1] == 'p' || string[1] == 'P')
-            {
-                init_fixpoint_params(front,infile,fixarea_params);
-            }
-            else if (string[1] == 'f' || string[1] == 'F')
-            {
-                velo_func_pack.func_params = NULL;
-                velo_func_pack.func = NULL;
-            }
+                if (string[1] == 'a' || string[1] == 'A')
+                {
+                    init_fixarea_params(front,infile,fixarea_params);
+                }
+                else if (string[1] == 'p' || string[1] == 'P')
+                {
+                    init_fixpoint_params(front,infile,fixarea_params);
+                }
+                else if (string[1] == 'f' || string[1] == 'F')
+                {
+                    velo_func_pack.func_params = NULL;
+                    velo_func_pack.func = NULL;
+                }
             
-            velo_func_pack.func_params = (POINTER)fixarea_params;
-            velo_func_pack.func = marker_velo;
-            break;
+                velo_func_pack.func_params = (POINTER)fixarea_params;
+                velo_func_pack.func = marker_velo;
+                break;
             
             default:
-            (void) printf("Unknown velocity function, use zero_velo()\n");
-            velo_func_pack.func_params = NULL;
-            velo_func_pack.func = zero_velo;
-            break;
-        }	
+                (void) printf("Unknown velocity function, use zero_velo()\n");
+                velo_func_pack.func_params = NULL;
+                velo_func_pack.func = zero_velo;
+                break;
+            }	
 	}
+	if (CursorAfterStringOpt(infile,"Enter gravity:"))
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%lf",af_params->gravity+i);
+                printf(" %f",af_params->gravity[i]);
+            }
+            printf("\n");
+        }
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
 

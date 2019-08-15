@@ -1519,8 +1519,8 @@ EXPORT void propagate_surface(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-	double *g = Fparams->gravity;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = af_params->gravity;
 
 	hs = Hyper_surf(surf);
 	unsort_surf_point(surf);
@@ -1568,10 +1568,10 @@ EXPORT void propagate_node(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-	double *g = Fparams->gravity;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = af_params->gravity;
 	
-    int dim = front->rect_grid->dim;
+        int dim = front->rect_grid->dim;
 
         sl = (STATE*)left_state(node->posn);
         sr = (STATE*)right_state(node->posn);
@@ -1596,10 +1596,10 @@ EXPORT void propagate_curve(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-    F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-	double *g = Fparams->gravity;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = af_params->gravity;
 	
-    int dim = front->rect_grid->dim;
+        int dim = front->rect_grid->dim;
 
 	for (b = curve->first; b != curve->last; b = b->next)
         {
