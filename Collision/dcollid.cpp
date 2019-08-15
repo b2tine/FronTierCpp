@@ -585,7 +585,9 @@ void CollisionSolver::detectCollision()
 	int MAX_ITER = 8;
 	//const int MAX_ITER = 8;
 	int niter = 1;
-    int num_collision_pairs;
+
+    int npairs = static_cast<int>(HUGE);
+    int prev_npairs = npairs;
 
 	std::cout<<"Starting collision handling: "<<std::endl;
 	//record if has an actual collision
@@ -593,27 +595,32 @@ void CollisionSolver::detectCollision()
 	int cd_count = 0;
 	setHasCollision(false);
 	//
-	while(is_collision){
-	    is_collision = false;
+	while(is_collision) {
+	    
+        is_collision = false;
 	    start_clock("dynamic_AABB_collision");
 	    
         aabbCollision();
-            is_collision = abt_collision->getCollsnState();
-	    stop_clock("dynamic_AABB_collision");
+        is_collision = abt_collision->getCollsnState();
 
+        stop_clock("dynamic_AABB_collision");
+
+        //cd_count++ never == 0
 	    if (cd_count++ == 0 && is_collision)
             setHasCollision(true);
 
 	    updateAverageVelocity();
-        num_collision_pairs = abt_collision->getCount(); 
-	    std::cout<<"    #"<<niter << ": " << num_collision_pairs
+        
+        prev_npairs = npairs;
+        npairs = abt_collision->getCount(); 
+	    
+        std::cout<<"    #"<<niter << ": " << npairs
 		     << " pair of collision tris" << std::endl;
 
 	    //if (++niter > MAX_ITER) break;
 	    if (++niter > MAX_ITER)
         {
-            //20 based on experimental evidence
-            if (num_collision_pairs > 20)
+            if (npairs > 0.5*prev_npairs+1)
             {
                 break;
             }
