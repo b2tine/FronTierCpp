@@ -1,12 +1,15 @@
 #!/bin/bash
 
 PETSC_ARCH="opt"
+WARNING="-w"
 
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
         DEBUG_FLAGS="-g3 -rdynamic"
+    elif [[ "$arg" == "-w" ]]; then
+        WARNING="-Wall"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
@@ -16,8 +19,8 @@ done
 
 
 
-export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
-export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
+export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
+export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
 
 
 

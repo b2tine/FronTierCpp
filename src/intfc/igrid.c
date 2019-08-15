@@ -1247,7 +1247,9 @@ EXPORT boolean rect_in_which(
 	const int   *gmax = grid->gmax;
 	const int   *lbuf = grid->lbuf, *ubuf = grid->ubuf;
 	int	    i, dim = grid->dim;
-	int SHIFT = 0.2; /* TOLERANCE */
+	
+    double SHIFT = 0.2; /* TOLERANCE */
+        //int SHIFT = 0.2; /* TOLERANCE */
 
 		/* Find Grid Block and points outside and moved in */
 

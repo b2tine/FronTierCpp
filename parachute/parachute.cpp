@@ -212,6 +212,7 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
+	    FT_InteriorPropagate(front);
 	    if (!af_params->no_fluid)
 	    {
                 l_cartesian->solve(front->dt);
@@ -256,6 +257,7 @@ void airfoil_driver(Front *front,
 	    break_strings(front); // test
 	    FrontPreAdvance(front);
             FT_Propagate(front);
+            FT_InteriorPropagate(front);
 
 	    if (!af_params->no_fluid)
 	    {

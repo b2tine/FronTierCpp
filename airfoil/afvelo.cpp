@@ -122,14 +122,14 @@ void setMotionParams(Front* front)
 	}
 #endif
 
-    if (CursorAfterStringOpt(infile,
+        if (CursorAfterStringOpt(infile,
                 "Entering yes to turn off fluid solver: "))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->no_fluid = YES;
-    }
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                af_params->no_fluid = YES;
+        }
 
 	if (af_params->no_fluid == YES)
 	{
@@ -150,7 +150,7 @@ void setMotionParams(Front* front)
 	if (af_params->no_fluid == YES || 
 	    af_params->is_parachute_system == NO)
 	{
-        CursorAfterString(infile,"Enter interior propagator:");
+            CursorAfterString(infile,"Enter interior propagator:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (dim == 2)
@@ -203,11 +203,12 @@ void setMotionParams(Front* front)
 	    	case 'e':
 	    	case 'E':
 	    	    if (string[1] == '2')
-	    	    	front->interior_propagate = second_order_elastic_surf_propagate;
+	    	    	front->interior_propagate = 
+                                    second_order_elastic_surf_propagate;
 	    	    else
 		    {
-                front->interior_propagate = fourth_order_elastic_surf_propagate;
-				//= fourth_order_elastic_set_propagate;
+                        front->interior_propagate = 
+                                    fourth_order_elastic_surf_propagate;
 #if defined(__GPU__)
             		if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
@@ -222,7 +223,8 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'p':
 	    	case 'P':
-	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
+	    	    front->interior_propagate = 
+                                fourth_order_elastic_set_propagate;
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -231,9 +233,9 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-    {
+        {
 	    front->interior_propagate = fourth_order_elastic_set_propagate;
-    }
+        }
 
 
 	if (af_params->no_fluid == NO)
@@ -285,6 +287,18 @@ void setMotionParams(Front* front)
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
+
+    /*
+        CursorAfterString(infile,"Enter preximity test tolerance:");
+        fscanf(infile,"%lf",&af_params->pre_tol);
+        (void) printf("%f\n",af_params->pre_tol);
+        CursorAfterString(infile,"Enter volume diff criteria:");
+        fscanf(infile,"%lf",&af_params->vol_diff);
+        (void) printf("%f\n",af_params->vol_diff);
+        CursorAfterString(infile,"Enter restitution coefficient:");
+        fscanf(infile,"%lf",&af_params->rest);
+        (void) printf("%f\n",af_params->rest);
+    */
 
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
@@ -348,7 +362,7 @@ void setMotionParams(Front* front)
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
 	    af_params->m_g = af_params->m_s;
-        if (af_params->attach_gores == YES)
+            if (af_params->attach_gores == YES)
 	    {
 		CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
@@ -370,14 +384,14 @@ void setMotionParams(Front* front)
 		}
 	    }
 	    
-        af_params->unequal_coeff = 1.0;
+            af_params->unequal_coeff = 1.0;
 	    if (CursorAfterStringOpt(infile,"Enter unequal coefficient:"))
 	    {
 		fscanf(infile,"%lf",&af_params->unequal_coeff);
 		(void) printf("%f\n",af_params->unequal_coeff);
 	    }
 	    
-        af_params->unequal_strings_num = 0;
+            af_params->unequal_strings_num = 0;
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
@@ -385,7 +399,7 @@ void setMotionParams(Front* front)
 		(void) printf("%d\n",af_params->unequal_strings_num);
 	    }
 	    
-        if (af_params->unequal_strings_num > 0)
+            if (af_params->unequal_strings_num > 0)
 	    {
 		FT_VectorMemoryAlloc(
 				(POINTER*)&af_params->unequal_strings_gindex,
@@ -553,7 +567,7 @@ static void initVelocityFunc(
 {
 	static VELO_FUNC_PACK velo_func_pack;
 	static VORTEX_PARAMS *vortex_params; /* velocity function parameters */
-    static BIPOLAR_PARAMS *dv_params;
+        static BIPOLAR_PARAMS *dv_params;
 	static VERTICAL_PARAMS *vert_params;
 	static RANDOMV_PARAMS *randv_params;
 	static TOROIDAL_PARAMS *toro_params;
@@ -581,30 +595,30 @@ static void initVelocityFunc(
 	    (void) printf("\tFixed point velocity (FP)\n");
 	    (void) printf("\tFree fall velocity (FF)\n");
    
-        CursorAfterString(infile,"Enter velocity function: ");
+            CursorAfterString(infile,"Enter velocity function: ");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    
-        switch (string[0])
-        {
+            switch (string[0])
+            {
             case 'r':
             case 'R':
 		if (string[1] == 'o' || string[1] == 'O')
 		{
-            FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
-            sizeof(VORTEX_PARAMS));
-                front->max_time = 0.4;
-                front->movie_frame_interval = 0.02;
-                vortex_params->dim = 2;
-                vortex_params->type[0] = 'M';
-                vortex_params->cos_time = 0;
-                vortex_params->cen[0] = 0.5;
-                vortex_params->cen[1] = 0.25;
-                vortex_params->rad = 0.15;
-                vortex_params->time = 0.5*front->max_time;
-                velo_func_pack.func_params = (POINTER)vortex_params;
-                velo_func_pack.func = vortex_vel;
-    }
+                    FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
+                                sizeof(VORTEX_PARAMS));
+                    front->max_time = 0.4;
+                    front->movie_frame_interval = 0.02;
+                    vortex_params->dim = 2;
+                    vortex_params->type[0] = 'M';
+                    vortex_params->cos_time = 0;
+                    vortex_params->cen[0] = 0.5;
+                    vortex_params->cen[1] = 0.25;
+                    vortex_params->rad = 0.15;
+                    vortex_params->time = 0.5*front->max_time;
+                    velo_func_pack.func_params = (POINTER)vortex_params;
+                    velo_func_pack.func = vortex_vel;
+                }
 		else if (string[1] == 'a' || string[1] == 'A')
 		{
 	    	    FT_ScalarMemoryAlloc((POINTER*)&randv_params,
@@ -652,7 +666,8 @@ static void initVelocityFunc(
         	fscanf(infile,"%lf",&vert_params->stop_time);
         	(void) printf("%f\n",vert_params->stop_time);
 		CursorAfterString(infile,"Enter center of vertical motion:");
-        	fscanf(infile,"%lf %lf",&vert_params->cen[0],&vert_params->cen[1]);
+        	fscanf(infile,"%lf %lf",&vert_params->cen[0],
+                                        &vert_params->cen[1]);
             	velo_func_pack.func_params = (POINTER)vert_params;
             	velo_func_pack.func = vertical_velo;
             	break;
@@ -728,30 +743,30 @@ static void initVelocityFunc(
             case 'F':
 	    	FT_ScalarMemoryAlloc((POINTER*)&fixarea_params,
 				sizeof(FIXAREA_PARAMS));
-            if (string[1] == 'a' || string[1] == 'A')
-            {
-                init_fixarea_params(front,infile,fixarea_params);
-            }
-            else if (string[1] == 'p' || string[1] == 'P')
-            {
-                init_fixpoint_params(front,infile,fixarea_params);
-            }
-            else if (string[1] == 'f' || string[1] == 'F')
-            {
-                velo_func_pack.func_params = NULL;
-                velo_func_pack.func = NULL;
-            }
+                if (string[1] == 'a' || string[1] == 'A')
+                {
+                    init_fixarea_params(front,infile,fixarea_params);
+                }
+                else if (string[1] == 'p' || string[1] == 'P')
+                {
+                    init_fixpoint_params(front,infile,fixarea_params);
+                }
+                else if (string[1] == 'f' || string[1] == 'F')
+                {
+                    velo_func_pack.func_params = NULL;
+                    velo_func_pack.func = NULL;
+                }
             
-            velo_func_pack.func_params = (POINTER)fixarea_params;
-            velo_func_pack.func = marker_velo;
-            break;
+                velo_func_pack.func_params = (POINTER)fixarea_params;
+                velo_func_pack.func = marker_velo;
+                break;
             
             default:
-            (void) printf("Unknown velocity function, use zero_velo()\n");
-            velo_func_pack.func_params = NULL;
-            velo_func_pack.func = zero_velo;
-            break;
-        }	
+                (void) printf("Unknown velocity function, use zero_velo()\n");
+                velo_func_pack.func_params = NULL;
+                velo_func_pack.func = zero_velo;
+                break;
+            }	
 	}
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */

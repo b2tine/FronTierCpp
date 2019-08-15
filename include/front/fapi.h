@@ -183,6 +183,14 @@ extern "C" {
 
    IMPORT  void FT_Propagate(Front *front);
 
+/*! \fn void FT_InteriorPropagate(Front *front)
+ *  \ingroup PROPAGATION
+    \brief For spring-mass settlement.
+    \param front Pointer to Front to be propagated
+ */
+
+   IMPORT  void FT_InteriorPropagate(Front *front);
+
 /*! \fn void FT_RedistMesh(Front *front)
  *  \ingroup OPTIMIZATION
     \brief This is an independent call for redistribution and optimization
