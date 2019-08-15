@@ -261,7 +261,7 @@ static void CgalCircle(
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;
-        bool set_gore,set_vent,set_string;
+        bool set_gore,set_vent,set_string,fixed_bdry;
         char string[100];
 	std::list<Cgal_Point> list_of_seeds;
 	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
@@ -419,23 +419,24 @@ static void CgalCircle(
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
 	checkReducedTri(*surf);
         wave_type(*surf) = ELASTIC_BOUNDARY;
+        fixed_bdry = false;
         if (set_string == false && set_gore == false && set_vent == false)
         {
             /* Could be used for non-parachute tests */
-            if (CursorAfterStringOpt(infile,"Enter yes to fix the boundary curve: "))
+            if (CursorAfterStringOpt(infile,
+                        "Enter yes to fix the boundary curve: "))
             {
                 fscanf(infile,"%s",string);
                 printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-                {
-                    FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
-                }
+                    fixed_bdry = true;
             }
-            else
-                FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
         }
+        if (fixed_bdry == true)
+            FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
         else
             FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+
 	setMonoCompBdryZeroLength(*surf);
         if (set_string == true)
 	{

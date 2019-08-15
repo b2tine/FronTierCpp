@@ -27,25 +27,15 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-noinst_PROGRAMS = fabric \
-				  test1 \
-				  test2 \
-				  fortrantest
+noinst_PROGRAMS = fabric_Cplus \
+		  fabric_Fortn
 
 				  
-fabric_SOURCES = fabric.cpp
-fabric_LDADD = $(builddir)/objs/libfabric.la
+fabric_Cplus_SOURCES = fabric_Cplus.cpp
+fabric_Cplus_LDADD = $(builddir)/objs/libfabric.la
 
-
-test1_SOURCES = test1.cpp
-test1_LDADD = $(builddir)/objs/libfabric.la
-
-test2_SOURCES = test2.cpp
-test2_LDADD = $(builddir)/objs/libfabric.la
-
-
-fortrantest_SOURCES = fortran_driver.F90
-fortrantest_LDADD = $(builddir)/objs/libfabric.la -lstdc++
+fabric_Fortn_SOURCES = fabric_Fortn.F90
+fabric_Fortn_LDADD = $(builddir)/objs/libfabric.la -lstdc++
 
 
 

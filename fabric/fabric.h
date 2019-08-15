@@ -9,9 +9,13 @@
 
 #include "airfoil_sv.h"
 
+#include <map>
 #include <cassert>
 #include <vector>
-#include <map>
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <string>
 
 
 struct CONSTR_PARAMS
@@ -391,13 +395,28 @@ extern double springCharTimeStep(Front*);	// spring characteristic time
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 
-// fabric_api_internal.cpp
-extern void SMM_InitFronTier(Front*,F_BASIC_DATA*);
-extern void SMM_InitModules(Front*);
-extern void SMM_InitPerturbation(Front*);
-extern void SMM_InitPropagator(Front*);
-extern void SMM_InitSpringMassParams(Front*);
-extern void SMM_InitTestVelFunc(Front*);
-extern void SMM_InitTestTimeContrl(Front*);
+// fabric_api.cpp
+
+/* C++ API functions */
+extern Front *SMM_GetFront();
+extern void SMM_InitCpp(int,char**);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* C++ and Fortran API functions */
+extern void SMM_Init(char inname[]);
+extern void SMM_InitModules();
+extern void SMM_InitPropagator();
+extern void SMM_InitSpringMassParams();
+extern void SMM_InitTestVelFunc();
+extern void SMM_InitTestTimeContrl();
+extern void SMM_Plot();
+extern void SMM_TestDriver();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -35,11 +35,40 @@ static void passive_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
 static void gore_point_propagate(Front*,POINTER,POINT*,POINT*,BOND*,double);
 static void load_node_propagate(Front*,NODE*,NODE*,double);
 static void rg_string_node_propagate(Front*,NODE*,NODE*,double);
+static void fourth_order_elastic_set_propagate2d(Front*,double);
+static void fourth_order_elastic_set_propagate3d(Front*,double);
 
 static void coating_mono_hyper_surf3d(Front*);
 
 
 EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
+{
+        switch (fr->rect_grid->dim)
+        {
+        case 2:
+            return fourth_order_elastic_set_propagate2d(fr,fr_dt);
+        case 3:
+            return fourth_order_elastic_set_propagate3d(fr,fr_dt);
+        }
+}       /* end fourth_order_elastic_set_propagate */
+
+static void fourth_order_elastic_set_propagate2d(Front* fr, double fr_dt)
+{
+        CURVE **c,*elastic_curve;
+        intfc_curve_loop(fr->interf,c)
+        {
+            if (wave_type(*c) == ELASTIC_BOUNDARY ||
+                wave_type(*c) == ELASTIC_STRING)
+            {
+                elastic_curve = *c;
+                break;
+            }
+        }
+        fourth_order_elastic_curve_propagate(fr,fr,fr->interf,elastic_curve,
+                        elastic_curve,fr_dt);
+}       /* end fourth_order_elastic_set_propagate2d */
+
+static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int size = 0,owner_size,client_size;
@@ -312,7 +341,7 @@ EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
-}	/* end fourth_order_elastic_set_propagate() */
+}	/* end fourth_order_elastic_set_propagate3d() */
 
 //TODO: Is this function as useless as it looks?
 //      Unless hypersurface elements need to be able
@@ -492,19 +521,20 @@ EXPORT void airfoil_curve_propagate(
         double dt)
 {
 	int dim = front->rect_grid->dim;
-    switch (hsbdry_type(oldc))
-    {
-    case STRING_HSBDRY:
-        return string_curve_propagation(front,wave,oldc,newc,dt);
-    case MONO_COMP_HSBDRY:
-        return mono_curve_propagation(front,wave,oldc,newc,dt);
-    case GORE_HSBDRY:
-        return gore_curve_propagation(front,wave,oldc,newc,dt);
-    case PASSIVE_HSBDRY:
-        return passive_curve_propagation(front,wave,oldc,newc,dt);
-    default:
-        return;
-    }
+        if (dim == 2) return;
+        switch (hsbdry_type(oldc))
+        {
+        case STRING_HSBDRY:
+            return string_curve_propagation(front,wave,oldc,newc,dt);
+        case MONO_COMP_HSBDRY:
+            return mono_curve_propagation(front,wave,oldc,newc,dt);
+        case GORE_HSBDRY:
+            return gore_curve_propagation(front,wave,oldc,newc,dt);
+        case PASSIVE_HSBDRY:
+            return passive_curve_propagation(front,wave,oldc,newc,dt);
+        default:
+            return;
+        }
 }	/* end airfoil_curve_propagate */
 
 static void string_curve_propagation(
@@ -731,7 +761,7 @@ static void load_node_propagate(
 	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	POINT *oldp,*newp;
-	double *g = Fparams->gravity;
+	double *g = af_params->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
 	double mass = af_params->payload;
@@ -813,7 +843,7 @@ static void rg_string_node_propagate(
         AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	RECT_GRID *gr = computational_grid(front->interf);
         POINT *oldp,*newp;
-        double *g = Fparams->gravity;
+        double *g = af_params->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
         double mass = af_params->payload;
