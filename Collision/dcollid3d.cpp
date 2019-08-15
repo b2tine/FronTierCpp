@@ -60,6 +60,9 @@ void CollisionSolver3d::assembleFromInterface(
 	}
 }
 
+//TODO: This fails in the simple case of 2 rigid boxes making
+//      face to face contact.
+//      
 // test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 {
@@ -138,59 +141,51 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	//compute angular velocity w: I*w = L;
 	double w[3], mag_w = 0;
 
-    for (int i = 0; i < 3; ++i)
-    {
-        memcpy(tmp,I,9*sizeof(double));
-        for (int j = 0; j < 3; j++)
-            tmp[j][i] = L[j];
+	    for (int i = 0; i < 3; ++i){
+	         memcpy(tmp,I,9*sizeof(double));
+	         for (int j = 0; j < 3; j++)
+		      tmp[j][i] = L[j];
+             if( myDet3d(I) >= ROUND_EPS )
+                 w[i] = myDet3d(tmp)/myDet3d(I);
+             else
+                 w[i] = 0.0;
+            }
 
-        if (myDet3d(I) < ROUND_EPS)
-            w[i] = 0.0;
-        else
-            w[i] = myDet3d(tmp)/myDet3d(I);
-    }
+        if (myDet3d(I) < ROUND_EPS) {
+            //I is non-invertible, calculate pseudoinverse with SVD
+            arma::mat arI(3, 3);
+            arma::vec arL(3);
 
-    /*
-    if (myDet3d(I) < ROUND_EPS) {
-        //I is non-invertible, calculate pseudoinverse with SVD
-        arma::mat arI(3, 3);
-        arma::vec arL(3);
-
-        for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-             arI(i, j) = I[i][j];
-        for (int i = 0; i < 3; i++)
-             arL(i) = L[i];
-
-        arma::mat arU;
-        arma::mat arV;
-        arma::vec ars;
-
-        arma::svd(arU, ars, arV, arI);
-        for (int i = 0; i < 3; i++)
-             if (ars(i))
-                 ars(i) = 1.0/ars(i);
-        
-        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
-        arma::vec arw = pinvarI*arL;
-
-        for (int i = 0; i < 3; i++)
-             w[i] = arw[i];
-    }
-    else
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            memcpy(tmp,I,9*sizeof(double));
+            for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
-                tmp[j][i] = L[j];
-            w[i] = myDet3d(tmp)/myDet3d(I);
+                 arI(i, j) = I[i][j];
+            for (int i = 0; i < 3; i++)
+                 arL(i) = L[i];
+
+            arma::mat arU;
+            arma::mat arV;
+            arma::vec ars;
+
+            arma::svd(arU, ars, arV, arI);
+            for (int i = 0; i < 3; i++)
+                 if (ars(i))
+                     ars(i) = 1.0/ars(i);
+            
+            arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
+            arma::vec arw = pinvarI*arL;
+
+            for (int i = 0; i < 3; i++)
+                 w[i] = arw[i];
         }
-
-    }
-    */
-
-    mag_w = Mag3d(w);
+        else {
+	    for (int i = 0; i < 3; ++i){
+	         memcpy(tmp,I,9*sizeof(double));
+	         for (int j = 0; j < 3; j++)
+		      tmp[j][i] = L[j];
+	         w[i] = myDet3d(tmp)/myDet3d(I);
+            }
+	}
+	mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
 	double dt = getTimeStepSize();
@@ -210,7 +205,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 		    xF[i] = dx[i];
 		    wxR[i] = 0.0;
 		}
-		    minusVec(dx,xF,xR);
+		minusVec(dx,xF,xR);
 	    }
 	    else{
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);

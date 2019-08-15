@@ -34,14 +34,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <intfc/iloc.h>
 
-//static	double	the_p1[3] = {0.612029,   0.303286,   1.890613};
-//static	double	the_p2[3] = {0.620959,   0.349305,   1.875875};
-//static	double	the_tri_coords[9] = {0,0,0,0,0,0,0,0,0};
-
 static	double	the_p1[3] = {0.407029,0.648137,1.659124};
 static	double	the_p2[3] = {0.407029,0.648137,1.659124};
 static	double	the_tri_coords[9] = {0.379664741722715582,-0.019368477164232626,2.55380989900332134,0.379532279836457598,0.00105824378706123601,2.55440522359787625,0.376016895465755618,-0.0126302608449629893,2.53797644354082008};
-
 static	long	the_gindex;
 static	long	the_tri_gindex[3] = {0,0,0};
 static	long	the_bond_gindex[2] = {0,0};

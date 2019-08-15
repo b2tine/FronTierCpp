@@ -1938,14 +1938,12 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             //      leads me to believe that bugs in the collision code is
             //      outweighing any potential rounding errors currently.
             collision_solver->setFabricThickness(1.0e-4);
-                //collision_solver->setFabricThickness(1.0e-3);
-                //collision_solver->setFabricThickness(af_params->pre_tol);
+            //collision_solver->setFabricThickness(1.0e-3);
 
             //TODO: coefficient of restitution varies between materials,
             //      and should be determined at runtime using the STATE
             //      data of the colliding pairs. 
             collision_solver->setRestitutionCoef(1.0);
-		        //collision_solver->setRestitutionCoef(af_params->rest);
                 
             //Default value is 0.0, so only worry about setting it
             //(to 1.0 for example) when the collision is between two
@@ -1953,10 +1951,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             //rigid-rigid collision here, because it appears that it was
             //ommitted from all the cloth impulse calculations making it
             //effectively 0.0 by default again.
-                
-            //For updating aabb tree
-            collision_solver->setVolumeDiff(0.05);
-                //collision_solver->setVolumeDiff(af_params->vol_diff);
         }
     }
 

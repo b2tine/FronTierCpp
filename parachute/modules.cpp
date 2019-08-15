@@ -152,7 +152,7 @@ extern void initParachuteDefault(
 	af_params->num_opt_round = 20;
         af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
-        af_params->attach_gores = NO;
+    af_params->attach_gores = NO;
 	if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))
         {

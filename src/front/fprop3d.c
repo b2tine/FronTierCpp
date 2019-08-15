@@ -1053,14 +1053,14 @@ EXPORT void fourth_order_point_propagate(
         int (*vfunc)(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
                                 double*);
 
-        if (wave_type(oldhs) < MOVABLE_BODY_BOUNDARY)
+    if (wave_type(oldhs) < MOVABLE_BODY_BOUNDARY)
+    {
+        for (i = 0; i < dim; ++i)
         {
-            for (i = 0; i < dim; ++i)
-            {
-                Coords(newp)[i] = Coords(oldp)[i];
-            }
-            return;
+            Coords(newp)[i] = Coords(oldp)[i];
         }
+        return;
+    }
 
 	if (front->vfunc == NULL)
 	{

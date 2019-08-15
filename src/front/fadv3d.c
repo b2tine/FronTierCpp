@@ -1454,19 +1454,45 @@ LOCAL int struct_advance_front3d(
 	    stop_clock("scatter_front");
 	    status = GOOD_STEP;
 	}
-	init_intfc_curvature3d(*newfront,(*newfront)->interf);
 
+	start_clock("interior_propagate");
+	init_intfc_curvature3d(*newfront,(*newfront)->interf);
+	if (front->interior_propagate != NULL)
+	    (*front->interior_propagate)(*newfront,dt);
+	init_intfc_curvature3d(*newfront,(*newfront)->interf);
+	stop_clock("interior_propagate");
+/*	
+	if (debugging("collision"))
+	{
+	    printf("Before resolve_collision()\n");
+            printf("interface_reconstructed(intfc) = %d\n",
+                interface_reconstructed((*newfront)->interf));
+            resolve_collision(*newfront);
+	    printf("After resolve_collision()\n");
+	}
+*/
+	start_clock("scatter_front");
+	if (!scatter_front(*newfront))
+	{
+	    stop_clock("scatter_front");
+            (void) printf("ERROR in struct_advance_front3d(), "
+                          "scatter_front() failed\n");
+	    stop_clock("scatter_front");
+	    clean_up(ERROR);
+	}
+	else
+	{
+	    stop_clock("scatter_front");
+	    status = GOOD_STEP;
+	}
+
+	stop_clock("propagate");
+
+	if (status == GOOD_STEP)
+	    init_intfc_curvature3d(*newfront,(*newfront)->interf);
+	
 	return return_advance_front(front,newfront,status,fname);
 }	/* end struct_advance_front3d */
-
-EXPORT void interior_advance_front(
-        Front *front)
-{
-	start_clock("interior_propagate");
-	(*front->interior_propagate)(front,front->dt);
-	init_intfc_curvature3d(front,front->interf);
-	stop_clock("interior_propagate");
-}       /* end interior_advance_front3d */
 
 LOCAL int simple_advance_front3d(
 	double		dt,
