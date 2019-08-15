@@ -25,7 +25,7 @@ Initial surface type can be
         CIRCULAR_PERT
 Enter initial canopy surface type: P
 Enter the height of the plane: 0.8
-Enter type of plane edge: c
+Enter type of plane eXXXXXXXXXXXXXXXXXdge: c
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
 Enter yes to attach strings to canopy: no
