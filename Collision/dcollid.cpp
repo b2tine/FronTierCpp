@@ -620,7 +620,7 @@ void CollisionSolver::detectCollision()
 	    //if (++niter > MAX_ITER) break;
 	    if (++niter > MAX_ITER)
         {
-            if (npairs > 0.5*prev_npairs+1)
+            if (npairs >= prev_npairs/2 + 1)
             {
                 break;
             }
