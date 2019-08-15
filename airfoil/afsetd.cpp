@@ -300,7 +300,7 @@ extern void compute_spring_accel1(
 //#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
-	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
+	        //f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
         //ext_impul is the velocity component due to the impulse
         //of the external force component -- not the actual impulse
 	}
