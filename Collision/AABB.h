@@ -1,11 +1,12 @@
-#ifndef AABB_H_
-#define AABB_H_
+#ifndef AABB_H
+#define AABB_H
 
 #include <vector>
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
 #include <map>
+
 #include "collid.h"
 
 // header file for AABB tree
@@ -31,11 +32,10 @@ class AABB {
     CD_HSE* hse = nullptr;
     double dt;
     MotionState abType;
-    double tol;
 public:
     // constructor
     AABB() {}
-    AABB(double, CD_HSE*, MotionState);
+    AABB(CD_HSE*, MotionState);
     AABB(CD_HSE*, MotionState, double);
     AABB(const CPoint&, const CPoint&);
     // explicit saying that we need a default version of 
@@ -56,7 +56,6 @@ public:
 class AABBTree;
 
 class Node {
-public:
     friend class AABBTree;
     // AABB stored in node. May store information for branch AABB
     // and may be adjusted for dynamic AABB 
@@ -70,6 +69,7 @@ public:
     std::shared_ptr<Node> left;
     std::shared_ptr<Node> right;
     void updateBranch();
+public:
     // make this node to be brance from two Node parameter
     void setBranch(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>);
     // judge if this node is a leaf
@@ -82,7 +82,6 @@ public:
 };
 
 class AABBTree {
-public:
     std::shared_ptr<Node> root;
     // node needed to be removed and reinsert to the tree
     std::unordered_map<long, POINT*> ump;
@@ -95,15 +94,14 @@ public:
     int numLeaf = 0;
     double treeHeight(Node*); 
     double dt;
-    bool isProximity;
     bool isCollsn;
-    bool queryProximity(Node*, CollisionSolver*);
+    void queryProximity(Node*, CollisionSolver*);
     bool queryCollision(Node*, CollisionSolver*);
     // insert a node into the subtree with parent 
     // as the root
     void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
     MotionState type;
-    double tolerance;
+public:
     AABBTree(int);
     // don't want tree to be copied or moved
     AABBTree(const AABBTree&) = delete;

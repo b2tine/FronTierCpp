@@ -750,12 +750,12 @@ double PARABOLIC_SOLVER::compBdryFlux(
 			}
 			else
 			{
-		    	    influx += D*dt*(Snb - S0)/top_h[1]*top_h[0];
-                            if (getStateVel[1] != NULL)
-                            {
-			        v = (*getStateVel[1])(state);
-			        influx += v*dt*Snb*top_h[0];
-                            }
+                influx += D*dt*(Snb - S0)/top_h[1]*top_h[0];
+                if (getStateVel[1] != NULL)
+                {
+                    v = (*getStateVel[1])(state);
+                    influx += v*dt*Snb*top_h[0];
+                }
 			}
 		    }
 	    	}
@@ -813,23 +813,25 @@ double PARABOLIC_SOLVER::compBdryFlux(
 		    if (fr_crx_grid_seg == DIRICHLET_PDE_BOUNDARY)
 		    {
 			Snb = (*getStateVarFunc)(state);
-                        if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                        
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
                             boundary_state_function(hs) &&
                             strcmp(boundary_state_function_name(hs),
                             "flowThroughBoundaryState") == 0)
-                        {
-                            v = a[0][ic];
-                            influx += v*dt*S0*top_h[1];
-                        }
-                        else
-                        {
-                            influx += D*dt*(Snb - S0)/top_h[0]*top_h[1];
-                            if (getStateVel[0] != NULL)
-                            {
-                                v = (*getStateVel[0])(state);
-                                influx += v*dt*Snb*top_h[1];
-                            }
-                        }
+                {
+                    v = a[0][ic];
+                    influx += v*dt*S0*top_h[1];
+                }
+                else
+                {
+                    influx += D*dt*(Snb - S0)/top_h[0]*top_h[1];
+                    if (getStateVel[0] != NULL)
+                    {
+                        v = (*getStateVel[0])(state);
+                        influx += v*dt*Snb*top_h[1];
+                    }
+                }
+
 		    }
 	    	}
 	      }
@@ -851,23 +853,25 @@ double PARABOLIC_SOLVER::compBdryFlux(
 		    if (fr_crx_grid_seg == DIRICHLET_PDE_BOUNDARY)
 		    {
 			Snb = (*getStateVarFunc)(state);
-			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+			
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
                             boundary_state_function(hs) &&
                             strcmp(boundary_state_function_name(hs),
                             "flowThroughBoundaryState") == 0)
+                    {
+                        v = a[0][ic];
+                        influx -= v*dt*S0*top_h[1];
+                    }
+                    else
+                    {
+                        influx += D*dt*(Snb - S0)/top_h[0]*top_h[1];
+                        if (getStateVel[0] != NULL)
                         {
-                            v = a[0][ic];
-                            influx -= v*dt*S0*top_h[1];
+                            v = (*getStateVel[0])(state);
+                            influx -= v*dt*Snb*top_h[1];
                         }
-                        else
-                        {
-                            influx += D*dt*(Snb - S0)/top_h[0]*top_h[1];
-                            if (getStateVel[0] != NULL)
-                            {
-                                v = (*getStateVel[0])(state);
-                                influx -= v*dt*Snb*top_h[1];
-                            }
-                        }
+                    }
+
 		    }
 	    	}
 	      }

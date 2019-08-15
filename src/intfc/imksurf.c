@@ -5391,6 +5391,7 @@ LOCAL   void offset_bdry_faces(
         double tol = 0.00000001;
         double *h = rgr->h;
 
+        printf("Entering offset_bdry_faces()\n");
         for (i = 0; i < dim; ++i)
         {
             for (j = 0; j < 2; ++j)

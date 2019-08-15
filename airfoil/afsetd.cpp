@@ -253,10 +253,6 @@ extern void set_spring_vertex_memory(
 	}
 }	/* end set_spring_vertex_memory */
 
-//TODO: f is the most confusing choice of variable for a function
-//      that says it is computing acceleration.
-//      *_accel and *_impul variables are equally confusing, as they
-//      do not appear to actually be computing these quantities.
 extern void compute_spring_accel1(
 	SPRING_VERTEX *sv,
 	double *f,
@@ -264,7 +260,7 @@ extern void compute_spring_accel1(
 {
 	int i,k;
 	double len,vec[MAXD];
-	//double v_rel[MAXD];
+	double v_rel[MAXD];
 
 	for (k = 0; k < dim; ++k)
 	    f[k] = 0.0;
@@ -275,12 +271,9 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] = sv->x_nb[i][k] - sv->x[k];
 		len += sqr(vec[k]);
-//#ifdef DAMPING_FORCE
-        //TODO: need relative velocity of only the internal
-        //      velocity components resulting from spring impulse?
-        //      compare with line 310, and see todo in airfoil_sv.h
-		//v_rel[k] = sv->v_nb[i][k] - sv->v[k];
-//#endif
+/*#ifdef DAMPING_FORCE
+		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
+#endif*/
 	    }
 	    len = sqrt(len);
 
@@ -288,9 +281,9 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-//#ifdef DAMPING_FORCE
-		//f[k] += sv->lambda*v_rel[k]/sv->m; //This is artificial viscosity
-//#endif
+/*#ifdef DAMPING_FORCE
+		f[k] += sv->lambda*v_rel[k]/sv->m;
+#endif*/
 	    }
 	}
 
@@ -300,20 +293,14 @@ extern void compute_spring_accel1(
     //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
-    {
 	    sv->f[k] = f[k]*sv->m;
-    }
-
-//#ifndef DAMPING_FORCE
+/*#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
-        //ext_impul is the velocity component due to the impulse
-        //of the external force component -- not the actual impulse
 	}
-//#endif*/
-	
-    for (k = 0; k < dim; ++k)
+#endif*/
+	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
 			+ sv->other_accel[k];

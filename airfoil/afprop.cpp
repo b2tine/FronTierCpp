@@ -599,6 +599,18 @@ static void mono_curve_propagation(
 	    (void) printf("Entering mono_curve_propagation()\n");
 	}
 
+	/*
+	oldb = oldc->first;
+	newb = newc->first;
+	oldp = oldb->start;
+	newp = newb->start;
+	for (btris = Btris(oldb); btris && *btris; ++btris)
+	{
+	    oldp->hse = oldhse = Hyper_surf_element((*btris)->tri);
+	    oldp->hs = oldhs = Hyper_surf((*btris)->surface);
+	    elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+	}
+	*/
 	for (oldb = oldc->first, newb = newc->first; oldb != NULL;
 		oldb = oldb->next, newb = newb->next)
 	{
