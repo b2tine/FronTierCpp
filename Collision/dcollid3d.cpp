@@ -140,17 +140,17 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 
     for (int i = 0; i < 3; ++i)
     {
-         memcpy(tmp,I,9*sizeof(double));
-         for (int j = 0; j < 3; j++)
-             tmp[j][i] = L[j];
+        memcpy(tmp,I,9*sizeof(double));
+        for (int j = 0; j < 3; j++)
+            tmp[j][i] = L[j];
 
-         //TODO: this is being done in next section
-         if( myDet3d(I) >= ROUND_EPS )
-             w[i] = myDet3d(tmp)/myDet3d(I);
-         else
-             w[i] = 0.0;
+        if (myDet3d(I) < ROUND_EPS)
+            w[i] = 0.0;
+        else
+            w[i] = myDet3d(tmp)/myDet3d(I);
     }
 
+    /*
     if (myDet3d(I) < ROUND_EPS) {
         //I is non-invertible, calculate pseudoinverse with SVD
         arma::mat arI(3, 3);
@@ -188,6 +188,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
         }
 
     }
+    */
 
     mag_w = Mag3d(w);
 	

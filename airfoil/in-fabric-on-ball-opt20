@@ -32,7 +32,7 @@ Enter yes to attach strings to canopy: no
 
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 16
+Enter interior sub step number: 10
 
 Entering number of canopy optimization rounds: 20
 Enter fabric spring constant: 5000

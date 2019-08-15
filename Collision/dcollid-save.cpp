@@ -415,68 +415,6 @@ void CollisionSolver::resolveCollision()
 // function to perform AABB tree building, updating structure
 // and query for proximity detection process
 void CollisionSolver::aabbProximity() {
-    if (abt_proximity == nullptr) {
-        double pre_tol = CollisionSolver3d::getFabricThickness();
-
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
-             abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    /*
-    else {
-        delete abt_proximity.release();
-        double pre_tol = CollisionSolver3d::getFabricThickness();
-
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
-             abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    */
-    // if first time, build the tree and AABB elements and node
-    /*
-    if (abt_proximity == nullptr) {
-        double pre_tol = CollisionSolver3d::getFabricThickness();
-
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
-             abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    */
-    else {
-        abt_proximity->updateAABBTree(hseList);
-        // if current tree structure don't fit for the current 
-        // surface, update structure of the tree
-        if (fabs(abt_proximity->getVolume() - volume) > vol_diff * volume) {
-            abt_proximity->updateTreeStructure();
-            volume = abt_proximity->getVolume();
-            build_count_pre++;
-            std::cout << "build_count_pre is " << build_count_pre << std::endl; 
-        }
-        
-    }
-    
-    // query for collision detection of AABB elements
-    abt_proximity->query(this);
-}
-
-
-
-/*
-// function to perform AABB tree building, updating structure
-// and query for proximity detection process
-void CollisionSolver::aabbProximity() {
     // if first time, build the tree and AABB elements and node
     if (!abt_proximity.get()) {
         abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
@@ -504,9 +442,20 @@ void CollisionSolver::aabbProximity() {
     // query for collision detection of AABB elements
     abt_proximity->query(this);
 }
-*/
+
 void CollisionSolver::detectProximity()
 {
+        /*
+        start_clock("cgal_proximity");
+
+	int num_pairs = 0;
+        int numBox = 0;
+        double time; 
+
+	CGAL::box_self_intersection_d(hseList.begin(),hseList.end(),
+                             reportProximity(time, numBox, num_pairs,this),
+			     traitsForProximity());
+        */
     start_clock("dynamic_AABB_proximity");
     aabbProximity();
     stop_clock("dynamic_AABB_proximity");
@@ -514,46 +463,10 @@ void CollisionSolver::detectProximity()
 	updateAverageVelocity();
 	if (debugging("collision"))
 	std::cout << abt_proximity->getCount() 
+	//std::cout << num_pairs
                   << " pair of proximity" << std::endl;
 }
 
-// AABB tree for collision detection process
-void CollisionSolver::aabbCollision() {
-    if (abt_collision == nullptr) {
-        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
-             abt_collision->addAABB(ab);
-        }
-        abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
-    }
-    /*
-    else {
-        delete abt_collision.release();
-        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
-             abt_collision->addAABB(ab);
-        }
-        abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
-    }
-    */
-    else {
-        abt_collision->setTimeStep(s_dt);
-        abt_collision->updateAABBTree(hseList);
-        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume) {
-            build_count_col++;
-            abt_collision->updateTreeStructure();
-            volume = abt_collision->getVolume();
-            std::cout << "build_count_col is " << build_count_col << std::endl; 
-        }
-    }
-    abt_collision->query(this);
-}
-
-/*
 // AABB tree for collision detection process
 void CollisionSolver::aabbCollision() {
     if (!abt_collision.get()) {
@@ -576,7 +489,6 @@ void CollisionSolver::aabbCollision() {
     }
     abt_collision->query(this);
 }
-*/
 
 void CollisionSolver::detectCollision()
 {
@@ -593,8 +505,15 @@ void CollisionSolver::detectCollision()
 	while(is_collision){
 	    is_collision = false;
 	    start_clock("dynamic_AABB_collision");
-	    
-        aabbCollision();
+            /*
+            int numBox = 0;
+	    int cd_pair = 0;
+   
+	    CGAL::box_self_intersection_d(hseList.begin(),
+		  hseList.end(),reportCollision(numBox, 
+                    is_collision,cd_pair,this), traitsForCollision());
+            */
+	    aabbCollision();
             is_collision = abt_collision->getCollsnState();
 	    stop_clock("dynamic_AABB_collision");
 
@@ -603,6 +522,7 @@ void CollisionSolver::detectCollision()
 
 	    updateAverageVelocity();
 	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+	    //std::cout<<"    #"<<niter << ": " << cd_pair
 		     << " pair of collision tris" << std::endl;
 	    if (++niter > MAX_ITER) break;
 	}
@@ -766,11 +686,6 @@ void CollisionSolver::reduceSuperelast()
 //TODO: This is not the correct update
 void CollisionSolver::updateFinalVelocity()
 {
-	//TODO:avgVel is actually the velocity at t(n+1/2)
-	//need to call spring solver to get velocity at t(n+1)
-	//for simplicity now set v(n+1) = v(n+1/2)
-    
-    
     //detectProximity();
 	//detectCollision(); 
 	
