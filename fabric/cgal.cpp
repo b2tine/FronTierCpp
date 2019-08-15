@@ -78,6 +78,7 @@ static void setNodePoints(CURVE*,double*,int,POINT**,double);
 static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,
                     int);
 static void connectTwoStringNodes(Front*,NODE*,NODE*);
+static void splitRectEdge(FILE*,Front*,SURFACE*,double*);
 
 extern void CgalCanopySurface(
 	FILE *infile,
@@ -197,11 +198,14 @@ static void CgalRectangular(
 	double height;
 	double Lower[2];
 	double Upper[2];
+        double *out_nodes_coords;
 	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
 	std::list<Cgal_Point> list_of_seeds;
 	CDT cdt;
 	CDT::Finite_faces_iterator fit;
         Vertex_handle *v_out;
+        bool to_split,fixed_bdry;
+        char string[100];
 
         CursorAfterString(infile,"Enter the height of the plane:");
         fscanf(infile,"%lf",&height);
@@ -220,6 +224,16 @@ static void CgalRectangular(
 	v_out[2] = cdt.insert(Cgal_Point(Upper[0], Upper[1]));
 	v_out[3] = cdt.insert(Cgal_Point(Lower[0], Upper[1]));
 
+        out_nodes_coords = new double[num_strings*2];
+        out_nodes_coords[0] = Lower[0]; 
+        out_nodes_coords[num_strings] = Lower[1];
+        out_nodes_coords[1] = Upper[0]; 
+        out_nodes_coords[num_strings+1] = Lower[1];
+        out_nodes_coords[2] = Upper[0]; 
+        out_nodes_coords[num_strings+2] = Upper[1];
+        out_nodes_coords[3] = Lower[0]; 
+        out_nodes_coords[num_strings+3] = Upper[1];
+
 	for (i = 0; i < num_strings-1; i++)
 		cdt.insert_constraint(v_out[i],v_out[i+1]);
 	cdt.insert_constraint(v_out[0],v_out[num_strings-1]);
@@ -236,7 +250,37 @@ static void CgalRectangular(
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
         wave_type(*surf) = ELASTIC_BOUNDARY;
-        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+
+        to_split = false;
+        if (CursorAfterStringOpt(infile,
+                "Enter yes to install boundary on each side: "))
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                to_split = true;
+        }
+        if (to_split == false)
+        {
+            fixed_bdry = false;
+            if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
+            {
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    fixed_bdry = true;
+            }
+            if (fixed_bdry == true)
+                FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+            else
+                FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+        }
+        else
+        {
+            FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+            splitRectEdge(infile,front,*surf,out_nodes_coords);
+        }
+
 	setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
 	if (consistent_interface(front->interf) == NO)
@@ -2747,3 +2791,118 @@ static void connectTwoStringNodes(
 	b->length0 = spacing;
 	af_params->string_curves.push_back(string_curve);
 }       /* end connectTwoStringNodes */
+
+static CURVE *curve_with_node_points(
+        SURFACE *surf,
+        POINT *p1,
+        POINT *p2)
+{
+        CURVE **c;
+        surf_neg_curve_loop(surf,c)
+        {
+            if (((*c)->start->posn == p1 && (*c)->end->posn == p2) ||
+                ((*c)->start->posn == p2 && (*c)->end->posn == p1))
+                return *c;
+        }
+        surf_pos_curve_loop(surf,c)
+        {
+            if (((*c)->start->posn == p1 && (*c)->end->posn == p2) ||
+                ((*c)->start->posn == p2 && (*c)->end->posn == p1))
+                return *c;
+        }
+}       /* end curve_with_node_points */
+
+static void splitRectEdge(
+        FILE *infile,
+        Front *front,
+        SURFACE *surf,
+        double *out_nodes_coords)
+{
+        POINT **node_pts;
+        CURVE *cbdry;
+        BOND *b;
+        char string[100];
+        int i;
+
+        // node pts:
+        // 0: lower-lower corner
+        // 1: upper-lower corner
+        // 2: upper-upper corner
+        // 3: lower-upper corner
+
+        FT_VectorMemoryAlloc((POINTER*)&node_pts,4,sizeof(POINT*));
+        findStringNodePoints(surf,out_nodes_coords,node_pts,4,&cbdry);
+        curve_bond_loop(cbdry,b)
+        {
+            if (b->start == node_pts[0])
+            {
+                move_closed_loop_node(cbdry,b);
+                break;
+            }
+        }
+        for (i = 1; i < 4; ++i)
+        {
+            curve_bond_loop(cbdry,b)
+            {
+                if (b->start == node_pts[i])
+                {
+                    split_curve(b->start,b,cbdry,0,0,0,0);
+                    break;
+                }
+            }
+            cbdry = I_CurveOfPoint(front->interf,b->start,&b);
+        }
+        if (CursorAfterStringOpt(infile,"Enter yes to change boundary type:"))
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                POINT *p1,*p2;
+                CursorAfterString(infile,"In direction 0");
+                printf("\n");
+                CursorAfterString(infile,"Enter yes to fix lower boundary:");
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    p1 = node_pts[0];
+                    p2 = node_pts[3];
+                    cbdry = curve_with_node_points(surf,p1,p2);
+                    hsbdry_type(cbdry) = FIXED_HSBDRY;
+                }
+                CursorAfterString(infile,"Enter yes to fix upper boundary:");
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    p1 = node_pts[1];
+                    p2 = node_pts[2];
+                    cbdry = curve_with_node_points(surf,p1,p2);
+                    hsbdry_type(cbdry) = FIXED_HSBDRY;
+                }
+                CursorAfterString(infile,"In direction 1");
+                printf("\n");
+                CursorAfterString(infile,"Enter yes to fix lower boundary:");
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    p1 = node_pts[0];
+                    p2 = node_pts[1];
+                    cbdry = curve_with_node_points(surf,p1,p2);
+                    hsbdry_type(cbdry) = FIXED_HSBDRY;
+                }
+                CursorAfterString(infile,"Enter yes to fix upper boundary:");
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    p1 = node_pts[2];
+                    p2 = node_pts[3];
+                    cbdry = curve_with_node_points(surf,p1,p2);
+                    hsbdry_type(cbdry) = FIXED_HSBDRY;
+                }
+            }
+        }
+}       /* end splitRectEdge */

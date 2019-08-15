@@ -38,34 +38,3 @@ Enter yes to install the strings to RGB: n
 Enter type of plane edge: c
 Enter start angle of chord: 6.263185
 Enter rotation angles: 0.0
-
-Start parameters for spring-mass system
-Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.01
-Enter fabric point mass: 0.001
-Enter string spring constant: 5000
-Enter string damping constant: 0.0
-Enter string point mass: 0.01
-
-Start test velocity function set
-Available velocity functions are:
-        Vortex velocity (R)
-        Double vortex velocity (D)
-        Vertical velocity (V)
-        Toroidal velocity (T)
-        Parabolic velocity (P)
-        Singular velocity (S)
-        Zero velocity (Z)
-        Fixed area velocity (FA)
-        Fixed point velocity (FP)
-        Free fall velocity (FF)
-Enter velocity function: Z
-
-Start test time control parameters
-Max time: 5
-Max step: 100
-Print interval: 1
-Movie frame interval: 0.1
-CFL factor: 0.5
-
-Turn off test run
