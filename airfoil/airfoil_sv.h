@@ -4,7 +4,14 @@
 //TODO: Comments with description of each variable.
 //      Or even better, rename variables.
 
-        
+//TODO: To implement artificial viscosity do we need pointers to
+//      the neighboring vertices so the velocity components due to
+//      the impulse of external force can be subtracted off.
+//      Then we would be using the relative velocity of only the
+//      internal internal component resulting from the impulse of
+//      the spring force between vertices. See afsetd.cpp line 289,
+//      and compare with line 307.
+
 struct SPRING_VERTEX
 {
     double *x;
