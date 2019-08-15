@@ -8,32 +8,25 @@ program fortran_driver
             import :: c_char
             character(kind=c_char) :: in_name
         end subroutine
-    end interface
-    interface
+        
         subroutine smm_init_modules() bind(c, name="SMM_InitModules")
         end subroutine
-    end interface
-    interface
+        
         subroutine smm_init_propagator() bind(c, name="SMM_InitPropagator")
         end subroutine
-    end interface
-    interface
+        
         subroutine smm_init_sm_params() bind(c, name="SMM_InitSpringMassParams")
         end subroutine
-    end interface
-    interface
+
         subroutine smm_init_vel_func() bind(c, name="SMM_InitTestVelFunc")
         end subroutine
-    end interface
-    interface
+
         subroutine smm_init_time_control() bind(c, name="SMM_InitTestTimeContrl")
         end subroutine
-    end interface
-    interface
+        
         subroutine smm_plot() bind(c, name="SMM_Plot")
         end subroutine
-    end interface
-    interface
+        
         subroutine smm_test_driver() bind(c, name="SMM_TestDriver")
         end subroutine
     end interface
