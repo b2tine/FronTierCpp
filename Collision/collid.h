@@ -141,6 +141,7 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity;
         std::unique_ptr<AABBTree> abt_collision;
         double volume;
+        double vol_diff;
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;
@@ -184,7 +185,10 @@ protected:
 	static bool s_detImpZone;
 	void clearHseList();
 public:
-        enum {STATIC, MOVING};
+    int build_count_pre = 1;
+    int build_count_col = 1;
+    enum {STATIC, MOVING};
+
 	CollisionSolver(int);
 	CollisionSolver();
         // in case we are going to use move operations
@@ -205,6 +209,7 @@ public:
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
+    double setVolumeDiff(double);
 	virtual ~CollisionSolver(); //virtual destructor
 	//pure virtual functions
 	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
@@ -217,8 +222,6 @@ public:
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
     
-            //double volDiffCoef {0.05};
-
 	//for debugging
 	static void printDebugVariable();
 	static int moving_edg_to_edg;
