@@ -65,6 +65,7 @@ Enter interior sub step number: 10
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+Entering number of canopy optimization rounds: 20
 Enter fabric spring constant: 2000
 Enter fabric friction constant: 2.0
 Enter fabric point mass: 0.01
