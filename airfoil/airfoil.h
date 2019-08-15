@@ -112,6 +112,12 @@ typedef struct {
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
+    
+    //for Collision Handling
+    double vol_diff;
+    double pre_tol;
+    double rest;
+
 } AF_PARAMS;
 
 /*	airfoil.cpp functions */
