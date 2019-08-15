@@ -184,12 +184,17 @@ LOCAL  void trace_back()
 
 	nptrs = backtrace(buffer,SIZE);
     
-    //////////
+    //TODO: Fix trace so it works for pie code.
+    //      addr2line call below will not work,
+    //      needs to account for offset from function.
+    //      Willl require writing some new parsing
+    //      functions.
+    /*
     FILE* fp = fopen("./backtrace_info.txt","a");
     int fd = fileno(fp);
     backtrace_symbols_fd(buffer,nptrs,fd);
     fclose(fp);
-    //////
+    */
 
 	strings = backtrace_symbols(buffer,nptrs);
 	printf("======= Backtrace: =========\n");
