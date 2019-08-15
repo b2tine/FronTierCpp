@@ -582,8 +582,10 @@ void CollisionSolver::aabbCollision() {
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
-	const int MAX_ITER = 8;
+	int MAX_ITER = 8;
+	//const int MAX_ITER = 8;
 	int niter = 1;
+    int num_collision_pairs;
 
 	std::cout<<"Starting collision handling: "<<std::endl;
 	//record if has an actual collision
@@ -603,12 +605,23 @@ void CollisionSolver::detectCollision()
             setHasCollision(true);
 
 	    updateAverageVelocity();
-	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+        num_collision_pairs = abt_collision->getCount(); 
+	    std::cout<<"    #"<<niter << ": " << num_collision_pairs
 		     << " pair of collision tris" << std::endl;
-	    if (++niter > MAX_ITER) break;
-	}
 
-	start_clock("computeImpactZone");
+	    //if (++niter > MAX_ITER) break;
+	    if (++niter > MAX_ITER)
+        {
+            //20 based on experimental evidence
+            if (num_collision_pairs > 20)
+            {
+                break;
+            }
+            MAX_ITER++;
+        }
+	}
+    
+    start_clock("computeImpactZone");
 	if (is_collision) 
 	    computeImpactZone();
 	stop_clock("computeImpactZone");
