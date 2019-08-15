@@ -404,8 +404,9 @@ void CollisionSolver::resolveCollision()
 	    //reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
-    //TODO: implement this function correctly
 	start_clock("updateFinalVelocity");
+    //detectProximity();
+    //TODO: implement this function correctly
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
 }
