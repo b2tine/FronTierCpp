@@ -328,40 +328,46 @@ static void CgalCircle(
         set_gore = false;
         set_vent = false;
         set_string = false;
+	af_params->attach_gores = NO;
 
-	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
+	if (CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:"))
         {
-	    CirR[1] = 0.1 * CirR[0];
-	    af_params->attach_gores = YES;
-            set_gore = true;
-	}
-	else
-	    af_params->attach_gores = NO;
-	CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
-	if (string[0]=='y' || string[0]=='Y')
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+	        CirR[1] = 0.1 * CirR[0];
+	        af_params->attach_gores = YES;
+                set_gore = true;
+	    }
+        }
+	if (CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:"))
         {
-            CursorAfterString(infile,"Enter radius of the vent:");
-	    fscanf(infile,"%lf",&CirR[1]);
-	    (void) printf("%f\n",CirR[1]);
-            set_vent = true;
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+	    if (string[0]=='y' || string[0]=='Y')
+            {
+                CursorAfterString(infile,"Enter radius of the vent:");
+	        fscanf(infile,"%lf",&CirR[1]);
+	        (void) printf("%f\n",CirR[1]);
+                set_vent = true;
+            }
         }
 
 	num_strings = 28;   //default
-	CursorAfterStringOpt(infile,"Enter yes to attach strings to canopy:");
-	fscanf(infile,"%s",string);
-	(void) printf("%s\n",string);
-	if (string[0]=='y' || string[0]=='Y')
-	{
-	    CursorAfterString(infile,"Enter number of chords:");
-	    fscanf(infile,"%d",&num_strings);
-	    (void) printf("%d\n",num_strings);
-            set_string = true;
-	}
+	if (CursorAfterStringOpt(infile,
+                    "Enter yes to attach strings to canopy:"))
+        {
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+	    if (string[0]=='y' || string[0]=='Y')
+	    {
+	        CursorAfterString(infile,"Enter number of chords:");
+	        fscanf(infile,"%d",&num_strings);
+	        (void) printf("%d\n",num_strings);
+                set_string = true;
+	    }
+        }
 	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,
                                 sizeof(POINT*));
 

@@ -4,29 +4,32 @@ program fortran_driver
     implicit none
 
     interface
-        subroutine smm_init(in_name) bind(c, name="SMM_Init")
+        subroutine smm_init(in_name) bind(c,name="SMM_Init")
             import :: c_char
             character(kind=c_char) :: in_name
         end subroutine
-        
-        subroutine smm_init_modules() bind(c, name="SMM_InitModules")
-        end subroutine
-        
-        subroutine smm_init_propagator() bind(c, name="SMM_InitPropagator")
-        end subroutine
-        
-        subroutine smm_init_sm_params() bind(c, name="SMM_InitSpringMassParams")
+
+        subroutine smm_init_modules() bind(c,name="SMM_InitModules")
         end subroutine
 
-        subroutine smm_init_vel_func() bind(c, name="SMM_InitTestVelFunc")
+        subroutine smm_init_propagator() bind(c,name="SMM_InitPropagator")
         end subroutine
 
-        subroutine smm_init_time_control() bind(c, name="SMM_InitTestTimeContrl")
+        subroutine smm_init_sm_params() bind(c,name="SMM_InitSpringMassParams")
         end subroutine
-        
+
+        subroutine smm_init_vel_func() bind(c,name="SMM_InitTestVelFunc")
+        end subroutine
+
+        subroutine smm_init_time_control() bind(c,name="SMM_InitTestTimeContrl")
+        end subroutine
+
         subroutine smm_plot() bind(c, name="SMM_Plot")
         end subroutine
-        
+
+        subroutine smm_save() bind(c, name="SMM_Save")
+        end subroutine
+
         subroutine smm_test_driver() bind(c, name="SMM_TestDriver")
         end subroutine
     end interface

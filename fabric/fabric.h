@@ -400,6 +400,7 @@ extern void InstallNewLoadNode(Front*,int);
 /* C++ API functions */
 extern Front *SMM_GetFront();
 extern void SMM_InitCpp(int,char**);
+extern void SMM_RestartCpp(int,char**);
 
 #ifdef __cplusplus
 extern "C" {
@@ -413,6 +414,7 @@ extern void SMM_InitSpringMassParams();
 extern void SMM_InitTestVelFunc();
 extern void SMM_InitTestTimeContrl();
 extern void SMM_Plot();
+extern void SMM_Save();
 extern void SMM_TestDriver();
 
 #ifdef __cplusplus

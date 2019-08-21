@@ -42,6 +42,11 @@ extern void SMM_InitCpp(int argc, char **argv)
         static AF_PARAMS af_params;
 
         FT_Init(argc,argv,&f_basic);
+        if (f_basic.RestartRun) 
+        {
+            SMM_RestartCpp(argc,argv);
+            return;
+        }
         front->extra2 = (POINTER)&af_params;
         f_basic.size_of_intfc_state = sizeof(STATE);
         af_params.node_id[0] = 0;
@@ -50,9 +55,44 @@ extern void SMM_InitCpp(int argc, char **argv)
         FT_StartUp(front,&f_basic);
         if (FT_Dimension() == 2) // initialization using old method
             setInitialIntfcAF(front,&level_func_pack,InName(front));
+        else
+            level_func_pack.pos_component = LIQUID_COMP2;
         FT_InitDebug(InName(front));
         FT_InitIntfc(front,&level_func_pack);
 }       /* end SMM_InitCpp */
+
+extern void SMM_RestartCpp(int argc, char **argv)
+{
+        Front *front = SMM_GetFront();
+        static F_BASIC_DATA f_basic;
+        static AF_PARAMS af_params;
+
+        FT_Init(argc,argv,&f_basic);
+        if (!f_basic.RestartRun) return;
+
+        char *restart_name            = f_basic.restart_name;
+        char *restart_state_name      = f_basic.restart_state_name;
+
+        sprintf(restart_state_name,"%s/state.ts%s",restart_name,
+			right_flush(f_basic.RestartStep,7));
+        sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
+			right_flush(f_basic.RestartStep,7));
+	
+        if (pp_numnodes() > 1)
+        {
+            sprintf(restart_name,"%s-nd%s",restart_name,
+                    right_flush(pp_mynode(),4));
+            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
+                    right_flush(pp_mynode(),4));
+	}
+        front->extra2 = (POINTER)&af_params;
+        f_basic.size_of_intfc_state = sizeof(STATE);
+        af_params.node_id[0] = 0;
+
+        FT_ReadSpaceDomain(f_basic.in_name,&f_basic);
+        FT_StartUp(front,&f_basic);
+        FT_InitDebug(InName(front));
+}       /* end SMM_RestartCpp */
 
 #ifdef __cplusplus
 extern "C" {
@@ -243,7 +283,7 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%d",&af_params->num_smooth_layers);
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
-        af_params->payload = 0.0;       // default
+        af_params->payload = af_params->m_s;       // default
 	if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
@@ -291,8 +331,8 @@ extern void SMM_TestDriver()
 
 	FT_ResetTime(front);
 
-	FT_Save(front);
-        FT_Draw(front);
+	SMM_Save();
+        SMM_Plot();
 
 	FT_Propagate(front);
 	FT_InteriorPropagate(front);
@@ -306,7 +346,7 @@ extern void SMM_TestDriver()
         // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
-	    FT_Save(front);
+	    SMM_Save();
 	    return;
 	}
     
@@ -345,12 +385,12 @@ extern void SMM_TestDriver()
 
             if (FT_IsSaveTime(front))
 	    {
-                FT_Save(front);
+                SMM_Save();
 	    }
         
             if (FT_IsDrawTime(front))
 	    {
-                FT_Draw(front);
+                SMM_Plot();
 	    }
 
             if (FT_TimeLimitReached(front))
@@ -377,6 +417,13 @@ extern void SMM_Plot()
         Front *front = SMM_GetFront();
         FT_Draw(front);
 }       /* end SMM_Plot */
+
+extern void SMM_Save()
+{
+        Front *front = SMM_GetFront();
+        FT_Save(front);
+        printAfExtraData(front,OutName(front));
+}       /* end SMM_Save */
 
 #ifdef __cplusplus
 }
