@@ -1,12 +1,15 @@
 #!/bin/bash
 
 PETSC_ARCH="opt"
+WARNING="-w"
 
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         PETSC_ARCH="dbg"
         OPT_FLAGS="-Og"
         DEBUG_FLAGS="-g3 -rdynamic"
+    elif [[ "$arg" == "-w" ]]; then
+        WARNING="-Wall"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
     elif [[ "$arg" == "-c" ]]; then
@@ -16,8 +19,8 @@ done
 
 
 
-export CFLAGS="-w $DEBUG_FLAGS $OPT_FLAGS"
-export CXXFLAGS="-std=c++11 -w $DEBUG_FLAGS $OPT_FLAGS"
+export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
+export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
 
 
 
@@ -44,6 +47,13 @@ function config_lambda {
 }
 
 function config_alpha {
+    PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${PETSC_ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+}
+
+function config_beta {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${PETSC_ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
@@ -85,6 +95,9 @@ elif [[ "$HOST" == lambda ]]; then
 elif [[ "$HOST" == alpha ]]; then
     echo "Machine recognized as alpha."
     config_alpha
+elif [[ "$HOST" == beta.ams.stonybrook.edu ]]; then
+    echo "Machine recognized as beta."
+    config_beta
 elif [[ "$HOST" == defiant ]]; then
     echo "Machine recognized as defiant."
     config_defiant

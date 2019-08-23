@@ -1,5 +1,5 @@
-Domain limit in 0-th dimension: 0 1
-Domain limit in 1-th dimension: 0 1
+Domain limit in 0-th dimension: -0.5 1.5
+Domain limit in 1-th dimension: -0.5 1.5
 Domain limit in 2-th dimension: 0 1
 Computational grid: 50 50 50
 Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
@@ -63,6 +63,7 @@ Enter payload: 0.0
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+Entering number of canopy optimization rounds: 20
 Enter fabric spring constant: 5000
 Enter fabric friction constant: 0.5
 Enter fabric point mass: 0.002
@@ -91,7 +92,7 @@ Type yes if the rigid body is fixed: no
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 2.0
+Enter the total mass for rigid body: 1.0
 Enter the initial center of mass for rigid body: 0.7 0.5 0.5
 Enter the initial center of mass velocity: -0.5 0 0.0
 

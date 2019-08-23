@@ -1,0 +1,196 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 60 60 60
+Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 60 60 60
+Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+Max time: 3.0
+Max step: 1000
+Print interval: 0.01
+Movie frame interval: 0.005
+CFL factor: 0.5
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+
+**************Fluid parameters***************
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+
+Enter projection type: SIMPLE
+Enter advection order: 4
+Enter density and viscosity of the fluid: 1.0 0.00628
+Enter gravity: 0 0 0
+Enter fluid ambient velocity: 0 0 0
+
+*************Boundary parameters**************
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 4
+Enter pressure: 0
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+**********************************************
+
+Enter number of canopy surfaces: 1
+
+Initial surface type can be
+	PLANE
+	ELLIPSE
+	SINE_WAVE
+	CIRCULAR_PERT
+
+Enter initial canopy surface type: P
+Enter the height of the plane: 0.5
+Enter type of plane edge: c
+Enter circle center: 0.5 0.5
+Enter circle radius: 0.4
+
+Enter surface tension: 0.0
+Enter area density of canopy: 1.0
+Enter factor of smoothing radius: 1
+
+Entering yes to turn off fluid solver: yes
+Enter velocity function: fa
+Enter initial shape of fixed area: ellipse
+Enter center of ellipse: 0.5 0.5
+Enter radii of ellipse: 0.3 0.2
+Enter area velocity: 0 0 4
+Enter interior propagator: p
+Enter interior sub step number: 10
+
+Entering type of spring model: 3
+Enter yes to use GPU solver: no
+
+Enter fabric spring constant: 1500
+Enter fabric friction constant: 0.01
+Enter fabric point mass: 0.001
+
+Enter yes to use porosity: no
+Enter viscous parameter: 30.0
+Enter inertial parameter: 0.0
+
+****************Movie options*****************
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+Type y to make cross sectional component movie: n
+Type y to make vector velocity field movie: n
+Type y to plot surface stress: n
+
+************Debugging options*****************
+Enter yes for debugging: yes
+Enter the debugging string: trace
+Enter the debugging string: CLOCK
+Enter the debugging string: step_size
+Enter the debugging string: tsample_velocity
+
+
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+Max time: 3.0
+Max step: 1000
+Print interval: 0.01
+Movie frame interval: 0.005
+CFL factor: 0.5
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+
+**************Fluid parameters***************
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+
+Enter projection type: SIMPLE
+Enter advection order: 4
+Enter density and viscosity of the fluid: 1.0 0.00628
+Enter gravity: 0 0 0
+Enter fluid ambient velocity: 0 0 0
+
+*************Boundary parameters**************
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 4
+Enter pressure: 0
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+**********************************************
+
+Enter number of canopy surfaces: 1
+
+Initial surface type can be
+	PLANE
+	ELLIPSE
+	SINE_WAVE
+	CIRCULAR_PERT
+
+Enter initial canopy surface type: P
+Enter the height of the plane: 0.5
+Enter type of plane edge: c
+Enter circle center: 0.5 0.5
+Enter circle radius: 0.4
+
+Enter surface tension: 0.0
+Enter area density of canopy: 1.0
+Enter factor of smoothing radius: 1
+
+Entering yes to turn off fluid solver: yes
+Enter velocity function: fa
+Enter initial shape of fixed area: ellipse
+Enter center of ellipse: 0.5 0.5
+Enter radii of ellipse: 0.3 0.2
+Enter area velocity: 0 0 4
+Enter interior propagator: p
+Enter interior sub step number: 10
+
+Entering type of spring model: 1
+Enter yes to use GPU solver: no
+
+Enter fabric spring constant: 1500
+Enter fabric friction constant: 0.01
+Enter fabric point mass: 0.001
+
+Enter yes to use porosity: no
+Enter viscous parameter: 30.0
+Enter inertial parameter: 0.0
+
+****************Movie options*****************
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+Type y to make cross sectional component movie: n
+Type y to make vector velocity field movie: n
+Type y to plot surface stress: n
+
+************Debugging options*****************
+Enter yes for debugging: yes
+Enter the debugging string: trace
+Enter the debugging string: CLOCK
+Enter the debugging string: step_size
+Enter the debugging string: tsample_velocity
+
+

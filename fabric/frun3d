@@ -1,0 +1,18 @@
+#!/bin/bash
+
+casename=$1
+
+if [ $# -ne 1 ]; then
+    echo "ERROR: need input file casename"
+    echo "example usage: frun drumC"
+    exit 1
+fi
+
+
+#fabric_Fortn.F90 has hardcoded for now
+initfile="ftinit.txt"
+
+echo "-d 3 -i in-$casename -o out-$casename" > $initfile
+
+
+./fabric_Fortn

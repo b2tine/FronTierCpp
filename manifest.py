@@ -8,13 +8,13 @@ excluded= tuple('config.h')
 docfiles = ('README','LICENSE')
 
 infile_prefixes = ['in-']
-script_prefixes = ['build','mrun','qrun-inputdir']
+script_prefixes = ['build','mrun','crun','frun','qrun-inputdir']
 file_prefixes = tuple(infile_prefixes + script_prefixes)
 directory_prefixes = tuple(['refsol-'])
 
 script_suffixes = ['.py','sh']
 autotools_suffixes = ['.ac','.am','.m4']
-src_suffixes = ['.c','.cpp','.h','.hpp','.cu','.cuh']
+src_suffixes = ['.c','.cpp','.h','.hpp','.cu','.cuh','.F90']
 file_suffixes = tuple(script_suffixes + autotools_suffixes + src_suffixes)
 
 

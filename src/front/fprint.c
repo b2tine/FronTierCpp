@@ -1673,9 +1673,12 @@ EXPORT  void show_front_output(
         char *out_name,
 	boolean print_in_binary)
 {   
-	show_front_gd(front,out_name);
-	show_front_xg(front,out_name);
-	show_front_hdf(front,out_name);
+        if (FT_Dimension() < 3)
+        {
+	    show_front_gd(front,out_name);
+	    show_front_xg(front,out_name);
+	    show_front_hdf(front,out_name);
+        }
 	show_front_gv(front,out_name);
 	show_front_vtk(front,out_name,print_in_binary);	
 	show_front_sdl(front,out_name);

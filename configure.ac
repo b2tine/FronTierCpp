@@ -21,7 +21,12 @@ LT_INIT([disable-shared])
 
 #Check for compilers
 AC_PROG_CXX([mpic++ mpicxx])
-
+AC_PROG_FC
+AC_FC_SRCEXT([F90])
+AC_FC_LIBRARY_LDFLAGS
+AC_FC_FREEFORM
+AC_FC_WRAPPERS
+AC_FC_MAIN
 
 #Check for pthreads
 AX_PTHREAD([have_pthread=yes],[have_pthread=no])
@@ -372,17 +377,13 @@ AS_IF([test $with_nlopt = yes],
 
 
 
-#check if airfoil and Collsion should be built
+#check if fabric, airfoil and Collsion should be built
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
-#check if BVH directory should be built
-AC_ARG_WITH([bvh],[AS_HELP_STRING([--with-bvh],
-              [build the BVH directory])],
-              [buildBVH=yes],[buildBVH=no])
-
-AM_CONDITIONAL([BVH_OPT],[test $buildBVH = yes])
-
+AM_COND_IF([CGAL_ARMA_OPT],
+           [AC_CONFIG_FILES([fabric/Makefile
+                             fabric/objs/Makefile])])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
@@ -396,6 +397,15 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          airfoil/objs/Makefile
                                          airfoil/tests/Makefile
                                          parachute/Makefile])])])
+
+
+#check if BVH directory should be built
+AC_ARG_WITH([bvh],[AS_HELP_STRING([--with-bvh],
+              [build the BVH directory])],
+              [buildBVH=yes],[buildBVH=no])
+
+AM_CONDITIONAL([BVH_OPT],[test $buildBVH = yes])
+
 
 
 #check if folding should be built

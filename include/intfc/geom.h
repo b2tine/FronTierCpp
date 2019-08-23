@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define _IGEOM_H
 
 #include <util/cdecs.h>
-#include <util/vmalloc.h>
+//#include <util/vmalloc.h>
 #include <intfc/triangledefs.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
