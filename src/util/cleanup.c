@@ -178,7 +178,7 @@ LOCAL  void trace_back()
 	#define SIZE 20  /*number of functions need to traceback*/
 	void *buffer[SIZE];
 	char **strings, *ptr;
-	int nptrs, j, i, k;
+	int nptrs, j, i, k, p;
 	char syscom[256],fname[256];
 	FILE* pipe; 
 
@@ -189,12 +189,12 @@ LOCAL  void trace_back()
     //      needs to account for offset from function.
     //      Willl require writing some new parsing
     //      functions.
-    /*
+
     FILE* fp = fopen("./backtrace_info.txt","a");
     int fd = fileno(fp);
     backtrace_symbols_fd(buffer,nptrs,fd);
     fclose(fp);
-    */
+
 
 	strings = backtrace_symbols(buffer,nptrs);
 	printf("======= Backtrace: =========\n");
@@ -204,18 +204,46 @@ LOCAL  void trace_back()
 	else for (j = 0; j < nptrs; j++)
 	{
 	    /*split strings[j] to program name and function name*/
-	    i = 0; k = 0;
+	    i = 0; k = 0; p=0;
 	    while (strings[j][i] != ')')
 	    {
 		if (strings[j][i] == '(')
-		    k = i;	
+		    k = i;
+		if (strings[j][i] == '+')
+			p = i;
 		i++;
 	    }
-	    /*print program name and function name*/
-            printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
-	    /*print file name and line number*/
-	    if (buffer[j] != NULL)
-            sprintf(syscom,"addr2line %p -e %.*s",buffer[j],k,strings[j]);
+
+		printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
+	    if (p == k+1){ // no function to find
+			if (buffer[j] != NULL)
+				sprintf(syscom,"addr2line -e %.*s %.*s",k,strings[j],i-p-1,strings[j]+p+1);
+
+	    } else { // calling nm
+			printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1);
+			printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
+			printf("buffer: %p\n",buffer[j]);
+			printf("file: %.*s\n",k,strings[j]);
+
+			sprintf(syscom,"nm %.*s | grep %.*s",k,strings[j],p-k-1,strings[j]+k+1);
+			pipe = popen(syscom,"r");
+			if (fgets(syscom,sizeof(syscom),pipe) != 0)
+			{
+			i = 0; ptr = syscom;
+			while (syscom[i] != '\0')
+			{
+				if (syscom[i] == '/')
+					ptr = syscom + i + 1;
+				i++;
+			}
+			printf("syscom: %s\n",syscom);
+			}
+			pclose(pipe);
+
+	    	// if nm gives no symbols then break.
+
+
+	    }
 
 	    pipe = popen(syscom,"r");
 	    if (fgets(syscom,sizeof(syscom),pipe) != 0)
