@@ -139,6 +139,6 @@ echo "configure options: ${CONF}"
 ./configure ${CONF}
 
 if [[ -z "$NOMAKE" ]]; then
-    make
+    make -j 4
 fi
 
