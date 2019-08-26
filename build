@@ -81,11 +81,20 @@ function config_defiant {
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
+function config_kord {
+    export CC=/shared/openmpi-2.1.1/gcc-6.2.1/bin/mpicc
+    export CXX=/shared/openmpi-2.1.1/gcc-6.2.1/bin/mpicxx
+    CONF="--with-mpi --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+}
+
 HOST=`uname -n`
 
 if [[ "$HOST" == intruder.cluster ]]; then
     echo "Machine recognized as intruder."
     config_intruder
+elif [[ "$HOST" == head ]]; then
+    echo "Machine recognized as opportunity."
+    config_kord
 elif [[ "$HOST" == omega.ams.stonybrook.edu ]]; then
     echo "Machine recognized as omega."
     config_omega
