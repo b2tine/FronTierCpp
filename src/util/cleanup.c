@@ -178,23 +178,13 @@ LOCAL  void trace_back()
 	#define SIZE 20  /*number of functions need to traceback*/
 	void *buffer[SIZE];
 	char **strings, *ptr;
-	int nptrs, j, i, k;
+	int nptrs, j, i, k, p;
 	char syscom[256],fname[256];
-	FILE* pipe; 
+	FILE* pipe;
+	long int hex_base, hex_offset;
+	char oaddr[32];
 
 	nptrs = backtrace(buffer,SIZE);
-    
-    //TODO: Fix trace so it works for pie code.
-    //      addr2line call below will not work,
-    //      needs to account for offset from function.
-    //      Willl require writing some new parsing
-    //      functions.
-    /*
-    FILE* fp = fopen("./backtrace_info.txt","a");
-    int fd = fileno(fp);
-    backtrace_symbols_fd(buffer,nptrs,fd);
-    fclose(fp);
-    */
 
 	strings = backtrace_symbols(buffer,nptrs);
 	printf("======= Backtrace: =========\n");
@@ -203,19 +193,51 @@ LOCAL  void trace_back()
 	}
 	else for (j = 0; j < nptrs; j++)
 	{
+		//printf("raw string: %s\n",strings[j]);
 	    /*split strings[j] to program name and function name*/
-	    i = 0; k = 0;
+	    i = 0; k = 0; p=0;
 	    while (strings[j][i] != ')')
 	    {
 		if (strings[j][i] == '(')
-		    k = i;	
+		    k = i;
+		if (strings[j][i] == '+')
+			p = i;
 		i++;
 	    }
-	    /*print program name and function name*/
-            printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
-	    /*print file name and line number*/
-	    if (buffer[j] != NULL)
-            sprintf(syscom,"addr2line %p -e %.*s",buffer[j],k,strings[j]);
+
+	    if (p == k+1){ // no function to find
+			if (buffer[j] != NULL){
+				if (strings[j][1]!='l'){
+					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
+					sprintf(syscom,"addr2line -e %.*s %.*s",k,strings[j],i-p-1,strings[j]+p+1);
+				} else {
+					printf("#%-2d %s to %.*s stopping backtrace.\n",j,strings[j]+i+1,k,strings[j]);
+					break;
+				}
+			}
+	    } else { // calling nm
+			//printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1);
+			//printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
+			//printf("buffer: %p\n",buffer[j]);
+			//printf("file: %.*s\n",k,strings[j]);
+
+			sprintf(syscom,"nm %.*s 2>/dev/null | grep %.*s | cut -d' ' -f1",k,strings[j],p-k-1,strings[j]+k+1);
+			pipe = popen(syscom,"r");
+			if (fgets(syscom,sizeof(syscom),pipe) != 0)
+			{
+				printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
+				hex_base = strtol(syscom, NULL, 16);
+				sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
+				hex_offset = strtol(oaddr, NULL, 16);
+				//printf("hex values: %x %x\n", hex_base, hex_offset);
+				//printf("hex sum: %x\n", hex_base+hex_offset);
+				pclose(pipe);
+				sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_base+hex_offset);
+			} else { // done with useful trace
+				pclose(pipe);
+				break;
+			}
+	    }
 
 	    pipe = popen(syscom,"r");
 	    if (fgets(syscom,sizeof(syscom),pipe) != 0)
@@ -232,6 +254,7 @@ LOCAL  void trace_back()
 	    pclose(pipe);
 	}
 	free(strings);
+	printf("======= end backtrace: =========\n");
 }
 
 EXPORT void clean_upp(
