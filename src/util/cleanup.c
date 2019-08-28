@@ -183,6 +183,7 @@ LOCAL  void trace_back()
 	FILE* pipe;
 	long int hex_base, hex_offset;
 	char oaddr[32];
+	long int hex_minus;
 
 	nptrs = backtrace(buffer,SIZE);
 
@@ -205,53 +206,71 @@ LOCAL  void trace_back()
 		i++;
 	    }
 
-	    if (p == k+1){ // no function to find
-			if (buffer[j] != NULL){
+	    /*
+	     * The following parses a raw backtrace string:
+	     * for example:
+	     *     1) ./iFluid(+0x2b33a6) [0x55e0d27e73a6]
+	     *     2) /home/jarret/petsc-3.11.0-dbg/lib/libpetsc.so.3.11(PCApplyBAorAB+0x1007) [0x7f5417eb3cb1]
+	     *
+	     * The hexidecimal value in brackets is hex_minus, the value in paranthesis after the plus
+	     * sign is hex_offset, and the address of the function name (if one - PCApplyBAorAB in (2))
+	     * is hex_base.  The correct address of the reference line is:
+	     * 		 hex_base + hex_offset - hex_minus
+	     */
+
+	    hex_base = 0x0;
+		if (buffer[j] != NULL){
+		    hex_minus = strtol(buffer[j], NULL, 16);
+		    if (p == k+1){ // no function name
 				if (strings[j][1]!='l'){
+					sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
+					hex_offset = strtol(oaddr, NULL, 16);
 					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
-					sprintf(syscom,"addr2line -e %.*s %.*s",k,strings[j],i-p-1,strings[j]+p+1);
+					sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_offset - hex_minus);
 				} else {
 					printf("#%-2d %s to %.*s stopping backtrace.\n",j,strings[j]+i+1,k,strings[j]);
 					break;
 				}
 			}
-	    } else { // calling nm
-			//printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1);
-			//printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
-			//printf("buffer: %p\n",buffer[j]);
-			//printf("file: %.*s\n",k,strings[j]);
+		    else { // has function name.  Calling nm to find its address.
 
-			sprintf(syscom,"nm %.*s 2>/dev/null | grep %.*s | cut -d' ' -f1",k,strings[j],p-k-1,strings[j]+k+1);
+				//printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1); // to help debugging
+				//printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
+				//printf("buffer: %p\n",buffer[j]);
+				//printf("file: %.*s\n",k,strings[j]);
+
+				sprintf(syscom,"nm %.*s 2>/dev/null | grep %.*s | cut -d' ' -f1",k,strings[j],p-k-1,strings[j]+k+1);
+				pipe = popen(syscom,"r");
+				if (fgets(syscom,sizeof(syscom),pipe) != 0)
+				{
+					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
+					hex_base = strtol(syscom, NULL, 16);
+					sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
+					hex_offset = strtol(oaddr, NULL, 16);
+					//printf("hex values: %x %x\n", hex_base, hex_offset); // for debug
+					//printf("hex sum: %x\n", hex_base+hex_offset);
+					pclose(pipe);
+					sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_base+hex_offset-hex_minus);
+				} else { // done with useful trace
+					pclose(pipe);
+					break;
+				}
+		    }
+
 			pipe = popen(syscom,"r");
 			if (fgets(syscom,sizeof(syscom),pipe) != 0)
 			{
-				printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
-				hex_base = strtol(syscom, NULL, 16);
-				sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
-				hex_offset = strtol(oaddr, NULL, 16);
-				//printf("hex values: %x %x\n", hex_base, hex_offset);
-				//printf("hex sum: %x\n", hex_base+hex_offset);
-				pclose(pipe);
-				sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_base+hex_offset);
-			} else { // done with useful trace
-				pclose(pipe);
-				break;
+				i = 0; ptr = syscom;
+				while (syscom[i] != '\0')
+				{
+					if (syscom[i] == '/')
+						ptr = syscom + i + 1;
+					i++;
+				}
+				printf("at %s",ptr);
 			}
-	    }
-
-	    pipe = popen(syscom,"r");
-	    if (fgets(syscom,sizeof(syscom),pipe) != 0)
-	    {
-		i = 0; ptr = syscom;
-		while (syscom[i] != '\0')
-		{
-		    if (syscom[i] == '/')
-		        ptr = syscom + i + 1;
-		    i++;
+			pclose(pipe);
 		}
-		printf("at %s",ptr);
-	    }
-	    pclose(pipe);
 	}
 	free(strings);
 	printf("======= end backtrace: =========\n");
