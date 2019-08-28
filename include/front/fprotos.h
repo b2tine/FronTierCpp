@@ -266,6 +266,8 @@ IMPORT	void  	set_point_gindex(Front*);
 IMPORT	void  	set_surface_gindex(Front*);
 IMPORT	void  	set_tri_gindex(Front*);
 IMPORT	void  	set_curve_gindex(Front*);
+IMPORT	void  	set_gindex_to_tri(Front*);
+IMPORT	void  	set_gindex_to_point(Front*);
 IMPORT  void	exchange_curve_gindex(Front*);
 
         /* fgrid.c*/

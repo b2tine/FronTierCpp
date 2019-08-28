@@ -6,6 +6,7 @@
 /*! \defgroup INITIALIZATION    FronTier Initialization Functions
  *  \defgroup TIME              FronTier Time Control Functions
  *  \defgroup OUTPUT            FronTier Output Functions
+ *  \defgroup INPUT             FronTier Input Functions
  *  \defgroup PROPAGATION       FronTier Propagation Functions
  *  \defgroup GRIDINTFC         FronTier Interface-Grid Functions
  *  \defgroup GEOMETRY          FronTier Interface Geometry Functions
@@ -1249,6 +1250,13 @@ extern "C" {
 				int n6,
 				int size);
 
+/*! \fn void FT_RelinkGlobalIndex(Front *front)
+ *  \ingroup PROPAGATION
+    \brief This function relink interface point and tris to global indices
+    \param front @b Pointers to the front.
+ */
+   IMPORT  void FT_RelinkGlobalIndex(Front *front);
+
 /*! \fn void FT_SetGlobalIndex(Front *front)
  *  \ingroup INITIALIZATION
     \brief This function set global index for all point, curves, surfaces 
@@ -2041,6 +2049,28 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
    IMPORT  boolean FT_CheckSurfCompConsistency(
 			Front *front,
 			SURFACE *surf);
+
+/*! \fn void FT_WriteFrontState(FILE *outfile, Front *front)
+ *  \ingroup OUTPUT
+    \brief This function write front state to outfile in binary format 
+    \param outfile @b in Pointer to the file with data.
+    \param front @b in Pointer to the front.
+ */
+
+   IMPORT  void FT_WriteFrontState(
+                        FILE *outfile,
+			Front *front);
+
+/*! \fn void FT_ReadFrontState(FILE *infile, Front *front)
+ *  \ingroup INPUT
+    \brief This function read front state from infile in binary format 
+    \param infile @b in Pointer to the file with data.
+    \param front @b in Pointer to the front.
+ */
+
+   IMPORT  void FT_ReadFrontState(
+                        FILE *infile,
+			Front *front);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #if !defined(_VMALLOC_H)
 #define _VMALLOC_H
 
-//#include <util/cdecs.h>
+#include <util/cdecs.h>
 
 #define	  CHAR	  sizeof(char)
 #define   INT	  sizeof(int)

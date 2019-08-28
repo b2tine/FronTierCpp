@@ -512,6 +512,8 @@ struct _Front {
 	RECT_GRID *rect_grid;		/* Grid Info */
 	PP_GRID* pp_grid;
 	F_BASIC_DATA *f_basic;
+        POINT **gpoints;
+        TRI **gtris;
 
 		/* advancing the front */
 	void	(*_pre_advance_front)(struct _Front*);
