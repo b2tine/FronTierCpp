@@ -82,9 +82,9 @@ function config_defiant {
 }
 
 function config_kord {
-    export CC=/shared/openmpi-2.1.1/gcc-6.2.1/bin/mpicc
-    export CXX=/shared/openmpi-2.1.1/gcc-6.2.1/bin/mpicxx
-    CONF="--with-mpi --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib"
+    export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
+    export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
+    CONF="--with-mpi --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
 }
 
 HOST=`uname -n`
@@ -117,13 +117,8 @@ elif [[ "$HOST" == jarret-MacBookAir ]]; then
 	echo "Jarret RECOGNIZED"
 	config_jarretlaptop
 else 
-    echo Unreognized machine.
-    echo "Type the PETSc directory to use (opt, dbg):"
-    read PETSC_DIR
-    echo using ${PETSC_DIR} 
-    export CC=${PETSC_DIR}/bin/mpicc
-    export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR}"
+    echo Unrecognized machine.
+    exit 1
 fi
 
 
