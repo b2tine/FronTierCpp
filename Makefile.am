@@ -20,8 +20,12 @@ MAYBE_FOLDING = folding
 endif
 MAYBE_AIRFOIL = airfoil
 MAYBE_PARACHUTE = parachute
-MAYBE_FABRIC = fabric
 endif
+endif
+
+
+if CGAL_ARMA_OPT
+MAYBE_FABRIC = fabric
 endif
 
 
