@@ -2969,10 +2969,8 @@ LOCAL void blocks_on_tri(
 	}
 	
 	if(is_tri_outside(intfc, t, grid))
-    {
 	    for(i=0; i<3; ++i)
-            i_diff[i] = 0;
-    }
+		i_diff[i] = 0;
 
 	if (i_diff[0] > 6)
 	{
@@ -4028,11 +4026,11 @@ EXPORT boolean line_tri_crossing(
 	double *crds2,
 	double tol)
 {
-POINT	**pt = Point_of_tri(tri);
-double	*p0 = Coords(pt[0]), *p1 = Coords(pt[1]), *p2=Coords(pt[2]);
-const double *n;
-double    norm[MAXD], v[MAXD], D, t1, t2;
-int	i,iv,ie;
+        POINT	**pt = Point_of_tri(tri);
+        double	*p0 = Coords(pt[0]), *p1 = Coords(pt[1]), *p2=Coords(pt[2]);
+        const double *n;
+        double    norm[MAXD], v[MAXD], D, t1, t2;
+        int	i,iv,ie;
 
 	n = Tri_normal(tri); 
 	D = Mag3d(n);
@@ -4059,6 +4057,7 @@ int	i,iv,ie;
 	    if(point_tri_crossing(crx,&iv,&ie,v,tri,norm,tol))
 		return YES;
 	}
+        if (fabs(t1) < tol && fabs(t2) < tol) return NO;
 	
 	/*In the same side of the plane */
 	if(t1*t2 > 0.0)

@@ -209,7 +209,7 @@ EXPORT	void	f_user_fprint_interface(
 	INTERFACE	*intfc)
 {
 	int		i;
-	int		print_bstates = NO;
+	//int		print_bstates = NO;
 
 	(void) fprintf(file,"\n");
 	(void) foutput(file);
@@ -220,6 +220,7 @@ EXPORT	void	f_user_fprint_interface(
 	               interface_tangent_name(intfc));
 	(void) fprintf(file,"End interface normal and tangent operators\n");
 
+        /*
 	for (i = 0; i < num_bstates(intfc); ++i)
 	{
 	    if (bstate_list(intfc)[i] != NULL)
@@ -228,9 +229,10 @@ EXPORT	void	f_user_fprint_interface(
 	    	break;
 	    }
 	}
+        */
 
 	(void) fprintf(file,"\n");
-	if (print_bstates)
+	//if (print_bstates)
 	{
 	    BOUNDARY_STATE *bstate;
 

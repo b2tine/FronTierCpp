@@ -73,6 +73,69 @@ LOCAL boolean point_out_domain(
 	return NO;
 }	/* end point_out_domain */
 
+EXPORT	void set_gindex_to_point(
+	Front *front)
+{
+        INTERFACE *intfc = front->interf;
+        SURFACE **s;
+        CURVE **c;
+        NODE **n;
+        TRI *tri;
+        BOND *b;
+        POINT *p;
+        long gindex,max_gindex = intfc->max_point_gindex;
+        int i;
+
+        if (front->gpoints == NULL)
+            FT_VectorMemoryAlloc(&front->gpoints,max_gindex,sizeof(POINT*));
+        intfc_surface_loop(intfc,s)
+        {
+            surf_tri_loop(*s,tri)
+            {
+                for (i = 0; i < 3; ++i) {
+                    p = Point_of_tri(tri)[i];
+                    gindex = Gindex(p);
+                    front->gpoints[gindex] = p;
+                }
+            }
+        }
+        intfc_curve_loop(intfc,c)
+        {
+            curve_bond_loop(*c,b)
+            {
+                gindex = Gindex(b->start);
+                front->gpoints[gindex] = b->start;
+                gindex = Gindex(b->end);
+                front->gpoints[gindex] = b->end;
+            }
+        }
+        intfc_node_loop(intfc,n)
+        {
+            gindex = Gindex((*n)->posn);
+            front->gpoints[gindex] = (*n)->posn;
+        }
+}       /* end set_gindex_to_point */
+
+EXPORT	void set_gindex_to_tri(
+	Front *front)
+{
+        INTERFACE *intfc = front->interf;
+        SURFACE **s;
+        TRI *tri;
+        long gindex,max_gindex = intfc->max_tri_gindex;
+
+        if (front->gtris == NULL)
+            FT_VectorMemoryAlloc(&front->gtris,max_gindex,sizeof(TRI*));
+        intfc_surface_loop(intfc,s)
+        {
+            surf_tri_loop(*s,tri)
+            {
+                gindex = Gindex(tri);
+                front->gtris[gindex] = tri;
+            }
+        }
+}       /* end set_gindex_to_tri */
+
 EXPORT	void set_point_gindex(
 	Front *front)
 {

@@ -64,8 +64,7 @@ EXPORT	void FT_Propagate(
             }
 	    FT_MakeGridIntfc(front);
 	}
-	FrontAdvance(front->dt,&dt_frac,front,&newfront,
-                                (POINTER)NULL);
+	FrontAdvance(front->dt,&dt_frac,front,&newfront,(POINTER)NULL);
 
         assign_interface_and_free_front(front,newfront);
 	if (front->grid_intfc != NULL)
@@ -555,11 +554,11 @@ EXPORT	void FT_Save(
 	Front *front)
 {
 	char *out_name = OutName(front);
-    if (debugging("trace"))
-        (void) printf("Entering FT_Save()\n");
+        if (debugging("trace"))
+            (void) printf("Entering FT_Save()\n");
 	print_front_output(front,out_name);
-    if (debugging("trace"))
-        (void) printf("Leaving FT_Save()\n");
+        if (debugging("trace"))
+            (void) printf("Leaving FT_Save()\n");
 }	/* end FT_Save */
 
 EXPORT	void FrontFreeAll(
