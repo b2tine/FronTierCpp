@@ -1,0 +1,4576 @@
+Domain limit in 0-th dimension: 0.000000 12.000000
+Domain limit in 1-th dimension: 0.000000 12.000000
+Domain limit in 2-th dimension: 0.000000 24.000000
+Computational grid: 60 60 120 
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+filename = out-C9-Vent-LH/state.ts0000440-afdata
+Enter yes for debugging: yes
+Enter the debugging string: collision
+
+Start parameters for spring-mass system 
+Enter interior sub step number: 
+Cannot find the string, using default
+Enter yes to use total mass: no
+Enter fabric spring constant: 5000.000000
+Enter fabric damping constant: 0.010000
+Enter fabric point mass: 0.001000
+Enter string spring constant: 5000.000000
+Enter string damping constant: 0.000000
+Enter string point mass: 0.010000
+canopy points count (fabric+gore)  = 10441, string points count = 2520
+fabric point mass  = 0.001000,
+string point mass = 0.010000,
+gore point mass = 0.000000
+Enter number of smooth layers: 
+Cannot find the string, using default
+Enter payload: 100.000000
+
+Start test velocity function set 
+Available velocity functions are:
+	Vertical velocity (V)
+	Parabolic velocity (P)
+	Singular velocity (S)
+	Zero velocity (Z)
+	Fixed area velocity (FA)
+	Fixed point velocity (FP)
+	Free fall velocity (FF)
+Enter velocity function:  FA
+Available initial areas are:
+	Rectangle (R)
+	Ellipse (E)
+Enter initial shape of fixed area: E
+Enter center of ellipse: 6.000000 6.000000
+Enter radii of ellipse: 0.500000 0.500000
+Enter area velocity: 0.000000 0.000000 0.000000 
+Enter gravity:  0.000000 0.000000 -9.800000
+
+Start test time control parameters 
+Max time: 3.000000
+Max step: 514
+Print interval: 1.000000
+Movie frame interval: 0.100000
+CFL factor: 0.500000
+Redistribution interval: 
+Cannot find the string, using default
+Type yes to turn off auto-redistribution: 
+Cannot find the string, using default
+Turn off test run 
+Cannot find the string, using default
+
+time =     0.97889610907698   step =   440   next dt =     0.00034111465805
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.433891 6.218344 17.853643
+avgVel = 0.000000 0.000000 0.000000
+sl->x_old = 0.000000 0.000000 0.000000
+fr_dt = 0.000341  dt = 0.000049  n_sub = 7
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000341  ROUND_EPS = 0.000000
+The point coords: 6.435859 6.218629 17.853215
+avgVel = 0.000000 0.000000 0.000000
+sl->x_old = 6.433891 6.218344 17.853643
+Maximum average velocity is 782.397 -362.452 440.014
+x_old = [5.268046 6.292018 17.806088]
+x_new = [5.534933 6.168380 17.956183]
+dt = 0.000341
+    max velocity = [782.397007 -362.452079 440.013854]
+Enter EdgeToEdge 4 times
+Enter PointToTri 5 times
+Enter isCoplanar 0 times
+7 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [782.397007 -362.452079 440.013854]
+Enter EdgeToEdge 37 times
+Enter PointToTri 0 times
+Enter isCoplanar 86452 times
+    #1: 29 pair of collision tris
+    max velocity = [782.397007 -362.452079 440.013854]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 86482 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    468 edges are over strain limit after 4 iterations
+
+time =     0.97923722373503   step =   441   next dt =     0.00005311664607
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.435859 6.218629 17.853215
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.433891 6.218344 17.853643
+fr_dt = 0.000053  dt = 0.000053  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000053  ROUND_EPS = 0.000000
+The point coords: 6.436165 6.218673 17.853149
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.435859 6.218629 17.853215
+Maximum average velocity is 1205.26 -560.799 680.096
+x_old = [5.534933 6.168380 17.956183]
+x_new = [5.598952 6.138592 17.992307]
+dt = 0.000053
+    max velocity = [1205.263255 -560.799384 680.096317]
+Enter EdgeToEdge 5 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+12 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [1205.263255 -560.799384 680.096317]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 77297 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    498 edges are over strain limit after 4 iterations
+
+time =     0.97929034038110   step =   442   next dt =     0.00005598441300
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.436165 6.218673 17.853149
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.435859 6.218629 17.853215
+fr_dt = 0.000056  dt = 0.000056  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000056  ROUND_EPS = 0.000000
+The point coords: 6.436488 6.218720 17.853079
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436165 6.218673 17.853149
+Maximum average velocity is 1161.36 -537.187 651.814
+x_old = [5.598952 6.138592 17.992307]
+x_new = [5.663971 6.108518 18.028799]
+dt = 0.000056
+    max velocity = [1161.361974 -537.187249 651.813829]
+Enter EdgeToEdge 9 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+16 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-3.536515 -712.946943 294.322780]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 77387 times
+    #1: 1 pair of collision tris
+    max velocity = [-3.536515 -712.946943 294.322780]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 77372 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    498 edges are over strain limit after 4 iterations
+
+time =     0.97934632479410   step =   443   next dt =     0.00004807859712
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.436488 6.218720 17.853079
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436165 6.218673 17.853149
+fr_dt = 0.000048  dt = 0.000048  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000048  ROUND_EPS = 0.000000
+The point coords: 6.436766 6.218760 17.853018
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436488 6.218720 17.853079
+Maximum average velocity is -5.82253 -691.157 274.683
+x_old = [5.651616 6.391289 17.985339]
+x_new = [5.651336 6.358059 17.998545]
+dt = 0.000048
+    max velocity = [-5.822526 -691.156828 274.682806]
+Enter EdgeToEdge 13 times
+Enter PointToTri 12 times
+Enter isCoplanar 0 times
+23 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-5.822526 -691.156828 274.682806]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 77087 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    506 edges are over strain limit after 4 iterations
+
+time =     0.97939440339122   step =   444   next dt =     0.00007839483645
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.436766 6.218760 17.853018
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436488 6.218720 17.853079
+fr_dt = 0.000078  dt = 0.000078  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000078  ROUND_EPS = 0.000000
+The point coords: 6.437218 6.218826 17.852920
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436766 6.218760 17.853018
+Maximum average velocity is -5.26536 -618.022 229.833
+x_old = [5.651336 6.358059 17.998545]
+x_new = [5.650923 6.309609 18.016563]
+dt = 0.000078
+    max velocity = [-5.265356 -618.021849 229.833398]
+Enter EdgeToEdge 9 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+22 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-549.810872 -117.679161 -60.307254]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 78137 times
+    #1: 1 pair of collision tris
+    max velocity = [-549.810872 -117.679161 -60.307254]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 78017 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    494 edges are over strain limit after 4 iterations
+
+time =     0.97947279822767   step =   445   next dt =     0.00007062702928
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.437218 6.218826 17.852920
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.436766 6.218760 17.853018
+fr_dt = 0.000071  dt = 0.000071  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000071  ROUND_EPS = 0.000000
+The point coords: 6.437626 6.218885 17.852831
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.437218 6.218826 17.852920
+Maximum average velocity is -429.503 -64.1462 -74.2198
+x_old = [6.251063 6.273849 17.989699]
+x_new = [6.220728 6.269319 17.984457]
+dt = 0.000071
+    max velocity = [-429.503086 -64.146155 -74.219849]
+Enter EdgeToEdge 18 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+31 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-429.503086 -64.146155 -74.219849]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 78152 times
+    #1: 2 pair of collision tris
+    max velocity = [-429.503086 -64.146155 -74.219849]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 78152 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    503 edges are over strain limit after 4 iterations
+
+time =     0.97954342525695   step =   446   next dt =     0.00008470577894
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.437626 6.218885 17.852831
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.437218 6.218826 17.852920
+fr_dt = 0.000085  dt = 0.000085  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000085  ROUND_EPS = 0.000000
+The point coords: 6.438115 6.218956 17.852725
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.437626 6.218885 17.852831
+Maximum average velocity is 345.901 -189.928 165.712
+x_old = [5.547866 6.193097 17.962998]
+x_new = [5.577166 6.177009 17.977034]
+dt = 0.000085
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 30 times
+Enter PointToTri 18 times
+Enter isCoplanar 0 times
+41 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 1 times
+Enter PointToTri 5 times
+Enter isCoplanar 78872 times
+    #1: 6 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #2: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #3: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #4: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #5: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #6: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #7: 5 pair of collision tris
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+    #8: 5 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 78857 times
+9 number of points in this zone
+    #0: 5 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [345.900679 -189.927620 165.712310]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 78857 times
+9 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    514 edges are over strain limit after 4 iterations
+
+time =     0.97962813103589   step =   447   next dt =     0.00010763617207
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.438115 6.218956 17.852725
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.437626 6.218885 17.852831
+fr_dt = 0.000108  dt = 0.000054  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000108  ROUND_EPS = 0.000000
+The point coords: 6.438736 6.219045 17.852590
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.438115 6.218956 17.852725
+Maximum average velocity is 349.107 -184.432 132.76
+x_old = [5.577166 6.177009 17.977034]
+x_new = [5.614743 6.157157 17.991324]
+dt = 0.000108
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 28 times
+Enter PointToTri 25 times
+Enter isCoplanar 0 times
+48 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79622 times
+    #1: 1 pair of collision tris
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79592 times
+    #2: 1 pair of collision tris
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79592 times
+    #3: 1 pair of collision tris
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79592 times
+    #4: 1 pair of collision tris
+    max velocity = [349.106754 -184.432114 132.760145]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 79592 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    511 edges are over strain limit after 4 iterations
+
+time =     0.97973576720796   step =   448   next dt =     0.00013029133837
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.438736 6.219045 17.852590
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.438115 6.218956 17.852725
+fr_dt = 0.000130  dt = 0.000065  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000130  ROUND_EPS = 0.000000
+The point coords: 6.439487 6.219154 17.852427
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.438736 6.219045 17.852590
+Maximum average velocity is 310.568 151.783 -46.6983
+x_old = [6.201859 6.278476 17.969923]
+x_new = [6.242324 6.298252 17.963839]
+dt = 0.000130
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 11 times
+Enter PointToTri 25 times
+Enter isCoplanar 0 times
+36 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 9 times
+Enter PointToTri 0 times
+Enter isCoplanar 80747 times
+    #1: 9 pair of collision tris
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80627 times
+    #2: 1 pair of collision tris
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80627 times
+    #3: 1 pair of collision tris
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80627 times
+    #4: 1 pair of collision tris
+    max velocity = [310.568265 151.783354 -46.698265]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80627 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    516 edges are over strain limit after 4 iterations
+
+time =     0.97986605854633   step =   449   next dt =     0.00008696350830
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.439487 6.219154 17.852427
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.438736 6.219045 17.852590
+fr_dt = 0.000087  dt = 0.000087  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000087  ROUND_EPS = 0.000000
+The point coords: 6.439989 6.219227 17.852318
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.439487 6.219154 17.852427
+Maximum average velocity is 466.057 165.116 -17.5801
+x_old = [6.242324 6.298252 17.963839]
+x_new = [6.282854 6.312611 17.962310]
+dt = 0.000087
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 14 times
+Enter PointToTri 26 times
+Enter isCoplanar 0 times
+40 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 5 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #1: 5 pair of collision tris
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #2: 1 pair of collision tris
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #3: 1 pair of collision tris
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #4: 1 pair of collision tris
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #5: 1 pair of collision tris
+    max velocity = [466.057427 165.115981 -17.580068]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 79682 times
+    #6: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    544 edges are over strain limit after 4 iterations
+
+time =     0.97995302205463   step =   450   next dt =     0.00009947029133
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.439989 6.219227 17.852318
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.439487 6.219154 17.852427
+fr_dt = 0.000099  dt = 0.000050  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000099  ROUND_EPS = 0.000000
+The point coords: 6.440563 6.219310 17.852193
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.439989 6.219227 17.852318
+Maximum average velocity is 492.021 126.906 10.9241
+x_old = [6.282854 6.312611 17.962310]
+x_new = [6.331795 6.325235 17.963397]
+dt = 0.000099
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 22 times
+Enter PointToTri 19 times
+Enter isCoplanar 0 times
+39 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 80042 times
+    #1: 7 pair of collision tris
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80042 times
+    #2: 1 pair of collision tris
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80042 times
+    #3: 1 pair of collision tris
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80042 times
+    #4: 1 pair of collision tris
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80042 times
+    #5: 1 pair of collision tris
+    max velocity = [492.020977 126.905570 10.924059]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80042 times
+    #6: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    549 edges are over strain limit after 4 iterations
+
+time =     0.98005249234596   step =   451   next dt =     0.00005714273698
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.440563 6.219310 17.852193
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.439989 6.219227 17.852318
+fr_dt = 0.000057  dt = 0.000057  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000057  ROUND_EPS = 0.000000
+The point coords: 6.440893 6.219358 17.852121
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.440563 6.219310 17.852193
+Maximum average velocity is 479.572 80.8228 51.1542
+x_old = [6.331795 6.325235 17.963397]
+x_new = [6.359199 6.329853 17.966320]
+dt = 0.000057
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 22 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+35 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #1: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #2: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #3: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #4: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #5: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #6: 1 pair of collision tris
+    max velocity = [479.571926 80.822765 51.154229]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 79262 times
+    #7: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    567 edges are over strain limit after 4 iterations
+
+time =     0.98010963508294   step =   452   next dt =     0.00012717229822
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.440893 6.219358 17.852121
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.440563 6.219310 17.852193
+fr_dt = 0.000127  dt = 0.000064  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000127  ROUND_EPS = 0.000000
+The point coords: 6.441627 6.219464 17.851962
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.440893 6.219358 17.852121
+Maximum average velocity is 447.834 43.0657 101.42
+x_old = [6.359199 6.329853 17.966320]
+x_new = [6.416151 6.335330 17.979217]
+dt = 0.000127
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 26 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+39 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 27 times
+Enter PointToTri 13 times
+Enter isCoplanar 81332 times
+    #1: 23 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #2: 1 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #3: 1 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #4: 1 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #5: 1 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #6: 1 pair of collision tris
+    max velocity = [447.834108 43.065704 101.420003]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81182 times
+    #7: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    572 edges are over strain limit after 4 iterations
+
+time =     0.98023680738116   step =   453   next dt =     0.00012012326744
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.441627 6.219464 17.851962
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.440893 6.219358 17.852121
+fr_dt = 0.000120  dt = 0.000060  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000120  ROUND_EPS = 0.000000
+The point coords: 6.442320 6.219564 17.851811
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.441627 6.219464 17.851962
+Maximum average velocity is 303.106 -6.94088 124.389
+x_old = [6.416151 6.335330 17.979217]
+x_new = [6.452561 6.334496 17.994159]
+dt = 0.000120
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 27 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+40 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 9 times
+Enter PointToTri 0 times
+Enter isCoplanar 80777 times
+    #1: 9 pair of collision tris
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80747 times
+    #2: 1 pair of collision tris
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80747 times
+    #3: 1 pair of collision tris
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80747 times
+    #4: 1 pair of collision tris
+    max velocity = [303.105653 -6.940884 124.388739]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80747 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    581 edges are over strain limit after 4 iterations
+
+time =     0.98035693064860   step =   454   next dt =     0.00013148493861
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.442320 6.219564 17.851811
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.441627 6.219464 17.851962
+fr_dt = 0.000131  dt = 0.000066  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000131  ROUND_EPS = 0.000000
+The point coords: 6.443079 6.219674 17.851647
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.442320 6.219564 17.851811
+Maximum average velocity is -219.35 116.745 -66.3116
+x_old = [5.632613 6.179768 17.966269]
+x_new = [5.603772 6.195118 17.957550]
+dt = 0.000131
+    max velocity = [-219.349846 116.744585 -66.311582]
+Enter EdgeToEdge 18 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+31 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-219.349846 116.744585 -66.311582]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81347 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    587 edges are over strain limit after 4 iterations
+
+time =     0.98048841558721   step =   455   next dt =     0.00013113186850
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.443079 6.219674 17.851647
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.442320 6.219564 17.851811
+fr_dt = 0.000131  dt = 0.000066  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000131  ROUND_EPS = 0.000000
+The point coords: 6.443835 6.219784 17.851482
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.443079 6.219674 17.851647
+Maximum average velocity is -266.334 -102.028 24.412
+x_old = [6.456266 6.326347 18.006225]
+x_new = [6.421341 6.312968 18.009426]
+dt = 0.000131
+    max velocity = [-266.334017 -102.028440 24.412034]
+Enter EdgeToEdge 22 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+35 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-253.736771 -95.252602 30.023117]
+Enter EdgeToEdge 9 times
+Enter PointToTri 2 times
+Enter isCoplanar 80882 times
+    #1: 8 pair of collision tris
+    max velocity = [-243.243931 -89.608687 34.696852]
+Enter EdgeToEdge 1 times
+Enter PointToTri 2 times
+Enter isCoplanar 80657 times
+    #2: 2 pair of collision tris
+    max velocity = [-243.243931 -89.608687 34.696852]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80657 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    609 edges are over strain limit after 4 iterations
+
+time =     0.98061954745571   step =   456   next dt =     0.00010523552784
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.443835 6.219784 17.851482
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.443079 6.219674 17.851647
+fr_dt = 0.000105  dt = 0.000053  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000105  ROUND_EPS = 0.000000
+The point coords: 6.444443 6.219871 17.851350
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.443835 6.219784 17.851482
+Maximum average velocity is 100.419 -143.422 233.623
+x_old = [6.390213 6.326400 17.956226]
+x_new = [6.400781 6.311307 17.980811]
+dt = 0.000105
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 22 times
+Enter PointToTri 19 times
+Enter isCoplanar 0 times
+41 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 12 times
+Enter PointToTri 8 times
+Enter isCoplanar 79997 times
+    #1: 15 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 79997 times
+    #2: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 79997 times
+    #3: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+    #4: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+    #5: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 3 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+    #6: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 1 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+    #7: 2 pair of collision tris
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 1 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+    #8: 2 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 1 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+7 number of points in this zone
+    #0: 2 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 0 times
+Enter PointToTri 2 times
+Enter isCoplanar 79967 times
+7 number of points in this zone
+    #1: 2 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [100.418551 -143.421966 233.622638]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 79967 times
+7 number of points in this zone
+    #2: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    641 edges are over strain limit after 4 iterations
+
+time =     0.98072478298355   step =   457   next dt =     0.00013079474431
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.444443 6.219871 17.851350
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.443835 6.219784 17.851482
+fr_dt = 0.000131  dt = 0.000065  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000131  ROUND_EPS = 0.000000
+The point coords: 6.445197 6.219981 17.851186
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.444443 6.219871 17.851350
+Maximum average velocity is 27.9161 -217.862 250.619
+x_old = [6.400781 6.311307 17.980811]
+x_new = [6.404432 6.282812 18.013591]
+dt = 0.000131
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 23 times
+Enter PointToTri 19 times
+Enter isCoplanar 0 times
+42 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 9 times
+Enter PointToTri 8 times
+Enter isCoplanar 80852 times
+    #1: 13 pair of collision tris
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 80822 times
+    #2: 2 pair of collision tris
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 80822 times
+    #3: 2 pair of collision tris
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 4 times
+Enter PointToTri 2 times
+Enter isCoplanar 80792 times
+    #4: 2 pair of collision tris
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 4 times
+Enter PointToTri 0 times
+Enter isCoplanar 80792 times
+    #5: 2 pair of collision tris
+    max velocity = [27.916077 -217.861958 250.619267]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80792 times
+    #6: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    632 edges are over strain limit after 4 iterations
+
+time =     0.98085557772786   step =   458   next dt =     0.00011283650718
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.445197 6.219981 17.851186
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.444443 6.219871 17.851350
+fr_dt = 0.000113  dt = 0.000056  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000113  ROUND_EPS = 0.000000
+The point coords: 6.445848 6.220075 17.851045
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.445197 6.219981 17.851186
+Maximum average velocity is -65.2692 -239.591 220.805
+x_old = [6.404432 6.282812 18.013591]
+x_new = [6.397067 6.255777 18.038506]
+dt = 0.000113
+    max velocity = [-65.269228 -239.591498 220.804550]
+Enter EdgeToEdge 11 times
+Enter PointToTri 19 times
+Enter isCoplanar 0 times
+30 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-65.269228 -239.591498 220.804550]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 80897 times
+    #1: 6 pair of collision tris
+    max velocity = [-65.269228 -239.591498 220.804550]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80897 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    643 edges are over strain limit after 4 iterations
+
+time =     0.98096841423504   step =   459   next dt =     0.00013511740715
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.445848 6.220075 17.851045
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.445197 6.219981 17.851186
+fr_dt = 0.000135  dt = 0.000045  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000135  ROUND_EPS = 0.000000
+The point coords: 6.446628 6.220188 17.850875
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.445848 6.220075 17.851045
+Maximum average velocity is -159.771 -217.026 141.464
+x_old = [6.397067 6.255777 18.038506]
+x_new = [6.375479 6.226453 18.057620]
+dt = 0.000135
+    max velocity = [-159.770672 -217.026190 141.463945]
+Enter EdgeToEdge 19 times
+Enter PointToTri 24 times
+Enter isCoplanar 0 times
+43 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-159.770672 -217.026190 141.463945]
+Enter EdgeToEdge 1 times
+Enter PointToTri 3 times
+Enter isCoplanar 81557 times
+    #1: 4 pair of collision tris
+    max velocity = [-159.770672 -217.026190 141.463945]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81572 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    654 edges are over strain limit after 4 iterations
+
+time =     0.98110353164219   step =   460   next dt =     0.00009661194104
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.446628 6.220188 17.850875
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.445848 6.220075 17.851045
+fr_dt = 0.000097  dt = 0.000048  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000097  ROUND_EPS = 0.000000
+The point coords: 6.447186 6.220269 17.850754
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.446628 6.220188 17.850875
+Maximum average velocity is -218.601 -167.103 20.1335
+x_old = [6.375479 6.226453 18.057620]
+x_new = [6.354360 6.210309 18.059565]
+dt = 0.000097
+    max velocity = [-218.601126 -167.102563 20.133520]
+Enter EdgeToEdge 18 times
+Enter PointToTri 18 times
+Enter isCoplanar 0 times
+36 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-218.601126 -167.102563 20.133520]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80222 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    652 edges are over strain limit after 4 iterations
+
+time =     0.98120014358323   step =   461   next dt =     0.00009716486783
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.447186 6.220269 17.850754
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.446628 6.220188 17.850875
+fr_dt = 0.000097  dt = 0.000049  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000097  ROUND_EPS = 0.000000
+The point coords: 6.447746 6.220350 17.850632
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.447186 6.220269 17.850754
+Maximum average velocity is -277.494 -51.8025 -55.9679
+x_old = [6.353908 6.308579 17.994857]
+x_new = [6.326945 6.303546 17.989419]
+dt = 0.000097
+    max velocity = [-277.493929 -51.802535 -55.967944]
+Enter EdgeToEdge 17 times
+Enter PointToTri 18 times
+Enter isCoplanar 0 times
+35 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-277.493929 -51.802535 -55.967944]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80642 times
+    #1: 1 pair of collision tris
+    max velocity = [-277.493929 -51.802535 -55.967944]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80642 times
+    #2: 1 pair of collision tris
+    max velocity = [-277.493929 -51.802535 -55.967944]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80642 times
+    #3: 1 pair of collision tris
+    max velocity = [-277.493929 -51.802535 -55.967944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80642 times
+    #4: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    681 edges are over strain limit after 4 iterations
+
+time =     0.98129730845106   step =   462   next dt =     0.00008922620834
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.447746 6.220350 17.850632
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.447186 6.220269 17.850754
+fr_dt = 0.000089  dt = 0.000089  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000089  ROUND_EPS = 0.000000
+The point coords: 6.448261 6.220424 17.850520
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.447746 6.220350 17.850632
+Maximum average velocity is -288.985 -77.6143 -47.6324
+x_old = [6.326945 6.303546 17.989419]
+x_new = [6.301160 6.296620 17.985169]
+dt = 0.000089
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 18 times
+Enter PointToTri 18 times
+Enter isCoplanar 0 times
+36 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80597 times
+    #1: 1 pair of collision tris
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80597 times
+    #2: 1 pair of collision tris
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80597 times
+    #3: 1 pair of collision tris
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 80597 times
+    #4: 1 pair of collision tris
+    max velocity = [-288.985480 -77.614262 -47.632426]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80597 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    675 edges are over strain limit after 4 iterations
+
+time =     0.98138653465940   step =   463   next dt =     0.00009027599855
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.448261 6.220424 17.850520
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.447746 6.220350 17.850632
+fr_dt = 0.000090  dt = 0.000045  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000090  ROUND_EPS = 0.000000
+The point coords: 6.448782 6.220500 17.850407
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.448261 6.220424 17.850520
+Maximum average velocity is -126.256 42.9788 -288.991
+x_old = [6.315582 6.198048 18.030616]
+x_new = [6.304184 6.201928 18.004527]
+dt = 0.000090
+    max velocity = [-126.255810 42.978824 -288.991153]
+Enter EdgeToEdge 23 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+36 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-126.255810 42.978824 -288.991153]
+Enter EdgeToEdge 1 times
+Enter PointToTri 2 times
+Enter isCoplanar 80252 times
+    #1: 2 pair of collision tris
+    max velocity = [-126.255810 42.978824 -288.991153]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80252 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    684 edges are over strain limit after 4 iterations
+
+time =     0.98147681065796   step =   464   next dt =     0.00008715829329
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.448782 6.220500 17.850407
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.448261 6.220424 17.850520
+fr_dt = 0.000087  dt = 0.000087  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000087  ROUND_EPS = 0.000000
+The point coords: 6.449285 6.220572 17.850298
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.448782 6.220500 17.850407
+Maximum average velocity is -46.541 98.8593 -325.469
+x_old = [6.304184 6.201928 18.004527]
+x_new = [6.300128 6.210544 17.976160]
+dt = 0.000087
+    max velocity = [-46.540954 98.859328 -325.469192]
+Enter EdgeToEdge 25 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+29 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-46.540954 98.859328 -325.469192]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80492 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    685 edges are over strain limit after 4 iterations
+
+time =     0.98156396895124   step =   465   next dt =     0.00008666206891
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.449285 6.220572 17.850298
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.448782 6.220500 17.850407
+fr_dt = 0.000087  dt = 0.000087  n_sub = 1
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000087  ROUND_EPS = 0.000000
+The point coords: 6.449785 6.220645 17.850189
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.449285 6.220572 17.850298
+Maximum average velocity is 33.1763 134.467 -319.114
+x_old = [6.300128 6.210544 17.976160]
+x_new = [6.303003 6.222198 17.948505]
+dt = 0.000087
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 22 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+26 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 9 times
+Enter PointToTri 17 times
+Enter isCoplanar 80792 times
+    #1: 19 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #2: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #3: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #4: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #5: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #6: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #7: 3 pair of collision tris
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+    #8: 3 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 80807 times
+8 number of points in this zone
+    #0: 3 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [33.176346 134.467105 -319.113785]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 80762 times
+8 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    707 edges are over strain limit after 4 iterations
+
+time =     0.98165063102015   step =   466   next dt =     0.00009406238397
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.449785 6.220645 17.850189
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.449285 6.220572 17.850298
+fr_dt = 0.000094  dt = 0.000047  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000094  ROUND_EPS = 0.000000
+The point coords: 6.450328 6.220723 17.850071
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.449785 6.220645 17.850189
+Maximum average velocity is 105.143 147.344 -269.689
+x_old = [6.303003 6.222198 17.948505]
+x_new = [6.312893 6.236057 17.923137]
+dt = 0.000094
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 19 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+25 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81212 times
+    #1: 1 pair of collision tris
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81212 times
+    #2: 1 pair of collision tris
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81212 times
+    #3: 1 pair of collision tris
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 81212 times
+    #4: 1 pair of collision tris
+    max velocity = [105.142562 147.343587 -269.689248]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81212 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    710 edges are over strain limit after 4 iterations
+
+time =     0.98174469340412   step =   467   next dt =     0.00019253196686
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.450328 6.220723 17.850071
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.449785 6.220645 17.850189
+fr_dt = 0.000193  dt = 0.000048  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000193  ROUND_EPS = 0.000000
+The point coords: 6.451439 6.220884 17.849830
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.450328 6.220723 17.850071
+Maximum average velocity is 178.017 115.725 -128.272
+x_old = [6.312893 6.236057 17.923137]
+x_new = [6.347167 6.258338 17.898441]
+dt = 0.000193
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 11 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+17 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 9 times
+Enter PointToTri 26 times
+Enter isCoplanar 84257 times
+    #1: 33 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 5 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #2: 5 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #3: 1 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #4: 1 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #5: 1 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #6: 1 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #7: 1 pair of collision tris
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+    #8: 1 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+6 number of points in this zone
+    #0: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84197 times
+6 number of points in this zone
+    #1: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84152 times
+6 number of points in this zone
+    #2: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 84152 times
+6 number of points in this zone
+    #3: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [178.017081 115.724502 -128.272438]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 84152 times
+6 number of points in this zone
+    #4: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    680 edges are over strain limit after 4 iterations
+
+time =     0.98193722537097   step =   468   next dt =     0.00014264516380
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.451439 6.220884 17.849830
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.450328 6.220723 17.850071
+fr_dt = 0.000143  dt = 0.000048  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000143  ROUND_EPS = 0.000000
+The point coords: 6.452262 6.221003 17.849651
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.451439 6.220884 17.849830
+Maximum average velocity is 267.248 66.3928 -9.25792
+x_old = [6.262807 6.269988 17.968103]
+x_new = [6.300928 6.279459 17.966782]
+dt = 0.000143
+    max velocity = [267.247773 66.392790 -9.257917]
+Enter EdgeToEdge 10 times
+Enter PointToTri 9 times
+Enter isCoplanar 0 times
+19 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [267.247773 66.392790 -9.257917]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81737 times
+    #1: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    695 edges are over strain limit after 4 iterations
+
+time =     0.98207987053477   step =   469   next dt =     0.00012811232341
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.452262 6.221003 17.849651
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.451439 6.220884 17.849830
+fr_dt = 0.000128  dt = 0.000064  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000128  ROUND_EPS = 0.000000
+The point coords: 6.453001 6.221110 17.849490
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.452262 6.221003 17.849651
+Maximum average velocity is 300.933 68.7286 17.5032
+x_old = [6.300928 6.279459 17.966782]
+x_new = [6.339481 6.288264 17.969024]
+dt = 0.000128
+    max velocity = [300.932663 68.728581 17.503159]
+Enter EdgeToEdge 10 times
+Enter PointToTri 17 times
+Enter isCoplanar 0 times
+25 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [192.467846 26.429940 179.454265]
+Enter EdgeToEdge 24 times
+Enter PointToTri 10 times
+Enter isCoplanar 82007 times
+    #1: 24 pair of collision tris
+    max velocity = [192.467846 26.429940 179.454265]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81737 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    702 edges are over strain limit after 4 iterations
+
+time =     0.98220798285819   step =   470   next dt =     0.00012636709683
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.453001 6.221110 17.849490
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.452262 6.221003 17.849651
+fr_dt = 0.000126  dt = 0.000063  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000126  ROUND_EPS = 0.000000
+The point coords: 6.453730 6.221216 17.849332
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.453001 6.221110 17.849490
+Maximum average velocity is 153.136 31.227 233.059
+x_old = [6.400470 6.268698 17.929682]
+x_new = [6.419821 6.272644 17.959133]
+dt = 0.000126
+    max velocity = [153.135934 31.227028 233.059074]
+Enter EdgeToEdge 6 times
+Enter PointToTri 9 times
+Enter isCoplanar 0 times
+15 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [153.135934 31.227028 233.059074]
+Enter EdgeToEdge 4 times
+Enter PointToTri 0 times
+Enter isCoplanar 82127 times
+    #1: 4 pair of collision tris
+    max velocity = [153.135934 31.227028 233.059074]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82127 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    695 edges are over strain limit after 4 iterations
+
+time =     0.98233434995501   step =   471   next dt =     0.00015599847476
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.453730 6.221216 17.849332
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.453001 6.221110 17.849490
+fr_dt = 0.000156  dt = 0.000052  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000156  ROUND_EPS = 0.000000
+The point coords: 6.454631 6.221346 17.849136
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.453730 6.221216 17.849332
+Maximum average velocity is 40.8679 39.5426 295.26
+x_old = [6.419821 6.272644 17.959133]
+x_new = [6.426196 6.278812 18.005193]
+dt = 0.000156
+    max velocity = [40.867926 39.542583 295.260079]
+Enter EdgeToEdge 6 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+12 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [40.867926 39.542583 295.260079]
+Enter EdgeToEdge 12 times
+Enter PointToTri 15 times
+Enter isCoplanar 82967 times
+    #1: 25 pair of collision tris
+    max velocity = [40.867926 39.542583 295.260079]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82967 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    697 edges are over strain limit after 4 iterations
+
+time =     0.98249034842978   step =   472   next dt =     0.00018803624504
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.454631 6.221346 17.849136
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.453730 6.221216 17.849332
+fr_dt = 0.000188  dt = 0.000047  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000188  ROUND_EPS = 0.000000
+The point coords: 6.455716 6.221503 17.848900
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.454631 6.221346 17.849136
+Maximum average velocity is -130.863 31.1172 255.746
+x_old = [6.426196 6.278812 18.005193]
+x_new = [6.401589 6.284663 18.053283]
+dt = 0.000188
+    max velocity = [-130.862908 31.117227 255.745965]
+Enter EdgeToEdge 6 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+6 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-130.862908 31.117227 255.745965]
+Enter EdgeToEdge 16 times
+Enter PointToTri 6 times
+Enter isCoplanar 83747 times
+    #1: 20 pair of collision tris
+    max velocity = [-130.862908 31.117227 255.745965]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 83657 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    700 edges are over strain limit after 4 iterations
+
+time =     0.98267838467482   step =   473   next dt =     0.00018942942830
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.455716 6.221503 17.848900
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.454631 6.221346 17.849136
+fr_dt = 0.000189  dt = 0.000047  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000189  ROUND_EPS = 0.000000
+The point coords: 6.456809 6.221661 17.848663
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.455716 6.221503 17.848900
+Maximum average velocity is -268.754 -34.8052 62.4543
+x_old = [6.401589 6.284663 18.053283]
+x_new = [6.350679 6.278070 18.065113]
+dt = 0.000189
+    max velocity = [-268.754059 -34.805165 62.454349]
+Enter EdgeToEdge 5 times
+Enter PointToTri 5 times
+Enter isCoplanar 0 times
+10 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-268.754059 -34.805165 62.454349]
+Enter EdgeToEdge 4 times
+Enter PointToTri 15 times
+Enter isCoplanar 84077 times
+    #1: 18 pair of collision tris
+    max velocity = [-268.754059 -34.805165 62.454349]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 83957 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    706 edges are over strain limit after 4 iterations
+
+time =     0.98286781410312   step =   474   next dt =     0.00014179345510
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.456809 6.221661 17.848663
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.455716 6.221503 17.848900
+fr_dt = 0.000142  dt = 0.000047  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000142  ROUND_EPS = 0.000000
+The point coords: 6.457627 6.221780 17.848485
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.456809 6.221661 17.848663
+Maximum average velocity is -257.09 -103.78 -158.579
+x_old = [6.350679 6.278070 18.065113]
+x_new = [6.314226 6.263355 18.042628]
+dt = 0.000142
+    max velocity = [-257.089748 -103.780250 -158.578642]
+Enter EdgeToEdge 8 times
+Enter PointToTri 14 times
+Enter isCoplanar 0 times
+18 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 21 times
+Enter PointToTri 7 times
+Enter isCoplanar 82997 times
+    #1: 24 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 2 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #2: 9 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #3: 7 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #4: 7 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #5: 7 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #6: 7 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #7: 7 pair of collision tris
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 82922 times
+11 number of points in this zone
+    #0: 7 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [-201.953719 -79.172639 -108.498384]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82862 times
+11 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    712 edges are over strain limit after 4 iterations
+
+time =     0.98300960755822   step =   475   next dt =     0.00011705952045
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.457627 6.221780 17.848485
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.456809 6.221661 17.848663
+fr_dt = 0.000117  dt = 0.000059  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000117  ROUND_EPS = 0.000000
+The point coords: 6.458302 6.221878 17.848338
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.457627 6.221780 17.848485
+Maximum average velocity is -151.901 -93.4568 -164.45
+x_old = [6.322044 6.266844 18.049729]
+x_new = [6.304262 6.255904 18.030479]
+dt = 0.000117
+    max velocity = [-151.901178 -93.456841 -164.450488]
+Enter EdgeToEdge 10 times
+Enter PointToTri 11 times
+Enter isCoplanar 0 times
+18 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-123.386799 -75.789574 -129.238341]
+Enter EdgeToEdge 11 times
+Enter PointToTri 1 times
+Enter isCoplanar 82397 times
+    #1: 7 pair of collision tris
+    max velocity = [-123.386799 -75.789574 -129.238341]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 82337 times
+    #2: 1 pair of collision tris
+    max velocity = [-123.386799 -75.789574 -129.238341]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82337 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    706 edges are over strain limit after 4 iterations
+
+time =     0.98312666707868   step =   476   next dt =     0.00011814150321
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.458302 6.221878 17.848338
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.457627 6.221780 17.848485
+fr_dt = 0.000118  dt = 0.000059  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000118  ROUND_EPS = 0.000000
+The point coords: 6.458984 6.221976 17.848190
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.458302 6.221878 17.848338
+Maximum average velocity is -61.0594 -84.8117 -169.059
+x_old = [6.307600 6.257972 18.034601]
+x_new = [6.300386 6.247952 18.014628]
+dt = 0.000118
+    max velocity = [-61.059374 -84.811726 -169.058896]
+Enter EdgeToEdge 9 times
+Enter PointToTri 3 times
+Enter isCoplanar 0 times
+12 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-61.059374 -84.811726 -169.058896]
+Enter EdgeToEdge 7 times
+Enter PointToTri 1 times
+Enter isCoplanar 82022 times
+    #1: 7 pair of collision tris
+    max velocity = [-61.059374 -84.811726 -169.058896]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 81947 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    699 edges are over strain limit after 4 iterations
+
+time =     0.98324480858188   step =   477   next dt =     0.00014414333587
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.458984 6.221976 17.848190
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.458302 6.221878 17.848338
+fr_dt = 0.000144  dt = 0.000048  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000144  ROUND_EPS = 0.000000
+The point coords: 6.459816 6.222097 17.848009
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.458984 6.221976 17.848190
+Maximum average velocity is 72.4982 -96.3312 -223.454
+x_old = [6.300386 6.247952 18.014628]
+x_new = [6.310837 6.234067 17.982418]
+dt = 0.000144
+    max velocity = [72.498235 -96.331202 -223.453590]
+Enter EdgeToEdge 9 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+9 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [72.498235 -96.331202 -223.453590]
+Enter EdgeToEdge 20 times
+Enter PointToTri 20 times
+Enter isCoplanar 83432 times
+    #1: 31 pair of collision tris
+    max velocity = [72.498235 -96.331202 -223.453590]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 83297 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    721 edges are over strain limit after 4 iterations
+
+time =     0.98338895191775   step =   478   next dt =     0.00012946238497
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.459816 6.222097 17.848009
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.458984 6.221976 17.848190
+fr_dt = 0.000129  dt = 0.000065  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000129  ROUND_EPS = 0.000000
+The point coords: 6.460563 6.222205 17.847847
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.459816 6.222097 17.848009
+Maximum average velocity is 163.117 -93.2209 -217.933
+x_old = [6.310837 6.234067 17.982418]
+x_new = [6.331954 6.221998 17.954204]
+dt = 0.000129
+    max velocity = [163.116991 -93.220924 -217.932620]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+1 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [163.116991 -93.220924 -217.932620]
+Enter EdgeToEdge 2 times
+Enter PointToTri 1 times
+Enter isCoplanar 82787 times
+    #1: 3 pair of collision tris
+    max velocity = [163.116991 -93.220924 -217.932620]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82787 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    748 edges are over strain limit after 4 iterations
+
+time =     0.98351841430272   step =   479   next dt =     0.00011419168924
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.460563 6.222205 17.847847
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.459816 6.222097 17.848009
+fr_dt = 0.000114  dt = 0.000057  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000114  ROUND_EPS = 0.000000
+The point coords: 6.461222 6.222300 17.847704
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.460563 6.222205 17.847847
+Maximum average velocity is 184.899 -76.6447 -166.039
+x_old = [6.331954 6.221998 17.954204]
+x_new = [6.353068 6.213246 17.935244]
+dt = 0.000114
+    max velocity = [184.898500 -76.644676 -166.039023]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+1 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [184.898500 -76.644676 -166.039023]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 82652 times
+    #1: 8 pair of collision tris
+    max velocity = [184.898500 -76.644676 -166.039023]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 82652 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    746 edges are over strain limit after 4 iterations
+
+time =     0.98363260599197   step =   480   next dt =     0.00018610646410
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.461222 6.222300 17.847704
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.460563 6.222205 17.847847
+fr_dt = 0.000186  dt = 0.000047  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000186  ROUND_EPS = 0.000000
+The point coords: 6.462296 6.222456 17.847470
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.461222 6.222300 17.847704
+Maximum average velocity is 146.542 -38.5832 -67.819
+x_old = [6.353068 6.213246 17.935244]
+x_new = [6.380340 6.206066 17.922622]
+dt = 0.000186
+    max velocity = [146.542151 -38.583187 -67.818963]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+1 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [146.542151 -38.583187 -67.818963]
+Enter EdgeToEdge 29 times
+Enter PointToTri 8 times
+Enter isCoplanar 84767 times
+    #1: 24 pair of collision tris
+    max velocity = [146.542151 -38.583187 -67.818963]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 84767 times
+    #2: 2 pair of collision tris
+    max velocity = [146.542151 -38.583187 -67.818963]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 84797 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    744 edges are over strain limit after 4 iterations
+
+time =     0.98381871245606   step =   481   next dt =     0.00026865382158
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.462296 6.222456 17.847470
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.461222 6.222300 17.847704
+fr_dt = 0.000269  dt = 0.000045  n_sub = 6
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000269  ROUND_EPS = 0.000000
+The point coords: 6.463846 6.222680 17.847134
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.462296 6.222456 17.847470
+Maximum average velocity is -112.387 -5.40734 -89.2237
+x_old = [5.631113 6.296705 17.977105]
+x_new = [5.600919 6.295253 17.953135]
+dt = 0.000269
+    max velocity = [-112.387268 -5.407342 -89.223696]
+Enter EdgeToEdge 5 times
+Enter PointToTri 13 times
+Enter isCoplanar 0 times
+16 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-112.387268 -5.407342 -89.223696]
+Enter EdgeToEdge 30 times
+Enter PointToTri 14 times
+Enter isCoplanar 87842 times
+    #1: 31 pair of collision tris
+    max velocity = [-112.387268 -5.407342 -89.223696]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 87842 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    762 edges are over strain limit after 4 iterations
+
+time =     0.98408736627764   step =   482   next dt =     0.00023966171347
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.463846 6.222680 17.847134
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.462296 6.222456 17.847470
+fr_dt = 0.000240  dt = 0.000048  n_sub = 5
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000240  ROUND_EPS = 0.000000
+The point coords: 6.465229 6.222880 17.846833
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.463846 6.222680 17.847134
+Maximum average velocity is -157.709 92.7249 184.72
+x_old = [6.384097 6.215505 17.945881]
+x_new = [6.346300 6.237728 17.990151]
+dt = 0.000240
+    max velocity = [-157.709094 92.724927 184.720349]
+Enter EdgeToEdge 1 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+8 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-157.709094 92.724927 184.720349]
+Enter EdgeToEdge 40 times
+Enter PointToTri 15 times
+Enter isCoplanar 87767 times
+    #1: 30 pair of collision tris
+    max velocity = [-157.709094 92.724927 184.720349]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 87767 times
+    #2: 2 pair of collision tris
+    max velocity = [-157.709094 92.724927 184.720349]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 87767 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    750 edges are over strain limit after 4 iterations
+
+time =     0.98432702799112   step =   483   next dt =     0.00021874453502
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.465229 6.222880 17.846833
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.463846 6.222680 17.847134
+fr_dt = 0.000219  dt = 0.000055  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000219  ROUND_EPS = 0.000000
+The point coords: 6.466491 6.223063 17.846559
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.465229 6.222880 17.846833
+Maximum average velocity is -185.456 108.212 184.672
+x_old = [6.346300 6.237728 17.990151]
+x_new = [6.305732 6.261399 18.030547]
+dt = 0.000219
+    max velocity = [-185.455875 108.212007 184.671605]
+Enter EdgeToEdge 1 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+8 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-179.286143 107.222329 182.601825]
+Enter EdgeToEdge 20 times
+Enter PointToTri 13 times
+Enter isCoplanar 87602 times
+    #1: 28 pair of collision tris
+    max velocity = [-175.101748 104.855841 179.245004]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 87497 times
+    #2: 1 pair of collision tris
+    max velocity = [-175.101748 104.855841 179.245004]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 87512 times
+    #3: 2 pair of collision tris
+    max velocity = [-168.541139 100.355776 171.671926]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 87557 times
+    #4: 1 pair of collision tris
+    max velocity = [-168.541139 100.355776 171.671926]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 87512 times
+    #5: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    743 edges are over strain limit after 4 iterations
+
+time =     0.98454577252614   step =   484   next dt =     0.00022984178591
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.466491 6.223063 17.846559
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.465229 6.222880 17.846833
+fr_dt = 0.000230  dt = 0.000046  n_sub = 5
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000230  ROUND_EPS = 0.000000
+The point coords: 6.467817 6.223255 17.846271
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.466491 6.223063 17.846559
+Maximum average velocity is -56.2317 -24.4799 101.432
+x_old = [5.596658 6.213994 17.912638]
+x_new = [5.583734 6.208368 17.935952]
+dt = 0.000230
+    max velocity = [-56.231669 -24.479886 101.432109]
+Enter EdgeToEdge 8 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+10 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-56.231669 -24.479886 101.432109]
+Enter EdgeToEdge 10 times
+Enter PointToTri 6 times
+Enter isCoplanar 88967 times
+    #1: 12 pair of collision tris
+    max velocity = [-56.231669 -24.479886 101.432109]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 88877 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    764 edges are over strain limit after 4 iterations
+
+time =     0.98477561431205   step =   485   next dt =     0.00031041676874
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.467817 6.223255 17.846271
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.466491 6.223063 17.846559
+fr_dt = 0.000310  dt = 0.000052  n_sub = 6
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000310  ROUND_EPS = 0.000000
+The point coords: 6.469608 6.223514 17.845881
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.467817 6.223255 17.846271
+Maximum average velocity is 125.254 -7.88426 -72.6594
+x_old = [6.302393 6.273276 18.042424]
+x_new = [6.341274 6.270829 18.019870]
+dt = 0.000310
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 1 times
+Enter isCoplanar 0 times
+1 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 9 times
+Enter PointToTri 21 times
+Enter isCoplanar 93392 times
+    #1: 28 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 3 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #2: 9 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #3: 7 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #4: 7 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #5: 7 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #6: 7 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #7: 7 pair of collision tris
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 93362 times
+11 number of points in this zone
+    #0: 7 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [125.254362 -7.884258 -72.659434]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 93287 times
+11 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    764 edges are over strain limit after 4 iterations
+
+time =     0.98508603108079   step =   486   next dt =     0.00034284962375
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.469608 6.223514 17.845881
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.467817 6.223255 17.846271
+fr_dt = 0.000343  dt = 0.000049  n_sub = 7
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000343  ROUND_EPS = 0.000000
+The point coords: 6.471587 6.223801 17.845451
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.469608 6.223514 17.845881
+Maximum average velocity is 170.537 -72.1823 -175.562
+x_old = [6.341274 6.270829 18.019870]
+x_new = [6.399742 6.246081 17.959678]
+dt = 0.000343
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 4 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+11 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 45 times
+Enter PointToTri 27 times
+Enter isCoplanar 94367 times
+    #1: 58 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 5 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #2: 11 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #3: 7 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #4: 7 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #5: 7 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #6: 7 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #7: 7 pair of collision tris
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 7 times
+Enter isCoplanar 94307 times
+11 number of points in this zone
+    #0: 7 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [170.536796 -72.182277 -175.561770]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 94232 times
+11 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    791 edges are over strain limit after 4 iterations
+
+time =     0.98542888070455   step =   487   next dt =     0.00021527039593
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.471587 6.223801 17.845451
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.469608 6.223514 17.845881
+fr_dt = 0.000215  dt = 0.000054  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000215  ROUND_EPS = 0.000000
+The point coords: 6.472829 6.223980 17.845181
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.471587 6.223801 17.845451
+Maximum average velocity is 74.4176 89.0786 -41.0921
+x_old = [6.236157 5.572949 17.951029]
+x_new = [6.252177 5.592125 17.942183]
+dt = 0.000215
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+7 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 23 times
+Enter PointToTri 3 times
+Enter isCoplanar 90782 times
+    #1: 22 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 6 times
+Enter PointToTri 2 times
+Enter isCoplanar 90782 times
+    #2: 4 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 2 times
+Enter PointToTri 2 times
+Enter isCoplanar 90782 times
+    #3: 2 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 2 times
+Enter PointToTri 2 times
+Enter isCoplanar 90782 times
+    #4: 2 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 2 times
+Enter PointToTri 2 times
+Enter isCoplanar 90782 times
+    #5: 2 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90782 times
+    #6: 1 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90782 times
+    #7: 1 pair of collision tris
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90782 times
+    #8: 1 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90782 times
+6 number of points in this zone
+    #0: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [74.417624 89.078599 -41.092073]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 90782 times
+6 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    800 edges are over strain limit after 4 iterations
+
+time =     0.98564415110047   step =   488   next dt =     0.00020656270815
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.472829 6.223980 17.845181
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.471587 6.223801 17.845451
+fr_dt = 0.000207  dt = 0.000052  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000207  ROUND_EPS = 0.000000
+The point coords: 6.474021 6.224153 17.844922
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.472829 6.223980 17.845181
+Maximum average velocity is 53.7959 30.1944 -106.165
+x_old = [6.264984 5.548411 18.023608]
+x_new = [6.276097 5.554648 18.001678]
+dt = 0.000207
+    max velocity = [53.795938 30.194400 -106.164609]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+3 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [53.795938 30.194400 -106.164609]
+Enter EdgeToEdge 14 times
+Enter PointToTri 4 times
+Enter isCoplanar 90827 times
+    #1: 15 pair of collision tris
+    max velocity = [53.795938 30.194400 -106.164609]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 90767 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    806 edges are over strain limit after 4 iterations
+
+time =     0.98585071380862   step =   489   next dt =     0.00016166513509
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.474021 6.224153 17.844922
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.472829 6.223980 17.845181
+fr_dt = 0.000162  dt = 0.000054  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000162  ROUND_EPS = 0.000000
+The point coords: 6.474954 6.224288 17.844720
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.474021 6.224153 17.844922
+Maximum average velocity is -190.812 -45.5364 74.4244
+x_old = [6.374760 6.222708 17.929519]
+x_new = [6.343912 6.215347 17.941551]
+dt = 0.000162
+    max velocity = [-190.812420 -45.536388 74.424440]
+Enter EdgeToEdge 4 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+4 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-190.812420 -45.536388 74.424440]
+Enter EdgeToEdge 5 times
+Enter PointToTri 1 times
+Enter isCoplanar 89237 times
+    #1: 6 pair of collision tris
+    max velocity = [-190.812420 -45.536388 74.424440]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 89237 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    823 edges are over strain limit after 4 iterations
+
+time =     0.98601237894372   step =   490   next dt =     0.00021811635987
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.474954 6.224288 17.844720
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.474021 6.224153 17.844922
+fr_dt = 0.000218  dt = 0.000055  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000218  ROUND_EPS = 0.000000
+The point coords: 6.476212 6.224470 17.844446
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.474954 6.224288 17.844720
+Maximum average velocity is -183.783 2.49887 175.482
+x_old = [6.343912 6.215347 17.941551]
+x_new = [6.303826 6.215892 17.979827]
+dt = 0.000218
+    max velocity = [-183.783329 2.498868 175.481870]
+Enter EdgeToEdge 8 times
+Enter PointToTri 1 times
+Enter isCoplanar 0 times
+9 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-183.783329 2.498868 175.481870]
+Enter EdgeToEdge 34 times
+Enter PointToTri 30 times
+Enter isCoplanar 90617 times
+    #1: 55 pair of collision tris
+    max velocity = [-183.783329 2.498868 175.481870]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90482 times
+    #2: 1 pair of collision tris
+    max velocity = [-183.783329 2.498868 175.481870]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 90482 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    822 edges are over strain limit after 4 iterations
+
+time =     0.98623049530359   step =   491   next dt =     0.00018224123671
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.476212 6.224470 17.844446
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.474954 6.224288 17.844720
+fr_dt = 0.000182  dt = 0.000046  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000182  ROUND_EPS = 0.000000
+The point coords: 6.477264 6.224622 17.844218
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.476212 6.224470 17.844446
+Maximum average velocity is -38.598 70.6399 193.593
+x_old = [6.303826 6.215892 17.979827]
+x_new = [6.296792 6.228765 18.015107]
+dt = 0.000182
+    max velocity = [-38.598048 70.639892 193.592929]
+Enter EdgeToEdge 9 times
+Enter PointToTri 8 times
+Enter isCoplanar 0 times
+17 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-36.449012 63.230779 184.726700]
+Enter EdgeToEdge 10 times
+Enter PointToTri 5 times
+Enter isCoplanar 90527 times
+    #1: 14 pair of collision tris
+    max velocity = [-36.449012 63.230779 184.726700]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 90497 times
+    #2: 1 pair of collision tris
+    max velocity = [-36.449012 63.230779 184.726700]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 90512 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    829 edges are over strain limit after 4 iterations
+
+time =     0.98641273654030   step =   492   next dt =     0.00014921384556
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.477264 6.224622 17.844218
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.476212 6.224470 17.844446
+fr_dt = 0.000149  dt = 0.000050  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000149  ROUND_EPS = 0.000000
+The point coords: 6.478125 6.224747 17.844031
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.477264 6.224622 17.844218
+Maximum average velocity is 46.2618 78.6911 140.123
+x_old = [6.297183 6.227415 18.013492]
+x_new = [6.304086 6.239157 18.034400]
+dt = 0.000149
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 21 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+21 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 10 times
+Enter isCoplanar 89807 times
+    #1: 10 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #2: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #3: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #4: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #5: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #6: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #7: 3 pair of collision tris
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+    #8: 3 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 3 times
+Enter isCoplanar 89807 times
+8 number of points in this zone
+    #0: 3 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [46.261844 78.691108 140.122898]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 89807 times
+8 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    851 edges are over strain limit after 4 iterations
+
+time =     0.98656195038586   step =   493   next dt =     0.00019032055376
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.478125 6.224747 17.844031
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.477264 6.224622 17.844218
+fr_dt = 0.000190  dt = 0.000048  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000190  ROUND_EPS = 0.000000
+The point coords: 6.479223 6.224906 17.843792
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.478125 6.224747 17.844031
+Maximum average velocity is 198.611 97.1607 13.7786
+x_old = [6.304086 6.239157 18.034400]
+x_new = [6.341886 6.257648 18.037022]
+dt = 0.000190
+    max velocity = [198.610688 97.160701 13.778628]
+Enter EdgeToEdge 14 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+14 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [198.610688 97.160701 13.778628]
+Enter EdgeToEdge 22 times
+Enter PointToTri 22 times
+Enter isCoplanar 91037 times
+    #1: 30 pair of collision tris
+    max velocity = [198.610688 97.160701 13.778628]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 91007 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    871 edges are over strain limit after 4 iterations
+
+time =     0.98675227093962   step =   494   next dt =     0.00024202043033
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.479223 6.224906 17.843792
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.478125 6.224747 17.844031
+fr_dt = 0.000242  dt = 0.000048  n_sub = 5
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000242  ROUND_EPS = 0.000000
+The point coords: 6.480620 6.225108 17.843488
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.479223 6.224906 17.843792
+Maximum average velocity is 217.085 90.9299 -108.978
+x_old = [6.341886 6.257648 18.037022]
+x_new = [6.394425 6.279655 18.010647]
+dt = 0.000242
+    max velocity = [217.085057 90.929869 -108.977601]
+Enter EdgeToEdge 10 times
+Enter PointToTri 5 times
+Enter isCoplanar 0 times
+15 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [217.085057 90.929869 -108.977601]
+Enter EdgeToEdge 14 times
+Enter PointToTri 7 times
+Enter isCoplanar 94217 times
+    #1: 16 pair of collision tris
+    max velocity = [217.085057 90.929869 -108.977601]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 94217 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    854 edges are over strain limit after 4 iterations
+
+time =     0.98699429136995   step =   495   next dt =     0.00019419348162
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.480620 6.225108 17.843488
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.479223 6.224906 17.843792
+fr_dt = 0.000194  dt = 0.000049  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000194  ROUND_EPS = 0.000000
+The point coords: 6.481740 6.225270 17.843245
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.480620 6.225108 17.843488
+Maximum average velocity is 88.8982 72.4983 -136.333
+x_old = [6.394425 6.279655 18.010647]
+x_new = [6.411688 6.293734 17.984172]
+dt = 0.000194
+    max velocity = [88.898249 72.498295 -136.333410]
+Enter EdgeToEdge 9 times
+Enter PointToTri 5 times
+Enter isCoplanar 0 times
+12 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [88.898249 72.498295 -136.333410]
+Enter EdgeToEdge 9 times
+Enter PointToTri 15 times
+Enter isCoplanar 93092 times
+    #1: 24 pair of collision tris
+    max velocity = [88.898249 72.498295 -136.333410]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 93047 times
+    #2: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    834 edges are over strain limit after 4 iterations
+
+time =     0.98718848485157   step =   496   next dt =     0.00034537605514
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.481740 6.225270 17.843245
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.480620 6.225108 17.843488
+fr_dt = 0.000345  dt = 0.000049  n_sub = 7
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000345  ROUND_EPS = 0.000000
+The point coords: 6.483733 6.225559 17.842812
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.481740 6.225270 17.843245
+Maximum average velocity is -101.934 -4.90469 -44.0719
+x_old = [6.411688 6.293734 17.984172]
+x_new = [6.376483 6.292040 17.968951]
+dt = 0.000345
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 9 times
+Enter PointToTri 14 times
+Enter isCoplanar 0 times
+23 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 29 times
+Enter PointToTri 30 times
+Enter isCoplanar 99692 times
+    #1: 49 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 1 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #2: 9 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #3: 8 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #4: 8 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #5: 8 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #6: 8 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #7: 8 pair of collision tris
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+    #8: 8 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 8 times
+Enter isCoplanar 99662 times
+8 number of points in this zone
+9 number of points in this zone
+    #0: 8 pair of collision tris
+     2 zones of impact
+Test loop 2
+    max velocity = [-101.934085 -4.904693 -44.071908]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 99572 times
+8 number of points in this zone
+9 number of points in this zone
+    #1: 0 pair of collision tris
+     2 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    849 edges are over strain limit after 4 iterations
+
+time =     0.98753386090672   step =   497   next dt =     0.00012782881196
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.483733 6.225559 17.842812
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.481740 6.225270 17.843245
+fr_dt = 0.000128  dt = 0.000064  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000128  ROUND_EPS = 0.000000
+The point coords: 6.484471 6.225666 17.842652
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.483733 6.225559 17.842812
+Maximum average velocity is -209.269 -91.5176 83.3463
+x_old = [6.376483 6.292040 17.968951]
+x_new = [6.349732 6.280341 17.979605]
+dt = 0.000128
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 5 times
+Enter PointToTri 4 times
+Enter isCoplanar 0 times
+9 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 1 times
+Enter PointToTri 13 times
+Enter isCoplanar 90842 times
+    #1: 14 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #2: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #3: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #4: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #5: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #6: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #7: 6 pair of collision tris
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+    #8: 6 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 90842 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [-209.269439 -91.517636 83.346292]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 90842 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    900 edges are over strain limit after 4 iterations
+
+time =     0.98766168971867   step =   498   next dt =     0.00015115909088
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.484471 6.225666 17.842652
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.483733 6.225559 17.842812
+fr_dt = 0.000151  dt = 0.000050  n_sub = 3
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000151  ROUND_EPS = 0.000000
+The point coords: 6.485343 6.225792 17.842462
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.484471 6.225666 17.842652
+Maximum average velocity is -204.865 -148.816 131.764
+x_old = [6.349732 6.280341 17.979605]
+x_new = [6.318765 6.257847 17.999522]
+dt = 0.000151
+    max velocity = [-204.865112 -148.815872 131.764444]
+Enter EdgeToEdge 6 times
+Enter PointToTri 4 times
+Enter isCoplanar 0 times
+10 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-204.865112 -148.815872 131.764444]
+Enter EdgeToEdge 5 times
+Enter PointToTri 0 times
+Enter isCoplanar 92012 times
+    #1: 5 pair of collision tris
+    max velocity = [-204.865112 -148.815872 131.764444]
+Enter EdgeToEdge 4 times
+Enter PointToTri 3 times
+Enter isCoplanar 91937 times
+    #2: 5 pair of collision tris
+    max velocity = [-204.865112 -148.815872 131.764444]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 91937 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    916 edges are over strain limit after 4 iterations
+
+time =     0.98781284880955   step =   499   next dt =     0.00017991575498
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.485343 6.225792 17.842462
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.484471 6.225666 17.842652
+fr_dt = 0.000180  dt = 0.000045  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000180  ROUND_EPS = 0.000000
+The point coords: 6.486381 6.225942 17.842236
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.485343 6.225792 17.842462
+Maximum average velocity is -114.514 -178.083 118.297
+x_old = [6.318765 6.257847 17.999522]
+x_new = [6.298162 6.225807 18.020806]
+dt = 0.000180
+    max velocity = [-114.513530 -178.082747 118.297442]
+Enter EdgeToEdge 6 times
+Enter PointToTri 4 times
+Enter isCoplanar 0 times
+10 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 25 times
+Enter PointToTri 17 times
+Enter isCoplanar 92897 times
+    #1: 31 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #2: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #3: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #4: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #5: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #6: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #7: 5 pair of collision tris
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+    #8: 5 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 5 times
+Enter isCoplanar 92792 times
+9 number of points in this zone
+    #0: 5 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [-91.422127 -180.425759 121.751944]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 92777 times
+9 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    904 edges are over strain limit after 4 iterations
+
+time =     0.98799276456453   step =   500   next dt =     0.00032458223223
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.486381 6.225942 17.842236
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.485343 6.225792 17.842462
+fr_dt = 0.000325  dt = 0.000046  n_sub = 7
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000325  ROUND_EPS = 0.000000
+The point coords: 6.488254 6.226213 17.841829
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.486381 6.225942 17.842236
+Maximum average velocity is 70.7515 -79.5819 0.169004
+x_old = [6.302317 6.225385 18.021428]
+x_new = [6.325281 6.199554 18.021482]
+dt = 0.000325
+    max velocity = [70.751505 -79.581868 0.169004]
+Enter EdgeToEdge 6 times
+Enter PointToTri 3 times
+Enter isCoplanar 0 times
+9 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [70.751505 -79.581868 0.169004]
+Enter EdgeToEdge 31 times
+Enter PointToTri 17 times
+Enter isCoplanar 99707 times
+    #1: 35 pair of collision tris
+    max velocity = [70.751505 -79.581868 0.169004]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 99662 times
+    #2: 1 pair of collision tris
+    max velocity = [70.751505 -79.581868 0.169004]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 99662 times
+    #3: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    908 edges are over strain limit after 4 iterations
+
+time =     0.98831734679676   step =   501   next dt =     0.00042973595537
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.488254 6.226213 17.841829
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.486381 6.225942 17.842236
+fr_dt = 0.000430  dt = 0.000048  n_sub = 9
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000430  ROUND_EPS = 0.000000
+The point coords: 6.490734 6.226572 17.841291
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.488254 6.226213 17.841829
+Maximum average velocity is 136.323 145.365 -164.053
+x_old = [6.325281 6.199554 18.021482]
+x_new = [6.383864 6.262023 17.950983]
+dt = 0.000430
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 0 times
+7 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 46 times
+Enter PointToTri 18 times
+Enter isCoplanar 104072 times
+    #1: 53 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 5 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #2: 5 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #3: 2 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #4: 2 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #5: 1 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #6: 1 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #7: 1 pair of collision tris
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+    #8: 1 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 103382 times
+6 number of points in this zone
+    #0: 1 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [136.323437 145.364831 -164.053337]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 103352 times
+6 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    884 edges are over strain limit after 4 iterations
+
+time =     0.98874708275213   step =   502   next dt =     0.00027037808181
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.490734 6.226572 17.841291
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.488254 6.226213 17.841829
+fr_dt = 0.000270  dt = 0.000045  n_sub = 6
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000270  ROUND_EPS = 0.000000
+The point coords: 6.492294 6.226798 17.840951
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.490734 6.226572 17.841291
+Maximum average velocity is -73.3415 113.362 -25.0468
+x_old = [6.383864 6.262023 17.950983]
+x_new = [6.364034 6.292673 17.944211]
+dt = 0.000270
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 5 times
+Enter PointToTri 3 times
+Enter isCoplanar 0 times
+8 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 21 times
+Enter PointToTri 5 times
+Enter isCoplanar 97787 times
+    #1: 23 pair of collision tris
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 97682 times
+    #2: 3 pair of collision tris
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 97682 times
+    #3: 3 pair of collision tris
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 97682 times
+    #4: 3 pair of collision tris
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 97682 times
+    #5: 1 pair of collision tris
+    max velocity = [-73.341539 113.362238 -25.046803]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 97682 times
+    #6: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    909 edges are over strain limit after 4 iterations
+
+time =     0.98901746083394   step =   503   next dt =     0.00038951513024
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.492294 6.226798 17.840951
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.490734 6.226572 17.841291
+fr_dt = 0.000390  dt = 0.000049  n_sub = 8
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000390  ROUND_EPS = 0.000000
+The point coords: 6.494542 6.227123 17.840463
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.492294 6.226798 17.840951
+Maximum average velocity is -110.949 -67.2134 198.285
+x_old = [6.364034 6.292673 17.944211]
+x_new = [6.320818 6.266493 18.021446]
+dt = 0.000390
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 7 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+7 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 93 times
+Enter PointToTri 45 times
+Enter isCoplanar 105362 times
+    #1: 83 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 14 times
+Enter PointToTri 9 times
+Enter isCoplanar 104612 times
+    #2: 18 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 3 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #3: 12 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 3 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #4: 12 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 3 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #5: 12 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 1 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #6: 10 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 0 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #7: 9 pair of collision tris
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 0 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+    #8: 9 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 0 times
+Enter PointToTri 9 times
+Enter isCoplanar 104552 times
+8 number of points in this zone
+10 number of points in this zone
+    #0: 9 pair of collision tris
+     2 zones of impact
+Test loop 2
+    max velocity = [-110.948912 -67.213386 198.285197]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 104717 times
+8 number of points in this zone
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     2 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    902 edges are over strain limit after 4 iterations
+
+time =     0.98940697596418   step =   504   next dt =     0.00030179221378
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.494542 6.227123 17.840463
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.492294 6.226798 17.840951
+fr_dt = 0.000302  dt = 0.000050  n_sub = 6
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000302  ROUND_EPS = 0.000000
+The point coords: 6.496283 6.227375 17.840085
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.494542 6.227123 17.840463
+Maximum average velocity is 42.3089 -161.456 119.764
+x_old = [6.320818 6.266493 18.021446]
+x_new = [6.333587 6.217767 18.057590]
+dt = 0.000302
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 2 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+2 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 57 times
+Enter PointToTri 47 times
+Enter isCoplanar 102107 times
+    #1: 78 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 10 times
+Enter PointToTri 12 times
+Enter isCoplanar 101762 times
+    #2: 20 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 101702 times
+    #3: 9 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+    #4: 9 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+    #5: 9 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+    #6: 7 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+    #7: 6 pair of collision tris
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+    #8: 6 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 101642 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [42.308948 -161.455705 119.763942]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 101597 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    931 edges are over strain limit after 4 iterations
+
+time =     0.98970876817797   step =   505   next dt =     0.00031850221175
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.496283 6.227375 17.840085
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.494542 6.227123 17.840463
+fr_dt = 0.000319  dt = 0.000046  n_sub = 7
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000319  ROUND_EPS = 0.000000
+The point coords: 6.498121 6.227641 17.839685
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.496283 6.227375 17.840085
+Maximum average velocity is 104.936 -2.93681 -175.422
+x_old = [6.333587 6.217767 18.057590]
+x_new = [6.367009 6.216831 18.001717]
+dt = 0.000319
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 10 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+10 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 34 times
+Enter PointToTri 9 times
+Enter isCoplanar 102766 times
+    #1: 33 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 6 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #2: 6 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #3: 3 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #4: 3 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 3 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #5: 3 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 1 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #6: 1 pair of collision tris
+    max velocity = [104.936354 -2.936809 -175.421544]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 102631 times
+    #7: 0 pair of collision tris
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    933 edges are over strain limit after 4 iterations
+
+time =     0.99002727038972   step =   506   next dt =     0.00029086584425
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.498121 6.227641 17.839685
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.496283 6.227375 17.840085
+fr_dt = 0.000291  dt = 0.000048  n_sub = 6
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000291  ROUND_EPS = 0.000000
+The point coords: 6.499799 6.227884 17.839321
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.498121 6.227641 17.839685
+Maximum average velocity is -52.9219 115.902 -241.021
+x_old = [6.367009 6.216831 18.001717]
+x_new = [6.351616 6.250543 17.931613]
+dt = 0.000291
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 9 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+16 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 43 times
+Enter PointToTri 25 times
+Enter isCoplanar 102106 times
+    #1: 59 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #2: 16 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #3: 16 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #4: 16 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 1 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #5: 13 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 1 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #6: 13 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 0 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #7: 12 pair of collision tris
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 0 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+    #8: 12 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 0 times
+Enter PointToTri 12 times
+Enter isCoplanar 101986 times
+10 number of points in this zone
+10 number of points in this zone
+    #0: 12 pair of collision tris
+     2 zones of impact
+Test loop 2
+    max velocity = [-52.921892 115.902463 -241.021480]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 101926 times
+10 number of points in this zone
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     2 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    955 edges are over strain limit after 4 iterations
+
+time =     0.99031813623397   step =   507   next dt =     0.00020692758679
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.499799 6.227884 17.839321
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.498121 6.227641 17.839685
+fr_dt = 0.000207  dt = 0.000052  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000207  ROUND_EPS = 0.000000
+The point coords: 6.500994 6.228057 17.839061
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.499799 6.227884 17.839321
+Maximum average velocity is -102.407 55.8467 -80.4545
+x_old = [6.351616 6.250543 17.931613]
+x_new = [6.330425 6.262100 17.914964]
+dt = 0.000207
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 16 times
+Enter PointToTri 7 times
+Enter isCoplanar 0 times
+21 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 42 times
+Enter PointToTri 18 times
+Enter isCoplanar 100471 times
+    #1: 40 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #2: 10 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #3: 10 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #4: 10 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #5: 7 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #6: 7 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #7: 7 pair of collision tris
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 100336 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [-102.407164 55.846665 -80.454525]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 100291 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    972 edges are over strain limit after 4 iterations
+
+time =     0.99052506382076   step =   508   next dt =     0.00026823009452
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.500994 6.228057 17.839061
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.499799 6.227884 17.839321
+fr_dt = 0.000268  dt = 0.000054  n_sub = 5
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000268  ROUND_EPS = 0.000000
+The point coords: 6.502541 6.228281 17.838725
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.500994 6.228057 17.839061
+Maximum average velocity is -40.2712 -70.669 158.081
+x_old = [6.330425 6.262100 17.914964]
+x_new = [6.319623 6.243144 17.957366]
+dt = 0.000268
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 24 times
+Enter PointToTri 10 times
+Enter isCoplanar 0 times
+30 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 31 times
+Enter PointToTri 47 times
+Enter isCoplanar 103066 times
+    #1: 64 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 103036 times
+    #2: 10 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 103036 times
+    #3: 10 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 103036 times
+    #4: 9 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 2 times
+Enter PointToTri 6 times
+Enter isCoplanar 103021 times
+    #5: 8 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 103021 times
+    #6: 7 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 103021 times
+    #7: 7 pair of collision tris
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 103021 times
+    #8: 6 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 103021 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [-40.271165 -70.669016 158.080965]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 102736 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    999 edges are over strain limit after 4 iterations
+
+time =     0.99079329391528   step =   509   next dt =     0.00013024545924
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.502541 6.228281 17.838725
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.500994 6.228057 17.839061
+fr_dt = 0.000130  dt = 0.000065  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000130  ROUND_EPS = 0.000000
+The point coords: 6.503293 6.228390 17.838561
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.502541 6.228281 17.838725
+Maximum average velocity is 32.8436 -120.39 284.824
+x_old = [6.319623 6.243144 17.957366]
+x_new = [6.323901 6.227464 17.994463]
+dt = 0.000130
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 15 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+15 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 11 times
+Enter PointToTri 6 times
+Enter isCoplanar 97696 times
+    #1: 17 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 5 times
+Enter PointToTri 6 times
+Enter isCoplanar 97696 times
+    #2: 11 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #3: 10 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #4: 7 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 2 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #5: 8 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #6: 7 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #7: 7 pair of collision tris
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 97681 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [32.843556 -120.389979 284.824314]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 97651 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    1020 edges are over strain limit after 4 iterations
+
+time =     0.99092353937452   step =   510   next dt =     0.00010010321432
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.503293 6.228390 17.838561
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.502541 6.228281 17.838725
+fr_dt = 0.000100  dt = 0.000050  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000100  ROUND_EPS = 0.000000
+The point coords: 6.503870 6.228474 17.838436
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.503293 6.228390 17.838561
+Maximum average velocity is 67.1859 -96.4437 282.077
+x_old = [6.323901 6.227464 17.994463]
+x_new = [6.330626 6.217810 18.022700]
+dt = 0.000100
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 11 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+11 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 5 times
+Enter PointToTri 12 times
+Enter isCoplanar 96451 times
+    #1: 17 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 96451 times
+    #2: 10 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #3: 10 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #4: 9 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 2 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #5: 8 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #6: 7 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #7: 7 pair of collision tris
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 96436 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [67.185932 -96.443668 282.077445]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 96391 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    1037 edges are over strain limit after 4 iterations
+
+time =     0.99102364258884   step =   511   next dt =     0.00010046931832
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.503870 6.228474 17.838436
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.503293 6.228390 17.838561
+fr_dt = 0.000100  dt = 0.000050  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000100  ROUND_EPS = 0.000000
+The point coords: 6.504450 6.228558 17.838310
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.503870 6.228474 17.838436
+Maximum average velocity is 85.9437 -47.2876 232.957
+x_old = [6.330626 6.217810 18.022700]
+x_new = [6.339261 6.213059 18.046105]
+dt = 0.000100
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 11 times
+Enter PointToTri 17 times
+Enter isCoplanar 0 times
+28 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 7 times
+Enter PointToTri 6 times
+Enter isCoplanar 96241 times
+    #1: 13 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 6 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #2: 12 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 6 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #3: 12 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #4: 9 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #5: 10 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #6: 7 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #7: 7 pair of collision tris
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+    #8: 7 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 96226 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [85.943663 -47.287622 232.957417]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 96196 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    1060 edges are over strain limit after 4 iterations
+
+time =     0.99112411190716   step =   512   next dt =     0.00012595857010
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.504450 6.228558 17.838310
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.503870 6.228474 17.838436
+fr_dt = 0.000126  dt = 0.000063  n_sub = 2
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000126  ROUND_EPS = 0.000000
+The point coords: 6.505177 6.228663 17.838152
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.504450 6.228558 17.838310
+Maximum average velocity is 93.7961 27.1915 132.253
+x_old = [6.339261 6.213059 18.046105]
+x_new = [6.351075 6.216484 18.062764]
+dt = 0.000126
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 13 times
+Enter PointToTri 17 times
+Enter isCoplanar 0 times
+30 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 19 times
+Enter PointToTri 21 times
+Enter isCoplanar 96796 times
+    #1: 37 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 7 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #2: 13 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #3: 10 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #4: 9 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 4 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #5: 10 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 3 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #6: 9 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 1 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #7: 7 pair of collision tris
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+    #8: 6 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 0 times
+Enter PointToTri 6 times
+Enter isCoplanar 96781 times
+10 number of points in this zone
+    #0: 6 pair of collision tris
+     1 zones of impact
+Test loop 2
+    max velocity = [93.796067 27.191510 132.252690]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 96706 times
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     1 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    1060 edges are over strain limit after 4 iterations
+
+time =     0.99125007047726   step =   513   next dt =     0.00021088975607
+COLLISION DETECTION ON
+Entering fourth_order_elastic_set_propagate3d()
+The point coords: 6.505177 6.228663 17.838152
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.504450 6.228558 17.838310
+fr_dt = 0.000211  dt = 0.000053  n_sub = 4
+ns = 1, nc = 57, nn = 30, num_verts = 12906
+20406 num of tris, 2492 num of bonds
+22898 number of elements is assembled
+Test dt = 0.000211  ROUND_EPS = 0.000000
+The point coords: 6.506394 6.228839 17.837887
+avgVel = 5.770335 0.835259 -1.253954
+sl->x_old = 6.505177 6.228663 17.838152
+Maximum average velocity is 70.9046 131.835 -53.5715
+x_old = [6.351075 6.216484 18.062764]
+x_new = [6.366029 6.244286 18.051466]
+dt = 0.000211
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 11 times
+Enter PointToTri 29 times
+Enter isCoplanar 0 times
+40 pair of proximity
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+Starting collision handling: 
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 19 times
+Enter PointToTri 22 times
+Enter isCoplanar 100921 times
+    #1: 34 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 11 times
+Enter PointToTri 12 times
+Enter isCoplanar 100861 times
+    #2: 22 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #3: 16 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #4: 16 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 3 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #5: 15 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 4 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #6: 16 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 1 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #7: 13 pair of collision tris
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 1 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+    #8: 13 pair of collision tris
+Starting compute Impact Zone: 
+Test loop 2
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 0 times
+Enter PointToTri 12 times
+Enter isCoplanar 100846 times
+10 number of points in this zone
+10 number of points in this zone
+    #0: 12 pair of collision tris
+     2 zones of impact
+Test loop 2
+    max velocity = [70.904639 131.835200 -53.571511]
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 100666 times
+10 number of points in this zone
+10 number of points in this zone
+    #1: 0 pair of collision tris
+     2 zones of impact
+Enter EdgeToEdge 0 times
+Enter PointToTri 0 times
+Enter isCoplanar 0 times
+    1043 edges are over strain limit after 4 iterations
+
+time =     0.99146096023333   step =   514   next dt =     0.00034620745070
+
+fabric_Cplus.cpp:45: error: calling clean_up
+
+		CLEAN_UP, error = 0
+
+Storage used 227110528 bytes
+
+
+		EXECUTION TIME DATA:
+
+		CPU TIME: 4 Minutes 47 Seconds
+		SYS TIME: 0 Seconds
+		MAX RSS = 301376 Kilobytes
+
+		TERMINATION TIME OF RUN:   Tue Aug 27 09:28:11 2019
+
