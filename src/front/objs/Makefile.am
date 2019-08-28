@@ -43,6 +43,7 @@ libfront_la_SOURCES += \
 ../fgrid.c \
 ../finit.c \
 ../fint.c \
+../fmap3.c \
 ../fmap2.c \
 ../fmap.c \
 ../fnode.c \
