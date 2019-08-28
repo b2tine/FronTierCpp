@@ -177,11 +177,18 @@ void CollisionSolver::computeAverageVelocity()
 {
     POINT* pt;
     STATE* sl; 
-	double dt = getTimeStepSize();
-	double max_speed = 0;
+    double dt = getTimeStepSize();
+    double max_speed = 0;
     double* max_vel = nullptr;
-	POINT* max_pt=nullptr;
+    POINT* max_pt=nullptr;
 
+    printf("Test dt = %f  ROUND_EPS = %f\n",dt,ROUND_EPS);
+    pt = gpoints[11622];
+    sl = (STATE*)left_state(pt); 
+    printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
+                                Coords(pt)[2]);
+    printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+    printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -190,7 +197,7 @@ void CollisionSolver::computeAverageVelocity()
             pt = (*it)->Point_of_hse(i);
             sl = (STATE*)left_state(pt); 
             for (int j = 0; j < 3; ++j)
-    		{
+    	    {
                 if (dt > ROUND_EPS)
                 {
                     sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
@@ -219,6 +226,14 @@ void CollisionSolver::computeAverageVelocity()
                     max_speed = Mag3d(sl->avgVel);
                     max_vel = sl->avgVel;
                     max_pt = pt;
+                    if (Gindex(pt) == 11622)
+                    {
+                        printf("\n\nmax_speed = %f  max_vel = %f %f %f\n",
+                            max_speed,max_vel[0],max_vel[1],max_vel[2]);
+                        printf("Gindex(p) = %d\n",Gindex(pt));
+                        printf("Coords(p) = %f %f %f\n\n\n",Coords(pt)[0],
+                                    Coords(pt)[1],Coords(pt)[2]);
+                    }
                 }
             }
         
@@ -226,8 +241,8 @@ void CollisionSolver::computeAverageVelocity()
         
     }
 
-	if (debugging("collision"))
-	{
+    if (debugging("collision"))
+    {
         if (max_vel)
         {
             std::cout << "Maximum average velocity is "
@@ -245,11 +260,11 @@ void CollisionSolver::computeAverageVelocity()
                     Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
 	        printf("dt = %f\n",dt);
         }
-	}
+    }
 	
     //restore coords of points to old coords !!!
-	//x_old is the only valid coords for each point 
-	//Coords(point) is for temporary judgement
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
 	
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
@@ -279,7 +294,10 @@ void CollisionSolver::computeImpactZone()
         std::cout<<"Starting compute Impact Zone: "<<std::endl;
 	turnOnImpZone();
 	//makeSet(hseList);
+        int count = 0;
         while(is_collision){
+            printf("Test loop 2\n");
+            if (++count == 20) clean_up(ERROR);
             is_collision = false;
 
 	    //start UF alogrithm
@@ -453,9 +471,9 @@ void CollisionSolver::detectProximity()
                              reportProximity(time, numBox, num_pairs,this),
 			     traitsForProximity());
         */
-    start_clock("dynamic_AABB_proximity");
-    aabbProximity();
-    stop_clock("dynamic_AABB_proximity");
+        start_clock("dynamic_AABB_proximity");
+        aabbProximity();
+        stop_clock("dynamic_AABB_proximity");
 
 	updateAverageVelocity();
 	if (debugging("collision"))
@@ -515,7 +533,7 @@ void CollisionSolver::detectCollision()
 	    stop_clock("dynamic_AABB_collision");
 
 	    if (cd_count++ == 0 && is_collision)
-            setHasCollision(true);
+                setHasCollision(true);
 
 	    updateAverageVelocity();
 	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 

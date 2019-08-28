@@ -34,49 +34,56 @@ extern Front *SMM_GetFront()
         return &front;
 }       /* end SMM_GetFront */
 
+extern F_BASIC_DATA *SMM_GetBasicData()
+{
+        static F_BASIC_DATA f_basic;
+        return &f_basic;
+}       /* end SMM_GetBasicData */
+
 extern void SMM_InitCpp(int argc, char **argv)
 {
         Front *front = SMM_GetFront();
-        static F_BASIC_DATA f_basic;
+        F_BASIC_DATA *f_basic = SMM_GetBasicData();
         static LEVEL_FUNC_PACK level_func_pack;
         static AF_PARAMS af_params;
 
-        FT_Init(argc,argv,&f_basic);
-        if (f_basic.RestartRun) 
+        FT_Init(argc,argv,f_basic);
+        if (f_basic->RestartRun) 
         {
             SMM_RestartCpp(argc,argv);
             return;
         }
         front->extra2 = (POINTER)&af_params;
-        f_basic.size_of_intfc_state = sizeof(STATE);
+        f_basic->size_of_intfc_state = sizeof(STATE);
         af_params.node_id[0] = 0;
 
-        FT_ReadSpaceDomain(f_basic.in_name,&f_basic);
-        FT_StartUp(front,&f_basic);
+        FT_ReadSpaceDomain(f_basic->in_name,f_basic);
+        FT_StartUp(front,f_basic);
         if (FT_Dimension() == 2) // initialization using old method
             setInitialIntfcAF(front,&level_func_pack,InName(front));
         else
             level_func_pack.pos_component = LIQUID_COMP2;
         FT_InitDebug(InName(front));
         FT_InitIntfc(front,&level_func_pack);
+	FT_ResetTime(front);
 }       /* end SMM_InitCpp */
 
 extern void SMM_RestartCpp(int argc, char **argv)
 {
         Front *front = SMM_GetFront();
-        static F_BASIC_DATA f_basic;
+        F_BASIC_DATA *f_basic = SMM_GetBasicData();
         static AF_PARAMS af_params;
 
-        FT_Init(argc,argv,&f_basic);
-        if (!f_basic.RestartRun) return;
+        FT_Init(argc,argv,f_basic);
+        if (!f_basic->RestartRun) return;
 
-        char *restart_name            = f_basic.restart_name;
-        char *restart_state_name      = f_basic.restart_state_name;
+        char *restart_name            = f_basic->restart_name;
+        char *restart_state_name      = f_basic->restart_state_name;
 
         sprintf(restart_state_name,"%s/state.ts%s",restart_name,
-			right_flush(f_basic.RestartStep,7));
+			right_flush(f_basic->RestartStep,7));
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
-			right_flush(f_basic.RestartStep,7));
+			right_flush(f_basic->RestartStep,7));
 	
         if (pp_numnodes() > 1)
         {
@@ -86,12 +93,14 @@ extern void SMM_RestartCpp(int argc, char **argv)
                     right_flush(pp_mynode(),4));
 	}
         front->extra2 = (POINTER)&af_params;
-        f_basic.size_of_intfc_state = sizeof(STATE);
+        f_basic->size_of_intfc_state = sizeof(STATE);
         af_params.node_id[0] = 0;
 
-        FT_ReadSpaceDomain(f_basic.in_name,&f_basic);
-        FT_StartUp(front,&f_basic);
+        FT_ReadSpaceDomain(f_basic->in_name,f_basic);
+        FT_StartUp(front,f_basic);
+        readAfExtraData(front,restart_state_name);
         FT_InitDebug(InName(front));
+        FT_SetOutputCounter(front);
 }       /* end SMM_RestartCpp */
 
 #ifdef __cplusplus
@@ -127,7 +136,10 @@ extern void SMM_Init(char inname[])
 extern void SMM_InitModules()
 {
         Front *front = SMM_GetFront();
+        F_BASIC_DATA *fbasic = SMM_GetBasicData();
         FILE *infile = fopen(InName(front),"r");
+
+        if (fbasic->RestartRun) return;
 
         if (FT_Dimension() == 3) // 2D initialization used old method
         {
@@ -319,6 +331,7 @@ extern void SMM_InitTestTimeContrl()
 extern void SMM_TestDriver()
 {
         Front *front = SMM_GetFront();
+        F_BASIC_DATA *f_basic = SMM_GetBasicData();
 	FILE *infile = fopen(InName(front),"r");
         double CFL;
         int  dim = front->rect_grid->dim;
@@ -329,19 +342,27 @@ extern void SMM_TestDriver()
 
         CFL = Time_step_factor(front);
 
-	FT_ResetTime(front);
-
 	SMM_Save();
         SMM_Plot();
 
-	FT_Propagate(front);
-	FT_InteriorPropagate(front);
+        if (!f_basic->RestartRun)
+        {
+	    FT_Propagate(front);
+            FT_RelinkGlobalIndex(front);
+	    FT_InteriorPropagate(front);
 
-        FT_SetOutputCounter(front);
-	FT_SetTimeStep(front);
+            FT_SetOutputCounter(front);
+	    FT_SetTimeStep(front);
 
-        FT_TimeControlFilter(front);
-	FT_PrintTimeStamp(front);
+            FT_TimeControlFilter(front);
+        }
+        else
+        {
+            setSpecialNodeForce(front,af_params->kl);
+            FT_SetOutputCounter(front);
+	    FT_TimeControlFilter(front);
+        }
+        FT_PrintTimeStamp(front);
 	
         // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
@@ -359,6 +380,7 @@ extern void SMM_TestDriver()
 	    start_clock("timeStep");
 
             FT_Propagate(front);
+            FT_RelinkGlobalIndex(front);
             FT_InteriorPropagate(front);
 
             if (debugging("trace"))
@@ -384,18 +406,18 @@ extern void SMM_TestDriver()
 	    /* Output section */
 
             if (FT_IsSaveTime(front))
-	    {
                 SMM_Save();
-	    }
         
             if (FT_IsDrawTime(front))
-	    {
                 SMM_Plot();
-	    }
 
             if (FT_TimeLimitReached(front))
 	    {
                 FT_PrintTimeStamp(front);
+                if (!FT_IsSaveTime(front))
+                    SMM_Save();
+                if (!FT_IsDrawTime(front))
+                    SMM_Plot();
 	    	stop_clock("timeStep");
                 break;
 	    }
@@ -412,6 +434,7 @@ extern void SMM_TestDriver()
     
         FT_FreeMainIntfc(front);
 }       /* end fabric_driver */
+
 extern void SMM_Plot()
 {
         Front *front = SMM_GetFront();

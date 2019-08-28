@@ -355,8 +355,11 @@ void generic_spring_solver(
 	    x_old[i][j] = sv[i].x[j];
 	    v_old[i][j] = sv[i].v[j];
 	}
+        // TMP
+        double max_v,max_x;
 	for (n = 0; n < n_loop; ++n)
 	{
+            max_v = max_x = -HUGE;
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
@@ -364,6 +367,8 @@ void generic_spring_solver(
                 v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
+                if (max_v < v_new[i][j]) max_v = v_new[i][j];
+                if (max_x < x_new[i][j]) max_x = x_new[i][j];
 	    }
 	    for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
@@ -421,11 +426,14 @@ void generic_spring_solver(
                 v_new[i][j] += dt*accel[i][j]/6.0;
 	    }
 
+            max_v = max_x = -HUGE;
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
                 sv[i].x[j] = x_new[i][j];
                 sv[i].v[j] = v_new[i][j];
+                if (max_v < v_new[i][j]) max_v = v_new[i][j];
+                if (max_x < x_new[i][j]) max_x = x_new[i][j];
 	    }
 	    for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
@@ -441,6 +449,12 @@ void generic_spring_solver(
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
+                    if (isnan(x_old[i][j]))
+                    {
+                        printf("After loop %d = %d: x_old[%d][%d] = %f\n",
+                                    n,i,j,x_old[i][j]);
+                        clean_up(ERROR);
+                    }
                 }
 	    	for (i = 0; i < size; ++i)
 		{

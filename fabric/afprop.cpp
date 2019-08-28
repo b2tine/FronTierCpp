@@ -95,14 +95,20 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
-
-
         static CollisionSolver* collision_solver = new CollisionSolver3d();
+
 	if (!debugging("collision_off"))
             printf("COLLISION DETECTION ON\n");
         else
             printf("COLLISION DETECTION OFF\n");
 
+        printf("Entering fourth_order_elastic_set_propagate3d()\n");
+        POINT *pt = fr->gpoints[11622];
+        STATE *sl = (STATE*)left_state(pt);
+        printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
+                                Coords(pt)[2]);
+        printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+        printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
 
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
@@ -266,6 +272,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 //rigid-rigid collision here, because it appears that it was
                 //ommitted from all the cloth impulse calculations making it
                 //effectively 0.0 by default again.
+                collision_solver->gpoints = fr->gpoints;
+                collision_solver->gtris = fr->gtris;
             }
 
             get_point_set_from(&geom_set,point_set);
@@ -334,7 +342,9 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             if (myid == owner_id)
             {
                 if (FT_Dimension() == 3)
+                {
                     collision_solver->resolveCollision();
+                }
             }
             setSpecialNodeForce(fr, geom_set.kl);
         }
