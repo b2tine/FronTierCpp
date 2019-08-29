@@ -773,11 +773,11 @@ struct	_MAX_FRONT_SPEED {
 	} operators;
 };
 typedef struct _MAX_FRONT_SPEED MAX_FRONT_SPEED;
-#if defined(__cplusplus)
-typedef struct _MAX_FRONT_SPEED::_MAX_FRONT_SPEED_OPERATORS MAX_FRONT_SPEED_OPERATORS;
-#else /* defined(__cplusplus) */
+//#if defined(__cplusplus)
+//typedef struct _MAX_FRONT_SPEED::_MAX_FRONT_SPEED_OPERATORS MAX_FRONT_SPEED_OPERATORS;
+//#else /* defined(__cplusplus) */
 typedef struct _MAX_FRONT_SPEED_OPERATORS MAX_FRONT_SPEED_OPERATORS;
-#endif /* defined(__cplusplus) */
+//#endif /* defined(__cplusplus) */
 
 #define	MaxFrontSpeed(fr)	(fr)->_MaxFrontSpeed
 #define	Spfr(fr)		MaxFrontSpeed(fr)->_spfr
