@@ -1,7 +1,7 @@
 To restart at step 514:
 
-fabric_Cplus -d 3 -i in-C9-Vent-LH -o out-C9-Vent-LH-r1 -r out-C9-Vent-LH -t 514
+./fabric_Cplus -d 3 -i in-C9-Vent-LH -o out-C9-Vent-LH-r1 -r out-C9-Vent-LH -t 514 &
 
 To restart at step 516:
 
-fabric_Cplus -d 3 -i in-C9-Vent-LH -o out-C9-Vent-LH-r2 -r out-C9-Vent-LH -t 516
+./fabric_Cplus -d 3 -i in-C9-Vent-LH -o out-C9-Vent-LH-r2 -r out-C9-Vent-LH -t 516 &
