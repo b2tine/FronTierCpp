@@ -97,21 +97,21 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static int break_strings_num = af_params->break_strings_num;
         static CollisionSolver* collision_solver = new CollisionSolver3d();
 
-	if (!debugging("collision_off"))
-            printf("COLLISION DETECTION ON\n");
-        else
-            printf("COLLISION DETECTION OFF\n");
-
-        printf("Entering fourth_order_elastic_set_propagate3d()\n");
-        POINT *pt = fr->gpoints[11622];
-        STATE *sl = (STATE*)left_state(pt);
-        printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
-                                Coords(pt)[2]);
-        printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-        printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-
 	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
+	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
+
+	if (!debugging("collision_off"))
+        printf("COLLISION DETECTION ON\n");
+    else
+        printf("COLLISION DETECTION OFF\n");
+
+    POINT *pt = fr->gpoints[11622];
+    STATE *sl = (STATE*)left_state(pt);
+    printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
+                            Coords(pt)[2]);
+    printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+    printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+
 	geom_set.front = fr;
 
 	if (first_break_strings && break_strings_num > 0 &&
@@ -123,6 +123,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
+    //TODO: join to below if statement
 	if (first)
         {
             set_elastic_params(&geom_set,fr_dt);
@@ -350,7 +351,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
+	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
 
 //TODO: Is this function as useless as it looks?

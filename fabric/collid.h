@@ -260,6 +260,9 @@ public:
 	void createImpZoneForRG(const INTERFACE*);
 };
 
+
+//TODO: Remove these report* functors
+//
 //callback functor to identify real collision
 struct reportProximity{
     int& num_pairs;
@@ -302,6 +305,7 @@ struct reportCollision{
 	}
     }
 };
+///
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);

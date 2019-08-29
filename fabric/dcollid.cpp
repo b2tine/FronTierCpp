@@ -418,11 +418,12 @@ void CollisionSolver::resolveCollision()
 
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
-	reduceSuperelast();
+	    //reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
     //TODO: implement this function correctly
 	start_clock("updateFinalVelocity");
+    //detectProximity();
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
 }
@@ -460,17 +461,6 @@ void CollisionSolver::aabbProximity() {
 
 void CollisionSolver::detectProximity()
 {
-        /*
-        start_clock("cgal_proximity");
-
-	int num_pairs = 0;
-        int numBox = 0;
-        double time; 
-
-	CGAL::box_self_intersection_d(hseList.begin(),hseList.end(),
-                             reportProximity(time, numBox, num_pairs,this),
-			     traitsForProximity());
-        */
         start_clock("dynamic_AABB_proximity");
         aabbProximity();
         stop_clock("dynamic_AABB_proximity");
@@ -478,7 +468,6 @@ void CollisionSolver::detectProximity()
 	updateAverageVelocity();
 	if (debugging("collision"))
 	std::cout << abt_proximity->getCount() 
-	//std::cout << num_pairs
                   << " pair of proximity" << std::endl;
 }
 
@@ -698,9 +687,14 @@ void CollisionSolver::reduceSuperelast()
         printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
 }
 
-//TODO: This is not the correct update
+//TODO: This is not the correct update.
 void CollisionSolver::updateFinalVelocity()
 {
+    //avgVel is actually the velocity at t(n+1/2)
+    //need to call spring solver to get velocity at t(n+1)
+    //for simplicity now set v(n+1) = v(n+1/2)
+
+
     //detectProximity();
 	//detectCollision(); 
 	
