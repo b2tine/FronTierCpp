@@ -187,6 +187,13 @@ LOCAL  void trace_back()
 
 	nptrs = backtrace(buffer,SIZE);
 
+    //////////////////////////////////////////////
+    FILE* fp = fopen("./backtrace_info.txt","w");
+    int fd = fileno(fp);
+    backtrace_symbols_fd(buffer,nptrs,fd);
+    fclose(fp);
+    //////////////////////////////////////////////
+
 	strings = backtrace_symbols(buffer,nptrs);
 	printf("======= Backtrace: =========\n");
 	if (strings == NULL){
@@ -194,17 +201,23 @@ LOCAL  void trace_back()
 	}
 	else for (j = 0; j < nptrs; j++)
 	{
-		//printf("raw string: %s\n",strings[j]);
+        //printf("raw string: %s\n",strings[j]);
 	    /*split strings[j] to program name and function name*/
 	    i = 0; k = 0; p=0;
 	    while (strings[j][i] != ')')
 	    {
-		if (strings[j][i] == '(')
-		    k = i;
-		if (strings[j][i] == '+')
-			p = i;
-		i++;
+            if (strings[j][i] == '(')
+                k = i;
+            if (strings[j][i] == '+')
+                p = i;
+            i++;
 	    }
+
+        //if (k == i-1) then there is no function name 
+        //              and p = 0
+        // 
+        //      e.g raw string: ./fabric_Cplus()
+        //      This case occurs with Centos6-7
 
 	    /*
 	     * The following parses a raw backtrace string:
@@ -218,15 +231,32 @@ LOCAL  void trace_back()
 	     * 		 hex_base + hex_offset - hex_minus
 	     */
 
-	    hex_base = 0x0;
+        hex_base = 0x0;
 		if (buffer[j] != NULL){
 		    hex_minus = strtol(buffer[j], NULL, 16);
-		    if (p == k+1){ // no function name
+		    if (p == k+1 || i == k+1){ // no function name
 				if (strings[j][1]!='l'){
-					sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
-					hex_offset = strtol(oaddr, NULL, 16);
+                    if (i == k+1)
+                    {
+					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i+1,strings[j]);
+                    hex_offset = 0;
+					sprintf(syscom,"addr2line -e %.*s %p",k,strings[j],buffer[j]);
+                    }
+                    else
+                    {
+                    sprintf(oaddr, "%.*s \n",i-p-1,strings[j]+p+1);
 					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i-k+1,strings[j]+k);
+                    hex_offset = strtol(oaddr, NULL, 16);
 					sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_offset - hex_minus);
+                    }
+                        
+                    /*
+                         printf("\n%s\n",syscom);
+                        printf("buffer[%d]: %p\n",j, buffer[j]);
+                        printf("\n%ld\n",hex_offset);
+                        printf("\n%ld\n",hex_minus);
+                        */
+
 				} else {
 					printf("#%-2d %s to %.*s stopping backtrace.\n",j,strings[j]+i+1,k,strings[j]);
 					break;
@@ -234,12 +264,38 @@ LOCAL  void trace_back()
 			}
 		    else { // has function name.  Calling nm to find its address.
 
-				//printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1); // to help debugging
-				//printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
-				//printf("buffer: %p\n",buffer[j]);
-				//printf("file: %.*s\n",k,strings[j]);
+
+                /*
+                ///////
+                printf("k = %d\n",k);
+                printf("p = %d\n",p);
+                printf("i = %d\n",i);
+                
+                if (k == i-1)
+                {
+				printf("adding_address: %.*s \n",0,"0"); // to help debugging
+				printf("func_to_find: %.*s \n",0,"0");
+                }
+                else
+                {
+				printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1); // to help debugging
+				printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
+                }
+				
+				printf("adding_address: %.*s \n",i-p-1,strings[j]+p+1); // to help debugging
+				printf("func_to_find: %.*s \n",p-k-1,strings[j]+k+1);
+                printf("buffer: %p\n",buffer[j]);
+				printf("file: %.*s\n",k,strings[j]);
+                /////////
+                */
+
 
 				sprintf(syscom,"nm %.*s 2>/dev/null | grep %.*s | cut -d' ' -f1",k,strings[j],p-k-1,strings[j]+k+1);
+
+                ///
+                    //printf("\n%s\n",syscom);
+                ////
+
 				pipe = popen(syscom,"r");
 				if (fgets(syscom,sizeof(syscom),pipe) != 0)
 				{
