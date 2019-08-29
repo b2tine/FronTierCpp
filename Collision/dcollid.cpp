@@ -605,7 +605,9 @@ void CollisionSolver::detectCollision()
 
         stop_clock("dynamic_AABB_collision");
 
-        //cd_count++ never == 0
+        //TODO: This doesn't do anything.
+        //      boolean set in setHasCollision() is retrieved using
+        //      hasCollision(), but is never called anywhere.
 	    if (cd_count++ == 0 && is_collision)
             setHasCollision(true);
 
