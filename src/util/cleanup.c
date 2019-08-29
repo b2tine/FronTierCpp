@@ -241,7 +241,6 @@ LOCAL  void trace_back()
                     if (i == k+1)
                     {
 					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i+1,strings[j]);
-                    hex_offset = 0;
 					sprintf(syscom,"addr2line -e %.*s %p",k,strings[j],buffer[j]);
                     }
                     else

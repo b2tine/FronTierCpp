@@ -922,7 +922,7 @@ EXPORT	INTERFACE *make_grid_intfc(
 	INTERFACE *grid_intfc;
 	int dim = comp_grid->dim;
 
-	if (debugging("make_grid_intfc"))
+	if (debugging("trace"))
 	    (void) printf("Entering make_grid_intfc()\n");
 
 	start_clock("make_grid_intfc");
@@ -1008,7 +1008,7 @@ EXPORT	INTERFACE *make_grid_intfc(
 	}
 
 	reset_intfc_num_points(grid_intfc);
-	if (debugging("make_grid_intfc"))
+	if (debugging("trace"))
 	    (void) printf("Leaving make_grid_intfc()\n");
         stop_clock("make_grid_intfc");
 	return grid_intfc;

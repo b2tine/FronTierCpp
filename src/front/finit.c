@@ -1687,6 +1687,7 @@ EXPORT  void    FT_StartUp(
 		set_size_of_intfc_state(front->sizest);
 
         	f_set_interface_hooks(dim,init_data(&Init));
+
 		if (ft_basic->RestartRun)
 		{
 		    IO_TYPE io_type;
@@ -1747,6 +1748,7 @@ EXPORT  void    FT_StartUp(
 
 	front->hdf_movie_var = NULL;
 	set_topological_grid(front->interf,front->rect_grid);
+
 	if (ft_basic != NULL && ft_basic->RestartRun)
 	{
 	    int rbt[3][2];
@@ -1757,7 +1759,8 @@ EXPORT  void    FT_StartUp(
 	    }
 	    pp_clip_rect_grids(front,rbt);
 	}
-	stop_clock("FT_StartUp");
+	
+    stop_clock("FT_StartUp");
 	i_grid++;
 	return;
 }       /* end FT_StartUp */

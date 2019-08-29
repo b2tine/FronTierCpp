@@ -1737,6 +1737,9 @@ EXPORT	void	pp_l_allgather(
 	DEBUG_LEAVE(pp_l_allgather)
 }		/*end pp_l_allgather*/
 
+
+//TODO: Set these with the proper openmp function calls
+
 LOCAL   int num_of_thread = 1;          /* default */
 
 EXPORT  int get_num_of_thread()

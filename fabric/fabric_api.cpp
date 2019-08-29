@@ -47,36 +47,42 @@ extern void SMM_InitCpp(int argc, char **argv)
         static LEVEL_FUNC_PACK level_func_pack;
         static AF_PARAMS af_params;
 
-        FT_Init(argc,argv,f_basic);
-        if (f_basic->RestartRun) 
-        {
-            SMM_RestartCpp(argc,argv);
-            return;
-        }
-        front->extra2 = (POINTER)&af_params;
         f_basic->size_of_intfc_state = sizeof(STATE);
-        af_params.node_id[0] = 0;
-
+        
+        FT_Init(argc,argv,f_basic);
+        FT_InitDebug(f_basic->in_name);
         FT_ReadSpaceDomain(f_basic->in_name,f_basic);
-        FT_StartUp(front,f_basic);
-        if (FT_Dimension() == 2) // initialization using old method
-            setInitialIntfcAF(front,&level_func_pack,InName(front));
-        else
-            level_func_pack.pos_component = LIQUID_COMP2;
-        FT_InitDebug(InName(front));
-        FT_InitIntfc(front,&level_func_pack);
-	FT_ResetTime(front);
+        
+        af_params.num_np = 1;
+        //FT_VectorMemoryAlloc((POINTER*)&af_params.node_id,1,sizeof(int));
+        af_params.node_id[0] = 0;
+        front->extra2 = (POINTER)&af_params;
+
+        SMM_StartUp(front,f_basic);
 }       /* end SMM_InitCpp */
 
-extern void SMM_RestartCpp(int argc, char **argv)
+extern void SMM_StartUp(Front *front, F_BASIC_DATA *ft_basic)
 {
-        Front *front = SMM_GetFront();
-        F_BASIC_DATA *f_basic = SMM_GetBasicData();
-        static AF_PARAMS af_params;
+        if (f_basic->RestartRun)
+        {
+            SMM_Restart(front,f_basic);
+        }
+        else
+        {
+            FT_StartUp(front,f_basic);
+        
+            if (FT_Dimension() == 2) // initialization using old method
+                setInitialIntfcAF(front,&level_func_pack,InName(front));
+            else
+                level_func_pack.pos_component = LIQUID_COMP2;
+        
+            FT_InitIntfc(front,&level_func_pack);
+	        FT_ResetTime(front);
+        }
+}       /* end SMM_StartUp */
 
-        FT_Init(argc,argv,f_basic);
-        if (!f_basic->RestartRun) return;
-
+extern void SMM_Restart(Front *front, F_BASIC_DATA *ft_basic)
+{
         char *restart_name            = f_basic->restart_name;
         char *restart_state_name      = f_basic->restart_state_name;
 
@@ -91,17 +97,13 @@ extern void SMM_RestartCpp(int argc, char **argv)
                     right_flush(pp_mynode(),4));
             sprintf(restart_state_name,"%s-nd%s",restart_state_name,
                     right_flush(pp_mynode(),4));
-	}
-        front->extra2 = (POINTER)&af_params;
-        f_basic->size_of_intfc_state = sizeof(STATE);
-        af_params.node_id[0] = 0;
+        }
 
-        FT_ReadSpaceDomain(f_basic->in_name,f_basic);
         FT_StartUp(front,f_basic);
         readAfExtraData(front,restart_state_name);
-        FT_InitDebug(InName(front));
         FT_SetOutputCounter(front);
-}       /* end SMM_RestartCpp */
+}
+
 
 #ifdef __cplusplus
 extern "C" {

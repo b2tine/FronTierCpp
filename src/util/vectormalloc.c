@@ -85,14 +85,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *			A = (double **) bi_array(&A,m,n,DOUBLE);
 *
 *	The array may later be freed by the call:
-*			free(A);
+*			vmfree(A);
 *
 *	Similiarly, to allocate an n dimensional vector V of floats, use:
 *			double *V;
 *			V = (double *) uni_array(&V,n,FLOAT);
 *
 *	The vector can be freed by the call:
-*			free(V);
+*			vmfree(V);
 *
 *	Both arrays could have been freed by either of the calls:
 *			free_these(2,A,V);

@@ -111,6 +111,8 @@ struct AF_PARAMS
 	int    num_opt_round;		/* number of mesh optimizations rounds*/
 	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */
 	int    num_np;			/* number of master node to run spring model */
+    
+    //TODO: Why has this changed to fixed sized array?
 	int    node_id[10];		/* master node id */
 	
         double break_strings_time;	/* time to break some strings */
@@ -399,8 +401,10 @@ extern void InstallNewLoadNode(Front*,int);
 
 /* C++ API functions */
 extern Front *SMM_GetFront();
+extern F_BASIC_DATA *SMM_GetBasicData();
 extern void SMM_InitCpp(int,char**);
-extern void SMM_RestartCpp(int,char**);
+extern void SMM_StartUp(Front *front, F_BASIC_DATA *ft_basic);
+extern void SMM_Restart(Front *front, F_BASIC_DATA *ft_basic);
 
 #ifdef __cplusplus
 extern "C" {
