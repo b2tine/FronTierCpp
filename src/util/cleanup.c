@@ -237,7 +237,7 @@ LOCAL  void trace_back()
 		if (buffer[j] != NULL){
 		    hex_minus = strtol(buffer[j], NULL, 16);
 		    if (p == k+1 || i == k+1){ // no function name
-				if (strings[j][1]!='l'){
+				//if (strings[j][1]!='l'){
                     if (i == k+1)
                     {
 					printf("#%-2d %s in %.*s ",j,strings[j]+i+1,i+1,strings[j]);
@@ -250,10 +250,10 @@ LOCAL  void trace_back()
                     hex_offset = strtol(oaddr, NULL, 16);
 					sprintf(syscom,"addr2line -e %.*s 0x%x",k,strings[j],hex_offset - hex_minus);
                     }
-				} else {
+				/*} else {
 					printf("#%-2d %s to %.*s stopping backtrace.\n",j,strings[j]+i+1,k,strings[j]);
 					break;
-				}
+				}*/
 			}
 		    else { // has function name.  Calling nm to find its address.
 
