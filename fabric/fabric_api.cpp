@@ -58,16 +58,7 @@ extern void SMM_InitCpp(int argc, char **argv)
         af_params.node_id[0] = 0;
         front->extra2 = (POINTER)&af_params;
 
-        SMM_StartUp(front,f_basic);
-}       /* end SMM_InitCpp */
-
-extern void SMM_StartUp(Front *front, F_BASIC_DATA *ft_basic)
-{
-        if (f_basic->RestartRun)
-        {
-            SMM_Restart(front,f_basic);
-        }
-        else
+        if (!f_basic->RestartRun)
         {
             FT_StartUp(front,f_basic);
         
@@ -77,11 +68,15 @@ extern void SMM_StartUp(Front *front, F_BASIC_DATA *ft_basic)
                 level_func_pack.pos_component = LIQUID_COMP2;
         
             FT_InitIntfc(front,&level_func_pack);
-	        FT_ResetTime(front);
+            FT_ResetTime(front);
         }
-}       /* end SMM_StartUp */
+        else
+        {
+            SMM_Restart(front,f_basic);
+        }
+}       /* end SMM_InitCpp */
 
-extern void SMM_Restart(Front *front, F_BASIC_DATA *ft_basic)
+extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
 {
         char *restart_name            = f_basic->restart_name;
         char *restart_state_name      = f_basic->restart_state_name;

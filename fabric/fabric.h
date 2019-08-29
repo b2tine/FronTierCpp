@@ -403,8 +403,7 @@ extern void InstallNewLoadNode(Front*,int);
 extern Front *SMM_GetFront();
 extern F_BASIC_DATA *SMM_GetBasicData();
 extern void SMM_InitCpp(int,char**);
-extern void SMM_StartUp(Front *front, F_BASIC_DATA *ft_basic);
-extern void SMM_Restart(Front *front, F_BASIC_DATA *ft_basic);
+extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic);
 
 #ifdef __cplusplus
 extern "C" {
