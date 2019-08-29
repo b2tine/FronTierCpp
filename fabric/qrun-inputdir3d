@@ -17,7 +17,7 @@
         
 
 #executable
-EXENAME="airfoil"
+EXENAME="fabric_Cplus"
 
 #input directory 
 INDIR=${1%/}
