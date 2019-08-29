@@ -72,13 +72,14 @@ Enter gravity: 0 0 -9.8
 Start test time control parameters
 Max time: 3
 Max step: 517
-Print interval: 1
+Print interval: 0.1
 Movie frame interval: 0.1
 CFL factor: 0.5
 
 ////////////////////////////////////////
 
 Enter yes for debugging: yes
+Enter the debugging string: trace
 Enter the debugging string: collision
 
 
