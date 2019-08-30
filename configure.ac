@@ -434,11 +434,11 @@ AM_CONDITIONAL([EX3D_OPT],[test $exThreeD = yes])
 
 
 #option to compile FrontWrapper directory (Makfiles always generated)
-AC_ARG_WITH([libcpp],[AS_HELP_STRING([--with-libcpp],
+AC_ARG_WITH([frontwrapper],[AS_HELP_STRING([--with-frontwrapper],
               [build the FrontWrapper directory])],
-              [libCpp=yes],[libCpp=no])
+              [FT_Wrapper=yes],[FT_Wrapper=no])
 
-AM_CONDITIONAL([LIBCPP_OPT],[test $libCpp = yes])
+AM_CONDITIONAL([FT_WRAPPER_OPT],[test $FT_Wrapper = yes])
 
 
 

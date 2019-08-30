@@ -37,8 +37,8 @@ if EX3D_OPT
 MAYBE_EX3D = example3d
 endif
 
-if LIBCPP_OPT
-MAYBE_LIBCPP = FrontWrapper
+if FT_WRAPPER_OPT
+MAYBE_FRONTWRAPPER = FrontWrapper
 endif
 
 SUBDIRS = lib \
@@ -56,7 +56,7 @@ SUBDIRS = lib \
 		  $(MAYBE_FABRIC) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
-		  $(MAYBE_LIBCPP)
+		  $(MAYBE_FRONTWRAPPER)
 
 
 
