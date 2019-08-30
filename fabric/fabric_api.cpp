@@ -135,26 +135,24 @@ extern void SMM_InitModules()
 {
         Front *front = SMM_GetFront();
         F_BASIC_DATA *fbasic = SMM_GetBasicData();
-        FILE *infile = fopen(InName(front),"r");
 
-        if (!fbasic->RestartRun)// return;
+        if (!fbasic->RestartRun)
         {
-        if (FT_Dimension() == 3) // 2D initialization used old method
-        {
-            printf("\n");
-            CursorAfterString(infile,"Start parameters for modules");
-            printf("\n");
-            initParachuteModules(front);
-            initPerturbation3d(front);
-            optimizeElasticMesh(front);
+            FILE *infile = fopen(InName(front),"r");
+            if (FT_Dimension() == 3) // 2D initialization used old method
+            {
+                printf("\n");
+                CursorAfterString(infile,"Start parameters for modules");
+                printf("\n");
+                initParachuteModules(front);
+                initPerturbation3d(front);
+                optimizeElasticMesh(front);
+            }
+            set_equilibrium_mesh(front);
+            FT_SetGlobalIndex(front);
+            fclose(infile);
         }
-
-        set_equilibrium_mesh(front);
-        FT_SetGlobalIndex(front);
-        }
-
         static_mesh(front->interf) = YES;
-        fclose(infile);
 }       /* end SMM_InitModules */
 
 extern void SMM_InitPropagator()
