@@ -295,14 +295,12 @@ EXPORT void compute_spring_accel1(
 
 	for (k = 0; k < dim; ++k)
 	    sv->f[k] = f[k]*sv->m;
-        /*
-#ifndef DAMPING_FORCE
+//#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
 	}
-#endif
-        */
+//#endif
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 

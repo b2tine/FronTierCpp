@@ -11,6 +11,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Enter yes for debugging: yes
 Enter the debugging string: trace
+Enter the debugging string: Xcollision_off
 
 Start parameters for modules
 Enter number of canopy surfaces: 1
