@@ -50,7 +50,6 @@ extern void SMM_InitCpp(int argc, char **argv)
         f_basic->size_of_intfc_state = sizeof(STATE);
         
         FT_Init(argc,argv,f_basic);
-        FT_InitDebug(f_basic->in_name);
         FT_ReadSpaceDomain(f_basic->in_name,f_basic);
         
         af_params.num_np = 1;
@@ -61,6 +60,7 @@ extern void SMM_InitCpp(int argc, char **argv)
         if (!f_basic->RestartRun)
         {
             FT_StartUp(front,f_basic);
+            FT_InitDebug(f_basic->in_name);
         
             if (FT_Dimension() == 2) // initialization using old method
                 setInitialIntfcAF(front,&level_func_pack,InName(front));
@@ -95,6 +95,7 @@ extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
         }
 
         FT_StartUp(front,f_basic);
+        FT_InitDebug(f_basic->in_name);
         readAfExtraData(front,restart_state_name);
         FT_SetOutputCounter(front);
 }
@@ -136,8 +137,8 @@ extern void SMM_InitModules()
         F_BASIC_DATA *fbasic = SMM_GetBasicData();
         FILE *infile = fopen(InName(front),"r");
 
-        if (fbasic->RestartRun) return;
-
+        if (!fbasic->RestartRun)// return;
+        {
         if (FT_Dimension() == 3) // 2D initialization used old method
         {
             printf("\n");
@@ -150,7 +151,9 @@ extern void SMM_InitModules()
 
         set_equilibrium_mesh(front);
         FT_SetGlobalIndex(front);
+        }
 
+        static_mesh(front->interf) = YES;
         fclose(infile);
 }       /* end SMM_InitModules */
 
