@@ -1885,12 +1885,14 @@ static void new_setNodeVelocity3d(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	CURVE **c;
-	double nor[MAXD],nor_speed,max_nor_speed;
+	double nor[MAXD];
 	double *vel = nullptr;
 	double *crds_max = nullptr;
 	int gindex_max;
 	long gindex;
 
+    double nor_speed = 0.0;
+    double max_nor_speed = 0.0;
 	for (c = node->out_curves; c && *c; ++c)
         {
 		if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
