@@ -1886,8 +1886,8 @@ static void new_setNodeVelocity3d(
 	Front *front = geom_set->front;
 	CURVE **c;
 	double nor[MAXD],nor_speed,max_nor_speed;
-	double *vel;
-	double *crds_max;
+	double *vel = nullptr;
+	double *crds_max = nullptr;
 	int gindex_max;
 	long gindex;
 

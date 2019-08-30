@@ -110,7 +110,7 @@ EXPORT	void FrontSwapAndFree(
 	Front *newfront)
 {
         assign_interface_and_free_front(front,newfront);
-}	/* end FT_Propagate */
+}	/* end FrontSwapAndFree */
 
 EXPORT	int FrontAdvance(
         double    dt,
