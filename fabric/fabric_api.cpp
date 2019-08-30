@@ -448,6 +448,11 @@ extern void SMM_Save()
         printAfExtraData(front,OutName(front));
 }       /* end SMM_Save */
 
+extern void SMM_CleanUp(int exitcode)
+{
+    clean_up(exitcode);
+}
+
 #ifdef __cplusplus
 }
 #endif

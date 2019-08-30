@@ -42,5 +42,5 @@ int main(int argc, char **argv)
         SMM_Plot();
 
         SMM_TestDriver();
-	clean_up(0);
+	    SMM_CleanUp();
 }

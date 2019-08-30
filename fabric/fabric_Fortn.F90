@@ -32,6 +32,11 @@ program fortran_driver
 
         subroutine smm_test_driver() bind(c, name="SMM_TestDriver")
         end subroutine
+
+        subroutine smm_clean_up(exitcode) bind(c, name="SMM_CleanUp")
+            import :: c_int
+            integer(kind=c_int), optional, intent(in) :: exitcode
+        end subroutine
     end interface
 
     
@@ -48,5 +53,6 @@ program fortran_driver
     call smm_plot()
 
     call smm_test_driver()
+    call smm_clean_up()
 
 end program fortran_driver

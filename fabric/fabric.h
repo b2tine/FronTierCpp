@@ -419,6 +419,7 @@ extern void SMM_InitTestTimeContrl();
 extern void SMM_Plot();
 extern void SMM_Save();
 extern void SMM_TestDriver();
+extern void SMM_CleanUp(int exitcode = 0);
 
 #ifdef __cplusplus
 }
