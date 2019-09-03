@@ -411,7 +411,7 @@ extern "C" {
 #endif
 
 /* C++ and Fortran API functions */
-extern void SMM_Init(char inname[]);
+extern void SMM_Init(char *args);
 extern void SMM_InitModules();
 extern void SMM_InitPropagator();
 extern void SMM_InitSpringMassParams();
