@@ -10,7 +10,8 @@ docfiles = ('README','LICENSE')
 infile_prefixes = ['in-']
 script_prefixes = ['build','mrun','crun','frun','qrun-inputdir']
 file_prefixes = tuple(infile_prefixes + script_prefixes)
-directory_prefixes = tuple(['refsol-'])
+#directory_prefixes = tuple(['refsol-'])
+directory_prefixes = ('bin','refsol-')
 
 script_suffixes = ['.py','sh']
 autotools_suffixes = ['.ac','.am','.m4']
