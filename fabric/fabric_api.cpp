@@ -129,6 +129,12 @@ extern void SMM_Init(char inname[])
         }
 
         SMM_InitCpp(argc,argv);
+
+        for (int i = 0; i < argc; ++i)
+        {
+            delete[] argv[i];
+        }
+
 }       /* end SMM_Init */
 
 extern void SMM_InitModules()

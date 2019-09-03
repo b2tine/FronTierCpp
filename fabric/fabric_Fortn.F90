@@ -6,7 +6,7 @@ program fortran_driver
     interface
         subroutine smm_init(in_name) bind(c,name="SMM_Init")
             import :: c_char
-            character(kind=c_char) :: in_name
+            character(kind=c_char), dimension(*) :: in_name
         end subroutine
 
         subroutine smm_init_modules() bind(c,name="SMM_InitModules")
