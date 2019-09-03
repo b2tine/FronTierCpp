@@ -1,0 +1,22 @@
+To run examples, first copy input files from one of the input-*
+directories into the current working directory.
+
+    i.e.    cp input-2d/* .
+    or      cp input-3d/* .
+
+Then pass the desired casename to the script frun2d, or frun3d.
+For example, to run with the input file "in-swing" from input-2d,
+
+            ./frun2d swing 
+
+and to run with the input file "in-drumC" from input-3d,
+
+            ./frun3d drumC
+
+
+the output will be written to directories in the current directory
+with the casename prefixed by out, e.g "out-drumC-F", the suffix
+indicates which script, frun* or crun*, was used.
+
+
+
