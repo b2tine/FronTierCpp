@@ -290,21 +290,12 @@ void CollisionSolver::computeImpactZone()
 	    start_clock("dynamic_AABB_collision");
             aabbCollision();
             is_collision = abt_collision->getCollsnState();
-            /*
-            int numBox = 0;
-	    int cd_pair = 0;
-
-	    CGAL::box_self_intersection_d(hseList.begin(),
-                  hseList.end(),reportCollision(numBox, is_collision,
-                    cd_pair,this), traitsForCollision());
-            */
 	    stop_clock("dynamic_AABB_collision");
  
             updateAverageVelocity();
 
 	    updateImpactZoneVelocity(numZones);
             std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
-            //std::cout <<"    #"<< niter++ << ": " << cd_pair
                       << " pair of collision tris" << std::endl;
 	    std::cout <<"     "<< numZones
 		      <<" zones of impact" << std::endl;
