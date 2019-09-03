@@ -13,6 +13,7 @@
 #include <cassert>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <cstring>
 #include <string>

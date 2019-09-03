@@ -105,37 +105,29 @@ extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
 extern "C" {
 #endif
 
-extern void SMM_Init(char inname[])
+extern void SMM_Init(char* args)
 {
-        std::ifstream infile(inname);
+        std::string s(args);
         std::vector<std::string> argstrings;
+        argstrings.insert(argstrings.begin(),"dummyarg");
+        int argc = 1;
 
-        int argc = 0;
-        while (!infile.eof())
+        std::string arg;
+        std::stringstream ss(s);
+        while (ss >> arg)
         {
-            std::string curr;
-            infile >> curr;
-            argstrings.push_back(curr);
+            argstrings.push_back(arg);
             argc++;
         }
 
-        argstrings.insert(argstrings.begin(),"dummyarg");
-    
         char* argv[argc];
         for (int i = 0; i < argc; ++i)
         {
-            argv[i] = new char[argstrings[i].length()+1];
-            std::strcpy(argv[i],argstrings[i].c_str());
+            argv[i] = const_cast<char*>(argstrings[i].c_str());
         }
 
         SMM_InitCpp(argc,argv);
-
-        for (int i = 0; i < argc; ++i)
-        {
-            delete[] argv[i];
-        }
-
-}       /* end SMM_Init */
+}
 
 extern void SMM_InitModules()
 {
