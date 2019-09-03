@@ -41,7 +41,7 @@ static void fourth_order_elastic_set_propagate3d(Front*,double);
 static void coating_mono_hyper_surf3d(Front*);
 
 
-EXPORT void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
+extern void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
         switch (fr->rect_grid->dim)
         {
@@ -427,7 +427,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 }       /* setCollisionFreePoints3d() */
 
-EXPORT void elastic_point_propagate(
+extern void elastic_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -504,7 +504,7 @@ EXPORT void elastic_point_propagate(
 }       /* elastic_point_propagate */
 
 
-EXPORT void airfoil_point_propagate(
+extern void airfoil_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -524,7 +524,7 @@ EXPORT void airfoil_point_propagate(
                                         dt,V);
 }       /* airfoil_point_propagate */
 
-EXPORT void airfoil_curve_propagate(
+extern void airfoil_curve_propagate(
         Front *front,
         POINTER wave,
 	CURVE *oldc,
@@ -990,7 +990,7 @@ static void rg_string_node_propagate(
         }
 }	/* end rg_string_node_propagate */
 
-EXPORT int airfoil_node_propagate(
+extern int airfoil_node_propagate(
 	Front *front,
 	POINTER wave,
 	NODE *oldn,
@@ -1064,7 +1064,7 @@ static void passive_curve_propagation(
         }
 }       /* end passive_curve_propagation */
 
-EXPORT void coating_mono_hyper_surf(
+extern void coating_mono_hyper_surf(
 	Front *front)
 {
     coating_mono_hyper_surf3d(front);

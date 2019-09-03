@@ -91,7 +91,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
-EXPORT void compute_total_canopy_force(
+extern void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
 	double *neg_force)
@@ -261,7 +261,7 @@ static boolean is_pore(
 	return (Tri_index(tri) == 0) ? YES : NO;
 }	/* end is_pore */
 
-EXPORT void assign_node_field(
+extern void assign_node_field(
 	NODE *node,
 	double **x,
 	double **v,
@@ -282,7 +282,7 @@ EXPORT void assign_node_field(
 	(*n)++;
 }	/* end assign_node_field */
 	
-EXPORT void assign_curve_field(
+extern void assign_curve_field(
 	CURVE *curve,
 	double **x,
 	double **v,
@@ -307,7 +307,7 @@ EXPORT void assign_curve_field(
 	*n = i;
 }	/* end assign_curve_field */
 	
-EXPORT void assign_surf_field(
+extern void assign_surf_field(
 	SURFACE *surf,
 	double **x,
 	double **v,
@@ -341,7 +341,7 @@ EXPORT void assign_surf_field(
 	*n = i;
 }	/* end assign_surf_field */
 	
-EXPORT void compute_surf_accel1(
+extern void compute_surf_accel1(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	double **f,
@@ -382,7 +382,7 @@ EXPORT void compute_surf_accel1(
 	}
 }	/* end compute_surf_accel1 */
 
-EXPORT void compute_curve_accel1(
+extern void compute_curve_accel1(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -502,7 +502,7 @@ EXPORT void compute_curve_accel1(
 	*n = i;
 }	/* end compute_curve_accel1 */
 
-EXPORT void compute_node_accel1(
+extern void compute_node_accel1(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -689,7 +689,7 @@ EXPORT void compute_node_accel1(
 	(*n)++;
 }	/* end compute_node_accel1 */
 
-EXPORT void compute_center_of_mass_velo(
+extern void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)
 {
 	int i,j,n;
@@ -813,7 +813,7 @@ static void smooth_vel(
 	    vel[k] /= (double)np;
 }	/* end smooth_vel */
 
-EXPORT void compute_node_accel2(
+extern void compute_node_accel2(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -985,7 +985,7 @@ EXPORT void compute_node_accel2(
 	(*n)++;
 }	/* end compute_node_accel2 */
 
-EXPORT void compute_curve_accel2(
+extern void compute_curve_accel2(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -1102,7 +1102,7 @@ EXPORT void compute_curve_accel2(
 	*n = i;
 }	/* end compute_curve_accel2 */
 
-EXPORT void compute_surf_accel2(
+extern void compute_surf_accel2(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	double **f,
@@ -1186,7 +1186,7 @@ static void spring_force_at_point2(
 	}
 }	/* end spring_force_at_point2 */
 
-EXPORT void compute_node_accel3(
+extern void compute_node_accel3(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	double **f,
@@ -1359,7 +1359,7 @@ EXPORT void compute_node_accel3(
 	(*n)++;
 }	/* end compute_node_accel3 */
 
-EXPORT void compute_curve_accel3(
+extern void compute_curve_accel3(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **f,
@@ -1484,7 +1484,7 @@ static boolean curve_in_pointer_list(
 	return NO;
 }	/* end curve_in_pointer_list */
 
-EXPORT boolean is_registered_point(
+extern boolean is_registered_point(
 	SURFACE *surf,
 	POINT *p)
 {
@@ -1504,7 +1504,7 @@ EXPORT boolean is_registered_point(
 	return NO;
 }	/* end is_registered_point */
 
-EXPORT void propagate_surface(
+extern void propagate_surface(
         ELASTIC_SET *geom_set,
         SURFACE *surf,
         double **x,
@@ -1556,7 +1556,7 @@ EXPORT void propagate_surface(
         }
 }       /* propagate_surface */
 
-EXPORT void propagate_node(
+extern void propagate_node(
         ELASTIC_SET *geom_set,
 	NODE *node,
         double **x,
@@ -1583,7 +1583,7 @@ EXPORT void propagate_node(
         ++(*n);
 }	/* end propagate_node */
 
-EXPORT void propagate_curve(
+extern void propagate_curve(
         ELASTIC_SET *geom_set,
 	CURVE *curve,
         double **x,
@@ -1738,11 +1738,13 @@ static void setSurfVelocity(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed,max_nor_speed;
-	double *vel,*max_coords;
+	double *vel = nullptr;
+    double *max_coords = nullptr;
 	int gindex_max;
         int dim = front->rect_grid->dim;
 	long gindex;
 
+        nor_speed = 0.0;
         max_nor_speed = 0.0;
 	unsort_surf_point(surf);
 	hs = Hyper_surf(surf);
@@ -1790,12 +1792,13 @@ static void setCurveVelocity(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed,max_nor_speed;
-	double *vel;
-	double *crds_max;
+	double *vel = nullptr;
+	double *crds_max = nullptr;
 	long gindex;
 	int gindex_max;
 	int dim = FT_Dimension();
 
+        nor_speed = 0.0;
         max_nor_speed = 0.0;
 	for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -1850,7 +1853,7 @@ static void new_setNodeVelocity2d(
 	POINT *p;
 	STATE *sl,*sr;
         Front *front = geom_set->front;
-	double *vel;
+	double *vel = nullptr;
 	long gindex;
         double max_speed = 0.0;
 
@@ -1962,7 +1965,7 @@ static void new_setNodeVelocity3d(
         set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
 }	/* end setNodeVelocity3d */
 
-EXPORT void set_geomset_velocity(
+extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -1983,7 +1986,7 @@ EXPORT void set_geomset_velocity(
 
 }	/* end set_geomset_velocity */
 
-EXPORT void collectNodeExtra(
+extern void collectNodeExtra(
 	Front *front,
 	INTERFACE *host_intfc,
 	int owner_id)
@@ -2052,7 +2055,7 @@ EXPORT void collectNodeExtra(
 	}
 }	/* end collectNodeExtra */
 
-EXPORT void scatterAirfoilExtra(
+extern void scatterAirfoilExtra(
 	Front *front)
 {
 	NODE **n;
@@ -2118,7 +2121,7 @@ EXPORT void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
-EXPORT void setSpecialNodeForce(
+extern void setSpecialNodeForce(
 	Front *front,
 	double kl)
 {
@@ -2201,7 +2204,7 @@ EXPORT void setSpecialNodeForce(
 }	/* end setSpecialNodeForce */
 
 //Given string node, the function finds the corresponding canopy surface.
-EXPORT SURFACE *canopy_of_string_node(NODE *n)
+extern SURFACE *canopy_of_string_node(NODE *n)
 {
 	SURFACE *canopy,**s;
 	CURVE *c,**curves;
@@ -2243,7 +2246,7 @@ EXPORT SURFACE *canopy_of_string_node(NODE *n)
 	return (canopy_found == YES) ? canopy : NULL;
 }	/* end canopy_of_string_node */
 
-EXPORT void break_strings(Front *front)
+extern void break_strings(Front *front)
 {
         INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -2386,7 +2389,7 @@ static void break_string_curve(CURVE* c, double height)
 	    printf("Leaving split_string_curve()\n");
 }	/* end split_string_curve */
 
-EXPORT void record_break_strings_gindex(Front *front)
+extern void record_break_strings_gindex(Front *front)
 {
 	INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -2420,7 +2423,7 @@ EXPORT void record_break_strings_gindex(Front *front)
 	    printf("Leaving record_break_strings_gindex()\n");
 }	/* end record_break_strings_gindex */
 
-EXPORT void set_unequal_strings(Front *front)
+extern void set_unequal_strings(Front *front)
 {
 	INTERFACE *intfc = front->interf;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;

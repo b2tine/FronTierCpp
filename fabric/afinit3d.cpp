@@ -55,7 +55,7 @@ static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
 static void init3dCurves(Front*,double*,double*,int,AF_NODE_TYPE);
 
 
-EXPORT void initEllipticSurf(
+extern void initEllipticSurf(
 	FILE *infile,
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack)
@@ -228,7 +228,7 @@ EXPORT void initEllipticSurf(
     }
 }	/* end initElllipticSurf */
 
-EXPORT void initParabolicSurf(
+extern void initParabolicSurf(
 	FILE *infile,
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack)
@@ -346,7 +346,7 @@ EXPORT void initParabolicSurf(
 
 }	/* end initParabolicSurf */
 	
-EXPORT void initPlaneSurf(
+extern void initPlaneSurf(
 	FILE *infile,
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack)
@@ -405,7 +405,7 @@ EXPORT void initPlaneSurf(
 	}
 }	/* end initPlaneSurf */
 
-EXPORT void initAirbag(FILE *infile,
+extern void initAirbag(FILE *infile,
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack)
 {
@@ -2143,7 +2143,7 @@ static void initRectangularPlaneEdge(
                 (void) printf("%f\n",bdry_params.lower_mass[i]);
             
                 if (CursorAfterStringOpt(infile,
-                            "Enter EXPORTal force:"))
+                            "Enter external force:"))
                 {
                     fscanf(infile,"%lf %lf %lf",
                             &bdry_params.lower_force[i][0],
@@ -2521,7 +2521,7 @@ static void initWingsPlaneEdge(
 	}
 }	/* end initWingsPlaneEdge */
 
-EXPORT void initIsolated3dCurves(Front* front)
+extern void initIsolated3dCurves(Front* front)
 {
     double pt_s[3];
     double pt_e[3];

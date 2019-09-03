@@ -229,7 +229,7 @@ static void count_surf_neighbors(
 	*n = i;
 }	/* end count_surf_neighbors */
 
-EXPORT void set_spring_vertex_memory(
+extern void set_spring_vertex_memory(
 	SPRING_VERTEX *sv,
 	int size)
 {
@@ -245,12 +245,12 @@ EXPORT void set_spring_vertex_memory(
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
-	    for (j = 0; j < MAXD; ++j)	// reset EXPORTal acceleration
+	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
 		sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
 
-EXPORT void compute_spring_accel1(
+extern void compute_spring_accel1(
 	SPRING_VERTEX *sv,
 	double *f,
 	int dim)
@@ -282,7 +282,7 @@ EXPORT void compute_spring_accel1(
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
 /*
 #ifdef DAMPING_FORCE
-		f[k] += sv->lambda*v_rel[k]/sv->m;
+		f[k] += sv->lambda*v_rel[k]/sv->m; //This is artificial viscosity
 #endif
 */
 	    }
@@ -294,14 +294,18 @@ EXPORT void compute_spring_accel1(
         //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
+    {
 	    sv->f[k] = f[k]*sv->m;
-//#ifndef DAMPING_FORCE
+    }
+/*
+#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
 	}
-//#endif
-	for (k = 0; k < dim; ++k)
+#endif
+*/	
+    for (k = 0; k < dim; ++k)
 	{
 	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
 			+ sv->other_accel[k];
@@ -464,7 +468,7 @@ void generic_spring_solver(
 	    (void) printf("Leaving generic_spring_solver()\n");
 }	/* end generic_spring_solver */
 
-EXPORT void count_vertex_neighbors(
+extern void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv)
 {
@@ -488,7 +492,7 @@ EXPORT void count_vertex_neighbors(
 	    (void) printf("Leaving count_vertex_neighbors()\n");
 }	/* end  count_vertex_neighbors */
 
-EXPORT void link_point_set(
+extern void link_point_set(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *point_set_store)
@@ -591,7 +595,7 @@ static void link_node_point_set(
 	(*n)++;
 }	/* end link_node_point_set */
 
-EXPORT void set_vertex_neighbors(
+extern void set_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv,
 	GLOBAL_POINT **point_set)
@@ -619,7 +623,7 @@ EXPORT void set_vertex_neighbors(
 	    (void) printf("Leaving set_vertex_neighbors()\n");
 }	/* end  set_vertex_neighbors */
 
-EXPORT void set_node_spring_vertex(
+extern void set_node_spring_vertex(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	SPRING_VERTEX *sv,
@@ -870,7 +874,7 @@ EXPORT void set_node_spring_vertex(
 	(*n)++;
 }	/* end set_node_spring_vertex */
 
-EXPORT void set_curve_spring_vertex(
+extern void set_curve_spring_vertex(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	SPRING_VERTEX *sv,
@@ -1048,7 +1052,7 @@ EXPORT void set_curve_spring_vertex(
 	*n = i;
 }	/* end set_curve_spring_vertex */
 
-EXPORT void set_surf_spring_vertex(
+extern void set_surf_spring_vertex(
 	ELASTIC_SET *geom_set,
 	SURFACE *surf,
 	SPRING_VERTEX *sv,
@@ -1167,7 +1171,7 @@ static void put_point_value_to(
 	}
 }	/* end put_point_value_to */
 	
-EXPORT void get_point_set_from(
+extern void get_point_set_from(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -1190,7 +1194,7 @@ EXPORT void get_point_set_from(
 	    (void) printf("Leaving get_point_set_from()\n");
 }	/* end  get_point_set_from */
 
-EXPORT void put_point_set_to(
+extern void put_point_set_to(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
@@ -1300,7 +1304,7 @@ static void node_put_point_set_to(
 	put_point_value_to(p,point_set);
 }	/* end node_put_point_set_to */
 
-EXPORT void set_elastic_params(
+extern void set_elastic_params(
 	ELASTIC_SET *geom_set,
 	double fr_dt)
 {
@@ -1331,7 +1335,7 @@ EXPORT void set_elastic_params(
 	geom_set->dt_tol = dt_tol;
 }	/* end set_elastic_params */
 
-EXPORT void merge_global_point_set(
+extern void merge_global_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *gpoint_store,
 	int num_gpoint)
@@ -1344,7 +1348,7 @@ EXPORT void merge_global_point_set(
 	}
 }	/* end merge_global_point_set */
 
-EXPORT void assembleParachuteSet(
+extern void assembleParachuteSet(
 	INTERFACE *intfc,
 	ELASTIC_SET *geom_set)
 {
@@ -1471,7 +1475,7 @@ static void assembleParachuteSet3d(
 		geom_set->num_verts);
 }	/* end assembleParachuteSet */
 
-EXPORT void copy_from_client_point_set(
+extern void copy_from_client_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *client_point_set,
 	int client_size,
@@ -1504,7 +1508,7 @@ EXPORT void copy_from_client_point_set(
         }
 }	/* end copy_from_client_point_set */
 
-EXPORT void copy_to_client_point_set(
+extern void copy_to_client_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *client_point_set,
 	int client_size)
@@ -1580,7 +1584,7 @@ static void reorder_string_curves(NODE *node)
 	FT_FreeThese(2,string_curves,nb_points);
 }	/* end reorder_string_curves */
 
-EXPORT void set_vertex_impulse(
+extern void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)
 {

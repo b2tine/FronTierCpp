@@ -558,7 +558,7 @@ void printHyperSurfQuality(
 	}
 }	/* end printHyperSurfQuality */
 
-EXPORT void print_elastic_params(ELASTIC_SET geom_set)
+extern void print_elastic_params(ELASTIC_SET geom_set)
 {
 	double *spfr;
 	Front *fr = geom_set.front;
@@ -1142,7 +1142,7 @@ static void rotateParachuteSet(
 	}
 }	/* end rotateParachuteSet */
 
-EXPORT int numOfMonoHsbdry(
+extern int numOfMonoHsbdry(
 	INTERFACE *intfc)
 {
 	CURVE **c;
@@ -1154,7 +1154,7 @@ EXPORT int numOfMonoHsbdry(
 	return nc;
 }	/* end numOfMonoBdry */
 
-EXPORT int numOfGoreHsbdry(
+extern int numOfGoreHsbdry(
 	INTERFACE *intfc)
 {
 	CURVE **c;
@@ -1166,7 +1166,7 @@ EXPORT int numOfGoreHsbdry(
 	return nc;
 }	/* end numOfMonoBdry */
 
-EXPORT int numOfGoreNodes(
+extern int numOfGoreNodes(
 	INTERFACE *intfc)
 {
 	NODE **n;
@@ -1194,7 +1194,7 @@ EXPORT int numOfGoreNodes(
 	return num_gore_nodes;
 }	/* numOfGoreNodes */
 
-EXPORT int arrayOfMonoHsbdry(
+extern int arrayOfMonoHsbdry(
 	INTERFACE *intfc,
 	CURVE **mono_curves)
 {
@@ -1211,7 +1211,7 @@ EXPORT int arrayOfMonoHsbdry(
 	return nc;
 }	/* end arrayOfMonoBdry */
 
-EXPORT int arrayOfGoreHsbdry(
+extern int arrayOfGoreHsbdry(
 	INTERFACE *intfc,
 	CURVE **gore_curves)
 {
@@ -1228,7 +1228,7 @@ EXPORT int arrayOfGoreHsbdry(
 	return nc;
 }	/* end arrayOfGoreBdry */
 
-EXPORT int getGoreNodes(
+extern int getGoreNodes(
 	INTERFACE *intfc,
 	NODE **gore_nodes)
 {
@@ -1243,7 +1243,7 @@ EXPORT int getGoreNodes(
 	return num_nodes;
 }	/* getGoreNodes */
 
-EXPORT boolean is_bdry_node(
+extern boolean is_bdry_node(
 	NODE *node)
 {
 	CURVE **c;
@@ -1268,7 +1268,7 @@ EXPORT boolean is_bdry_node(
 	return NO;
 }	/* is_bdry_node */
 
-EXPORT boolean is_gore_node(
+extern boolean is_gore_node(
 	NODE *node)
 {
 	CURVE **c;
@@ -1289,7 +1289,7 @@ EXPORT boolean is_gore_node(
 	    return NO;
 }	/* end is_gore_node */
 
-EXPORT boolean is_load_node(NODE *n)
+extern boolean is_load_node(NODE *n)
 {
         AF_NODE_EXTRA *af_node_extra;
         if (n->extra == NULL) return NO;
@@ -1298,7 +1298,7 @@ EXPORT boolean is_load_node(NODE *n)
         return NO;
 }       /* end is_load_node */
 
-EXPORT boolean is_rg_string_node(NODE *n)
+extern boolean is_rg_string_node(NODE *n)
 {
         AF_NODE_EXTRA *af_node_extra;
         if (n->extra == NULL) return NO;
@@ -1307,7 +1307,7 @@ EXPORT boolean is_rg_string_node(NODE *n)
         return NO;
 }       /* end is_rg_string_node */
 
-EXPORT boolean goreInIntfc(
+extern boolean goreInIntfc(
 	INTERFACE *intfc)
 {
 	NODE **n;
@@ -1320,7 +1320,7 @@ EXPORT boolean goreInIntfc(
 	return NO;
 }	/* end goreInIntfc */
 
-EXPORT double springCharTimeStep(
+extern double springCharTimeStep(
 	Front *fr)
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
