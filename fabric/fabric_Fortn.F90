@@ -40,68 +40,63 @@ program fortran_driver
     end interface
 
 
-    integer :: i, j, k, l, m, n, argc, length, stat
     character(len=50) :: arg
-    character(kind=c_char) :: d = c_null_char
+    integer :: i, k, argc, length, stat
+    
+    character(kind=c_char,len=10) :: d = c_null_char
     character(kind=c_char,len=50) :: ifile = c_null_char
     character(kind=c_char,len=50) :: ofile = c_null_char
+    character(kind=c_char,len=50) :: rfile = c_null_char
+    character(kind=c_char,len=10) :: rstep = c_null_char
 
-    character(kind=c_char,len=256) :: args
+    character(kind=c_char,len=:), allocatable :: args
 
-    j = 0
+
     k = 0
-    l = 0
-    m = 0
-    n = 0
-
     argc = command_argument_count()
+
     do i = 1, argc
-        if (i == j .or. i == k .or. i == l) cycle
+        if (i == k) cycle
         call get_command_argument(i,arg,length=length,status=stat)
 
         select case(arg)
 
             case ("-d")
-                j = i+1
+                k = i+1
+                call get_command_argument(k,arg,length=length,status=stat)
+                read(unit=arg,fmt="(a)") d
+                d = "-d "//d//c_null_char
 
             case ("-i")
                 k = i+1
+                call get_command_argument(k,arg,length=length,status=stat)
+                read(unit=arg,fmt="(a)") ifile
+                ifile = "-i "//ifile//c_null_char
 
             case ("-o")
-                l = i+1
+                k = i+1
+                call get_command_argument(k,arg,length=length,status=stat)
+                read(unit=arg,fmt="(a)") ofile
+                ofile = "-o "//ofile//c_null_char
 
             case ("-r")
-                m = i+1
+                k = i+1
+                call get_command_argument(k,arg,length=length,status=stat)
+                read(unit=arg,fmt="(a)") rfile
+                rfile = "-r "//rfile//c_null_char
 
             case ("-t")
-                n = i+1
+                k = i+1
+                call get_command_argument(k,arg,length=length,status=stat)
+                read(unit=arg,fmt="(a)") rstep
+                rstep = "-t "//rstep//c_null_char
 
         end select
     end do
 
-    if (j /= 0) then
-        call get_command_argument(j,arg,length=length,status=stat)
-        read(unit=arg,fmt=*) d
-        d = d//c_null_char
-    end if
 
-    if (k /= 0) then
-        call get_command_argument(k,arg,length=length,status=stat)
-        read(unit=arg,fmt=*) ifile
-        ifile = ifile//c_null_char
-    end if
-
-    if (l /= 0) then
-        call get_command_argument(l,arg,length=length,status=stat)
-        read(unit=arg,fmt=*) ofile
-        ofile = ofile//c_null_char
-    end if
-
-
-    !TODO: read in restart options -r and -t
-
-
-    args = "-d "//d//" -i "//ifile//" -o "//ofile//c_null_char
+    args = d//" "//ifile//" "//ofile
+    args = args//" "//rfile//" "//rstep
     
 
     call smm_init(args)
