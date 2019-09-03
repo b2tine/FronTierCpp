@@ -1,5 +1,5 @@
-#ifndef AABB_H_
-#define AABB_H_
+#ifndef AABB_H
+#define AABB_H
 
 #include <vector>
 #include <set>
