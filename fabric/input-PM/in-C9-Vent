@@ -40,12 +40,15 @@ Enter start angle of chord: 6.263185
 Enter rotation angles: 0.0
 
 Start parameters for spring-mass system
+Enter yes to use total mass: no
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric point mass: 0.001
 Enter string spring constant: 5000
 Enter string damping constant: 0.0
 Enter string point mass: 0.01
+Enter payload: 100
+
 
 Start test velocity function set
 Available velocity functions are:
@@ -68,4 +71,10 @@ Print interval: 1
 Movie frame interval: 0.1
 CFL factor: 0.5
 
-Turn off test run
+////////////////////////////////////////
+
+Enter yes for debugging: yes
+Enter the debugging string: trace
+
+
+
