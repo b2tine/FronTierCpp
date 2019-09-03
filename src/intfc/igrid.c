@@ -1250,7 +1250,8 @@ EXPORT boolean rect_in_which(
     
     //TODO: THIS DOES NOT LOOK CORRECT, AND THIS FUNCTION IS
     //      LIKELY NOT BEHAVING AS INTENDED.
-	int SHIFT = 0.2; /* TOLERANCE */
+	//int SHIFT = 0.2; /* TOLERANCE */
+    double SHIFT = 0.2;
     //
 
 		/* Find Grid Block and points outside and moved in */

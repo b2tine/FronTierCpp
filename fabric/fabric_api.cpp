@@ -150,7 +150,9 @@ extern void SMM_InitModules()
             FT_SetGlobalIndex(front);
             fclose(infile);
         }
-        //static_mesh(front->interf) = YES;
+        //TODO: Does static_mesh need to be set to YES?
+        //      FT_SetGlobalIndex() above sets this to NO...
+            //static_mesh(front->interf) = YES;
 }       /* end SMM_InitModules */
 
 extern void SMM_InitPropagator()

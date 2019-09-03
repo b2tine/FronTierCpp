@@ -460,7 +460,7 @@ EXPORT	double	f_max_front_time_step(
 	for (i = 0; i < dim; ++i)
 	{
 	    if (hmin > h[i]) hmin = h[i];
-	    if (spfr[i] > MACH_EPS)
+	    if (spfr[i] > 0.0)
 	    {
 	        dt[i] = dim_fac*h[i]/spfr[i];
 	        if (max_dt > dt[i])
@@ -473,7 +473,7 @@ EXPORT	double	f_max_front_time_step(
 	    else
 	        dt[i] = HUGE;
 	}
-	if (spfr[dim] > MACH_EPS)
+	if (spfr[dim] > 0.0)
 	{
 	    dt[dim] = dim_fac*hmin/spfr[dim];
 	    if (max_dt > dt[dim])
