@@ -8,6 +8,7 @@
 function config_opportunity {
     export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
     export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
+    export CPPFLAGS="-I/home/ext.bballentine/FT_External/gmp-6.1.2/include -I/home/ext.bballentine/FT_External/mpfr-4.0.2/include"
     CONF="--with-mpi --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
 }
 
