@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+SOURCE="${BASH_SOURCE[0]}"
+SRCDIR="$(cd -P "$(dirname "$SOURCE")" > /dev/null 2>&1 && pwd)"
+
+
+#for multiple input files
+if [ "$#" -ne 1 ]; then
+    for var in "$@"; do
+        $SRCDIR/lsp $var
+    done
+    exit 0
+fi
+
+# for single file
+filename=$1
+dname="movie_index"
+if [ ! -d "$dname" ]; then
+    mkdir $dname
+fi
+
+i=0
+echo "creating index for $filename"
+for file in vtk.ts*; do
+    if [ ! -e "${file}/${filename}.vtk" ]; then
+        echo "      No $filename files"
+        exit 0
+    fi
+    i=$(expr $i + 1)
+    ln -P ${file}/${filename}.vtk ./${dname}/${filename}-${i}.vtk > /dev/null 2>&1
+done
+

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+SOURCE="${BASH_SOURCE[0]}"
+SRCDIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+
+$SRCDIR/lsp 2d-intfc 2d-curves VELOCITY PRESSURE
+
