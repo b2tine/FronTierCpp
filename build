@@ -1,28 +1,15 @@
 #!/bin/bash
 
-PETSC_ARCH="opt"
-WARNING="-w"
-
-for arg in $@ ; do
-    if [[ "$arg" == "-d" ]]; then
-        PETSC_ARCH="dbg"
-        OPT_FLAGS="-Og"
-        DEBUG_FLAGS="-gdwarf-2 -g3 -rdynamic"
-    elif [[ "$arg" == "-w" ]]; then
-        WARNING="-Wall"
-    elif [[ "$arg" == "-n" ]]; then
-        NOMAKE=1
-    elif [[ "$arg" == "-c" ]]; then
-        CLEAN=1
-    fi
-done
+###########################################################
+##                  Config Functions                     ##
+###########################################################
 
 
-
-export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
-export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
-
-
+function config_opportunity {
+    export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
+    export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
+    CONF="--with-mpi --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
+}
 
 function config_intruder {
     module load mvapich2-2.1/gcc-4.9.2
@@ -81,20 +68,42 @@ function config_defiant {
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-function config_kord {
-    export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
-    export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
-    CONF="--with-mpi --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
-}
 
-HOST=`uname -n`
+###########################################################
+##                   Start of Script                     ##
+###########################################################
+
+
+PETSC_ARCH="opt"
+OPT_FLAGS="-O2"
+
+DEBUG_FLAGS="-rdynamic"
+WARNING="-w"
+
+
+for arg in $@ ; do
+    if [[ "$arg" == "-d" ]]; then
+        PETSC_ARCH="dbg"
+        OPT_FLAGS="-Og"
+        DEBUG_FLAGS="-gdwarf-2 -g3 -rdynamic"
+    elif [[ "$arg" == "-w" ]]; then
+        WARNING="-Wall"
+    elif [[ "$arg" == "-n" ]]; then
+        NOMAKE=1
+    fi
+done
+
+
+export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
+export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
+
+
+HOST=$(uname -n)
+
 
 if [[ "$HOST" == intruder.cluster ]]; then
     echo "Machine recognized as intruder."
     config_intruder
-elif [[ "$HOST" == head ]]; then
-    echo "Machine recognized as opportunity."
-    config_kord
 elif [[ "$HOST" == omega.ams.stonybrook.edu ]]; then
     echo "Machine recognized as omega."
     config_omega
@@ -116,16 +125,14 @@ elif [[ "$HOST" == grad01 ]]; then
 elif [[ "$HOST" == jarret-MacBookAir ]]; then
 	echo "Jarret RECOGNIZED"
 	config_jarretlaptop
+elif [[ "$HOST" == head ]]; then
+    echo "Machine recognized as opportunity."
+    config_opportunity
 else 
     echo Unrecognized machine.
     exit 1
 fi
 
-
-
-if [[ -n "$CLEAN" ]]; then
-    make clean
-fi
 
 autoreconf -vif
 
