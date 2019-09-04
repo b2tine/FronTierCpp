@@ -183,6 +183,7 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
         AABB& abr = p->right->box;
         // get volume after inserting current node to 
         // left or right subtree
+        //TODO: relative change may be better than absolutes
         // double vdiff1 = abl.merge(n->box).volume()-abl.volume();
         // double vdiff2 = abr.merge(n->box).volume()-abr.volume();
          double vdiff1 = abl.merge(n->box).volume();
@@ -202,6 +203,8 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
     parentNode->updateAABB();
 }
 
+//This is tracking points, not triangles or bonds ...
+//sets AABBTree::count = 0
 void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList) {
     vhMap.clear();
     nodeSet.clear();
@@ -212,7 +215,6 @@ void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList) {
               ids.push_back(it->Point_of_hse(i)->global_index);
          vhMap.insert({ids, it});
     }
-    
 }
 
 void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList) {
@@ -263,8 +265,6 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
     Node* cur = root.get();
     std::stack<Node*> sn;
 
-    //TODO: is this count assignment to zero necessary?
-    //count = 0;
     while (cur || !sn.empty()) {
         while (cur) {
             sn.push(cur);
@@ -278,8 +278,6 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
                 isProximity = queryProximity(cur, collsn_solver);
             else
                 isCollsn = queryCollision(cur, collsn_solver);
-    //TODO: and this increment
-            //count++;
             nodeSet.insert(cur);
         }
         

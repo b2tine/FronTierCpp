@@ -111,6 +111,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     else
         printf("COLLISION DETECTION OFF\n");
 
+    /*
     //TMP
     POINT *pt = fr->gpoints[11622];
     STATE *sl = (STATE*)left_state(pt);
@@ -118,7 +119,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                             Coords(pt)[2]);
     printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
     printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-    //
+    */
 	
     geom_set.front = fr;
 

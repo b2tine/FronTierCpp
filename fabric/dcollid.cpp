@@ -303,7 +303,7 @@ void CollisionSolver::computeImpactZone()
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
 	turnOnImpZone();
-	//makeSet(hseList);
+	//makeSet(hseList); //this is done in AABBTree::updatePointMap()
     
     //int impzone_counter = 0
     //TODO: This can enter infinite loop
@@ -541,7 +541,9 @@ void CollisionSolver::detectCollision()
 	    updateAverageVelocity();
 	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
 		     << " pair of collision tris" << std::endl;
-	    if (++niter > MAX_ITER) break;
+	    
+        if (++niter > MAX_ITER)
+            break;
 	}
 
 	start_clock("computeImpactZone");
