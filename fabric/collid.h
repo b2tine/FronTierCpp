@@ -106,11 +106,10 @@ class AABBTree;
 //abstract base class for collision detection and handling
 class CollisionSolver {
 private:
-	//global parameters
 	std::unique_ptr<AABBTree> abt_proximity;
-        std::unique_ptr<AABBTree> abt_collision;
-        double volume;
-        double vol_diff {0.0};
+    std::unique_ptr<AABBTree> abt_collision;
+    double volume;
+    double vol_diff {0.0};
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;
@@ -133,8 +132,8 @@ private:
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();
 	void detectCollision();
-        void aabbProximity();
-        void aabbCollision();
+    void aabbProximity();
+    void aabbCollision();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
@@ -159,9 +158,8 @@ public:
 
 	CollisionSolver(int);
 	CollisionSolver();
-        // in case we are going to use move operations
-        CollisionSolver(CollisionSolver&&);
-        CollisionSolver& operator=(CollisionSolver&&);
+    CollisionSolver(CollisionSolver&&);
+    CollisionSolver& operator=(CollisionSolver&&);
 	static void setRoundingTolerance(double);
 	static double getRoundingTolerance();
 	static void setFabricThickness(double);
@@ -189,8 +187,9 @@ public:
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
-        POINT **gpoints;
-        TRI **gtris;
+
+    POINT **gpoints;
+    TRI **gtris;
 
 	//for debugging
 	static void printDebugVariable();

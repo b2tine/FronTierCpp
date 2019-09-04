@@ -100,8 +100,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     //      Will require, writing a proper destructor for CollisionSolver
     //      and AABB classes to prevent runaway memory leak.
     
-    static CollisionSolver* collision_solver = new CollisionSolver3d();
-    //CollisionSolver* collision_solver = new CollisionSolver3d();
+    //static CollisionSolver* collision_solver = new CollisionSolver3d();
+    CollisionSolver* collision_solver = new CollisionSolver3d();
 
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
@@ -352,7 +352,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
-	if(!debugging("collision_off"))
+	if (!debugging("collision_off"))
         {
             if (myid == owner_id)
             {
@@ -364,15 +364,15 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             setSpecialNodeForce(fr, geom_set.kl);
         }
 
+    delete collision_solver;
+    
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
 
 //TODO: Is this function as useless as it looks?
-//      Unless hypersurface elements need to be able
-//      to change their boundary (wave) type in the
-//      middle of a run, this can just be done during
-//      initialization and cached in the STATE.
+//      This can just be done during initialization
+//      and cached in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;

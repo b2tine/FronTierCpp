@@ -51,7 +51,13 @@ CollisionSolver::CollisionSolver(int dim)
 CollisionSolver::CollisionSolver() = default;
 CollisionSolver::CollisionSolver(CollisionSolver&& rhs) = default;
 CollisionSolver& CollisionSolver::operator=(CollisionSolver&& rhs) = default;
-CollisionSolver::~CollisionSolver() = default;
+
+CollisionSolver::~CollisionSolver()
+{
+    abt_proximity.reset();
+    abt_collision.reset();
+    clearHseList();
+}
 
 void CollisionSolver::clearHseList(){
 	for (unsigned i = 0; i < hseList.size(); ++i){
