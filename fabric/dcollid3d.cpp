@@ -711,8 +711,8 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	Cross3d(x21,x43,tmp);
 	if (Mag3d(tmp) < ROUND_EPS)
 	{
-        //TODO: This doesn't seem right ...
-	    return false; //ignore the case where two edges are parallel??
+        //TODO: is this working?
+	        //return false; //ignore the case where two edges are parallel??
 	    
         //degenerate cases to parallel line segments
         if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
@@ -781,7 +781,8 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	    addVec(Coords(pts[2]),v2,v2);
 	    minusVec(v2,v1,nor);
 	    nor_mag = Mag3d(nor);
-	    if (nor_mag < 1000 * MACH_EPS)
+	    //if (nor_mag < 1000 * MACH_EPS)
+	    if (nor_mag < ROUND_EPS)
 	    {
 		//v1 == v2;
                 //two edges intersect with each other
@@ -802,7 +803,7 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	nor_mag = Mag3d(nor);
 	if (nor_mag < MACH_EPS)
 	{
-            printf("Normal vector is NaN:\t");
+            printf("Normal vector is degenerate:\t");
             printf("a = %f, b = %f\n",a,b);
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i){
@@ -848,8 +849,14 @@ static bool PointToTri(POINT** pts, double h, double root)
 	Pts2Vec(pts[3],pts[2],x43);
 	
 	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
-	if (fabs(det) < 1000 * MACH_EPS){ // change ROUND_EPS to 1000*MACH_EPS
-	    return false; // ignore cases where tri reduces to a line or point
+	//if (fabs(det) < 1000 * MACH_EPS)
+	if (fabs(det) < ROUND_EPS)
+    { // change ROUND_EPS to 1000*MACH_EPS
+	     // ignore cases where tri reduces to a line or point
+         
+        //TODO: let's not ignore it
+        //return false;
+
 	    /*consider the case when det = 0*/
 	    /*x13 and x23 are collinear*/
 	    POINT* tmp_pts[3]; 
@@ -896,7 +903,8 @@ static bool PointToTri(POINT** pts, double h, double root)
 		    nor[0] = nor[1] = nor[2] = 1.0;
 	    }
 	}
-	else{
+	else
+    {
 	    /*det != 0*/
 	    /*x13 and x23 are non-collinear*/
 	    Cross3d(x13, x23, nor);
@@ -954,6 +962,8 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    clean_up(ERROR);
 	}
 
+    //TODO: characteristic length can also be squareroot
+    //      of the triangle's area.
 	double c_len = 0;	
 	for (int i = 0; i < 3; ++i){
 	    double tmp_dist = distance_between_positions(Coords(pts[i]),
@@ -965,10 +975,13 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    return false;
 	for (int i = 0; i < 3; ++i)
 	{
-	    double eps = CollisionSolver3d::getRoundingTolerance(); 
-	    //test, use eps instead of h/c_len
-	    if (w[i] > 1+eps || w[i] < -eps) 
-		return false;
+        //TODO: This needs to take fabric thickness, h, into account.
+        double eps = h/c_len;
+        assert(c_len > MACH_EPS);
+	        //double eps = CollisionSolver3d::getRoundingTolerance(); 
+	                    //test, use eps instead of h/c_len  -- NO
+	    if (w[i] > 1.0+eps || w[i] < -eps)
+            return false;
 	}
 	PointToTriImpulse(pts, nor, w, dist,root);
 	return true;
@@ -998,7 +1011,7 @@ static void PointToTriImpulse(POINT** pts, double* nor,
 	lambda = CollisionSolver::getFrictionConstant(); 
 	h      = CollisionSolver::getFabricThickness();
 	cr     = CollisionSolver::getRestitutionCoef();
-	dist   = h - dist;
+	dist   = h - dist; //overlap
 	double rigid_impulse[2] = {0.0};
 
 	/* apply impulses to the average (linear trajectory) velocity */
@@ -1067,7 +1080,9 @@ static void PointToTriImpulse(POINT** pts, double* nor,
 	    }
 	    else
 	    {
-		double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+            //FOUND TYPO HERE -- fixed
+		double tmp = - std::min(dt*k*dist, m* (0.1*dist/dt - vn));
+		//double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
 		impulse += tmp;
 		rigid_impulse[0] += tmp;
 		rigid_impulse[1] += tmp;
@@ -1263,7 +1278,7 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 
 //uncomment the following for the debugging purpose
 if (debugging("CollisionImpulse"))
-if (fabs(m_impulse) > 0){
+if (fabs(m_impulse) > 0.0){
 	printf("real EdgeToEdge collision\n");
 	printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
 	printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
