@@ -258,8 +258,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->recordOriginalPosition();
             
                 //TODO: Is friction component working?
-                collision_solver->setFrictionConstant(af_params->lambda_s);
-                //collision_solver->setFrictionConstant(0.0);
+                collision_solver->setFrictionConstant(0.0);
+                //collision_solver->setFrictionConstant(af_params->lambda_s);
             
                 collision_solver->setSpringConstant(af_params->ks); 
                 collision_solver->setPointMass(af_params->m_s);
