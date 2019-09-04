@@ -1,5 +1,6 @@
 #include "AABB.h"
 #include <stack>
+#include <queue>
 #include <fstream>
 
 enum class MotionState {STATIC, MOVING};
@@ -62,8 +63,8 @@ void AABB::updateAABBInfo(double dt) {
         }
     else 
         for (int i = 0; i < 3; i++) {
-             lowerbound[i] = hse->min_moving_coord(i, dt)-1e-6;
-             upperbound[i] = hse->max_moving_coord(i, dt)+1e-6;
+             lowerbound[i] = hse->min_moving_coord(i, dt) - 0.001*tol;//1e-6;
+             upperbound[i] = hse->max_moving_coord(i, dt) + 0.001*tol;//1e-6;
         }
 }
 
@@ -124,11 +125,45 @@ Node* Node::getSibling() const {
         parent->left.get();
 }
 
+Node::~Node()
+{
+    left.reset();
+    right.reset();
+    parent.reset();
+    data.reset();
+}
+
 AABBTree::AABBTree(int i) {
     if (i == 0)
         type = MotionState::STATIC;
     else 
         type = MotionState::MOVING;
+}
+
+AABBTree::~AABB()
+{
+    deleteTree();
+}
+
+AABB::deleteTree()
+{
+    Node* r = root.get();
+    std::queue<Node*> q;
+
+    q.push(r);
+    while (!q.empty())
+    {
+        Node* node = q.front();
+        q.pop();
+
+        if (node->left != nullptr)
+            q.push(node->left);
+        
+        if (node->right != nullptr)
+            q.push(node->right);
+
+        node.reset();
+    }
 }
 
 void AABBTree::addAABB(AABB* ab) {

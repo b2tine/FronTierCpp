@@ -44,6 +44,7 @@ public:
     AABB& operator=(const AABB&) = default;
     AABB(AABB&&) = default;
     AABB& operator=(AABB&&) = default;
+    ~AABB() = default
     // merge this with anther AABB to get a
     // merged AABB and construct the corresponding AABB tree
     AABB merge(const AABB&) const;
@@ -79,6 +80,7 @@ public:
     bool isCollid(Node*);
     void updateAABB();
     Node* getSibling() const;
+    ~Node();
 };
 
 class AABBTree {
@@ -105,6 +107,8 @@ public:
     MotionState type;
     double tolerance;
     AABBTree(int);
+    ~AABBTree();
+    void deleteTree();
     // don't want tree to be copied or moved
     AABBTree(const AABBTree&) = delete;
     AABBTree& operator=(const AABBTree&) = delete;
