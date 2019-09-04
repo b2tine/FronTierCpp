@@ -36,7 +36,7 @@ public:
     // constructor
     AABB() {}
     AABB(double, CD_HSE*, MotionState);
-    AABB(CD_HSE*, MotionState, double);
+    AABB(double, CD_HSE*, MotionState, double);
     AABB(const CPoint&, const CPoint&);
     // explicit saying that we need a default version of 
     // copy and move operations 

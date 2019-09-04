@@ -617,7 +617,7 @@ bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h){
 bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
 	POINT* pts[4];
 	STATE* sl[2];
-	bool status = false;
+	//bool status = false;
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
@@ -651,8 +651,10 @@ bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
                 pts[3] == pts[2])
                 continue;
 	    if (PointToTri(pts,h))
-		status = true;
+            return true;
+		//status = true;
 	}
+
 	for (int i = 0; i < 3; ++i)
 	{
 	    pts[0] = Point_of_tri(tri1)[i];
@@ -667,10 +669,11 @@ bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
                     continue;
 
 	  	if (EdgeToEdge(pts, h))
-		    status = true;
+            return true;
+		    //status = true;
 	    }  
 	}
-	return status;
+	return false;//status;
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -712,7 +715,7 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	if (Mag3d(tmp) < ROUND_EPS)
 	{
         //TODO: is this working?
-	        //return false; //ignore the case where two edges are parallel??
+	     return false; //ignore the case where two edges are parallel??
 	    
         //degenerate cases to parallel line segments
         if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
@@ -781,8 +784,8 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	    addVec(Coords(pts[2]),v2,v2);
 	    minusVec(v2,v1,nor);
 	    nor_mag = Mag3d(nor);
-	    //if (nor_mag < 1000 * MACH_EPS)
-	    if (nor_mag < ROUND_EPS)
+	    //if (nor_mag < ROUND_EPS)
+	    if (nor_mag < 1000 * MACH_EPS)
 	    {
 		//v1 == v2;
                 //two edges intersect with each other
@@ -843,19 +846,19 @@ static bool PointToTri(POINT** pts, double h, double root)
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3];
 	double nor[3] = {0.0}, nor_mag = 0.0, dist, det;
+    double tri_area;
 
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
 	Pts2Vec(pts[3],pts[2],x43);
 	
 	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
-	//if (fabs(det) < 1000 * MACH_EPS)
-	if (fabs(det) < ROUND_EPS)
+	if (fabs(det) < 1000 * MACH_EPS)
     { // change ROUND_EPS to 1000*MACH_EPS
 	     // ignore cases where tri reduces to a line or point
          
         //TODO: let's not ignore it
-        //return false;
+        return false;
 
 	    /*consider the case when det = 0*/
 	    /*x13 and x23 are collinear*/
@@ -922,14 +925,18 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    dist = Dot3d(x43_old, nor);
 	    for (int i = 0; i < 3; ++i)
 	        nor[i] /= nor_mag * ((dist >= 0)? 1.0:-1.0);
-	    dist = fabs(Dot3d(x43, nor));
-
+	
+        dist = fabs(Dot3d(x43, nor));
+        if (dist > h)
+	        return false;
+	
 	    w[0] = (Dot3d(x13,x43)*Dot3d(x23,x23)-Dot3d(x23,x43)*Dot3d(x13,x23))/det;
 	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
 	    w[2] = 1 - w[0] - w[1];
 	    
 	}
-	/* test for corner cases */
+	
+    /* test for corner cases */
 	if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS 
 	    || fabs(w[2]) < ROUND_EPS)
 	{
@@ -962,25 +969,22 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    clean_up(ERROR);
 	}
 
-    //TODO: characteristic length can also be squareroot
-    //      of the triangle's area.
+    /*
 	double c_len = 0;	
 	for (int i = 0; i < 3; ++i){
 	    double tmp_dist = distance_between_positions(Coords(pts[i]),
                                 Coords(pts[(i+1)%3]),3);
 	    if (tmp_dist > c_len) 
 		c_len = tmp_dist;
-	}
-	if (dist > h)
-	    return false;
-	for (int i = 0; i < 3; ++i)
+	}*/
+
+    double eps = h/sqrt(0.5*nor_mag);
+    for (int i = 0; i < 3; ++i)
 	{
         //TODO: This needs to take fabric thickness, h, into account.
-        double eps = h/c_len;
-        assert(c_len > MACH_EPS);
 	        //double eps = CollisionSolver3d::getRoundingTolerance(); 
 	                    //test, use eps instead of h/c_len  -- NO
-	    if (w[i] > 1.0+eps || w[i] < -eps)
+	    if (w[i] > 1.0 + eps || w[i] < -1.0*eps)
             return false;
 	}
 	PointToTriImpulse(pts, nor, w, dist,root);
@@ -1080,8 +1084,7 @@ static void PointToTriImpulse(POINT** pts, double* nor,
 	    }
 	    else
 	    {
-            //FOUND TYPO HERE -- fixed
-		double tmp = - std::min(dt*k*dist, m* (0.1*dist/dt - vn));
+		double tmp = - std::min(dt*k*dist, m*(0.1*dist/dt - vn));
 		//double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
 		impulse += tmp;
 		rigid_impulse[0] += tmp;

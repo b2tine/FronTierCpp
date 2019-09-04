@@ -16,13 +16,13 @@ AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h),
          indices.push_back(h->Point_of_hse(i)->global_index);
 }
 // for collision detection
-AABB::AABB(CD_HSE* h, MotionState type, double t) : hse(h), dt(t), 
+AABB::AABB(double t, CD_HSE* h, MotionState type, double Dt) : tol(t), hse(h), dt(Dt), 
         abType(type), lowerbound(3), upperbound(3) {   
     if (type != MotionState::MOVING)
         throw std::runtime_error("Collision AABB tree must has MOVING type!");
     for (int i = 0; i < 3; i++) {
-         lowerbound[i] = h->min_moving_coord(i, dt)-1e-6;
-         upperbound[i] = h->max_moving_coord(i, dt)+1e-6;
+         lowerbound[i] = h->min_moving_coord(i, dt) - 0.001*tol;//1e-6;
+         upperbound[i] = h->max_moving_coord(i, dt) + 0.001*tol;//1e-6;
     }
     for (int i = 0; i < h->num_pts(); i++) 
          indices.push_back(h->Point_of_hse(i)->global_index);
