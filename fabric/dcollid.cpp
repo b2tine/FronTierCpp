@@ -183,6 +183,7 @@ void CollisionSolver::computeAverageVelocity()
     double* max_vel = nullptr;
     POINT* max_pt=nullptr;
 
+    /*
     printf("Test dt = %f  ROUND_EPS = %f\n",dt,ROUND_EPS);
     pt = gpoints[11622];
     sl = (STATE*)left_state(pt); 
@@ -190,6 +191,10 @@ void CollisionSolver::computeAverageVelocity()
                                 Coords(pt)[2]);
     printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
     printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+    */
+
+    printf("Test computeAverageVelocity() hseList.size() = %d\n",
+                    hseList.size());
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -227,6 +232,7 @@ void CollisionSolver::computeAverageVelocity()
                     max_speed = Mag3d(sl->avgVel);
                     max_vel = sl->avgVel;
                     max_pt = pt;
+                    /*
                     if (Gindex(pt) == 11622)
                     {
                         printf("\n\nmax_speed = %f  max_vel = %f %f %f\n",
@@ -235,6 +241,7 @@ void CollisionSolver::computeAverageVelocity()
                         printf("Coords(p) = %f %f %f\n\n\n",Coords(pt)[0],
                                     Coords(pt)[1],Coords(pt)[2]);
                     }
+                    */
                 }
             }
         
@@ -260,6 +267,7 @@ void CollisionSolver::computeAverageVelocity()
 	        printf("x_new = [%f %f %f]\n",
                     Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
 	        printf("dt = %f\n",dt);
+            printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
 	
@@ -284,36 +292,43 @@ void CollisionSolver::computeAverageVelocity()
 void CollisionSolver::turnOffImpZone(){s_detImpZone = false;}
 void CollisionSolver::turnOnImpZone(){s_detImpZone = true;}
 bool CollisionSolver::getImpZoneStatus(){ return s_detImpZone;}
+
 //this function is needed if collision still happens
 //after several iterations;
 void CollisionSolver::computeImpactZone()
 {
 	bool is_collision = true;
-        int numZones = 0;
+    int numZones = 0;
 	int niter = 0;
 
-        std::cout<<"Starting compute Impact Zone: "<<std::endl;
+    std::cout<<"Starting compute Impact Zone: "<<std::endl;
+
 	turnOnImpZone();
 	//makeSet(hseList);
-        while(is_collision){
-            is_collision = false;
+    
+    //int impzone_counter = 0
+    //TODO: This can enter infinite loop
+    while(is_collision)
+    {
+        //if (++impzone_counter == 20) clean_up(ERROR);
+        is_collision = false;
 
-	    //start UF alogrithm
-	    //merge four pts if collision happens
+        //start UF alogrithm
+        //merge four pts if collision happens
 
-	    start_clock("dynamic_AABB_collision");
+        start_clock("dynamic_AABB_collision");
             aabbCollision();
             is_collision = abt_collision->getCollsnState();
-	    stop_clock("dynamic_AABB_collision");
- 
+        stop_clock("dynamic_AABB_collision");
+
             updateAverageVelocity();
 
-	    updateImpactZoneVelocity(numZones);
+        updateImpactZoneVelocity(numZones);
             std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
                       << " pair of collision tris" << std::endl;
-	    std::cout <<"     "<< numZones
-		      <<" zones of impact" << std::endl;
-        }
+        std::cout <<"     "<< numZones
+              <<" zones of impact" << std::endl;
+    }
 	turnOffImpZone();
 	return;
 }
@@ -423,12 +438,11 @@ void CollisionSolver::resolveCollision()
 // function to perform AABB tree building, updating structure
 // and query for proximity detection process
 void CollisionSolver::aabbProximity() {
-    if (abt_proximity == nullptr) {
+    if (!abt_proximity) {
         double pre_tol = CollisionSolver3d::getFabricThickness();
         abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
-        //abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
+             AABB* ab = new AABB(pre_tol, *it, abt_proximity->getType());
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
@@ -448,23 +462,9 @@ void CollisionSolver::aabbProximity() {
         volume = abt_proximity->getVolume();
     }
     */
-    // if first time, build the tree and AABB elements and node
-    /*
-    if (abt_proximity == nullptr) {
-        double pre_tol = CollisionSolver3d::getFabricThickness();
-
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
-             abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    */
     else {
         abt_proximity->updateAABBTree(hseList);
-        // if current tree structure don't fit for the current 
+        // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
         if (fabs(abt_proximity->getVolume() - volume) > vol_diff * volume) {
             abt_proximity->updateTreeStructure();
@@ -472,66 +472,29 @@ void CollisionSolver::aabbProximity() {
             build_count_pre++;
             std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
-        
-    }
-    
-    // query for collision detection of AABB elements
-    abt_proximity->query(this);
-}
-
-
-/*
-// function to perform AABB tree building, updating structure
-// and query for proximity detection process
-void CollisionSolver::aabbProximity() {
-    // if first time, build the tree and AABB elements and node
-    if (!abt_proximity.get()) {
-        abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB(*it, abt_proximity->getType());
-             abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    else {
-        abt_proximity->updateAABBTree(hseList);
-        // TODO: review effects of the decision described in
-        // the comment below and the following if statement.
-        
-        // if current tree structure doesn't fit for the current 
-        // surface, update structure of the tree
-        
-        if (abs((abt_proximity->getVolume() - volume)) > volDiffCoef*volume)
-        {
-            abt_proximity->updateTreeStructure();
-            volume = abt_proximity->getVolume();
-        }
     }
     // query for collision detection of AABB elements
     abt_proximity->query(this);
 }
-*/
 
 void CollisionSolver::detectProximity()
 {
-        start_clock("dynamic_AABB_proximity");
-        aabbProximity();
-        stop_clock("dynamic_AABB_proximity");
+    start_clock("dynamic_AABB_proximity");
+    aabbProximity();
+    stop_clock("dynamic_AABB_proximity");
 
 	updateAverageVelocity();
 	if (debugging("collision"))
-	std::cout << abt_proximity->getCount() 
-                  << " pair of proximity" << std::endl;
+        std::cout << abt_proximity->getCount()
+            << " pair of proximity" << std::endl;
 }
 
 // AABB tree for collision detection process
 void CollisionSolver::aabbCollision() {
-    if (abt_collision == nullptr) {
+    if (!abt_collision) {
         abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
-        //abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
+             AABB* ab = new AABB(*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
@@ -562,31 +525,40 @@ void CollisionSolver::aabbCollision() {
     abt_collision->query(this);
 }
 
-/*
-// AABB tree for collision detection process
-void CollisionSolver::aabbCollision() {
-    if (!abt_collision.get()) {
-        abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB(*it, abt_collision->getType(), s_dt);
-             abt_collision->addAABB(ab);
-        }
-        abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
-    }
-    else {
-        abt_collision->setTimeStep(s_dt);
-        abt_collision->updateAABBTree(hseList);
-        
-        if ((abt_collision->getVolume() - volume) > volDiffCoef*volume) {
-            abt_collision->updateTreeStructure();
-            volume = abt_collision->getVolume();
-        }
-    }
-    abt_collision->query(this);
-}
-*/
+void CollisionSolver::detectCollision()
+{
+	bool is_collision = true; 
+	const int MAX_ITER = 8;
+	int niter = 1;
 
+	std::cout<<"Starting collision handling: "<<std::endl;
+	//record if has an actual collision
+	//this is useful for adpative dt
+	int cd_count = 0;
+	setHasCollision(false);
+	//
+	while(is_collision){
+	    is_collision = false;
+	    
+        start_clock("dynamic_AABB_collision");
+	    aabbCollision();
+            is_collision = abt_collision->getCollsnState();
+	    stop_clock("dynamic_AABB_collision");
+
+	    if (cd_count++ == 0 && is_collision)
+                setHasCollision(true);
+
+	    updateAverageVelocity();
+	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+		     << " pair of collision tris" << std::endl;
+	    if (++niter > MAX_ITER) break;
+	}
+
+	start_clock("computeImpactZone");
+	if (is_collision) 
+	    computeImpactZone();
+	stop_clock("computeImpactZone");
+}
 
 /*
  * TODO: Use this one after bugs fixed.
@@ -647,41 +619,6 @@ void CollisionSolver::detectCollision()
 	stop_clock("computeImpactZone");
 }
 */
-
-void CollisionSolver::detectCollision()
-{
-	bool is_collision = true; 
-	const int MAX_ITER = 8;
-	int niter = 1;
-
-	std::cout<<"Starting collision handling: "<<std::endl;
-	//record if has an actual collision
-	//this is useful for adpative dt
-	int cd_count = 0;
-	setHasCollision(false);
-	//
-	while(is_collision){
-	    is_collision = false;
-	    
-        start_clock("dynamic_AABB_collision");
-	    aabbCollision();
-            is_collision = abt_collision->getCollsnState();
-	    stop_clock("dynamic_AABB_collision");
-
-	    if (cd_count++ == 0 && is_collision)
-                setHasCollision(true);
-
-	    updateAverageVelocity();
-	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
-		     << " pair of collision tris" << std::endl;
-	    if (++niter > MAX_ITER) break;
-	}
-
-	start_clock("computeImpactZone");
-	if (is_collision) 
-	    computeImpactZone();
-	stop_clock("computeImpactZone");
-}
 
 //helper function to detect a collision between 
 //a moving point and a moving triangle
@@ -1096,6 +1033,20 @@ bool CollisionSolver::isProximity(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
+        /*
+            if (Gindex(Point_of_tri(t1)[0]) == 18414 &&
+                Gindex(Point_of_tri(t1)[1]) == 18415 &&
+                Gindex(Point_of_tri(t1)[2]) == 12191 &&
+                Gindex(Point_of_tri(t2)[0]) == 17741 &&
+                Gindex(Point_of_tri(t2)[1]) == 10421 &&
+                Gindex(Point_of_tri(t2)[2]) == 19335)
+            {
+                printf("t1:\n");
+                print_tri_coords(t1);
+                printf("t2:\n");
+                print_tri_coords(t2);
+            }
+        */
 	    return TriToTri(t1,t2,h);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 

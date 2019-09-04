@@ -138,6 +138,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	//compute angular velocity w: I*w = L;
 	double w[3], mag_w = 0;
 
+    /*
     for (int i = 0; i < 3; ++i)
     {
         memcpy(tmp,I,9*sizeof(double));
@@ -149,6 +150,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
         else
             w[i] = myDet3d(tmp)/myDet3d(I);
     }
+    */
 
     if (myDet3d(I) < ROUND_EPS) {
         //I is non-invertible, calculate pseudoinverse with SVD
