@@ -203,7 +203,9 @@ void CollisionSolver::computeAverageVelocity()
             sl = (STATE*)left_state(pt); 
             for (int j = 0; j < 3; ++j)
     	    {
-                if (dt > ROUND_EPS)
+                //TODO: us dt > DT = 0.001 --- ROUND_EPS = 1.0e-10
+                //if (dt > ROUND_EPS)
+                if (dt > DT)
                 {
                     sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
                     sl->avgVel_old[j] = sl->avgVel[j];
@@ -515,7 +517,6 @@ void CollisionSolver::aabbCollision() {
     abt_collision->query(this);
 }
 
-/*
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
@@ -552,8 +553,8 @@ void CollisionSolver::detectCollision()
 	    computeImpactZone();
 	stop_clock("computeImpactZone");
 }
-*/
 
+/*
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
@@ -610,6 +611,7 @@ void CollisionSolver::detectCollision()
 	    computeImpactZone();
 	stop_clock("computeImpactZone");
 }
+*/
 
 //helper function to detect a collision between 
 //a moving point and a moving triangle
