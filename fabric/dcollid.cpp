@@ -35,11 +35,11 @@ double CollisionSolver::s_k = 1000;
 double CollisionSolver::s_m = 0.01;
 double CollisionSolver::s_lambda = 0.02;
 double CollisionSolver::s_cr = 0.0;
-int traitsForProximity::m_dim = 3;
-int traitsForCollision::m_dim = 3;
-double traitsForProximity::s_eps = EPS;	
-double traitsForCollision::s_eps = EPS;
-double traitsForCollision::s_dt = DT;
+//int traitsForProximity::m_dim = 3;
+//int traitsForCollision::m_dim = 3;
+//double traitsForProximity::s_eps = EPS;	
+//double traitsForCollision::s_eps = EPS;
+//double traitsForCollision::s_dt = DT;
 
 //debugging variables
 int CollisionSolver::moving_edg_to_edg = 0;
@@ -69,8 +69,8 @@ void CollisionSolver::clearHseList(){
 //set rounding tolerance
 void CollisionSolver::setRoundingTolerance(double neweps){
 	s_eps = neweps;
-	traitsForProximity::s_eps = neweps;	
-	traitsForCollision::s_eps = neweps;
+	//traitsForProximity::s_eps = neweps;	
+	//traitsForCollision::s_eps = neweps;
 }
 double CollisionSolver::getRoundingTolerance(){return s_eps;}
 
@@ -82,7 +82,7 @@ double CollisionSolver::setVolumeDiff(double vd) { vol_diff = vd; }
 //this function should be called at every time step
 void CollisionSolver::setTimeStepSize(double new_dt){	
 	s_dt = new_dt;
-	traitsForCollision::s_dt = new_dt;
+	//traitsForCollision::s_dt = new_dt;
 }
 double CollisionSolver::getTimeStepSize(){return s_dt;}
 
@@ -365,17 +365,20 @@ void CollisionSolver::updateImpactZoneVelocity(int &nZones)
 	nZones = numZones;
 }
 
+/*
 void CollisionSolver::setTraitsDimension(){
 	traitsForProximity::m_dim = m_dim;
 	traitsForCollision::m_dim = m_dim;
 }
+*/
+
 //resolve collision in the input tris list
 void CollisionSolver::resolveCollision()
 {
 	//catch floating point exception: nan/inf
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
 
-	setTraitsDimension();
+	//setTraitsDimension();
 
 	start_clock("computeAverageVelocity");
 	computeAverageVelocity();

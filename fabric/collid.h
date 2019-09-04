@@ -2,7 +2,7 @@
 #define COLLID_H
 
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/box_intersection_d.h>
+//#include <CGAL/box_intersection_d.h>
 
 #include <FronTier.h>
 #include "state.h"
@@ -16,10 +16,12 @@
 #undef isnan
 #endif
 
+//TODO: How where these determined?
 #define DEBUGGING false
 const double ROUND_EPS = 1e-10;
 const double EPS = 1e-6;
 const double DT = 0.001;
+
 /*
 user-defined state should include the following
 struct UF{
@@ -99,6 +101,8 @@ public:
 	int num_pts()const {return 1;}
 };
 
+/*
+ * TODO: Remove these traits structures
 //box traits structure for proximity detection 
 struct traitsForProximity{
 	typedef double 		NT;
@@ -129,6 +133,7 @@ struct traitsForCollision{
 		{return b->max_moving_coord(d,s_dt)+s_eps;}
 	static std::ptrdiff_t id(Box_parameter b) { return (std::ptrdiff_t)(b);}
 };
+*/
 
 // Pimpl(Pointer to Implementation) idiom
 // declare AABBTree but not defined yet
@@ -162,7 +167,7 @@ private:
 	void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
-	void setTraitsDimension();
+	//void setTraitsDimension();
 	void detectProximity();
 	void detectCollision();
         void aabbProximity();
