@@ -35,11 +35,6 @@ double CollisionSolver::s_k = 1000;
 double CollisionSolver::s_m = 0.01;
 double CollisionSolver::s_lambda = 0.02;
 double CollisionSolver::s_cr = 0.0;
-//int traitsForProximity::m_dim = 3;
-//int traitsForCollision::m_dim = 3;
-//double traitsForProximity::s_eps = EPS;	
-//double traitsForCollision::s_eps = EPS;
-//double traitsForCollision::s_dt = DT;
 
 //debugging variables
 int CollisionSolver::moving_edg_to_edg = 0;
@@ -67,11 +62,11 @@ void CollisionSolver::clearHseList(){
 	hseList.clear();
 }
 //set rounding tolerance
-void CollisionSolver::setRoundingTolerance(double neweps){
+void CollisionSolver::setRoundingTolerance(double neweps)
+{
 	s_eps = neweps;
-	//traitsForProximity::s_eps = neweps;	
-	//traitsForCollision::s_eps = neweps;
 }
+
 double CollisionSolver::getRoundingTolerance(){return s_eps;}
 
 //set fabric thickness
@@ -80,10 +75,11 @@ double CollisionSolver::getFabricThickness(){return s_thickness;}
 double CollisionSolver::setVolumeDiff(double vd) { vol_diff = vd; }
 
 //this function should be called at every time step
-void CollisionSolver::setTimeStepSize(double new_dt){	
-	s_dt = new_dt;
-	//traitsForCollision::s_dt = new_dt;
+void CollisionSolver::setTimeStepSize(double new_dt)
+{
+    s_dt = new_dt;
 }
+
 double CollisionSolver::getTimeStepSize(){return s_dt;}
 
 //set spring constant
@@ -179,7 +175,7 @@ void CollisionSolver::computeAverageVelocity()
     POINT* pt;
     STATE* sl; 
     double dt = getTimeStepSize();
-    double max_speed = 0;
+    double max_speed = 0.0;
     double* max_vel = nullptr;
     POINT* max_pt=nullptr;
 
@@ -193,8 +189,11 @@ void CollisionSolver::computeAverageVelocity()
     printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
     */
 
+    /*
     printf("Test computeAverageVelocity() hseList.size() = %d\n",
                     hseList.size());
+    */
+
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -380,20 +379,11 @@ void CollisionSolver::updateImpactZoneVelocity(int &nZones)
 	nZones = numZones;
 }
 
-/*
-void CollisionSolver::setTraitsDimension(){
-	traitsForProximity::m_dim = m_dim;
-	traitsForCollision::m_dim = m_dim;
-}
-*/
-
 //resolve collision in the input tris list
 void CollisionSolver::resolveCollision()
 {
 	//catch floating point exception: nan/inf
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
-
-	//setTraitsDimension();
 
 	start_clock("computeAverageVelocity");
 	computeAverageVelocity();
@@ -630,8 +620,10 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 	    {
 	        if ((!first) && (isMovableRigidBody(pts[i]) || 
 				 isMovableRigidBody(pts[j])))
-		    continue;
-		mergePoint(pts[i],pts[j]); 
+            {
+                continue;
+            }
+            mergePoint(pts[i],pts[j]); 
 	    }
 	}
 }

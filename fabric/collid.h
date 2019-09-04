@@ -2,7 +2,6 @@
 #define COLLID_H
 
 #include <CGAL/Simple_cartesian.h>
-//#include <CGAL/box_intersection_d.h>
 
 #include <FronTier.h>
 #include "state.h"
@@ -101,42 +100,7 @@ public:
 	int num_pts()const {return 1;}
 };
 
-/*
- * TODO: Remove these traits structures
-//box traits structure for proximity detection 
-struct traitsForProximity{
-	typedef double 		NT;
-	typedef CD_HSE*		Box_parameter;
-
-	static int m_dim;
-	static double s_eps;
-	static int dimension(){ return m_dim;}
-	static double min_coord(Box_parameter b, int d)
-		{return b->min_static_coord(d)-s_eps;}
-	static double max_coord(Box_parameter b, int d)
-		{return b->max_static_coord(d)+s_eps;}
-	static std::ptrdiff_t id(Box_parameter b) { return (std::ptrdiff_t)(b);}
-};
-
-//box traits structure for collision detection
-struct traitsForCollision{
-	typedef double          		NT;
-        typedef CD_HSE*      Box_parameter;
-
-	static int m_dim;
-	static double s_eps;
-	static double s_dt;
-        static int dimension(){ return m_dim;}
-        static double min_coord(Box_parameter b, int d)
-		{return b->min_moving_coord(d,s_dt)-s_eps;}
-        static double max_coord(Box_parameter b, int d)
-		{return b->max_moving_coord(d,s_dt)+s_eps;}
-	static std::ptrdiff_t id(Box_parameter b) { return (std::ptrdiff_t)(b);}
-};
-*/
-
-// Pimpl(Pointer to Implementation) idiom
-// declare AABBTree but not defined yet
+//Forward declaration of AABBTree
 class AABBTree;
 
 //abstract base class for collision detection and handling
@@ -167,7 +131,6 @@ private:
 	void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
-	//void setTraitsDimension();
 	void detectProximity();
 	void detectCollision();
         void aabbProximity();
@@ -226,7 +189,6 @@ public:
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
-        //double volDiffCoef {0.05};
         POINT **gpoints;
         TRI **gtris;
 
@@ -239,6 +201,7 @@ public:
 	static int pt_to_tri;
 };
 
+/*
 //derived 2D-class for collision detection and handling.
 //NOTE: This has not implementation, and should probably just be deleted.
 class CollisionSolver2d : public CollisionSolver {
@@ -252,11 +215,11 @@ public:
 	void assembleFromInterface(const INTERFACE*,double dt);
 	void createImpZoneForRG(const INTERFACE*);
 };
+*/
 
 //derived 3D-class for collision detection and handling
 class CollisionSolver3d : public CollisionSolver {
 private:
-	//input tris
 	void updateImpactListVelocity(POINT*);
 	bool BondToBond(const BOND*,const BOND*,double);
 	bool TriToTri(const TRI*,const TRI*,double);
