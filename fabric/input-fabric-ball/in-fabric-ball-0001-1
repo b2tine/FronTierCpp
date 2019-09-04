@@ -9,9 +9,7 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Enter yes for debugging: yes
-Enter the debugging string: collision
-Enter the debugging string: CollisionImpulse
+Enter yes for debugging: no
 
 Start parameters for modules
 Enter yes to add rigid body: yes
@@ -42,7 +40,7 @@ Enter fabric spring constant: 5000
 Enter fabric damping constant: 1.0
 Enter fabric point mass: 0.002
 Enter fabric thickness: 0.0001
-Enter vol_diff coefficient: 0.1
+Enter vol_diff coefficient: 0.05
 
 Type yes to perturb the surface: n
 
