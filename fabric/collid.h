@@ -201,22 +201,6 @@ public:
 	static int pt_to_tri;
 };
 
-/*
-//derived 2D-class for collision detection and handling.
-//NOTE: This has not implementation, and should probably just be deleted.
-class CollisionSolver2d : public CollisionSolver {
-private:
-	void updateImpactListVelocity(POINT*);
-	bool BondToBond(const BOND*,const BOND*,double);
-	bool TriToTri(const TRI*,const TRI*,double);
-	bool TriToBond(const TRI*,const BOND*,double);
-public:
-	CollisionSolver2d():CollisionSolver(2){}
-	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
-};
-*/
-
 //derived 3D-class for collision detection and handling
 class CollisionSolver3d : public CollisionSolver {
 private:
