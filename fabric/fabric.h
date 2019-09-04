@@ -127,7 +127,8 @@ struct AF_PARAMS
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
     
-    double vol_diff {0.0}; //for refitting AABBTree
+    double fabric_thickness {1.0e-03};  //for collision handling
+    double vol_diff {0.0};              //for refitting AABBTree
 }; 
 
 

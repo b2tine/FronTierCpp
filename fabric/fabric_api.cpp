@@ -302,6 +302,12 @@ extern void SMM_InitSpringMassParams()
 	}
 
     //TODO: this can be start of an InitAABBParams function
+    
+    if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+    {
+        fscanf(infile,"%lf",&af_params->fabric_thickness);
+        (void) printf("%f\n",af_params->fabric_thickness);
+    }
     if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))
     {
         fscanf(infile,"%lf",&af_params->vol_diff);

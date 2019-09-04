@@ -8,10 +8,10 @@
 #Must be run in the directory of the executable
 
 #example:
-#           ./qrun-inputdir3d.sh input-rt3d 2 2 2
+#           ./qrun-inputdir3d.sh input-3d 2 2 2
 #
 #       Will run the executable for every input file
-#       prefixed with "in-" in the directory input-rt3d
+#       prefixed with "in-" in the directory input-3d
 #       with 2 x partitions, 2 y partitions, and 2 z partitions
 #       with 2*2*2 = 8 total cores.
         

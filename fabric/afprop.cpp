@@ -258,8 +258,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->recordOriginalPosition();
             
                 //TODO: Is friction component working?
-                collision_solver->setFrictionConstant(0.0);
-                //collision_solver->setFrictionConstant(af_params->lambda_s);
+                collision_solver->setFrictionConstant(af_params->lambda_s);
+                //collision_solver->setFrictionConstant(0.0);
             
                 collision_solver->setSpringConstant(af_params->ks); 
                 collision_solver->setPointMass(af_params->m_s);
@@ -268,7 +268,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 //      Unphysical penetration using the thicker 1.0e-03 m
                 //      leads me to believe that bugs in the collision code is
                 //      outweighing any potential rounding errors currently.
-                collision_solver->setFabricThickness(1.0e-4);
+                collision_solver->setFabricThickness(af_params->fabric_thickness);
+                //collision_solver->setFabricThickness(1.0e-4);
                 //collision_solver->setFabricThickness(1.0e-3);
 
                 //TODO: coefficient of restitution varies between materials,
