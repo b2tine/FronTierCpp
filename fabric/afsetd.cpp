@@ -1228,6 +1228,11 @@ static void surf_get_point_set_from(
 	unsort_surf_point(surf);
 	surf_tri_loop(surf,tri)
 	{
+            if (the_tri_with_gindex(tri))
+            {
+                printf("In surf_get_point_set_from(), the tri coords:\n");
+                print_tri_coords(tri);
+            }
 	    for (j = 0; j < 3; ++j)
 	    {
 		p = Point_of_tri(tri)[j];

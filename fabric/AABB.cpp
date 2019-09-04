@@ -46,6 +46,8 @@ double AABB::volume() {
             (upperbound[2]-lowerbound[2]);
 }
 
+//This is the intersection test for AABB's.
+//Not a collision or geometric primitive check.
 bool AABB::isCollid(const AABB& ab) {
     return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
            (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
@@ -261,6 +263,8 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
     Node* cur = root.get();
     std::stack<Node*> sn;
 
+    //TODO: is this count assignment to zero necessary?
+    //count = 0;
     while (cur || !sn.empty()) {
         while (cur) {
             sn.push(cur);
@@ -274,6 +278,8 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
                 isProximity = queryProximity(cur, collsn_solver);
             else
                 isCollsn = queryCollision(cur, collsn_solver);
+    //TODO: and this increment
+            //count++;
             nodeSet.insert(cur);
         }
         

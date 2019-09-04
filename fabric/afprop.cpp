@@ -95,7 +95,13 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
-        static CollisionSolver* collision_solver = new CollisionSolver3d();
+        
+    //TODO: CollisionSolver can't be static for Restart functionality.
+    //      Will require, writing a proper destructor for CollisionSolver
+    //      and AABB classes to prevent runaway memory leak.
+    
+    static CollisionSolver* collision_solver = new CollisionSolver3d();
+    //CollisionSolver* collision_solver = new CollisionSolver3d();
 
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
@@ -105,14 +111,16 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     else
         printf("COLLISION DETECTION OFF\n");
 
+    //TMP
     POINT *pt = fr->gpoints[11622];
     STATE *sl = (STATE*)left_state(pt);
     printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
                             Coords(pt)[2]);
     printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
     printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-
-	geom_set.front = fr;
+    //
+	
+    geom_set.front = fr;
 
 	if (first_break_strings && break_strings_num > 0 &&
 	    break_strings_time >= 0.0 && 

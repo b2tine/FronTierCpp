@@ -35,11 +35,11 @@ static boolean curve_in_pointer_list(CURVE*,CURVE**);
 static void setNodeVelocity(ELASTIC_SET*,NODE*,double**,GLOBAL_POINT**);
 static void setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
 static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
-static void new_setNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
-static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
+static void newSetNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+static void newSetNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+static void newSetNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+static void newSetCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
+static void newSetSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);
 
@@ -1835,15 +1835,15 @@ static void setNodeVelocity(
 	switch(dim)
 	{
 	case 2:
-	    new_setNodeVelocity2d(geom_set,node,point_set);
+	    newSetNodeVelocity2d(geom_set,node,point_set);
 	    return;
 	case 3:
-	    new_setNodeVelocity3d(geom_set,node,point_set);
+	    newSetNodeVelocity3d(geom_set,node,point_set);
 	    return;
 	}
 }	/* end setNodeVelocity */
 
-static void new_setNodeVelocity2d(
+static void newSetNodeVelocity2d(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	GLOBAL_POINT **point_set)
@@ -1874,7 +1874,7 @@ static void new_setNodeVelocity2d(
 	}
 }	/* end setNodeVelocity2d */
 
-static void new_setNodeVelocity3d(
+static void newSetNodeVelocity3d(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	GLOBAL_POINT **point_set)

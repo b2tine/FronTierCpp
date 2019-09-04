@@ -878,11 +878,10 @@ static void init_fixarea_params(
 	SHAPE_PARAMS sparams;
 	int i,num_pts,dim = front->rect_grid->dim;
 	static REGISTERED_PTS *registered_pts;
+        SURFACE **s;
+        TRI *tri;
 	POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
 	INTERFACE *intfc = front->interf;
-	SURFACE *surf;
 
 	(void) printf("Available initial areas are:\n");
 	(void) printf("\tRectangle (R)\n");
@@ -920,42 +919,82 @@ static void init_fixarea_params(
             (void) printf("%f ",fixarea_params->vel[i]);
         }
         (void) printf("\n");
-	num_pts = 0;
-	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING)
-		continue;
-	    if (within_shape(sparams,Coords(p)))
-	    {
-		num_pts++;	
-	    }
-	}
-	FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,
-				sizeof(int));
-	FT_ScalarMemoryAlloc((POINTER*)&registered_pts,sizeof(REGISTERED_PTS));
-	FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,num_pts,
-				sizeof(int));
-	fixarea_params->num_pts = num_pts;
-	registered_pts->num_pts = num_pts;
 
 	num_pts = 0;
-	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
+        if (!front->f_basic->RestartRun)
         {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
-	    if (within_shape(sparams,Coords(p)))
-	    {
-		fixarea_params->global_ids[num_pts] = Gindex(p);	
-		registered_pts->global_ids[num_pts] = Gindex(p);	
-		num_pts++;
-	    	surf = Surface_of_hs(hs);
-	    	surf->extra = (POINTER)registered_pts;
-	    }
-	}
+            /* Count number of registered points */
+	    num_pts = 0;
+            reset_sort_status(intfc);
+            intfc_surface_loop(intfc,s)
+            {
+                if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                    wave_type(*s) != ELASTIC_STRING)
+                    continue;
+                surf_tri_loop(*s,tri)
+                {
+                    for (i = 0; i < 3; ++i)
+                    {
+                        p = Point_of_tri(tri)[i];
+                        if (sorted(p)) continue;
+                        sorted(p) = YES;
+	                if (within_shape(sparams,Coords(p)))
+		            num_pts++;	
+                    }
+                }
+            }
+
+	    FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                                sizeof(REGISTERED_PTS));
+	    FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,num_pts,
+				sizeof(int));
+	    registered_pts->num_pts = num_pts;
+
+            /* Record registered points */
+            num_pts = 0;	
+            reset_sort_status(intfc);
+            intfc_surface_loop(intfc,s)
+            {
+                if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                    wave_type(*s) != ELASTIC_STRING)
+                    continue;
+	        (*s)->extra = (POINTER)registered_pts;
+                surf_tri_loop(*s,tri)
+                {
+                    for (i = 0; i < 3; ++i)
+                    {
+                        p = Point_of_tri(tri)[i];
+                        if (sorted(p)) continue;
+                        sorted(p) = YES;
+	                if (within_shape(sparams,Coords(p)))
+                        {
+		            registered_pts->global_ids[num_pts] = Gindex(p);	
+		            num_pts++;	
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            intfc_surface_loop(intfc,s)
+            {
+                if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                    wave_type(*s) != ELASTIC_STRING)
+                    continue;
+                if ((*s)->extra == NULL) continue;
+                registered_pts = (REGISTERED_PTS*)(*s)->extra;
+                num_pts = registered_pts->num_pts;
+            }
+        }
+        if (num_pts == 0) return;
+	FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,
+				sizeof(int));
+	fixarea_params->num_pts = num_pts;
+        for (i = 0; i < num_pts; ++i)
+        {
+	    fixarea_params->global_ids[i] = registered_pts->global_ids[i];	
+        }
 }	/* end init_fixarea_params */
 
 static boolean within_shape(

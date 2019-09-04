@@ -266,52 +266,6 @@ public:
 };
 
 
-//TODO: Remove these report* functors
-//
-//callback functor to identify real collision
-struct reportProximity{
-    int& num_pairs;
-    // how many pairs of AABBs are collided
-    int& numBox;
-    // record time of nonAABB part
-    double& time;
-    CollisionSolver* collsn_solver;
-    reportProximity(double& ntime, int& nnumBox, int &npair,
-                CollisionSolver* solver): num_pairs(npair = 0),
-                                          time(ntime),
-                                          numBox(nnumBox),
-				          collsn_solver(solver){}
-    void operator()( const CD_HSE* a, const CD_HSE* b) {
-        double start = cpu_seconds();
-
-        numBox++;
-	if(collsn_solver->isProximity(a,b)){
-	    num_pairs++;
-	}
-        time += cpu_seconds()-start;
-    }
-};
-
-struct reportCollision{
-    bool& is_collision;
-    int& numBox;
-    int& num_pairs;
-    CollisionSolver* collsn_solver;
-    reportCollision(int& nnumBox, bool &status, int &npairs,
-                    CollisionSolver* solver): is_collision(status), 
-                                              numBox(nnumBox),
-		                              num_pairs(npairs = 0), 
-		                              collsn_solver(solver){}
-    void operator()( const CD_HSE* a, const CD_HSE* b) {
-	if (collsn_solver->isCollision(a,b)){
-            numBox++;
-	    num_pairs ++;
-	    is_collision = true;
-	}
-    }
-};
-// end TODO
-
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
 void initTestModule(Front&, char*);

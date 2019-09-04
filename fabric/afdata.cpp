@@ -139,8 +139,28 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
+	fprintf(outfile,"\nSurface extra data:\n");
+        intfc_surface_loop(intfc,s) 
+        {
+            int num_pts;
+            REGISTERED_PTS *registered_pts;
+
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING)
+                continue;
+            if ((*s)->extra == NULL)
+                num_pts = 0;
+            else
+            {
+                registered_pts = (REGISTERED_PTS*)(*s)->extra;
+                num_pts = registered_pts->num_pts;
+            }
+            fprintf(outfile,"number of registered points = %d\n",num_pts);
+            for (i = 0; i < num_pts; ++i)
+                fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+        }
 	fprintf(outfile,"\nCurve extra data:\n");
-	for (c = intfc->curves; c && *c; ++c)
+        intfc_curve_loop(intfc,c)
 	{
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
@@ -155,7 +175,7 @@ void printAfExtraData(
 	    }
 	}
 	fprintf(outfile,"\nNode extra data:\n");
-	for (n = intfc->nodes; n && *n; ++n)
+        intfc_node_loop(intfc,n)
 	{
 	    AF_NODE_EXTRA *n_params = (AF_NODE_EXTRA*)(*n)->extra;
 	    if (n_params == NULL)
@@ -180,7 +200,7 @@ void printAfExtraData(
             	fprintf(outfile,"%ld\n",Gindex(p));
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+        intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
             fprintf(outfile,"%ld\n",Gindex(p));
@@ -212,7 +232,7 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+        intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
             fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
@@ -330,6 +350,28 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
 	}
+	next_output_line_containing_string(infile,"Surface extra data:");
+        intfc_surface_loop(intfc,s)
+        {
+            int num_pts;
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING)
+                continue;
+	    fgetstring(infile,"number of registered points = ");
+            fscanf(infile,"%d",&num_pts);
+            if (num_pts != 0)
+            {
+                static REGISTERED_PTS *registered_pts;
+                FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                            sizeof(REGISTERED_PTS));
+                FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                            num_pts,sizeof(int));
+                (*s)->extra = (REGISTERED_PTS*)registered_pts;
+                registered_pts->num_pts = num_pts;
+                for (i = 0; i < num_pts; ++i)
+                    fscanf(infile,"%d",registered_pts->global_ids+i);
+            }
+        }
 	next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
