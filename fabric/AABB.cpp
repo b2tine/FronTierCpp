@@ -140,20 +140,19 @@ AABBTree::AABBTree(int i) {
         type = MotionState::MOVING;
 }
 
-AABBTree::~AABB()
+AABBTree::~AABBTree()
 {
     deleteTree();
 }
 
-AABB::deleteTree()
+void AABBTree::deleteTree()
 {
-    Node* r = root.get();
-    std::queue<Node*> q;
+    std::queue<std::shared_ptr<Node> > q;
 
-    q.push(r);
+    q.push(this->root);
     while (!q.empty())
     {
-        Node* node = q.front();
+        auto node = q.front();
         q.pop();
 
         if (node->left != nullptr)

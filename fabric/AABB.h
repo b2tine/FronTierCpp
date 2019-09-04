@@ -44,7 +44,7 @@ public:
     AABB& operator=(const AABB&) = default;
     AABB(AABB&&) = default;
     AABB& operator=(AABB&&) = default;
-    ~AABB() = default
+    ~AABB() = default;
     // merge this with anther AABB to get a
     // merged AABB and construct the corresponding AABB tree
     AABB merge(const AABB&) const;
