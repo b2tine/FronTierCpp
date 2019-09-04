@@ -27,7 +27,7 @@ typedef Kernel::Triangle_3                                    Triangle_3;
 //define default parameters for collision detection
 bool   CollisionSolver::s_detImpZone = false;
 double CollisionSolver::s_eps = EPS;
-double CollisionSolver::s_thickness = 0.0001;
+double CollisionSolver::s_thickness = 0.001;
 double CollisionSolver::s_dt = DT;
 double CollisionSolver::s_k = 1000;
 double CollisionSolver::s_m = 0.01;
@@ -518,7 +518,8 @@ void CollisionSolver::aabbCollision() {
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
-	const int MAX_ITER = 8;
+	const int MAX_ITER = 12;
+	//const int MAX_ITER = 8;
 	int niter = 1;
 
 	std::cout<<"Starting collision handling: "<<std::endl;
@@ -532,7 +533,7 @@ void CollisionSolver::detectCollision()
 	    
         start_clock("dynamic_AABB_collision");
 	    aabbCollision();
-            is_collision = abt_collision->getCollsnState();
+        is_collision = abt_collision->getCollsnState();
 	    stop_clock("dynamic_AABB_collision");
 
 	    if (cd_count++ == 0 && is_collision)
@@ -959,7 +960,7 @@ void CollisionSolver::updateAverageVelocity()
 	    printDebugVariable();
 }
 
-bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
+bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
         //Commented code turns off collision detection involving the lines/strings
@@ -1014,7 +1015,7 @@ bool CollisionSolver::isCollision(const CD_HSE* a, const CD_HSE* b){
 }
 
 //This is checking the geometric primitive for intersection
-bool CollisionSolver::isProximity(const CD_HSE* a, const CD_HSE* b){
+bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
 	double h = CollisionSolver3d::getFabricThickness();

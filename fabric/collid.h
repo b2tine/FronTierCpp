@@ -182,8 +182,8 @@ public:
 	//pure virtual functions
 	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
 	virtual void createImpZoneForRG(const INTERFACE*) = 0;
-	bool isProximity(const CD_HSE*,const CD_HSE*);	
-	bool isCollision(const CD_HSE*,const CD_HSE*);
+	bool getProximity(const CD_HSE*,const CD_HSE*);	
+	bool getCollision(const CD_HSE*,const CD_HSE*);
 	void resolveCollision();
 	void recordOriginalPosition();	
 	void setDomainBoundary(double* L,double *U);

@@ -303,7 +303,7 @@ bool AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver) {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
-                        if (collsn_solver->isProximity(a, b))
+                        if (collsn_solver->getProximity(a,b))
                             count++; 
                     }
                 }
@@ -336,7 +336,7 @@ bool AABBTree::queryCollision(Node* n, CollisionSolver* collsn_solver) {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
-                        if (collsn_solver->isCollision(a, b)) 
+                        if (collsn_solver->getCollision(a,b)) 
                             count++;
                     }
                 }
