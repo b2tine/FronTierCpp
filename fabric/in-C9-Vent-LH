@@ -47,6 +47,8 @@ Enter fabric point mass: 0.001
 Enter string spring constant: 5000
 Enter string damping constant: 0.0
 Enter string point mass: 0.01
+Enter fabric thickness: 0.001
+Enter vol_diff coefficient: 0.0
 Enter payload: 100
 
 Start test velocity function set

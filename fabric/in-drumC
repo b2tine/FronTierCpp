@@ -37,6 +37,8 @@ Start parameters for spring-mass system
 Enter fabric spring constant: 1000
 Enter fabric damping constant: 0.0
 Enter fabric point mass: 0.1
+Enter fabric thickness: 0.001
+Enter vol_diff coefficient: 0.0
 
 Type yes to perturb the surface: y
 Entering perturbation type: radial

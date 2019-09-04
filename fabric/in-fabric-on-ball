@@ -10,7 +10,7 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Enter yes for debugging: yes
-Enter the debugging string: trace
+Enter the debugging string: Xtrace
 
 Start parameters for modules
 Enter yes to add rigid body: yes
@@ -40,8 +40,8 @@ Start parameters for spring-mass system
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 1.0
 Enter fabric point mass: 0.002
-Enter fabric thickness: 0.0001
-Enter vol_diff coefficient: 0.05
+Enter fabric thickness: 0.001
+Enter vol_diff coefficient: 0.0
 
 Type yes to perturb the surface: n
 
@@ -62,7 +62,7 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3
-Max step: 1000
+Max step: 2000
 Print interval: 1
 Movie frame interval: 0.025
 CFL factor: 0.5
