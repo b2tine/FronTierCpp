@@ -9,7 +9,7 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
 Enter the debugging string: trace
 
 Start parameters for modules
@@ -62,5 +62,5 @@ Start test time control parameters
 Max time: 3
 Max step: 1000
 Print interval: 1
-Movie frame interval: 0.05
+Movie frame interval: 0.025
 CFL factor: 0.5

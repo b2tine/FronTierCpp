@@ -515,6 +515,7 @@ void CollisionSolver::aabbCollision() {
     abt_collision->query(this);
 }
 
+/*
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
@@ -551,9 +552,8 @@ void CollisionSolver::detectCollision()
 	    computeImpactZone();
 	stop_clock("computeImpactZone");
 }
+*/
 
-/*
- * TODO: Use this one after bugs fixed.
 void CollisionSolver::detectCollision()
 {
 	bool is_collision = true; 
@@ -610,7 +610,6 @@ void CollisionSolver::detectCollision()
 	    computeImpactZone();
 	stop_clock("computeImpactZone");
 }
-*/
 
 //helper function to detect a collision between 
 //a moving point and a moving triangle

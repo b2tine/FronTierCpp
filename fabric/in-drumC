@@ -60,7 +60,7 @@ Enter velocity function: Z
 
 Start test time control parameters
 Max time: 5
-Max step: 100
+Max step: 500
 Print interval: 1
 Movie frame interval: 0.1
 CFL factor: 0.5
