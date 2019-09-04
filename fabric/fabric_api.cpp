@@ -148,10 +148,11 @@ extern void SMM_InitModules()
             }
             set_equilibrium_mesh(front);
             FT_SetGlobalIndex(front);
+            static_mesh(front->interf) = YES;
             fclose(infile);
         }
-        //TODO: Does static_mesh need to be set to YES?
-        //      FT_SetGlobalIndex() above sets this to NO...
+        //TODO: Does static_mesh need to be set to YES for restart also?
+        //      Or does it inherit it from copying the interface?
             //static_mesh(front->interf) = YES;
 }       /* end SMM_InitModules */
 
