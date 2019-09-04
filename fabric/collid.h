@@ -110,7 +110,7 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity;
         std::unique_ptr<AABBTree> abt_collision;
         double volume;
-        double vol_diff {0.05};
+        double vol_diff {0.0};
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;

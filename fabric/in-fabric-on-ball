@@ -38,8 +38,9 @@ Enter circle radius: 0.4
 
 Start parameters for spring-mass system
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 1.0
+Enter fabric damping constant: 0.95
 Enter fabric point mass: 0.002
+Enter vol_diff coefficient: 0.15
 
 Type yes to perturb the surface: n
 

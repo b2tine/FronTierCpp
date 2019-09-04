@@ -284,7 +284,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 //effectively 0.0 by default again.
             
                 //change in volume of root bounding box to refit tree
-                collision_solver->setVolumeDiff(0.05);
+                collision_solver->setVolumeDiff(af_params->vol_diff);
                 
                 collision_solver->gpoints = fr->gpoints;
                 collision_solver->gtris = fr->gtris;

@@ -300,6 +300,26 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
+
+    //TODO: this can be start of an InitAABBParams function
+    if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))
+    {
+        fscanf(infile,"%lf",&af_params->vol_diff);
+        (void) printf("%f\n",af_params->vol_diff);
+    }
+
+    /*
+     * TODO: implement in order to test large range of parameters
+     *       for friction, vol_diff, rounding tolerance etc.
+     *
+        CursorAfterString(infile,"Enter preximity test tolerance:");
+        fscanf(infile,"%lf",&af_params->pre_tol);
+        (void) printf("%f\n",af_params->pre_tol);
+        CursorAfterString(infile,"Enter restitution coefficient:");
+        fscanf(infile,"%lf",&af_params->rest);
+        (void) printf("%f\n",af_params->rest);
+    */
+
 	fclose(infile);
 }	/* end SMM_InitSpringMassParams */
 

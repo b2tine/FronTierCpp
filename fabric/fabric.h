@@ -126,6 +126,8 @@ struct AF_PARAMS
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
+    
+    double vol_diff {0.0}; //for refitting AABBTree
 }; 
 
 
