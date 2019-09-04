@@ -387,6 +387,9 @@ extern void SMM_TestDriver()
                 (void) print_storage("at end of time step","trace");
             }
 
+            // TMP
+            (void) print_storage("at end of time step","trace");
+
 	    FT_AddTimeStepToCounter(front);
 
 	    //Next time step determined by maximum speed of previous
