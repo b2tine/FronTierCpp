@@ -56,7 +56,7 @@ class HsBond : public Hse
 {
     private:
 
-        //TODO: consider unique_ptr<BOND>
+        //TODO: replace with global bond index
         BOND* bond{nullptr};
 
     public:
@@ -84,7 +84,7 @@ class HsTri : public Hse
 {
     private:
 
-        //TODO: consider unique_ptr<TRI>
+        //TODO: replace with global tri index
         TRI* tri{nullptr};
 
     public:
