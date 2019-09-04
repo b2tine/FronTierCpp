@@ -1,6 +1,4 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/box_intersection_d.h>
-#include <CGAL/intersections.h>
 
 #include <vector>
 #include <iostream>
