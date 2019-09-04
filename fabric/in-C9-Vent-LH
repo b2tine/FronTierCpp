@@ -72,5 +72,5 @@ Start test time control parameters
 Max time: 3
 Max step: 750
 Print interval: 0.2
-Movie frame interval: 0.1
+Movie frame interval: 0.05
 CFL factor: 0.5

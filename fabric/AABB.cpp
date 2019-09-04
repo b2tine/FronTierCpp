@@ -183,8 +183,10 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
         AABB& abr = p->right->box;
         // get volume after inserting current node to 
         // left or right subtree
-        double vdiff1 = abl.merge(n->box).volume()-abl.volume();
-        double vdiff2 = abr.merge(n->box).volume()-abr.volume();
+        double vdiff1 = (abl.merge(n->box).volume()-abl.volume())/abl.volume();
+        double vdiff2 = (abr.merge(n->box).volume()-abr.volume())/abr.volume();
+        //double vdiff1 = abl.merge(n->box).volume()-abl.volume();
+        //double vdiff2 = abr.merge(n->box).volume()-abr.volume();
             //double vdiff1 = abl.merge(n->box).volume();
             //double vdiff2 = abr.merge(n->box).volume();
             // int vdiff1 = treeHeight(p->left);
