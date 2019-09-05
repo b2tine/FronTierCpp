@@ -9,7 +9,8 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
+Enter the debugging string: collision
 
 Start parameters for modules
 Enter yes to add rigid body: yes

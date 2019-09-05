@@ -846,7 +846,7 @@ static bool PointToTri(POINT** pts, double h, double root)
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3];
 	double nor[3] = {0.0}, nor_mag = 0.0, dist, det;
-    double tri_area;
+    double tri_area = -1.0;
 
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
@@ -912,6 +912,7 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    /*x13 and x23 are non-collinear*/
 	    Cross3d(x13, x23, nor);
 	    nor_mag = Mag3d(nor);
+        tri_area = 0.5*nor_mag;
 
 	    /*compute the old direction*/
 	    double x43_old[3];
@@ -932,32 +933,51 @@ static bool PointToTri(POINT** pts, double h, double root)
 	
 	    w[0] = (Dot3d(x13,x43)*Dot3d(x23,x23)-Dot3d(x23,x43)*Dot3d(x13,x23))/det;
 	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
-	    w[2] = 1 - w[0] - w[1];
+	    w[2] = 1.0 - w[0] - w[1];
 	    
 	}
 	
-    /* test for corner cases */
-	if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS 
-	    || fabs(w[2]) < ROUND_EPS)
-	{
-	    double vec[3] = {0, 0, 0};
-	    STATE* tmp_sl = (STATE*)left_state(pts[3]);
-	    for (int j = 0; j < 3; ++j)
-		vec[j] = tmp_sl->x_old[j];
-	    for (int i = 0; i < 3; ++i)
-	    {
-		tmp_sl = (STATE*)left_state(pts[i]);
-		for (int j = 0; j < 3; ++j)
-		    vec[j] -= w[i] * tmp_sl->x_old[j];
-	    }
-	    double vec_mag = Mag3d(vec);
-	    if (vec_mag > ROUND_EPS)
-	    {
-		for (int j = 0; j < 3; ++j)
-		    nor[j] = vec[j];
-	    }
+    /*
+	double c_len = 0.0;	
+	for (int i = 0; i < 3; ++i)
+    {
+	    double tmp_dist = distance_between_positions(Coords(pts[i]),
+                                Coords(pts[(i+1)%3]),3);
+	    if (tmp_dist > c_len)
+            c_len = tmp_dist;
 	}
-	/* end of the test */
+    */
+
+    //double eps = h/c_len;
+    double eps = h/sqrt(tri_area);
+    for (int i = 0; i < 3; ++i)
+	{
+        if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
+            return false;
+	}
+
+    //TODO: This needs work done -- is definitely wrong.
+
+    double vec[3] = {0, 0, 0};
+    STATE* tmp_sl = (STATE*)left_state(pts[3]);
+
+    for (int j = 0; j < 3; ++j)
+        vec[j] = tmp_sl->x_old[j];
+
+    for (int i = 0; i < 3; ++i)
+    {
+        tmp_sl = (STATE*)left_state(pts[i]);
+        for (int j = 0; j < 3; ++j)
+            vec[j] -= w[i] * tmp_sl->x_old[j];
+    }
+    
+    double vec_mag = Mag3d(vec);
+    if (vec_mag > ROUND_EPS)
+    {
+        for (int j = 0; j < 3; ++j)
+            nor[j] = vec[j];
+    }
+
 	
 	nor_mag = Mag3d(nor);
 	if (nor_mag > ROUND_EPS)
@@ -969,24 +989,6 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    clean_up(ERROR);
 	}
 
-    /*
-	double c_len = 0;	
-	for (int i = 0; i < 3; ++i){
-	    double tmp_dist = distance_between_positions(Coords(pts[i]),
-                                Coords(pts[(i+1)%3]),3);
-	    if (tmp_dist > c_len) 
-		c_len = tmp_dist;
-	}*/
-
-    double eps = h/sqrt(0.5*nor_mag);
-    for (int i = 0; i < 3; ++i)
-	{
-        //TODO: This needs to take fabric thickness, h, into account.
-	        //double eps = CollisionSolver3d::getRoundingTolerance(); 
-	                    //test, use eps instead of h/c_len  -- NO
-	    if (w[i] > 1.0 + eps || w[i] < -1.0*eps)
-            return false;
-	}
 	PointToTriImpulse(pts, nor, w, dist,root);
 	return true;
 }
@@ -1000,11 +1002,6 @@ static void PointToTriImpulse(POINT** pts, double* nor,
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
-
-    //TODO: Select the coefficient of restitution (COR) based
-    //      on the material type of the points. Simplest solution
-    //      is to set COR = 0 for any interactions that involve cloth,
-    //      and set COR = 1 for the case of 2 rigid bodies.
 
     double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
 	double impulse = 0.0, m_impulse = 0.0;

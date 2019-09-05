@@ -10,8 +10,8 @@ AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h),
     if (type != MotionState::STATIC)
         throw std::runtime_error("Proximity AABB tree must has STATIC type!");
     for (int i = 0; i < 3; i++) {
-         lowerbound[i] = h->min_static_coord(i)-tol;
-         upperbound[i] = h->max_static_coord(i)+tol;
+         lowerbound[i] = h->min_static_coord(i) - tol;
+         upperbound[i] = h->max_static_coord(i) + tol;
     }
     for (int i = 0; i < h->num_pts(); i++)
          indices.push_back(h->Point_of_hse(i)->global_index);
@@ -238,7 +238,6 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
     parentNode->updateAABB();
 }
 
-//This is tracking points, not triangles or bonds ...
 //sets AABBTree::count = 0
 void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList) {
     vhMap.clear();
@@ -320,9 +319,8 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
     }
 }
 
-// for AABB inside Node n, find all collied AABBs
-// and add it to the list
-// preorder traverse the tree and if find a collided node to be 
+// For AABB inside Node n, find all intersecting AABBs.
+// Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
 bool AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver) {

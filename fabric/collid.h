@@ -224,6 +224,8 @@ void Pts2Vec(const POINT*, const POINT*, double*);
 void scalarMult(double a,double* v, double* ans); 
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
+bool LeftTurn(std::vector<double>&a,
+        std::vector<double>&b, std::vector<double>&c);
 double myDet3d(double[][3]);
 double distBetweenCoords(double* v1, double* v2);
 extern void printPointList(POINT**, const int);
