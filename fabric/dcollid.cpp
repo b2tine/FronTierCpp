@@ -277,7 +277,7 @@ void CollisionSolver::computeAverageVelocity()
     //restore coords of points to old coords !!!
     //x_old is the only valid coords for each point 
     //Coords(point) is for temporary judgement
-	
+
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -1186,7 +1186,7 @@ POINT* CD_TRI::Point_of_hse(int i) const{
 /* The followings are helper functions for vector operations. */
 void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
 	for (int i = 0; i < 3; ++i)	
-	    v[i] = Coords(p1)[i] - Coords(p2)[i];
+	    v[i] = Coords(p2)[i] - Coords(p1)[i];
 }
 
 double distBetweenCoords(double* v1, double* v2)

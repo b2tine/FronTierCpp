@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
     printf("Checkpoint(%s) at line %d in file \"%s\"\n", \
             #ID,__LINE__,__FILE__)
 
-#define LOC() printf("Location: at %s:%d/%s()!\n", __FILE__, __LINE__, __func__);
+#define LOC() printf("Location: at %s:%d/%s()!\n", __FILE__, __LINE__, __func__)
 
 
 #if defined(USE_OVERTURE) 

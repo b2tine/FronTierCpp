@@ -846,22 +846,24 @@ static bool PointToTri(POINT** pts, double h, double root)
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3];
 	double nor[3] = {0.0}, nor_mag = 0.0, dist, det;
-    double tri_area = -1.0;
 
+    //TODO: not consisent with below that uses x_old in computations.
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
 	Pts2Vec(pts[3],pts[2],x43);
 	
 	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < 1000 * MACH_EPS)
-    { // change ROUND_EPS to 1000*MACH_EPS
-	     // ignore cases where tri reduces to a line or point
+    {   
+	    // ignore cases where tri reduces to a line or point
          
         //TODO: let's not ignore it
         return false;
 
-	    /*consider the case when det = 0*/
-	    /*x13 and x23 are collinear*/
+        /*
+	    //consider the case when det = 0
+	    //x13 and x23 are collinear
+
 	    POINT* tmp_pts[3]; 
 	    double max_len = 0;
 	    //find longest side
@@ -905,6 +907,7 @@ static bool PointToTri(POINT** pts, double h, double root)
 		if (Mag3d(nor) < ROUND_EPS)
 		    nor[0] = nor[1] = nor[2] = 1.0;
 	    }
+        */
 	}
 	else
     {
@@ -912,22 +915,27 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    /*x13 and x23 are non-collinear*/
 	    Cross3d(x13, x23, nor);
 	    nor_mag = Mag3d(nor);
-        tri_area = 0.5*nor_mag;
+        double tri_area = 0.5*nor_mag;
 
-	    /*compute the old direction*/
+        /*
+	    //get the old direction
 	    double x43_old[3];
 	    STATE* tmp_sl[2];
 	    tmp_sl[0] = (STATE*)left_state(pts[3]);
 	    tmp_sl[1] = (STATE*)left_state(pts[2]);
 	    minusVec(tmp_sl[0]->x_old,tmp_sl[1]->x_old,x43_old);
+        */
 
 	    /*correct the normal direction*/
 	    /*always pointing from triangle to p4*/
-	    dist = Dot3d(x43_old, nor);
+	    
+        //dist = Dot3d(x43_old, nor);
+        dist = Dot3d(x43, nor);
 	    for (int i = 0; i < 3; ++i)
-	        nor[i] /= nor_mag * ((dist >= 0)? 1.0:-1.0);
+	        nor[i] /= nor_mag*((dist >= 0) ? 1.0 : -1.0);
 	
-        dist = fabs(Dot3d(x43, nor));
+        //dist = fabs(Dot3d(x43, nor));
+        dist = fabs(dist);
         if (dist > h)
 	        return false;
 	
@@ -935,59 +943,63 @@ static bool PointToTri(POINT** pts, double h, double root)
 	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
 	    w[2] = 1.0 - w[0] - w[1];
 	    
-	}
+        /*
+        double c_len = 0.0;	
+        for (int i = 0; i < 3; ++i)
+        {
+            double tmp_dist = distance_between_positions(Coords(pts[i]),
+                                    Coords(pts[(i+1)%3]),3);
+            if (tmp_dist > c_len)
+                c_len = tmp_dist;
+        }
+        */
+
+        //double eps = h/c_len;
+        double eps = h/sqrt(tri_area);
+        for (int i = 0; i < 3; ++i)
+        {
+            if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
+                return false;
+        }
+
+        //Project point onto plane of the triangle
+        double vec[3] = {0, 0, 0};
+        STATE* tmp_sl = (STATE*)left_state(pts[3]);
+
+        //TODO: this is wrong
+        if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS
+                || fabs(w[2]) < ROUND_EPS)
+        {
+            for (int j = 0; j < 3; ++j)
+                vec[j] = tmp_sl->x_old[j];
+
+            for (int i = 0; i < 3; ++i)
+            {
+                tmp_sl = (STATE*)left_state(pts[i]);
+                for (int j = 0; j < 3; ++j)
+                    vec[j] -= w[i] * tmp_sl->x_old[j];
+            }
+            
+            double vec_mag = Mag3d(vec);
+            if (vec_mag > ROUND_EPS)
+            {
+                for (int j = 0; j < 3; ++j)
+                    nor[j] = vec[j];
+            }
+        }
+
+        nor_mag = Mag3d(nor);
+        if (nor_mag > ROUND_EPS)
+            for (int i = 0; i < 3; ++i)
+                nor[i] /= nor_mag;
+        else
+        {
+            std::cout << "nan nor vec" << std::endl;
+            printPointList(pts,4);
+            clean_up(ERROR);
+        }
 	
-    /*
-	double c_len = 0.0;	
-	for (int i = 0; i < 3; ++i)
-    {
-	    double tmp_dist = distance_between_positions(Coords(pts[i]),
-                                Coords(pts[(i+1)%3]),3);
-	    if (tmp_dist > c_len)
-            c_len = tmp_dist;
-	}
-    */
-
-    //double eps = h/c_len;
-    double eps = h/sqrt(tri_area);
-    for (int i = 0; i < 3; ++i)
-	{
-        if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
-            return false;
-	}
-
-    //TODO: This needs work done -- is definitely wrong.
-
-    double vec[3] = {0, 0, 0};
-    STATE* tmp_sl = (STATE*)left_state(pts[3]);
-
-    for (int j = 0; j < 3; ++j)
-        vec[j] = tmp_sl->x_old[j];
-
-    for (int i = 0; i < 3; ++i)
-    {
-        tmp_sl = (STATE*)left_state(pts[i]);
-        for (int j = 0; j < 3; ++j)
-            vec[j] -= w[i] * tmp_sl->x_old[j];
     }
-    
-    double vec_mag = Mag3d(vec);
-    if (vec_mag > ROUND_EPS)
-    {
-        for (int j = 0; j < 3; ++j)
-            nor[j] = vec[j];
-    }
-
-	
-	nor_mag = Mag3d(nor);
-	if (nor_mag > ROUND_EPS)
-	    for (int i = 0; i < 3; ++i)
-	        nor[i] /= nor_mag;
-	else{
-	    std::cout << "nan nor vec" << std::endl;
-	    printPointList(pts,4);
-	    clean_up(ERROR);
-	}
 
 	PointToTriImpulse(pts, nor, w, dist,root);
 	return true;
