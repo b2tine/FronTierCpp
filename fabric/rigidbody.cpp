@@ -20,7 +20,7 @@ static void surf_enlargement(SURFACE*,double);
 
 
 
-EXPORT void initRigidBody(
+extern void initRigidBody(
 	Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
@@ -257,7 +257,7 @@ static void init_rigid_cylinder(
 	return;
 }	/* end init_rigid_cylinder */
 
-EXPORT void unsort_surf_point(SURFACE *surf)
+extern void unsort_surf_point(SURFACE *surf)
 {
 	TRI *tri;
 	POINT *p;
@@ -346,10 +346,7 @@ static void surf_enlargement(
         }
 }
 
-
-
-
-EXPORT void rgb_init(Front*front, RG_PARAMS* rgb_params)
+extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
 {
     int dim = FT_Dimension();
     if (dim == 1) return;
