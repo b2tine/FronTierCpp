@@ -1584,6 +1584,23 @@ static void installString(
 			    break;
 		    }
 		}
+                if (*rg_surf == NULL)
+                {
+                    printf("Cannot find rigid body surface, rg_index = %d\n",
+                                rg_index);
+                    printf("Available rigid body indices are: ");
+		    intfc_surface_loop(intfc, rg_surf)
+		    {
+		        if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
+			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
+		        {
+                            printf("surf %d index: %d\n",rg_surf,
+                                        body_index(*rg_surf));
+		        }
+		    }
+                    printf("\n");
+                    clean_up(ERROR);
+                }
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
 		return;

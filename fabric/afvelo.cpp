@@ -560,7 +560,7 @@ extern void initVelocityFunc(
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
 	    front->node_propagate = airfoil_node_propagate;
-	    velo_func_pack.point_propagate = elastic_point_propagate;
+	    velo_func_pack.point_propagate = airfoil_point_propagate;
 	    (void) printf("Available velocity functions are:\n");
 	    (void) printf("\tVertical velocity (V)\n");
 	    (void) printf("\tParabolic velocity (P)\n");

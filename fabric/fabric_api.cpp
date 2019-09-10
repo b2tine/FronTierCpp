@@ -53,7 +53,6 @@ extern void SMM_InitCpp(int argc, char **argv)
         FT_ReadSpaceDomain(f_basic->in_name,f_basic);
         
         af_params.num_np = 1;
-        //FT_VectorMemoryAlloc((POINTER*)&af_params.node_id,1,sizeof(int));
         af_params.node_id[0] = 0;
         front->extra2 = (POINTER)&af_params;
 
@@ -162,10 +161,11 @@ extern void SMM_InitPropagator()
         int dim = front->rect_grid->dim;
 
         Tracking_algorithm(front) = STRUCTURE_TRACKING;
-        front->_point_propagate = elastic_point_propagate;
+        front->_point_propagate = airfoil_point_propagate;
         front->curve_propagate = airfoil_curve_propagate;
         front->node_propagate = airfoil_node_propagate;
         front->interior_propagate = fourth_order_elastic_set_propagate;
+        front->_compute_force_and_torque = fluid_compute_force_and_torque;
 }       /* end SMM_InitPropagator */
 
 extern void SMM_InitSpringMassParams()
@@ -367,7 +367,7 @@ extern void SMM_TestDriver()
 
         CFL = Time_step_factor(front);
 
-	SMM_Save();
+	    SMM_Save();
         SMM_Plot();
 
         if (!f_basic->RestartRun)
@@ -404,6 +404,7 @@ extern void SMM_TestDriver()
 
 	    start_clock("timeStep");
 
+            FrontPreAdvance(front);
             FT_Propagate(front);
             FT_RelinkGlobalIndex(front);
             FT_InteriorPropagate(front);

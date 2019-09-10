@@ -706,8 +706,6 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 	double v1[3],v2[3];
 	double nor[3], nor_mag, dist;
 
-    //Variable names don't match the behavior of Pts2Vec().
-    //Pointing in the wron direction.
 	Pts2Vec(pts[1],pts[0],x21);    
 	Pts2Vec(pts[3],pts[2],x43);
 	Pts2Vec(pts[2],pts[0],x31);

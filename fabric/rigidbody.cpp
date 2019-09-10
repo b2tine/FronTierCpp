@@ -450,11 +450,11 @@ static void prompt_for_rigid_body_params(
     else
     {
         (void) printf("Available dynamic motion types are:\n");
-        (void) printf("\tFREE_MOTION:\n");
-        (void) printf("\tCOM_MOTION (center of mass):\n");
-        (void) printf("\tTRANSLATION:\n");
-        (void) printf("\tROTATION:\n");
-        CursorAfterString(infile,"Enter type of dynamic motion: ");
+        (void) printf("\tFREE_MOTION\n");
+        (void) printf("\tCOM_MOTION (center of mass)\n");
+        (void) printf("\tTRANSLATION\n");
+        (void) printf("\tROTATION\n");
+        CursorAfterString(infile,"Enter type of dynamic motion ");
         fscanf(infile,"%s",s);
         (void) printf("%s\n",s);
         switch(s[0])
