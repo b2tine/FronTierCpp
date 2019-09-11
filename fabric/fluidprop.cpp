@@ -129,17 +129,24 @@ static void neumann_point_propagate(
         double              *V)
 {
 	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-	F_FIELD *field = Fparams->field;
+	F_FIELD *field;
         int i, dim = front->rect_grid->dim;
-	double *m_pre = field->pres;
-	double *m_phi = field->phi;
-	double *m_vor = field->vort;
+	double *m_pre;
+	double *m_phi;
+	double *m_vor;
 	STATE *oldst,*newst;
 	POINTER sl,sr;
 	COMPONENT comp;
 	double nor[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
 	double dn,*h = front->rect_grid->h;
+
+        if (Fparams == NULL) return; // No fluid
+
+	field = Fparams->field;
+	m_pre = field->pres;
+	m_phi = field->phi;
+	m_vor = field->vort;
 
 	FT_GetStatesAtPoint(oldp,oldhse,oldhs,&sl,&sr);
 	if (fluid_comp(negative_component(oldhs)))
