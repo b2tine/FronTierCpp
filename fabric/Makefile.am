@@ -28,7 +28,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 
 
 noinst_PROGRAMS = fabric_Cplus \
-		  fabric_Fortn
+				  fabric_Fortn \
+				  cgal_intfc_test
 
 				  
 fabric_Cplus_SOURCES = fabric_Cplus.cpp
@@ -36,6 +37,9 @@ fabric_Cplus_LDADD = $(builddir)/objs/libfabric.la
 
 fabric_Fortn_SOURCES = fabric_Fortn.F90
 fabric_Fortn_LDADD = $(builddir)/objs/libfabric.la -lstdc++
+
+cgal_intfc_test_SOURCES = cgal_intfc_test.cpp
+cgal_intfc_test_LDADD = $(builddir)/objs/libfabric.la
 
 
 

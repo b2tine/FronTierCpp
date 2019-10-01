@@ -24,6 +24,8 @@ libfabric_la_SOURCES = \
 ../afsetd.cpp \
 ../aftest.cpp \
 ../afvelo.cpp \
+../cgal_intfc.h \
+../cgal_intfc.cpp \
 ../cgal.cpp \
 ../collid.h \
 ../dcollid.cpp \
