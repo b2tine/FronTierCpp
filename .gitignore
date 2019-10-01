@@ -72,9 +72,7 @@ parachute/parachute
 parachute/ginit
 parachute/intfc
 fabric/fabric
-fabric/test1
-fabric/test2
-fabric/fortrantest
+fabric/cgal_intfc_test
 fabric/fabric_Fortn
 fabric/fabric_Cplus
 FrontWrapper/example00
