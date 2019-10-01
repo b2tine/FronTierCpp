@@ -7,7 +7,7 @@
 #include <fstream>
 #include <algorithm>
 #include <cmath>
-#include <cenv>
+#include <cfenv>
 
 #include <omp.h>
 
