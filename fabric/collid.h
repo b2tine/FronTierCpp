@@ -1,8 +1,6 @@
 #ifndef COLLID_H
 #define COLLID_H
 
-#include <CGAL/Simple_cartesian.h>
-
 #include <FronTier.h>
 #include "state.h"
 

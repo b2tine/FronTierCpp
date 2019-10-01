@@ -1,14 +1,13 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <FronTier.h>
+#include "AABB.h"
+#include "collid.h"
 
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <cmath>
 #include <algorithm>
-
-#include <FronTier.h>
-#include "AABB.h"
-#include "collid.h"
+#include <cmath>
+#include <cenv>
 
 #include <omp.h>
 
@@ -19,10 +18,6 @@ static void mergePoint(POINT*,POINT*);
 inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel   Kernel;
-typedef Kernel::Point_3                                       Point_3;
-typedef Kernel::Triangle_3                                    Triangle_3;
 
 //define default parameters for collision detection
 bool   CollisionSolver::s_detImpZone = false;
@@ -1032,20 +1027,6 @@ bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
-        /*
-            if (Gindex(Point_of_tri(t1)[0]) == 18414 &&
-                Gindex(Point_of_tri(t1)[1]) == 18415 &&
-                Gindex(Point_of_tri(t1)[2]) == 12191 &&
-                Gindex(Point_of_tri(t2)[0]) == 17741 &&
-                Gindex(Point_of_tri(t2)[1]) == 10421 &&
-                Gindex(Point_of_tri(t2)[2]) == 19335)
-            {
-                printf("t1:\n");
-                print_tri_coords(t1);
-                printf("t2:\n");
-                print_tri_coords(t2);
-            }
-        */
 	    return TriToTri(t1,t2,h);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
