@@ -33,9 +33,12 @@ using Mesh = CGAL::Surface_mesh<cgalPoint3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
 
-void CGAL_MakeSphericalSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,int,SURFACE**);
-void CGAL_MakeEllipsoidalSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,int,SURFACE**);
-void CGAL_MakeCuboidSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,int,SURFACE**);
+extern void CGAL_MakeSphericalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
+                            int,int,SURFACE**);
+extern void CGAL_MakeEllipsoidalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
+                            int,int,SURFACE**);
+extern void CGAL_MakeCuboidSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,
+                            int,SURFACE**);
 
 template <typename CGAL_Surface,
           typename CGAL_MeshCriteria,

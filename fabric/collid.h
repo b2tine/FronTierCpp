@@ -196,6 +196,9 @@ public:
 	static int is_coplanar;
 	static int edg_to_edg;
 	static int pt_to_tri;
+
+    TRI *res_tris[100];
+    int num_res_tris;
 };
 
 //derived 3D-class for collision detection and handling

@@ -282,7 +282,8 @@ extern void compute_spring_accel1(
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
 /*
 #ifdef DAMPING_FORCE
-		f[k] += sv->lambda*v_rel[k]/sv->m; //This is artificial viscosity
+                //This is artificial viscosity
+		f[k] += sv->lambda*v_rel[k]/sv->m; 
 #endif
 */
 	    }
