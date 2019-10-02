@@ -141,12 +141,12 @@ static  void spring_driver(
 	    FT_ResetTime(front);
 
 	    // Always output the initial interface.
-	    FT_Save(front,out_name);
+	    FT_Save(front);
 	    gviewSurfaceStress(front);
 
 	    printAfExtraDada(front,out_name);
 
-            FT_AddMovieFrame(front,out_name,binary);
+        FT_Draw(front);
 	    vtkPlotSurfaceStress(front);
 
 	    FT_Propagate(front);
@@ -193,13 +193,13 @@ static  void spring_driver(
 
             if (FT_IsSaveTime(front))
 	    {
-		FT_Save(front,out_name);
+		FT_Save(front);
 	    	printAfExtraDada(front,out_name);
 		gviewSurfaceStress(front);
 	    }
-            if (FT_IsMovieFrameTime(front))
+            if (FT_IsDrawTime(front))
 	    {
-                FT_AddMovieFrame(front,out_name,binary);
+                FT_Draw(front);
 		vtkPlotSurfaceStress(front);
 	    }
 

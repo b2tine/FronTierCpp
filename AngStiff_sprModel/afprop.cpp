@@ -52,9 +52,9 @@ static SURFACE *canopy_of_string_node(NODE *n)
 	boolean canopy_found = NO;
 
 	canopy = NULL;
-	nc = FT_NumOfNodeCurves(n);
+	nc = I_NumOfNodeCurves(n);
 	FT_VectorMemoryAlloc((POINTER*)&curves,nc,sizeof(CURVE*));
-	FT_ArrayOfNodeCurves(n,curves);
+	I_ArrayOfNodeCurves(n,curves);
 
 	for (i = 0; i < nc; ++i)
 	{
@@ -125,9 +125,9 @@ extern void fourth_order_elastic_set_propagate(
 
 	new_geom_set.load_node = newn;
 
-	num_str_curves = FT_NumOfNodeCurves(newn);
+	num_str_curves = I_NumOfNodeCurves(newn);
 
-	if (num_str_curves != FT_NumOfNodeCurves(newn))
+	if (num_str_curves != I_NumOfNodeCurves(newn))
 	{
 	    (void) printf("ERROR in af_node_propagate(): "
 			  "new number of string curves not equal!\n");
@@ -139,7 +139,7 @@ extern void fourth_order_elastic_set_propagate(
 			sizeof(NODE*));
 	FT_VectorMemoryAlloc((POINTER*)&new_gore_nodes,num_gore_nodes,
 			sizeof(NODE*));
-	FT_ArrayOfNodeCurves(newn,new_str_curves);
+	I_ArrayOfNodeCurves(newn,new_str_curves);
 
 	new_geom_set.num_strings = num_str_curves;
 

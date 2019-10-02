@@ -252,7 +252,12 @@ struct _TRI
 	TRI_NEIGHBOR neighbor[3];
 	double side_length0[3];		/* equilibrium length of each side */
 	double side_dir0[3][3];		/* equilibrium length of each side */
-	double color;			/* to plot color scale of triangle */
+
+    double k[3];			/* tensile stiffness of side */
+    double gamma[3][4];		/* angular stiffness of adj-sides */
+    double gam[3];			/* angular stiffness of adj-sides */
+	
+    double color;			/* to plot color scale of triangle */
 	struct _SURFACE	*surf;		/* surface in which the triangle lies */
 	struct _TRI *prev;
 	struct _TRI *next;
