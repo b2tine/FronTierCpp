@@ -252,20 +252,28 @@ struct _CURVE_VEL_PARAMS {
 };
 typedef struct _CURVE_VEL_PARAMS CURVE_VEL_PARAMS;
 
+/*
 static void node_vel_func(
 	POINTER vparams,
+	double *vel)*/
+static int node_vel_func(
+	POINTER vparams,
+    Front* front,
+    POINT* p,
+    HYPER_SURF_ELEMENT *hse,
+    HYPER_SURF *hs,
 	double *vel)
 {
-	NODE_VEL_PARAMS *nvparams = (NODE_VEL_PARAMS*)vparams;	
-	int i;
-	for (i = 0; i < 3; ++i)	
+	NODE_VEL_PARAMS *nvparams = (NODE_VEL_PARAMS*)vparams;
+	for (int i = 0; i < 3; ++i)	
 	    vel[i] = 0.0;
-	if (*(nvparams->time) >= nvparams->stop_time)
-	    return;
-	for (i = 0; i < 3; ++i)	
-	{
-	    vel[i] = nvparams->v0*nvparams->dir[i];
-	}
+	//if (*(nvparams->time) >= nvparams->stop_time)
+	//    return;
+	if (*(nvparams->time) < nvparams->stop_time)
+    {
+        for (int i = 0; i < 3; ++i)	
+            vel[i] = nvparams->v0*nvparams->dir[i];
+    }
 }	/* end node_vel_func */
 
 static void initCurvePropagation(
@@ -346,9 +354,14 @@ static void initCurvePropagation(
 	    CursorAfterString(infile,"Enter stop time:");
 	    fscanf(infile,"%lf",&vparams[i].stop_time);
 	    (void) printf("%f\n",vparams[i].stop_time);
-	    curves[i]->vparams = (POINTER)&vparams[i];
-	    curves[i]->vfunc = node_vel_func;
 	    vparams[i].time = &front->time;
+
+        FT_InitCurveVeloFunc(curves[i],
+                "node_vel_func",(POINTER)&vparams[i],node_vel_func);
+	    //curves[i]->vparams = (POINTER)&vparams[i];
+        //curves[i]->vfunc = node_vel_func;
+
+	    //vparams[i].time = &front->time;
 	    hsbdry_type(curves[i]) = PRESET_CURVE;
 	    curves[i]->start->extra = &node_extra;
 	    curves[i]->end->extra = &node_extra;
@@ -423,10 +436,15 @@ static void initNodePropagation(
 	    CursorAfterString(infile,"Enter stop time:");
 	    fscanf(infile,"%lf",&vparams[i].stop_time);
 	    (void) printf("%f\n",vparams[i].stop_time);
-	    nodes[i]->vparams = (POINTER)&vparams[i];
-	    nodes[i]->vfunc = node_vel_func;
-	    nodes[i]->extra = &node_extra;
 	    vparams[i].time = &front->time;
+
+        FT_InitNodeVeloFunc(nodes[i],
+                "node_vel_func",(POINTER)&vparams[i],node_vel_func);
+	    //nodes[i]->vparams = (POINTER)&vparams[i];
+	    //nodes[i]->vfunc = node_vel_func;
+	    
+	    //vparams[i].time = &front->time;
+        nodes[i]->extra = &node_extra;
 	}
 }	/* end initNodePropagation */
 
@@ -439,6 +457,7 @@ static void spring_surface_propagate(
 {
 }	/* end spring_surface_propagate */
 
+//Takes on responsibility of airfoil_curve_propagate().
 static void spring_curve_propagate(
 	Front *front,
 	POINTER wave,
@@ -453,20 +472,30 @@ static void spring_curve_propagate(
 
 	if (debugging("trace"))
 	    (void) printf("Entering spring_curve_propagate()\n");
-	if (hsbdry_type(oldc) != PRESET_CURVE || oldc->vfunc == NULL) 
+
+    VELO_FUNC_PACK* vfunc_pack = (VELO_FUNC_PACK*)oldc->vel_pack;
+	POINTER vparams = (POINTER)vfunc_pack->func_params; 
+
+	//if (hsbdry_type(oldc) != PRESET_CURVE || oldc->vfunc == NULL) 
+	if (hsbdry_type(oldc) != PRESET_CURVE || vfunc_pack->func == NULL) 
 	{
 	    if (debugging("trace"))
 	    	(void) printf("Leaving spring_curve_propagate()\n");
 	    return;
 	}
 
-	dim = FT_Dimension();
-	(*oldc->vfunc)(oldc->vparams,vel);
+    (*vfunc_pack->func)(vparams,front,NULL,NULL,NULL,vel);
+
+
+    //TODO: replace this
+	    //(*oldc->vfunc)(oldc->vparams,vel);
 
 	oldb = oldc->first;
 	newb = newc->first;
 	oldp = oldb->start;
 	newp = newb->start;
+
+	dim = FT_Dimension();
 	for (i = 0; i < dim; ++i)
 	{
 	    Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
@@ -490,6 +519,7 @@ static void spring_curve_propagate(
 	    (void) printf("Leaving spring_curve_propagate()\n");
 }	/* end spring_curve_propagate */
 
+//Takes on responsibilty of airfoil_node_propagate()
 static void spring_node_propagate(
 	Front *front,
 	POINTER wave,
@@ -500,10 +530,19 @@ static void spring_node_propagate(
 	double vel[MAXD],s;
 	int i,dim;
 
-	if (oldn->vfunc == NULL) return;
-	dim = FT_Dimension();
-	(*oldn->vfunc)(oldn->vparams,vel);
-	for (i = 0; i < dim; ++i)
+    VELO_FUNC_PACK* vfunc_pack = (VELO_FUNC_PACK*)oldn->vel_pack;
+    
+    if (vfunc_pack->func == NULL) return;
+
+	POINTER vparams = (POINTER)vfunc_pack->func_params; 
+    (*vfunc_pack->func)(vparams,front,NULL,NULL,NULL,vel);
+
+    //TODO: replace this
+	    //if (oldn->vfunc == NULL) return;
+	    //(*oldn->vfunc)(oldn->vparams,vel);
+	
+    dim = FT_Dimension();
+    for (i = 0; i < dim; ++i)
 	{
 	    Coords(newn->posn)[i] = Coords(oldn->posn)[i] + dt*vel[i];
 	    set_max_front_speed(i,fabs(vel[i]),NULL,Coords(newn->posn),front);
