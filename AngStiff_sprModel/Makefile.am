@@ -1,4 +1,4 @@
-SUBDIRS = objs tests
+SUBDIRS = objs
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/AngStiff_sprModel \
@@ -19,7 +19,7 @@ noinst_PROGRAMS = spring
 spring_SOURCES = spring.cpp
 
 
-spring_LDADD =	$(builddir)/objs/libairfoil.la
+spring_LDADD =	$(builddir)/objs/libangstiff.la
 
 
 

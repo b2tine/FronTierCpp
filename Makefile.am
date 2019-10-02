@@ -18,6 +18,7 @@ MAYBE_COLLISION = Collision
 if FOLDING_OPT
 MAYBE_FOLDING = folding
 endif
+MAYBE_ANGSTIFF_SPRMODEL = AngStiff_sprModel
 MAYBE_AIRFOIL = airfoil
 MAYBE_PARACHUTE = parachute
 endif
@@ -54,6 +55,7 @@ SUBDIRS = lib \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_FABRIC) \
+		  $(MAYBE_ANGSTIFF_SPRMODEL) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
 		  $(MAYBE_FRONTWRAPPER)

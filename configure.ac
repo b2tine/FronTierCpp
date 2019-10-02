@@ -393,6 +393,8 @@ AM_COND_IF([CGAL_ARMA_OPT],
                                          Collision/Makefile
                                          Collision/objs/Makefile
                                          Collision/tests/Makefile
+                                         AngStiff_sprModel/Makefile
+                                         AngStiff_sprModel/objs/Makefile
                                          airfoil/Makefile
                                          airfoil/objs/Makefile
                                          airfoil/tests/Makefile
