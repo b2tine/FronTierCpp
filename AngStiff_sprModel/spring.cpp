@@ -232,7 +232,7 @@ static void initSpringPropagation(
 	front->_curve_propagate = spring_curve_propagate;
 	    front->_node_propagate = spring_node_propagate;
 	
-        initCurvePropagation(front);
+    initCurvePropagation(front);
 	initNodePropagation(front);
 
         front->vfunc = NULL;
@@ -359,6 +359,7 @@ static void initCurvePropagation(
 	    (void) printf("%f\n",vparams[i].stop_time);
 	    //vparams[i].time = &front->time;
 
+        front->vfunc = NULL;
         FT_InitCurveVeloFunc(curves[i],
                 "curve_vel_func",(POINTER)&vparams[i],node_vel_func);
 	    //curves[i]->vparams = (POINTER)&vparams[i];
@@ -441,6 +442,7 @@ static void initNodePropagation(
 	    (void) printf("%f\n",vparams[i].stop_time);
 	    //vparams[i].time = &front->time;
 
+        front->vfunc = NULL;
         FT_InitNodeVeloFunc(nodes[i],
                 "node_vel_func",(POINTER)&vparams[i],node_vel_func);
 	    //nodes[i]->vparams = (POINTER)&vparams[i];
@@ -478,10 +480,17 @@ static void spring_curve_propagate(
 
     VELO_FUNC_PACK* vfunc_pack = (VELO_FUNC_PACK*)oldc->vel_pack;
 	
-    //TODO: this is nullptr for some reason.
+    //TODO: vfunc_pack is a nullptr for some reason.
+    //
+    //if (vfunc_pack->func_params == NULL)
+    if (vfunc_pack == NULL)
+    {
+        printf("ERROR: vfunc_pack == NULL\n");
+        //printf("ERROR: vfunc_pack->func_params == NULL\n");
+        clean_up(ERROR);
+    }
     POINTER vparams = (POINTER)vfunc_pack->func_params; 
 
-	//if (hsbdry_type(oldc) != PRESET_CURVE || oldc->vfunc == NULL) 
 	if (hsbdry_type(oldc) != PRESET_CURVE || vfunc_pack->func == NULL) 
 	{
 	    if (debugging("trace"))
