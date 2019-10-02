@@ -96,7 +96,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
         
-    //static CollisionSolver* collision_solver = new CollisionSolver3d();
     CollisionSolver* collision_solver = new CollisionSolver3d();
 
 	if (debugging("trace"))
