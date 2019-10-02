@@ -230,9 +230,12 @@ static void initSpringPropagation(
 	Tracking_algorithm(front) = SIMPLE_TRACKING;
 	front->_surface_propagate = spring_surface_propagate;
 	front->_curve_propagate = spring_curve_propagate;
-	initCurvePropagation(front);
+	    front->_node_propagate = spring_node_propagate;
+	
+        initCurvePropagation(front);
 	initNodePropagation(front);
 
+        front->vfunc = NULL;
 	front->interior_propagate = fourth_order_elastic_surf_propagate;
 }	/* end initSpringPropagation */
 
@@ -354,14 +357,14 @@ static void initCurvePropagation(
 	    CursorAfterString(infile,"Enter stop time:");
 	    fscanf(infile,"%lf",&vparams[i].stop_time);
 	    (void) printf("%f\n",vparams[i].stop_time);
-	    vparams[i].time = &front->time;
+	    //vparams[i].time = &front->time;
 
         FT_InitCurveVeloFunc(curves[i],
-                "node_vel_func",(POINTER)&vparams[i],node_vel_func);
+                "curve_vel_func",(POINTER)&vparams[i],node_vel_func);
 	    //curves[i]->vparams = (POINTER)&vparams[i];
         //curves[i]->vfunc = node_vel_func;
 
-	    //vparams[i].time = &front->time;
+	    vparams[i].time = &front->time;
 	    hsbdry_type(curves[i]) = PRESET_CURVE;
 	    curves[i]->start->extra = &node_extra;
 	    curves[i]->end->extra = &node_extra;
@@ -436,14 +439,14 @@ static void initNodePropagation(
 	    CursorAfterString(infile,"Enter stop time:");
 	    fscanf(infile,"%lf",&vparams[i].stop_time);
 	    (void) printf("%f\n",vparams[i].stop_time);
-	    vparams[i].time = &front->time;
+	    //vparams[i].time = &front->time;
 
         FT_InitNodeVeloFunc(nodes[i],
                 "node_vel_func",(POINTER)&vparams[i],node_vel_func);
 	    //nodes[i]->vparams = (POINTER)&vparams[i];
 	    //nodes[i]->vfunc = node_vel_func;
 	    
-	    //vparams[i].time = &front->time;
+	    vparams[i].time = &front->time;
         nodes[i]->extra = &node_extra;
 	}
 }	/* end initNodePropagation */
@@ -474,7 +477,9 @@ static void spring_curve_propagate(
 	    (void) printf("Entering spring_curve_propagate()\n");
 
     VELO_FUNC_PACK* vfunc_pack = (VELO_FUNC_PACK*)oldc->vel_pack;
-	POINTER vparams = (POINTER)vfunc_pack->func_params; 
+	
+    //TODO: this is nullptr for some reason.
+    POINTER vparams = (POINTER)vfunc_pack->func_params; 
 
 	//if (hsbdry_type(oldc) != PRESET_CURVE || oldc->vfunc == NULL) 
 	if (hsbdry_type(oldc) != PRESET_CURVE || vfunc_pack->func == NULL) 
