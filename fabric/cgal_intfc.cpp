@@ -43,10 +43,11 @@ void CGAL_MakeEllipsoidalSurf(
         CGAL::Implicit_surface_3<GT,ellipsoid_function>
             cgal_surface(func,bounding_sphere,1.0e-06);
         
-        double lfs = 1.0;
+        //TODO: provide justification for this value of epsilon.
         double epsilon = 0.0425;
+        double max_lfs = max_radius;
         CGAL::Surface_mesh_default_criteria_3<Tr>
-            cgal_mesh_criteria = CGAL_GenerateMeshCriteria(lfs,epsilon);
+            cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
 
         CGAL::Manifold_tag cgal_manifold_tag;
 
@@ -58,7 +59,6 @@ void CGAL_MakeEllipsoidalSurf(
                         &cgal_surface,&cgal_mesh_criteria,&cgal_manifold_tag);
 }
 
-//FT_MakeCuboidSurf() should be preferred at this time
 void CGAL_MakeCuboidSurf(
         Front* front,
         double* center,
@@ -87,10 +87,11 @@ void CGAL_MakeCuboidSurf(
         CGAL::Implicit_surface_3<GT,cuboid_function>
             cgal_surface(func,bounding_sphere,1.0e-06);
 
-        double lfs = 1.0;
+        //TODO: provide justification for this value of epsilon.
         double epsilon = 0.0425;
+        double max_lfs = max_edge_dist;
         CGAL::Surface_mesh_default_criteria_3<Tr>
-            cgal_mesh_criteria = CGAL_GenerateMeshCriteria(lfs,epsilon);
+            cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
 
         CGAL::Manifold_tag cgal_manifold_tag;
 
@@ -116,21 +117,32 @@ void CGAL_MakeCuboidSurf(
 
 
 CGAL::Surface_mesh_default_criteria_3<Tr>
-CGAL_GenerateMeshCriteria(double lfs, double epsilon)
+CGAL_GenerateMeshCriteria(double epsilon, double max_lfs)
 {
-        //lfs is local feature size, the distance from points to medial axis.
-        //epsilon must be < 0.16
-        
-        //max tri angle <= 30.0 guarantees convergence 
-        double at = 30.0;
+        //epsilon must be < 0.16 for theoretical gaurantees descibed
+        //in the CGAL 3d surface mesh manual.
 
-        //upper bound on radius of surface Delauney balls
-        double ub_rad = epsilon*lfs;
+        //max_lfs is the max local feature size, i.e max distance
+        //from points sampled on the level surface to the medial axis
+        //of the surface, and should be approximated conservatively.
         
-        //upper bound on center-center distances of surface mesh facets
-        double ub_dist = 4.5*sqr(epsilon)*lfs;
+        //e.g. For a sphere, max_lfs should be set to the sphere radius.
+        //     For an ellipsoid, max_lfs should be set to the largest of
+        //     the 3 provided radii.
+        
+        //Lower bound on the minimum angle of surface mesh facets.
+        //Must be <= 30.0 in order to guarantee convergence.
+        double lb_ang = 30.0;
 
-        CGAL::Surface_mesh_default_criteria_3<Tr> criteria(at,ub_rad,ub_dist);
+        //Upper bound on radius of surface Delauney balls.
+        //Follows from the definition of (loose) epsilon-sampled surfaces.
+        double ub_rad = epsilon*max_lfs;
+        
+        //Upper bound on the distance between centers of surface mesh
+        //facets and centers of the Delauney Balls circumscribing them.
+        double ub_dist = 4.5*sqr(epsilon)*max_lfs;
+
+        CGAL::Surface_mesh_default_criteria_3<Tr> criteria(lb_ang,ub_rad,ub_dist);
         return criteria;
 }
 
