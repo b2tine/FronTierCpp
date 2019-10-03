@@ -216,7 +216,8 @@ static void init_rigid_cylinder(
 	Front *front)
 {
 	char string[100];
-	double cen[MAXD], radius, height, idir;
+	double cen[MAXD], radius, height;
+    int idir;
 	SURFACE* surf;
 	int w_type;
 	int neg_comp,pos_comp;
@@ -231,11 +232,11 @@ static void init_rigid_cylinder(
             fscanf(infile,"%lf",&height);
             (void) printf("%f\n",height);
         CursorAfterString(infile,"Enter central axis of the cylinder:");
-            fscanf(infile,"%lf",&idir);
-            (void) printf("%f\n",idir);
+            fscanf(infile,"%ld",&idir);
+            (void) printf("%d\n",idir);
         (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
         (void) printf("The default is Movable (M)\n");
-        wave_type(surf) = MOVABLE_BODY_BOUNDARY;
+        w_type = MOVABLE_BODY_BOUNDARY;
             neg_comp = SOLID_COMP;
             pos_comp = LIQUID_COMP2;
         if (CursorAfterStringOpt(infile,
@@ -258,8 +259,6 @@ static void init_rigid_cylinder(
 
         if (cgal_mesh)
         {
-            //printf("ERROR: no cgal level function for cylindrical surface\n");
-            //clean_up(ERROR);
             CGAL_MakeCylindricalSurf(front,cen,radius,height,
                     idir,neg_comp,pos_comp,w_type,1,&surf);
             
