@@ -12,8 +12,8 @@ static void initMultiRigidBodies(FILE*,Front*,int);
 
 static void init_rigid_sphere(FILE*,Front*);
 static void init_rigid_box(FILE*,Front*);
-static void init_rigid_human(FILE*,Front*);
 static void init_rigid_cylinder(FILE*,Front*);
+static void init_rigid_human(FILE*,Front*);
 
 // functions for changing the human body surface
 static void surf_com_translation(SURFACE*,double*);
@@ -71,21 +71,21 @@ static void initSingleRigidBody(
 	case 'S':
 	    init_rigid_sphere(infile, front);
             break;
-        case 'b':
-        case 'B':
-	    init_rigid_box(infile, front);
-            break;
-	case 'h':
-	case 'H':
-	    init_rigid_human(infile, front);
-	    break;
+    case 'b':
+    case 'B':
+        init_rigid_box(infile, front);
+        break;
 	case 'c':
 	case 'C':
 	    init_rigid_cylinder(infile, front);
 	    break;
-        default:
-            (void) printf("Unknow type of rigid body!\n");
-            clean_up(ERROR);
+	case 'h':
+	case 'H':
+	    init_rigid_human(infile, front);
+	    break;
+    default:
+        (void) printf("Unknow type of rigid body!\n");
+        clean_up(ERROR);
         }
 }	/* end initSingleRigidBody */
 
@@ -159,8 +159,6 @@ static void init_rigid_sphere(
             FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
                                         &surf);
         }
-        
-        return;
 }	/* end init_rigid_sphere */
 
 static void init_rigid_box(
@@ -211,9 +209,67 @@ static void init_rigid_box(
         {
             FT_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,2,&surf);
         }
-        
-	return;
 }	/* end init_rigid_box */
+
+static void init_rigid_cylinder(
+	FILE *infile,
+	Front *front)
+{
+	char string[100];
+	double cen[MAXD], radius, height, idir;
+	SURFACE* surf;
+	int w_type;
+	int neg_comp,pos_comp;
+
+        CursorAfterString(infile,"Enter center of the cylinder:");
+            fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
+            (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
+        CursorAfterString(infile,"Enter radius of the cylinder:");
+            fscanf(infile,"%lf",&radius);
+            (void) printf("%f\n",radius);
+        CursorAfterString(infile,"Enter height of the cylinder:");
+            fscanf(infile,"%lf",&height);
+            (void) printf("%f\n",height);
+        CursorAfterString(infile,"Enter central axis of the cylinder:");
+            fscanf(infile,"%lf",&idir);
+            (void) printf("%f\n",idir);
+        (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
+        (void) printf("The default is Movable (M)\n");
+        wave_type(surf) = MOVABLE_BODY_BOUNDARY;
+            neg_comp = SOLID_COMP;
+            pos_comp = LIQUID_COMP2;
+        if (CursorAfterStringOpt(infile,
+                    "Type yes if the rigid body is fixed:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                w_type = NEUMANN_BOUNDARY;
+        }
+
+        bool cgal_mesh = false;
+        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                cgal_mesh = true;
+        }
+
+        if (cgal_mesh)
+        {
+            //printf("ERROR: no cgal level function for cylindrical surface\n");
+            //clean_up(ERROR);
+            CGAL_MakeCylindricalSurf(front,cen,radius,height,
+                    idir,neg_comp,pos_comp,w_type,1,&surf);
+            
+        }
+        else
+        {
+	        FT_MakeCylinderSurf(front,cen,radius,height/2,
+                    idir,neg_comp,pos_comp,w_type,&surf);
+        }
+}	/* end init_rigid_cylinder */
 
 static void init_rigid_human(
 	FILE *infile,
@@ -255,67 +311,7 @@ static void init_rigid_human(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	        wave_type(surf) = NEUMANN_BOUNDARY;
 	}
-	return;
 }	/* end init_rigid_human */
-
-static void init_rigid_cylinder(
-	FILE *infile,
-	Front *front)
-{
-	char string[100];
-	double cen[MAXD], radius, height;
-	SURFACE* surf;
-	int w_type;
-	int neg_comp,pos_comp;
-
-	CursorAfterString(infile,"Enter center of the cylinder:");
-        fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
-        (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
-	CursorAfterString(infile,"Enter radius of the cylinder:");
-        fscanf(infile,"%lf",&radius);
-        (void) printf("%f\n",radius);
-	CursorAfterString(infile,"Enter height of the cylinder:");
-        fscanf(infile,"%lf",&height);
-	(void) printf("%f\n",height);
-	(void) printf("Rigid body can be fixed (F) or Movable (M)\n");
-	(void) printf("The default is Movable (M)\n");
-	wave_type(surf) = MOVABLE_BODY_BOUNDARY;
-        neg_comp = SOLID_COMP;
-        pos_comp = LIQUID_COMP2;
-	if (CursorAfterStringOpt(infile,
-	    		"Type yes if the rigid body is fixed:"))
-	{
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0] == 'y' || string[0] == 'Y')
-	        w_type = NEUMANN_BOUNDARY;
-	}
-
-        bool cgal_mesh = false;
-        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                cgal_mesh = true;
-        }
-
-        if (cgal_mesh)
-        {
-            printf("ERROR: no cgal level function for cylindrical surface\n");
-            clean_up(ERROR);
-            /*CGAL_MakeCylindricalSurf(front,cen,radius,height/2,
-                 3,neg_comp,pos_comp,w_type,1,&surf);
-            */
-        }
-        else
-        {
-	    FT_MakeCylinderSurf(front,cen,radius,height/2,
-                2,neg_comp,pos_comp,w_type,&surf);
-        }
-        
-	return;
-}	/* end init_rigid_cylinder */
 
 extern void unsort_surf_point(SURFACE *surf)
 {

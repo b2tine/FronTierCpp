@@ -23,7 +23,7 @@ using Sphere_3 = GT::Sphere_3;
 using Point_3 = GT::Point_3;
 using FT = GT::FT;
 
-using Vertex_handle =  C2T3::Vertex_handle;
+using Vertex_handle = C2T3::Vertex_handle;
 using Vertex_iterator = C2T3::Vertex_iterator;
 using Facet_iterator = C2T3::Facet_iterator;
 
@@ -39,6 +39,9 @@ extern void CGAL_MakeEllipsoidalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
                             int,int,SURFACE**);
 extern void CGAL_MakeCuboidSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,
                             int,SURFACE**);
+
+extern void CGAL_MakeCylindricalSurf(Front*,double*,double,double,int,COMPONENT,
+                            COMPONENT,int,int,SURFACE**);
 
 template <typename CGAL_Surface,
           typename CGAL_MeshCriteria,
@@ -102,6 +105,32 @@ struct cuboid_function
         
         return dist;
     }
+};
+
+struct cylinder_function
+{
+    double* center;
+    double radius;
+    double height;
+    int idir;
+
+    cylinder_function(double* cen, double rad, double h, int dir)
+        : center{cen}, radius{rad}, height{h}, idir{dir}
+    {}
+
+    FT operator()(Point_3 p) const
+    {
+        const FT coords[3] = {p.x(), p.y(), p.z()};
+   
+        const FT x = coords[(idir+1)%3] - center[(idir+1)%3];
+        const FT y = coords[(idir+2)%3] - center[(idir+2)%3];
+        const FT z = coords[idir] - center[idir];
+
+        if (z > -0.5*height && z < 0.5*height)
+            return sqr(x) + sqr(y) - sqr(radius);
+        else
+            return 1.0;
+    }    
 };
 
 #endif
