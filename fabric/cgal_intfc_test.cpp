@@ -68,6 +68,7 @@ int main(int argc, char **argv)
 	sprintf(dname,"%s/CGAL_ellipsoid_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
 
     
@@ -86,6 +87,7 @@ int main(int argc, char **argv)
 	sprintf(dname,"%s/CGAL_cuboid_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
 
     
@@ -107,9 +109,10 @@ int main(int argc, char **argv)
 	sprintf(dname,"%s/CGAL_cylindrical_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
 
-    
+/*
     //FronTier Ellipsoidal Level Surface
 
     FT_StartUp(&front,&f_basic);
@@ -127,6 +130,7 @@ int main(int argc, char **argv)
     sprintf(dname,"%s/FT_ellipsoid_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
    
 
@@ -147,6 +151,7 @@ int main(int argc, char **argv)
     sprintf(dname,"%s/FT_cuboid_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
 
     
@@ -172,7 +177,9 @@ int main(int argc, char **argv)
 	sprintf(dname,"%s/FT_cylindrical_intfc",out_name);
 	gview_plot_interface(dname,front.interf);
 
+    //FT_FreeFront(&front);
     delete_interface(front.interf);
-    
+*/
+
 	clean_up(0);
 }
