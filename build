@@ -6,10 +6,11 @@
 
 
 function config_opportunity {
-    export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
-    export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
-    export CPPFLAGS="-I/home/ext.bballentine/FT_External/gmp-6.1.2/include -I/home/ext.bballentine/FT_External/mpfr-4.0.2/include"
-    CONF="--with-mpi --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
+    OPENMPI_DIR=/shared/openmpi-2.1.1/gcc-6.2.1
+    export CC="${OPENMPI_DIR}/bin/mpicc"
+    export CXX="${OPENMPI_DIR}/bin/mpicxx"
+    export CFLAGS="-std=gnu11 $CFLAGS"
+    CONF="--with-openmpi-dir=${OPENMPI_DIR} --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
 }
 
 function config_intruder {
