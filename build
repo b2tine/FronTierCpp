@@ -13,6 +13,11 @@ function config_opportunity {
     CONF="--with-openmpi-dir=${OPENMPI_DIR} --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
 }
 
+function config_opportunity_serial {
+    export CFLAGS="-std=gnu11 $CFLAGS"
+    CONF="--with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
+}
+
 function config_intruder {
     module load mvapich2-2.1/gcc-4.9.2
     export CC=mpicc
@@ -95,6 +100,8 @@ for arg in $@ ; do
         WARNING="-Wall"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
+    elif [[ "$arg" == "-s" ]]; then
+        SERIAL=1
     fi
 done
 
@@ -132,7 +139,11 @@ elif [[ "$HOST" == jarret-MacBookAir ]]; then
 	config_jarretlaptop
 elif [[ "$HOST" == head ]]; then
     echo "Machine recognized as opportunity."
-    config_opportunity
+    if [[ "$SERIAL" == 1 ]]; then
+        config_opportunity_serial
+    else
+        config_opportunity
+    fi
 else 
     echo Unrecognized machine.
     exit 1
@@ -145,7 +156,7 @@ echo "configure options: ${CONF}"
 
 ./configure ${CONF}
 
-if [[ -z "$NOMAKE" ]]; then
+if [[ "$NOMAKE" != 1 ]]; then
     make -j 4
 fi
 

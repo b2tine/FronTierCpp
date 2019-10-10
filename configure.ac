@@ -20,7 +20,7 @@ AM_PROG_AR
 LT_INIT([disable-shared])
 
 #Check for compilers
-AC_PROG_CXX([mpic++ mpicxx])
+AC_PROG_CXX
 AC_PROG_FC
 AC_FC_SRCEXT([F90])
 AC_FC_LIBRARY_LDFLAGS
