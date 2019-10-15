@@ -1,8 +1,9 @@
-#include <FronTier.h>
 #include "spring_solver.h"
 #include <unordered_map>
-#include "../iFluid/ifluid_state.h"
 #include "folding.h"
+
+#include <FronTier.h>
+#include "../iFluid/ifluid_state.h"
 
 //helper functions to convert FronTier data structures
 //to spring mesh
