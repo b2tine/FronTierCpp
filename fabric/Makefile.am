@@ -27,6 +27,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+
+
 noinst_PROGRAMS = fabric_Cplus \
 				  fabric_Fortn \
 				  cgal_intfc_test

@@ -22,6 +22,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/parachute \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+
+
 
 noinst_PROGRAMS = parachute
 

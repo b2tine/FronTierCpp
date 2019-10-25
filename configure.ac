@@ -259,11 +259,11 @@ with_cgal=no
 AS_IF([test "x${cgal_dir}" != xno],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
-       cgallib="-L${cgal_dir}/lib ${cgal_libflags}"],
+       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}lib -Wl,-rpath=${cgal_dir}/lib"],
        [test "x${cgal_inc}" != xno && test "x${cgal_lib}" != xno],
        [with_cgal=yes
         cgalinc="-I${cgal_inc} -frounding-math"
-        cgallib="-L${cgal_lib} ${cgal_libflags}"])
+        cgallib="-L${cgal_lib} ${cgal_libflags} -Wl,-rpath-link=${cgal_lib} -Wl,-rpath=${cgal_lib}"])
 
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
