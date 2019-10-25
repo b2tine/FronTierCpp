@@ -15,6 +15,8 @@ extern void CGAL_MakeSphericalSurf(
                             w_type,refinement_level,surf);
 }
 
+//TODO: Max local feature size, max_lfs, can probably be tightened up
+//      in the below cgal surface functions.
 extern void CGAL_MakeEllipsoidalSurf(
         Front* front,
         double* center,
@@ -142,6 +144,47 @@ extern void CGAL_MakeCylindricalSurf(
             CGAL::Manifold_tag
                 >(front,surf,neg_comp,pos_comp,w_type,
                         &cgal_surface,&cgal_mesh_criteria,&cgal_manifold_tag);
+}
+
+extern void CGAL_MakeConeSurf(
+        Front* front,
+        double* center,
+        double slope,
+        double height,
+        COMPONENT neg_comp,
+        COMPONENT pos_comp,
+        int w_type,
+        int refinement_level,
+        SURFACE** surf)
+{
+        cone_function func(center,slope,height);
+        double radius = height/slope;
+        double max_dist = std::max(radius,height);
+
+        FT bounding_sphere_squared_radius = sqr(1.0+max_dist);
+        Point_3 bounding_sphere_center(center[0],center[1],center[2]);
+
+        Sphere_3 bounding_sphere(bounding_sphere_center,
+                                 bounding_sphere_squared_radius);
+
+        CGAL::Implicit_surface_3<GT,cone_function>
+            cgal_surface(func,bounding_sphere,1.0e-06);
+        
+        //TODO: provide justification for this value of epsilon.
+        double epsilon = 0.0425;
+        double max_lfs = max_dist;
+        CGAL::Surface_mesh_default_criteria_3<Tr>
+            cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
+
+        CGAL::Manifold_tag cgal_manifold_tag;
+
+        CGAL_MakeLevelSurface<
+            CGAL::Implicit_surface_3<GT,cone_function>,
+            CGAL::Surface_mesh_default_criteria_3<Tr>,
+            CGAL::Manifold_tag
+                >(front,surf,neg_comp,pos_comp,w_type,
+                        &cgal_surface,&cgal_mesh_criteria,&cgal_manifold_tag);
+
 }
 
 //TODO: Read about cgal meshing criteria and develop

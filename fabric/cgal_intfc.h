@@ -43,6 +43,9 @@ extern void CGAL_MakeCuboidSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,
 extern void CGAL_MakeCylindricalSurf(Front*,double*,double,double,int,COMPONENT,
                             COMPONENT,int,int,SURFACE**);
 
+extern void CGAL_MakeConeSurf(Front*,double*,double,double,COMPONENT,COMPONENT,
+                            int,int,SURFACE**);
+
 template <typename CGAL_Surface,
           typename CGAL_MeshCriteria,
           typename CGAL_ManifoldTag>
@@ -131,6 +134,33 @@ struct cylinder_function
         else
             return 1.0;
     }    
+};
+
+struct cone_function
+{
+    double* center; //center of lower boundary disk
+    double slope;
+    double height;
+
+    cone_function(double* cen, double sl, double h)
+        : center{cen}, slope{sl}, height{h}
+    {
+        //for now assume positive slope
+        assert(slope > 0.0);
+    }
+
+    FT operator()(Point_3 p) const
+    {
+        const FT x = p.x() - center[0];
+        const FT y = p.y() - center[1];
+        const FT z = p.z() - center[2];
+
+        double val;
+        if (z > 0 && z < height)
+            return sqr(slope)*(sqr(x) + sqr(y)) - sqr(z);
+        else
+            return 1.0;
+    }
 };
 
 #endif

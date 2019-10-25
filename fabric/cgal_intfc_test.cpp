@@ -112,6 +112,27 @@ int main(int argc, char **argv)
     //FT_FreeFront(&front);
     delete_interface(front.interf);
 
+
+    //CGAL Cone Level Surface
+    
+    FT_StartUp(&front,&f_basic);
+	FT_InitIntfc(&front,&level_func_pack);
+    
+    SURFACE* cone_surf;
+    double cone_center[3] = {0.0, 0.0, -0.5};
+    double cone_slope = 1.5;
+    double cone_height = 0.75;
+
+    CGAL_MakeConeSurf(&front,cone_center,cone_slope,cone_height,
+            neg_comp,pos_comp,w_type,1,&cone_surf);
+    
+	sprintf(dname,"%s/CGAL_cone_intfc",out_name);
+	gview_plot_interface(dname,front.interf);
+
+    //FT_FreeFront(&front);
+    delete_interface(front.interf);
+
+
 /*
     //FronTier Ellipsoidal Level Surface
 
