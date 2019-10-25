@@ -1,5 +1,5 @@
-program fortran_driver
-
+module ft_api
+    
     use, intrinsic :: iso_c_binding
     implicit none
 
@@ -39,6 +39,14 @@ program fortran_driver
         end subroutine smm_clean_up
     end interface
 
+end module FT_API
+
+
+program fortran_driver
+
+    use ft_api
+    use, intrinsic :: iso_c_binding
+    implicit none
 
     character(len=50) :: arg
     integer :: i, k, argc, length, stat
