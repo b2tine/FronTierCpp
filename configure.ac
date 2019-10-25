@@ -253,7 +253,7 @@ AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
             [specify location of libraries])],
             [cgal_lib=${withval}],[cgal_lib=no])
 
-cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
+cgal_libflags="-lCGAL_Core -lCGAL -lgmp -lmpfr"
 
 with_cgal=no
 AS_IF([test "x${cgal_dir}" != xno],
