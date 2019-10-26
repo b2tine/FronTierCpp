@@ -409,6 +409,9 @@ extern F_BASIC_DATA *SMM_GetBasicData();
 extern void SMM_InitCpp(int,char**);
 extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic);
 
+extern void SMM_StartUpStep();
+extern void SMM_TimeMarch();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -422,6 +425,7 @@ extern void SMM_InitTestVelFunc();
 extern void SMM_InitTestTimeControl();
 extern void SMM_Plot();
 extern void SMM_Save();
+extern void SMM_Driver();
 extern void SMM_TestDriver();
 extern void SMM_CleanUp(int exitcode = 0);
 
