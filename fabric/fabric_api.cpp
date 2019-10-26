@@ -342,7 +342,7 @@ extern void SMM_InitTestVelFunc()
         fclose(infile);
 }       /* end SMM_InitTestVelFunc */
 
-extern void SMM_InitTestTimeContrl()
+extern void SMM_InitTestTimeControl()
 {
         Front *front = SMM_GetFront();
 	FILE *infile = fopen(InName(front),"r");

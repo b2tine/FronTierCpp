@@ -419,7 +419,7 @@ extern void SMM_InitModules();
 extern void SMM_InitPropagator();
 extern void SMM_InitSpringMassParams();
 extern void SMM_InitTestVelFunc();
-extern void SMM_InitTestTimeContrl();
+extern void SMM_InitTestTimeControl();
 extern void SMM_Plot();
 extern void SMM_Save();
 extern void SMM_TestDriver();

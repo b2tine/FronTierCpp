@@ -21,7 +21,7 @@ module fortran_api
         subroutine smm_init_vel_func() bind(c,name="SMM_InitTestVelFunc")
         end subroutine smm_init_vel_func
 
-        subroutine smm_init_time_control() bind(c,name="SMM_InitTestTimeContrl")
+        subroutine smm_init_time_control() bind(c,name="SMM_InitTestTimeControl")
         end subroutine smm_init_time_control
 
         subroutine smm_plot() bind(c, name="SMM_Plot")

@@ -37,7 +37,7 @@ int main(int argc, char **argv)
         SMM_InitSpringMassParams();
         SMM_InitPropagator();
         SMM_InitTestVelFunc();
-        SMM_InitTestTimeContrl();
+        SMM_InitTestTimeControl();
 	    
         SMM_Plot();
 
