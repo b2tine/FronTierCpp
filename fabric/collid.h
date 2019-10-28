@@ -121,7 +121,7 @@ private:
 	static void turnOnImpZone();
 	bool reduceSuperelastOnce(int&);
 	void computeAverageVelocity();
-    void resetCoordinates();
+    void resetPositionCoordinates();
 	void updateFinalPosition();
 	void reduceSuperelast();
 	void updateFinalVelocity();

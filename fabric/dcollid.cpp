@@ -272,10 +272,10 @@ void CollisionSolver::computeAverageVelocity()
     //now called inside resolveCollision() immediately
     //after computeAverageVelocity()
     // 
-    //  resetCoordinates();
+    //  resetPositionCoordinates();
 }
 
-void CollisionSolver::resetCoordinates()
+void CollisionSolver::resetPositionCoordinates()
 {
     POINT* pt;
     STATE* sl; 
@@ -397,7 +397,7 @@ void CollisionSolver::resolveCollision()
     //restore coords of points to old coords !!!
     //x_old is the only valid coords for each point 
     //Coords(point) is for temporary judgement
-    resetCoordinates();
+    resetPositionCoordinates();
 	
     start_clock("detectProximity");
 	detectProximity();
