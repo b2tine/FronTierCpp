@@ -1197,14 +1197,6 @@ void scalarMult(double a,double* v, double* ans)
             ans[i] = a*v[i];	
 }
 
-bool LeftTurn(std::vector<double>& a,
-              std::vector<double>& b,
-              std::vector<double>& c)
-{
-    return (b[0] - a[0])*(c[1] - a[1])
-        - (c[0] - a[0])*(b[1] - a[1]);
-}
-
 extern double myDet3d(double a[3][3]){
     return  a[0][0]*(a[1][1]*a[2][2] - a[2][1]*a[1][2]) 
 	  - a[0][1]*(a[1][0]*a[2][2] - a[2][0]*a[1][2]) 

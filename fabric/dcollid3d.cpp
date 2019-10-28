@@ -617,7 +617,7 @@ bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h){
 bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
 	POINT* pts[4];
 	STATE* sl[2];
-	//bool status = false;
+	bool status = false;
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
@@ -645,14 +645,12 @@ bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
 		pts[j] = Point_of_tri(tmp_tri2)[j];
 	    pts[3] = Point_of_tri(tmp_tri1)[i];
 	
-	    //we do not consider point against 
-            //a triangle that cotains it
-            if (pts[3] == pts[0] || pts[3] == pts[1] ||
-                pts[3] == pts[2])
-                continue;
+	    //Don't consider a point against the triangle that contains it
+        if (pts[3] == pts[0] || pts[3] == pts[1]
+                || pts[3] == pts[2]) continue;
+
 	    if (PointToTri(pts,h))
-            return true;
-		//status = true;
+            status = true;
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -663,17 +661,16 @@ bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
 		pts[2] = Point_of_tri(tri2)[j];
 		pts[3] = Point_of_tri(tri2)[(j+1)%3];
 		
-		//we do not consider edges share a point
-                if (pts[0] == pts[2] || pts[0] == pts[3] ||
-                    pts[1] == pts[2] || pts[1] == pts[3])
-                    continue;
+		//Don't check edges that share an endpoint
+        if (pts[0] == pts[2] || pts[0] == pts[3] ||
+            pts[1] == pts[2] || pts[1] == pts[3])
+            continue;
 
 	  	if (EdgeToEdge(pts, h))
-            return true;
-		    //status = true;
+            status = true;
 	    }  
 	}
-	return false;//status;
+	return status;
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -690,16 +687,17 @@ static void PointToLine(POINT* pts[],double &a)
         a = Dot3d(x13,x12)/Dot3d(x12,x12);
 }
 
+/*
 static bool EdgeToEdge(POINT** pts, double h, double root)
 {
-/*	x1	x3
- *	/	 \
- *     /	  \
- * x2 /		   \ x4
- * solve equation
- * x21*x21*a - x21*x43*b = x21*x31
- * -x21*x43*a + x43*x43*b = -x43*x31
- */
+//     x1	  x3
+//	    /	   \
+//     /	    \
+// x2 /		     \ x4
+// solve equation
+// x21*x21*a - x21*x43*b = x21*x31
+// -x21*x43*a + x43*x43*b = -x43*x31
+//
 	double x21[3], x43[3], x31[3];
 	double a, b;
 	double tmp[3];
@@ -829,371 +827,152 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
     EdgeToEdgeImpulse(pts, nor, a, b, dist, root);
 	return true;
 }
+*/
 
-static bool PointToTri(POINT** pts, double h, double root)
+//For details of this implementation see:
+///http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
+static bool EdgeToEdge(POINT** pts, double h, double root)
 {
-/*	x1
- *  	/\     x4 *
- *     /  \
- * x2 /____\ x3
- *
- * solve equation
- * x13*x13*w1 + x13*x23*w2 = x13*x43
- * x13*x23*w1 + x23*x23*w2 = x23*x43
- */
-	double w[3] = {0.0};
-	double x13[3], x23[3], x43[3];
-	double nor[3] = {0.0}, nor_mag = 0.0, dist, det;
+//	   x1	x3
+//	    /	 \
+//     /	  \
+// x2 /		   \ x4
+//
+	double x12[3], x34[3], x31[3];
+	Pts2Vec(pts[0],pts[1],x12);    
+	Pts2Vec(pts[2],pts[3],x34);
+	Pts2Vec(pts[2],pts[0],x31);
 
-    //TODO: not consisent with below that uses x_old in computations.
-	Pts2Vec(pts[0],pts[2],x13);
-	Pts2Vec(pts[1],pts[2],x23);
-	Pts2Vec(pts[3],pts[2],x43);
+    //Matrix entries
+    double a = Dot3d(x12,x12);
+    double b = Dot3d(x12,x34);
+    double c = Dot3d(x34,x34);
+
+    //RHS
+    double d = Dot3d(x12,x31);
+    double e = Dot3d(x34,x31);
 	
-	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
-	if (fabs(det) < 1000 * MACH_EPS)
-    {   
-	    // ignore cases where tri reduces to a line or point
-         
-        //TODO: let's not ignore it
-        return false;
+    //Matrix Determinant
+    double D = fabs(a*c - b*b);
 
-        /*
-	    //consider the case when det = 0
-	    //x13 and x23 are collinear
+    //Solution, and solution numerators and denominators
+    double sC = 0;  double sN = 0;  double sD = D;    
+    double tC = 0;  double tN = 0;  double tD = D;    
+    
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
 
-	    POINT* tmp_pts[3]; 
-	    double max_len = 0;
-	    //find longest side
-	    for (int i = 0; i < 3; ++i){
-		double tmp_dist = distance_between_positions(Coords(pts[i]),
-				Coords(pts[(i+1)%3]),3);
-		if (tmp_dist > max_len){
-		    tmp_pts[0] = pts[i];
-		    tmp_pts[1] = pts[(i+1)%3];
-		    max_len = tmp_dist;
-		}
-	    }
-	    if (max_len < ROUND_EPS){
-		//triangle degenerate to a point
-		minusVec(Coords(pts[0]),Coords(pts[3]),nor);
-		dist = Mag3d(nor);
-		if (dist < ROUND_EPS)
-		for (int i = 0; i < 3; ++i){
-		    w[i] = 1.0/3.0;
-		    nor[i] = 1.0; 
-		}
-	    }
-	    else{
-		//triangle degnerate to a line between tmp_pts
-		tmp_pts[2] = pts[3];
-		double a;
-		PointToLine(tmp_pts,a);
-		for (int i = 0; i < 3; ++i)
-		for (int j = 0; j < 2; ++j){
-		    if (tmp_pts[j] == pts[i]){
-			w[i] = (j == 0) ? a : 1.0-a;
-		    }
-		}
-		double v[3];
-		minusVec(Coords(tmp_pts[1]),Coords(tmp_pts[0]),v);
-		scalarMult(a,v,v);
-		addVec(Coords(tmp_pts[0]),v,v);
-		minusVec(Coords(pts[3]),v,nor);
-		dist = Mag3d(nor);
-		//define nor vec if dist == 0
-		if (Mag3d(nor) < ROUND_EPS)
-		    nor[0] = nor[1] = nor[2] = 1.0;
-	    }
-        */
-	}
-	else
+
+    double dist, vec[3];
+	Cross3d(x12,x34,vec);
+	//if (Mag3d(vec) < ROUND_EPS)
+	//{
+        //return false;
+    //}
+
+
+    if (D < ROUND_EPS || Mag3d(vec) < ROUND_EPS)
     {
-	    /*det != 0*/
-	    /*x13 and x23 are non-collinear*/
-	    Cross3d(x13, x23, nor);
-	    nor_mag = Mag3d(nor);
-        double tri_area = 0.5*nor_mag;
-
-        /*
-	    //get the old direction
-	    double x43_old[3];
-	    STATE* tmp_sl[2];
-	    tmp_sl[0] = (STATE*)left_state(pts[3]);
-	    tmp_sl[1] = (STATE*)left_state(pts[2]);
-	    minusVec(tmp_sl[0]->x_old,tmp_sl[1]->x_old,x43_old);
-        */
-
-	    /*correct the normal direction*/
-	    /*always pointing from triangle to p4*/
-	    
-        //dist = Dot3d(x43_old, nor);
-        dist = Dot3d(x43, nor);
-	    for (int i = 0; i < 3; ++i)
-	        nor[i] /= nor_mag*((dist >= 0) ? 1.0 : -1.0);
-	
-        //dist = fabs(Dot3d(x43, nor));
-        dist = fabs(dist);
-        if (dist > h)
-	        return false;
-	
-	    w[0] = (Dot3d(x13,x43)*Dot3d(x23,x23)-Dot3d(x23,x43)*Dot3d(x13,x23))/det;
-	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
-	    w[2] = 1.0 - w[0] - w[1];
-	    
-        /*
-        double c_len = 0.0;	
-        for (int i = 0; i < 3; ++i)
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
         {
-            double tmp_dist = distance_between_positions(Coords(pts[i]),
-                                    Coords(pts[(i+1)%3]),3);
-            if (tmp_dist > c_len)
-                c_len = tmp_dist;
-        }
-        */
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
 
-        //double eps = h/c_len;
-        double eps = h/sqrt(tri_area);
-        for (int i = 0; i < 3; ++i)
+        }
+        else if( sN > sD )
         {
-            if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
-                return false;
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
         }
-
-        //Project point onto plane of the triangle
-        double vec[3] = {0, 0, 0};
-        STATE* tmp_sl = (STATE*)left_state(pts[3]);
-
-        //TODO: this is wrong
-        if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS
-                || fabs(w[2]) < ROUND_EPS)
-        {
-            for (int j = 0; j < 3; ++j)
-                vec[j] = tmp_sl->x_old[j];
-
-            for (int i = 0; i < 3; ++i)
-            {
-                tmp_sl = (STATE*)left_state(pts[i]);
-                for (int j = 0; j < 3; ++j)
-                    vec[j] -= w[i] * tmp_sl->x_old[j];
-            }
-            
-            double vec_mag = Mag3d(vec);
-            if (vec_mag > ROUND_EPS)
-            {
-                for (int j = 0; j < 3; ++j)
-                    nor[j] = vec[j];
-            }
-        }
-
-        nor_mag = Mag3d(nor);
-        if (nor_mag > ROUND_EPS)
-            for (int i = 0; i < 3; ++i)
-                nor[i] /= nor_mag;
-        else
-        {
-            std::cout << "nan nor vec" << std::endl;
-            printPointList(pts,4);
-            clean_up(ERROR);
-        }
-	
     }
 
-	PointToTriImpulse(pts, nor, w, dist,root);
-	return true;
-}
-
-/* repulsion and friction functions, update velocity functions */
-static void PointToTriImpulse(POINT** pts, double* nor,
-        double* w, double dist, double root)
-{
-	if (debugging("collision"))
-	    CollisionSolver::pt_to_tri++;
-	STATE *sl[4];
-	for (int i = 0; i < 4; ++i)
-	    sl[i] = (STATE*)left_state(pts[i]);
-
-    double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
-	double impulse = 0.0, m_impulse = 0.0;
-	double k, m, lambda, dt, h, cr, sum_w = 0.0;
-	k      = CollisionSolver::getSpringConstant();
-	m      = CollisionSolver::getPointMass();
-	dt     = CollisionSolver::getTimeStepSize();
-	lambda = CollisionSolver::getFrictionConstant(); 
-	h      = CollisionSolver::getFabricThickness();
-	cr     = CollisionSolver::getRestitutionCoef();
-	dist   = h - dist; //overlap
-	double rigid_impulse[2] = {0.0};
-
-	/* apply impulses to the average (linear trajectory) velocity */
-	for (int i = 0; i < 3; ++i)
-	{
-	    v_rel[i] += sl[3]->avgVel[i];
-	    for (int j = 0; j < 3; ++j)
-		v_rel[i] -= w[j] * sl[j]->avgVel[i];
-	}
-	vn = Dot3d(v_rel, nor);
-	if (Dot3d(v_rel, v_rel) > sqr(vn))
-	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
-	else
-	    vt = 0.0;
-	if (vn < 0)
-	{
-	    if (isStaticRigidBody(pts[3]) ||
-	       (isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1]) &&
-		isStaticRigidBody(pts[2]))){
-		impulse = vn;
-		rigid_impulse[0] = vn;
-		rigid_impulse[1] = vn;
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
-		&& isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
-	    {
-		    double m1 = total_mass(pts[0]->hs);
-		    double m2 = total_mass(pts[3]->hs);
-		    rigid_impulse[0] = vn * m2 / (m1 + m2);
-		    rigid_impulse[1] = vn * m1 / (m1 + m2);
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
-		&& isMovableRigidBody(pts[2]))
-	    {
-		rigid_impulse[0] = 0.5 * vn;
-		impulse = 0.5 * vn;
-	    }
-	    else if (isMovableRigidBody(pts[3]))
-	    {
-		impulse = 0.5 * vn;
-		rigid_impulse[1] = 0.5 * vn;
-	    }
-	    else
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if (-1.0*d < 0.0)
+            sN = 0.0;
+        else if (-1.0*d > a)
+            sN = sD;
+        else
         {
-	        impulse = vn * 0.5;
+            sN = -d;
+            sD = a;
         }
+    }
+    else if (tN > tD)
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if ((b - d)  < 0.0)
+            sN = 0.0;
+        else if ((b - d) > a)
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
 
-	    for (int i = 0; i < 3; ++i)
-	    {
-		    if (isStaticRigidBody(pts[i]))
-                w[i] = 0.0;
-            sum_w += w[i];
-	    }
-	    if (fabs(sum_w) > MACH_EPS)
-	        scalarMult(1.0/sum_w,w,w);
-	}
+    //Compute the solution and obtain the closest pair of points.
+    if (sN == sD)
+        sC = 1.0;
+    else
+        sC = fabs(sN) < ROUND_EPS ? 0.0 : sN/sD;
 
-	if (vn * dt < 0.1 * dist)
-	{
-	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
-		isRigidBody(pts[2]) && isRigidBody(pts[3]))
-	    {
-            //cr = 1.0;
-		    rigid_impulse[0] *= 1.0 + cr;
-		    rigid_impulse[1] *= 1.0 + cr;
-	    }
-	    else
-	    {
-		double tmp = - std::min(dt*k*dist, m*(0.1*dist/dt - vn));
-		//double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
-		impulse += tmp;
-		rigid_impulse[0] += tmp;
-		rigid_impulse[1] += tmp;
-	    }
-	}
-	if (fabs(sum_w) < MACH_EPS)
-	    m_impulse = impulse;
-	else
-	    m_impulse = 2.0 * impulse / (1.0 + Dot3d(w, w));
+    if (tN == tD)
+        tC = 1.0;
+    else
+        tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
+    
+    
+    /*
+    if (std::isinf(sC) || std::isinf(tC))
+    {
+        LOC();
+        printf("sC or tC is inf\n");
+        clean_up(ERROR);
+    }
+    */
+    
+    scalarMult(sC,x12,x12);
+    addVec(x31,x12,vec);
 
-//uncomment the following the debugging purpose
-if (debugging("CollisionImpulse"))
-if (fabs(m_impulse) > 0.0){
-	printf("real PointToTri collision, dist = %e\n",dist);
-	printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-	printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-	printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-	printf("m_impuse = %f, impulse = %f, w = [%f %f %f]\n",
-		m_impulse,impulse,w[0],w[1],w[2]);
-	printf("dt = %f, root = %f\n",dt,root);
-	printf("k = %f, m = %f\n",k,m);
-	printf("x_old:\n");
-	for (int i = 0; i < 4; ++i){
-	    STATE* sl1 = (STATE*)left_state(pts[i]);
-	    printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
-	}
-	printf("x_new:\n");
-	for (int i = 0; i < 4; ++i){
-	    printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-	}
-	printf("avgVel:\n");
-	for (int i = 0; i < 4; ++i){
-	    STATE* sl1 = (STATE*)left_state(pts[i]);
-	    printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-	}
-}
+    scalarMult(tC,x34,x34);
+    minusVec(vec,x34,vec);
 
-	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
-	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
-	{
-	    if (isMovableRigidBody(pts[0]))
-		SpreadImpactZoneImpulse(pts[0], rigid_impulse[0], nor);
-	    if (isMovableRigidBody(pts[3]))
-		SpreadImpactZoneImpulse(pts[3], -1.0 * rigid_impulse[1], nor);
-	    return;
-	}
+    dist = Mag3d(vec);
+    if (dist > h)
+        return false;
 
-	for (int i = 0; i < 3; ++i)
-	{
-	    if (isStaticRigidBody(pts[i])) continue;
-	    double t_impulse = m_impulse;
-	    if (isMovableRigidBody(pts[i])) t_impulse = rigid_impulse[0];
-	    for(int j = 0; j < 3; ++j)
-	    {
-	        sl[i]->collsnImpulse[j] += w[i] * t_impulse * nor[j];
-	        if (fabs(vt) > ROUND_EPS)
-	            sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
-	    	    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-	    }
-	    sl[i]->collsn_num += 1;
-	}
-	if (!isStaticRigidBody(pts[3]))
-	{
-	    double t_impulse = m_impulse;
-	    if (isMovableRigidBody(pts[3])) t_impulse = rigid_impulse[1];
-	    for (int j = 0; j < 3; ++j)
-	    {
-	        sl[3]->collsnImpulse[j] -= t_impulse * nor[j];
-	        if (fabs(vt) > ROUND_EPS)
-	            sl[3]->friction[j] += std::max(-fabs(lambda * 
-			    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-	    }
-	    sl[3]->collsn_num += 1;
-	}
-	for (int j = 0; j < 4; ++j)
-	     if(isStaticRigidBody(pts[j])) 
-		memset((void*)sl[j]->collsnImpulse,0,3*sizeof(double));
+    EdgeToEdgeImpulse(pts,vec,sC,tC,dist,root);
+	return true;
 
-	if (debugging("CollisionImpulse"))
-	for (int i = 0; i < 4; ++i){
-	    printf("pt[%d], collsnImp = [%f %f %f], friction = [%f %f %f]\n",
-	i, sl[i]->collsnImpulse[0],sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
-	sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
-	}
-
-	for (int kk = 0; kk < 4; kk++)
-	for (int j = 0; j < 3; ++j){
-	    if (std::isnan(sl[kk]->collsnImpulse[j]) ||
-		std::isinf(sl[kk]->collsnImpulse[j])){
-		printf("PointToTri: sl[%d]->impl[%d] = nan\n",kk,j);
-		for (int i = 0; i < 4; ++i){
-		printf("points[%d] = %p\n",i,(void*)pts[i]);
-		printf("coords = [%f %f %f]\n",Coords(pts[i])[0],
-			Coords(pts[i])[1],Coords(pts[i])[2]);
-		}
-		printf("w = [%f %f %f]\nnor = [%f %f %f]\ndist = %f\n",
-		w[0],w[1],w[2],nor[0],nor[1],nor[2],dist);
-		printf("v_rel = [%f %f %f]\n",v_rel[0],v_rel[1],v_rel[2]);
-	        clean_up(ERROR);
-	    }
-	}
 }
 
 static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, double dist, double root)
@@ -1387,6 +1166,384 @@ if (fabs(m_impulse) > 0.0){
 	    }
 	}
 
+}
+static bool PointToTri(POINT** pts, double h, double root)
+{
+/*	x1
+ *  	/\     x4 *
+ *     /  \
+ * x2 /____\ x3
+ *
+ * solve equation
+ * x13*x13*w1 + x13*x23*w2 = x13*x43
+ * x13*x23*w1 + x23*x23*w2 = x23*x43
+ */
+	double w[3] = {0.0};
+	double x13[3], x23[3], x43[3], x34[3];
+	double nor[3] = {0.0};
+	double unit_nor[3] = {0.0};
+    double nor_mag = 0.0, dist, det;
+
+    //TODO: not consisent with below that uses x_old in computations.
+	Pts2Vec(pts[0],pts[2],x13);
+	Pts2Vec(pts[1],pts[2],x23);
+	Pts2Vec(pts[3],pts[2],x43);
+    scalarMult(-1.0,x43,x34);
+	
+	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+	if (fabs(det) < 1000 * MACH_EPS)
+    {   
+	    // ignore cases where tri reduces to a line or point
+         
+        //TODO: let's not ignore it
+        return false;
+
+        /*
+	    //consider the case when det = 0
+	    //x13 and x23 are collinear
+
+	    POINT* tmp_pts[3]; 
+	    double max_len = 0;
+	    //find longest side
+	    for (int i = 0; i < 3; ++i){
+		double tmp_dist = distance_between_positions(Coords(pts[i]),
+				Coords(pts[(i+1)%3]),3);
+		if (tmp_dist > max_len){
+		    tmp_pts[0] = pts[i];
+		    tmp_pts[1] = pts[(i+1)%3];
+		    max_len = tmp_dist;
+		}
+	    }
+	    if (max_len < ROUND_EPS){
+		//triangle degenerate to a point
+		minusVec(Coords(pts[0]),Coords(pts[3]),nor);
+		dist = Mag3d(nor);
+		if (dist < ROUND_EPS)
+		for (int i = 0; i < 3; ++i){
+		    w[i] = 1.0/3.0;
+		    nor[i] = 1.0; 
+		}
+	    }
+	    else{
+		//triangle degnerate to a line between tmp_pts
+		tmp_pts[2] = pts[3];
+		double a;
+		PointToLine(tmp_pts,a);
+		for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 2; ++j){
+		    if (tmp_pts[j] == pts[i]){
+			w[i] = (j == 0) ? a : 1.0-a;
+		    }
+		}
+		double v[3];
+		minusVec(Coords(tmp_pts[1]),Coords(tmp_pts[0]),v);
+		scalarMult(a,v,v);
+		addVec(Coords(tmp_pts[0]),v,v);
+		minusVec(Coords(pts[3]),v,nor);
+		dist = Mag3d(nor);
+		//define nor vec if dist == 0
+		if (Mag3d(nor) < ROUND_EPS)
+		    nor[0] = nor[1] = nor[2] = 1.0;
+	    }
+        */
+	}
+	else
+    {
+	    /*det != 0*/
+	    /*x13 and x23 are non-collinear*/
+	    Cross3d(x13, x23, nor);
+	    nor_mag = Mag3d(nor);
+        scalarMult(1.0/nor_mag,nor,unit_nor);
+        double tri_area = 0.5*nor_mag;
+
+        /*
+	    //get the old direction
+	    double x43_old[3];
+	    STATE* tmp_sl[2];
+	    tmp_sl[0] = (STATE*)left_state(pts[3]);
+	    tmp_sl[1] = (STATE*)left_state(pts[2]);
+	    minusVec(tmp_sl[0]->x_old,tmp_sl[1]->x_old,x43_old);
+        */
+
+	    /*correct the normal direction*/
+	    /*always pointing from triangle to p4*/
+	    
+        //dist = Dot3d(x43_old, nor);
+        //dist = Dot3d(x43,nor);
+        dist = Dot3d(x34,nor);
+        if (dist < 0.0)
+        {
+            scalarMult(-1.0,nor,nor);
+            scalarMult(-1.0,unit_nor,unit_nor);
+        }
+	
+        dist = fabs(dist);
+        if (dist > h)
+	        return false;
+	
+	    w[0] = (Dot3d(x23,x23)*Dot3d(x13,x43)-Dot3d(x13,x23)*Dot3d(x23,x43))/det;
+	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
+	    w[2] = 1.0 - w[0] - w[1];
+	    
+        /*
+        double c_len = 0.0;	
+        for (int i = 0; i < 3; ++i)
+        {
+            double tmp_dist = distance_between_positions(Coords(pts[i]),
+                                    Coords(pts[(i+1)%3]),3);
+            if (tmp_dist > c_len)
+                c_len = tmp_dist;
+        }
+        */
+
+        //double eps = h/c_len;
+        double eps = h/sqrt(tri_area);
+        for (int i = 0; i < 3; ++i)
+        {
+            if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
+                return false;
+        }
+
+        /*
+        //Project point onto plane of the triangle
+        double vec[3] = {0, 0, 0};
+        STATE* tmp_sl = (STATE*)left_state(pts[3]);
+
+        if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS
+                || fabs(w[2]) < ROUND_EPS)
+        {
+            for (int j = 0; j < 3; ++j)
+                vec[j] = tmp_sl->x_old[j];
+
+            for (int i = 0; i < 3; ++i)
+            {
+                tmp_sl = (STATE*)left_state(pts[i]);
+                for (int j = 0; j < 3; ++j)
+                    vec[j] -= w[i] * tmp_sl->x_old[j];
+            }
+            
+            double vec_mag = Mag3d(vec);
+            if (vec_mag > ROUND_EPS)
+            {
+                for (int j = 0; j < 3; ++j)
+                    nor[j] = vec[j];
+            }
+        }
+        */
+
+        /*
+        nor_mag = Mag3d(nor);
+        if (nor_mag > ROUND_EPS)
+            for (int i = 0; i < 3; ++i)
+                nor[i] /= nor_mag;
+        else
+        {
+            std::cout << "nan nor vec" << std::endl;
+            printPointList(pts,4);
+            clean_up(ERROR);
+        }
+        */
+    }
+
+	//PointToTriImpulse(pts, nor, w, dist,root);
+	PointToTriImpulse(pts,unit_nor,w,dist,root);
+	return true;
+}
+
+/* repulsion and friction functions, update velocity functions */
+static void PointToTriImpulse(
+        POINT** pts,
+        double* nor,
+        double* w,
+        double dist,
+        double root)
+{
+	if (debugging("collision"))
+	    CollisionSolver::pt_to_tri++;
+	STATE *sl[4];
+	for (int i = 0; i < 4; ++i)
+	    sl[i] = (STATE*)left_state(pts[i]);
+
+    double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
+	double impulse = 0.0, m_impulse = 0.0;
+	double rigid_impulse[2] = {0.0};
+	double k, m, lambda, dt, h, cr, sum_w = 0.0;
+	k      = CollisionSolver::getSpringConstant();
+	m      = CollisionSolver::getPointMass();
+	dt     = CollisionSolver::getTimeStepSize();
+	lambda = CollisionSolver::getFrictionConstant(); 
+	h      = CollisionSolver::getFabricThickness();
+	cr     = CollisionSolver::getRestitutionCoef();
+	dist   = h - dist; //overlap with fabric thickness
+
+	/* apply impulses to the average (linear trajectory) velocity */
+	for (int i = 0; i < 3; ++i)
+	{
+	    v_rel[i] += sl[3]->avgVel[i];
+	    for (int j = 0; j < 3; ++j)
+		v_rel[i] -= w[j] * sl[j]->avgVel[i];
+	}
+	vn = Dot3d(v_rel, nor);
+	if (Dot3d(v_rel, v_rel) > sqr(vn))
+	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
+	else
+	    vt = 0.0;
+	if (vn < 0)
+	{
+	    if (isStaticRigidBody(pts[3]) ||
+	       (isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1]) &&
+		isStaticRigidBody(pts[2]))){
+		impulse = vn;
+		rigid_impulse[0] = vn;
+		rigid_impulse[1] = vn;
+	    }
+	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
+		&& isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
+	    {
+		    double m1 = total_mass(pts[0]->hs);
+		    double m2 = total_mass(pts[3]->hs);
+		    rigid_impulse[0] = vn * m2 / (m1 + m2);
+		    rigid_impulse[1] = vn * m1 / (m1 + m2);
+	    }
+	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
+		&& isMovableRigidBody(pts[2]))
+	    {
+		rigid_impulse[0] = 0.5 * vn;
+		impulse = 0.5 * vn;
+	    }
+	    else if (isMovableRigidBody(pts[3]))
+	    {
+		impulse = 0.5 * vn;
+		rigid_impulse[1] = 0.5 * vn;
+	    }
+	    else
+        {
+	        impulse = vn * 0.5;
+        }
+
+	    for (int i = 0; i < 3; ++i)
+	    {
+		    if (isStaticRigidBody(pts[i]))
+                w[i] = 0.0;
+            sum_w += w[i];
+	    }
+	    if (fabs(sum_w) > MACH_EPS)
+	        scalarMult(1.0/sum_w,w,w);
+	}
+
+	if (vn * dt < 0.1 * dist)
+	{
+	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
+		isRigidBody(pts[2]) && isRigidBody(pts[3]))
+	    {
+            //cr = 1.0;
+		    rigid_impulse[0] *= 1.0 + cr;
+		    rigid_impulse[1] *= 1.0 + cr;
+	    }
+	    else
+	    {
+		double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+		impulse += tmp;
+		rigid_impulse[0] += tmp;
+		rigid_impulse[1] += tmp;
+	    }
+	}
+	if (fabs(sum_w) < MACH_EPS)
+	    m_impulse = impulse;
+	else
+	    m_impulse = 2.0 * impulse / (1.0 + Dot3d(w, w));
+
+//uncomment the following the debugging purpose
+if (debugging("CollisionImpulse"))
+if (fabs(m_impulse) > 0.0){
+	printf("real PointToTri collision, dist = %e\n",dist);
+	printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
+	printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+	printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+	printf("m_impuse = %f, impulse = %f, w = [%f %f %f]\n",
+		m_impulse,impulse,w[0],w[1],w[2]);
+	printf("dt = %f, root = %f\n",dt,root);
+	printf("k = %f, m = %f\n",k,m);
+	printf("x_old:\n");
+	for (int i = 0; i < 4; ++i){
+	    STATE* sl1 = (STATE*)left_state(pts[i]);
+	    printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+	}
+	printf("x_new:\n");
+	for (int i = 0; i < 4; ++i){
+	    printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+	}
+	printf("avgVel:\n");
+	for (int i = 0; i < 4; ++i){
+	    STATE* sl1 = (STATE*)left_state(pts[i]);
+	    printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+	}
+}
+
+	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
+	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
+	{
+	    if (isMovableRigidBody(pts[0]))
+		SpreadImpactZoneImpulse(pts[0], rigid_impulse[0], nor);
+	    if (isMovableRigidBody(pts[3]))
+		SpreadImpactZoneImpulse(pts[3], -1.0 * rigid_impulse[1], nor);
+	    return;
+	}
+
+	for (int i = 0; i < 3; ++i)
+	{
+	    if (isStaticRigidBody(pts[i])) continue;
+	    double t_impulse = m_impulse;
+	    if (isMovableRigidBody(pts[i])) t_impulse = rigid_impulse[0];
+	    for(int j = 0; j < 3; ++j)
+	    {
+	        sl[i]->collsnImpulse[j] += w[i] * t_impulse * nor[j];
+	        if (fabs(vt) > ROUND_EPS)
+	            sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
+	    	    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
+	    }
+	    sl[i]->collsn_num += 1;
+	}
+	if (!isStaticRigidBody(pts[3]))
+	{
+	    double t_impulse = m_impulse;
+	    if (isMovableRigidBody(pts[3])) t_impulse = rigid_impulse[1];
+	    for (int j = 0; j < 3; ++j)
+	    {
+	        sl[3]->collsnImpulse[j] -= t_impulse * nor[j];
+	        if (fabs(vt) > ROUND_EPS)
+	            sl[3]->friction[j] += std::max(-fabs(lambda * 
+			    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
+	    }
+	    sl[3]->collsn_num += 1;
+	}
+	for (int j = 0; j < 4; ++j)
+	     if(isStaticRigidBody(pts[j])) 
+		memset((void*)sl[j]->collsnImpulse,0,3*sizeof(double));
+
+	if (debugging("CollisionImpulse"))
+	for (int i = 0; i < 4; ++i){
+	    printf("pt[%d], collsnImp = [%f %f %f], friction = [%f %f %f]\n",
+	i, sl[i]->collsnImpulse[0],sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
+	sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
+	}
+
+	for (int kk = 0; kk < 4; kk++)
+	for (int j = 0; j < 3; ++j){
+	    if (std::isnan(sl[kk]->collsnImpulse[j]) ||
+		std::isinf(sl[kk]->collsnImpulse[j])){
+		printf("PointToTri: sl[%d]->impl[%d] = nan\n",kk,j);
+		for (int i = 0; i < 4; ++i){
+		printf("points[%d] = %p\n",i,(void*)pts[i]);
+		printf("coords = [%f %f %f]\n",Coords(pts[i])[0],
+			Coords(pts[i])[1],Coords(pts[i])[2]);
+		}
+		printf("w = [%f %f %f]\nnor = [%f %f %f]\ndist = %f\n",
+		w[0],w[1],w[2],nor[0],nor[1],nor[2],dist);
+		printf("v_rel = [%f %f %f]\n",v_rel[0],v_rel[1],v_rel[2]);
+	        clean_up(ERROR);
+	    }
+	}
 }
 
 static void unsort_surface_point(SURFACE *surf)
