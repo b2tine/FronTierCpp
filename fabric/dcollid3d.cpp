@@ -1008,6 +1008,7 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 	else
 	    vt = 0.0;
 
+    //Edges are approaching each other
 	if (vn < 0.0)
 	{
 	    if ((isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])) ||
@@ -1036,12 +1037,20 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 		rigid_impulse[1] = 0.5 * vn;
 	    }
 	    else
-		impulse = vn * 0.5;
-    	    if (isStaticRigidBody(pts[0])) wa[0] = 0.0;
+        {
+            //this is the fabric-fabric case?
+            impulse = vn * 0.5;
+        }
+
+        if (isStaticRigidBody(pts[0])) wa[0] = 0.0;
 	    if (isStaticRigidBody(pts[1])) wa[1] = 0.0;
 	    if (isStaticRigidBody(pts[2])) wb[0] = 0.0;
 	    if (isStaticRigidBody(pts[3])) wb[1] = 0.0;
 	}
+
+    //TODO:For Collisions only one of these should be applied, not both.
+    //     For Repulsions, both are applied.
+
 	if (vn * dt < 0.1 * dist)
 	{
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
@@ -1059,6 +1068,7 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 		rigid_impulse[1] += tmp;
 	    }
 	}
+
 	if (wa[0] + wa[1] < MACH_EPS || wb[0] + wb[1] < MACH_EPS)
 	    m_impulse = impulse;
 	else
@@ -1388,6 +1398,8 @@ static void PointToTriImpulse(
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
 	    vt = 0.0;
+
+    //Point and Triangle are approaching each other
 	if (vn < 0)
 	{
 	    if (isStaticRigidBody(pts[3]) ||
@@ -1418,6 +1430,7 @@ static void PointToTriImpulse(
 	    }
 	    else
         {
+            //this is the fabric-fabric case?
 	        impulse = vn * 0.5;
         }
 
@@ -1431,6 +1444,9 @@ static void PointToTriImpulse(
 	        scalarMult(1.0/sum_w,w,w);
 	}
 
+    //TODO:For Collisions only one of these should be applied, not both.
+    //     For Repulsions, both are applied.
+
 	if (vn * dt < 0.1 * dist)
 	{
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
@@ -1442,12 +1458,13 @@ static void PointToTriImpulse(
 	    }
 	    else
 	    {
-		double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
-		impulse += tmp;
-		rigid_impulse[0] += tmp;
-		rigid_impulse[1] += tmp;
+            double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+            impulse += tmp;
+            rigid_impulse[0] += tmp;
+            rigid_impulse[1] += tmp;
 	    }
 	}
+
 	if (fabs(sum_w) < MACH_EPS)
 	    m_impulse = impulse;
 	else

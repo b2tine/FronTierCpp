@@ -391,7 +391,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY tag
+    //TODO: add ELASTIC_BOUNDARY and ELASTIC_STRING tags
     
     CURVE **c;
     BOND* b;
