@@ -277,6 +277,9 @@ void CollisionSolver::computeAverageVelocity()
 
 void CollisionSolver::resetCoordinates()
 {
+    POINT* pt;
+    STATE* sl; 
+
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
