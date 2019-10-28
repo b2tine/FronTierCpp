@@ -473,6 +473,8 @@ void CollisionSolver::aabbProximity() {
             std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
+
+    //TODO: move this outside of this function, call in detectProximity()
     // query for collision detection of AABB elements
     abt_proximity->query(this);
 }
@@ -481,6 +483,7 @@ void CollisionSolver::detectProximity()
 {
     start_clock("dynamic_AABB_proximity");
     aabbProximity();
+    //TODO: call query() here instead of a tail call in in aabbProximity()
     stop_clock("dynamic_AABB_proximity");
 
 	updateAverageVelocity();
@@ -523,6 +526,8 @@ void CollisionSolver::aabbCollision() {
             std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
     }
+
+    //TODO: this should be called outside of this function
     abt_collision->query(this);
 }
 
@@ -544,6 +549,7 @@ void CollisionSolver::detectCollision()
 	    
         start_clock("dynamic_AABB_collision");
 	    aabbCollision();
+        //TODO: call query here instead of as tail call in aabbCollision().
         is_collision = abt_collision->getCollsnState();
 	    stop_clock("dynamic_AABB_collision");
 
@@ -971,6 +977,9 @@ void CollisionSolver::updateAverageVelocity()
 	    printDebugVariable();
 }
 
+//TODO: make regular nonmember function, with h passed as 3rd arg
+//
+//Note all of the MovingXToX() functions change the Coords of the points involved.
 bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -1025,6 +1034,8 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
 	return false;
 }
 
+//TODO: getProximity() should be a regular function with h passed as 3d argument.
+//
 //This is checking the geometric primitive for intersection
 bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
 	const CD_BOND *cd_b1, *cd_b2;
