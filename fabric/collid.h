@@ -101,7 +101,7 @@ public:
 //Forward declaration of AABBTree
 class AABBTree;
 
-//abstract base class for collision detection and handling
+//base class for collision detection and handling
 class CollisionSolver {
 private:
 	std::unique_ptr<AABBTree> abt_proximity;
@@ -121,6 +121,7 @@ private:
 	static void turnOnImpZone();
 	bool reduceSuperelastOnce(int&);
 	void computeAverageVelocity();
+    void resetCoordinates();
 	void updateFinalPosition();
 	void reduceSuperelast();
 	void updateFinalVelocity();

@@ -268,11 +268,10 @@ void CollisionSolver::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
-	
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
+}
 
+void CollisionSolver::resetCoordinates()
+{
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -283,7 +282,6 @@ void CollisionSolver::computeAverageVelocity()
             for (int j = 0; j < m_dim; ++j)
                 Coords(pt)[j] =  sl->x_old[j];
         }
-        
     }
 }
 
@@ -388,7 +386,12 @@ void CollisionSolver::resolveCollision()
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
-	start_clock("detectProximity");
+    //restore coords of points to old coords !!!
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
+    resetCoordinates();
+	
+    start_clock("detectProximity");
 	detectProximity();
 	stop_clock("detectProximity");
 
