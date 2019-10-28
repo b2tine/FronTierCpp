@@ -31,7 +31,7 @@ module fortran_api
         end subroutine smm_save
 
         subroutine smm_driver() bind(c, name="SMM_Driver")
-        end subroutine smm_test_driver
+        end subroutine smm_driver
 
         subroutine smm_test_driver() bind(c, name="SMM_TestDriver")
         end subroutine smm_test_driver
