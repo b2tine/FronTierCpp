@@ -268,6 +268,11 @@ void CollisionSolver::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
+
+    //now called inside resolveCollision() immediately
+    //after computeAverageVelocity()
+    // 
+    //  resetCoordinates();
 }
 
 void CollisionSolver::resetCoordinates()
