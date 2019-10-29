@@ -38,7 +38,6 @@ class AABB {
     MotionState abType;
     double tol;
 public:
-    // constructor
     AABB() {}
     AABB(double, CD_HSE*, MotionState);
     AABB(double, CD_HSE*, MotionState, double);

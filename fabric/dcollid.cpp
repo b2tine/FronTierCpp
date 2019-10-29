@@ -402,11 +402,12 @@ void CollisionSolver3d::aabbProximity()
     if (!abt_proximity)
     {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_proximity = std::unique_ptr<AABBTree>(
-                            new AABBTree(MotionState::STATIC));
+        abt_proximity =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::STATIC));
+
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
-             AABB* ab = new AABB(pre_tol, *it, abt_proximity->getType());
+             AABB* ab = new AABB(pre_tol,*it,abt_proximity->getType());
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
@@ -463,10 +464,11 @@ void CollisionSolver3d::detectProximity()
 void CollisionSolver3d::aabbCollision() {
     if (!abt_collision) {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_collision = std::unique_ptr<AABBTree>(
-                            new AABBTree(MotionState::MOVING));
+        abt_collision =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
+
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB(pre_tol,*it, abt_collision->getType(), s_dt);
+             AABB* ab = new AABB(pre_tol,*it,abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
@@ -619,6 +621,21 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 	}
 }
 
+void CollisionSolver3d::reduceSuperelast()
+{
+	bool has_superelas = true;
+	int niter = 0;
+    int num_edges;
+	const int max_iter = 3;
+	while(has_superelas && niter++ < max_iter)
+    {
+	    has_superelas = reduceSuperelastOnce(num_edges);
+	}
+
+	if (debugging("collision"))
+        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
+}
+
 //TODO: Implement this correctly.
 //      jacobi iteration style for strain and
 //      gauss-seidel iteration style for strain rate.
@@ -736,21 +753,6 @@ void CollisionSolver3d::updateFinalPosition()
             }
         }
 	}
-}
-
-void CollisionSolver3d::reduceSuperelast()
-{
-	bool has_superelas = true;
-	int niter = 0;
-    int num_edges;
-	const int max_iter = 3;
-	while(has_superelas && niter++ < max_iter)
-    {
-	    has_superelas = reduceSuperelastOnce(num_edges);
-	}
-
-	if (debugging("collision"))
-        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
 }
 
 //TODO: This is not the correct update.

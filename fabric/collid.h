@@ -126,7 +126,6 @@ bool MovingBondToBond(const BOND*,const BOND*,double);
 bool MovingTriToBond(const TRI*,const BOND*,double);
 bool MovingTriToTri(const TRI*,const TRI*,double);
 
-
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
 void initTestModule(Front&, char*);

@@ -1,29 +1,26 @@
 #include <armadillo>
 #include "collid.h"
 
-static void unsort_surface_point(SURFACE *surf);
-
-static bool MovingPointToTri(POINT**,double);
 static bool MovingEdgeToEdge(POINT**,double);
-static bool isCoplanar(POINT**,double,double*);
-
-static bool PointToTri(POINT**, double,
-        MotionState mstate = MotionState::STATIC, double root = 0.0);
 static bool EdgeToEdge(POINT**, double,
         MotionState mstate = MotionState::STATIC, double root = 0.0);
-//static bool PointToTri(POINT**,double,double root = 0.0);
-//static bool EdgeToEdge(POINT**,double,double root = 0.0);
+
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
-static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
-//static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,double);
-//static void PointToTriImpulse(POINT**,double*,double*,double,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
                                         double,double,double,double);
 
+static bool MovingPointToTri(POINT**,double);
+static bool PointToTri(POINT**, double,
+        MotionState mstate = MotionState::STATIC, double root = 0.0);
+
+static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
 static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
                                         double,double,double,double);
+
+static bool isCoplanar(POINT**,double,double*);
+static void unsort_surface_point(SURFACE *surf);
 
 //functions in CollisionSolver3d
 void CollisionSolver3d::assembleFromInterface(
@@ -1083,7 +1080,7 @@ static void EdgeToEdgeImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::edg_to_edg++;
 
-    //TODO: should dt be set to the root?
+    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
 	double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
@@ -1198,6 +1195,7 @@ static void EdgeToEdgeImpulse(
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
+    //friction
     for (int i = 0;  i < 4; ++i)
     {
         if (!isStaticRigidBody(pts[i]))
@@ -1209,12 +1207,10 @@ static void EdgeToEdgeImpulse(
             for (int j = 0; j < 3; ++j)
             {
                 sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                //sl[i]->collsnImpulse[j] += wab[i]*t_impulse*nor[j];
        
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    //double frcoef = std::max(-fabs(lambda*wab[i]*t_impulse/vt), -1.0);
                     sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
                 }
             }
@@ -1223,110 +1219,10 @@ static void EdgeToEdgeImpulse(
         }
         else
         {
-            //memset((void*)sl[i]->collsnImpulse,0.0,3*sizeof(double));
             for (int j = 0; j < 3; ++j)
                 sl[i]->collsnImpulse[j] = 0.0;
         }
     }
-
-    /*
-    for (int j = 0; j < 3; ++j)
-	{
-	    //p[0]
-	    if (!isStaticRigidBody(pts[0]))
-	    {
-		double t_impulse = m_impulse;
-		if (isMovableRigidBody(pts[0]))
-            t_impulse = rigid_impulse[0];
-
-        sl[0]->collsnImpulse[j] += wab[0] * t_impulse * nor[j];
-        //sl[0]->collsnImpulse[j] += wa[0] * t_impulse * nor[j];
-        
-        if (fabs(vt) > ROUND_EPS)
-        {
-            sl[0]->friction[j] += std::max(-fabs(lambda * wab[0] *
-            t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-            //sl[0]->friction[j] += std::max(-fabs(lambda * wa[0] *
-            //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-        }
-
-		if (j == 0)
-            sl[0]->collsn_num += 1;
-	    }
-
-	    //p[1]
-	    if (!isStaticRigidBody(pts[1]))
-	    {
-		double t_impulse = m_impulse;
-		if (isMovableRigidBody(pts[1]))
-            t_impulse = rigid_impulse[0];
-
-        sl[1]->collsnImpulse[j] += wab[1] * t_impulse * nor[j];
-        //sl[1]->collsnImpulse[j] += wa[1] * t_impulse * nor[j];
-
-        if (fabs(vt) > ROUND_EPS)
-        {
-            sl[1]->friction[j] += std::max(-fabs(lambda * wab[1] * 
-			    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-            //sl[1]->friction[j] += std::max(-fabs(lambda * wa[1] * 
-			  //  t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-        }
-
-		if (j == 0)
-            sl[1]->collsn_num += 1;
-	    }
-
-	    //p[2]
-	    if (!isStaticRigidBody(pts[2]))
-	    {
-		double t_impulse = m_impulse;
-		if (isMovableRigidBody(pts[2]))
-            t_impulse = rigid_impulse[1];
-        
-        sl[2]->collsnImpulse[j] -= wab[2] * t_impulse * nor[j];
-        //sl[2]->collsnImpulse[j] -= wb[0] * t_impulse * nor[j];
-
-        if (fabs(vt) > ROUND_EPS)
-        {
-            sl[2]->friction[j] += std::max(-fabs(lambda * wab[2] *
-			    t_impulse/vt), -1.0)*(v_rel[j] - vn * nor[j]);
-            //sl[2]->friction[j] += std::max(-fabs(lambda * wb[0] *
-			  //  t_impulse/vt), -1.0)*(v_rel[j] - vn * nor[j]);
-        }
-
-		if (j == 0)
-            sl[2]->collsn_num += 1;
-	    }
-
-	    //p[3]
-	    if (!isStaticRigidBody(pts[3]))
-	    {
-		double t_impulse = m_impulse;
-		if (isMovableRigidBody(pts[3]))
-            t_impulse = rigid_impulse[1];
-	        
-        sl[3]->collsnImpulse[j] -= wab[3] * t_impulse * nor[j];
-        //sl[3]->collsnImpulse[j] -= wb[1] * t_impulse * nor[j];
-
-        if (fabs(vt) > ROUND_EPS)
-        {
-            sl[3]->friction[j] += std::max(-fabs(lambda * wab[3] * 
-			    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-            //sl[3]->friction[j] += std::max(-fabs(lambda * wb[1] * 
-			  //  t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-        }
-
-		if (j == 0)
-            sl[3]->collsn_num += 1;
-	    }
-	}
-
-	for (int j = 0; j < 4; ++j)
-    {
-        if(isStaticRigidBody(pts[j]))
-            memset((void*)sl[j]->collsnImpulse,0,3*sizeof(double));
-    }
-    */
 
 	for (int i = 0; i < 4; i++)
 	for (int j = 0; j < 3; ++j)
@@ -1614,7 +1510,7 @@ static void PointToTriImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::pt_to_tri++;
     
-    //TODO: should dt be set to the root?
+    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
@@ -1721,6 +1617,7 @@ static void PointToTriImpulse(
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
+    //friction
 	for (int i = 0; i < 4; ++i)
 	{
         if (!isStaticRigidBody(pts[i]))
@@ -1732,15 +1629,11 @@ static void PointToTriImpulse(
             for(int j = 0; j < 3; ++j)
             {
                 sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                //sl[i]->collsnImpulse[j] += w[i] * t_impulse * nor[j];
 
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    //double frcoef = std::max(-fabs(lambda*w[i]*t_impulse/vt), -1.0);
                     sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
-                    //sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
-                        //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
                 }
             }
 
@@ -1752,42 +1645,6 @@ static void PointToTriImpulse(
                 sl[i]->collsnImpulse[j] = 0.0;
         }
 	}
-
-    /*
-	if (!isStaticRigidBody(pts[3]))
-	{
-	    double t_impulse = m_impulse;
-	    if (isMovableRigidBody(pts[3]))
-            t_impulse = rigid_impulse[1];
-	    
-        double frcoef = std::max(-fabs(-1.0*lambda*t_impulse/vt), -1.0);
-
-        for (int j = 0; j < 3; ++j)
-	    {
-	        sl[3]->collsnImpulse[j] += -1.0*t_impulse * nor[j];
-	        //sl[3]->collsnImpulse[j] -= t_impulse * nor[j];
-	    
-            if (fabs(vt) > ROUND_EPS)
-            {
-                sl[3]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
-	            //sl[3]->friction[j] += std::max(-fabs(-1.0*lambda * 
-			        //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
-            }
-	    }
-	    sl[3]->collsn_num += 1;
-	}
-
-    for (int i = 0; i < 4; ++i)
-    {
-        //if(isStaticRigidBody(pts[i]))
-          //  memset((void*)sl[i]->collsnImpulse,0,3*sizeof(double));
-        if(isStaticRigidBody(pts[i]))
-        {
-            for (int j = 0; j < 3; ++j)
-                sl[i]->collsnImpulse[j] = 0.0;
-        }
-    }
-    */
 
 	if (debugging("CollisionImpulse"))
 	for (int i = 0; i < 4; ++i)
@@ -1855,7 +1712,6 @@ static void PointToTriInelasticImpulse(
     }
     else
     {
-        //this is the fabric-fabric case?
         *impulse = vn * 0.5;
     }
 
@@ -1888,7 +1744,7 @@ static void PointToTriElasticImpulse(
     }
     else
     {
-        double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+        double tmp = -1.0*std::min(dt*k*dist/m, (0.1*dist/dt - vn));
         *impulse += tmp;
         rigid_impulse[0] += tmp;
         rigid_impulse[1] += tmp;
