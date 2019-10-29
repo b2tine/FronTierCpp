@@ -414,8 +414,8 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                     Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
 		    }
     
-            if (PointToTri(pts,h,roots[i])) 
-		    return true;
+            if (PointToTri(pts,h,roots[i]))
+                return true;
 	    }
 
         return false;
@@ -459,19 +459,24 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
     }
 }
 
-static void isCoplanarHelper(double* s[], double v[][3]) {
-    	v[0][0] = s[0][0];         v[0][1] = s[0][1];         v[0][2] = s[0][2];
+static void isCoplanarHelper(double* s[], double v[][3])
+{
+    v[0][0] = s[0][0];         v[0][1] = s[0][1];         v[0][2] = s[0][2];
 	v[1][0] = s[1][0]-s[0][0]; v[1][1] = s[1][1]-s[0][1]; v[1][2] = s[1][2]-s[0][2];
 	v[2][0] = s[2][0]-s[0][0]; v[2][1] = s[2][1]-s[0][1]; v[2][2] = s[2][2]-s[0][2];
 	v[3][0] = s[3][0]-s[0][0]; v[3][1] = s[3][1]-s[0][1]; v[3][2] = s[3][2]-s[0][2];
 }
+
 static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 {
 	if (debugging("collision"))
 	    CollisionSolver::is_coplanar++;
 
-	double v[4][3] = {0}, x[4][3] = {0};
-	double* tmp[4] = {0};
+	double v[4][3] = {0.0};
+    double x[4][3] = {0.0};
+	
+    double* tmp[4] = {nullptr};
+
 	//for performance, unrolling the loop
 	tmp[0] = ((STATE*)left_state(pts[0]))->avgVel;
 	tmp[1] = ((STATE*)left_state(pts[1]))->avgVel;
@@ -721,7 +726,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
             pts[1] == pts[2] || pts[1] == pts[3])
             continue;
 
-	  	if (EdgeToEdge(pts, h))
+	  	if (EdgeToEdge(pts,h))
             status = true;
 	    }  
 	}
@@ -1042,29 +1047,40 @@ static void EdgeToEdgeImpulse(
 	if (debugging("collision"))
 	    CollisionSolver::edg_to_edg++;
 
+    //TODO: should dt be set to the root?
+	double k      = CollisionSolver::getSpringConstant();
+	double m      = CollisionSolver::getPointMass();
+	double dt     = CollisionSolver::getTimeStepSize();
+	double lambda = CollisionSolver::getFrictionConstant(); 
+	double h      = CollisionSolver::getFabricThickness();
+	double cr     = CollisionSolver::getRestitutionCoef();
+    //TODO: coefficient of restitution should not be
+    //      static member of CollisionSolver class
+	
+    dist   = h - dist;
+
+	double v_rel[3] = {0.0, 0.0, 0.0};
+    double vn = 0.0;
+    double vt = 0.0;
+
+	double impulse = 0.0;
+    double m_impulse = 0.0;
+    double rigid_impulse[2] = {0.0};
+	
+	double wa[2] = {1.0 - a, a};
+    double wb[2] = {1.0 - b, b};
+
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
-
-	double v_rel[3] = {0.0, 0.0, 0.0}, vn = 0.0, vt = 0.0;
-	double impulse = 0.0, m_impulse = 0.0;
-	double k, m, lambda, dt, h, cr;
-	k      = CollisionSolver::getSpringConstant();
-	m      = CollisionSolver::getPointMass();
-	dt     = CollisionSolver::getTimeStepSize();
-	lambda = CollisionSolver::getFrictionConstant(); 
-	h      = CollisionSolver::getFabricThickness();
-	cr     = CollisionSolver::getRestitutionCoef();
-	dist   = h - dist;
-	double rigid_impulse[2] = {0.0};
-	double wa[2] = {1.0 - a, a}, wb[2] = {1.0 - b, b};
 
 	for (int j = 0; j < 3; ++j)
 	{
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
 	    v_rel[j] -= (1.0-a) * sl[0]->avgVel[j] + a * sl[1]->avgVel[j];
 	}
-	vn = Dot3d(v_rel, nor);
+	
+    vn = Dot3d(v_rel, nor);
 	if (Dot3d(v_rel, v_rel) > sqr(vn))
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
@@ -1120,7 +1136,9 @@ static void EdgeToEdgeImpulse(
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
 		isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	    {
-            //cr = 1.0;
+            //TODO: coefficient of restitution should not be
+            //      static member of CollisionSolver class
+            cr = 1.0;
             rigid_impulse[0] *= 1.0 + cr;
             rigid_impulse[1] *= 1.0 + cr;
 	    }
