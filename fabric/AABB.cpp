@@ -239,19 +239,24 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
 }
 
 //sets AABBTree::count = 0
-void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList) {
+void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList)
+{
     vhMap.clear();
     nodeSet.clear();
     count = 0; 
-    for (auto it : hseList) {
+
+    for (auto it : hseList)
+    {
          std::vector<long> ids;
          for (int i = 0; i < it->num_pts(); i++) 
               ids.push_back(it->Point_of_hse(i)->global_index);
+   
          vhMap.insert({ids, it});
     }
 }
 
-void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList) {
+void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList)
+{
     updatePointMap(hseList);
 
     std::stack<Node*> sn;
@@ -262,29 +267,38 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList) {
     
     //iterative postorder traversal of tree
     do {
-        while (cur) {
+        while (cur)
+        {
             if (cur->right)
                 sn.push(cur->right.get());
             sn.push(cur);
             cur = cur->left.get();
         }
+
         cur = sn.top();
         sn.pop();
-        if (cur->right && !sn.empty() && cur->right.get() == sn.top()) {
+
+        if (cur->right && !sn.empty() && cur->right.get() == sn.top())
+        {
             sn.pop();
             sn.push(cur);
             cur = cur->right.get();
         }
-        else {
-            if (cur->isLeaf()) {
+        else
+        {
+            if (cur->isLeaf())
+            {
                 cur->data->hse = vhMap[cur->data->indices];
                 cur->data->updateAABBInfo(dt);
                 cur->updateAABB();    
             }
+
             if (!cur->isLeaf())
                 cur->updateBranch();
+
             cur = nullptr;
         }
+
     } while (!sn.empty());
 }
 

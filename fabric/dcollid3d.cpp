@@ -426,20 +426,15 @@ static bool MovingPointToTri(POINT* pts[],const double h)
             {
                 sl = (STATE*)left_state(pts[j]);
     		    for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
+                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
 		    }
     
-            //if (PointToTri(pts,h,roots[i]))
             if (PointToTri(pts,h,mstate,roots[i]))
                 return true;
 	    }
-
-        return false;
 	}
-	else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 //NOTE: Changes coords of pts involved
@@ -461,20 +456,15 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
             {
                 sl = (STATE*)left_state(pts[j]);
                 for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
+                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
             }
 
-            //if (EdgeToEdge(pts,h,roots[i]))
             if (EdgeToEdge(pts,h,mstate,roots[i]))
                 return true;
         }
+    }
 
-	    return false;
-    }
-	else
-    {
-        return false;
-    }
+    return false;
 }
 
 static void isCoplanarHelper(double* s[], double v[][3])

@@ -94,8 +94,9 @@ public:
     std::map<std::vector<long>, CD_HSE*> vhMap;
     std::unordered_set<Node*> nodeSet;
     std::vector<std::shared_ptr<Node>> nodeArray;
-    int count;
-    int numLeaf = 0;
+
+    int count {0};
+    int numLeaf {0};
     double treeHeight(Node*); 
     double dt;
     bool isProximity;
