@@ -1750,7 +1750,7 @@ static void PointToTriImpulse(
         else
         {
             for (int j = 0; j < 3; ++j)
-                sl[j]->collsnImpulse = 0.0;
+                sl[i]->collsnImpulse[j] = 0.0;
         }
 	}
 
@@ -1785,7 +1785,7 @@ static void PointToTriImpulse(
         if(isStaticRigidBody(pts[i]))
         {
             for (int j = 0; j < 3; ++j)
-                sl[j]->collsnImpulse = 0.0;
+                sl[i]->collsnImpulse[j] = 0.0;
         }
     }
     */
