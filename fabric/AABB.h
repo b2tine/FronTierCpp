@@ -8,11 +8,9 @@
 #include <map>
 #include "collid.h"
 
-// header file for AABB tree
-// axis-aligned bounding box class
 using CPoint = std::vector<double>;
-// scope enum type forward declaration
-enum class MotionState;
+
+enum class MotionState {STATIC, MOVING};
 
 class Node;
 class AABBTree;
@@ -102,10 +100,6 @@ public:
     
     // query all collid pairs
     void query(double tol);
-        //void query(CollisionSolver*);
-   
-        //bool queryProximity(Node*, CollisionSolver*);
-        //bool queryCollision(Node*, CollisionSolver*);
 
     // insert a node into the subtree with parent 
     // as the root

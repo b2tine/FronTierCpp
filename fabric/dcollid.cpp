@@ -541,6 +541,7 @@ void CollisionSolver::detectCollision()
 	
     int niter = 1;
 	int cd_count = 0;
+   
     while(is_collision)
     {
 	    is_collision = false;
@@ -578,26 +579,28 @@ void CollisionSolver::detectCollision()
 /*
 void CollisionSolver::detectCollision()
 {
-	bool is_collision = true; 
+	std::cout<<"Starting collision handling: "<<std::endl;
+
 	int MAX_ITER = 8;
 	//const int MAX_ITER = 8;
-	int niter = 1;
+    const double h = CollisionSolver3d::getRoundingTolerance();
 
     int npairs = static_cast<int>(HUGE);
     int prev_npairs = npairs;
-
-	std::cout<<"Starting collision handling: "<<std::endl;
-	//record if has an actual collision
-	//this is useful for adpative dt
-	int cd_count = 0;
+	
+    bool is_collision = true;
 	setHasCollision(false);
-	//
-	while(is_collision) {
+	
+	int niter = 1;
+	int cd_count = 0;
+
+    while(is_collision) {
 	    
         is_collision = false;
 	    start_clock("dynamic_AABB_collision");
 	    
         aabbCollision();
+        abt_collision->query(h);
         is_collision = abt_collision->getCollsnState();
 
         stop_clock("dynamic_AABB_collision");
@@ -982,11 +985,6 @@ void CollisionSolver::updateAverageVelocity()
 	    printDebugVariable();
 }
 
-//TODO: make regular nonmember function, with h passed as 3rd arg
-//
-//Note all of the MovingXToX() functions change the Coords of the points involved.
-
-//bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b)
 bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
@@ -1044,11 +1042,7 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 	return false;
 }
 
-//TODO: getProximity() should be a regular function with h passed as 3d argument.
-//
 //This is checking the geometric primitive for intersection
-
-//bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b)
 bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;

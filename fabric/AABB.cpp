@@ -3,8 +3,7 @@
 #include <queue>
 #include <fstream>
 
-enum class MotionState {STATIC, MOVING};
-//  for proximity detection
+//for proximity detection
 AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h), 
         abType(type), lowerbound(3), upperbound(3) {
     if (type != MotionState::STATIC)
@@ -16,14 +15,15 @@ AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h),
     for (int i = 0; i < h->num_pts(); i++)
          indices.push_back(h->Point_of_hse(i)->global_index);
 }
-// for collision detection
+
+//for collision detection
 AABB::AABB(double t, CD_HSE* h, MotionState type, double Dt) : tol(t), hse(h), dt(Dt), 
         abType(type), lowerbound(3), upperbound(3) {   
     if (type != MotionState::MOVING)
         throw std::runtime_error("Collision AABB tree must has MOVING type!");
     for (int i = 0; i < 3; i++) {
-         lowerbound[i] = h->min_moving_coord(i, dt) - 0.001*tol;//1e-6;
-         upperbound[i] = h->max_moving_coord(i, dt) + 0.001*tol;//1e-6;
+         lowerbound[i] = h->min_moving_coord(i, dt) - 0.001*tol;
+         upperbound[i] = h->max_moving_coord(i, dt) + 0.001*tol;
     }
     for (int i = 0; i < h->num_pts(); i++) 
          indices.push_back(h->Point_of_hse(i)->global_index);
@@ -57,15 +57,21 @@ bool AABB::isCollid(const AABB& ab) {
 
 void AABB::updateAABBInfo(double dt) {
     if (abType == MotionState::STATIC)
-        for (int i = 0; i < 3; i++) {
-             lowerbound[i] = hse->min_static_coord(i)-tol;
-             upperbound[i] = hse->max_static_coord(i)+tol;
+    {
+        for (int i = 0; i < 3; i++)
+        {
+             lowerbound[i] = hse->min_static_coord(i) - tol;
+             upperbound[i] = hse->max_static_coord(i) + tol;
         }
-    else 
-        for (int i = 0; i < 3; i++) {
-             lowerbound[i] = hse->min_moving_coord(i, dt) - 0.001*tol;//1e-6;
-             upperbound[i] = hse->max_moving_coord(i, dt) + 0.001*tol;//1e-6;
+    }
+    else
+    {
+        for (int i = 0; i < 3; i++)
+        {
+             lowerbound[i] = hse->min_moving_coord(i, dt) - 0.001*tol;
+             upperbound[i] = hse->max_moving_coord(i, dt) + 0.001*tol;
         }
+    }
 }
 
 bool AABB::contain(const AABB* ab) {
@@ -257,8 +263,10 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList) {
     std::stack<Node*> sn;
     Node* cur = root.get();
 
-    if (!root.get()) return;
-    // iterative postorder traverse
+    if (!root.get())
+        return;
+    
+    //iterative postorder traversal of tree
     do {
         while (cur) {
             if (cur->right)
@@ -296,35 +304,29 @@ double AABBTree::treeHeight(Node* root) {
 
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
-
-//void AABBTree::query(CollisionSolver* collsn_solver)
 void AABBTree::query(double tol)
 {
     Node* cur = root.get();
     std::stack<Node*> sn;
 
-    while (cur || !sn.empty()) {
-        while (cur) {
+    while (cur || !sn.empty())
+    {
+        while (cur)
+        {
             sn.push(cur);
             cur = cur->left.get();
         }
+
         cur = sn.top();
         sn.pop();
         
-        //TODO: collsn_solver should not be passed as arg
-        //      to queryProximity() or queryCollision()
         if (cur->isLeaf())
         {
             if (type == MotionState::STATIC)
-            {
                 isProximity = queryProximity(cur,tol);
-                //isProximity = queryProximity(cur, collsn_solver);
-            }
             else
-            {
                 isCollsn = queryCollision(cur,tol);
-                //isCollsn = queryCollision(cur, collsn_solver);
-            }
+            
             nodeSet.insert(cur);
         }
         
@@ -332,14 +334,10 @@ void AABBTree::query(double tol)
     }
 }
 
-//TODO: do not pass collsn_solver as arg
-//
 // For AABB inside Node n, find all intersecting AABBs.
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-
-//bool AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver)
 bool AABBTree::queryProximity(Node* n, double tol)
 {
     std::stack<Node*> sn;
@@ -357,11 +355,6 @@ bool AABBTree::queryProximity(Node* n, double tol)
                     {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
-
-                        //TODO: make getProximity() a regular function
-                        //      collsn_solver should not be passed into queryProximity()
-
-                        //if (collsn_solver->getProximity(a,b))
                         if (getProximity(a,b,tol))
                             count++; 
                     }
@@ -388,9 +381,6 @@ bool AABBTree::queryProximity(Node* n, double tol)
     return count > 0;
 }
 
-//TODO: do not pass collsn_solver as arg
-//
-//bool AABBTree::queryCollision(Node* n, CollisionSolver* collsn_solver)
 bool AABBTree::queryCollision(Node* n, double tol)
 {
     std::stack<Node*> sn;
@@ -408,11 +398,6 @@ bool AABBTree::queryCollision(Node* n, double tol)
                     {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
-
-                        //TODO: make getCollision() a regular function
-                        //      collsn_solver should not be passed into queryCollision()
-                        //
-                        //if (collsn_solver->getCollision(a,b)) 
                         if (getCollision(a,b,tol)) 
                             count++;
                     }

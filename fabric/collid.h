@@ -42,9 +42,10 @@ struct STATE{
 
 //abstract base class for hypersurface element(HSE)
 //can be a point or a bond or a triangle
-class CD_HSE{
+class CD_HSE
+{
 public:
-        std::string name;
+    std::string name;
 	virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;
 	virtual double max_moving_coord(int,double) = 0;
@@ -55,12 +56,18 @@ public:
 };
 
 //wrap class for triangle
-class CD_TRI: public CD_HSE{
+class CD_TRI: public CD_HSE
+{
 public:
-	TRI* m_tri;
-	CD_TRI(TRI* tri, const char* n):m_tri(tri){
-            name = n;
-        }
+	
+    TRI* m_tri;
+	
+    CD_TRI(TRI* tri, const char* n)
+        : m_tri(tri)
+    {
+        name = n;
+    }
+
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
@@ -70,13 +77,19 @@ public:
 };
 
 //wrap class for bond
-class CD_BOND: public CD_HSE{
+class CD_BOND: public CD_HSE
+{
 public:
-	BOND* m_bond;
+
 	int m_dim;
-	CD_BOND(BOND* bond, int dim, const char* n):m_bond(bond), m_dim(dim){
-            name = n;
-        }
+    BOND* m_bond;
+	
+    CD_BOND(BOND* bond, int dim, const char* n)
+        : m_bond(bond), m_dim(dim)
+    {
+        name = n;
+    }
+
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
@@ -86,10 +99,16 @@ public:
 };
 
 //wrap class for point
-class CD_POINT: public CD_HSE{
+class CD_POINT: public CD_HSE
+{
 public:
-	POINT* m_point;
-	CD_POINT(POINT* point):m_point(point){}
+
+    POINT* m_point;
+
+    CD_POINT(POINT* point)
+        : m_point(point)
+    {}
+
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
@@ -100,6 +119,10 @@ public:
 
 //Forward declaration of AABBTree
 class AABBTree;
+
+//TODO: Just make the base class CollisionSolver3d,
+//      there isn't any point to having pure virtuals etc.
+//      when the 2d case was never implemented.
 
 //TODO: do we really want/need any static data or methods?
 
@@ -145,14 +168,6 @@ private:
 	void setHasCollision(bool judge) {has_collision = judge;}
 
 	virtual void updateImpactListVelocity(POINT*) = 0;
-    /*
-	virtual bool BondToBond(const BOND*,const BOND*,double) = 0;
-	virtual bool TriToTri(const TRI*,const TRI*,double) = 0;
-	virtual bool TriToBond(const TRI*,const BOND*,double)=0;
-	virtual bool MovingBondToBond(const BOND*,const BOND*,double) = 0;
-	virtual bool MovingTriToTri(const TRI*,const TRI*,double) = 0;
-	virtual bool MovingTriToBond(const TRI*,const BOND*,double)=0;
-    */
 
 protected:
 	int m_dim;
@@ -189,12 +204,10 @@ public:
 
     double setVolumeDiff(double);
 	virtual ~CollisionSolver(); //virtual destructor
-	//pure virtual functions
+	
+    //pure virtual functions
 	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
 	virtual void createImpZoneForRG(const INTERFACE*) = 0;
-	
-        //bool getProximity(const CD_HSE*,const CD_HSE*);	
-	    //bool getCollision(const CD_HSE*,const CD_HSE*);
 	
     void resolveCollision();
 	void recordOriginalPosition();	
@@ -217,19 +230,14 @@ public:
     int num_res_tris;
 };
 
+//TODO: Move into base class and rename is CollisionSolver3d.
+//      No point in deriving.
+//
 //derived 3D-class for collision detection and handling
-class CollisionSolver3d : public CollisionSolver {
+class CollisionSolver3d : public CollisionSolver
+{
 private:
 	void updateImpactListVelocity(POINT*);
-
-    /*
-	bool BondToBond(const BOND*,const BOND*,double);
-	bool TriToTri(const TRI*,const TRI*,double);
-	bool TriToBond(const TRI*,const BOND*,double);
-	bool MovingBondToBond(const BOND*,const BOND*,double);
-	bool MovingTriToTri(const TRI*,const TRI*,double);
-	bool MovingTriToBond(const TRI*,const BOND*,double);
-    */
 
 public:
 	CollisionSolver3d():CollisionSolver(3){}

@@ -253,7 +253,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	}
 }
 
-//bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h){
 bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -304,7 +303,6 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
     return status;
 }
 
-//bool CollisionSolver3d::MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -325,7 +323,8 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
                 return false;
 	    }
 	}
-	/* detect collision between two bonds */	
+
+    /* detect collision between two bonds */	
     if(MovingEdgeToEdge(pts,h))
         status = true;
 
@@ -335,7 +334,6 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
     return status;
 }
 
-//bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
 bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -575,10 +573,6 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 }
 
 //NOTE: this function restores coords of points to x_old
-//
-//helper function to detect proximity between elements 
-
-//bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h)
 bool TriToBond(const TRI* tri,const BOND* bd, double h)
 {
 	POINT* pts[4];
@@ -637,8 +631,6 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
 }
 
 //NOTE: this function restores coords of points to x_old
-//
-//bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h)
 bool BondToBond(const BOND* b1, const BOND* b2, double h)
 {
 	POINT* pts[4];
@@ -676,8 +668,6 @@ bool BondToBond(const BOND* b1, const BOND* b2, double h)
 }
 
 //NOTE: this function restores coords of points to x_old
-//
-//bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h)
 bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 {
 	POINT* pts[4];
