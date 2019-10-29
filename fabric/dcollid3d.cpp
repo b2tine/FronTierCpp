@@ -1718,7 +1718,8 @@ static void PointToTriImpulse(
     std::vector<double> W(w,w+3);
     W.push_back(-1.0);
 
-	for (int i = 0; i < 3; ++i)
+	//for (int i = 0; i < 3; ++i)
+	for (int i = 0; i < 4; ++i)
 	{
 	    //if (isStaticRigidBody(pts[i]))
           //  continue;
