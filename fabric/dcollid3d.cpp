@@ -1193,9 +1193,10 @@ static void EdgeToEdgeImpulse(
 	    return;
 	}
 	
-    std::vector<double> W(wab,wab+4);
-    W[2] *= -1.0;
-    W[3] *= -1.0;
+
+    std::vector<double> W = {wab[0],wab[1],-wab[2],-wab[3]};
+    std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
+                             rigid_impulse[1],rigid_impulse[1]};
 
     for (int i = 0;  i < 4; ++i)
     {
@@ -1203,10 +1204,7 @@ static void EdgeToEdgeImpulse(
         {
             double t_impulse = m_impulse;
             if (isMovableRigidBody(pts[i]))
-                t_impulse = rigid_impulse[i];
-        
-            double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-            //double frcoef = std::max(-fabs(lambda*wab[i]*t_impulse/vt), -1.0);
+                t_impulse = R[i];
             
             for (int j = 0; j < 3; ++j)
             {
@@ -1214,7 +1212,11 @@ static void EdgeToEdgeImpulse(
                 //sl[i]->collsnImpulse[j] += wab[i]*t_impulse*nor[j];
        
                 if (fabs(vt) > ROUND_EPS)
+                {
+                    double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+                    //double frcoef = std::max(-fabs(lambda*wab[i]*t_impulse/vt), -1.0);
                     sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                }
             }
         
             sl[i]->collsn_num++;
@@ -1641,7 +1643,7 @@ static void PointToTriImpulse(
 	{
 	    v_rel[i] += sl[3]->avgVel[i];
 	    for (int j = 0; j < 3; ++j)
-		v_rel[i] -= w[j] * sl[j]->avgVel[i];
+            v_rel[i] -= w[j] * sl[j]->avgVel[i];
 	}
 
 	vn = Dot3d(v_rel, nor);
@@ -1715,24 +1717,18 @@ static void PointToTriImpulse(
 	    return;
 	}
 
-    std::vector<double> W(w,w+3);
-    W.push_back(-1.0);
+    std::vector<double> W = {w[0],w[1],w[2],-1.0};
+    std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
+                             rigid_impulse[1],rigid_impulse[1]};
 
-	//for (int i = 0; i < 3; ++i)
 	for (int i = 0; i < 4; ++i)
 	{
-	    //if (isStaticRigidBody(pts[i]))
-          //  continue;
         if (!isStaticRigidBody(pts[i]))
         {
-	    
             double t_impulse = m_impulse;
             if (isMovableRigidBody(pts[i]))
-                t_impulse = rigid_impulse[0];
+                t_impulse = R[i];
             
-            double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-            //double frcoef = std::max(-fabs(lambda*w[i]*t_impulse/vt), -1.0);
-
             for(int j = 0; j < 3; ++j)
             {
                 sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
@@ -1740,6 +1736,8 @@ static void PointToTriImpulse(
 
                 if (fabs(vt) > ROUND_EPS)
                 {
+                    double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+                    //double frcoef = std::max(-fabs(lambda*w[i]*t_impulse/vt), -1.0);
                     sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
                     //sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
                         //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
