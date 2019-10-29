@@ -915,12 +915,10 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 */
 
 //For details of this implementation see:
-///http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
+//http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
 //
 //Note that mstate has default value of MotionState::STATIC,
 //and root has default value of 0.0
-
-//static bool EdgeToEdge(POINT** pts, double h, double root)
 static bool EdgeToEdge(
         POINT** pts,
         double h,
@@ -1064,13 +1062,15 @@ static bool EdgeToEdge(
     if (dist > h)
         return false;
 
-    //EdgeToEdgeImpulse(pts,vec,sC,tC,dist,root);
     EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,root);
 	return true;
 
 }
 
 //TODO: root is not used inside this function at all
+//
+//Note that mstate has default value of MotionState::STATIC,
+//and root has default value 0.0
 static void EdgeToEdgeImpulse(
         POINT** pts,
         double* nor,
@@ -1122,91 +1122,28 @@ static void EdgeToEdgeImpulse(
 	else
 	    vt = 0.0;
     
-    //Edges are approaching each other: apply inelastic impulse
-    if (vn < 0.0)
-        EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-	
-    /*
-    if (vn < 0.0)
-	{
-	    if ((isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])) ||
-	    	(isStaticRigidBody(pts[2]) && isStaticRigidBody(pts[3])))
-	    {
-		impulse = vn;
-		rigid_impulse[0] = vn;
-		rigid_impulse[1] = vn;
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
-		&& isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
-	    {
-		double m1 = total_mass(pts[0]->hs);
-		double m2 = total_mass(pts[2]->hs);
-		rigid_impulse[0] = vn * m2 / (m1 + m2);
-		rigid_impulse[1] = vn * m1 / (m1 + m2);
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]))
-	    {
-		rigid_impulse[0] = 0.5 * vn;
-		impulse = 0.5 * vn; 
-	    }
-	    else if (isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
-	    {
-		impulse = 0.5 * vn;
-		rigid_impulse[1] = 0.5 * vn;
-	    }
-	    else
-        {
-            //this is the fabric-fabric case?
-            impulse = vn * 0.5;
-        }
+    //Edges are approaching each other (vn < 0.0):
+    //      apply inelastic impulse
+    //Edges are seperating from each other (vn > 0.0):
+    //      apply elastic impulse
+    
+    if (mstate == MotionState::MOVING)
+    {
+        //Apply one or the other for collision, NOT BOTH
+        if (vn < 0.0)
+            EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
+        else if (vn * dt < 0.1 * dist)
+            EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
+    }
+    else
+    {
+        //Can apply both for repulsion
+        if (vn < 0.0)
+            EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
+        if (vn * dt < 0.1 * dist)
+            EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
+    }
 
-        if (isStaticRigidBody(pts[0])) wab[0] = 0.0;
-	    if (isStaticRigidBody(pts[1])) wab[1] = 0.0;
-	    if (isStaticRigidBody(pts[2])) wab[2] = 0.0;
-	    if (isStaticRigidBody(pts[3])) wab[3] = 0.0;
-        
-        //if (isStaticRigidBody(pts[0])) wa[0] = 0.0;
-	    //if (isStaticRigidBody(pts[1])) wa[1] = 0.0;
-	    //if (isStaticRigidBody(pts[2])) wb[0] = 0.0;
-	    //if (isStaticRigidBody(pts[3])) wb[1] = 0.0;
-	}
-    */
-
-    //TODO:For Collisions only one of the forces (inelastic or elastic)
-    //     should be applied, not both.
-    //     For Repulsions, one or both are applied depending on vn.
-
-
-    //spring based repulsion
-    //
-    //TODO write EdgeToEdgeElasticImpulse()
-    //        IN: vn, dt, m, k, dist, cr, pts
-    //     INOUT: rigid_impulse, impulse
-	
-    if (vn * dt < 0.1 * dist)
-        EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
-
-    /*
-    if (vn * dt < 0.1 * dist)
-	{
-	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
-		isRigidBody(pts[2]) && isRigidBody(pts[3]))
-	    {
-            //cr = 1.0;
-            rigid_impulse[0] *= 1.0 + cr;
-            rigid_impulse[1] *= 1.0 + cr;
-	    }
-	    else
-	    {
-		double tmp = -1.0*std::min(dt*k*dist/m, (0.1*dist/dt - vn));
-		impulse += tmp;
-		rigid_impulse[0] += tmp;
-		rigid_impulse[1] += tmp;
-	    }
-	}
-    */
-
-	//if (wa[0] + wa[1] < MACH_EPS || wb[0] + wb[1] < MACH_EPS)
 	if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
     {
 	    m_impulse = impulse;
@@ -1216,8 +1153,6 @@ static void EdgeToEdgeImpulse(
         double wabs_sqr = sqr(wab[0]) + sqr(wab[1])
                           + sqr(wab[2]) + sqr(wab[3]);
         m_impulse = 2.0*impulse/wabs_sqr;
-        //m_impulse = 2.0 * impulse / (wa[0]*wa[0] + wa[1]*wa[1] 
-		//			+ wb[0]*wb[0] + wb[1]*wb[1]);
     }
 
     //uncomment the following for debugging
@@ -1246,7 +1181,7 @@ static void EdgeToEdgeImpulse(
         }
         printf("\n");
     }
-    //////////////////////////////////////////
+    ////////////////////////////////////////////////
 
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
@@ -1258,8 +1193,7 @@ static void EdgeToEdgeImpulse(
 	    return;
 	}
 	
-    //TODO: could make this a loop if we make an array:
-    //      double[4] wab = {wa[0],wa[1],wb[0],wb[1]};
+    //TODO: make this a loop since now using array wab
     for (int j = 0; j < 3; ++j)
 	{
 	    //p[0]
@@ -1682,87 +1616,27 @@ static void PointToTriImpulse(
 	else
 	    vt = 0.0;
 
-
-    //Point and Triangle are approaching each other: apply inelastic impulse
-	if (vn < 0)
-        PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-
-    /*
-    //Point and Triangle are approaching each other: apply inelastic impulse
-	if (vn < 0)
-	{
-	    if (isStaticRigidBody(pts[3]) ||
-	       (isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])
-            && isStaticRigidBody(pts[2])))
-        {
-		impulse = vn;
-		rigid_impulse[0] = vn;
-		rigid_impulse[1] = vn;
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
-		&& isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
-	    {
-		    double m1 = total_mass(pts[0]->hs);
-		    double m2 = total_mass(pts[3]->hs);
-		    rigid_impulse[0] = vn * m2 / (m1 + m2);
-		    rigid_impulse[1] = vn * m1 / (m1 + m2);
-	    }
-	    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
-		&& isMovableRigidBody(pts[2]))
-	    {
-		rigid_impulse[0] = 0.5 * vn;
-		impulse = 0.5 * vn;
-	    }
-	    else if (isMovableRigidBody(pts[3]))
-	    {
-		impulse = 0.5 * vn;
-		rigid_impulse[1] = 0.5 * vn;
-	    }
-	    else
-        {
-            //this is the fabric-fabric case?
-	        impulse = vn * 0.5;
-        }
-
-	    for (int i = 0; i < 3; ++i)
-	    {
-		    if (isStaticRigidBody(pts[i]))
-                w[i] = 0.0;
-            sum_w += w[i];
-	    }
-
-	    if (fabs(sum_w) > MACH_EPS)
-	        scalarMult(1.0/sum_w,w,w);
-	}
-    */
-
-    //TODO:For Collisions only one of the forces (inelastic or elastic)
-    //     should be applied, not both.
-    //     For Repulsions, one or both are applied depending on vn.
-
-
-	if (vn * dt < 0.1 * dist)
-        PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
-
-    /*
-	if (vn * dt < 0.1 * dist)
-	{
-	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
-		isRigidBody(pts[2]) && isRigidBody(pts[3]))
-	    {
-            cr = 1.0;
-		    rigid_impulse[0] *= 1.0 + cr;
-		    rigid_impulse[1] *= 1.0 + cr;
-	    }
-	    else
-	    {
-            double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
-            impulse += tmp;
-            rigid_impulse[0] += tmp;
-            rigid_impulse[1] += tmp;
-	    }
-	}
-    */
+    //Point and Triangle are approaching each other (vn < 0.0):
+    //      apply inelastic impulse
+    //Point and Triangle are seperating from each other (vn > 0.0):
+    //      apply elastic impulse
+    
+    if (mstate == MotionState::MOVING)
+    {
+        //Apply one or the other for collision, NOT BOTH
+        if (vn < 0.0)
+            PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
+        else if (vn * dt < 0.1 * dist)
+            PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
+    }
+    else
+    {
+        //Can apply both for repulsion
+        if (vn < 0.0)
+            PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
+        if (vn * dt < 0.1 * dist)
+            PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
+    }
 
 	if (fabs(sum_w) < MACH_EPS)
 	    m_impulse = impulse;
