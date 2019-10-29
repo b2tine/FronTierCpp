@@ -1881,7 +1881,7 @@ static void PointToTriImpulse(
 	}
 }
 
-PointToTriInelasticImpulse(
+static void PointToTriInelasticImpulse(
         double vn,
         POINT** pts,
         double* impulse,
@@ -1929,7 +1929,7 @@ PointToTriInelasticImpulse(
         *sum_w += w[i];
     }
 
-    if (fabs(sum_w) > MACH_EPS)
+    if (fabs(*sum_w) > MACH_EPS)
         scalarMult(1.0/(*sum_w),w,w);
 }
 
