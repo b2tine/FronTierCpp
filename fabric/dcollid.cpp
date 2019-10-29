@@ -256,11 +256,13 @@ bool CollisionSolver3d::getImpZoneStatus(){ return s_detImpZone;}
 //present after several iterations;
 void CollisionSolver3d::computeImpactZone()
 {
-	bool is_collision = true;
-    int numZones = 0;
-	int niter = 0;
-
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
+
+    const double h = CollisionSolver3d::getRoundingTolerance();
+
+	int niter = 0;
+    int numZones = 0;
+	bool is_collision = true;
 
 	turnOnImpZone();
 	//makeSet(hseList); //this is done in AABBTree::updatePointMap()
@@ -275,20 +277,24 @@ void CollisionSolver3d::computeImpactZone()
         //start UF alogrithm
         //merge four pts if collision happens
 
-        start_clock("dynamic_AABB_collision");
-            aabbCollision();
-            is_collision = abt_collision->getCollsnState();
-        stop_clock("dynamic_AABB_collision");
+            start_clock("dynamic_AABB_collision");
+        aabbCollision();
+        abt_collision->query(h);
+            stop_clock("dynamic_AABB_collision");
 
-            updateAverageVelocity();
+        is_collision = abt_collision->getCollsnState();
 
+        updateAverageVelocity();
         updateImpactZoneVelocity(numZones);
-            std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
-                      << " pair of collision tris" << std::endl;
+
+        std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
+                  << " pair of collision tris" << std::endl;
         std::cout <<"     "<< numZones
-              <<" zones of impact" << std::endl;
+                  <<" zones of impact" << std::endl;
     }
-	turnOffImpZone();
+	
+    turnOffImpZone();
+
 	return;
 }
 
