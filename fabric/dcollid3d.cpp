@@ -1193,7 +1193,41 @@ static void EdgeToEdgeImpulse(
 	    return;
 	}
 	
-    //TODO: make this a loop since now using array wab
+    std::vector<double> W(wab,wab+4);
+    W[2] *= -1.0;
+    W[3] *= -1.0;
+
+    for (int i = 0;  i < 4; ++i)
+    {
+        if (!isStaticRigidBody(pts[i]))
+        {
+            double t_impulse = m_impulse;
+            if (isMovableRigidBody(pts[i]))
+                t_impulse = rigid_impulse[i];
+        
+            double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+            //double frcoef = std::max(-fabs(lambda*wab[i]*t_impulse/vt), -1.0);
+            
+            for (int j = 0; j < 3; ++j)
+            {
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+                //sl[i]->collsnImpulse[j] += wab[i]*t_impulse*nor[j];
+       
+                if (fabs(vt) > ROUND_EPS)
+                    sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+            }
+        
+            sl[i]->collsn_num++;
+        }
+        else
+        {
+            //memset((void*)sl[i]->collsnImpulse,0.0,3*sizeof(double));
+            for (int j = 0; j < 3; ++j)
+                sl[i]->collsnImpulse[j] = 0.0;
+        }
+    }
+
+    /*
     for (int j = 0; j < 3; ++j)
 	{
 	    //p[0]
@@ -1290,6 +1324,7 @@ static void EdgeToEdgeImpulse(
         if(isStaticRigidBody(pts[j]))
             memset((void*)sl[j]->collsnImpulse,0,3*sizeof(double));
     }
+    */
 
 	for (int i = 0; i < 4; i++)
 	for (int j = 0; j < 3; ++j)
@@ -1559,7 +1594,6 @@ static bool PointToTri(
         */
     }
 
-	//PointToTriImpulse(pts,nor,w,dist,root);
 	PointToTriImpulse(pts,unit_nor,w,dist,mstate,root);
 	return true;
 }
@@ -1681,50 +1715,80 @@ static void PointToTriImpulse(
 	    return;
 	}
 
+    std::vector<double> W(w,w+3);
+    W.push_back(-1.0);
+
 	for (int i = 0; i < 3; ++i)
 	{
-	    if (isStaticRigidBody(pts[i]))
-            continue;
+	    //if (isStaticRigidBody(pts[i]))
+          //  continue;
+        if (!isStaticRigidBody(pts[i]))
+        {
 	    
-        double t_impulse = m_impulse;
-	    if (isMovableRigidBody(pts[i]))
-            t_impulse = rigid_impulse[0];
-	    
-        for(int j = 0; j < 3; ++j)
-	    {
-	        sl[i]->collsnImpulse[j] += w[i] * t_impulse * nor[j];
-	        if (fabs(vt) > ROUND_EPS)
+            double t_impulse = m_impulse;
+            if (isMovableRigidBody(pts[i]))
+                t_impulse = rigid_impulse[0];
+            
+            double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+            //double frcoef = std::max(-fabs(lambda*w[i]*t_impulse/vt), -1.0);
+
+            for(int j = 0; j < 3; ++j)
             {
-	            sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
-	    	    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+                //sl[i]->collsnImpulse[j] += w[i] * t_impulse * nor[j];
+
+                if (fabs(vt) > ROUND_EPS)
+                {
+                    sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                    //sl[i]->friction[j] += std::max(-fabs(lambda * w[i] * 
+                        //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
+                }
             }
-	    }
-	    sl[i]->collsn_num += 1;
+
+            sl[i]->collsn_num++;
+        }
+        else
+        {
+            for (int j = 0; j < 3; ++j)
+                sl[j]->collsnImpulse = 0.0;
+        }
 	}
 
+    /*
 	if (!isStaticRigidBody(pts[3]))
 	{
 	    double t_impulse = m_impulse;
 	    if (isMovableRigidBody(pts[3]))
             t_impulse = rigid_impulse[1];
 	    
+        double frcoef = std::max(-fabs(-1.0*lambda*t_impulse/vt), -1.0);
+
         for (int j = 0; j < 3; ++j)
 	    {
-	        sl[3]->collsnImpulse[j] -= t_impulse * nor[j];
-	        if (fabs(vt) > ROUND_EPS)
+	        sl[3]->collsnImpulse[j] += -1.0*t_impulse * nor[j];
+	        //sl[3]->collsnImpulse[j] -= t_impulse * nor[j];
+	    
+            if (fabs(vt) > ROUND_EPS)
             {
-	            sl[3]->friction[j] += std::max(-fabs(lambda * 
-			    t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
+                sl[3]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+	            //sl[3]->friction[j] += std::max(-fabs(-1.0*lambda * 
+			        //t_impulse/vt), -1.0) * (v_rel[j] - vn * nor[j]);
             }
 	    }
 	    sl[3]->collsn_num += 1;
 	}
 
-    for (int j = 0; j < 4; ++j)
+    for (int i = 0; i < 4; ++i)
     {
-        if(isStaticRigidBody(pts[j]))
-            memset((void*)sl[j]->collsnImpulse,0,3*sizeof(double));
+        //if(isStaticRigidBody(pts[i]))
+          //  memset((void*)sl[i]->collsnImpulse,0,3*sizeof(double));
+        if(isStaticRigidBody(pts[i]))
+        {
+            for (int j = 0; j < 3; ++j)
+                sl[j]->collsnImpulse = 0.0;
+        }
     }
+    */
 
 	if (debugging("CollisionImpulse"))
 	for (int i = 0; i < 4; ++i)
