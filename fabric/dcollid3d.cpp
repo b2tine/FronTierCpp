@@ -470,7 +470,7 @@ static void isCoplanarHelper(double* s[], double v[][3])
 static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 {
 	if (debugging("collision"))
-	    CollisionSolver::is_coplanar++;
+	    CollisionSolver3d::is_coplanar++;
 
 	double v[4][3] = {0.0};
     double x[4][3] = {0.0};
@@ -1045,15 +1045,15 @@ static void EdgeToEdgeImpulse(
         double root)
 {
 	if (debugging("collision"))
-	    CollisionSolver::edg_to_edg++;
+	    CollisionSolver3d::edg_to_edg++;
 
     //TODO: should dt be set to the root?
-	double k      = CollisionSolver::getSpringConstant();
-	double m      = CollisionSolver::getPointMass();
-	double dt     = CollisionSolver::getTimeStepSize();
-	double lambda = CollisionSolver::getFrictionConstant(); 
-	double h      = CollisionSolver::getFabricThickness();
-	double cr     = CollisionSolver::getRestitutionCoef();
+	double k      = CollisionSolver3d::getSpringConstant();
+	double m      = CollisionSolver3d::getPointMass();
+	double dt     = CollisionSolver3d::getTimeStepSize();
+	double lambda = CollisionSolver3d::getFrictionConstant(); 
+	double h      = CollisionSolver3d::getFabricThickness();
+	double cr     = CollisionSolver3d::getRestitutionCoef();
     //TODO: coefficient of restitution should not be
     //      static member of CollisionSolver class
 	
@@ -1455,22 +1455,31 @@ static void PointToTriImpulse(
         double root)
 {
 	if (debugging("collision"))
-	    CollisionSolver::pt_to_tri++;
+	    CollisionSolver3d::pt_to_tri++;
+    
+    //TODO: should dt be set to the root?
+    double k      = CollisionSolver3d::getSpringConstant();
+	double m      = CollisionSolver3d::getPointMass();
+	double dt     = CollisionSolver3d::getTimeStepSize();
+	double lambda = CollisionSolver3d::getFrictionConstant(); 
+	double h      = CollisionSolver3d::getFabricThickness();
+	double cr     = CollisionSolver3d::getRestitutionCoef();
+
+	dist   = h - dist; //overlap with fabric thickness
+
+    double vn = 0.0;
+    double vt = 0.0;
+    double v_rel[3] = {0.0};
+
+	double impulse = 0.0;
+    double m_impulse = 0.0;
+	double rigid_impulse[2] = {0.0};
+    
+    double sum_w = 0.0;
+
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
-
-    double v_rel[3] = {0.0}, vn = 0.0, vt = 0.0;
-	double impulse = 0.0, m_impulse = 0.0;
-	double rigid_impulse[2] = {0.0};
-	double k, m, lambda, dt, h, cr, sum_w = 0.0;
-	k      = CollisionSolver::getSpringConstant();
-	m      = CollisionSolver::getPointMass();
-	dt     = CollisionSolver::getTimeStepSize();
-	lambda = CollisionSolver::getFrictionConstant(); 
-	h      = CollisionSolver::getFabricThickness();
-	cr     = CollisionSolver::getRestitutionCoef();
-	dist   = h - dist; //overlap with fabric thickness
 
 	/* apply impulses to the average (linear trajectory) velocity */
 	for (int i = 0; i < 3; ++i)
@@ -1539,7 +1548,7 @@ static void PointToTriImpulse(
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
 		isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	    {
-            //cr = 1.0;
+            cr = 1.0;
 		    rigid_impulse[0] *= 1.0 + cr;
 		    rigid_impulse[1] *= 1.0 + cr;
 	    }

@@ -1,16 +1,93 @@
 #ifndef AABB_H
 #define AABB_H
 
-#include <vector>
-#include <set>
+#include <FronTier.h>
+
+#include <fstream>
+#include <memory>
+#include <functional>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
+#include <stack>
+#include <queue>
+#include <set>
 #include <map>
-#include "collid.h"
 
 using CPoint = std::vector<double>;
 
 enum class MotionState {STATIC, MOVING};
+
+//abstract base class for hypersurface element(HSE)
+//can be a point, bond, or triangle
+struct CD_HSE
+{
+    std::string name;
+	virtual double max_static_coord(int) = 0;
+	virtual double min_static_coord(int) = 0;
+	virtual double max_moving_coord(int,double) = 0;
+	virtual double min_moving_coord(int,double) = 0;
+	virtual POINT* Point_of_hse(int) const  = 0;
+	virtual int num_pts() const= 0;
+	virtual ~CD_HSE(){};
+};
+
+//wrap class for triangle
+struct CD_TRI: public CD_HSE
+{
+    TRI* m_tri;
+	
+    CD_TRI(TRI* tri, const char* n)
+        : m_tri(tri)
+    {
+        name = n;
+    }
+
+	double max_static_coord(int);
+	double min_static_coord(int);
+	double max_moving_coord(int,double);
+	double min_moving_coord(int,double);
+	POINT* Point_of_hse(int) const;
+	int num_pts() const {return 3;}
+};
+
+//wrap class for bond
+struct CD_BOND: public CD_HSE
+{
+	int m_dim;
+    BOND* m_bond;
+	
+    CD_BOND(BOND* bond, int dim, const char* n)
+        : m_bond(bond), m_dim(dim)
+    {
+        name = n;
+    }
+
+	double max_static_coord(int);
+	double min_static_coord(int);
+	double max_moving_coord(int,double);
+	double min_moving_coord(int,double);
+	POINT* Point_of_hse(int) const;
+	int num_pts()const{return 2;}
+};
+
+//wrap class for point
+struct CD_POINT: public CD_HSE
+{
+    POINT* m_point;
+
+    CD_POINT(POINT* point)
+        : m_point(point)
+    {}
+
+	double max_static_coord(int);
+	double min_static_coord(int);
+	double max_moving_coord(int,double);
+	double min_moving_coord(int,double);
+	POINT* Point_of_hse(int) const;
+	int num_pts()const {return 1;}
+};
+
 
 class Node;
 class AABBTree;
@@ -50,9 +127,6 @@ public:
     double volume();
     bool isCollid(const AABB&);
 };
-
-// tree node corresponding to AABB
-class AABBTree;
 
 class Node {
 public:
@@ -106,14 +180,17 @@ public:
     void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
     MotionState type;
     double tolerance;
-    AABBTree(int);
+    
+    AABBTree(MotionState mstate);
     ~AABBTree();
     void deleteTree();
+
     // don't want tree to be copied or moved
     AABBTree(const AABBTree&) = delete;
     AABBTree& operator=(const AABBTree&) = delete;
     AABBTree(AABBTree&&) = delete;
     AABBTree& operator=(AABBTree&&) = delete;
+    
     // add an AABB element into a tree
     void addAABB(AABB*);
     
@@ -131,5 +208,11 @@ private:
     bool queryProximity(Node* n,double tol);
     bool queryCollision(Node* n,double tol);
 };
+
+
+//dcollid.cpp
+bool getProximity(const CD_HSE*,const CD_HSE*,double);
+bool getCollision(const CD_HSE*,const CD_HSE*,double);
+
 
 #endif

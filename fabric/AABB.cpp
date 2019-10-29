@@ -1,7 +1,4 @@
 #include "AABB.h"
-#include <stack>
-#include <queue>
-#include <fstream>
 
 //for proximity detection
 AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h), 
@@ -139,12 +136,9 @@ Node::~Node()
     data.reset();
 }
 
-AABBTree::AABBTree(int i) {
-    if (i == 0)
-        type = MotionState::STATIC;
-    else 
-        type = MotionState::MOVING;
-}
+AABBTree::AABBTree(MotionState mstate)
+    : type{mstate}
+{}
 
 AABBTree::~AABBTree()
 {

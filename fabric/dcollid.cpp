@@ -1,5 +1,5 @@
 #include <FronTier.h>
-#include "AABB.h"
+//#include "AABB.h"
 #include "collid.h"
 
 #include <vector>
@@ -20,84 +20,69 @@ inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
 
 //define default parameters for collision detection
-bool   CollisionSolver::s_detImpZone = false;
-double CollisionSolver::s_eps = EPS;
-double CollisionSolver::s_thickness = 0.001;
-double CollisionSolver::s_dt = DT;
-double CollisionSolver::s_k = 1000;
-double CollisionSolver::s_m = 0.01;
-double CollisionSolver::s_lambda = 0.02;
-double CollisionSolver::s_cr = 0.0;
+double CollisionSolver3d::s_eps = EPS;
+double CollisionSolver3d::s_thickness = 0.001;
+double CollisionSolver3d::s_dt = DT;
+double CollisionSolver3d::s_k = 1000;
+double CollisionSolver3d::s_m = 0.01;
+double CollisionSolver3d::s_lambda = 0.02;
+double CollisionSolver3d::s_cr = 1.0;
+bool   CollisionSolver3d::s_detImpZone = false;
 
 //debugging variables
-int CollisionSolver::moving_edg_to_edg = 0;
-int CollisionSolver::moving_pt_to_tri = 0;
-int CollisionSolver::is_coplanar = 0;
-int CollisionSolver::edg_to_edg = 0;
-int CollisionSolver::pt_to_tri = 0;
+int CollisionSolver3d::moving_edg_to_edg = 0;
+int CollisionSolver3d::moving_pt_to_tri = 0;
+int CollisionSolver3d::is_coplanar = 0;
+int CollisionSolver3d::edg_to_edg = 0;
+int CollisionSolver3d::pt_to_tri = 0;
 
-// To use Pimpl idiom by unique_ptr, special member function 
-// should be explicit declared in header file and defined in 
-// implementation file
-CollisionSolver::CollisionSolver(int dim)
-    : m_dim(dim), abt_proximity(nullptr)
-{}
-
-CollisionSolver::CollisionSolver() = default;
-CollisionSolver::CollisionSolver(CollisionSolver&& rhs) = default;
-CollisionSolver& CollisionSolver::operator=(CollisionSolver&& rhs) = default;
-
-CollisionSolver::~CollisionSolver()
+CollisionSolver3d::~CollisionSolver3d()
 {
     abt_proximity.reset();
     abt_collision.reset();
     clearHseList();
 }
 
-void CollisionSolver::clearHseList(){
+void CollisionSolver3d::clearHseList(){
 	for (unsigned i = 0; i < hseList.size(); ++i){
 		delete hseList[i];
 	}
 	hseList.clear();
 }
-//set rounding tolerance
-void CollisionSolver::setRoundingTolerance(double neweps)
+
+void CollisionSolver3d::setRoundingTolerance(double neweps)
 {
 	s_eps = neweps;
 }
 
-double CollisionSolver::getRoundingTolerance(){return s_eps;}
+double CollisionSolver3d::getRoundingTolerance(){return s_eps;}
 
-//set fabric thickness
-void CollisionSolver::setFabricThickness(double h){s_thickness = h;}
-double CollisionSolver::getFabricThickness(){return s_thickness;}
-double CollisionSolver::setVolumeDiff(double vd) { vol_diff = vd; }
+void CollisionSolver3d::setFabricThickness(double h){s_thickness = h;}
+double CollisionSolver3d::getFabricThickness(){return s_thickness;}
+double CollisionSolver3d::setVolumeDiff(double vd) {vol_diff = vd;}
 
 //this function should be called at every time step
-void CollisionSolver::setTimeStepSize(double new_dt)
+void CollisionSolver3d::setTimeStepSize(double new_dt)
 {
     s_dt = new_dt;
 }
 
-double CollisionSolver::getTimeStepSize(){return s_dt;}
+double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
-//set spring constant
-void   CollisionSolver::setSpringConstant(double new_k){s_k = new_k;}
-double CollisionSolver::getSpringConstant(){return s_k;}
+void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
+double CollisionSolver3d::getSpringConstant(){return s_k;}
 
-//set spring friction 
-void   CollisionSolver::setFrictionConstant(double new_la){s_lambda = new_la;}
-double CollisionSolver::getFrictionConstant(){return s_lambda;}
+void   CollisionSolver3d::setFrictionConstant(double new_la){s_lambda = new_la;}
+double CollisionSolver3d::getFrictionConstant(){return s_lambda;}
 
-//set mass of fabric point
-void   CollisionSolver::setPointMass(double new_m){s_m = new_m;}
-double CollisionSolver::getPointMass(){return s_m;}
+void   CollisionSolver3d::setPointMass(double new_m){s_m = new_m;}
+double CollisionSolver3d::getPointMass(){return s_m;}
 
 //set restitution coefficient between rigid bodies
-void   CollisionSolver::setRestitutionCoef(double new_cr){s_cr = new_cr;}
-double CollisionSolver::getRestitutionCoef(){return s_cr;}
+void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
+double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
-void CollisionSolver::recordOriginalPosition(){
+void CollisionSolver3d::recordOriginalPosition(){
 	POINT* pt;
 	STATE* sl;
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
@@ -114,14 +99,14 @@ void CollisionSolver::recordOriginalPosition(){
 	}
 }
 
-void CollisionSolver::setDomainBoundary(double* L, double* U) {
+void CollisionSolver3d::setDomainBoundary(double* L, double* U) {
 	for (int i = 0; i < m_dim; ++i) {
 	    Boundary[i][0] = L[i];
 	    Boundary[i][1] = U[i];
 	}
 }
 
-void CollisionSolver::detectDomainBoundaryCollision() {
+void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFrictionConstant();
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
@@ -169,7 +154,7 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 	}
 }
 
-void CollisionSolver::computeAverageVelocity()
+void CollisionSolver3d::computeAverageVelocity()
 {
     POINT* pt;
     STATE* sl; 
@@ -270,7 +255,7 @@ void CollisionSolver::computeAverageVelocity()
     }
 }
 
-void CollisionSolver::resetPositionCoordinates()
+void CollisionSolver3d::resetPositionCoordinates()
 {
     POINT* pt;
     STATE* sl; 
@@ -288,13 +273,13 @@ void CollisionSolver::resetPositionCoordinates()
     }
 }
 
-void CollisionSolver::turnOffImpZone(){s_detImpZone = false;}
-void CollisionSolver::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver::getImpZoneStatus(){ return s_detImpZone;}
+void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
+void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
+bool CollisionSolver3d::getImpZoneStatus(){ return s_detImpZone;}
 
 //this function is needed if collision still happens
 //after several iterations;
-void CollisionSolver::computeImpactZone()
+void CollisionSolver3d::computeImpactZone()
 {
 	bool is_collision = true;
     int numZones = 0;
@@ -332,7 +317,7 @@ void CollisionSolver::computeImpactZone()
 	return;
 }
 
-void CollisionSolver::updateImpactZoneVelocityForRG()
+void CollisionSolver3d::updateImpactZoneVelocityForRG()
 {
 	POINT* pt;
 	unsortHseList(hseList);
@@ -357,7 +342,7 @@ void CollisionSolver::updateImpactZoneVelocityForRG()
 	}
 }
 
-void CollisionSolver::updateImpactZoneVelocity(int &nZones)
+void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 {
 	POINT* pt;
 	int numZones = 0;
@@ -380,7 +365,7 @@ void CollisionSolver::updateImpactZoneVelocity(int &nZones)
 }
 
 //resolve collision in the input tris list
-void CollisionSolver::resolveCollision()
+void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
@@ -432,12 +417,13 @@ void CollisionSolver::resolveCollision()
 
 // function to perform AABB tree building, updating structure
 // and query for proximity detection process
-void CollisionSolver::aabbProximity()
+void CollisionSolver3d::aabbProximity()
 {
     if (!abt_proximity)
     {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
+        abt_proximity = std::unique_ptr<AABBTree>(
+                            new AABBTree(MotionState::STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
              AABB* ab = new AABB(pre_tol, *it, abt_proximity->getType());
@@ -454,7 +440,7 @@ void CollisionSolver::aabbProximity()
         delete abt_proximity.release();
         double pre_tol = CollisionSolver3d::getFabricThickness();
 
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
+        abt_proximity = std::move(std::make_unique<AABBTree>(MotionState::STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
              abt_proximity->addAABB(ab);
@@ -478,7 +464,7 @@ void CollisionSolver::aabbProximity()
     }
 }
 
-void CollisionSolver::detectProximity()
+void CollisionSolver3d::detectProximity()
 {
     const double h = CollisionSolver3d::getFabricThickness();
 
@@ -494,10 +480,11 @@ void CollisionSolver::detectProximity()
 }
 
 // AABB tree for collision detection process
-void CollisionSolver::aabbCollision() {
+void CollisionSolver3d::aabbCollision() {
     if (!abt_collision) {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
+        abt_collision = std::unique_ptr<AABBTree>(
+                            new AABBTree(MotionState::MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB(pre_tol,*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
@@ -508,7 +495,7 @@ void CollisionSolver::aabbCollision() {
     /*
     else {
         delete abt_collision.release();
-        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
+        abt_collision = std::move(std::make_unique<AABBTree>(MotionState::MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
@@ -529,7 +516,7 @@ void CollisionSolver::aabbCollision() {
     }
 }
 
-void CollisionSolver::detectCollision()
+void CollisionSolver3d::detectCollision()
 {
 	std::cout<<"Starting collision handling: "<<std::endl;
 	
@@ -577,7 +564,7 @@ void CollisionSolver::detectCollision()
 }
 
 /*
-void CollisionSolver::detectCollision()
+void CollisionSolver3d::detectCollision()
 {
 	std::cout<<"Starting collision handling: "<<std::endl;
 
@@ -659,7 +646,7 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 //      jacobi iteration style for strain and
 //      gauss-seidel iteration style for strain rate.
 //      Should be called after collisions have been handled.
-bool CollisionSolver::reduceSuperelastOnce(int& num_edges)
+bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
 {
 	double dt = getTimeStepSize();
 	const double superelasTol = 0.10;
@@ -750,7 +737,7 @@ bool CollisionSolver::reduceSuperelastOnce(int& num_edges)
 	return has_superelas;
 }
 
-void CollisionSolver::updateFinalPosition()
+void CollisionSolver3d::updateFinalPosition()
 {
 	POINT* pt;
 	STATE* sl;
@@ -774,7 +761,7 @@ void CollisionSolver::updateFinalPosition()
 	}
 }
 
-void CollisionSolver::reduceSuperelast()
+void CollisionSolver3d::reduceSuperelast()
 {
 	bool has_superelas = true;
 	int niter = 0;
@@ -790,7 +777,7 @@ void CollisionSolver::reduceSuperelast()
 }
 
 //TODO: This is not the correct update.
-void CollisionSolver::updateFinalVelocity()
+void CollisionSolver3d::updateFinalVelocity()
 {
     //avgVel is actually the velocity at t(n+1/2)
     //need to call spring solver to get velocity at t(n+1)
@@ -829,7 +816,7 @@ void CollisionSolver::updateFinalVelocity()
     updateFinalForRG();
 }
 
-void CollisionSolver::updateFinalForRG()
+void CollisionSolver3d::updateFinalForRG()
 {
 	POINT* pt;
         STATE* sl;
@@ -898,7 +885,7 @@ void CollisionSolver::updateFinalForRG()
         }
 }
 
-void CollisionSolver::updateAverageVelocity()
+void CollisionSolver3d::updateAverageVelocity()
 {
 	POINT *p;
 	STATE *sl;
@@ -989,7 +976,6 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
-    //double h = CollisionSolver3d::getRoundingTolerance();
 
         //Commented code turns off collision detection involving the lines/strings
         /*
@@ -1087,7 +1073,7 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 	return false;
 }
 
-void CollisionSolver::printDebugVariable(){
+void CollisionSolver3d::printDebugVariable(){
 	std::cout << "Enter EdgeToEdge " << edg_to_edg 
 		  << " times"<< std::endl;
 	std::cout << "Enter PointToTri " << pt_to_tri 

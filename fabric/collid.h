@@ -1,13 +1,8 @@
 #ifndef COLLID_H
 #define COLLID_H
 
-#include <FronTier.h>
+#include "AABB.h"
 #include "state.h"
-
-#include <functional>
-#include <map>
-#include <fstream>
-#include <memory>
 
 #if defined(isnan)
 #undef isnan
@@ -15,8 +10,8 @@
 
 //TODO: How where these determined?
 #define DEBUGGING false
-const double ROUND_EPS = 1e-10;
-const double EPS = 1e-6;
+const double ROUND_EPS = 1.0e-10;
+const double EPS = 1.0e-6;
 const double DT = 0.001;
 
 /*
@@ -40,6 +35,7 @@ struct STATE{
 	UF     impZone;
 };*/
 
+/*
 //abstract base class for hypersurface element(HSE)
 //can be a point or a bond or a triangle
 class CD_HSE
@@ -116,25 +112,89 @@ public:
 	POINT* Point_of_hse(int) const;
 	int num_pts()const {return 1;}
 };
+*/
 
 //Forward declaration of AABBTree
-class AABBTree;
+//class AABBTree;
 
 //TODO: Just make the base class CollisionSolver3d,
 //      there isn't any point to having pure virtuals etc.
 //      when the 2d case was never implemented.
 
-//TODO: do we really want/need any static data or methods?
-
 //base class for collision detection and handling
-class CollisionSolver {
+class CollisionSolver3d {
+public:
+	
+    int m_dim {3};
+	std::vector<CD_HSE*> hseList;
+	std::map< int, std::vector<double> > mrg_com;
+    //static bool s_detImpZone;
+	
+	void clearHseList();
+
+    int build_count_pre = 1;
+    int build_count_col = 1;
+    //enum {STATIC, MOVING};
+
+	CollisionSolver3d() = default;
+    virtual ~CollisionSolver3d();
+
+    CollisionSolver3d(const CollisionSolver3d&) = delete;
+    CollisionSolver3d& operator=(const CollisionSolver3d&) = delete;
+    CollisionSolver3d(CollisionSolver3d&&) = delete;
+    CollisionSolver3d& operator=(CollisionSolver3d&&) = delete;
+
+	static void setRoundingTolerance(double);
+	static double getRoundingTolerance();
+	static void setFabricThickness(double);
+	static double getFabricThickness();
+	static void setTimeStepSize(double);
+	static double getTimeStepSize();
+	static void setSpringConstant(double);
+	static double getSpringConstant();
+	static void setFrictionConstant(double);
+	static double getFrictionConstant();
+	static void setPointMass(double);
+	static double getPointMass();
+	static void setRestitutionCoef(double);
+	static double getRestitutionCoef();
+	static bool getImpZoneStatus();	
+
+    double setVolumeDiff(double);
+	
+    //pure virtual functions
+	//virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
+	//virtual void createImpZoneForRG(const INTERFACE*) = 0;
+	void assembleFromInterface(const INTERFACE*,double dt);
+	void createImpZoneForRG(const INTERFACE*);
+	
+    void resolveCollision();
+	void recordOriginalPosition();	
+	void setDomainBoundary(double* L,double *U);
+	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
+	bool hasCollision() {return has_collision;}
+
+    POINT **gpoints;
+    TRI **gtris;
+
+	//for debugging
+	static void printDebugVariable();
+	static int moving_edg_to_edg;
+	static int moving_pt_to_tri;
+	static int is_coplanar;
+	static int edg_to_edg;
+	static int pt_to_tri;
+
+    TRI *res_tris[100];
+    int num_res_tris;
+
 private:
-	std::unique_ptr<AABBTree> abt_proximity;
-    std::unique_ptr<AABBTree> abt_collision;
+	std::unique_ptr<AABBTree> abt_proximity {nullptr};
+    std::unique_ptr<AABBTree> abt_collision {nullptr};
+
     double volume;
     double vol_diff {0.0};
 
-    //TODO: Do we really want these as static members?
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;
@@ -142,7 +202,18 @@ private:
 	static double s_k;
 	static double s_lambda;
 	static double s_cr;
-	
+    static bool s_detImpZone;
+
+    /*
+	double s_eps {EPS};
+	double s_thickness {0.001};
+	double s_dt {DT};
+	double s_k {1000};
+	double s_m {0.01};
+	double s_lambda {0.02};
+	double s_cr {1.0};
+    */
+
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
@@ -167,73 +238,11 @@ private:
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
 
-	virtual void updateImpactListVelocity(POINT*) = 0;
-
-protected:
-	int m_dim;
-	std::vector<CD_HSE*> hseList;
-	std::map< int, std::vector<double> > mrg_com;
-	static bool s_detImpZone;
-	void clearHseList();
-public:
-    int build_count_pre = 1;
-    int build_count_col = 1;
-    enum {STATIC, MOVING};
-
-	CollisionSolver(int);
-	CollisionSolver();
-    CollisionSolver(CollisionSolver&&);
-    CollisionSolver& operator=(CollisionSolver&&);
-
-    //TODO: Do we really want these as static methods?
-	static void setRoundingTolerance(double);
-	static double getRoundingTolerance();
-	static void setFabricThickness(double);
-	static double getFabricThickness();
-	static void setTimeStepSize(double);
-	static double getTimeStepSize();
-	static void setSpringConstant(double);
-	static double getSpringConstant();
-	static void setFrictionConstant(double);
-	static double getFrictionConstant();
-	static void setPointMass(double);
-	static double getPointMass();
-	static void setRestitutionCoef(double);
-	static double getRestitutionCoef();
-	static bool getImpZoneStatus();	
-
-    double setVolumeDiff(double);
-	virtual ~CollisionSolver(); //virtual destructor
-	
-    //pure virtual functions
-	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
-	virtual void createImpZoneForRG(const INTERFACE*) = 0;
-	
-    void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
-	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
-	bool hasCollision() {return has_collision;}
-
-    POINT **gpoints;
-    TRI **gtris;
-
-	//for debugging
-	static void printDebugVariable();
-	static int moving_edg_to_edg;
-	static int moving_pt_to_tri;
-	static int is_coplanar;
-	static int edg_to_edg;
-	static int pt_to_tri;
-
-    TRI *res_tris[100];
-    int num_res_tris;
+	//virtual void updateImpactListVelocity(POINT*) = 0;
+	void updateImpactListVelocity(POINT*);
 };
 
-//TODO: Move into base class and rename is CollisionSolver3d.
-//      No point in deriving.
-//
-//derived 3D-class for collision detection and handling
+/*
 class CollisionSolver3d : public CollisionSolver
 {
 private:
@@ -244,10 +253,11 @@ public:
 	void assembleFromInterface(const INTERFACE*,double dt);
 	void createImpZoneForRG(const INTERFACE*);
 };
+*/
 
 
-bool getProximity(const CD_HSE*,const CD_HSE*,double);	
-bool getCollision(const CD_HSE*,const CD_HSE*,double);
+//bool getProximity(const CD_HSE*,const CD_HSE*,double);	
+//bool getCollision(const CD_HSE*,const CD_HSE*,double);
 
 bool BondToBond(const BOND*,const BOND*,double);
 bool TriToBond(const TRI*,const BOND*,double);

@@ -96,15 +96,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
         
-    CollisionSolver* collision_solver = new CollisionSolver3d();
-
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
-
-	if (!debugging("collision_off"))
-        printf("COLLISION DETECTION ON\n");
-    else
-        printf("COLLISION DETECTION OFF\n");
 
     geom_set.front = fr;
 
@@ -195,7 +188,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	elastic_intfc = fr->interf;
 	assembleParachuteSet(elastic_intfc,&geom_set);
-	if (myid != owner_id)
+	
+    if (myid != owner_id)
 	{
 	    client_size = geom_set.num_verts;
 	    if (size < client_size)
@@ -223,9 +217,20 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 					owner_id);
 	}
 	else
+    {
 	    size = owner_size;
+    }
 
-	if (myid == owner_id)
+    CollisionSolver3d* collision_solver;
+	if (!debugging("collision_off"))
+    {
+        collision_solver = new CollisionSolver3d();
+        printf("COLLISION DETECTION ON\n");
+    }
+    else
+        printf("COLLISION DETECTION OFF\n");
+
+    if (myid == owner_id)
 	{
             if (!debugging("collision_off"))
             {
@@ -338,18 +343,16 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	compute_center_of_mass_velo(&geom_set);
 
 	if (!debugging("collision_off"))
+    {
+        if (myid == owner_id)
         {
-            if (myid == owner_id)
-            {
-                if (FT_Dimension() == 3)
-                {
-                    collision_solver->resolveCollision();
-                }
-            }
-            setSpecialNodeForce(fr, geom_set.kl);
+            if (FT_Dimension() == 3)
+                collision_solver->resolveCollision();
         }
+        setSpecialNodeForce(fr, geom_set.kl);
 
-    delete collision_solver;
+        delete collision_solver;
+    }
     
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
