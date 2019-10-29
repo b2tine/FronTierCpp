@@ -1070,7 +1070,6 @@ static void EdgeToEdgeImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::edg_to_edg++;
 
-    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
 	double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
@@ -1114,9 +1113,11 @@ static void EdgeToEdgeImpulse(
     //Edges are seperating from each other (vn > 0.0):
     //      apply elastic impulse
     
+    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
+        dt = root;
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
         else if (vn * dt < 0.1 * dist)
@@ -1500,7 +1501,6 @@ static void PointToTriImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::pt_to_tri++;
     
-    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
@@ -1543,9 +1543,11 @@ static void PointToTriImpulse(
     //Point and Triangle are seperating from each other (vn > 0.0):
     //      apply elastic impulse
     
+    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
+        dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
         else if (vn * dt < 0.1 * dist)
