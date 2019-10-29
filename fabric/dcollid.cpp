@@ -449,12 +449,13 @@ void CollisionSolver3d::detectProximity()
 {
     const double h = CollisionSolver3d::getFabricThickness();
 
-        start_clock("dynamic_AABB_proximity");
+    start_clock("dynamic_AABB_proximity");
     aabbProximity();
     abt_proximity->query(h);
-        stop_clock("dynamic_AABB_proximity");
+    stop_clock("dynamic_AABB_proximity");
 
 	updateAverageVelocity();
+
 	if (debugging("collision"))
         std::cout << abt_proximity->getCount()
             << " pair of proximity" << std::endl;
@@ -530,8 +531,10 @@ void CollisionSolver3d::detectCollision()
         }
 
 	    updateAverageVelocity();
-	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
-		     << " pair of collision tris" << std::endl;
+
+	    if (debugging("collision"))
+            std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+                << " pair of collision tris" << std::endl;
 	    
         if (++niter > MAX_ITER)
             break;
