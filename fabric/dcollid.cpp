@@ -1010,7 +1010,6 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
-	//double h = CollisionSolver3d::getFabricThickness();
 
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
