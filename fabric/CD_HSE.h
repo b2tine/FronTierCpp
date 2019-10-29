@@ -2,6 +2,10 @@
 #define CD_HSE_H
 
 #include <FronTier.h>
+#include "state.h"
+
+#include <string>
+
 
 //abstract base class for hypersurface element(HSE)
 //can be a point, bond, or triangle

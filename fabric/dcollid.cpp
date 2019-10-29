@@ -163,21 +163,6 @@ void CollisionSolver3d::computeAverageVelocity()
     double* max_vel = nullptr;
     POINT* max_pt=nullptr;
 
-    /*
-    printf("Test dt = %f  ROUND_EPS = %f\n",dt,ROUND_EPS);
-    pt = gpoints[11622];
-    sl = (STATE*)left_state(pt); 
-    printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
-                                Coords(pt)[2]);
-    printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-    printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-    */
-
-    /*
-    printf("Test computeAverageVelocity() hseList.size() = %d\n",
-                    hseList.size());
-    */
-
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
     {
@@ -215,16 +200,6 @@ void CollisionSolver3d::computeAverageVelocity()
                     max_speed = Mag3d(sl->avgVel);
                     max_vel = sl->avgVel;
                     max_pt = pt;
-                    /*
-                    if (Gindex(pt) == 11622)
-                    {
-                        printf("\n\nmax_speed = %f  max_vel = %f %f %f\n",
-                            max_speed,max_vel[0],max_vel[1],max_vel[2]);
-                        printf("Gindex(p) = %d\n",Gindex(pt));
-                        printf("Coords(p) = %f %f %f\n\n\n",Coords(pt)[0],
-                                    Coords(pt)[1],Coords(pt)[2]);
-                    }
-                    */
                 }
             }
         
@@ -277,8 +252,8 @@ void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
 void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
 bool CollisionSolver3d::getImpZoneStatus(){ return s_detImpZone;}
 
-//this function is needed if collision still happens
-//after several iterations;
+//this function is needed if collisions still
+//present after several iterations;
 void CollisionSolver3d::computeImpactZone()
 {
 	bool is_collision = true;
@@ -364,7 +339,6 @@ void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 	nZones = numZones;
 }
 
-//resolve collision in the input tris list
 void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
@@ -624,9 +598,6 @@ void CollisionSolver3d::detectCollision()
 }
 */
 
-//helper function to detect a collision between 
-//a moving point and a moving triangle
-//or between two moving edges 
 extern void createImpZone(POINT* pts[], int num, bool first){
 	for (int i = 0; i < num; ++i)
 	{
@@ -1084,101 +1055,11 @@ void CollisionSolver3d::printDebugVariable(){
 	edg_to_edg = pt_to_tri = 0;
 }
 
-/********************************
-* implementation for CD_HSE     *
-*********************************/
-double CD_BOND::max_static_coord(int dim){
-    return std::max(Coords(m_bond->start)[dim],
-		    Coords(m_bond->end)[dim]);
-}
-
-double CD_BOND::min_static_coord(int dim){
-    return std::min(Coords(m_bond->start)[dim],
-		    Coords(m_bond->end)[dim]);
-}
-
-double CD_BOND::max_moving_coord(int dim,double dt){
-    double ans = -HUGE;
-    for (int i = 0; i < 2; ++i){
-	POINT* pt = (i == 0)? m_bond->start : m_bond->end;
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(ans,sl->x_old[dim]);
-	ans = std::max(ans,sl->x_old[dim]+sl->avgVel[dim]*dt); 
-    }    
-    return ans;
-}
-
-double CD_BOND::min_moving_coord(int dim,double dt){
-    double ans = HUGE;
-    for (int i = 0; i < 2; ++i){
-	POINT* pt = (i == 0)? m_bond->start : m_bond->end;
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(ans,sl->x_old[dim]);
-	ans = std::min(ans,sl->x_old[dim]+sl->avgVel[dim]*dt); 
-    }    
-    return ans;
-}
-
-POINT* CD_BOND::Point_of_hse(int i) const{
-    if (i >= num_pts())
-	return NULL;
-    else
-        return (i == 0) ? m_bond->start : 
-			  m_bond->end;
-}
-
-double CD_TRI::max_static_coord(int dim){
-    double ans = -HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(sl->x_old[dim],ans);
-    }
-    return ans;
-}
-
-double CD_TRI::min_static_coord(int dim){
-    double ans = HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(sl->x_old[dim],ans);
-    }
-    return ans;
-}
-
-double CD_TRI::max_moving_coord(int dim,double dt){
-    double ans = -HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(ans,sl->x_old[dim]);
-	ans = std::max(ans,sl->x_old[dim]+sl->avgVel[dim]*dt);
-    }
-    return ans;
-}
-
-double CD_TRI::min_moving_coord(int dim,double dt){
-    double ans = HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(ans,sl->x_old[dim]);
-	ans = std::min(ans,sl->x_old[dim]+sl->avgVel[dim]*dt);
-    }
-    return ans;
-}
-
-POINT* CD_TRI::Point_of_hse(int i) const{
-    if (i >= num_pts())
-	return NULL;
-    else
-        return Point_of_tri(m_tri)[i];
-}
 
 /*******************************
 * utility functions start here *
 *******************************/
+
 /* The followings are helper functions for vector operations. */
 void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
 	for (int i = 0; i < 3; ++i)	

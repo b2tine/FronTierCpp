@@ -30,6 +30,8 @@ libfabric_la_SOURCES = \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
+../CD_HSE.h \
+../CD_HSE.cpp \
 ../AABB.h \
 ../AABB.cpp \
 ../fluidinit.cpp \

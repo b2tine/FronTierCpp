@@ -2,139 +2,28 @@
 #define COLLID_H
 
 #include "AABB.h"
-#include "state.h"
 
 #if defined(isnan)
 #undef isnan
 #endif
 
-//TODO: How where these determined?
 #define DEBUGGING false
+
+//TODO: How where these determined?
 const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-6;
 const double DT = 0.001;
 
-/*
-user-defined state should include the following
-struct UF{
-	POINT* next_pt;
-	POINT* root;
-	POINT* tail;
-	int num_pts;
-};
 
-struct STATE{
-	double vel[3];
-	double collsnImpulse[3];
-	double friction[3];
-	double avgVel[3];
-	double x_old[3];
-	int    collsn_num;
-	bool   has_collsn;
-	bool   is_fixed;
-	UF     impZone;
-};*/
-
-/*
-//abstract base class for hypersurface element(HSE)
-//can be a point or a bond or a triangle
-class CD_HSE
-{
-public:
-    std::string name;
-	virtual double max_static_coord(int) = 0;
-	virtual double min_static_coord(int) = 0;
-	virtual double max_moving_coord(int,double) = 0;
-	virtual double min_moving_coord(int,double) = 0;
-	virtual POINT* Point_of_hse(int) const  = 0;
-	virtual int num_pts() const= 0;
-	virtual ~CD_HSE(){};
-};
-
-//wrap class for triangle
-class CD_TRI: public CD_HSE
-{
-public:
-	
-    TRI* m_tri;
-	
-    CD_TRI(TRI* tri, const char* n)
-        : m_tri(tri)
-    {
-        name = n;
-    }
-
-	double max_static_coord(int);
-	double min_static_coord(int);
-	double max_moving_coord(int,double);
-	double min_moving_coord(int,double);
-	POINT* Point_of_hse(int) const;
-	int num_pts() const {return 3;}
-};
-
-//wrap class for bond
-class CD_BOND: public CD_HSE
-{
-public:
-
-	int m_dim;
-    BOND* m_bond;
-	
-    CD_BOND(BOND* bond, int dim, const char* n)
-        : m_bond(bond), m_dim(dim)
-    {
-        name = n;
-    }
-
-	double max_static_coord(int);
-	double min_static_coord(int);
-	double max_moving_coord(int,double);
-	double min_moving_coord(int,double);
-	POINT* Point_of_hse(int) const;
-	int num_pts()const{return 2;}
-};
-
-//wrap class for point
-class CD_POINT: public CD_HSE
-{
-public:
-
-    POINT* m_point;
-
-    CD_POINT(POINT* point)
-        : m_point(point)
-    {}
-
-	double max_static_coord(int);
-	double min_static_coord(int);
-	double max_moving_coord(int,double);
-	double min_moving_coord(int,double);
-	POINT* Point_of_hse(int) const;
-	int num_pts()const {return 1;}
-};
-*/
-
-//Forward declaration of AABBTree
-//class AABBTree;
-
-//TODO: Just make the base class CollisionSolver3d,
-//      there isn't any point to having pure virtuals etc.
-//      when the 2d case was never implemented.
-
-//base class for collision detection and handling
 class CollisionSolver3d {
 public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
 	std::map< int, std::vector<double> > mrg_com;
-    //static bool s_detImpZone;
 	
-	void clearHseList();
-
     int build_count_pre = 1;
     int build_count_col = 1;
-    //enum {STATIC, MOVING};
 
 	CollisionSolver3d() = default;
     virtual ~CollisionSolver3d();
@@ -161,16 +50,15 @@ public:
 	static bool getImpZoneStatus();	
 
     double setVolumeDiff(double);
-	
-    //pure virtual functions
-	//virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
-	//virtual void createImpZoneForRG(const INTERFACE*) = 0;
+
+	void clearHseList();
 	void assembleFromInterface(const INTERFACE*,double dt);
 	void createImpZoneForRG(const INTERFACE*);
 	
     void resolveCollision();
 	void recordOriginalPosition();	
 	void setDomainBoundary(double* L,double *U);
+
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
 
@@ -204,16 +92,6 @@ private:
 	static double s_cr;
     static bool s_detImpZone;
 
-    /*
-	double s_eps {EPS};
-	double s_thickness {0.001};
-	double s_dt {DT};
-	double s_k {1000};
-	double s_m {0.01};
-	double s_lambda {0.02};
-	double s_cr {1.0};
-    */
-
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
@@ -237,27 +115,9 @@ private:
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
-
-	//virtual void updateImpactListVelocity(POINT*) = 0;
 	void updateImpactListVelocity(POINT*);
 };
 
-/*
-class CollisionSolver3d : public CollisionSolver
-{
-private:
-	void updateImpactListVelocity(POINT*);
-
-public:
-	CollisionSolver3d():CollisionSolver(3){}
-	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
-};
-*/
-
-
-//bool getProximity(const CD_HSE*,const CD_HSE*,double);	
-//bool getCollision(const CD_HSE*,const CD_HSE*,double);
 
 bool BondToBond(const BOND*,const BOND*,double);
 bool TriToBond(const TRI*,const BOND*,double);
