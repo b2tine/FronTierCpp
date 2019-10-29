@@ -99,8 +99,14 @@ public:
     double dt;
     bool isProximity;
     bool isCollsn;
-    bool queryProximity(Node*, CollisionSolver*);
-    bool queryCollision(Node*, CollisionSolver*);
+    
+    // query all collid pairs
+    void query(double tol);
+        //void query(CollisionSolver*);
+   
+        //bool queryProximity(Node*, CollisionSolver*);
+        //bool queryCollision(Node*, CollisionSolver*);
+
     // insert a node into the subtree with parent 
     // as the root
     void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
@@ -116,8 +122,7 @@ public:
     AABBTree& operator=(AABBTree&&) = delete;
     // add an AABB element into a tree
     void addAABB(AABB*);
-    // query all collid pairs
-    void query(CollisionSolver*);
+    
     int getCount() { return count; }
     double getVolume() { return root->box.volume(); } 
     void updateTreeStructure();
@@ -126,6 +131,11 @@ public:
     bool getCollsnState() { return isCollsn; }
     void updateAABBTree(const std::vector<CD_HSE*>&);
     MotionState getType() { return type; }
+
+private:
+
+    bool queryProximity(Node* n,double tol);
+    bool queryCollision(Node* n,double tol);
 };
 
 #endif

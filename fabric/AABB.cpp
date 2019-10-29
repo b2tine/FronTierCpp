@@ -290,12 +290,16 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList) {
 double AABBTree::treeHeight(Node* root) {
     if (!root)
         return 0;
-    return std::max(treeHeight(root->left.get()), treeHeight(root->right.get()))+1;
+    return std::max(treeHeight(root->left.get()),
+                    treeHeight(root->right.get())) + 1;
 }
+
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
-void AABBTree::query(CollisionSolver* collsn_solver) {
 
+//void AABBTree::query(CollisionSolver* collsn_solver)
+void AABBTree::query(double tol)
+{
     Node* cur = root.get();
     std::stack<Node*> sn;
 
@@ -309,11 +313,18 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
         
         //TODO: collsn_solver should not be passed as arg
         //      to queryProximity() or queryCollision()
-        if (cur->isLeaf()) {
+        if (cur->isLeaf())
+        {
             if (type == MotionState::STATIC)
-                isProximity = queryProximity(cur, collsn_solver);
+            {
+                isProximity = queryProximity(cur,tol);
+                //isProximity = queryProximity(cur, collsn_solver);
+            }
             else
-                isCollsn = queryCollision(cur, collsn_solver);
+            {
+                isCollsn = queryCollision(cur,tol);
+                //isCollsn = queryCollision(cur, collsn_solver);
+            }
             nodeSet.insert(cur);
         }
         
@@ -327,71 +338,104 @@ void AABBTree::query(CollisionSolver* collsn_solver) {
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-bool AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver) {
+
+//bool AABBTree::queryProximity(Node* n, CollisionSolver* collsn_solver)
+bool AABBTree::queryProximity(Node* n, double tol)
+{
     std::stack<Node*> sn;
     Node* cur = root.get();
 
-    while (cur || !sn.empty()) {
-        while (cur) {
-            if (cur->isCollid(n)) {
-                if (cur->isLeaf() && n != cur) {
-                    if (nodeSet.find(cur) == nodeSet.end()) {
+    while (cur || !sn.empty())
+    {
+        while (cur)
+        {
+            if (cur->isCollid(n))
+            {
+                if (cur->isLeaf() && n != cur)
+                {
+                    if (nodeSet.find(cur) == nodeSet.end())
+                    {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
                         //TODO: make getProximity() a regular function
                         //      collsn_solver should not be passed into queryProximity()
-                        if (collsn_solver->getProximity(a,b))
+
+                        //if (collsn_solver->getProximity(a,b))
+                        if (getProximity(a,b,tol))
                             count++; 
                     }
                 }
                 sn.push(cur);
                 cur = cur->left.get();
             }   
-            // if the AABB of the subtree does not collid with 
-            // node n, we ignore the whole subtree
-            else 
-                break;    
+            else
+            { 
+                //if the AABB of the subtree does not collid with 
+                //node n, we ignore the whole subtree
+                break;
+            }
         }
+
         if (sn.empty())
             break;
+
         cur = sn.top();
         sn.pop();
         cur = cur->right.get();
     }
+
     return count > 0;
 }
 
 //TODO: do not pass collsn_solver as arg
-bool AABBTree::queryCollision(Node* n, CollisionSolver* collsn_solver) {
+//
+//bool AABBTree::queryCollision(Node* n, CollisionSolver* collsn_solver)
+bool AABBTree::queryCollision(Node* n, double tol)
+{
     std::stack<Node*> sn;
     Node* cur = root.get();
 
-    while (cur || !sn.empty()) {
-        while (cur) {
-            if (cur->isCollid(n)) {
-                if (cur->isLeaf() && n != cur) {
-                    if (nodeSet.find(cur) == nodeSet.end()) {
+    while (cur || !sn.empty())
+    {
+        while (cur)
+        {
+            if (cur->isCollid(n))
+            {
+                if (cur->isLeaf() && n != cur)
+                {
+                    if (nodeSet.find(cur) == nodeSet.end())
+                    {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
 
                         //TODO: make getCollision() a regular function
-                        //      collsn_solver should not be passed into queryProximity()
-                        if (collsn_solver->getCollision(a,b)) 
+                        //      collsn_solver should not be passed into queryCollision()
+                        //
+                        //if (collsn_solver->getCollision(a,b)) 
+                        if (getCollision(a,b,tol)) 
                             count++;
                     }
                 }
+
                 sn.push(cur);
                 cur = cur->left.get();
-            }   
+            }
             else 
-                break;    
+            {
+                //if the AABB of the subtree does not collid with 
+                //node n, we ignore the whole subtree
+                break;
+            }
         }
+        
         if (sn.empty())
             break;
+
         cur = sn.top();
         sn.pop();
         cur = cur->right.get();
     }
+
     return count > 0;
 }

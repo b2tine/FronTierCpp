@@ -101,6 +101,8 @@ public:
 //Forward declaration of AABBTree
 class AABBTree;
 
+//TODO: do we really want/need any static data or methods?
+
 //base class for collision detection and handling
 class CollisionSolver {
 private:
@@ -108,6 +110,8 @@ private:
     std::unique_ptr<AABBTree> abt_collision;
     double volume;
     double vol_diff {0.0};
+
+    //TODO: Do we really want these as static members?
 	static double s_eps;
 	static double s_thickness;
 	static double s_dt;
@@ -115,11 +119,14 @@ private:
 	static double s_k;
 	static double s_lambda;
 	static double s_cr;
-	bool has_collision;
+	
+    bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
+
 	static void turnOffImpZone();
 	static void turnOnImpZone();
-	bool reduceSuperelastOnce(int&);
+	
+    bool reduceSuperelastOnce(int&);
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
@@ -138,12 +145,15 @@ private:
 	void setHasCollision(bool judge) {has_collision = judge;}
 
 	virtual void updateImpactListVelocity(POINT*) = 0;
+    /*
 	virtual bool BondToBond(const BOND*,const BOND*,double) = 0;
 	virtual bool TriToTri(const TRI*,const TRI*,double) = 0;
 	virtual bool TriToBond(const TRI*,const BOND*,double)=0;
 	virtual bool MovingBondToBond(const BOND*,const BOND*,double) = 0;
 	virtual bool MovingTriToTri(const TRI*,const TRI*,double) = 0;
 	virtual bool MovingTriToBond(const TRI*,const BOND*,double)=0;
+    */
+
 protected:
 	int m_dim;
 	std::vector<CD_HSE*> hseList;
@@ -159,6 +169,8 @@ public:
 	CollisionSolver();
     CollisionSolver(CollisionSolver&&);
     CollisionSolver& operator=(CollisionSolver&&);
+
+    //TODO: Do we really want these as static methods?
 	static void setRoundingTolerance(double);
 	static double getRoundingTolerance();
 	static void setFabricThickness(double);
@@ -174,14 +186,17 @@ public:
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
+
     double setVolumeDiff(double);
 	virtual ~CollisionSolver(); //virtual destructor
 	//pure virtual functions
 	virtual void assembleFromInterface(const INTERFACE*,double dt) = 0;
 	virtual void createImpZoneForRG(const INTERFACE*) = 0;
-	bool getProximity(const CD_HSE*,const CD_HSE*);	
-	bool getCollision(const CD_HSE*,const CD_HSE*);
-	void resolveCollision();
+	
+        //bool getProximity(const CD_HSE*,const CD_HSE*);	
+	    //bool getCollision(const CD_HSE*,const CD_HSE*);
+	
+    void resolveCollision();
 	void recordOriginalPosition();	
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
@@ -206,17 +221,32 @@ public:
 class CollisionSolver3d : public CollisionSolver {
 private:
 	void updateImpactListVelocity(POINT*);
+
+    /*
 	bool BondToBond(const BOND*,const BOND*,double);
 	bool TriToTri(const TRI*,const TRI*,double);
 	bool TriToBond(const TRI*,const BOND*,double);
 	bool MovingBondToBond(const BOND*,const BOND*,double);
 	bool MovingTriToTri(const TRI*,const TRI*,double);
 	bool MovingTriToBond(const TRI*,const BOND*,double);
+    */
+
 public:
 	CollisionSolver3d():CollisionSolver(3){}
 	void assembleFromInterface(const INTERFACE*,double dt);
 	void createImpZoneForRG(const INTERFACE*);
 };
+
+
+bool getProximity(const CD_HSE*,const CD_HSE*,double);	
+bool getCollision(const CD_HSE*,const CD_HSE*,double);
+
+bool BondToBond(const BOND*,const BOND*,double);
+bool TriToBond(const TRI*,const BOND*,double);
+bool TriToTri(const TRI*,const TRI*,double);
+bool MovingBondToBond(const BOND*,const BOND*,double);
+bool MovingTriToBond(const TRI*,const BOND*,double);
+bool MovingTriToTri(const TRI*,const TRI*,double);
 
 
 void initSurfaceState(SURFACE*,const double*);

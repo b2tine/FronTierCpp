@@ -253,7 +253,9 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	}
 }
 
-bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h){
+//bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h){
+bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
+{
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 	POINT* pts[4];
 	bool status = false;
@@ -261,9 +263,9 @@ bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 	/* do not consider bond point that is a tri vertex */
 	for (int i = 0; i < 3; ++i)
 	{
-	    if (Point_of_tri(tri)[i] == bd->start ||
-		Point_of_tri(tri)[i] == bd->end)
-		return false;
+	    if (Point_of_tri(tri)[i] == bd->start
+            || Point_of_tri(tri)[i] == bd->end)
+            return false;
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -271,29 +273,40 @@ bool CollisionSolver3d::MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 
 	/* detect collision of start point of bond w.r.t to tri */
 	pts[3] = bd->start;
-        if (MovingPointToTri(pts, h)) status = true;
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
-	/* detect collision of end point of bond to w.r.t. tri */
+    if (MovingPointToTri(pts, h))
+        status = true;
+    
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+	
+    /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
-        if (MovingPointToTri(pts, h)) status = true;
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
-	/* detect collision of each of tri edge w.r.t to bond */
+    if (MovingPointToTri(pts, h))
+        status = true;
+
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+	
+    /* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
 	pts[3] = bd->end;
 	for (int i = 0; i < 3; ++i)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-            if (MovingEdgeToEdge(pts,h)) status = true;
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
+        if (MovingEdgeToEdge(pts,h))
+            status = true;
+
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
 	}
-	return status;
+
+    return status;
 }
 
-bool CollisionSolver3d::MovingBondToBond(const BOND* b1, const BOND* b2, double h){
+//bool CollisionSolver3d::MovingBondToBond(const BOND* b1, const BOND* b2, double h)
+bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
+{
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 	POINT* pts[4];
 	bool status = false;
@@ -308,18 +321,22 @@ bool CollisionSolver3d::MovingBondToBond(const BOND* b1, const BOND* b2, double 
 	{
 	    for (int j = i + 1; j < 4; ++j)
 	    {
-		if (pts[i] == pts[j])
-		    return false;
+            if (pts[i] == pts[j])
+                return false;
 	    }
 	}
 	/* detect collision between two bonds */	
-        if(MovingEdgeToEdge(pts,h)) status = true;
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
-	return status;
+    if(MovingEdgeToEdge(pts,h))
+        status = true;
+
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+
+    return status;
 }
 
-bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
+//bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
+bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 	POINT* pts[4];
@@ -330,89 +347,118 @@ bool CollisionSolver3d::MovingTriToTri(const TRI* a,const TRI* b, double h)
 	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
 		return false;
 	}
+
 	//detect point to tri collision
 	for (int k = 0; k < 2; ++k)
-	for (int i = 0; i < 3; ++i){
+	for (int i = 0; i < 3; ++i)
+    {
 	    const TRI* tmp_tri1 = (k == 0) ? a : b;
 	    const TRI* tmp_tri2 = (k == 0) ? b : a;
 	    for (int j = 0; j < 3; ++j)
-	    	pts[j] = Point_of_tri(tmp_tri1)[j];
-	    pts[3] = Point_of_tri(tmp_tri2)[i];
+            pts[j] = Point_of_tri(tmp_tri1)[j];
+        pts[3] = Point_of_tri(tmp_tri2)[i];
 
-	    //we do not consider point against 
-	    //a triangle that cotains it
-	    if (pts[3] == pts[0] || pts[3] == pts[1] ||
-		pts[3] == pts[2])
-		continue; 
-            if(MovingPointToTri(pts,h)) status = true;
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
+	    //Don't consider point against the triangle it belongs to
+	    if (pts[3] == pts[0] || pts[3] == pts[1]
+                || pts[3] == pts[2])
+            continue; 
+        
+        if(MovingPointToTri(pts,h))
+            status = true;
+
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
 	for (int i = 0; i < 3; ++i)
+    {
+        pts[0] = Point_of_tri(a)[i];
+        pts[1] = Point_of_tri(a)[(i+1)%3];
+        for (int j = 0; j < 3; ++j)
         {
-            pts[0] = Point_of_tri(a)[i];
-            pts[1] = Point_of_tri(a)[(i+1)%3];
-            for (int j = 0; j < 3; ++j){
-                pts[2] = Point_of_tri(b)[j];
-                pts[3] = Point_of_tri(b)[(j+1)%3];
+            pts[2] = Point_of_tri(b)[j];
+            pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-		//we do not consider edges share a point
-		if (pts[0] == pts[2] || pts[0] == pts[3] ||
-		    pts[1] == pts[2] || pts[1] == pts[3])
-		    continue;
-                if(MovingEdgeToEdge(pts,h)) status = true;
-                if (status && is_detImpZone)
-                    createImpZone(pts,4);
+		    //Don't consider edges with a shared enpoint
+            if (pts[0] == pts[2] || pts[0] == pts[3]
+            || pts[1] == pts[2] || pts[1] == pts[3])
+                continue;
+    
+            if(MovingEdgeToEdge(pts,h))
+                status = true;
+                
+            if (status && is_detImpZone)
+                createImpZone(pts,4);
 	    }
-        }
+    }
+
 	return status;
 }
 
-
-static bool MovingPointToTri(POINT* pts[],const double h) {
-
+//NOTE: Changes coords of pts involved
+static bool MovingPointToTri(POINT* pts[],const double h)
+{
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 	STATE* sl;
-	if (isCoplanar(pts,dt,roots)){
-	    for (int i = 0; i < 4; ++i){
-		if (roots[i] < 0) continue;
-		for (int j = 0; j < 4; ++j){
-		    sl = (STATE*)left_state(pts[j]);
-		    for (int k = 0; k < 3; ++k)
-		        Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
-		}
-		if (PointToTri(pts,h,roots[i])) 
+	if (isCoplanar(pts,dt,roots))
+    {
+	    for (int i = 0; i < 4; ++i)
+        {
+            if (roots[i] < 0)
+                continue;
+    
+            for (int j = 0; j < 4; ++j)
+            {
+                sl = (STATE*)left_state(pts[j]);
+    		    for (int k = 0; k < 3; ++k)
+                    Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
+		    }
+    
+            if (PointToTri(pts,h,roots[i])) 
 		    return true;
 	    }
-	    return false;
+
+        return false;
 	}
 	else
-	    return false;
+    {
+        return false;
+    }
 }
 
-static bool MovingEdgeToEdge(POINT* pts[],const double h) {
+//NOTE: Changes coords of pts involved
+static bool MovingEdgeToEdge(POINT* pts[],const double h)
+{
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 	STATE* sl;
 
-	if (isCoplanar(pts,dt,roots)){
-            for (int i = 0; i < 4; ++i){
-                if (roots[i] < 0) continue;
-                for (int j = 0; j < 4; ++j){
-                    sl = (STATE*)left_state(pts[j]);
-                    for (int k = 0; k < 3; ++k)
-                        Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
-                }
-                if (EdgeToEdge(pts,h,roots[i]))
-                        return true;
+	if (isCoplanar(pts,dt,roots))
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            if (roots[i] < 0)
+                continue;
+                
+            for (int j = 0; j < 4; ++j)
+            {
+                sl = (STATE*)left_state(pts[j]);
+                for (int k = 0; k < 3; ++k)
+                    Coords(pts[j])[k] = sl->x_old[k]+roots[i]*sl->avgVel[k];
             }
-	    return false;
+
+            if (EdgeToEdge(pts,h,roots[i]))
+                return true;
         }
-	else
+
 	    return false;
+    }
+	else
+    {
+        return false;
+    }
 }
 
 static void isCoplanarHelper(double* s[], double v[][3]) {
@@ -528,8 +574,13 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	    return false;
 }
 
+//NOTE: this function restores coords of points to x_old
+//
 //helper function to detect proximity between elements 
-bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h){
+
+//bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h)
+bool TriToBond(const TRI* tri,const BOND* bd, double h)
+{
 	POINT* pts[4];
 	STATE* sl;
 	bool status = false;
@@ -539,17 +590,18 @@ bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h){
 	{
 	    if (Point_of_tri(tri)[i] == bd->start ||
 		Point_of_tri(tri)[i] == bd->end)
-		return false;
+            return false;
 	}
 
 	/* make sure the coords are old coords */
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
+
 	for (int i = 0; i < 3; ++i)
 	{
 	    sl = (STATE*)left_state(pts[i]);
 	    for (int j = 0; j < 3; ++j)
-		Coords(pts[i])[j] = sl->x_old[j];
+            Coords(pts[i])[j] = sl->x_old[j];
 	}
 
 	/* detect proximity of start point of bond w.r.t. tri */
@@ -557,14 +609,18 @@ bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h){
 	sl = (STATE*)left_state(pts[3]);
 	for (int j = 0; j < 3; ++j)
 	    Coords(pts[3])[j] = sl->x_old[j];
-	if (PointToTri(pts,h)) status = true;
+
+	if (PointToTri(pts,h))
+        status = true;
 
 	/* detect proximity of end point of bond w.r.t. tri */
 	pts[3] = bd->end;
 	sl = (STATE*)left_state(pts[3]);
 	for (int j = 0; j < 3; ++j)
 	    Coords(pts[3])[j] = sl->x_old[j];
-	if (PointToTri(pts,h)) status = true;
+	
+    if (PointToTri(pts,h))
+        status = true;
 	
 	/* detect proximity each edge of tri w.r.t. bond */
 	pts[2] = bd->start;
@@ -573,13 +629,18 @@ bool CollisionSolver3d::TriToBond(const TRI* tri,const BOND* bd, double h){
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-	    if (EdgeToEdge(pts, h)) status = true;
+	    if (EdgeToEdge(pts, h))
+            status = true;
 	}
 
 	return status;
 }
 
-bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h){
+//NOTE: this function restores coords of points to x_old
+//
+//bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h)
+bool BondToBond(const BOND* b1, const BOND* b2, double h)
+{
 	POINT* pts[4];
 	STATE* sl;
 	bool status = false;
@@ -608,13 +669,17 @@ bool CollisionSolver3d::BondToBond(const BOND* b1, const BOND* b2, double h){
 	}
 
 	/* detect proximity between two bonds */
-	if (EdgeToEdge(pts, h))
+	if (EdgeToEdge(pts,h))
 		status = true;
 
 	return status;
 }
 
-bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h){
+//NOTE: this function restores coords of points to x_old
+//
+//bool CollisionSolver3d::TriToTri(const TRI* tri1, const TRI* tri2, double h)
+bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
+{
 	POINT* pts[4];
 	STATE* sl[2];
 	bool status = false;
@@ -975,7 +1040,14 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 
 }
 
-static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, double dist, double root)
+//TODO: root is not used inside this function at all
+static void EdgeToEdgeImpulse(
+        POINT** pts,
+        double* nor,
+        double a,
+        double b,
+        double dist,
+        double root)
 {
 	if (debugging("collision"))
 	    CollisionSolver::edg_to_edg++;
@@ -1008,7 +1080,7 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 	else
 	    vt = 0.0;
 
-    //Edges are approaching each other
+    //Edges are approaching each other: apply inelastic impulse
 	if (vn < 0.0)
 	{
 	    if ((isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])) ||
@@ -1048,9 +1120,11 @@ static void EdgeToEdgeImpulse(POINT** pts, double* nor, double a, double b, doub
 	    if (isStaticRigidBody(pts[3])) wb[1] = 0.0;
 	}
 
-    //TODO:For Collisions only one of these should be applied, not both.
-    //     For Repulsions, both are applied.
+    //TODO:For Collisions only one of the forces (inelastic or elastic)
+    //     should be applied, not both.
+    //     For Repulsions, one or both are applied depending on vn.
 
+    //spring based repulsion
 	if (vn * dt < 0.1 * dist)
 	{
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
@@ -1177,6 +1251,8 @@ if (fabs(m_impulse) > 0.0){
 	}
 
 }
+
+//Note that root has default value of 0.0
 static bool PointToTri(POINT** pts, double h, double root)
 {
 /*	x1
@@ -1360,6 +1436,8 @@ static bool PointToTri(POINT** pts, double h, double root)
 	return true;
 }
 
+//TODO: root is not used inside this function at all
+//
 /* repulsion and friction functions, update velocity functions */
 static void PointToTriImpulse(
         POINT** pts,
@@ -1444,8 +1522,9 @@ static void PointToTriImpulse(
 	        scalarMult(1.0/sum_w,w,w);
 	}
 
-    //TODO:For Collisions only one of these should be applied, not both.
-    //     For Repulsions, both are applied.
+    //TODO:For Collisions only one of the forces (inelastic or elastic)
+    //     should be applied, not both.
+    //     For Repulsions, one or both are applied depending on vn.
 
 	if (vn * dt < 0.1 * dist)
 	{
