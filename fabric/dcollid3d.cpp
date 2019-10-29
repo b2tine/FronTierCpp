@@ -21,6 +21,10 @@ static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
                                         double,double,double,double);
 
+static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
+static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
+                                        double,double,double,double);
+
 //functions in CollisionSolver3d
 void CollisionSolver3d::assembleFromInterface(
 	const INTERFACE* intfc,const double dt)
@@ -1105,6 +1109,7 @@ static void EdgeToEdgeImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
+	//apply impulses to the average (linear trajectory) velocity
 	for (int j = 0; j < 3; ++j)
 	{
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
@@ -1663,20 +1668,27 @@ static void PointToTriImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
-	/* apply impulses to the average (linear trajectory) velocity */
+	//apply impulses to the average (linear trajectory) velocity
 	for (int i = 0; i < 3; ++i)
 	{
 	    v_rel[i] += sl[3]->avgVel[i];
 	    for (int j = 0; j < 3; ++j)
 		v_rel[i] -= w[j] * sl[j]->avgVel[i];
 	}
+
 	vn = Dot3d(v_rel, nor);
 	if (Dot3d(v_rel, v_rel) > sqr(vn))
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
 	    vt = 0.0;
 
-    //Point and Triangle are approaching each other
+
+    //Point and Triangle are approaching each other: apply inelastic impulse
+	if (vn < 0)
+        PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
+
+    /*
+    //Point and Triangle are approaching each other: apply inelastic impulse
 	if (vn < 0)
 	{
 	    if (isStaticRigidBody(pts[3]) ||
@@ -1718,14 +1730,21 @@ static void PointToTriImpulse(
                 w[i] = 0.0;
             sum_w += w[i];
 	    }
+
 	    if (fabs(sum_w) > MACH_EPS)
 	        scalarMult(1.0/sum_w,w,w);
 	}
+    */
 
     //TODO:For Collisions only one of the forces (inelastic or elastic)
     //     should be applied, not both.
     //     For Repulsions, one or both are applied depending on vn.
 
+
+	if (vn * dt < 0.1 * dist)
+        PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
+
+    /*
 	if (vn * dt < 0.1 * dist)
 	{
 	    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
@@ -1743,38 +1762,40 @@ static void PointToTriImpulse(
             rigid_impulse[1] += tmp;
 	    }
 	}
+    */
 
 	if (fabs(sum_w) < MACH_EPS)
 	    m_impulse = impulse;
 	else
 	    m_impulse = 2.0 * impulse / (1.0 + Dot3d(w, w));
 
-//uncomment the following the debugging purpose
-if (debugging("CollisionImpulse"))
-if (fabs(m_impulse) > 0.0){
-	printf("real PointToTri collision, dist = %e\n",dist);
-	printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-	printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-	printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-	printf("m_impuse = %f, impulse = %f, w = [%f %f %f]\n",
-		m_impulse,impulse,w[0],w[1],w[2]);
-	printf("dt = %f, root = %f\n",dt,root);
-	printf("k = %f, m = %f\n",k,m);
-	printf("x_old:\n");
-	for (int i = 0; i < 4; ++i){
-	    STATE* sl1 = (STATE*)left_state(pts[i]);
-	    printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
-	}
-	printf("x_new:\n");
-	for (int i = 0; i < 4; ++i){
-	    printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-	}
-	printf("avgVel:\n");
-	for (int i = 0; i < 4; ++i){
-	    STATE* sl1 = (STATE*)left_state(pts[i]);
-	    printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-	}
-}
+    //uncomment the following the debugging purpose
+    if (debugging("CollisionImpulse"))
+    if (fabs(m_impulse) > 0.0){
+        printf("real PointToTri collision, dist = %e\n",dist);
+        printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
+        printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+        printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+        printf("m_impuse = %f, impulse = %f, w = [%f %f %f]\n",
+            m_impulse,impulse,w[0],w[1],w[2]);
+        printf("dt = %f, root = %f\n",dt,root);
+        printf("k = %f, m = %f\n",k,m);
+        printf("x_old:\n");
+        for (int i = 0; i < 4; ++i){
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+        }
+        printf("x_new:\n");
+        for (int i = 0; i < 4; ++i){
+            printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+        }
+        printf("avgVel:\n");
+        for (int i = 0; i < 4; ++i){
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+        }
+    }
+    ////////////////////////////////////////////////////
 
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
@@ -1858,6 +1879,83 @@ if (fabs(m_impulse) > 0.0){
             clean_up(ERROR);
 	    }
 	}
+}
+
+PointToTriInelasticImpulse(
+        double vn,
+        POINT** pts,
+        double* impulse,
+        double* rigid_impulse,
+        double* w,
+        double* sum_w)
+{
+    if (isStaticRigidBody(pts[3]) ||
+       (isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])
+        && isStaticRigidBody(pts[2])))
+    {
+        *impulse = vn;
+        rigid_impulse[0] = vn;
+        rigid_impulse[1] = vn;
+    }
+    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
+            && isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
+    {
+        double m1 = total_mass(pts[0]->hs);
+        double m2 = total_mass(pts[3]->hs);
+        rigid_impulse[0] = vn * m2 / (m1 + m2);
+        rigid_impulse[1] = vn * m1 / (m1 + m2);
+    }
+    else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
+            && isMovableRigidBody(pts[2]))
+    {
+        *impulse = 0.5 * vn;
+        rigid_impulse[0] = 0.5 * vn;
+    }
+    else if (isMovableRigidBody(pts[3]))
+    {
+        *impulse = 0.5 * vn;
+        rigid_impulse[1] = 0.5 * vn;
+    }
+    else
+    {
+        //this is the fabric-fabric case?
+        *impulse = vn * 0.5;
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        if (isStaticRigidBody(pts[i]))
+            w[i] = 0.0;
+        *sum_w += w[i];
+    }
+
+    if (fabs(sum_w) > MACH_EPS)
+        scalarMult(1.0/(*sum_w),w,w);
+}
+
+static void PointToTriElasticImpulse(
+        double vn,
+        double dist,
+        POINT** pts,
+        double* impulse,
+        double* rigid_impulse,
+        double dt, double m,
+        double k, double cor)
+{
+    if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
+    isRigidBody(pts[2]) && isRigidBody(pts[3]))
+    {
+        //cor = 1.0;
+        rigid_impulse[0] *= 1.0 + cor;
+        rigid_impulse[1] *= 1.0 + cor;
+    }
+    else
+    {
+        double tmp = - std::min(dt*k*dist/m, (0.1*dist/dt - vn));
+        *impulse += tmp;
+        rigid_impulse[0] += tmp;
+        rigid_impulse[1] += tmp;
+    }
 }
 
 static void unsort_surface_point(SURFACE *surf)

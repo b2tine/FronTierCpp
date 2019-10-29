@@ -1092,7 +1092,7 @@ void minusVec(double* v1, double* v2, double* ans)
 	    ans[i] = v1[i]-v2[i];
 }
 
-void scalarMult(double a,double* v, double* ans)
+void scalarMult(double a, double* v, double* ans)
 {
 	for (int i = 0; i < 3; ++i)
             ans[i] = a*v[i];	
