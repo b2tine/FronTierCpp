@@ -11,10 +11,10 @@ struct SPRING_VERTEX
     int num_nb;             //number of neighboring vertices
     double m;               //mass
     double lambda;          //damping coefficient
-    double **x_nb;
-    double **v_nb;
+    double **x_nb;          //positions of neighbor vertices
+    double **v_nb;          //velocities of neighbor vertices
 	int *ix_nb;
-    double *k;              //spring constant
+    double *k;              //spring constant of neighbor vertices
     double *len0;           //equilibrium lengths to neighbors
     double ext_accel[3];    //gravity
 	double *fluid_accel;    //acceleration due to fluid pressue difference on fabric

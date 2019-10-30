@@ -908,17 +908,18 @@ void CollisionSolver3d::updateAverageVelocity()
 		    sl->has_collsn = true;
 		    for (int k = 0; k < 3; ++k)
 		    {
-			sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
-			if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
-			{
-			    printf("inf/nan vel[%d]: impulse = %f, friction = %f, collsn_num = %d\n",
-				k,sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
-			    clean_up(ERROR);
-			}
-			//reset impulse and fricition to 0
-			//collision handling will recalculate the impulse
-			sl->collsnImpulse[k] = sl->friction[k] = 0.0;
-		    }
+                sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                
+                if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
+                {
+                    printf("inf/nan vel[%d]: impulse = %f, friction = %f, collsn_num = %d\n",
+                    k,sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
+                    clean_up(ERROR);
+                }
+   
+	    		sl->collsnImpulse[k] = 0.0;
+                sl->friction[k] = 0.0;
+            }
 		    sl->collsn_num = 0;
 		}
 

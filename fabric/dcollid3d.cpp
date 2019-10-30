@@ -1039,19 +1039,23 @@ static bool EdgeToEdge(
     }
     */
     
-    scalarMult(sC,x12,x12);
-    addVec(x31,x12,vec);
-
+    //"normal vector" always points from
+    //the x12 edge to the x34 edge
+    
+    double nor[3];
     scalarMult(tC,x34,x34);
-    minusVec(vec,x34,vec);
+    scalarMult(sC,x12,x12);
+    minusVec(x34,x12,nor);
+    minusVec(nor,x13,nor);
 
-    dist = Mag3d(vec);
+    dist = Mag3d(nor);
     if (dist > h)
         return false;
 
-    EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,root);
-	return true;
+    scalarMult(1.0/dist,nor,nor);
 
+    EdgeToEdgeImpulse(pts,nor,sC,tC,dist,mstate,root);
+	return true;
 }
 
 //TODO: root is not used inside this function at all
@@ -1098,8 +1102,8 @@ static void EdgeToEdgeImpulse(
 	//apply impulses to the average (linear trajectory) velocity
 	for (int j = 0; j < 3; ++j)
 	{
-	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
-	    v_rel[j] -= (1.0-a) * sl[0]->avgVel[j] + a * sl[1]->avgVel[j];
+	    v_rel[j]  = (1.0 - b)*sl[2]->avgVel[j] + b*sl[3]->avgVel[j];
+	    v_rel[j] -= (1.0 - a)*sl[0]->avgVel[j] + a*sl[1]->avgVel[j];
 	}
 	
     vn = Dot3d(v_rel, nor);
@@ -1113,7 +1117,6 @@ static void EdgeToEdgeImpulse(
     //Edges are seperating from each other (vn > 0.0):
     //      apply elastic impulse
     
-    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
@@ -1125,7 +1128,7 @@ static void EdgeToEdgeImpulse(
     }
     else
     {
-        //Can apply both for repulsion
+        //Apply both if needed for proximity
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
         if (vn * dt < 0.1 * dist)
@@ -1138,8 +1141,7 @@ static void EdgeToEdgeImpulse(
     }
     else
     {
-        double wabs_sqr = sqr(wab[0]) + sqr(wab[1])
-                          + sqr(wab[2]) + sqr(wab[3]);
+        double wabs_sqr = sqr(wab[0]) + sqr(wab[1]) + sqr(wab[2]) + sqr(wab[3]);
         m_impulse = 2.0*impulse/wabs_sqr;
     }
 
@@ -1186,27 +1188,35 @@ static void EdgeToEdgeImpulse(
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
-    //friction
+    //TODO: should probably be in own function together with
+    //      the elastic and inelastic impulse functions above
     for (int i = 0;  i < 4; ++i)
     {
         if (!isStaticRigidBody(pts[i]))
         {
+            sl[i]->collsn_num++;
+
             double t_impulse = m_impulse;
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
             for (int j = 0; j < 3; ++j)
             {
-                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+                double delta_vn = W[i]*t_impulse;
+                sl[i]->collsnImpulse[j] += delta_vn*nor[j];
        
+                //Friction only applied for proximity, not collisions.
+                if (mstate == MotionState::MOVING)
+                    continue;
+
                 if (fabs(vt) > ROUND_EPS)
                 {
-                    double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                    //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+                    //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                    double frcoef = std::max(1.0,lambda*delta_vn/vt);
+                    sl[i]->friction[j] -= frcoef*(v_rel[j] - vn*nor[j]);
                 }
             }
-        
-            sl[i]->collsn_num++;
         }
         else
         {
@@ -1264,7 +1274,7 @@ static void EdgeToEdgeInelasticImpulse(
     else
     {
         //this is the fabric-fabric case?
-        *impulse = vn * 0.5;
+        *impulse = 0.5 * vn;
     }
 
     //TODO: Why is this for only vn < 0?
@@ -1534,7 +1544,7 @@ static void PointToTriImpulse(
 	}
 
 	vn = Dot3d(v_rel, nor);
-	if (Dot3d(v_rel, v_rel) > sqr(vn))
+	if (Dot3d(v_rel, v_rel) > sqr(vn))  //this should always be true
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
 	    vt = 0.0;
@@ -1544,10 +1554,9 @@ static void PointToTriImpulse(
     //Point and Triangle are seperating from each other (vn > 0.0):
     //      apply elastic impulse
     
-    //TODO: should dt be set to the root when mstate == MotionState::MOVING?
     if (mstate == MotionState::MOVING)
     {
-        //Apply one or the other for collision, NOT BOTH
+        //Apply one or the other for collisions, NOT BOTH
         dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
@@ -1556,7 +1565,7 @@ static void PointToTriImpulse(
     }
     else
     {
-        //Can apply both for repulsion
+        //Apply both if needed for proximity
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
         if (vn * dt < 0.1 * dist)
@@ -1610,27 +1619,35 @@ static void PointToTriImpulse(
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
-    //friction
+    //TODO: should probably be in own function together with
+    //      the elastic and inelastic impulse functions above
 	for (int i = 0; i < 4; ++i)
 	{
         if (!isStaticRigidBody(pts[i]))
         {
+            sl[i]->collsn_num++;
+
             double t_impulse = m_impulse;
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
             for(int j = 0; j < 3; ++j)
             {
-                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+                double delta_vn = W[i]*t_impulse;
+                sl[i]->collsnImpulse[j] += delta_vn*nor[j];
+
+                //Friction only applied for proximity, not collisions.
+                if (mstate == MotionState::MOVING)
+                    continue;
 
                 if (fabs(vt) > ROUND_EPS)
                 {
-                    double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                    //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+                    double frcoef = std::max(1.0,lambda*delta_vn/vt);
+                    //double frcoef = std::max(1.0,lambda*W[i]*t_impulse/vt);
+                    sl[i]->friction[j] -= frcoef*(v_rel[j] - vn*nor[j]);
                 }
             }
-
-            sl[i]->collsn_num++;
         }
         else
         {
@@ -1705,7 +1722,7 @@ static void PointToTriInelasticImpulse(
     }
     else
     {
-        *impulse = vn * 0.5;
+        *impulse = 0.5 * vn;
     }
 
     for (int i = 0; i < 3; ++i)
