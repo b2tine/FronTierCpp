@@ -255,31 +255,35 @@ extern void compute_spring_accel1(
 	double* accel,
 	int dim)
 {
-	double len,vec[MAXD];
+	double vec[MAXD];
 	double v_rel[MAXD];
 
 	for (int k = 0; k < dim; ++k)
         accel[k] = 0.0;
 
-    for (int i = 0; i < sv->num_nb; ++i)
+    for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    len = 0.0;
+	    double len = 0.0;
 	    for (int k = 0; k < dim; ++k)
 	    {
-            vec[k] = sv->x_nb[i][k] - sv->x[k];
-            len += sqr(vec[k]);
+            vec[k] = sv->x_nb[j][k] - sv->x[k];
+            len += vec[k]*vec[k];
 /*
 #ifdef DAMPING_FORCE
-		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
+		v_rel[k] = sv->v_nb[j][k] - sv->v[k];
 #endif
 */
 	    }
+
 	    len = sqrt(len);
 
 	    for (int k = 0; k < dim; ++k)
 	    {
-            vec[k] /= len;
-            accel[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
+            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
+            //accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
+            
+            //vec[k] /= len;
+            //accel[k] += sv->k[j]*((len - sv->len0[j])*vec[k])/sv->m;
 /*
 #ifdef DAMPING_FORCE
             //This is artificial viscosity
@@ -291,22 +295,19 @@ extern void compute_spring_accel1(
 
         //TODO: This isn't being used currently.
         //      Figure out why.
-    
         //computeElasticForce(sv,f);
 
 	for (int k = 0; k < dim; ++k)
     {
-        //TODO: compare to fabric_gpu.cu : dev_comp_spring_accel
-	    sv->f[k] += accel[k]*sv->m;
-	    //sv->f[k] = accel[k]*sv->m;
+	    sv->f[k] = accel[k]*sv->m;
     }
 	
     for (int k = 0; k < dim; ++k)
 	{
 //#ifndef DAMPING_FORCE
-	    accel[k] += -sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
 //#endif
-	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
                     + sv->other_accel[k];
 	}
 }	/* end compute_spring_accel */
