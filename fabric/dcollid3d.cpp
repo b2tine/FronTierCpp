@@ -1317,9 +1317,10 @@ static bool PointToTri(
  * x13*x23*w1 + x23*x23*w2 = x23*x43
  */
     double dist;
-    double nor[3];
+    //double nor[3];
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3], x34[3];
+    double tri_nor[3] = {0.0};
 
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
@@ -1389,7 +1390,6 @@ static bool PointToTri(
 	    /*x13 and x23 are non-collinear*/
 
         //unit normal vector of the plane of the triangle
-	    double tri_nor[3] = {0.0};
 	    Cross3d(x13,x23,tri_nor);
 	    double tri_nor_mag = Mag3d(tri_nor);
 
@@ -1408,8 +1408,9 @@ static bool PointToTri(
 	    //correct the triangle's normal direction to point to same
         //side as the point (not used right now, but may need at some
         //for detecting/correcting interpenetration etc.)
-        dist = Dot3d(x34,tri_nor);
+
         //dist = Dot3d(x34_old,tri_nor);
+        dist = Dot3d(x34,tri_nor);
         if (dist < 0.0)
         {
             scalarMult(-1.0,tri_nor,tri_nor);
@@ -1442,13 +1443,14 @@ static bool PointToTri(
                 return false;
         }
 
+        /*
         //compute the "normal vector" pointing from the
         //projected point of the triangle's plane to the point
         for (int i = 0; i < 3; ++i)
         {
             nor[i] = x34[i] + w[0]*x13[i] + w[1]*x23[i];
         }
-
+        */
         
         /*
         STATE* tmp_sl = (STATE*)left_state(pts[3]);
@@ -1467,6 +1469,7 @@ static bool PointToTri(
         }
         */
             
+        /*
         double nor_mag = Mag3d(nor);
         if (nor_mag > ROUND_EPS)
         {
@@ -1478,9 +1481,10 @@ static bool PointToTri(
             printPointList(pts,4);
             clean_up(ERROR);
         }
+        */
     }
 
-	PointToTriImpulse(pts,nor,w,dist,mstate,root);
+	PointToTriImpulse(pts,tri_nor,w,dist,mstate,root);
 	return true;
 }
 
