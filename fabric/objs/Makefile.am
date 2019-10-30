@@ -14,8 +14,8 @@ noinst_LTLIBRARIES = libfabric.la
 
 
 libfabric_la_SOURCES = \
-../airfoil.h \
-../airfoil_sv.h \
+../fabric.h \
+../fabric_sv.h \
 ../afprop.cpp \
 ../afcnpy.cpp \
 ../afdata.cpp \
