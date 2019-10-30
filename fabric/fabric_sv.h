@@ -1,10 +1,6 @@
-#ifndef AIRFOIL_SV
-#define AIRFOIL_SV
+#ifndef FABRIC_SV
+#define FABRIC_SV
 
-//TODO: Comments with description of each variable.
-//      Or even better, rename variables.
-
-        
 struct SPRING_VERTEX
 {
     double *x;              //position
