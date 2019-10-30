@@ -1046,7 +1046,7 @@ static bool EdgeToEdge(
     scalarMult(tC,x34,x34);
     scalarMult(sC,x12,x12);
     minusVec(x34,x12,nor);
-    minusVec(nor,x13,nor);
+    minusVec(nor,x31,nor);
 
     dist = Mag3d(nor);
     if (dist > h)
