@@ -7,20 +7,20 @@
         
 struct SPRING_VERTEX
 {
-    double *x;
-    double *v;
-	double *f;
-    double *ext_impul;
+    double *x;              //position
+    double *v;              //velocity
+	double *f;              //force
+    double *ext_impul;      //velocity comp due to impulse of external force
 	int ix;
-    int num_nb;
-    double m;
-    double lambda;
+    int num_nb;             //number of neighboring vertices
+    double m;               //mass
+    double lambda;          //damping coefficient
     double **x_nb;
     double **v_nb;
 	int *ix_nb;
-    double *k;
-    double *len0;
-    double ext_accel[3];
+    double *k;              //spring constant
+    double *len0;           //equilibrium lengths to neighbors
+    double ext_accel[3];    //gravity
 	double *fluid_accel;
 	double *other_accel;
 };

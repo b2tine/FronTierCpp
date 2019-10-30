@@ -1,5 +1,4 @@
 #include <FronTier.h>
-//#include "AABB.h"
 #include "collid.h"
 
 #include <vector>
