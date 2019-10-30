@@ -268,34 +268,18 @@ extern void compute_spring_accel1(
 	    {
             vec[k] = sv->x_nb[j][k] - sv->x[k];
             len += vec[k]*vec[k];
-/*
-#ifdef DAMPING_FORCE
-		v_rel[k] = sv->v_nb[j][k] - sv->v[k];
-#endif
-*/
 	    }
-
 	    len = sqrt(len);
 
 	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
-            //accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
-            
             //vec[k] /= len;
             //accel[k] += sv->k[j]*((len - sv->len0[j])*vec[k])/sv->m;
-/*
-#ifdef DAMPING_FORCE
-            //This is artificial viscosity
-		    accel[k] += sv->lambda*v_rel[k]/sv->m; 
-#endif
-*/
         }
 	}
 
-        //TODO: This isn't being used currently.
-        //      Figure out why.
-        //computeElasticForce(sv,f);
+    //computeElasticForce(sv,f);
 
 	for (int k = 0; k < dim; ++k)
     {
@@ -304,9 +288,7 @@ extern void compute_spring_accel1(
 	
     for (int k = 0; k < dim; ++k)
 	{
-//#ifndef DAMPING_FORCE
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-//#endif
         accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
                     + sv->other_accel[k];
 	}
