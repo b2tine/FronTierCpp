@@ -1316,16 +1316,17 @@ static bool PointToTri(
  * x13*x13*w1 + x13*x23*w2 = x13*x43
  * x13*x23*w1 + x23*x23*w2 = x23*x43
  */
+    double dist;
+    double nor[3];
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3], x34[3];
-    double dist, det;
 
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
 	Pts2Vec(pts[3],pts[2],x43);
     scalarMult(-1.0,x43,x34);
 	
-	det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < 1000 * MACH_EPS)
     {   
 	    // ignore cases where tri reduces to a line or point
@@ -1443,7 +1444,6 @@ static bool PointToTri(
 
         //compute the "normal vector" pointing from the
         //projected point of the triangle's plane to the point
-        double nor[3];
         for (int i = 0; i < 3; ++i)
         {
             nor[i] = x34[i] + w[0]*x13[i] + w[1]*x23[i];
