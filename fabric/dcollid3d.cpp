@@ -66,7 +66,7 @@ void CollisionSolver3d::assembleFromInterface(
 	createImpZoneForRG(intfc);
 	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
 
-	if (debugging("collision")){
+	if (debugging("assembleFromInterface")){
 	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
 	    printf("%lu number of elements is assembled\n",hseList.size());
 	}

@@ -192,7 +192,7 @@ void CollisionSolver3d::computeAverageVelocity()
 		
             }
 
-            if (debugging("collision"))
+            if (debugging("average_velocity"))
             {
                 if (Mag3d(sl->avgVel) >= max_speed)
                 {
@@ -206,7 +206,7 @@ void CollisionSolver3d::computeAverageVelocity()
         
     }
 
-    if (debugging("collision"))
+    if (debugging("average_velocity"))
     {
         if (max_vel)
         {
@@ -270,7 +270,6 @@ void CollisionSolver3d::computeImpactZone()
     //TODO: This can enter infinite loop
     while(is_collision)
     {
-        //if (++impzone_counter == 20) clean_up(ERROR);
         is_collision = false;
 
         //start UF alogrithm
@@ -295,8 +294,6 @@ void CollisionSolver3d::computeImpactZone()
     }
 	
     turnOffImpZone();
-
-	return;
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()
@@ -364,7 +361,7 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
-	if (debugging("collision"))
+	if (debugging("printDebugVariable"))
 	    printDebugVariable();
 
 	//check linear trajectories for collisions
@@ -372,7 +369,7 @@ void CollisionSolver3d::resolveCollision()
 	detectCollision();
 	stop_clock("detectCollision");
 
-	if (debugging("collision"))
+	if (debugging("printDebugVariable"))
 	    printDebugVariable();
 	
 	start_clock("detectDomainBoundaryCollision");
@@ -457,7 +454,7 @@ void CollisionSolver3d::detectProximity()
 
 	updateAverageVelocity();
 
-	if (debugging("collision"))
+	if (debugging("proximity"))
         std::cout << abt_proximity->getCount()
             << " pair of proximity" << std::endl;
 }
@@ -502,7 +499,8 @@ void CollisionSolver3d::aabbCollision() {
 
 void CollisionSolver3d::detectCollision()
 {
-	std::cout<<"Starting collision handling: "<<std::endl;
+    if (debugging("collision"))
+        std::cout<<"Starting collision handling: "<<std::endl;
 	
 	const int MAX_ITER = 12;
     const double h = CollisionSolver3d::getRoundingTolerance();
@@ -517,10 +515,10 @@ void CollisionSolver3d::detectCollision()
     {
 	    is_collision = false;
 	    
-            start_clock("dynamic_AABB_collision");
+        start_clock("dynamic_AABB_collision");
         aabbCollision();
         abt_collision->query(h);
-            stop_clock("dynamic_AABB_collision");
+        stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
 
@@ -541,12 +539,12 @@ void CollisionSolver3d::detectCollision()
             break;
 	}
 
-        start_clock("computeImpactZone");
-
 	if (is_collision) 
+    {
+        start_clock("computeImpactZone");
 	    computeImpactZone();
-    
         stop_clock("computeImpactZone");
+    }
 }
 
 /*
@@ -638,7 +636,7 @@ void CollisionSolver3d::reduceSuperelast()
 	    has_superelas = reduceSuperelastOnce(num_edges);
 	}
 
-	if (debugging("collision"))
+	if (debugging("strain_limit"))
         printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
 }
 
@@ -933,7 +931,7 @@ void CollisionSolver3d::updateAverageVelocity()
 		    sl->collsn_num_RG = 0;
 		}
 
-		if (debugging("collision"))
+		if (debugging("average_velocity"))
         {
 		    //debugging: print largest speed
 		    double speed = Mag3d(sl->avgVel);
@@ -950,10 +948,10 @@ void CollisionSolver3d::updateAverageVelocity()
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
 
-	if (debugging("collision"))
+	if (debugging("average_velocity"))
 	if (maxVel != nullptr)
 	    printf("    max velocity = [%f %f %f]\n",maxVel[0],maxVel[1],maxVel[2]);
-	if (debugging("collision"))
+	if (debugging("printDebugVariable"))
 	    printDebugVariable();
 }
 
