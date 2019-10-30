@@ -276,14 +276,16 @@ void CollisionSolver3d::computeImpactZone()
         //start UF alogrithm
         //merge four pts if collision happens
 
-            start_clock("dynamic_AABB_collision");
+        start_clock("dynamic_AABB_collision");
         aabbCollision();
         abt_collision->query(h);
-            stop_clock("dynamic_AABB_collision");
+        stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
 
+        //TODO: Verify Jarret's claim that this should be removed.
         updateAverageVelocity();
+
         updateImpactZoneVelocity(numZones);
 
         std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
@@ -608,6 +610,8 @@ void CollisionSolver3d::detectCollision()
 }
 */
 
+//Note: num has default value of 4,
+//and first has default value of false
 extern void createImpZone(POINT* pts[], int num, bool first){
 	for (int i = 0; i < num; ++i)
 	{
