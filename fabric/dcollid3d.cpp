@@ -1318,11 +1318,8 @@ static bool PointToTri(
  */
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3], x34[3];
-	double nor[3] = {0.0};
-	double unit_nor[3] = {0.0};
-    double nor_mag = 0.0, dist, det;
+    double dist, det;
 
-    //TODO: not consisent with below that uses x_old in computations.
 	Pts2Vec(pts[0],pts[2],x13);
 	Pts2Vec(pts[1],pts[2],x23);
 	Pts2Vec(pts[3],pts[2],x43);
@@ -1389,30 +1386,32 @@ static bool PointToTri(
     {
 	    /*det != 0*/
 	    /*x13 and x23 are non-collinear*/
-	    Cross3d(x13, x23, nor);
-	    nor_mag = Mag3d(nor);
-        scalarMult(1.0/nor_mag,nor,unit_nor);
-        double tri_area = 0.5*nor_mag;
+
+        //unit normal vector of the plane of the triangle
+	    double tri_nor[3] = {0.0};
+	    Cross3d(x13,x23,tri_nor);
+	    double tri_nor_mag = Mag3d(tri_nor);
+
+        scalarMult(1.0/tri_nor_mag,tri_nor,tri_nor);
+        double tri_area = 0.5*tri_nor_mag;
 
         /*
 	    //get the old direction
-	    double x43_old[3];
+	    double x34_old[3];
 	    STATE* tmp_sl[2];
-	    tmp_sl[0] = (STATE*)left_state(pts[3]);
-	    tmp_sl[1] = (STATE*)left_state(pts[2]);
-	    minusVec(tmp_sl[0]->x_old,tmp_sl[1]->x_old,x43_old);
+	    tmp_sl[0] = (STATE*)left_state(pts[2]);
+	    tmp_sl[1] = (STATE*)left_state(pts[3]);
+	    minusVec(tmp_sl[1]->x_old,tmp_sl[0]->x_old,x34_old);
         */
 
-	    /*correct the normal direction*/
-	    /*always pointing from triangle to p4*/
-	    
-        //dist = Dot3d(x43_old, nor);
-        //dist = Dot3d(x43,nor);
-        dist = Dot3d(x34,nor);
+	    //correct the triangle's normal direction to point to same
+        //side as the point (not used right now, but may need at some
+        //for detecting/correcting interpenetration etc.)
+        dist = Dot3d(x34,tri_nor);
+        //dist = Dot3d(x34_old,tri_nor);
         if (dist < 0.0)
         {
-            scalarMult(-1.0,nor,nor);
-            scalarMult(-1.0,unit_nor,unit_nor);
+            scalarMult(-1.0,tri_nor,tri_nor);
         }
 	
         dist = fabs(dist);
@@ -1442,48 +1441,46 @@ static bool PointToTri(
                 return false;
         }
 
-        /*
-        //Project point onto plane of the triangle
-        double vec[3] = {0, 0, 0};
-        STATE* tmp_sl = (STATE*)left_state(pts[3]);
+        //compute the "normal vector" pointing from the
+        //projected point of the triangle's plane to the point
+        double nor[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            nor[i] = x34[i] + w[0]*x13[i] + w[1]*x23[i];
+        }
 
+        
+        /*
+        STATE* tmp_sl = (STATE*)left_state(pts[3]);
         if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS
                 || fabs(w[2]) < ROUND_EPS)
         {
-            for (int j = 0; j < 3; ++j)
-                vec[j] = tmp_sl->x_old[j];
+        
+        for (int j = 0; j < 3; ++j)
+            nor[j] = tmp_sl->x_old[j];
 
-            for (int i = 0; i < 3; ++i)
-            {
-                tmp_sl = (STATE*)left_state(pts[i]);
-                for (int j = 0; j < 3; ++j)
-                    vec[j] -= w[i] * tmp_sl->x_old[j];
-            }
-            
-            double vec_mag = Mag3d(vec);
-            if (vec_mag > ROUND_EPS)
-            {
-                for (int j = 0; j < 3; ++j)
-                    nor[j] = vec[j];
-            }
+        for (int i = 0; i < 3; ++i)
+        {
+            tmp_sl = (STATE*)left_state(pts[i]);
+            for (int j = 0; j < 3; ++j)
+                nor[j] -= w[i] * tmp_sl->x_old[j];
         }
         */
-
-        /*
-        nor_mag = Mag3d(nor);
+            
+        double nor_mag = Mag3d(nor);
         if (nor_mag > ROUND_EPS)
-            for (int i = 0; i < 3; ++i)
-                nor[i] /= nor_mag;
+        {
+            scalarMult(1.0/nor_mag,nor,nor);
+        }
         else
         {
-            std::cout << "nan nor vec" << std::endl;
+            std::cout << "nor_mag < ROUND_EPS" << std::endl;
             printPointList(pts,4);
             clean_up(ERROR);
         }
-        */
     }
 
-	PointToTriImpulse(pts,unit_nor,w,dist,mstate,root);
+	PointToTriImpulse(pts,nor,w,dist,mstate,root);
 	return true;
 }
 
