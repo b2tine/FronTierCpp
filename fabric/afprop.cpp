@@ -110,25 +110,27 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: join to below if statement
+    //TODO: these "first" initialization procedures
+    //      should be seperate function called before
+    //      any propagation functions are called
 	if (first)
-        {
-            set_elastic_params(&geom_set,fr_dt);
-            if (debugging("step_size"))
-                print_elastic_params(geom_set);
-        }
+    {
+        set_elastic_params(&geom_set,fr_dt);
+        if (debugging("step_size"))
+            print_elastic_params(geom_set);
+    }
 
-        if (fr_dt > geom_set.dt_tol)
-        {
-            n_sub = (int)(fr_dt/geom_set.dt_tol);
-            dt = fr_dt/n_sub;
-        }
-	    else
-        {
-            n_sub = af_params->n_sub;
-            dt = fr_dt/n_sub;
-        }
-        printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
+    if (fr_dt > geom_set.dt_tol)
+    {
+        n_sub = (int)(fr_dt/geom_set.dt_tol);
+        dt = fr_dt/n_sub;
+    }
+    else
+    {
+        n_sub = af_params->n_sub;
+        dt = fr_dt/n_sub;
+    }
+    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
 
 	if (first)
 	{
