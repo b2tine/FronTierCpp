@@ -287,7 +287,7 @@ void CollisionSolver3d::computeImpactZone()
         is_collision = abt_collision->getCollsnState();
 
         //TODO: Verify Jarret's claim that this should be removed.
-        updateAverageVelocity();
+        //updateAverageVelocity();
 
         updateImpactZoneVelocity(numZones);
 
@@ -458,6 +458,7 @@ void CollisionSolver3d::detectProximity()
             << " pair of proximity" << std::endl;
 }
 
+//TODO: This needs to be rebuilt every iteration of collision handling
 // AABB tree for collision detection process
 void CollisionSolver3d::aabbCollision()
 {
