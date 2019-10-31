@@ -917,19 +917,19 @@ static bool EdgeToEdge(
 //     /	  \
 // x2 /		   \ x4
 //
-	double x12[3], x34[3], x31[3];
+	double x12[3], x34[3], x13[3];
 	Pts2Vec(pts[0],pts[1],x12);    
 	Pts2Vec(pts[2],pts[3],x34);
-	Pts2Vec(pts[2],pts[0],x31);
+	Pts2Vec(pts[0],pts[2],x13);
 
     //Matrix entries
     double a = Dot3d(x12,x12);
-    double b = Dot3d(x12,x34);
+    double b = -Dot3d(x12,x34);
     double c = Dot3d(x34,x34);
 
     //RHS
-    double d = Dot3d(x12,x31);
-    double e = Dot3d(x34,x31);
+    double d = Dot3d(x12,x13);
+    double e = -Dot3d(x34,x13);
 	
     //Matrix Determinant
     double D = fabs(a*c - b*b);
@@ -1042,17 +1042,46 @@ static bool EdgeToEdge(
     //"normal vector" always points from
     //the x12 edge to the x34 edge
     double nor[3];
+	for (int j = 0; j < 3; ++j)
+	{
+	    nor[j]  = (1.0 - tC)*Coords(pts[2])[j] + tC*Coords(pts[3])[j];
+	    nor[j] -= (1.0 - sC)*Coords(pts[0])[j] + sC*Coords(pts[1])[j];
+    }
+    
+    //TODO: Make sure nor is pointing in the correct direction.
+
+    /*
     scalarMult(tC,x34,x34);
     scalarMult(sC,x12,x12);
     minusVec(x34,x12,nor);
     minusVec(nor,x31,nor);
+    */
 
     dist = Mag3d(nor);
     if (dist > h)
         return false;
 
-    scalarMult(1.0/dist,nor,nor);
-
+    if (dist > ROUND_EPS)
+        scalarMult(1.0/dist,nor,nor);
+    else
+    {
+        std::cout << "dist (nor_mag) < ROUND_EPS" << std::endl;
+        std::cout << "sC = " << sC << " tC = " << tC << std::endl;
+        printPointList(pts,4);
+	    double p12[3]; double p34[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            p34[i] = (1.0 - tC)*Coords(pts[2])[i] + tC*Coords(pts[3])[i];
+	        p12[i] = (1.0 - sC)*Coords(pts[0])[i] + sC*Coords(pts[1])[i];
+        }
+            printf("nor \t p34 \t p12\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%g \t %g \t %g\n",nor[i],p34[i],p12[i]);
+        }
+        clean_up(ERROR);
+    }
+    
     EdgeToEdgeImpulse(pts,nor,sC,tC,dist,mstate,root);
 	return true;
 }
