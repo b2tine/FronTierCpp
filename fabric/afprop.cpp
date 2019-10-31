@@ -249,8 +249,9 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->assembleFromInterface(fr->interf,fr->dt);
                 collision_solver->recordOriginalPosition();
             
-                //TODO: Is friction component working?
-                collision_solver->setFrictionConstant(0.0);
+                //TODO: Friction coefficient is not the same thing as the
+                //      spring model's damping coefficient.
+                collision_solver->setFrictionConstant(0.1);
                 //collision_solver->setFrictionConstant(af_params->lambda_s);
             
                 collision_solver->setSpringConstant(af_params->ks); 
@@ -283,7 +284,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->gtris = fr->gtris;
             }
 
-            get_point_set_from(&geom_set,point_set);
+        get_point_set_from(&geom_set,point_set);
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
@@ -360,8 +361,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
 
-//TODO: Is this function as useless as it looks?
-//      This can just be done during initialization
+//TODO: This can just be done during initialization
 //      and cached in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {

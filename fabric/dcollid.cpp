@@ -71,6 +71,8 @@ double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
 double CollisionSolver3d::getSpringConstant(){return s_k;}
 
+//TODO: rename this to mu in order to differentiate between
+//the spring model damping coefficent
 void   CollisionSolver3d::setFrictionConstant(double new_la){s_lambda = new_la;}
 double CollisionSolver3d::getFrictionConstant(){return s_lambda;}
 
@@ -105,6 +107,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U) {
 	}
 }
 
+//TODO: This does not work. Fix it.
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFrictionConstant();
@@ -144,6 +147,8 @@ void CollisionSolver3d::detectDomainBoundaryCollision() {
 		        Coords(pt)[j] = cand_coords[j];
 		    }
 		}
+        //TODO: Don't think this is actually in the tangential direction
+        //
 		//reduce tangential velocity with friction
 		double preVt = Mag3d(sl->avgVel);
 		if (preVt > MACH_EPS)
@@ -246,7 +251,7 @@ void CollisionSolver3d::resetPositionCoordinates()
             pt = (*it)->Point_of_hse(i);
             sl = (STATE*)left_state(pt);
             for (int j = 0; j < m_dim; ++j)
-                Coords(pt)[j] =  sl->x_old[j];
+                Coords(pt)[j] = sl->x_old[j];
         }
     }
 }

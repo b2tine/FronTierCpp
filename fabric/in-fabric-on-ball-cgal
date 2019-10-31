@@ -11,6 +11,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Enter yes for debugging: yes
 Enter the debugging string: collision
+Enter the debugging string: rm_crx
 
 Start parameters for modules
 

@@ -697,6 +697,8 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 		return false;
 	}
 
+    //TODO: Check to see if this function is only called for
+    //      proximity repulsions. If so, then this isn't needed.
 	//make sure the coords are old coords;
 	for (int i = 0; i < 3; ++i){
 	    pts[0] = Point_of_tri(tri1)[i];
