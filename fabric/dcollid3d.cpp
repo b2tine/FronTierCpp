@@ -1207,12 +1207,14 @@ static void EdgeToEdgeImpulse(
                 if (mstate == MotionState::MOVING)
                     continue;
 
+                //TODO: I Think there is a sign/direction problem here,
+                //      use the W array to determine correct direction of impulse
                 if (fabs(vt) > ROUND_EPS)
                 {
-                    //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
-                    double delta_vt = std::min(lambda*delta_vn,vt);
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //double delta_vt = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
+                    //sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j]);
+                    double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j]);
                 }
             }
         }
@@ -1636,12 +1638,14 @@ static void PointToTriImpulse(
                 if (mstate == MotionState::MOVING)
                     continue;
 
+                //TODO: I Think there is a sign/direction problem here,
+                //      use the W array to determine correct direction of impulse
                 if (fabs(vt) > ROUND_EPS)
                 {
                     //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    //double frcoef = std::max(1.0,lambda*W[i]*t_impulse/vt);
-                    double delta_vt = std::min(lambda*delta_vn,vt);
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
+                    double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j]);
                 }
             }
         }
