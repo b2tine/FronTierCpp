@@ -227,6 +227,10 @@ void CollisionSolver3d::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
+
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
+    resetPositionCoordinates();
 }
 
 void CollisionSolver3d::resetPositionCoordinates()
@@ -351,11 +355,6 @@ void CollisionSolver3d::resolveCollision()
 	start_clock("computeAverageVelocity");
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
-
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
-    resetPositionCoordinates();
 	
     start_clock("detectProximity");
 	detectProximity();
@@ -460,35 +459,28 @@ void CollisionSolver3d::detectProximity()
 }
 
 // AABB tree for collision detection process
-void CollisionSolver3d::aabbCollision() {
-    if (!abt_collision) {
+void CollisionSolver3d::aabbCollision()
+{
+    if (!abt_collision)
+    {
         double pre_tol = CollisionSolver3d::getFabricThickness();
         abt_collision =
             std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
 
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
+        for (auto it = hseList.begin(); it != hseList.end(); it++)
+        {
              AABB* ab = new AABB(pre_tol,*it,abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
         volume = abt_collision->getVolume();
     }
-    /*
-    else {
-        delete abt_collision.release();
-        abt_collision = std::move(std::make_unique<AABBTree>(MotionState::MOVING));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
-             abt_collision->addAABB(ab);
-        }
-        abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
-    }
-    */
-    else {
+    else
+    {
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
-        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume) {
+        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
+        {
             build_count_col++;
             abt_collision->updateTreeStructure();
             volume = abt_collision->getVolume();
@@ -610,21 +602,30 @@ void CollisionSolver3d::detectCollision()
 
 //Note: num has default value of 4,
 //and first has default value of false
-extern void createImpZone(POINT* pts[], int num, bool first){
+extern void createImpZone(POINT* pts[], int num, bool first)
+{
 	for (int i = 0; i < num; ++i)
 	{
 	    for (int j = 0; j < i; ++j)
 	    {
-	        if ((!first) && (isMovableRigidBody(pts[i]) || 
-				 isMovableRigidBody(pts[j])))
+	        if ((!first) && (isMovableRigidBody(pts[i])
+                || isMovableRigidBody(pts[j])))
             {
                 continue;
             }
             mergePoint(pts[i],pts[j]); 
 	    }
 	}
+    //TODO: Check that all points of the interface have not
+    //      been merged into a single impact zone.
+    //      If this occurs, then we should have a collision
+    //      free state (double check this claim) and the collision
+    //      handling iterations can be terminated.
 }
 
+//TODO: See aftest.cpp airfoil_stat functions which record
+//      the strain in a spring mass surface (potential energy)
+//      Then look at how to apply strain limiting impulses
 void CollisionSolver3d::reduceSuperelast()
 {
 	bool has_superelas = true;
@@ -760,16 +761,14 @@ void CollisionSolver3d::updateFinalPosition()
 }
 
 //TODO: This is not the correct update.
+//      Could try using generic_spring_solver()
+//      which is 4th order kunga kutta.
 void CollisionSolver3d::updateFinalVelocity()
 {
     //avgVel is actually the velocity at t(n+1/2)
     //need to call spring solver to get velocity at t(n+1)
     //for simplicity now set v(n+1) = v(n+1/2)
 
-
-    //detectProximity();
-	//detectCollision(); 
-	
     POINT* pt;
 	STATE* sl;
 	double dt = getTimeStepSize();
@@ -868,13 +867,9 @@ void CollisionSolver3d::updateFinalForRG()
         }
 }
 
-void CollisionSolver3d::updateAverageVelocity()
-{
-	POINT *p;
-	STATE *sl;
-	double maxSpeed = 0;
-	double* maxVel = nullptr;
-
+//TODO: Make this a function after putting VTK
+//      into configure.ac and build.
+/*
 #ifdef HAVE_VTK
 	if (debugging("CollisionImpulse"))
     {
@@ -888,6 +883,25 @@ void CollisionSolver3d::updateAverageVelocity()
         }
 	}
 #endif
+*/
+
+//TODO: Nothing related to the collision impulses
+//      should be in this function.
+//      Proximity and Friction impulses only.
+//
+//      Collision impulses may have a similar function,
+//      but they will not consider friction, and will
+//      update the "final midstep" velocity instead.
+//      
+//      We may be able to reuse for the Collision impulses
+//      but is better to have a conceptual barrier between
+//      the two for the moment.
+void CollisionSolver3d::updateAverageVelocity()
+{
+	POINT *p;
+	STATE *sl;
+	double maxSpeed = 0;
+	double* maxVel = nullptr;
 
     unsortHseList(hseList);
 	for (unsigned i = 0; i < hseList.size(); ++i)
@@ -934,7 +948,6 @@ void CollisionSolver3d::updateAverageVelocity()
 
 		if (debugging("average_velocity"))
         {
-		    //debugging: print largest speed
 		    double speed = Mag3d(sl->avgVel);
 		    if (speed > maxSpeed) {
 			maxVel = sl->avgVel;
@@ -946,12 +959,14 @@ void CollisionSolver3d::updateAverageVelocity()
 	    }
 	}
 	
+    //TODO: Consider moving this, and all other non-fabric code
+    //      into seperate functions/managers.
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
 
 	if (debugging("average_velocity"))
 	if (maxVel != nullptr)
-	    printf("    max velocity = [%f %f %f]\n",maxVel[0],maxVel[1],maxVel[2]);
+	    printf("\t\tmax velocity = [%f %f %f]\n",maxVel[0],maxVel[1],maxVel[2]);
 	if (debugging("printDebugVariable"))
 	    printDebugVariable();
 }

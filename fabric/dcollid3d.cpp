@@ -1041,7 +1041,6 @@ static bool EdgeToEdge(
     
     //"normal vector" always points from
     //the x12 edge to the x34 edge
-    
     double nor[3];
     scalarMult(tC,x34,x34);
     scalarMult(sC,x12,x12);
@@ -1058,8 +1057,6 @@ static bool EdgeToEdge(
 	return true;
 }
 
-//TODO: root is not used inside this function at all
-//
 //Note that mstate has default value of MotionState::STATIC,
 //and root has default value 0.0
 static void EdgeToEdgeImpulse(
@@ -1194,18 +1191,19 @@ static void EdgeToEdgeImpulse(
     {
         if (!isStaticRigidBody(pts[i]))
         {
+            //TODO: distinguish between collsn_impulse and proximity_impulse
             sl[i]->collsn_num++;
 
             double t_impulse = m_impulse;
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
+            double delta_vn = W[i]*t_impulse;
             for (int j = 0; j < 3; ++j)
             {
-                double delta_vn = W[i]*t_impulse;
                 sl[i]->collsnImpulse[j] += delta_vn*nor[j];
        
-                //Friction only applied for proximity, not collisions.
+                //Friction only applied for proximities, not collisions.
                 if (mstate == MotionState::MOVING)
                     continue;
 
@@ -1213,8 +1211,8 @@ static void EdgeToEdgeImpulse(
                 {
                     //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
                     //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
-                    double frcoef = std::max(1.0,lambda*delta_vn/vt);
-                    sl[i]->friction[j] -= frcoef*(v_rel[j] - vn*nor[j]);
+                    double delta_vt = std::min(lambda*delta_vn,vt);
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
@@ -1273,11 +1271,9 @@ static void EdgeToEdgeInelasticImpulse(
     }
     else
     {
-        //this is the fabric-fabric case?
         *impulse = 0.5 * vn;
     }
 
-    //TODO: Why is this for only vn < 0?
     if (isStaticRigidBody(pts[0])) W[0] = 0.0;
     if (isStaticRigidBody(pts[1])) W[1] = 0.0;
     if (isStaticRigidBody(pts[2])) W[2] = 0.0;
@@ -1544,7 +1540,7 @@ static void PointToTriImpulse(
 	}
 
 	vn = Dot3d(v_rel, nor);
-	if (Dot3d(v_rel, v_rel) > sqr(vn))  //this should always be true
+	if (Dot3d(v_rel, v_rel) > sqr(vn))
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
 	    vt = 0.0;
@@ -1631,9 +1627,9 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
+            double delta_vn = W[i]*t_impulse;
             for(int j = 0; j < 3; ++j)
             {
-                double delta_vn = W[i]*t_impulse;
                 sl[i]->collsnImpulse[j] += delta_vn*nor[j];
 
                 //Friction only applied for proximity, not collisions.
@@ -1643,9 +1639,9 @@ static void PointToTriImpulse(
                 if (fabs(vt) > ROUND_EPS)
                 {
                     //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
-                    double frcoef = std::max(1.0,lambda*delta_vn/vt);
                     //double frcoef = std::max(1.0,lambda*W[i]*t_impulse/vt);
-                    sl[i]->friction[j] -= frcoef*(v_rel[j] - vn*nor[j]);
+                    double delta_vt = std::min(lambda*delta_vn,vt);
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
