@@ -251,7 +251,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             
                 //TODO: Friction coefficient is not the same thing as the
                 //      spring model's damping coefficient.
-                collision_solver->setFrictionConstant(0.0);
+                collision_solver->setFrictionConstant(0.1);
                 //collision_solver->setFrictionConstant(af_params->lambda_s);
             
                 collision_solver->setSpringConstant(af_params->ks); 

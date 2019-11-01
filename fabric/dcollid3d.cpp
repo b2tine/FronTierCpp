@@ -1271,7 +1271,9 @@ static void EdgeToEdgeImpulse(
                     if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
                         delta_vt = lambda*W[i]*fabs(t_impulse);
    
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //TODO: check sign of update
+                    sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
                    
                    /* 
                     double delta_vt = vt;
@@ -1716,7 +1718,9 @@ static void PointToTriImpulse(
                     if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
                         delta_vt = lambda*W[i]*fabs(t_impulse);
    
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //TODO: check sign of update
+                    sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
                     
                     //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
                     //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);

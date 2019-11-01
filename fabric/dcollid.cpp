@@ -474,6 +474,7 @@ void CollisionSolver3d::aabbCollision()
 {
     if (!abt_collision)
     {
+        //double pre_tol = CollisionSolver3d::getRoundingTolerance();
         double pre_tol = CollisionSolver3d::getFabricThickness();
         abt_collision =
             std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
