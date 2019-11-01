@@ -82,7 +82,8 @@ private:
 
     //TODO: put this in AABBTree class
     double vol_diff {0.0};
-    double old_collision_vol;
+    double collision_vol;
+    double proximity_vol;
 
 	static double s_eps;
 	static double s_thickness;

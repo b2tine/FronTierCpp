@@ -109,8 +109,10 @@ void CollisionSolver3d::recordOriginalPosition()
 	}
 }
 
-void CollisionSolver3d::setDomainBoundary(double* L, double* U) {
-	for (int i = 0; i < m_dim; ++i) {
+void CollisionSolver3d::setDomainBoundary(double* L, double* U)
+{
+	for (int i = 0; i < m_dim; ++i)
+    {
 	    Boundary[i][0] = L[i];
 	    Boundary[i][1] = U[i];
 	}
@@ -385,9 +387,9 @@ void CollisionSolver3d::resolveCollision()
 	if (debugging("printDebugVariable"))
 	    printDebugVariable();
 	
-	start_clock("detectDomainBoundaryCollision");
-	detectDomainBoundaryCollision();
-	stop_clock("detectDomainBoundaryCollision");
+	//start_clock("detectDomainBoundaryCollision");
+	//detectDomainBoundaryCollision();
+	//stop_clock("detectDomainBoundaryCollision");
 
 	//update position using final midstep velocity
 	start_clock("updateFinalPosition");
@@ -422,7 +424,7 @@ void CollisionSolver3d::aabbProximity()
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
-        //old_proximity_vol = abt_proximity->getVolume();
+        proximity_vol = abt_proximity->getVolume();
     }
     /*
      *
@@ -447,15 +449,13 @@ void CollisionSolver3d::aabbProximity()
         abt_proximity->updateAABBTree(hseList);
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
-        /*
-        if (fabs(abt_proximity->getVolume() - old_proximity_vol) > vol_diff*old_proximity_vol)
-        {
+        //if (fabs(abt_proximity->getVolume() - proximity_vol) > vol_diff*proximity_vol)
+        //{
             abt_proximity->updateTreeStructure();
-            old_proximity_vol = abt_proximity->getVolume();
-            build_count_pre++;
-            std::cout << "build_count_pre is " << build_count_pre << std::endl; 
+            proximity_vol = abt_proximity->getVolume();
+            //build_count_pre++;
+            //std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
-    */
     }
 }
 
@@ -475,7 +475,6 @@ void CollisionSolver3d::detectProximity()
             << " pair of proximity" << std::endl;
 }
 
-//TODO: This needs to be rebuilt every iteration of collision handling
 // AABB tree for collision detection process
 void CollisionSolver3d::aabbCollision()
 {
@@ -492,19 +491,25 @@ void CollisionSolver3d::aabbCollision()
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
-        old_collision_vol = abt_collision->getVolume();
+        collision_vol = abt_collision->getVolume();
     }
     else
     {
+        //TODO: Change time step to one of the computed collision times?
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
-        if (fabs(abt_collision->getVolume() - old_collision_vol) > vol_diff * old_collision_vol)
+        abt_collision->updateTreeStructure();
+        collision_vol = abt_collision->getVolume();
+
+        /*
+        if (fabs(abt_collision->getVolume() - collision_vol) > vol_diff * collision_vol)
         {
             build_count_col++;
             abt_collision->updateTreeStructure();
-            old_collision_vol = abt_collision->getVolume();
+            collision_vol = abt_collision->getVolume();
             std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
+        */
     }
 }
 
