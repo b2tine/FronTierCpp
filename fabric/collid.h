@@ -80,8 +80,9 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
-    double volume;
+    //TODO: put this in AABBTree class
     double vol_diff {0.0};
+    double old_collision_vol;
 
 	static double s_eps;
 	static double s_thickness;

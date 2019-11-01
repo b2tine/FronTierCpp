@@ -362,6 +362,7 @@ void CollisionSolver3d::resolveCollision()
 	stop_clock("computeAverageVelocity");
 	
     start_clock("detectProximity");
+    aabbProximity();
 	detectProximity();
 	stop_clock("detectProximity");
 
@@ -391,7 +392,7 @@ void CollisionSolver3d::resolveCollision()
 	//stop_clock("reduceSuperelast");
 	
 	start_clock("updateFinalVelocity");
-    //detectProximity();
+    detectProximity();
     //TODO: implement this function correctly
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
@@ -413,7 +414,7 @@ void CollisionSolver3d::aabbProximity()
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
+        //old_proximity_vol = abt_proximity->getVolume();
     }
     /*
      *
@@ -432,29 +433,33 @@ void CollisionSolver3d::aabbProximity()
         volume = abt_proximity->getVolume();
     }
     */
+
+    //NOTE: Only build proximity tree once at startup
+    /*
     else
     {
         abt_proximity->updateAABBTree(hseList);
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
-        if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
+        if (fabs(abt_proximity->getVolume() - old_proximity_vol) > vol_diff*old_proximity_vol)
         {
             abt_proximity->updateTreeStructure();
-            volume = abt_proximity->getVolume();
+            old_proximity_vol = abt_proximity->getVolume();
             build_count_pre++;
             std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
+    */
 }
 
 void CollisionSolver3d::detectProximity()
 {
     const double h = CollisionSolver3d::getFabricThickness();
 
-    start_clock("dynamic_AABB_proximity");
-    aabbProximity();
+    start_clock("AABB_proximity");
+    //aabbProximity();
     abt_proximity->query(h);
-    stop_clock("dynamic_AABB_proximity");
+    stop_clock("AABB_proximity");
 
 	updateAverageVelocity();
 
@@ -479,17 +484,17 @@ void CollisionSolver3d::aabbCollision()
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
+        old_collision_vol = abt_collision->getVolume();
     }
     else
     {
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
-        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
+        if (fabs(abt_collision->getVolume() - old_collision_vol) > vol_diff * old_collision_vol)
         {
             build_count_col++;
             abt_collision->updateTreeStructure();
-            volume = abt_collision->getVolume();
+            old_collision_vol = abt_collision->getVolume();
             std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
     }
@@ -928,7 +933,9 @@ void CollisionSolver3d::updateAverageVelocity()
 		    sl->has_collsn = true;
 		    for (int k = 0; k < 3; ++k)
 		    {
-                sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                //sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
+                sl->avgVel[k] += sl->friction[k];
                 
                 if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                 {

@@ -90,37 +90,48 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 	}
 }
 
-void CollisionSolver3d::updateImpactListVelocity(POINT* head){
+void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+{
 	STATE* sl = NULL;
 	POINT* p = head;
+
 	double m = getPointMass();
-	double x_cm[3] = {0.0}, v_cm[3] = {0.0};
+    double x_cm[3] = {0.0};
+    double v_cm[3] = {0.0};
 	double L[3] = {0.0}; //angular momentum
 	double I[3][3] = {0.0}; //inertia tensor
 	double tmp[3][3];
 	int num_pts = 0;
 
-	while(p){
-		num_pts++; //debug
+    //compute center of mass position and velocity
+	while(p)
+    {
+		num_pts++;
 		sorted(p) = YES;
 		sl = (STATE*)left_state(p);
-		for (int i = 0; i < m_dim; ++i){
+	
+        for (int i = 0; i < m_dim; ++i)
+        {
 		    x_cm[i] += sl->x_old[i]; 
 		    v_cm[i] += sl->avgVel[i];
 		}
-                p = next_pt(p);
-        }
-	if (debugging("collision"))
+
+        p = next_pt(p);
+    }
+
+    if (debugging("collision"))
 	    printf("%d number of points in this zone\n",num_pts);
-	//compute center and veclocity of impact Zone
-	for (int i = 0; i < m_dim; ++i){
+
+	for (int i = 0; i < m_dim; ++i)
+    {
 	    x_cm[i] /= num_pts;
 	    v_cm[i] /= num_pts;
 	}
 
 	//compute angular momentum
 	p = head;
-	while(p){
+	while(p)
+    {
 	    double dx[3], dv[3], Li[3];
 	    sl = (STATE*)left_state(p);
 	    minusVec(sl->x_old,x_cm,dx);
@@ -130,67 +141,34 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	    addVec(Li,L,L);    
 	    p = next_pt(p);
 	}
+
 	//compute Inertia tensor
 	p = head;
-	while(p){
+	while(p)
+    {
 	    double dx[3], mag_dx = 0.0;
 	    sl = (STATE*)left_state(p);
 	    minusVec(sl->x_old,x_cm,dx);
 	    mag_dx = Mag3d(dx);
-	    for (int i = 0; i < 3; ++i)
-	    for (int j = 0; j < 3; ++j){
-		tmp[i][j] = -dx[i]*dx[j];
-		if (i == j)
-		    tmp[i][j] += mag_dx*mag_dx; 
-	 	I[i][j] += tmp[i][j]*m;
-	    } 
+	   
+        for (int i = 0; i < 3; ++i)
+	    for (int j = 0; j < 3; ++j)
+        {
+		    tmp[i][j] = -dx[i]*dx[j];
+		    if (i == j)
+                tmp[i][j] += mag_dx*mag_dx; 
+	
+            I[i][j] += tmp[i][j]*m;
+	    }
+
 	    p = next_pt(p);
 	}
 
 	//compute angular velocity w: I*w = L;
-	double w[3], mag_w = 0;
+    double mag_w = 0;
+	double w[3] = {0.0};
 
-    /*
-    for (int i = 0; i < 3; ++i)
-    {
-        memcpy(tmp,I,9*sizeof(double));
-        for (int j = 0; j < 3; j++)
-            tmp[j][i] = L[j];
-
-        if (myDet3d(I) < ROUND_EPS)
-            w[i] = 0.0;
-        else
-            w[i] = myDet3d(tmp)/myDet3d(I);
-    }
-    */
-
-    if (myDet3d(I) < ROUND_EPS) {
-        //I is non-invertible, calculate pseudoinverse with SVD
-        arma::mat arI(3, 3);
-        arma::vec arL(3);
-
-        for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-             arI(i, j) = I[i][j];
-        for (int i = 0; i < 3; i++)
-             arL(i) = L[i];
-
-        arma::mat arU;
-        arma::mat arV;
-        arma::vec ars;
-
-        arma::svd(arU, ars, arV, arI);
-        for (int i = 0; i < 3; i++)
-             if (ars(i))
-                 ars(i) = 1.0/ars(i);
-        
-        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
-        arma::vec arw = pinvarI*arL;
-
-        for (int i = 0; i < 3; i++)
-             w[i] = arw[i];
-    }
-    else
+    if (myDet3d(I) > ROUND_EPS)
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -199,70 +177,116 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head){
                 tmp[j][i] = L[j];
             w[i] = myDet3d(tmp)/myDet3d(I);
         }
+    }
+    else
+    {
+        //I is non-invertible, calculate pseudoinverse with SVD
+        arma::vec arL(3);
+        arma::mat arI(3,3);
 
+        for (int i = 0; i < 3; i++)
+        {
+            arL(i) = L[i];
+            for (int j = 0; j < 3; j++)
+                 arI(i,j) = I[i][j];
+        }
+
+        arma::mat arU;
+        arma::mat arV;
+        arma::vec ars;
+
+        arma::svd(arU, ars, arV, arI);
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (ars(i))
+                ars(i) = 1.0/ars(i);
+        }
+
+        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
+        arma::vec arw = pinvarI*arL;
+
+        for (int i = 0; i < 3; i++)
+             w[i] = arw[i];
     }
 
     mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
 	double dt = getTimeStepSize();
-	p = head;
-        while(p){
-	    if (isStaticRigidBody(p)) {
-		p = next_pt(p);
-		continue;
-	    }
-	    double x_new[3],dx[3];
-	    double xF[3], xR[3];
-	    sl = (STATE*)left_state(p);
-	    minusVec(sl->x_old,x_cm,dx);
-	    double wxR[3],tmpV[3];
-	    if (mag_w < ROUND_EPS){
-	        for (int i = 0; i < 3; ++i){
-		    xF[i] = dx[i];
-		    wxR[i] = 0.0;
-		}
-		    minusVec(dx,xF,xR);
-	    }
-	    else{
-	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
-	        minusVec(dx,xF,xR);
-	        scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
-	        Cross3d(tmpV,xR,wxR);
-	    }
-	    for (int i = 0; i < 3; ++i)
-	    {
-	    	x_new[i] = x_cm[i] + dt*v_cm[i]
-			 + xF[i] + cos(dt*mag_w)*xR[i]
-			 + wxR[i];
-		sl = (STATE*)left_state(p);
-		sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-	    	if (std::isnan(sl->avgVel[i]))
-		{ 
-			printf("coords[3], vel[3]\n");
-			p = head;
-			while(p){
-			    sl = (STATE*)left_state(p);
-			    printf("%f %f %f %f %f %f;\n",
-				sl->x_old[0],sl->x_old[1],sl->x_old[2],
-				sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-			    p = next_pt(p);
-			}
-			printf("num_pts = %d, weight = %d\n",
-			num_pts,weight(head));
-			printf("nan vel, w = %f, mag_w = %f\n",
-			w[i],mag_w);
-			printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
-			printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
-			I[0][0],I[0][1],I[0][2],I[1][0],I[1][1],I[1][2],
-			I[2][0],I[2][1],I[2][2]);
-			printf("xF = %f %f %f, xR = %f %f %f\n",
-			xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
-			clean_up(ERROR);
-		}
-	    }
-	    p = next_pt(p);
-	}
+	
+    p = head;
+    while(p)
+    {
+        if (isStaticRigidBody(p))
+        {
+            p = next_pt(p);
+            continue;
+        }
+    
+        double x_new[3],dx[3];
+        double xF[3], xR[3];
+        double wxR[3],tmpV[3];
+        sl = (STATE*)left_state(p);
+        
+        minusVec(sl->x_old,x_cm,dx);
+
+        if (mag_w < ROUND_EPS)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                xF[i] = dx[i];
+                wxR[i] = 0.0;
+            }
+    
+            minusVec(dx,xF,xR);
+        }
+        else
+        {
+            scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
+            minusVec(dx,xF,xR);
+            scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+            Cross3d(tmpV,xR,wxR);
+        }
+    
+        //TODO: move x_new calculation to above if else block,
+        for (int i = 0; i < 3; ++i)
+        {
+            x_new[i] = x_cm[i] + dt*v_cm[i]
+                + xF[i] + cos(dt*mag_w)*xR[i] + wxR[i];
+    
+            sl = (STATE*)left_state(p);
+            sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+   
+            if (std::isnan(sl->avgVel[i]))
+            { 
+                printf("coords[3], vel[3]\n");
+                p = head;
+                while(p)
+                {
+                    sl = (STATE*)left_state(p);
+                    printf("%f %f %f %f %f %f;\n",
+                    sl->x_old[0],sl->x_old[1],sl->x_old[2],
+                    sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+                    p = next_pt(p);
+                }
+
+                printf("num_pts = %d, weight = %d\n",
+                num_pts,weight(head));
+                printf("nan vel, w = %f, mag_w = %f\n",
+                w[i],mag_w);
+                printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
+                printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
+                I[0][0],I[0][1],I[0][2],I[1][0],I[1][1],I[1][2],
+                I[2][0],I[2][1],I[2][2]);
+                printf("xF = %f %f %f, xR = %f %f %f\n",
+                xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
+                clean_up(ERROR);
+            }
+        }
+    
+        p = next_pt(p);
+    }
 }
 
 bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
@@ -699,7 +723,8 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 
     //TODO: Check to see if this function is only called for
     //      proximity repulsions. If so, then this isn't needed.
-	//make sure the coords are old coords;
+	
+    //make sure the coords are old coords;
 	for (int i = 0; i < 3; ++i){
 	    pts[0] = Point_of_tri(tri1)[i];
 	    sl[0] = (STATE*)left_state(pts[0]);
@@ -1076,7 +1101,8 @@ static bool EdgeToEdge(
             p34[i] = (1.0 - tC)*Coords(pts[2])[i] + tC*Coords(pts[3])[i];
 	        p12[i] = (1.0 - sC)*Coords(pts[0])[i] + sC*Coords(pts[1])[i];
         }
-            printf("nor \t p34 \t p12\n");
+    
+        printf("nor \t p34 \t p12\n");
         for (int i = 0; i < 3; ++i)
         {
             printf("%g \t %g \t %g\n",nor[i],p34[i],p12[i]);
@@ -1201,6 +1227,8 @@ static void EdgeToEdgeImpulse(
     }
     ////////////////////////////////////////////////
 
+    //TODO: This doesn't look right.
+    //      Also should be its own function.
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1229,30 +1257,43 @@ static void EdgeToEdgeImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            double delta_vn = W[i]*t_impulse;
             for (int j = 0; j < 3; ++j)
             {
-                sl[i]->collsnImpulse[j] += delta_vn*nor[j];
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
        
                 //Friction only applied for proximities, not collisions.
                 if (mstate == MotionState::MOVING)
                     continue;
 
-                //TODO: I Think there is a sign/direction problem here,
-                //      use the W array to determine correct direction of impulse
                 if (fabs(vt) > ROUND_EPS)
                 {
+                    double delta_vt = W[i]*vt;
+                    if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
+                        delta_vt = lambda*W[i]*fabs(t_impulse);
+   
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                   
+                   /* 
+                    double delta_vt = vt;
+                    if (fabs(lambda*t_impulse) < vt)
+                        delta_vt = lambda*t_impulse;
+
+                    sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    */
+
                     //double delta_vt = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
                     //sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j]);
-                    double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j]);
+                    //double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
                 }
             }
         }
         else
         {
             for (int j = 0; j < 3; ++j)
+            {
                 sl[i]->collsnImpulse[j] = 0.0;
+                sl[i]->friction[j] = 0.0;
+            }
         }
     }
 
@@ -1294,8 +1335,8 @@ static void EdgeToEdgeInelasticImpulse(
     }
     else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]))
     {
-        rigid_impulse[0] = 0.5 * vn;
         *impulse = 0.5 * vn; 
+        rigid_impulse[0] = 0.5 * vn;
     }
     else if (isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
     {
@@ -1325,7 +1366,6 @@ static void EdgeToEdgeElasticImpulse(
     if (isRigidBody(pts[0]) && isRigidBody(pts[1])
         && isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
-        //cor = 1.0;
         rigid_impulse[0] *= 1.0 + cor;
         rigid_impulse[1] *= 1.0 + cor;
     }
@@ -1634,6 +1674,8 @@ static void PointToTriImpulse(
     }
     ////////////////////////////////////////////////////
 
+    //TODO: This doesn't look right.
+    //      Also should be its own function.
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1660,30 +1702,36 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            double delta_vn = W[i]*t_impulse;
             for(int j = 0; j < 3; ++j)
             {
-                sl[i]->collsnImpulse[j] += delta_vn*nor[j];
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
 
                 //Friction only applied for proximity, not collisions.
                 if (mstate == MotionState::MOVING)
                     continue;
 
-                //TODO: I Think there is a sign/direction problem here,
-                //      use the W array to determine correct direction of impulse
                 if (fabs(vt) > ROUND_EPS)
                 {
+                    double delta_vt = W[i]*vt;
+                    if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
+                        delta_vt = lambda*W[i]*fabs(t_impulse);
+   
+                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    
                     //double frcoef = std::max(-fabs(lambda*W[i]*t_impulse/vt), -1.0);
                     //sl[i]->friction[j] += frcoef*(v_rel[j] - vn*nor[j]);
-                    double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
-                    sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j]);
+                    //double delta_vt = std::min(1.0,fabs(lambda*delta_vn/vt));
+                    //sl[i]->friction[j] -= delta_vt*(v_rel[j] - vn*nor[j]);
                 }
             }
         }
         else
         {
             for (int j = 0; j < 3; ++j)
+            {
                 sl[i]->collsnImpulse[j] = 0.0;
+                sl[i]->friction[j] = 0.0;
+            }
         }
 	}
 
@@ -1779,7 +1827,6 @@ static void PointToTriElasticImpulse(
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
     isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
-        //cor = 1.0;
         rigid_impulse[0] *= 1.0 + cor;
         rigid_impulse[1] *= 1.0 + cor;
     }
