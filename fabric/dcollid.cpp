@@ -362,7 +362,6 @@ void CollisionSolver3d::resolveCollision()
 	stop_clock("computeAverageVelocity");
 	
     start_clock("detectProximity");
-    aabbProximity();
 	detectProximity();
 	stop_clock("detectProximity");
 
@@ -433,14 +432,13 @@ void CollisionSolver3d::aabbProximity()
         volume = abt_proximity->getVolume();
     }
     */
-
-    //NOTE: Only build proximity tree once at startup
-    /*
     else
     {
+        //NOTE: Only build proximity tree once at startup
         abt_proximity->updateAABBTree(hseList);
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
+        /*
         if (fabs(abt_proximity->getVolume() - old_proximity_vol) > vol_diff*old_proximity_vol)
         {
             abt_proximity->updateTreeStructure();
@@ -448,8 +446,8 @@ void CollisionSolver3d::aabbProximity()
             build_count_pre++;
             std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
-    }
     */
+    }
 }
 
 void CollisionSolver3d::detectProximity()
@@ -457,7 +455,7 @@ void CollisionSolver3d::detectProximity()
     const double h = CollisionSolver3d::getFabricThickness();
 
     start_clock("AABB_proximity");
-    //aabbProximity();
+    aabbProximity();
     abt_proximity->query(h);
     stop_clock("AABB_proximity");
 

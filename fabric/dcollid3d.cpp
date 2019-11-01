@@ -1269,7 +1269,8 @@ static void EdgeToEdgeImpulse(
                 {
                     double delta_vt = W[i]*vt;
                     if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
-                        delta_vt = lambda*W[i]*fabs(t_impulse);
+                        delta_vt = lambda*W[i]*t_impulse;
+                        //delta_vt = lambda*W[i]*fabs(t_impulse);
    
                     //TODO: check sign of update
                     sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j])/vt;
@@ -1716,7 +1717,8 @@ static void PointToTriImpulse(
                 {
                     double delta_vt = W[i]*vt;
                     if (fabs(lambda*W[i]*t_impulse) < fabs(delta_vt))
-                        delta_vt = lambda*W[i]*fabs(t_impulse);
+                        delta_vt = lambda*W[i]*t_impulse;
+                        //delta_vt = lambda*W[i]*fabs(t_impulse);
    
                     //TODO: check sign of update
                     sl[i]->friction[j] += delta_vt*(v_rel[j] - vn*nor[j])/vt;
