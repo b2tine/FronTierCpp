@@ -24,7 +24,7 @@ double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_k = 1000;
 double CollisionSolver3d::s_m = 0.01;
-double CollisionSolver3d::s_lambda = 0.02;
+double CollisionSolver3d::s_mu = 0.0;
 double CollisionSolver3d::s_cr = 1.0;
 bool   CollisionSolver3d::s_detImpZone = false;
 
@@ -71,10 +71,9 @@ double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
 double CollisionSolver3d::getSpringConstant(){return s_k;}
 
-//TODO: rename this to mu in order to differentiate between
-//the spring model damping coefficent
-void   CollisionSolver3d::setFrictionConstant(double new_la){s_lambda = new_la;}
-double CollisionSolver3d::getFrictionConstant(){return s_lambda;}
+//the spring model static friction coefficent
+void   CollisionSolver3d::setFrictionConstant(double new_mu){s_mu = new_mu;}
+double CollisionSolver3d::getFrictionConstant(){return s_mu;}
 
 void   CollisionSolver3d::setPointMass(double new_m){s_m = new_m;}
 double CollisionSolver3d::getPointMass(){return s_m;}
@@ -83,19 +82,29 @@ double CollisionSolver3d::getPointMass(){return s_m;}
 void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
-void CollisionSolver3d::recordOriginalPosition(){
+void CollisionSolver3d::recordOriginalPosition()
+{
 	POINT* pt;
 	STATE* sl;
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it){
-	    for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-		sl = (STATE*)left_state(pt); 
-		sl->has_collsn = false;
-		if (isMovableRigidBody(pt)) continue;
-		for (int j = 0; j < 3; ++j)
-		    sl->x_old[j] = Coords(pt)[j];
-		if (std::isnan(sl->x_old[0])) std::cout<<"nan_x_old"<<std::endl;
+
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    pt = (*it)->Point_of_hse(i);
+		    sl = (STATE*)left_state(pt); 
+		    sl->has_collsn = false;
+		
+            //TODO: why?
+            if (isMovableRigidBody(pt))
+                continue;
+		
+            for (int j = 0; j < 3; ++j)
+                sl->x_old[j] = Coords(pt)[j];
+	
+            if (std::isnan(sl->x_old[0]))
+                std::cout<<"nan_x_old"<<std::endl;
 	    }
 	}
 }
@@ -391,7 +400,7 @@ void CollisionSolver3d::resolveCollision()
 	//stop_clock("reduceSuperelast");
 	
 	start_clock("updateFinalVelocity");
-    detectProximity();
+    //detectProximity();
     //TODO: implement this function correctly
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
@@ -759,13 +768,25 @@ void CollisionSolver3d::updateFinalPosition()
         {
             pt = (*it)->Point_of_hse(i);
             sl = (STATE*)left_state(pt);
+
+            std::vector<double> x_old(sl->x_old,sl->x_old+3);
+            std::vector<double> avgVel(sl->avgVel,sl->avgVel+3);
+
             for (int j = 0; j < 3; ++j)
             {
-                Coords(pt)[j] = sl->x_old[j]+sl->avgVel[j]*dt;
-                if (std::isnan(Coords(pt)[j]))
-                    printf("nan coords, x_old = %f, avgVel = %f\n",
-                            sl->x_old[j],sl->avgVel[j]);
+                Coords(pt)[j] = x_old[j] + avgVel[j]*dt;
+                sl->x_old[j] = x_old[j] + avgVel[j]*dt;
             }
+
+            /*
+            if (std::isnan(Mag3d(Coords(pt))))
+            {
+                for (int i = 0; i < 3; ++i)
+                    printf("nan coords, x_old = %f, avgVel = %f\n",
+                            x_old[j],avgVel[j]);
+                clean_up(ERROR);
+            }
+            */
         }
 	}
 }
@@ -790,9 +811,12 @@ void CollisionSolver3d::updateFinalVelocity()
         {
             pt = (*it)->Point_of_hse(i);
             sl = (STATE*)left_state(pt);
+            
+            /*
             if (!sl->has_collsn) 
                 continue;
-            
+            */
+
             for (int j = 0; j < 3; ++j)
             {
                 pt->vel[j] = sl->avgVel[j];
@@ -802,7 +826,6 @@ void CollisionSolver3d::updateFinalVelocity()
                     printf("nan vel and avgVel\n");
             }
         }
-        
     }
     
     updateFinalForRG();
@@ -934,7 +957,9 @@ void CollisionSolver3d::updateAverageVelocity()
 		    {
                 //sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
                 sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
-                sl->avgVel[k] += sl->friction[k];
+                //TODO: does friction impulse also need to divide by num collision?
+                sl->avgVel[k] += sl->friction[k]/sl->collsn_num;
+                //sl->avgVel[k] += sl->friction[k];
                 
                 if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                 {
