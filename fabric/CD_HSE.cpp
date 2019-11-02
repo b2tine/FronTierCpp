@@ -89,3 +89,22 @@ POINT* CD_TRI::Point_of_hse(int i) const{
         return Point_of_tri(m_tri)[i];
 }
 
+const bool AdjacentHSEs(const CD_HSE* const A, const CD_HSE* const B)
+{
+    assert (A && B);
+
+    int nA = A->num_pts();
+    int nB = B->num_pts();
+    
+    for( int i = 0; i < nA; ++i )
+    {
+        const POINT* pA = A->Point_of_hse(i);
+        for( int j = 0; j < nB; ++j )
+        {
+            if( pA == B->Point_of_hse(j) )
+                return true;
+        }
+    }
+    return false;
+}
+

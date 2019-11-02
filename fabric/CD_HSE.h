@@ -77,4 +77,8 @@ struct CD_POINT: public CD_HSE
 	int num_pts()const {return 1;}
 };
 
+
+const bool AdjacentHSEs(const CD_HSE* const A, const CD_HSE* const B);
+
+
 #endif
