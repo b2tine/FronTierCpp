@@ -133,9 +133,6 @@ bool MovingBondToBond(const BOND*,const BOND*,double);
 void checkProximity(const CD_HSE*,const CD_HSE*,double);
 void checkCollision(const CD_HSE*,const CD_HSE*,double);
 
-void EdgeToEdgeProximity();
-void EdgeToEdgeProximity();
-
 void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 void PointToTriProximityImpulse(POINT**,double*,double*,double);
 

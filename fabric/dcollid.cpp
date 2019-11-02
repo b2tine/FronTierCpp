@@ -925,11 +925,14 @@ void CollisionSolver3d::processCollisionCandidates()
         //checkCollision(a,b,s_thickness);
         if (checkCollision(a,b,s_thickness))
         {
-            //
+            //TODO: solve the cubic.
+            //      If collision, apply impulses to vel.
+            //      Then ......
         }
     }
 }
 
+//TODO: better name.
 //TODO: not ready yet
 Proximity* checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
@@ -996,6 +999,8 @@ void CollisionSolver3d::processProximityCandidates()
     }
 }
 
+//TODO: better name.
+//TODO: better location?
 //TODO: More elegant double dispatch?
 void checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {

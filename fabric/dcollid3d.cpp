@@ -483,8 +483,8 @@ static bool MovingPointToTri(POINT* pts[], double h)
     return status;
 }
 
-//TODO: this looks alright, but need to pipe be able to
-//      pipe out to the higher level functions.
+//TODO: this looks alright, but need to be able to
+//      pipe into the higher level functions.
 //      Need to save all the collision objects and sort
 //      by time of collision.
 static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
