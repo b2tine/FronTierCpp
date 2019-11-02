@@ -348,13 +348,16 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 }
 
 //TODO: update for new data structures
-bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
+bool MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
 {
 	POINT* pts[4];
 
 	pts[0] = b1->start; pts[1] = b1->end;
 	pts[2] = b2->start; pts[3] = b2->end;
 
+    //TODO: ensure getProximityCandidates() eliminates
+    //      this possibility, and remove.
+    //
 	/* do not consider two bonds that share a common point */
 	if (pts[0] == pts[2] || pts[0] == pts[3]
         || pts[1] == pts[2] || pts[1] == pts[3])
@@ -364,9 +367,10 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 
     /* detect collision between two bonds */	
 	bool status = false;
-    if (MovingEdgeToEdge(pts,h))
+    if (MovingEdgeToEdge(pts,tol))
         status = true;
 
+    //TODO: Investigate if this is correct
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (status && is_detImpZone)
         createImpZone(pts,4);
@@ -479,37 +483,30 @@ static bool MovingPointToTri(POINT* pts[], double h)
     return status;
 }
 
-//TODO: finish updating for new data structures
-static bool MovingEdgeToEdge(POINT* pts[], double h)
+//TODO: this looks alright, but need to pipe be able to
+//      pipe out to the higher level functions.
+//      Need to save all the collision objects and sort
+//      by time of collision.
+static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
 {
+    //TODO: I dont' like this static function call
 	double maxdt = CollisionSolver3d::getTimeStepSize();
 	double dt[4] = {-1,-1,-1,maxdt};
     
-    MotionState mstate = MotionState::MOVING;
-    bool status = false;
-
 	if (isCoplanar(pts,maxdt,dt))
     {
         for (int i = 0; i < 4; ++i)
         {
-            if (dt[i] < 0)
+            if (dt[i] < 0.0)
                 continue;
 
             Proximity* collision = KineticEdgeToEdge(pts,h,dt[i]);
-            //TODO: finish the rest, below is garbage from before
-            
             if (collision)
-
-            if (EdgeToEdge(pts,h,mstate,roots[i]))
-            {
-                status = true;
-                break;
-            }
+                return collision;
         }
-
     }
 
-    return status;
+    return {};
 }
 
 static void isCoplanarHelper(double* s[], double v[][3])
@@ -630,14 +627,17 @@ static bool isCoplanar(POINT* pts[], double dt, double roots[])
 	    return false;
 }
 
-bool TriToBond(const TRI* tri,const BOND* bd, double h)
+void TriToBond(const TRI* tri,const BOND* bd, double h)
 {
+    //TODO: ensure getProximityCandidates() eliminates
+    //      this possibility, and remove.
+    //
 	/* do not consider bond point that is a tri vertex */
 	for (int i = 0; i < 3; ++i)
 	{
 	    if (Point_of_tri(tri)[i] == bd->start ||
             Point_of_tri(tri)[i] == bd->end)
-            return false;
+            return;
 	}
 
 	POINT* pts[4];
@@ -656,7 +656,7 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
             proximities.push_back(proximity);
     }
 
-	//detect proximity of each triangle edge with bond edge
+	//detect proximity of each triangle edge with the bond edge
 	pts[2] = bd->start;
     pts[3] = bd->end;
 	for (int i = 0; i < 3; ++i)
@@ -682,6 +682,7 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
         }
     }
 
+    //TODO: handle memory better
     if (closest)
     {
         closest->applyImpulse();
@@ -689,40 +690,36 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
         {
             delete *it;
         }
-
-        return true;
     }
-
-    return false;
 }
 
-//NOTE: this function restores coords of points to x_old
-bool BondToBond(const BOND* b1, const BOND* b2, double h)
+void BondToBond(const BOND* b1, const BOND* b2, double tol)
 {
 	POINT* pts[4];
 
 	pts[0] = b1->start; pts[1] = b1->end;
 	pts[2] = b2->start; pts[3] = b2->end;
 
+    //TODO: ensure getProximityCandidates() eliminates
+    //      this possibility, and remove.
+    //
 	//Don't consider two bonds that share a common point
 	if (pts[0] == pts[2] || pts[0] == pts[3]
         || pts[1] == pts[2] || pts[1] == pts[3])
     {
-        return false;
+        return;
     }
     
-    Proximity* proximity = EdgeToEdge(pts,h);
+    //TODO: handle memory better
+    Proximity* proximity = EdgeToEdge(pts,tol);
     if (proximity)
     {
         proximity->applyImpulse();
         delete proximity;
-        return true;
     }
-
-    return false;
 }
 
-bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
+void TriToTri(const TRI* tri1, const TRI* tri2, double tol)
 {
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
@@ -744,12 +741,15 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
         for (int j = 0; j < 3; ++j)
             pts[j] = Point_of_tri(tmp_tri2)[j];
 	
+        //TODO: ensure getProximityCandidates() eliminates
+        //      this possibility, and remove.
+        //
 	    //Don't check a point against the triangle that contains it
         if (pts[0] == pts[3] ||
             pts[1] == pts[3] || pts[2] == pts[3])
             continue;
 
-        Proximity* proximity = PointToTri(pts,h);
+        Proximity* proximity = PointToTri(pts,tol);
         if (proximity)
             proximities.push_back(proximity);
 	}
@@ -764,12 +764,15 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 		    pts[2] = Point_of_tri(tri2)[j];
 		    pts[3] = Point_of_tri(tri2)[(j+1)%3];
 		
+            //TODO: ensure getProximityCandidates() eliminates
+            //      this possibility, and remove.
+            //
             //Don't check edges that share an endpoint
             if (pts[0] == pts[2] || pts[0] == pts[3] ||
                 pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
 
-            Proximity* proximity = EdgeToEdge(pts,h);
+            Proximity* proximity = EdgeToEdge(pts,tol);
             if (proximity)
                 proximities.push_back(proximity);
 	    }
@@ -788,6 +791,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
         }
     }
 
+    //TODO: handle memory better
     if (closest)
     {
         closest->applyImpulse();
@@ -795,11 +799,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
         {
             delete *it;
         }
-
-        return true;
     }
-
-    return false;
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -1147,7 +1147,6 @@ static bool EdgeToEdge(
 }
 */
 
-//TODO: finish
 static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
 {
     STATE* sl;
@@ -1159,9 +1158,6 @@ static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
     }
 
     Proximity* collision = EdgeToEdge(pts,h,dt);
-    //if (collision)
-
-    //TODO: do something here
 
     //restore coordinates of points
     for (int j = 0; j < 4; ++j)
@@ -1171,6 +1167,7 @@ static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
             Coords(pts[j])[k] = sl->x_old[k];
     }
 
+    return collision;
 }
 
 //Note: default value: dt = -1.0
@@ -1213,7 +1210,7 @@ static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
 	Cross3d(x12,x34,vec);
 	//if (Mag3d(vec) < ROUND_EPS)
 	//{
-        //return false;
+        //return {};
     //}
 
 

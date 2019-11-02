@@ -119,17 +119,16 @@ private:
 	void processCollisionCandidates();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
-	void setHasCollision(bool judge) {has_collision = judge;}
 	void updateImpactListVelocity(POINT*);
 };
 
-bool BondToBond(const BOND*,const BOND*,double);
-bool TriToBond(const TRI*,const BOND*,double);
-bool TriToTri(const TRI*,const TRI*,double);
+void TriToTri(const TRI*,const TRI*,double);
+void TriToBond(const TRI*,const BOND*,double);
+void BondToBond(const BOND*,const BOND*,double);
 
-bool MovingBondToBond(const BOND*,const BOND*,double);
-bool MovingTriToBond(const TRI*,const BOND*,double);
 bool MovingTriToTri(const TRI*,const TRI*,double);
+bool MovingTriToBond(const TRI*,const BOND*,double);
+bool MovingBondToBond(const BOND*,const BOND*,double);
 
 void checkProximity(const CD_HSE*,const CD_HSE*,double);
 void checkCollision(const CD_HSE*,const CD_HSE*,double);
