@@ -1348,9 +1348,6 @@ static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
     return proximity;
 }
 
-//Note that mstate has default value of MotionState::STATIC,
-//and root has default value 0.0
-
 void EdgeToEdgeProximityImpulse(
         POINT** pts,
         double* nor,
