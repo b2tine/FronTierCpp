@@ -120,6 +120,8 @@ private:
 	void updateImpactListVelocity(POINT*);
 };
 
+void PointToTriProximityImpulse(POINT**,double*,double*,double);
+void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 
 bool BondToBond(const BOND*,const BOND*,double);
 bool TriToBond(const TRI*,const BOND*,double);
@@ -127,6 +129,63 @@ bool TriToTri(const TRI*,const TRI*,double);
 bool MovingBondToBond(const BOND*,const BOND*,double);
 bool MovingTriToBond(const TRI*,const BOND*,double);
 bool MovingTriToTri(const TRI*,const TRI*,double);
+
+class Proximity
+{
+    public:
+
+        POINT** pts {nullptr};
+        double nor[3] {0.0};
+        double dist {HUGE};
+        
+        virtual void applyImpulse() = 0;
+        virtual ~Proximity() = default;
+};
+
+class EdgeEdgeProximity : public Proximity
+{
+    public:
+
+        double a {-1.0};
+        double b {-1.0};
+        
+        EdgeEdgeProximity(POINT** points,
+                double* normal, double A, double B, double distance)
+            : pts{points}, a{A}, b{B}, dist{distance}
+        {
+            for (int i = 0; i < 3; ++i)
+                nor[i] = normal[i];
+        }
+        
+        void applyImpulse() override
+        {
+            EdgeToEdgeProximityImpulse(pts,nor,a,b,dist);
+        }
+};
+
+class PointTriProximity : public Proximity
+{
+    public:
+
+        double w[3] {-1.0};
+
+        PointTriProximity(POINT** points,
+                double* normal, double* weights, double distance)
+            : pts{points}, dist{distance}
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                w[i] = weights[i];
+                nor[i] = normal[i];
+            }
+        }
+
+        void applyImpulse() override
+        {
+            PointToTriProximityImpulse(pts,nor,w,dist);
+        }
+};
+
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
@@ -152,5 +211,7 @@ bool isRigidBody(const CD_HSE*);
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
+
+
 
 #endif

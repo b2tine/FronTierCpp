@@ -1,19 +1,22 @@
 #include <armadillo>
 #include "collid.h"
 
+//static bool EdgeToEdge(POINT**, double,
+  //      MotionState mstate = MotionState::STATIC, double root = 0.0);
+static Proximity* EdgeToEdge(POINT**, double);
 static bool MovingEdgeToEdge(POINT**,double);
-static bool EdgeToEdge(POINT**, double,
-        MotionState mstate = MotionState::STATIC, double root = 0.0);
 
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
                                         double,double,double,double);
 
+//static bool PointToTri(POINT**, double,
+  //      MotionState mstate = MotionState::STATIC, double root = 0.0);
+static Proximity* PointToTri(POINT**, double);
 static bool MovingPointToTri(POINT**,double);
-static bool PointToTri(POINT**, double,
-        MotionState mstate = MotionState::STATIC, double root = 0.0);
 
+//void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
 static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
@@ -642,119 +645,100 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	    return false;
 }
 
-//NOTE: this function restores coords of points to x_old
 bool TriToBond(const TRI* tri,const BOND* bd, double h)
 {
-	POINT* pts[4];
-	STATE* sl;
-	bool status = false;
-    MotionState mstate = MotionState::STATIC;
-
 	/* do not consider bond point that is a tri vertex */
 	for (int i = 0; i < 3; ++i)
 	{
 	    if (Point_of_tri(tri)[i] == bd->start ||
-		Point_of_tri(tri)[i] == bd->end)
+            Point_of_tri(tri)[i] == bd->end)
             return false;
 	}
 
-	/* make sure the coords are old coords */
-	for (int i = 0; i < 3; ++i)
+	POINT* pts[4];
+    std::vector<Proximity*> proximities;
+	
+    for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
-	for (int i = 0; i < 3; ++i)
-	{
-	    sl = (STATE*)left_state(pts[i]);
-	    for (int j = 0; j < 3; ++j)
-            Coords(pts[i])[j] = sl->x_old[j];
-	}
+	//detect proximity of triangle to bond end points.
+    for (int i = 0; i < 2; ++i)
+    {
+        pts[3] = (i == 0) ? bd->start : bd->end;
+        
+        Proximity* proximity = PointToTri(pts,h);
+        if (proximity)
+            proximities.push_back(proximity);
+    }
 
-	/* detect proximity of start point of bond w.r.t. tri */
-	pts[3] = bd->start;
-	sl = (STATE*)left_state(pts[3]);
-	for (int j = 0; j < 3; ++j)
-	    Coords(pts[3])[j] = sl->x_old[j];
-
-	if (PointToTri(pts,h))
-        status = true;
-
-	/* detect proximity of end point of bond w.r.t. tri */
-	pts[3] = bd->end;
-	sl = (STATE*)left_state(pts[3]);
-	for (int j = 0; j < 3; ++j)
-	    Coords(pts[3])[j] = sl->x_old[j];
-	
-    if (PointToTri(pts,h))
-        status = true;
-	
-	/* detect proximity each edge of tri w.r.t. bond */
+	//detect proximity of each triangle edge with bond edge
 	pts[2] = bd->start;
-	pts[3] = bd->end;
+    pts[3] = bd->end;
 	for (int i = 0; i < 3; ++i)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-	    if (EdgeToEdge(pts, h))
-            status = true;
+
+        Proximity* proximity = EdgeToEdge(pts,h);
+        if (proximity)
+            proximities.push_back(proximity);
 	}
 
-	return status;
+    Proximity* closest;
+    double min_dist = HUGE;
+
+    std::vector<Proximity*>::iterator it;
+    for (it = proximities.begin(); it < proximities.end(); ++it)
+    {
+        if ((*it)->dist < min_dist)
+        {
+            min_dist = (*it)->dist;
+            closest = *it;
+        }
+    }
+
+    if (closest)
+    {
+        closest->applyImpulse();
+        for (it = proximities.begin(); it < proximities.end(); ++it)
+        {
+            delete *it;
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 //NOTE: this function restores coords of points to x_old
 bool BondToBond(const BOND* b1, const BOND* b2, double h)
 {
 	POINT* pts[4];
-	STATE* sl;
-	bool status = false;
-    MotionState mstate = MotionState::STATIC;
 
-	pts[0] = b1->start;
-	pts[1] = b1->end;
-	pts[2] = b2->start;
-	pts[3] = b2->end;
+	pts[0] = b1->start; pts[1] = b1->end;
+	pts[2] = b2->start; pts[3] = b2->end;
 
-	/* do not consider two bonds that share a common point */
+	//Don't consider two bonds that share a common point
 	if (pts[0] == pts[2] || pts[0] == pts[3]
         || pts[1] == pts[2] || pts[1] == pts[3])
     {
         return false;
     }
     
-    /*
-	for (int i = 0; i < 4; ++i)
-	{
-	    for (int j = i + 1; j < 4; ++j)
-	    {
-		if (pts[i] == pts[j])
-		    return false;
-	    }
-	}
-    */
+    Proximity* proximity = EdgeToEdge(pts,h);
+    if (proximity)
+    {
+        proximity->applyImpulse();
+        delete proximity;
+        return true;
+    }
 
-	/* make sure the coords are old coords */
-	for (int i = 0; i < 4; ++i)
-	{
-	    sl = (STATE*)left_state(pts[i]);
-	    for (int j = 0; j < 3; ++j)
-            Coords(pts[i])[j] = sl->x_old[j];
-	}
-
-	/* detect proximity between two bonds */
-	if (EdgeToEdge(pts,h))
-		status = true;
-
-	return status;
+    return false;
 }
 
-//NOTE: this function restores coords of points to x_old
 bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 {
-	POINT* pts[4];
-	STATE* sl[2];
-	bool status = false;
-    MotionState mstate = MotionState::STATIC;
-
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
@@ -762,18 +746,8 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
             return false;
 	}
 
-    //make sure the coords are old coords;
-	for (int i = 0; i < 3; ++i)
-    {
-	    pts[0] = Point_of_tri(tri1)[i];
-	    sl[0] = (STATE*)left_state(pts[0]);
-	    pts[1] = Point_of_tri(tri2)[i];
-	    sl[1] = (STATE*)left_state(pts[1]);
-	    
-        for (int j = 0; j < 2; ++j)
-	    for (int k = 0; k < 3; ++k)
-	        Coords(pts[j])[k] = sl[j]->x_old[k];
-	}
+	POINT* pts[4];
+    std::vector<Proximity*> proximities;
 
 	for (int k = 0; k < 2; ++k)
 	for (int i = 0; i < 3; ++i)
@@ -781,16 +755,18 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 	    const TRI* tmp_tri1 = (k == 0) ? tri1 : tri2;
 	    const TRI* tmp_tri2 = (k == 0) ? tri2 : tri1;
 
+	    pts[3] = Point_of_tri(tmp_tri1)[i];
         for (int j = 0; j < 3; ++j)
             pts[j] = Point_of_tri(tmp_tri2)[j];
-	    pts[3] = Point_of_tri(tmp_tri1)[i];
 	
-	    //Don't consider a point against the triangle that contains it
-        if (pts[0] == pts[3] || pts[1] == pts[3]
-                || pts[2] == pts[3]) continue;
+	    //Don't check a point against the triangle that contains it
+        if (pts[0] == pts[3] ||
+            pts[1] == pts[3] || pts[2] == pts[3])
+            continue;
 
-	    if (PointToTri(pts,h))
-            status = true;
+        Proximity* proximity = PointToTri(pts,h);
+        if (proximity)
+            proximities.push_back(proximity);
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -808,12 +784,37 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
                 pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
 
-            if (EdgeToEdge(pts,h))
-                status = true;
-	    } 
+            Proximity* proximity = EdgeToEdge(pts,h);
+            if (proximity)
+                proximities.push_back(proximity);
+	    }
     }
 
-	return status;
+    Proximity* closest;
+    double min_dist = HUGE;
+
+    std::vector<Proximity*>::iterator it;
+    for (it = proximities.begin(); it < proximities.end(); ++it)
+    {
+        if ((*it)->dist < min_dist)
+        {
+            min_dist = (*it)->dist;
+            closest = *it;
+        }
+    }
+
+    if (closest)
+    {
+        closest->applyImpulse();
+        for (it = proximities.begin(); it < proximities.end(); ++it)
+        {
+            delete *it;
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -977,11 +978,191 @@ static bool EdgeToEdge(POINT** pts, double h, double root)
 //
 //Note that mstate has default value of MotionState::STATIC,
 //and root has default value of 0.0
+
+/*
 static bool EdgeToEdge(
         POINT** pts,
         double h,
         MotionState mstate,
         double root)
+{
+//	   x1	x3
+//	    /	 \
+//     /	  \
+// x2 /		   \ x4
+//
+	double x12[3], x34[3], x13[3];
+	Pts2Vec(pts[0],pts[1],x12);    
+	Pts2Vec(pts[2],pts[3],x34);
+	Pts2Vec(pts[0],pts[2],x13);
+
+    //Matrix entries
+    double a = Dot3d(x12,x12);
+    double b = -Dot3d(x12,x34);
+    double c = Dot3d(x34,x34);
+
+    //RHS
+    double d = Dot3d(x12,x13);
+    double e = -Dot3d(x34,x13);
+	
+    //Matrix Determinant
+    double D = fabs(a*c - b*b);
+
+    //Solution, and solution numerators and denominators
+    double sC = 0;  double sN = 0;  double sD = D;    
+    double tC = 0;  double tN = 0;  double tD = D;    
+    
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
+
+
+    double dist, vec[3];
+	Cross3d(x12,x34,vec);
+	//if (Mag3d(vec) < ROUND_EPS)
+	//{
+        //return false;
+    //}
+
+
+    if (D < ROUND_EPS || Mag3d(vec) < ROUND_EPS)
+    {
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
+        {
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
+
+        }
+        else if( sN > sD )
+        {
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
+        }
+    }
+
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if (-1.0*d < 0.0)
+            sN = 0.0;
+        else if (-1.0*d > a)
+            sN = sD;
+        else
+        {
+            sN = -d;
+            sD = a;
+        }
+    }
+    else if (tN > tD)
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if ((b - d)  < 0.0)
+            sN = 0.0;
+        else if ((b - d) > a)
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
+
+    //Compute the solution and obtain the closest pair of points.
+    if (sN == sD)
+        sC = 1.0;
+    else
+        sC = fabs(sN) < ROUND_EPS ? 0.0 : sN/sD;
+
+    if (tN == tD)
+        tC = 1.0;
+    else
+        tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
+    
+    
+    //
+    //if (std::isinf(sC) || std::isinf(tC))
+    //{
+    //    LOC();
+    //    printf("sC or tC is inf\n");
+    //    clean_up(ERROR);
+    //}
+    //
+    
+    //"normal vector" always points from
+    //the x12 edge to the x34 edge
+    double nor[3];
+	for (int j = 0; j < 3; ++j)
+	{
+	    nor[j]  = (1.0 - tC)*Coords(pts[2])[j] + tC*Coords(pts[3])[j];
+	    nor[j] -= (1.0 - sC)*Coords(pts[0])[j] + sC*Coords(pts[1])[j];
+    }
+    
+    //TODO: Make sure nor is pointing in the correct direction.
+
+    //
+    //scalarMult(tC,x34,x34);
+    //scalarMult(sC,x12,x12);
+    //minusVec(x34,x12,nor);
+    //minusVec(nor,x31,nor);
+    //
+
+    dist = Mag3d(nor);
+    if (dist > h)
+        return false;
+
+    if (dist > ROUND_EPS)
+        scalarMult(1.0/dist,nor,nor);
+    else
+    {
+        std::cout << "dist (nor_mag) < ROUND_EPS" << std::endl;
+        std::cout << "sC = " << sC << " tC = " << tC << std::endl;
+        printPointList(pts,4);
+	    double p12[3]; double p34[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            p34[i] = (1.0 - tC)*Coords(pts[2])[i] + tC*Coords(pts[3])[i];
+	        p12[i] = (1.0 - sC)*Coords(pts[0])[i] + sC*Coords(pts[1])[i];
+        }
+    
+        printf("nor \t p34 \t p12\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%g \t %g \t %g\n",nor[i],p34[i],p12[i]);
+        }
+        clean_up(ERROR);
+    }
+    
+    EdgeToEdgeImpulse(pts,nor,sC,tC,dist,mstate,root);
+	return true;
+}
+*/
+
+static Proximity* EdgeToEdge(POINT** pts, double h)
 {
 //	   x1	x3
 //	    /	 \
@@ -1110,27 +1291,22 @@ static bool EdgeToEdge(
     }
     */
     
+    
+    //TODO: Make sure nor is pointing in the correct direction.
+    
     //"normal vector" always points from
     //the x12 edge to the x34 edge
+    
     double nor[3];
 	for (int j = 0; j < 3; ++j)
 	{
 	    nor[j]  = (1.0 - tC)*Coords(pts[2])[j] + tC*Coords(pts[3])[j];
 	    nor[j] -= (1.0 - sC)*Coords(pts[0])[j] + sC*Coords(pts[1])[j];
     }
-    
-    //TODO: Make sure nor is pointing in the correct direction.
-
-    /*
-    scalarMult(tC,x34,x34);
-    scalarMult(sC,x12,x12);
-    minusVec(x34,x12,nor);
-    minusVec(nor,x31,nor);
-    */
 
     dist = Mag3d(nor);
     if (dist > h)
-        return false;
+        return {};
 
     if (dist > ROUND_EPS)
         scalarMult(1.0/dist,nor,nor);
@@ -1153,13 +1329,25 @@ static bool EdgeToEdge(
         }
         clean_up(ERROR);
     }
-    
-    EdgeToEdgeImpulse(pts,nor,sC,tC,dist,mstate,root);
-	return true;
+
+    Proximity* proximity = new EdgeEdgeProximity(pts,sC,tC,w,dist);
+    return proximity;
 }
 
 //Note that mstate has default value of MotionState::STATIC,
 //and root has default value 0.0
+
+void EdgeToEdgeProximityImpulse(
+        POINT** pts,
+        double* nor,
+        double a,
+        double b,
+        double dist)
+{
+    MotionState mstate = MotionState::STATIC;
+    EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,-1.0);
+}
+
 static void EdgeToEdgeImpulse(
         POINT** pts,
         double* nor,
@@ -1180,10 +1368,6 @@ static void EdgeToEdgeImpulse(
 	double cr     = CollisionSolver3d::getRestitutionCoef();
 	
     dist   = h - dist;
-
-	double wa[2] = {1.0 - a, a};
-    double wb[2] = {1.0 - b, b};
-    double wab[4] = {wa[0], wa[1], wb[0], wb[1]};
 
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
@@ -1214,7 +1398,9 @@ static void EdgeToEdgeImpulse(
 	double impulse = 0.0;
 	double friction_impulse = 0.0;
     double rigid_impulse[2] = {0.0};
-	
+    
+    double wab[4] = {1.0 - a, a, 1.0 - b, b};
+
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
@@ -1244,8 +1430,7 @@ static void EdgeToEdgeImpulse(
         }
     }
 
-    double m_impulse;
-    double f_impulse;
+    double m_impulse; double f_impulse;
 	if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
     {
 	    m_impulse = impulse;
@@ -1449,13 +1634,14 @@ static void EdgeToEdgeElasticImpulse(
 
 //Note that mstate has default value of MotionState::STATIC,
 //and root has default value of 0.0
+/*
 static bool PointToTri(
         POINT** pts,
         double h,
         MotionState mstate,
         double root)
 {
-/*	x1
+//	x1
  *  	/\     x4 *
  *     /  \
  * x2 /____\ x3
@@ -1463,7 +1649,7 @@ static bool PointToTri(
  * solve equation
  * x13*x13*w1 + x13*x23*w2 = x13*x43
  * x13*x23*w1 + x23*x23*w2 = x23*x43
- */
+ //
     double dist;
     //double nor[3];
 	double w[3] = {0.0};
@@ -1483,7 +1669,7 @@ static bool PointToTri(
         //TODO: let's not ignore it
         return false;
 
-        /*
+        //
 	    //consider the case when det = 0
 	    //x13 and x23 are collinear
 
@@ -1530,12 +1716,12 @@ static bool PointToTri(
 		if (Mag3d(nor) < ROUND_EPS)
 		    nor[0] = nor[1] = nor[2] = 1.0;
 	    }
-        */
+        //
 	}
 	else
     {
-	    /*det != 0*/
-	    /*x13 and x23 are non-collinear*/
+	    //det != 0
+	    //x13 and x23 are non-collinear
 
         //unit normal vector of the plane of the triangle
 	    Cross3d(x13,x23,tri_nor);
@@ -1544,14 +1730,14 @@ static bool PointToTri(
         scalarMult(1.0/tri_nor_mag,tri_nor,tri_nor);
         double tri_area = 0.5*tri_nor_mag;
 
-        /*
+        //
 	    //get the old direction
-	    double x34_old[3];
-	    STATE* tmp_sl[2];
-	    tmp_sl[0] = (STATE*)left_state(pts[2]);
-	    tmp_sl[1] = (STATE*)left_state(pts[3]);
-	    minusVec(tmp_sl[1]->x_old,tmp_sl[0]->x_old,x34_old);
-        */
+	    //double x34_old[3];
+	    //STATE* tmp_sl[2];
+	    //tmp_sl[0] = (STATE*)left_state(pts[2]);
+	    //tmp_sl[1] = (STATE*)left_state(pts[3]);
+	    //minusVec(tmp_sl[1]->x_old,tmp_sl[0]->x_old,x34_old);
+        //
 
 	    //correct the triangle's normal direction to point to same
         //side as the point (not used right now, but may need at some
@@ -1572,16 +1758,16 @@ static bool PointToTri(
 	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
 	    w[2] = 1.0 - w[0] - w[1];
 	    
-        /*
-        double c_len = 0.0;	
-        for (int i = 0; i < 3; ++i)
-        {
-            double tmp_dist = distance_between_positions(Coords(pts[i]),
-                                    Coords(pts[(i+1)%3]),3);
-            if (tmp_dist > c_len)
-                c_len = tmp_dist;
-        }
-        */
+        //
+        //double c_len = 0.0;	
+        //for (int i = 0; i < 3; ++i)
+        //{
+        //    double tmp_dist = distance_between_positions(Coords(pts[i]),
+        //                            Coords(pts[(i+1)%3]),3);
+        //    if (tmp_dist > c_len)
+        //        c_len = tmp_dist;
+        //}
+        //
 
         //double eps = h/c_len;
         double eps = h/sqrt(tri_area);
@@ -1591,16 +1777,15 @@ static bool PointToTri(
                 return false;
         }
 
-        /*
+        //
         //compute the "normal vector" pointing from the
         //projected point of the triangle's plane to the point
-        for (int i = 0; i < 3; ++i)
-        {
-            nor[i] = x34[i] + w[0]*x13[i] + w[1]*x23[i];
-        }
-        */
+        //for (int i = 0; i < 3; ++i)
+        //{
+          //  nor[i] = x34[i] + w[0]*x13[i] + w[1]*x23[i];
+        //}
+        //
         
-        /*
         STATE* tmp_sl = (STATE*)left_state(pts[3]);
         if (fabs(w[0]) < ROUND_EPS || fabs(w[1]) < ROUND_EPS
                 || fabs(w[2]) < ROUND_EPS)
@@ -1615,9 +1800,7 @@ static bool PointToTri(
             for (int j = 0; j < 3; ++j)
                 nor[j] -= w[i] * tmp_sl->x_old[j];
         }
-        */
             
-        /*
         double nor_mag = Mag3d(nor);
         if (nor_mag > ROUND_EPS)
         {
@@ -1629,16 +1812,104 @@ static bool PointToTri(
             printPointList(pts,4);
             clean_up(ERROR);
         }
-        */
     }
 
 	PointToTriImpulse(pts,tri_nor,w,dist,mstate,root);
 	return true;
 }
+*/
 
-//TODO: root is not used inside this function at all
-//
-/* repulsion and friction functions, update velocity functions */
+static Proximity* PointToTri(POINT** pts, double h)
+{
+/*	x1
+ *  	/\     x4 *
+ *     /  \
+ * x2 /____\ x3
+ *
+ * solve equation
+ * x13*x13*w1 + x13*x23*w2 = x13*x43
+ * x13*x23*w1 + x23*x23*w2 = x23*x43
+ */
+    
+	double x13[3], x23[3], x43[3], x34[3];
+	
+    Pts2Vec(pts[0],pts[2],x13);
+	Pts2Vec(pts[1],pts[2],x23);
+	Pts2Vec(pts[3],pts[2],x43);
+    scalarMult(-1.0,x43,x34);
+	
+	//double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+
+    double tri_nor[3] = {0.0};
+    Cross3d(x13,x23,tri_nor);
+    double tri_nor_mag = Mag3d(tri_nor);
+
+    scalarMult(1.0/tri_nor_mag,tri_nor,tri_nor);
+    double tri_area = 0.5*tri_nor_mag;
+
+    double dist = Dot3d(x34,tri_nor);
+    if (dist < 0.0)
+    {
+        dist = fabs(dist);
+        scalarMult(-1.0,tri_nor,tri_nor);
+    }
+
+    if (dist > h)
+        return {};
+
+	double w[3];
+    w[0] = (Dot3d(x23,x23)*Dot3d(x13,x43)-Dot3d(x13,x23)*Dot3d(x23,x43))/det;
+    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
+    w[2] = 1.0 - w[0] - w[1];
+    
+    /*
+    double c_len = 0.0;	
+    for (int i = 0; i < 3; ++i)
+    {
+        double tmp_dist = distance_between_positions(Coords(pts[i]),
+                                Coords(pts[(i+1)%3]),3);
+        if (tmp_dist > c_len)
+            c_len = tmp_dist;
+    }
+    */
+
+    //double eps = h/c_len;
+    double eps = h/sqrt(tri_area);
+    for (int i = 0; i < 3; ++i)
+    {
+        if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
+            return {};
+            //return false;
+    }
+
+    /*
+    double nor_mag = Mag3d(nor);
+    if (nor_mag > ROUND_EPS)
+    {
+        scalarMult(1.0/nor_mag,nor,nor);
+    }
+    else
+    {
+        std::cout << "nor_mag < ROUND_EPS" << std::endl;
+        printPointList(pts,4);
+        clean_up(ERROR);
+    }
+    */
+
+    Proximity* proximity = new PointToTriProximity(pts,tri_nor,w,dist);
+    return proximity;
+}
+
+void PointToTriProximityImpulse(
+        POINT** pts,
+        double* nor,
+        double* w,
+        double dist)
+{
+    MotionState mstate = MotionState::STATIC;
+    PointToTriImpulse(pts,nor,w,dist,mstate,-1.0);
+}
+
 static void PointToTriImpulse(
         POINT** pts,
         double* nor,
@@ -1719,9 +1990,11 @@ static void PointToTriImpulse(
         }
     }
 
+
     double m_impulse;
     double f_impulse;
-	if (fabs(sum_w) < MACH_EPS)
+
+    if (fabs(sum_w) < MACH_EPS)
     {
 	    m_impulse = impulse;
         f_impulse = friction_impulse;

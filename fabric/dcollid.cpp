@@ -976,6 +976,7 @@ void CollisionSolver3d::updateAverageVelocity()
 	    		sl->collsnImpulse[k] = 0.0;
                 sl->friction[k] = 0.0;
             }
+
 		    sl->collsn_num = 0;
 		}
 
@@ -1069,7 +1070,7 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 	return false;
 }
 
-//This is checking the geometric primitive for intersection
+//This is checking the geometric primitives for proximity
 bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
