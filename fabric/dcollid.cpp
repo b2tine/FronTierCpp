@@ -376,16 +376,20 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
-	if (debugging("printDebugVariable"))
-	    printDebugVariable();
+	updateAverageVelocity();
+
+    //TODO: I believe algorithm correct up to here.
+
+	//if (debugging("printDebugVariable"))
+	  //  printDebugVariable();
 
 	//check linear trajectories for collisions
 	start_clock("detectCollision");
 	detectCollision();
 	stop_clock("detectCollision");
 
-	if (debugging("printDebugVariable"))
-	    printDebugVariable();
+	//if (debugging("printDebugVariable"))
+	  //  printDebugVariable();
 	
 	//start_clock("detectDomainBoundaryCollision");
 	//detectDomainBoundaryCollision();
@@ -412,6 +416,7 @@ void CollisionSolver3d::resolveCollision()
 // and query for proximity detection process
 void CollisionSolver3d::aabbProximity()
 {
+    //TODO: Only build proximity tree once at startup
     if (!abt_proximity)
     {
         double pre_tol = CollisionSolver3d::getFabricThickness();
@@ -443,9 +448,10 @@ void CollisionSolver3d::aabbProximity()
         volume = abt_proximity->getVolume();
     }
     */
+
+    /*
     else
     {
-        //NOTE: Only build proximity tree once at startup
         abt_proximity->updateAABBTree(hseList);
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
@@ -457,22 +463,19 @@ void CollisionSolver3d::aabbProximity()
             //std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
+    */
 }
 
 void CollisionSolver3d::detectProximity()
 {
-    const double h = CollisionSolver3d::getFabricThickness();
-
-    start_clock("AABB_proximity");
     aabbProximity();
-    abt_proximity->query(h);
-    stop_clock("AABB_proximity");
-
-	updateAverageVelocity();
+    candidates = abt_collision->getCandidates();
 
 	if (debugging("proximity"))
-        std::cout << abt_proximity->getCount()
-            << " pair of proximity" << std::endl;
+        std::cout << candidates.size()
+            << " pair of proximity candidates" << std::endl;
+
+    processProximityCandidates();
 }
 
 // AABB tree for collision detection process
@@ -513,6 +516,9 @@ void CollisionSolver3d::aabbCollision()
     }
 }
 
+//TODO: use gauss-seidel updates
+
+//TODO: finish updating for new data structures
 void CollisionSolver3d::detectCollision()
 {
     if (debugging("collision"))
@@ -533,17 +539,13 @@ void CollisionSolver3d::detectCollision()
 	    
         start_clock("dynamic_AABB_collision");
         aabbCollision();
-        abt_collision->query(h);
+        candidates = abt_collision->getCandidates();
         stop_clock("dynamic_AABB_collision");
 
-        is_collision = abt_collision->getCollsnState();
+        //TODO: implement this
+        processCollisionCandidates();
 
-        //TODO: What is the point of cd_count? Appears to serve no purpose.
-        //      Also, has_collision is never used (what setHasCollision() sets).
-	    if (cd_count++ == 0 && is_collision)
-        {
-            setHasCollision(true);
-        }
+        //TODO: below is garbage
 
 	    updateAverageVelocity();
 
@@ -562,67 +564,6 @@ void CollisionSolver3d::detectCollision()
         stop_clock("computeImpactZone");
     }
 }
-
-/*
-void CollisionSolver3d::detectCollision()
-{
-	std::cout<<"Starting collision handling: "<<std::endl;
-
-	int MAX_ITER = 8;
-	//const int MAX_ITER = 8;
-    const double h = CollisionSolver3d::getRoundingTolerance();
-
-    int npairs = static_cast<int>(HUGE);
-    int prev_npairs = npairs;
-	
-    bool is_collision = true;
-	setHasCollision(false);
-	
-	int niter = 1;
-	int cd_count = 0;
-
-    while(is_collision) {
-	    
-        is_collision = false;
-	    start_clock("dynamic_AABB_collision");
-	    
-        aabbCollision();
-        abt_collision->query(h);
-        is_collision = abt_collision->getCollsnState();
-
-        stop_clock("dynamic_AABB_collision");
-
-        //TODO: This doesn't do anything.
-        //      boolean set in setHasCollision() is retrieved using
-        //      hasCollision(), but is never called anywhere.
-	    if (cd_count++ == 0 && is_collision)
-            setHasCollision(true);
-
-	    updateAverageVelocity();
-        
-        prev_npairs = npairs;
-        npairs = abt_collision->getCount(); 
-	    
-        std::cout<<"    #"<<niter << ": " << npairs
-		     << " pair of collision tris" << std::endl;
-
-	    //if (++niter > MAX_ITER) break;
-	    if (++niter > MAX_ITER)
-        {
-            if (npairs >= prev_npairs/2 + 1)
-            {
-                break;
-            }
-            MAX_ITER++;
-        }
-	}
-    
-    start_clock("computeImpactZone");
-	if (is_collision) 
-	    computeImpactZone();
-	stop_clock("computeImpactZone");
-}
-*/
 
 //Note: num has default value of 4,
 //and first has default value of false
@@ -1014,7 +955,12 @@ void CollisionSolver3d::updateAverageVelocity()
 	    printDebugVariable();
 }
 
-bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
+void CollisionSolver3d::processCollisionCandidates()
+{
+    //TODO: implementation
+}
+
+void checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -1067,11 +1013,24 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 	    std::cout<<"This case has not been implemented"<<std::endl;
 	    clean_up(ERROR);
 	}
-	return false;
+}
+
+void CollisionSolver3d::processProximityCandidates()
+{
+    std::vector<NodePair>::iterator it;
+    for (it = candidates.begin(); it < candidates.end(); ++it)
+    {
+        Node* A = it->first;
+        Node* B = it->second;
+        CD_HSE* a = A->data->hse;
+        CD_HSE* b = B->data->hse;
+        checkProximity(a,b,s_thickness);
+    }
 }
 
 //This is checking the geometric primitives for proximity
-bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
+//bool isProximity(const CD_HSE* a, const CD_HSE* b, double tol)
+void checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -1111,7 +1070,6 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 	    std::cout<<"This case has not been implemented"<<std::endl;
 	    clean_up(ERROR);
 	}
-	return false;
 }
 
 void CollisionSolver3d::printDebugVariable(){
