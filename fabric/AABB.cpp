@@ -1,5 +1,6 @@
 #include "AABB.h"
 
+
 //for proximity detection
 AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h), 
         abType(type), lowerbound(3), upperbound(3) {
@@ -94,7 +95,8 @@ void Node::setBranch(std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
     right = n2;
 }
 
-bool Node::isLeaf() {
+bool Node::isLeaf()
+{
     return left == nullptr && right == nullptr;
 }
 
@@ -128,6 +130,16 @@ void Node::updateAABB() {
 const bool Node::overlaps(Node* n) const
 {
     return box.overlaps(n->box);
+}
+
+Node* Node::getLeftChild() const
+{
+    return->left.get();
+}
+
+Node* Node::getRightChild() const
+{
+    return->right.get();
 }
 
 Node* Node::getSibling() const {
@@ -319,23 +331,86 @@ double AABBTree::treeHeight(Node* root) {
                     treeHeight(root->right.get())) + 1;
 }
 
+std::vector<NodePair> AABBTree::getCandidates()
+{
+    Node* nodeA = root.get();
+    Node* nodeB = root.get();
+
+    std::stack<NodePair> qstack;
+    qstack.push(std::make_pair(nodeA,nodeB));
+
+    std::vector<NodePair> candidates;
+
+    while (!qstack.empty())
+    {
+        Node* A = qstack.top().first;
+        Node* B = qstack.top().second;
+        qstack.pop();
+
+        if (A->overlaps(B))
+        {
+            if (A->isLeaf() && B->isLeaf())
+            {
+                if (A->hasAdjacentHse(B))
+                    continue;
+                candidates.push_back(std::make_pair(A,B));
+            }
+            else if (A->isLeaf())
+            {
+                Node* rc = B->getRightChild();
+                qstack.push(std::make_pair(A,rc));
+                Node* lc = B->getLeftChild();
+                qstack.push(std::make_pair(A,lc));
+            }
+            else if (B->isLeaf())
+            {
+                Node* rc = A->getRightChild();
+                qstack.push(std::make_pair(rc,B));
+                Node* lc = A->getLeftChild();
+                qstack.push(std::make_pair(lc,B));
+            }
+            else
+            {
+                if (A->volume() < B->volume())
+                {
+                    Node* rc = B->getRightChild();
+                    qstack.push(std::make_pair(A,rc));
+                    Node* lc = B->getLeftChild();
+                    qstack.push(std::make_pair(A,lc));
+                }
+                else
+                {
+                    Node* rc = A->getRightChild();
+                    qstack.push(std::make_pair(rc,B));
+                    Node* lc = A->getLeftChild();
+                    qstack.push(std::make_pair(lc,B));
+                }
+            }
+        }
+    }
+
+    return candidates;
+}
+    
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
+/*
 void AABBTree::query(double tol)
 {
     Node* cur = root.get();
     std::stack<Node*> sn;
 
+
     while (cur || !sn.empty())
     {
         while (cur)
         {
-            sn.push(cur);
+            qstack.push(cur);
             cur = cur->left.get();
         }
 
-        cur = sn.top();
-        sn.pop();
+        cur = qstack.top();
+        qstack.pop();
         
         if (cur->isLeaf())
         {
@@ -350,7 +425,9 @@ void AABBTree::query(double tol)
         cur = cur->right.get();
     }
 }
+*/
 
+/*
 // For AABB inside Node n, find all intersecting AABBs.
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
@@ -397,6 +474,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
 
     return count > 0;
 }
+*/
 
 bool AABBTree::queryCollision(Node* n, double tol)
 {
@@ -441,3 +519,19 @@ bool AABBTree::queryCollision(Node* n, double tol)
 
     return count > 0;
 }
+
+const CD_HSE* const Node::getHSE() const
+{
+    return data->hse;
+}
+
+const bool Node::hasAdjacentHSE(const Node* const node) const
+{
+    return areAdjacentHse(this->getHse(),node->getHse());
+}
+
+const double Node::volume() const
+{
+    return box.volume();
+}
+

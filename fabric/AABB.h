@@ -14,13 +14,15 @@
 #include <set>
 #include <map>
 
-using CPoint = std::vector<double>;
 
 enum class MotionState {STATIC, MOVING};
 
-
 class Node;
 class AABBTree;
+
+using CPoint = std::vector<double>;
+using NodePair = std::pair<Node*,Node*>;
+
 
 class AABB {
     friend class Node;
@@ -59,28 +61,38 @@ public:
 
 class Node {
 public:
+
     friend class AABBTree;
+    
     // AABB stored in node. May store information for branch AABB
     // and may be adjusted for dynamic AABB 
     AABB box;
-    // if leaf, point to the corresponding AABB
-    // empty for branch
+    const bool overlaps(Node*) const;
+    const double volume() const;
+    
+    // if leaf, point to the corresponding AABB (empty for branch)
     std::unique_ptr<AABB> data;
-    // parent node
+    const CD_HSE* const getHSE() const;
+    const bool hasAdjacentHSE(const Node* const node) const;
+    
     std::weak_ptr<Node> parent;
-    // left and right children node
     std::shared_ptr<Node> left;
     std::shared_ptr<Node> right;
-    void updateBranch();
-    // make this node to be brance from two Node parameter
-    void setBranch(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>);
-    // judge if this node is a leaf
-    bool isLeaf();
-    // set an AABB element to be a leaf
-    void setLeaf(AABB*);
-    const bool overlaps(Node*) const;
-    void updateAABB();
+    
+    Node* getLeftChild() const;
+    Node* getRightChild() const;
     Node* getSibling() const;
+
+    void updateBranch();
+    
+    // make this node to be branch from two Node parameter
+    void setBranch(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>);
+    
+    void setLeaf(AABB*);
+    const bool isLeaf() const;
+
+    void updateAABB();
+
     ~Node();
 };
 
@@ -99,11 +111,10 @@ public:
     int numLeaf {0};
     double treeHeight(Node*); 
     double dt;
-    bool isProximity;
-    bool isCollsn;
     
     // query all collid pairs
     void query(double tol);
+    std::vector<NodePair> getCandidates();
 
     // insert a node into the subtree with parent 
     // as the root
@@ -129,20 +140,19 @@ public:
     void updateTreeStructure();
     void updatePointMap(const std::vector<CD_HSE*>&);
     void setTimeStep(double t) { dt = t; }
-    bool getCollsnState() { return isCollsn; }
     void updateAABBTree(const std::vector<CD_HSE*>&);
     MotionState getType() { return type; }
 
 private:
 
-    bool queryProximity(Node* n,double tol);
-    bool queryCollision(Node* n,double tol);
+    //bool queryProximity(Node* n,double tol);
+    //bool queryCollision(Node* n,double tol);
 };
 
 
 //dcollid.cpp
-bool getProximity(const CD_HSE*,const CD_HSE*,double);
-bool getCollision(const CD_HSE*,const CD_HSE*,double);
+//bool getProximity(const CD_HSE*,const CD_HSE*,double);
+//bool getCollision(const CD_HSE*,const CD_HSE*,double);
 
 
 #endif
