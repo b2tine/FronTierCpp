@@ -32,7 +32,6 @@ class AABB {
     std::vector<long> indices;
     void updateAABBInfo(double);
     //void updateAABBInfo(const std::unordered_map<long, POINT*>&);
-    bool contain(const AABB*);
     CD_HSE* hse = nullptr;
     double dt;
     MotionState abType;
@@ -53,8 +52,9 @@ public:
     // merged AABB and construct the corresponding AABB tree
     AABB merge(const AABB&) const;
     // get the volume of the AABB
-    double volume();
-    bool isCollid(const AABB&);
+    const double volume() const;
+    const bool overlaps(const AABB&) const;
+    const bool contains(const AABB&) const;
 };
 
 class Node {
@@ -78,7 +78,7 @@ public:
     bool isLeaf();
     // set an AABB element to be a leaf
     void setLeaf(AABB*);
-    bool isCollid(Node*);
+    const bool overlaps(Node*) const;
     void updateAABB();
     Node* getSibling() const;
     ~Node();

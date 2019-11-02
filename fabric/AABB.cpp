@@ -39,17 +39,32 @@ AABB AABB::merge(const AABB& ab) const {
     return AABB(pl, pu);
 } 
 
-double AABB::volume() {
-    return (upperbound[0]-lowerbound[0])*(upperbound[1]-lowerbound[1])*
-            (upperbound[2]-lowerbound[2]);
+const double AABB::volume() const
+{
+    double volume = 1.0;
+    for (int i = 0; i < 3; ++i)
+        volume *= upperbound[i] - lowerbound[i];
+    return volume;
 }
 
-//This is the intersection test for AABB's.
-//Not a collision or geometric primitive check.
-bool AABB::isCollid(const AABB& ab) {
-    return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
-           (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
-           (lowerbound[2] <= ab.upperbound[2] && upperbound[2] >= ab.lowerbound[2]); 
+const bool AABB::overlaps(const AABB& BB) const
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        if (BB.lowerbound[i] > upperbound[i] ) return false;
+        if (BB.upperbound[i] < lowerbound[i] ) return false;
+    }
+    return true;
+}
+
+const bool AABB::contains(const AABB& BB) const
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        if (BB.lowerbound[i] <= lowerbound[i] ) return false;
+        if (BB.upperbound[i] >= upperbound[i] ) return false;
+    }
+    return true;
 }
 
 void AABB::updateAABBInfo(double dt) {
@@ -69,12 +84,6 @@ void AABB::updateAABBInfo(double dt) {
              upperbound[i] = hse->max_moving_coord(i, dt) + 0.001*tol;
         }
     }
-}
-
-bool AABB::contain(const AABB* ab) {
-    return lowerbound[0] <= ab->lowerbound[0] && lowerbound[1] <= ab->lowerbound[1] &&
-        lowerbound[2] <= ab->lowerbound[2] && upperbound[0] >= ab->upperbound[0] &&
-        upperbound[1] >= ab->upperbound[1] && upperbound[2] >= ab->upperbound[2];
 }
 
 void Node::setBranch(std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
@@ -116,8 +125,9 @@ void Node::updateAABB() {
     }
 }
 
-bool Node::isCollid(Node* n) {
-    return box.isCollid(n->box);
+const bool Node::overlaps(Node* n) const
+{
+    return box.overlaps(n->box);
 }
 
 Node* Node::getSibling() const {
@@ -354,7 +364,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
     {
         while (cur)
         {
-            if (cur->isCollid(n))
+            if (cur->overlaps(n))
             {
                 if (cur->isLeaf() && n != cur)
                 {
@@ -397,7 +407,7 @@ bool AABBTree::queryCollision(Node* n, double tol)
     {
         while (cur)
         {
-            if (cur->isCollid(n))
+            if (cur->overlaps(n))
             {
                 if (cur->isLeaf() && n != cur)
                 {

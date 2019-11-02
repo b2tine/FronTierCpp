@@ -48,8 +48,8 @@ const bool AABB::overlaps(const AABB& BB) const
 {
     for( int i = 0; i < 3; ++i )
     {
-        if( BB.upper[i] < lower[i] ) return false;
         if( BB.lower[i] > upper[i] ) return false;
+        if( BB.upper[i] < lower[i] ) return false;
     }
     return true;
 }
