@@ -3,8 +3,10 @@
 
 //static bool EdgeToEdge(POINT**, double,
   //      MotionState mstate = MotionState::STATIC, double root = 0.0);
-static Proximity* EdgeToEdge(POINT**, double);
+
 static bool MovingEdgeToEdge(POINT**,double);
+static Proximity* EdgeToEdge(POINT**,double,double dt = -1.0);
+static Proximity* KineticEdgeToEdge(POINT**,double,double);
 
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
@@ -13,8 +15,10 @@ static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
 
 //static bool PointToTri(POINT**, double,
   //      MotionState mstate = MotionState::STATIC, double root = 0.0);
-static Proximity* PointToTri(POINT**, double);
+
 static bool MovingPointToTri(POINT**,double);
+static Proximity* PointToTri(POINT**,double);
+static Proximity* KineticPointToTri(POINT**,double,double);
 
 //void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
@@ -27,7 +31,7 @@ static void unsort_surface_point(SURFACE *surf);
 
 //functions in CollisionSolver3d
 void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc,const double dt)
+	const INTERFACE* intfc, double dt)
 {
 	//assemble tris list from input intfc
 	//this function should be called before
@@ -292,6 +296,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     }
 }
 
+//TODO: update for new data structures
 bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -342,16 +347,13 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
     return status;
 }
 
+//TODO: update for new data structures
 bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 {
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 	POINT* pts[4];
-	bool status = false;
 
-	pts[0] = b1->start;
-	pts[1] = b1->end;
-	pts[2] = b2->start;
-	pts[3] = b2->end;
+	pts[0] = b1->start; pts[1] = b1->end;
+	pts[2] = b2->start; pts[3] = b2->end;
 
 	/* do not consider two bonds that share a common point */
 	if (pts[0] == pts[2] || pts[0] == pts[3]
@@ -360,27 +362,19 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
         return false;
     }
 
-    /*
-    for (int i = 0; i < 4; ++i)
-	{
-	    for (int j = i + 1; j < 4; ++j)
-	    {
-            if (pts[i] == pts[j])
-                return false;
-	    }
-	}
-    */
-
     /* detect collision between two bonds */	
-    if(MovingEdgeToEdge(pts,h))
+	bool status = false;
+    if (MovingEdgeToEdge(pts,h))
         status = true;
 
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (status && is_detImpZone)
         createImpZone(pts,4);
 
     return status;
 }
 
+//TODO: update for new data structures
 bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 {
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -443,8 +437,8 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	return status;
 }
 
-//NOTE: Changes coords of pts involved
-static bool MovingPointToTri(POINT* pts[],const double h)
+//TODO: update for new data structures
+static bool MovingPointToTri(POINT* pts[], double h)
 {
 	STATE* sl;
 	double dt = CollisionSolver3d::getTimeStepSize();
@@ -470,7 +464,6 @@ static bool MovingPointToTri(POINT* pts[],const double h)
             {
                 status = true;
                 break;
-                //return true;
             }
 	    }
 
@@ -484,30 +477,28 @@ static bool MovingPointToTri(POINT* pts[],const double h)
 	}
 
     return status;
-    //return false;
 }
 
-static bool MovingEdgeToEdge(POINT* pts[],const double h)
+//TODO: finish updating for new data structures
+static bool MovingEdgeToEdge(POINT* pts[], double h)
 {
-	STATE* sl;
-	double dt = CollisionSolver3d::getTimeStepSize();
-	double roots[4] = {-1,-1,-1,dt};
+	double maxdt = CollisionSolver3d::getTimeStepSize();
+	double dt[4] = {-1,-1,-1,maxdt};
+    
     MotionState mstate = MotionState::MOVING;
     bool status = false;
 
-	if (isCoplanar(pts,dt,roots))
+	if (isCoplanar(pts,maxdt,dt))
     {
         for (int i = 0; i < 4; ++i)
         {
-            if (roots[i] < 0)
+            if (dt[i] < 0)
                 continue;
-                
-            for (int j = 0; j < 4; ++j)
-            {
-                sl = (STATE*)left_state(pts[j]);
-                for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
-            }
+
+            Proximity* collision = KineticEdgeToEdge(pts,h,dt[i]);
+            //TODO: finish the rest, below is garbage from before
+            
+            if (collision)
 
             if (EdgeToEdge(pts,h,mstate,roots[i]))
             {
@@ -516,12 +507,6 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
             }
         }
 
-        for (int j = 0; j < 4; ++j)
-        {
-            sl = (STATE*)left_state(pts[j]);
-            for (int k = 0; k < 3; ++k)
-                Coords(pts[j])[k] = sl->x_old[k];
-        }
     }
 
     return status;
@@ -535,7 +520,7 @@ static void isCoplanarHelper(double* s[], double v[][3])
 	v[3][0] = s[3][0]-s[0][0]; v[3][1] = s[3][1]-s[0][1]; v[3][2] = s[3][2]-s[0][2];
 }
 
-static bool isCoplanar(POINT* pts[], const double dt, double roots[])
+static bool isCoplanar(POINT* pts[], double dt, double roots[])
 {
 	if (debugging("collision"))
 	    CollisionSolver3d::is_coplanar++;
@@ -1162,7 +1147,34 @@ static bool EdgeToEdge(
 }
 */
 
-static Proximity* EdgeToEdge(POINT** pts, double h)
+//TODO: finish
+static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
+{
+    STATE* sl;
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*) left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k] + dt*sl->avgVel[k];
+    }
+
+    Proximity* collision = EdgeToEdge(pts,h,dt);
+    //if (collision)
+
+    //TODO: do something here
+
+    //restore coordinates of points
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+    }
+
+}
+
+//Note: default value: dt = -1.0
+static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
 {
 //	   x1	x3
 //	    /	 \
@@ -1189,7 +1201,7 @@ static Proximity* EdgeToEdge(POINT** pts, double h)
     //Solution, and solution numerators and denominators
     double sC = 0;  double sN = 0;  double sD = D;    
     double tC = 0;  double tN = 0;  double tD = D;    
-    
+
     //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
     //Seperation of the numerator and denominator allows us to
     //efficiently analyze the boundary of the constrained domain,
@@ -1330,7 +1342,12 @@ static Proximity* EdgeToEdge(POINT** pts, double h)
         clean_up(ERROR);
     }
 
-    Proximity* proximity = new EdgeEdgeProximity(pts,sC,tC,w,dist);
+
+    if (dt < 0.0)
+        Proximity* proximity = new EdgeEdgeProximity(pts,sC,tC,w,dist);
+    else
+        Proximity* proximity = new EdgeEdgeCollision(pts,sC,tC,w,dist,dt);
+
     return proximity;
 }
 

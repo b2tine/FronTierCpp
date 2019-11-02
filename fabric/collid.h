@@ -60,7 +60,6 @@ public:
 	void setDomainBoundary(double* L,double *U);
 
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
-	bool hasCollision() {return has_collision;}
 
     POINT **gpoints;
     TRI **gtris;
@@ -77,6 +76,7 @@ public:
     int num_res_tris;
 
 private:
+
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
@@ -84,6 +84,8 @@ private:
     double vol_diff {0.0};
     double collision_vol;
     double proximity_vol;
+
+    std::vector<NodePair> candidates;
 
 	static double s_eps;
 	static double s_thickness;
@@ -94,7 +96,6 @@ private:
 	static double s_cr;
     static bool s_detImpZone;
 
-    bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
 	static void turnOffImpZone();
@@ -110,25 +111,34 @@ private:
 	void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
-	void detectProximity();
-	void detectCollision();
     void aabbProximity();
     void aabbCollision();
+	void detectProximity();
+	void detectCollision();
+	void processProximityCandidates();
+	void processCollisionCandidates();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
 	void updateImpactListVelocity(POINT*);
 };
 
-void PointToTriProximityImpulse(POINT**,double*,double*,double);
-void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
-
 bool BondToBond(const BOND*,const BOND*,double);
 bool TriToBond(const TRI*,const BOND*,double);
 bool TriToTri(const TRI*,const TRI*,double);
+
 bool MovingBondToBond(const BOND*,const BOND*,double);
 bool MovingTriToBond(const TRI*,const BOND*,double);
 bool MovingTriToTri(const TRI*,const TRI*,double);
+
+void checkProximity(const CD_HSE*,const CD_HSE*,double);
+void checkCollision(const CD_HSE*,const CD_HSE*,double);
+
+void EdgeToEdgeProximity();
+void EdgeToEdgeProximity();
+
+void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
+void PointToTriProximityImpulse(POINT**,double*,double*,double);
 
 class Proximity
 {
@@ -139,6 +149,7 @@ class Proximity
         double dist {HUGE};
         
         virtual void applyImpulse() = 0;
+        
         virtual ~Proximity() = default;
 };
 
@@ -149,15 +160,15 @@ class EdgeEdgeProximity : public Proximity
         double a {-1.0};
         double b {-1.0};
         
-        EdgeEdgeProximity(POINT** points,
-                double* normal, double A, double B, double distance)
-            : pts{points}, a{A}, b{B}, dist{distance}
+        EdgeEdgeProximity(POINT** Pts, double* Nor,
+                double A, double B, double Dist)
+            : pts{Pts}, a{A}, b{B}, dist{Dist}
         {
             for (int i = 0; i < 3; ++i)
-                nor[i] = normal[i];
+                nor[i] = Nor[i];
         }
         
-        void applyImpulse() override
+        virtual void applyImpulse() override
         {
             EdgeToEdgeProximityImpulse(pts,nor,a,b,dist);
         }
@@ -169,14 +180,14 @@ class PointTriProximity : public Proximity
 
         double w[3] {-1.0};
 
-        PointTriProximity(POINT** points,
-                double* normal, double* weights, double distance)
-            : pts{points}, dist{distance}
+        PointTriProximity(POINT** Pts,
+                double* Nor, double* W, double Dist)
+            : pts{Pts}, dist{Dist}
         {
             for (int i = 0; i < 3; ++i)
             {
-                w[i] = weights[i];
-                nor[i] = normal[i];
+                w[i] = W[i];
+                nor[i] = Nor[i];
             }
         }
 
@@ -184,6 +195,34 @@ class PointTriProximity : public Proximity
         {
             PointToTriProximityImpulse(pts,nor,w,dist);
         }
+};
+
+class EdgeEdgeCollision : public EdgeEdgeProximity
+{
+    public:
+
+        double dt {-1.0};
+
+        EdgeEdgeCollision(POINT** Pts, double* Nor,
+                double A, double B, double Dist, double Dt)
+            : EdgeEdgeProximity(Pts,Nor,A,B,Dist), dt{DT}
+        {}
+
+        //TODO: applyImpulse()
+};
+
+class PointTriCollision : public PointTriProximity
+{
+    public:
+
+        double dt {-1.0};
+
+        PointTriCollision(POINT** Pts, double* Nor,
+                double* W, double Dist, double Dt)
+            : PointTriProximity(Pts,Nor,W,Dist), dt{Dt}
+        {}
+
+        //TODO: applyImpulse()
 };
 
 
