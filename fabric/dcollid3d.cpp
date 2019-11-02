@@ -5,8 +5,10 @@
   //      MotionState mstate = MotionState::STATIC, double root = 0.0);
 
 static bool MovingEdgeToEdge(POINT**,double);
-static Proximity* EdgeToEdge(POINT**,double,double dt = -1.0);
+//static Proximity* EdgeToEdge(POINT**,double,double dt = -1.0);
+static std::unique_ptr<Proximity> EdgeToEdge(POINT**,double,double dt = -1.0);
 static Proximity* KineticEdgeToEdge(POINT**,double,double);
+
 
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
@@ -348,7 +350,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 }
 
 //TODO: update for new data structures
-bool MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
+Proximity* MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
 {
 	POINT* pts[4];
 
@@ -362,10 +364,12 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
 	if (pts[0] == pts[2] || pts[0] == pts[3]
         || pts[1] == pts[2] || pts[1] == pts[3])
     {
-        return false;
+        return {};
     }
 
-    /* detect collision between two bonds */	
+    return MovingEdgeToEdge(pts,tol);
+
+    /*
 	bool status = false;
     if (MovingEdgeToEdge(pts,tol))
         status = true;
@@ -376,6 +380,7 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
         createImpZone(pts,4);
 
     return status;
+    */
 }
 
 //TODO: update for new data structures
@@ -483,14 +488,10 @@ static bool MovingPointToTri(POINT* pts[], double h)
     return status;
 }
 
-//TODO: this looks alright, but need to be able to
-//      pipe into the higher level functions.
-//      Need to save all the collision objects and sort
-//      by time of collision.
+//TODO: I dont' like these static variables/functions
 static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
 {
-    //TODO: I dont' like this static function call
-	double maxdt = CollisionSolver3d::getTimeStepSize();
+    double maxdt = CollisionSolver3d::getTimeStepSize();
 	double dt[4] = {-1,-1,-1,maxdt};
     
 	if (isCoplanar(pts,maxdt,dt))
@@ -685,7 +686,7 @@ void TriToBond(const TRI* tri,const BOND* bd, double h)
     //TODO: handle memory better
     if (closest)
     {
-        closest->applyImpulse();
+        closest->computeImpulse();
         for (it = proximities.begin(); it < proximities.end(); ++it)
         {
             delete *it;
@@ -693,7 +694,7 @@ void TriToBond(const TRI* tri,const BOND* bd, double h)
     }
 }
 
-void BondToBond(const BOND* b1, const BOND* b2, double tol)
+std::unique_ptr<Proximity> BondToBond(const BOND* b1, const BOND* b2, double tol)
 {
 	POINT* pts[4];
 
@@ -702,34 +703,30 @@ void BondToBond(const BOND* b1, const BOND* b2, double tol)
 
     //TODO: ensure getProximityCandidates() eliminates
     //      this possibility, and remove.
-    //
-	//Don't consider two bonds that share a common point
 	if (pts[0] == pts[2] || pts[0] == pts[3]
         || pts[1] == pts[2] || pts[1] == pts[3])
     {
-        return;
+        return {};
     }
     
-    //TODO: handle memory better
-    Proximity* proximity = EdgeToEdge(pts,tol);
-    if (proximity)
-    {
-        proximity->applyImpulse();
-        delete proximity;
-    }
+    std::uniqe_ptr<Proximity> proximity = EdgeToEdge(pts,tol);
+    return proximity;
 }
 
-void TriToTri(const TRI* tri1, const TRI* tri2, double tol)
+std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol)
 {
+    //TODO: ensure getProximityCandidates() eliminates
+    //      this possibility, and remove.
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
+        //tris share a point
 	    if (Point_of_tri(tri1)[i] == Point_of_tri(tri2)[j])
-            return false;
+            return {};
 	}
 
 	POINT* pts[4];
-    std::vector<Proximity*> proximities;
+    std::vector<std::unique_ptr<Proximity>> proximities;
 
 	for (int k = 0; k < 2; ++k)
 	for (int i = 0; i < 3; ++i)
@@ -749,9 +746,9 @@ void TriToTri(const TRI* tri1, const TRI* tri2, double tol)
             pts[1] == pts[3] || pts[2] == pts[3])
             continue;
 
-        Proximity* proximity = PointToTri(pts,tol);
+        std::unique_ptr<Proximity> proximity = PointToTri(pts,tol);
         if (proximity)
-            proximities.push_back(proximity);
+            proximities.push_back(std::move(proximity));
 	}
 
 	for (int i = 0; i < 3; ++i)
@@ -772,16 +769,17 @@ void TriToTri(const TRI* tri1, const TRI* tri2, double tol)
                 pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
 
-            Proximity* proximity = EdgeToEdge(pts,tol);
+            std::unique_ptr<Proximity> proximity = EdgeToEdge(pts,tol);
             if (proximity)
-                proximities.push_back(proximity);
+                proximities.push_back(std::move(proximity));
 	    }
     }
 
+    //TODO: need to swap
     Proximity* closest;
     double min_dist = HUGE;
 
-    std::vector<Proximity*>::iterator it;
+    std::vector<unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
     {
         if ((*it)->dist < min_dist)
@@ -791,15 +789,19 @@ void TriToTri(const TRI* tri1, const TRI* tri2, double tol)
         }
     }
 
+    /*
     //TODO: handle memory better
     if (closest)
     {
-        closest->applyImpulse();
+        closest->computeImpulse();
+        closest->updateAverageVelocity();
+
         for (it = proximities.begin(); it < proximities.end(); ++it)
         {
             delete *it;
         }
     }
+    */
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -1171,7 +1173,8 @@ static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
 }
 
 //Note: default value: dt = -1.0
-static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
+//static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
+static std::unique_ptr<Proximity> EdgeToEdge(POINT** pts, double h, double dt)
 {
 //	   x1	x3
 //	    /	 \
@@ -1340,10 +1343,18 @@ static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
     }
 
 
+    std::unique_ptr<Proximity> proximity;
+
     if (dt < 0.0)
-        Proximity* proximity = new EdgeEdgeProximity(pts,sC,tC,w,dist);
+    {
+        proximity =
+            std::unique_ptr<Proximity>(new EdgeEdgeProximity(pts,sC,tC,w,dist));
+    }
     else
-        Proximity* proximity = new EdgeEdgeCollision(pts,sC,tC,w,dist,dt);
+    {
+        proximity =
+            std::unique_ptr<Proximity>(new EdgeEdgeCollision(pts,sC,tC,w,dist,dt));
+    }
 
     return proximity;
 }
@@ -1368,9 +1379,6 @@ static void EdgeToEdgeImpulse(
         MotionState mstate,
         double root)
 {
-	if (debugging("collision"))
-	    CollisionSolver3d::edg_to_edg++;
-
 	double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();

@@ -59,7 +59,8 @@ public:
     const bool contains(const AABB&) const;
 };
 
-class Node {
+class Node
+{
 public:
 
     friend class AABBTree;
@@ -96,8 +97,11 @@ public:
     ~Node();
 };
 
-class AABBTree {
+class AABBTree
+{
+
 public:
+
     std::shared_ptr<Node> root;
     // node needed to be removed and reinsert to the tree
     std::unordered_map<long, POINT*> ump;

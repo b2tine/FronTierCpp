@@ -2,6 +2,7 @@
 #define COLLID_H
 
 #include "AABB.h"
+#include "Proximity.h"
 
 #if defined(isnan)
 #undef isnan
@@ -15,7 +16,8 @@ const double EPS = 1.0e-6;
 const double DT = 0.001;
 
 
-class CollisionSolver3d {
+class CollisionSolver3d
+{
 public:
 	
     int m_dim {3};
@@ -85,7 +87,9 @@ private:
     double collision_vol;
     double proximity_vol;
 
-    std::vector<NodePair> candidates;
+    std::vector<NodePair> proximityCandidates;
+    std::vector<NodePair> collisionCandidates;
+    std::vector<Proximity*> Collisions;
 
 	static double s_eps;
 	static double s_thickness;
@@ -122,104 +126,27 @@ private:
 	void updateImpactListVelocity(POINT*);
 };
 
-void TriToTri(const TRI*,const TRI*,double);
-void TriToBond(const TRI*,const BOND*,double);
-void BondToBond(const BOND*,const BOND*,double);
+//void TriToTri(const TRI*,const TRI*,double);
+//void TriToBond(const TRI*,const BOND*,double);
+//void BondToBond(const BOND*,const BOND*,double);
 
-bool MovingTriToTri(const TRI*,const TRI*,double);
-bool MovingTriToBond(const TRI*,const BOND*,double);
-bool MovingBondToBond(const BOND*,const BOND*,double);
+//Proximity* TriToTri(const TRI*,const TRI*,double);
+//Proximity* TriToBond(const TRI*,const BOND*,double);
+//Proximity* BondToBond(const BOND*,const BOND*,double);
 
-void checkProximity(const CD_HSE*,const CD_HSE*,double);
-void checkCollision(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
+std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
+std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
+
+std::unique_ptr<Proximity> MovingTriToTri(const TRI*,const TRI*,double);
+std::unique_ptr<Proximity> MovingTriToBond(const TRI*,const BOND*,double);
+std::unique_ptr<Proximity> MovingBondToBond(const BOND*,const BOND*,double);
+
+std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Proximity> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
 void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 void PointToTriProximityImpulse(POINT**,double*,double*,double);
-
-class Proximity
-{
-    public:
-
-        POINT** pts {nullptr};
-        double nor[3] {0.0};
-        double dist {HUGE};
-        
-        virtual void applyImpulse() = 0;
-        
-        virtual ~Proximity() = default;
-};
-
-class EdgeEdgeProximity : public Proximity
-{
-    public:
-
-        double a {-1.0};
-        double b {-1.0};
-        
-        EdgeEdgeProximity(POINT** Pts, double* Nor,
-                double A, double B, double Dist)
-            : pts{Pts}, a{A}, b{B}, dist{Dist}
-        {
-            for (int i = 0; i < 3; ++i)
-                nor[i] = Nor[i];
-        }
-        
-        virtual void applyImpulse() override
-        {
-            EdgeToEdgeProximityImpulse(pts,nor,a,b,dist);
-        }
-};
-
-class PointTriProximity : public Proximity
-{
-    public:
-
-        double w[3] {-1.0};
-
-        PointTriProximity(POINT** Pts,
-                double* Nor, double* W, double Dist)
-            : pts{Pts}, dist{Dist}
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                w[i] = W[i];
-                nor[i] = Nor[i];
-            }
-        }
-
-        void applyImpulse() override
-        {
-            PointToTriProximityImpulse(pts,nor,w,dist);
-        }
-};
-
-class EdgeEdgeCollision : public EdgeEdgeProximity
-{
-    public:
-
-        double dt {-1.0};
-
-        EdgeEdgeCollision(POINT** Pts, double* Nor,
-                double A, double B, double Dist, double Dt)
-            : EdgeEdgeProximity(Pts,Nor,A,B,Dist), dt{DT}
-        {}
-
-        //TODO: applyImpulse()
-};
-
-class PointTriCollision : public PointTriProximity
-{
-    public:
-
-        double dt {-1.0};
-
-        PointTriCollision(POINT** Pts, double* Nor,
-                double* W, double Dist, double Dt)
-            : PointTriProximity(Pts,Nor,W,Dist), dt{Dt}
-        {}
-
-        //TODO: applyImpulse()
-};
 
 
 void initSurfaceState(SURFACE*,const double*);

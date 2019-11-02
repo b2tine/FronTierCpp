@@ -94,7 +94,8 @@ void CollisionSolver3d::recordOriginalPosition()
         {
 		    pt = (*it)->Point_of_hse(i);
 		    sl = (STATE*)left_state(pt); 
-		    sl->has_collsn = false;
+		    
+            sl->has_collsn = false;
 		
             //TODO: why?
             if (isMovableRigidBody(pt))
@@ -857,7 +858,6 @@ void CollisionSolver3d::updateAverageVelocity()
 		    sl->has_collsn = true;
 		    for (int k = 0; k < 3; ++k)
 		    {
-                //sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
                 sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                 //TODO: does friction impulse also need to divide by num collision?
                 sl->avgVel[k] += sl->friction[k]/sl->collsn_num;
@@ -914,7 +914,6 @@ void CollisionSolver3d::updateAverageVelocity()
 //TODO: not ready yet
 void CollisionSolver3d::processCollisionCandidates()
 {
-    //TODO: Gauss-Seidel iterations.
     std::vector<NodePair>::iterator it;
     for (it = candidates.begin(); it < candidates.end(); ++it)
     {
@@ -922,33 +921,24 @@ void CollisionSolver3d::processCollisionCandidates()
         Node* B = it->second;
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
-        //checkCollision(a,b,s_thickness);
-        if (checkCollision(a,b,s_thickness))
-        {
-            //TODO: solve the cubic.
-            //      If collision, apply impulses to vel.
-            //      Then ......
-        }
+
+        Proximity* collision = checkCollision(a,b,s_eps);
+        if (collision)
+            Collisions.push_back(collision);
     }
+
+    //TODO: Sort the Collisions vector by time of collision,
+    //      and begin iteratively processing them in Gauess-Seidel
+    //      fashion.
 }
 
 //TODO: better name.
 //TODO: not ready yet
 Proximity* checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
-	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
+	const CD_BOND *cd_b1, *cd_b2;
 
-        //Commented code turns off collision detection involving the lines/strings
-        /*
-        if (a->name == "lines" && b->name == "lines") {
-            return false;
-        }
-        if (a->name == "lines" && b->name == "tris_rigid" || 
-            a->name == "tris_rigid" && b->name == "lines")
-            return false;
-       */
-        
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
 	{
@@ -995,14 +985,17 @@ void CollisionSolver3d::processProximityCandidates()
         Node* B = it->second;
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
-        checkProximity(a,b,s_thickness);
+
+        std::unique_ptr<Proximity> proximity = checkProximity(a,b,s_thickness);
+        if (proximity)
+        {
+            proximity->computeImpulse();
+            proximity->updateAverageVelocity();
+        }
     }
 }
 
-//TODO: better name.
-//TODO: better location?
-//TODO: More elegant double dispatch?
-void checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
+std::unique_ptr<Proximity> checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -1013,29 +1006,29 @@ void checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 	    TRI* t1 = cd_t1->m_tri;
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
-            return;
-	    TriToTri(t1,t2,tol);
+            return {};
+	    return TriToTri(t1,t2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
-	    BondToBond(b1,b2,tol);
+	    return BondToBond(b1,b2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    TriToBond(t1,b1,tol);
+	    return TriToBond(t1,b1,tol);
 	}
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    TriToBond(t1,b1,tol);
+	    return TriToBond(t1,b1,tol);
 	}
 	else
 	{
