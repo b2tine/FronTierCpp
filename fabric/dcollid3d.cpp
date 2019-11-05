@@ -1,14 +1,12 @@
 #include <armadillo>
 #include "collid.h"
 
-//static bool EdgeToEdge(POINT**, double,
-  //      MotionState mstate = MotionState::STATIC, double root = 0.0);
 
+static bool EdgeToEdge(POINT**,double,double*,double*,double*,double*);
 static bool MovingEdgeToEdge(POINT**,double);
-//static Proximity* EdgeToEdge(POINT**,double,double dt = -1.0);
-static std::unique_ptr<Proximity> EdgeToEdge(POINT**,double,double dt = -1.0);
-static Proximity* KineticEdgeToEdge(POINT**,double,double);
 
+static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
+static std::unique_ptr<Collision> KineticEdgeToEdge(POINT**,double,double);
 
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
@@ -19,7 +17,8 @@ static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
   //      MotionState mstate = MotionState::STATIC, double root = 0.0);
 
 static bool MovingPointToTri(POINT**,double);
-static Proximity* PointToTri(POINT**,double);
+//static Proximity* PointToTri(POINT**,double);
+static std::unique_ptr<Proximity> PointToTri(POINT**,double);
 static Proximity* KineticPointToTri(POINT**,double,double);
 
 //void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
@@ -31,9 +30,8 @@ static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
 static bool isCoplanar(POINT**,double,double*);
 static void unsort_surface_point(SURFACE *surf);
 
-//functions in CollisionSolver3d
-void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc, double dt)
+
+void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
 {
 	//assemble tris list from input intfc
 	//this function should be called before
@@ -81,554 +79,24 @@ void CollisionSolver3d::assembleFromInterface(
 	}
 }
 
-// test function for creating impact zone for each movable RG
-void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
+static void unsort_surface_point(SURFACE *surf)
 {
-	SURFACE** s;
-	TRI* tri;
+    TRI *tri;
+    POINT *p;
+    int i;
 
-	intfc_surface_loop(intfc, s)
-	{
-	    if (is_bdry(*s)) continue;
-	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
-
-        surf_tri_loop(*s, tri)
-	    {
-    		createImpZone(Point_of_tri(tri), 3, YES);
-	    }
-	}
-}
-
-void CollisionSolver3d::updateImpactListVelocity(POINT* head)
-{
-	STATE* sl = NULL;
-	POINT* p = head;
-
-	double m = getPointMass();
-    double x_cm[3] = {0.0};
-    double v_cm[3] = {0.0};
-	double L[3] = {0.0}; //angular momentum
-	double I[3][3] = {0.0}; //inertia tensor
-	double tmp[3][3];
-	int num_pts = 0;
-
-    //compute center of mass position and velocity
-	while(p)
+    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
+                    tri = tri->next)
     {
-		num_pts++;
-		sorted(p) = YES;
-		sl = (STATE*)left_state(p);
-	
-        for (int i = 0; i < m_dim; ++i)
+        for (i = 0; i < 3; ++i)
         {
-		    x_cm[i] += sl->x_old[i]; 
-		    v_cm[i] += sl->avgVel[i];
-		}
-
-        p = next_pt(p);
-    }
-
-    if (debugging("collision"))
-	    printf("%d number of points in this zone\n",num_pts);
-
-	for (int i = 0; i < m_dim; ++i)
-    {
-	    x_cm[i] /= num_pts;
-	    v_cm[i] /= num_pts;
-	}
-
-	//compute angular momentum
-	p = head;
-	while(p)
-    {
-	    double dx[3], dv[3], Li[3];
-	    sl = (STATE*)left_state(p);
-	    minusVec(sl->x_old,x_cm,dx);
-	    minusVec(sl->avgVel,v_cm,dv); 	
-	    Cross3d(dx,dv,Li);
-	    scalarMult(m,Li,Li);
-	    addVec(Li,L,L);    
-	    p = next_pt(p);
-	}
-
-	//compute Inertia tensor
-	p = head;
-	while(p)
-    {
-	    double dx[3], mag_dx = 0.0;
-	    sl = (STATE*)left_state(p);
-	    minusVec(sl->x_old,x_cm,dx);
-	    mag_dx = Mag3d(dx);
-	   
-        for (int i = 0; i < 3; ++i)
-	    for (int j = 0; j < 3; ++j)
-        {
-		    tmp[i][j] = -dx[i]*dx[j];
-		    if (i == j)
-                tmp[i][j] += mag_dx*mag_dx; 
-	
-            I[i][j] += tmp[i][j]*m;
-	    }
-
-	    p = next_pt(p);
-	}
-
-	//compute angular velocity w: I*w = L;
-    double mag_w = 0;
-	double w[3] = {0.0};
-
-    if (myDet3d(I) > ROUND_EPS)
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            memcpy(tmp,I,9*sizeof(double));
-            for (int j = 0; j < 3; j++)
-                tmp[j][i] = L[j];
-            w[i] = myDet3d(tmp)/myDet3d(I);
+            p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
         }
     }
-    else
-    {
-        //I is non-invertible, calculate pseudoinverse with SVD
-        arma::vec arL(3);
-        arma::mat arI(3,3);
+}       /* end unsort_surface_point */
 
-        for (int i = 0; i < 3; i++)
-        {
-            arL(i) = L[i];
-            for (int j = 0; j < 3; j++)
-                 arI(i,j) = I[i][j];
-        }
-
-        arma::mat arU;
-        arma::mat arV;
-        arma::vec ars;
-
-        arma::svd(arU, ars, arV, arI);
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (ars(i))
-                ars(i) = 1.0/ars(i);
-        }
-
-        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
-        arma::vec arw = pinvarI*arL;
-
-        for (int i = 0; i < 3; i++)
-             w[i] = arw[i];
-    }
-
-    mag_w = Mag3d(w);
-	
-	//compute average velocity for each point
-	double dt = getTimeStepSize();
-	
-    p = head;
-    while(p)
-    {
-        if (isStaticRigidBody(p))
-        {
-            p = next_pt(p);
-            continue;
-        }
-    
-        double x_new[3],dx[3];
-        double xF[3], xR[3];
-        double wxR[3],tmpV[3];
-        sl = (STATE*)left_state(p);
-        
-        minusVec(sl->x_old,x_cm,dx);
-
-        if (mag_w < ROUND_EPS)
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                xF[i] = dx[i];
-                wxR[i] = 0.0;
-            }
-    
-            minusVec(dx,xF,xR);
-        }
-        else
-        {
-            scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
-            minusVec(dx,xF,xR);
-            scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
-            Cross3d(tmpV,xR,wxR);
-        }
-    
-        //TODO: move x_new calculation to above if else block,
-        for (int i = 0; i < 3; ++i)
-        {
-            x_new[i] = x_cm[i] + dt*v_cm[i]
-                + xF[i] + cos(dt*mag_w)*xR[i] + wxR[i];
-    
-            sl = (STATE*)left_state(p);
-            sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-   
-            if (std::isnan(sl->avgVel[i]))
-            { 
-                printf("coords[3], vel[3]\n");
-                p = head;
-                while(p)
-                {
-                    sl = (STATE*)left_state(p);
-                    printf("%f %f %f %f %f %f;\n",
-                    sl->x_old[0],sl->x_old[1],sl->x_old[2],
-                    sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-                    p = next_pt(p);
-                }
-
-                printf("num_pts = %d, weight = %d\n",
-                num_pts,weight(head));
-                printf("nan vel, w = %f, mag_w = %f\n",
-                w[i],mag_w);
-                printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
-                printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
-                I[0][0],I[0][1],I[0][2],I[1][0],I[1][1],I[1][2],
-                I[2][0],I[2][1],I[2][2]);
-                printf("xF = %f %f %f, xR = %f %f %f\n",
-                xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
-                clean_up(ERROR);
-            }
-        }
-    
-        p = next_pt(p);
-    }
-}
-
-//TODO: update for new data structures
-bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
-{
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-	POINT* pts[4];
-	bool status = false;
-
-	/* do not consider bond point that is a tri vertex */
-	for (int i = 0; i < 3; ++i)
-	{
-	    if (Point_of_tri(tri)[i] == bd->start
-            || Point_of_tri(tri)[i] == bd->end)
-            return false;
-	}
-
-	for (int i = 0; i < 3; ++i)
-	    pts[i] = Point_of_tri(tri)[i];
-
-	/* detect collision of start point of bond w.r.t to tri */
-	pts[3] = bd->start;
-    if (MovingPointToTri(pts,h))
-        status = true;
-    
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-	
-    /* detect collision of end point of bond to w.r.t. tri */
-	pts[3] = bd->end;
-    if (MovingPointToTri(pts,h))
-        status = true;
-
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-	
-    /* detect collision of each of tri edge w.r.t to bond */
-	pts[2] = bd->start;
-	pts[3] = bd->end;
-	for (int i = 0; i < 3; ++i)
-	{
-	    pts[0] = Point_of_tri(tri)[i];
-	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-        if (MovingEdgeToEdge(pts,h))
-            status = true;
-
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
-	}
-
-    return status;
-}
-
-//TODO: update for new data structures
-Proximity* MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
-{
-	POINT* pts[4];
-
-	pts[0] = b1->start; pts[1] = b1->end;
-	pts[2] = b2->start; pts[3] = b2->end;
-
-    //TODO: ensure getProximityCandidates() eliminates
-    //      this possibility, and remove.
-    //
-	/* do not consider two bonds that share a common point */
-	if (pts[0] == pts[2] || pts[0] == pts[3]
-        || pts[1] == pts[2] || pts[1] == pts[3])
-    {
-        return {};
-    }
-
-    return MovingEdgeToEdge(pts,tol);
-
-    /*
-	bool status = false;
-    if (MovingEdgeToEdge(pts,tol))
-        status = true;
-
-    //TODO: Investigate if this is correct
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-
-    return status;
-    */
-}
-
-//TODO: update for new data structures
-bool MovingTriToTri(const TRI* a,const TRI* b, double h)
-{
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-	POINT* pts[4];
-	bool status = false;
-
-	for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
-	{
-	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
-            return false;
-	}
-
-	//detect point to tri collision
-	for (int k = 0; k < 2; ++k)
-	for (int i = 0; i < 3; ++i)
-    {
-	    const TRI* tmp_tri1 = (k == 0) ? a : b;
-	    const TRI* tmp_tri2 = (k == 0) ? b : a;
-
-	    for (int j = 0; j < 3; ++j)
-            pts[j] = Point_of_tri(tmp_tri1)[j];
-        pts[3] = Point_of_tri(tmp_tri2)[i];
-
-	    //Don't consider point against the triangle it belongs to
-	    if (pts[3] == pts[0] || pts[3] == pts[1]
-                || pts[3] == pts[2])
-            continue; 
-        
-        if(MovingPointToTri(pts,h))
-            status = true;
-
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
-	}
-
-	//detect edge to edge collision
-	for (int i = 0; i < 3; ++i)
-    {
-        pts[0] = Point_of_tri(a)[i];
-        pts[1] = Point_of_tri(a)[(i+1)%3];
-        for (int j = 0; j < 3; ++j)
-        {
-            pts[2] = Point_of_tri(b)[j];
-            pts[3] = Point_of_tri(b)[(j+1)%3];
-		
-		    //Don't consider edges with a shared enpoint
-            if (pts[0] == pts[2] || pts[0] == pts[3]
-            || pts[1] == pts[2] || pts[1] == pts[3])
-                continue;
-    
-            if(MovingEdgeToEdge(pts,h))
-                status = true;
-                
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
-	    }
-    }
-
-	return status;
-}
-
-//TODO: update for new data structures
-static bool MovingPointToTri(POINT* pts[], double h)
-{
-	STATE* sl;
-	double dt = CollisionSolver3d::getTimeStepSize();
-	double roots[4] = {-1,-1,-1,dt};
-    MotionState mstate = MotionState::MOVING;
-    bool status = false;
-
-	if (isCoplanar(pts,dt,roots))
-    {
-	    for (int i = 0; i < 4; ++i)
-        {
-            if (roots[i] < 0)
-                continue;
-    
-            for (int j = 0; j < 4; ++j)
-            {
-                sl = (STATE*)left_state(pts[j]);
-    		    for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
-		    }
-    
-            if (PointToTri(pts,h,mstate,roots[i]))
-            {
-                status = true;
-                break;
-            }
-	    }
-
-        for (int j = 0; j < 4; ++j)
-        {
-
-            sl = (STATE*)left_state(pts[j]);
-            for (int k = 0; k < 3; ++k)
-                Coords(pts[j])[k] = sl->x_old[k];
-        }
-	}
-
-    return status;
-}
-
-//TODO: I dont' like these static variables/functions
-static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
-{
-    double maxdt = CollisionSolver3d::getTimeStepSize();
-	double dt[4] = {-1,-1,-1,maxdt};
-    
-	if (isCoplanar(pts,maxdt,dt))
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            if (dt[i] < 0.0)
-                continue;
-
-            Proximity* collision = KineticEdgeToEdge(pts,h,dt[i]);
-            if (collision)
-                return collision;
-        }
-    }
-
-    return {};
-}
-
-static void isCoplanarHelper(double* s[], double v[][3])
-{
-    v[0][0] = s[0][0];         v[0][1] = s[0][1];         v[0][2] = s[0][2];
-	v[1][0] = s[1][0]-s[0][0]; v[1][1] = s[1][1]-s[0][1]; v[1][2] = s[1][2]-s[0][2];
-	v[2][0] = s[2][0]-s[0][0]; v[2][1] = s[2][1]-s[0][1]; v[2][2] = s[2][2]-s[0][2];
-	v[3][0] = s[3][0]-s[0][0]; v[3][1] = s[3][1]-s[0][1]; v[3][2] = s[3][2]-s[0][2];
-}
-
-static bool isCoplanar(POINT* pts[], double dt, double roots[])
-{
-	if (debugging("collision"))
-	    CollisionSolver3d::is_coplanar++;
-
-	double v[4][3] = {0.0};
-    double x[4][3] = {0.0};
-	
-    double* tmp[4] = {nullptr};
-
-	//for performance, unrolling the loop
-	tmp[0] = ((STATE*)left_state(pts[0]))->avgVel;
-	tmp[1] = ((STATE*)left_state(pts[1]))->avgVel;
-	tmp[2] = ((STATE*)left_state(pts[2]))->avgVel;
-	tmp[3] = ((STATE*)left_state(pts[3]))->avgVel;
-	isCoplanarHelper(tmp, v);
-
-	tmp[0] = ((STATE*)left_state(pts[0]))->x_old;
-	tmp[1] = ((STATE*)left_state(pts[1]))->x_old;
-	tmp[2] = ((STATE*)left_state(pts[2]))->x_old;
-	tmp[3] = ((STATE*)left_state(pts[3]))->x_old;
-	isCoplanarHelper(tmp, x);
-
-	//get roots "t" of a cubic equation
-	//(x1+tv1)x(x2+tv2)*(x3+tv3) = 0
-	//transform to at^3+bt^2+ct+d = 0
-	double a, b, c, d;
-	double vv[3], vx[3], xx[3];
-	vv[0] = v[1][1]*v[2][2]-v[1][2]*v[2][1];
-	vv[1] = v[1][0]*v[2][2]-v[1][2]*v[2][0];
-	vv[2] = v[1][0]*v[2][1]-v[1][1]*v[2][0];
-	
-	vx[0] = v[1][1]*x[2][2]-v[1][2]*x[2][1]-v[2][1]*x[1][2]+v[2][2]*x[1][1];
-	vx[1] = v[1][0]*x[2][2]-v[1][2]*x[2][0]-v[2][0]*x[1][2]+v[2][2]*x[1][0];
-	vx[2] = v[1][0]*x[2][1]-v[1][1]*x[2][0]-v[2][0]*x[1][1]+v[2][1]*x[1][0];
-
-	xx[0] = x[1][1]*x[2][2]-x[1][2]*x[2][1];
-	xx[1] = x[1][0]*x[2][2]-x[1][2]*x[2][0];
-	xx[2] = x[1][0]*x[2][1]-x[1][1]*x[2][0];
-
-	a = v[3][0]*vv[0] - v[3][1]*vv[1] + v[3][2]*vv[2];
-
-	b = x[3][0]*vv[0] - x[3][1]*vv[1] + x[3][2]*vv[2] + 
-	    v[3][0]*vx[0] - v[3][1]*vx[1] + v[3][2]*vx[2];
-
-	c = x[3][0]*vx[0] - x[3][1]*vx[1] + x[3][2]*vx[2] +
-            v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
-
-	d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
-	//solve equation using method from "Art of Scientific Computing"
-	//transform equation to t^3+at^2+bt+c = 0
-	if (fabs(a) > MACH_EPS){
-	    b /= a; c /= a; d /= a;
-	    a = b; b = c; c = d;
-	    double Q, R, theta;
-	    double Q3, R2;
-	    Q = (a*a-3*b)/9;
-	    R = (2*a*a*a-9*a*b+27*c)/54;
-	    Q3 = Q*Q*Q;
-	    R2 = R*R;
-	    if (R2 < Q3){
-	        double Qsqrt = sqrt(Q);
-		theta = acos(R/sqrt(Q3));
-		roots[0] = -2*Qsqrt*cos(theta/3)-a/3;
-		roots[1] = -2*Qsqrt*cos((theta+2*M_PI)/3)-a/3;
-		roots[2] = -2*Qsqrt*cos((theta-2*M_PI)/3)-a/3;	
-	    }
-	    else{
-		double A, B;
-		double sgn = (R > 0) ? 1.0 : -1.0;
-		A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
-		B = (fabs(A) < ROUND_EPS) ? 0.0 : Q/A;
-		roots[0] = (A+B)-a/3.0;
-		if (fabs(A-B) < ROUND_EPS)
-		    roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
-	    }
-	}
-	else{
-		a = b; b = c; c = d;
-	   	double delta = b*b-4.0*a*c;
-	   	if (fabs(a) > ROUND_EPS && delta > 0){
-		    double delta_sqrt = sqrt(delta);
-		    roots[0] = (-b+delta_sqrt)/(2.0*a);
-	    	    roots[1] = (-b-delta_sqrt)/(2.0*a);
-	   	}
-		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
-		{
-		    roots[0] = -c/b;
-	        }
-	}
-	//elimiate invalid roots;
-	for (int i = 0; i < 3; ++i){
-	        roots[i] = roots[i]-MACH_EPS;
-	    	if (roots[i] < 0 || roots[i] > dt) 
-		    roots[i] = -1;
-	}
-	//sort the roots
-	if (roots[0] > roots[1])
-	    std::swap(roots[0], roots[1]);
-	if (roots[0] > roots[2])
-	    std::swap(roots[0], roots[2]);
-	if (roots[1] > roots[2])
-	    std::swap(roots[1], roots[2]);
-
-	if (roots[0] > MACH_EPS || roots[1] > MACH_EPS || roots[2] > MACH_EPS)
-	    return true;
-	else
-	    return false;
-}
-
-void TriToBond(const TRI* tri,const BOND* bd, double h)
+std::unique_ptr<Proximity> TriToBond(const TRI* tri,const BOND* bd, double h)
 {
     //TODO: ensure getProximityCandidates() eliminates
     //      this possibility, and remove.
@@ -638,11 +106,11 @@ void TriToBond(const TRI* tri,const BOND* bd, double h)
 	{
 	    if (Point_of_tri(tri)[i] == bd->start ||
             Point_of_tri(tri)[i] == bd->end)
-            return;
+            return {};
 	}
 
 	POINT* pts[4];
-    std::vector<Proximity*> proximities;
+    std::vector<std::unique_ptr<Proximity>> proximities;
 	
     for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
@@ -652,9 +120,9 @@ void TriToBond(const TRI* tri,const BOND* bd, double h)
     {
         pts[3] = (i == 0) ? bd->start : bd->end;
         
-        Proximity* proximity = PointToTri(pts,h);
+        st::unique_ptr<Proximity> proximity = PointToTri(pts,h);
         if (proximity)
-            proximities.push_back(proximity);
+            proximities.push_back(std::move(proximity));
     }
 
 	//detect proximity of each triangle edge with the bond edge
@@ -665,33 +133,25 @@ void TriToBond(const TRI* tri,const BOND* bd, double h)
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
 
-        Proximity* proximity = EdgeToEdge(pts,h);
+        std::unique_ptr<Proximity> proximity = StaticEdgeToEdge(pts,h);
         if (proximity)
-            proximities.push_back(proximity);
+            proximities.push_back(std::move(proximity));
 	}
 
-    Proximity* closest;
     double min_dist = HUGE;
+    std::unique_ptr<Proximity closest;
 
-    std::vector<Proximity*>::iterator it;
+    std::vector<unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
     {
         if ((*it)->dist < min_dist)
         {
             min_dist = (*it)->dist;
-            closest = *it;
+            closest = std::move(*it);
         }
     }
 
-    //TODO: handle memory better
-    if (closest)
-    {
-        closest->computeImpulse();
-        for (it = proximities.begin(); it < proximities.end(); ++it)
-        {
-            delete *it;
-        }
-    }
+    return closest;
 }
 
 std::unique_ptr<Proximity> BondToBond(const BOND* b1, const BOND* b2, double tol)
@@ -709,7 +169,7 @@ std::unique_ptr<Proximity> BondToBond(const BOND* b1, const BOND* b2, double tol
         return {};
     }
     
-    std::uniqe_ptr<Proximity> proximity = EdgeToEdge(pts,tol);
+    std::uniqe_ptr<Proximity> proximity = StaticEdgeToEdge(pts,tol);
     return proximity;
 }
 
@@ -769,15 +229,14 @@ std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol
                 pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
 
-            std::unique_ptr<Proximity> proximity = EdgeToEdge(pts,tol);
+            std::unique_ptr<Proximity> proximity = StaticEdgeToEdge(pts,tol);
             if (proximity)
                 proximities.push_back(std::move(proximity));
 	    }
     }
 
-    //TODO: need to swap
-    Proximity* closest;
     double min_dist = HUGE;
+    std::unique_ptr<Proximity closest;
 
     std::vector<unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
@@ -785,23 +244,11 @@ std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol
         if ((*it)->dist < min_dist)
         {
             min_dist = (*it)->dist;
-            closest = *it;
+            closest = std::move(*it);
         }
     }
 
-    /*
-    //TODO: handle memory better
-    if (closest)
-    {
-        closest->computeImpulse();
-        closest->updateAverageVelocity();
-
-        for (it = proximities.begin(); it < proximities.end(); ++it)
-        {
-            delete *it;
-        }
-    }
-    */
+    return closest;
 }
 
 static void PointToLine(POINT* pts[],double &a)
@@ -817,148 +264,6 @@ static void PointToLine(POINT* pts[],double &a)
     Pts2Vec(pts[0],pts[2],x13);
     a = Dot3d(x13,x12)/Dot3d(x12,x12);
 }
-
-/*
-static bool EdgeToEdge(POINT** pts, double h, double root)
-{
-//     x1	  x3
-//	    /	   \
-//     /	    \
-// x2 /		     \ x4
-// solve equation
-// x21*x21*a - x21*x43*b = x21*x31
-// -x21*x43*a + x43*x43*b = -x43*x31
-//
-	double x21[3], x43[3], x31[3];
-	double a, b;
-	double tmp[3];
-	double v1[3],v2[3];
-	double nor[3], nor_mag, dist;
-
-	Pts2Vec(pts[1],pts[0],x21);    
-	Pts2Vec(pts[3],pts[2],x43);
-	Pts2Vec(pts[2],pts[0],x31);
-	Cross3d(x21,x43,tmp);
-	if (Mag3d(tmp) < ROUND_EPS)
-	{
-        //TODO: is this working?
-	     return false; //ignore the case where two edges are parallel??
-	    
-        //degenerate cases to parallel line segments
-        if (Mag3d(x21) > ROUND_EPS || Mag3d(x43) > ROUND_EPS){
-	    	POINT* plist[3];
-		double tmp_min_dist = HUGE;
-		for (int i = 0; i < 4; ++i){
-		    // p0-> p2--p3
-		    // p1-> p2--p3
-		    // p2-> p0--p1
-		    // p3-> p0--p1
-		    plist[0] = (i%2 == 0) ? pts[(i+2)%4] : pts[(i+1)%4];
-		    plist[1] = (i%2 == 0) ? pts[(i+3)%4] : pts[(i+2)%4];
-		    plist[2] = pts[i];
-		    double tmp_vec[3], tmp_nor[3], tmp_dist, tmp_a;
-		    minusVec(Coords(plist[1]),Coords(plist[0]),tmp_vec);
-		    if (Mag3d(tmp_vec) < ROUND_EPS) continue;
-
-		    PointToLine(plist,tmp_a);
-		    tmp_a = std::max(std::min(tmp_a,1.0),0.0);
-		    scalarMult(tmp_a,tmp_vec,tmp_vec);
-		    addVec(Coords(plist[0]),tmp_vec,tmp_vec);
-		    if (i/2 == 0)
-		        minusVec(Coords(plist[2]),tmp_vec,tmp_nor);
-		    else 
-		        minusVec(tmp_vec,Coords(plist[2]),tmp_nor);
-		    tmp_dist = distance_between_positions(
-				tmp_vec,Coords(plist[2]),3);
-		    if (tmp_dist < tmp_min_dist){
-			memcpy((void*)nor,(void*)tmp_nor,3*sizeof(double));
-			dist = tmp_min_dist = tmp_dist;
-			if	(i == 0){a = 0.0; b = tmp_a;}
-			else if (i == 1){a = 1.0; b = tmp_a;}
-			else if (i == 2){a = tmp_a; b = 0.0;}
-			else if (i == 3){a = tmp_a; b = 1.0;}
-		    }
-		}		
-
-		if (dist < ROUND_EPS){
-		    memcpy((void*)nor,
-			   (Mag3d(x21) < ROUND_EPS) ? (void*)x43 : (void*)x21,
-			    3*sizeof(double));
-		}
-
-	    }
-	    else{
-	   	//both x21 and x43 degenerate to points
-		minusVec(Coords(pts[0]),Coords(pts[2]),nor);
-		dist = Mag3d(nor);
-		if (dist < ROUND_EPS){
-		    nor[0] = nor[1] = nor[2] = 1.0;
-		}
-		a = 0.0; b = 0.0;
-	    }
-	}
-	else
-	{
-	    a = (Dot3d(x43,x43)*Dot3d(x21,x31)-Dot3d(x21,x43)*Dot3d(x43,x31))/
-	        (Dot3d(x21,x21)*Dot3d(x43,x43)-Dot3d(x21,x43)*Dot3d(x21,x43)); 
-	    b = (Dot3d(x21,x43)*Dot3d(x21,x31)-Dot3d(x21,x21)*Dot3d(x43,x31))/
-                (Dot3d(x21,x21)*Dot3d(x43,x43)-Dot3d(x21,x43)*Dot3d(x21,x43));
-	    a = std::max(std::min(a,1.0),0.0);	
-	    b = std::max(std::min(b,1.0),0.0);	
-	    scalarMult(a,x21,v1);
-	    scalarMult(b,x43,v2);
-	    addVec(Coords(pts[0]),v1,v1);
-	    addVec(Coords(pts[2]),v2,v2);
-	    minusVec(v2,v1,nor);
-	    nor_mag = Mag3d(nor);
-	    //if (nor_mag < ROUND_EPS)
-	    if (nor_mag < 1000 * MACH_EPS)
-	    {
-		//v1 == v2;
-                //two edges intersect with each other
-                //normal direction is calculated with old position
-		STATE* sl[4];
-		for (int i = 0; i < 4; ++i)
-		    sl[i] = (STATE*)left_state(pts[i]);
-		for (int j = 0; j < 3; ++j)
-		{
-		    nor[j]  = (1.0-b) * sl[2]->x_old[j] + b * sl[3]->x_old[j];
-		    nor[j] -= (1.0-a) * sl[0]->x_old[j] + a * sl[1]->x_old[j];
-		}
-	    }
-	    dist = distBetweenCoords(v1,v2);
-	}
-	if (dist > h) 
-	    return false;
-	nor_mag = Mag3d(nor);
-	if (nor_mag < MACH_EPS)
-	{
-            printf("Normal vector is degenerate:\t");
-            printf("a = %f, b = %f\n",a,b);
-            printf("x_old:\n");
-            for (int i = 0; i < 4; ++i){
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
-            }
-            printf("x_new:\n");
-            for (int i = 0; i < 4; ++i){
-                printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-            }
-            printf("avgVel:\n");
-            for (int i = 0; i < 4; ++i){
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-            }
-            clean_up(ERROR);
-	}
-	else
-        for (int i = 0; i < 3; ++i)
-            nor[i] /= nor_mag;
-    
-    EdgeToEdgeImpulse(pts, nor, a, b, dist, root);
-	return true;
-}
-*/
 
 //For details of this implementation see:
 //http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
@@ -1149,8 +454,27 @@ static bool EdgeToEdge(
 }
 */
 
-static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
+static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT** pts, double h)
 {
+    double nor[3];
+    double a, b, dist;
+    
+    std::unique_ptr<Proximity> proximity;
+
+    if (EdgeToEdge(pts,h,nor,&a,&b,&dist))
+    {
+        proximity =
+            std::unique_ptr<Proximity>(new EdgeEdgeProximity(pts,nor,a,b,dist));
+    }
+
+    return proximity;
+}
+
+static std::unique_ptr<Collision> KineticEdgeToEdge(POINT** pts, double h, double dt)
+{
+    double nor[3];
+    double a, b, dist;
+
     STATE* sl;
     for (int j = 0; j < 4; ++j)
     {
@@ -1159,7 +483,14 @@ static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
             Coords(pts[j])[k] = sl->x_old[k] + dt*sl->avgVel[k];
     }
 
-    Proximity* collision = EdgeToEdge(pts,h,dt);
+    std::unique_ptr<Collision> collision;
+
+    if (EdgeToEdge(pts,h,nor,&a,&b,&dist))
+    {
+        collision =
+            std::unique_ptr<Collision>(new EdgeEdgeCollision(pts,nor,a,b,dist,dt));
+
+    }
 
     //restore coordinates of points
     for (int j = 0; j < 4; ++j)
@@ -1172,8 +503,171 @@ static Proximity* KineticEdgeToEdge(POINT** pts, double h, double dt)
     return collision;
 }
 
+static bool EdgeToEdge(
+        POINT** pts,
+        double h,
+        double* nor,
+        double* A,
+        double* B,
+        double* dist)
+{
+	double x12[3], x34[3], x13[3];
+	Pts2Vec(pts[0],pts[1],x12);    
+	Pts2Vec(pts[2],pts[3],x34);
+	Pts2Vec(pts[0],pts[2],x13);
+
+    //Matrix entries
+    double a = Dot3d(x12,x12);
+    double b = -Dot3d(x12,x34);
+    double c = Dot3d(x34,x34);
+
+    //RHS
+    double d = Dot3d(x12,x13);
+    double e = -Dot3d(x34,x13);
+	
+    //Matrix Determinant
+    double D = fabs(a*c - b*b);
+
+    //Solution, and solution numerators and denominators
+    double sC = 0;  double sN = 0;  double sD = D;    
+    double tC = 0;  double tN = 0;  double tD = D;    
+
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
+
+
+    double vec[3];
+	Cross3d(x12,x34,vec);
+
+    if (D < ROUND_EPS || Mag3d(vec) < ROUND_EPS)
+    {
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
+        {
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
+
+        }
+        else if( sN > sD )
+        {
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
+        }
+    }
+
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if (-1.0*d < 0.0)
+            sN = 0.0;
+        else if (-1.0*d > a)
+            sN = sD;
+        else
+        {
+            sN = -d;
+            sD = a;
+        }
+    }
+    else if (tN > tD)
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if ((b - d)  < 0.0)
+            sN = 0.0;
+        else if ((b - d) > a)
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
+
+    //Compute the solution and obtain the closest pair of points.
+    if (sN == sD)
+        sC = 1.0;
+    else
+        sC = fabs(sN) < ROUND_EPS ? 0.0 : sN/sD;
+
+    if (tN == tD)
+        tC = 1.0;
+    else
+        tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
+    
+    
+    //TODO: Make sure nor is pointing in the correct direction.
+    
+    //"normal vector" always points from
+    //the x12 edge to the x34 edge
+    
+	for (int j = 0; j < 3; ++j)
+	{
+	    nor[j]  = (1.0 - tC)*Coords(pts[2])[j] + tC*Coords(pts[3])[j];
+	    nor[j] -= (1.0 - sC)*Coords(pts[0])[j] + sC*Coords(pts[1])[j];
+    }
+
+    double distance = Mag3d(nor);
+    if (distance > h)
+        return false;
+
+    if (distance > ROUND_EPS)
+    {
+        scalarMult(1.0/(distance),nor,nor);
+        *A = sC;
+        *B = tC;
+        *dist = distance;
+    }
+    else
+    {
+        std::cout << "dist (nor_mag) < ROUND_EPS" << std::endl;
+        std::cout << "sC = " << sC << " tC = " << tC << std::endl;
+        printPointList(pts,4);
+	    double p12[3]; double p34[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            p34[i] = (1.0 - tC)*Coords(pts[2])[i] + tC*Coords(pts[3])[i];
+	        p12[i] = (1.0 - sC)*Coords(pts[0])[i] + sC*Coords(pts[1])[i];
+        }
+    
+        printf("nor \t p34 \t p12\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%g \t %g \t %g\n",nor[i],p34[i],p12[i]);
+        }
+        clean_up(ERROR);
+    }
+
+    return true;
+}
+
+
 //Note: default value: dt = -1.0
 //static Proximity* EdgeToEdge(POINT** pts, double h, double dt)
+/*
 static std::unique_ptr<Proximity> EdgeToEdge(POINT** pts, double h, double dt)
 {
 //	   x1	x3
@@ -1294,14 +788,14 @@ static std::unique_ptr<Proximity> EdgeToEdge(POINT** pts, double h, double dt)
         tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
     
     
-    /*
-    if (std::isinf(sC) || std::isinf(tC))
-    {
-        LOC();
-        printf("sC or tC is inf\n");
-        clean_up(ERROR);
-    }
-    */
+    //
+    //if (std::isinf(sC) || std::isinf(tC))
+    //{
+      //  LOC();
+      //  printf("sC or tC is inf\n");
+      //  clean_up(ERROR);
+    //}
+    //
     
     
     //TODO: Make sure nor is pointing in the correct direction.
@@ -1348,16 +842,17 @@ static std::unique_ptr<Proximity> EdgeToEdge(POINT** pts, double h, double dt)
     if (dt < 0.0)
     {
         proximity =
-            std::unique_ptr<Proximity>(new EdgeEdgeProximity(pts,sC,tC,w,dist));
+            std::unique_ptr<Proximity>(new EdgeEdgeProximity(pts,nor,sC,tC,dist));
     }
     else
     {
         proximity =
-            std::unique_ptr<Proximity>(new EdgeEdgeCollision(pts,sC,tC,w,dist,dt));
+            std::unique_ptr<Proximity>(new EdgeEdgeCollision(pts,nor,sC,tC,dist,dt));
     }
 
     return proximity;
 }
+*/
 
 void EdgeToEdgeProximityImpulse(
         POINT** pts,
@@ -1466,29 +961,32 @@ static void EdgeToEdgeImpulse(
 
     //uncomment the following for debugging
     if (debugging("CollisionImpulse"))
-    if (fabs(m_impulse) > 0.0){
-        printf("real EdgeToEdge collision\n");
-        printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-        printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-        printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-        printf("m_impulse = %f, impulse = %f, a = %f, b = %f\n",
-            m_impulse,impulse,a,b);
-        printf("root = %e,h = %e, dt = %e\n",root,h,dt);
-        printf("x_old:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+    {
+        if (fabs(m_impulse) > 0.0)
+        {
+            printf("real EdgeToEdge collision\n");
+            printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
+            printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+            printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+            printf("m_impulse = %f, impulse = %f, a = %f, b = %f\n",
+                m_impulse,impulse,a,b);
+            printf("root = %e,h = %e, dt = %e\n",root,h,dt);
+            printf("x_old:\n");
+            for (int i = 0; i < 4; ++i){
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+            }
+            printf("x_new:\n");
+            for (int i = 0; i < 4; ++i){
+                printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+            }
+            printf("avgVel:\n");
+            for (int i = 0; i < 4; ++i){
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+            }
+            printf("\n");
         }
-        printf("x_new:\n");
-        for (int i = 0; i < 4; ++i){
-            printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-        }
-        printf("avgVel:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-        }
-        printf("\n");
     }
     ////////////////////////////////////////////////
 
@@ -1515,7 +1013,7 @@ static void EdgeToEdgeImpulse(
     {
         if (!isStaticRigidBody(pts[i]))
         {
-            //TODO: distinguish between collsn_impulse and proximity_impulse
+            //TODO: should probably move this somewhere else
             sl[i]->collsn_num++;
 
             double t_impulse = m_impulse;
@@ -1838,7 +1336,8 @@ static bool PointToTri(
 }
 */
 
-static Proximity* PointToTri(POINT** pts, double h)
+//static Proximity* PointToTri(POINT** pts, double h)
+static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
 {
 /*	x1
  *  	/\     x4 *
@@ -1915,7 +1414,9 @@ static Proximity* PointToTri(POINT** pts, double h)
     }
     */
 
-    Proximity* proximity = new PointToTriProximity(pts,tri_nor,w,dist);
+    //TODO: add PointToTriCollision(pts,tri_nor,w,dist,dt)
+    std::unique_ptr<Proximity> proximity;
+    proximity = std::unique_ptr<Proximity>(new PointToTriProximity(pts,tri_nor,w,dist));
     return proximity;
 }
 
@@ -2074,6 +1575,7 @@ static void PointToTriImpulse(
 	{
         if (!isStaticRigidBody(pts[i]))
         {
+            //TODO: should probably move this somewhere else
             sl[i]->collsn_num++;
 
             double t_impulse = m_impulse;
@@ -2233,20 +1735,550 @@ static void PointToTriElasticImpulse(
     }
 }
 
-static void unsort_surface_point(SURFACE *surf)
+//TODO: update for new data structures
+bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 {
-        TRI *tri;
-        POINT *p;
-        int i;
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+	POINT* pts[4];
+	bool status = false;
 
-        for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
+	/* do not consider bond point that is a tri vertex */
+	for (int i = 0; i < 3; ++i)
+	{
+	    if (Point_of_tri(tri)[i] == bd->start
+            || Point_of_tri(tri)[i] == bd->end)
+            return false;
+	}
+
+	for (int i = 0; i < 3; ++i)
+	    pts[i] = Point_of_tri(tri)[i];
+
+	/* detect collision of start point of bond w.r.t to tri */
+	pts[3] = bd->start;
+    if (MovingPointToTri(pts,h))
+        status = true;
+    
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+	
+    /* detect collision of end point of bond to w.r.t. tri */
+	pts[3] = bd->end;
+    if (MovingPointToTri(pts,h))
+        status = true;
+
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+	
+    /* detect collision of each of tri edge w.r.t to bond */
+	pts[2] = bd->start;
+	pts[3] = bd->end;
+	for (int i = 0; i < 3; ++i)
+	{
+	    pts[0] = Point_of_tri(tri)[i];
+	    pts[1] = Point_of_tri(tri)[(i+1)%3];
+        if (MovingEdgeToEdge(pts,h))
+            status = true;
+
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
+	}
+
+    return status;
+}
+
+//TODO: update for new data structures
+Proximity* MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
+{
+	POINT* pts[4];
+
+	pts[0] = b1->start; pts[1] = b1->end;
+	pts[2] = b2->start; pts[3] = b2->end;
+
+    //TODO: ensure getProximityCandidates() eliminates
+    //      this possibility, and remove.
+    //
+	/* do not consider two bonds that share a common point */
+	if (pts[0] == pts[2] || pts[0] == pts[3]
+        || pts[1] == pts[2] || pts[1] == pts[3])
+    {
+        return {};
+    }
+
+    return MovingEdgeToEdge(pts,tol);
+
+    /*
+	bool status = false;
+    if (MovingEdgeToEdge(pts,tol))
+        status = true;
+
+    //TODO: Investigate if this is correct
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && is_detImpZone)
+        createImpZone(pts,4);
+
+    return status;
+    */
+}
+
+//TODO: update for new data structures
+bool MovingTriToTri(const TRI* a,const TRI* b, double h)
+{
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+	POINT* pts[4];
+	bool status = false;
+
+	for (int i = 0; i < 3; ++i)
+	for (int j = 0; j < 3; ++j)
+	{
+	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
+            return false;
+	}
+
+	//detect point to tri collision
+	for (int k = 0; k < 2; ++k)
+	for (int i = 0; i < 3; ++i)
+    {
+	    const TRI* tmp_tri1 = (k == 0) ? a : b;
+	    const TRI* tmp_tri2 = (k == 0) ? b : a;
+
+	    for (int j = 0; j < 3; ++j)
+            pts[j] = Point_of_tri(tmp_tri1)[j];
+        pts[3] = Point_of_tri(tmp_tri2)[i];
+
+	    //Don't consider point against the triangle it belongs to
+	    if (pts[3] == pts[0] || pts[3] == pts[1]
+                || pts[3] == pts[2])
+            continue; 
+        
+        if(MovingPointToTri(pts,h))
+            status = true;
+
+        if (status && is_detImpZone)
+            createImpZone(pts,4);
+	}
+
+	//detect edge to edge collision
+	for (int i = 0; i < 3; ++i)
+    {
+        pts[0] = Point_of_tri(a)[i];
+        pts[1] = Point_of_tri(a)[(i+1)%3];
+        for (int j = 0; j < 3; ++j)
         {
-            for (i = 0; i < 3; ++i)
+            pts[2] = Point_of_tri(b)[j];
+            pts[3] = Point_of_tri(b)[(j+1)%3];
+		
+		    //Don't consider edges with a shared enpoint
+            if (pts[0] == pts[2] || pts[0] == pts[3]
+            || pts[1] == pts[2] || pts[1] == pts[3])
+                continue;
+    
+            if(MovingEdgeToEdge(pts,h))
+                status = true;
+                
+            if (status && is_detImpZone)
+                createImpZone(pts,4);
+	    }
+    }
+
+	return status;
+}
+
+//TODO: update for new data structures
+static bool MovingPointToTri(POINT* pts[], double h)
+{
+	STATE* sl;
+	double dt = CollisionSolver3d::getTimeStepSize();
+	double roots[4] = {-1,-1,-1,dt};
+    MotionState mstate = MotionState::MOVING;
+    bool status = false;
+
+	if (isCoplanar(pts,dt,roots))
+    {
+	    for (int i = 0; i < 4; ++i)
+        {
+            if (roots[i] < 0)
+                continue;
+    
+            for (int j = 0; j < 4; ++j)
             {
-                p = Point_of_tri(tri)[i];
-                sorted(p) = NO;
+                sl = (STATE*)left_state(pts[j]);
+    		    for (int k = 0; k < 3; ++k)
+                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+		    }
+    
+            if (PointToTri(pts,h,mstate,roots[i]))
+            {
+                status = true;
+                break;
+            }
+	    }
+
+        for (int j = 0; j < 4; ++j)
+        {
+
+            sl = (STATE*)left_state(pts[j]);
+            for (int k = 0; k < 3; ++k)
+                Coords(pts[j])[k] = sl->x_old[k];
+        }
+	}
+
+    return status;
+}
+
+//TODO: I dont' like these static variables/functions
+static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
+{
+    double maxdt = CollisionSolver3d::getTimeStepSize();
+	double dt[4] = {-1,-1,-1,maxdt};
+    
+	if (isCoplanar(pts,maxdt,dt))
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            if (dt[i] < 0.0)
+                continue;
+
+            Proximity* collision = KineticEdgeToEdge(pts,h,dt[i]);
+            if (collision)
+                return collision;
+        }
+    }
+
+    return {};
+}
+
+static bool isCoplanar(POINT* pts[], double dt, double roots[])
+{
+	if (debugging("collision"))
+	    CollisionSolver3d::is_coplanar++;
+
+	double v[4][3] = {0.0};
+    double x[4][3] = {0.0};
+	
+    double* tmp[4] = {nullptr};
+
+	//for performance, unrolling the loop
+	tmp[0] = ((STATE*)left_state(pts[0]))->avgVel;
+	tmp[1] = ((STATE*)left_state(pts[1]))->avgVel;
+	tmp[2] = ((STATE*)left_state(pts[2]))->avgVel;
+	tmp[3] = ((STATE*)left_state(pts[3]))->avgVel;
+	isCoplanarHelper(tmp, v);
+
+	tmp[0] = ((STATE*)left_state(pts[0]))->x_old;
+	tmp[1] = ((STATE*)left_state(pts[1]))->x_old;
+	tmp[2] = ((STATE*)left_state(pts[2]))->x_old;
+	tmp[3] = ((STATE*)left_state(pts[3]))->x_old;
+	isCoplanarHelper(tmp, x);
+
+	//get roots "t" of a cubic equation
+	//(x1+tv1)x(x2+tv2)*(x3+tv3) = 0
+	//transform to at^3+bt^2+ct+d = 0
+	double a, b, c, d;
+	double vv[3], vx[3], xx[3];
+	vv[0] = v[1][1]*v[2][2]-v[1][2]*v[2][1];
+	vv[1] = v[1][0]*v[2][2]-v[1][2]*v[2][0];
+	vv[2] = v[1][0]*v[2][1]-v[1][1]*v[2][0];
+	
+	vx[0] = v[1][1]*x[2][2]-v[1][2]*x[2][1]-v[2][1]*x[1][2]+v[2][2]*x[1][1];
+	vx[1] = v[1][0]*x[2][2]-v[1][2]*x[2][0]-v[2][0]*x[1][2]+v[2][2]*x[1][0];
+	vx[2] = v[1][0]*x[2][1]-v[1][1]*x[2][0]-v[2][0]*x[1][1]+v[2][1]*x[1][0];
+
+	xx[0] = x[1][1]*x[2][2]-x[1][2]*x[2][1];
+	xx[1] = x[1][0]*x[2][2]-x[1][2]*x[2][0];
+	xx[2] = x[1][0]*x[2][1]-x[1][1]*x[2][0];
+
+	a = v[3][0]*vv[0] - v[3][1]*vv[1] + v[3][2]*vv[2];
+
+	b = x[3][0]*vv[0] - x[3][1]*vv[1] + x[3][2]*vv[2] + 
+	    v[3][0]*vx[0] - v[3][1]*vx[1] + v[3][2]*vx[2];
+
+	c = x[3][0]*vx[0] - x[3][1]*vx[1] + x[3][2]*vx[2] +
+            v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
+
+	d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
+	//solve equation using method from "Art of Scientific Computing"
+	//transform equation to t^3+at^2+bt+c = 0
+	if (fabs(a) > MACH_EPS){
+	    b /= a; c /= a; d /= a;
+	    a = b; b = c; c = d;
+	    double Q, R, theta;
+	    double Q3, R2;
+	    Q = (a*a-3*b)/9;
+	    R = (2*a*a*a-9*a*b+27*c)/54;
+	    Q3 = Q*Q*Q;
+	    R2 = R*R;
+	    if (R2 < Q3){
+	        double Qsqrt = sqrt(Q);
+		theta = acos(R/sqrt(Q3));
+		roots[0] = -2*Qsqrt*cos(theta/3)-a/3;
+		roots[1] = -2*Qsqrt*cos((theta+2*M_PI)/3)-a/3;
+		roots[2] = -2*Qsqrt*cos((theta-2*M_PI)/3)-a/3;	
+	    }
+	    else{
+		double A, B;
+		double sgn = (R > 0) ? 1.0 : -1.0;
+		A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
+		B = (fabs(A) < ROUND_EPS) ? 0.0 : Q/A;
+		roots[0] = (A+B)-a/3.0;
+		if (fabs(A-B) < ROUND_EPS)
+		    roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
+	    }
+	}
+	else{
+		a = b; b = c; c = d;
+	   	double delta = b*b-4.0*a*c;
+	   	if (fabs(a) > ROUND_EPS && delta > 0){
+		    double delta_sqrt = sqrt(delta);
+		    roots[0] = (-b+delta_sqrt)/(2.0*a);
+	    	    roots[1] = (-b-delta_sqrt)/(2.0*a);
+	   	}
+		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
+		{
+		    roots[0] = -c/b;
+	        }
+	}
+	//elimiate invalid roots;
+	for (int i = 0; i < 3; ++i){
+	        roots[i] = roots[i]-MACH_EPS;
+	    	if (roots[i] < 0 || roots[i] > dt) 
+		    roots[i] = -1;
+	}
+	//sort the roots
+	if (roots[0] > roots[1])
+	    std::swap(roots[0], roots[1]);
+	if (roots[0] > roots[2])
+	    std::swap(roots[0], roots[2]);
+	if (roots[1] > roots[2])
+	    std::swap(roots[1], roots[2]);
+
+	if (roots[0] > MACH_EPS || roots[1] > MACH_EPS || roots[2] > MACH_EPS)
+	    return true;
+	else
+	    return false;
+}
+
+static void isCoplanarHelper(double* s[], double v[][3])
+{
+    v[0][0] = s[0][0];         v[0][1] = s[0][1];         v[0][2] = s[0][2];
+	v[1][0] = s[1][0]-s[0][0]; v[1][1] = s[1][1]-s[0][1]; v[1][2] = s[1][2]-s[0][2];
+	v[2][0] = s[2][0]-s[0][0]; v[2][1] = s[2][1]-s[0][1]; v[2][2] = s[2][2]-s[0][2];
+	v[3][0] = s[3][0]-s[0][0]; v[3][1] = s[3][1]-s[0][1]; v[3][2] = s[3][2]-s[0][2];
+}
+
+// test function for creating impact zone for each movable RG
+void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
+{
+	SURFACE** s;
+	TRI* tri;
+
+	intfc_surface_loop(intfc, s)
+	{
+	    if (is_bdry(*s)) continue;
+	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+
+        surf_tri_loop(*s, tri)
+	    {
+    		createImpZone(Point_of_tri(tri), 3, YES);
+	    }
+	}
+}
+
+void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+{
+	STATE* sl = NULL;
+	POINT* p = head;
+
+	double m = getPointMass();
+    double x_cm[3] = {0.0};
+    double v_cm[3] = {0.0};
+	double L[3] = {0.0}; //angular momentum
+	double I[3][3] = {0.0}; //inertia tensor
+	double tmp[3][3];
+	int num_pts = 0;
+
+    //compute center of mass position and velocity
+	while(p)
+    {
+		num_pts++;
+		sorted(p) = YES;
+		sl = (STATE*)left_state(p);
+	
+        for (int i = 0; i < m_dim; ++i)
+        {
+		    x_cm[i] += sl->x_old[i]; 
+		    v_cm[i] += sl->avgVel[i];
+		}
+
+        p = next_pt(p);
+    }
+
+    if (debugging("collision"))
+	    printf("%d number of points in this zone\n",num_pts);
+
+	for (int i = 0; i < m_dim; ++i)
+    {
+	    x_cm[i] /= num_pts;
+	    v_cm[i] /= num_pts;
+	}
+
+	//compute angular momentum
+	p = head;
+	while(p)
+    {
+	    double dx[3], dv[3], Li[3];
+	    sl = (STATE*)left_state(p);
+	    minusVec(sl->x_old,x_cm,dx);
+	    minusVec(sl->avgVel,v_cm,dv); 	
+	    Cross3d(dx,dv,Li);
+	    scalarMult(m,Li,Li);
+	    addVec(Li,L,L);    
+	    p = next_pt(p);
+	}
+
+	//compute Inertia tensor
+	p = head;
+	while(p)
+    {
+	    double dx[3], mag_dx = 0.0;
+	    sl = (STATE*)left_state(p);
+	    minusVec(sl->x_old,x_cm,dx);
+	    mag_dx = Mag3d(dx);
+	   
+        for (int i = 0; i < 3; ++i)
+	    for (int j = 0; j < 3; ++j)
+        {
+		    tmp[i][j] = -dx[i]*dx[j];
+		    if (i == j)
+                tmp[i][j] += mag_dx*mag_dx; 
+	
+            I[i][j] += tmp[i][j]*m;
+	    }
+
+	    p = next_pt(p);
+	}
+
+	//compute angular velocity w: I*w = L;
+    double mag_w = 0;
+	double w[3] = {0.0};
+
+    if (myDet3d(I) > ROUND_EPS)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            memcpy(tmp,I,9*sizeof(double));
+            for (int j = 0; j < 3; j++)
+                tmp[j][i] = L[j];
+            w[i] = myDet3d(tmp)/myDet3d(I);
+        }
+    }
+    else
+    {
+        //I is non-invertible, calculate pseudoinverse with SVD
+        arma::vec arL(3);
+        arma::mat arI(3,3);
+
+        for (int i = 0; i < 3; i++)
+        {
+            arL(i) = L[i];
+            for (int j = 0; j < 3; j++)
+                 arI(i,j) = I[i][j];
+        }
+
+        arma::mat arU;
+        arma::mat arV;
+        arma::vec ars;
+
+        arma::svd(arU, ars, arV, arI);
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (ars(i))
+                ars(i) = 1.0/ars(i);
+        }
+
+        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
+        arma::vec arw = pinvarI*arL;
+
+        for (int i = 0; i < 3; i++)
+             w[i] = arw[i];
+    }
+
+    mag_w = Mag3d(w);
+	
+	//compute average velocity for each point
+	double dt = getTimeStepSize();
+	
+    p = head;
+    while(p)
+    {
+        if (isStaticRigidBody(p))
+        {
+            p = next_pt(p);
+            continue;
+        }
+    
+        double x_new[3],dx[3];
+        double xF[3], xR[3];
+        double wxR[3],tmpV[3];
+        sl = (STATE*)left_state(p);
+        
+        minusVec(sl->x_old,x_cm,dx);
+
+        if (mag_w < ROUND_EPS)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                xF[i] = dx[i];
+                wxR[i] = 0.0;
+            }
+    
+            minusVec(dx,xF,xR);
+        }
+        else
+        {
+            scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
+            minusVec(dx,xF,xR);
+            scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+            Cross3d(tmpV,xR,wxR);
+        }
+    
+        //TODO: move x_new calculation to above if else block,
+        for (int i = 0; i < 3; ++i)
+        {
+            x_new[i] = x_cm[i] + dt*v_cm[i]
+                + xF[i] + cos(dt*mag_w)*xR[i] + wxR[i];
+    
+            sl = (STATE*)left_state(p);
+            sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+   
+            if (std::isnan(sl->avgVel[i]))
+            { 
+                printf("coords[3], vel[3]\n");
+                p = head;
+                while(p)
+                {
+                    sl = (STATE*)left_state(p);
+                    printf("%f %f %f %f %f %f;\n",
+                    sl->x_old[0],sl->x_old[1],sl->x_old[2],
+                    sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+                    p = next_pt(p);
+                }
+
+                printf("num_pts = %d, weight = %d\n",
+                num_pts,weight(head));
+                printf("nan vel, w = %f, mag_w = %f\n",
+                w[i],mag_w);
+                printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
+                printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
+                I[0][0],I[0][1],I[0][2],I[1][0],I[1][1],I[1][2],
+                I[2][0],I[2][1],I[2][2]);
+                printf("xF = %f %f %f, xR = %f %f %f\n",
+                xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
+                clean_up(ERROR);
             }
         }
-}       /* end unsort_surface_point */
+    
+        p = next_pt(p);
+    }
+}
 

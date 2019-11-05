@@ -152,24 +152,30 @@ void PointToTriProximityImpulse(POINT**,double*,double*,double);
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
 void initTestModule(Front&, char*);
+
 void Pts2Vec(const POINT*, const POINT*, double*); 
 void scalarMult(double a,double* v, double* ans); 
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
 double myDet3d(double[][3]);
 double distBetweenCoords(double* v1, double* v2);
+
 extern void printPointList(POINT**, const int);
+
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);
+
 void unsortHseList(std::vector<CD_HSE*>&);
 POINT*& next_pt(POINT*);
 int& weight(POINT*);
+
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const CD_HSE*);
 bool isMovableRigidBody(const POINT*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
+
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);

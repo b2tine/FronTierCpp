@@ -4,6 +4,7 @@
 #include <FronTier.h>
 #include "state.h"
 
+void updateAverageVelocityProximity(POINT** pts);
 
 class Proximity
 {
@@ -41,8 +42,7 @@ class EdgeEdgeProximity : public Proximity
 
         virtual void updateAverageVelocity() override
         {
-            //TODO: sl->avgVel_old = sl->avgVel;
-
+            updateAverageVelocityProximity(pts);
         }
 };
 
@@ -70,19 +70,28 @@ class PointTriProximity : public Proximity
 
         virtual void updateAverageVelocity() override
         {
-
+            updateAverageVelocityProximity(pts);
         }
 };
 
-class EdgeEdgeCollision : public EdgeEdgeProximity
+class Collision : public Proximity
 {
     public:
 
         double dt {-1.0};
 
+};
+
+class EdgeEdgeCollision : public Collision
+{
+    public:
+
+        double a {-1.0};
+        double b {-1.0};
+
         EdgeEdgeCollision(POINT** Pts, double* Nor,
                 double A, double B, double Dist, double Dt)
-            : EdgeEdgeProximity(Pts,Nor,A,B,Dist), dt{DT}
+            : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}
         {}
 
         void computeImpulse() override
@@ -96,16 +105,22 @@ class EdgeEdgeCollision : public EdgeEdgeProximity
         }
 };
 
-class PointTriCollision : public PointTriProximity
+class PointTriCollision : public Collision
 {
     public:
 
-        double dt {-1.0};
+        double w[3] {-1.0};
 
         PointTriCollision(POINT** Pts, double* Nor,
                 double* W, double Dist, double Dt)
-            : PointTriProximity(Pts,Nor,W,Dist), dt{Dt}
-        {}
+            : pts{Pts}, dist{Dist}, dt{Dt}
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                w[i] = W[i];
+                nor[i] = Nor[i];
+            }
+        }
 
         void computeImpulse() override
         {
