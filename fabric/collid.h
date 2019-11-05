@@ -114,6 +114,7 @@ private:
 	void computeAverageVelocity();
 	//void updateAverageVelocity();
     void resetPositionCoordinates();
+    void resetAverageVelocity();
 	
     void aabbProximity();
 	void detectProximity();

@@ -293,8 +293,28 @@ void CollisionSolver3d::resetPositionCoordinates()
         {
             pt = (*it)->Point_of_hse(i);
             sl = (STATE*)left_state(pt);
+            
             for (int j = 0; j < m_dim; ++j)
                 Coords(pt)[j] = sl->x_old[j];
+        }
+    }
+}
+
+void CollisionSolver3d::resetAverageVelocity()
+{
+    POINT* pt;
+    STATE* sl; 
+
+    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
+            it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sl = (STATE*)left_state(pt);
+
+            for (int j = 0; j < m_dim; ++j)
+                sl->avgVel[j] = sl->avgVel_old[j];
         }
     }
 }
