@@ -31,10 +31,10 @@
 
 /*****declaration of static functions starts here********/
 //static void makeSet(std::vector<CD_HSE*>&);
-static POINT* findSet(POINT*);
-static void mergePoint(POINT*,POINT*);
-inline POINT*& root(POINT*);
-inline POINT*& tail(POINT*);
+//static POINT* findSet(POINT*);
+//static void mergePoint(POINT*,POINT*);
+//inline POINT*& root(POINT*);
+//inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
 
 //define default parameters for collision detection
@@ -61,8 +61,10 @@ CollisionSolver3d::~CollisionSolver3d()
     clearHseList();
 }
 
-void CollisionSolver3d::clearHseList(){
-	for (unsigned i = 0; i < hseList.size(); ++i){
+void CollisionSolver3d::clearHseList()
+{
+	for (unsigned i = 0; i < hseList.size(); ++i)
+    {
 		delete hseList[i];
 	}
 	hseList.clear();
@@ -93,6 +95,73 @@ double CollisionSolver3d::getPointMass() {return s_m;}
 //set restitution coefficient between rigid bodies
 void   CollisionSolver3d::setRestitutionCoef(double new_cr) {s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef() {return s_cr;}
+
+
+void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
+{
+	//assemble tris list from input intfc
+	//this function should be called before
+	//spring interior dynamics computed
+	SURFACE** s;
+	CURVE** c;
+	TRI *tri;
+	BOND *b;
+	int n_tri = 0, n_bond = 0;
+	setTimeStepSize(dt);
+	clearHseList();
+	
+    intfc_surface_loop(intfc,s)
+	{
+	    if (is_bdry(*s)) continue;
+	    unsort_surface_point(*s);
+	    surf_tri_loop(*s,tri)
+	    {
+                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
+                    wave_type(*s) == NEUMANN_BOUNDARY)
+	            hseList.push_back(new CD_TRI(tri, "tris_rigid"));
+                else 
+                    hseList.push_back(new CD_TRI(tri, "tris"));
+		n_tri++;
+	    }
+	}
+
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+	    curve_bond_loop(*c,b)
+	    {
+            hseList.push_back(new CD_BOND(b,m_dim, "lines"));
+		    n_bond++;
+	    }
+	}
+
+	makeSet(hseList);
+	createImpZoneForRG(intfc);
+	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
+
+	if (debugging("assembleFromInterface")){
+	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
+	    printf("%lu number of elements is assembled\n",hseList.size());
+	}
+}
+
+void unsort_surface_point(SURFACE *surf)
+{
+    TRI *tri;
+    POINT *p;
+    int i;
+
+    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
+                    tri = tri->next)
+    {
+        for (i = 0; i < 3; ++i)
+        {
+            p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
+        }
+    }
+}       /* end unsort_surface_point */
+
 
 void CollisionSolver3d::recordOriginalPosition()
 {
@@ -256,10 +325,6 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
-	//updateAverageVelocity();
-
-    //TODO: I believe algorithm correct up to here.
-
 	//if (debugging("printDebugVariable"))
 	  //  printDebugVariable();
 
@@ -356,50 +421,6 @@ void CollisionSolver3d::processProximityCandidates()
         (*pit)->updateAverageVelocity();
     }
 }
-
-/*
-std::unique_ptr<Proximity> checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
-{
-	const CD_BOND *cd_b1, *cd_b2;
-	const CD_TRI  *cd_t1, *cd_t2;
-
-	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
-	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    TRI* t1 = cd_t1->m_tri;
-	    TRI* t2 = cd_t2->m_tri;
-	    if ((t1->surf == t2->surf) && isRigidBody(a))
-            return {};
-	    return TriToTri(t1,t2,tol);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
-	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    BOND* b2 = cd_b2->m_bond;
-	    return BondToBond(b1,b2,tol);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
-		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,tol);
-	}
-	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
-                 (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,tol);
-	}
-	else
-	{
-	    std::cout<<"This case has not been implemented"<<std::endl;
-	    clean_up(ERROR);
-	}
-}
-*/
 
 //TODO: use gauss-seidel updates
 //TODO: finish updating for new data structures
@@ -526,50 +547,6 @@ void CollisionSolver3d::processCollisionCandidates()
     */
 }
 
-/*
-std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
-{
-	const CD_TRI  *cd_t1, *cd_t2;
-	const CD_BOND *cd_b1, *cd_b2;
-
-	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
-	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    TRI* t1 = cd_t1->m_tri;
-	    TRI* t2 = cd_t2->m_tri;
-	    if ((t1->surf == t2->surf) && isRigidBody(a))
-            return {};
-	    return MovingTriToTri(t1,t2,tol);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
-	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    BOND* b2 = cd_b2->m_bond;
-	    return MovingBondToBond(b1,b2,tol);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
-		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,tol);
-	}
-	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
-                 (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,tol);
-	}
-	else
-	{
-	    std::cout<<"This case has not been implemented"<<std::endl;
-	    clean_up(ERROR);
-	}
-}
-*/
-
 //TODO: rewrite this with new data structures
 void CollisionSolver3d::computeImpactZone()
 {
@@ -612,92 +589,6 @@ void CollisionSolver3d::computeImpactZone()
     }
 	
     turnOffImpZone();
-}
-
-void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
-{
-	POINT* pt;
-	int numZones = 0;
-
-	unsortHseList(hseList);
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it){
-	    for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-		//skip traversed or isolated pts
-		if (sorted(pt) ||
-		    weight(findSet(pt)) == 1) continue;
-		else{
-		    updateImpactListVelocity(findSet(pt));
-		    numZones++;
-		}
-	    }
-	}	
-	nZones = numZones;
-}
-
-void CollisionSolver3d::updateImpactZoneVelocityForRG()
-{
-	POINT* pt;
-	unsortHseList(hseList);
-
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            pt = (*it)->Point_of_hse(i);
-            
-            //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1) continue;
-            else if (!isMovableRigidBody(pt))
-            {
-                sorted(pt) = YES;
-                continue;
-            }
-            else
-                updateImpactListVelocity(findSet(pt));
-	    }
-	}
-}
-
-extern void SpreadImpactZoneImpulse(
-        POINT* p,
-        double impulse,
-        double* nor)
-{
-        POINT* root = findSet(p);
-        while (root)
-        {
-            STATE *sl = (STATE*)left_state(root);
-            for (int i = 0; i < 3; ++i)
-                sl->collsnImpulse_RG[i] += impulse * nor[i];
-            sl->collsn_num_RG += 1;
-            root = next_pt(root);
-        }
-}
-
-//Note: num has default value of 4,
-//and first has default value of false
-extern void createImpZone(POINT* pts[], int num, bool first)
-{
-	for (int i = 0; i < num; ++i)
-	{
-	    for (int j = 0; j < i; ++j)
-	    {
-	        if ((!first) && (isMovableRigidBody(pts[i])
-                || isMovableRigidBody(pts[j])))
-            {
-                continue;
-            }
-            mergePoint(pts[i],pts[j]); 
-	    }
-	}
-    //TODO: Check that all points of the interface have not
-    //      been merged into a single impact zone.
-    //      If this occurs, then we should have a collision
-    //      free state (double check this claim) and the collision
-    //      handling iterations can be terminated.
 }
 
 //TODO: See aftest.cpp airfoil_stat functions which record
@@ -1114,6 +1005,56 @@ void CollisionSolver3d::printDebugVariable(){
 	edg_to_edg = pt_to_tri = 0;
 }
 
+void unsortHseList(std::vector<CD_HSE*>& hseList){
+	for (unsigned j = 0; j < hseList.size(); ++j)
+	{
+	    CD_HSE* hse = hseList[j];
+	    int np = hse->num_pts();
+	    for (int i = 0; i < np; ++i){
+		sorted(hse->Point_of_hse(i)) = NO;
+	    }
+	}
+}
+
+bool isStaticRigidBody(const POINT* p){
+    STATE* sl = (STATE*)left_state(p);
+    return sl->is_fixed;
+}
+
+bool isStaticRigidBody(const CD_HSE* hse){
+    for (int i = 0; i < hse->num_pts(); ++i)
+   	if (isStaticRigidBody(hse->Point_of_hse(i)))
+	    return true;
+    return false;
+}
+
+bool isMovableRigidBody(const POINT* p){
+    STATE* sl = (STATE*)left_state(p);
+    return sl->is_movableRG;
+}
+
+bool isMovableRigidBody(const CD_HSE* hse){
+    for (int i = 0; i < hse->num_pts(); ++i)
+        if (isMovableRigidBody(hse->Point_of_hse(i)))
+            return true;
+    return false;
+}
+
+bool isRigidBody(const POINT* p){
+    return isStaticRigidBody(p) || isMovableRigidBody(p);
+}
+
+bool isRigidBody(const CD_HSE* hse){
+    return isStaticRigidBody(hse) || isMovableRigidBody(hse);
+}
+
+
+void printPointList(POINT** plist,const int n){
+	for (int i = 0; i < n; ++i){
+	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
+		Coords(plist[i])[1],Coords(plist[i])[2]);
+	}
+}
 
 /*******************************
 * utility functions start here *
@@ -1152,129 +1093,10 @@ void scalarMult(double a, double* v, double* ans)
             ans[i] = a*v[i];	
 }
 
-extern double myDet3d(double a[3][3]){
+double myDet3d(double a[3][3]){
     return  a[0][0]*(a[1][1]*a[2][2] - a[2][1]*a[1][2]) 
 	  - a[0][1]*(a[1][0]*a[2][2] - a[2][0]*a[1][2]) 
 	  + a[0][2]*(a[1][0]*a[2][1] - a[2][0]*a[1][1]);
 }
 
-void unsortHseList(std::vector<CD_HSE*>& hseList){
-	for (unsigned j = 0; j < hseList.size(); ++j)
-	{
-	    CD_HSE* hse = hseList[j];
-	    int np = hse->num_pts();
-	    for (int i = 0; i < np; ++i){
-		sorted(hse->Point_of_hse(i)) = NO;
-	    }
-	}
-}
-
-//functions for UF alogrithm
-int& weight(POINT* p){
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.num_pts;
-}
-
-inline POINT*& root(POINT* p){
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.root;
-}
-
-POINT*& next_pt(POINT* p){
-	STATE* sl = (STATE*)left_state(p);
-        return sl->impZone.next_pt;
-}
-
-inline POINT*& tail(POINT* p){
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.tail;
-}
-
-extern void makeSet(std::vector<CD_HSE*>& hseList)
-{
-	STATE* sl;
-	POINT* pt;
-    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-            it < hseList.end(); ++it)
-    {
-        for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            pt = (*it)->Point_of_hse(i);
-            sorted(pt) = NO;
-            sl = (STATE*)left_state(pt);
-            sl->impZone.next_pt = NULL;
-            sl->impZone.tail = pt;
-            sl->impZone.root = pt;
-            sl->impZone.num_pts = 1;
-        }
-    }
-}
-
-POINT* findSet(POINT* p){
-	if (root(p) != p)
-		root(p) = findSet(root(p));
-	return root(p);
-}
-
-void mergePoint(POINT* X, POINT* Y){
-	POINT* PX = findSet(X);
-	POINT* PY = findSet(Y);
-	if (PX == PY) return;
-	if (weight(PX) > weight(PY)){
-	    //update root after merge
-	    weight(PX) += weight(PY);
-	    root(PY) = PX;
-	    //link two list, update tail
-	    next_pt(tail(PX)) = PY;
-	    tail(PX) = tail(PY); 
-	}
-	else{
-	    //update root after merge
-	    weight(PY) += weight(PX);
-	    root(PX) = PY;
-	    //link two list, update tail
-	    next_pt(tail(PY)) = PX;
-	    tail(PY) = tail(PX); 
-	}
-}
-//end of UF functions
-
-void printPointList(POINT** plist,const int n){
-	for (int i = 0; i < n; ++i){
-	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
-		Coords(plist[i])[1],Coords(plist[i])[2]);
-	}
-}
-
-bool isStaticRigidBody(const POINT* p){
-    STATE* sl = (STATE*)left_state(p);
-    return sl->is_fixed;
-}
-
-bool isStaticRigidBody(const CD_HSE* hse){
-    for (int i = 0; i < hse->num_pts(); ++i)
-   	if (isStaticRigidBody(hse->Point_of_hse(i)))
-	    return true;
-    return false;
-}
-
-bool isMovableRigidBody(const POINT* p){
-    STATE* sl = (STATE*)left_state(p);
-    return sl->is_movableRG;
-}
-
-bool isMovableRigidBody(const CD_HSE* hse){
-    for (int i = 0; i < hse->num_pts(); ++i)
-        if (isMovableRigidBody(hse->Point_of_hse(i)))
-            return true;
-    return false;
-}
-
-bool isRigidBody(const POINT* p){
-    return isStaticRigidBody(p) || isMovableRigidBody(p);
-}
-
-bool isRigidBody(const CD_HSE* hse){
-    return isStaticRigidBody(hse) || isMovableRigidBody(hse);
-}
 

@@ -14,6 +14,8 @@ static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
                                      double,double,double,double);
 
+static void SpreadImpactZoneImpulse(POINT*, double, double*);
+
 
 void PointToTriProximityImpulse(
         POINT** pts,
@@ -650,6 +652,22 @@ static void EdgeToEdgeElasticImpulse(
         rigid_impulse[1] += tmp;
     }
 }
+
+static void SpreadImpactZoneImpulse(POINT* p, double impulse, double* nor)
+{
+    POINT* root = findSet(p);
+    while (root)
+    {
+        STATE *sl = (STATE*)left_state(root);
+        
+        for (int i = 0; i < 3; ++i)
+            sl->collsnImpulse_RG[i] += impulse * nor[i];
+        
+        sl->collsn_num_RG += 1;
+        root = next_pt(root);
+    }
+}
+
 
 
 

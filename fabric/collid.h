@@ -2,7 +2,6 @@
 #define COLLID_H
 
 #include "AABB.h"
-//#include "Proximity.h"
 
 #if defined(isnan)
 #undef isnan
@@ -57,13 +56,14 @@ public:
 
     double setVolumeDiff(double);
 
+	void recordOriginalPosition();	
+
 	void clearHseList();
 	void assembleFromInterface(const INTERFACE*,double dt);
 	void createImpZoneForRG(const INTERFACE*);
+	void setDomainBoundary(double* L,double *U);
 	
     void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
 
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 
@@ -111,24 +111,30 @@ private:
 	static void turnOffImpZone();
 	static void turnOnImpZone();
 	
-    bool reduceSuperelastOnce(int&);
 	void computeAverageVelocity();
-    void resetPositionCoordinates();
-	void updateFinalPosition();
-	void reduceSuperelast();
-	void updateFinalVelocity();
 	//void updateAverageVelocity();
-	void computeImpactZone();
+    void resetPositionCoordinates();
+	
+    void aabbProximity();
+	void detectProximity();
+	void processProximityCandidates();
+
+    void aabbCollision();
+	void detectCollision();
+	void processCollisionCandidates();
+	
+    void detectDomainBoundaryCollision();
+	void updateFinalForRG();
+
+    void updateFinalPosition();
+	void updateFinalVelocity();
+	
+    void reduceSuperelast();
+    bool reduceSuperelastOnce(int&);
+	
+    void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
-    void aabbProximity();
-    void aabbCollision();
-	void detectProximity();
-	void detectCollision();
-	void processProximityCandidates();
-	void processCollisionCandidates();
-	void detectDomainBoundaryCollision();
-	void updateFinalForRG();
 	void updateImpactListVelocity(POINT*);
 };
 
@@ -156,11 +162,18 @@ std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
 std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
 */
 
-extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
-void initSurfaceState(SURFACE*,const double*);
-void initCurveState(CURVE*,const double*);
-void initTestModule(Front&, char*);
+void unsort_surface_point(SURFACE *surf);
+void unsortHseList(std::vector<CD_HSE*>&);
+
+bool isStaticRigidBody(const POINT*);
+bool isStaticRigidBody(const CD_HSE*);
+bool isMovableRigidBody(const POINT*);
+bool isMovableRigidBody(const CD_HSE*);
+bool isRigidBody(const POINT*);
+bool isRigidBody(const CD_HSE*);
+
+void printPointList(POINT**, const int);
 
 void Pts2Vec(const POINT*, const POINT*, double*); 
 void scalarMult(double a,double* v, double* ans); 
@@ -169,21 +182,15 @@ void minusVec(double* v1, double* v2, double* ans);
 double myDet3d(double[][3]);
 double distBetweenCoords(double* v1, double* v2);
 
-extern void printPointList(POINT**, const int);
 
-extern void createImpZone(POINT*[],int num = 4,bool first = NO);
-extern void makeSet(std::vector<CD_HSE*>&);
-
-void unsortHseList(std::vector<CD_HSE*>&);
-POINT*& next_pt(POINT*);
-int& weight(POINT*);
-
-bool isStaticRigidBody(const POINT*);
-bool isStaticRigidBody(const CD_HSE*);
-bool isMovableRigidBody(const POINT*);
-bool isMovableRigidBody(const CD_HSE*);
-bool isRigidBody(const POINT*);
-bool isRigidBody(const CD_HSE*);
+void createImpZone(POINT**, int num = 4, bool first = NO);
+int& weight(POINT* p);
+POINT*& root(POINT* p);
+POINT*& next_pt(POINT* p);
+POINT*& tail(POINT* p);
+void makeSet(std::vector<CD_HSE*>& hselist);
+POINT* findSet(POINT* p);
+void mergePoint(POINT* X, POINT* Y);
 
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);

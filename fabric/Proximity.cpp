@@ -1,16 +1,16 @@
 #include "Proximity.h"
 #include "collid.h"
 
-std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
-std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
-std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
+static std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
+static std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
+static std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
 
 static std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
 static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
 
-std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
-std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
-std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
+static std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
+static std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
+static std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
 
 static std::unique_ptr<Collision> MovingPointToTri(POINT**,double);
 static std::unique_ptr<Collision> MovingEdgeToEdge(POINT**,double);
@@ -882,6 +882,8 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
     */
 }
 
+//For details of this implementation see:
+//  //http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
 static bool EdgeToEdge(
         POINT** pts,
         double h,
@@ -1043,6 +1045,22 @@ static bool EdgeToEdge(
     return true;
 }
 
+/*
+static void PointToLine(POINT** pts, double* a)
+static void PointToLine(POINT** pts, double& a)
+{
+//	x1 -----projP---- x2
+//		  |
+//		  |  dist
+//		  *x3
+	
+    double x12[3], x13[3];
+	Pts2Vec(pts[0],pts[1],x12);
+    Pts2Vec(pts[0],pts[2],x13);
+    // *a = Dot3d(x13,x12)/Dot3d(x12,x12);
+    a = Dot3d(x13,x12)/Dot3d(x12,x12);
+}
+*/
 
 
 PointTriProximity::PointTriProximity(POINT** Pts, double* Nor,

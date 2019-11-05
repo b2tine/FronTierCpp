@@ -32,7 +32,7 @@ libfabric_la_SOURCES = \
 ../Proximity.cpp \
 ../collid.h \
 ../dcollid.cpp \
-../dcollid3d.cpp \
+../ImpactZone.cpp \
 ../Impulse.cpp
 ../CD_HSE.h \
 ../CD_HSE.cpp \
