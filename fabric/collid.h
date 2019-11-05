@@ -138,33 +138,13 @@ private:
 	void updateImpactListVelocity(POINT*);
 };
 
-//Impulse.cpp
-void PointToTriProximityImpulse(POINT**,double*,double*,double);
-void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 
-void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
-void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
-
-//Moved to Proximity.h
-/*
-std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
-std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
-
-std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
-std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
-std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
-
-std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
-std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
-
-std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
-std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
-std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
-*/
-
+//dcollid.cpp
+void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 void unsort_surface_point(SURFACE *surf);
 void unsortHseList(std::vector<CD_HSE*>&);
+void printPointList(POINT**, const int);
 
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const CD_HSE*);
@@ -173,16 +153,25 @@ bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
 
-void printPointList(POINT**, const int);
-
-void Pts2Vec(const POINT*, const POINT*, double*); 
 void scalarMult(double a,double* v, double* ans); 
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
-double myDet3d(double[][3]);
+void Pts2Vec(const POINT*, const POINT*, double*); 
 double distBetweenCoords(double* v1, double* v2);
+double myDet3d(double[][3]);
 
+//Proximity.cpp
+std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
+//Impulse.cpp
+void PointToTriProximityImpulse(POINT**,double*,double*,double);
+void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
+
+void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
+void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
+
+//ImpactZone.cpp
 void createImpZone(POINT**, int num = 4, bool first = NO);
 int& weight(POINT* p);
 POINT*& root(POINT* p);
@@ -191,9 +180,6 @@ POINT*& tail(POINT* p);
 void makeSet(std::vector<CD_HSE*>& hselist);
 POINT* findSet(POINT* p);
 void mergePoint(POINT* X, POINT* Y);
-
-
-void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 
 

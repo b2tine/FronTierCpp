@@ -13,6 +13,7 @@
 
 //TODO: Make this a function after putting VTK
 //      into configure.ac and build.
+
 /*
 #ifdef HAVE_VTK
 	if (debugging("CollisionImpulse"))
@@ -1005,7 +1006,8 @@ void CollisionSolver3d::printDebugVariable(){
 	edg_to_edg = pt_to_tri = 0;
 }
 
-void unsortHseList(std::vector<CD_HSE*>& hseList){
+void unsortHseList(std::vector<CD_HSE*>& hseList)
+{
 	for (unsigned j = 0; j < hseList.size(); ++j)
 	{
 	    CD_HSE* hse = hseList[j];
@@ -1013,6 +1015,13 @@ void unsortHseList(std::vector<CD_HSE*>& hseList){
 	    for (int i = 0; i < np; ++i){
 		sorted(hse->Point_of_hse(i)) = NO;
 	    }
+	}
+}
+
+void printPointList(POINT** plist,const int n){
+	for (int i = 0; i < n; ++i){
+	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
+		Coords(plist[i])[1],Coords(plist[i])[2]);
 	}
 }
 
@@ -1049,32 +1058,11 @@ bool isRigidBody(const CD_HSE* hse){
 }
 
 
-void printPointList(POINT** plist,const int n){
-	for (int i = 0; i < n; ++i){
-	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
-		Coords(plist[i])[1],Coords(plist[i])[2]);
-	}
-}
-
 /*******************************
 * utility functions start here *
 *******************************/
 
 /* The followings are helper functions for vector operations. */
-void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
-	for (int i = 0; i < 3; ++i)	
-	    v[i] = Coords(p2)[i] - Coords(p1)[i];
-}
-
-double distBetweenCoords(double* v1, double* v2)
-{
-	double dist = 0.0;
-	for (int i = 0; i < 3; ++i){
-		dist += sqr(v1[i]-v2[i]);
-	}
-	return std::sqrt(dist);
-}
-
 void addVec(double* v1, double* v2, double* ans)
 {
 	for (int i = 0; i < 3; ++i)
@@ -1091,6 +1079,20 @@ void scalarMult(double a, double* v, double* ans)
 {
 	for (int i = 0; i < 3; ++i)
             ans[i] = a*v[i];	
+}
+
+void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
+	for (int i = 0; i < 3; ++i)	
+	    v[i] = Coords(p2)[i] - Coords(p1)[i];
+}
+
+double distBetweenCoords(double* v1, double* v2)
+{
+	double dist = 0.0;
+	for (int i = 0; i < 3; ++i){
+		dist += sqr(v1[i]-v2[i]);
+	}
+	return std::sqrt(dist);
 }
 
 double myDet3d(double a[3][3]){

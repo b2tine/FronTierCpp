@@ -5,39 +5,8 @@
 #include "state.h"
 
 std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
-
-//std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
-//std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
-//std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
-
-//std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
-//std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
-
 std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
-//std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
-//std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
-//std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
-
-//std::unique_ptr<Collision> KineticPointToTri(POINT**,double,double,double);
-//std::unique_ptr<Collision> KineticEdgeToEdge(POINT**,double,double,double);
-
-//Moved to Impulse.h
-//
-//void PointToTriProximityImpulse(POINT**,double*,double*,double);
-//void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
-//void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
-//void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
-
-
-/*
-void UpdateAverageVelocity(POINT** pts);
-//void updateAverageVelocityProximity(POINT** pts);
-
-void UpdateState(POINT** pts, double dt);
-//void updateAverageVelocityCollision(POINT** pts);
-void RestorePrevState(POINT** pts);
-*/
 
 class Proximity
 {
