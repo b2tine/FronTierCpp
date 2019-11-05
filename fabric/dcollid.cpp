@@ -443,8 +443,6 @@ void CollisionSolver3d::processProximityCandidates()
     }
 }
 
-//TODO: use gauss-seidel updates
-//TODO: finish updating for new data structures
 void CollisionSolver3d::detectCollision()
 {
     if (debugging("collision"))
@@ -453,11 +451,9 @@ void CollisionSolver3d::detectCollision()
 	const int MAX_ITER = 12;
     const double h = CollisionSolver3d::getRoundingTolerance();
 	
-    int niter = 1;
-	int cd_count = 0;
-   
     //TODO: keep track of total elapsed time?
     
+    int niter = 1;
     bool is_collision = true; 
 
     while(is_collision)
@@ -482,9 +478,11 @@ void CollisionSolver3d::detectCollision()
 
     //TODO: implement computeImpactZone() using new data structures
     //      SEE PROVOT PAPER
+    //
 	if (is_collision) 
     {
         start_clock("computeImpactZone");
+        //TODO: rename computeImpactZone to something better
 	    computeImpactZone();
         stop_clock("computeImpactZone");
     }
@@ -530,6 +528,9 @@ static bool CollisionCompare(
 //      Gauess-Seidel fashion
 void CollisionSolver3d::processCollisionCandidates()
 {
+    //TODO: can Collisions vector be used like we
+    //      are trying to?
+    //
     //Collisions.clear();
 
     std::vector<NodePair>::iterator it;
@@ -553,11 +554,9 @@ void CollisionSolver3d::processCollisionCandidates()
         }
     }
 
-    /*
     //Sort the Collisions vector by time of collision
     //
-    std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
-    */
+    //std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
 }
 
 //TODO: rewrite this with new data structures
