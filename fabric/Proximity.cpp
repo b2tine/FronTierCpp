@@ -25,23 +25,12 @@ static bool EdgeToEdge(POINT**,double,double*,double*,double*,double*);
 
 
 static void UpdateAverageVelocity(POINT** pts);
-//static void updateAverageVelocityProximity(POINT** pts);
+static void UpdatePostCollisionState(POINT** pts, double dt);
 
 //static void SaveState(POINT** pts);
 static void UpdateState(POINT** pts, double dt);
-//static void updateAverageVelocityCollision(POINT** pts);
 static void RestorePrevState(POINT** pts);
 
-
-//static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
-//static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
-//static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
-  //                                      double,double,double,double);
-
-//static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
-//static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
-//static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
-  //                                      double,double,double,double);
 
 
 std::unique_ptr<Proximity> checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
@@ -1082,8 +1071,19 @@ void PointTriProximity::computeImpulse()
 void PointTriProximity::updateAverageVelocity()
 {
     UpdateAverageVelocity(pts);
-    //UpdateAverageVelocityProximity(pts);
 }
+
+void PointTriProximity::computePostCollisionImpulse(double dt)
+{
+    PointToTriPostCollisionProximityImpulse(pts,nor,w,dist,dt);
+}
+
+/*
+void PointTriProximity::updatePostCollisionState(double dt)
+{
+    UpdateState(pts,dt);
+}
+*/
 
 EdgeEdgeProximity::EdgeEdgeProximity(POINT** Pts, double* Nor,
                                     double A, double B, double Dist)
@@ -1101,13 +1101,98 @@ void EdgeEdgeProximity::computeImpulse()
 void EdgeEdgeProximity::updateAverageVelocity()
 {
     UpdateAverageVelocity(pts);
-    //UpdateAverageVelocityProximity(pts);
+}
+
+void EdgeEdgeProximity::computePostCollisionImpulse(double dt)
+{
+    EdgeToEdgePostCollisionProximityImpulse(pts,nor,a,b,dist,dt);
+}
+
+/*
+void EdgeEdgeProximity::updatePostCollisionState(double dt)
+{
+    UpdateState(pts,dt);
+}
+*/
+
+PointTriCollision::PointTriCollision(POINT** Pts, double* Nor, double* W,
+                                    double Dist, double Dt, double MaxDt)
+    : pts{Pts}, dist{Dist}, dt{Dt}, maxdt{MaxDt}
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        w[i] = W[i];
+        nor[i] = Nor[i];
+    }
+}
+
+void PointTriCollision::computeImpulse()
+{
+    PointToTriCollisionImpulse(pts,nor,w,dist,dt);
+}
+
+void PointTriCollision::updateState()
+{
+    UpdateState(pts,dt);
+}
+
+void PointTriCollision::checkNewStateProximity(double tol)
+{
+    std::unique_ptr<Proximity> proximity = StaticPointToTri(pts,tol);
+    if (proximity)
+    {
+        double avg_dt = 0.5*(dt + maxdt);
+        proximity->computePostCollisionImpulse(avg_dt);
+        UpdateNewState(pts,avg_dt);
+        //proximity->updatePostCollisionState(avg_dt);
+    }
+}
+
+void PointTriCollision::restorePrevState()
+{
+    RestorePrevState(pts);
+}
+
+EdgeEdgeCollision::EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
+                                double B, double Dist, double Dt, double MaxDt)
+    : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}, maxdt{MaxDt}
+{
+    for (int i = 0; i < 3; ++i)
+        nor[i] = Nor[i];
+}
+
+void EdgeEdgeCollision::computeImpulse()
+{
+    EdgeToEdgeCollisionImpulse(pts,nor,a,b,dist,dt);
+}
+
+void EdgeEdgeCollision::updateState()
+{
+    UpdateState(pts,dt);
+}
+
+void EdgeEdgeCollision::checkNewStateProximity(double tol)
+{
+    std::unique_ptr<Proximity> proximity = StaticEdgeToEdge(pts,tol);
+    if (proximity)
+    {
+        double avg_dt = 0.5*(dt + maxdt);
+        proximity->computePostCollisionImpulse(avg_dt);
+        UpdateNewState(pts,avg_dt);
+        //proximity->updatePostCollisionState(avg_dt);
+    }
+}
+
+void EdgeEdgeCollision::restorePrevState()
+{
+    RestorePrevState(pts);
 }
 
 //TODO: make method of Proximity class?
 //
-//void UpdateAverageVelocityProximity(POINT** pts)
-void UpdateAverageVelocity(POINT** pts)
+//Call after all impulses have been computed;
+//see CollisionSolver3d::processProximityCandidates()
+static void UpdateAverageVelocity(POINT** pts)
 {
 	POINT *p;
 	STATE *sl;
@@ -1171,55 +1256,6 @@ void UpdateAverageVelocity(POINT** pts)
     */
 }
 
-PointTriCollision::PointTriCollision(POINT** Pts, double* Nor, double* W,
-                                    double Dist, double Dt, double MaxDt)
-    : pts{Pts}, dist{Dist}, dt{Dt}, maxdt{MaxDt}
-{
-    for (int i = 0; i < 3; ++i)
-    {
-        w[i] = W[i];
-        nor[i] = Nor[i];
-    }
-}
-
-void PointTriCollision::computeImpulse()
-{
-    PointToTriCollisionImpulse(pts,nor,w,dist,dt);
-}
-
-void PointTriCollision::updateState()
-{
-    UpdateState(pts,dt);
-}
-
-void PointTriCollision::restorePrevState()
-{
-    RestorePrevState(pts);
-}
-
-EdgeEdgeCollision::EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
-                                double B, double Dist, double Dt, double MaxDt)
-    : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}, maxdt{MaxDt}
-{
-    for (int i = 0; i < 3; ++i)
-        nor[i] = Nor[i];
-}
-
-void EdgeEdgeCollision::computeImpulse()
-{
-    EdgeToEdgeCollisionImpulse(pts,nor,a,b,dist,dt);
-}
-
-void EdgeEdgeCollision::updateState()
-{
-    UpdateState(pts,dt);
-}
-
-void EdgeEdgeCollision::restorePrevState()
-{
-    RestorePrevState(pts);
-}
-
 /*
 static void SaveState(POINT** pts)
 {
@@ -1268,6 +1304,8 @@ static void UpdateState(POINT** pts, double dt)
             //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
             
             sl->collsnImpulse[k] = 0.0;
+
+            //TODO: is this what we want?
             sl->collsn_num = 0;
             
             if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
@@ -1277,7 +1315,7 @@ static void UpdateState(POINT** pts, double dt)
                 clean_up(ERROR);
             }
             
-            //compute new position and new effective veloicity
+            //compute new position and new effective velocity
             Coords(p)[k] = sl->x_old[k] + dt*sl->avgVel[k];
             sl->avgVel[k] = (Coords(p)[j] - sl->x_old[j])/dt;
         }
@@ -1300,7 +1338,6 @@ static void UpdateState(POINT** pts, double dt)
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
     */
-
 }
 
 //TODO: make method of Collision class?

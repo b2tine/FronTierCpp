@@ -38,13 +38,24 @@ void PointToTriCollisionImpulse(
     PointToTriImpulse(pts,nor,w,dist,mstate,dt);
 }
 
+void PointToTriPostCollisionProximityImpulse(
+        POINT** pts,
+        double* nor,
+        double* w,
+        double dist,
+        double dt)
+{
+    MotionState mstate = MotionState::STATIC;
+    PointToTriImpulse(pts,nor,w,dist,mstate,dt);
+}
+
 static void PointToTriImpulse(
         POINT** pts,
         double* nor,
         double* w,
         double dist,
         MotionState mstate,
-        double root)
+        double deltaT)
 {
 	if (debugging("collision"))
 	    CollisionSolver3d::pt_to_tri++;
@@ -89,10 +100,12 @@ static void PointToTriImpulse(
     double friction_impulse = 0.0;
 	double rigid_impulse[2] = {0.0};
 
+    if (deltaT > 0.0)
+        dt = deltaT;
+
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collisions, NOT BOTH
-        dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
         else if (vn * dt < 0.1 * dist)
@@ -369,6 +382,18 @@ void EdgeToEdgeCollisionImpulse(
     EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,dt);
 }
 
+void EdgeToEdgePostCollisionProximityImpulse(
+        POINT** pts,
+        double* nor,
+        double a,
+        double b,
+        double dist,
+        double dt)
+{
+    MotionState mstate = MotionState::STATIC;
+    EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,dt);
+}
+
 static void EdgeToEdgeImpulse(
         POINT** pts,
         double* nor,
@@ -376,7 +401,7 @@ static void EdgeToEdgeImpulse(
         double b,
         double dist,
         MotionState mstate,
-        double root)
+        double deltaT)
 {
 	double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
@@ -419,10 +444,12 @@ static void EdgeToEdgeImpulse(
     
     double wab[4] = {1.0 - a, a, 1.0 - b, b};
 
+    if (deltaT > 0.0)
+        dt = deltaT;
+
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
-        dt = root;
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
         else if (vn * dt < 0.1 * dist)

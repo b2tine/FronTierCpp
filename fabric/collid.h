@@ -166,10 +166,12 @@ std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
 //Impulse.cpp
 void PointToTriProximityImpulse(POINT**,double*,double*,double);
-void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
-
-void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
+void PointToTriPostCollisionProximityImpulse(POINT**,double*,double*,double);
 void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
+
+void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
+void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,double);
+void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp
 void createImpZone(POINT**, int num = 4, bool first = NO);

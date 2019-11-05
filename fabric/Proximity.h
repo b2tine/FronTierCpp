@@ -18,6 +18,8 @@ class Proximity
         
         virtual void computeImpulse() = 0;
         virtual void updateAverageVelocity() = 0;
+        virtual void computePostCollisionImpulse(double dt) = 0;
+        //virtual void updatePostCollisionState(double dt) = 0;
         
         virtual ~Proximity() = default;
 };
@@ -35,6 +37,8 @@ class PointTriProximity : public Proximity
 
         void computeImpulse() override;
         void updateAverageVelocity() override;
+        void computePostCollisionImpulse(double dt) override;
+        //void updatePostCollisionState(double dt) override;
 };
 
 class EdgeEdgeProximity : public Proximity
@@ -51,6 +55,8 @@ class EdgeEdgeProximity : public Proximity
 
         void computeImpulse() override;
         void updateAverageVelocity() override;
+        void computePostCollisionImpulse(double dt) override;
+        //void updatePostCollisionState(double dt) override;
 };
 
 class Collision
@@ -66,6 +72,7 @@ class Collision
         
         virtual void computeImpulse() = 0;
         virtual void updateState() = 0;
+        virtual void checkNewStateProximity(double tol) = 0;
         virtual void restorePrevState() = 0;
         
         virtual ~Collision() = default;
@@ -84,6 +91,7 @@ class PointTriCollision : public Collision
 
         void computeImpulse() override;
         void updateState() override;
+        void checkNewStateProximity(double tol) override;
         void restorePrevState() override;
 };
 
@@ -94,24 +102,15 @@ class EdgeEdgeCollision : public Collision
         double a {-1.0};
         double b {-1.0};
 
+
         EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
-                double B, double Dist, double Dt, double MaxDt)
-            : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}, maxdt{MaxDt}
-        {}
+                double B, double Dist, double Dt, double MaxDt);
 
-        void computeImpulse() override
-        {
-            EdgeToEdgeCollisionImpulse(pts,nor,a,b,dist,dt);
-        }
 
-        void updateState() override
-        {
-            UpdateState(pts,dt);
-        }
-
-        void restorePrevState() override
-        {
-            RestorePrevState(pts);
+        void computeImpulse() override;
+        void updateState() override;
+        void checkNewStateProximity(double tol) override;
+        void restorePrevState() override;
         }
 };
 

@@ -510,7 +510,7 @@ static bool CollisionCompare(
 //      Gauess-Seidel fashion
 void CollisionSolver3d::processCollisionCandidates()
 {
-    Collisions.clear();
+    //Collisions.clear();
 
     std::vector<NodePair>::iterator it;
     for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
@@ -526,25 +526,17 @@ void CollisionSolver3d::processCollisionCandidates()
         {
             collsn->computeImpulse();
             collsn->updateState();
+            collsn->checkNewStateProximity(s_thickness);
             
-            //TODO: check "final position" for proximity
-            
-            //save so average velocity can be reset if neccessary
+            //Save so states can be reset if neccessary
             Collisions.push_back(std::move(collsn));
         }
     }
 
     /*
     //Sort the Collisions vector by time of collision
+    //
     std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
-
-    std::vector<std::unique_ptr<Collision>>::iterator it;
-    for (it = Collisions.begin(); it < Collisions.end(); ++it)
-    {
-        (*it)->computeImpulse();
-        (*it)->updateAverageVelocity();
-        //TODO: check "final position" for proximity
-    }
     */
 }
 
