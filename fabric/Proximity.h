@@ -4,12 +4,40 @@
 #include <FronTier.h>
 #include "state.h"
 
+std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
 
-void updateAverageVelocityProximity(POINT** pts);
+//std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
+//std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
+//std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
 
-//TODO: implement this
+//std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
+//std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
+
+std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
+
+//std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
+//std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
+//std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
+
+//std::unique_ptr<Collision> KineticPointToTri(POINT**,double,double,double);
+//std::unique_ptr<Collision> KineticEdgeToEdge(POINT**,double,double,double);
+
+//Moved to Impulse.h
+//
+//void PointToTriProximityImpulse(POINT**,double*,double*,double);
+//void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
+//void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
+//void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
+
+
+/*
+void UpdateAverageVelocity(POINT** pts);
+//void updateAverageVelocityProximity(POINT** pts);
+
+void UpdateState(POINT** pts, double dt);
 //void updateAverageVelocityCollision(POINT** pts);
-
+void RestorePrevState(POINT** pts);
+*/
 
 class Proximity
 {
@@ -25,6 +53,21 @@ class Proximity
         virtual ~Proximity() = default;
 };
 
+class PointTriProximity : public Proximity
+{
+    public:
+
+        double w[3] {-1.0};
+
+
+        PointTriProximity(POINT** Pts, double* Nor,
+                         double* W, double Dist);
+
+
+        void computeImpulse() override;
+        void updateAverageVelocity() override;
+};
+
 class EdgeEdgeProximity : public Proximity
 {
     public:
@@ -32,51 +75,13 @@ class EdgeEdgeProximity : public Proximity
         double a {-1.0};
         double b {-1.0};
         
+
         EdgeEdgeProximity(POINT** Pts, double* Nor,
-                double A, double B, double Dist)
-            : pts{Pts}, a{A}, b{B}, dist{Dist}
-        {
-            for (int i = 0; i < 3; ++i)
-                nor[i] = Nor[i];
-        }
+                        double A, double B, double Dist);
         
-        virtual void computeImpulse() override
-        {
-            EdgeToEdgeProximityImpulse(pts,nor,a,b,dist);
-        }
 
-        virtual void updateAverageVelocity() override
-        {
-            updateAverageVelocityProximity(pts);
-        }
-};
-
-class PointTriProximity : public Proximity
-{
-    public:
-
-        double w[3] {-1.0};
-
-        PointTriProximity(POINT** Pts,
-                double* Nor, double* W, double Dist)
-            : pts{Pts}, dist{Dist}
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                w[i] = W[i];
-                nor[i] = Nor[i];
-            }
-        }
-
-        void computeImpulse() override
-        {
-            PointToTriProximityImpulse(pts,nor,w,dist);
-        }
-
-        virtual void updateAverageVelocity() override
-        {
-            updateAverageVelocityProximity(pts);
-        }
+        void computeImpulse() override;
+        void updateAverageVelocity() override;
 };
 
 class Collision
@@ -86,12 +91,31 @@ class Collision
         POINT** pts {nullptr};
         double nor[3] {0.0};
         double dist {HUGE};
+
         double dt {-1.0};
+        double maxdt {-1.0};
         
         virtual void computeImpulse() = 0;
-        virtual void updateAverageVelocity() = 0;
+        virtual void updateState() = 0;
+        virtual void restorePrevState() = 0;
         
         virtual ~Collision() = default;
+};
+
+class PointTriCollision : public Collision
+{
+    public:
+
+        double w[3] {-1.0};
+
+        
+        PointTriCollision(POINT** Pts, double* Nor,
+                double* W, double Dist, double Dt, double MaxDt);
+
+
+        void computeImpulse() override;
+        void updateState() override;
+        void restorePrevState() override;
 };
 
 class EdgeEdgeCollision : public Collision
@@ -101,9 +125,9 @@ class EdgeEdgeCollision : public Collision
         double a {-1.0};
         double b {-1.0};
 
-        EdgeEdgeCollision(POINT** Pts, double* Nor,
-                double A, double B, double Dist, double Dt)
-            : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}
+        EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
+                double B, double Dist, double Dt, double MaxDt)
+            : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}, maxdt{MaxDt}
         {}
 
         void computeImpulse() override
@@ -111,37 +135,14 @@ class EdgeEdgeCollision : public Collision
             EdgeToEdgeCollisionImpulse(pts,nor,a,b,dist,dt);
         }
 
-        virtual void updateAverageVelocity() override
+        void updateState() override
         {
-
-        }
-};
-
-class PointTriCollision : public Collision
-{
-    public:
-
-        double w[3] {-1.0};
-
-        PointTriCollision(POINT** Pts, double* Nor,
-                double* W, double Dist, double Dt)
-            : pts{Pts}, dist{Dist}, dt{Dt}
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                w[i] = W[i];
-                nor[i] = Nor[i];
-            }
+            UpdateState(pts,dt);
         }
 
-        void computeImpulse() override
+        void restorePrevState() override
         {
-            PointToTriCollisionImpulse(pts,nor,w,dist,dt);
-        }
-
-        virtual void updateAverageVelocity() override
-        {
-
+            RestorePrevState(pts);
         }
 };
 

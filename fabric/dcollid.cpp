@@ -1,5 +1,6 @@
 #include <FronTier.h>
 #include "collid.h"
+#include "Proximity.h"
 
 #include <vector>
 #include <iostream>
@@ -294,7 +295,8 @@ void CollisionSolver3d::resolveCollision()
 void CollisionSolver3d::detectProximity()
 {
     aabbProximity();
-    candidates = abt_collision->getCandidates();
+    proximityCandidates.clear();
+    proximityCandidates = abt_collision->getCandidates();
 
 	if (debugging("proximity"))
         std::cout << candidates.size()
@@ -329,11 +331,13 @@ void CollisionSolver3d::aabbProximity()
 
 void CollisionSolver3d::processProximityCandidates()
 {
-    std::vector<NodePair>::iterator it;
-    for (it = candidates.begin(); it < candidates.end(); ++it)
+    Proximities.clear();
+
+    std::vector<NodePair>::iterator nit;
+    for (nit = proximityCandidates.begin(); nit < proximityCandidates.end(); ++nit)
     {
-        Node* A = it->first;
-        Node* B = it->second;
+        Node* A = nit->first;
+        Node* B = nit->second;
         
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
@@ -341,13 +345,19 @@ void CollisionSolver3d::processProximityCandidates()
         std::unique_ptr<Proximity> proximity = checkProximity(a,b,s_thickness);
         if (proximity)
         {
-            //TODO: implement updateAverageVelocity()
             proximity->computeImpulse();
-            proximity->updateAverageVelocity();
+            Proximities.push_back(std::move(proximity));
         }
+    }
+
+    std::vector<unique_ptr<Proximity>>::iterator pit;
+    for (pit = Proximities.begin(); pit < Proximities.end(); ++pit)
+    {
+        (*pit)->updateAverageVelocity();
     }
 }
 
+/*
 std::unique_ptr<Proximity> checkProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_BOND *cd_b1, *cd_b2;
@@ -389,6 +399,7 @@ std::unique_ptr<Proximity> checkProximity(const CD_HSE* a, const CD_HSE* b, doub
 	    clean_up(ERROR);
 	}
 }
+*/
 
 //TODO: use gauss-seidel updates
 //TODO: finish updating for new data structures
@@ -400,23 +411,27 @@ void CollisionSolver3d::detectCollision()
 	const int MAX_ITER = 12;
     const double h = CollisionSolver3d::getRoundingTolerance();
 	
-    bool is_collision = true; 
-	
     int niter = 1;
 	int cd_count = 0;
    
+    //TODO: keep track of total elapsed time?
+    
+    bool is_collision = true; 
+
     while(is_collision)
     {
 	    is_collision = false;
 	    
+        //TODO: process one collision pair, then recompute
+        //      tree and get new candidates?
         aabbCollision();
+        collisionCandidates.clear();
         collisionCandidates = abt_collision->getCandidates();
 
 	    if (debugging("collision"))
             std::cout<<"    #"<<niter << ": " << collisionCandidates.getCount() 
                 << " pair of collision candidates" << std::endl;
 
-        //TODO: implement this
         processCollisionCandidates();
 
         if (++niter > MAX_ITER)
@@ -424,6 +439,7 @@ void CollisionSolver3d::detectCollision()
 	}
 
     //TODO: implement computeImpactZone() using new data structures
+    //      SEE PROVOT PAPER
 	if (is_collision) 
     {
         start_clock("computeImpactZone");
@@ -459,6 +475,8 @@ void CollisionSolver3d::aabbCollision()
     }
 }
 
+//For sorting Collisions by time of occcurence.
+//Still unclear if we want to do this.
 static bool CollisionCompare(
         std::unique_ptr<Collision>& A,
         std::unique_ptr<Collision>& B)
@@ -466,11 +484,14 @@ static bool CollisionCompare(
     return A->dt < B->dt;
 }
 
-//TODO: not ready yet
+//TODO: iteratively process collision candidates in
+//      Gauess-Seidel fashion
 void CollisionSolver3d::processCollisionCandidates()
 {
+    Collisions.clear();
+
     std::vector<NodePair>::iterator it;
-    for (it = candidates.begin(); it < candidates.end(); ++it)
+    for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
     {
         Node* A = it->first;
         Node* B = it->second;
@@ -478,24 +499,34 @@ void CollisionSolver3d::processCollisionCandidates()
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
 
-        std::unique_ptr<Collision> collision = checkCollision(a,b,s_eps);
-        if (collision)
-            Collisions.push_back(collision);
+        std::unique_ptr<Collision> collsn = checkCollision(a,b,s_eps);
+        if (collsn)
+        {
+            collsn->computeImpulse();
+            collsn->updateState();
+            
+            //TODO: check "final position" for proximity
+            
+            //save so average velocity can be reset if neccessary
+            Collisions.push_back(std::move(collsn));
+        }
     }
 
+    /*
     //Sort the Collisions vector by time of collision
     std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
 
-    //TODO: begin iteratively processing them in Gauess-Seidel
-    //      fashion.
     std::vector<std::unique_ptr<Collision>>::iterator it;
     for (it = Collisions.begin(); it < Collisions.end(); ++it)
     {
-
+        (*it)->computeImpulse();
+        (*it)->updateAverageVelocity();
+        //TODO: check "final position" for proximity
     }
+    */
 }
 
-//TODO: Need to work inside MovingXToX()
+/*
 std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -537,6 +568,7 @@ std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, doub
 	    clean_up(ERROR);
 	}
 }
+*/
 
 //TODO: rewrite this with new data structures
 void CollisionSolver3d::computeImpactZone()

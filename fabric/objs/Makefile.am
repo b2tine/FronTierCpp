@@ -28,9 +28,12 @@ libfabric_la_SOURCES = \
 ../cgal_intfc.h \
 ../cgal_intfc.cpp \
 ../cgal.cpp \
+../Proximity.h \
+../Proximity.cpp \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
+../Impulse.cpp
 ../CD_HSE.h \
 ../CD_HSE.cpp \
 ../AABB.h \

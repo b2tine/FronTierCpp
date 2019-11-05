@@ -2,7 +2,7 @@
 #define COLLID_H
 
 #include "AABB.h"
-#include "Proximity.h"
+//#include "Proximity.h"
 
 #if defined(isnan)
 #undef isnan
@@ -14,6 +14,10 @@
 const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-6;
 const double DT = 0.001;
+
+
+class Proximity;
+class Collision;
 
 
 class CollisionSolver3d
@@ -88,6 +92,8 @@ private:
     double proximity_vol;
 
     std::vector<NodePair> proximityCandidates;
+    std::vector<std::unique_ptr<Proximity>> Proximities;
+    
     std::vector<NodePair> collisionCandidates;
     std::vector<std::unique_ptr<Collision>> Collisions;
 
@@ -111,7 +117,7 @@ private:
 	void updateFinalPosition();
 	void reduceSuperelast();
 	void updateFinalVelocity();
-	void updateAverageVelocity();
+	//void updateAverageVelocity();
 	void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
@@ -126,31 +132,31 @@ private:
 	void updateImpactListVelocity(POINT*);
 };
 
-//void TriToTri(const TRI*,const TRI*,double);
-//void TriToBond(const TRI*,const BOND*,double);
-//void BondToBond(const BOND*,const BOND*,double);
+//Impulse.cpp
+void PointToTriProximityImpulse(POINT**,double*,double*,double);
+void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 
-//Proximity* TriToTri(const TRI*,const TRI*,double);
-//Proximity* TriToBond(const TRI*,const BOND*,double);
-//Proximity* BondToBond(const BOND*,const BOND*,double);
+void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
+void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
+
+//Moved to Proximity.h
+/*
+std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
 std::unique_ptr<Proximity> TriToTri(const TRI*,const TRI*,double);
 std::unique_ptr<Proximity> TriToBond(const TRI*,const BOND*,double);
 std::unique_ptr<Proximity> BondToBond(const BOND*,const BOND*,double);
 
-std::unique_ptr<Proximity> MovingTriToTri(const TRI*,const TRI*,double);
-std::unique_ptr<Proximity> MovingTriToBond(const TRI*,const BOND*,double);
-std::unique_ptr<Proximity> MovingBondToBond(const BOND*,const BOND*,double);
+std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
+std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
 
-std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
-std::unique_ptr<Proximity> checkCollision(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Collision> MovingTriToTri(const TRI*,const TRI*,double);
+std::unique_ptr<Collision> MovingTriToBond(const TRI*,const BOND*,double);
+std::unique_ptr<Collision> MovingBondToBond(const BOND*,const BOND*,double);
+*/
 
-void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
-void PointToTriProximityImpulse(POINT**,double*,double*,double);
-
-void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
-void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
-
+extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
@@ -179,7 +185,6 @@ bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
 
-extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
