@@ -85,6 +85,9 @@ void UF_MergePoints(POINT* X, POINT* Y)
 	}
 }
 
+//TODO: Make this a factory function returning pointers
+//      to an ImpactZone class object?
+//
 //Note: num has default value of 4,
 //and first has default value of false
 void CreateImpactZone(POINT** pts, int num, bool first)
@@ -98,7 +101,8 @@ void CreateImpactZone(POINT** pts, int num, bool first)
             {
                 continue;
             }
-            mergePoint(pts[i],pts[j]); 
+
+            UF_MergePoints(pts[i],pts[j]); 
 	    }
 	}
     //TODO: Check that all points of the interface have not
@@ -109,7 +113,7 @@ void CreateImpactZone(POINT** pts, int num, bool first)
 }
 
 // test function for creating impact zone for each movable RG
-void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
+void CollisionSolver3d::createImpactZoneForRG(const INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
@@ -124,54 +128,74 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 
         surf_tri_loop(*s, tri)
 	    {
+            //TODO: Test what CreateImpactZone() does when given this.
     		CreateImpactZone(Point_of_tri(tri), 3, YES);
 	    }
 	}
 }
-
 
 void CollisionSolver3d::computeImpactZones()
 {
     if (debugging("collision"))
         std::cout<<"Starting fail-safe (Impact Zone) method:\n";
 	
-	turnOnImpZone();
-
-    int numImpactZones = 0;
     bool collision_free = false; 
-
     while (!collision_free)
     {
         aabbCollision();
         collisionCandidates.clear();
         collisionCandidates = abt_collision->getCandidates();
 
-        /*
 	    if (debugging("collision"))
         {
             std::cout<< "    #" << niter++ << ": " << collisionCandidates.size()
                      << " pair of collision tris\n";
-            
-            std::cout<< "     " << numImpactZones  << " zones of impact\n";
         }
-        */
+            
+        growImpactZones();
 
-        processCollisionCandidates();
+        //TODO: Check that entire interface has not been merged
+        //      into single ImpactZone;
+        //      If it has then we can terminate.
         
-        updateImpactZoneVelocity(numImpactZones);
-
-        if (Collisions.empty())
+        if (!Collisions.empty())
+            updateImpactZoneVelocity();
+        else
             collision_free = true;
     }
-    
-    turnOffImpZone();
 }
 
-void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
+void CollisionSolver3d::growImpactZones()
+{
+    Collisions.clear();
+
+    std::vector<NodePair>::iterator it;
+    for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
+    {
+        Node* A = it->first;
+        Node* B = it->second;
+
+        CD_HSE* a = A->data->hse;
+        CD_HSE* b = B->data->hse;
+
+        std::unique_ptr<Collision> collsn = checkCollision(a,b,s_eps);
+        if (collsn)
+        {
+            collsn->mergeImpactZones();
+            Collisions.push_back(std::move(collsn));
+        }
+    }
+
+    //Sort the Collisions vector by time of collision
+    //
+    //std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
+}
+
+void CollisionSolver3d::updateImpactZoneVelocity()
 {
 	POINT* pt;
-	int numZones = 0;
-
+    
+    num_impact_zones = 0;
 	unsortHseList(hseList);
 
     std::vector<CD_HSE*>::iterator it;
@@ -182,17 +206,18 @@ void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
             pt = (*it)->Point_of_hse(i);
 
             //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1)
+            if (sorted(pt) || UF_Weight(UF_FindSet(pt)) == 1)
                 continue;
             else
             {
                 updateImpactListVelocity(findSet(pt));
-                numZones++;
+                num_impact_zones++;
             }
 	    }
     }
-    
-    nZones = numZones;
+
+    if (debugging("collision"))
+        std::cout<< "     " << num_impact_zones  << " zones of impact\n";
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()
@@ -233,15 +258,16 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     double L[3] = {0.0};    //angular momentum
 	double I[3][3] = {0.0}; //inertia tensor
 	double tmp[3][3];
-	int num_pts = 0;
+	
+    int num_pts = 0;
 
     //compute center of mass position and velocity
 	while(p)
     {
 		num_pts++;
 		sorted(p) = YES;
-		sl = (STATE*)left_state(p);
-	
+		
+        sl = (STATE*)left_state(p);
         for (int i = 0; i < m_dim; ++i)
         {
 		    x_cm[i] += sl->x_old[i]; 

@@ -504,19 +504,6 @@ std::unique_ptr<Collision> MovingBondToBond(const BOND* b1, const BOND* b2, doub
     }
 
     return MovingEdgeToEdge(pts,tol);
-
-    /*
-	bool status = false;
-    if (MovingEdgeToEdge(pts,tol))
-        status = true;
-
-    //TODO: Investigate if this is correct
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-
-    return status;
-    */
 }
 
 static std::unique_ptr<Collision> MovingPointToTri(POINT** pts, double h)
@@ -531,9 +518,9 @@ static std::unique_ptr<Collision> MovingPointToTri(POINT** pts, double h)
             if (dt[i] < 0.0)
                 continue;
 
-            std::unique_ptr<Collision> collision = KineticPointToTri(pts,h,dt[i]);
-            if (collision)
-                return collision;
+            std::unique_ptr<Collision> collsn = KineticPointToTri(pts,h,dt[i]);
+            if (collsn)
+                return collsn;
         }
 	}
 
@@ -552,9 +539,9 @@ static std::unique_ptr<Collision> MovingEdgeToEdge(POINT** pts, double h)
             if (dt[i] < 0.0)
                 continue;
 
-            std::unique_ptr<Collision> collision = KineticEdgeToEdge(pts,h,dt[i],maxdt);
-            if (collision)
-                return collision;
+            std::unique_ptr<Collision> collsn = KineticEdgeToEdge(pts,h,dt[i],maxdt);
+            if (collsn)
+                return collsn;
         }
     }
 
@@ -1148,6 +1135,11 @@ void PointTriCollision::checkNewStateProximity(double tol)
     }
 }
 
+void PointTriCollision::mergeImpactZones()
+{
+    CreateImpZone(pts,4);
+}
+
 void PointTriCollision::restorePrevState()
 {
     RestorePrevState(pts);
@@ -1181,6 +1173,11 @@ void EdgeEdgeCollision::checkNewStateProximity(double tol)
         UpdateNewState(pts,avg_dt);
         //proximity->updatePostCollisionState(avg_dt);
     }
+}
+
+void EdgeEdgeCollision::mergeImpactZones()
+{
+    CreateImpZone(pts,4);
 }
 
 void EdgeEdgeCollision::restorePrevState()

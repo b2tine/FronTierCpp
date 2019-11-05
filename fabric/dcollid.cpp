@@ -46,7 +46,7 @@ double CollisionSolver3d::s_k = 1000;
 double CollisionSolver3d::s_m = 0.01;
 double CollisionSolver3d::s_mu = 0.0;
 double CollisionSolver3d::s_cr = 1.0;
-bool   CollisionSolver3d::s_detImpZone = false;
+bool   CollisionSolver3d::impact_zones_on = false;
 
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
@@ -97,6 +97,21 @@ double CollisionSolver3d::getPointMass() {return s_m;}
 void   CollisionSolver3d::setRestitutionCoef(double new_cr) {s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef() {return s_cr;}
 
+void CollisionSolver3d::turnOnImpactZones()
+{
+    impact_zones_on = true;
+}
+
+void CollisionSolver3d::turnOffImpactZones()
+{
+    impact_zones_on = false;
+}
+
+bool CollisionSolver3d::getImpactZoneStatus()
+{
+    return impact_zones_on;
+}
+
 
 void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
 {
@@ -108,27 +123,33 @@ void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
 	TRI *tri;
 	BOND *b;
 	int n_tri = 0, n_bond = 0;
-	setTimeStepSize(dt);
+	
 	clearHseList();
+    setTimeStepSize(dt);
 	
     intfc_surface_loop(intfc,s)
 	{
-	    if (is_bdry(*s)) continue;
-	    unsort_surface_point(*s);
-	    surf_tri_loop(*s,tri)
+	    if (is_bdry(*s))
+            continue;
+	    
+        unsort_surface_point(*s);
+	    
+        surf_tri_loop(*s,tri)
 	    {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
-                    wave_type(*s) == NEUMANN_BOUNDARY)
-	            hseList.push_back(new CD_TRI(tri, "tris_rigid"));
-                else 
-                    hseList.push_back(new CD_TRI(tri, "tris"));
-		n_tri++;
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY
+                    || wave_type(*s) == NEUMANN_BOUNDARY)
+                hseList.push_back(new CD_TRI(tri, "tris_rigid"));
+            else
+                hseList.push_back(new CD_TRI(tri, "tris"));
+            n_tri++;
 	    }
 	}
 
 	intfc_curve_loop(intfc,c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+        if (hsbdry_type(*c) != STRING_HSBDRY)
+            continue; 
+
 	    curve_bond_loop(*c,b)
 	    {
             hseList.push_back(new CD_BOND(b,m_dim, "lines"));
@@ -136,11 +157,13 @@ void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
 	    }
 	}
 
-	makeSet(hseList);
-	createImpZoneForRG(intfc);
+	UF_MakeDisjointSets(hseList);
+	createImpactZoneForRG(intfc);
+
 	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
 
-	if (debugging("assembleFromInterface")){
+	if (debugging("assembleFromInterface"))
+    {
 	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
 	    printf("%lu number of elements is assembled\n",hseList.size());
 	}
@@ -319,20 +342,6 @@ void CollisionSolver3d::resetAverageVelocity()
     }
 }
 
-void CollisionSolver3d::turnOffImpZone()
-{
-    s_detImpZone = false;
-}
-
-void CollisionSolver3d::turnOnImpZone(){
-    s_detImpZone = true;
-}
-
-bool CollisionSolver3d::getImpZoneStatus()
-{
-    return s_detImpZone;
-}
-
 void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
@@ -411,6 +420,7 @@ void CollisionSolver3d::aabbProximity()
              AABB* ab = new AABB(pre_tol,*it,abt_proximity->getType());
              abt_proximity->addAABB(ab);
         }
+
         abt_proximity->updatePointMap(hseList);
         proximity_vol = abt_proximity->getVolume();
     }

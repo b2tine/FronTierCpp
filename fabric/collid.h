@@ -40,19 +40,27 @@ public:
 
 	static void setRoundingTolerance(double);
 	static double getRoundingTolerance();
+
 	static void setFabricThickness(double);
 	static double getFabricThickness();
-	static void setTimeStepSize(double);
+	
+    static void setTimeStepSize(double);
 	static double getTimeStepSize();
-	static void setSpringConstant(double);
+	
+    static void setSpringConstant(double);
 	static double getSpringConstant();
-	static void setFrictionConstant(double);
+	
+    static void setFrictionConstant(double);
 	static double getFrictionConstant();
-	static void setPointMass(double);
+	
+    static void setPointMass(double);
 	static double getPointMass();
-	static void setRestitutionCoef(double);
+	
+    static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
-	static bool getImpZoneStatus();	
+	
+    static bool getImpZoneStatus();	
+
 
     double setVolumeDiff(double);
 
@@ -60,7 +68,7 @@ public:
 
 	void clearHseList();
 	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
+	void createImpactZoneForRG(const INTERFACE*);
 	void setDomainBoundary(double* L,double *U);
 	
     void resolveCollision();
@@ -104,12 +112,13 @@ private:
 	static double s_k;
 	static double s_mu;
 	static double s_cr;
-    static bool s_detImpZone;
 
 	double Boundary[3][2]; //domain boundary[dir][side]
 
-	static void turnOffImpZone();
-	static void turnOnImpZone();
+    int num_impact_zones;
+    static bool impact_zones_on;
+	static void turnOnImpactZones();
+	static void turnOffImpactZones();
 	
 	void computeAverageVelocity();
 	//void updateAverageVelocity();
@@ -175,7 +184,7 @@ void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,doubl
 void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp
-void CreateImpZone(POINT**, int num = 4, bool first = NO);
+void CreateImpactZone(POINT**, int num = 4, bool first = NO);
 
 POINT*& UF_Root(POINT* p);
 POINT*& UF_NextPoint(POINT* p);

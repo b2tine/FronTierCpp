@@ -73,6 +73,7 @@ class Collision
         virtual void computeImpulse() = 0;
         virtual void updateState() = 0;
         virtual void checkNewStateProximity(double tol) = 0;
+        virtual void mergeImpactZones() = 0;
         virtual void restorePrevState() = 0;
         
         virtual ~Collision() = default;
@@ -92,6 +93,7 @@ class PointTriCollision : public Collision
         void computeImpulse() override;
         void updateState() override;
         void checkNewStateProximity(double tol) override;
+        void mergeImpactZones() override;
         void restorePrevState() override;
 };
 
@@ -110,6 +112,7 @@ class EdgeEdgeCollision : public Collision
         void computeImpulse() override;
         void updateState() override;
         void checkNewStateProximity(double tol) override;
+        void mergeImpactZones() override;
         void restorePrevState() override;
         }
 };
