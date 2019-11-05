@@ -185,7 +185,6 @@ void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp
 void CreateImpactZone(POINT**);
-//void CreateImpactZone(POINT**, int num = 4, bool first = NO);
 void CreateImpactZoneRigidBody(POINT** pts);
 
 POINT*& UF_Root(POINT* p);

@@ -263,31 +263,6 @@ static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT** pts, double h)
     return proximity;
 }
 
-/*
-//NOTE: Moved to Impulse.cpp
-void PointToTriProximityImpulse(
-        POINT** pts,
-        double* nor,
-        double* w,
-        double dist)
-{
-    MotionState mstate = MotionState::STATIC;
-    PointToTriImpulse(pts,nor,w,dist,mstate,-1.0);
-}
-
-//NOTE: Moved to Impulse.cpp
-void EdgeToEdgeProximityImpulse(
-        POINT** pts,
-        double* nor,
-        double a,
-        double b,
-        double dist)
-{
-    MotionState mstate = MotionState::STATIC;
-    EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,-1.0);
-}
-*/
-
 std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -341,9 +316,6 @@ std::unique_ptr<Collision> MovingTriToTri(const TRI* a,const TRI* b, double h)
             return {};
 	}
 
-	//bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //bool status = false;
-
 	POINT* pts[4];
     std::vector<std::unique_ptr<Collision>> collisions;
 
@@ -366,13 +338,9 @@ std::unique_ptr<Collision> MovingTriToTri(const TRI* a,const TRI* b, double h)
             pts[1] == pts[3] || pts[2] == pts[3])
             continue; 
         
-        //TODO: implement MovingPointToTri()
         std::unique_ptr<Collision> collsn = MovingPointToTri(pts,h);
         if (collsn)
             collisions.push_back(std::move(collsn));
-
-        //if (status && is_detImpZone)
-          //  createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -396,9 +364,6 @@ std::unique_ptr<Collision> MovingTriToTri(const TRI* a,const TRI* b, double h)
             std::unique_ptr<Collision> collsn = MovingEdgeToEdge(pts,h);
             if (collsn)
                 collisions.push_back(std::move(collsn));
-                
-            //if (status && is_detImpZone)
-              //  createImpZone(pts,4);
 	    }
     }
 
@@ -432,9 +397,6 @@ std::unique_ptr<Collision> MovingTriToBond(const TRI* tri,const BOND* bd, double
             return {};
 	}
 
-	//bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-	//bool status = false;
-
 	POINT* pts[4];
     std::vector<std::unique_ptr<Collision>> collisions;
 
@@ -449,9 +411,6 @@ std::unique_ptr<Collision> MovingTriToBond(const TRI* tri,const BOND* bd, double
          std::unique_ptr<Collision> collsn = MovingPointToTri(pts,h);
          if (collsn)
              collisions.push_back(std::move(collsn));
-
-        //if (status && is_detImpZone)
-          //  createImpZone(pts,4);
     }
 
     /* detect collision of each of tri edge w.r.t to bond */
@@ -465,9 +424,6 @@ std::unique_ptr<Collision> MovingTriToBond(const TRI* tri,const BOND* bd, double
         std::unique_ptr<Collision> collsn = MovingEdgeToEdge(pts,h);
         if (collsn)
             collisions.push_back(std::move(collsn));
-
-        //if (status && is_detImpZone)
-          //  createImpZone(pts,4);
 	}
 
     double min_dist = HUGE;
@@ -745,33 +701,6 @@ static std::unique_ptr<Collision> KineticEdgeToEdge(
     return collision;
 }
 
-/*
-//NOTE: Moved to Impulse.cpp
-void PointToTriCollisionImpulse(
-        POINT** pts,
-        double* nor,
-        double* w,
-        double dist,
-        double dt)
-{
-    MotionState mstate = MotionState::MOVING;
-    PointToTriImpulse(pts,nor,w,dist,mstate,dt);
-}
-
-//NOTE: Moved to Impulse.cpp
-void EdgeToEdgeCollisionImpulse(
-        POINT** pts,
-        double* nor,
-        double a,
-        double b,
-        double dist,
-        double dt)
-{
-    MotionState mstate = MotionState::MOVING;
-    EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,dt);
-}
-*/
-
 static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* dist)
 {
 /*	x1
@@ -859,7 +788,7 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
 }
 
 //For details of this implementation see:
-//  //http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
+//http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment()
 static bool EdgeToEdge(
         POINT** pts,
         double h,
