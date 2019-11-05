@@ -1,10 +1,93 @@
 #include <armadillo>
 #include "collid.h"
 
+POINT*& UF_Root(POINT* p)
+{
+	STATE* sl = (STATE*) left_state(p);
+	return sl->impZone.root;
+}
+
+POINT*& UF_NextPoint(POINT* p)
+{
+	STATE* sl = (STATE*) left_state(p);
+    return sl->impZone.next_pt;
+}
+
+POINT*& UF_Tail(POINT* p)
+{
+	STATE* sl = (STATE*) left_state(p);
+	return sl->impZone.tail;
+}
+
+int& UF_Weight(POINT* p)
+{
+	STATE* sl = (STATE*) left_state(p);
+	return sl->impZone.num_pts;
+}
+
+void UF_MakeDisjointSets(std::vector<CD_HSE*>& hselist)
+{
+	STATE* sl;
+	POINT* pt;
+
+    for (std::vector<CD_HSE*>::iterator it = hselist.begin();
+            it < hselist.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+            sorted(pt) = NO;
+
+            sl = (STATE*) left_state(pt);
+
+            sl->impZone.root = pt;
+            sl->impZone.next_pt = nullptr;
+            sl->impZone.tail = pt;
+            sl->impZone.num_pts = 1;
+        }
+    }
+}
+
+POINT* UF_FindSet(POINT* p)
+{
+	if (UF_Root(p) != p)
+		UF_Root(p) = UF_FindSet(UF_Root(p));
+	return UF_Root(p);
+}
+
+void UF_MergePoints(POINT* X, POINT* Y)
+{
+	POINT* PX = UF_FindSet(X);
+	POINT* PY = UF_FindSet(Y);
+	
+    if (PX == PY)
+        return;
+	
+    if (UF_Weight(PX) > UF_Weight(PY))
+    {
+	    //update root after merge
+	    UF_Weight(PX) += UF_Weight(PY);
+	    UF_Root(PY) = PX;
+
+	    //link lists, update tail
+	    UF_NextPoint(UF_Tail(PX)) = PY;
+	    UF_Tail(PX) = UF_Tail(PY); 
+	}
+	else
+    {
+	    //update root after merge
+	    UF_Weight(PY) += UF_Weight(PX);
+	    UF_Root(PX) = PY;
+
+	    //link lists, update tail
+	    UF_NextPoint(UF_Tail(PY)) = PX;
+	    UF_Tail(PY) = UF_Tail(PX); 
+	}
+}
 
 //Note: num has default value of 4,
 //and first has default value of false
-void createImpZone(POINT** pts, int num, bool first)
+void CreateImpactZone(POINT** pts, int num, bool first)
 {
 	for (int i = 0; i < num; ++i)
 	{
@@ -25,7 +108,6 @@ void createImpZone(POINT** pts, int num, bool first)
     //      handling iterations can be terminated.
 }
 
-
 // test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 {
@@ -34,14 +116,55 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 
 	intfc_surface_loop(intfc, s)
 	{
-	    if (is_bdry(*s)) continue;
-	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+	    if (is_bdry(*s))
+            continue;
+	    
+        if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0]))
+            continue;
 
         surf_tri_loop(*s, tri)
 	    {
-    		createImpZone(Point_of_tri(tri), 3, YES);
+    		CreateImpactZone(Point_of_tri(tri), 3, YES);
 	    }
 	}
+}
+
+
+void CollisionSolver3d::computeImpactZones()
+{
+    if (debugging("collision"))
+        std::cout<<"Starting fail-safe (Impact Zone) method:\n";
+	
+	turnOnImpZone();
+
+    int numImpactZones = 0;
+    bool collision_free = false; 
+
+    while (!collision_free)
+    {
+        aabbCollision();
+        collisionCandidates.clear();
+        collisionCandidates = abt_collision->getCandidates();
+
+        /*
+	    if (debugging("collision"))
+        {
+            std::cout<< "    #" << niter++ << ": " << collisionCandidates.size()
+                     << " pair of collision tris\n";
+            
+            std::cout<< "     " << numImpactZones  << " zones of impact\n";
+        }
+        */
+
+        processCollisionCandidates();
+        
+        updateImpactZoneVelocity(numImpactZones);
+
+        if (Collisions.empty())
+            collision_free = true;
+    }
+    
+    turnOffImpZone();
 }
 
 void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
@@ -50,20 +173,26 @@ void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 	int numZones = 0;
 
 	unsortHseList(hseList);
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it){
-	    for (int i = 0; i < (*it)->num_pts(); ++i){
-		pt = (*it)->Point_of_hse(i);
-		//skip traversed or isolated pts
-		if (sorted(pt) ||
-		    weight(findSet(pt)) == 1) continue;
-		else{
-		    updateImpactListVelocity(findSet(pt));
-		    numZones++;
-		}
+
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            pt = (*it)->Point_of_hse(i);
+
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(findSet(pt)) == 1)
+                continue;
+            else
+            {
+                updateImpactListVelocity(findSet(pt));
+                numZones++;
+            }
 	    }
-	}	
-	nZones = numZones;
+    }
+    
+    nZones = numZones;
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()
@@ -71,15 +200,16 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 	POINT* pt;
 	unsortHseList(hseList);
 
-	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-	     it < hseList.end(); ++it)
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             pt = (*it)->Point_of_hse(i);
             
             //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1) continue;
+            if (sorted(pt) || weight(findSet(pt)) == 1)
+                continue;
             else if (!isMovableRigidBody(pt))
             {
                 sorted(pt) = YES;
@@ -93,13 +223,14 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 
 void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 {
-	STATE* sl = NULL;
+	STATE* sl = nullptr;
 	POINT* p = head;
 
 	double m = getPointMass();
     double x_cm[3] = {0.0};
     double v_cm[3] = {0.0};
-	double L[3] = {0.0}; //angular momentum
+	
+    double L[3] = {0.0};    //angular momentum
 	double I[3][3] = {0.0}; //inertia tensor
 	double tmp[3][3];
 	int num_pts = 0;
@@ -289,86 +420,5 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
         p = next_pt(p);
     }
 }
-
-//functions for UF alogrithm
-int& weight(POINT* p)
-{
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.num_pts;
-}
-
-POINT*& root(POINT* p)
-{
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.root;
-}
-
-POINT*& next_pt(POINT* p)
-{
-	STATE* sl = (STATE*)left_state(p);
-    return sl->impZone.next_pt;
-}
-
-POINT*& tail(POINT* p)
-{
-	STATE* sl = (STATE*)left_state(p);
-	return sl->impZone.tail;
-}
-
-void makeSet(std::vector<CD_HSE*>& hselist)
-{
-	STATE* sl;
-	POINT* pt;
-    for (std::vector<CD_HSE*>::iterator it = hselist.begin();
-            it < hselist.end(); ++it)
-    {
-        for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            pt = (*it)->Point_of_hse(i);
-            sorted(pt) = NO;
-            sl = (STATE*)left_state(pt);
-            sl->impZone.next_pt = NULL;
-            sl->impZone.tail = pt;
-            sl->impZone.root = pt;
-            sl->impZone.num_pts = 1;
-        }
-    }
-}
-
-POINT* findSet(POINT* p)
-{
-	if (root(p) != p)
-		root(p) = findSet(root(p));
-	return root(p);
-}
-
-void mergePoint(POINT* X, POINT* Y)
-{
-	POINT* PX = findSet(X);
-	POINT* PY = findSet(Y);
-	
-    if (PX == PY)
-        return;
-	
-    if (weight(PX) > weight(PY))
-    {
-	    //update root after merge
-	    weight(PX) += weight(PY);
-	    root(PY) = PX;
-	    //link two list, update tail
-	    next_pt(tail(PX)) = PY;
-	    tail(PX) = tail(PY); 
-	}
-	else
-    {
-	    //update root after merge
-	    weight(PY) += weight(PX);
-	    root(PX) = PY;
-	    //link two list, update tail
-	    next_pt(tail(PY)) = PX;
-	    tail(PY) = tail(PX); 
-	}
-}
-//end of UF functions
 
 

@@ -116,14 +116,19 @@ private:
     void resetPositionCoordinates();
     void resetAverageVelocity();
 	
-    void aabbProximity();
 	void detectProximity();
+    void aabbProximity();
 	void processProximityCandidates();
 
-    void aabbCollision();
 	void detectCollision();
+    void aabbCollision();
 	void processCollisionCandidates();
 	
+    void computeImpactZones();
+	void updateImpactZoneVelocity(int&);
+	void updateImpactZoneVelocityForRG();
+	void updateImpactListVelocity(POINT*);
+
     void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 
@@ -132,11 +137,6 @@ private:
 	
     void reduceSuperelast();
     bool reduceSuperelastOnce(int&);
-	
-    void computeImpactZone();
-	void updateImpactZoneVelocity(int&);
-	void updateImpactZoneVelocityForRG();
-	void updateImpactListVelocity(POINT*);
 };
 
 
@@ -175,15 +175,16 @@ void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,doubl
 void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp
-void createImpZone(POINT**, int num = 4, bool first = NO);
-int& weight(POINT* p);
-POINT*& root(POINT* p);
-POINT*& next_pt(POINT* p);
-POINT*& tail(POINT* p);
-void makeSet(std::vector<CD_HSE*>& hselist);
-POINT* findSet(POINT* p);
-void mergePoint(POINT* X, POINT* Y);
+void CreateImpZone(POINT**, int num = 4, bool first = NO);
 
+POINT*& UF_Root(POINT* p);
+POINT*& UF_NextPoint(POINT* p);
+POINT*& UF_Tail(POINT* p);
+int& UF_Weight(POINT* p);
+
+void UF_MakeDisjointSets(std::vector<CD_HSE*>& hselist);
+POINT* UF_FindSet(POINT* p);
+void UF_MergePoints(POINT* X, POINT* Y);
 
 
 #endif

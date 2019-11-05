@@ -372,7 +372,6 @@ void CollisionSolver3d::resolveCollision()
 	//stop_clock("reduceSuperelast");
 	
 	start_clock("updateFinalVelocity");
-    //detectProximity();
     //TODO: implement this function correctly
 	updateFinalVelocity();
 	stop_clock("updateFinalVelocity");
@@ -385,8 +384,10 @@ void CollisionSolver3d::detectProximity()
     proximityCandidates = abt_collision->getCandidates();
 
 	if (debugging("proximity"))
-        std::cout << candidates.size()
-            << " pair of proximity candidates" << std::endl;
+    {
+        std::cout << proximityCandidates.size()
+                  << " pair of proximity candidates\n";
+    }
 
     processProximityCandidates();
 }
@@ -446,44 +447,36 @@ void CollisionSolver3d::processProximityCandidates()
 void CollisionSolver3d::detectCollision()
 {
     if (debugging("collision"))
-        std::cout<<"Starting collision handling: "<<std::endl;
+        std::cout<<"Starting collision handling:\n";
 	
 	const int MAX_ITER = 12;
-    const double h = CollisionSolver3d::getRoundingTolerance();
-	
-    //TODO: keep track of total elapsed time?
-    
-    int niter = 1;
-    bool is_collision = true; 
+    bool collision_free = false; 
 
-    while(is_collision)
+    for (int i = 0; i < MAX_ITER; ++i)
     {
-	    is_collision = false;
-	    
-        //TODO: process one collision pair, then recompute
-        //      tree and get new candidates?
         aabbCollision();
         collisionCandidates.clear();
         collisionCandidates = abt_collision->getCandidates();
 
 	    if (debugging("collision"))
-            std::cout<<"    #"<<niter << ": " << collisionCandidates.getCount() 
-                << " pair of collision candidates" << std::endl;
+        {
+            std::cout<< "    #" << niter << ": " << collisionCandidates.size()
+                     << " pair of collision candidates\n";
+        }
 
         processCollisionCandidates();
-
-        if (++niter > MAX_ITER)
+       
+        if (Collisions.empty())
+        {
+            collision_free = true;
             break;
-	}
+        }
+    }
 
-    //TODO: implement computeImpactZone() using new data structures
-    //      SEE PROVOT PAPER
-    //
-	if (is_collision) 
+	if (!collision_free) 
     {
         start_clock("computeImpactZone");
-        //TODO: rename computeImpactZone to something better
-	    computeImpactZone();
+	    computeImpactZones();
         stop_clock("computeImpactZone");
     }
 }
@@ -528,10 +521,7 @@ static bool CollisionCompare(
 //      Gauess-Seidel fashion
 void CollisionSolver3d::processCollisionCandidates()
 {
-    //TODO: can Collisions vector be used like we
-    //      are trying to?
-    //
-    //Collisions.clear();
+    Collisions.clear();
 
     std::vector<NodePair>::iterator it;
     for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
@@ -548,8 +538,6 @@ void CollisionSolver3d::processCollisionCandidates()
             collsn->computeImpulse();
             collsn->updateState();
             collsn->checkNewStateProximity(s_thickness);
-            
-            //Save so states can be reset if neccessary
             Collisions.push_back(std::move(collsn));
         }
     }
@@ -557,50 +545,6 @@ void CollisionSolver3d::processCollisionCandidates()
     //Sort the Collisions vector by time of collision
     //
     //std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
-}
-
-//TODO: rewrite this with new data structures
-void CollisionSolver3d::computeImpactZone()
-{
-    std::cout<<"Starting compute Impact Zone: "<<std::endl;
-
-    const double h = CollisionSolver3d::getRoundingTolerance();
-
-	int niter = 0;
-    int numZones = 0;
-	bool is_collision = true;
-
-	turnOnImpZone();
-	//makeSet(hseList); //this is done in AABBTree::updatePointMap()
-    
-    //int impzone_counter = 0
-    //TODO: This can enter infinite loop
-    while(is_collision)
-    {
-        is_collision = false;
-
-        //start UF alogrithm
-        //merge four pts if collision happens
-
-        start_clock("dynamic_AABB_collision");
-        aabbCollision();
-        abt_collision->query(h);
-        stop_clock("dynamic_AABB_collision");
-
-        is_collision = abt_collision->getCollsnState();
-
-        //TODO: Verify Jarret's claim that this should be removed.
-        //updateAverageVelocity();
-
-        updateImpactZoneVelocity(numZones);
-
-        std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
-                  << " pair of collision tris" << std::endl;
-        std::cout <<"     "<< numZones
-                  <<" zones of impact" << std::endl;
-    }
-	
-    turnOffImpZone();
 }
 
 //TODO: See aftest.cpp airfoil_stat functions which record
