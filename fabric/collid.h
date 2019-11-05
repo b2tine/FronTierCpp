@@ -89,7 +89,7 @@ private:
 
     std::vector<NodePair> proximityCandidates;
     std::vector<NodePair> collisionCandidates;
-    std::vector<Proximity*> Collisions;
+    std::vector<std::unique_ptr<Collision>> Collisions;
 
 	static double s_eps;
 	static double s_thickness;
@@ -147,6 +147,9 @@ std::unique_ptr<Proximity> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
 void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
 void PointToTriProximityImpulse(POINT**,double*,double*,double);
+
+void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
+void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 
 void initSurfaceState(SURFACE*,const double*);

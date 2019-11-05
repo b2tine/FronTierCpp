@@ -255,7 +255,7 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
-	updateAverageVelocity();
+	//updateAverageVelocity();
 
     //TODO: I believe algorithm correct up to here.
 
@@ -334,6 +334,7 @@ void CollisionSolver3d::processProximityCandidates()
     {
         Node* A = it->first;
         Node* B = it->second;
+        
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
 
@@ -412,7 +413,7 @@ void CollisionSolver3d::detectCollision()
         collisionCandidates = abt_collision->getCandidates();
 
 	    if (debugging("collision"))
-            std::cout<<"    #"<<niter << ": " << collisionCandidates->getCount() 
+            std::cout<<"    #"<<niter << ": " << collisionCandidates.getCount() 
                 << " pair of collision candidates" << std::endl;
 
         //TODO: implement this
@@ -458,8 +459,9 @@ void CollisionSolver3d::aabbCollision()
     }
 }
 
-bool CollisionCompare(std::unique_ptr<Collision>& A,
-                      std::unique_ptr<Collision>& B)
+static bool CollisionCompare(
+        std::unique_ptr<Collision>& A,
+        std::unique_ptr<Collision>& B)
 {
     return A->dt < B->dt;
 }
@@ -472,21 +474,29 @@ void CollisionSolver3d::processCollisionCandidates()
     {
         Node* A = it->first;
         Node* B = it->second;
+
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
 
-        Proximity* collision = checkCollision(a,b,s_eps);
+        std::unique_ptr<Collision> collision = checkCollision(a,b,s_eps);
         if (collision)
             Collisions.push_back(collision);
     }
 
-    //TODO: Sort the Collisions vector by time of collision,
-    //      and begin iteratively processing them in Gauess-Seidel
+    //Sort the Collisions vector by time of collision
+    std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
+
+    //TODO: begin iteratively processing them in Gauess-Seidel
     //      fashion.
+    std::vector<std::unique_ptr<Collision>>::iterator it;
+    for (it = Collisions.begin(); it < Collisions.end(); ++it)
+    {
+
+    }
 }
 
-//TODO: not ready yet
-std::unique_ptr<Proximity> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
+//TODO: Need to work inside MovingXToX()
+std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_TRI  *cd_t1, *cd_t2;
 	const CD_BOND *cd_b1, *cd_b2;

@@ -3,7 +3,9 @@
 
 
 static bool EdgeToEdge(POINT**,double,double*,double*,double*,double*);
-static bool MovingEdgeToEdge(POINT**,double);
+//static bool MovingEdgeToEdge(POINT**,double);
+
+static std::unique_ptr<Collision> MovingEdgeToEdge(POINT**,double);
 
 static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT**,double);
 static std::unique_ptr<Collision> KineticEdgeToEdge(POINT**,double,double);
@@ -16,10 +18,14 @@ static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,
 //static bool PointToTri(POINT**, double,
   //      MotionState mstate = MotionState::STATIC, double root = 0.0);
 
-static bool MovingPointToTri(POINT**,double);
+static bool PointToTri(POINT**,double,double*,double*,double*);
+
+static std::unique_ptr<Collision> MovingPointToTri(POINT**,double);
+//static bool MovingPointToTri(POINT**,double);
 //static Proximity* PointToTri(POINT**,double);
-static std::unique_ptr<Proximity> PointToTri(POINT**,double);
-static Proximity* KineticPointToTri(POINT**,double,double);
+
+static std::unique_ptr<Proximity> StaticPointToTri(POINT**,double);
+static std::unique_ptr<Collision> KineticPointToTri(POINT**,double,double);
 
 //void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
@@ -120,7 +126,7 @@ std::unique_ptr<Proximity> TriToBond(const TRI* tri,const BOND* bd, double h)
     {
         pts[3] = (i == 0) ? bd->start : bd->end;
         
-        st::unique_ptr<Proximity> proximity = PointToTri(pts,h);
+        st::unique_ptr<Proximity> proximity = StaticPointToTri(pts,h);
         if (proximity)
             proximities.push_back(std::move(proximity));
     }
@@ -139,7 +145,7 @@ std::unique_ptr<Proximity> TriToBond(const TRI* tri,const BOND* bd, double h)
 	}
 
     double min_dist = HUGE;
-    std::unique_ptr<Proximity closest;
+    std::unique_ptr<Proximity> closest;
 
     std::vector<unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
@@ -206,7 +212,7 @@ std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol
             pts[1] == pts[3] || pts[2] == pts[3])
             continue;
 
-        std::unique_ptr<Proximity> proximity = PointToTri(pts,tol);
+        std::unique_ptr<Proximity> proximity = StaticPointToTri(pts,tol);
         if (proximity)
             proximities.push_back(std::move(proximity));
 	}
@@ -236,7 +242,7 @@ std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol
     }
 
     double min_dist = HUGE;
-    std::unique_ptr<Proximity closest;
+    std::unique_ptr<Proximity> closest;
 
     std::vector<unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
@@ -865,6 +871,18 @@ void EdgeToEdgeProximityImpulse(
     EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,-1.0);
 }
 
+void EdgeToEdgeCollisionImpulse(
+        POINT** pts,
+        double* nor,
+        double a,
+        double b,
+        double dist,
+        double dt)
+{
+    MotionState mstate = MotionState::MOVING;
+    EdgeToEdgeImpulse(pts,nor,a,b,dist,mstate,dt);
+}
+
 static void EdgeToEdgeImpulse(
         POINT** pts,
         double* nor,
@@ -1336,8 +1354,60 @@ static bool PointToTri(
 }
 */
 
+static std::unique_ptr<Proximity> StaticPointToTri(POINT** pts, double h)
+{
+    double nor[3];
+    double w[3];
+    double dist;
+
+    std::unique_ptr<Proximity> proximity;
+
+    if (PointToTri(pts,h,nor,w,&dist))
+    {
+        proximity =
+            std::unique_ptr<Proximity>(new PointTriProximity(pts,nor,a,b,dist));
+    }
+
+    return proximity;
+}
+
+static std::unique_ptr<Collision> KineticPointToTri(POINT** pts, double h, double dt)
+{
+    double nor[3];
+    double w[3];
+    double dist;
+
+    STATE* sl;
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*) left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k] + dt*sl->avgVel[k];
+    }
+
+    std::unique_ptr<Collision> collision;
+
+    if (PointToTri(pts,h,nor,w,&dist))
+    {
+        collision =
+            std::unique_ptr<Collision>(new PointTriCollision(pts,nor,w,dist,dt));
+
+    }
+
+    //restore coordinates of points
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+    }
+
+    return collision;
+}
+
 //static Proximity* PointToTri(POINT** pts, double h)
-static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
+//static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
+static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* dist)
 {
 /*	x1
  *  	/\     x4 *
@@ -1365,20 +1435,20 @@ static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
     scalarMult(1.0/tri_nor_mag,tri_nor,tri_nor);
     double tri_area = 0.5*tri_nor_mag;
 
-    double dist = Dot3d(x34,tri_nor);
-    if (dist < 0.0)
+    double distance = Dot3d(x34,tri_nor);
+    if (distance < 0.0)
     {
-        dist = fabs(dist);
+        distance = fabs(dist);
         scalarMult(-1.0,tri_nor,tri_nor);
     }
 
-    if (dist > h)
-        return {};
+    if (distance > h)
+        return false;
 
-	double w[3];
-    w[0] = (Dot3d(x23,x23)*Dot3d(x13,x43)-Dot3d(x13,x23)*Dot3d(x23,x43))/det;
-    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
-    w[2] = 1.0 - w[0] - w[1];
+	double W[3];
+    W[0] = (Dot3d(x23,x23)*Dot3d(x13,x43)-Dot3d(x13,x23)*Dot3d(x23,x43))/det;
+    W[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
+    W[2] = 1.0 - W[0] - W[1];
     
     /*
     double c_len = 0.0;	
@@ -1395,10 +1465,18 @@ static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
     double eps = h/sqrt(tri_area);
     for (int i = 0; i < 3; ++i)
     {
-        if (w[i] < -1.0*eps || w[i] > 1.0 + eps)
-            return {};
-            //return false;
+        if (W[i] < -1.0*eps || W[i] > 1.0 + eps)
+            return false;
     }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        w[i] = W[i];
+        nor[i] = tri_nor[i];
+    }
+    *dist = distance;
+
+    return true;
 
     /*
     double nor_mag = Mag3d(nor);
@@ -1413,11 +1491,6 @@ static std::unique_ptr<Proximity> PointToTri(POINT** pts, double h)
         clean_up(ERROR);
     }
     */
-
-    //TODO: add PointToTriCollision(pts,tri_nor,w,dist,dt)
-    std::unique_ptr<Proximity> proximity;
-    proximity = std::unique_ptr<Proximity>(new PointToTriProximity(pts,tri_nor,w,dist));
-    return proximity;
 }
 
 void PointToTriProximityImpulse(
@@ -1428,6 +1501,17 @@ void PointToTriProximityImpulse(
 {
     MotionState mstate = MotionState::STATIC;
     PointToTriImpulse(pts,nor,w,dist,mstate,-1.0);
+}
+
+void PointToTriCollisionImpulse(
+        POINT** pts,
+        double* nor,
+        double* w,
+        double dist,
+        double dt)
+{
+    MotionState mstate = MotionState::MOVING;
+    PointToTriImpulse(pts,nor,w,dist,mstate,dt);
 }
 
 static void PointToTriImpulse(
@@ -1527,28 +1611,31 @@ static void PointToTriImpulse(
 
     //uncomment the following the debugging purpose
     if (debugging("CollisionImpulse"))
-    if (fabs(m_impulse) > 0.0){
-        printf("real PointToTri collision, dist = %e\n",dist);
-        printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-        printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-        printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-        printf("m_impulse = %f, impulse = %f, w = [%f %f %f]\n",
-            m_impulse,impulse,w[0],w[1],w[2]);
-        printf("dt = %f, root = %f\n",dt,root);
-        printf("k = %f, m = %f\n",k,m);
-        printf("x_old:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
-        }
-        printf("x_new:\n");
-        for (int i = 0; i < 4; ++i){
-            printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-        }
-        printf("avgVel:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+    {
+        if (fabs(m_impulse) > 0.0)
+        {
+            printf("real PointToTri collision, dist = %e\n",dist);
+            printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
+            printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+            printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+            printf("m_impulse = %f, impulse = %f, w = [%f %f %f]\n",
+                m_impulse,impulse,w[0],w[1],w[2]);
+            printf("dt = %f, root = %f\n",dt,root);
+            printf("k = %f, m = %f\n",k,m);
+            printf("x_old:\n");
+            for (int i = 0; i < 4; ++i){
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+            }
+            printf("x_new:\n");
+            for (int i = 0; i < 4; ++i){
+                printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+            }
+            printf("avgVel:\n");
+            for (int i = 0; i < 4; ++i){
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+            }
         }
     }
     ////////////////////////////////////////////////////
@@ -1736,39 +1823,43 @@ static void PointToTriElasticImpulse(
 }
 
 //TODO: update for new data structures
-bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
+std::unique_ptr<Collision> MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 {
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-	POINT* pts[4];
-	bool status = false;
-
 	/* do not consider bond point that is a tri vertex */
 	for (int i = 0; i < 3; ++i)
 	{
-	    if (Point_of_tri(tri)[i] == bd->start
-            || Point_of_tri(tri)[i] == bd->end)
-            return false;
+        //TODO: ensure getCandidates() eliminates
+        //      this possibility, and remove.
+        //
+        //do not consider bond point that is a tri vertex
+	    if (Point_of_tri(tri)[i] == bd->start ||
+            Point_of_tri(tri)[i] == bd->end)
+            return {};
 	}
+
+	//bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+	//bool status = false;
+
+	POINT* pts[4];
+    std::vector<std::unique_ptr<Collision>> collisions;
 
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
-	/* detect collision of start point of bond w.r.t to tri */
-	pts[3] = bd->start;
-    if (MovingPointToTri(pts,h))
-        status = true;
-    
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-	
-    /* detect collision of end point of bond to w.r.t. tri */
-	pts[3] = bd->end;
-    if (MovingPointToTri(pts,h))
-        status = true;
+    //detect proximity of triangle to bond end points.
+    for (int i = 0; i < 2; ++i)
+    {
+        pts[3] = (i == 0) ? bd->start : bd->end;
 
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-	
+        //TODO: implement MovingPointToTri()
+         std::unique_ptr<Collision> collsn = MovingPointToTri(pts,h);
+         if (collision)
+             collisions.push_back(std::move(collsn));
+
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
+    }
+
     /* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
 	pts[3] = bd->end;
@@ -1776,18 +1867,33 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-        if (MovingEdgeToEdge(pts,h))
-            status = true;
+        
+        std::unique_ptr<Collision> collsn = MovingEdgeToEdge(pts,h);
+        if (collision)
+            collisions.push_back(std::move(collsn));
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
-    return status;
+    double min_dist = HUGE;
+    std::unique_ptr<Collision> closest;
+
+    std::vector<unique_ptr<Collision>>::iterator it;
+    for (it = collisions.begin(); it < collisions.end(); ++it)
+    {
+        if ((*it)->dist < min_dist)
+        {
+            min_dist = (*it)->dist;
+            closest = std::move(*it);
+        }
+    }
+
+    return closest;
 }
 
 //TODO: update for new data structures
-Proximity* MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
+std::unique_ptr<Collision> MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
 {
 	POINT* pts[4];
 
@@ -1821,18 +1927,22 @@ Proximity* MovingBondToBond(const BOND* b1, const BOND* b2, double tol)
 }
 
 //TODO: update for new data structures
-bool MovingTriToTri(const TRI* a,const TRI* b, double h)
+std::unique_ptr<Collision> MovingTriToTri(const TRI* a,const TRI* b, double h)
 {
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-	POINT* pts[4];
-	bool status = false;
-
+    //TODO: ensure getCandidates() eliminates
+    //      this possibility, and remove.
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
 	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
-            return false;
+            return {};
 	}
+
+	//bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //bool status = false;
+
+	POINT* pts[4];
+    std::vector<std::unique_ptr<Collision>> collisions;
 
 	//detect point to tri collision
 	for (int k = 0; k < 2; ++k)
@@ -1845,16 +1955,21 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
+        //TODO: ensure getCandidates() eliminates
+        //      this possibility, and remove.
+        //
 	    //Don't consider point against the triangle it belongs to
-	    if (pts[3] == pts[0] || pts[3] == pts[1]
-                || pts[3] == pts[2])
+	    if (pts[0] == pts[3] ||
+            pts[1] == pts[3] || pts[2] == pts[3])
             continue; 
         
-        if(MovingPointToTri(pts,h))
-            status = true;
+        //TODO: implement MovingPointToTri()
+        std::unique_ptr<Collision> collsn = MovingPointToTri(pts,h);
+        if (collision)
+            collisions.push_back(std::move(collsn));
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -1867,70 +1982,67 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
+            //TODO: ensure getCandidates() eliminates
+            //      this possibility, and remove.
+            //
 		    //Don't consider edges with a shared enpoint
-            if (pts[0] == pts[2] || pts[0] == pts[3]
-            || pts[1] == pts[2] || pts[1] == pts[3])
+            if (pts[0] == pts[2] || pts[0] == pts[3] ||
+                pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
     
-            if(MovingEdgeToEdge(pts,h))
-                status = true;
+            std::unique_ptr<Collision> collsn = MovingEdgeToEdge(pts,h);
+            if (collision)
+                collisions.push_back(std::move(collsn));
                 
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
+            //if (status && is_detImpZone)
+              //  createImpZone(pts,4);
 	    }
     }
 
-	return status;
+    double min_dist = HUGE;
+    std::unique_ptr<Collision> closest;
+
+    std::vector<unique_ptr<Collision>>::iterator it;
+    for (it = collisions.begin(); it < collisions.end(); ++it)
+    {
+        if ((*it)->dist < min_dist)
+        {
+            min_dist = (*it)->dist;
+            closest = std::move(*it);
+        }
+    }
+
+    return closest;
 }
 
 //TODO: update for new data structures
-static bool MovingPointToTri(POINT* pts[], double h)
+static std::unique_ptr<Collision> MovingPointToTri(POINT* pts[], double h)
 {
-	STATE* sl;
-	double dt = CollisionSolver3d::getTimeStepSize();
-	double roots[4] = {-1,-1,-1,dt};
-    MotionState mstate = MotionState::MOVING;
-    bool status = false;
+	double maxdt = CollisionSolver3d::getTimeStepSize();
+	double dt[4] = {-1,-1,-1,maxdt};
 
-	if (isCoplanar(pts,dt,roots))
+	if (isCoplanar(pts,maxdt,roots))
     {
-	    for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i)
         {
-            if (roots[i] < 0)
+            if (dt[i] < 0.0)
                 continue;
-    
-            for (int j = 0; j < 4; ++j)
-            {
-                sl = (STATE*)left_state(pts[j]);
-    		    for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
-		    }
-    
-            if (PointToTri(pts,h,mstate,roots[i]))
-            {
-                status = true;
-                break;
-            }
-	    }
 
-        for (int j = 0; j < 4; ++j)
-        {
-
-            sl = (STATE*)left_state(pts[j]);
-            for (int k = 0; k < 3; ++k)
-                Coords(pts[j])[k] = sl->x_old[k];
+            std::unique_ptr<Collision> collision = KineticPointToTri(pts,h,dt[i]);
+            if (collision)
+                return collision;
         }
 	}
 
-    return status;
+    return {};
 }
 
 //TODO: I dont' like these static variables/functions
-static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
+static std::unique_ptr<Collision> MovingEdgeToEdge(POINT* pts[], double h)
 {
     double maxdt = CollisionSolver3d::getTimeStepSize();
 	double dt[4] = {-1,-1,-1,maxdt};
-    
+
 	if (isCoplanar(pts,maxdt,dt))
     {
         for (int i = 0; i < 4; ++i)
@@ -1938,7 +2050,7 @@ static Proximity* MovingEdgeToEdge(POINT* pts[], double h)
             if (dt[i] < 0.0)
                 continue;
 
-            Proximity* collision = KineticEdgeToEdge(pts,h,dt[i]);
+            std::unique_ptr<Collision> collision = KineticEdgeToEdge(pts,h,dt[i]);
             if (collision)
                 return collision;
         }

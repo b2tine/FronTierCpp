@@ -4,7 +4,12 @@
 #include <FronTier.h>
 #include "state.h"
 
+
 void updateAverageVelocityProximity(POINT** pts);
+
+//TODO: implement this
+//void updateAverageVelocityCollision(POINT** pts);
+
 
 class Proximity
 {
@@ -74,12 +79,19 @@ class PointTriProximity : public Proximity
         }
 };
 
-class Collision : public Proximity
+class Collision
 {
     public:
 
+        POINT** pts {nullptr};
+        double nor[3] {0.0};
+        double dist {HUGE};
         double dt {-1.0};
-
+        
+        virtual void computeImpulse() = 0;
+        virtual void updateAverageVelocity() = 0;
+        
+        virtual ~Collision() = default;
 };
 
 class EdgeEdgeCollision : public Collision
@@ -96,7 +108,7 @@ class EdgeEdgeCollision : public Collision
 
         void computeImpulse() override
         {
-
+            EdgeToEdgeCollisionImpulse(pts,nor,a,b,dist,dt);
         }
 
         virtual void updateAverageVelocity() override
@@ -124,7 +136,7 @@ class PointTriCollision : public Collision
 
         void computeImpulse() override
         {
-
+            PointToTriCollisionImpulse(pts,nor,w,dist,dt);
         }
 
         virtual void updateAverageVelocity() override
