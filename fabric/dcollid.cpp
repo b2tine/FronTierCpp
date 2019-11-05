@@ -158,7 +158,7 @@ void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc, double dt)
 	}
 
 	UF_MakeDisjointSets(hseList);
-	createImpactZoneForRG(intfc);
+	createImpactZoneForRigidBody(intfc);
 
 	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
 
@@ -470,7 +470,8 @@ void CollisionSolver3d::detectCollision()
 
 	    if (debugging("collision"))
         {
-            std::cout<< "    #" << niter << ": " << collisionCandidates.size()
+            std::cout<< "    #" << niter << ": "
+                     << collisionCandidates.size()
                      << " pair of collision candidates\n";
         }
 

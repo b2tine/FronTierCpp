@@ -68,7 +68,7 @@ public:
 
 	void clearHseList();
 	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpactZoneForRG(const INTERFACE*);
+	void createImpactZoneForRigidBody(const INTERFACE*);
 	void setDomainBoundary(double* L,double *U);
 	
     void resolveCollision();
@@ -184,7 +184,9 @@ void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,doubl
 void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp
-void CreateImpactZone(POINT**, int num = 4, bool first = NO);
+void CreateImpactZone(POINT**);
+//void CreateImpactZone(POINT**, int num = 4, bool first = NO);
+void CreateImpactZoneRigidBody(POINT** pts);
 
 POINT*& UF_Root(POINT* p);
 POINT*& UF_NextPoint(POINT* p);

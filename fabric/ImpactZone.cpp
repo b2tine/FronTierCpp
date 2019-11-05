@@ -88,16 +88,21 @@ void UF_MergePoints(POINT* X, POINT* Y)
 //TODO: Make this a factory function returning pointers
 //      to an ImpactZone class object?
 //
-//Note: num has default value of 4,
-//and first has default value of false
-void CreateImpactZone(POINT** pts, int num, bool first)
+void CreateImpactZone(POINT** pts)
 {
-	for (int i = 0; i < num; ++i)
+	for (int i = 0; i < 4; ++i)
 	{
 	    for (int j = 0; j < i; ++j)
 	    {
-	        if ((!first) && (isMovableRigidBody(pts[i])
-                || isMovableRigidBody(pts[j])))
+            /*
+            if ((isMovableRigidBody(pts[i]) || isMovableRigidBody(pts[j]))
+                    && !first)
+            {
+                continue;
+            }
+            */
+
+            if ((isMovableRigidBody(pts[i]) || isMovableRigidBody(pts[j])))
             {
                 continue;
             }
@@ -112,8 +117,20 @@ void CreateImpactZone(POINT** pts, int num, bool first)
     //      handling iterations can be terminated.
 }
 
+//TODO: could pass the tri instead
+void CreateImpactZoneRigidBody(POINT** pts)
+{
+	for (int i = 0; i < 3; ++i)
+	{
+	    for (int j = 0; j < i; ++j)
+        {
+            UF_MergePoints(pts[i],pts[j]);
+        }
+    }
+}
+
 // test function for creating impact zone for each movable RG
-void CollisionSolver3d::createImpactZoneForRG(const INTERFACE* intfc)
+void CollisionSolver3d::createImpactZoneForRigidBody(const INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
@@ -128,8 +145,7 @@ void CollisionSolver3d::createImpactZoneForRG(const INTERFACE* intfc)
 
         surf_tri_loop(*s, tri)
 	    {
-            //TODO: Test what CreateImpactZone() does when given this.
-    		CreateImpactZone(Point_of_tri(tri), 3, YES);
+    		CreateImpactZoneRigidBody(Point_of_tri(tri));
 	    }
 	}
 }
@@ -148,8 +164,9 @@ void CollisionSolver3d::computeImpactZones()
 
 	    if (debugging("collision"))
         {
-            std::cout<< "    #" << niter++ << ": " << collisionCandidates.size()
-                     << " pair of collision tris\n";
+            std::cout<< "    #" << niter++ << ": "
+                     << collisionCandidates.size()
+                     << " pair of collision candidates\n";
         }
             
         growImpactZones();
