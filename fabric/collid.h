@@ -2,6 +2,7 @@
 #define COLLID_H
 
 #include "AABB.h"
+#include "Proximity.h"
 
 #if defined(isnan)
 #undef isnan
@@ -13,10 +14,6 @@
 const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-6;
 const double DT = 0.001;
-
-
-class Proximity;
-class Collision;
 
 
 class CollisionSolver3d
@@ -59,10 +56,9 @@ public:
     static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	
-    static bool getImpZoneStatus();	
+    static bool getImpactZoneStatus();	
 
-
-    double setVolumeDiff(double);
+    double setVolumeDiff(double);//remove
 
 	void recordOriginalPosition();	
 
@@ -94,10 +90,9 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
-    //TODO: put this in AABBTree class
-    double vol_diff {0.0};
-    double collision_vol;
-    double proximity_vol;
+    double vol_diff {0.0}; //remove
+    double collision_vol;  //remove
+    double proximity_vol;  //remove
 
     std::vector<NodePair> proximityCandidates;
     std::vector<std::unique_ptr<Proximity>> Proximities;
@@ -177,11 +172,11 @@ std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
 
 //Impulse.cpp
 void PointToTriProximityImpulse(POINT**,double*,double*,double);
-void PointToTriPostCollisionProximityImpulse(POINT**,double*,double*,double);
+void PointToTriPostCollisionProximityImpulse(POINT**,double*,double*,double,double);
 void EdgeToEdgeCollisionImpulse(POINT**,double*,double,double,double,double);
 
 void EdgeToEdgeProximityImpulse(POINT**,double*,double,double,double);
-void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,double);
+void EdgeToEdgePostCollisionProximityImpulse(POINT**,double*,double,double,double,double);
 void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 
 //ImpactZone.cpp

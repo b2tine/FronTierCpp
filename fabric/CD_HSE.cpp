@@ -91,7 +91,11 @@ POINT* CD_TRI::Point_of_hse(int i) const{
 
 const bool AdjacentHSEs(const CD_HSE* const A, const CD_HSE* const B)
 {
-    assert (A && B);
+    if (!A || !B)
+    {
+        printf("ERROR In AdjacentHSEs(): passed a nullptr\n");
+        clean_up(ERROR);
+    }
 
     int nA = A->num_pts();
     int nB = B->num_pts();

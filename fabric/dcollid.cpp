@@ -447,7 +447,7 @@ void CollisionSolver3d::processProximityCandidates()
         }
     }
 
-    std::vector<unique_ptr<Proximity>>::iterator pit;
+    std::vector<std::unique_ptr<Proximity>>::iterator pit;
     for (pit = Proximities.begin(); pit < Proximities.end(); ++pit)
     {
         (*pit)->updateAverageVelocity();
@@ -470,7 +470,7 @@ void CollisionSolver3d::detectCollision()
 
 	    if (debugging("collision"))
         {
-            std::cout<< "    #" << niter << ": "
+            std::cout<< "    #" << i << ": "
                      << collisionCandidates.size()
                      << " pair of collision candidates\n";
         }
@@ -543,6 +543,10 @@ void CollisionSolver3d::processCollisionCandidates()
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
 
+        //TODO: pass time step to checkCollision()
+        //       
+        //std::unique_ptr<Collision> collsn = checkCollision(a,b,s_eps,s_dt);
+        
         std::unique_ptr<Collision> collsn = checkCollision(a,b,s_eps);
         if (collsn)
         {

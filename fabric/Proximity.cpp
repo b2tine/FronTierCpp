@@ -25,7 +25,7 @@ static bool EdgeToEdge(POINT**,double,double*,double*,double*,double*);
 
 
 static void UpdateAverageVelocity(POINT** pts);
-static void UpdatePostCollisionState(POINT** pts, double dt);
+//static void UpdatePostCollisionState(POINT** pts, double dt);
 
 //static void SaveState(POINT** pts);
 static void UpdateState(POINT** pts, double dt);
@@ -140,7 +140,7 @@ std::unique_ptr<Proximity> TriToTri(const TRI* tri1, const TRI* tri2, double tol
     double min_dist = HUGE;
     std::unique_ptr<Proximity> closest;
 
-    std::vector<unique_ptr<Proximity>>::iterator it;
+    std::vector<std::unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
     {
         if ((*it)->dist < min_dist)
@@ -177,7 +177,7 @@ std::unique_ptr<Proximity> TriToBond(const TRI* tri,const BOND* bd, double h)
     {
         pts[3] = (i == 0) ? bd->start : bd->end;
         
-        st::unique_ptr<Proximity> proximity = StaticPointToTri(pts,h);
+        std::unique_ptr<Proximity> proximity = StaticPointToTri(pts,h);
         if (proximity)
             proximities.push_back(std::move(proximity));
     }
@@ -198,7 +198,7 @@ std::unique_ptr<Proximity> TriToBond(const TRI* tri,const BOND* bd, double h)
     double min_dist = HUGE;
     std::unique_ptr<Proximity> closest;
 
-    std::vector<unique_ptr<Proximity>>::iterator it;
+    std::vector<std::unique_ptr<Proximity>>::iterator it;
     for (it = proximities.begin(); it < proximities.end(); ++it)
     {
         if ((*it)->dist < min_dist)
@@ -226,7 +226,7 @@ std::unique_ptr<Proximity> BondToBond(const BOND* b1, const BOND* b2, double tol
         return {};
     }
     
-    std::uniqe_ptr<Proximity> proximity = StaticEdgeToEdge(pts,tol);
+    std::unique_ptr<Proximity> proximity = StaticEdgeToEdge(pts,tol);
     return proximity;
 }
 
@@ -241,7 +241,7 @@ static std::unique_ptr<Proximity> StaticPointToTri(POINT** pts, double h)
     if (PointToTri(pts,h,nor,w,&dist))
     {
         proximity =
-            std::unique_ptr<Proximity>(new PointTriProximity(pts,nor,a,b,dist));
+            std::unique_ptr<Proximity>(new PointTriProximity(pts,nor,w,dist));
     }
 
     return proximity;
@@ -263,6 +263,10 @@ static std::unique_ptr<Proximity> StaticEdgeToEdge(POINT** pts, double h)
     return proximity;
 }
 
+//TODO: Pass dt to MovinXToX() functions.
+//      Attempting to decouple from CollisionSolver3d
+//
+//std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol, double dt)
 std::unique_ptr<Collision> checkCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 {
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -370,7 +374,7 @@ std::unique_ptr<Collision> MovingTriToTri(const TRI* a,const TRI* b, double h)
     double min_dist = HUGE;
     std::unique_ptr<Collision> closest;
 
-    std::vector<unique_ptr<Collision>>::iterator it;
+    std::vector<std::unique_ptr<Collision>>::iterator it;
     for (it = collisions.begin(); it < collisions.end(); ++it)
     {
         if ((*it)->dist < min_dist)
@@ -429,7 +433,7 @@ std::unique_ptr<Collision> MovingTriToBond(const TRI* tri,const BOND* bd, double
     double min_dist = HUGE;
     std::unique_ptr<Collision> closest;
 
-    std::vector<unique_ptr<Collision>>::iterator it;
+    std::vector<std::unique_ptr<Collision>>::iterator it;
     for (it = collisions.begin(); it < collisions.end(); ++it)
     {
         if ((*it)->dist < min_dist)
@@ -474,7 +478,8 @@ static std::unique_ptr<Collision> MovingPointToTri(POINT** pts, double h)
             if (dt[i] < 0.0)
                 continue;
 
-            std::unique_ptr<Collision> collsn = KineticPointToTri(pts,h,dt[i]);
+            std::unique_ptr<Collision> collsn = KineticPointToTri(pts,h,dt[i],maxdt);
+
             if (collsn)
                 return collsn;
         }
@@ -712,7 +717,6 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
  * x13*x13*w1 + x13*x23*w2 = x13*x43
  * x13*x23*w1 + x23*x23*w2 = x23*x43
  */
-    
 	double x13[3], x23[3], x43[3], x34[3];
 	
     Pts2Vec(pts[0],pts[2],x13);
@@ -720,7 +724,13 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
 	Pts2Vec(pts[3],pts[2],x43);
     scalarMult(-1.0,x43,x34);
 	
-	//double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+    if (det < ROUND_EPS)
+    {
+        std::cout << "ERROR In PointToTri(): degenerate TRI (det = 0)\n";
+        printPointList(pts,4);
+        clean_up(ERROR);
+    }
 
     double tri_nor[3] = {0.0};
     Cross3d(x13,x23,tri_nor);
@@ -732,7 +742,7 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
     double distance = Dot3d(x34,tri_nor);
     if (distance < 0.0)
     {
-        distance = fabs(dist);
+        distance = fabs(distance);
         scalarMult(-1.0,tri_nor,tri_nor);
     }
 
@@ -970,12 +980,12 @@ static void PointToLine(POINT** pts, double& a)
 
 PointTriProximity::PointTriProximity(POINT** Pts, double* Nor,
                                     double* W, double Dist)
-    : pts{Pts}, dist{Dist}
+    : Proximity(Pts,Nor,Dist)
 {
     for (int i = 0; i < 3; ++i)
     {
         w[i] = W[i];
-        nor[i] = Nor[i];
+        //nor[i] = Nor[i];
     }
 }
 
@@ -1003,10 +1013,10 @@ void PointTriProximity::updatePostCollisionState(double dt)
 
 EdgeEdgeProximity::EdgeEdgeProximity(POINT** Pts, double* Nor,
                                     double A, double B, double Dist)
-    : pts{Pts}, a{A}, b{B}, dist{Dist}
+    : Proximity(Pts,Nor,Dist), a{A}, b{B}
 {
-    for (int i = 0; i < 3; ++i)
-        nor[i] = Nor[i];
+    //for (int i = 0; i < 3; ++i)
+      //  nor[i] = Nor[i];
 }
 
 void EdgeEdgeProximity::computeImpulse()
@@ -1032,13 +1042,13 @@ void EdgeEdgeProximity::updatePostCollisionState(double dt)
 */
 
 PointTriCollision::PointTriCollision(POINT** Pts, double* Nor, double* W,
-                                    double Dist, double Dt, double MaxDt)
-    : pts{Pts}, dist{Dist}, dt{Dt}, maxdt{MaxDt}
+                                    double Dist, double Dt, double Maxdt)
+    : Collision(Pts,Nor,Dist,Dt,Maxdt)
 {
     for (int i = 0; i < 3; ++i)
     {
         w[i] = W[i];
-        nor[i] = Nor[i];
+        //nor[i] = Nor[i];
     }
 }
 
@@ -1059,14 +1069,14 @@ void PointTriCollision::checkNewStateProximity(double tol)
     {
         double avg_dt = 0.5*(dt + maxdt);
         proximity->computePostCollisionImpulse(avg_dt);
-        UpdateNewState(pts,avg_dt);
+        UpdateState(pts,avg_dt);
         //proximity->updatePostCollisionState(avg_dt);
     }
 }
 
 void PointTriCollision::mergeImpactZones()
 {
-    CreateImpZone(pts,4);
+    CreateImpactZone(pts);
 }
 
 void PointTriCollision::restorePrevState()
@@ -1075,12 +1085,9 @@ void PointTriCollision::restorePrevState()
 }
 
 EdgeEdgeCollision::EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
-                                double B, double Dist, double Dt, double MaxDt)
-    : pts{Pts}, a{A}, b{B}, dist{Dist}, dt{DT}, maxdt{MaxDt}
-{
-    for (int i = 0; i < 3; ++i)
-        nor[i] = Nor[i];
-}
+                                double B, double Dist, double Dt, double Maxdt)
+    : Collision(Pts,Nor,Dist,Dt,Maxdt), a{A}, b{B}
+{}
 
 void EdgeEdgeCollision::computeImpulse()
 {
@@ -1099,14 +1106,14 @@ void EdgeEdgeCollision::checkNewStateProximity(double tol)
     {
         double avg_dt = 0.5*(dt + maxdt);
         proximity->computePostCollisionImpulse(avg_dt);
-        UpdateNewState(pts,avg_dt);
+        UpdateState(pts,avg_dt);
         //proximity->updatePostCollisionState(avg_dt);
     }
 }
 
 void EdgeEdgeCollision::mergeImpactZones()
 {
-    CreateImpZone(pts,4);
+    CreateImpactZone(pts);
 }
 
 void EdgeEdgeCollision::restorePrevState()
@@ -1247,7 +1254,7 @@ static void UpdateState(POINT** pts, double dt)
             
             //compute new position and new effective velocity
             Coords(p)[k] = sl->x_old[k] + dt*sl->avgVel[k];
-            sl->avgVel[k] = (Coords(p)[j] - sl->x_old[j])/dt;
+            sl->avgVel[k] = (Coords(p)[k] - sl->x_old[k])/dt;
         }
 
     

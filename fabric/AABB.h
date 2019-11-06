@@ -27,6 +27,7 @@ using NodePair = std::pair<Node*,Node*>;
 class AABB {
     friend class Node;
     friend class AABBTree;
+public:
     CPoint lowerbound;
     CPoint upperbound;
     // indices will store the index of points on the  
@@ -38,7 +39,7 @@ class AABB {
     double dt;
     MotionState abType;
     double tol;
-public:
+
     AABB() {}
     AABB(double, CD_HSE*, MotionState);
     AABB(double, CD_HSE*, MotionState, double);

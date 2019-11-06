@@ -95,7 +95,7 @@ void Node::setBranch(std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
     right = n2;
 }
 
-bool Node::isLeaf()
+const bool Node::isLeaf() const
 {
     return left == nullptr && right == nullptr;
 }
@@ -134,12 +134,12 @@ const bool Node::overlaps(Node* n) const
 
 Node* Node::getLeftChild() const
 {
-    return->left.get();
+    return left.get();
 }
 
 Node* Node::getRightChild() const
 {
-    return->right.get();
+    return right.get();
 }
 
 Node* Node::getSibling() const {
@@ -351,7 +351,7 @@ std::vector<NodePair> AABBTree::getCandidates()
         {
             if (A->isLeaf() && B->isLeaf())
             {
-                if (A->hasAdjacentHse(B))
+                if (A->hasAdjacentHSE(B))
                     continue;
                 candidates.push_back(std::make_pair(A,B));
             }
@@ -476,6 +476,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
 }
 */
 
+/*
 bool AABBTree::queryCollision(Node* n, double tol)
 {
     std::stack<Node*> sn;
@@ -519,6 +520,7 @@ bool AABBTree::queryCollision(Node* n, double tol)
 
     return count > 0;
 }
+*/
 
 const CD_HSE* const Node::getHSE() const
 {
@@ -527,7 +529,7 @@ const CD_HSE* const Node::getHSE() const
 
 const bool Node::hasAdjacentHSE(const Node* const node) const
 {
-    return areAdjacentHse(this->getHse(),node->getHse());
+    return AdjacentHSEs(this->getHSE(),node->getHSE());
 }
 
 const double Node::volume() const

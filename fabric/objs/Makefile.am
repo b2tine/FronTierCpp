@@ -33,7 +33,7 @@ libfabric_la_SOURCES = \
 ../collid.h \
 ../dcollid.cpp \
 ../ImpactZone.cpp \
-../Impulse.cpp
+../Impulse.cpp \
 ../CD_HSE.h \
 ../CD_HSE.cpp \
 ../AABB.h \

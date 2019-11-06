@@ -172,7 +172,7 @@ static void PointToTriImpulse(
             printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
             printf("m_impulse = %f, impulse = %f, w = [%f %f %f]\n",
                 m_impulse,impulse,w[0],w[1],w[2]);
-            printf("dt = %f, root = %f\n",dt,root);
+            printf("dt = %f, deltaT = %f\n",dt,deltaT);
             printf("k = %f, m = %f\n",k,m);
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i){
@@ -507,7 +507,7 @@ static void EdgeToEdgeImpulse(
             printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
             printf("m_impulse = %f, impulse = %f, a = %f, b = %f\n",
                 m_impulse,impulse,a,b);
-            printf("root = %e,h = %e, dt = %e\n",root,h,dt);
+            printf("deltaT = %e,h = %e, dt = %e\n",deltaT,h,dt);
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i){
                 STATE* sl1 = (STATE*)left_state(pts[i]);
@@ -544,7 +544,7 @@ static void EdgeToEdgeImpulse(
                              rigid_impulse[1],rigid_impulse[1]};
 
     std::vector<double> FR = {friction_impulse_rigid[0],friction_impulse_rigid[0],
-                              friction_impulse_rigid[1],friction_impulse_rigid[1]}
+                              friction_impulse_rigid[1],friction_impulse_rigid[1]};
 
     //TODO: should probably be in own function together with
     //      the elastic and inelastic impulse functions above

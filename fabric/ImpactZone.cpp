@@ -157,7 +157,9 @@ void CollisionSolver3d::computeImpactZones()
     if (debugging("collision"))
         std::cout<<"Starting fail-safe (Impact Zone) method:\n";
 	
+    int iter = 0;
     bool collision_free = false; 
+    
     while (!collision_free)
     {
         aabbCollision();
@@ -166,7 +168,7 @@ void CollisionSolver3d::computeImpactZones()
 
 	    if (debugging("collision"))
         {
-            std::cout<< "    #" << niter++ << ": "
+            std::cout<< "    #" << iter << ": "
                      << collisionCandidates.size()
                      << " pair of collision candidates\n";
         }
@@ -181,6 +183,8 @@ void CollisionSolver3d::computeImpactZones()
             updateImpactZoneVelocity();
         else
             collision_free = true;
+
+        ++iter;
     }
 }
 
@@ -304,19 +308,19 @@ void updateImpactListVelocity(POINT* head)
 		sorted(p) = YES;
 		
         sl = (STATE*)left_state(p);
-        for (int i = 0; i < m_dim; ++i)
+        for (int i = 0; i < 3; ++i)
         {
 		    x_cm[i] += sl->x_old[i]; 
 		    v_cm[i] += sl->avgVel[i];
 		}
 
-        p = next_pt(p);
+        p = UF_NextPoint(p);
     }
 
     if (debugging("collision"))
 	    printf("%d number of points in this zone\n",num_pts);
 
-	for (int i = 0; i < m_dim; ++i)
+	for (int i = 0; i < 3; ++i)
     {
 	    x_cm[i] /= num_pts;
 	    v_cm[i] /= num_pts;
@@ -333,7 +337,7 @@ void updateImpactListVelocity(POINT* head)
 	    Cross3d(dx,dv,Li);
 	    scalarMult(m,Li,Li);
 	    addVec(Li,L,L);    
-	    p = next_pt(p);
+        p = UF_NextPoint(p);
 	}
 
 	//compute Inertia tensor
@@ -355,7 +359,7 @@ void updateImpactListVelocity(POINT* head)
             I[i][j] += tmp[i][j]*m;
 	    }
 
-	    p = next_pt(p);
+        p = UF_NextPoint(p);
 	}
 
 	//compute angular velocity w: I*w = L;
@@ -413,7 +417,7 @@ void updateImpactListVelocity(POINT* head)
     {
         if (isStaticRigidBody(p))
         {
-            p = next_pt(p);
+	        p = UF_NextPoint(p);
             continue;
         }
     
@@ -461,11 +465,11 @@ void updateImpactListVelocity(POINT* head)
                     printf("%f %f %f %f %f %f;\n",
                     sl->x_old[0],sl->x_old[1],sl->x_old[2],
                     sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-                    p = next_pt(p);
+                    p = UF_NextPoint(p);
                 }
 
                 printf("num_pts = %d, weight = %d\n",
-                num_pts,weight(head));
+                num_pts,UF_Weight(head));
                 printf("nan vel, w = %f, mag_w = %f\n",
                 w[i],mag_w);
                 printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
@@ -478,7 +482,7 @@ void updateImpactListVelocity(POINT* head)
             }
         }
     
-        p = next_pt(p);
+        p = UF_NextPoint(p);
     }
 }
 

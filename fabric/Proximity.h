@@ -1,11 +1,12 @@
 #ifndef PROXIMITY_H
 #define PROXIMITY_H
 
-#include <FronTier.h>
+#include "CD_HSE.h"
 #include "state.h"
 
-std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
-std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
+#include <iostream>
+#include <memory>
+
 
 
 class Proximity
@@ -16,6 +17,13 @@ class Proximity
         double nor[3] {0.0};
         double dist {HUGE};
         
+        Proximity(POINT** Pts, double* Nor, double Dist)
+            : pts{Pts}, dist{Dist}
+        {
+            for (int i = 0; i < 3; ++i)
+                nor[i] = Nor[i];
+        }
+
         virtual void computeImpulse() = 0;
         virtual void updateAverageVelocity() = 0;
         virtual void computePostCollisionImpulse(double dt) = 0;
@@ -70,6 +78,14 @@ class Collision
         double dt {-1.0};
         double maxdt {-1.0};
         
+        Collision(POINT** Pts, double* Nor,
+                double Dist, double Dt, double Maxdt)
+            : pts{Pts}, dist{Dist}, dt{Dt}, maxdt{Maxdt}
+        {
+            for (int i = 0; i < 3; ++i)
+                nor[i] = Nor[i];
+        }
+
         virtual void computeImpulse() = 0;
         virtual void updateState() = 0;
         virtual void checkNewStateProximity(double tol) = 0;
@@ -87,7 +103,7 @@ class PointTriCollision : public Collision
 
         
         PointTriCollision(POINT** Pts, double* Nor,
-                double* W, double Dist, double Dt, double MaxDt);
+                double* W, double Dist, double Dt, double Maxdt);
 
 
         void computeImpulse() override;
@@ -106,7 +122,7 @@ class EdgeEdgeCollision : public Collision
 
 
         EdgeEdgeCollision(POINT** Pts, double* Nor, double A,
-                double B, double Dist, double Dt, double MaxDt);
+                double B, double Dist, double Dt, double Maxdt);
 
 
         void computeImpulse() override;
@@ -114,9 +130,13 @@ class EdgeEdgeCollision : public Collision
         void checkNewStateProximity(double tol) override;
         void mergeImpactZones() override;
         void restorePrevState() override;
-        }
 };
 
+
+
+std::unique_ptr<Proximity> checkProximity(const CD_HSE*,const CD_HSE*,double);
+std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double);
+//std::unique_ptr<Collision> checkCollision(const CD_HSE*,const CD_HSE*,double,double);
 
 
 #endif
