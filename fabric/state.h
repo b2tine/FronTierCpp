@@ -17,11 +17,12 @@ struct STATE
     double impulse[MAXD];            /* Accum impact from external force */
 
 
-	/* for collision */
+	//for collision
 	struct UF   
     {
-        POINT* next_pt;
+        //TODO: rename root to head
         POINT* root;
+        POINT* next_pt;
         POINT* tail;
         int num_pts;
     };

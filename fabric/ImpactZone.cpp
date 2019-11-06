@@ -1,6 +1,8 @@
 #include <armadillo>
 #include "collid.h"
 
+//TODO: Rename UF_Root() to UF_Head(),
+//      and rename impZone.root to impZone.head
 POINT*& UF_Root(POINT* p)
 {
 	STATE* sl = (STATE*) left_state(p);
@@ -208,7 +210,8 @@ void CollisionSolver3d::growImpactZones()
     //std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
 }
 
-void CollisionSolver3d::updateImpactZoneVelocity()
+//void CollisionSolver3d::updateImpactZoneVelocity()
+void updateImpactZoneVelocity()
 {
 	POINT* pt;
     
@@ -227,7 +230,7 @@ void CollisionSolver3d::updateImpactZoneVelocity()
                 continue;
             else
             {
-                updateImpactListVelocity(findSet(pt));
+                updateImpactListVelocity(UF_FindSet(pt));
                 num_impact_zones++;
             }
 	    }
@@ -237,7 +240,8 @@ void CollisionSolver3d::updateImpactZoneVelocity()
         std::cout<< "     " << num_impact_zones  << " zones of impact\n";
 }
 
-void CollisionSolver3d::updateImpactZoneVelocityForRG()
+//void CollisionSolver3d::updateImpactZoneVelocityForRigidBody()
+void updateImpactZoneVelocityForRigidBody()
 {
 	POINT* pt;
 	unsortHseList(hseList);
@@ -263,7 +267,8 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 	}
 }
 
-void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+//void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+void updateImpactListVelocity(POINT* head)
 {
 	STATE* sl = nullptr;
 	POINT* p = head;

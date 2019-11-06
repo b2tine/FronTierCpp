@@ -134,9 +134,10 @@ private:
 	void processCollisionCandidates();
 	
     void computeImpactZones();
-	void updateImpactZoneVelocity(int&);
-	void updateImpactZoneVelocityForRG();
-	void updateImpactListVelocity(POINT*);
+    void growImpactZones();
+	//void updateImpactZoneVelocity();
+	//void updateImpactZoneVelocityForRigidBody();
+	//void updateImpactListVelocity(POINT*);
 
     void detectDomainBoundaryCollision();
 	void updateFinalForRG();
@@ -186,6 +187,10 @@ void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 //ImpactZone.cpp
 void CreateImpactZone(POINT**);
 void CreateImpactZoneRigidBody(POINT** pts);
+
+void updateImpactZoneVelocity();
+void updateImpactZoneVelocityForRigidBody();
+void updateImpactListVelocity(POINT* head);
 
 POINT*& UF_Root(POINT* p);
 POINT*& UF_NextPoint(POINT* p);

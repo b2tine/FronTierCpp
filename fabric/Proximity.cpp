@@ -1126,6 +1126,7 @@ static void UpdateAverageVelocity(POINT** pts)
     for (int i = 0; i < 4; ++i)
     {
         p = pts[i];
+
         if (isStaticRigidBody(p))
             continue;
 
@@ -1143,16 +1144,22 @@ static void UpdateAverageVelocity(POINT** pts)
         
         for (int k = 0; k < 3; ++k)
         {
-            sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
             //sl->avgVel[k] += sl->friction[k]/sl->collsn_num;
-            //sl->avgVel[k] += sl->collsnImpulse[k];
-            sl->avgVel[k] += sl->friction[k];
+            //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
+            ////sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
             
-            sl->collsnImpulse[k] = 0.0;
+            sl->avgVel[k] += sl->friction[k];
+            sl->avgVel[k] += sl->collsnImpulse[k];
+            //sl->avgVel[k] += sl->collsnImpulse_RG[k];
+            
             sl->friction[k] = 0.0;
+            sl->collsnImpulse[k] = 0.0;
+            //sl->collsnImpulse_RG[k] = 0.0;
+            
             sl->collsn_num = 0;
+            //sl->collsn_num_RG = 0;
 
-            //save for Collision RestoreState()
+            //save in case we need to restore previous state
             sl->avgVel_old[k] = sl->avgVel[k];
             
             if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
@@ -1163,8 +1170,9 @@ static void UpdateAverageVelocity(POINT** pts)
             }
         }
     
+        //updateImpactZoneVelocityForRigidBody();
+
         /*
-        //TODO: do we really need to differentiate now?
         // test for RG
         if (sl->collsn_num_RG > 0)
         {
@@ -1178,7 +1186,7 @@ static void UpdateAverageVelocity(POINT** pts)
 	
     /*
     if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRG(); // test for moving objects
+	    updateImpactZoneVelocityForRigidBody(); // test for moving objects
     */
 }
 
@@ -1213,6 +1221,7 @@ static void UpdateState(POINT** pts, double dt)
     for (int i = 0; i < 4; ++i)
     {
         p = pts[i];
+
         if (isStaticRigidBody(p))
             continue;
 
@@ -1226,13 +1235,17 @@ static void UpdateState(POINT** pts, double dt)
         //TODO: need to divide by sl->collsn_num at all?
         for (int k = 0; k < 3; ++k)
         {
-            sl->avgVel[k] += sl->collsnImpulse[k];
             //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
             
+            sl->avgVel[k] += sl->collsnImpulse[k];
+            ////sl->avgVel[k] += sl->collsnImpulse_RG[k];
+            
             sl->collsnImpulse[k] = 0.0;
+            //sl->collsnImpulse_RG[k] = 0.0;
 
             //TODO: is this what we want?
             sl->collsn_num = 0;
+            //sl->collsn_num_RG = 0;
             
             if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
             {
@@ -1262,7 +1275,7 @@ static void UpdateState(POINT** pts, double dt)
 	
     /*
     if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRG(); // test for moving objects
+	    updateImpactZoneVelocityForRigidBody(); // test for moving objects
     */
 }
 
