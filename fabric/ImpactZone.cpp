@@ -90,12 +90,14 @@ void UF_MergePoints(POINT* X, POINT* Y)
 //TODO: Make this a factory function returning pointers
 //      to an ImpactZone class object?
 //
+////TODO: this might be broken now
 void CreateImpactZone(POINT** pts)
 {
 	for (int i = 0; i < 4; ++i)
 	{
 	    for (int j = 0; j < i; ++j)
 	    {
+////TODO: this might be broken now
             /*
             if ((isMovableRigidBody(pts[i]) || isMovableRigidBody(pts[j]))
                     && !first)
@@ -195,8 +197,8 @@ void CollisionSolver3d::growImpactZones()
     std::vector<NodePair>::iterator it;
     for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
     {
-        Node* A = it->first;
-        Node* B = it->second;
+        auto A = it->first;
+        auto B = it->second;
 
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;

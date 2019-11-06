@@ -390,7 +390,7 @@ void CollisionSolver3d::detectProximity()
 {
     aabbProximity();
     proximityCandidates.clear();
-    proximityCandidates = abt_collision->getCandidates();
+    proximityCandidates = abt_proximity->getCandidates();
 
 	if (debugging("proximity"))
     {
@@ -433,8 +433,8 @@ void CollisionSolver3d::processProximityCandidates()
     std::vector<NodePair>::iterator nit;
     for (nit = proximityCandidates.begin(); nit < proximityCandidates.end(); ++nit)
     {
-        Node* A = nit->first;
-        Node* B = nit->second;
+        auto A = nit->first;
+        auto B = nit->second;
         
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
@@ -537,8 +537,8 @@ void CollisionSolver3d::processCollisionCandidates()
     std::vector<NodePair>::iterator it;
     for (it = collisionCandidates.begin(); it < collisionCandidates.end(); ++it)
     {
-        Node* A = it->first;
-        Node* B = it->second;
+        auto A = it->first;
+        auto B = it->second;
 
         CD_HSE* a = A->data->hse;
         CD_HSE* b = B->data->hse;
@@ -988,42 +988,50 @@ void unsortHseList(std::vector<CD_HSE*>& hseList)
 	}
 }
 
-void printPointList(POINT** plist,const int n){
-	for (int i = 0; i < n; ++i){
+void printPointList(POINT** plist, const int n)
+{
+	for (int i = 0; i < n; ++i)
+    {
 	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
-		Coords(plist[i])[1],Coords(plist[i])[2]);
+                Coords(plist[i])[1],Coords(plist[i])[2]);
 	}
 }
 
-bool isStaticRigidBody(const POINT* p){
-    STATE* sl = (STATE*)left_state(p);
-    return sl->is_fixed;
+const bool isStaticRigidBody(const POINT* p)
+{
+    STATE* sl = (STATE*) left_state(p);
+    if (sl->is_fixed) return true;
 }
 
-bool isStaticRigidBody(const CD_HSE* hse){
+const bool isStaticRigidBody(const CD_HSE* hse)
+{
     for (int i = 0; i < hse->num_pts(); ++i)
-   	if (isStaticRigidBody(hse->Point_of_hse(i)))
-	    return true;
+        if (isStaticRigidBody(hse->Point_of_hse(i)))
+            return true;
     return false;
 }
 
-bool isMovableRigidBody(const POINT* p){
+const bool isMovableRigidBody(const POINT* p)
+{
     STATE* sl = (STATE*)left_state(p);
-    return sl->is_movableRG;
+    if (sl->is_movableRG) return true;
 }
 
-bool isMovableRigidBody(const CD_HSE* hse){
+const bool isMovableRigidBody(const CD_HSE* hse)
+{
     for (int i = 0; i < hse->num_pts(); ++i)
         if (isMovableRigidBody(hse->Point_of_hse(i)))
             return true;
     return false;
 }
 
-bool isRigidBody(const POINT* p){
+const bool isRigidBody(const POINT* p)
+{
     return isStaticRigidBody(p) || isMovableRigidBody(p);
 }
 
-bool isRigidBody(const CD_HSE* hse){
+const bool isRigidBody(const CD_HSE* hse)
+{
     return isStaticRigidBody(hse) || isMovableRigidBody(hse);
 }
 

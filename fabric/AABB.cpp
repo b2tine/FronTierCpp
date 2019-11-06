@@ -97,11 +97,15 @@ void Node::setBranch(std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
 
 const bool Node::isLeaf() const
 {
-    return left == nullptr && right == nullptr;
+    if (!left && !right && data)
+        return true;
+    return false;
 }
 
-void Node::setLeaf(AABB* ab) {
-    data.reset(ab);
+void Node::setLeaf(AABB* ab)
+{
+    //data.reset(ab);
+    data = ab;
 }
 
 void Node::updateBranch() {
@@ -125,6 +129,11 @@ void Node::updateAABB() {
         else 
             updateBranch();
     }
+}
+
+const bool Node::overlaps(std::shared_ptr<Node> n) const
+{
+    return box.overlaps(n->box);
 }
 
 const bool Node::overlaps(Node* n) const
@@ -155,7 +164,7 @@ Node::~Node()
     left.reset();
     right.reset();
     parent.reset();
-    data.reset();
+    //data.reset();
 }
 
 AABBTree::AABBTree(MotionState mstate)
@@ -324,13 +333,89 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList)
 }
 
 
-double AABBTree::treeHeight(Node* root) {
+double AABBTree::treeHeight(Node* root)
+{
     if (!root)
         return 0;
+
     return std::max(treeHeight(root->left.get()),
                     treeHeight(root->right.get())) + 1;
 }
 
+//TODO: Broken -- bad_alloc
+std::vector<NodePair> AABBTree::getCandidates()
+{
+    auto nodeA = root;
+    auto nodeB = root;
+
+    std::stack<NodePair> qstack;
+    qstack.push(std::make_pair(nodeA,nodeB));
+
+    std::vector<NodePair> candidates;
+
+    while (!qstack.empty())
+    {
+        auto A = qstack.top().first;
+        auto B = qstack.top().second;
+        qstack.pop();
+
+        if (A->overlaps(B))
+        {
+            if (A->isLeaf() && B->isLeaf())
+            {
+                if (A->hasAdjacentHSE(B))
+                    continue;
+                candidates.push_back(std::make_pair(A,B));
+            }
+            else if (A->isLeaf())
+            {
+                auto rc = B->right;
+                if (rc)
+                    qstack.push(std::make_pair(A,rc));
+   
+                auto lc = B->left;
+                if (lc)
+                    qstack.push(std::make_pair(A,lc));
+            }
+            else if (B->isLeaf())
+            {
+                auto rc = A->right;
+                if (rc)
+                    qstack.push(std::make_pair(rc,B));
+
+                auto lc = A->left;
+                if (lc)
+                    qstack.push(std::make_pair(lc,B));
+            }
+            else
+            {
+                if (A->volume() < B->volume())
+                {
+                    auto rc = B->right;
+                    if (rc)
+                        qstack.push(std::make_pair(A,rc));
+
+                    auto lc = B->left;
+                    if (lc)
+                        qstack.push(std::make_pair(A,lc));
+                }
+                else
+                {
+                    auto rc = A->right;
+                    if (rc)
+                        qstack.push(std::make_pair(rc,B));
+
+                    auto lc = A->left;
+                    if (lc)
+                        qstack.push(std::make_pair(lc,B));
+                }
+            }
+        }
+    }
+
+    return candidates;
+}
+/*
 std::vector<NodePair> AABBTree::getCandidates()
 {
     Node* nodeA = root.get();
@@ -391,6 +476,7 @@ std::vector<NodePair> AABBTree::getCandidates()
 
     return candidates;
 }
+*/
     
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
@@ -527,7 +613,7 @@ const CD_HSE* const Node::getHSE() const
     return data->hse;
 }
 
-const bool Node::hasAdjacentHSE(const Node* const node) const
+const bool Node::hasAdjacentHSE(std::shared_ptr<Node> node) const
 {
     return AdjacentHSEs(this->getHSE(),node->getHSE());
 }

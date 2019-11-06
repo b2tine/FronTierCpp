@@ -152,12 +152,12 @@ void unsort_surface_point(SURFACE *surf);
 void unsortHseList(std::vector<CD_HSE*>&);
 void printPointList(POINT**, const int);
 
-bool isStaticRigidBody(const POINT*);
-bool isStaticRigidBody(const CD_HSE*);
-bool isMovableRigidBody(const POINT*);
-bool isMovableRigidBody(const CD_HSE*);
-bool isRigidBody(const POINT*);
-bool isRigidBody(const CD_HSE*);
+const bool isStaticRigidBody(const POINT*);
+const bool isStaticRigidBody(const CD_HSE*);
+const bool isMovableRigidBody(const POINT*);
+const bool isMovableRigidBody(const CD_HSE*);
+const bool isRigidBody(const POINT*);
+const bool isRigidBody(const CD_HSE*);
 
 void scalarMult(double a,double* v, double* ans); 
 void addVec(double* v1, double* v2, double* ans); 

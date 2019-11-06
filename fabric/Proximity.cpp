@@ -724,13 +724,15 @@ static bool PointToTri(POINT** pts, double h, double* nor, double* w, double* di
 	Pts2Vec(pts[3],pts[2],x43);
     scalarMult(-1.0,x43,x34);
 	
-	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
+	double det = Dot3d(x13,x13)*Dot3d(x23,x23) - Dot3d(x13,x23)*Dot3d(x13,x23);
+    /*
     if (det < ROUND_EPS)
     {
         std::cout << "ERROR In PointToTri(): degenerate TRI (det = 0)\n";
         printPointList(pts,4);
         clean_up(ERROR);
     }
+    */
 
     double tri_nor[3] = {0.0};
     Cross3d(x13,x23,tri_nor);

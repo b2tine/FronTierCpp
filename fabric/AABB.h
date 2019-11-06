@@ -21,13 +21,16 @@ class Node;
 class AABBTree;
 
 using CPoint = std::vector<double>;
-using NodePair = std::pair<Node*,Node*>;
+using NodePair = std::pair<std::shared_ptr<Node>,std::shared_ptr<Node>>;
 
 
 class AABB {
+    
     friend class Node;
     friend class AABBTree;
+
 public:
+    
     CPoint lowerbound;
     CPoint upperbound;
     // indices will store the index of points on the  
@@ -69,13 +72,18 @@ public:
     // AABB stored in node. May store information for branch AABB
     // and may be adjusted for dynamic AABB 
     AABB box;
-    const bool overlaps(Node*) const;
+
     const double volume() const;
+    const bool overlaps(Node*) const;
+    const bool overlaps(std::shared_ptr<Node> node) const;
     
     // if leaf, point to the corresponding AABB (empty for branch)
-    std::unique_ptr<AABB> data;
+    //std::unique_ptr<AABB> data;
+    AABB* data;
     const CD_HSE* const getHSE() const;
-    const bool hasAdjacentHSE(const Node* const node) const;
+    
+    const bool hasAdjacentHSE(std::shared_ptr<Node> node) const;
+
     
     std::weak_ptr<Node> parent;
     std::shared_ptr<Node> left;
