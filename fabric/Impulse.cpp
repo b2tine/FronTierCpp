@@ -665,16 +665,16 @@ static void EdgeToEdgeElasticImpulse(
 
 static void SpreadImpactZoneImpulse(POINT* p, double impulse, double* nor)
 {
-    POINT* root = findSet(p);
-    while (root)
+    POINT* head = UF_FindSet(p);
+    while (head)
     {
-        STATE *sl = (STATE*)left_state(root);
+        STATE *sl = (STATE*) left_state(head);
         
         for (int i = 0; i < 3; ++i)
             sl->collsnImpulse_RG[i] += impulse*nor[i];
         
-        sl->collsn_num_RG += 1;
-        root = next_pt(root);
+        sl->collsn_num_RG++;
+        head = UF_NextPoint(head);
     }
 }
 

@@ -135,7 +135,7 @@ private:
 	
     void computeImpactZones();
     void growImpactZones();
-	//void updateImpactZoneVelocity();
+	void updateImpactZoneVelocity();
 	//void updateImpactZoneVelocityForRigidBody();
 	//void updateImpactListVelocity(POINT*);
 
@@ -188,8 +188,7 @@ void PointToTriCollisionImpulse(POINT**,double*,double*,double,double);
 void CreateImpactZone(POINT**);
 void CreateImpactZoneRigidBody(POINT** pts);
 
-void updateImpactZoneVelocity();
-void updateImpactZoneVelocityForRigidBody();
+void updateImpactZoneVelocityForRigidBody(POINT* p);
 void updateImpactListVelocity(POINT* head);
 
 POINT*& UF_Root(POINT* p);

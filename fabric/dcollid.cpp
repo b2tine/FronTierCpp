@@ -486,9 +486,9 @@ void CollisionSolver3d::detectCollision()
 
 	if (!collision_free) 
     {
-        start_clock("computeImpactZone");
+        start_clock("computeImpactZones");
 	    computeImpactZones();
-        stop_clock("computeImpactZone");
+        stop_clock("computeImpactZones");
     }
 }
 

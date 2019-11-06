@@ -1144,20 +1144,17 @@ static void UpdateAverageVelocity(POINT** pts)
         
         for (int k = 0; k < 3; ++k)
         {
-            //sl->avgVel[k] += sl->friction[k]/sl->collsn_num;
-            //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
-            ////sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
-            
             sl->avgVel[k] += sl->friction[k];
             sl->avgVel[k] += sl->collsnImpulse[k];
             //sl->avgVel[k] += sl->collsnImpulse_RG[k];
             
+            //sl->avgVel[k] += sl->friction[k]/sl->collsn_num;
+            //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
+            //sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
+            
             sl->friction[k] = 0.0;
             sl->collsnImpulse[k] = 0.0;
             //sl->collsnImpulse_RG[k] = 0.0;
-            
-            sl->collsn_num = 0;
-            //sl->collsn_num_RG = 0;
 
             //save in case we need to restore previous state
             sl->avgVel_old[k] = sl->avgVel[k];
@@ -1170,24 +1167,22 @@ static void UpdateAverageVelocity(POINT** pts)
             }
         }
     
-        //updateImpactZoneVelocityForRigidBody();
+        sl->collsn_num = 0;
 
         /*
-        // test for RG
         if (sl->collsn_num_RG > 0)
-        {
-            for (int k = 0; k < 3; ++k)
-                sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
-            sl->collsn_num_RG = 0;
-        }
+            updateImpactZoneVelocityForRigidBody(p);
+            //updateImpactListVelocity(UF_FindSet(p));
+            
+        sl->collsn_num_RG = 0;
         */
 
     }
 	
-    /*
-    if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRigidBody(); // test for moving objects
-    */
+    //test for moving objects
+    //
+    //if (getTimeStepSize() > 0.0)
+	    //updateImpactZoneVelocityForRigidBody();
 }
 
 /*
@@ -1243,10 +1238,6 @@ static void UpdateState(POINT** pts, double dt)
             sl->collsnImpulse[k] = 0.0;
             //sl->collsnImpulse_RG[k] = 0.0;
 
-            //TODO: is this what we want?
-            sl->collsn_num = 0;
-            //sl->collsn_num_RG = 0;
-            
             if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
             {
                 printf("inf/nan vel[%d]: impulse = %f, collsn_num = %d\n",
@@ -1260,17 +1251,16 @@ static void UpdateState(POINT** pts, double dt)
         }
 
     
+        sl->collsn_num = 0;
+        
         /*
-        //TODO: do we really need to differentiate now?
-        // test for RG
         if (sl->collsn_num_RG > 0)
-        {
-            for (int k = 0; k < 3; ++k)
-                sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
-            sl->collsn_num_RG = 0;
-        }
+            updateImpactZoneVelocityForRigidBody(p);
+            //updateImpactListVelocity(UF_FindSet(p));
+            
+        sl->collsn_num_RG = 0;
         */
-
+            
     }
 	
     /*

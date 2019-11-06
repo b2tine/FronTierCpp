@@ -210,8 +210,7 @@ void CollisionSolver3d::growImpactZones()
     //std::sort(Collisions.begin(),Collisions.end(),CollisionCompare);
 }
 
-//void CollisionSolver3d::updateImpactZoneVelocity()
-void updateImpactZoneVelocity()
+void CollisionSolver3d::updateImpactZoneVelocity()
 {
 	POINT* pt;
     
@@ -240,6 +239,7 @@ void updateImpactZoneVelocity()
         std::cout<< "     " << num_impact_zones  << " zones of impact\n";
 }
 
+/*
 //void CollisionSolver3d::updateImpactZoneVelocityForRigidBody()
 void updateImpactZoneVelocityForRigidBody()
 {
@@ -254,7 +254,7 @@ void updateImpactZoneVelocityForRigidBody()
             pt = (*it)->Point_of_hse(i);
             
             //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1)
+            if (sorted(pt) || UF_Weight(UF_FindSet(pt)) == 1)
                 continue;
             else if (!isMovableRigidBody(pt))
             {
@@ -262,18 +262,32 @@ void updateImpactZoneVelocityForRigidBody()
                 continue;
             }
             else
-                updateImpactListVelocity(findSet(pt));
+                updateImpactListVelocity(UF_FindSet(pt));
 	    }
 	}
+}
+*/
+
+void updateImpactZoneVelocityForRigidBody(POINT* p)
+{
+    if (!isMovableRigidBody(p))
+        return;
+
+    if (UF_Weight(UF_FindSet(p)) == 1)
+        return;
+    
+    updateImpactListVelocity(UF_FindSet(p));
 }
 
 //void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 void updateImpactListVelocity(POINT* head)
 {
+	double m = CollisionSolver3d::getPointMass();
+	double dt = CollisionSolver3d::getTimeStepSize();
+
 	STATE* sl = nullptr;
 	POINT* p = head;
 
-	double m = getPointMass();
     double x_cm[3] = {0.0};
     double v_cm[3] = {0.0};
 	
@@ -393,7 +407,6 @@ void updateImpactListVelocity(POINT* head)
     mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
-	double dt = getTimeStepSize();
 	
     p = head;
     while(p)
