@@ -4,6 +4,7 @@
 #include <FronTier.h>
 #include "state.h"
 
+#include <vector>
 #include <string>
 
 
