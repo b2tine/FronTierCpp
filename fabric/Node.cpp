@@ -34,6 +34,10 @@ void Node::setParent(Node* const p) noexcept
     parent = p;
 }
 
+//TODO: Get rid of these default implementations.
+//      Too confusing too follow, just make them pure virtual
+//      and give each its own overriding specialization.
+
 //InternalNode uses these default implementations
 const Hse* const Node::getHse() const noexcept
 {
