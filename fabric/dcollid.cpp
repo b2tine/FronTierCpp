@@ -1,5 +1,4 @@
 #include <FronTier.h>
-#include "AABB.h"
 #include "collid.h"
 
 #include <vector>
@@ -20,84 +19,69 @@ inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
 
 //define default parameters for collision detection
-bool   CollisionSolver::s_detImpZone = false;
-double CollisionSolver::s_eps = EPS;
-double CollisionSolver::s_thickness = 0.001;
-double CollisionSolver::s_dt = DT;
-double CollisionSolver::s_k = 1000;
-double CollisionSolver::s_m = 0.01;
-double CollisionSolver::s_lambda = 0.02;
-double CollisionSolver::s_cr = 0.0;
+double CollisionSolver3d::s_eps = EPS;
+double CollisionSolver3d::s_thickness = 0.001;
+double CollisionSolver3d::s_dt = DT;
+double CollisionSolver3d::s_k = 1000;
+double CollisionSolver3d::s_m = 0.01;
+double CollisionSolver3d::s_lambda = 0.02;
+double CollisionSolver3d::s_cr = 1.0;
+bool   CollisionSolver3d::s_detImpZone = false;
 
 //debugging variables
-int CollisionSolver::moving_edg_to_edg = 0;
-int CollisionSolver::moving_pt_to_tri = 0;
-int CollisionSolver::is_coplanar = 0;
-int CollisionSolver::edg_to_edg = 0;
-int CollisionSolver::pt_to_tri = 0;
+int CollisionSolver3d::moving_edg_to_edg = 0;
+int CollisionSolver3d::moving_pt_to_tri = 0;
+int CollisionSolver3d::is_coplanar = 0;
+int CollisionSolver3d::edg_to_edg = 0;
+int CollisionSolver3d::pt_to_tri = 0;
 
-// To use Pimpl idiom by unique_ptr, special member function 
-// should be explicit declared in header file and defined in 
-// implementation file
-CollisionSolver::CollisionSolver(int dim)
-    : m_dim(dim), abt_proximity(nullptr)
-{}
-
-CollisionSolver::CollisionSolver() = default;
-CollisionSolver::CollisionSolver(CollisionSolver&& rhs) = default;
-CollisionSolver& CollisionSolver::operator=(CollisionSolver&& rhs) = default;
-
-CollisionSolver::~CollisionSolver()
+CollisionSolver3d::~CollisionSolver3d()
 {
     abt_proximity.reset();
     abt_collision.reset();
     clearHseList();
 }
 
-void CollisionSolver::clearHseList(){
+void CollisionSolver3d::clearHseList(){
 	for (unsigned i = 0; i < hseList.size(); ++i){
 		delete hseList[i];
 	}
 	hseList.clear();
 }
-//set rounding tolerance
-void CollisionSolver::setRoundingTolerance(double neweps)
+
+void CollisionSolver3d::setRoundingTolerance(double neweps)
 {
 	s_eps = neweps;
 }
 
-double CollisionSolver::getRoundingTolerance(){return s_eps;}
+double CollisionSolver3d::getRoundingTolerance(){return s_eps;}
 
-//set fabric thickness
-void CollisionSolver::setFabricThickness(double h){s_thickness = h;}
-double CollisionSolver::getFabricThickness(){return s_thickness;}
-double CollisionSolver::setVolumeDiff(double vd) { vol_diff = vd; }
+void CollisionSolver3d::setFabricThickness(double h){s_thickness = h;}
+double CollisionSolver3d::getFabricThickness(){return s_thickness;}
+double CollisionSolver3d::setVolumeDiff(double vd) {vol_diff = vd;}
 
 //this function should be called at every time step
-void CollisionSolver::setTimeStepSize(double new_dt)
+void CollisionSolver3d::setTimeStepSize(double new_dt)
 {
     s_dt = new_dt;
 }
 
-double CollisionSolver::getTimeStepSize(){return s_dt;}
+double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
-//set spring constant
-void   CollisionSolver::setSpringConstant(double new_k){s_k = new_k;}
-double CollisionSolver::getSpringConstant(){return s_k;}
+void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
+double CollisionSolver3d::getSpringConstant(){return s_k;}
 
-//set spring friction 
-void   CollisionSolver::setFrictionConstant(double new_la){s_lambda = new_la;}
-double CollisionSolver::getFrictionConstant(){return s_lambda;}
+void   CollisionSolver3d::setFrictionConstant(double new_la){s_lambda = new_la;}
+double CollisionSolver3d::getFrictionConstant(){return s_lambda;}
 
-//set mass of fabric point
-void   CollisionSolver::setPointMass(double new_m){s_m = new_m;}
-double CollisionSolver::getPointMass(){return s_m;}
+void   CollisionSolver3d::setPointMass(double new_m){s_m = new_m;}
+double CollisionSolver3d::getPointMass(){return s_m;}
 
 //set restitution coefficient between rigid bodies
-void   CollisionSolver::setRestitutionCoef(double new_cr){s_cr = new_cr;}
-double CollisionSolver::getRestitutionCoef(){return s_cr;}
+void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
+double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
-void CollisionSolver::recordOriginalPosition(){
+void CollisionSolver3d::recordOriginalPosition(){
 	POINT* pt;
 	STATE* sl;
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
@@ -114,14 +98,14 @@ void CollisionSolver::recordOriginalPosition(){
 	}
 }
 
-void CollisionSolver::setDomainBoundary(double* L, double* U) {
+void CollisionSolver3d::setDomainBoundary(double* L, double* U) {
 	for (int i = 0; i < m_dim; ++i) {
 	    Boundary[i][0] = L[i];
 	    Boundary[i][1] = U[i];
 	}
 }
 
-void CollisionSolver::detectDomainBoundaryCollision() {
+void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFrictionConstant();
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
@@ -169,7 +153,7 @@ void CollisionSolver::detectDomainBoundaryCollision() {
 	}
 }
 
-void CollisionSolver::computeAverageVelocity()
+void CollisionSolver3d::computeAverageVelocity()
 {
     POINT* pt;
     STATE* sl; 
@@ -177,21 +161,6 @@ void CollisionSolver::computeAverageVelocity()
     double max_speed = 0.0;
     double* max_vel = nullptr;
     POINT* max_pt=nullptr;
-
-    /*
-    printf("Test dt = %f  ROUND_EPS = %f\n",dt,ROUND_EPS);
-    pt = gpoints[11622];
-    sl = (STATE*)left_state(pt); 
-    printf("The point coords: %f %f %f\n",Coords(pt)[0],Coords(pt)[1],
-                                Coords(pt)[2]);
-    printf("avgVel = %f %f %f\n",sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
-    printf("sl->x_old = %f %f %f\n",sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-    */
-
-    /*
-    printf("Test computeAverageVelocity() hseList.size() = %d\n",
-                    hseList.size());
-    */
 
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
@@ -230,16 +199,6 @@ void CollisionSolver::computeAverageVelocity()
                     max_speed = Mag3d(sl->avgVel);
                     max_vel = sl->avgVel;
                     max_pt = pt;
-                    /*
-                    if (Gindex(pt) == 11622)
-                    {
-                        printf("\n\nmax_speed = %f  max_vel = %f %f %f\n",
-                            max_speed,max_vel[0],max_vel[1],max_vel[2]);
-                        printf("Gindex(p) = %d\n",Gindex(pt));
-                        printf("Coords(p) = %f %f %f\n\n\n",Coords(pt)[0],
-                                    Coords(pt)[1],Coords(pt)[2]);
-                    }
-                    */
                 }
             }
         
@@ -268,10 +227,12 @@ void CollisionSolver::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
-	
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
+}
+
+void CollisionSolver3d::resetPositionCoordinates()
+{
+    POINT* pt;
+    STATE* sl; 
 
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
@@ -283,55 +244,53 @@ void CollisionSolver::computeAverageVelocity()
             for (int j = 0; j < m_dim; ++j)
                 Coords(pt)[j] =  sl->x_old[j];
         }
-        
     }
 }
 
-void CollisionSolver::turnOffImpZone(){s_detImpZone = false;}
-void CollisionSolver::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver::getImpZoneStatus(){ return s_detImpZone;}
+void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
+void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
+bool CollisionSolver3d::getImpZoneStatus(){ return s_detImpZone;}
 
-//this function is needed if collision still happens
-//after several iterations;
-void CollisionSolver::computeImpactZone()
+//this function is needed if collisions still
+//present after several iterations;
+void CollisionSolver3d::computeImpactZone()
 {
-	bool is_collision = true;
-    int numZones = 0;
-	int niter = 0;
-
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
+    const double h = CollisionSolver3d::getRoundingTolerance();
+
+	int niter = 0;
+    int numZones = 0;
+	bool is_collision = true;
+
 	turnOnImpZone();
-	//makeSet(hseList); //this is done in AABBTree::updatePointMap()
     
-    //int impzone_counter = 0
-    //TODO: This can enter infinite loop
     while(is_collision)
     {
-        //if (++impzone_counter == 20) clean_up(ERROR);
         is_collision = false;
 
         //start UF alogrithm
         //merge four pts if collision happens
 
         start_clock("dynamic_AABB_collision");
-            aabbCollision();
-            is_collision = abt_collision->getCollsnState();
+        aabbCollision();
+        abt_collision->query(h);
         stop_clock("dynamic_AABB_collision");
 
-            updateAverageVelocity();
+        is_collision = abt_collision->getCollsnState();
 
         updateImpactZoneVelocity(numZones);
-            std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
-                      << " pair of collision tris" << std::endl;
+
+        std::cout <<"    #"<<niter++ << ": " << abt_collision->getCount() 
+                  << " pair of collision tris" << std::endl;
         std::cout <<"     "<< numZones
-              <<" zones of impact" << std::endl;
+                  <<" zones of impact" << std::endl;
     }
-	turnOffImpZone();
-	return;
+	
+    turnOffImpZone();
 }
 
-void CollisionSolver::updateImpactZoneVelocityForRG()
+void CollisionSolver3d::updateImpactZoneVelocityForRG()
 {
 	POINT* pt;
 	unsortHseList(hseList);
@@ -356,7 +315,7 @@ void CollisionSolver::updateImpactZoneVelocityForRG()
 	}
 }
 
-void CollisionSolver::updateImpactZoneVelocity(int &nZones)
+void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 {
 	POINT* pt;
 	int numZones = 0;
@@ -378,8 +337,7 @@ void CollisionSolver::updateImpactZoneVelocity(int &nZones)
 	nZones = numZones;
 }
 
-//resolve collision in the input tris list
-void CollisionSolver::resolveCollision()
+void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
@@ -388,7 +346,12 @@ void CollisionSolver::resolveCollision()
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
-	start_clock("detectProximity");
+    //restore coords of points to old coords !!!
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
+    resetPositionCoordinates();
+	
+    start_clock("detectProximity");
 	detectProximity();
 	stop_clock("detectProximity");
 
@@ -426,23 +389,31 @@ void CollisionSolver::resolveCollision()
 
 // function to perform AABB tree building, updating structure
 // and query for proximity detection process
-void CollisionSolver::aabbProximity() {
-    if (!abt_proximity) {
+void CollisionSolver3d::aabbProximity()
+{
+    if (!abt_proximity)
+    {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_proximity = std::unique_ptr<AABBTree>(new AABBTree(STATIC));
-        for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB(pre_tol, *it, abt_proximity->getType());
+        abt_proximity =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::STATIC));
+
+        for (auto it = hseList.begin(); it != hseList.end(); it++)
+        {
+             AABB* ab = new AABB(pre_tol,*it,abt_proximity->getType());
              abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
         volume = abt_proximity->getVolume();
     }
     /*
+     *
+     //NOTE: This is old code that rebuilt the tree every time.
+     //
     else {
         delete abt_proximity.release();
         double pre_tol = CollisionSolver3d::getFabricThickness();
 
-        abt_proximity = std::move(std::make_unique<AABBTree>(STATIC));
+        abt_proximity = std::move(std::make_unique<AABBTree>(MotionState::STATIC));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (pre_tol, *it, abt_proximity->getType());
              abt_proximity->addAABB(ab);
@@ -451,40 +422,46 @@ void CollisionSolver::aabbProximity() {
         volume = abt_proximity->getVolume();
     }
     */
-    else {
+    else
+    {
         abt_proximity->updateAABBTree(hseList);
         // if current tree structure doesn't fit for the current 
         // surface, update structure of the tree
-        if (fabs(abt_proximity->getVolume() - volume) > vol_diff * volume) {
+        if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
+        {
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
             build_count_pre++;
             std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
-    // query for collision detection of AABB elements
-    abt_proximity->query(this);
 }
 
-void CollisionSolver::detectProximity()
+void CollisionSolver3d::detectProximity()
 {
+    const double h = CollisionSolver3d::getFabricThickness();
+
     start_clock("dynamic_AABB_proximity");
     aabbProximity();
+    abt_proximity->query(h);
     stop_clock("dynamic_AABB_proximity");
 
 	updateAverageVelocity();
-	if (debugging("collision"))
+
+	if (debugging("proximity"))
         std::cout << abt_proximity->getCount()
             << " pair of proximity" << std::endl;
 }
 
 // AABB tree for collision detection process
-void CollisionSolver::aabbCollision() {
+void CollisionSolver3d::aabbCollision() {
     if (!abt_collision) {
         double pre_tol = CollisionSolver3d::getFabricThickness();
-        abt_collision = std::unique_ptr<AABBTree>(new AABBTree(MOVING));
+        abt_collision =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
+
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
-             AABB* ab = new AABB(pre_tol,*it, abt_collision->getType(), s_dt);
+             AABB* ab = new AABB(pre_tol,*it,abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
@@ -493,7 +470,7 @@ void CollisionSolver::aabbCollision() {
     /*
     else {
         delete abt_collision.release();
-        abt_collision = std::move(std::make_unique<AABBTree>(MOVING));
+        abt_collision = std::move(std::make_unique<AABBTree>(MotionState::MOVING));
         for (auto it = hseList.begin(); it != hseList.end(); it++) {
              AABB* ab = new AABB (*it, abt_collision->getType(), s_dt);
              abt_collision->addAABB(ab);
@@ -512,109 +489,59 @@ void CollisionSolver::aabbCollision() {
             std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
     }
-    abt_collision->query(this);
 }
 
-void CollisionSolver::detectCollision()
+void CollisionSolver3d::detectCollision()
 {
-	bool is_collision = true; 
-	const int MAX_ITER = 12;
-	//const int MAX_ITER = 8;
-	int niter = 1;
-
 	std::cout<<"Starting collision handling: "<<std::endl;
-	//record if has an actual collision
-	//this is useful for adpative dt
-	int cd_count = 0;
+	
+	const int MAX_ITER = 12;
+    const double h = CollisionSolver3d::getRoundingTolerance();
+	
+    bool is_collision = true; 
 	setHasCollision(false);
-	//
-	while(is_collision){
+	
+    int niter = 1;
+	int cd_count = 0;
+   
+    while(is_collision)
+    {
 	    is_collision = false;
 	    
-        start_clock("dynamic_AABB_collision");
-	    aabbCollision();
-        is_collision = abt_collision->getCollsnState();
-	    stop_clock("dynamic_AABB_collision");
+            start_clock("dynamic_AABB_collision");
+        aabbCollision();
+        abt_collision->query(h);
+            stop_clock("dynamic_AABB_collision");
 
+        is_collision = abt_collision->getCollsnState();
+
+        //TODO: What is the point of cd_count? Appears to serve no purpose.
+        //      Also, has_collision is never used (what setHasCollision() sets).
 	    if (cd_count++ == 0 && is_collision)
-                setHasCollision(true);
+        {
+            setHasCollision(true);
+        }
 
 	    updateAverageVelocity();
-	    std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
-		     << " pair of collision tris" << std::endl;
+
+	    //if (debugging("collision"))
+            std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+                << " pair of collision tris" << std::endl;
 	    
         if (++niter > MAX_ITER)
             break;
 	}
 
-	start_clock("computeImpactZone");
+        start_clock("computeImpactZone");
+
 	if (is_collision) 
 	    computeImpactZone();
-	stop_clock("computeImpactZone");
-}
-
-/*
-void CollisionSolver::detectCollision()
-{
-	bool is_collision = true; 
-	int MAX_ITER = 8;
-	//const int MAX_ITER = 8;
-	int niter = 1;
-
-    int npairs = static_cast<int>(HUGE);
-    int prev_npairs = npairs;
-
-	std::cout<<"Starting collision handling: "<<std::endl;
-	//record if has an actual collision
-	//this is useful for adpative dt
-	int cd_count = 0;
-	setHasCollision(false);
-	//
-	while(is_collision) {
-	    
-        is_collision = false;
-	    start_clock("dynamic_AABB_collision");
-	    
-        aabbCollision();
-        is_collision = abt_collision->getCollsnState();
-
-        stop_clock("dynamic_AABB_collision");
-
-        //TODO: This doesn't do anything.
-        //      boolean set in setHasCollision() is retrieved using
-        //      hasCollision(), but is never called anywhere.
-	    if (cd_count++ == 0 && is_collision)
-            setHasCollision(true);
-
-	    updateAverageVelocity();
-        
-        prev_npairs = npairs;
-        npairs = abt_collision->getCount(); 
-	    
-        std::cout<<"    #"<<niter << ": " << npairs
-		     << " pair of collision tris" << std::endl;
-
-	    //if (++niter > MAX_ITER) break;
-	    if (++niter > MAX_ITER)
-        {
-            if (npairs >= prev_npairs/2 + 1)
-            {
-                break;
-            }
-            MAX_ITER++;
-        }
-	}
     
-    start_clock("computeImpactZone");
-	if (is_collision) 
-	    computeImpactZone();
-	stop_clock("computeImpactZone");
+        stop_clock("computeImpactZone");
 }
-*/
 
-//helper function to detect a collision between 
-//a moving point and a moving triangle
-//or between two moving edges 
+//Note: num has default value of 4,
+//and first has default value of false
 extern void createImpZone(POINT* pts[], int num, bool first){
 	for (int i = 0; i < num; ++i)
 	{
@@ -630,11 +557,26 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 	}
 }
 
+void CollisionSolver3d::reduceSuperelast()
+{
+	bool has_superelas = true;
+	int niter = 0;
+    int num_edges;
+	const int max_iter = 3;
+	while(has_superelas && niter++ < max_iter)
+    {
+	    has_superelas = reduceSuperelastOnce(num_edges);
+	}
+
+	if (debugging("collision"))
+        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
+}
+
 //TODO: Implement this correctly.
 //      jacobi iteration style for strain and
 //      gauss-seidel iteration style for strain rate.
 //      Should be called after collisions have been handled.
-bool CollisionSolver::reduceSuperelastOnce(int& num_edges)
+bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
 {
 	double dt = getTimeStepSize();
 	const double superelasTol = 0.10;
@@ -725,7 +667,7 @@ bool CollisionSolver::reduceSuperelastOnce(int& num_edges)
 	return has_superelas;
 }
 
-void CollisionSolver::updateFinalPosition()
+void CollisionSolver3d::updateFinalPosition()
 {
 	POINT* pt;
 	STATE* sl;
@@ -749,23 +691,8 @@ void CollisionSolver::updateFinalPosition()
 	}
 }
 
-void CollisionSolver::reduceSuperelast()
-{
-	bool has_superelas = true;
-	int niter = 0;
-    int num_edges;
-	const int max_iter = 3;
-	while(has_superelas && niter++ < max_iter)
-    {
-	    has_superelas = reduceSuperelastOnce(num_edges);
-	}
-
-	if (debugging("collision"))
-        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
-}
-
 //TODO: This is not the correct update.
-void CollisionSolver::updateFinalVelocity()
+void CollisionSolver3d::updateFinalVelocity()
 {
     //avgVel is actually the velocity at t(n+1/2)
     //need to call spring solver to get velocity at t(n+1)
@@ -804,7 +731,7 @@ void CollisionSolver::updateFinalVelocity()
     updateFinalForRG();
 }
 
-void CollisionSolver::updateFinalForRG()
+void CollisionSolver3d::updateFinalForRG()
 {
 	POINT* pt;
         STATE* sl;
@@ -873,7 +800,7 @@ void CollisionSolver::updateFinalForRG()
         }
 }
 
-void CollisionSolver::updateAverageVelocity()
+void CollisionSolver3d::updateAverageVelocity()
 {
 	POINT *p;
 	STATE *sl;
@@ -960,9 +887,11 @@ void CollisionSolver::updateAverageVelocity()
 	    printDebugVariable();
 }
 
-bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
+bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
+{
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
+
         //Commented code turns off collision detection involving the lines/strings
         /*
         if (a->name == "lines" && b->name == "lines") {
@@ -972,7 +901,7 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
             a->name == "tris_rigid" && b->name == "lines")
             return false;
        */
-	double h = CollisionSolver3d::getRoundingTolerance();
+        
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
 	{
@@ -980,7 +909,7 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
-	    return MovingTriToTri(t1,t2,h);
+	    return MovingTriToTri(t1,t2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
@@ -988,7 +917,7 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
         //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
-	    return MovingBondToBond(b1,b2,h);
+	    return MovingBondToBond(b1,b2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
@@ -996,7 +925,7 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
         //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,h);
+	    return MovingTriToBond(t1,b1,tol);
 	}
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
@@ -1004,7 +933,7 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
         //return false;
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,h);
+	    return MovingTriToBond(t1,b1,tol);
 	}
 	else
 	{
@@ -1015,10 +944,10 @@ bool CollisionSolver::getCollision(const CD_HSE* a, const CD_HSE* b){
 }
 
 //This is checking the geometric primitive for intersection
-bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
+bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
+{
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
-	double h = CollisionSolver3d::getFabricThickness();
 
 	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
 	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
@@ -1027,28 +956,28 @@ bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
-	    return TriToTri(t1,t2,h);
+	    return TriToTri(t1,t2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
-	    return BondToBond(b1,b2,h);
+	    return BondToBond(b1,b2,tol);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,h);
+	    return TriToBond(t1,b1,tol);
 	}
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,h);
+	    return TriToBond(t1,b1,tol);
 	}
 	else
 	{
@@ -1058,7 +987,7 @@ bool CollisionSolver::getProximity(const CD_HSE* a, const CD_HSE* b){
 	return false;
 }
 
-void CollisionSolver::printDebugVariable(){
+void CollisionSolver3d::printDebugVariable(){
 	std::cout << "Enter EdgeToEdge " << edg_to_edg 
 		  << " times"<< std::endl;
 	std::cout << "Enter PointToTri " << pt_to_tri 
@@ -1069,101 +998,11 @@ void CollisionSolver::printDebugVariable(){
 	edg_to_edg = pt_to_tri = 0;
 }
 
-/********************************
-* implementation for CD_HSE     *
-*********************************/
-double CD_BOND::max_static_coord(int dim){
-    return std::max(Coords(m_bond->start)[dim],
-		    Coords(m_bond->end)[dim]);
-}
-
-double CD_BOND::min_static_coord(int dim){
-    return std::min(Coords(m_bond->start)[dim],
-		    Coords(m_bond->end)[dim]);
-}
-
-double CD_BOND::max_moving_coord(int dim,double dt){
-    double ans = -HUGE;
-    for (int i = 0; i < 2; ++i){
-	POINT* pt = (i == 0)? m_bond->start : m_bond->end;
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(ans,sl->x_old[dim]);
-	ans = std::max(ans,sl->x_old[dim]+sl->avgVel[dim]*dt); 
-    }    
-    return ans;
-}
-
-double CD_BOND::min_moving_coord(int dim,double dt){
-    double ans = HUGE;
-    for (int i = 0; i < 2; ++i){
-	POINT* pt = (i == 0)? m_bond->start : m_bond->end;
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(ans,sl->x_old[dim]);
-	ans = std::min(ans,sl->x_old[dim]+sl->avgVel[dim]*dt); 
-    }    
-    return ans;
-}
-
-POINT* CD_BOND::Point_of_hse(int i) const{
-    if (i >= num_pts())
-	return NULL;
-    else
-        return (i == 0) ? m_bond->start : 
-			  m_bond->end;
-}
-
-double CD_TRI::max_static_coord(int dim){
-    double ans = -HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(sl->x_old[dim],ans);
-    }
-    return ans;
-}
-
-double CD_TRI::min_static_coord(int dim){
-    double ans = HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(sl->x_old[dim],ans);
-    }
-    return ans;
-}
-
-double CD_TRI::max_moving_coord(int dim,double dt){
-    double ans = -HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::max(ans,sl->x_old[dim]);
-	ans = std::max(ans,sl->x_old[dim]+sl->avgVel[dim]*dt);
-    }
-    return ans;
-}
-
-double CD_TRI::min_moving_coord(int dim,double dt){
-    double ans = HUGE;
-    for (int i = 0; i < 3; ++i){
-	POINT* pt = Point_of_tri(m_tri)[i];
-	STATE* sl = (STATE*)left_state(pt);
-	ans = std::min(ans,sl->x_old[dim]);
-	ans = std::min(ans,sl->x_old[dim]+sl->avgVel[dim]*dt);
-    }
-    return ans;
-}
-
-POINT* CD_TRI::Point_of_hse(int i) const{
-    if (i >= num_pts())
-	return NULL;
-    else
-        return Point_of_tri(m_tri)[i];
-}
 
 /*******************************
 * utility functions start here *
 *******************************/
+
 /* The followings are helper functions for vector operations. */
 void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
 	for (int i = 0; i < 3; ++i)	
@@ -1191,18 +1030,10 @@ void minusVec(double* v1, double* v2, double* ans)
 	    ans[i] = v1[i]-v2[i];
 }
 
-void scalarMult(double a,double* v, double* ans)
+void scalarMult(double a, double* v, double* ans)
 {
 	for (int i = 0; i < 3; ++i)
             ans[i] = a*v[i];	
-}
-
-bool LeftTurn(std::vector<double>& a,
-              std::vector<double>& b,
-              std::vector<double>& c)
-{
-    return (b[0] - a[0])*(c[1] - a[1])
-        - (c[0] - a[0])*(b[1] - a[1]);
 }
 
 extern double myDet3d(double a[3][3]){
