@@ -1,39 +1,35 @@
-#ifndef AIRFOIL_SV
-#define AIRFOIL_SV
+#ifndef FABRIC_SV
+#define FABRIC_SV
 
-//TODO: Comments with description of each variable.
-//      Or even better, rename variables.
-
-        
 struct SPRING_VERTEX
 {
-    double *x;
-    double *v;
-	double *f;
-    double *ext_impul;
+    double *x;              //position
+    double *v;              //velocity
+	double *f;              //force
+    double *ext_impul;      //velocity comp due to impulse of external force
 	int ix;
-    int num_nb;
-    double m;
-    double lambda;
+    int num_nb;             //number of neighboring vertices
+    double m;               //mass
+    double lambda;          //damping coefficient
     double **x_nb;
     double **v_nb;
 	int *ix_nb;
-    double *k;
-    double *len0;
-    double ext_accel[3];
-	double *fluid_accel;
-	double *other_accel;
+    double *k;              //spring constant
+    double *len0;           //equilibrium lengths to neighbors
+    double ext_accel[3];    //gravity
+	double *fluid_accel;    //acceleration due to fluid pressue difference on fabric
+	double *other_accel;    //acceleration for special nodes
 };
 
 struct GLOBAL_POINT
 {
-    double x[3];
-    double v[3];
-	double f[3];
+    double x[3];            //position
+    double v[3];            //velocity
+	double f[3];            //force
     double impuls[3];
-    long gindex;
-	double fluid_accel[3];
-	double other_accel[3];
+	double fluid_accel[3];  //acceleration due to fluid pressue difference on fabric
+	double other_accel[3];  //acceleration for special nodes
+    long gindex;            //global index
 };
 
 #endif
