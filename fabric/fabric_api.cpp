@@ -310,6 +310,11 @@ extern void SMM_InitSpringMassParams()
             CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
+
+            CursorAfterString(infile,"Enter fabric friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_s);
+            (void) printf("%f\n",af_params->mu_s);
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
