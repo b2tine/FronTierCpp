@@ -252,64 +252,47 @@ extern void set_spring_vertex_memory(
 
 extern void compute_spring_accel1(
 	SPRING_VERTEX *sv,
-	double *f,
+	double* accel,
 	int dim)
 {
-	int i,k;
-	double len,vec[MAXD];
+	double vec[MAXD];
 	double v_rel[MAXD];
 
-	for (k = 0; k < dim; ++k)
-	    f[k] = 0.0;
-	for (i = 0; i < sv->num_nb; ++i)
+	for (int k = 0; k < dim; ++k)
+        accel[k] = 0.0;
+
+    for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    len = 0.0;
-	    for (k = 0; k < dim; ++k)
+	    double len = 0.0;
+	    for (int k = 0; k < dim; ++k)
 	    {
-		vec[k] = sv->x_nb[i][k] - sv->x[k];
-		len += sqr(vec[k]);
-/*
-#ifdef DAMPING_FORCE
-		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
-#endif
-*/
+            vec[k] = sv->x_nb[j][k] - sv->x[k];
+            len += vec[k]*vec[k];
 	    }
+
 	    len = sqrt(len);
 
-	    for (k = 0; k < dim; ++k)
+	    for (int k = 0; k < dim; ++k)
 	    {
-		vec[k] /= len;
-		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-/*
-#ifdef DAMPING_FORCE
-                //This is artificial viscosity
-		f[k] += sv->lambda*v_rel[k]/sv->m; 
-#endif
-*/
-	    }
+            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
+        }
 	}
 
         //TODO: This isn't being used currently.
         //      Figure out why.
-    
         //computeElasticForce(sv,f);
 
-	for (k = 0; k < dim; ++k)
+	for (int k = 0; k < dim; ++k)
     {
-	    sv->f[k] = f[k]*sv->m;
+	    sv->f[k] = accel[k]*sv->m;
     }
-/*
-//#ifndef DAMPING_FORCE
-	for (k = 0; k < dim; ++k)
+	
+    for (int k = 0; k < dim; ++k)
 	{
-	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
-	}
-//#endif
-*/	
-    for (k = 0; k < dim; ++k)
-	{
-	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
-			+ sv->other_accel[k];
+	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+        
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
+                    + sv->other_accel[k];
 	}
 }	/* end compute_spring_accel */
 
