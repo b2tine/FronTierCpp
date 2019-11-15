@@ -307,6 +307,7 @@ extern void SMM_InitSpringMassParams()
 	    CursorAfterString(infile,"Enter fabric spring constant:");
             fscanf(infile,"%lf",&af_params->ks);
             (void) printf("%f\n",af_params->ks);
+            
             CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);

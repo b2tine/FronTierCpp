@@ -24,7 +24,7 @@ double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_k = 1000;
 double CollisionSolver3d::s_m = 0.01;
-double CollisionSolver3d::s_lambda = 0.02;
+double CollisionSolver3d::s_mu = 0.4;
 double CollisionSolver3d::s_cr = 1.0;
 bool   CollisionSolver3d::s_detImpZone = false;
 
@@ -71,8 +71,8 @@ double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
 double CollisionSolver3d::getSpringConstant(){return s_k;}
 
-void   CollisionSolver3d::setFrictionConstant(double new_la){s_lambda = new_la;}
-double CollisionSolver3d::getFrictionConstant(){return s_lambda;}
+void   CollisionSolver3d::setFrictionConstant(double new_mu){s_mu = new_mu;}
+double CollisionSolver3d::getFrictionConstant(){return s_mu;}
 
 void   CollisionSolver3d::setPointMass(double new_m){s_m = new_m;}
 double CollisionSolver3d::getPointMass(){return s_m;}

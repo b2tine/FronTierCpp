@@ -88,7 +88,7 @@ private:
 	static double s_dt;
 	static double s_m;
 	static double s_k;
-	static double s_lambda;
+	static double s_mu;
 	static double s_cr;
     static bool s_detImpZone;
 

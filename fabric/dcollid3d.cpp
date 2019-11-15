@@ -914,7 +914,7 @@ static void EdgeToEdgeImpulse(
 	double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
-	double lambda = CollisionSolver3d::getFrictionConstant(); 
+	double mu     = CollisionSolver3d::getFrictionConstant(); 
 	double h      = CollisionSolver3d::getFabricThickness();
 	double cr     = CollisionSolver3d::getRestitutionCoef();
 	
@@ -1048,8 +1048,8 @@ static void EdgeToEdgeImpulse(
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = vt;
-                    if (fabs(lambda*t_impulse) < vt)
-                        delta_vt = lambda*t_impulse;
+                    if (fabs(mu*t_impulse) < vt)
+                        delta_vt = mu*t_impulse;
                     sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
@@ -1266,7 +1266,7 @@ static void PointToTriImpulse(
     double k      = CollisionSolver3d::getSpringConstant();
 	double m      = CollisionSolver3d::getPointMass();
 	double dt     = CollisionSolver3d::getTimeStepSize();
-	double lambda = CollisionSolver3d::getFrictionConstant(); 
+	double mu     = CollisionSolver3d::getFrictionConstant(); 
 	double h      = CollisionSolver3d::getFabricThickness();
 	double cr     = CollisionSolver3d::getRestitutionCoef();
 
@@ -1392,8 +1392,8 @@ static void PointToTriImpulse(
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = vt;
-                    if (fabs(lambda*t_impulse) < vt)
-                        delta_vt = lambda*t_impulse;
+                    if (fabs(mu*t_impulse) < vt)
+                        delta_vt = mu*t_impulse;
                     sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
