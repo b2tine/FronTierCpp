@@ -96,15 +96,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
         
-    CollisionSolver* collision_solver = new CollisionSolver3d();
-
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
-
-	if (!debugging("collision_off"))
-        printf("COLLISION DETECTION ON\n");
-    else
-        printf("COLLISION DETECTION OFF\n");
 
     geom_set.front = fr;
 
@@ -117,25 +110,27 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: join to below if statement
+    //TODO: these "first" initialization procedures
+    //      should be seperate function called before
+    //      any propagation functions are called
 	if (first)
-        {
-            set_elastic_params(&geom_set,fr_dt);
-            if (debugging("step_size"))
-                print_elastic_params(geom_set);
-        }
+    {
+        set_elastic_params(&geom_set,fr_dt);
+        if (debugging("step_size"))
+            print_elastic_params(geom_set);
+    }
 
-        if (fr_dt > geom_set.dt_tol)
-        {
-            n_sub = (int)(fr_dt/geom_set.dt_tol);
-            dt = fr_dt/n_sub;
-        }
-	    else
-        {
-            n_sub = af_params->n_sub;
-            dt = fr_dt/n_sub;
-        }
-        printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
+    if (fr_dt > geom_set.dt_tol)
+    {
+        n_sub = (int)(fr_dt/geom_set.dt_tol);
+        dt = fr_dt/n_sub;
+    }
+    else
+    {
+        n_sub = af_params->n_sub;
+        dt = fr_dt/n_sub;
+    }
+    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
 
 	if (first)
 	{
@@ -195,7 +190,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	elastic_intfc = fr->interf;
 	assembleParachuteSet(elastic_intfc,&geom_set);
-	if (myid != owner_id)
+	
+    if (myid != owner_id)
 	{
 	    client_size = geom_set.num_verts;
 	    if (size < client_size)
@@ -223,9 +219,20 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 					owner_id);
 	}
 	else
+    {
 	    size = owner_size;
+    }
 
-	if (myid == owner_id)
+    CollisionSolver3d* collision_solver;
+	if (!debugging("collision_off"))
+    {
+        collision_solver = new CollisionSolver3d();
+        printf("COLLISION DETECTION ON\n");
+    }
+    else
+        printf("COLLISION DETECTION OFF\n");
+
+    if (myid == owner_id)
 	{
             if (!debugging("collision_off"))
             {
@@ -243,7 +250,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->recordOriginalPosition();
             
                 //TODO: Is friction component working?
-                collision_solver->setFrictionConstant(0.0);
+                collision_solver->setFrictionConstant(0.4);
                 //collision_solver->setFrictionConstant(af_params->lambda_s);
             
                 collision_solver->setSpringConstant(af_params->ks); 
@@ -338,18 +345,16 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	compute_center_of_mass_velo(&geom_set);
 
 	if (!debugging("collision_off"))
+    {
+        if (myid == owner_id)
         {
-            if (myid == owner_id)
-            {
-                if (FT_Dimension() == 3)
-                {
-                    collision_solver->resolveCollision();
-                }
-            }
-            setSpecialNodeForce(fr, geom_set.kl);
+            if (FT_Dimension() == 3)
+                collision_solver->resolveCollision();
         }
+        setSpecialNodeForce(fr, geom_set.kl);
 
-    delete collision_solver;
+        delete collision_solver;
+    }
     
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
@@ -391,7 +396,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY tag
+    //TODO: add ELASTIC_BOUNDARY and ELASTIC_STRING tags
     
     CURVE **c;
     BOND* b;
