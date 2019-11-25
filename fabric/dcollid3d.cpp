@@ -400,6 +400,7 @@ static bool MovingPointToTri(POINT* pts[],const double h)
 	STATE* sl;
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     MotionState mstate = MotionState::MOVING;
 
 	if (isCoplanar(pts,dt,roots))
@@ -416,8 +417,26 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
 		    }
     
+            //if (PointToTri(pts,h,mstate,roots[i]))
+              //  return true;
+	    
+            bool status = false;
             if (PointToTri(pts,h,mstate,roots[i]))
+                status = true;
+
+            if (is_detImpZone)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    sl = (STATE*)left_state(pts[j]);
+                    for (int k = 0; k < 3; ++k)
+                        Coords(pts[j])[k] = sl->x_old[k];
+                }
+            }
+
+            if (status)
                 return true;
+
 	    }
 	}
 
@@ -430,6 +449,7 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
 	STATE* sl;
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     MotionState mstate = MotionState::MOVING;
 
 	if (isCoplanar(pts,dt,roots))
@@ -446,7 +466,24 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
             }
 
+            //if (EdgeToEdge(pts,h,mstate,roots[i]))
+              //  return true;
+
+            bool status = false;
             if (EdgeToEdge(pts,h,mstate,roots[i]))
+                status = true;
+
+            if (is_detImpZone)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    sl = (STATE*)left_state(pts[j]);
+                    for (int k = 0; k < 3; ++k)
+                        Coords(pts[j])[k] = sl->x_old[k];
+                }
+            }
+
+            if (status)
                 return true;
         }
     }
@@ -588,32 +625,36 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
             return false;
 	}
 
-	/* make sure the coords are old coords */
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
+	/* make sure the coords are old coords */
+    /*
 	for (int i = 0; i < 3; ++i)
 	{
 	    sl = (STATE*)left_state(pts[i]);
 	    for (int j = 0; j < 3; ++j)
             Coords(pts[i])[j] = sl->x_old[j];
 	}
+    */
 
 	/* detect proximity of start point of bond w.r.t. tri */
 	pts[3] = bd->start;
+    /*
 	sl = (STATE*)left_state(pts[3]);
 	for (int j = 0; j < 3; ++j)
 	    Coords(pts[3])[j] = sl->x_old[j];
-
+    */
 	if (PointToTri(pts,h))
         status = true;
 
 	/* detect proximity of end point of bond w.r.t. tri */
 	pts[3] = bd->end;
+    /*
 	sl = (STATE*)left_state(pts[3]);
 	for (int j = 0; j < 3; ++j)
 	    Coords(pts[3])[j] = sl->x_old[j];
-	
+	*/
     if (PointToTri(pts,h))
         status = true;
 	
@@ -655,12 +696,14 @@ bool BondToBond(const BOND* b1, const BOND* b2, double h)
 	}
 
 	/* make sure the coords are old coords */
+    /*
 	for (int i = 0; i < 4; ++i)
 	{
 	    sl = (STATE*)left_state(pts[i]);
 	    for (int j = 0; j < 3; ++j)
 		Coords(pts[i])[j] = sl->x_old[j];
 	}
+    */
 
 	/* detect proximity between two bonds */
 	if (EdgeToEdge(pts,h))
@@ -685,6 +728,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 	}
 
 	//make sure the coords are old coords;
+    /*
 	for (int i = 0; i < 3; ++i){
 	    pts[0] = Point_of_tri(tri1)[i];
 	    sl[0] = (STATE*)left_state(pts[0]);
@@ -694,6 +738,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 	    for (int k = 0; k < 3; ++k)
 	        Coords(pts[j])[k] = sl[j]->x_old[k];
 	}
+    */
 
 	for (int k = 0; k < 2; ++k)
 	for (int i = 0; i < 3; ++i)
@@ -890,9 +935,12 @@ static bool EdgeToEdge(
     if (dist > h)
         return false;
 
-    EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,root);
-	return true;
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (!is_detImpZone)
+        EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,root);
 
+    //EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,root);
+	return true;
 }
 
 //TODO: root is not used inside this function at all
@@ -961,7 +1009,7 @@ static void EdgeToEdgeImpulse(
         dt = root;
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        else if (vn * dt < 0.1 * dist)
+        else if (fabs(vn) * dt < 0.1 * dist)
             EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
     }
     else
@@ -969,7 +1017,7 @@ static void EdgeToEdgeImpulse(
         //Can apply both for repulsion
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        if (vn * dt < 0.1 * dist)
+        if (fabs(vn) * dt < 0.1 * dist)
             EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
     }
 
@@ -1050,6 +1098,8 @@ static void EdgeToEdgeImpulse(
                     double delta_vt = vt;
                     if (fabs(mu*t_impulse) < vt)
                         delta_vt = mu*t_impulse;
+
+                    //sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                     sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
@@ -1245,7 +1295,11 @@ static bool PointToTri(
         */
     }
 
-	PointToTriImpulse(pts,tri_nor,w,dist,mstate,root);
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (!is_detImpZone)
+        PointToTriImpulse(pts,tri_nor,w,dist,mstate,root);
+
+	//PointToTriImpulse(pts,tri_nor,w,dist,mstate,root);
 	return true;
 }
 
@@ -1312,7 +1366,7 @@ static void PointToTriImpulse(
         dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        else if (vn * dt < 0.1 * dist)
+        else if (fabs(vn) * dt < 0.1 * dist)
             PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
     }
     else
@@ -1320,7 +1374,7 @@ static void PointToTriImpulse(
         //Can apply both for repulsion
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        if (vn * dt < 0.1 * dist)
+        if (fabs(vn) * dt < 0.1 * dist)
             PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k,cr);
     }
 
@@ -1394,6 +1448,8 @@ static void PointToTriImpulse(
                     double delta_vt = vt;
                     if (fabs(mu*t_impulse) < vt)
                         delta_vt = mu*t_impulse;
+                    
+                    //sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                     sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }

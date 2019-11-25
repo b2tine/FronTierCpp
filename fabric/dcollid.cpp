@@ -366,25 +366,24 @@ void CollisionSolver3d::resolveCollision()
 	if (debugging("collision"))
 	    printDebugVariable();
 	
-	start_clock("detectDomainBoundaryCollision");
-	detectDomainBoundaryCollision();
-	stop_clock("detectDomainBoundaryCollision");
+	//start_clock("detectDomainBoundaryCollision");
+	//detectDomainBoundaryCollision();
+	//stop_clock("detectDomainBoundaryCollision");
 
 	//update position using final midstep velocity
-	start_clock("updateFinalPosition");
 	updateFinalPosition();
-	stop_clock("updateFinalPosition");
+	detectProximity();
+    //TODO: can cause interpenetration: need to update impulse for
+    //      use in spring solver only.
+	    //updateFinalPosition();
 
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
 	    //reduceSuperelast();
 	//stop_clock("reduceSuperelast");
 	
-	start_clock("updateFinalVelocity");
-    //detectProximity();
     //TODO: implement this function correctly
 	updateFinalVelocity();
-	stop_clock("updateFinalVelocity");
 }
 
 // function to perform AABB tree building, updating structure
@@ -432,7 +431,7 @@ void CollisionSolver3d::aabbProximity()
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
             build_count_pre++;
-            std::cout << "build_count_pre is " << build_count_pre << std::endl; 
+            //std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
 }
@@ -834,6 +833,8 @@ void CollisionSolver3d::updateAverageVelocity()
         if (isStaticRigidBody(p)) continue;
         if (sorted(p)) continue;
 
+        //TODO: add switch for update impulse for use in spring solver.
+        //      for endstep proximity
 		sl = (STATE*)left_state(p);
 		if (sl->collsn_num > 0)
 		{
