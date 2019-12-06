@@ -184,6 +184,49 @@ int airfoil_velo(
 	return YES;
 }
 
+//TODO: make default when switch to default porous fabric
+/*
+int af_find_state_at_crossing(
+    Front *front,
+    int *icoords,
+    GRID_DIRECTION dir,
+    int comp,
+    POINTER *state,
+    HYPER_SURF **hs,
+    double *crx_coords)
+{
+    boolean status;
+    HYPER_SURF_ELEMENT *hse;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+    status = FT_StateStructAtGridCrossing2(front,icoords,
+            dir,comp,state,hs,&hse,crx_coords);
+    
+    if (status == NO)
+        return NO_PDE_BOUNDARY;
+    else
+    {
+        switch (wave_type(*hs))
+        {
+        case FIRST_PHYSICS_WAVE_TYPE:
+        case ELASTIC_STRING:
+        case ELASTIC_BOUNDARY:
+            return NO_PDE_BOUNDARY;
+        case MOVABLE_BODY_BOUNDARY:
+            return CONST_V_PDE_BOUNDARY;
+        case 
+            DIRICHLET_BOUNDARY:
+	    if (boundary_state_function(*hs) &&
+                strcmp(boundary_state_function_name(*hs),
+                "flowThroughBoundaryState") == 0)
+                return CONST_P_PDE_BOUNDARY;
+            else
+                return CONST_V_PDE_BOUNDARY;
+        }
+    }
+    return NEUMANN_PDE_BOUNDARY;
+}*/       /* af_find_state_at_crossing */
+
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
