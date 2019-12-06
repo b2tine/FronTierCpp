@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <iomanip>
 #include <cstdlib>
+#include <cassert>
 
 static void setCollisionFreePoints3d(INTERFACE*, Drag*);
 bool findAndLocate(std::ifstream&, const char*);
@@ -161,7 +162,7 @@ void Folder3d::doFolding() {
     //SpringSolver* sp_solver = SpringSolver::createSpringSolver(
     //						getOdeScheme()); 
     SpringSolver* sp_solver = new SpringSolver();	
-    CollisionSolver* cd_solver = new CollisionSolver3d();
+    CollisionSolver3d* cd_solver = new CollisionSolver3d();
     
     //configure collision solver
     cd_solver->assembleFromInterface(m_intfc,getFrameStepSize());
@@ -320,7 +321,7 @@ double Folder3d::computeKineticEnergy() {
 void Folder3d::doFolding(
      Drag* drag, 
      SpringSolver* sp_solver,
-     CollisionSolver* cd_solver) 
+     CollisionSolver3d* cd_solver) 
 {
     double min_dt = sp_solver->getTimeStepSize();
     double max_dt = std::max(min_dt,getFrameStepSize());

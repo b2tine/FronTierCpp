@@ -87,6 +87,7 @@ EXPORT double getStateTemp(POINTER state)
 }	/* end getStateMTemp */
 
 
+//TODO: this is currently the same is ifluid_point_propagate()
 EXPORT void fluid_point_propagate(
         Front *front,
         POINTER wave,
