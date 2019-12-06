@@ -260,7 +260,6 @@ extern void compute_spring_accel1(
 {
 	int i,k;
 	double len,vec[MAXD];
-	double v_rel[MAXD];
 
 	for (k = 0; k < dim; ++k)
 	    f[k] = 0.0;
@@ -271,9 +270,6 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] = sv->x_nb[i][k] - sv->x[k];
 		len += sqr(vec[k]);
-//#ifdef DAMPING_FORCE
-		v_rel[k] = sv->v_nb[i][k] - sv->v[k];
-//#endif
 	    }
 	    len = sqrt(len);
 
@@ -281,32 +277,19 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
-//#ifdef DAMPING_FORCE
-		f[k] += sv->lambda*v_rel[k]/sv->m; //This is artificial viscosity
-//#endif
 	    }
 	}
 
-    //TODO: This isn't being used currently.
-    //      Figure out why.
-    
-    //computeElasticForce(sv,f);
+        //TODO: This has not been implemented.
+        //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
-    {
 	    sv->f[k] = f[k]*sv->m;
-    }
-
-//#ifndef DAMPING_FORCE
 	for (k = 0; k < dim; ++k)
 	{
-	        //f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
-        //ext_impul is the velocity component due to the impulse
-        //of the external force component -- not the actual impulse
+	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
 	}
-//#endif*/
-	
-    for (k = 0; k < dim; ++k)
+	for (k = 0; k < dim; ++k)
 	{
 	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
 			+ sv->other_accel[k];
@@ -1465,7 +1448,7 @@ static void assembleParachuteSet3d(
 	    }
 	}
 	
-    //TODO: below unfinished?
+    //TODO: below if finished?
     /* Change for dealing the cases where there is both canopy surface
 	   and isolated 3d curves */
 	intfc_curve_loop(intfc,c)
