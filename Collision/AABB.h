@@ -1,18 +1,23 @@
 #ifndef AABB_H
 #define AABB_H
 
-#include <vector>
-#include <set>
+#include "CD_HSE.h"
+
+#include <fstream>
+#include <memory>
+#include <functional>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
+#include <stack>
+#include <queue>
+#include <set>
 #include <map>
-#include "collid.h"
 
-// header file for AABB tree
-// axis-aligned bounding box class
 using CPoint = std::vector<double>;
-// scope enum type forward declaration
-enum class MotionState;
+
+enum class MotionState {STATIC, MOVING};
+
 
 class Node;
 class AABBTree;
@@ -33,10 +38,9 @@ class AABB {
     MotionState abType;
     double tol;
 public:
-    // constructor
     AABB() {}
     AABB(double, CD_HSE*, MotionState);
-    AABB(CD_HSE*, MotionState, double);
+    AABB(double, CD_HSE*, MotionState, double);
     AABB(const CPoint&, const CPoint&);
     // explicit saying that we need a default version of 
     // copy and move operations 
@@ -44,6 +48,7 @@ public:
     AABB& operator=(const AABB&) = default;
     AABB(AABB&&) = default;
     AABB& operator=(AABB&&) = default;
+    ~AABB() = default;
     // merge this with anther AABB to get a
     // merged AABB and construct the corresponding AABB tree
     AABB merge(const AABB&) const;
@@ -51,9 +56,6 @@ public:
     double volume();
     bool isCollid(const AABB&);
 };
-
-// tree node corresponding to AABB
-class AABBTree;
 
 class Node {
 public:
@@ -79,6 +81,7 @@ public:
     bool isCollid(Node*);
     void updateAABB();
     Node* getSibling() const;
+    ~Node();
 };
 
 class AABBTree {
@@ -91,29 +94,36 @@ public:
     std::map<std::vector<long>, CD_HSE*> vhMap;
     std::unordered_set<Node*> nodeSet;
     std::vector<std::shared_ptr<Node>> nodeArray;
-    int count;
-    int numLeaf = 0;
+
+    int count {0};
+    int numLeaf {0};
     double treeHeight(Node*); 
     double dt;
     bool isProximity;
     bool isCollsn;
-    bool queryProximity(Node*, CollisionSolver*);
-    bool queryCollision(Node*, CollisionSolver*);
+    
+    // query all collid pairs
+    void query(double tol);
+
     // insert a node into the subtree with parent 
     // as the root
     void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
     MotionState type;
     double tolerance;
-    AABBTree(int);
+    
+    AABBTree(MotionState mstate);
+    ~AABBTree();
+    void deleteTree();
+
     // don't want tree to be copied or moved
     AABBTree(const AABBTree&) = delete;
     AABBTree& operator=(const AABBTree&) = delete;
     AABBTree(AABBTree&&) = delete;
     AABBTree& operator=(AABBTree&&) = delete;
+    
     // add an AABB element into a tree
     void addAABB(AABB*);
-    // query all collid pairs
-    void query(CollisionSolver*);
+    
     int getCount() { return count; }
     double getVolume() { return root->box.volume(); } 
     void updateTreeStructure();
@@ -122,6 +132,17 @@ public:
     bool getCollsnState() { return isCollsn; }
     void updateAABBTree(const std::vector<CD_HSE*>&);
     MotionState getType() { return type; }
+
+private:
+
+    bool queryProximity(Node* n,double tol);
+    bool queryCollision(Node* n,double tol);
 };
+
+
+//dcollid.cpp
+bool getProximity(const CD_HSE*,const CD_HSE*,double);
+bool getCollision(const CD_HSE*,const CD_HSE*,double);
+
 
 #endif

@@ -1825,13 +1825,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	static int break_strings_num = af_params->break_strings_num;
 
 
-    static CollisionSolver* collision_solver = new CollisionSolver3d();
-	if (!debugging("collision_off"))
-        printf("COLLISION DETECTION ON\n");
-    else
-        printf("COLLISION DETECTION OFF\n");
-
-
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
 	geom_set.front = fr;
@@ -1951,6 +1944,16 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	else
 	    size = owner_size;
 
+    CollisionSolver3d* collision_solver;
+    if (!debugging("collision_off"))
+    {
+        collision_solver = new CollisionSolver3d();
+        printf("COLLISION DETECTION ON\n");
+    }
+    else
+        printf("COLLISION DETECTION OFF\n");
+
+
 	if (myid == owner_id)
 	{
 	
@@ -1969,37 +1972,17 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
             collision_solver->recordOriginalPosition();
             
-            //TODO: Is friction component working?
-            collision_solver->setFrictionConstant(0.0);
-            //collision_solver->setFrictionConstant(af_params->lambda_s);
+            collision_solver->setFrictionConstant(0.5);
             
             collision_solver->setSpringConstant(af_params->ks); 
             collision_solver->setPointMass(af_params->m_s);
 
-            //TODO: What is going on here?
-            //      Unphysical penetration using the thicker 1.0e-03 m
-            //      leads me to believe that bugs in the collision code is
-            //      outweighing any potential rounding errors currently.
-            collision_solver->setFabricThickness(1.0e-4);
-                //collision_solver->setFabricThickness(1.0e-3);
-                //collision_solver->setFabricThickness(af_params->pre_tol);
+            collision_solver->setFabricThickness(1.0e-3);
 
-            //TODO: coefficient of restitution varies between materials,
-            //      and should be determined at runtime using the STATE
-            //      data of the colliding pairs. 
             collision_solver->setRestitutionCoef(1.0);
-		        //collision_solver->setRestitutionCoef(af_params->rest);
                 
-            //Default value is 0.0, so only worry about setting it
-            //(to 1.0 for example) when the collision is between two
-            //rigid bodies. Alternatively could set it the value for
-            //rigid-rigid collision here, because it appears that it was
-            //ommitted from all the cloth impulse calculations making it
-            //effectively 0.0 by default again.
-                
-            //For updating aabb tree
-            collision_solver->setVolumeDiff(0.05);
-                //collision_solver->setVolumeDiff(af_params->vol_diff);
+            //TODO:to be removed
+            collision_solver->setVolumeDiff(0.0);
         }
     }
 
@@ -2072,6 +2055,8 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
                     collision_solver->resolveCollision();
             }
         setSpecialNodeForce(fr, geom_set.kl);
+
+        delete collision_solver;
     }
 
 	if (debugging("trace"))

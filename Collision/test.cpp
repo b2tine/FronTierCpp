@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 static void propagation_driver(Front *front)
 {
     double CFL;
-	CollisionSolver *collision_solver = new CollisionSolver3d();
+	CollisionSolver3d *collision_solver = new CollisionSolver3d();
 
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
