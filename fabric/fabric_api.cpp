@@ -283,10 +283,11 @@ extern void SMM_InitSpringMassParams()
 	char string[100];
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        printf("\n");
-        CursorAfterString(infile,"Start parameters for spring-mass system");
-        printf("\n");
-	af_params->n_sub = 1;
+    printf("\n");
+    CursorAfterString(infile,"Start parameters for spring-mass system");
+    printf("\n");
+
+    af_params->n_sub = 1;
 	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
         {
 	    fscanf(infile,"%d",&af_params->n_sub);

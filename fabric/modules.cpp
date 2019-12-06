@@ -97,7 +97,6 @@ start_loop:
 
 extern void initParachuteModules(Front *front)
 {
-	int i,num_canopy;
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
 	static RG_PARAMS *rgb_params;
@@ -113,7 +112,8 @@ extern void initParachuteModules(Front *front)
         FT_ScalarMemoryAlloc((POINTER*)&rgb_params,sizeof(RG_PARAMS));
 	rgb_init(front,rgb_params);
 
-	CursorAfterString(infile,"Enter number of canopy surfaces:");
+	int num_canopy = 0;
+	CursorAfterStringOpt(infile,"Enter number of canopy surfaces:");
         fscanf(infile,"%d",&num_canopy);
         (void) printf("%d\n",num_canopy);
         if (num_canopy == 1)
@@ -132,8 +132,8 @@ extern void initParachuteModules(Front *front)
 
 	if (num_canopy == 1 && !complex_set)
 	    initSingleModule(front);
-	else
-	    initMultiModule(front,num_canopy);
+	else if (num_canopy > 1)
+        initMultiModule(front,num_canopy);
 
 	divideAtGoreBdry(front->interf);
 	setCanopyBodyIndex(front);
