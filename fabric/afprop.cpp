@@ -328,6 +328,19 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
+    /*
+    ////////////////////////////////////////////////////////////
+
+    //TODO: CALL TEARING ROUTINE HERE
+
+    0. Initialize fabric edge structures 
+    1. Check for springs exceeding tear threshold
+    2. Create/Propagate tears
+    3. Reindex Points/Tris
+
+    ////////////////////////////////////////////////////////////
+    */
+
 	if (!debugging("collision_off"))
     {
         if (myid == owner_id)
