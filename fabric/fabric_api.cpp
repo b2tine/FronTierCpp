@@ -317,6 +317,10 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%lf",&af_params->mu_s);
             (void) printf("%f\n",af_params->mu_s);
 
+            CursorAfterStringOpt(infile,"Enter fabric tearing threshold:");
+            fscanf(infile,"%lf",&af_params->tl_s);
+            (void) printf("%f\n",af_params->tl_s);
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");

@@ -92,6 +92,8 @@ struct AF_PARAMS
         double gore_len_fac;
         double gravity[MAXD];		/* gravitational force */
 	double payload;
+    
+    double tl_s;      // fabric spring tearing threshold */
 	double ks;			/* spring constant of surface */
 	double kl;			/* spring constant of string curves */
 	double kg;                      /* spring constant of gore curves */

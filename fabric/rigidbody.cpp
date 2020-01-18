@@ -33,7 +33,7 @@ extern void initRigidBody(
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] != 'y' && string[0] != 'Y')
-		return;
+            return;
 	}
 	else
 	    return;
