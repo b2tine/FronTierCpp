@@ -143,10 +143,12 @@ void FabricTearer::readGindexWeakPoints(
     weakpt_idx.insert(gindex_weakpts.begin(),gindex_weakpts.end());
 }
 
+//void FabricTearer::tearFabric(Front* front)
 void FabricTearer::tearFabric()
 {
     checkForTearingEvents();
     processTearingEvents();
+        //FT_SetGlobalIndex(front);
 }
 
 void FabricTearer::checkForTearingEvents()
@@ -173,6 +175,9 @@ void FabricTearer::processTearingEvents()
         
             //printf("tear_idx[%d] = %ld\n",i,itear);
 
+        //TODO: need to be careful when/how updates are done
+        //      to global indices and the vectors of objects
+        //      that use them.
         if (!isWeakPoint(e->beg) && !isWeakPoint(e->end))
             createNewTear(e);
         else
@@ -195,8 +200,10 @@ void FabricTearer::createNewTear(FabricEdge* e)
     //         vector, and the weakpt index to account for the new
     //         points/edges/tris
     
-    //weakpt_idx.insert(Gindex(e->beg));
-    //weakpt_idx.insert(Gindex(e->end));
+        //insert_point_in_tri_side();
+
+        //weakpt_idx.insert(Gindex(e->beg));
+        //weakpt_idx.insert(Gindex(e->end));
 
     printf("FabricTearer::createNewTear() not implemented yet\n");
     clean_up(0);

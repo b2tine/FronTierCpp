@@ -11,11 +11,13 @@ void FabricTearer::setEdgeTension(int index, double Tension)
 }
 */
 
+//void FabricTearer::tearFabricTest(Front* front)
 void FabricTearer::tearFabricTest()
 {
     checkForTearingEventsTest();
     processTearingEvents();
-    printEdges();
+    //printEdges();
+        //FT_SetGlobalIndex(front);
 }
 
 void FabricTearer::checkForTearingEventsTest()

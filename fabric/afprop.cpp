@@ -368,7 +368,10 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
         //Tearer->setEdgeTension(1000,5000.0);
     Tearer->tearFabricTest();
+        //Tearer->tearFabricTest(fr);
+        
         //Tearer->tearFabric();
+        //Tearer->tearFabric(fr);
 
     //clean_up(0);
 

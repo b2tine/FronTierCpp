@@ -86,12 +86,14 @@ class FabricTearer
 
 
         void tearFabric();
+        //void tearFabric(Front* front);
 
         void printEdges() const;
 
         //Testing Functions
             //void setEdgeTension(int index, double T);
         void tearFabricTest();
+        //void tearFabricTest(Front* front);
 
     private:
         
