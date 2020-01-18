@@ -3,6 +3,9 @@
 
 #include <FronTier.h>
 
+#include <cassert>
+#include <utility>
+#include <unordered_set>
 #include <vector>
 
 
@@ -10,48 +13,44 @@ class FabricEdge
 {
     public:
 
-        double k;
-        double tear_threshold;
+        POINT* beg;
+        POINT* end;
 
-        double length;
-        double tension
-        double disp[3];
-
-            //bool visited {false};
+        double tension {0.0};
 
         //FabricEdge() = default;
 
         FabricEdge(POINT* p1, POINT* p2)
             : beg{p1}, end{p2}
-        {
-            gindex_beg = Gindex(beg);
-            gindex_end = Gindex(end);
-            length0 = separation(beg,end,3);
-        }
+        {}
+
+        void setRestLength(double l);
+        void setSpringConstant(double k);
+        void setTearingThreshold(double T);
+
+        double getLength();
+        double getTension();
+
+        void print();
 
         bool checkForTear();
 
+        //Testing Functions
+        bool checkForTearTest(int i);
+
     private:
 
-        double length0;
-
-        //long int gindex;
-        long int gindex_beg;
-        long int gindex_end;
-
-        POINT* beg;
-        POINT* end;
-
-        bool beg_weak {false};
-        bool end_weak {false};
-
-        FabricEdge* prev;
-        FabricEdge* next;
+        double ks {0.0};
+        double tear_threshold {HUGE};
         
+        double length0 {-1.0};
+        double length {-1.0};
+        double disp[3];
+
+        void computeTension();
         bool underTension();
         void computeLength();
         void computeDisplacement();
-        double computeTension();
 };
 
 
@@ -59,25 +58,38 @@ class FabricTearer
 {
     public:
 
-        virtual ~FabricTearer();
-        FabricTearer(const Front* front);
+        ~FabricTearer();
+
+        void collectFabricEdges(const INTERFACE* intfc);
+        void setSpringData(double ks, double max_tension);
+        
+        std::vector<std::pair<long int, long int>> recordGindexPairs();
+        void readGindexPairs(POINT** gpoints,
+                const std::vector<std::pair<long int, long int>>& gindexpairs);
+        
+        std::vector<double> recordRestingEdgeLengths();
+        void readRestingEdgeLengths(const std::vector<double>& restlengths);
 
         void tearFabric();
 
+        void printEdges();
+
         //Testing Functions
-        void setEdgeTension(int index, double T);
-        void pringEdgeTensions();
+            //void setEdgeTension(int index, double T);
+        void tearFabricTest();
 
     private:
         
-        std::vector<int> tear_idx;
+        std::vector<long int> tear_idx;
         std::vector<FabricEdge*> edges;
 
         void clearEdges();
-        void collectFabricEdges(const Front* front);
         
         void checkForTearingEvents();
         void processTearingEvents();
+
+        //Testing Functions
+        void checkForTearingEventsTest();
 };
 
 

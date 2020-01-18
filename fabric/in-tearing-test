@@ -37,7 +37,7 @@ Start parameters for spring-mass system
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.02
 Enter fabric friction constant: 0.5
-Enter fabric tearing threshold: 1000
+Enter fabric tearing threshold: 1000.0
 Enter fabric point mass: 0.002
 Enter fabric thickness: 0.001
 Enter vol_diff coefficient: 0.0
@@ -61,7 +61,7 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3
-Max step: 2000
+Max step: 2
 Print interval: 1
 Movie frame interval: 0.025
 CFL factor: 0.5

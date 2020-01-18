@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "fabric.h"
 #include "collid.h"
+#include "Tearing.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
@@ -185,7 +186,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                     delete_interface(elastic_intfc);
 	    }
 	    stop_clock("set_data");
-	    first = NO;
+	        //first = NO;
 	}
 
 	elastic_intfc = fr->interf;
@@ -330,7 +331,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
     ////////////////////////////////////////////////////////////
 
-    //TODO: CALL TEARING ROUTINE HERE
+    //TODO: TEARING ROUTINE HERE
 
     /*
         0. Initialize fabric edge structures 
@@ -339,13 +340,35 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         3. Reindex Points/Tris
     */
 
-    //Initialize fabric edge structures
-    FabricTearer* Tearer = new FabricTearer(fr->interf);
-        //Tearer->setEdgeTension(100,5000.0);
-    Tearer->printEdgeTensions();
-    Tearer->tearFabric();
+    //TODO: Need to make FabricTearer static?
+    FabricTearer* Tearer = new FabricTearer;
+    
+    //TODO: for restart functionality, need to record these
+    //      in some type of save/restart file.
+    static std::vector<double> restlengths;
+    static std::vector<std::pair<long int, long int>> fabric_gindex_pairs;
 
-    clean_up(0);
+    //Initialize fabric edge structures
+    if (first)
+    {
+        Tearer->collectFabricEdges(fr->interf);
+        restlengths = Tearer->recordRestingEdgeLengths();
+        fabric_gindex_pairs = Tearer->recordGindexPairs();
+        first = NO;
+    }
+    else
+    {
+        Tearer->readGindexPairs(fr->gpoints,fabric_gindex_pairs);
+        Tearer->readRestingEdgeLengths(restlengths);
+    }
+
+    Tearer->setSpringData(af_params->ks,af_params->tl_s);
+
+        //Tearer->setEdgeTension(1000,5000.0);
+    Tearer->tearFabricTest();
+        //Tearer->tearFabric();
+
+    //clean_up(0);
 
     ////////////////////////////////////////////////////////////
 

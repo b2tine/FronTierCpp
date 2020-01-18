@@ -41,6 +41,9 @@ libfabric_la_SOURCES = \
 ../rigidbody.h \
 ../rigidbody.cpp \
 ../modules.cpp \
+../Tearing.h \
+../Tearing.cpp \
+../TearingTester.cpp \
 ../fabric_api.cpp
 
 
