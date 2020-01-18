@@ -347,6 +347,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     //      in some type of save/restart file.
     static std::vector<double> restlengths;
     static std::vector<std::pair<long int, long int>> fabric_gindex_pairs;
+    static std::vector<long int> fabric_gindex_weakpts;
 
     //Initialize fabric edge structures
     if (first)
@@ -360,6 +361,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     {
         Tearer->readGindexPairs(fr->gpoints,fabric_gindex_pairs);
         Tearer->readRestingEdgeLengths(restlengths);
+        Tearer->readGindexWeakPoints(fabric_gindex_weakpts);
     }
 
     Tearer->setSpringData(af_params->ks,af_params->tl_s);

@@ -16,24 +16,24 @@ class FabricEdge
         POINT* beg;
         POINT* end;
 
-        double tension {0.0};
+            //double tension {0.0};
 
         //FabricEdge() = default;
 
-        FabricEdge(POINT* p1, POINT* p2)
-            : beg{p1}, end{p2}
-        {}
+        FabricEdge(POINT* p1, POINT* p2);
 
         void setRestLength(double l);
         void setSpringConstant(double k);
         void setTearingThreshold(double T);
 
-        double getLength();
-        double getTension();
-
-        void print();
+        double getLength() const;
+        double getTension() const;
 
         bool checkForTear();
+
+        void setWeakPointFlag(bool flag);
+
+        void print() const;
 
         //Testing Functions
         bool checkForTearTest(int i);
@@ -42,15 +42,21 @@ class FabricEdge
 
         double ks {0.0};
         double tear_threshold {HUGE};
-        
         double length0 {-1.0};
-        double length {-1.0};
+        
         double disp[3];
+        double length {-1.0};
+        double tension {0.0};
 
         void computeTension();
-        bool underTension();
+        bool underTension() const;
         void computeLength();
         void computeDisplacement();
+
+        bool has_weakpt {false};
+        double weakpt_factor {1.0}; //TODO: read from AF_PARAMS
+
+        bool hasWeakPoint() const;
 };
 
 
@@ -63,16 +69,25 @@ class FabricTearer
         void collectFabricEdges(const INTERFACE* intfc);
         void setSpringData(double ks, double max_tension);
         
-        std::vector<std::pair<long int, long int>> recordGindexPairs();
-        void readGindexPairs(POINT** gpoints,
-                const std::vector<std::pair<long int, long int>>& gindexpairs);
+        std::vector<std::pair<long int, long int>>
+            recordGindexPointPairs() const;
         
         std::vector<double> recordRestingEdgeLengths();
+
+        std::vector<long int> recordGindexWeakPoints() const;
+        
+        void readGindexPointPairs(POINT** gpoints,
+                const std::vector<std::pair<long int, long int>>& gindex_pairs);
+        
         void readRestingEdgeLengths(const std::vector<double>& restlengths);
+
+        void readGindexWeakPoints(
+                const std::vector<long int>& gindex_weakpts);
+
 
         void tearFabric();
 
-        void printEdges();
+        void printEdges() const;
 
         //Testing Functions
             //void setEdgeTension(int index, double T);
@@ -80,13 +95,19 @@ class FabricTearer
 
     private:
         
-        std::vector<long int> tear_idx;
         std::vector<FabricEdge*> edges;
+        std::vector<long int> tear_idx;
+        std::unordered_map<long int> weakpt_idx;
 
         void clearEdges();
         
         void checkForTearingEvents();
         void processTearingEvents();
+
+        void createNewTear(FabricEdge* e);
+        void propagateTear(FabricEdge* e);
+
+        bool isWeakPoint(POINT* p);
 
         //Testing Functions
         void checkForTearingEventsTest();

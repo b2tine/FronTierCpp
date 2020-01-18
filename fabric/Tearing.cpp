@@ -80,7 +80,7 @@ void FabricTearer::setSpringData(
 }
 
 std::vector<std::pair<long int, long int>>
-FabricTearer::recordGindexPairs()
+FabricTearer::recordGindexPointPairs() const
 {
     std::vector<std::pair<long int, long int>> gpairs;
     for (int i = 0; i < edges.size(); ++i)
@@ -90,22 +90,6 @@ FabricTearer::recordGindexPairs()
         gpairs.push_back(std::make_pair(gidx_beg,gidx_end));
     }
     return gpairs;
-}
-
-void FabricTearer::readGindexPairs(
-        POINT** gpoints,
-        const std::vector<std::pair<long int, long int>>& gpairs)
-{
-    printf("gpairs.size() = %d\n",gpairs.size());
-    
-    clearEdges();
-    for (int i = 0; i < gpairs.size(); ++i)
-    {
-        long int gidx_beg = gpairs[i].first;
-        long int gidx_end = gpairs[i].second;
-        edges.push_back(
-                new FabricEdge(gpoints[gidx_beg],gpoints[gidx_end]));
-    }
 }
 
 std::vector<double> FabricTearer::recordRestingEdgeLengths()
@@ -120,6 +104,28 @@ std::vector<double> FabricTearer::recordRestingEdgeLengths()
     return restlengths;
 }
 
+//std::unordered_map<long int> FabricTearer::recordGindexWeakPoints() const
+std::vector<long int> FabricTearer::recordGindexWeakPoints() const
+{
+    return std::vector<long int>(weakpt_idx.cbegin(),weakpt_idx.cend());
+}
+
+void FabricTearer::readGindexPointPairs(
+        POINT** gpoints,
+        const std::vector<std::pair<long int, long int>>& gindex_pairs)
+{
+    printf("gindex_pairs.size() = %d\n",gindex_pairs.size());
+    
+    clearEdges();
+    for (int i = 0; i < gindex_pairs.size(); ++i)
+    {
+        long int gidx_beg = gindex_pairs[i].first;
+        long int gidx_end = gindex_pairs[i].second;
+        edges.push_back(
+                new FabricEdge(gpoints[gidx_beg],gpoints[gidx_end]));
+    }
+}
+
 void FabricTearer::readRestingEdgeLengths(
         const std::vector<double>& restlengths)
 {
@@ -128,6 +134,13 @@ void FabricTearer::readRestingEdgeLengths(
     
     for (int i = 0; i < restlengths.size(); ++i)
         edges[i]->setRestLength(restlengths[i]);
+}
+
+void FabricTearer::readGindexWeakPoints(
+        const std::vector<long int>& gindex_weakpts)
+{
+    weakpt_idx.clear();
+    weakpt_idx.insert(gindex_weakpts.begin(),gindex_weakpts.end());
 }
 
 void FabricTearer::tearFabric()
@@ -142,6 +155,10 @@ void FabricTearer::checkForTearingEvents()
     for (int i = 0; i < edges.size(); ++i)
     {
         FabricEdge* e = edges[i];
+
+        if (isWeakPoint(e->beg) || isWeakPoint(e->end))
+            e->setWeakPointFlag(true);
+
         if (e->checkForTear())
             tear_idx.push_back(i);
     }
@@ -153,15 +170,52 @@ void FabricTearer::processTearingEvents()
     {
         long int itear = tear_idx[i];
         FabricEdge* e = edges[itear];
+        
+            //printf("tear_idx[%d] = %ld\n",i,itear);
 
-        //TODO: create/propagate the tear
-        printf("tear_idx[%d] = %ld\n",i,itear);
+        if (!isWeakPoint(e->beg) && !isWeakPoint(e->end))
+            createNewTear(e);
+        else
+            propagateTear(e);
     }
-
-    printf("processTearingEvents() not implemented\n");
 }
 
-void FabricTearer::printEdges()
+void FabricTearer::createNewTear(FabricEdge* e)
+{
+    //TODO: 
+    //      1. split the 2 incident triangles of the rupturing edge
+    //         into 2 triangles each using midpoint of the rupturing
+    //         edge and the nonadjacent triangle vertices
+    //
+    //      2. move the 2 newly created points off the line of the
+    //         ruptured edge, shortening the 4 new edges.
+    //         Or else these will rupture immediately on next check.
+    //
+    //      3. update the global point and tri indices, the restlength
+    //         vector, and the weakpt index to account for the new
+    //         points/edges/tris
+    
+    //weakpt_idx.insert(Gindex(e->beg));
+    //weakpt_idx.insert(Gindex(e->end));
+
+    printf("FabricTearer::createNewTear() not implemented yet\n");
+    clean_up(0);
+}
+
+void FabricTearer::propagateTear(FabricEdge* e)
+{
+    //TODO: implementation
+    //
+    printf("FabricTearer::propagateTear() not implemented yet\n");
+    clean_up(0);
+};
+bool FabricTearer::isWeakPoint(POINT* p)
+{
+    long int gindex = Gindex(p);
+    return weakpt_idx.find(gindex) != weakpt_idx.end();
+}
+
+void FabricTearer::printEdges() const
 {
     for (int i = 0; i < edges.size(); ++i)
     {
@@ -173,6 +227,12 @@ void FabricTearer::printEdges()
 ////////////////////////////////////
 ///////     FabricEdge       ///////
 ////////////////////////////////////
+
+FabricEdge(POINT* p1, POINT* p2)
+    : beg{p1}, end{p2}
+{
+    computeTension();
+}
 
 void FabricEdge::setRestLength(double l)
 {
@@ -189,22 +249,22 @@ void FabricEdge::setTearingThreshold(double T)
     tear_threshold = T;
 }
 
-double FabricEdge::getLength()
+double FabricEdge::getLength() const
 {
-    computeLength();
     return length;
 }
 
-double FabricEdge::getTension()
+double FabricEdge::getTension() const
 {
-    computeTension();
     return tension;
 }
 
 bool FabricEdge::checkForTear()
 {
-    computeTension();
-    return tension > tear_threshold;
+    double coeff = 1.0;
+    if (has_weakpt)
+        coeff = weakpt_factor;
+    return tension > coeff*tear_threshold;
 }
 
 void FabricEdge::computeTension()
@@ -225,7 +285,6 @@ void FabricEdge::computeTension()
 
 bool FabricEdge::underTension()
 {
-    computeLength();
     return length > length0;
 }
 
@@ -245,11 +304,22 @@ void FabricEdge::computeDisplacement()
         disp[i] = Coords(end)[i] - Coords(beg)[i];
 }
 
-void FabricEdge::print()
+void FabricEdge::setWeakPointFlag(bool flag)
+{
+    has_weakpt = flag;
+}
+
+bool FabricEdge::hasWeakPoint() const
+{
+    return has_weakpt;
+}
+
+void FabricEdge::print() const
 {
     printf("tension = %g   tear_threshold = %g   \
-            length = %g   length0 = %g\n",
-            tension,tear_threshold,length,length0);
+            length = %g   length0 = %g   has_weakpt = %s\n",
+            tension,tear_threshold,length,length0,
+            has_weakpt ? "YES" : "NO");
 }
 
 

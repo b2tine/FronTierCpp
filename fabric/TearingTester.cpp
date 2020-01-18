@@ -35,8 +35,6 @@ void FabricTearer::checkForTearingEventsTest()
 
 bool FabricEdge::checkForTearTest(int i)
 {
-    computeTension();
-    
     //artificially set tension for testing tearing
     if (i == 1000)
         tension = 5000.0;
