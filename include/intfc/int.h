@@ -259,7 +259,9 @@ struct _TRI
 	int boundary;		/* tri bonds on interface curves? */
 	int order;		/* used as an identification for a tri, avoid 
 				   the conflict with _index in private_data. */
-        long global_index;
+    
+    long global_index;
+
 	boolean	constrained;	/* If yes will not free to move */
 	union
 	{

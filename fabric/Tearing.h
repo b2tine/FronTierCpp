@@ -16,14 +16,16 @@ class FabricEdge
         POINT* beg;
         POINT* end;
 
-        //TRI* left;
-        //TRI* right;
+        TRI* left_tri {nullptr};
+        TRI* right_tri {nullptr};
 
-            //double tension {0.0};
-
-        //FabricEdge() = default;
-
+            //long int beg_gindex;
+            //long int end_gindex;
+            //long int left_tri_gindex;
+            //long int right_tri_gindex;
+        
         FabricEdge(POINT* p1, POINT* p2);
+        FabricEdge(POINT* p1, POINT* p2, TRI* tl, TRI* tr);
 
         void setRestLength(double l);
         void setSpringConstant(double k);
@@ -74,12 +76,18 @@ class FabricTearer
         
         std::vector<std::pair<long int, long int>>
             recordGindexPointPairs() const;
+
+        std::vector<std::pair<long int, long int>>
+            recordGindexTriPairs() const;
         
         std::vector<double> recordRestingEdgeLengths();
 
         std::vector<long int> recordGindexWeakPoints() const;
         
         void readGindexPointPairs(POINT** gpoints,
+                const std::vector<std::pair<long int, long int>>& gindex_pairs);
+        
+        void readGindexTriPairs(TRI** gtris,
                 const std::vector<std::pair<long int, long int>>& gindex_pairs);
         
         void readRestingEdgeLengths(const std::vector<double>& restlengths);

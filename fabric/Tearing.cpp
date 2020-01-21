@@ -25,13 +25,14 @@ void FabricTearer::collectFabricEdges(const INTERFACE* intfc)
 
     TRI* tri;
     SURFACE** s;
-
+    
     intfc_surface_loop(intfc,s)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY)
             continue;
 
         std::unordered_set<POINT*> point_set;
+        //std::unordered_set<TRI*> tri_set;
 
         surf_tri_loop(*s,tri)
         {
@@ -57,14 +58,63 @@ void FabricTearer::collectFabricEdges(const INTERFACE* intfc)
                     visited2 = false;
                 }
 
+                //TODO: not sure if this is sufficient to ensure
+                //      edge has been visited
+                //
                 //check if edge has already been processed
                 if (visited1 && visited2)
                     continue;
 
-                FabricEdge* fedge = new FabricEdge(p1,p2); 
+                long int left_tri_gindex = Gindex(tri);
+                long int right_tri_gindex = -1;
+
+                TRI* ntri = nullptr;
+                for (int i = 0 ; i < 3; ++i)
+                {
+                    ntri = Tri_neighbor(tri)[i].tri;
+
+                    if (ntri != nullptr)
+                    {
+                        if (Point_on_tri(ntri,p1) && Point_on_tri(ntri,p2))
+                        {
+                            right_tri_gindex = Gindex(ntri);
+                            break;
+                        }
+                    }
+
+                    if (i == 2 && right_tri_gindex == -1)
+                    {
+                        ntri = nullptr;
+                        //printf("can't find neighboring tri to %ld\n",
+                          //      left_tri_gindex);
+                        //clean_up(ERROR);
+                    }
+                }
+
+                FabricEdge* fedge = new FabricEdge(p1,p2,tri,ntri); 
                 edges.push_back(fedge);
             }
         }
+
+        //TODO: May need to traverse the bounding curve as well.
+        //      Could potentially miss the tri edges that are curve bonds?
+        
+        /*
+        BOND* b;
+        CURVE** c;
+        BOND_TRI** btris;
+
+        surf_pos_curve_loop(*s,c)
+        {
+            curve_bond_loop(*c,b)
+            {
+                bond_btri_loop(b,btris)
+                {
+
+                }
+            }
+        }
+        */
     }
 }
 
@@ -79,6 +129,8 @@ void FabricTearer::setSpringData(
     }
 }
 
+//TODO: join with other record functions and return
+//      an object containing the necessary vectors
 std::vector<std::pair<long int, long int>>
 FabricTearer::recordGindexPointPairs() const
 {
@@ -88,6 +140,33 @@ FabricTearer::recordGindexPointPairs() const
         long int gidx_beg = Gindex(edges[i]->beg);
         long int gidx_end = Gindex(edges[i]->end);
         gpairs.push_back(std::make_pair(gidx_beg,gidx_end));
+    }
+    return gpairs;
+}
+
+std::vector<std::pair<long int, long int>>
+FabricTearer::recordGindexTriPairs() const
+{
+    std::vector<std::pair<long int, long int>> gpairs;
+    for (int i = 0; i < edges.size(); ++i)
+    {
+        FabricEdge* e  = edges[i];
+       
+        long int gidx_left = -1;
+        long int gidx_right = -1;
+        
+        if (e->left_tri != nullptr)
+            gidx_left = Gindex(e->left_tri);
+        if (e->right_tri != nullptr)
+            gidx_right = Gindex(e->right_tri);
+        
+        if (gidx_left == -1 && gidx_right == -1)
+        {
+            printf("edges[%d] has no incident tris\n",i);
+            clean_up(ERROR);
+        }
+
+        gpairs.push_back(std::make_pair(gidx_left,gidx_right));
     }
     return gpairs;
 }
@@ -104,17 +183,18 @@ std::vector<double> FabricTearer::recordRestingEdgeLengths()
     return restlengths;
 }
 
-//std::unordered_map<long int> FabricTearer::recordGindexWeakPoints() const
 std::vector<long int> FabricTearer::recordGindexWeakPoints() const
 {
     return std::vector<long int>(weakpt_idx.cbegin(),weakpt_idx.cend());
 }
 
+//TODO: Write single function for Point and Tri Gindex Pairs
 void FabricTearer::readGindexPointPairs(
         POINT** gpoints,
         const std::vector<std::pair<long int, long int>>& gindex_pairs)
 {
-    printf("gindex_pairs.size() = %d\n",gindex_pairs.size());
+        //printf("edges.size() = %d\n",edges.size());
+        //printf("POINT gindex_pairs.size() = %d\n",gindex_pairs.size());
     
     clearEdges();
     for (int i = 0; i < gindex_pairs.size(); ++i)
@@ -126,16 +206,40 @@ void FabricTearer::readGindexPointPairs(
     }
 }
 
+//TODO: join with readGindexPointPairs() into single function
+//
+//NOTE: readGindexPointPairs() must be called first at this time
+void FabricTearer::readGindexTriPairs(
+        TRI** gtris,
+        const std::vector<std::pair<long int, long int>>& gindex_pairs)
+{
+        //printf("edges.size() = %d\n",edges.size());
+        //printf("TRI gindex_pairs.size() = %d\n",gindex_pairs.size());
+
+    for (int i = 0; i < gindex_pairs.size(); ++i)
+    {
+        long int gidx_left = gindex_pairs[i].first;
+        if (gidx_left != -1)
+            edges[i]->left_tri = gtris[gidx_left];
+
+        long int gidx_right = gindex_pairs[i].second;
+        if (gidx_right != -1)
+            edges[i]->right_tri = gtris[gidx_right];
+    }
+}
+
+//TODO: join with readGindexPointPairs() into single function
 void FabricTearer::readRestingEdgeLengths(
         const std::vector<double>& restlengths)
 {
-    printf("edges.size() = %d\n",edges.size());
-    printf("restlengths.size() = %d\n",restlengths.size());
+        //printf("edges.size() = %d\n",edges.size());
+        //printf("restlengths.size() = %d\n",restlengths.size());
     
     for (int i = 0; i < restlengths.size(); ++i)
         edges[i]->setRestLength(restlengths[i]);
 }
 
+//TODO: join with readGindexPointPairs() into single function
 void FabricTearer::readGindexWeakPoints(
         const std::vector<long int>& gindex_weakpts)
 {
@@ -200,21 +304,17 @@ void FabricTearer::createNewTear(FabricEdge* e)
     //         vector, and the weakpt index to account for the new
     //         points/edges/tris
     
-    TRI* left_tri;
-    TRI* right_tri;
+    TRI* left_tri = e->left_tri;
+    TRI* right_tri = e->right_tri;
 
-    //TRI** tris = e->beg->tris;
+    //IMPLEMENTATION HERE
 
-    //INTERFACE* intfc = nullptr;
+    INTERFACE* intfc = nullptr;
+    print_tri(left_tri,intfc);
+    print_tri(right_tri,intfc);
 
-    //if (tris == nullptr)
-     //   printf("tris is nullptr");
-    //print_tri(tris[0],intfc);
-
-
-
-    printf("FabricTearer::createNewTear() not implemented yet\n");
-    clean_up(0);
+        //printf("FabricTearer::createNewTear() not implemented yet\n");
+        //clean_up(0);
 }
 
 void FabricTearer::propagateTear(FabricEdge* e)
@@ -247,6 +347,22 @@ FabricEdge::FabricEdge(POINT* p1, POINT* p2)
     : beg{p1}, end{p2}
 {
     computeTension();
+    //beg_gindex = Gindex(p1);
+    //end_gindex = Gindex(p2);
+}
+
+FabricEdge::FabricEdge(POINT* p1, POINT* p2, TRI* tl, TRI* tr)
+    : FabricEdge(p1,p2)
+{
+    left_tri = tl;
+    right_tri = tr;
+    
+    /*
+    if (left_tri != nullptr)
+        left_tri_gindex = Gindex(left_tri);
+    if (right_tri != nullptr)
+        right_tri_gindex = Gindex(right_tri);
+    */
 }
 
 void FabricEdge::setRestLength(double l)

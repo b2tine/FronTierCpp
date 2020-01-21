@@ -1689,6 +1689,7 @@ LIB_LOCAL void fprint_tri(
 	    return;
 	}
 	(void) fprintf(file,"Tri = %llu\n",(long long unsigned int)tri_number(tri,intfc));
+	(void) fprintf(file,"Gindex = %ld\n",Gindex(tri));
 	for (i = 0; i < 3; ++i)
 	{
 	    p[i] = Point_of_tri(tri)[i];

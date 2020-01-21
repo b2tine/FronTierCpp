@@ -189,7 +189,73 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	        //first = NO;
 	}
 
-	elastic_intfc = fr->interf;
+    //Tearing needs to be done before calling the spring solver
+    //and doing collision handling because new points/tris are created
+    //when the fabric tears.
+    
+    ////////////////////////////////////////////////////////////
+    ////////////////////  TEARING   ////////////////////////////
+    ////////////////////////////////////////////////////////////
+
+    /*
+        0. Initialize fabric edge structures 
+        1. Check for springs exceeding tear threshold
+        2. Create/Propagate tears
+        3. Reindex Points/Tris
+    */
+
+    //TODO: only execute on master node
+    //      i.e. if (myid == owner_id)
+    
+    FabricTearer* Tearer = new FabricTearer;
+    
+    //TODO: for restart functionality, need to record these
+    //      in some type of save/restart file.
+    static std::vector<std::pair<long int, long int>> gindex_point_pairs;
+    static std::vector<std::pair<long int, long int>> gindex_tri_pairs;
+    static std::vector<long int> gindex_weakpts;
+    static std::vector<double> restlengths;
+
+    //TODO: consolidate read/record functions into a single
+    //      functions reading/returning a class object containing
+    //      the 3 vectors.
+
+    //Initialize fabric edge structures
+    if (first)
+    {
+        Tearer->collectFabricEdges(fr->interf);
+        gindex_point_pairs = Tearer->recordGindexPointPairs();
+        gindex_tri_pairs = Tearer->recordGindexTriPairs();
+        restlengths = Tearer->recordRestingEdgeLengths();
+        first = NO;
+    }
+    else
+    {
+        Tearer->readGindexPointPairs(fr->gpoints,gindex_point_pairs);
+        Tearer->readGindexTriPairs(fr->gtris,gindex_tri_pairs);
+        Tearer->readRestingEdgeLengths(restlengths);
+        Tearer->readGindexWeakPoints(gindex_weakpts);
+    }
+
+    Tearer->setSpringData(af_params->ks,af_params->tl_s);
+
+    /*
+    for (int i = 0; i < gindex_tri_pairs.size(); ++i)
+    {
+        auto gpair = gindex_tri_pairs[i];
+        printf("%d  %d\n",gpair.first,gpair.second);
+    }
+    */
+        
+        //Tearer->setEdgeTension(1000,5000.0);
+    Tearer->tearFabricTest();
+    
+    clean_up(0);
+
+    ////////////////////////////////////////////////////////////
+
+    
+    elastic_intfc = fr->interf;
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	
     if (myid != owner_id)
@@ -262,7 +328,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             
                 //TODO: remove this feature
                 //change in volume of root bounding box to refit tree
-                collision_solver->setVolumeDiff(af_params->vol_diff);
+                    //collision_solver->setVolumeDiff(af_params->vol_diff);
                 
                 collision_solver->gpoints = fr->gpoints;
                 collision_solver->gtris = fr->gtris;
@@ -328,55 +394,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
-
-    ////////////////////////////////////////////////////////////
-
-    //TODO: TEARING ROUTINE HERE
-
-    /*
-        0. Initialize fabric edge structures 
-        1. Check for springs exceeding tear threshold
-        2. Create/Propagate tears
-        3. Reindex Points/Tris
-    */
-
-    //TODO: Need to make FabricTearer static?
-    FabricTearer* Tearer = new FabricTearer;
-    
-    //TODO: for restart functionality, need to record these
-    //      in some type of save/restart file.
-    static std::vector<double> restlengths;
-    static std::vector<std::pair<long int, long int>> fabric_gindex_pairs;
-    static std::vector<long int> fabric_gindex_weakpts;
-
-    //Initialize fabric edge structures
-    if (first)
-    {
-        Tearer->collectFabricEdges(fr->interf);
-        restlengths = Tearer->recordRestingEdgeLengths();
-        fabric_gindex_pairs = Tearer->recordGindexPointPairs();
-        first = NO;
-    }
-    else
-    {
-        Tearer->readGindexPointPairs(fr->gpoints,fabric_gindex_pairs);
-        Tearer->readRestingEdgeLengths(restlengths);
-        Tearer->readGindexWeakPoints(fabric_gindex_weakpts);
-    }
-
-    Tearer->setSpringData(af_params->ks,af_params->tl_s);
-
-        //Tearer->setEdgeTension(1000,5000.0);
-    Tearer->tearFabricTest();
-        //Tearer->tearFabricTest(fr);
-        
-        //Tearer->tearFabric();
-        //Tearer->tearFabric(fr);
-
-    //clean_up(0);
-
-    ////////////////////////////////////////////////////////////
-
 
 	if (!debugging("collision_off"))
     {
