@@ -99,7 +99,7 @@ class FabricTearer
         
         std::vector<FabricEdge*> edges;
         std::vector<long int> tear_idx;
-        std::unordered_map<long int> weakpt_idx;
+        std::unordered_set<long int> weakpt_idx;
 
         void clearEdges();
         

@@ -235,7 +235,7 @@ void FabricTearer::printEdges() const
 ///////     FabricEdge       ///////
 ////////////////////////////////////
 
-FabricEdge(POINT* p1, POINT* p2)
+FabricEdge::FabricEdge(POINT* p1, POINT* p2)
     : beg{p1}, end{p2}
 {
     computeTension();
@@ -290,7 +290,7 @@ void FabricEdge::computeTension()
     tension = sign*sqrt(sqr_tension);
 }
 
-bool FabricEdge::underTension()
+bool FabricEdge::underTension() const
 {
     return length > length0;
 }

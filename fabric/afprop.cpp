@@ -354,12 +354,12 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     {
         Tearer->collectFabricEdges(fr->interf);
         restlengths = Tearer->recordRestingEdgeLengths();
-        fabric_gindex_pairs = Tearer->recordGindexPairs();
+        fabric_gindex_pairs = Tearer->recordGindexPointPairs();
         first = NO;
     }
     else
     {
-        Tearer->readGindexPairs(fr->gpoints,fabric_gindex_pairs);
+        Tearer->readGindexPointPairs(fr->gpoints,fabric_gindex_pairs);
         Tearer->readRestingEdgeLengths(restlengths);
         Tearer->readGindexWeakPoints(fabric_gindex_weakpts);
     }
