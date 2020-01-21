@@ -200,10 +200,18 @@ void FabricTearer::createNewTear(FabricEdge* e)
     //         vector, and the weakpt index to account for the new
     //         points/edges/tris
     
-        //insert_point_in_tri_side();
+    TRI* left_tri;
+    TRI* right_tri;
 
-        //weakpt_idx.insert(Gindex(e->beg));
-        //weakpt_idx.insert(Gindex(e->end));
+    //TRI** tris = e->beg->tris;
+
+    //INTERFACE* intfc = nullptr;
+
+    //if (tris == nullptr)
+     //   printf("tris is nullptr");
+    //print_tri(tris[0],intfc);
+
+
 
     printf("FabricTearer::createNewTear() not implemented yet\n");
     clean_up(0);

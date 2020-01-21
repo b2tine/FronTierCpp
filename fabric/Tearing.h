@@ -16,6 +16,9 @@ class FabricEdge
         POINT* beg;
         POINT* end;
 
+        //TRI* left;
+        //TRI* right;
+
             //double tension {0.0};
 
         //FabricEdge() = default;
