@@ -184,8 +184,8 @@ int airfoil_velo(
 	return YES;
 }
 
-//TODO: make default when switch to default porous fabric
-/*
+//GFM at ELASTIC_BOUNDARY.
+//The fluid solver treats as NO_PDE_BOUNDARY
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -225,8 +225,9 @@ int af_find_state_at_crossing(
         }
     }
     return NEUMANN_PDE_BOUNDARY;
-}*/       /* af_find_state_at_crossing */
+}       /* af_find_state_at_crossing */
 
+/*
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -272,7 +273,7 @@ int af_find_state_at_crossing(
 
     return NEUMANN_PDE_BOUNDARY;
 
-}       /* af_find_state_at_crossing */
+}*/       /* af_find_state_at_crossing */
 
 static boolean is_pore(
 	Front *front,
@@ -2059,9 +2060,49 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
         delete collision_solver;
     }
 
+    if (debugging("trace"))
+        print_max_fabric_speed();
+
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
 }	/* end fourth_order_elastic_set_propagate() */
+
+static void print_max_fabric_speed()
+{
+    SURFACE **s;
+    TRI *tri;
+    POINT *pt,*max_pt;
+    STATE *state;
+    double speed,max_speed;
+
+    max_speed = 0.0;
+    intfc_surface_loop(fr->interf,s)
+    {
+        if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+        surf_tri_loop(*s,tri)
+        {
+            for (i = 0; i < 3; ++i)
+            {
+                pt = Point_of_tri(tri)[i];
+                state = (STATE*)left_state(pt);
+                speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
+                            + sqr(state->vel[2]));
+                if (max_speed < speed)
+                {
+                    max_speed = speed;
+                    max_pt = pt;
+                }
+            }
+        }
+    }
+    //printf("After leaving fourth_order_elastic_set_propagate()\n");
+    printf("max speed of fabric/canopy: %f\n",max_speed);
+    printf("Point Gindex: %d  coords = %f %f %f\n",Gindex(max_pt),
+                Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
+    state = (STATE*)left_state(max_pt);
+    printf("Velocity: %f %f %f\n",state->vel[0],state->vel[1],
+                state->vel[2]);
+}
 
 static void setSurfVelocity(
 	ELASTIC_SET *geom_set,
