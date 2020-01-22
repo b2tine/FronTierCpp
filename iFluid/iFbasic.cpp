@@ -3137,6 +3137,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		}
 		for (j = 0; j < dim; ++j)
 		    vel[j][id] = state.vel[j];
+        //double speed = sqrt(sqr(vel[0][id]) + sqr(vel[1][id]) + sqr(vel[2][id]));
 	    }
         }
 	FT_FreeGridIntfc(front);
@@ -3556,10 +3557,12 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		index = d_index2d(i,j,top_gmax);
 		for (l = 0; l < dim; ++l)
 		{
-		    speed += fabs(vel[l][index]);
+		    speed += sqr(vel[l][index]);
+		    //speed += fabs(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
+        speed = sqrt(speed);
 		if (max_speed < speed) 
 		{
 		    max_speed = speed;
@@ -3577,10 +3580,12 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		index = d_index3d(i,j,k,top_gmax);
 		for (l = 0; l < dim; ++l)
 		{
-		    speed += fabs(vel[l][index]);
+		    speed += sqr(vel[l][index]);
+		    //speed += fabs(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
+        speed = sqrt(speed);
 		if (max_speed < speed) 
 		{
 		    max_speed = speed;
