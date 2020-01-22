@@ -48,6 +48,7 @@ static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);
+static void print_max_fabric_speed(Front* fr);
 
 #define 	MAX_NUM_RING1		30
 
@@ -2055,19 +2056,19 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
                 if (FT_Dimension() == 3)
                     collision_solver->resolveCollision();
             }
-        setSpecialNodeForce(fr, geom_set.kl);
+        setSpecialNodeForce(fr,geom_set.kl);
 
         delete collision_solver;
     }
 
     if (debugging("trace"))
-        print_max_fabric_speed();
+        print_max_fabric_speed(fr);
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
 }	/* end fourth_order_elastic_set_propagate() */
 
-static void print_max_fabric_speed()
+static void print_max_fabric_speed(Front* fr)
 {
     SURFACE **s;
     TRI *tri;
@@ -2081,7 +2082,7 @@ static void print_max_fabric_speed()
         if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
         surf_tri_loop(*s,tri)
         {
-            for (i = 0; i < 3; ++i)
+            for (int i = 0; i < 3; ++i)
             {
                 pt = Point_of_tri(tri)[i];
                 state = (STATE*)left_state(pt);
