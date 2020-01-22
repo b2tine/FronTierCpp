@@ -2772,6 +2772,87 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         int *icoords,
         double **field)
 {
+        switch (iFparams->num_scheme.ellip_method)
+        {
+        case SIMPLE_ELLIP:
+            return computeFieldPointDivSimple(icoords,field);
+        case DOUBLE_ELLIP:
+            return computeFieldPointDivDouble(icoords,field);
+        default:
+            printf("Elliptic Method Not Implemented\n");
+            clean_up(1);
+        }
+}       /* end computeFieldPointDiv */
+
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
+        int *icoords,
+        double **field)
+{
+	int icnb[MAXD];
+        int i,j,index,index_nb;
+        COMPONENT comp;
+	double div,u_edge[3][2];
+        double crx_coords[MAXD];
+        POINTER intfc_state;
+        HYPER_SURF *hs;
+	int status;
+        GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+	int idir,nb;
+	double u0,u_ref;
+
+	index = d_index(icoords,top_gmax,dim);
+        comp = top_comp[index];
+
+        if (!ifluid_comp(comp)) return 0.0;
+
+        for (idir = 0; idir < dim; idir++)
+        {
+            u0 = field[idir][index];
+            for (j = 0; j < dim; ++j)
+                icnb[j] = icoords[j];
+            for (nb = 0; nb < 2; nb++)
+            {
+                u_edge[idir][nb] = 0.0;
+                icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                index_nb = d_index(icnb,top_gmax,dim);
+                status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                                comp,&intfc_state,&hs,crx_coords);
+                if (status == NO_PDE_BOUNDARY)
+                {
+                    u_edge[idir][nb] = field[idir][index_nb];
+                }
+                else if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    u_edge[idir][nb] = u0; 
+                }
+                else if (status == CONST_V_PDE_BOUNDARY)
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    {
+                        u_edge[idir][nb] = u0;
+                    }
+                    else
+                    {
+                        u_edge[idir][nb] = u0;
+                    }
+                }
+            }
+        }
+
+	div = 0.0;
+	for (i = 0; i < dim; ++i)
+	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
+        return div;
+}       /* end computeFieldPointDivSimple */
+
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
+        int *icoords,
+        double **field)
+{
 	int icnb[MAXD];
         int i,j,index,index_nb;
         COMPONENT comp;
@@ -2841,7 +2922,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
 	for (i = 0; i < dim; ++i)
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
         return div;
-}       /* end computeFieldPointDiv */
+}       /* end computeFieldPointDivDouble */
 
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
@@ -3558,7 +3639,6 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		for (l = 0; l < dim; ++l)
 		{
 		    speed += sqr(vel[l][index]);
-		    //speed += fabs(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
@@ -3581,7 +3661,6 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		for (l = 0; l < dim; ++l)
 		{
 		    speed += sqr(vel[l][index]);
-		    //speed += fabs(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
