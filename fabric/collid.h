@@ -33,21 +33,31 @@ public:
     CollisionSolver3d(CollisionSolver3d&&) = delete;
     CollisionSolver3d& operator=(CollisionSolver3d&&) = delete;
 
-	static void setRoundingTolerance(double);
-	static double getRoundingTolerance();
-	static void setFabricThickness(double);
-	static double getFabricThickness();
 	static void setTimeStepSize(double);
 	static double getTimeStepSize();
-	static void setSpringConstant(double);
-	static double getSpringConstant();
-	static void setFrictionConstant(double);
-	static double getFrictionConstant();
-	static void setPointMass(double);
-	static double getPointMass();
+	static void setRoundingTolerance(double);
+	static double getRoundingTolerance();
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
+	
+    static void setFabricThickness(double);
+	static double getFabricThickness();
+	static void setFabricSpringConstant(double);
+	static double getFabricSpringConstant();
+	static void setFabricFrictionConstant(double);
+	static double getFabricFrictionConstant();
+	static void setFabricPointMass(double);
+	static double getFabricPointMass();
+
+	static void setStringThickness(double);
+	static double getStringThickness();
+	static void setStringSpringConstant(double);
+	static double getStringSpringConstant();
+	static void setStringFrictionConstant(double);
+	static double getStringFrictionConstant();
+	static void setStringPointMass(double);
+	static double getStringPointMass();
 
     double setVolumeDiff(double);
 
@@ -83,13 +93,20 @@ private:
     double volume;
     double vol_diff {0.0};
 
+	static double s_cr;
 	static double s_eps;
-	static double s_thickness;
 	static double s_dt;
+
+	static double s_thickness; //fabric thickness
 	static double s_m;
 	static double s_k;
 	static double s_mu;
-	static double s_cr;
+    
+	static double l_thickness; //string thickness
+	static double l_m;
+	static double l_k;
+	static double l_mu;
+
     static bool s_detImpZone;
 
     bool has_collision;

@@ -178,8 +178,8 @@ static void initSingleModule(
 	CgalCanopySurface(infile,front,&surf);
 	fclose(infile);
 
-        if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
-	    InstallNewLoadNode(front,1);
+    if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
+        InstallNewLoadNode(front,1);
 }	/* end initSingleModule */
 
 static void initMultiModule(

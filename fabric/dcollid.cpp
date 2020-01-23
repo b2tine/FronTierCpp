@@ -20,13 +20,19 @@ inline POINT*& tail(POINT*);
 
 //define default parameters for collision detection
 double CollisionSolver3d::s_eps = EPS;
-double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_dt = DT;
-double CollisionSolver3d::s_k = 1000;
-double CollisionSolver3d::s_m = 0.01;
-double CollisionSolver3d::s_mu = 0.4;
+bool CollisionSolver3d::s_detImpZone = false;
 double CollisionSolver3d::s_cr = 1.0;
-bool   CollisionSolver3d::s_detImpZone = false;
+
+double CollisionSolver3d::s_thickness = 0.001;
+double CollisionSolver3d::s_k = 5000;
+double CollisionSolver3d::s_m = 0.001;
+double CollisionSolver3d::s_mu = 0.4;
+
+double CollisionSolver3d::l_thickness = 0.005;
+double CollisionSolver3d::l_k = 50000;
+double CollisionSolver3d::l_m = 0.002;
+double CollisionSolver3d::l_mu = 0.6;
 
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
@@ -42,44 +48,50 @@ CollisionSolver3d::~CollisionSolver3d()
     clearHseList();
 }
 
-void CollisionSolver3d::clearHseList(){
-	for (unsigned i = 0; i < hseList.size(); ++i){
+void CollisionSolver3d::clearHseList()
+{
+	for (unsigned i = 0; i < hseList.size(); ++i)
+    {
 		delete hseList[i];
 	}
 	hseList.clear();
 }
 
-void CollisionSolver3d::setRoundingTolerance(double neweps)
-{
-	s_eps = neweps;
-}
+void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
+double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
+void CollisionSolver3d::setRoundingTolerance(double neweps){s_eps = neweps;}
 double CollisionSolver3d::getRoundingTolerance(){return s_eps;}
 
 void CollisionSolver3d::setFabricThickness(double h){s_thickness = h;}
 double CollisionSolver3d::getFabricThickness(){return s_thickness;}
-double CollisionSolver3d::setVolumeDiff(double vd) {vol_diff = vd;}
 
-//this function should be called at every time step
-void CollisionSolver3d::setTimeStepSize(double new_dt)
-{
-    s_dt = new_dt;
-}
+void   CollisionSolver3d::setFabricSpringConstant(double new_k){s_k = new_k;}
+double CollisionSolver3d::getFabricSpringConstant(){return s_k;}
 
-double CollisionSolver3d::getTimeStepSize(){return s_dt;}
+void   CollisionSolver3d::setFabricFrictionConstant(double new_mu){s_mu = new_mu;}
+double CollisionSolver3d::getFabricFrictionConstant(){return s_mu;}
 
-void   CollisionSolver3d::setSpringConstant(double new_k){s_k = new_k;}
-double CollisionSolver3d::getSpringConstant(){return s_k;}
+void   CollisionSolver3d::setFabricPointMass(double new_m){s_m = new_m;}
+double CollisionSolver3d::getFabricPointMass(){return s_m;}
 
-void   CollisionSolver3d::setFrictionConstant(double new_mu){s_mu = new_mu;}
-double CollisionSolver3d::getFrictionConstant(){return s_mu;}
+void CollisionSolver3d::setStringThickness(double h){l_thickness = h;}
+double CollisionSolver3d::getStringThickness(){return l_thickness;}
 
-void   CollisionSolver3d::setPointMass(double new_m){s_m = new_m;}
-double CollisionSolver3d::getPointMass(){return s_m;}
+void   CollisionSolver3d::setStringSpringConstant(double new_k){l_k = new_k;}
+double CollisionSolver3d::getStringSpringConstant(){return l_k;}
+
+void   CollisionSolver3d::setStringFrictionConstant(double new_mu){l_mu = new_mu;}
+double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
+
+void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
+double CollisionSolver3d::getStringPointMass(){return l_m;}
 
 //set restitution coefficient between rigid bodies
 void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
+
+double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
 void CollisionSolver3d::recordOriginalPosition(){
 	POINT* pt;
@@ -249,7 +261,7 @@ void CollisionSolver3d::resetPositionCoordinates()
 
 void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
 void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver3d::getImpZoneStatus(){ return s_detImpZone;}
+bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 //this function is needed if collisions still
 //present after several iterations;
