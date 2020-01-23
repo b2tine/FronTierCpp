@@ -319,9 +319,15 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter fabric spring constant:");
             fscanf(infile,"%lf",&af_params->ks);
             (void) printf("%f\n",af_params->ks);
-            CursorAfterString(infile,"Enter fabric friction constant:");
+
+            CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
+
+            CursorAfterString(infile,"Enter fabric friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_s);
+            (void) printf("%f\n",af_params->mu_s);
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -342,9 +348,15 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter string spring constant:");
             fscanf(infile,"%lf",&af_params->kl);
             (void) printf("%f\n",af_params->kl);
-            CursorAfterString(infile,"Enter string friction constant:");
+            
+            CursorAfterString(infile,"Enter string damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_l);
             (void) printf("%f\n",af_params->lambda_l);
+            
+            CursorAfterString(infile,"Enter string friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_l);
+            (void) printf("%f\n",af_params->mu_l);
+            
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter string total mass:");

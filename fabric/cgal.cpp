@@ -2249,8 +2249,6 @@ extern void InstallNewLoadNode(
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: play with this value ...
-    //      if as important as it looks, read in from input file
 	int string_curve_onenode = 10; // test
 
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))

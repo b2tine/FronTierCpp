@@ -83,8 +83,10 @@ typedef struct {
 	double ks;			/* spring constant of surface */
 	double kl;			/* spring constant of string curves */
 	double kg;                      /* spring constant of gore curves */
-	double lambda_s;		/* damping/friction factor of surface */
-	double lambda_l;		/* damping/friction factor of string curves */
+    double mu_s;        /* fabric static friction consant */
+    double mu_l;        /* string curves static friction consant */
+	double lambda_s;		/* damping factor of surface */
+	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
 	double m_s;			/* point mass of surface */
 	double m_l;			/* point mass of string curves */
@@ -114,7 +116,10 @@ typedef struct {
 					   id, for users' convenience */
     
     //for Collision Handling
-    double vol_diff;
+    double string_thickness {0.01};
+    double fabric_thickness {0.001};
+
+    double vol_diff {0.0};
     double pre_tol;
     double rest;
 

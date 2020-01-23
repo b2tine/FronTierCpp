@@ -185,8 +185,9 @@ int airfoil_velo(
 	return YES;
 }
 
-//GFM at ELASTIC_BOUNDARY.
-//The fluid solver treats as NO_PDE_BOUNDARY
+//GFM at ELASTIC_BOUNDARY:
+//      Add artificial source terms at boundary and have
+//      the fluid solver treat as NO_PDE_BOUNDARY
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
