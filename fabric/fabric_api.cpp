@@ -243,23 +243,22 @@ extern void SMM_InitModules()
         if (!fbasic->RestartRun)
         {
             FILE *infile = fopen(InName(front),"r");
+            printf("\n");
+            CursorAfterString(infile,"Start parameters for modules");
+            printf("\n");
+            fclose(infile);
+
             if (FT_Dimension() == 3) // 2D initialization used old method
             {
-                printf("\n");
-                CursorAfterString(infile,"Start parameters for modules");
-                printf("\n");
                 initParachuteModules(front);
                 initPerturbation3d(front);
+                initIsolated3dCurves(front);
                 optimizeElasticMesh(front);
             }
             set_equilibrium_mesh(front);
             FT_SetGlobalIndex(front);
             static_mesh(front->interf) = YES;
-            fclose(infile);
         }
-        //TODO: Does static_mesh need to be set to YES for restart also?
-        //      Or does it inherit it from copying the interface?
-            //static_mesh(front->interf) = YES;
 }       /* end SMM_InitModules */
 
 extern void SMM_InitPropagator()
@@ -324,34 +323,34 @@ extern void SMM_InitSpringMassParams()
                 (void) printf("%f\n",af_params->total_canopy_mass);
             }
             else
-	    {
-	        CursorAfterString(infile,"Enter fabric point mass:");
+            {
+	            CursorAfterString(infile,"Enter fabric point mass:");
                 fscanf(infile,"%lf",&af_params->m_s);
                 (void) printf("%f\n",af_params->m_s);
-	    }
+	        }
 	}
 
 	if ((dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	    (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
-	    CursorAfterString(infile,"Enter string spring constant:");
-            fscanf(infile,"%lf",&af_params->kl);
-            (void) printf("%f\n",af_params->kl);
-            CursorAfterString(infile,"Enter string damping constant:");
-            fscanf(infile,"%lf",&af_params->lambda_l);
-            (void) printf("%f\n",af_params->lambda_l);
-            if (af_params->use_total_mass)
-            {
-                CursorAfterString(infile,"Enter string total mass:");
-                fscanf(infile,"%lf",&af_params->total_string_mass);
-                (void) printf("%f\n",af_params->total_string_mass);
-            }
-            else
-            {
-                CursorAfterString(infile,"Enter string point mass:");
-                fscanf(infile,"%lf",&af_params->m_l);
-                (void) printf("%f\n",af_params->m_l);
-            }
+        CursorAfterString(infile,"Enter string spring constant:");
+        fscanf(infile,"%lf",&af_params->kl);
+        (void) printf("%f\n",af_params->kl);
+        CursorAfterString(infile,"Enter string damping constant:");
+        fscanf(infile,"%lf",&af_params->lambda_l);
+        (void) printf("%f\n",af_params->lambda_l);
+        if (af_params->use_total_mass)
+        {
+            CursorAfterString(infile,"Enter string total mass:");
+            fscanf(infile,"%lf",&af_params->total_string_mass);
+            (void) printf("%f\n",af_params->total_string_mass);
+        }
+        else
+        {
+            CursorAfterString(infile,"Enter string point mass:");
+            fscanf(infile,"%lf",&af_params->m_l);
+            (void) printf("%f\n",af_params->m_l);
+        }
 	}
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
@@ -416,29 +415,17 @@ extern void SMM_InitSpringMassParams()
 	}
 
     //TODO: this can be start of an InitAABBParams function
-    
     if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
     {
         fscanf(infile,"%lf",&af_params->fabric_thickness);
         (void) printf("%f\n",af_params->fabric_thickness);
     }
+    
     if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))
     {
         fscanf(infile,"%lf",&af_params->vol_diff);
         (void) printf("%f\n",af_params->vol_diff);
     }
-
-    /*
-     * TODO: implement in order to test large range of parameters
-     *       for friction, vol_diff, rounding tolerance etc.
-     *
-        CursorAfterString(infile,"Enter preximity test tolerance:");
-        fscanf(infile,"%lf",&af_params->pre_tol);
-        (void) printf("%f\n",af_params->pre_tol);
-        CursorAfterString(infile,"Enter restitution coefficient:");
-        fscanf(infile,"%lf",&af_params->rest);
-        (void) printf("%f\n",af_params->rest);
-    */
 
 	fclose(infile);
 }	/* end SMM_InitSpringMassParams */

@@ -64,33 +64,36 @@ extern  int countSurfPoints(INTERFACE* intfc)
 	int num_fabric_pts  = 0;
 	int surf_count = 0;
 	for (SURFACE** s = intfc->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == ELASTIC_BOUNDARY)
         {
-            if (wave_type(*s) == ELASTIC_BOUNDARY)
-	    {
-                num_fabric_pts += I_NumOfSurfPoints(*s);
-		surf_count++;
+            num_fabric_pts += I_NumOfSurfPoints(*s);
+    		surf_count++;
 	    }
-        }
+    }
 	return num_fabric_pts;
 }
 
 extern  int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) 
 {
-	int num_str_pts = 0;
-        for (CURVE** c = intfc->curves; c && *c; ++c)
-        {
-            if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else
-		continue;
-	    if (is_parachute_system == YES)
-		num_str_pts -= 2; //exclude curve boundaries
-        }
-	if (is_parachute_system == YES)
+    int num_str_pts = 0;
+    for (CURVE** c = intfc->curves; c && *c; ++c)
+    {
+        if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else
+            continue;
+    
+        if (is_parachute_system == YES)
+            num_str_pts -= 2; //exclude curve boundaries
+    }
+	
+    if (is_parachute_system == YES)
 	    num_str_pts += 1; //load node
-	return num_str_pts;
+	
+    return num_str_pts;
 }
 
 void setMotionParams(Front* front)
