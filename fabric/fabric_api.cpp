@@ -382,6 +382,7 @@ extern void SMM_InitSpringMassParams()
 
         if (af_params->use_total_mass)
             convert_to_point_mass(front,af_params);
+
 	if (af_params->is_parachute_system == NO)
 	{
 	    if (af_params->m_s == 0)
@@ -407,7 +408,8 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%d",&af_params->num_smooth_layers);
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
-        af_params->payload = af_params->m_s;       // default
+
+    af_params->payload = af_params->m_s;// default
 	if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
@@ -419,6 +421,12 @@ extern void SMM_InitSpringMassParams()
     {
         fscanf(infile,"%lf",&af_params->fabric_thickness);
         (void) printf("%f\n",af_params->fabric_thickness);
+    }
+    
+    if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+    {
+        fscanf(infile,"%lf",&af_params->string_thickness);
+        (void) printf("%f\n",af_params->string_thickness);
     }
     
     if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))

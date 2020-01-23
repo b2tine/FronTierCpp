@@ -89,13 +89,14 @@ struct AF_PARAMS
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
-        double gore_len_fac;
-        double gravity[MAXD];		/* gravitational force */
+    double gore_len_fac;
+    double gravity[MAXD];		/* gravitational force */
 	double payload;
 	double ks;			/* spring constant of surface */
 	double kl;			/* spring constant of string curves */
 	double kg;                      /* spring constant of gore curves */
     double mu_s;        /* fabric static friction consant */
+    double mu_l;        /* string curves static friction consant */
 	double lambda_s;		/* damping factor of surface */
 	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */

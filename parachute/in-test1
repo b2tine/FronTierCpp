@@ -10,7 +10,7 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 4.0
-Max step: 200
+Max step: 1000
 Print interval: 0.05
 Movie frame interval: 0.05
 CFL factor: 0.5
@@ -96,9 +96,10 @@ Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: trace
+Enter the debugging string: max_speed
+Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
-Enter the debugging string: step_size
+Enter the debugging string: Xstep_size
 Enter the debugging string: XPETSc
 Enter the debugging string: Xcoat_comp
 Enter the debugging string: Xdirichlet_bdry

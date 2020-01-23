@@ -1039,7 +1039,7 @@ static void EdgeToEdgeImpulse(
         printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
         printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
         printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-        printf("m_impuse = %f, impulse = %f, a = %f, b = %f\n",
+        printf("m_impulse = %f, impulse = %f, a = %f, b = %f\n",
             m_impulse,impulse,a,b);
         printf("root = %e,h = %e, dt = %e\n",root,h,dt);
         printf("x_old:\n");
@@ -1165,7 +1165,6 @@ static void EdgeToEdgeInelasticImpulse(
         *impulse = vn * 0.5;
     }
 
-    //TODO: Why is this for only vn < 0?
     if (isStaticRigidBody(pts[0])) W[0] = 0.0;
     if (isStaticRigidBody(pts[1])) W[1] = 0.0;
     if (isStaticRigidBody(pts[2])) W[2] = 0.0;

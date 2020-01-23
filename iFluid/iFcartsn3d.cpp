@@ -1163,8 +1163,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             source[index] += computeFieldPointPressureJump(icoords,
                              iFparams->porous_coeff[0],
                              iFparams->porous_coeff[1]);
-
-            //TODO: Should this be set?
             array[index] = phi[index];
 
 	    if (debugging("check_div"))

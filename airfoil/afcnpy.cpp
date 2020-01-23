@@ -1964,12 +1964,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
     {
 	    if (FT_Dimension() == 3)
         {
-            //TODO: This function just identifies which triangles and edges
-            //      have the potential to collide with each other based on their
-            //      the material/boundary type alone. We already know this from
-            //      initialization of the interface, so this is either an expensive
-            //      no-op, or the boundary type/condition of hypersurface elements
-            //      are artificially being changed midrun for some reason.
             setCollisionFreePoints3d(fr->interf);
 
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
@@ -1984,7 +1978,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 
             collision_solver->setRestitutionCoef(1.0);
                 
-            //TODO:to be removed
             collision_solver->setVolumeDiff(0.0);
         }
     }
@@ -2062,8 +2055,10 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
         delete collision_solver;
     }
 
-    if (debugging("trace"))
+    if (debugging("max_speed"))
+    {
         print_max_fabric_speed(fr);
+    }
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
@@ -2073,11 +2068,13 @@ static void print_max_fabric_speed(Front* fr)
 {
     SURFACE **s;
     TRI *tri;
-    POINT *pt,*max_pt;
+    POINT *pt;
     STATE *state;
-    double speed,max_speed;
+    
+    double speed;
+    double max_speed = 0.0;
+    POINT* max_pt = nullptr;
 
-    max_speed = 0.0;
     intfc_surface_loop(fr->interf,s)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
@@ -2097,13 +2094,18 @@ static void print_max_fabric_speed(Front* fr)
             }
         }
     }
-    //printf("After leaving fourth_order_elastic_set_propagate()\n");
+    
     printf("max speed of fabric/canopy: %f\n",max_speed);
-    printf("Point Gindex: %d  coords = %f %f %f\n",Gindex(max_pt),
-                Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
-    state = (STATE*)left_state(max_pt);
-    printf("Velocity: %f %f %f\n",state->vel[0],state->vel[1],
-                state->vel[2]);
+    if (max_pt != nullptr)
+    {
+        printf("Point Gindex: %d  coords = %f %f %f\n",
+                Gindex(max_pt),Coords(max_pt)[0],
+                Coords(max_pt)[1],Coords(max_pt)[2]);
+
+        state = (STATE*)left_state(max_pt);
+        printf("Velocity: %f %f %f\n",
+                state->vel[0],state->vel[1],state->vel[2]);
+    }
 }
 
 static void setSurfVelocity(

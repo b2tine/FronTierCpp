@@ -227,6 +227,11 @@ void CollisionSolver3d::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
+    
+    //restore coords of points to old coords !!!
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
+    resetPositionCoordinates();
 }
 
 void CollisionSolver3d::resetPositionCoordinates()
@@ -346,11 +351,6 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
-    resetPositionCoordinates();
-	
     start_clock("detectProximity");
 	detectProximity();
 	stop_clock("detectProximity");
@@ -372,7 +372,7 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-	detectProximity();
+	    //detectProximity();
     //TODO: can cause interpenetration: need to update impulse for
     //      use in spring solver only.
 	    //updateFinalPosition();
