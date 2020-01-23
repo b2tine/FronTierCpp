@@ -27,12 +27,12 @@ double CollisionSolver3d::s_cr = 1.0;
 double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_k = 5000;
 double CollisionSolver3d::s_m = 0.001;
-double CollisionSolver3d::s_mu = 0.4;
+double CollisionSolver3d::s_mu = 0.5;
 
 double CollisionSolver3d::l_thickness = 0.005;
 double CollisionSolver3d::l_k = 50000;
 double CollisionSolver3d::l_m = 0.002;
-double CollisionSolver3d::l_mu = 0.6;
+double CollisionSolver3d::l_mu = 0.5;
 
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
@@ -63,6 +63,12 @@ double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 void CollisionSolver3d::setRoundingTolerance(double neweps){s_eps = neweps;}
 double CollisionSolver3d::getRoundingTolerance(){return s_eps;}
 
+
+//set restitution coefficient between rigid bodies
+void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
+double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
+
+//fabric points
 void CollisionSolver3d::setFabricThickness(double h){s_thickness = h;}
 double CollisionSolver3d::getFabricThickness(){return s_thickness;}
 
@@ -75,6 +81,7 @@ double CollisionSolver3d::getFabricFrictionConstant(){return s_mu;}
 void   CollisionSolver3d::setFabricPointMass(double new_m){s_m = new_m;}
 double CollisionSolver3d::getFabricPointMass(){return s_m;}
 
+//string points
 void CollisionSolver3d::setStringThickness(double h){l_thickness = h;}
 double CollisionSolver3d::getStringThickness(){return l_thickness;}
 
@@ -87,9 +94,6 @@ double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
-//set restitution coefficient between rigid bodies
-void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
-double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
@@ -119,7 +123,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U) {
 
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
-	double mu = getFrictionConstant();
+	double mu = getFabricFrictionConstant();
 	for (std::vector<CD_HSE*>::iterator it = hseList.begin();
                 it < hseList.end(); ++it) {
 	    for (int i = 0; i < (*it)->num_pts(); ++i) {
@@ -172,7 +176,7 @@ void CollisionSolver3d::computeAverageVelocity()
     double dt = getTimeStepSize();
     double max_speed = 0.0;
     double* max_vel = nullptr;
-    POINT* max_pt=nullptr;
+    POINT* max_pt = nullptr;
 
     for (std::vector<CD_HSE*>::iterator it = hseList.begin();
             it < hseList.end(); ++it)
@@ -239,6 +243,11 @@ void CollisionSolver3d::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
+
+    //restore coords of points to old coords !!!
+    //x_old is the only valid coords for each point 
+    //Coords(point) is for temporary judgement
+    resetPositionCoordinates();
 }
 
 void CollisionSolver3d::resetPositionCoordinates()
@@ -358,11 +367,6 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
-    resetPositionCoordinates();
-	
     start_clock("detectProximity");
 	detectProximity();
 	stop_clock("detectProximity");
@@ -384,7 +388,7 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-	detectProximity();
+	    //detectProximity();
     //TODO: can cause interpenetration: need to update impulse for
     //      use in spring solver only.
 	    //updateFinalPosition();
@@ -450,6 +454,9 @@ void CollisionSolver3d::aabbProximity()
 
 void CollisionSolver3d::detectProximity()
 {
+    //TODO: Need to differentiate between string and fabric?
+    //      Or can we just use the larger string thickness
+    //      for everything?
     const double h = CollisionSolver3d::getFabricThickness();
 
     start_clock("dynamic_AABB_proximity");

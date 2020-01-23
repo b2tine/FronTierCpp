@@ -959,14 +959,15 @@ static void EdgeToEdgeImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::edg_to_edg++;
 
-	double k      = CollisionSolver3d::getSpringConstant();
-	double m      = CollisionSolver3d::getPointMass();
-	double dt     = CollisionSolver3d::getTimeStepSize();
-	double mu     = CollisionSolver3d::getFrictionConstant(); 
+    //TODO: detect when pts contain BOND endpoints of string
 	double h      = CollisionSolver3d::getFabricThickness();
+	double k      = CollisionSolver3d::getFabricSpringConstant();
+	double mu     = CollisionSolver3d::getFabricFrictionConstant(); 
+	double m      = CollisionSolver3d::getFabricPointMass();
 	double cr     = CollisionSolver3d::getRestitutionCoef();
+	double dt     = CollisionSolver3d::getTimeStepSize();
 	
-    dist   = h - dist;
+    dist = h - dist;
 
 	double v_rel[3] = {0.0, 0.0, 0.0};
     double vn = 0.0;
@@ -1316,14 +1317,15 @@ static void PointToTriImpulse(
 	if (debugging("collision"))
 	    CollisionSolver3d::pt_to_tri++;
     
-    double k      = CollisionSolver3d::getSpringConstant();
-	double m      = CollisionSolver3d::getPointMass();
-	double dt     = CollisionSolver3d::getTimeStepSize();
-	double mu     = CollisionSolver3d::getFrictionConstant(); 
+    //TODO: detect when pts contain BOND endpoints of string
 	double h      = CollisionSolver3d::getFabricThickness();
+	double k      = CollisionSolver3d::getFabricSpringConstant();
+	double mu     = CollisionSolver3d::getFabricFrictionConstant(); 
+	double m      = CollisionSolver3d::getFabricPointMass();
 	double cr     = CollisionSolver3d::getRestitutionCoef();
-
-	dist   = h - dist; //overlap with fabric thickness
+	double dt     = CollisionSolver3d::getTimeStepSize();
+   
+	dist = h - dist; //overlap with fabric thickness
 
     double vn = 0.0;
     double vt = 0.0;
