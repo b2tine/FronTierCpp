@@ -244,9 +244,7 @@ void CollisionSolver3d::computeAverageVelocity()
         }
     }
 
-    //restore coords of points to old coords !!!
-    //x_old is the only valid coords for each point 
-    //Coords(point) is for temporary judgement
+    //Reset points to original positions.
     resetPositionCoordinates();
 }
 

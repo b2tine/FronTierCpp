@@ -236,33 +236,24 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	{
             if (!debugging("collision_off"))
             {
-                // TODO: This function just identifies which triangles and edges
-                // have the potential to collide with each other based on their
-                // the material/boundary type alone. We already know this from
-                // initialization of the interface, so this should only be done
-                // once at start up.
                 setCollisionFreePoints3d(fr->interf);
 
                 collision_solver->assembleFromInterface(fr->interf,fr->dt);
                 collision_solver->recordOriginalPosition();
             
-                collision_solver->setFrictionConstant(af_params->mu_s);
-                //collision_solver->setFrictionConstant(0.4);
-            
-                collision_solver->setSpringConstant(af_params->ks); 
-                collision_solver->setPointMass(af_params->m_s);
-
-                collision_solver->setFabricThickness(af_params->fabric_thickness);
-
-                //TODO: coefficient of restitution varies between materials,
-                //      and should be determined at runtime using the STATE
-                //      data of the colliding pairs. 
                 collision_solver->setRestitutionCoef(1.0);
-            
-                //TODO: remove this feature
-                //change in volume of root bounding box to refit tree
                 collision_solver->setVolumeDiff(af_params->vol_diff);
                 
+                collision_solver->setFabricThickness(af_params->fabric_thickness);
+                collision_solver->setFabricFrictionConstant(af_params->mu_s);
+                collision_solver->setFabricSpringConstant(af_params->ks); 
+                collision_solver->setFabricPointMass(af_params->m_s);
+
+                collision_solver->setStringThickness(af_params->string_thickness);
+                collision_solver->setStringFrictionConstant(af_params->mu_l);
+                collision_solver->setStringSpringConstant(af_params->kl); 
+                collision_solver->setStringPointMass(af_params->m_l);
+
                 collision_solver->gpoints = fr->gpoints;
                 collision_solver->gtris = fr->gtris;
             }
@@ -344,9 +335,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
 
-//TODO: Is this function as useless as it looks?
-//      This can just be done during initialization
-//      and cached in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;
@@ -360,7 +348,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 
     next_point(intfc,NULL,NULL,NULL);
-    while(next_point(intfc,&p,&hse,&hs))
+    while (next_point(intfc,&p,&hse,&hs))
     {
         STATE* sl = (STATE*)left_state(p);
         sl->is_fixed = false;

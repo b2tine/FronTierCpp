@@ -93,12 +93,14 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 void CollisionSolver3d::updateImpactListVelocity(POINT* head){
 	STATE* sl = NULL;
 	POINT* p = head;
-	double m = getPointMass();
 	double x_cm[3] = {0.0}, v_cm[3] = {0.0};
 	double L[3] = {0.0}; //angular momentum
 	double I[3][3] = {0.0}; //inertia tensor
 	double tmp[3][3];
 	int num_pts = 0;
+
+	double m = getFabricPointMass();
+	//double m_string = getStringPointMass();
 
 	while(p){
 		num_pts++; //debug

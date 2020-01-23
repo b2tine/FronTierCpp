@@ -39,13 +39,14 @@ Enter yes to use total mass: no
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.02
 Enter fabric friction constant: 0.5
-Enter fabric point mass: 0.01
+Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 
-Enter string spring constant: 30000
+Enter string spring constant: 50000
 Enter string damping constant: 0.02
-Enter string friction constant: 0.6
+Enter string friction constant: 0.5
 Enter string point mass: 0.005
+Enter string thickness: 0.01
 
 Enter yes to add rigid body: no
 
