@@ -219,6 +219,16 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     //TODO: consolidate read/record functions into a single
     //      functions reading/returning a class object containing
     //      the 3 vectors.
+    //
+    //      Note that "tris[k]->side_length0[l]"
+    //      gives the resting edge length of ...
+    //      can we simplify some of the tearing procedures
+    //      with this accessor (now that we know about it)??
+    //
+    //      See the functions set_vertex_neighbors(),
+    //      get_point_set_from(), and put_point_set_to()
+    //      for other potential solutions to managing the
+    //      Tearing data/objects/indices
 
     //Initialize fabric edge structures
     if (first)
