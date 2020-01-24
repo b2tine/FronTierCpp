@@ -307,6 +307,7 @@ void FabricTearer::createNewTear(FabricEdge* e)
     
     TRI* left_tri = e->left_tri;
     TRI* right_tri = e->right_tri;
+
     TRI** tri_list;
     POINT *p1,*p2,*p3,*p4,*newp;
     SURFACE *surf;
@@ -366,8 +367,9 @@ void FabricTearer::createNewTear(FabricEdge* e)
     // Compute coordinates of mid-point
     for (i = 0; i < 3; ++i)
     {
-        coords[i] = 0.5*(Coords(p1)[i] + Coords(p2)[2]);
+        coords[i] = 0.5*(Coords(p1)[i] + Coords(p2)[i]);
     }
+
     printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
     printf("\n");
 
