@@ -4320,6 +4320,11 @@ EXPORT void install_hsbdry_on_surface(
 		clean_up(ERROR);
 	    }
 	}
+
+    //TEMP: for TEARING createNewTear() debugging
+    printf("The inserted curve\n");
+    print_curve(curve);
+
 	interpolate_intfc_states(intfc) = sav_intrp;
 	DEBUG_LEAVE(install_hsbdry_on_surface)
 }		/*end install_hsbdry_on_surface*/

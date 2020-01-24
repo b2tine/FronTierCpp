@@ -272,6 +272,7 @@ void FabricTearer::checkForTearingEvents()
 
 void FabricTearer::processTearingEvents()
 {
+    printf("Entering processTearingEvents()\n");
     for (int i = 0; i < tear_idx.size(); ++i)
     {
         long int itear = tear_idx[i];
@@ -306,15 +307,180 @@ void FabricTearer::createNewTear(FabricEdge* e)
     
     TRI* left_tri = e->left_tri;
     TRI* right_tri = e->right_tri;
+    TRI** tri_list;
+    POINT *p1,*p2,*p3,*p4,*newp;
+    SURFACE *surf;
+    double coords[MAXD];
+    int i,j,side_left,side_right;
+    int num_tris;
+    INTERFACE *save_intfc = current_interface();
 
     //IMPLEMENTATION HERE
 
-    INTERFACE* intfc = nullptr;
-    print_tri(left_tri,intfc);
-    print_tri(right_tri,intfc);
+    //These are needed for functions to be called
+    surf = left_tri->surf;
+    INTERFACE* intfc = surf->interface;
+    set_current_interface(intfc);
+    printf("intfc = %p  surf = %p\n",intfc,surf);
 
-        //printf("FabricTearer::createNewTear() not implemented yet\n");
-        //clean_up(0);
+    // Find the side of the left_tri neighboring the right_tri
+    for (i = 0; i < 3; ++i)
+    {
+        if (Tri_on_side(left_tri,i) == right_tri)
+        {
+            side_left = i;
+            break;
+        }
+    }
+    // Find the side of the right_tri neighboring the left_tri
+    for (i = 0; i < 3; ++i)
+    {
+        if (Tri_on_side(right_tri,i) == left_tri)
+        {
+            side_right = i;
+            break;
+        }
+    }
+    // Check consistency
+    printf("side_left  = %d\n",side_left);
+    printf("side_right = %d\n",side_right);
+
+    // Get the two points of the side two tris neighboring each other
+    p1 = Point_of_tri(left_tri)[side_left];
+    p2 = Point_of_tri(right_tri)[side_right];
+    // Should be consistent
+    printf("p1 = %p  rp1 = %p\n",p1,Point_of_tri(right_tri)[(side_right+1)%3]);
+    printf("p2 = %p  rp2 = %p\n",p2,Point_of_tri(left_tri)[(side_left+1)%3]);
+
+    // Two opposite points
+    p3 = Point_of_tri(left_tri)[(side_left+2)%3];
+    p4 = Point_of_tri(right_tri)[(side_right+2)%3];
+    // The two points the two tris share
+    printf("p1 = %p\n",p1);
+    printf("p2 = %p\n",p2);
+    // The two points the two tris not share
+    printf("p3 = %p\n",p3);
+    printf("p4 = %p\n",p4);
+    printf("\n");
+
+    // Compute coordinates of mid-point
+    for (i = 0; i < 3; ++i)
+    {
+        coords[i] = 0.5*(Coords(p1)[i] + Coords(p2)[2]);
+    }
+    printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
+    printf("\n");
+
+    // Create a point at the middle coordinate and insert in side
+    newp = Point(coords);
+    printf("newp = %p\n",newp);
+    insert_point_in_tri_side(newp,side_left,left_tri,surf);
+
+    // Get the four tris after splitting
+    num_tris = set_tri_list_around_point(newp,left_tri,&tri_list,intfc);
+    printf("Around newp: num_tris = %d\n",num_tris);
+
+    // Get the side of each tri for tearing
+    int n,side[4];
+    for (i = 0; i < num_tris; ++i)
+    {
+        side[i] = -1;
+        for (j = 0; j < 3; ++j)
+        {
+            if ((Point_of_tri(tri_list[i])[j] == newp &&
+                 (Point_of_tri(tri_list[i])[(j+1)%3] == p3 ||
+                  Point_of_tri(tri_list[i])[(j+1)%3] == p4))
+                ||
+                ((Point_of_tri(tri_list[i])[j] == p3 ||
+                  Point_of_tri(tri_list[i])[j] == p4) &&
+                 Point_of_tri(tri_list[i])[(j+1)%3] == newp))
+                side[i] = j;
+
+        }
+        printf("Tearing side of tri_list[%d]: %d\n",i,side[i]);
+    }
+    for (i = 0; i < num_tris; ++i)
+        printf("Gindex %d: %d\n",i,Gindex(tri_list[i]));
+
+    // Divide the four tris into two sets, each on one tearing side
+    TRI *tris1[2],*tris2[2];
+    n = 0;
+    for (i = 0; i < num_tris; ++i)
+        for (j = 0; j < 3; ++j)
+            if (Point_of_tri(tri_list[i])[j] == p1)
+                tris1[n++] = tri_list[i];
+    printf("n1 = %d\n",n);
+    n = 0;
+    for (i = 0; i < num_tris; ++i)
+        for (j = 0; j < 3; ++j)
+            if (Point_of_tri(tri_list[i])[j] == p2)
+                tris2[n++] = tri_list[i];
+    printf("n2 = %d\n",n);
+    printf("tris1 = %p %p\n",tris1[0],tris1[1]);
+    printf("tris2 = %p %p\n",tris2[0],tris2[1]);
+
+    // Duplicate the inserted point newp to split
+    POINT *newp1 = Point(Coords(newp));
+    // Reassign the newp on side 2 to newp1
+    for (i = 0; i < 2; ++i)
+        for (j = 0; j < 3; ++j)
+            if (Point_of_tri(tris2[i])[j] == newp)
+                    Point_of_tri(tris2[i])[j] = newp1;
+
+    Gindex(newp) = intfc->max_point_gindex;
+    Gindex(newp1) = intfc->max_point_gindex + 1;
+    intfc->max_point_gindex += 2;
+    printf("Gindex(newp) = %d\n",Gindex(newp));
+    printf("Gindex(newp1) = %d\n",Gindex(newp1));
+
+    // Open the tearing side of each tri
+    printf("p3 = %p\n",p3);
+    printf("p4 = %p\n",p4);
+    printf("newp = %p\n",newp);
+    printf("newp1 = %p\n",newp1);
+    for (i = 0; i < num_tris; ++i)
+    {
+        Tri_on_side(tri_list[i],side[i]) = NULL;
+        // Check: ps and pe must one as newp/newp1 and the other as p3/p4
+        printf("ps = %p  pe = %p\n",Point_of_tri(tri_list[i])[side[i]],
+                Point_of_tri(tri_list[i])[(side[i]+1)%3]);
+    }
+
+    /* I already checked
+    printf("\nnewp = %p\n",newp);
+    printf("tris1[0] pts: %p %p %p\n",Point_of_tri(tris1[0])[0],
+                Point_of_tri(tris1[0])[1],Point_of_tri(tris1[0])[2]);
+    printf("tris1[0] sides: %p %p %p\n",Tri_on_side(tris1[0],0),
+                Tri_on_side(tris1[0],1),Tri_on_side(tris1[0],2));
+    printf("tris1[1] pts: %p %p %p\n",Point_of_tri(tris1[1])[0],
+                Point_of_tri(tris1[1])[1],Point_of_tri(tris1[1])[2]);
+    printf("tris1[1] sides: %p %p %p\n",Tri_on_side(tris1[1],0),
+                Tri_on_side(tris1[1],1),Tri_on_side(tris1[1],2));
+
+    printf("\nnewp1 = %p\n",newp1);
+    printf("tris2[0] pts: %p %p %p\n",Point_of_tri(tris2[0])[0],
+                Point_of_tri(tris2[0])[1],Point_of_tri(tris2[0])[2]);
+    printf("tris2[0] sides: %p %p %p\n",Tri_on_side(tris2[0],0),
+                Tri_on_side(tris2[0],1),Tri_on_side(tris2[0],2));
+    printf("tris2[1] pts: %p %p %p\n",Point_of_tri(tris2[1])[0],
+                Point_of_tri(tris2[1])[1],Point_of_tri(tris2[1])[2]);
+    printf("tris2[1] sides: %p %p %p\n",Tri_on_side(tris2[1],0),
+                Tri_on_side(tris2[1],1),Tri_on_side(tris2[1],2));
+    */
+
+
+    printf("\nInterface before install tearing curve:\n");
+    // The original interface
+    //print_interface(intfc);
+    FT_InstallSurfEdge(surf,MONO_COMP_HSBDRY);
+    // The interface after inserting tearing curve
+    printf("Interface after install tearing curve:\n");
+    //print_interface(intfc);
+
+    // Make sure you restore the global interface
+    set_current_interface(save_intfc);
+
+    clean_up(0);
 }
 
 void FabricTearer::propagateTear(FabricEdge* e)
