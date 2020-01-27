@@ -463,6 +463,23 @@ static bool MovingPointToTri(POINT* pts[],const double h)
         sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                sl->has_collsn = true;
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+                    
+                    sl->collsnImpulse[k] = 0.0;
+                    sl->friction[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
     }
     
     return status;
@@ -525,6 +542,23 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
         sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                sl->has_collsn = true;
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+            
+                    sl->collsnImpulse[k] = 0.0;
+                    sl->friction[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
     }
     
     return status;

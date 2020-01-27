@@ -538,22 +538,20 @@ void CollisionSolver3d::detectCollision()
             setHasCollision(true);
         }
 
-	    updateAverageVelocity();
-
 	    //if (debugging("collision"))
             std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
                 << " pair of collision tris" << std::endl;
 	    
+	    //updateAverageVelocity();
+        
         if (++niter > MAX_ITER)
             break;
 	}
 
-        start_clock("computeImpactZone");
-
+    start_clock("computeImpactZone");
 	if (is_collision) 
 	    computeImpactZone();
-    
-        stop_clock("computeImpactZone");
+    stop_clock("computeImpactZone");
 }
 
 //Note: num has default value of 4,
