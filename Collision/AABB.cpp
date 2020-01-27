@@ -363,10 +363,14 @@ bool AABBTree::queryProximity(Node* n, double tol)
                     {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
-                        if (getProximity(a,b,tol))
-                            count++; 
+                        if (!adjacentHSE(a,b))
+                        {
+                            if (getProximity(a,b,tol))
+                                count++; 
+                        }
                     }
                 }
+
                 sn.push(cur);
                 cur = cur->left.get();
             }   
@@ -406,8 +410,11 @@ bool AABBTree::queryCollision(Node* n, double tol)
                     {
                         CD_HSE* a = cur->data->hse;
                         CD_HSE* b = n->data->hse;
-                        if (getCollision(a,b,tol)) 
-                            count++;
+                        if (!adjacentHSE(a,b))
+                        {
+                            if (getCollision(a,b,tol)) 
+                                count++;
+                        }
                     }
                 }
 

@@ -370,6 +370,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
                         }
                     }
                 }
+
                 sn.push(cur);
                 cur = cur->left.get();
             }   
