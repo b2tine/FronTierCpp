@@ -479,18 +479,18 @@ void FabricTearer::createNewTear(FabricEdge* e)
     */
 
 
-    printf("\nInterface before install tearing curve:\n");
+        //printf("\nInterface before install tearing curve:\n");
     // The original interface
     //print_interface(intfc);
     FT_InstallSurfEdge(surf,MONO_COMP_HSBDRY);
     // The interface after inserting tearing curve
-    printf("Interface after install tearing curve:\n");
+        //printf("Interface after install tearing curve:\n");
     //print_interface(intfc);
 
     // Make sure you restore the global interface
     set_current_interface(save_intfc);
 
-    clean_up(0);
+    //clean_up(0);
 }
 
 void FabricTearer::propagateTear(FabricEdge* e)
