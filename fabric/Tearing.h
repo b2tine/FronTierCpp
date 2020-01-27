@@ -84,11 +84,11 @@ class FabricTearer
 
         std::vector<long int> recordGindexWeakPoints() const;
         
-        void readGindexPointPairs(POINT** gpoints,
-                const std::vector<std::pair<long int, long int>>& gindex_pairs);
-        
-        void readGindexTriPairs(TRI** gtris,
-                const std::vector<std::pair<long int, long int>>& gindex_pairs);
+        void readEdgeData(
+                POINT** gpoints,
+                const std::vector<std::pair<long int, long int>>& gindex_ppairs,
+                TRI** gtris,
+                const std::vector<std::pair<long int, long int>>& gindex_tpairs);
         
         void readRestingEdgeLengths(const std::vector<double>& restlengths);
 

@@ -96,9 +96,6 @@ void FabricTearer::collectFabricEdges(const INTERFACE* intfc)
             }
         }
 
-        //TODO: May need to traverse the bounding curve as well.
-        //      Could potentially miss the tri edges that are curve bonds?
-        
         /*
         BOND* b;
         CURVE** c;
@@ -188,27 +185,36 @@ std::vector<long int> FabricTearer::recordGindexWeakPoints() const
     return std::vector<long int>(weakpt_idx.cbegin(),weakpt_idx.cend());
 }
 
-//TODO: Write single function for Point and Tri Gindex Pairs
-void FabricTearer::readGindexPointPairs(
+void FabricTearer::readEdgeData(
         POINT** gpoints,
-        const std::vector<std::pair<long int, long int>>& gindex_pairs)
+        const std::vector<std::pair<long int, long int>>& gindex_ppairs,
+        TRI** gtris,
+        const std::vector<std::pair<long int, long int>>& gindex_tpairs)
 {
         //printf("edges.size() = %d\n",edges.size());
         //printf("POINT gindex_pairs.size() = %d\n",gindex_pairs.size());
     
     clearEdges();
-    for (int i = 0; i < gindex_pairs.size(); ++i)
+    for (int i = 0; i < gindex_ppairs.size(); ++i)
     {
-        long int gidx_beg = gindex_pairs[i].first;
-        long int gidx_end = gindex_pairs[i].second;
+        long int gidx_beg = gindex_ppairs[i].first;
+        long int gidx_end = gindex_ppairs[i].second;
+        
+        long int gidx_left = gindex_tpairs[i].first;
+        if (gidx_left != -1)
+            edges[i]->left_tri = gtris[gidx_left];
+
+        long int gidx_right = gindex_tpairs[i].second;
+        if (gidx_right != -1)
+            edges[i]->right_tri = gtris[gidx_right];
+        
         edges.push_back(
-                new FabricEdge(gpoints[gidx_beg],gpoints[gidx_end]));
+                new FabricEdge(gpoints[gidx_beg],gpoints[gidx_end],
+                                gtris[gidx_left],gtris[gidx_right]));
     }
 }
 
-//TODO: join with readGindexPointPairs() into single function
-//
-//NOTE: readGindexPointPairs() must be called first at this time
+/*
 void FabricTearer::readGindexTriPairs(
         TRI** gtris,
         const std::vector<std::pair<long int, long int>>& gindex_pairs)
@@ -228,7 +234,6 @@ void FabricTearer::readGindexTriPairs(
     }
 }
 
-//TODO: join with readGindexPointPairs() into single function
 void FabricTearer::readRestingEdgeLengths(
         const std::vector<double>& restlengths)
 {
@@ -238,13 +243,20 @@ void FabricTearer::readRestingEdgeLengths(
     for (int i = 0; i < restlengths.size(); ++i)
         edges[i]->setRestLength(restlengths[i]);
 }
+*/
 
-//TODO: join with readGindexPointPairs() into single function
+//TODO: join with readEdges() into single function
 void FabricTearer::readGindexWeakPoints(
         const std::vector<long int>& gindex_weakpts)
 {
     weakpt_idx.clear();
     weakpt_idx.insert(gindex_weakpts.begin(),gindex_weakpts.end());
+    for (int i = 0; i < edges.size(); ++i)
+    {
+        FabricEdge* e = edges[i];
+        if (isWeakPoint(e->beg) || isWeakPoint(e->end))
+            e->setWeakPointFlag(true);
+    }
 }
 
 //void FabricTearer::tearFabric(Front* front)
@@ -261,10 +273,6 @@ void FabricTearer::checkForTearingEvents()
     for (int i = 0; i < edges.size(); ++i)
     {
         FabricEdge* e = edges[i];
-
-        if (isWeakPoint(e->beg) || isWeakPoint(e->end))
-            e->setWeakPointFlag(true);
-
         if (e->checkForTear())
             tear_idx.push_back(i);
     }
@@ -511,26 +519,19 @@ void FabricTearer::printEdges() const
 ///////     FabricEdge       ///////
 ////////////////////////////////////
 
-FabricEdge::FabricEdge(POINT* p1, POINT* p2)
-    : beg{p1}, end{p2}
-{
-    computeTension();
-    //beg_gindex = Gindex(p1);
-    //end_gindex = Gindex(p2);
-}
 
 FabricEdge::FabricEdge(POINT* p1, POINT* p2, TRI* tl, TRI* tr)
-    : FabricEdge(p1,p2)
+    : beg{p1}, end{p2}, left_tri{tl}, right_tri{tr}
 {
-    left_tri = tl;
-    right_tri = tr;
+    for (int i = 0; i < 3; ++i)
+    {
+        if (beg == Point_of_tri(left_tri)[i])
+            length0 = left_tri->side_length0[i];
+    } 
+    assert(length0 > 0.0);
     
-    /*
-    if (left_tri != nullptr)
-        left_tri_gindex = Gindex(left_tri);
-    if (right_tri != nullptr)
-        right_tri_gindex = Gindex(right_tri);
-    */
+    computeLength();
+    computeTension();
 }
 
 void FabricEdge::setRestLength(double l)
@@ -560,7 +561,7 @@ double FabricEdge::getTension() const
 
 bool FabricEdge::checkForTear()
 {
-    double coeff = 1.0;
+    double coeff = 1.0;//temp value
     if (has_weakpt)
         coeff = weakpt_factor;
     return tension > coeff*tear_threshold;

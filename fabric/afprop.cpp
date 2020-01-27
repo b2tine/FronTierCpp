@@ -111,9 +111,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: these "first" initialization procedures
-    //      should be seperate function called before
-    //      any propagation functions are called
 	if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
@@ -214,7 +211,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     static std::vector<std::pair<long int, long int>> gindex_point_pairs;
     static std::vector<std::pair<long int, long int>> gindex_tri_pairs;
     static std::vector<long int> gindex_weakpts;
-    static std::vector<double> restlengths;
+        //static std::vector<double> restlengths;
 
     //TODO: consolidate read/record functions into a single
     //      functions reading/returning a class object containing
@@ -236,14 +233,16 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         Tearer->collectFabricEdges(fr->interf);
         gindex_point_pairs = Tearer->recordGindexPointPairs();
         gindex_tri_pairs = Tearer->recordGindexTriPairs();
-        restlengths = Tearer->recordRestingEdgeLengths();
+            //restlengths = Tearer->recordRestingEdgeLengths();
         first = NO;
     }
     else
     {
-        Tearer->readGindexPointPairs(fr->gpoints,gindex_point_pairs);
-        Tearer->readGindexTriPairs(fr->gtris,gindex_tri_pairs);
-        Tearer->readRestingEdgeLengths(restlengths);
+        Tearer->readEdgeData(fr->gpoints,gindex_point_pairs,
+                          fr->gtris,gindex_tri_pairs);
+        //Tearer->readGindexPointPairs(fr->gpoints,gindex_point_pairs);
+        //Tearer->readGindexTriPairs(fr->gtris,gindex_tri_pairs);
+            //Tearer->readRestingEdgeLengths(restlengths);
         Tearer->readGindexWeakPoints(gindex_weakpts);
     }
 
