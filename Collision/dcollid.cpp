@@ -521,12 +521,12 @@ void CollisionSolver3d::detectCollision()
             setHasCollision(true);
         }
 
-	    updateAverageVelocity();
-
 	    //if (debugging("collision"))
             std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
                 << " pair of collision tris" << std::endl;
 	    
+	    //updateAverageVelocity();
+        
         if (++niter > MAX_ITER)
             break;
 	}

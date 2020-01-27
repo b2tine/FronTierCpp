@@ -406,7 +406,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	return status;
 }
 
-//NOTE: Changes coords of pts involved
 static bool MovingPointToTri(POINT* pts[],const double h)
 {
 	STATE* sl;
@@ -435,26 +434,6 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                 status = true;
                 break;
             }
-	    
-            /*
-            bool status = false;
-            if (PointToTri(pts,h,mstate,roots[i]))
-                status = true;
-
-            if (is_detImpZone)
-            {
-                for (int j = 0; j < 4; ++j)
-                {
-                    sl = (STATE*)left_state(pts[j]);
-                    for (int k = 0; k < 3; ++k)
-                        Coords(pts[j])[k] = sl->x_old[k];
-                }
-            }
-            
-
-            if (status)
-                return true;
-            */
 	    }
 	}
 
@@ -483,10 +462,8 @@ static bool MovingPointToTri(POINT* pts[],const double h)
     }
     
     return status;
-    //return false;
 }
 
-//NOTE: Changes coords of pts involved
 static bool MovingEdgeToEdge(POINT* pts[],const double h)
 {
 	STATE* sl;
@@ -510,30 +487,11 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
             }
 
-            //if (EdgeToEdge(pts,h,mstate,roots[i]))
-              //  return true;
-
-            //bool status = false;
             if (EdgeToEdge(pts,h,mstate,roots[i]))
             {
                 status = true;
                 break;
             }
-
-            /*
-            if (is_detImpZone)
-            {
-                for (int j = 0; j < 4; ++j)
-                {
-                    sl = (STATE*)left_state(pts[j]);
-                    for (int k = 0; k < 3; ++k)
-                        Coords(pts[j])[k] = sl->x_old[k];
-                }
-            }
-
-            if (status)
-                return true;
-            */
         }
     }
 
@@ -562,7 +520,6 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
     }
     
     return status;
-    //return false;
 }
 
 static void isCoplanarHelper(double* s[], double v[][3])

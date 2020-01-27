@@ -404,7 +404,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	return status;
 }
 
-//NOTE: Changes coords of pts involved
 static bool MovingPointToTri(POINT* pts[],const double h)
 {
 	STATE* sl;
@@ -433,25 +432,6 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                 status = true;
                 break;
             }
-
-            /*
-            bool status = false;
-            if (PointToTri(pts,h,mstate,roots[i]))
-                status = true;
-
-            if (is_detImpZone)
-            {
-                for (int j = 0; j < 4; ++j)
-                {
-                    sl = (STATE*)left_state(pts[j]);
-                    for (int k = 0; k < 3; ++k)
-                        Coords(pts[j])[k] = sl->x_old[k];
-                }
-            }
-
-            if (status)
-                return true;
-            */
 	    }
 	}
 
@@ -460,13 +440,28 @@ static bool MovingPointToTri(POINT* pts[],const double h)
         sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                sl->has_collsn = true;
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+                    
+                    sl->collsnImpulse[k] = 0.0;
+                    sl->friction[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
     }
 
     return status;
-    //return false;
 }
 
-//NOTE: Changes coords of pts involved
 static bool MovingEdgeToEdge(POINT* pts[],const double h)
 {
 	STATE* sl;
@@ -495,25 +490,6 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
                 status = true;
                 break;
             }
-
-            /*
-            bool status = false;
-            if (EdgeToEdge(pts,h,mstate,roots[i]))
-                status = true;
-
-            if (is_detImpZone)
-            {
-                for (int j = 0; j < 4; ++j)
-                {
-                    sl = (STATE*)left_state(pts[j]);
-                    for (int k = 0; k < 3; ++k)
-                        Coords(pts[j])[k] = sl->x_old[k];
-                }
-            }
-
-            if (status)
-                return true;
-            */
         }
     }
 
@@ -522,10 +498,26 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
         sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                sl->has_collsn = true;
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+                    
+                    sl->collsnImpulse[k] = 0.0;
+                    sl->friction[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
     }
 
     return status;
-    //return false;
 }
 
 static void isCoplanarHelper(double* s[], double v[][3])
