@@ -462,11 +462,11 @@ void CollisionSolver3d::detectProximity()
     abt_proximity->query(h);
     stop_clock("dynamic_AABB_proximity");
 
-	updateAverageVelocity();
-
 	if (debugging("proximity"))
         std::cout << abt_proximity->getCount()
             << " pair of proximity" << std::endl;
+
+	updateAverageVelocity();
 }
 
 // AABB tree for collision detection process

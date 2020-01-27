@@ -261,12 +261,14 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 	bool status = false;
 
 	/* do not consider bond point that is a tri vertex */
+    /*
 	for (int i = 0; i < 3; ++i)
 	{
 	    if (Point_of_tri(tri)[i] == bd->start
             || Point_of_tri(tri)[i] == bd->end)
             return false;
 	}
+    */
 
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
@@ -316,6 +318,7 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 	pts[3] = b2->end;
 
 	/* do not consider two bonds that share a common point */
+    /*
 	for (int i = 0; i < 4; ++i)
 	{
 	    for (int j = i + 1; j < 4; ++j)
@@ -324,6 +327,7 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
                 return false;
 	    }
 	}
+    */
 
     /* detect collision between two bonds */	
     if(MovingEdgeToEdge(pts,h))
@@ -341,12 +345,14 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	POINT* pts[4];
 	bool status = false;
 
+    /*
 	for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
 	{
 	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
 		return false;
 	}
+    */
 
 	//detect point to tri collision
 	for (int k = 0; k < 2; ++k)
@@ -359,10 +365,12 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
 	    //Don't consider point against the triangle it belongs to
+        /*
 	    if (pts[3] == pts[0] || pts[3] == pts[1]
                 || pts[3] == pts[2])
             continue; 
-        
+        */
+
         if(MovingPointToTri(pts,h))
             status = true;
 
@@ -381,10 +389,12 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
 		    //Don't consider edges with a shared enpoint
+            /*
             if (pts[0] == pts[2] || pts[0] == pts[3]
             || pts[1] == pts[2] || pts[1] == pts[3])
                 continue;
-    
+            */
+
             if(MovingEdgeToEdge(pts,h))
                 status = true;
                 
@@ -405,6 +415,7 @@ static bool MovingPointToTri(POINT* pts[],const double h)
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     MotionState mstate = MotionState::MOVING;
 
+    bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
 	    for (int i = 0; i < 4; ++i)
@@ -419,9 +430,13 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
 		    }
     
-            //if (PointToTri(pts,h,mstate,roots[i]))
-              //  return true;
+            if (PointToTri(pts,h,mstate,roots[i]))
+            {
+                status = true;
+                break;
+            }
 	    
+            /*
             bool status = false;
             if (PointToTri(pts,h,mstate,roots[i]))
                 status = true;
@@ -435,14 +450,23 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                         Coords(pts[j])[k] = sl->x_old[k];
                 }
             }
+            
 
             if (status)
                 return true;
-
+            */
 	    }
 	}
 
-    return false;
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+    }
+    
+    return status;
+    //return false;
 }
 
 //NOTE: Changes coords of pts involved
@@ -454,6 +478,7 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     MotionState mstate = MotionState::MOVING;
 
+    bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
         for (int i = 0; i < 4; ++i)
@@ -471,10 +496,14 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
             //if (EdgeToEdge(pts,h,mstate,roots[i]))
               //  return true;
 
-            bool status = false;
+            //bool status = false;
             if (EdgeToEdge(pts,h,mstate,roots[i]))
+            {
                 status = true;
+                break;
+            }
 
+            /*
             if (is_detImpZone)
             {
                 for (int j = 0; j < 4; ++j)
@@ -487,10 +516,19 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
 
             if (status)
                 return true;
+            */
         }
     }
 
-    return false;
+    for (int j = 0; j < 4; ++j)
+    {
+        sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+    }
+    
+    return status;
+    //return false;
 }
 
 static void isCoplanarHelper(double* s[], double v[][3])
@@ -927,11 +965,14 @@ static bool EdgeToEdge(
     }
     */
     
-    scalarMult(sC,x12,x12);
-    addVec(x31,x12,vec);
-
+	double x13[3];
+    Pts2Vec(pts[0],pts[2],x13);
+    
     scalarMult(tC,x34,x34);
-    minusVec(vec,x34,vec);
+    addVec(x13,x34,vec);
+
+    scalarMult(sC,x12,x12);
+    minusVec(vec,x12,vec);
 
     dist = Mag3d(vec);
     if (dist > h)
@@ -1100,10 +1141,10 @@ static void EdgeToEdgeImpulse(
                 {
                     double delta_vt = vt;
                     if (fabs(mu*t_impulse) < vt)
-                        delta_vt = mu*t_impulse;
+                        delta_vt = fabs(mu*t_impulse);
 
-                    //sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
-                    sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
@@ -1450,10 +1491,10 @@ static void PointToTriImpulse(
                 {
                     double delta_vt = vt;
                     if (fabs(mu*t_impulse) < vt)
-                        delta_vt = mu*t_impulse;
+                        delta_vt = fabs(mu*t_impulse);
                     
-                    //sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
-                    sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                    //sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
