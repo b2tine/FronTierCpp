@@ -35,12 +35,12 @@ public:
 
 	static void setTimeStepSize(double);
 	static double getTimeStepSize();
-	static void setRoundingTolerance(double);
-	static double getRoundingTolerance();
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
 	
+	static void setFabricRoundingTolerance(double);
+	static double getFabricRoundingTolerance();
     static void setFabricThickness(double);
 	static double getFabricThickness();
 	static void setFabricSpringConstant(double);
@@ -50,6 +50,8 @@ public:
 	static void setFabricPointMass(double);
 	static double getFabricPointMass();
 
+	static void setStringRoundingTolerance(double);
+	static double getStringRoundingTolerance();
 	static void setStringThickness(double);
 	static double getStringThickness();
 	static void setStringSpringConstant(double);
@@ -94,14 +96,15 @@ private:
     double vol_diff {0.0};
 
 	static double s_cr;
-	static double s_eps;
 	static double s_dt;
 
+	static double s_eps;
 	static double s_thickness; //fabric thickness
 	static double s_m;
 	static double s_k;
 	static double s_mu;
     
+	static double l_eps;
 	static double l_thickness; //string thickness
 	static double l_m;
 	static double l_k;

@@ -38,12 +38,11 @@ class AABB {
     MotionState abType;
     double tol;
 public:
-    AABB() {}
-    AABB(double, CD_HSE*, MotionState);
-    AABB(double, CD_HSE*, MotionState, double);
+    AABB(double, CD_HSE*);
+    AABB(double, CD_HSE*, double);
     AABB(const CPoint&, const CPoint&);
-    // explicit saying that we need a default version of 
-    // copy and move operations 
+    
+    AABB() = default;
     AABB(const AABB&) = default;
     AABB& operator=(const AABB&) = default;
     AABB(AABB&&) = default;

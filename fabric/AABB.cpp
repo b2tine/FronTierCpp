@@ -1,11 +1,12 @@
 #include "AABB.h"
 
 //for proximity detection
-AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h), 
-        abType(type), lowerbound(3), upperbound(3) {
-    if (type != MotionState::STATIC)
-        throw std::runtime_error("Proximity AABB tree must has STATIC type!");
-    for (int i = 0; i < 3; i++) {
+AABB::AABB(double t, CD_HSE* h)
+    : tol{t}, hse{h}, abType{MotionState::STATIC},
+    lowerbound(3), upperbound(3)
+{
+    for (int i = 0; i < 3; i++)
+    {
          lowerbound[i] = h->min_static_coord(i) - tol;
          upperbound[i] = h->max_static_coord(i) + tol;
     }
@@ -14,20 +15,22 @@ AABB::AABB(double t, CD_HSE* h, MotionState type) : tol(t), hse(h),
 }
 
 //for collision detection
-AABB::AABB(double t, CD_HSE* h, MotionState type, double Dt) : tol(t), hse(h), dt(Dt), 
-        abType(type), lowerbound(3), upperbound(3) {   
-    if (type != MotionState::MOVING)
-        throw std::runtime_error("Collision AABB tree must has MOVING type!");
-    for (int i = 0; i < 3; i++) {
-         lowerbound[i] = h->min_moving_coord(i, dt) - 0.001*tol;
-         upperbound[i] = h->max_moving_coord(i, dt) + 0.001*tol;
+AABB::AABB(double t, CD_HSE* h, double Dt)
+    : tol{t}, hse{h}, abType{MotionState::MOVING},
+    dt{Dt}, lowerbound(3), upperbound(3)
+{   
+    for (int i = 0; i < 3; i++)
+    {
+         lowerbound[i] = h->min_moving_coord(i, dt) - tol;
+         upperbound[i] = h->max_moving_coord(i, dt) + tol;
     }
     for (int i = 0; i < h->num_pts(); i++) 
          indices.push_back(h->Point_of_hse(i)->global_index);
 }
 
-AABB::AABB(const CPoint& pl, const CPoint& pu) : lowerbound(pl), upperbound(pu) {
-}
+AABB::AABB(const CPoint& pl, const CPoint& pu)
+    : lowerbound(pl), upperbound(pu)
+{}
 
 AABB AABB::merge(const AABB& ab) const {
     CPoint pl(3), pu(3);
@@ -46,10 +49,19 @@ double AABB::volume() {
 
 //This is the intersection test for AABB's.
 //Not a collision or geometric primitive check.
-bool AABB::isCollid(const AABB& ab) {
+bool AABB::isCollid(const AABB& ab)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        if (ab.upperbound[i] < lowerbound[i]) return false;
+        if (ab.lowerbound[i] > upperbound[i]) return false;
+    }
+    return true;
+    /*
     return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
            (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
            (lowerbound[2] <= ab.upperbound[2] && upperbound[2] >= ab.lowerbound[2]); 
+    */
 }
 
 void AABB::updateAABBInfo(double dt) {
@@ -65,8 +77,8 @@ void AABB::updateAABBInfo(double dt) {
     {
         for (int i = 0; i < 3; i++)
         {
-             lowerbound[i] = hse->min_moving_coord(i, dt) - 0.001*tol;
-             upperbound[i] = hse->max_moving_coord(i, dt) + 0.001*tol;
+             lowerbound[i] = hse->min_moving_coord(i, dt) - tol;
+             upperbound[i] = hse->max_moving_coord(i, dt) + tol;
         }
     }
 }

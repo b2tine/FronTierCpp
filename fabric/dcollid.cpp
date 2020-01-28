@@ -19,16 +19,17 @@ inline POINT*& tail(POINT*);
 /*******************end of declaration*******************/
 
 //define default parameters for collision detection
-double CollisionSolver3d::s_eps = EPS;
 double CollisionSolver3d::s_dt = DT;
-bool CollisionSolver3d::s_detImpZone = false;
 double CollisionSolver3d::s_cr = 1.0;
+bool CollisionSolver3d::s_detImpZone = false;
 
+double CollisionSolver3d::s_eps = EPS;
 double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_k = 5000;
 double CollisionSolver3d::s_m = 0.001;
 double CollisionSolver3d::s_mu = 0.5;
 
+double CollisionSolver3d::l_eps = 10.0*EPS;
 double CollisionSolver3d::l_thickness = 0.005;
 double CollisionSolver3d::l_k = 50000;
 double CollisionSolver3d::l_m = 0.002;
@@ -60,8 +61,11 @@ void CollisionSolver3d::clearHseList()
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
-void CollisionSolver3d::setRoundingTolerance(double neweps){s_eps = neweps;}
-double CollisionSolver3d::getRoundingTolerance(){return s_eps;}
+void CollisionSolver3d::setFabricRoundingTolerance(double neweps){s_eps = neweps;}
+double CollisionSolver3d::getFabricRoundingTolerance(){return s_eps;}
+
+void CollisionSolver3d::setStringRoundingTolerance(double neweps){l_eps = neweps;}
+double CollisionSolver3d::getStringRoundingTolerance(){return l_eps;}
 
 
 //set restitution coefficient between rigid bodies
@@ -118,7 +122,7 @@ void CollisionSolver3d::recordOriginalPosition()
             
                 if (std::isnan(sl->x_old[j]))
                 {
-                    std::cout<<"nan_x_old"<<std::endl;
+                    std::cout << "nan_x_old" << std::endl;
                     clean_up(ERROR);
                 }
             }
@@ -135,6 +139,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 	}
 }
 
+//TODO: fix this
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFabricFrictionConstant();
@@ -288,7 +293,7 @@ void CollisionSolver3d::computeImpactZone()
 {
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
-    const double h = CollisionSolver3d::getRoundingTolerance();
+    const double h = CollisionSolver3d::getFabricRoundingTolerance();
 
 	int niter = 0;
     int numZones = 0;
@@ -388,16 +393,16 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
-	if (debugging("collision"))
-	    printDebugVariable();
+	//if (debugging("collision"))
+	  //  printDebugVariable();
 
 	//check linear trajectories for collisions
 	start_clock("detectCollision");
 	detectCollision();
 	stop_clock("detectCollision");
 
-	if (debugging("collision"))
-	    printDebugVariable();
+	//if (debugging("collision"))
+	  //  printDebugVariable();
 	
 	//start_clock("detectDomainBoundaryCollision");
 	//detectDomainBoundaryCollision();
@@ -431,8 +436,8 @@ void CollisionSolver3d::aabbProximity()
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
             double tol = CollisionSolver3d::getFabricThickness();
-             AABB* ab = new AABB(tol,*it,abt_proximity->getType());
-             abt_proximity->addAABB(ab);
+            AABB* ab = new AABB(tol,*it);
+            abt_proximity->addAABB(ab);
         }
         abt_proximity->updatePointMap(hseList);
         volume = abt_proximity->getVolume();
@@ -478,8 +483,8 @@ void CollisionSolver3d::aabbCollision()
 
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
-            double tol = CollisionSolver3d::getFabricThickness();
-            AABB* ab = new AABB(tol,*it,abt_collision->getType(), s_dt);
+            double tol = CollisionSolver3d::getFabricRoundingTolerance();
+            AABB* ab = new AABB(tol,*it,s_dt);
             abt_collision->addAABB(ab);
         }
         abt_collision->updatePointMap(hseList);
@@ -504,7 +509,7 @@ void CollisionSolver3d::detectCollision()
 	std::cout<<"Starting collision handling: "<<std::endl;
 	
 	const int MAX_ITER = 12;
-    const double h = CollisionSolver3d::getRoundingTolerance();
+    const double h = CollisionSolver3d::getFabricRoundingTolerance();
 	
     bool is_collision = true; 
 	setHasCollision(false);
@@ -523,9 +528,12 @@ void CollisionSolver3d::detectCollision()
 
         is_collision = abt_collision->getCollsnState();
 
-	    //if (debugging("collision"))
-            std::cout<<"    #"<<niter << ": " << abt_collision->getCount() 
+	    if (debugging("collision"))
+        {
+            std::cout << "    #" << niter << ": "
+                << abt_collision->getCount() 
                 << " pair of collision tris" << std::endl;
+        }
 	    
 	    //updateAverageVelocity();
         
@@ -558,17 +566,20 @@ extern void createImpZone(POINT* pts[], int num, bool first){
 
 void CollisionSolver3d::reduceSuperelast()
 {
-	bool has_superelas = true;
 	int niter = 0;
     int num_edges;
 	const int max_iter = 3;
-	while(has_superelas && niter++ < max_iter)
+
+	bool has_superelas = true;
+    while(has_superelas && niter++ < max_iter)
     {
 	    has_superelas = reduceSuperelastOnce(num_edges);
 	}
 
-	if (debugging("collision"))
-        printf("    %d edges are over strain limit after %d iterations\n",num_edges,niter);
+	if (debugging("strain_limiting"))
+    {
+        printf("   %d edges are over strain limit\n",num_edges);
+    }
 }
 
 //TODO: Implement this correctly.
@@ -592,11 +603,14 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
         {
             POINT* p[2];
             STATE* sl[2];
+
             p[0] = hse->Point_of_hse(j%np);	
             p[1] = hse->Point_of_hse((j+1)%np);
+
             sl[0]= (STATE*)left_state(p[0]);
             sl[1]= (STATE*)left_state(p[1]);
 
+            /*
             double x_cand[2][3];    
             for (int k = 0; k < 2; ++k)
             {
@@ -604,44 +618,75 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
                 scalarMult(dt,sl[k]->avgVel,tmp);
                 addVec(sl[k]->x_old,tmp,x_cand[k]);
             }
+
+            //double len_new = distance_between_positions(x_cand[0],x_cand[1],3);
+            */
             
-            double len_new = distance_between_positions(x_cand[0],x_cand[1],3);
-		    double len_old = distance_between_positions(sl[0]->x_old,sl[1]->x_old,3);
-		    double len0;
+            double edge_vec[3];
+            minusVec(sl[1]->x_old,sl[0]->x_old,edge_vec);
+            
+            //double v_rel[3];
+	        //minusVec(sl[0]->avgVel,sl[1]->avgVel,v_rel);
+		    
+            double len_old = Mag3d(edge_vec);
+            //double len_old = distance_between_positions(sl[1]->x_old,sl[0]->x_old,3);
 		
+            double k;
+		    double len0;
+
             if (CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(hse))
+            {
+                k = getFabricSpringConstant();
                 len0 = cd_tri->m_tri->side_length0[j];
+            }
             else if (CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(hse))
+            {
+                k = getStringSpringConstant();
                 len0 = cd_bond->m_bond->length0;
+            }
             else
             {
-                std::cout<<"Unknown type"<<std::endl;
+                std::cout << "Unknown type" << std::endl;
                 clean_up(ERROR);
             }
             
-            double vec[3], v_rel[3];
-            minusVec(sl[0]->x_old,sl[1]->x_old,vec);
-	        minusVec(sl[0]->avgVel,sl[1]->avgVel,v_rel);
-            
-            if (len_old > ROUND_EPS && len_new > ROUND_EPS)
+            //if (len_old > ROUND_EPS && len_new > ROUND_EPS)
+            if (len_old > ROUND_EPS)
             {
-                scalarMult(1/len_old,vec,vec); //normalize
-                double strain_rate = (len_new-len_old)/len_old;
-                double strain = (len_new-len0)/len0;
+                scalarMult(1/len_old,edge_vec,edge_vec); //normalize
+                double strain = (len_old-len0)/len0;
+                //double strain_rate = (len_new-len_old)/len_old;
                 
-                if (fabs(strain) > superelasTol || fabs(strain_rate) > superelasTol)
+                //if (fabs(strain) > superelasTol || fabs(strain_rate) > superelasTol)
+                if (fabs(strain) > superelasTol)
                 {
-                    double v_tmp[3];
-                    addVec(sl[0]->avgVel,sl[1]->avgVel,v_tmp);
-                    scalarMult(0.5,v_tmp,v_tmp);
-                    memcpy((void*)sl[0]->avgVel,(void*)v_tmp,3*sizeof(double)); 
-                    memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
-                    num_edges++;
+                    double correction = (fabs(strain)-superelasTol)*len0;
+                    double impulse = k*correction*dt;
+
+                    double sign = -1.0;
+                    if (strain < 0.0)
+                        sign = 1.0;
+
+                    //double v_tmp1[3]; double v_tmp2[3];
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        sl[0]->avgVel[k] += sign*impulse*edge_vec[k];
+                        sl[1]->avgVel[k] += -sign*impulse*edge_vec[k];
+                        //v_tmp1[i] = sign*impulse*edge_vec[i];
+                        //v_tmp2[i] = -sign*impulse*edge_vec[i];
+                    }
+                    //memcpy((void*)sl[0]->avgVel,(void*)v_tmp1,3*sizeof(double)); 
+                    //memcpy((void*)sl[1]->avgVel,(void*)v_tmp2,3*sizeof(double));
+                    
                     has_superelas = true;
+                    num_edges++;
                 }
             }
             else
             {
+                printf("ERROR: len_old < ROUND_EPS\n");
+                clean_up(ERROR);
+                /*
                 printf("Warning: len0 = %e, len_new = %e, len_old = %e\n",
                         len0,len_new,len_old);
                 printf("p0 = %p, p1 = %p\n",(void*)p[0],(void*)p[1]);
@@ -657,6 +702,7 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
                 memcpy((void*)sl[1]->avgVel,(void*)v_tmp,3*sizeof(double));
                 num_edges++;
                 has_superelas = true;
+                */
             }	
 	    
         }

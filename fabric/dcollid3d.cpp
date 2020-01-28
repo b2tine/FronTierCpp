@@ -22,42 +22,55 @@ static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,
 static bool isCoplanar(POINT**,double,double*);
 static void unsort_surface_point(SURFACE *surf);
 
-//functions in CollisionSolver3d
+//NOTE: This must be called before spring interior dynamics computed
 void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc,const double dt)
+	const INTERFACE* intfc, const double dt)
 {
-	//assemble tris list from input intfc
-	//this function should be called before
-	//spring interior dynamics computed
+	setTimeStepSize(dt);
+	clearHseList();
+
 	SURFACE** s;
 	CURVE** c;
 	TRI *tri;
 	BOND *b;
-	int n_tri = 0, n_bond = 0;
-	setTimeStepSize(dt);
-	clearHseList();
+
+	int n_tri = 0;
+    int n_bond = 0;
 	
+    //TODO: Collect each CD_HSE_TYPE in seperate hseLists?
+    
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
 	    unsort_surface_point(*s);
-	    surf_tri_loop(*s,tri)
+	    
+        surf_tri_loop(*s,tri)
 	    {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
-                    wave_type(*s) == NEUMANN_BOUNDARY)
-	            hseList.push_back(new CD_TRI(tri, "tris_rigid"));
-                else 
-                    hseList.push_back(new CD_TRI(tri, "tris"));
-		n_tri++;
+            CD_HSE_TYPE tag;
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
+                wave_type(*s) == NEUMANN_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::RIGID_TRI;
+            }
+            else 
+            {
+                tag = CD_HSE_TYPE::FABRIC_TRI;
+            }
+            
+            hseList.push_back(new CD_TRI(tri,tag));
+		    n_tri++;
 	    }
 	}
 
 	intfc_curve_loop(intfc,c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+	    if (hsbdry_type(*c) != STRING_HSBDRY)
+            continue; 
+
+        CD_HSE_TYPE tag = CD_HSE_TYPE::FABRIC_BOND;
 	    curve_bond_loop(*c,b)
 	    {
-            hseList.push_back(new CD_BOND(b,m_dim, "lines"));
+            hseList.push_back(new CD_BOND(b,tag));
 		    n_bond++;
 	    }
 	}
