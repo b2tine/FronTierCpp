@@ -387,7 +387,7 @@ static bool MovingPointToTri(POINT* pts[],const double h)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
-                    STATE* sl (STATE*)left_state(pts[j]);
+                    STATE* sl = (STATE*)left_state(pts[j]);
                     if (sl->collsn_num > 0)
                         sl->has_collsn = true;
                 }
@@ -438,7 +438,7 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
                 
             for (int j = 0; j < 4; ++j)
             {
-                sl = (STATE*)left_state(pts[j]);
+                STATE* sl = (STATE*)left_state(pts[j]);
                 for (int k = 0; k < 3; ++k)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
             }
