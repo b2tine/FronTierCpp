@@ -328,6 +328,12 @@ void setMotionParams(Front* front)
             fscanf(infile,"%lf",&af_params->mu_s);
             (void) printf("%f\n",af_params->mu_s);
 
+            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_thickness);
+                (void) printf("%f\n",af_params->fabric_thickness);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -357,6 +363,12 @@ void setMotionParams(Front* front)
             fscanf(infile,"%lf",&af_params->mu_l);
             (void) printf("%f\n",af_params->mu_l);
             
+            if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_thickness);
+                (void) printf("%f\n",af_params->string_thickness);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter string total mass:");

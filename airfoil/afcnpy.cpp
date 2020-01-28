@@ -1969,16 +1969,21 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
             collision_solver->recordOriginalPosition();
             
-            collision_solver->setFrictionConstant(0.5);
-            
-            collision_solver->setSpringConstant(af_params->ks); 
-            collision_solver->setPointMass(af_params->m_s);
-
-            collision_solver->setFabricThickness(1.0e-3);
-
             collision_solver->setRestitutionCoef(1.0);
-                
             collision_solver->setVolumeDiff(0.0);
+
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
+
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
+
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
         }
     }
 
@@ -2046,11 +2051,12 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	if(!debugging("collision_off"))
     {
         if (myid == owner_id)
-            {
-                if (FT_Dimension() == 3)
-                    collision_solver->resolveCollision();
-            }
+        {
+            if (FT_Dimension() == 3)
+                collision_solver->resolveCollision();
+        }
         setSpecialNodeForce(fr,geom_set.kl);
+	    //compute_center_of_mass_velo(&geom_set);
 
         delete collision_solver;
     }

@@ -116,7 +116,7 @@ typedef struct {
 					   id, for users' convenience */
     
     //for Collision Handling
-    double string_thickness {0.01};
+    double string_thickness {0.005};
     double fabric_thickness {0.001};
 
     double vol_diff {0.0};
