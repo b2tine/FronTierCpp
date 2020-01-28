@@ -260,16 +260,6 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd, double h)
 	POINT* pts[4];
 	bool status = false;
 
-	/* do not consider bond point that is a tri vertex */
-    /*
-	for (int i = 0; i < 3; ++i)
-	{
-	    if (Point_of_tri(tri)[i] == bd->start
-            || Point_of_tri(tri)[i] == bd->end)
-            return false;
-	}
-    */
-
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
@@ -317,18 +307,6 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2, double h)
 	pts[2] = b2->start;
 	pts[3] = b2->end;
 
-	/* do not consider two bonds that share a common point */
-    /*
-	for (int i = 0; i < 4; ++i)
-	{
-	    for (int j = i + 1; j < 4; ++j)
-	    {
-            if (pts[i] == pts[j])
-                return false;
-	    }
-	}
-    */
-
     /* detect collision between two bonds */	
     if(MovingEdgeToEdge(pts,h))
         status = true;
@@ -345,15 +323,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	POINT* pts[4];
 	bool status = false;
 
-    /*
-	for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
-	{
-	    if (Point_of_tri(a)[i] == Point_of_tri(b)[j])
-		return false;
-	}
-    */
-
 	//detect point to tri collision
 	for (int k = 0; k < 2; ++k)
 	for (int i = 0; i < 3; ++i)
@@ -363,13 +332,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
 	    for (int j = 0; j < 3; ++j)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
-
-	    //Don't consider point against the triangle it belongs to
-        /*
-	    if (pts[3] == pts[0] || pts[3] == pts[1]
-                || pts[3] == pts[2])
-            continue; 
-        */
 
         if(MovingPointToTri(pts,h))
             status = true;
@@ -388,13 +350,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b, double h)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-		    //Don't consider edges with a shared enpoint
-            /*
-            if (pts[0] == pts[2] || pts[0] == pts[3]
-            || pts[1] == pts[2] || pts[1] == pts[3])
-                continue;
-            */
-
             if(MovingEdgeToEdge(pts,h))
                 status = true;
                 
@@ -640,7 +595,6 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	    return false;
 }
 
-//NOTE: this function restores coords of points to x_old
 bool TriToBond(const TRI* tri,const BOND* bd, double h)
 {
 	POINT* pts[4];
@@ -648,44 +602,16 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
 	bool status = false;
     MotionState mstate = MotionState::STATIC;
 
-	/* do not consider bond point that is a tri vertex */
-	for (int i = 0; i < 3; ++i)
-	{
-	    if (Point_of_tri(tri)[i] == bd->start ||
-		Point_of_tri(tri)[i] == bd->end)
-            return false;
-	}
-
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
-	/* make sure the coords are old coords */
-    /*
-	for (int i = 0; i < 3; ++i)
-	{
-	    sl = (STATE*)left_state(pts[i]);
-	    for (int j = 0; j < 3; ++j)
-            Coords(pts[i])[j] = sl->x_old[j];
-	}
-    */
-
 	/* detect proximity of start point of bond w.r.t. tri */
 	pts[3] = bd->start;
-    /*
-	sl = (STATE*)left_state(pts[3]);
-	for (int j = 0; j < 3; ++j)
-	    Coords(pts[3])[j] = sl->x_old[j];
-    */
 	if (PointToTri(pts,h))
         status = true;
 
 	/* detect proximity of end point of bond w.r.t. tri */
 	pts[3] = bd->end;
-    /*
-	sl = (STATE*)left_state(pts[3]);
-	for (int j = 0; j < 3; ++j)
-	    Coords(pts[3])[j] = sl->x_old[j];
-	*/
     if (PointToTri(pts,h))
         status = true;
 	
@@ -703,7 +629,6 @@ bool TriToBond(const TRI* tri,const BOND* bd, double h)
 	return status;
 }
 
-//NOTE: this function restores coords of points to x_old
 bool BondToBond(const BOND* b1, const BOND* b2, double h)
 {
 	POINT* pts[4];
@@ -716,26 +641,6 @@ bool BondToBond(const BOND* b1, const BOND* b2, double h)
 	pts[2] = b2->start;
 	pts[3] = b2->end;
 
-	/* do not consider two bonds that share a common point */
-	for (int i = 0; i < 4; ++i)
-	{
-	    for (int j = i + 1; j < 4; ++j)
-	    {
-		if (pts[i] == pts[j])
-		    return false;
-	    }
-	}
-
-	/* make sure the coords are old coords */
-    /*
-	for (int i = 0; i < 4; ++i)
-	{
-	    sl = (STATE*)left_state(pts[i]);
-	    for (int j = 0; j < 3; ++j)
-		Coords(pts[i])[j] = sl->x_old[j];
-	}
-    */
-
 	/* detect proximity between two bonds */
 	if (EdgeToEdge(pts,h))
 		status = true;
@@ -743,33 +648,12 @@ bool BondToBond(const BOND* b1, const BOND* b2, double h)
 	return status;
 }
 
-//NOTE: this function restores coords of points to x_old
 bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 {
 	POINT* pts[4];
 	STATE* sl[2];
 	bool status = false;
     MotionState mstate = MotionState::STATIC;
-
-	for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
-	{
-	    if (Point_of_tri(tri1)[i] == Point_of_tri(tri2)[j])
-		return false;
-	}
-
-	//make sure the coords are old coords;
-    /*
-	for (int i = 0; i < 3; ++i){
-	    pts[0] = Point_of_tri(tri1)[i];
-	    sl[0] = (STATE*)left_state(pts[0]);
-	    pts[1] = Point_of_tri(tri2)[i];
-	    sl[1] = (STATE*)left_state(pts[1]);
-	    for (int j = 0; j < 2; ++j)
-	    for (int k = 0; k < 3; ++k)
-	        Coords(pts[j])[k] = sl[j]->x_old[k];
-	}
-    */
 
 	for (int k = 0; k < 2; ++k)
 	for (int i = 0; i < 3; ++i)
@@ -780,10 +664,6 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 		pts[j] = Point_of_tri(tmp_tri2)[j];
 	    pts[3] = Point_of_tri(tmp_tri1)[i];
 	
-	    //Don't consider a point against the triangle that contains it
-        if (pts[3] == pts[0] || pts[3] == pts[1]
-                || pts[3] == pts[2]) continue;
-
 	    if (PointToTri(pts,h))
             status = true;
 	}
@@ -796,11 +676,6 @@ bool TriToTri(const TRI* tri1, const TRI* tri2, double h)
 		pts[2] = Point_of_tri(tri2)[j];
 		pts[3] = Point_of_tri(tri2)[(j+1)%3];
 		
-		//Don't check edges that share an endpoint
-        if (pts[0] == pts[2] || pts[0] == pts[3] ||
-            pts[1] == pts[2] || pts[1] == pts[3])
-            continue;
-
 	  	if (EdgeToEdge(pts,h))
             status = true;
 	    }  
@@ -968,6 +843,8 @@ static bool EdgeToEdge(
     dist = Mag3d(vec);
     if (dist > h)
         return false;
+
+    scalarMult(1.0/dist,vec,vec);
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (!is_detImpZone)

@@ -383,6 +383,7 @@ extern void SMM_InitSpringMassParams()
         if (af_params->use_total_mass)
             convert_to_point_mass(front,af_params);
 
+    /*
 	if (af_params->is_parachute_system == NO)
 	{
 	    if (af_params->m_s == 0)
@@ -390,6 +391,7 @@ extern void SMM_InitSpringMassParams()
 	    if (af_params->m_l == 0)
 		af_params->m_l = af_params->m_s;
 	}
+    */
 
         if (dim == 3)
         {
@@ -470,111 +472,108 @@ extern void SMM_Driver()
 
 extern void SMM_TestDriver()
 {
-        Front *front = SMM_GetFront();
-        F_BASIC_DATA *f_basic = SMM_GetBasicData();
+    Front *front = SMM_GetFront();
+    F_BASIC_DATA *f_basic = SMM_GetBasicData();
 	FILE *infile = fopen(InName(front),"r");
-        double CFL;
-        int  dim = front->rect_grid->dim;
+    double CFL;
+    int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        if (CursorAfterStringOpt(infile,"Turn off test run"))
-            return;
+    if (CursorAfterStringOpt(infile,"Turn off test run"))
+        return;
 
-        CFL = Time_step_factor(front);
+    CFL = Time_step_factor(front);
 
-	    SMM_Save();
-        SMM_Plot();
+    SMM_Save();
+    SMM_Plot();
 
-        if (!f_basic->RestartRun)
-        {
-	    FT_Propagate(front);
-            FT_RelinkGlobalIndex(front);
-	    FT_InteriorPropagate(front);
+    if (!f_basic->RestartRun)
+    {
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+        FT_InteriorPropagate(front);
 
-            FT_SetOutputCounter(front);
-	    FT_SetTimeStep(front);
+        FT_SetOutputCounter(front);
+        FT_SetTimeStep(front);
+    }
+    else
+    {
+        setSpecialNodeForce(front,af_params->kl);
+        FT_SetOutputCounter(front);
+    }
 
-            FT_TimeControlFilter(front);
-        }
-        else
-        {
-            setSpecialNodeForce(front,af_params->kl);
-            FT_SetOutputCounter(front);
-	    FT_TimeControlFilter(front);
-        }
-        FT_PrintTimeStamp(front);
+    FT_TimeControlFilter(front);
+    FT_PrintTimeStamp(front);
 	
-        // For restart debugging 
+    // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    SMM_Save();
 	    return;
 	}
     
-        for (;;)
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
+        reset_clock();
+        start_clock("timeStep");
+
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+        FT_InteriorPropagate(front);
+
+        if (debugging("trace"))
         {
-            /* Propagating interface for time step dt */
-            if(debugging("CLOCK"))
-                reset_clock();
-
-	    start_clock("timeStep");
-
-            FrontPreAdvance(front);
-            FT_Propagate(front);
-            FT_RelinkGlobalIndex(front);
-            FT_InteriorPropagate(front);
-
-            if (debugging("trace"))
-            {
-                (void) printf("After solve()\n");
-                (void) print_storage("at end of time step","trace");
-            }
-
-            // TMP
+            (void) printf("After Front Propagation\n");
             (void) print_storage("at end of time step","trace");
-
-	    FT_AddTimeStepToCounter(front);
-
-	    //Next time step determined by maximum speed of previous
-	    //step, assuming the propagation is hyperbolic and
-	    //is not dependent on second order derivatives of
-	    //the interface such as curvature, and etc.
-
-	    FT_SetTimeStep(front);
-            if (debugging("step_size"))
-            {
-                (void) printf("Time step from FrontHypTimeStep(): %f\n",
-                                    front->dt);
-            }
-            
-	    /* Output section */
-
-            if (FT_IsSaveTime(front))
-                SMM_Save();
-        
-            if (FT_IsDrawTime(front))
-                SMM_Plot();
-
-            if (FT_TimeLimitReached(front))
-	    {
-                FT_PrintTimeStamp(front);
-                if (!FT_IsSaveTime(front))
-                    SMM_Save();
-                if (!FT_IsDrawTime(front))
-                    SMM_Plot();
-	    	stop_clock("timeStep");
-                break;
-	    }
-
-	    /* Time and step control section */
-
-	    FT_TimeControlFilter(front);
-	    print_storage("after time loop","trace");
-
-	    FT_PrintTimeStamp(front);
-            fflush(stdout);
-	    stop_clock("timeStep");
         }
+
+        /* Time and step control section */
+
+        FT_AddTimeStepToCounter(front);
+
+        //Next time step determined by maximum speed of previous
+        //step, assuming the propagation is hyperbolic and
+        //is not dependent on second order derivatives of
+        //the interface such as curvature, and etc.
+
+        FT_SetTimeStep(front);
+        
+        if (debugging("step_size"))
+        {
+            (void) printf("Time step from FrontHypTimeStep(): %f\n",
+                                front->dt);
+        }
+            
+        FT_TimeControlFilter(front);
+        FT_PrintTimeStamp(front);
+    
+        /* Output section */
+
+        if (FT_IsSaveTime(front))
+            SMM_Save();
+    
+        if (FT_IsDrawTime(front))
+            SMM_Plot();
+
+        if (FT_TimeLimitReached(front))
+        {
+            FT_PrintTimeStamp(front);
+            if (!FT_IsSaveTime(front))
+                SMM_Save();
+            if (!FT_IsDrawTime(front))
+                SMM_Plot();
+            stop_clock("timeStep");
+            break;
+        }
+
+        print_storage("after time loop","trace");
+        
+        fflush(stdout);
+        stop_clock("timeStep");
+    }
     
         FT_FreeMainIntfc(front);
 }       /* end fabric_driver */

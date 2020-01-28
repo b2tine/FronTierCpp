@@ -110,9 +110,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: these "first" initialization procedures
-    //      should be seperate function called before
-    //      any propagation functions are called
 	if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
@@ -146,9 +143,10 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-                elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                                ELASTIC_BOUNDARY);
-                collectNodeExtra(fr,elastic_intfc,owner_id);
+            elastic_intfc =
+                FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            
+            collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
             elastic_intfc = fr->interf;
@@ -258,7 +256,9 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 collision_solver->gtris = fr->gtris;
             }
 
-            get_point_set_from(&geom_set,point_set);
+        //write to GLOBAL_POINT** point_set
+        get_point_set_from(&geom_set,point_set);
+
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
@@ -295,25 +295,27 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    stop_clock("spring_model");
 
 	    for (i = 0; i < pp_numnodes(); i++)
-            {
-                if (i == myid) continue;
-                copy_to_client_point_set(point_set,
-                            client_point_set_store[i], client_size_new[i]);
-                pp_send(3,client_point_set_store[i],
-                            client_size_new[i]*sizeof(GLOBAL_POINT),i);
-            }
+        {
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                        client_point_set_store[i], client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                        client_size_new[i]*sizeof(GLOBAL_POINT),i);
+        }
 	}
 
-        if (myid != owner_id)
-        {
-            pp_recv(3,owner_id,point_set_store,
-            client_size*sizeof(GLOBAL_POINT));
-        }
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,
+        client_size*sizeof(GLOBAL_POINT));
+    }
 
 	/* Owner send and patch point_set_store from other processors */	
-	put_point_set_to(&geom_set,point_set);
-	/* Calculate the real force on load_node and rg_string_node */
-	setSpecialNodeForce(fr, geom_set.kl);
+	//  write from point_set to geom_set
+    put_point_set_to(&geom_set,point_set);
+	
+    /* Calculate the real force on load_node and rg_string_node */
+	setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
@@ -326,7 +328,9 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             if (FT_Dimension() == 3)
                 collision_solver->resolveCollision();
         }
-        setSpecialNodeForce(fr, geom_set.kl);
+        
+        setSpecialNodeForce(fr,geom_set.kl);
+	    //compute_center_of_mass_velo(&geom_set);
 
         delete collision_solver;
     }
@@ -368,8 +372,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY and ELASTIC_STRING tags
-    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)
@@ -389,10 +391,9 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     {
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
-        AF_NODE_EXTRA* extra;
-
-        if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
-                (extra->af_node_type == PRESET_NODE))
+        
+        AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
+        if (extra && extra->af_node_type == PRESET_NODE)
         {
             sl->is_fixed = true;
         }
