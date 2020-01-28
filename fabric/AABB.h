@@ -102,7 +102,7 @@ public:
     bool isCollsn;
     
     // query all collid pairs
-    void query(double tol);
+    void query();
 
     // insert a node into the subtree with parent 
     // as the root
@@ -134,14 +134,14 @@ public:
 
 private:
 
-    bool queryProximity(Node* n,double tol);
-    bool queryCollision(Node* n,double tol);
+    bool queryProximity(Node* n);
+    bool queryCollision(Node* n);
 };
 
 
 //dcollid.cpp
-bool getProximity(const CD_HSE*,const CD_HSE*,double);
-bool getCollision(const CD_HSE*,const CD_HSE*,double);
+bool getProximity(const CD_HSE*,const CD_HSE*);
+bool getCollision(const CD_HSE*,const CD_HSE*);
 
 
 #endif

@@ -2,6 +2,7 @@
 #define COLLID_H
 
 #include "AABB.h"
+//#include "fabric_sv.h"
 
 #if defined(isnan)
 #undef isnan
@@ -11,7 +12,7 @@
 
 //TODO: How where these determined?
 const double ROUND_EPS = 1.0e-10;
-const double EPS = 1.0e-6;
+const double EPS = 1.0e-06;
 const double DT = 0.001;
 
 
@@ -39,8 +40,6 @@ public:
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
 	
-	static void setFabricRoundingTolerance(double);
-	static double getFabricRoundingTolerance();
     static void setFabricThickness(double);
 	static double getFabricThickness();
 	static void setFabricSpringConstant(double);
@@ -49,9 +48,9 @@ public:
 	static double getFabricFrictionConstant();
 	static void setFabricPointMass(double);
 	static double getFabricPointMass();
+	static void setFabricRoundingTolerance(double);
+	static double getFabricRoundingTolerance();
 
-	static void setStringRoundingTolerance(double);
-	static double getStringRoundingTolerance();
 	static void setStringThickness(double);
 	static double getStringThickness();
 	static void setStringSpringConstant(double);
@@ -60,6 +59,8 @@ public:
 	static double getStringFrictionConstant();
 	static void setStringPointMass(double);
 	static double getStringPointMass();
+	static void setStringRoundingTolerance(double);
+	static double getStringRoundingTolerance();
 
     double setVolumeDiff(double);
 
@@ -95,17 +96,17 @@ private:
     double volume;
     double vol_diff {0.0};
 
-	static double s_cr;
 	static double s_dt;
+	static double s_cr;
 
-	static double s_eps;
 	static double s_thickness; //fabric thickness
+	static double s_eps;
 	static double s_m;
 	static double s_k;
 	static double s_mu;
     
-	static double l_eps;
 	static double l_thickness; //string thickness
+	static double l_eps;
 	static double l_m;
 	static double l_k;
 	static double l_mu;
@@ -125,10 +126,12 @@ private:
 	void reduceSuperelast();
 	void updateFinalVelocity();
 	void updateAverageVelocity();
+	void updateExternalImpulse();
 	void computeImpactZone();
 	void updateImpactZoneVelocity(int&);
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();
+	void detectProximityEndStep();
 	void detectCollision();
     void aabbProximity();
     void aabbCollision();
@@ -139,12 +142,12 @@ private:
 };
 
 
-bool BondToBond(const BOND*,const BOND*,double);
-bool TriToBond(const TRI*,const BOND*,double);
-bool TriToTri(const TRI*,const TRI*,double);
-bool MovingBondToBond(const BOND*,const BOND*,double);
-bool MovingTriToBond(const TRI*,const BOND*,double);
-bool MovingTriToTri(const TRI*,const TRI*,double);
+bool BondToBond(const BOND*,const BOND*);
+bool TriToBond(const TRI*,const BOND*);
+bool TriToTri(const TRI*,const TRI*);
+bool MovingBondToBond(const BOND*,const BOND*);
+bool MovingTriToBond(const TRI*,const BOND*);
+bool MovingTriToTri(const TRI*,const TRI*);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);

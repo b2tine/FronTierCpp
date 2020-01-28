@@ -293,8 +293,6 @@ void CollisionSolver3d::computeImpactZone()
 {
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
-    const double h = CollisionSolver3d::getFabricRoundingTolerance();
-
 	int niter = 0;
     int numZones = 0;
 	bool is_collision = true;
@@ -310,7 +308,7 @@ void CollisionSolver3d::computeImpactZone()
 
         start_clock("dynamic_AABB_collision");
         aabbCollision();
-        abt_collision->query(h);
+        abt_collision->query();
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
@@ -319,9 +317,9 @@ void CollisionSolver3d::computeImpactZone()
         {
             std::cout << "    #"<<niter++ << ": "
                       << abt_collision->getCount() 
-                      << " pair of collision tris" << std::endl;
+                      << " collision pairs" << std::endl;
             std::cout << "     " << numZones
-                      << " zones of impact" << std::endl;
+                      << " impact zones" << std::endl;
         }
 
         updateImpactZoneVelocity(numZones);
@@ -356,8 +354,8 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 
 void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 {
-	int numZones = 0;
 	unsortHseList(hseList);
+	int numZones = 0;
     
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
@@ -436,6 +434,9 @@ void CollisionSolver3d::aabbProximity()
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
             double tol = CollisionSolver3d::getFabricThickness();
+            if ((*it)->type == CD_HSE_TYPE::FABRIC_BOND)
+                tol = CollisionSolver3d::getStringThickness();
+
             AABB* ab = new AABB(tol,*it);
             abt_proximity->addAABB(ab);
         }
@@ -457,17 +458,15 @@ void CollisionSolver3d::aabbProximity()
 
 void CollisionSolver3d::detectProximity()
 {
-    const double h = CollisionSolver3d::getFabricThickness();
-
     start_clock("dynamic_AABB_proximity");
     aabbProximity();
-    abt_proximity->query(h);
+    abt_proximity->query();
     stop_clock("dynamic_AABB_proximity");
 
 	if (debugging("proximity"))
     {
         std::cout << abt_proximity->getCount()
-            << " pair of proximity" << std::endl;
+            << " proximity pairs" << std::endl;
     }
 
 	updateAverageVelocity();
@@ -484,6 +483,9 @@ void CollisionSolver3d::aabbCollision()
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
             double tol = CollisionSolver3d::getFabricRoundingTolerance();
+            if ((*it)->type == CD_HSE_TYPE::FABRIC_BOND)
+                tol = CollisionSolver3d::getStringRoundingTolerance();
+
             AABB* ab = new AABB(tol,*it,s_dt);
             abt_collision->addAABB(ab);
         }
@@ -506,10 +508,9 @@ void CollisionSolver3d::aabbCollision()
 
 void CollisionSolver3d::detectCollision()
 {
-	std::cout<<"Starting collision handling: "<<std::endl;
+	std::cout << "Starting collision handling: " << std::endl;
 	
 	const int MAX_ITER = 12;
-    const double h = CollisionSolver3d::getFabricRoundingTolerance();
 	
     bool is_collision = true; 
 	setHasCollision(false);
@@ -523,7 +524,7 @@ void CollisionSolver3d::detectCollision()
 	    
         start_clock("dynamic_AABB_collision");
         aabbCollision();
-        abt_collision->query(h);
+        abt_collision->query();
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
@@ -532,7 +533,7 @@ void CollisionSolver3d::detectCollision()
         {
             std::cout << "    #" << niter << ": "
                 << abt_collision->getCount() 
-                << " pair of collision tris" << std::endl;
+                << " collision pairs" << std::endl;
         }
 	    
 	    //updateAverageVelocity();
@@ -754,8 +755,9 @@ void CollisionSolver3d::updateFinalVelocity()
             POINT* pt = (*it)->Point_of_hse(i);
             STATE* sl = (STATE*)left_state(pt);
 
-            if (!sl->has_collsn) 
-                continue;
+            //TODO: yes or no?
+            //if (!sl->has_collsn) 
+              //  continue;
             
             for (int j = 0; j < 3; ++j)
             {
@@ -931,7 +933,7 @@ void CollisionSolver3d::updateAverageVelocity()
     }
 }
 
-bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
+bool getCollision(const CD_HSE* a, const CD_HSE* b)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -943,28 +945,28 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
-	    return MovingTriToTri(t1,t2,tol);
+	    return MovingTriToTri(t1,t2);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
-	    return MovingBondToBond(b1,b2,tol);
+	    return MovingBondToBond(b1,b2);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,tol);
+	    return MovingTriToBond(t1,b1);
 	}
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1,tol);
+	    return MovingTriToBond(t1,b1);
 	}
 	else
 	{
@@ -975,7 +977,7 @@ bool getCollision(const CD_HSE* a, const CD_HSE* b, double tol)
 }
 
 //This is checking the geometric primitive for intersection
-bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
+bool getProximity(const CD_HSE* a, const CD_HSE* b)
 {
 	const CD_BOND *cd_b1, *cd_b2;
 	const CD_TRI  *cd_t1, *cd_t2;
@@ -987,28 +989,28 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b, double tol)
 	    TRI* t2 = cd_t2->m_tri;
 	    if ((t1->surf == t2->surf) && isRigidBody(a))
             return false;
-	    return TriToTri(t1,t2,tol);
+	    return TriToTri(t1,t2);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
 	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    BOND* b2 = cd_b2->m_bond;
-	    return BondToBond(b1,b2,tol);
+	    return BondToBond(b1,b2);
 	}
 	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
 		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,tol);
+	    return TriToBond(t1,b1);
 	}
 	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
                  (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
 	{
 	    BOND* b1 = cd_b1->m_bond;
 	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1,tol);
+	    return TriToBond(t1,b1);
 	}
 	else
 	{

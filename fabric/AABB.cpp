@@ -64,7 +64,8 @@ bool AABB::isCollid(const AABB& ab)
     */
 }
 
-void AABB::updateAABBInfo(double dt) {
+void AABB::updateAABBInfo(double dt)
+{
     if (abType == MotionState::STATIC)
     {
         for (int i = 0; i < 3; i++)
@@ -324,7 +325,7 @@ double AABBTree::treeHeight(Node* root) {
 
 // inorder traverse the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
-void AABBTree::query(double tol)
+void AABBTree::query()
 {
     Node* cur = root.get();
     std::stack<Node*> sn;
@@ -343,9 +344,9 @@ void AABBTree::query(double tol)
         if (cur->isLeaf())
         {
             if (type == MotionState::STATIC)
-                isProximity = queryProximity(cur,tol);
+                isProximity = queryProximity(cur);
             else
-                isCollsn = queryCollision(cur,tol);
+                isCollsn = queryCollision(cur);
             
             nodeSet.insert(cur);
         }
@@ -358,7 +359,7 @@ void AABBTree::query(double tol)
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-bool AABBTree::queryProximity(Node* n, double tol)
+bool AABBTree::queryProximity(Node* n)
 {
     std::stack<Node*> sn;
     Node* cur = root.get();
@@ -377,7 +378,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
                         CD_HSE* b = n->data->hse;
                         if (!adjacentHSE(a,b))
                         {
-                            if (getProximity(a,b,tol))
+                            if (getProximity(a,b))
                                 count++; 
                         }
                     }
@@ -405,7 +406,7 @@ bool AABBTree::queryProximity(Node* n, double tol)
     return count > 0;
 }
 
-bool AABBTree::queryCollision(Node* n, double tol)
+bool AABBTree::queryCollision(Node* n)
 {
     std::stack<Node*> sn;
     Node* cur = root.get();
@@ -424,7 +425,7 @@ bool AABBTree::queryCollision(Node* n, double tol)
                         CD_HSE* b = n->data->hse;
                         if (!adjacentHSE(a,b))
                         {
-                            if (getCollision(a,b,tol)) 
+                            if (getCollision(a,b)) 
                                 count++;
                         }
                     }
