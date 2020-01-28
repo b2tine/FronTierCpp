@@ -60,6 +60,7 @@ struct CD_BOND: public CD_HSE
 	int num_pts()const{return 2;}
 };
 
+/*
 //wrap class for point
 struct CD_POINT: public CD_HSE
 {
@@ -76,6 +77,7 @@ struct CD_POINT: public CD_HSE
 	POINT* Point_of_hse(int) const;
 	int num_pts()const {return 1;}
 };
+*/
 
 
 bool adjacentHSE(CD_HSE* A, CD_HSE* B);
