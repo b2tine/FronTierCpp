@@ -461,7 +461,7 @@ static bool MovingEdgeToEdge(POINT* pts[],const double h)
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
-        sl = (STATE*)left_state(pts[j]);
+        STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
 
