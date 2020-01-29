@@ -408,11 +408,8 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-    detectProximity();
-    //TODO: can cause interpenetration: need to update impulse for
-    //      use in spring solver only.
-	    //updateFinalPosition();
-
+    //detectProximity();
+    
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
 	    //reduceSuperelast();
@@ -501,7 +498,6 @@ void CollisionSolver3d::aabbCollision()
             build_count_col++;
             abt_collision->updateTreeStructure();
             volume = abt_collision->getVolume();
-            //std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
     }
 }
@@ -548,7 +544,8 @@ void CollisionSolver3d::detectCollision()
 
 //Note: num has default value of 4,
 //and first has default value of false
-extern void createImpZone(POINT* pts[], int num, bool first){
+extern void createImpZone(POINT* pts[], int num, bool first)
+{
 	for (int i = 0; i < num; ++i)
 	{
 	    for (int j = 0; j < i; ++j)
@@ -713,17 +710,16 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
 
 void CollisionSolver3d::updateFinalPosition()
 {
+	double dt = getTimeStepSize();
     unsortHseList(hseList);
 
-	double dt = getTimeStepSize();
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            
-            if (sorted(pt))
+            if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
             STATE* sl = (STATE*)left_state(pt);
@@ -750,6 +746,8 @@ void CollisionSolver3d::updateFinalVelocity()
     //avgVel is actually the velocity at t(n+1/2)
     //need to call spring solver to get velocity at t(n+1)
     //for simplicity now set v(n+1) = v(n+1/2)
+    
+    unsortHseList(hseList);
 	
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
@@ -757,11 +755,12 @@ void CollisionSolver3d::updateFinalVelocity()
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            
-            if (sorted(pt))
+            if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
             STATE* sl = (STATE*)left_state(pt);
+            if (!sl->has_collsn) //TODO: why is this needed?
+                continue;
 
             for (int j = 0; j < 3; ++j)
             {
