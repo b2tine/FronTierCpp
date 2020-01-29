@@ -763,10 +763,6 @@ void CollisionSolver3d::updateFinalVelocity()
 
             STATE* sl = (STATE*)left_state(pt);
 
-            //TODO: yes or no?
-            //if (!sl->has_collsn) 
-              //  continue;
-            
             for (int j = 0; j < 3; ++j)
             {
                 pt->vel[j] = sl->avgVel[j];

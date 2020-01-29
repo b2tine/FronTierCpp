@@ -1007,11 +1007,11 @@ static void EdgeToEdgeImpulse(
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
-        dt = root;
+        double collsn_dt = root;
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        else if (vn * dt < 0.1 * overlap)
-            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+        else if (vn * collsn_dt < 0.1 * overlap)
+            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,collsn_dt,m,k);
     }
     else
     {
@@ -1039,20 +1039,22 @@ static void EdgeToEdgeImpulse(
         if (fabs(m_impulse) > 0.0)
         {
             printf("\tEdgeToEdgeImpulse():\n");
-            printf("root = %e, dt = %e\n",root,dt);
+            printf("collsn_dt = %e, dt = %e\n",root,dt);
             printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
-            printf("impulse = %f, m_impulse = %f",impulse,m_impulse);
+            printf("impulse = %f, m_impulse = %f\n",impulse,m_impulse);
             printf("k = %f, m = %f, mu = %f\n",k,m,mu);
             printf("vn = %f, vt = %f\n",vn,vt);
             printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+            printf("nor = %f %g %f\n",nor[0],nor[1],nor[2]);
             printf("a = %f, b = %f\n",a,b);
             
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i)
             {
                 STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%f %f %f\n", sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+                printf("%f %f %f   Gindex(pts[%d]) = %lu\n",
+                        sl1->x_old[0],sl1->x_old[1],sl1->x_old[2],
+                        i,Gindex(pts[i]));
             }
             printf("x_new:\n");
             for (int i = 0; i < 4; ++i)
@@ -1127,10 +1129,11 @@ static void EdgeToEdgeImpulse(
     {
 	    for (int i = 0; i < 4; ++i)
         {
-            printf("pt[%d]: collsnImpulse = [%f %f %f],\
-                    friction = [%f %f %f]\n", i,sl[i]->collsnImpulse[0],
-                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
-                    sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
+            printf("pt[%d]:",i);
+            printf(" collsnImpulse = [%f %f %f]", sl[i]->collsnImpulse[0],
+                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2]);
+            printf(" friction = [%f %f %f]\n",sl[i]->friction[0],
+                    sl[i]->friction[1],sl[i]->friction[2]);
         }
         printf("\n");
     }
@@ -1387,11 +1390,11 @@ static void PointToTriImpulse(
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
-        dt = root;
+        double collsn_dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        else if (vn * dt < 0.1 * overlap)
-            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+        else if (vn * collsn_dt < 0.1 * overlap)
+            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,collsn_dt,m,k);
     }
     else
     {
@@ -1413,9 +1416,9 @@ static void PointToTriImpulse(
         if (fabs(m_impulse) > 0.0)
         {
             printf("\tPointToTriImpulse():\n");
-            printf("root = %e, dt = %e\n",root,dt);
+            printf("collsn_dt = %e, dt = %e\n",root,dt);
             printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
-            printf("impulse = %f, m_impulse = %f",impulse,m_impulse);
+            printf("impulse = %f, m_impulse = %f\n",impulse,m_impulse);
             printf("k = %f, m = %f, mu = %f\n",k,m,mu);
             printf("vn = %f, vt = %f\n",vn,vt);
             printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
@@ -1426,8 +1429,9 @@ static void PointToTriImpulse(
             for (int i = 0; i < 4; ++i)
             {
                 STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%f %f %f\n",
-                        sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+                printf("%f %f %f   Gindex(pts[%d]) = %lu\n",
+                        sl1->x_old[0],sl1->x_old[1],
+                        sl1->x_old[2],i,Gindex(pts[i]));
             }
             printf("x_new:\n");
             for (int i = 0; i < 4; ++i)
@@ -1502,10 +1506,11 @@ static void PointToTriImpulse(
     {
 	    for (int i = 0; i < 4; ++i)
         {
-            printf("pt[%d]: collsnImpulse = [%f %f %f],\
-                    friction = [%f %f %f]\n", i,sl[i]->collsnImpulse[0],
-                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
-                    sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
+            printf("pt[%d]:",i);
+            printf(" collsnImpulse = [%f %f %f]", sl[i]->collsnImpulse[0],
+                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2]);
+            printf(" friction = [%f %f %f]\n",sl[i]->friction[0],
+                    sl[i]->friction[1],sl[i]->friction[2]);
         }
         printf("\n");
     }
