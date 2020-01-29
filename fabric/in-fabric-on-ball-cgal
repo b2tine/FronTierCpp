@@ -43,7 +43,7 @@ Enter fabric damping constant: 0.02
 Enter fabric friction constant: 0.5
 Enter fabric point mass: 0.002
 Enter fabric thickness: 0.001
-Enter vol_diff coefficient: 0.0
+Enter fabric rounding tolerance: 0.000001
 
 Type yes to perturb the surface: n
 

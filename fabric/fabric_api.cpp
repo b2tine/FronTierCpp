@@ -286,21 +286,29 @@ extern void SMM_InitSpringMassParams()
     CursorAfterString(infile,"Start parameters for spring-mass system");
     printf("\n");
 
+    af_params->num_opt_round = 0;
+    if (CursorAfterStringOpt(infile,
+                "Enter the number of fabric optimization rounds: "))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+
     af_params->n_sub = 1;
 	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
-        {
-	    fscanf(infile,"%d",&af_params->n_sub);
-	    (void) printf("%d\n",af_params->n_sub);
-        }
+    {
+    fscanf(infile,"%d",&af_params->n_sub);
+    (void) printf("%d\n",af_params->n_sub);
+    }
 
-        af_params->use_total_mass = NO;
-        if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->use_total_mass = YES;
-        }
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
+    }
 
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
@@ -316,6 +324,18 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%lf",&af_params->mu_s);
             (void) printf("%f\n",af_params->mu_s);
 
+            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_thickness);
+                (void) printf("%f\n",af_params->fabric_thickness);
+            }
+    
+            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_eps);
+                (void) printf("%f\n",af_params->fabric_eps);
+            }
+    
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -336,9 +356,27 @@ extern void SMM_InitSpringMassParams()
         CursorAfterString(infile,"Enter string spring constant:");
         fscanf(infile,"%lf",&af_params->kl);
         (void) printf("%f\n",af_params->kl);
+        
         CursorAfterString(infile,"Enter string damping constant:");
         fscanf(infile,"%lf",&af_params->lambda_l);
         (void) printf("%f\n",af_params->lambda_l);
+        
+        CursorAfterString(infile,"Enter string friction constant:");
+        fscanf(infile,"%lf",&af_params->mu_l);
+        (void) printf("%f\n",af_params->mu_l);
+
+        if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_thickness);
+            (void) printf("%f\n",af_params->string_thickness);
+        }
+        
+        if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_eps);
+            (void) printf("%f\n",af_params->string_eps);
+        }
+    
         if (af_params->use_total_mass)
         {
             CursorAfterString(infile,"Enter string total mass:");
@@ -380,8 +418,8 @@ extern void SMM_InitSpringMassParams()
 	}
 
 
-        if (af_params->use_total_mass)
-            convert_to_point_mass(front,af_params);
+    if (af_params->use_total_mass)
+        convert_to_point_mass(front,af_params);
 
     /*
 	if (af_params->is_parachute_system == NO)
@@ -393,17 +431,18 @@ extern void SMM_InitSpringMassParams()
 	}
     */
 
-        if (dim == 3)
-        {
-	    printf("canopy points count (fabric+gore)  = %d, "
-		    "string points count = %d\n",
-	    countSurfPoints(front->interf), 
-	    countStringPoints(front->interf,af_params->is_parachute_system));
-	    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
-		    "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
-		    af_params->m_g);
-        }
+    if (dim == 3)
+    {
+    printf("canopy points count (fabric+gore)  = %d, "
+        "string points count = %d\n",
+    countSurfPoints(front->interf), 
+    countStringPoints(front->interf,af_params->is_parachute_system));
+    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
+        "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
+        af_params->m_g);
+    }
 
+    //TODO: what does this do?
 	af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
 	{
@@ -411,31 +450,13 @@ extern void SMM_InitSpringMassParams()
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
 
+    //TODO: move to init parachute module
     af_params->payload = af_params->m_s;// default
 	if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
-
-    //TODO: this can be start of an InitAABBParams function
-    if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
-    {
-        fscanf(infile,"%lf",&af_params->fabric_thickness);
-        (void) printf("%f\n",af_params->fabric_thickness);
-    }
-    
-    if (CursorAfterStringOpt(infile,"Enter string thickness:"))
-    {
-        fscanf(infile,"%lf",&af_params->string_thickness);
-        (void) printf("%f\n",af_params->string_thickness);
-    }
-    
-    if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))
-    {
-        fscanf(infile,"%lf",&af_params->vol_diff);
-        (void) printf("%f\n",af_params->vol_diff);
-    }
 
 	fclose(infile);
 }	/* end SMM_InitSpringMassParams */

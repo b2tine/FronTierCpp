@@ -1020,14 +1020,16 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b)
 	return false;
 }
 
-void CollisionSolver3d::printDebugVariable(){
+void CollisionSolver3d::printDebugVariable()
+{
 	std::cout << "Enter EdgeToEdge " << edg_to_edg 
 		  << " times"<< std::endl;
 	std::cout << "Enter PointToTri " << pt_to_tri 
 		  << " times"<< std::endl;
 	std::cout << "Enter isCoplanar " << is_coplanar
 		  << " times"<< std::endl;
-	moving_edg_to_edg = moving_pt_to_tri = is_coplanar = 0;
+	
+    moving_edg_to_edg = moving_pt_to_tri = is_coplanar = 0;
 	edg_to_edg = pt_to_tri = 0;
 }
 

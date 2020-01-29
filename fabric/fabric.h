@@ -130,8 +130,11 @@ struct AF_PARAMS
 					   id, for users' convenience */
     
     //for collision handling
-    double string_thickness {0.01};
+    double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
+    
+    double string_eps {1.0e-05};
+    double string_thickness {0.05};
 
     double vol_diff {0.0};              //for refitting AABBTree
 }; 

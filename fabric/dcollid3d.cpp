@@ -696,20 +696,17 @@ bool TriToBond(const TRI* tri,const BOND* bd)
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
-	/* detect proximity of start point of bond w.r.t. tri */
 	pts[3] = bd->start;
 	if (PointToTri(pts,tol))
         status = true;
 
-	/* detect proximity of end point of bond w.r.t. tri */
 	pts[3] = bd->end;
     if (PointToTri(pts,tol))
         status = true;
 	
-	/* detect proximity each edge of tri w.r.t. bond */
 	pts[2] = bd->start;
-	pts[3] = bd->end;
-	for (int i = 0; i < 3; ++i)
+    pts[3] = bd->end;
+    for (int i = 0; i < 3; ++i)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
@@ -750,7 +747,8 @@ bool TriToTri(const TRI* tri1, const TRI* tri2)
 	{
 	    const TRI* tmp_tri1 = (k == 0) ? tri1 : tri2;
 	    const TRI* tmp_tri2 = (k == 0) ? tri2 : tri1;
-	    for (int j = 0; j < 3; ++j)
+	    
+        for (int j = 0; j < 3; ++j)
             pts[j] = Point_of_tri(tmp_tri2)[j];
 	    pts[3] = Point_of_tri(tmp_tri1)[i];
 	
@@ -762,7 +760,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2)
 	{
 	    pts[0] = Point_of_tri(tri1)[i];
 	    pts[1] = Point_of_tri(tri1)[(i+1)%3];
-	    for (int j = 0; j < 3; ++j)
+        for (int j = 0; j < 3; ++j)
         {
             pts[2] = Point_of_tri(tri2)[j];
             pts[3] = Point_of_tri(tri2)[(j+1)%3];
@@ -771,6 +769,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2)
                 status = true;
 	    }  
 	}
+
 	return status;
 }
 
@@ -901,7 +900,7 @@ static bool EdgeToEdge(
         }
     }
 
-    //Compute the solution and obtain the closest pair of points.
+    //Compute the closest pair of points
     if (sN == sD)
         sC = 1.0;
     else
@@ -911,16 +910,6 @@ static bool EdgeToEdge(
         tC = 1.0;
     else
         tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
-    
-    
-    /*
-    if (std::isinf(sC) || std::isinf(tC))
-    {
-        LOC();
-        printf("sC or tC is inf\n");
-        clean_up(ERROR);
-    }
-    */
     
 	double x13[3];
     Pts2Vec(pts[0],pts[2],x13);
@@ -1266,7 +1255,6 @@ static bool PointToTri(
         //side as the point (not used right now, but may need at some
         //for detecting/correcting interpenetration etc.)
         dist = Dot3d(x34,tri_nor);
-        //dist = Dot3d(x34_old,tri_nor);
         if (dist < 0.0)
         {
             scalarMult(-1.0,tri_nor,tri_nor);

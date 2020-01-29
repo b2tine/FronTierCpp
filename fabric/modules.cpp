@@ -129,15 +129,6 @@ extern void initParachuteModules(Front *front)
             }
         }
 
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-    af_params->num_opt_round = 0;
-    if (CursorAfterStringOpt(infile,
-                "Enter the number of fabric optimization rounds: "))
-    {
-        fscanf(infile,"%d",&af_params->num_opt_round);
-        (void) printf("%d\n",af_params->num_opt_round);
-    }
-
 	fclose(infile);
 
 	if (num_canopy == 1 && !complex_set)
