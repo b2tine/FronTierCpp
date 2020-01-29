@@ -408,7 +408,7 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-    //detectProximity();
+    detectProximity();
     //TODO: can cause interpenetration: need to update impulse for
     //      use in spring solver only.
 	    //updateFinalPosition();
@@ -536,8 +536,6 @@ void CollisionSolver3d::detectCollision()
                 << " collision pairs" << std::endl;
         }
 	    
-	    //updateAverageVelocity();
-        
         if (++niter > MAX_ITER)
             break;
 	}
@@ -715,19 +713,23 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
 
 void CollisionSolver3d::updateFinalPosition()
 {
-	double dt = getTimeStepSize();
+    unsortHseList(hseList);
 
+	double dt = getTimeStepSize();
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            STATE* sl = (STATE*)left_state(pt);
+            
+            if (sorted(pt))
+                continue;
 
+            STATE* sl = (STATE*)left_state(pt);
             for (int j = 0; j < 3; ++j)
             {
-                double ncoord = sl->x_old[j]+sl->avgVel[j]*dt;
+                double ncoord = sl->x_old[j] + sl->avgVel[j]*dt;
                 if (std::isnan(ncoord))
                 {
                     printf("nan coords, x_old = %f, avgVel = %f\n",
@@ -737,6 +739,8 @@ void CollisionSolver3d::updateFinalPosition()
                 
                 Coords(pt)[j] = ncoord;
             }
+
+            sorted(pt) = YES;
         }
 	}
 }
@@ -753,6 +757,10 @@ void CollisionSolver3d::updateFinalVelocity()
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
+            
+            if (sorted(pt))
+                continue;
+
             STATE* sl = (STATE*)left_state(pt);
 
             //TODO: yes or no?
@@ -770,6 +778,8 @@ void CollisionSolver3d::updateFinalVelocity()
                     clean_up(ERROR);
                 }
             }
+
+            sorted(pt) = YES;
         }
         
     }
@@ -877,8 +887,8 @@ void CollisionSolver3d::updateAverageVelocity()
 	    {
 		p = hse->Point_of_hse(j);
 		
-        if (isStaticRigidBody(p)) continue;
-        if (sorted(p)) continue;
+        if (sorted(p) || isStaticRigidBody(p))
+            continue;
 
 		sl = (STATE*)left_state(p);
 		if (sl->collsn_num > 0)

@@ -13,6 +13,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: CollisionImpulse
 
 
 Start parameters for modules
@@ -34,22 +35,23 @@ Enter yes to have parallel curves for curve 1: no
 
 Start parameters for spring-mass system
 
+Enter the number of fabric optimization rounds: 5
 Enter interior sub step number: 10
 Enter yes to use total mass: no
 
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.02
+Enter fabric damping constant: 0.01
 Enter fabric friction constant: 0.5
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.02
+Enter string damping constant: 0.01
 Enter string friction constant: 0.5
-Enter string point mass: 0.005
-Enter string thickness: 0.01
-Enter string rounding tolerance: 0.00001
+Enter string point mass: 0.002
+Enter string thickness: 0.0025
+Enter string rounding tolerance: 0.000005
 
 Enter yes to add rigid body: no
 
@@ -70,7 +72,7 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3.0
-Max step: 50
+Max step: 35
 Print interval: 0.01
 Movie frame interval: 0.01
 CFL factor: 0.5

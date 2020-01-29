@@ -576,7 +576,8 @@ static void isCoplanarHelper(double* s[], double v[][3])
 
 static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 {
-    CollisionSolver3d::is_coplanar++;
+    if (debugging("collision"))
+        CollisionSolver3d::is_coplanar++;
 
 	double v[4][3] = {0.0};
     double x[4][3] = {0.0};
@@ -949,7 +950,8 @@ static void EdgeToEdgeImpulse(
         MotionState mstate,
         double root)
 {
-    CollisionSolver3d::edg_to_edg++;
+    if (debugging("collision"))
+        CollisionSolver3d::edg_to_edg++;
 
 	double v_rel[3] = {0.0, 0.0, 0.0};
     double vn = 0.0;
@@ -980,7 +982,7 @@ static void EdgeToEdgeImpulse(
         mu = CollisionSolver3d::getStringFrictionConstant();
     }
 
-    dist = h - dist;
+    double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
 	for (int j = 0; j < 3; ++j)
@@ -1008,16 +1010,16 @@ static void EdgeToEdgeImpulse(
         dt = root;
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        else if (vn * dt < 0.1 * dist)
-            EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k);
+        else if (vn * dt < 0.1 * overlap)
+            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
     }
     else
     {
         //Can apply both for repulsion
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        if (vn * dt < 0.1 * dist)
-            EdgeToEdgeElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k);
+        if (vn * dt < 0.1 * overlap)
+            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
     }
 
 	if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
@@ -1031,33 +1033,43 @@ static void EdgeToEdgeImpulse(
         m_impulse = 2.0*impulse/wabs_sqr;
     }
 
-    //uncomment the following for debugging
+    ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
-    if (fabs(m_impulse) > 0.0){
-        printf("real EdgeToEdge collision\n");
-        printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-        printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-        printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-        printf("m_impulse = %f, impulse = %f, a = %f, b = %f\n",
-            m_impulse,impulse,a,b);
-        printf("root = %e,h = %e, dt = %e\n",root,h,dt);
-        printf("x_old:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+    {
+        if (fabs(m_impulse) > 0.0)
+        {
+            printf("\tEdgeToEdgeImpulse():\n");
+            printf("root = %e, dt = %e\n",root,dt);
+            printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+            printf("impulse = %f, m_impulse = %f",impulse,m_impulse);
+            printf("k = %f, m = %f, mu = %f\n",k,m,mu);
+            printf("vn = %f, vt = %f\n",vn,vt);
+            printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+            printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+            printf("a = %f, b = %f\n",a,b);
+            
+            printf("x_old:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n", sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+            }
+            printf("x_new:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                printf("%f %f %f\n",
+                Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+            }
+            printf("avgVel:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+            }
+            printf("\n");
         }
-        printf("x_new:\n");
-        for (int i = 0; i < 4; ++i){
-            printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-        }
-        printf("avgVel:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-        }
-        printf("\n");
     }
-    ////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
 
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
@@ -1111,13 +1123,25 @@ static void EdgeToEdgeImpulse(
         }
     }
 
+	if (debugging("CollisionImpulse"))
+    {
+	    for (int i = 0; i < 4; ++i)
+        {
+            printf("pt[%d]: collsnImpulse = [%f %f %f],\
+                    friction = [%f %f %f]\n", i,sl[i]->collsnImpulse[0],
+                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
+                    sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
+        }
+        printf("\n");
+    }
+
 	for (int i = 0; i < 4; i++)
 	for (int j = 0; j < 3; ++j)
     {
 	    if (std::isnan(sl[i]->collsnImpulse[j]) ||
             std::isinf(sl[i]->collsnImpulse[j]))
         {
-		    printf("EdgeToEdge: sl[%d]->impl[%d] = nan\n",i,j);
+		    printf("EdgeToEdge: sl[%d]->collsnImpulse[%d] = nan\n",i,j);
 		    printf("a b = %f %f, nor = [%f %f %f], dist = %f\n",
                     a,b,nor[0],nor[1],nor[2],dist);
 	        clean_up(ERROR);
@@ -1306,7 +1330,8 @@ static void PointToTriImpulse(
         MotionState mstate,
         double root)
 {
-    CollisionSolver3d::pt_to_tri++;
+    if (debugging("collision"))
+        CollisionSolver3d::pt_to_tri++;
     
     double vn = 0.0;
     double vt = 0.0;
@@ -1335,7 +1360,8 @@ static void PointToTriImpulse(
         mu = CollisionSolver3d::getStringFrictionConstant();
     }
 
-	dist = h - dist; //overlap with fabric thickness
+    //overlap with fabric thickness
+	double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
 	for (int i = 0; i < 3; ++i)
@@ -1364,16 +1390,16 @@ static void PointToTriImpulse(
         dt = root;
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        else if (vn * dt < 0.1 * dist)
-            PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k);
+        else if (vn * dt < 0.1 * overlap)
+            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
     }
     else
     {
         //Can apply both for repulsion
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        if (vn * dt < 0.1 * dist)
-            PointToTriElasticImpulse(vn,dist,pts,&impulse,rigid_impulse,dt,m,k);
+        if (vn * dt < 0.1 * overlap)
+            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
     }
 
 	if (fabs(sum_w) < MACH_EPS)
@@ -1381,33 +1407,45 @@ static void PointToTriImpulse(
 	else
 	    m_impulse = 2.0 * impulse / (1.0 + Dot3d(w, w));
 
-    //uncomment the following the debugging purpose
+    ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
-    if (fabs(m_impulse) > 0.0){
-        printf("real PointToTri collision, dist = %e\n",dist);
-        printf("vt = %f, vn = %f, dist = %f\n",vt,vn,dist);
-        printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
-        printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
-        printf("m_impuse = %f, impulse = %f, w = [%f %f %f]\n",
-            m_impulse,impulse,w[0],w[1],w[2]);
-        printf("dt = %f, root = %f\n",dt,root);
-        printf("k = %f, m = %f\n",k,m);
-        printf("x_old:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
-        }
-        printf("x_new:\n");
-        for (int i = 0; i < 4; ++i){
-            printf("%f %f %f\n",Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-        }
-        printf("avgVel:\n");
-        for (int i = 0; i < 4; ++i){
-            STATE* sl1 = (STATE*)left_state(pts[i]);
-            printf("%f %f %f\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+    {
+        if (fabs(m_impulse) > 0.0)
+        {
+            printf("\tPointToTriImpulse():\n");
+            printf("root = %e, dt = %e\n",root,dt);
+            printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+            printf("impulse = %f, m_impulse = %f",impulse,m_impulse);
+            printf("k = %f, m = %f, mu = %f\n",k,m,mu);
+            printf("vn = %f, vt = %f\n",vn,vt);
+            printf("v_rel = %f %f %f\n",v_rel[0],v_rel[1],v_rel[2]);
+            printf("nor = %f %f %f\n",nor[0],nor[1],nor[2]);
+            printf("w[0] = %f, w[1] = %f, w[2] = %f\n",w[0],w[1],w[2]);
+            
+            printf("x_old:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",
+                        sl1->x_old[0],sl1->x_old[1],sl1->x_old[2]);
+            }
+            printf("x_new:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                printf("%f %f %f\n",
+                        Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+            }
+            printf("avgVel:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+                STATE* sl1 = (STATE*)left_state(pts[i]);
+                printf("%f %f %f\n",
+                        sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+            }
+            printf("\n");
         }
     }
-    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
 
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
@@ -1461,12 +1499,16 @@ static void PointToTriImpulse(
 	}
 
 	if (debugging("CollisionImpulse"))
-	for (int i = 0; i < 4; ++i)
     {
-	    printf("pt[%d], collsnImp = [%f %f %f], friction = [%f %f %f]\n", i,
-        sl[i]->collsnImpulse[0],sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
-        sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
-	}
+	    for (int i = 0; i < 4; ++i)
+        {
+            printf("pt[%d]: collsnImpulse = [%f %f %f],\
+                    friction = [%f %f %f]\n", i,sl[i]->collsnImpulse[0],
+                    sl[i]->collsnImpulse[1],sl[i]->collsnImpulse[2],
+                    sl[i]->friction[0],sl[i]->friction[1],sl[i]->friction[2]);
+        }
+        printf("\n");
+    }
 
 	for (int kk = 0; kk < 4; kk++)
 	for (int j = 0; j < 3; ++j)
@@ -1474,7 +1516,7 @@ static void PointToTriImpulse(
         if (std::isnan(sl[kk]->collsnImpulse[j]) ||
 		std::isinf(sl[kk]->collsnImpulse[j]))
         {
-            printf("PointToTri: sl[%d]->impl[%d] = nan\n",kk,j);
+            printf("PointToTri: sl[%d]->collsnImpulse[%d] = nan\n",kk,j);
             for (int i = 0; i < 4; ++i)
             {
                 printf("points[%d] = %p\n",i,(void*)pts[i]);
