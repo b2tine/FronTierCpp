@@ -334,6 +334,12 @@ void setMotionParams(Front* front)
                 (void) printf("%f\n",af_params->fabric_thickness);
             }
 
+            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_eps);
+                (void) printf("%f\n",af_params->fabric_eps);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -367,6 +373,12 @@ void setMotionParams(Front* front)
             {
                 fscanf(infile,"%lf",&af_params->string_thickness);
                 (void) printf("%f\n",af_params->string_thickness);
+            }
+
+            if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_eps);
+                (void) printf("%f\n",af_params->string_eps);
             }
 
             if (af_params->use_total_mass)

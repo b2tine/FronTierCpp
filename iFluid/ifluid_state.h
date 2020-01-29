@@ -1,10 +1,6 @@
 #ifndef IFLUID_STATE_H
 #define IFLUID_STATE_H
 
-//TODO: Split into individual classes for iFluid and Collision.
-//      Then can make an FSI class for airfoil via composition
-//      of the iFluid and Collision STATE structures.
-
 
 struct STATE {
         double dens;                    /* Density */
@@ -33,6 +29,7 @@ struct STATE {
         };
     
         UF     impZone;
+        double collsn_dt;
         double collsnImpulse[3];
 	double collsnImpulse_RG[3];
         double friction[3];
@@ -44,6 +41,7 @@ struct STATE {
         bool   has_collsn;
         bool   is_fixed;
 	bool   is_movableRG;
+    bool is_stringpt;
 };
 
 
