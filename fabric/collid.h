@@ -2,7 +2,6 @@
 #define COLLID_H
 
 #include "AABB.h"
-//#include "fabric_sv.h"
 
 #if defined(isnan)
 #undef isnan
