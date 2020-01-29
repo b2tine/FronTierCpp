@@ -240,6 +240,39 @@ AS_IF([test $with_boost = yes],
 
 
 
+#configure with VTK
+AC_ARG_WITH([vtk-dir],[AS_HELP_STRING([--with-vtk-dir=path],
+            [specify location of single directory installation])],
+            [vtk_dir=${withval}],[vtk_dir=no])
+
+AC_ARG_WITH([vtk-inc],[AS_HELP_STRING([--with-vtk-inc=path],
+            [specify location of header files])],
+            [vtk_inc=${withval}],[vtk_inc=no])
+
+AC_ARG_WITH([vtk-lib],[AS_HELP_STRING([--with-vtk-lib=path],
+            [specify location of libraries])],
+            [vtk_lib=${withval}],[vtk_lib=no])
+
+vtk_libflags="-lvtkCommonComputationalGeometry-7.1 -lvtkIOXML-7.1 -lvtkCommonColor-7.1 -lvtkCommonExecutionModel-7.1 -lvtkCommonDataModel-7.1 -lvtkCommonCore-7.1"
+
+with_vtk=no
+AS_IF([test "x${vtk_dir}" != xno],
+      [with_vtk=yes
+       vtkinc="-I${vtk_dir}/include"
+       vtklib="-L${vtk_dir}/lib ${vtk_libflags} -Wl,-rpath-link=${vtk_dir}/lib -Wl,-rpath=${vtk_dir}/lib"],
+       [test "x${vtk_inc}" != xno && test "x${vtk_lib}" != xno],
+       [with_vtk=yes
+        vtkinc="-I${vtk_inc}"
+        vtklib="-L${vtk_lib} ${vtk_libflags} -Wl,-rpath-link=${vtk_lib} -Wl,-rpath=${vtk_lib}"])
+
+AC_SUBST(VTK_CFLAGS,${vtkinc})
+AC_SUBST(VTK_LIBS,${vtklib})
+
+AS_IF([test $with_vtk = yes],
+      [AC_DEFINE([HAVE_vtk],[1],[build with vtk])])
+
+
+
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
             [specify location of single directory installation])],
@@ -259,7 +292,7 @@ with_cgal=no
 AS_IF([test "x${cgal_dir}" != xno],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
-       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}lib -Wl,-rpath=${cgal_dir}/lib"],
+       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}/lib -Wl,-rpath=${cgal_dir}/lib"],
        [test "x${cgal_inc}" != xno && test "x${cgal_lib}" != xno],
        [with_cgal=yes
         cgalinc="-I${cgal_inc} -frounding-math"

@@ -225,10 +225,12 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	if (!debugging("collision_off"))
     {
         collision_solver = new CollisionSolver3d();
+        collision_solver->setVtkDirectory(OutName(fr));
         printf("COLLISION DETECTION ON\n");
     }
     else
         printf("COLLISION DETECTION OFF\n");
+
 
     if (myid == owner_id)
 	{

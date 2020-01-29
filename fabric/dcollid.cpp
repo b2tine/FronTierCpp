@@ -58,21 +58,19 @@ void CollisionSolver3d::clearHseList()
 	hseList.clear();
 }
 
+double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
+
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
-
-void CollisionSolver3d::setFabricRoundingTolerance(double neweps){s_eps = neweps;}
-double CollisionSolver3d::getFabricRoundingTolerance(){return s_eps;}
-
-void CollisionSolver3d::setStringRoundingTolerance(double neweps){l_eps = neweps;}
-double CollisionSolver3d::getStringRoundingTolerance(){return l_eps;}
-
 
 //set restitution coefficient between rigid bodies
 void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
 //fabric points
+void CollisionSolver3d::setFabricRoundingTolerance(double neweps){s_eps = neweps;}
+double CollisionSolver3d::getFabricRoundingTolerance(){return s_eps;}
+
 void CollisionSolver3d::setFabricThickness(double h){s_thickness = h;}
 double CollisionSolver3d::getFabricThickness(){return s_thickness;}
 
@@ -86,6 +84,9 @@ void   CollisionSolver3d::setFabricPointMass(double new_m){s_m = new_m;}
 double CollisionSolver3d::getFabricPointMass(){return s_m;}
 
 //string points
+void CollisionSolver3d::setStringRoundingTolerance(double neweps){l_eps = neweps;}
+double CollisionSolver3d::getStringRoundingTolerance(){return l_eps;}
+
 void CollisionSolver3d::setStringThickness(double h){l_thickness = h;}
 double CollisionSolver3d::getStringThickness(){return l_thickness;}
 
@@ -95,11 +96,10 @@ double CollisionSolver3d::getStringSpringConstant(){return l_k;}
 void   CollisionSolver3d::setStringFrictionConstant(double new_mu){l_mu = new_mu;}
 double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 
-void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
+void CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
 
-double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
 void CollisionSolver3d::recordOriginalPosition()
 {
@@ -852,26 +852,28 @@ void CollisionSolver3d::updateFinalForRG()
         }
 }
 
+#ifdef HAVE_VTK
+void CollisionSolver3d::vtkPlotSurface()
+{
+    static int count = 0;
+    updateFinalPosition();
+
+    char fname[200];
+    sprintf(fname,"%s/vtksurfplot",outdir.c_str());
+    if (create_directory(fname,NO))
+    {
+        sprintf(fname,"%s/surf-%03d.vtp",fname,count++);
+        vtkplotVectorSurface(hseList,fname);
+    }
+}
+#endif
+
 void CollisionSolver3d::updateAverageVelocity()
 {
 	POINT *p;
 	STATE *sl;
 	double maxSpeed = 0;
 	double* maxVel = nullptr;
-
-#ifdef HAVE_VTK
-	if (debugging("CollisionImpulse"))
-    {
-        char fname[200] = "vtk_test";
-        static int count = 0;
-        updateFinalPosition();
-        if (create_directory(fname,NO))
-        {
-            sprintf(fname,"%s/surf-%03d.vtp",fname,count++);
-            vtkplotVectorSurface(hseList,fname);
-        }
-	}
-#endif
 
     unsortHseList(hseList);
 	for (unsigned i = 0; i < hseList.size(); ++i)

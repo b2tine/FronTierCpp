@@ -22,12 +22,13 @@ EXTRA_DIST = $(input_directories) airfoil_gpu.cuh  airfoil_gpu.cu
 
 AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
-			  @ARMA_CFLAGS@ @MPI_CFLAGS@ \
+			  @ARMA_CFLAGS@ @VTK_CFLAGS@ \
+			  @MPI_CFLAGS@ \
 			  -I$(abs_top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@ @VTK_LIBS@
 
 
 noinst_PROGRAMS = fabric_Cplus \

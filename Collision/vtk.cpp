@@ -1,5 +1,4 @@
 #include <vtkCellData.h>
-#include <vtkCellArray.h>
 #include <vtkFloatArray.h>
 #include <vtkPoints.h>
 #include <vtkPolygon.h>

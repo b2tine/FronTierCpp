@@ -4,13 +4,12 @@ input_directories = input
 
 EXTRA_DIST = $(input_directories) \
 			 filecheck.h \
-			 filecheck.cpp \
-			 vtk.cpp
+			 filecheck.cpp
 			 
 
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
-			  @ARMA_CFLAGS@ \
+			  @ARMA_CFLAGS@ @VTK_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
@@ -18,7 +17,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@ @VTK_LIBS@
 
 
 noinst_PROGRAMS = test

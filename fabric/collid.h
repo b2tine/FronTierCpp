@@ -74,6 +74,10 @@ public:
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
 
+    std::string outdir;
+    void setOutputDirectory(std::string dir) {outdir.assign(dir);}
+    void vtkPlotSurface();
+
     POINT **gpoints;
     TRI **gtris;
 
@@ -171,6 +175,7 @@ bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
+//vtk.cpp
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 #endif

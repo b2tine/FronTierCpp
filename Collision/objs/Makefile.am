@@ -1,13 +1,13 @@
 AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
-			  @ARMA_CFLAGS@ \
+			  @ARMA_CFLAGS@ @VTK_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@ @VTK_LIBS@
 
 
 noinst_LTLIBRARIES = libCollision.la
@@ -21,7 +21,8 @@ libCollision_la_SOURCES = \
 ../AABB.h \
 ../AABB.cpp \
 ../CD_HSE.h \
-../CD_HSE.cpp
+../CD_HSE.cpp \
+../vtk.cpp
 
 
 libCollision_la_LIBADD = $(top_builddir)/iFluid/objs/libiFluid.la
