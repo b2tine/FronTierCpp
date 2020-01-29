@@ -945,24 +945,26 @@ extern void set_curve_spring_vertex(
 	    sv[i].m = m_l;
 	    sv[i].num_nb = 2;
 	    sv[i].lambda = lambda_l;
-	    if (dim == 3)
+
+        if (dim == 3)
 	    {
 	    	if (hsbdry_type(curve) == FIXED_HSBDRY || g == NULL)
 	    	{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = 0;
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = 0;
 	    	}
-		else
-		{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = g[j];
-		}
+            else
+            {
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = g[j];
+            }
 	    }
 	    else if (dim == 2 && g)
 	    {
                 for (j = 0; j < dim; ++j)
                 	sv[i].ext_accel[j] = g[j];
 	    }
+
 	    SURFACE** surf;
 	    boolean is_stationary_point = NO;
 	    intfc_surface_loop(front->interf, surf)

@@ -568,10 +568,11 @@ extern void SMM_TestDriver()
                                 front->dt);
         }
             
-        FT_TimeControlFilter(front);
-        FT_PrintTimeStamp(front);
-    
         /* Output section */
+
+        //print_airfoil_stat(front,OutName(front));
+        print_strings(front,OutName(front));
+
 
         if (FT_IsSaveTime(front))
             SMM_Save();
@@ -590,10 +591,12 @@ extern void SMM_TestDriver()
             break;
         }
 
-        print_storage("after time loop","trace");
+        FT_TimeControlFilter(front);
+        //print_storage("after time loop","trace");
+        FT_PrintTimeStamp(front);
         
-        fflush(stdout);
         stop_clock("timeStep");
+        fflush(stdout);
     }
     
         FT_FreeMainIntfc(front);

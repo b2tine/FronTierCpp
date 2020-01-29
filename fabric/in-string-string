@@ -35,8 +35,8 @@ Enter yes to have parallel curves for curve 1: no
 
 Start parameters for spring-mass system
 
-Enter the number of fabric optimization rounds: 5
-Enter interior sub step number: 10
+Enter the number of fabric optimization rounds: 0
+Enter interior sub step number: 1
 Enter yes to use total mass: no
 
 Enter fabric spring constant: 5000
@@ -48,10 +48,10 @@ Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
 Enter string damping constant: 0.01
-Enter string friction constant: 0.5
-Enter string point mass: 0.002
-Enter string thickness: 0.0025
-Enter string rounding tolerance: 0.000005
+Enter string friction constant: 0.0
+Enter string point mass: 0.003
+Enter string thickness: 0.005
+Enter string rounding tolerance: 0.000010
 
 Enter yes to add rigid body: no
 

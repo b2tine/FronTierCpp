@@ -52,7 +52,7 @@ static boolean find_crx_between_box_line(double*,double*,double*,double*,double,
 
 static void print_rgb3d(Front *,char *);
 static void print_drag3d(Front *,char *);
-static void print_strings(Front *,char *);
+//static void print_strings(Front *,char *);
 
 extern void second_order_elastic_curve_propagate(
 	Front           *fr,
@@ -2314,7 +2314,7 @@ static void print_drag3d(
         return;
 }       /* end print_drag3d */
 
-static void print_strings(
+extern void print_strings(
 	Front *front,
 	char *out_name)
 {
