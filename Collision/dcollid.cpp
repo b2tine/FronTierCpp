@@ -408,7 +408,7 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-    //detectProximity();
+    detectProximity();
     
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
@@ -448,7 +448,6 @@ void CollisionSolver3d::aabbProximity()
             abt_proximity->updateTreeStructure();
             volume = abt_proximity->getVolume();
             build_count_pre++;
-            //std::cout << "build_count_pre is " << build_count_pre << std::endl; 
         }
     }
 }
