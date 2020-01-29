@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: -0.5 1
-Computational grid: 60 60 90
+Domain limit in 2-th dimension: 0 1
+Computational grid: 50 50 50
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -22,8 +22,8 @@ Enter number of canopy surfaces: 0
 Enter yes to add isolated curves: yes
 Enter the number of curves: 2
 
-Enter the start of curve 0: 0.5 0.1 0.6
-Enter the end of curve 0: 0.5 0.9 0.6
+Enter the start of curve 0: 0.45 0.3 0.6
+Enter the end of curve 0: 0.55 0.7 0.6
 Enter yes to fix the endpoints of curve 0: yes
 Enter yes to have parallel curves for curve 0: no
 
@@ -47,11 +47,11 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.01
-Enter string friction constant: 0.0
-Enter string point mass: 0.003
-Enter string thickness: 0.005
-Enter string rounding tolerance: 0.000010
+Enter string damping constant: 0.02
+Enter string friction constant: 0.7
+Enter string point mass: 0.002
+Enter string thickness: 0.008
+Enter string rounding tolerance: 0.000050
 
 Enter yes to add rigid body: no
 
@@ -72,9 +72,9 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3.0
-Max step: 35
-Print interval: 0.01
-Movie frame interval: 0.01
+Max step: 70
+Print interval: 0.005
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes

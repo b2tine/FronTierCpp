@@ -7,7 +7,7 @@ static bool EdgeToEdge(POINT**, double,
 
 static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
-static void EdgeToEdgeElasticImpulse(double,double,POINT**,double*,double*,double,double,double);
+static void EdgeToEdgeElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
 static bool MovingPointToTri(POINT**);
 static bool PointToTri(POINT**, double,
@@ -15,7 +15,7 @@ static bool PointToTri(POINT**, double,
 
 static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double);
 static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
-static void PointToTriElasticImpulse(double,double,POINT**,double*,double*,double,double,double);
+static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
 static bool isCoplanar(POINT**,double,double*);
 static void unsort_surface_point(SURFACE *surf);
@@ -136,7 +136,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     }
 	
     avg_dt += CollisionSolver3d::getTimeStepSize();
-    avg_dt /= num_pts+1;
+    avg_dt /= (double)num_pts + 1.0;
 
 	for (int i = 0; i < m_dim; ++i)
     {
@@ -958,9 +958,10 @@ static void EdgeToEdgeImpulse(
     double vn = 0.0;
     double vt = 0.0;
 
-	double impulse = 0.0;
-    double m_impulse = 0.0;
     double rigid_impulse[2] = {0.0};
+	double inelastic_impulse = 0.0;
+    double elastic_impulse = 0.0;
+    double m_impulse = 0.0;
 	
 	double wa[2] = {1.0 - a, a};
     double wb[2] = {1.0 - b, b};
@@ -970,6 +971,7 @@ static void EdgeToEdgeImpulse(
 	double k = CollisionSolver3d::getFabricSpringConstant();
 	double m = CollisionSolver3d::getFabricPointMass();
     double mu = CollisionSolver3d::getFabricFrictionConstant(); 
+    double overlap_coef = 0.1;
 	
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
@@ -981,8 +983,8 @@ static void EdgeToEdgeImpulse(
         k = CollisionSolver3d::getStringSpringConstant();
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
+        overlap_coef = 0.005;
     }
-
     double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
@@ -1007,27 +1009,32 @@ static void EdgeToEdgeImpulse(
     if (debugging("CollisionImpulse"))
     {
         printf("vn = %g\n",vn);
-        printf("vn * dt = %g  %s  %f * overlap = %g\n",
-                vn*dt, (vn*dt < 0.1*overlap) ? "<" : ">",
-                0.1, 0.1*overlap);
+        printf("vn * dt = %g  %s  %g * overlap = %g\n",
+                vn*dt, (vn*dt < overlap_coef*overlap) ? "<" : ">",
+                overlap_coef, overlap_coef*overlap);
     }
 	
+
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
         if (vn < 0.0)
-            EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        else if (vn * dt < 0.1 * overlap)
-            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+            EdgeToEdgeInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,wab);
+        else if (vn * dt <  overlap_coef * overlap)
+            EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
+                    &elastic_impulse,rigid_impulse,dt,m,k);
     }
     else
     {
         //Can apply both for repulsion
         if (vn < 0.0)
-            EdgeToEdgeInelasticImpulse(vn,pts,&impulse,rigid_impulse,wab);
-        if (vn * dt < 0.1 * overlap)
-            EdgeToEdgeElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+            EdgeToEdgeInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,wab);
+        if (vn * dt < overlap_coef * overlap)
+            EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
+                    &elastic_impulse,rigid_impulse,dt,m,k);
     }
+    
+    double impulse = inelastic_impulse + elastic_impulse;
 
 	if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
     {
@@ -1043,11 +1050,13 @@ static void EdgeToEdgeImpulse(
     ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
     {
-        if (fabs(m_impulse) > 0.0)
-        {
+        //if (fabs(m_impulse) > 0.0)
+        //{
             printf("\tEdgeToEdgeImpulse():\n");
             printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
             printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+            printf("inelastic_impulse = %g, elastic_impulse = %g\n",
+                    inelastic_impulse,elastic_impulse);
             printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
@@ -1076,7 +1085,7 @@ static void EdgeToEdgeImpulse(
                 printf("%g %g %g\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
             }
             printf("\n");
-        }
+        //}
     }
     ////////////////////////////////////////////////////////////////////
 
@@ -1207,6 +1216,7 @@ static void EdgeToEdgeInelasticImpulse(
 
 static void EdgeToEdgeElasticImpulse(
         double vn,
+        double overlap_coef,
         double overlap,
         POINT** pts,
         double* impulse,
@@ -1225,11 +1235,11 @@ static void EdgeToEdgeElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  0.1*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, 0.1*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
         }
 
-        double tmp = -1.0*std::min(dt*k*overlap/m, (0.1*overlap/dt - vn));
+        double tmp = -1.0*std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
         *impulse += tmp;
         rigid_impulse[0] += tmp;
         rigid_impulse[1] += tmp;
@@ -1346,9 +1356,9 @@ static void PointToTriImpulse(
     double vt = 0.0;
     double v_rel[3] = {0.0};
 
-	double impulse = 0.0;
-    double m_impulse = 0.0;
 	double rigid_impulse[2] = {0.0};
+	double inelastic_impulse = 0.0;
+    double elastic_impulse = 0.0;
     
     double sum_w = 0.0;
 
@@ -1361,15 +1371,15 @@ static void PointToTriImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
+    double overlap_coef = 0.1;
     if (sl[3]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
         k = CollisionSolver3d::getStringSpringConstant();
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
+        overlap_coef = 0.005;
     }
-
-    //overlap with fabric thickness
 	double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
@@ -1395,28 +1405,33 @@ static void PointToTriImpulse(
     if (debugging("CollisionImpulse"))
     {
         printf("vn = %g\n",vn);
-        printf("vn * dt = %g  %s  %f * overlap = %g\n",
-                vn*dt, (vn*dt < 0.1*overlap) ? "<" : ">",
-                0.1, 0.1*overlap);
+        printf("vn * dt = %g  %s  %g * overlap = %g\n",
+                vn*dt, (vn*dt < overlap_coef*overlap) ? "<" : ">",
+                overlap_coef, overlap_coef*overlap);
     }
 	
     if (mstate == MotionState::MOVING)
     {
         //Apply one or the other for collision, NOT BOTH
         if (vn < 0.0)
-            PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        else if (vn * dt < 0.1 * overlap)
-            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+            PointToTriInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,w,&sum_w);
+        else if (vn * dt < overlap_coef * overlap)
+            PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
+                    &elastic_impulse,rigid_impulse,dt,m,k);
     }
     else
     {
         //Can apply both for repulsion
         if (vn < 0.0)
-            PointToTriInelasticImpulse(vn,pts,&impulse,rigid_impulse,w,&sum_w);
-        if (vn * dt < 0.1 * overlap)
-            PointToTriElasticImpulse(vn,overlap,pts,&impulse,rigid_impulse,dt,m,k);
+            PointToTriInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,w,&sum_w);
+        if (vn * dt < overlap_coef * overlap)
+            PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
+                    &elastic_impulse,rigid_impulse,dt,m,k);
     }
 
+    double impulse = inelastic_impulse + elastic_impulse;
+
+    double m_impulse;
 	if (fabs(sum_w) < MACH_EPS)
 	    m_impulse = impulse;
 	else
@@ -1425,11 +1440,13 @@ static void PointToTriImpulse(
     ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
     {
-        if (fabs(m_impulse) > 0.0)
-        {
+        //if (fabs(m_impulse) > 0.0)
+        //{
             printf("\tPointToTriImpulse():\n");
             printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
             printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+            printf("inelastic_impulse = %g, elastic_impulse = %g\n",
+                    inelastic_impulse,elastic_impulse);
             printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
@@ -1459,7 +1476,7 @@ static void PointToTriImpulse(
                         sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
             }
             printf("\n");
-        }
+        //}
     }
     ////////////////////////////////////////////////////////////////////
 
@@ -1604,6 +1621,7 @@ static void PointToTriInelasticImpulse(
 
 static void PointToTriElasticImpulse(
         double vn,
+        double overlap_coef,
         double overlap,
         POINT** pts,
         double* impulse,
@@ -1622,11 +1640,11 @@ static void PointToTriElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  0.1*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, 0.1*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
         }
 
-        double tmp = -1.0*std::min(dt*k*overlap/m, (0.1*overlap/dt - vn));
+        double tmp = -1.0*std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
         *impulse += tmp;
         rigid_impulse[0] += tmp;
         rigid_impulse[1] += tmp;
