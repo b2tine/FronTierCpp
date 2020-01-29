@@ -74,9 +74,9 @@ public:
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
 
-    std::string outdir;
-    void setOutputDirectory(std::string dir) {outdir.assign(dir);}
-    void vtkPlotSurface();
+    std::string vtkdir;
+    void setVtkDirectory(std::string dir) {vtkdir.assign(dir);}
+    void vtkPlotSurface(std::string pname);
 
     POINT **gpoints;
     TRI **gtris;

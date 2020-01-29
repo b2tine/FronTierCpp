@@ -269,16 +269,21 @@ void CollisionSolver3d::computeAverageVelocity()
 
 void CollisionSolver3d::resetPositionCoordinates()
 {
+	unsortHseList(hseList);
+
     std::vector<CD_HSE*>::iterator it;
     for (it = hseList.begin(); it < hseList.end(); ++it)
     {
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            STATE* sl = (STATE*)left_state(pt);
+            if (sorted(pt)) continue;
 
+            STATE* sl = (STATE*)left_state(pt);
             for (int j = 0; j < m_dim; ++j)
                 Coords(pt)[j] =  sl->x_old[j];
+
+            sorted(pt) = YES;
         }
     }
 }
@@ -713,17 +718,16 @@ bool CollisionSolver3d::reduceSuperelastOnce(int& num_edges)
 
 void CollisionSolver3d::updateFinalPosition()
 {
+	double dt = getTimeStepSize();
     unsortHseList(hseList);
 
-	double dt = getTimeStepSize();
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            
-            if (sorted(pt))
+            if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
             STATE* sl = (STATE*)left_state(pt);
@@ -757,11 +761,11 @@ void CollisionSolver3d::updateFinalVelocity()
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            
-            if (sorted(pt))
+            if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
             STATE* sl = (STATE*)left_state(pt);
+            if (!sl->has_collsn) continue;
 
             for (int j = 0; j < 3; ++j)
             {
@@ -853,17 +857,22 @@ void CollisionSolver3d::updateFinalForRG()
 }
 
 #ifdef HAVE_VTK
-void CollisionSolver3d::vtkPlotSurface()
+void CollisionSolver3d::vtkPlotSurface(std::string pname)
 {
-    static int count = 0;
-    //updateFinalPosition();
-
-    char fname[200];
-    sprintf(fname,"%s/vtksurfplot",outdir.c_str());
-    if (create_directory(fname,NO))
+    if (vtkdir.empty())
     {
-        sprintf(fname,"%s/surf-%03d.vtp",fname,count++);
-        vtkplotVectorSurface(hseList,fname);
+        printf("vtkPlotSurface() ERROR: vtkdir.empty()\n");
+        return;
+    }
+
+    if (create_directory(vtkdir.c_str(),NO))
+    {
+        if (pname.empty()) pname = "vtk-surf.vtp";
+        std::string fname = vtkdir + "/" + pname;
+        
+        updateFinalPosition();
+        vtkplotVectorSurface(hseList,fname.c_str());
+        resetPositionCoordinates();
     }
 }
 #endif

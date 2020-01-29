@@ -224,9 +224,9 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     CollisionSolver3d* collision_solver;
 	if (!debugging("collision_off"))
     {
-        collision_solver = new CollisionSolver3d();
-        collision_solver->setOutputDirectory(OutName(fr));
         printf("COLLISION DETECTION ON\n");
+        collision_solver = new CollisionSolver3d();
+        collision_solver->setVtkDirectory(OutName(fr));
     }
     else
         printf("COLLISION DETECTION OFF\n");
@@ -241,9 +241,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
             collision_solver->recordOriginalPosition();
 
-            collision_solver->vtkPlotSurface();
-            clean_up(0);
-        
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);
             
