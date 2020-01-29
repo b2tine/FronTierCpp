@@ -856,7 +856,7 @@ void CollisionSolver3d::updateFinalForRG()
 void CollisionSolver3d::vtkPlotSurface()
 {
     static int count = 0;
-    updateFinalPosition();
+    //updateFinalPosition();
 
     char fname[200];
     sprintf(fname,"%s/vtksurfplot",outdir.c_str());

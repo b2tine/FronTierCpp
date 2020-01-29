@@ -269,7 +269,7 @@ AC_SUBST(VTK_CFLAGS,${vtkinc})
 AC_SUBST(VTK_LIBS,${vtklib})
 
 AS_IF([test $with_vtk = yes],
-      [AC_DEFINE([HAVE_vtk],[1],[build with vtk])])
+      [AC_DEFINE([HAVE_VTK],[1],[build with vtk])])
 
 
 
@@ -528,3 +528,4 @@ Configure Information:
     GTEST_LDFLAGS   : $GTEST_LDFLAGS
     GTEST_LIBS      : $GTEST_LIBS
 ])
+
