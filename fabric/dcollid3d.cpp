@@ -21,10 +21,8 @@ static bool isCoplanar(POINT**,double,double*);
 static void unsort_surface_point(SURFACE *surf);
 
 //NOTE: This must be called before spring interior dynamics computed
-void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc, const double dt)
+void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc)
 {
-	setTimeStepSize(dt);
 	clearHseList();
 
 	SURFACE** s;
@@ -1050,42 +1048,39 @@ static void EdgeToEdgeImpulse(
     ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
     {
-        //if (fabs(m_impulse) > 0.0)
-        //{
-            printf("\tEdgeToEdgeImpulse():\n");
-            printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
-            printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
-            printf("inelastic_impulse = %g, elastic_impulse = %g\n",
-                    inelastic_impulse,elastic_impulse);
-            printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
-            printf("k = %g, m = %g, mu = %g\n",k,m,mu);
-            printf("vn = %g, vt = %g\n",vn,vt);
-            printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
-            printf("a = %g, b = %g\n",a,b);
-            
-            printf("x_old:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%g %g %g   Gindex(pts[%d]) = %lu\n",
-                        sl1->x_old[0],sl1->x_old[1],sl1->x_old[2],
-                        i,Gindex(pts[i]));
-            }
-            printf("x_new:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                printf("%g %g %g\n",
-                Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-            }
-            printf("avgVel:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%g %g %g\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-            }
-            printf("\n");
-        //}
+        printf("\tEdgeToEdgeImpulse():\n");
+        printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
+        printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+        printf("inelastic_impulse = %g, elastic_impulse = %g\n",
+                inelastic_impulse,elastic_impulse);
+        printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
+        printf("k = %g, m = %g, mu = %g\n",k,m,mu);
+        printf("vn = %g, vt = %g\n",vn,vt);
+        printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
+        printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
+        printf("a = %g, b = %g\n",a,b);
+        
+        printf("x_old:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%g %g %g   Gindex(pts[%d]) = %lu\n",
+                    sl1->x_old[0],sl1->x_old[1],sl1->x_old[2],
+                    i,Gindex(pts[i]));
+        }
+        printf("x_new:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            printf("%g %g %g\n",
+            Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+        }
+        printf("avgVel:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%g %g %g\n",sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+        }
+        printf("\n");
     }
     ////////////////////////////////////////////////////////////////////
 
@@ -1099,6 +1094,8 @@ static void EdgeToEdgeImpulse(
 	    return;
 	}
 	
+    if (fabs(m_impulse) < DBL_EPSILON)
+        return;
 
     std::vector<double> W = {-wab[0],-wab[1],wab[2],wab[3]};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
@@ -1440,43 +1437,40 @@ static void PointToTriImpulse(
     ////////////////////////////////////////////////////////////////////
     if (debugging("CollisionImpulse"))
     {
-        //if (fabs(m_impulse) > 0.0)
-        //{
-            printf("\tPointToTriImpulse():\n");
-            printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
-            printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
-            printf("inelastic_impulse = %g, elastic_impulse = %g\n",
-                    inelastic_impulse,elastic_impulse);
-            printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
-            printf("k = %g, m = %g, mu = %g\n",k,m,mu);
-            printf("vn = %g, vt = %g\n",vn,vt);
-            printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
-            printf("w[0] = %g, w[1] = %g, w[2] = %g\n",w[0],w[1],w[2]);
-            
-            printf("x_old:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%g %g %g   Gindex(pts[%d]) = %lu\n",
-                        sl1->x_old[0],sl1->x_old[1],
-                        sl1->x_old[2],i,Gindex(pts[i]));
-            }
-            printf("x_new:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                printf("%g %g %g\n",
-                        Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
-            }
-            printf("avgVel:\n");
-            for (int i = 0; i < 4; ++i)
-            {
-                STATE* sl1 = (STATE*)left_state(pts[i]);
-                printf("%g %g %g\n",
-                        sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
-            }
-            printf("\n");
-        //}
+        printf("\tPointToTriImpulse():\n");
+        printf("dt = %e, step_dt = %e\n",dt,CollisionSolver3d::getTimeStepSize());
+        printf("h = %e, dist = %e, overlap = %e\n",h,dist,overlap);
+        printf("inelastic_impulse = %g, elastic_impulse = %g\n",
+                inelastic_impulse,elastic_impulse);
+        printf("impulse = %g, m_impulse = %g\n",impulse,m_impulse);
+        printf("k = %g, m = %g, mu = %g\n",k,m,mu);
+        printf("vn = %g, vt = %g\n",vn,vt);
+        printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
+        printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
+        printf("w[0] = %g, w[1] = %g, w[2] = %g\n",w[0],w[1],w[2]);
+        
+        printf("x_old:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%g %g %g   Gindex(pts[%d]) = %lu\n",
+                    sl1->x_old[0],sl1->x_old[1],
+                    sl1->x_old[2],i,Gindex(pts[i]));
+        }
+        printf("x_new:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            printf("%g %g %g\n",
+                    Coords(pts[i])[0],Coords(pts[i])[1],Coords(pts[i])[2]);
+        }
+        printf("avgVel:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            STATE* sl1 = (STATE*)left_state(pts[i]);
+            printf("%g %g %g\n",
+                    sl1->avgVel[0],sl1->avgVel[1],sl1->avgVel[2]);
+        }
+        printf("\n");
     }
     ////////////////////////////////////////////////////////////////////
 
@@ -1489,6 +1483,9 @@ static void PointToTriImpulse(
             SpreadImpactZoneImpulse(pts[3], rigid_impulse[1], nor);
 	    return;
 	}
+
+    if (fabs(m_impulse) < DBL_EPSILON)
+        return;
 
     std::vector<double> W = {-w[0],-w[1],-w[2],1.0};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],

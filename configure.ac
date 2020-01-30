@@ -301,7 +301,6 @@ AS_IF([test "x${cgal_dir}" != xno],
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
 
-#The macro HAVE_CGAL isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cgal = yes],
       [AC_DEFINE([HAVE_CGAL],[1],[build with cgal])])
 
@@ -335,7 +334,6 @@ AS_IF([test "x${arma_dir}" != xno],
         armainc="-I${arma_inc} ${arma_cflags}"
         armalib="-L${arma_lib} ${arma_libflags}"])
 
-#The macro HAVE_ARMA isn't being used right now, but may be useful for debugging
 AS_IF([test $with_arma = yes],
       [AC_DEFINE([HAVE_ARMA],[1],[build with armadillo])])
 
@@ -371,7 +369,6 @@ AS_IF([test "x${cvode_dir}" != xno],
 AC_SUBST(CVODE_CFLAGS,${cvodeinc})
 AC_SUBST(CVODE_LIBS,${cvodelib})
 
-#The macro HAVE_CVODE isn't being used right now, but may be useful for debugging
 AS_IF([test $with_cvode = yes],
       [AC_DEFINE([HAVE_CVODE],[1],[build with cvode])])
 
@@ -404,7 +401,6 @@ AS_IF([test "x${nlopt_dir}" != xno],
 AC_SUBST(NLOPT_CFLAGS,${nloptinc})
 AC_SUBST(NLOPT_LIBS,${nloptlib})
 
-#The macro HAVE_NLOPT isn't being used right now, but may be useful for debugging
 AS_IF([test $with_nlopt = yes],
       [AC_DEFINE([HAVE_NLOPT],[1],[build with nlopt])])
 

@@ -36,6 +36,7 @@ struct STATE
     double x_old[3];
     int collsn_num;
     int collsn_num_RG;
+    bool has_proximity;
     bool has_collsn;
     bool is_fixed;
     bool is_movableRG;

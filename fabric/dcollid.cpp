@@ -263,7 +263,6 @@ void CollisionSolver3d::computeAverageVelocity()
         }
     }
 
-    //Reset points to original positions.
     resetPositionCoordinates();
 }
 
@@ -396,6 +395,8 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
 	stop_clock("detectProximity");
 
+    vtkPlotSurface("ProximityImpulse");
+
 	//if (debugging("collision"))
 	  //  printDebugVariable();
 
@@ -506,7 +507,6 @@ void CollisionSolver3d::aabbCollision()
             build_count_col++;
             abt_collision->updateTreeStructure();
             volume = abt_collision->getVolume();
-            //std::cout << "build_count_col is " << build_count_col << std::endl; 
         }
     }
 }
@@ -755,6 +755,8 @@ void CollisionSolver3d::updateFinalVelocity()
     //need to call spring solver to get velocity at t(n+1)
     //for simplicity now set v(n+1) = v(n+1/2)
 	
+    unsortHseList(hseList);
+
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
@@ -857,21 +859,23 @@ void CollisionSolver3d::updateFinalForRG()
 }
 
 #ifdef HAVE_VTK
-void CollisionSolver3d::vtkPlotSurface(std::string pname)
-{
-    if (vtkdir.empty())
-    {
-        printf("vtkPlotSurface() ERROR: vtkdir.empty()\n");
-        return;
-    }
+void CollisionSolver3d::vtkPlotSurface(std::string vtkdir)
+{ 
+    vtkdir = outdir + "/" + vtkdir;
+    vtkdir += ".ts" + tstep;
 
     if (create_directory(vtkdir.c_str(),NO))
     {
-        if (pname.empty()) pname = "vtk-surf.vtp";
-        std::string fname = vtkdir + "/" + pname;
+        std::string fname;
         
-        updateFinalPosition();
+        fname = vtkdir + "/current_intfc.vtp";
         vtkplotVectorSurface(hseList,fname.c_str());
+
+        updateFinalPosition();
+
+        fname = vtkdir + "/forecast_intfc.vtp";
+        vtkplotVectorSurface(hseList,fname.c_str());
+
         resetPositionCoordinates();
     }
 }

@@ -107,8 +107,8 @@ void vtkplotVectorSurface(std::vector<CD_HSE*>& hse_list, const char* fname)
 #endif
 
   // Optional - set the mode. The default is binary.
-  writer->SetDataModeToBinary();
-  //writer->SetDataModeToAscii();
+    //writer->SetDataModeToBinary();
+  writer->SetDataModeToAscii();
   writer->Write();
   
   return;

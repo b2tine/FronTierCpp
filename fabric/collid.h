@@ -25,13 +25,43 @@ public:
     int build_count_pre = 1;
     int build_count_col = 1;
 
-	CollisionSolver3d() = default;
     virtual ~CollisionSolver3d();
-
+	CollisionSolver3d() = default;
     CollisionSolver3d(const CollisionSolver3d&) = delete;
     CollisionSolver3d& operator=(const CollisionSolver3d&) = delete;
     CollisionSolver3d(CollisionSolver3d&&) = delete;
     CollisionSolver3d& operator=(CollisionSolver3d&&) = delete;
+
+    CollisionSolver3d(Front* front)
+    {
+        outdir = OutName(front);
+        tstep = std::to_string(front->step);
+        setTimeStepSize(front->dt);
+        
+        gtris = front->gtris;
+        gpoints = front->gpoints;
+    }
+
+    POINT **gpoints;
+    TRI **gtris;
+
+    std::string outdir;
+    std::string tstep;
+
+    void vtkPlotSurface(std::string vtkdir);
+    void setOutputDirectory(std::string dir) {outdir.assign(dir);}
+    
+	void clearHseList();
+	void assembleFromInterface(const INTERFACE*);
+	void createImpZoneForRG(const INTERFACE*);
+	
+    void resolveCollision();
+	void recordOriginalPosition();	
+	void setDomainBoundary(double* L,double *U);
+    double setVolumeDiff(double);
+
+	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
+	bool hasCollision() {return has_collision;}
 
 	static void setTimeStepSize(double);
 	static double getTimeStepSize();
@@ -60,26 +90,6 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
-
-    double setVolumeDiff(double);
-
-	void clearHseList();
-	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
-	
-    void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
-
-	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
-	bool hasCollision() {return has_collision;}
-
-    std::string vtkdir;
-    void setVtkDirectory(std::string dir) {vtkdir.assign(dir);}
-    void vtkPlotSurface(std::string pname);
-
-    POINT **gpoints;
-    TRI **gtris;
 
 	//for debugging
 	static void printDebugVariable();

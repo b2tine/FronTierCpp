@@ -225,8 +225,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	if (!debugging("collision_off"))
     {
         printf("COLLISION DETECTION ON\n");
-        collision_solver = new CollisionSolver3d();
-        collision_solver->setVtkDirectory(OutName(fr));
+        collision_solver = new CollisionSolver3d(fr);
     }
     else
         printf("COLLISION DETECTION OFF\n");
@@ -238,7 +237,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         {
             setCollisionFreePoints3d(fr->interf);
 
-            collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            collision_solver->assembleFromInterface(fr->interf);
             collision_solver->recordOriginalPosition();
 
             collision_solver->setRestitutionCoef(1.0);
@@ -255,9 +254,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             collision_solver->setStringFrictionConstant(af_params->mu_l);
             collision_solver->setStringSpringConstant(af_params->kl); 
             collision_solver->setStringPointMass(af_params->m_l);
-
-            collision_solver->gpoints = fr->gpoints;
-            collision_solver->gtris = fr->gtris;
         }
 
         //write to GLOBAL_POINT** point_set
@@ -334,7 +330,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         }
         
         setSpecialNodeForce(fr,geom_set.kl);
-	    //compute_center_of_mass_velo(&geom_set);
 
         delete collision_solver;
     }
