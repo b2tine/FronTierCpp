@@ -1009,8 +1009,8 @@ static void EdgeToEdgeImpulse(
     if (debugging("CollisionImpulse"))
     {
         printf("vn = %g\n",vn);
-        printf("vn * dt = %g  %s  %g * overlap = %g\n",
-                vn*dt, (vn*dt < overlap_coef*overlap) ? "<" : ">",
+        printf("fabs(vn) * dt = %g  %s  %g * overlap = %g\n",
+                fabs(vn)*dt, (fabs(vn)*dt < overlap_coef*overlap) ? "<" : ">",
                 overlap_coef, overlap_coef*overlap);
     }
 	
@@ -1029,7 +1029,7 @@ static void EdgeToEdgeImpulse(
         //Can apply both for repulsion
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,wab);
-        if (vn * dt < overlap_coef * overlap)
+        if (fabs(vn) * dt < overlap_coef * overlap)
             EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
                     &elastic_impulse,rigid_impulse,dt,m,k);
     }
@@ -1235,11 +1235,11 @@ static void EdgeToEdgeElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - fabs(vn) = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - fabs(vn));
         }
 
-        double tmp = -1.0*std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
+        double tmp = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - fabs(vn)));
         *impulse += tmp;
         rigid_impulse[0] += tmp;
         rigid_impulse[1] += tmp;
@@ -1405,8 +1405,8 @@ static void PointToTriImpulse(
     if (debugging("CollisionImpulse"))
     {
         printf("vn = %g\n",vn);
-        printf("vn * dt = %g  %s  %g * overlap = %g\n",
-                vn*dt, (vn*dt < overlap_coef*overlap) ? "<" : ">",
+        printf("fabs(vn) * dt = %g  %s  %g * overlap = %g\n",
+                fabs(vn)*dt, (fabs(vn)*dt < overlap_coef*overlap) ? "<" : ">",
                 overlap_coef, overlap_coef*overlap);
     }
 	
@@ -1424,7 +1424,7 @@ static void PointToTriImpulse(
         //Can apply both for repulsion
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,&inelastic_impulse,rigid_impulse,w,&sum_w);
-        if (vn * dt < overlap_coef * overlap)
+        if (fabs(vn) * dt < overlap_coef * overlap)
             PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
                     &elastic_impulse,rigid_impulse,dt,m,k);
     }
@@ -1640,11 +1640,11 @@ static void PointToTriElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - fabs(vn) = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - fabs(vn));
         }
 
-        double tmp = -1.0*std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
+        double tmp = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - fabs(vn)));
         *impulse += tmp;
         rigid_impulse[0] += tmp;
         rigid_impulse[1] += tmp;
