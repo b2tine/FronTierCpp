@@ -9,8 +9,8 @@
 
 #define DEBUGGING false
 
-//TODO: How where these determined?
-const double ROUND_EPS = 1.0e-10;
+const double ROUND_EPS = DBL_EPSILON;
+//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
