@@ -378,10 +378,28 @@ void FabricTearer::createNewTear(FabricEdge* e)
         coords[i] = 0.5*(Coords(p1)[i] + Coords(p2)[i]);
     }
 
-    printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
+    printf("midpoint coords = %f %f %f\n",coords[0],coords[1],coords[2]);
     printf("\n");
 
-    // Create a point at the middle coordinate and insert in side
+    // Compute direction vectors to p3 and p4 from midpoint for
+    // displacing the new points
+    double vec_mp2p3[3];
+    double vec_mp2p4[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        vec_mp2p3[i] = Coords(p3)[i] - coords[i];
+        vec_mp2p4[i] = Coords(p4)[i] - coords[i];
+    }
+    double mag_mp2p3 = Mag3d(vec_mp2p3);
+    double mag_mp2p4 = Mag3d(vec_mp2p4);
+    for (int i = 0; i < 3; ++i)
+    {
+        vec_mp2p3[i] /= mag_mp2p3;
+        vec_mp2p4[i] /= mag_mp2p4;
+    }
+
+
+    // Create a point at the middle coordinate and insert in side of left_tri
     newp = Point(coords);
     printf("newp = %p\n",newp);
     insert_point_in_tri_side(newp,side_left,left_tri,surf);
@@ -456,7 +474,7 @@ void FabricTearer::createNewTear(FabricEdge* e)
                 Point_of_tri(tri_list[i])[(side[i]+1)%3]);
     }
 
-    /* I already checked
+    // I already checked
     printf("\nnewp = %p\n",newp);
     printf("tris1[0] pts: %p %p %p\n",Point_of_tri(tris1[0])[0],
                 Point_of_tri(tris1[0])[1],Point_of_tri(tris1[0])[2]);
@@ -476,7 +494,6 @@ void FabricTearer::createNewTear(FabricEdge* e)
                 Point_of_tri(tris2[1])[1],Point_of_tri(tris2[1])[2]);
     printf("tris2[1] sides: %p %p %p\n",Tri_on_side(tris2[1],0),
                 Tri_on_side(tris2[1],1),Tri_on_side(tris2[1],2));
-    */
 
 
         //printf("\nInterface before install tearing curve:\n");
@@ -486,6 +503,15 @@ void FabricTearer::createNewTear(FabricEdge* e)
     // The interface after inserting tearing curve
         //printf("Interface after install tearing curve:\n");
     //print_interface(intfc);
+
+    // Separate new points
+    for (int i = 0; i < 3; ++i)
+    {
+        //TODO: wrong direction vector
+        //Coords(newp)[i] += 0.001*vec_mp2p3[i];
+        //Coords(newp1)[i] += 0.001*vec_mp2p4[i];
+    }
+
 
     // Make sure you restore the global interface
     set_current_interface(save_intfc);
