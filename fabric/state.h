@@ -17,7 +17,7 @@ struct STATE
     double impulse[MAXD];            /* Accum impact from external force */
 
 
-	/* for collision */
+	// for collision
 	struct UF   
     {
         POINT* next_pt;
@@ -38,6 +38,9 @@ struct STATE
     bool   has_collsn;
     bool   is_fixed;
     bool   is_movableRG;
+
+    // for tearing
+    bool is_weakpt {false};
 };
 
 #endif

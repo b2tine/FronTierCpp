@@ -381,24 +381,6 @@ void FabricTearer::createNewTear(FabricEdge* e)
     printf("midpoint coords = %f %f %f\n",coords[0],coords[1],coords[2]);
     printf("\n");
 
-    // Compute direction vectors to p3 and p4 from midpoint for
-    // displacing the new points
-    double vec_mp2p3[3];
-    double vec_mp2p4[3];
-    for (int i = 0; i < 3; ++i)
-    {
-        vec_mp2p3[i] = Coords(p3)[i] - coords[i];
-        vec_mp2p4[i] = Coords(p4)[i] - coords[i];
-    }
-    double mag_mp2p3 = Mag3d(vec_mp2p3);
-    double mag_mp2p4 = Mag3d(vec_mp2p4);
-    for (int i = 0; i < 3; ++i)
-    {
-        vec_mp2p3[i] /= mag_mp2p3;
-        vec_mp2p4[i] /= mag_mp2p4;
-    }
-
-
     // Create a point at the middle coordinate and insert in side of left_tri
     newp = Point(coords);
     printf("newp = %p\n",newp);
@@ -475,6 +457,7 @@ void FabricTearer::createNewTear(FabricEdge* e)
     }
 
     // I already checked
+    /*
     printf("\nnewp = %p\n",newp);
     printf("tris1[0] pts: %p %p %p\n",Point_of_tri(tris1[0])[0],
                 Point_of_tri(tris1[0])[1],Point_of_tri(tris1[0])[2]);
@@ -494,7 +477,7 @@ void FabricTearer::createNewTear(FabricEdge* e)
                 Point_of_tri(tris2[1])[1],Point_of_tri(tris2[1])[2]);
     printf("tris2[1] sides: %p %p %p\n",Tri_on_side(tris2[1],0),
                 Tri_on_side(tris2[1],1),Tri_on_side(tris2[1],2));
-
+    */
 
         //printf("\nInterface before install tearing curve:\n");
     // The original interface
@@ -504,15 +487,41 @@ void FabricTearer::createNewTear(FabricEdge* e)
         //printf("Interface after install tearing curve:\n");
     //print_interface(intfc);
 
+    // Compute direction vectors to p1 and p2 from midpoint for
+    // displacing the new points
+    double vec_mp2p1[3];
+    double vec_mp2p2[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        vec_mp2p1[i] = Coords(p1)[i] - coords[i];
+        vec_mp2p2[i] = Coords(p2)[i] - coords[i];
+    }
+    double mag_mp2p1 = Mag3d(vec_mp2p1);
+    double mag_mp2p2 = Mag3d(vec_mp2p2);
+    for (int i = 0; i < 3; ++i)
+    {
+        vec_mp2p1[i] /= mag_mp2p1;
+        vec_mp2p2[i] /= mag_mp2p2;
+    }
+
     // Separate new points
     for (int i = 0; i < 3; ++i)
     {
-        //TODO: wrong direction vector
-        //Coords(newp)[i] += 0.001*vec_mp2p3[i];
-        //Coords(newp1)[i] += 0.001*vec_mp2p4[i];
+        Coords(newp)[i] += 0.1*mag_mp2p1*vec_mp2p1[i];
+        Coords(newp1)[i] += 0.1*mag_mp2p2*vec_mp2p2[i];
     }
 
+    //TODO:
+    // Assign new equilibrium lengths (6 edges affected)
 
+    //TODO:
+    // Set Weak Points (2 new weak points)
+
+    //TODO:
+    // Create new FabricEdge objects for the 2 new edges
+    // and update the 4 edges bordering the new tris.
+    
+    
     // Make sure you restore the global interface
     set_current_interface(save_intfc);
 

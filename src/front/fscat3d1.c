@@ -4322,7 +4322,7 @@ EXPORT void install_hsbdry_on_surface(
 	}
 
     //TEMP: for TEARING createNewTear() debugging
-    printf("The inserted curve\n");
+    printf("Tearing: The inserted curve\n");
     print_curve(curve);
 
 	interpolate_intfc_states(intfc) = sav_intrp;
