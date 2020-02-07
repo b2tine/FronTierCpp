@@ -199,13 +199,11 @@ int main(int argc, char **argv)
             (void) printf("next dt = %20.14f\n",front.dt);
         }
         gd_closeplot();
-	
-    vmfree(x);
+	vmfree(x);
 	vmfree(u_old);
 	vmfree(u_new);
 	vmfree(u_sol);
-	
-    clean_up(0);
+	clean_up(0);
 }
 
 static void error_func(
