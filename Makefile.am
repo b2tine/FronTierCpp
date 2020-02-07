@@ -42,6 +42,7 @@ MAYBE_FRONTWRAPPER = FrontWrapper
 endif
 
 SUBDIRS = lib \
+		  weno \
 		  cFluid \
 		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \

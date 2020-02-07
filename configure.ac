@@ -457,6 +457,7 @@ AC_CONFIG_FILES([Makefile
                  src/front/Makefile
                  src/front/objs/Makefile
                  src/front/tests/Makefile
+                 weno/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
                  cFluid/tests/Makefile
