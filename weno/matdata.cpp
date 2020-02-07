@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #include "weno.h"
+#include <vector>
 
 static void readWenoParams(PARAMS*,char*);
 static void setSolutionType(INIT_TYPE);
@@ -39,6 +40,7 @@ static void (*exact_soln)(double,double,double*,double*,int);
 static void wave_func(double,double,double*,double*,int);
 static void hamp_func(double,double,double*,double*,int);
 static void cosine_func(double,double,double*,double*,int);
+static void sine_func(double,double,double*,double*,int);
 static void square_func(double,double,double*,double*,int);
 static void error_func(double*,double*,double*,int);
 
@@ -121,85 +123,113 @@ int main(int argc, char **argv)
         sprintf(gd_name,"%s/soln.gif",out_name);
         gd_initplot(gd_name,movie_caption,xmin,xmax,umin,umax,2);
 
+
+    int N = mesh_size;
+    int T = front.max_step;
+    std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
+
 	/* Time loop */
 	front.dt = dt = CFL*pow(dx,1.5)/wave_speed;
-        for (;;)
-        {
-            /* Advancing numerical solution */
-	    printf("dx = %f  dt = %f\n",dx,dt);
-	    Weno5(mesh_size,u_old,u_new,dx,front.dt);
+    for (int tt = 0; tt < T; ++tt)
+    {
+        /* Advancing numerical solution */
+        printf("dx = %f  dt = %f\n",dx,dt);
+        Weno5(mesh_size,u_old,u_new,dx,front.dt);
 
-            /* Swapping solution storage */
+        /* Swapping solution storage */
+        for (i = imin; i < imax; i++)
+        {
+            u_old[i] = u_new[i];
+        }
+
+        //save solution to solmat column tt
+        for (int i = 0; i < N; ++i)
+        {
+            solmat[i][tt] = u_old[i];
+        }
+     
+        /* Time and step control */
+        FT_AddTimeStepToCounter(&front);
+        (void) printf("\ntime = %20.14f   step = %5d   ",
+                            front.time,front.step);
+
+    /* Movie frame */
+        if (FT_IsDrawTime(&front))
+        {
+            /* Numerical solution */
+            x_movie = x;
+            y_movie = u_old;
+            gd_plotdata(mesh_size,x_movie,y_movie);
+
+            /* Exact solution */
+            exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+            x_movie = x;
+            y_movie = u_sol;
+            gd_plotdata(mesh_size,x_movie,y_movie);
+
+            /* Time label */
+            sprintf(time_label,"Time = %6.3f",front.time);
+            gd_plotframe(time_label);
+        }
+        /* Output date control */
+     
+        if (FT_IsSaveTime(&front))
+        {
+            /* Numerical solution */
+    sprintf(xg_name,"%s/num_sol-%d.xg",out_name,front.ip);
+            xg_file = fopen(xg_name,"w");
+            fprintf(xg_file,"\"u vs. x\"\n");
             for (i = imin; i < imax; i++)
             {
-                u_old[i] = u_new[i];
+                fprintf(xg_file,"%f  %f\n",x[i],u_old[i]);
             }
+            fclose(xg_file);
 
-            /* Time and step control */
-            FT_AddTimeStepToCounter(&front);
-            (void) printf("\ntime = %20.14f   step = %5d   ",
-                                front.time,front.step);
-
-	    /* Movie frame */
-            if (FT_IsDrawTime(&front))
+            /* Exact solution */
+            exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+            sprintf(xg_name,"%s/exc-%d.xg",out_name,front.ip);
+            xg_file = fopen(xg_name,"w");
+            fprintf(xg_file,"\"u vs. x\"\n");
+            for (i = imin; i < imax; i++)
             {
-                /* Numerical solution */
-                x_movie = x;
-                y_movie = u_old;
-                gd_plotdata(mesh_size,x_movie,y_movie);
-
-                /* Exact solution */
-                exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
-                x_movie = x;
-                y_movie = u_sol;
-                gd_plotdata(mesh_size,x_movie,y_movie);
-
-                /* Time label */
-                sprintf(time_label,"Time = %6.3f",front.time);
-                gd_plotframe(time_label);
+                fprintf(xg_file,"%f  %f\n",x[i],u_sol[i]);
             }
-            /* Output date control */
-            if (FT_IsSaveTime(&front))
-            {
-                /* Numerical solution */
-		sprintf(xg_name,"%s/num_sol-%d.xg",out_name,front.ip);
-                xg_file = fopen(xg_name,"w");
-                fprintf(xg_file,"\"u vs. x\"\n");
-                for (i = imin; i < imax; i++)
-                {
-                    fprintf(xg_file,"%f  %f\n",x[i],u_old[i]);
-                }
-                fclose(xg_file);
+            fclose(xg_file);
+        }
 
-                /* Exact solution */
-                exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
-                sprintf(xg_name,"%s/exc-%d.xg",out_name,front.ip);
-                xg_file = fopen(xg_name,"w");
-                fprintf(xg_file,"\"u vs. x\"\n");
-                for (i = imin; i < imax; i++)
-                {
-                    fprintf(xg_file,"%f  %f\n",x[i],u_sol[i]);
-		}
-                fclose(xg_file);
-            }
-
-	    /* Termination control */
-            if (FT_TimeLimitReached(&front))
-            {
-                front.dt = dt;
-                FT_TimeControlFilter(&front); /* reduce time step for output */
-                (void) printf("next dt = %20.14f\n",front.dt);
-        	exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
-		error_func(u_sol,u_old,err,mesh_size);
-                break;
-            }
-
+    /* Termination control */
+        if (FT_TimeLimitReached(&front))
+        {
             front.dt = dt;
             FT_TimeControlFilter(&front); /* reduce time step for output */
             (void) printf("next dt = %20.14f\n",front.dt);
+        exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+    error_func(u_sol,u_old,err,mesh_size);
+            break;
         }
-        gd_closeplot();
-	vmfree(x);
+
+        front.dt = dt;
+        FT_TimeControlFilter(&front); /* reduce time step for output */
+        (void) printf("next dt = %20.14f\n",front.dt);
+    }
+
+    // Write solmat file
+    char sm_name[100];
+    sprintf(sm_name,"%s/solmat-%d-%d.txt",out_name,N,T);
+    FILE* sm_file = fopen(sm_name,"w");
+    for (int i = 0; i < N; ++i)
+    {
+        for (int j = 0; j < T; ++j)
+        {
+            fprintf(sm_file,"%f ",solmat[i][j]);
+        }
+        fprintf(sm_file,"\n");
+    }
+
+
+    gd_closeplot();
+
+    vmfree(x);
 	vmfree(u_old);
 	vmfree(u_new);
 	vmfree(u_sol);
@@ -261,8 +291,11 @@ static void readWenoParams(
         {
         case 's':
         case 'S':
-	    params->init_type = SQUARE;
-	    break;
+            if (string[1] == 'i' || string[1] == 'I')
+                params->init_type = SINE;
+            else
+                params->init_type = SQUARE;
+	        break;
         case 'h':
         case 'H':
 	    params->init_type = HAMP;
@@ -339,6 +372,20 @@ static void cosine_func(
 	}
 }
 
+static void sine_func(
+        double a,
+        double time,
+        double *x,
+        double *u,
+        int mesh_size)
+{
+    for (int i = 0; i < mesh_size; i++)
+    {
+        double arg = x[i];
+	    u[i]=sin(PI*arg);
+	}
+}
+
 static void square_func(
         double a,
         double time,
@@ -353,7 +400,7 @@ static void square_func(
         {
             arg = x[i] - a*time;
 	    
-            if (arg >= 1.0 && arg <= 2.0)
+            if (arg >= -0.1 && arg <= 0.1)
                 u[i] = 1.0;
             else
                 u[i] = 0.0;
@@ -371,8 +418,11 @@ static void setSolutionType(
         case HAMP:
 	    exact_soln = hamp_func;
             break;
-	case COSINE:
+	    case COSINE:
 	    exact_soln = cosine_func;
+	    break;
+	    case SINE:
+	    exact_soln = sine_func;
 	    break;
         case SQUARE:
 	    exact_soln = square_func;

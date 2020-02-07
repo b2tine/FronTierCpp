@@ -21,6 +21,7 @@ enum _INIT_TYPE {
         UNKNOWN_INIT_TYPE = -1,
 	SQUARE = 1,
         HAMP,
+	SINE,
 	COSINE,
         WAVE
 };

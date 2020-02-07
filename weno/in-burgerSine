@@ -17,5 +17,5 @@ Redistribution interval: 0
 ***************Called by init_wave_params****************
 
 Enter type of equation: BURGER
-Enter type of initial condition: SQUARE
+Enter type of initial condition: SINE
 Enter coefficient a: 1.0
