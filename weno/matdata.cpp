@@ -119,19 +119,34 @@ int main(int argc, char **argv)
         umin -= 0.15*height;    umax += 0.15*height;
 
         /* Open and initialize GD movie output */
-        sprintf(movie_caption,"u vs. x");
-        sprintf(gd_name,"%s/soln.gif",out_name);
-        gd_initplot(gd_name,movie_caption,xmin,xmax,umin,umax,2);
+        //sprintf(movie_caption,"u vs. x");
+        //sprintf(gd_name,"%s/soln.gif",out_name);
+        //gd_initplot(gd_name,movie_caption,xmin,xmax,umin,umax,2);
 
 
     int N = mesh_size;
     int T = front.max_step;
     std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
+    //std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
+    std::vector<double> timevec;
 
 	/* Time loop */
 	front.dt = dt = CFL*pow(dx,1.5)/wave_speed;
-    for (int tt = 0; tt < T; ++tt)
+    //for (int tt = 0; tt < T; ++tt)
+    int tt = 0;
+    for (;;)
     {
+        if (FT_IsSaveTime(&front) || tt == 0)
+        {
+            //save solution to solmat column tt
+            for (int i = 0; i < N; ++i)
+            {
+                solmat[i][tt] = u_old[i];
+            }
+            timevec.push_back(front.time);
+            tt++;
+        }
+     
         /* Advancing numerical solution */
         printf("dx = %f  dt = %f\n",dx,dt);
         Weno5(mesh_size,u_old,u_new,dx,front.dt);
@@ -142,40 +157,37 @@ int main(int argc, char **argv)
             u_old[i] = u_new[i];
         }
 
-        //save solution to solmat column tt
-        for (int i = 0; i < N; ++i)
-        {
-            solmat[i][tt] = u_old[i];
-        }
-     
         /* Time and step control */
         FT_AddTimeStepToCounter(&front);
         (void) printf("\ntime = %20.14f   step = %5d   ",
                             front.time,front.step);
+        
 
-    /* Movie frame */
+        /*
+    // Movie frame
         if (FT_IsDrawTime(&front))
         {
-            /* Numerical solution */
+            // Numerical solution
             x_movie = x;
             y_movie = u_old;
             gd_plotdata(mesh_size,x_movie,y_movie);
 
-            /* Exact solution */
+            // Exact solution
             exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
             x_movie = x;
             y_movie = u_sol;
             gd_plotdata(mesh_size,x_movie,y_movie);
 
-            /* Time label */
+            // Time label
             sprintf(time_label,"Time = %6.3f",front.time);
             gd_plotframe(time_label);
         }
-        /* Output date control */
+
+        // Output date control
      
         if (FT_IsSaveTime(&front))
         {
-            /* Numerical solution */
+            // Numerical solution
     sprintf(xg_name,"%s/num_sol-%d.xg",out_name,front.ip);
             xg_file = fopen(xg_name,"w");
             fprintf(xg_file,"\"u vs. x\"\n");
@@ -185,7 +197,7 @@ int main(int argc, char **argv)
             }
             fclose(xg_file);
 
-            /* Exact solution */
+            // Exact solution
             exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
             sprintf(xg_name,"%s/exc-%d.xg",out_name,front.ip);
             xg_file = fopen(xg_name,"w");
@@ -196,12 +208,13 @@ int main(int argc, char **argv)
             }
             fclose(xg_file);
         }
+        */
 
-    /* Termination control */
+    // Termination control
         if (FT_TimeLimitReached(&front))
         {
             front.dt = dt;
-            FT_TimeControlFilter(&front); /* reduce time step for output */
+            FT_TimeControlFilter(&front); // reduce time step for output
             (void) printf("next dt = %20.14f\n",front.dt);
         exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
     error_func(u_sol,u_old,err,mesh_size);
@@ -209,25 +222,44 @@ int main(int argc, char **argv)
         }
 
         front.dt = dt;
-        FT_TimeControlFilter(&front); /* reduce time step for output */
+        FT_TimeControlFilter(&front); // reduce time step for output
         (void) printf("next dt = %20.14f\n",front.dt);
     }
 
     // Write solmat file
     char sm_name[100];
-    sprintf(sm_name,"%s/solmat-%d-%d.txt",out_name,N,T);
+    sprintf(sm_name,"%s/solmat-%d-%d.txt",out_name,N,(int)timevec.size());
     FILE* sm_file = fopen(sm_name,"w");
     for (int i = 0; i < N; ++i)
     {
-        for (int j = 0; j < T; ++j)
+        for (int j = 0; j < timevec.size(); ++j)
         {
             fprintf(sm_file,"%f ",solmat[i][j]);
+            //fprintf(sm_file,"%g ",solmat[i][j]);
         }
         fprintf(sm_file,"\n");
     }
 
+    // Write timevec file
+    char tv_name[100];
+    sprintf(tv_name,"%s/time-%d.txt",out_name,(int)timevec.size());
+    FILE* tv_file = fopen(tv_name,"w");
+    for (int i = 0; i < timevec.size(); ++i)
+    {
+        fprintf(tv_file,"%20.14f\n",timevec[i]);
+    }
 
-    gd_closeplot();
+    // Write xvec file
+    char xv_name[100];
+    sprintf(xv_name,"%s/x-%d.txt",out_name,N);
+    FILE* xv_file = fopen(xv_name,"w");
+    for (int i = 0; i < N; ++i)
+    {
+        fprintf(xv_file,"%20.14f\n",x[i]);
+    }
+
+
+    //gd_closeplot();
 
     vmfree(x);
 	vmfree(u_old);
