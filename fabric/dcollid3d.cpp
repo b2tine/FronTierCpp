@@ -1143,7 +1143,7 @@ static void EdgeToEdgeImpulse(
                         delta_vt = fabs(mu*t_impulse);
 
                     for (int j = 0; j < 3; ++j)
-                        sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                        sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
@@ -1555,7 +1555,7 @@ static void PointToTriImpulse(
                         delta_vt = fabs(mu*t_impulse);
                     
                     for (int j = 0; j < 3; ++j)
-                        sl[i]->friction[j] += W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
+                        sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
         }
