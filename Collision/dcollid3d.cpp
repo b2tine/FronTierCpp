@@ -1,7 +1,9 @@
 #include <armadillo>
 #include "collid.h"
 
-static bool MovingEdgeToEdge(POINT**);
+static bool MovingEdgeToEdgeJac(POINT**);
+static bool MovingEdgeToEdgeGS(POINT**);
+
 static bool EdgeToEdge(POINT**, double,
         MotionState mstate = MotionState::STATIC, double root = -1.0);
 
@@ -9,7 +11,9 @@ static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,d
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
-static bool MovingPointToTri(POINT**);
+static bool MovingPointToTriJac(POINT**);
+static bool MovingPointToTriGS(POINT**);
+
 static bool PointToTri(POINT**, double,
         MotionState mstate = MotionState::STATIC, double root = -1.0);
 
@@ -335,7 +339,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 
 	/* detect collision of start point of bond w.r.t to tri */
 	pts[3] = bd->start;
-    if (MovingPointToTri(pts))
+    if (MovingPointToTriJac(pts))
         status = true;
     
     if (status && is_detImpZone)
@@ -343,7 +347,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
-    if (MovingPointToTri(pts))
+    if (MovingPointToTriJac(pts))
         status = true;
 
     if (status && is_detImpZone)
@@ -356,7 +360,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-        if (MovingEdgeToEdge(pts))
+        if (MovingEdgeToEdgeJac(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -376,7 +380,7 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	pts[3] = b2->end;
 
 	bool status = false;
-    if(MovingEdgeToEdge(pts))
+    if(MovingEdgeToEdgeJac(pts))
         status = true;
 
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -403,7 +407,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
-        if(MovingPointToTri(pts))
+        if(MovingPointToTriJac(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -420,7 +424,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-            if(MovingEdgeToEdge(pts))
+            if(MovingEdgeToEdgeJac(pts))
                 status = true;
                 
             if (status && is_detImpZone)
@@ -431,8 +435,79 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 	return status;
 }
 
+//jacobi update
+static bool MovingPointToTriJac(POINT* pts[])
+{
+	double dt = CollisionSolver3d::getTimeStepSize();
+	double roots[4] = {-1,-1,-1,dt};
+
+    bool status = false;
+	if (isCoplanar(pts,dt,roots))
+    {
+        double tol = CollisionSolver3d::getFabricRoundingTolerance();
+        STATE* s = (STATE*)left_state(pts[3]);
+        if (s->is_stringpt)
+            tol = CollisionSolver3d::getStringRoundingTolerance();
+        
+        for (int i = 0; i < 4; ++i)
+        {
+            if (roots[i] < 0)
+                continue;
+    
+            for (int j = 0; j < 4; ++j)
+            {
+                STATE* sl = (STATE*)left_state(pts[j]);
+    		    for (int k = 0; k < 3; ++k)
+                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+		    }
+    
+            MotionState mstate = MotionState::MOVING;
+            if (PointToTri(pts,tol,mstate,roots[i]))
+            {
+                status = true;
+                for (int j = 0; j < 4; ++j)
+                {
+                    STATE* sl = (STATE*)left_state(pts[j]);
+                    sl->collsn_dt = roots[i];
+                    sl->has_collsn = true;
+                }
+                break;
+            }
+	    }
+	}
+
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+        
+        // Use updateAverageVelocity() in detectCollision()
+        // to perform update instead.
+
+        /*
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->collsnImpulse[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
+        */
+    }
+    
+    return status;
+}
+
 //gauss-seidel update
-static bool MovingPointToTri(POINT* pts[])
+static bool MovingPointToTriGS(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
@@ -497,8 +572,82 @@ static bool MovingPointToTri(POINT* pts[])
     return status;
 }
 
+//jacobi update
+static bool MovingEdgeToEdgeJac(POINT* pts[])
+{
+	double dt = CollisionSolver3d::getTimeStepSize();
+	double roots[4] = {-1,-1,-1,dt};
+
+    bool status = false;
+	if (isCoplanar(pts,dt,roots))
+    {
+        double tol = CollisionSolver3d::getFabricRoundingTolerance();
+        STATE* s = (STATE*)left_state(pts[0]);
+        if (s->is_stringpt)
+            tol = CollisionSolver3d::getStringRoundingTolerance();
+        s = (STATE*)left_state(pts[2]);
+        if (s->is_stringpt)
+            tol = CollisionSolver3d::getStringRoundingTolerance();
+
+        for (int i = 0; i < 4; ++i)
+        {
+            if (roots[i] < 0)
+                continue;
+                
+            for (int j = 0; j < 4; ++j)
+            {
+                STATE* sl = (STATE*)left_state(pts[j]);
+                for (int k = 0; k < 3; ++k)
+                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+            }
+
+            MotionState mstate = MotionState::MOVING;
+            if (EdgeToEdge(pts,tol,mstate,roots[i]))
+            {
+                status = true;
+                for (int j = 0; j < 4; ++j)
+                {
+                    STATE* sl = (STATE*)left_state(pts[j]);
+                    sl->collsn_dt = roots[i];
+                    sl->has_collsn = true;
+                }
+                break;
+            }
+        }
+    }
+
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        for (int k = 0; k < 3; ++k)
+            Coords(pts[j])[k] = sl->x_old[k];
+
+        // Use updateAverageVelocity() in detectCollision()
+        // to perform update instead.
+        
+        /*
+        if (!is_detImpZone)
+        {
+            if (sl->collsn_num > 0)
+            {
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse[k];
+                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->collsnImpulse[k] = 0.0;
+                }
+            }
+            sl->collsn_num = 0;
+        }
+        */
+    }
+    
+    return status;
+}
+
 //gauss-seidel update
-static bool MovingEdgeToEdge(POINT* pts[])
+static bool MovingEdgeToEdgeGS(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
