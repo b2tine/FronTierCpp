@@ -530,6 +530,9 @@ void CollisionSolver3d::detectCollision()
                 << abt_collision->getCount() 
                 << " collision pairs" << std::endl;
         }
+
+        //needed for jacobi update -- don't call when using gauss-seidel update
+        updateAverageVelocity();
 	    
         if (++niter > MAX_ITER)
             break;
