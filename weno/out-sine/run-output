@@ -8714,7 +8714,7 @@ dx = 0.007843  dt = 0.000347
 
 time =     1.00000000000000   step =  2900   next dt =     0.00000000000000
 
-256	4.030361e-01	4.521178e-01	6.778368e-01
+256	4.045581e-01	4.526186e-01	6.896640e-01
 
 matdata.cpp:268: error: calling clean_up
 
@@ -8727,7 +8727,7 @@ Storage used 6920 bytes
 
 		CPU TIME: 0 Seconds
 		SYS TIME: 0 Seconds
-		MAX RSS = 34252 Kilobytes
+		MAX RSS = 33880 Kilobytes
 
-		TERMINATION TIME OF RUN:   Fri Feb  7 14:12:59 2020
+		TERMINATION TIME OF RUN:   Wed Feb 12 11:12:51 2020
 
