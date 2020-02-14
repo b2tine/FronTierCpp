@@ -1,0 +1,48 @@
+Domain limit in 0-th dimension: -1.000000 1.000000
+Computational grid: 256 
+Lower boundary in 0-th dimension: PERIODIC
+Upper boundary in 0-th dimension: PERIODIC
+Max time: 1.000000
+Max step: 5
+Print interval: 0.500000
+Movie frame interval: 0.100000
+CFL factor: 0.500000
+Redistribution interval: 0
+Type yes to turn off auto-redistribution: 
+Cannot find the string, using default
+Enter type of equation:  BURGER
+Enter type of initial condition:  SQUARE
+Enter coefficient a:  1.000000
+dx = 0.007843  dt = 0.000347
+
+time =     0.00034729995511   step =     1   next dt =     0.00034729995511
+dx = 0.007843  dt = 0.000347
+
+time =     0.00069459991023   step =     2   next dt =     0.00034729995511
+dx = 0.007843  dt = 0.000347
+
+time =     0.00104189986534   step =     3   next dt =     0.00034729995511
+dx = 0.007843  dt = 0.000347
+
+time =     0.00138919982046   step =     4   next dt =     0.00034729995511
+dx = 0.007843  dt = 0.000347
+
+time =     0.00173649977557   step =     5   next dt =     0.00034729995511
+
+256	1.502782e-03	1.353221e-02	1.541652e-01
+
+matdata.cpp:268: error: calling clean_up
+
+		CLEAN_UP, error = 0
+
+Storage used 6920 bytes
+
+
+		EXECUTION TIME DATA:
+
+		CPU TIME: 0 Seconds
+		SYS TIME: 0 Seconds
+		MAX RSS = 13080 Kilobytes
+
+		TERMINATION TIME OF RUN:   Fri Feb 14 13:52:58 2020
+
