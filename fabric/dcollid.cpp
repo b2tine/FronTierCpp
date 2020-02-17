@@ -294,7 +294,6 @@ void CollisionSolver3d::computeImpactZone()
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
 	int niter = 0;
-    int numZones = 0;
 	bool is_collision = true;
 
 	turnOnImpZone();
@@ -313,16 +312,18 @@ void CollisionSolver3d::computeImpactZone()
 
         is_collision = abt_collision->getCollsnState();
 
+        updateImpactZoneVelocity();
+
         if (debugging("collision"))
         {
             std::cout << "    #"<<niter++ << ": "
                       << abt_collision->getCount() 
                       << " collision pairs" << std::endl;
-            std::cout << "     " << numZones
+            std::cout << "     " << numImpactZones
                       << " impact zones" << std::endl;
+            std::cout << "     " << numImpactZonePoints
+                      << " total impact zone points" << std::endl;
         }
-
-        updateImpactZoneVelocity(numZones);
     }
 	
     turnOffImpZone();
@@ -352,10 +353,12 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 	}
 }
 
-void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
+void CollisionSolver3d::updateImpactZoneVelocity()
 {
+	numImpactZonePoints = 0;
+	numImpactZones = 0;
+
 	unsortHseList(hseList);
-	int numZones = 0;
     
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
@@ -363,19 +366,19 @@ void CollisionSolver3d::updateImpactZoneVelocity(int &nZones)
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
 		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
 		
             //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1)
+            if (sorted(pt) || weight(head) == 1)
                 continue;
             else
             {
-                updateImpactListVelocity(findSet(pt));
-                numZones++;
+                updateImpactListVelocity(head);
+                numImpactZonePoints += weight(head);
+                numImpactZones++;
             }
 	    }
 	}
-
-	nZones = numZones;
 }
 
 void CollisionSolver3d::resolveCollision()
