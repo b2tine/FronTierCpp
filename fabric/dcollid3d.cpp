@@ -339,7 +339,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 
 	/* detect collision of start point of bond w.r.t to tri */
 	pts[3] = bd->start;
-    if (MovingPointToTriJac(pts))
+    if (MovingPointToTriGS(pts))
         status = true;
     
     if (status && is_detImpZone)
@@ -347,7 +347,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
-    if (MovingPointToTriJac(pts))
+    if (MovingPointToTriGS(pts))
         status = true;
 
     if (status && is_detImpZone)
@@ -360,7 +360,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-        if (MovingEdgeToEdgeJac(pts))
+        if (MovingEdgeToEdgeGS(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -380,7 +380,7 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	pts[3] = b2->end;
 
 	bool status = false;
-    if(MovingEdgeToEdgeJac(pts))
+    if(MovingEdgeToEdgeGS(pts))
         status = true;
 
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -407,7 +407,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
-        if(MovingPointToTriJac(pts))
+        if(MovingPointToTriGS(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -424,7 +424,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-            if(MovingEdgeToEdgeJac(pts))
+            if(MovingEdgeToEdgeGS(pts))
                 status = true;
                 
             if (status && is_detImpZone)

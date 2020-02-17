@@ -408,7 +408,8 @@ void CollisionSolver3d::resolveCollision()
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-    detectProximity();
+    //TODO: verify this should not be called a second time
+            //detectProximity();
     
     //TODO: implement this function correctly
 	//start_clock("reduceSuperelast");
@@ -531,8 +532,8 @@ void CollisionSolver3d::detectCollision()
                 << " collision pairs" << std::endl;
         }
 
-        //needed for jacobi update -- don't call when using gauss-seidel update
-        updateAverageVelocity();
+        //TODO: don't call when using gauss-seidel update
+        //updateAverageVelocity();
 	    
         if (++niter > MAX_ITER)
             break;
@@ -853,6 +854,7 @@ void CollisionSolver3d::updateFinalForRG()
         }
 }
 
+//For Jacobi velocity update
 void CollisionSolver3d::updateAverageVelocity()
 {
 	POINT *p;
@@ -860,6 +862,7 @@ void CollisionSolver3d::updateAverageVelocity()
 	double maxSpeed = 0;
 	double* maxVel = nullptr;
 
+/*
 #ifdef HAVE_VTK
 	if (debugging("CollisionImpulse"))
     {
@@ -873,6 +876,7 @@ void CollisionSolver3d::updateAverageVelocity()
         }
 	}
 #endif
+*/
 
     unsortHseList(hseList);
 	for (unsigned i = 0; i < hseList.size(); ++i)
