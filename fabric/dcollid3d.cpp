@@ -69,9 +69,10 @@ void CollisionSolver3d::assembleFromInterface(
 	    if (hsbdry_type(*c) != STRING_HSBDRY)
             continue; 
 
-        CD_HSE_TYPE tag = CD_HSE_TYPE::FABRIC_BOND;
+        CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
 	    {
+            //TODO: Mark fixed/static string nodes (points)
             hseList.push_back(new CD_BOND(b,tag));
 		    n_bond++;
 	    }
@@ -383,9 +384,12 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
     if(MovingEdgeToEdgeGS(pts))
         status = true;
 
+    //NO IMPACT ZONES FOR STRING-STRING COLLISIONS
+    /*
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (status && is_detImpZone)
         createImpZone(pts,4);
+    */
 
     return status;
 }
@@ -436,19 +440,21 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 }
 
 //jacobi update
+// Use updateAverageVelocity() in detectCollision()
+// to perform update after all impulses recorded.
 static bool MovingPointToTriJac(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    STATE* s = (STATE*)left_state(pts[3]);
+    if (s->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+        
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[3]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -476,31 +482,11 @@ static bool MovingPointToTriJac(POINT* pts[])
 	    }
 	}
 
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
-        
-        // Use updateAverageVelocity() in detectCollision()
-        // to perform update instead.
-
-        /*
-        if (!is_detImpZone)
-        {
-            if (sl->collsn_num > 0)
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
-                    sl->collsnImpulse[k] = 0.0;
-                }
-            }
-            sl->collsn_num = 0;
-        }
-        */
     }
     
     return status;
@@ -512,14 +498,14 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    STATE* s = (STATE*)left_state(pts[3]);
+    if (s->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+        
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[3]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -573,22 +559,23 @@ static bool MovingPointToTriGS(POINT* pts[])
 }
 
 //jacobi update
+// Use updateAverageVelocity() in detectCollision()
+// to perform update after all impulses recorded.
 static bool MovingEdgeToEdgeJac(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    if (s0->is_stringpt || s2->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[0]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        s = (STATE*)left_state(pts[2]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -616,31 +603,11 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
         }
     }
 
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
-
-        // Use updateAverageVelocity() in detectCollision()
-        // to perform update instead.
-        
-        /*
-        if (!is_detImpZone)
-        {
-            if (sl->collsn_num > 0)
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
-                    sl->collsnImpulse[k] = 0.0;
-                }
-            }
-            sl->collsn_num = 0;
-        }
-        */
     }
     
     return status;
@@ -652,17 +619,22 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    if (s0->is_stringpt || s2->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+
+    /*
+    bool string_string = false;
+    if (s0->is_stringpt && s2->is_stringpt)
+        string_string = true;
+    */
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[0]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        s = (STATE*)left_state(pts[2]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -697,7 +669,78 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
 
-        if (!is_detImpZone)
+        //TODO: If the point is a string pt then spread,
+        //      even if colliding point is not a string pt?
+        //if (sl->is_stringpt)
+        if (string_string)
+        {
+            if (sl->collsn_num > 0)
+            {
+                POINT* pchain[3];
+                BOND* b = Bond_of_hse(pts[j]->hse);
+
+                int nchain;
+                if (pts[j] == b->start)
+                {
+                    if (!b->prev)
+                    {
+                        pchain[0] = pts[j];
+                        pchain[1] = b->end;
+                        nchain = 2;
+                    
+                        /*
+                        //TODO: find how to append the following to a curves.list file
+                        double** plist = new double*[2];
+                        plist[0] = Coords(pts[j]);
+                        plist[1] = Coords(b->end);
+                        std::string fname = "pchain";
+                        gview_polyline("no_prev_bond",fname.c_str(),plist,2,pRED,5.0);
+                        delete[] plist;
+                        clean_up(0);
+                        */
+                    }
+                    else
+                    {
+                        pchain[0] = b->prev->start;
+                        pchain[1] = pts[j];
+                        pchain[2] = b->end;
+                        nchain = 3;
+                    }
+                }
+                else
+                {
+                    if (!b->next)
+                    {
+                        pchain[0] = b->start;
+                        pchain[1] = pts[j];
+                        nchain = 2;
+                    }
+                    else
+                    {
+                        pchain[0] = b->start;
+                        pchain[1] = pts[j];
+                        pchain[2] = b->next->end;
+                        nchain = 3;
+                    }
+                }
+
+                for (int i = 0; i < nchain; ++i)
+                {
+                    STATE* csl = (STATE*)left_state(pchain[i]);
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        csl->avgVel[k] += sl->collsnImpulse[k]/3.0;
+                        csl->avgVel[k] /= (double)sl->collsn_num;
+                    }
+                }
+
+                for (int k = 0; k < 3; ++k)
+                    sl->collsnImpulse[k] = 0.0;
+            }
+
+            sl->collsn_num = 0;
+        }
+        else if (!is_detImpZone)
         {
             if (sl->collsn_num > 0)
             {
@@ -1079,8 +1122,14 @@ static bool EdgeToEdge(
         scalarMult(1.0/dist,vec,vec);
         //return false;
 
+    bool string_string = false;
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+    if (s0->is_stringpt && s2->is_stringpt)
+        string_string = true;
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (!is_detImpZone)
+    if (!is_detImpZone || string_string)
     {
         double dt = root;
         if (mstate == MotionState::STATIC)
@@ -1410,6 +1459,12 @@ static void EdgeToEdgeElasticImpulse(
         double dt, double m,
         double k)
 {
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        if (sl->is_stringpt) return;
+    }
+
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
         isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
@@ -1859,6 +1914,12 @@ static void PointToTriElasticImpulse(
         double dt, double m,
         double k)
 {
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        if (sl->is_stringpt) return;
+    }
+
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
         isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {

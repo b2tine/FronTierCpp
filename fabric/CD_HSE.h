@@ -10,7 +10,7 @@
 enum class CD_HSE_TYPE
 {
     FABRIC_TRI,
-    FABRIC_BOND,
+    STRING_BOND,
     RIGID_TRI
 };
 
@@ -58,7 +58,7 @@ struct CD_BOND: public CD_HSE
         : m_bond{bond}
     {
         type = tag;
-        if (type == CD_HSE_TYPE::FABRIC_BOND)
+        if (type == CD_HSE_TYPE::STRING_BOND)
         {
             STATE* sl;
             sl = (STATE*)left_state(m_bond->start);
