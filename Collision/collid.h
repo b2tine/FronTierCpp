@@ -112,6 +112,9 @@ private:
 
     static bool s_detImpZone;
 
+    int numImpactZones {0};
+    int numImpactZonePoints {0};
+
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
@@ -127,7 +130,7 @@ private:
 	void updateAverageVelocity();
 	void updateExternalImpulse();
 	void computeImpactZone();
-	void updateImpactZoneVelocity(int&);
+	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();
 	void detectProximityEndStep();

@@ -626,11 +626,9 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     if (s0->is_stringpt || s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
-    /*
     bool string_string = false;
     if (s0->is_stringpt && s2->is_stringpt)
         string_string = true;
-    */
 
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
