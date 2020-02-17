@@ -1224,8 +1224,11 @@ static void EdgeToEdgeImpulse(
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
             printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
+            printf("nor = %g %g %g\n\n",nor[0],nor[1],nor[2]);
+            
             printf("a = %g, b = %g\n",a,b);
+            printf("wa[0] = %g, wa[1] =  %g, wb[0] = %g, wb[1] = %g\n\n",
+                    wa[0],wa[1],wb[0],wb[1]);
             
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i)
@@ -1654,8 +1657,9 @@ static void PointToTriImpulse(
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
             printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
-            printf("w[0] = %g, w[1] = %g, w[2] = %g\n",w[0],w[1],w[2]);
+            printf("nor = %g %g %g\n\n",nor[0],nor[1],nor[2]);
+
+            printf("w[0] = %g, w[1] = %g, w[2] = %g\n\n",w[0],w[1],w[2]);
             
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i)
