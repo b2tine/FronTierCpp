@@ -561,7 +561,7 @@ static bool MovingPointToTriGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->avgVel[k] /= (double)sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
             }
@@ -704,7 +704,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->avgVel[k] /= (double)sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
             }
