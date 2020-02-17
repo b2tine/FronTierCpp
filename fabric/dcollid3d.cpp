@@ -1184,6 +1184,7 @@ static void EdgeToEdgeImpulse(
     
     double impulse[2];
     double m_impulse[2];
+    double f_impulse[2];
 
     for (int i = 0; i < 2; ++i)
     {
@@ -1192,12 +1193,15 @@ static void EdgeToEdgeImpulse(
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
         }
         else
         {
             double wabs_sqr = sqr(wab[0]) + sqr(wab[1])
                               + sqr(wab[2]) + sqr(wab[3]);
+        
             m_impulse[i] = 2.0*impulse[i]/wabs_sqr;
+            f_impulse[i] = 2.0*inelastic_impulse[i]/wabs_sqr;
         }
     }
 
@@ -1246,6 +1250,7 @@ static void EdgeToEdgeImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
+    //TODO: Do this correctly using impulse method
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1266,6 +1271,8 @@ static void EdgeToEdgeImpulse(
     std::vector<double> W = {-wab[0],-wab[1],wab[2],wab[3]};
     std::vector<double> M = {m_impulse[0],m_impulse[0],
                              m_impulse[1],m_impulse[1]};
+    std::vector<double> F = {f_impulse[0],f_impulse[0],
+                             f_impulse[1],f_impulse[1]};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
@@ -1282,14 +1289,15 @@ static void EdgeToEdgeImpulse(
             for (int j = 0; j < 3; ++j)
                 sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
        
-            //friction
+            // Apply friction for static proximity repulsions
             if (mstate == MotionState::STATIC)
             {
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
-                    if (fabs(mu*t_impulse) < max_friction)
-                        delta_vt = fabs(mu*t_impulse);
+                    if (fabs(mu*friction_impulse) < max_friction)
+                        delta_vt = fabs(mu*friction_impulse);
 
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
@@ -1600,14 +1608,22 @@ static void PointToTriImpulse(
 
     double impulse[2];
     double m_impulse[2];
+    double f_impulse[2];
 
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
+
         if (fabs(sum_w) < MACH_EPS)
+        {
             m_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
+        }
         else
-            m_impulse[i] = 2.0 * impulse[i] / (1.0 + Dot3d(w, w));
+        {
+            m_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
+            f_impulse[i] = 2.0*inelastic_impulse[i]/(1.0 + Dot3d(w, w));
+        }
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -1657,6 +1673,7 @@ static void PointToTriImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
+    //TODO: Do this correctly using impulse method
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1678,6 +1695,8 @@ static void PointToTriImpulse(
     std::vector<double> W = {-w[0],-w[1],-w[2],1.0};
     std::vector<double> M = {m_impulse[0],m_impulse[0],
                              m_impulse[0],m_impulse[1]};
+    std::vector<double> F = {f_impulse[0],f_impulse[0],
+                             f_impulse[0],f_impulse[1]};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[0],rigid_impulse[1]};
 
@@ -1694,14 +1713,15 @@ static void PointToTriImpulse(
             for (int j = 0; j < 3; ++j)
                 sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
 
-            //friction
+            // Apply friction for static proximity repulsions
             if (mstate == MotionState::STATIC)
             {
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
-                    if (fabs(mu*t_impulse) < max_friction)
-                        delta_vt = fabs(mu*t_impulse);
+                    if (fabs(mu*friction_impulse) < max_friction)
+                        delta_vt = fabs(mu*friction_impulse);
                     
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
