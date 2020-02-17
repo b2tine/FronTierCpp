@@ -69,9 +69,10 @@ void CollisionSolver3d::assembleFromInterface(
 	    if (hsbdry_type(*c) != STRING_HSBDRY)
             continue; 
 
-        CD_HSE_TYPE tag = CD_HSE_TYPE::FABRIC_BOND;
+        CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
 	    {
+            //TODO: Mark fixed/static string nodes (points)
             hseList.push_back(new CD_BOND(b,tag));
 		    n_bond++;
 	    }
@@ -105,6 +106,8 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 	}
 }
 
+//TODO: This may not be desirable for string-string interactions.
+//      If not, remove string code in function.
 void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 {
     POINT* p = nullptr;
@@ -139,6 +142,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 		num_pts++;
     }
 	
+    //TODO: Is this justified, or just use the full step dt?
     avg_dt += CollisionSolver3d::getTimeStepSize();
     avg_dt /= (double)num_pts + 1.0;
 
@@ -150,9 +154,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	    //v_cm[i] /= (double)num_pts;
 	}
 
-    //if (debugging("collision"))
-	  //  printf("%d number of points in this zone\n",num_pts);
-	
 	//compute angular momentum
 	double L[3] = {0.0};
 
@@ -339,7 +340,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 
 	/* detect collision of start point of bond w.r.t to tri */
 	pts[3] = bd->start;
-    if (MovingPointToTriJac(pts))
+    if (MovingPointToTriGS(pts))
         status = true;
     
     if (status && is_detImpZone)
@@ -347,7 +348,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
-    if (MovingPointToTriJac(pts))
+    if (MovingPointToTriGS(pts))
         status = true;
 
     if (status && is_detImpZone)
@@ -360,7 +361,7 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
-        if (MovingEdgeToEdgeJac(pts))
+        if (MovingEdgeToEdgeGS(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -380,12 +381,15 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	pts[3] = b2->end;
 
 	bool status = false;
-    if(MovingEdgeToEdgeJac(pts))
+    if(MovingEdgeToEdgeGS(pts))
         status = true;
 
+    //NO IMPACT ZONES FOR STRING-STRING COLLISIONS
+    /*
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (status && is_detImpZone)
         createImpZone(pts,4);
+    */
 
     return status;
 }
@@ -407,7 +411,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
-        if(MovingPointToTriJac(pts))
+        if(MovingPointToTriGS(pts))
             status = true;
 
         if (status && is_detImpZone)
@@ -424,7 +428,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-            if(MovingEdgeToEdgeJac(pts))
+            if(MovingEdgeToEdgeGS(pts))
                 status = true;
                 
             if (status && is_detImpZone)
@@ -436,19 +440,21 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 }
 
 //jacobi update
+// Use updateAverageVelocity() in detectCollision()
+// to perform update after all impulses recorded.
 static bool MovingPointToTriJac(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    STATE* s = (STATE*)left_state(pts[3]);
+    if (s->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+        
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[3]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -476,31 +482,11 @@ static bool MovingPointToTriJac(POINT* pts[])
 	    }
 	}
 
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
-        
-        // Use updateAverageVelocity() in detectCollision()
-        // to perform update instead.
-
-        /*
-        if (!is_detImpZone)
-        {
-            if (sl->collsn_num > 0)
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
-                    sl->collsnImpulse[k] = 0.0;
-                }
-            }
-            sl->collsn_num = 0;
-        }
-        */
     }
     
     return status;
@@ -512,14 +498,14 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    STATE* s = (STATE*)left_state(pts[3]);
+    if (s->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+        
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[3]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -561,7 +547,7 @@ static bool MovingPointToTriGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->avgVel[k] /= (double)sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
             }
@@ -573,22 +559,23 @@ static bool MovingPointToTriGS(POINT* pts[])
 }
 
 //jacobi update
+// Use updateAverageVelocity() in detectCollision()
+// to perform update after all impulses recorded.
 static bool MovingEdgeToEdgeJac(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    if (s0->is_stringpt || s2->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[0]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        s = (STATE*)left_state(pts[2]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -616,31 +603,11 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
         }
     }
 
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
-
-        // Use updateAverageVelocity() in detectCollision()
-        // to perform update instead.
-        
-        /*
-        if (!is_detImpZone)
-        {
-            if (sl->collsn_num > 0)
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
-                    sl->collsnImpulse[k] = 0.0;
-                }
-            }
-            sl->collsn_num = 0;
-        }
-        */
     }
     
     return status;
@@ -652,17 +619,22 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
 
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+
+    double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    if (s0->is_stringpt || s2->is_stringpt)
+        tol = CollisionSolver3d::getStringRoundingTolerance();
+
+    /*
+    bool string_string = false;
+    if (s0->is_stringpt && s2->is_stringpt)
+        string_string = true;
+    */
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
-        double tol = CollisionSolver3d::getFabricRoundingTolerance();
-        STATE* s = (STATE*)left_state(pts[0]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-        s = (STATE*)left_state(pts[2]);
-        if (s->is_stringpt)
-            tol = CollisionSolver3d::getStringRoundingTolerance();
-
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0)
@@ -697,14 +669,85 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
 
-        if (!is_detImpZone)
+        //TODO: If the point is a string pt then spread,
+        //      even if colliding point is not a string pt?
+        //if (sl->is_stringpt)
+        if (string_string)
+        {
+            if (sl->collsn_num > 0)
+            {
+                POINT* pchain[3];
+                BOND* b = Bond_of_hse(pts[j]->hse);
+
+                int nchain;
+                if (pts[j] == b->start)
+                {
+                    if (!b->prev)
+                    {
+                        pchain[0] = pts[j];
+                        pchain[1] = b->end;
+                        nchain = 2;
+                    
+                        /*
+                        //TODO: find how to append the following to a curves.list file
+                        double** plist = new double*[2];
+                        plist[0] = Coords(pts[j]);
+                        plist[1] = Coords(b->end);
+                        std::string fname = "pchain";
+                        gview_polyline("no_prev_bond",fname.c_str(),plist,2,pRED,5.0);
+                        delete[] plist;
+                        clean_up(0);
+                        */
+                    }
+                    else
+                    {
+                        pchain[0] = b->prev->start;
+                        pchain[1] = pts[j];
+                        pchain[2] = b->end;
+                        nchain = 3;
+                    }
+                }
+                else
+                {
+                    if (!b->next)
+                    {
+                        pchain[0] = b->start;
+                        pchain[1] = pts[j];
+                        nchain = 2;
+                    }
+                    else
+                    {
+                        pchain[0] = b->start;
+                        pchain[1] = pts[j];
+                        pchain[2] = b->next->end;
+                        nchain = 3;
+                    }
+                }
+
+                for (int i = 0; i < nchain; ++i)
+                {
+                    STATE* csl = (STATE*)left_state(pchain[i]);
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        csl->avgVel[k] += sl->collsnImpulse[k]/3.0;
+                        csl->avgVel[k] /= (double)sl->collsn_num;
+                    }
+                }
+
+                for (int k = 0; k < 3; ++k)
+                    sl->collsnImpulse[k] = 0.0;
+            }
+
+            sl->collsn_num = 0;
+        }
+        else if (!is_detImpZone)
         {
             if (sl->collsn_num > 0)
             {
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= sl->collsn_num;
+                    sl->avgVel[k] /= (double)sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
             }
@@ -1079,8 +1122,14 @@ static bool EdgeToEdge(
         scalarMult(1.0/dist,vec,vec);
         //return false;
 
+    bool string_string = false;
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+    if (s0->is_stringpt && s2->is_stringpt)
+        string_string = true;
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (!is_detImpZone)
+    if (!is_detImpZone || string_string)
     {
         double dt = root;
         if (mstate == MotionState::STATIC)
@@ -1141,18 +1190,13 @@ static void EdgeToEdgeImpulse(
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
 	    v_rel[j] -= (1.0-a) * sl[0]->avgVel[j] + a * sl[1]->avgVel[j];
 	}
+    double mag_vrel = Mag3d(v_rel);
 	
     vn = Dot3d(v_rel, nor);
 	if (Dot3d(v_rel, v_rel) > sqr(vn))
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
 	else
 	    vt = 0.0;
-    
-    //Edges are approaching each other (vn < 0.0):
-    //      apply inelastic impulse
-    
-    //Edges are seperating from each other (vn > 0.0):
-    //      apply elastic impulse
     
     if (debugging("CollisionImpulse"))
     {
@@ -1162,19 +1206,26 @@ static void EdgeToEdgeImpulse(
                 overlap_coef, overlap_coef*overlap);
     }
 	
+    //Edges are approaching each other (vn < 0.0):
+    //      apply inelastic impulse
+    
+    //Edges are seperating from each other (vn > 0.0):
+    //      apply elastic impulse
 
     if (mstate == MotionState::MOVING)
     {
-        //Apply one or the other for collision, NOT BOTH
+        // Apply one or the other for collision, NOT BOTH.
+        // Zero the relative velocity with inelastic impulse.
         if (vn < 0.0)
-            EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
+            EdgeToEdgeInelasticImpulse(mag_vrel,pts,inelastic_impulse,rigid_impulse,wab);
         else if (vn * dt <  overlap_coef * overlap)
             EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
     }
     else
     {
-        //Can apply both for repulsion
+        // May apply both for repulsion.
+        // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
         if (fabs(vn) * dt < overlap_coef * overlap)
@@ -1184,6 +1235,7 @@ static void EdgeToEdgeImpulse(
     
     double impulse[2];
     double m_impulse[2];
+    double f_impulse[2];
 
     for (int i = 0; i < 2; ++i)
     {
@@ -1192,12 +1244,15 @@ static void EdgeToEdgeImpulse(
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
         }
         else
         {
             double wabs_sqr = sqr(wab[0]) + sqr(wab[1])
                               + sqr(wab[2]) + sqr(wab[3]);
+        
             m_impulse[i] = 2.0*impulse[i]/wabs_sqr;
+            f_impulse[i] = 2.0*inelastic_impulse[i]/wabs_sqr;
         }
     }
 
@@ -1218,8 +1273,11 @@ static void EdgeToEdgeImpulse(
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
             printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
+            printf("nor = %g %g %g\n\n",nor[0],nor[1],nor[2]);
+            
             printf("a = %g, b = %g\n",a,b);
+            printf("wa[0] = %g, wa[1] =  %g, wb[0] = %g, wb[1] = %g\n\n",
+                    wa[0],wa[1],wb[0],wb[1]);
             
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i)
@@ -1246,6 +1304,7 @@ static void EdgeToEdgeImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
+    //TODO: Do this correctly using impulse method
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1266,6 +1325,8 @@ static void EdgeToEdgeImpulse(
     std::vector<double> W = {-wab[0],-wab[1],wab[2],wab[3]};
     std::vector<double> M = {m_impulse[0],m_impulse[0],
                              m_impulse[1],m_impulse[1]};
+    std::vector<double> F = {f_impulse[0],f_impulse[0],
+                             f_impulse[1],f_impulse[1]};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[1],rigid_impulse[1]};
 
@@ -1279,22 +1340,29 @@ static void EdgeToEdgeImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            for (int j = 0; j < 3; ++j)
-                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-       
-            //friction
             if (mstate == MotionState::STATIC)
             {
+                for (int j = 0; j < 3; ++j)
+                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+       
+                // Apply friction for static proximity repulsions
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
-                    if (fabs(mu*t_impulse) < max_friction)
-                        delta_vt = fabs(mu*t_impulse);
+                    if (fabs(mu*friction_impulse) < max_friction)
+                        delta_vt = fabs(mu*friction_impulse);
 
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
+            else
+            {
+                for (int j = 0; j < 3; ++j)
+                    sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
+            }
+        
         }
         else
         {
@@ -1335,44 +1403,44 @@ static void EdgeToEdgeImpulse(
 }
 
 static void EdgeToEdgeInelasticImpulse(
-        double vn,
+        double v,
         POINT** pts,
         double* impulse,
         double* rigid_impulse,
         double* W)
 {
-    vn = fabs(vn);
+    v = fabs(v);
 
     if ((isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])) ||
         (isStaticRigidBody(pts[2]) && isStaticRigidBody(pts[3])))
     {
-        impulse[0] = vn;
-        impulse[1] = vn;
-        rigid_impulse[0] = vn;
-        rigid_impulse[1] = vn;
+        impulse[0] = v;
+        impulse[1] = v;
+        rigid_impulse[0] = v;
+        rigid_impulse[1] = v;
     }
     else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
             && isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
     {
         double m1 = total_mass(pts[0]->hs);
         double m2 = total_mass(pts[2]->hs);
-        rigid_impulse[0] = vn * m2 / (m1 + m2);
-        rigid_impulse[1] = vn * m1 / (m1 + m2);
+        rigid_impulse[0] = v * m2 / (m1 + m2);
+        rigid_impulse[1] = v * m1 / (m1 + m2);
     }
     else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]))
     {
-        impulse[1] = 0.5 * vn; 
-        rigid_impulse[0] = 0.5 * vn;
+        impulse[1] = 0.5 * v; 
+        rigid_impulse[0] = 0.5 * v;
     }
     else if (isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
     {
-        impulse[0] = 0.5 * vn;
-        rigid_impulse[1] = 0.5 * vn;
+        impulse[0] = 0.5 * v;
+        rigid_impulse[1] = 0.5 * v;
     }
     else
     {
-        impulse[0] = 0.5 * vn;
-        impulse[1] = 0.5 * vn;
+        impulse[0] = 0.5 * v;
+        impulse[1] = 0.5 * v;
     }
 
     if (isStaticRigidBody(pts[0])) W[0] = 0.0;
@@ -1391,6 +1459,12 @@ static void EdgeToEdgeElasticImpulse(
         double dt, double m,
         double k)
 {
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        if (sl->is_stringpt) return;
+    }
+
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
         isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
@@ -1558,6 +1632,7 @@ static void PointToTriImpulse(
 	    for (int j = 0; j < 3; ++j)
             v_rel[i] -= w[j] * sl[j]->avgVel[i];
 	}
+    double mag_vrel = Mag3d(v_rel);
 
 	vn = Dot3d(v_rel, nor);
 	if (Dot3d(v_rel, v_rel) > sqr(vn))
@@ -1565,12 +1640,6 @@ static void PointToTriImpulse(
 	else
 	    vt = 0.0;
 
-    //Point and Triangle are approaching each other (vn < 0.0):
-    //      apply inelastic impulse
-    
-    //Point and Triangle are seperating from each other (vn > 0.0):
-    //      apply elastic impulse
-    
     if (debugging("CollisionImpulse"))
     {
         printf("vn = %g\n",vn);
@@ -1579,35 +1648,51 @@ static void PointToTriImpulse(
                 overlap_coef, overlap_coef*overlap);
     }
 	
+    //Point and Triangle are approaching each other (vn < 0.0):
+    //      apply inelastic impulse
+    
+    //Point and Triangle are seperating from each other (vn > 0.0):
+    //      apply elastic impulse
+    
     if (mstate == MotionState::MOVING)
     {
-        //Apply one or the other for collision, NOT BOTH
+        // Apply one or the other for collision, NOT BOTH.
+        // Zero the relative velocity with inelastic impulse.
         if (vn < 0.0)
-            PointToTriInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
-        else if (vn * dt < overlap_coef * overlap)
+            PointToTriInelasticImpulse(mag_vrel,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
+        else if (vn*dt < overlap_coef*overlap)
             PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
     }
     else
     {
-        //Can apply both for repulsion
+        // May apply both for repulsion.
+        // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
-        if (fabs(vn) * dt < overlap_coef * overlap)
+        if (fabs(vn)*dt < overlap_coef*overlap)
             PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
     }
 
     double impulse[2];
     double m_impulse[2];
+    double f_impulse[2];
 
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
+
         if (fabs(sum_w) < MACH_EPS)
+        {
             m_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
+        }
         else
-            m_impulse[i] = 2.0 * impulse[i] / (1.0 + Dot3d(w, w));
+        {
+            m_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
+            f_impulse[i] = 2.0*inelastic_impulse[i]/(1.0 + Dot3d(w, w));
+        }
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -1627,8 +1712,9 @@ static void PointToTriImpulse(
             printf("k = %g, m = %g, mu = %g\n",k,m,mu);
             printf("vn = %g, vt = %g\n",vn,vt);
             printf("v_rel = %g %g %g\n",v_rel[0],v_rel[1],v_rel[2]);
-            printf("nor = %g %g %g\n",nor[0],nor[1],nor[2]);
-            printf("w[0] = %g, w[1] = %g, w[2] = %g\n",w[0],w[1],w[2]);
+            printf("nor = %g %g %g\n\n",nor[0],nor[1],nor[2]);
+
+            printf("w[0] = %g, w[1] = %g, w[2] = %g\n\n",w[0],w[1],w[2]);
             
             printf("x_old:\n");
             for (int i = 0; i < 4; ++i)
@@ -1657,6 +1743,7 @@ static void PointToTriImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
+    //TODO: Do this correctly using impulse method
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
@@ -1678,6 +1765,8 @@ static void PointToTriImpulse(
     std::vector<double> W = {-w[0],-w[1],-w[2],1.0};
     std::vector<double> M = {m_impulse[0],m_impulse[0],
                              m_impulse[0],m_impulse[1]};
+    std::vector<double> F = {f_impulse[0],f_impulse[0],
+                             f_impulse[0],f_impulse[1]};
     std::vector<double> R = {rigid_impulse[0],rigid_impulse[0],
                              rigid_impulse[0],rigid_impulse[1]};
 
@@ -1691,22 +1780,29 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            for (int j = 0; j < 3; ++j)
-                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-
-            //friction
             if (mstate == MotionState::STATIC)
             {
+                for (int j = 0; j < 3; ++j)
+                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+
+                // Apply friction for static proximity repulsions
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
-                    if (fabs(mu*t_impulse) < max_friction)
-                        delta_vt = fabs(mu*t_impulse);
+                    if (fabs(mu*friction_impulse) < max_friction)
+                        delta_vt = fabs(mu*friction_impulse);
                     
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
             }
+            else
+            {
+                for (int j = 0; j < 3; ++j)
+                    sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
+            }
+        
         }
         else
         {
@@ -1754,47 +1850,47 @@ static void PointToTriImpulse(
 }
 
 static void PointToTriInelasticImpulse(
-        double vn,
+        double v,
         POINT** pts,
         double* impulse,
         double* rigid_impulse,
         double* w,
         double* sum_w)
 {
-    vn = fabs(vn);
+    v = fabs(v);
 
     if (isStaticRigidBody(pts[3]) ||
        (isStaticRigidBody(pts[0]) && isStaticRigidBody(pts[1])
         && isStaticRigidBody(pts[2])))
     {
-        impulse[0] = vn;
-        impulse[1] = vn;
-        rigid_impulse[0] = vn;
-        rigid_impulse[1] = vn;
+        impulse[0] = v;
+        impulse[1] = v;
+        rigid_impulse[0] = v;
+        rigid_impulse[1] = v;
     }
     else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1]) 
             && isMovableRigidBody(pts[2]) && isMovableRigidBody(pts[3]))
     {
         double m1 = total_mass(pts[0]->hs);
         double m2 = total_mass(pts[3]->hs);
-        rigid_impulse[0] = vn * m2 / (m1 + m2);
-        rigid_impulse[1] = vn * m1 / (m1 + m2);
+        rigid_impulse[0] = v * m2 / (m1 + m2);
+        rigid_impulse[1] = v * m1 / (m1 + m2);
     }
     else if (isMovableRigidBody(pts[0]) && isMovableRigidBody(pts[1])
             && isMovableRigidBody(pts[2]))
     {
-        impulse[1] = 0.5 * vn;
-        rigid_impulse[0] = 0.5 * vn;
+        impulse[1] = 0.5 * v;
+        rigid_impulse[0] = 0.5 * v;
     }
     else if (isMovableRigidBody(pts[3]))
     {
-        impulse[0] = 0.5 * vn;
-        rigid_impulse[1] = 0.5 * vn;
+        impulse[0] = 0.5 * v;
+        rigid_impulse[1] = 0.5 * v;
     }
     else
     {
-        impulse[0] = 0.5 * vn;
-        impulse[1] = 0.5 * vn;
+        impulse[0] = 0.5 * v;
+        impulse[1] = 0.5 * v;
     }
 
     for (int i = 0; i < 3; ++i)
@@ -1818,6 +1914,12 @@ static void PointToTriElasticImpulse(
         double dt, double m,
         double k)
 {
+    for (int j = 0; j < 4; ++j)
+    {
+        STATE* sl = (STATE*)left_state(pts[j]);
+        if (sl->is_stringpt) return;
+    }
+
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
         isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
