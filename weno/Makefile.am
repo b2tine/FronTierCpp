@@ -16,8 +16,8 @@ test_SOURCES = test.cpp \
 test_LDADD = $(top_builddir)/lib/libFronTier.la
 
 
-$(test_DEPENDENCIES): FORCE
-	@$(MAKE) -C $(top_builddir)/lib all
+#$(test_DEPENDENCIES): FORCE
+#	@$(MAKE) -C $(top_builddir)/lib all
 
 
 matdata_SOURCES = matdata.cpp \
@@ -29,9 +29,6 @@ matdata_LDADD = $(top_builddir)/lib/libFronTier.la
 
 $(matdata_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/lib all
-
-
-
 
 FORCE:
 

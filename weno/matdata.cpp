@@ -127,7 +127,6 @@ int main(int argc, char **argv)
     int N = mesh_size;
     int T = front.max_step;
     std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
-    //std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
     std::vector<double> timevec;
 
 	/* Time loop */
