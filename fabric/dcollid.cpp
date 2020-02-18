@@ -447,7 +447,7 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
-        //reduceSuperElasticity();
+    reduceSuperElasticity();
 
     //static proximity handling
 	detectProximity();
@@ -618,7 +618,7 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 
 void CollisionSolver3d::reduceSuperElasticity()
 {
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
 
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
@@ -695,21 +695,9 @@ void CollisionSolver3d::limitStrainRate()
 		    double lnew = distBetweenCoords(x_cand0,x_cand1);
 		    double lold = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
 
-            double e01[3];
-            Pts2Vec(p[0],p[1],e01);
-            scalarMult(1.0/lold,e01,e01);
-
             if (fabs(lnew - lold) > TOL*lold)
             {
-                double m = getFabricPointMass();
-                double k = getFabricSpringConstant();
-                if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-                {
-                    m = getStringPointMass();
-                    k = getStringSpringConstant();
-                }
-
-                double I = k*(fabs(lnew - lold) - TOL*lold)*dt/m;
+                double I = (fabs(lnew - lold) - TOL*lold)/dt;
                 double I0, I1;
 
                 if (lnew > lold) //Tension
@@ -722,6 +710,10 @@ void CollisionSolver3d::limitStrainRate()
                     I0 = -0.5*I;
                     I1 = 0.5*I;
                 }
+
+                double e01[3];
+                Pts2Vec(p[0],p[1],e01);
+                scalarMult(1.0/lold,e01,e01);
 
                 for (int j = 0; j < 3; ++j)
                 {
@@ -770,55 +762,49 @@ void CollisionSolver3d::limitStrain()
             sl[0] = (STATE*)left_state(p[0]);
             sl[1] = (STATE*)left_state(p[1]);
 
-            double m, k;
             double len0;
-            
             if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
             {
-                m = getStringPointMass();
-                k = getStringSpringConstant();
                 CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
                 len0 = cd_bond->m_bond->length0;
             }
             else
             {
-                m = getFabricPointMass();
-                k = getFabricSpringConstant();
                 CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
                 len0 = cd_tri->m_tri->side_length0[i];
             }
-
+            
             double len = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
-
-            double e01[3];
-            Pts2Vec(p[0],p[1],e01);
-            scalarMult(1.0/len,e01,e01);
-		    
+            
             double strain = len - len0;
             if (strain > TOL*len0 || strain < -CTOL*len0)
             {
                 double I0, I1;
                 if (strain > TOL*len0) //Tension
                 {
-                    double I = k*(strain - TOL*len0)*dt/m;
+                    double I = (strain - TOL*len0)/dt;
                     I0 = 0.5*I;
                     I1 = -0.5*I;
                 }
                 else                   //Compression
                 {
-                    double I = -k*(strain + CTOL*len0)*dt/m;
+                    double I = -(strain + CTOL*len0)/dt;
                     I0 = -0.5*I;
                     I1 = 0.5*I;
                 } 
                 
+                double e01[3];
+                Pts2Vec(p[0],p[1],e01);
+                scalarMult(1.0/len,e01,e01);
+		    
                 for (int j = 0; j < 3; ++j)
                 {
                     sl[0]->strainImpulse[j] += I0*e01[j];
                     sl[1]->strainImpulse[j] += I1*e01[j];
                 }
+
                 sl[0]->strain_num++;
                 sl[1]->strain_num++;
-                
                 numStrainEdges++;
             }
         
@@ -1118,7 +1104,7 @@ void CollisionSolver3d::updateAverageVelocity()
 		sl = (STATE*)left_state(p);
 		if (sl->collsn_num > 0)
 		{
-		    sl->has_collsn = true;
+		    //sl->has_collsn = true;
 
             if (sl->is_stringpt)
             {
