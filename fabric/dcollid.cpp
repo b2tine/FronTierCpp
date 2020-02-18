@@ -10,15 +10,13 @@
 
 #include <omp.h>
 
-/*****declaration of static functions starts here********/
-//static void makeSet(std::vector<CD_HSE*>&);
+//union find functions
 static POINT* findSet(POINT*);
 static void mergePoint(POINT*,POINT*);
 inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
-/*******************end of declaration*******************/
 
-//define default parameters for collision detection
+//default parameters for collision detection
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
@@ -41,22 +39,6 @@ int CollisionSolver3d::moving_pt_to_tri = 0;
 int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
-
-CollisionSolver3d::~CollisionSolver3d()
-{
-    abt_proximity.reset();
-    abt_collision.reset();
-    clearHseList();
-}
-
-void CollisionSolver3d::clearHseList()
-{
-	for (unsigned i = 0; i < hseList.size(); ++i)
-    {
-		delete hseList[i];
-	}
-	hseList.clear();
-}
 
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
@@ -98,9 +80,90 @@ double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
-
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
+
+CollisionSolver3d::~CollisionSolver3d()
+{
+    abt_proximity.reset();
+    abt_collision.reset();
+    clearHseList();
+}
+
+void CollisionSolver3d::clearHseList()
+{
+	for (unsigned i = 0; i < hseList.size(); ++i)
+    {
+		delete hseList[i];
+	}
+	hseList.clear();
+}
+
+//NOTE: Must be called before calling the spring solver
+void CollisionSolver3d::assembleFromInterface(
+	const INTERFACE* intfc, const double dt)
+{
+	setTimeStepSize(dt);
+	clearHseList();
+
+	SURFACE** s;
+	CURVE** c;
+	TRI *tri;
+	BOND *b;
+
+	int n_tri = 0;
+    int n_bond = 0;
+	
+    //TODO: Collect each CD_HSE_TYPE in seperate hseLists?
+    
+    intfc_surface_loop(intfc,s)
+	{
+	    if (is_bdry(*s)) continue;
+	    unsort_surface_point(*s);
+	    
+        surf_tri_loop(*s,tri)
+	    {
+            CD_HSE_TYPE tag;
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
+                wave_type(*s) == NEUMANN_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::RIGID_TRI;
+            }
+            else 
+            {
+                tag = CD_HSE_TYPE::FABRIC_TRI;
+            }
+            
+            hseList.push_back(new CD_TRI(tri,tag));
+		    n_tri++;
+	    }
+	}
+
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) != STRING_HSBDRY)
+            continue; 
+
+        CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
+	    curve_bond_loop(*c,b)
+	    {
+            hseList.push_back(new CD_BOND(b,tag));
+		    n_bond++;
+	    }
+	}
+
+	makeSet(hseList);
+	createImpZoneForRG(intfc);
+	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
+
+	if (debugging("intfc_assembly")){
+	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
+	    printf("%lu number of elements is assembled\n",hseList.size());
+	}
+}
+
+//NOTE: Must be called after assembleFromInterface()
+//      and before calling the spring solver.
 void CollisionSolver3d::recordOriginalPosition()
 {
     std::vector<CD_HSE*>::iterator it;
