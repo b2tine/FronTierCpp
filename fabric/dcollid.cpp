@@ -707,11 +707,15 @@ void CollisionSolver3d::limitStrainRate()
 
             if (fabs(lnew - lold) > TOL*lold)
             {
+                double m = getFabricPointMass();
                 double k = getFabricSpringConstant();
                 if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                {
+                    m = getStringPointMass();
                     k = getStringSpringConstant();
+                }
 
-                double I = k*(fabs(lnew - lold) - TOL*lold)*dt;
+                double I = k*(fabs(lnew - lold) - TOL*lold)*dt/m;
                 double I0, I1;
 
                 if (lnew > lold) //Tension
@@ -772,20 +776,22 @@ void CollisionSolver3d::limitStrain()
             sl[0] = (STATE*)left_state(p[0]);
             sl[1] = (STATE*)left_state(p[1]);
 
-            double k;
+            double m, k;
             double len0;
             
             if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
             {
+                m = getStringPointMass();
+                k = getStringSpringConstant();
                 CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
                 len0 = cd_bond->m_bond->length0;
-                k = getStringSpringConstant();
             }
             else
             {
+                m = getFabricPointMass();
+                k = getFabricSpringConstant();
                 CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
                 len0 = cd_tri->m_tri->side_length0[i];
-                k = getFabricSpringConstant();
             }
 
             double len = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
@@ -800,13 +806,13 @@ void CollisionSolver3d::limitStrain()
                 double I0, I1;
                 if (strain > TOL*len0) //Tension
                 {
-                    double I = k*(strain - TOL*len0)*dt;
+                    double I = k*(strain - TOL*len0)*dt/m;
                     I0 = 0.5*I;
                     I1 = -0.5*I;
                 }
                 else                   //Compression
                 {
-                    double I = -k*(strain + CTOL*len0)*dt;
+                    double I = -k*(strain + CTOL*len0)*dt/m;
                     I0 = -0.5*I;
                     I1 = 0.5*I;
                 } 
@@ -1014,7 +1020,7 @@ void CollisionSolver3d::updateAverageVelocity()
         int np = (*it)->num_pts(); 
 	    for (int j = 0; j < np; ++j)
 	    {
-            p = hse->Point_of_hse(j);
+            p = (*it)->Point_of_hse(j);
             
             if (sorted(p) || isStaticRigidBody(p))
                 continue;
@@ -1376,16 +1382,31 @@ extern double myDet3d(double a[3][3]){
 	  + a[0][2]*(a[1][0]*a[2][1] - a[2][0]*a[1][1]);
 }
 
-void unsortHseList(std::vector<CD_HSE*>& hseList){
-	for (unsigned j = 0; j < hseList.size(); ++j)
+void unsortHseList(std::vector<CD_HSE*>& hseList)
+{
+    std::vector<CD_HSE*>::iterator it; 
+    for (it = hseList.begin(); it < hseList.end(); ++it)
 	{
-	    CD_HSE* hse = hseList[j];
-	    int np = hse->num_pts();
-	    for (int i = 0; i < np; ++i){
-		sorted(hse->Point_of_hse(i)) = NO;
-	    }
+	    int np = (*it)->num_pts();
+	    for (int i = 0; i < np; ++i)
+            sorted((*it)->Point_of_hse(i)) = NO;
 	}
 }
+
+void unsort_surface_point(SURFACE *surf)
+{
+    TRI* tri = first_tri(surf);
+    for (tri; !at_end_of_tri_list(tri,surf); tri = tri->next)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            POINT* p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
+        }
+    }
+}       /* end unsort_surface_point */
+
+
 
 //functions for UF alogrithm
 int& weight(POINT* p){

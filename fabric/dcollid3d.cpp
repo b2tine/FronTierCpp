@@ -22,7 +22,6 @@ static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,do
 static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
 static bool isCoplanar(POINT**,double,double*);
-static void unsort_surface_point(SURFACE *surf);
 
 // test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
@@ -1209,9 +1208,6 @@ static void EdgeToEdgeImpulse(
     double m_impulse[2];
     double f_impulse[2];
 
-    //TODO: quantify/justify why friction impulses should only consider
-    //      the inelastic component of the impulse
-    
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
@@ -1498,7 +1494,7 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < 1000 * MACH_EPS)
     {   
-        //TODO: Create cgal library for interface construction
+        //TODO: Create cgal interface construction library
         //      and remove when this case can be safely omitted.
         //      
 	    // ignore cases where tri reduces to a line or point
@@ -1542,9 +1538,9 @@ static bool PointToTri(
             if (tmp_dist > c_len)
                 c_len = tmp_dist;
         }
+        double eps = tol/c_len;
         */
 
-        //double eps = tol/c_len;
         double eps = tol/sqrt(tri_area);
         for (int i = 0; i < 3; ++i)
         {
@@ -1660,9 +1656,6 @@ static void PointToTriImpulse(
     double m_impulse[2];
     double f_impulse[2];
 
-    //TODO: quantify/justify why friction impulses should only consider
-    //      the inelastic component of the impulse
-    
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
@@ -1930,20 +1923,4 @@ static void PointToTriElasticImpulse(
         rigid_impulse[1] += tmp;
     }
 }
-
-static void unsort_surface_point(SURFACE *surf)
-{
-    TRI *tri;
-    POINT *p;
-
-    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-        tri = tri->next)
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            p = Point_of_tri(tri)[i];
-            sorted(p) = NO;
-        }
-    }
-}       /* end unsort_surface_point */
 

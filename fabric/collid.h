@@ -169,6 +169,8 @@ extern void printPointList(POINT**, const int);
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);
 void unsortHseList(std::vector<CD_HSE*>&);
+void unsort_surface_point(SURFACE *surf);
+
 POINT*& next_pt(POINT*);
 int& weight(POINT*);
 bool isStaticRigidBody(const POINT*);
@@ -177,6 +179,7 @@ bool isMovableRigidBody(const POINT*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
+
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
