@@ -326,7 +326,6 @@ void CollisionSolver3d::computeAverageVelocity()
         }
     }
 
-    //Reset points to original positions.
     resetPositionCoordinates();
 }
 
@@ -364,9 +363,6 @@ void CollisionSolver3d::computeImpactZone()
     while(is_collision)
     {
         is_collision = false;
-
-        //start UF alogrithm
-        //merge four pts if collision happens
 
         start_clock("dynamic_AABB_collision");
         aabbCollision();
@@ -451,7 +447,7 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
-    reduceSuperElasticity();
+        //reduceSuperElasticity();
 
     //static proximity handling
 	detectProximity();
@@ -473,6 +469,7 @@ void CollisionSolver3d::resolveCollision()
     //      or if they mean that detectProximity() should be
     //      called after updating the final point positions
     //      and before the final velocity update.
+    //
     //detectProximity();
 	
     //TODO: Justify this final update, or implement correctly.
@@ -591,9 +588,6 @@ void CollisionSolver3d::detectCollision()
                 << " collision pairs" << std::endl;
         }
 
-        //TODO: don't call when using gauss-seidel update
-        //updateAverageVelocity();
-	    
         if (++niter > MAX_ITER)
             break;
 	}
@@ -748,7 +742,7 @@ void CollisionSolver3d::limitStrainRate()
 void CollisionSolver3d::limitStrain()
 {
     double TOL = 0.1;
-    double CTOL = 0.0;
+    double CTOL = 0.01;
 	
     numStrainEdges = 0;
     double dt = getTimeStepSize();
@@ -795,13 +789,13 @@ void CollisionSolver3d::limitStrain()
             }
 
             double len = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
-            double strain = len - len0;
 
             double e01[3];
             Pts2Vec(p[0],p[1],e01);
             scalarMult(1.0/len,e01,e01);
 		    
-            if (strain > TOL*len0 || -CTOL*len0 > strain)
+            double strain = len - len0;
+            if (strain > TOL*len0 || strain < -CTOL*len0)
             {
                 double I0, I1;
                 if (strain > TOL*len0) //Tension
