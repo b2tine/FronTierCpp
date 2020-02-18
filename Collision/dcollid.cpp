@@ -914,6 +914,7 @@ void CollisionSolver3d::updateAverageVelocity()
                     {
                         pchain[0] = p;
                         pchain[1] = b->end;
+                        pchain[2] = nullptr;
                         nchain = 2;
                     }
                     else
@@ -930,6 +931,7 @@ void CollisionSolver3d::updateAverageVelocity()
                     {
                         pchain[0] = b->start;
                         pchain[1] = p;
+                        pchain[2] = nullptr;
                         nchain = 2;
                     }
                     else
