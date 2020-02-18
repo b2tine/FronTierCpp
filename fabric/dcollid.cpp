@@ -202,7 +202,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 	}
 }
 
-//TODO: fix this
+//TODO: investigate
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFabricFrictionConstant();
@@ -889,7 +889,6 @@ void CollisionSolver3d::updateFinalPosition()
 	}
 }
 
-//Simple update: set v^{n+1} to the avgVel
 void CollisionSolver3d::updateFinalVelocity()
 {
     unsortHseList(hseList);
@@ -903,9 +902,15 @@ void CollisionSolver3d::updateFinalVelocity()
             if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
+            //TODO: Make sure only moving collision points
+            //      are marked with sl->has_collsn.
+            //      Current literature suggests that we can
+            //      omit points that only experienced proximity
+            //      repulsions. The non colliding points retain
+            //      the velocity that the spring solver computed.
+            
             STATE* sl = (STATE*)left_state(pt);
-            if (!sl->has_collsn) //TODO: why is this needed?
-                continue;
+            if (!sl->has_collsn) continue;
 
             for (int j = 0; j < 3; ++j)
             {
@@ -1022,11 +1027,13 @@ void CollisionSolver3d::updateAverageVelocity()
             sl = (STATE*)left_state(p);
             if (sl->collsn_num > 0)
             {
-                sl->has_collsn = true;
+                //TODO: Verify that this should be omitted for proximities.
+                //      This flag affects how the final velocity is updated.
+                //
+                //sl->has_collsn = true;
 
                 for (int k = 0; k < 3; ++k)
                 {
-
                     sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
                     sl->avgVel[k] /= (double)sl->collsn_num;
                 

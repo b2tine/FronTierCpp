@@ -151,9 +151,10 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    else
             elastic_intfc = fr->interf;
 	    
-            start_clock("set_data");
-	    if (myid == owner_id)
-            {
+        start_clock("set_data");
+        if (myid == owner_id)
+        {
+
 		if (client_size_old != NULL)
 		    FT_FreeThese(3, client_size_old, client_size_new, 
 					client_point_set_store);
@@ -196,12 +197,13 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    {
 	    	size = client_size;
 	    	if (point_set_store != NULL)
-		{
-		    FT_FreeThese(2,point_set_store,sv);
-		}
-	    	FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
+            {
+	    	    FT_FreeThese(2,point_set_store,sv);
+            }
+	
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
                                         sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
 	    }
 	    for (i = 0; i < max_point_gindex; ++i)
                 point_set[i] = NULL;
@@ -296,6 +298,7 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
+	    /* Owner send and patch point_set_store from other processors */	
 	    for (i = 0; i < pp_numnodes(); i++)
         {
             if (i == myid) continue;
@@ -311,9 +314,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         pp_recv(3,owner_id,point_set_store,
         client_size*sizeof(GLOBAL_POINT));
     }
-
-	/* Owner send and patch point_set_store from other processors */	
-	//  write from point_set to geom_set
+	
+    //  write from point_set to geom_set
     put_point_set_to(&geom_set,point_set);
 	
     /* Calculate the real force on load_node and rg_string_node */
@@ -332,7 +334,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         }
         
         setSpecialNodeForce(fr,geom_set.kl);
-	    //compute_center_of_mass_velo(&geom_set);
 
         delete collision_solver;
     }
