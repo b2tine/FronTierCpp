@@ -92,6 +92,9 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
+    bool has_collision;
+	double Boundary[3][2]; //domain boundary[dir][side]
+
     double volume;
     double vol_diff {0.0};
 
@@ -118,14 +121,10 @@ private:
     static void turnOffImpZone();
 	static void turnOnImpZone();
 
-    bool has_collision;
-	double Boundary[3][2]; //domain boundary[dir][side]
-
     int numStrainRateEdges {0};
     int numStrainEdges {0};
 
 	void reduceSuperElasticity();
-    bool reduceSuperelastOnce(int&);
     void limitStrainRate();
     void limitStrain();
 

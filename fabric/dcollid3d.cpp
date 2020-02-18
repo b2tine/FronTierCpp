@@ -72,7 +72,6 @@ void CollisionSolver3d::assembleFromInterface(
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
 	    {
-            //TODO: Mark fixed/static string nodes (points)
             hseList.push_back(new CD_BOND(b,tag));
 		    n_bond++;
 	    }
@@ -559,8 +558,8 @@ static bool MovingPointToTriGS(POINT* pts[])
 }
 
 //jacobi update
-// Use updateAverageVelocity() in detectCollision()
-// to perform update after all impulses recorded.
+//Use updateAverageVelocity() to perform the avgVel update
+//after all impulses have been recorded.
 static bool MovingEdgeToEdgeJac(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
