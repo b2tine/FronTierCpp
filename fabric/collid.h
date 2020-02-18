@@ -114,18 +114,24 @@ private:
 
     int numImpactZones {0};
     int numImpactZonePoints {0};
+	
+    static void turnOffImpZone();
+	static void turnOnImpZone();
 
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
-	static void turnOffImpZone();
-	static void turnOnImpZone();
-	
+    int numStrainRateEdges {0};
+    int numStrainEdges {0};
+
+	void reduceSuperElasticity();
     bool reduceSuperelastOnce(int&);
+    void limitStrainRate();
+    void limitStrain();
+
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
-	void reduceSuperelast();
 	void updateFinalVelocity();
 	void updateAverageVelocity();
 	void updateExternalImpulse();
@@ -159,7 +165,7 @@ void scalarMult(double a,double* v, double* ans);
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
 double myDet3d(double[][3]);
-double distBetweenCoords(double* v1, double* v2);
+double distBetweenCoords(double* x1, double* x2);
 extern void printPointList(POINT**, const int);
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);

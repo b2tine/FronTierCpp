@@ -390,6 +390,8 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
 	stop_clock("computeAverageVelocity");
 
+    reduceSuperElasticity();
+
     start_clock("detectProximity");
 	detectProximity();
 	stop_clock("detectProximity");
@@ -413,11 +415,6 @@ void CollisionSolver3d::resolveCollision()
 	updateFinalPosition();
     //TODO: verify this should not be called a second time
             //detectProximity();
-    
-    //TODO: implement this function correctly
-	//start_clock("reduceSuperelast");
-	    //reduceSuperelast();
-	//stop_clock("reduceSuperelast");
 	
     //TODO: implement this function correctly
 	updateFinalVelocity();
@@ -566,22 +563,224 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 	}
 }
 
-void CollisionSolver3d::reduceSuperelast()
+void CollisionSolver3d::reduceSuperElasticity()
 {
-	int niter = 0;
-    int num_edges;
-	const int max_iter = 3;
+	const int MAX_ITER = 3;
 
-	bool has_superelas = true;
-    while(has_superelas && niter++ < max_iter)
+    for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-	    has_superelas = reduceSuperelastOnce(num_edges);
+        limitStrainRate();
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("   %d Strain Rate Edges\n",numStrainRateEdges);
+        }
+
+	    bool excess_strain = false;
+        if (numStrainRateEdges > 0)
+            excess_strain = true;
+
+        if (!excess_strain)
+            break;
 	}
 
-	if (debugging("strain_limiting"))
+    for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        printf("   %d edges are over strain limit\n",num_edges);
+        limitStrain();
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("   %d Strain Edges\n",numStrainEdges);
+        }
+
+	    bool excess_strain = false;
+        if (numStrainEdges > 0)
+            excess_strain = true;
+
+        if (!excess_strain)
+            break;
+	}
+}
+
+//gauss-seidel iteration
+void CollisionSolver3d::limitStrainRate()
+{
+    numStrainRateEdges = 0;
+	double dt = getTimeStepSize();
+    double TOL = 0.1;
+    
+    unsortHseList(hseList);
+
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        if (isRigidBody(*it)) continue;
+	    
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = hse->num_pts();
+        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
+        {
+            p[0] = hse->Point_of_hse(i%np);	
+            p[1] = hse->Point_of_hse((i+1)%np);
+
+            //TODO: Is it possible to miss an edge using
+            //      this notion of a visited edge?
+            if (sorted(p[0]) && sorted(p[1])) continue;
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+		    double lnew = distBetweenCoords(x_cand0,x_cand1);
+		    double lold = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
+
+            double* e01;
+            Pts2Vec(p[0],p[1],e01);
+            scalarMult(1.0/lold,e01,e01);
+
+            if (fabs(lnew - lold) > TOL*lold)
+            {
+                double k = getFabricSpringConstant();
+                if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                    k = getStringSpringConstant();
+
+                double I = k*(fabs(lnew - lold) - TOL*lold)*dt;
+                double I0, I1;
+
+                if (lnew > lold) //Tension
+                {
+                    I0 = 0.5*I;
+                    I1 = -0.5*I;
+                }
+                else             //Compression
+                {
+                    I0 = -0.5*I;
+                    I1 = 0.5*I;
+                }
+
+                for (int j = 0; j < 3; ++j)
+                {
+                    sl[0]->avgVel[j] += I0*e01[j];
+                    sl[1]->avgVel[j] += I1*e01[j];
+                }
+
+                numStrainRateEdges++;
+            }
+
+            sorted(p[0]) = YES;
+            sorted(p[1]) = YES;
+        }
     }
+}
+
+//jacobi iteration
+void CollisionSolver3d::limitStrain()
+{
+    numStrainEdges = 0;
+	double dt = getTimeStepSize();
+    double TOL = 0.1;
+    double CTOL = 0.0;
+
+	unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        if (isRigidBody(*it)) continue;
+	    
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = hse->num_pts();
+        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
+        {
+            p[0] = hse->Point_of_hse(i%np);	
+            p[1] = hse->Point_of_hse((i+1)%np);
+
+            //TODO: Is it possible to miss an edge using
+            //      this notion of a visited edge?
+            if (sorted(p[0]) && sorted(p[1])) continue;
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double len = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
+
+            double* e01;
+            Pts2Vec(p[0],p[1],e01);
+            scalarMult(1.0/len,e01,e01);
+		    
+            double len0;
+            double k;
+
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+            {
+                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it)
+                len0 = cd_bond->m_bond->length0;
+                k = getStringSpringConstant();
+            }
+            else
+            {
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                len0 = cd_tri->m_tri->side_length0[i];
+                k = getFabricSpringConstant();
+            }
+
+            //TODO: FINISH
+            double strain = len - len0;
+            if (strain > 0) //Tension
+            {
+                if (strain > 0.1*len0)
+                {
+
+                }
+
+            }
+            else            //Compression
+            {
+                if (-CTOL*len0 > strain)
+                {
+
+                }
+
+            }
+            
+                double I = k*(fabs(lnew - lold) - TOL*lold)*dt;
+                double I0, I1;
+
+                if (lnew > lold) //Tension
+                {
+                    I0 = 0.5*I;
+                    I1 = -0.5*I;
+                }
+                else             //Compression
+                {
+                    I0 = -0.5*I;
+                    I1 = 0.5*I;
+                }
+
+                for (int j = 0; j < 3; ++j)
+                {
+                    sl[0]->avgVel[j] += I0*e01[j];
+                    sl[1]->avgVel[j] += I1*e01[j];
+                }
+
+                numStrainEdges++;
+
+            sorted(p[0]) = YES;
+            sorted(p[1]) = YES;
+        }
+
+    }
+
 }
 
 //TODO: Implement this correctly.
@@ -1132,11 +1331,11 @@ void Pts2Vec(const POINT* p1, const POINT* p2, double* v){
 	    v[i] = Coords(p2)[i] - Coords(p1)[i];
 }
 
-double distBetweenCoords(double* v1, double* v2)
+double distBetweenCoords(double* x1, double* x2)
 {
 	double dist = 0.0;
 	for (int i = 0; i < 3; ++i){
-		dist += sqr(v1[i]-v2[i]);
+		dist += sqr(x1[i]-x2[i]);
 	}
 	return std::sqrt(dist);
 }
