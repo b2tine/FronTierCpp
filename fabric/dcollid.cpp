@@ -175,6 +175,7 @@ void CollisionSolver3d::recordOriginalPosition()
             STATE* sl = (STATE*)left_state(pt); 
             
             sl->has_collsn = false;
+            sl->has_strainlim = false;
 
             if (isMovableRigidBody(pt))
                 continue;
@@ -447,19 +448,24 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
-    reduceSuperElasticity();
+    limitStrain();
+    limitStrainRate();
 
     //static proximity handling
 	detectProximity();
 
 	//check linear trajectories for collisions
 	detectCollision();
+    limitStrainRate();
 
     //TODO: fix this function
 	//detectDomainBoundaryCollision();
 
 	//update position using final midstep velocity
 	updateFinalPosition();
+    detectProximity();
+        //limitStrain();
+
     
     //TODO: Verify this should be called a second time?
     //      Bridson-Fedkiw paper says to apply proximity
@@ -616,13 +622,12 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 	}
 }
 
-void CollisionSolver3d::reduceSuperElasticity()
+void CollisionSolver3d::limitStrainRate()
 {
-	const int MAX_ITER = 2;
-
+	const int MAX_ITER = 5;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        limitStrainRate();
+        modifyStrainRate();
         
         if (debugging("strain_limiting"))
         {
@@ -636,27 +641,10 @@ void CollisionSolver3d::reduceSuperElasticity()
         if (!excess_strain)
             break;
 	}
-
-    for (int iter = 0; iter < MAX_ITER; ++iter)
-    {
-        limitStrain();
-        
-        if (debugging("strain_limiting"))
-        {
-            printf("   %d Strain Edges\n",numStrainEdges);
-        }
-
-	    bool excess_strain = false;
-        if (numStrainEdges > 0)
-            excess_strain = true;
-
-        if (!excess_strain)
-            break;
-	}
 }
 
 //gauss-seidel iteration
-void CollisionSolver3d::limitStrainRate()
+void CollisionSolver3d::modifyStrainRate()
 {
     numStrainRateEdges = 0;
 	double dt = getTimeStepSize();
@@ -720,7 +708,8 @@ void CollisionSolver3d::limitStrainRate()
                     sl[0]->avgVel[j] += I0*e01[j];
                     sl[1]->avgVel[j] += I1*e01[j];
                 }
-
+                sl[0]->has_strainlim = true;
+                sl[1]->has_strainlim = true;
                 numStrainRateEdges++;
             }
 
@@ -730,8 +719,29 @@ void CollisionSolver3d::limitStrainRate()
     }
 }
 
-//jacobi iteration
 void CollisionSolver3d::limitStrain()
+{
+	const int MAX_ITER = 2;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        modifyStrain();
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("   %d Strain Edges\n",numStrainEdges);
+        }
+
+	    bool excess_strain = false;
+        if (numStrainEdges > 0)
+            excess_strain = true;
+
+        if (!excess_strain)
+            break;
+	}
+}
+
+//jacobi iteration
+void CollisionSolver3d::modifyStrain()
 {
     double TOL = 0.1;
     double CTOL = 0.01;
@@ -759,9 +769,6 @@ void CollisionSolver3d::limitStrain()
             //      this notion of a visited edge?
             if (sorted(p[0]) && sorted(p[1])) continue;
 
-            sl[0] = (STATE*)left_state(p[0]);
-            sl[1] = (STATE*)left_state(p[1]);
-
             double len0;
             if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
             {
@@ -774,7 +781,7 @@ void CollisionSolver3d::limitStrain()
                 len0 = cd_tri->m_tri->side_length0[i];
             }
             
-            double len = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
+            double len = separation(p[0],p[1],3);
             
             double strain = len - len0;
             if (strain > TOL*len0 || strain < -CTOL*len0)
@@ -797,6 +804,9 @@ void CollisionSolver3d::limitStrain()
                 Pts2Vec(p[0],p[1],e01);
                 scalarMult(1.0/len,e01,e01);
 		    
+                sl[0] = (STATE*)left_state(p[0]);
+                sl[1] = (STATE*)left_state(p[1]);
+
                 for (int j = 0; j < 3; ++j)
                 {
                     sl[0]->strainImpulse[j] += I0*e01[j];
@@ -828,12 +838,12 @@ void CollisionSolver3d::limitStrain()
 		    STATE* sl = (STATE*)left_state(p);
             if (sl->strain_num > 0)
             {
+                sl->has_strainlim = true;
                 for (int j = 0; j > 3; ++j)
                 {
                     sl->avgVel[j] += sl->strainImpulse[j];
                     sl->strainImpulse[j] = 0.0;
                 }
-
                 sl->strain_num = 0;
             }
 
@@ -888,15 +898,10 @@ void CollisionSolver3d::updateFinalVelocity()
             if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
-            //TODO: Make sure only moving collision points
-            //      are marked with sl->has_collsn.
-            //      Current literature suggests that we can
-            //      omit points that only experienced proximity
-            //      repulsions. The non colliding points retain
-            //      the velocity that the spring solver computed.
+            //TODO: What about points with strain limiting impulses?
             
             STATE* sl = (STATE*)left_state(pt);
-            if (!sl->has_collsn) continue;
+            if (!sl->has_collsn && !sl->has_strainlim) continue;
 
             for (int j = 0; j < 3; ++j)
             {
@@ -1016,12 +1021,11 @@ void CollisionSolver3d::updateAverageVelocity()
                 //TODO: Verify that this should be omitted for proximities.
                 //      This flag affects how the final velocity is updated.
                 //
-                //sl->has_collsn = true;
+                sl->has_collsn = true;
 
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
-                    sl->avgVel[k] /= (double)sl->collsn_num;
+                    sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
@@ -1042,8 +1046,7 @@ void CollisionSolver3d::updateAverageVelocity()
                 sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->collsnImpulse_RG[k];
-                    sl->avgVel[k] /= (double)sl->collsn_num_RG;
+                    sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
                 }
                 sl->collsn_num_RG = 0;
             }

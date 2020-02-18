@@ -39,6 +39,7 @@ struct STATE
     int collsn_num;
     int collsn_num_RG;
     bool has_collsn;
+    bool has_strainlim;
     bool is_fixed;
     bool is_movableRG;
     bool is_stringpt;

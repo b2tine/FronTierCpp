@@ -50,7 +50,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     //compute impact zone's center of mass position and velocity
     int num_pts = 0;
     double totalmass = 0.0;
-    double avg_dt = 0.0;
+    //double avg_dt = 0.0;
 
     double x_cm[3] = {0.0};
     double v_cm[3] = {0.0};
@@ -59,7 +59,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	while(p)
     {
 		STATE* sl = (STATE*)left_state(p);
-        avg_dt += sl->collsn_dt;
+        //avg_dt += sl->collsn_dt;
 
         double m = getFabricPointMass();
         if (sl->is_stringpt)
@@ -78,8 +78,8 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     }
 	
     //TODO: Is this justified, or just use the full step dt?
-    avg_dt += CollisionSolver3d::getTimeStepSize();
-    avg_dt /= (double)num_pts + 1.0;
+    //avg_dt += CollisionSolver3d::getTimeStepSize();
+    //avg_dt /= (double)num_pts + 1.0;
 
 	for (int i = 0; i < m_dim; ++i)
     {
@@ -182,7 +182,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
 	//compute average velocity for each point
         
-        //double dt = getTimeStepSize();
+    double dt = getTimeStepSize();
     
 	p = head;
     while(p)
@@ -213,24 +213,24 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
         {
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
 	        minusVec(dx,xF,xR);
-	        scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
-	        //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+	        //scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
+	        scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
 	        Cross3d(tmpV,xR,wxR);
 	    }
 
 	    for (int i = 0; i < 3; ++i)
 	    {
+            /*
             x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
                        + cos(avg_dt*mag_w)*xR[i] + wxR[i];
 
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
+            */
 
-            /*
             x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-            */
 	    	
             if (std::isnan(sl->avgVel[i]))
             { 
@@ -482,12 +482,11 @@ static bool MovingPointToTriGS(POINT* pts[])
             {
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= (double)sl->collsn_num;
+                    sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
+                sl->collsn_num = 0;
             }
-            sl->collsn_num = 0;
         }
     }
     
@@ -604,12 +603,11 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
             {
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->collsnImpulse[k];
-                    sl->avgVel[k] /= (double)sl->collsn_num;
+                    sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
+                sl->collsn_num = 0;
             }
-            sl->collsn_num = 0;
         }
     }
     
@@ -741,8 +739,8 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                     sl->avgVel[k] /= (double)sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }
+                sl->collsn_num = 0;
             }
-            sl->collsn_num = 0;
         }
     }
     
@@ -1199,7 +1197,7 @@ static void EdgeToEdgeImpulse(
         // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
-        if (vn * dt < overlap_coef * overlap)
+        if (fabs(vn)*dt < overlap_coef * overlap)
             EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
     }
@@ -1317,8 +1315,11 @@ static void EdgeToEdgeImpulse(
                     sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
        
                 // Apply friction for static proximity repulsions
-                double friction_impulse = M[i];
-                //double friction_impulse = F[i];
+                
+                //TODO: only use inelastic component?
+                //
+                //double friction_impulse = M[i];
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
@@ -1451,11 +1452,11 @@ static void EdgeToEdgeElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - fabs(vn) = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - fabs(vn));
         }
 
-        double I = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
+        double I = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - fabs(vn)));
 
         impulse[0] += 0.5*I;
         impulse[1] += 0.5*I;
@@ -1648,7 +1649,7 @@ static void PointToTriImpulse(
         // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             PointToTriInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
-        if (vn*dt < overlap_coef*overlap)
+        if (fabs(vn)*dt < overlap_coef*overlap)
             PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
     }
@@ -1764,8 +1765,11 @@ static void PointToTriImpulse(
                     sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
 
                 // Apply friction for static proximity repulsions
-                double friction_impulse = M[i];
-                //double friction_impulse = F[i];
+                
+                //TODO: only use inelastic component?
+                //
+                //double friction_impulse = M[i];
+                double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
@@ -1913,11 +1917,11 @@ static void PointToTriElasticImpulse(
     {
         if (debugging("CollisionImpulse"))
         {
-            printf("dt*k*overlap/m = %g,  %g*overlap/dt - vn = %g\n",
-                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - vn);
+            printf("dt*k*overlap/m = %g,  %g*overlap/dt - fabs(vn) = %g\n",
+                    dt*k*overlap/m, overlap_coef, overlap_coef*overlap/dt - fabs(vn));
         }
 
-        double I = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - vn));
+        double I = std::min(dt*k*overlap/m, (overlap_coef*overlap/dt - fabs(vn)));
         
         impulse[0] += 0.5*I;
         impulse[1] += 0.5*I;

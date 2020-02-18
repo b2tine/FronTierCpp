@@ -124,9 +124,10 @@ private:
     int numStrainRateEdges {0};
     int numStrainEdges {0};
 
-	void reduceSuperElasticity();
     void limitStrainRate();
+    void modifyStrainRate();
     void limitStrain();
+    void modifyStrain();
 
 	void computeAverageVelocity();
     void resetPositionCoordinates();
