@@ -449,7 +449,7 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
 
     limitStrain();
-    limitStrainRate();
+    //limitStrainRate();
 
     //static proximity handling
 	detectProximity();
@@ -464,19 +464,6 @@ void CollisionSolver3d::resolveCollision()
 	//update position using final midstep velocity
 	updateFinalPosition();
     detectProximity();
-        //limitStrain();
-
-    
-    //TODO: Verify this should be called a second time?
-    //      Bridson-Fedkiw paper says to apply proximity
-    //      impulses at the end of the time step, but it's
-    //      not clear if they mean to just check for moving
-    //      collision at dt if there are no roots in [0,dt],
-    //      or if they mean that detectProximity() should be
-    //      called after updating the final point positions
-    //      and before the final velocity update.
-    //
-    //detectProximity();
 	
     //TODO: Justify this final update, or implement correctly.
 	updateFinalVelocity();
@@ -624,7 +611,7 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 
 void CollisionSolver3d::limitStrainRate()
 {
-	const int MAX_ITER = 5;
+	const int MAX_ITER = 6;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         modifyStrainRate();
@@ -744,7 +731,7 @@ void CollisionSolver3d::limitStrain()
 void CollisionSolver3d::modifyStrain()
 {
     double TOL = 0.1;
-    double CTOL = 0.01;
+    double CTOL = 0.05;
 	
     numStrainEdges = 0;
     double dt = getTimeStepSize();
@@ -769,7 +756,19 @@ void CollisionSolver3d::modifyStrain()
             //      this notion of a visited edge?
             if (sorted(p[0]) && sorted(p[1])) continue;
 
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+		    double lnew = distBetweenCoords(x_cand0,x_cand1);
             double len0;
+
             if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
             {
                 CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
@@ -781,9 +780,7 @@ void CollisionSolver3d::modifyStrain()
                 len0 = cd_tri->m_tri->side_length0[i];
             }
             
-            double len = separation(p[0],p[1],3);
-            
-            double strain = len - len0;
+            double strain = lnew - len0;
             if (strain > TOL*len0 || strain < -CTOL*len0)
             {
                 double I0, I1;
@@ -802,11 +799,8 @@ void CollisionSolver3d::modifyStrain()
                 
                 double e01[3];
                 Pts2Vec(p[0],p[1],e01);
-                scalarMult(1.0/len,e01,e01);
+                scalarMult(1.0/lnew,e01,e01);
 		    
-                sl[0] = (STATE*)left_state(p[0]);
-                sl[1] = (STATE*)left_state(p[1]);
-
                 for (int j = 0; j < 3; ++j)
                 {
                     sl[0]->strainImpulse[j] += I0*e01[j];

@@ -731,7 +731,7 @@ void CollisionSolver3d::limitStrain()
 void CollisionSolver3d::modifyStrain()
 {
     double TOL = 0.1;
-    double CTOL = 0.01;
+    double CTOL = 0.05;
 	
     numStrainEdges = 0;
     double dt = getTimeStepSize();
