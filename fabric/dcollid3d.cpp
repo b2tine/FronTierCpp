@@ -50,7 +50,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     //compute impact zone's center of mass position and velocity
     int num_pts = 0;
     double totalmass = 0.0;
-    //double avg_dt = 0.0;
+    double avg_dt = 0.0;
 
     double x_cm[3] = {0.0};
     double v_cm[3] = {0.0};
@@ -59,7 +59,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	while(p)
     {
 		STATE* sl = (STATE*)left_state(p);
-        //avg_dt += sl->collsn_dt;
+        avg_dt += sl->collsn_dt;
 
         double m = getFabricPointMass();
         if (sl->is_stringpt)
@@ -78,8 +78,15 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     }
 	
     //TODO: Is this justified, or just use the full step dt?
-    //avg_dt += CollisionSolver3d::getTimeStepSize();
+    avg_dt += CollisionSolver3d::getTimeStepSize();
     //avg_dt /= (double)num_pts + 1.0;
+    avg_dt /= (double)num_pts;
+
+    
+    //temp debug
+    double dt = getTimeStepSize();
+    printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
+
 
 	for (int i = 0; i < m_dim; ++i)
     {
@@ -182,7 +189,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
 	//compute average velocity for each point
         
-    double dt = getTimeStepSize();
+    //double dt = getTimeStepSize();
     
 	p = head;
     while(p)
@@ -213,24 +220,24 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
         {
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
 	        minusVec(dx,xF,xR);
-	        //scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
-	        scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+	        scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
+	        //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
 	        Cross3d(tmpV,xR,wxR);
 	    }
 
 	    for (int i = 0; i < 3; ++i)
 	    {
-            /*
             x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
                        + cos(avg_dt*mag_w)*xR[i] + wxR[i];
 
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
-            */
 
+            /*
             x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+            */
 	    	
             if (std::isnan(sl->avgVel[i]))
             { 
