@@ -104,6 +104,8 @@ Enter yes for debugging: yes
 Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size

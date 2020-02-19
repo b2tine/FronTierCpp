@@ -92,6 +92,9 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
+    bool has_collision;
+	double Boundary[3][2]; //domain boundary[dir][side]
+
     double volume;
     double vol_diff {0.0};
 
@@ -114,18 +117,21 @@ private:
 
     int numImpactZones {0};
     int numImpactZonePoints {0};
-
-    bool has_collision;
-	double Boundary[3][2]; //domain boundary[dir][side]
-
-	static void turnOffImpZone();
-	static void turnOnImpZone();
 	
-    bool reduceSuperelastOnce(int&);
+    static void turnOffImpZone();
+	static void turnOnImpZone();
+
+    int numStrainRateEdges {0};
+    int numStrainEdges {0};
+
+    void limitStrainRate();
+    void modifyStrainRate();
+    void limitStrain();
+    void modifyStrain();
+
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
-	void reduceSuperelast();
 	void updateFinalVelocity();
 	void updateAverageVelocity();
 	void updateExternalImpulse();
@@ -159,11 +165,13 @@ void scalarMult(double a,double* v, double* ans);
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
 double myDet3d(double[][3]);
-double distBetweenCoords(double* v1, double* v2);
+double distBetweenCoords(double* x1, double* x2);
 extern void printPointList(POINT**, const int);
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);
 void unsortHseList(std::vector<CD_HSE*>&);
+void unsort_surface_point(SURFACE *surf);
+
 POINT*& next_pt(POINT*);
 int& weight(POINT*);
 bool isStaticRigidBody(const POINT*);
@@ -172,6 +180,7 @@ bool isMovableRigidBody(const POINT*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
+
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
