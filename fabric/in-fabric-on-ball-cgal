@@ -12,6 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
 
 Start parameters for modules
 
@@ -41,7 +42,7 @@ Enter the number of fabric optimization rounds: 0
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.02
 Enter fabric friction constant: 0.5
-Enter fabric point mass: 0.001
+Enter fabric point mass: 0.002
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 

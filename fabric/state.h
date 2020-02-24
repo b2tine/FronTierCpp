@@ -30,13 +30,16 @@ struct STATE
     double collsn_dt;
     double collsnImpulse[3];
     double collsnImpulse_RG[3];
+    double strainImpulse[3];
     double friction[3];
     double avgVel[3];
     double avgVel_old[3];
     double x_old[3];
+    int strain_num;
     int collsn_num;
     int collsn_num_RG;
     bool has_collsn;
+    bool has_strainlim;
     bool is_fixed;
     bool is_movableRG;
     bool is_stringpt;
