@@ -246,7 +246,7 @@ extern void set_spring_vertex_memory(
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
 	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
-		sv[i].ext_accel[j] = 0.0;
+    		sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
 
@@ -278,8 +278,7 @@ extern void compute_spring_accel1(
         }
 	}
 
-        //TODO: This isn't being used currently.
-        //      Figure out why.
+        //TODO: investigate this function
         //computeElasticForce(sv,f);
 
 	for (int k = 0; k < dim; ++k)
@@ -658,7 +657,7 @@ extern void set_node_spring_vertex(
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_s;
+                    mass = geom_set->m_l;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
 	    	else if (extra->af_node_type == SEC_LOAD_NODE)
@@ -945,24 +944,26 @@ extern void set_curve_spring_vertex(
 	    sv[i].m = m_l;
 	    sv[i].num_nb = 2;
 	    sv[i].lambda = lambda_l;
-	    if (dim == 3)
+
+        if (dim == 3)
 	    {
 	    	if (hsbdry_type(curve) == FIXED_HSBDRY || g == NULL)
 	    	{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = 0;
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = 0;
 	    	}
-		else
-		{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = g[j];
-		}
+            else
+            {
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = g[j];
+            }
 	    }
 	    else if (dim == 2 && g)
 	    {
                 for (j = 0; j < dim; ++j)
                 	sv[i].ext_accel[j] = g[j];
 	    }
+
 	    SURFACE** surf;
 	    boolean is_stationary_point = NO;
 	    intfc_surface_loop(front->interf, surf)
@@ -1090,9 +1091,11 @@ extern void set_surf_spring_vertex(
 		sv[i].x = point_set[gindex]->x;
 		sv[i].v = point_set[gindex]->v;
 		sv[i].f = point_set[gindex]->f;
-	    	sv[i].ext_impul = point_set[gindex]->impuls;
-	    	sv[i].fluid_accel = point_set[gindex]->fluid_accel;
-	    	sv[i].other_accel = point_set[gindex]->other_accel;
+
+        sv[i].ext_impul = point_set[gindex]->impuls;
+        sv[i].fluid_accel = point_set[gindex]->fluid_accel;
+        sv[i].other_accel = point_set[gindex]->other_accel;
+
 		PointAndFirstRingTris(p,Hyper_surf_element(tri),
 				Hyper_surf(surf),&nt,tris);
 		sv[i].num_nb = nt;
@@ -1353,21 +1356,24 @@ static void assembleParachuteSet3d(
 	SURFACE **s = NULL;
 	CURVE **c = NULL;
 	NODE **n = NULL;
-	int i,l,ns,nc,nn;
-	SURFACE **surfs = geom_set->surfs;
+	
+    SURFACE **surfs = geom_set->surfs;
 	CURVE **curves = geom_set->curves;
 	NODE **nodes = geom_set->nodes;
-	int num_layers = 3;
+	
+    /* Assemble canopy surfaces */
 
-	ns = nc = nn = 0;
-	/* Assemble canopy surfaces */
-	intfc_surface_loop(intfc,s)
+	int ns = 0;
+    int nc = 0;
+    int nn = 0;
+	
+    intfc_surface_loop(intfc,s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 	    surfs[ns++] = *s;
 	    surf_pos_curve_loop(*s,c)
 	    {
-		if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
+		    if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
 	    	if (!pointer_in_list(*c,nc,(POINTER*)curves))
 	    	{
 		    curves[nc++] = *c;
@@ -1379,22 +1385,22 @@ static void assembleParachuteSet3d(
 	    }
 	    surf_neg_curve_loop(*s,c)
 	    {
-		if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
+		
+            if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
 	    	if (!pointer_in_list(*c,nc,(POINTER*)curves))
 	    	{
-		    curves[nc++] = *c;
-		    if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-		    	nodes[nn++] = (*c)->start;
-		    if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-		    	nodes[nn++] = (*c)->end;
+                curves[nc++] = *c;
+                if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+                    nodes[nn++] = (*c)->start;
+                if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+                    nodes[nn++] = (*c)->end;
 	    	}
 	    }
 	}
 	
-    //TODO: below unfinished?
-    /* Change for dealing the cases where there is both canopy surface
-	   and isolated 3d curves */
-	intfc_curve_loop(intfc,c)
+    //TODO: Handle both fabric surfaces and isolated 3d curves
+	
+    intfc_curve_loop(intfc,c)
 	{
 	    if (pointer_in_list(*c,nc,(POINTER*)curves)) continue;
 	    if (hsbdry_type(*c) == STRING_HSBDRY ||
@@ -1403,22 +1409,29 @@ static void assembleParachuteSet3d(
 	    {
 	        curves[nc++] = *c;
 	        if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-                	nodes[nn++] = (*c)->start;
-                if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-                	nodes[nn++] = (*c)->end;
+                nodes[nn++] = (*c)->start;
+            if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+                nodes[nn++] = (*c)->end;
 	    }
 	}	
 
+    if (debugging("intfc_assembly"))
+    {
+        printf("ns = %d, nc = %d, nn = %d\n",ns,nc,nn);
+    }
+
 	/* Assemble curves and nodes */
-	for (l = 0; l < num_layers; ++l)
+
+    int num_layers = 3; //TODO: what does this mean???
+	for (int l = 0; l < num_layers; ++l)
 	{
-	    for (i = 0; i < nn; ++i)
+	    for (int i = 0; i < nn; ++i)
 	    {
 	    	node_in_curve_loop(nodes[i],c)
 	    	{
 		    if (hsbdry_type(*c) == PASSIVE_HSBDRY ||
-			hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
-			continue;
+                hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
+                continue;
 		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
 		    {
 		    	curves[nc++] = *c;
@@ -1431,8 +1444,8 @@ static void assembleParachuteSet3d(
 	    	node_out_curve_loop(nodes[i],c)
 	    	{
 		    if (hsbdry_type(*c) == PASSIVE_HSBDRY ||
-			hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
-			continue;
+			    hsbdry_type(*c) == SUBDOMAIN_HSBDRY) 
+			    continue;
 		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
 		    {
 		    	curves[nc++] = *c;
@@ -1444,26 +1457,33 @@ static void assembleParachuteSet3d(
 	    	}
 	    }
 	}
+
 	geom_set->num_surfs = ns;
 	geom_set->num_curves = nc;
 	geom_set->num_nodes = nn;
 	geom_set->num_verts = 0;
-	for (i = 0; i < ns; ++i)
+	
+    for (int i = 0; i < ns; ++i)
 	    geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
 	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-	geom_set->num_verts += nn;
-	geom_set->load_node = NULL;
-	for (i = 0; i < nn; ++i)
+    geom_set->num_verts += nn;
+	
+    geom_set->load_node = NULL;
+    for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
+		    geom_set->load_node = nodes[i];
+		    reorder_string_curves(nodes[i]);
 	    }
 	}
-	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", ns, nc, nn, 
-		geom_set->num_verts);
+
+    if (debugging("intfc_assembly"))
+    {
+        printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n",
+                ns, nc, nn, geom_set->num_verts);
+    }
 }	/* end assembleParachuteSet */
 
 extern void copy_from_client_point_set(
@@ -1660,11 +1680,10 @@ static void set_surf_impulse(
 		sorted(p) = YES;
 		gindex = Gindex(p);
 		FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            	for (k = 0; k < 3; ++k)
-            	{
-	    	    sl->impulse[k] = sr->impulse[k] 
-				= point_set[gindex]->impuls[k];
-	    	}
+        for (k = 0; k < 3; ++k)
+        {
+            sl->impulse[k] = sr->impulse[k] = point_set[gindex]->impuls[k];
+        }
 	    }
 	}
 }	/* end set_surf_impulse */

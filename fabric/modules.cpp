@@ -128,6 +128,7 @@ extern void initParachuteModules(Front *front)
                     complex_set = YES;
             }
         }
+
 	fclose(infile);
 
 	if (num_canopy == 1 && !complex_set)

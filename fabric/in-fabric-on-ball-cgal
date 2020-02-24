@@ -9,52 +9,52 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
-Enter the debugging string: CollisionImpulse
 Enter the debugging string: strain_limiting
-
 
 Start parameters for modules
 
-Enter number of canopy surfaces: 0
-Enter yes to add isolated curves: yes
-Enter the number of curves: 2
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
 
-Enter the start of curve 0: 0.45 0.3 0.6
-Enter the end of curve 0: 0.55 0.7 0.6
-Enter yes to fix the endpoints of curve 0: yes
-Enter yes to have parallel curves for curve 0: no
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
 
-Enter the start of curve 1: 0.1 0.4 0.8
-Enter the end of curve 1: 0.9 0.6 0.8
-Enter yes to fix the endpoints of curve 1: no
-Enter yes to have parallel curves for curve 1: no
-
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: c
+Enter the height of the plane: 0.8
+Enter circle center: 0.5 0.5
+Enter circle radius: 0.4
 
 Start parameters for spring-mass system
 
 Enter the number of fabric optimization rounds: 0
-Enter interior sub step number: 1
-Enter yes to use total mass: no
 
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.01
+Enter fabric damping constant: 0.02
 Enter fabric friction constant: 0.5
-Enter fabric point mass: 0.001
+Enter fabric point mass: 0.002
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 50000
-Enter string damping constant: 0.01
-Enter string friction constant: 0.2
-Enter string point mass: 0.002
-Enter string thickness: 0.008
-Enter string rounding tolerance: 0.000050
+Type yes to perturb the surface: n
 
-Enter yes to add rigid body: no
+Enter yes to add rigid body: yes
+Enter the number of rigid bodies: 1
+Enter type of rigid body: s
+Enter center of the sphere: 0.5 0.5 0.5
+Enter radius of the sphere: 0.15
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
 
 Start test velocity function set
 Available velocity functions are:
@@ -68,14 +68,14 @@ Available velocity functions are:
         Fixed area velocity (FA)
         Fixed point velocity (FP)
         Free fall velocity (FF)
-Enter velocity function: Zero
+Enter velocity function: Z
 Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3.0
-Max step: 70
-Print interval: 0.005
-Movie frame interval: 0.005
+Max step: 2500
+Print interval: 0.025
+Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes

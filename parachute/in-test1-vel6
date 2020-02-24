@@ -10,7 +10,7 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 4.0
-Max step: 1000
+Max step: 107
 Print interval: 0.05
 Movie frame interval: 0.05
 CFL factor: 0.5
@@ -84,10 +84,12 @@ Enter string point mass: 0.002
 Enter string thickness: 0.008
 Enter string rounding tolerance: 0.000050
 
+Enter collision update type: Gauss-Seidel
+
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 5
+Enter velocity: 0 0 6.0
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -104,6 +106,8 @@ Enter yes for debugging: yes
 Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size

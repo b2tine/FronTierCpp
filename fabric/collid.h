@@ -9,9 +9,9 @@
 
 #define DEBUGGING false
 
-//TODO: How where these determined?
-const double ROUND_EPS = 1.0e-10;
-const double EPS = 1.0e-6;
+const double ROUND_EPS = DBL_EPSILON;
+//const double ROUND_EPS = 1.0e-10;
+const double EPS = 1.0e-06;
 const double DT = 0.001;
 
 
@@ -35,8 +35,6 @@ public:
 
 	static void setTimeStepSize(double);
 	static double getTimeStepSize();
-	static void setRoundingTolerance(double);
-	static double getRoundingTolerance();
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
@@ -49,6 +47,8 @@ public:
 	static double getFabricFrictionConstant();
 	static void setFabricPointMass(double);
 	static double getFabricPointMass();
+	static void setFabricRoundingTolerance(double);
+	static double getFabricRoundingTolerance();
 
 	static void setStringThickness(double);
 	static double getStringThickness();
@@ -58,6 +58,8 @@ public:
 	static double getStringFrictionConstant();
 	static void setStringPointMass(double);
 	static double getStringPointMass();
+	static void setStringRoundingTolerance(double);
+	static double getStringRoundingTolerance();
 
     double setVolumeDiff(double);
 
@@ -90,42 +92,54 @@ private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
+    bool has_collision;
+	double Boundary[3][2]; //domain boundary[dir][side]
+
     double volume;
     double vol_diff {0.0};
 
-	static double s_cr;
-	static double s_eps;
 	static double s_dt;
+	static double s_cr;
 
 	static double s_thickness; //fabric thickness
+	static double s_eps;
 	static double s_m;
 	static double s_k;
 	static double s_mu;
     
 	static double l_thickness; //string thickness
+	static double l_eps;
 	static double l_m;
 	static double l_k;
 	static double l_mu;
 
     static bool s_detImpZone;
 
-    bool has_collision;
-	double Boundary[3][2]; //domain boundary[dir][side]
-
-	static void turnOffImpZone();
-	static void turnOnImpZone();
+    int numImpactZones {0};
+    int numImpactZonePoints {0};
 	
-    bool reduceSuperelastOnce(int&);
+    static void turnOffImpZone();
+	static void turnOnImpZone();
+
+    int numStrainRateEdges {0};
+    int numStrainEdges {0};
+
+    void limitStrainRate();
+    void modifyStrainRate();
+    void limitStrain();
+    void modifyStrain();
+
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
-	void reduceSuperelast();
 	void updateFinalVelocity();
 	void updateAverageVelocity();
+	void updateExternalImpulse();
 	void computeImpactZone();
-	void updateImpactZoneVelocity(int&);
+	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();
+	void detectProximityEndStep();
 	void detectCollision();
     void aabbProximity();
     void aabbCollision();
@@ -136,12 +150,12 @@ private:
 };
 
 
-bool BondToBond(const BOND*,const BOND*,double);
-bool TriToBond(const TRI*,const BOND*,double);
-bool TriToTri(const TRI*,const TRI*,double);
-bool MovingBondToBond(const BOND*,const BOND*,double);
-bool MovingTriToBond(const TRI*,const BOND*,double);
-bool MovingTriToTri(const TRI*,const TRI*,double);
+bool BondToBond(const BOND*,const BOND*);
+bool TriToBond(const TRI*,const BOND*);
+bool TriToTri(const TRI*,const TRI*);
+bool MovingBondToBond(const BOND*,const BOND*);
+bool MovingTriToBond(const TRI*,const BOND*);
+bool MovingTriToTri(const TRI*,const TRI*);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
@@ -151,11 +165,13 @@ void scalarMult(double a,double* v, double* ans);
 void addVec(double* v1, double* v2, double* ans); 
 void minusVec(double* v1, double* v2, double* ans); 
 double myDet3d(double[][3]);
-double distBetweenCoords(double* v1, double* v2);
+double distBetweenCoords(double* x1, double* x2);
 extern void printPointList(POINT**, const int);
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);
 void unsortHseList(std::vector<CD_HSE*>&);
+void unsort_surface_point(SURFACE *surf);
+
 POINT*& next_pt(POINT*);
 int& weight(POINT*);
 bool isStaticRigidBody(const POINT*);
@@ -164,6 +180,7 @@ bool isMovableRigidBody(const POINT*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
+
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);

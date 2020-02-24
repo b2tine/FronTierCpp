@@ -100,8 +100,8 @@ struct AF_PARAMS
 	double lambda_s;		/* damping factor of surface */
 	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
-	double m_s;			/* point mass of surface */
-	double m_l;			/* point mass of string curves */
+	double m_s {0.001};			/* point mass of surface */
+	double m_l {0.01};			/* point mass of string curves */
 	double m_g;                     /* point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
@@ -130,11 +130,38 @@ struct AF_PARAMS
 					   id, for users' convenience */
     
     //for collision handling
-    double string_thickness {0.01};
+    double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
+    
+    double string_eps {1.0e-05};
+    double string_thickness {0.05};
 
     double vol_diff {0.0};              //for refitting AABBTree
 }; 
+
+struct ELASTIC_SET
+{
+	Front *front;
+    NODE *load_node;
+	SURFACE *surfs[100];
+	CURVE *curves[1000];
+	NODE *nodes[1000];
+	int num_surfs;
+	int num_curves;
+	int num_nodes;
+	double ks;
+	double kl;
+	double kg;
+	double lambda_s;
+	double lambda_l;
+	double lambda_g;
+	double m_s;
+	double m_l;
+	double m_g;
+	int num_verts;		/* Total number of spring-mass points */
+	double dt_tol;
+	double dt;
+};
 
 
 /*	airfoil.cpp functions */
@@ -233,30 +260,6 @@ struct REGISTERED_PTS
 	int *global_ids;
 };
 
-struct ELASTIC_SET
-{
-	Front *front;
-    NODE *load_node;
-	SURFACE *surfs[100];
-	CURVE *curves[1000];
-	NODE *nodes[1000];
-	int num_surfs;
-	int num_curves;
-	int num_nodes;
-	double ks;
-	double kl;
-	double kg;
-	double lambda_s;
-	double lambda_l;
-	double lambda_g;
-	double m_s;
-	double m_l;
-	double m_g;
-	int num_verts;		/* Total number of spring-mass points */
-	double dt_tol;
-	double dt;
-};
-
 //NOTE: these never had a definition
 /*
 void read_movie_options(char*,F_PARAMS*);
@@ -297,6 +300,7 @@ extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
 extern void second_order_elastic_surf_propagate(Front*,double);
 extern void set_equilibrium_mesh(Front*);
 extern void print_airfoil_stat(Front*,char*);
+extern void print_strings(Front*,char*);
 extern void fixed_length_tan_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void fourth_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
