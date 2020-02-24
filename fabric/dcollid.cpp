@@ -448,15 +448,22 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
-    limitStrain();
-    //limitStrainRate();
+    if (!debugging("strainlim_off"))
+    {
+        limitStrain();
+        //limitStrainRate();
+    }
 
     //static proximity handling
 	detectProximity();
 
 	//check linear trajectories for collisions
 	detectCollision();
-    limitStrainRate();
+
+    if (!debugging("strainlim_off"))
+    {
+        limitStrainRate();
+    }
 
     //TODO: fix this function
 	//detectDomainBoundaryCollision();
@@ -465,7 +472,6 @@ void CollisionSolver3d::resolveCollision()
 	updateFinalPosition();
     detectProximity();
 	
-    //TODO: Justify this final update, or implement correctly.
 	updateFinalVelocity();
 }
 
@@ -892,8 +898,6 @@ void CollisionSolver3d::updateFinalVelocity()
             if (sorted(pt) || isStaticRigidBody(pt))
                 continue;
 
-            //TODO: What about points with strain limiting impulses?
-            
             STATE* sl = (STATE*)left_state(pt);
             if (!sl->has_collsn && !sl->has_strainlim) continue;
 
@@ -1012,9 +1016,6 @@ void CollisionSolver3d::updateAverageVelocity()
             sl = (STATE*)left_state(p);
             if (sl->collsn_num > 0)
             {
-                //TODO: Verify that this should be omitted for proximities.
-                //      This flag affects how the final velocity is updated.
-                //
                 sl->has_collsn = true;
 
                 for (int k = 0; k < 3; ++k)

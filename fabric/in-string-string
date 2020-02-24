@@ -14,6 +14,7 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: CollisionImpulse
+Enter the debugging string: strain_limiting
 
 
 Start parameters for modules

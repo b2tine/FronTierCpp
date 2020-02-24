@@ -79,7 +79,6 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
     //TODO: Is this justified, or just use the full step dt?
     avg_dt += CollisionSolver3d::getTimeStepSize();
-    //avg_dt /= (double)num_pts + 1.0;
     avg_dt /= (double)num_pts;
 
     
@@ -189,7 +188,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
 	//compute average velocity for each point
         
-    //double dt = getTimeStepSize();
+        //double dt = getTimeStepSize();
     
 	p = head;
     while(p)
