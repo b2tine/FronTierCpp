@@ -460,6 +460,7 @@ void CollisionSolver3d::resolveCollision()
 	//check linear trajectories for collisions
 	detectCollision();
 
+    //TODO: this may need to be done before detectCollision()
     if (!debugging("strainlim_off"))
     {
         limitStrainRate();
