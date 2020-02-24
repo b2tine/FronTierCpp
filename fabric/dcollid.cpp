@@ -460,6 +460,7 @@ void CollisionSolver3d::resolveCollision()
 	//check linear trajectories for collisions
 	detectCollision();
 
+    //TODO: this may need to be done before detectCollision()
     if (!debugging("strainlim_off"))
     {
         limitStrainRate();
@@ -1116,6 +1117,7 @@ void CollisionSolver3d::updateAverageVelocity()
                     {
                         pchain[0] = p;
                         pchain[1] = b->end;
+                        pchain[2] = nullptr;
                         nchain = 2;
                     }
                     else
@@ -1132,6 +1134,7 @@ void CollisionSolver3d::updateAverageVelocity()
                     {
                         pchain[0] = b->start;
                         pchain[1] = p;
+                        pchain[2] = nullptr;
                         nchain = 2;
                     }
                     else
