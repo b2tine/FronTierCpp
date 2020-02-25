@@ -11,8 +11,6 @@
 #include <omp.h>
 
 //union find functions
-static POINT* findSet(POINT*);
-static void mergePoint(POINT*,POINT*);
 inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 
@@ -410,7 +408,7 @@ void CollisionSolver3d::infoImpactZones()
                 continue;
             else
             {
-                markImpactZonePoints(head)
+                markImpactZonePoints(head);
                 numImpactZonePoints += weight(head);
                 numImpactZones++;
             }

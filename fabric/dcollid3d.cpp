@@ -45,7 +45,7 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 //      adding points to it. Should be able to  update
 //      x_cm, v_cm, and avg_dt without looping through
 //      every point of the zone.
-void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+void updateImpactListVelocity(POINT* head)
 {
     POINT* p = nullptr;
 	
@@ -64,12 +64,12 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
         avg_dt += sl->collsn_dt;
         sl->has_collsn = true;
 
-        double m = getFabricPointMass();
+        double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 
         totalmass += m;
-        for (int i = 0; i < m_dim; ++i)
+        for (int i = 0; i < 3; ++i)
         {
 		    x_cm[i] += sl->x_old[i]*m; 
 		    v_cm[i] += sl->avgVel[i]*m;
@@ -91,7 +91,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
         //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
 
 
-	for (int i = 0; i < m_dim; ++i)
+	for (int i = 0; i < 3; ++i)
     {
 	    x_cm[i] /= totalmass;
 	    v_cm[i] /= totalmass;
@@ -108,7 +108,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	    STATE* sl = (STATE*)left_state(p);
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 	    
 	    double dx[3], dv[3], Li[3];
         minusVec(sl->x_old,x_cm,dx);
@@ -128,7 +128,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	    STATE* sl = (STATE*)left_state(p);
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 
 	    double dx[3];
         minusVec(sl->x_old,x_cm,dx);
@@ -192,7 +192,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
 	//compute average velocity for each point
         
-        //double dt = getTimeStepSize();
+        //double dt = CollisionSolver3d::getTimeStepSize();
     
 	p = head;
     while(p)
