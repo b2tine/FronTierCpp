@@ -136,6 +136,8 @@ private:
 	void updateAverageVelocity();
 	void updateExternalImpulse();
 	void computeImpactZone();
+	void infoImpactZones();
+	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();

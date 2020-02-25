@@ -41,8 +41,10 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 	}
 }
 
-//TODO: This may not be desirable for string-string interactions.
-//      If not, remove string code in function.
+//TODO: Optimize for when impact zone exists and we are
+//      adding points to it. Should be able to  update
+//      x_cm, v_cm, and avg_dt without looping through
+//      every point of the zone.
 void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 {
     POINT* p = nullptr;
@@ -60,6 +62,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     {
 		STATE* sl = (STATE*)left_state(p);
         avg_dt += sl->collsn_dt;
+        sl->has_collsn = true;
 
         double m = getFabricPointMass();
         if (sl->is_stringpt)
@@ -71,8 +74,10 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 		    x_cm[i] += sl->x_old[i]*m; 
 		    v_cm[i] += sl->avgVel[i]*m;
 		}
-		sorted(p) = YES;
 
+        //For now, still need to mark for updateImpactZoneVelocityForRG()
+        sorted(p) = YES;
+        
         p = next_pt(p);
 		num_pts++;
     }
@@ -80,11 +85,10 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     //TODO: Is this justified, or just use the full step dt?
     avg_dt += CollisionSolver3d::getTimeStepSize();
     avg_dt /= (double)num_pts;
-
     
     //temp debug
-    double dt = getTimeStepSize();
-    printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
+        //double dt = getTimeStepSize();
+        //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
 
 
 	for (int i = 0; i < m_dim; ++i)
@@ -284,16 +288,16 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
     if (MovingPointToTriGS(pts))
         status = true;
     
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
+    //if (status && is_detImpZone)
+      //  createImpZone(pts,4);
 	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
     if (MovingPointToTriGS(pts))
         status = true;
 
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
+    //if (status && is_detImpZone)
+      //  createImpZone(pts,4);
 	
     /* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
@@ -305,8 +309,8 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
         if (MovingEdgeToEdgeGS(pts))
             status = true;
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
     return status;
@@ -324,15 +328,6 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	bool status = false;
     if(MovingEdgeToEdgeGS(pts))
         status = true;
-
-    //TODO: further investigation required
-    //
-    //NO IMPACT ZONES FOR STRING-STRING COLLISIONS
-    /*
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-    */
 
     return status;
 }
@@ -357,8 +352,8 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
         if(MovingPointToTriGS(pts))
             status = true;
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -374,8 +369,8 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             if(MovingEdgeToEdgeGS(pts))
                 status = true;
                 
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
+            //if (status && is_detImpZone)
+              //  createImpZone(pts,4);
 	    }
     }
 
@@ -445,6 +440,8 @@ static bool MovingPointToTriGS(POINT* pts[])
     if (s->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
         
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
@@ -468,24 +465,23 @@ static bool MovingPointToTriGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
-                    sl->has_collsn = true;
                 }
                 break;
             }
 	    }
 	}
 
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
 
-        if (!is_detImpZone)
+        if (status && !is_detImpZone)
         {
             if (sl->collsn_num > 0)
             {
+                sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
@@ -493,6 +489,12 @@ static bool MovingPointToTriGS(POINT* pts[])
                 }
                 sl->collsn_num = 0;
             }
+        }
+        else if (status && is_detImpZone)
+        {
+            createImpZone(pts,4);
+            POINT* head = findSet(pts[0]);
+            updateImpactListVelocity(head);
         }
     }
     
@@ -566,6 +568,8 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     if (s0->is_stringpt || s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
@@ -589,16 +593,14 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
-                    sl->has_collsn = true;
                 }
                 break;
             }
         }
     }
 
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //No Impact Zones for string-string interactions
     bool string_string = false;
-
     if (s0->is_stringpt && s2->is_stringpt)
         string_string = true;
     
@@ -608,10 +610,11 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
 
-        if (!is_detImpZone || string_string)
+        if (status && (!is_detImpZone || string_string))
         {
             if (sl->collsn_num > 0)
             {
+                sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
@@ -619,6 +622,12 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 }
                 sl->collsn_num = 0;
             }
+        }
+        else if (status && is_detImpZone && !string_string)
+        {
+            createImpZone(pts,4);
+            POINT* head = findSet(pts[0]);
+            updateImpactListVelocity(head);
         }
     }
     
@@ -868,7 +877,7 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	//elimiate invalid roots;
 	for (int i = 0; i < 3; ++i)
     {
-        //TODO: is subtracting off MACH_EPS valid here?
+        //TODO: necessary to subtract off MACH_EPS valid here?
         //
         roots[i] = roots[i] - MACH_EPS;
         if (roots[i] < 0 || roots[i] > dt)
