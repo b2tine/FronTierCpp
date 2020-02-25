@@ -45,6 +45,7 @@ void printAfExtraData(
 	CURVE **c;
 	NODE **n;
 	BOND *b;
+    TRI *t;
 
 	sprintf(filename,"%s/state.ts%s",out_name,
                         right_flush(front->step,7));
@@ -186,11 +187,14 @@ void printAfExtraData(
                 fprintf(outfile,"af_node_type = %d\n",n_params->af_node_type);
 	    }
 	}
-	fprintf(outfile,"\nGlobal index of points\n");
+	
+    fprintf(outfile,"\nGlobal index of points\n");
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-            fprintf(outfile,"%ld\n",Gindex(p));
-	for (c = intfc->curves; c && *c; ++c)
+    while (next_point(intfc,&p,&hse,&hs))
+        fprintf(outfile,"%ld\n",Gindex(p));
+    
+    //TODO: why are these extra traversals needed for global point index?
+    for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
             fprintf(outfile,"%ld\n",Gindex(p));
@@ -200,11 +204,22 @@ void printAfExtraData(
             	fprintf(outfile,"%ld\n",Gindex(p));
 	    }
 	}
-        intfc_node_loop(intfc,n)
+
+    intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
             fprintf(outfile,"%ld\n",Gindex(p));
 	}
+
+	fprintf(outfile,"\nGlobal index of triangles\n");
+    intfc_surface_loop(intfc,s)
+    {
+        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
+        surf_tri_loop(*s,t)
+        {
+            fprintf(outfile,"%ld\n",Gindex(t));
+        }
+    }
 
 	fprintf(outfile,"\nGlobal index of curves\n");
 	for (c = intfc->curves; c && *c; ++c)
@@ -213,7 +228,8 @@ void printAfExtraData(
 	fprintf(outfile,"\nGlobal index of surfaces\n");
 	for (s = intfc->surfaces; s && *s; ++s)
 	    fprintf(outfile,"%d\n",Gindex(*s));
-	fprintf(outfile,"\nPoint periodic shift\n");
+	
+    fprintf(outfile,"\nPoint periodic shift\n");
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
 	{
@@ -259,8 +275,11 @@ void readAfExtraData(
 	CURVE **c;
 	NODE **n;
 	BOND *b;
+    TRI *t;
+
 	char string[100];
 	long max_point_gindex = 0;
+	long max_tri_gindex = 0;
 
         sprintf(filename,"%s-afdata",restart_name);
         infile = fopen(filename,"r");
@@ -407,18 +426,22 @@ void readAfExtraData(
 	    (*n)->extra = (POINTER)n_params;
 	    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
-	if (fgetstring(infile,"Global index of points") == FUNCTION_FAILED)
+	
+    if (fgetstring(infile,"Global index of points") == FUNCTION_FAILED)
 	{
 	    (void) printf("String \"Global index of points\" not found\n");
 	    clean_up(ERROR);
 	}
-	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
+	
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
 	{
-            fscanf(infile,"%ld",&Gindex(p));
+        fscanf(infile,"%ld",&Gindex(p));
 	    if (max_point_gindex < Gindex(p))
-		max_point_gindex = Gindex(p);
+            max_point_gindex = Gindex(p);
 	}
+
+    //TODO: why are these extra traversals needed for global point index?
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -433,16 +456,40 @@ void readAfExtraData(
 		    max_point_gindex = Gindex(p);
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+	
+    for (n = intfc->nodes; n && *n; ++n)
 	{
 	    p = (*n)->posn;
             fscanf(infile,"%ld",&Gindex(p));
 	    if (max_point_gindex < Gindex(p))
 		max_point_gindex = Gindex(p);
 	}
+
 	max_point_gindex++;
 	pp_global_lmax(&max_point_gindex,1);
 	intfc->max_point_gindex = max_point_gindex;
+
+    checkpoint("0");
+	if (fgetstring(infile,"Global index of triangles") == FUNCTION_FAILED)
+	{
+	    (void) printf("String \"Global index of triangles\" not found\n");
+	    clean_up(ERROR);
+	}
+    
+    intfc_surface_loop(intfc,s)
+    {
+        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
+        surf_tri_loop(*s,t)
+        {
+            fscanf(infile,"%ld",&Gindex(t));
+            if (max_tri_gindex < Gindex(t))
+                max_tri_gindex = Gindex(t);
+        }
+    }
+
+	max_tri_gindex++;
+	pp_global_lmax(&max_tri_gindex,1);
+	intfc->max_tri_gindex = max_tri_gindex;
 
 	if (fgetstring(infile,"Global index of curves") == FUNCTION_FAILED)
 	{

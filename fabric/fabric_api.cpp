@@ -524,6 +524,10 @@ extern void SMM_TestDriver()
         FT_SetOutputCounter(front);
     }
 
+    //TEMP: debug restart for triangle gindex
+        //printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
+        //printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
+
     FT_TimeControlFilter(front);
     FT_PrintTimeStamp(front);
 	

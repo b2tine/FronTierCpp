@@ -365,6 +365,7 @@ EXPORT void print_curve_global_index(CURVE *curve)
 
 EXPORT void print_tri_global_index(TRI* tri)
 {
+	(void) printf("Global index of tri: %ld\n",Gindex(tri));
 	(void) printf("Global indices of tri vertices: %ld %ld %ld\n",
 			Gindex(Point_of_tri(tri)[0]),
 			Gindex(Point_of_tri(tri)[1]),

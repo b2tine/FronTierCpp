@@ -278,9 +278,11 @@ LIB_LOCAL  boolean  i_intersections3d(
 		    {
 			(void) add_to_pointers(cbond,&Tri_cross_list(ct0));
 			(void) add_to_pointers(cbond,&Tri_cross_list(ct1));
-			if (DEBUG)
-			    show_crossing_tris("i_intersections3d",
-			                       ct0,ct1,cbond,intfc);
+			
+            //gview output
+            if (DEBUG)
+			    show_crossing_tris("i_intersections3d",ct0,ct1,cbond,intfc);
+
 			c_curves = install_c_bond_in_curve(cbond,cs0,cs1,
 						           c_curves);
 		    }
