@@ -40,7 +40,7 @@ EXPORT void FT_WriteFrontState(
         HYPER_SURF *hs;
         HYPER_SURF_ELEMENT *hse;
 
-        fprintf(outfile,"Front interface states:\n");
+        fprintf(outfile,"\nFront interface states:\n");
         next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
