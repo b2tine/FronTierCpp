@@ -791,8 +791,8 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	isCoplanarHelper(tmp, x);
 
 	//get roots "t" of a cubic equation
-	//(x1+tv1)x(x2+tv2)*(x3+tv3) = 0
-	//transform to at^3+bt^2+ct+d = 0
+	//(x12 + t*v12) x (x13 + t*v13)*(x14 + t*v14) = 0
+	//transform to a*t^3 + b*t^2 + c*t + d = 0
 	double a, b, c, d;
 	double vv[3], vx[3], xx[3];
 	vv[0] = v[1][1]*v[2][2]-v[1][2]*v[2][1];
@@ -816,53 +816,65 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
             v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
 
 	d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
-	//solve equation using method from "Art of Scientific Computing"
+	
+    //solve equation using method from "Art of Scientific Computing"
 	//transform equation to t^3+at^2+bt+c = 0
-	if (fabs(a) > MACH_EPS){
+	if (fabs(a) > MACH_EPS)
+    {
 	    b /= a; c /= a; d /= a;
 	    a = b; b = c; c = d;
 	    double Q, R, theta;
 	    double Q3, R2;
-	    Q = (a*a-3*b)/9;
-	    R = (2*a*a*a-9*a*b+27*c)/54;
+	    Q = (a*a-3.0*b)/9.0;
+	    R = (2.0*a*a*a-9.0*a*b+27.0*c)/54.0;
 	    Q3 = Q*Q*Q;
 	    R2 = R*R;
-	    if (R2 < Q3){
+
+	    if (R2 < Q3)
+        {
 	        double Qsqrt = sqrt(Q);
-		theta = acos(R/sqrt(Q3));
-		roots[0] = -2*Qsqrt*cos(theta/3)-a/3;
-		roots[1] = -2*Qsqrt*cos((theta+2*M_PI)/3)-a/3;
-		roots[2] = -2*Qsqrt*cos((theta-2*M_PI)/3)-a/3;	
-	    }
-	    else{
-		double A, B;
-		double sgn = (R > 0) ? 1.0 : -1.0;
-		A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
-		B = (fabs(A) < ROUND_EPS) ? 0.0 : Q/A;
-		roots[0] = (A+B)-a/3.0;
-		if (fabs(A-B) < ROUND_EPS)
-		    roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
+            theta = acos(R/sqrt(Q3));
+            roots[0] = -2.0*Qsqrt*cos(theta/3.0)-a/3.0;
+            roots[1] = -2.0*Qsqrt*cos((theta+2.0*M_PI)/3.0)-a/3.0;
+            roots[2] = -2.0*Qsqrt*cos((theta-2.0*M_PI)/3.0)-a/3.0;
+        }
+	    else
+        {
+            double A, B;
+            double sgn = (R > 0) ? 1.0 : -1.0;
+            A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
+            B = (fabs(A) < MACH_EPS) ? 0.0 : Q/A;
+            roots[0] = (A+B)-a/3.0;
+            if (fabs(A-B) < MACH_EPS)
+                roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
 	    }
 	}
-	else{
+	else
+    {
 		a = b; b = c; c = d;
 	   	double delta = b*b-4.0*a*c;
-	   	if (fabs(a) > ROUND_EPS && delta > 0){
+	   	if (fabs(a) > ROUND_EPS && delta > 0)
+        {
 		    double delta_sqrt = sqrt(delta);
 		    roots[0] = (-b+delta_sqrt)/(2.0*a);
-	    	    roots[1] = (-b-delta_sqrt)/(2.0*a);
+            roots[1] = (-b-delta_sqrt)/(2.0*a);
 	   	}
 		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
 		{
 		    roots[0] = -c/b;
-	        }
+        }
 	}
+
 	//elimiate invalid roots;
-	for (int i = 0; i < 3; ++i){
-	        roots[i] = roots[i]-MACH_EPS;
-	    	if (roots[i] < 0 || roots[i] > dt) 
-		    roots[i] = -1;
+	for (int i = 0; i < 3; ++i)
+    {
+        //TODO: is subtracting off MACH_EPS valid here?
+        //
+        roots[i] = roots[i] - MACH_EPS;
+        if (roots[i] < 0 || roots[i] > dt)
+            roots[i] = -1;
 	}
+
 	//sort the roots
 	if (roots[0] > roots[1])
 	    std::swap(roots[0], roots[1]);
