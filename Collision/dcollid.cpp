@@ -11,8 +11,6 @@
 #include <omp.h>
 
 //union find functions
-static POINT* findSet(POINT*);
-static void mergePoint(POINT*,POINT*);
 inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 
@@ -350,8 +348,6 @@ void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
 void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
 bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
-//this function is needed if collisions still
-//present after several iterations;
 void CollisionSolver3d::computeImpactZone()
 {
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
@@ -372,10 +368,13 @@ void CollisionSolver3d::computeImpactZone()
 
         is_collision = abt_collision->getCollsnState();
 
-        updateImpactZoneVelocity();
+        //TODO: Use gauss-seidel updating instead of this jacobi update.
+            //updateImpactZoneVelocity();
 
         if (debugging("collision"))
         {
+            infoImpactZones();
+
             std::cout << "    #"<<niter++ << ": "
                       << abt_collision->getCount() 
                       << " collision pairs" << std::endl;
@@ -387,6 +386,44 @@ void CollisionSolver3d::computeImpactZone()
     }
 	
     turnOffImpZone();
+}
+
+void CollisionSolver3d::infoImpactZones()
+{
+	numImpactZones = 0;
+	numImpactZonePoints = 0;
+
+	unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
+		
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(head) == 1)
+                continue;
+            else
+            {
+                markImpactZonePoints(head);
+                numImpactZonePoints += weight(head);
+                numImpactZones++;
+            }
+	    }
+	}
+}
+
+void CollisionSolver3d::markImpactZonePoints(POINT* head)
+{
+    POINT* p = head;
+    while (p)
+    {
+        sorted(p) = YES;
+        p = next_pt(p);
+    }
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()
@@ -413,10 +450,11 @@ void CollisionSolver3d::updateImpactZoneVelocityForRG()
 	}
 }
 
+//For jacobi style update of impact zones
 void CollisionSolver3d::updateImpactZoneVelocity()
 {
-	numImpactZonePoints = 0;
 	numImpactZones = 0;
+	numImpactZonePoints = 0;
 
 	unsortHseList(hseList);
     
@@ -457,21 +495,26 @@ void CollisionSolver3d::resolveCollision()
     //static proximity handling
 	detectProximity();
 
-	//check linear trajectories for collisions
-	detectCollision();
-
-    //TODO: this may need to be done before detectCollision()
+    //TODO: limitStrainRate() may need to be done before
+    //      detectCollision() (like it currently is).
+    //      Or should it just be done at the beginning
+    //      along with limitStrain()?
     if (!debugging("strainlim_off"))
     {
         limitStrainRate();
     }
+
+	//check linear trajectories for collisions
+	detectCollision();
 
     //TODO: fix this function
 	//detectDomainBoundaryCollision();
 
 	//update position using final midstep velocity
 	updateFinalPosition();
-    detectProximity();
+
+    //TODO: Verify detectProximity() should not be called here again.
+    //detectProximity();
 	
 	updateFinalVelocity();
 }

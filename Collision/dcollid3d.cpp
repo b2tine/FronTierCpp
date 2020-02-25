@@ -41,9 +41,11 @@ void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 	}
 }
 
-//TODO: This may not be desirable for string-string interactions.
-//      If not, remove string code in function.
-void CollisionSolver3d::updateImpactListVelocity(POINT* head)
+//TODO: Optimize for when impact zone exists and we are
+//      adding points to it. Should be able to  update
+//      x_cm, v_cm, and avg_dt without looping through
+//      every point of the zone.
+void updateImpactListVelocity(POINT* head)
 {
     POINT* p = nullptr;
 	
@@ -60,19 +62,22 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     {
 		STATE* sl = (STATE*)left_state(p);
         avg_dt += sl->collsn_dt;
+        sl->has_collsn = true;
 
-        double m = getFabricPointMass();
+        double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 
         totalmass += m;
-        for (int i = 0; i < m_dim; ++i)
+        for (int i = 0; i < 3; ++i)
         {
 		    x_cm[i] += sl->x_old[i]*m; 
 		    v_cm[i] += sl->avgVel[i]*m;
 		}
-		sorted(p) = YES;
 
+        //For now, still need to mark for updateImpactZoneVelocityForRG()
+        sorted(p) = YES;
+        
         p = next_pt(p);
 		num_pts++;
     }
@@ -80,14 +85,13 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
     //TODO: Is this justified, or just use the full step dt?
     avg_dt += CollisionSolver3d::getTimeStepSize();
     avg_dt /= (double)num_pts;
-
     
     //temp debug
-    double dt = getTimeStepSize();
-    printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
+        //double dt = getTimeStepSize();
+        //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
 
 
-	for (int i = 0; i < m_dim; ++i)
+	for (int i = 0; i < 3; ++i)
     {
 	    x_cm[i] /= totalmass;
 	    v_cm[i] /= totalmass;
@@ -104,7 +108,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	    STATE* sl = (STATE*)left_state(p);
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 	    
 	    double dx[3], dv[3], Li[3];
         minusVec(sl->x_old,x_cm,dx);
@@ -124,7 +128,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	    STATE* sl = (STATE*)left_state(p);
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
-            m = getStringPointMass();
+            m = CollisionSolver3d::getStringPointMass();
 
 	    double dx[3];
         minusVec(sl->x_old,x_cm,dx);
@@ -188,7 +192,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 	
 	//compute average velocity for each point
         
-        //double dt = getTimeStepSize();
+        //double dt = CollisionSolver3d::getTimeStepSize();
     
 	p = head;
     while(p)
@@ -273,7 +277,7 @@ void CollisionSolver3d::updateImpactListVelocity(POINT* head)
 bool MovingTriToBond(const TRI* tri,const BOND* bd)
 {
     bool status = false;
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+	//bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 
 	POINT* pts[4];
 	for (int i = 0; i < 3; ++i)
@@ -284,16 +288,16 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
     if (MovingPointToTriGS(pts))
         status = true;
     
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
+    //if (status && is_detImpZone)
+      //  createImpZone(pts,4);
 	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
     if (MovingPointToTriGS(pts))
         status = true;
 
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
+    //if (status && is_detImpZone)
+      //  createImpZone(pts,4);
 	
     /* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
@@ -305,8 +309,8 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
         if (MovingEdgeToEdgeGS(pts))
             status = true;
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
     return status;
@@ -325,15 +329,6 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
     if(MovingEdgeToEdgeGS(pts))
         status = true;
 
-    //TODO: further investigation required
-    //
-    //NO IMPACT ZONES FOR STRING-STRING COLLISIONS
-    /*
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && is_detImpZone)
-        createImpZone(pts,4);
-    */
-
     return status;
 }
 
@@ -342,7 +337,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 	POINT* pts[4];
 	bool status = false;
 	
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
 
 	//detect point to tri collision
 	for (int k = 0; k < 2; ++k)
@@ -357,8 +352,8 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
         if(MovingPointToTriGS(pts))
             status = true;
 
-        if (status && is_detImpZone)
-            createImpZone(pts,4);
+        //if (status && is_detImpZone)
+          //  createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -374,8 +369,8 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             if(MovingEdgeToEdgeGS(pts))
                 status = true;
                 
-            if (status && is_detImpZone)
-                createImpZone(pts,4);
+            //if (status && is_detImpZone)
+              //  createImpZone(pts,4);
 	    }
     }
 
@@ -468,24 +463,28 @@ static bool MovingPointToTriGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
-                    sl->has_collsn = true;
                 }
                 break;
             }
 	    }
 	}
 
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+    }
 
-        if (!is_detImpZone)
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && !is_detImpZone)
+    {
+        for (int j = 0; j < 4; ++j)
         {
+            STATE* sl = (STATE*)left_state(pts[j]);
             if (sl->collsn_num > 0)
             {
+                sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
@@ -494,6 +493,12 @@ static bool MovingPointToTriGS(POINT* pts[])
                 sl->collsn_num = 0;
             }
         }
+    }
+    else if (status && is_detImpZone)
+    {
+        createImpZone(pts,4);
+        POINT* head = findSet(pts[0]);
+        updateImpactListVelocity(head);
     }
     
     return status;
@@ -589,29 +594,33 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
-                    sl->has_collsn = true;
                 }
                 break;
             }
         }
     }
 
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    bool string_string = false;
-
-    if (s0->is_stringpt && s2->is_stringpt)
-        string_string = true;
-    
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
             Coords(pts[j])[k] = sl->x_old[k];
+    }
 
-        if (!is_detImpZone || string_string)
+    //No Impact Zones for string-string interactions
+    bool string_string = false;
+    if (s0->is_stringpt && s2->is_stringpt)
+        string_string = true;
+
+	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && (!is_detImpZone || string_string))
+    {
+        for (int j = 0; j < 4; ++j)
         {
+            STATE* sl = (STATE*)left_state(pts[j]);
             if (sl->collsn_num > 0)
             {
+                sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
@@ -621,7 +630,13 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
             }
         }
     }
-    
+    else if (status && is_detImpZone && !string_string)
+    {
+        createImpZone(pts,4);
+        POINT* head = findSet(pts[0]);
+        updateImpactListVelocity(head);
+    }
+
     return status;
 }
 
@@ -791,8 +806,8 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	isCoplanarHelper(tmp, x);
 
 	//get roots "t" of a cubic equation
-	//(x1+tv1)x(x2+tv2)*(x3+tv3) = 0
-	//transform to at^3+bt^2+ct+d = 0
+	//(x12 + t*v12) x (x13 + t*v13)*(x14 + t*v14) = 0
+	//transform to a*t^3 + b*t^2 + c*t + d = 0
 	double a, b, c, d;
 	double vv[3], vx[3], xx[3];
 	vv[0] = v[1][1]*v[2][2]-v[1][2]*v[2][1];
@@ -816,53 +831,65 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
             v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
 
 	d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
-	//solve equation using method from "Art of Scientific Computing"
+	
+    //solve equation using method from "Art of Scientific Computing"
 	//transform equation to t^3+at^2+bt+c = 0
-	if (fabs(a) > MACH_EPS){
+	if (fabs(a) > MACH_EPS)
+    {
 	    b /= a; c /= a; d /= a;
 	    a = b; b = c; c = d;
 	    double Q, R, theta;
 	    double Q3, R2;
-	    Q = (a*a-3*b)/9;
-	    R = (2*a*a*a-9*a*b+27*c)/54;
+	    Q = (a*a-3.0*b)/9.0;
+	    R = (2.0*a*a*a-9.0*a*b+27.0*c)/54.0;
 	    Q3 = Q*Q*Q;
 	    R2 = R*R;
-	    if (R2 < Q3){
+
+	    if (R2 < Q3)
+        {
 	        double Qsqrt = sqrt(Q);
-		theta = acos(R/sqrt(Q3));
-		roots[0] = -2*Qsqrt*cos(theta/3)-a/3;
-		roots[1] = -2*Qsqrt*cos((theta+2*M_PI)/3)-a/3;
-		roots[2] = -2*Qsqrt*cos((theta-2*M_PI)/3)-a/3;	
-	    }
-	    else{
-		double A, B;
-		double sgn = (R > 0) ? 1.0 : -1.0;
-		A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
-		B = (fabs(A) < ROUND_EPS) ? 0.0 : Q/A;
-		roots[0] = (A+B)-a/3.0;
-		if (fabs(A-B) < ROUND_EPS)
-		    roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
+            theta = acos(R/sqrt(Q3));
+            roots[0] = -2.0*Qsqrt*cos(theta/3.0)-a/3.0;
+            roots[1] = -2.0*Qsqrt*cos((theta+2.0*M_PI)/3.0)-a/3.0;
+            roots[2] = -2.0*Qsqrt*cos((theta-2.0*M_PI)/3.0)-a/3.0;
+        }
+	    else
+        {
+            double A, B;
+            double sgn = (R > 0) ? 1.0 : -1.0;
+            A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
+            B = (fabs(A) < MACH_EPS) ? 0.0 : Q/A;
+            roots[0] = (A+B)-a/3.0;
+            if (fabs(A-B) < MACH_EPS)
+                roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
 	    }
 	}
-	else{
+	else
+    {
 		a = b; b = c; c = d;
 	   	double delta = b*b-4.0*a*c;
-	   	if (fabs(a) > ROUND_EPS && delta > 0){
+	   	if (fabs(a) > ROUND_EPS && delta > 0)
+        {
 		    double delta_sqrt = sqrt(delta);
 		    roots[0] = (-b+delta_sqrt)/(2.0*a);
-	    	    roots[1] = (-b-delta_sqrt)/(2.0*a);
+            roots[1] = (-b-delta_sqrt)/(2.0*a);
 	   	}
 		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
 		{
 		    roots[0] = -c/b;
-	        }
+        }
 	}
+
 	//elimiate invalid roots;
-	for (int i = 0; i < 3; ++i){
-	        roots[i] = roots[i]-MACH_EPS;
-	    	if (roots[i] < 0 || roots[i] > dt) 
-		    roots[i] = -1;
+	for (int i = 0; i < 3; ++i)
+    {
+        //TODO: necessary to subtract off MACH_EPS valid here?
+        //
+        roots[i] = roots[i] - MACH_EPS;
+        if (roots[i] < 0 || roots[i] > dt)
+            roots[i] = -1;
 	}
+
 	//sort the roots
 	if (roots[0] > roots[1])
 	    std::swap(roots[0], roots[1]);

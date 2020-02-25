@@ -136,6 +136,8 @@ private:
 	void updateAverageVelocity();
 	void updateExternalImpulse();
 	void computeImpactZone();
+	void infoImpactZones();
+	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximity();
@@ -146,7 +148,6 @@ private:
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 	void setHasCollision(bool judge) {has_collision = judge;}
-	void updateImpactListVelocity(POINT*);
 };
 
 
@@ -156,6 +157,8 @@ bool TriToTri(const TRI*,const TRI*);
 bool MovingBondToBond(const BOND*,const BOND*);
 bool MovingTriToBond(const TRI*,const BOND*);
 bool MovingTriToTri(const TRI*,const TRI*);
+
+void updateImpactListVelocity(POINT* head);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
@@ -172,8 +175,11 @@ extern void makeSet(std::vector<CD_HSE*>&);
 void unsortHseList(std::vector<CD_HSE*>&);
 void unsort_surface_point(SURFACE *surf);
 
-POINT*& next_pt(POINT*);
-int& weight(POINT*);
+POINT* findSet(POINT* p);
+POINT*& next_pt(POINT* p);
+void mergePoint(POINT* X, POINT* Y);
+int& weight(POINT* p);
+
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const CD_HSE*);
 bool isMovableRigidBody(const POINT*);
