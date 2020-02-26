@@ -489,23 +489,26 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
+    //TODO: Fix limitStrain() and limitStrainRate() edge traversal,
+    //      and implement the zero relative velocity in direction of edge
+    //      constraint (currently only enforces the position constraint).
+    /*
     if (!debugging("strainlim_off"))
     {
         limitStrain();
         //limitStrainRate();
     }
+    */
 
     //static proximity handling
 	detectProximity();
 
-    //TODO: limitStrainRate() may need to be done before
-    //      detectCollision() (like it currently is).
-    //      Or should it just be done at the beginning
-    //      along with limitStrain()?
+    /*
     if (!debugging("strainlim_off"))
     {
         limitStrainRate();
     }
+    */
 
 	//check linear trajectories for collisions
 	detectCollision();
@@ -683,6 +686,7 @@ void CollisionSolver3d::limitStrainRate()
 	}
 }
 
+//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
 //gauss-seidel iteration
 void CollisionSolver3d::modifyStrainRate()
 {
@@ -706,8 +710,7 @@ void CollisionSolver3d::modifyStrainRate()
             p[0] = (*it)->Point_of_hse(i%np);	
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
-            //TODO: Is it possible to miss an edge using
-            //      this notion of a visited edge?
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
             if (sorted(p[0]) && sorted(p[1])) continue;
 
             sl[0] = (STATE*)left_state(p[0]);
@@ -764,6 +767,8 @@ void CollisionSolver3d::limitStrain()
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
+        numStrainEdges = 0;
+
         modifyStrain();
         
         if (debugging("strain_limiting"))
@@ -780,14 +785,13 @@ void CollisionSolver3d::limitStrain()
 	}
 }
 
+//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
 //jacobi iteration
 void CollisionSolver3d::modifyStrain()
 {
+    double dt = getTimeStepSize();
     double TOL = strain_limit;
     double CTOL = 0.01;//TODO: add input parameter for this
-	
-    numStrainEdges = 0;
-    double dt = getTimeStepSize();
 
 	unsortHseList(hseList);
     
@@ -805,8 +809,7 @@ void CollisionSolver3d::modifyStrain()
             p[0] = (*it)->Point_of_hse(i%np);	
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
-            //TODO: Is it possible to miss an edge using
-            //      this notion of a visited edge?
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
             if (sorted(p[0]) && sorted(p[1])) continue;
 
             sl[0] = (STATE*)left_state(p[0]);
@@ -1067,7 +1070,8 @@ void CollisionSolver3d::updateAverageVelocity()
 
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                    sl->avgVel[k] +=
+                        (sl->collsnImpulse[k] + sl->friction[k])/((double)sl->collsn_num);
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
@@ -1088,7 +1092,7 @@ void CollisionSolver3d::updateAverageVelocity()
                 sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
+                    sl->avgVel[k] += sl->collsnImpulse_RG[k]/((double)sl->collsn_num_RG);
                 }
                 sl->collsn_num_RG = 0;
             }
@@ -1119,158 +1123,6 @@ void CollisionSolver3d::updateAverageVelocity()
         }
     }
 }
-
-/*
-//TODO: String-String spread impulse to 2 neighbors,
-//      see MovingEdgeToEdgeGS(). Do we need here too?
-//
-//      This did not work as well as hoped ... 
-
-void CollisionSolver3d::updateAverageVelocity()
-{
-	POINT *p;
-	STATE *sl;
-	double maxSpeed = 0;
-	double* maxVel = nullptr;
-
-    unsortHseList(hseList);
-	for (unsigned i = 0; i < hseList.size(); ++i)
-	{
-	    CD_HSE* hse = hseList[i];
-	    int np = hse->num_pts(); 
-
-	    for (int j = 0; j < np; ++j)
-	    {
-		p = hse->Point_of_hse(j);
-		
-        if (sorted(p) || isStaticRigidBody(p))
-            continue;
-
-		sl = (STATE*)left_state(p);
-		if (sl->collsn_num > 0)
-		{
-		    //sl->has_collsn = true;
-
-            if (sl->is_stringpt)
-            {
-                POINT* pchain[3];
-                BOND* b = Bond_of_hse(p->hse);
-
-                int nchain;
-                if (p == b->start)
-                {
-                    if (!b->prev)
-                    {
-                        pchain[0] = p;
-                        pchain[1] = b->end;
-                        pchain[2] = nullptr;
-                        nchain = 2;
-                    }
-                    else
-                    {
-                        pchain[0] = b->prev->start;
-                        pchain[1] = p;
-                        pchain[2] = b->end;
-                        nchain = 3;
-                    }
-                }
-                else
-                {
-                    if (!b->next)
-                    {
-                        pchain[0] = b->start;
-                        pchain[1] = p;
-                        pchain[2] = nullptr;
-                        nchain = 2;
-                    }
-                    else
-                    {
-                        pchain[0] = b->start;
-                        pchain[1] = p;
-                        pchain[2] = b->next->end;
-                        nchain = 3;
-                    }
-                }
-
-                for (int i = 0; i < nchain; ++i)
-                {
-                    STATE* csl = (STATE*)left_state(pchain[i]);
-                    for (int k = 0; k < 3; ++k)
-                    {
-                        csl->avgVel[k] += sl->collsnImpulse[k]/3.0;
-                        csl->avgVel[k] += sl->friction[k]/3.0;
-                        csl->avgVel[k] /= (double)sl->collsn_num;
-                    
-                        if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
-                        {
-                            printf("inf/nan vel[%d]: impulse = %f, friction = %f, collsn_num = %d\n",
-                            k,sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
-                            clean_up(ERROR);
-                        }
-                    }
-                }
-
-                for (int k = 0; k < 3; ++k)
-                    sl->collsnImpulse[k] = 0.0;
-            }
-            else
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-
-                    sl->avgVel[k] += sl->collsnImpulse[k] + sl->friction[k];
-                    sl->avgVel[k] /= (double)sl->collsn_num;
-                
-                    if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
-                    {
-                        printf("inf/nan vel[%d]: impulse = %f, friction = %f, collsn_num = %d\n",
-                        k,sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
-                        clean_up(ERROR);
-                    }
-                
-                    sl->collsnImpulse[k] = 0.0;
-                    sl->friction[k] = 0.0;
-                }
-            }
-		    sl->collsn_num = 0;
-		}
-
-		if (sl->collsn_num_RG > 0)
-		{
-		    sl->has_collsn = true;
-		    for (int k = 0; k < 3; ++k)
-            {
-			    sl->avgVel[k] += sl->collsnImpulse_RG[k];
-			    sl->avgVel[k] /= (double)sl->collsn_num_RG;
-            }
-		    sl->collsn_num_RG = 0;
-		}
-
-		if (debugging("average_velocity"))
-        {
-		    double speed = Mag3d(sl->avgVel);
-		    if (speed > maxSpeed)
-            {
-		    	maxVel = sl->avgVel;
-                maxSpeed = speed;
-            }
-		}
-
-		sorted(p) = YES;
-	    }
-	}
-	
-    if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRG(); // test for moving objects
-
-	if (debugging("average_velocity"))
-    {
-	    if (maxVel != nullptr)
-	        printf("    max velocity = [%f %f %f]\n",
-                    maxVel[0],maxVel[1],maxVel[2]);
-    }
-}
-*/
 
 bool getCollision(const CD_HSE* a, const CD_HSE* b)
 {
