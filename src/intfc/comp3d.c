@@ -2980,10 +2980,14 @@ LOCAL void blocks_on_tri(
 	    print_tri_global_index(t);
 	    print_tri_coords(t);
 	    clean_up(ERROR);
+        
         //TEMP: debug
-            //char dname[100];
-            //sprintf(dname,"bad_idiff-%ld",Gindex(t));
-            //gview_plot_tri_list(dname,&t,1);
+        /*
+            char dname[100];
+            sprintf(dname,"bad_i_diff-%ld",Gindex(t));
+            gview_plot_tri_list(dname,&t,1);
+            clean_up(ERROR);
+        */
 	}
 
 	/*check if the array tri_blocks is out of range. */
