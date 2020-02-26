@@ -383,10 +383,12 @@ static bool MovingPointToTriJac(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    /*
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
-        
+    */  
+    
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
@@ -434,9 +436,11 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    /*
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
+    */
         
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
@@ -461,6 +465,7 @@ static bool MovingPointToTriGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
+                    CollisionSolver3d::addCollisionTime(sl->collsn_dt);
                 }
                 break;
             }
@@ -513,7 +518,7 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt || s2->is_stringpt)
+    if (s0->is_stringpt && s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
     bool status = false;
@@ -566,7 +571,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt || s2->is_stringpt)
+    if (s0->is_stringpt && s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
     bool status = false;

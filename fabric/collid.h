@@ -61,7 +61,26 @@ public:
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
 
-	void setStrainLimit(double);
+    
+    static void clearCollisionTimes()
+    {
+        CollisionTimes.clear();
+    }
+
+    static void addCollisionTime(double collsn_dt)
+    {
+        CollisionTimes.push_back(collsn_dt);
+    }
+
+    static double getAverageCollisionTime()
+    {
+        double avg_dt = std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
+        avg_dt /= CollisionTimes.size();
+        return avg_dt;
+    }
+
+	
+    void setStrainLimit(double);
 	//double getStrainLimit();
 	void setStrainRateLimit(double);
 	//double getStrainRateLimit();
@@ -103,6 +122,8 @@ private:
 
     double volume;
     double vol_diff {0.0};
+    
+    static std::vector<double> CollisionTimes;
 
 	static double s_dt;
 	static double s_cr;
