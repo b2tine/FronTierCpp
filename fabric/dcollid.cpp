@@ -489,23 +489,26 @@ void CollisionSolver3d::resolveCollision()
 
 	computeAverageVelocity();
 
+    //TODO: Fix limitStrain() and limitStrainRate() edge traversal,
+    //      and implement the zero relative velocity in direction of edge
+    //      constraint (currently only enforces the position constraint).
+    /*
     if (!debugging("strainlim_off"))
     {
         limitStrain();
         //limitStrainRate();
     }
+    */
 
     //static proximity handling
 	detectProximity();
 
-    //TODO: limitStrainRate() may need to be done before
-    //      detectCollision() (like it currently is).
-    //      Or should it just be done at the beginning
-    //      along with limitStrain()?
+    /*
     if (!debugging("strainlim_off"))
     {
         limitStrainRate();
     }
+    */
 
 	//check linear trajectories for collisions
 	detectCollision();
@@ -683,6 +686,7 @@ void CollisionSolver3d::limitStrainRate()
 	}
 }
 
+//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
 //gauss-seidel iteration
 void CollisionSolver3d::modifyStrainRate()
 {
@@ -706,8 +710,7 @@ void CollisionSolver3d::modifyStrainRate()
             p[0] = (*it)->Point_of_hse(i%np);	
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
-            //TODO: Is it possible to miss an edge using
-            //      this notion of a visited edge?
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
             if (sorted(p[0]) && sorted(p[1])) continue;
 
             sl[0] = (STATE*)left_state(p[0]);
@@ -764,6 +767,8 @@ void CollisionSolver3d::limitStrain()
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
+        numStrainEdges = 0;
+
         modifyStrain();
         
         if (debugging("strain_limiting"))
@@ -780,14 +785,13 @@ void CollisionSolver3d::limitStrain()
 	}
 }
 
+//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
 //jacobi iteration
 void CollisionSolver3d::modifyStrain()
 {
+    double dt = getTimeStepSize();
     double TOL = strain_limit;
     double CTOL = 0.01;//TODO: add input parameter for this
-	
-    numStrainEdges = 0;
-    double dt = getTimeStepSize();
 
 	unsortHseList(hseList);
     
@@ -805,8 +809,7 @@ void CollisionSolver3d::modifyStrain()
             p[0] = (*it)->Point_of_hse(i%np);	
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
-            //TODO: Is it possible to miss an edge using
-            //      this notion of a visited edge?
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
             if (sorted(p[0]) && sorted(p[1])) continue;
 
             sl[0] = (STATE*)left_state(p[0]);
