@@ -78,6 +78,9 @@ double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
+void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
+void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
+
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
 
@@ -661,8 +664,8 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 
 void CollisionSolver3d::limitStrainRate()
 {
-	const int MAX_ITER = 6;
-    for (int iter = 0; iter < MAX_ITER; ++iter)
+	const int MAX_ITER = 5;
+    for (int iter = 0; iter <= MAX_ITER; ++iter)
     {
         modifyStrainRate();
         
@@ -685,7 +688,7 @@ void CollisionSolver3d::modifyStrainRate()
 {
     numStrainRateEdges = 0;
 	double dt = getTimeStepSize();
-    double TOL = 0.1;
+    double TOL = strainrate_limit;
     
     unsortHseList(hseList);
 
@@ -780,8 +783,8 @@ void CollisionSolver3d::limitStrain()
 //jacobi iteration
 void CollisionSolver3d::modifyStrain()
 {
-    double TOL = 0.1;
-    double CTOL = 0.05;
+    double TOL = strain_limit;
+    double CTOL = 0.01;//TODO: add input parameter for this
 	
     numStrainEdges = 0;
     double dt = getTimeStepSize();

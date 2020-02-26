@@ -84,7 +84,8 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
-Enter collision update type: Gauss-Seidel
+Enter strain limit: 0.3
+Enter strain rate limit: 0.1
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension

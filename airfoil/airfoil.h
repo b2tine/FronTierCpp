@@ -122,6 +122,9 @@ typedef struct {
     double string_eps {1.0e-05};
     double string_thickness {0.005};
 
+    double strain_limit {0.1};
+    double strainrate_limit {0.1};
+
     double vol_diff {0.0};
     double pre_tol;
     double rest;
