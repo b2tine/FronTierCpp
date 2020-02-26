@@ -753,8 +753,9 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	for (int i = 0; i < 3; ++i)
     {
         //TODO: necessary to subtract off MACH_EPS valid here?
-        //
-        roots[i] = roots[i] - MACH_EPS;
+
+        roots[i] -= 1.0e-08;
+        //roots[i] = roots[i] - MACH_EPS;
         if (roots[i] < 0 || roots[i] > dt)
             roots[i] = -1;
 	}
