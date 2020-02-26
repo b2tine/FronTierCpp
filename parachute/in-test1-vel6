@@ -26,7 +26,7 @@ Projection type can be
 **************Fluid parameters***************
 Enter projection type: SIMPLE
 Enter advection order: 4
-Enter density and viscosity of the fluid: 1.2 0.000628
+Enter density and viscosity of the fluid: 1.29 0.000628
 Enter gravity: 0 0 -9.8
 
 ************Rigid body parameters*************
@@ -72,17 +72,17 @@ Enter area density of canopy: 5.0
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
-Enter fabric friction constant: 0.5
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
-Enter fabric thickness: 0.001
-Enter fabric rounding tolerance: 0.000001
+Enter fabric thickness: 0.0005
+Enter fabric rounding tolerance: 0.0000005
 
 Enter string spring constant: 50000
 Enter string damping constant: 0.01
-Enter string friction constant: 0.5
-Enter string point mass: 0.002
-Enter string thickness: 0.008
-Enter string rounding tolerance: 0.000050
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
 
 Enter collision update type: Gauss-Seidel
 
