@@ -119,8 +119,8 @@ typedef struct {
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
 
-    double string_eps {1.0e-05};
-    double string_thickness {0.005};
+    double string_eps {4.0e-06};
+    double string_thickness {0.004};
 
     double strain_limit {0.1};
     double strainrate_limit {0.1};

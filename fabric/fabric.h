@@ -115,7 +115,6 @@ struct AF_PARAMS
 	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */
 	int    num_np;			/* number of master node to run spring model */
     
-    //TODO: Why has this changed to fixed sized array?
 	int    node_id[10];		/* master node id */
 	
         double break_strings_time;	/* time to break some strings */
@@ -133,8 +132,11 @@ struct AF_PARAMS
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
     
-    double string_eps {1.0e-05};
-    double string_thickness {0.05};
+    double string_eps {4.0e-06};
+    double string_thickness {0.004};
+
+    double strain_limit {0.1};
+    double strainrate_limit {0.1};
 
     double vol_diff {0.0};              //for refitting AABBTree
 }; 

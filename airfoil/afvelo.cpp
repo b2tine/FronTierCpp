@@ -402,7 +402,6 @@ void setMotionParams(Front* front)
     CursorAfterString(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
-            
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{

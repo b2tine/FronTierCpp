@@ -1187,7 +1187,9 @@ static void EdgeToEdgeImpulse(
         k = CollisionSolver3d::getStringSpringConstant();
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
-        overlap_coef = 0.005;
+        //TODO: too small overlap_coef is likely 
+            //overlap_coef = 0.005;
+        overlap_coef = 0.1;
     }
     double overlap = h - dist;
 
@@ -1341,12 +1343,13 @@ static void EdgeToEdgeImpulse(
     {
         if (!isStaticRigidBody(pts[i]))
         {
-            sl[i]->collsn_num++;
-
             double t_impulse = M[i];
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
+            if (t_impulse > 0)
+                sl[i]->collsn_num++;
+    
             if (mstate == MotionState::STATIC)
             {
                 for (int j = 0; j < 3; ++j)
@@ -1470,15 +1473,6 @@ static void EdgeToEdgeElasticImpulse(
         double dt, double m,
         double k)
 {
-    /*
-    //TODO: string-string collision
-    for (int j = 0; j < 4; ++j)
-    {
-        STATE* sl = (STATE*)left_state(pts[j]);
-        if (sl->is_stringpt) return;
-    }
-    */
-
     if (isRigidBody(pts[0]) && isRigidBody(pts[1]) &&
         isRigidBody(pts[2]) && isRigidBody(pts[3]))
     {
@@ -1632,14 +1626,16 @@ static void PointToTriImpulse(
 	    sl[i] = (STATE*)left_state(pts[i]);
 
     double overlap_coef = 0.1;
+    /*
     if (sl[3]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
         k = CollisionSolver3d::getStringSpringConstant();
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
-        overlap_coef = 0.005;
+        overlap_coef = 0.1;
     }
+    */
 	double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
@@ -1791,12 +1787,13 @@ static void PointToTriImpulse(
 	{
         if (!isStaticRigidBody(pts[i]))
         {
-            sl[i]->collsn_num++;
-
             double t_impulse = M[i];
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
+            if (t_impulse > 0)
+                sl[i]->collsn_num++;
+    
             if (mstate == MotionState::STATIC)
             {
                 for (int j = 0; j < 3; ++j)

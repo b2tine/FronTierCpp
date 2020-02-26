@@ -61,6 +61,12 @@ public:
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
 
+	void setStrainLimit(double);
+	//double getStrainLimit();
+	void setStrainRateLimit(double);
+	//double getStrainRateLimit();
+
+
     double setVolumeDiff(double);
 
 	void clearHseList();
@@ -112,6 +118,9 @@ private:
 	static double l_m;
 	static double l_k;
 	static double l_mu;
+
+    double strain_limit {0.1};
+    double strainrate_limit {0.1};
 
     static bool s_detImpZone;
 
