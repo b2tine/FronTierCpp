@@ -101,7 +101,7 @@ struct AF_PARAMS
 	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
 	double m_s {0.001};			/* point mass of surface */
-	double m_l {0.01};			/* point mass of string curves */
+	double m_l {0.004};			/* point mass of string curves */
 	double m_g;                     /* point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */

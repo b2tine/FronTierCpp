@@ -38,6 +38,9 @@ int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
 
+std::vector<double> CollisionSolver3d::CollisionTimes;
+
+
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
@@ -153,7 +156,7 @@ void CollisionSolver3d::assembleFromInterface(
 	    }
 	}
 
-    CollisionTimes.reserve(hseList.size());
+    setSizeCollisionTimes(hseList.size());
 
 	makeSet(hseList);
 	createImpZoneForRG(intfc);
@@ -380,8 +383,15 @@ void CollisionSolver3d::computeImpactZone()
 
             std::cout << "    #"<<niter++ << ": "
                       << abt_collision->getCount() 
-                      << " collision pairs,  avg_collsn_dt = "
-                      << getAverageCollisionTime() << std::endl;
+                      << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
+
             std::cout << "     " << numImpactZones
                       << " impact zones" << std::endl;
             std::cout << "     " << numImpactZonePoints
@@ -637,8 +647,14 @@ void CollisionSolver3d::detectCollision()
         {
             std::cout << "    #" << niter << ": "
                 << abt_collision->getCount() 
-                << " collision pairs,  avg_collsn_dt = "
-                << getAverageCollisionTime() << std::endl;
+                << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
         }
 
         if (++niter > MAX_ITER)

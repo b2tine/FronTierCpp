@@ -3,6 +3,8 @@
 
 #include "AABB.h"
 
+#include <numeric>
+
 #if defined(isnan)
 #undef isnan
 #endif
@@ -67,6 +69,11 @@ public:
         CollisionTimes.clear();
     }
 
+    static void setSizeCollisionTimes(unsigned int size)
+    {
+        CollisionTimes.reserve(size);
+    }
+
     static void addCollisionTime(double collsn_dt)
     {
         CollisionTimes.push_back(collsn_dt);
@@ -74,7 +81,8 @@ public:
 
     static double getAverageCollisionTime()
     {
-        double avg_dt = std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
+        double avg_dt =
+            std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
         avg_dt /= CollisionTimes.size();
         return avg_dt;
     }

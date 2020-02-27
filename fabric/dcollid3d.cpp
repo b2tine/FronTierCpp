@@ -465,8 +465,9 @@ static bool MovingPointToTriGS(POINT* pts[])
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
-                    CollisionSolver3d::addCollisionTime(sl->collsn_dt);
                 }
+                    
+                CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
 	    }
@@ -598,6 +599,8 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
                 }
+                
+                CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
         }
@@ -758,9 +761,7 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	for (int i = 0; i < 3; ++i)
     {
         //TODO: necessary to subtract off MACH_EPS valid here?
-
-        roots[i] -= 1.0e-08;
-        //roots[i] = roots[i] - MACH_EPS;
+        roots[i] -= MACH_EPS;
         if (roots[i] < 0 || roots[i] > dt)
             roots[i] = -1;
 	}
@@ -1005,7 +1006,9 @@ static bool EdgeToEdge(
     else
     {
         //printf("\n\tEdgeToEdge() WARNING: dist < 0\n\n");
-        printf("\n\tEdgeToEdge() ERROR: dist < 0\n\n");
+        printf("\n\tEdgeToEdge() ERROR: dist <= 0");
+        if (mstate == MotionState::MOVING)
+        printf(",\tcollsn_dt = %g\n\n",root);
         clean_up(ERROR);
     }
 
