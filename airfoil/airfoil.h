@@ -77,20 +77,23 @@ typedef struct {
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
+    bool strings_present {false};
+    bool gores_present {false};
+
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
 	double payload;
-	double ks;			/* spring constant of surface */
-	double kl;			/* spring constant of string curves */
-	double kg;                      /* spring constant of gore curves */
+	double ks {5000.0};  /* spring constant of surface */
+	double kl {50000.0}; /* spring constant of string curves */
+	double kg {0.0};     /*(disabled) spring constant of gore curves */
     double mu_s;        /* fabric static friction consant */
     double mu_l;        /* string curves static friction consant */
 	double lambda_s;		/* damping factor of surface */
 	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
-	double m_s;			/* point mass of surface */
-	double m_l;			/* point mass of string curves */
-	double m_g;                     /* point mass of gore curves */
+	double m_s {0.001};	 /* point mass of surface */
+	double m_l {0.0};//{0.015}; /* point mass of string curves */
+	double m_g {0.0};     /*(disabled) point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
     double total_gore_mass;         /* Total mass of gore */
