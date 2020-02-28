@@ -383,10 +383,12 @@ static bool MovingPointToTriJac(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    /*
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
-        
+    */  
+    
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
@@ -434,9 +436,11 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
+    /*
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
+    */
         
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
@@ -462,6 +466,8 @@ static bool MovingPointToTriGS(POINT* pts[])
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
                 }
+                    
+                CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
 	    }
@@ -513,7 +519,7 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt || s2->is_stringpt)
+    if (s0->is_stringpt && s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
     bool status = false;
@@ -566,7 +572,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt || s2->is_stringpt)
+    if (s0->is_stringpt && s2->is_stringpt)
         tol = CollisionSolver3d::getStringRoundingTolerance();
 
     bool status = false;
@@ -593,6 +599,8 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                     STATE* sl = (STATE*)left_state(pts[j]);
                     sl->collsn_dt = roots[i];
                 }
+                
+                CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
         }
@@ -753,9 +761,7 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	for (int i = 0; i < 3; ++i)
     {
         //TODO: necessary to subtract off MACH_EPS valid here?
-
-        roots[i] -= 1.0e-08;
-        //roots[i] = roots[i] - MACH_EPS;
+        roots[i] -= MACH_EPS;
         if (roots[i] < 0 || roots[i] > dt)
             roots[i] = -1;
 	}
@@ -997,10 +1003,12 @@ static bool EdgeToEdge(
     //TODO: handle another way -- restart with smaller dt for example
     if (dist > 0)
         scalarMult(1.0/dist,vec,vec);
-    else
+    else if (dist == 0 && mstate == MotionState::STATIC)
     {
         //printf("\n\tEdgeToEdge() WARNING: dist < 0\n\n");
-        printf("\n\tEdgeToEdge() ERROR: dist < 0\n\n");
+        printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
+        printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
+        printf(",\t dist = %g\n\n",dist);
         clean_up(ERROR);
     }
 
@@ -1069,7 +1077,7 @@ static void EdgeToEdgeImpulse(
     }
     double overlap = h - dist;
 
-	//apply impulses to the average (linear trajectory) velocity
+	//apply impulses to the average velocity (linear trajectory)
 	for (int j = 0; j < 3; ++j)
 	{
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];

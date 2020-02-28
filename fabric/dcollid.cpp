@@ -559,6 +559,7 @@ void CollisionSolver3d::aabbProximity()
     }
     else
     {
+        abt_proximity->isProximity = false;
         abt_proximity->updateAABBTree(hseList);
         if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
         {
@@ -582,7 +583,11 @@ void CollisionSolver3d::detectProximity()
             << " proximity pairs" << std::endl;
     }
 
-	updateAverageVelocity();
+    if (abt_proximity->isProximity)
+        updateAverageVelocity();
+
+    if (getTimeStepSize() > 0.0)
+	    updateImpactZoneVelocityForRG(); // test for moving objects
 }
 
 // AABB tree for collision detection process
@@ -609,8 +614,10 @@ void CollisionSolver3d::aabbCollision()
     }
     else
     {
+        abt_collision->isCollsn = false;
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
+
         if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
         {
             build_count_col++;
@@ -1131,8 +1138,11 @@ void CollisionSolver3d::updateAverageVelocity()
 	    }
 	}
 	
+    /*
+    //TODO: Moved into detect_proximity(), if successful can remove.
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
 
 	if (debugging("average_velocity"))
     {

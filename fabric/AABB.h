@@ -98,8 +98,8 @@ public:
     int numLeaf {0};
     double treeHeight(Node*); 
     double dt;
-    bool isProximity;
-    bool isCollsn;
+    bool isProximity {false};
+    bool isCollsn {false};
     
     // query all collid pairs
     void query();

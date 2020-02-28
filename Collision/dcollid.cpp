@@ -38,6 +38,9 @@ int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
 
+std::vector<double> CollisionSolver3d::CollisionTimes;
+
+
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
 
@@ -153,6 +156,8 @@ void CollisionSolver3d::assembleFromInterface(
 	    }
 	}
 
+    setSizeCollisionTimes(hseList.size());
+
 	makeSet(hseList);
 	createImpZoneForRG(intfc);
 	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
@@ -177,6 +182,7 @@ void CollisionSolver3d::recordOriginalPosition()
             
             sl->has_collsn = false;
             sl->has_strainlim = false;
+            sl->collsn_dt = -1.0;
 
             if (isMovableRigidBody(pt))
                 continue;
@@ -371,16 +377,21 @@ void CollisionSolver3d::computeImpactZone()
 
         is_collision = abt_collision->getCollsnState();
 
-        //TODO: Use gauss-seidel updating instead of this jacobi update.
-            //updateImpactZoneVelocity();
-
         if (debugging("collision"))
         {
             infoImpactZones();
 
             std::cout << "    #"<<niter++ << ": "
                       << abt_collision->getCount() 
-                      << " collision pairs" << std::endl;
+                      << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
+
             std::cout << "     " << numImpactZones
                       << " impact zones" << std::endl;
             std::cout << "     " << numImpactZonePoints
@@ -548,6 +559,7 @@ void CollisionSolver3d::aabbProximity()
     }
     else
     {
+        abt_proximity->isProximity = false;
         abt_proximity->updateAABBTree(hseList);
         if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
         {
@@ -571,12 +583,18 @@ void CollisionSolver3d::detectProximity()
             << " proximity pairs" << std::endl;
     }
 
-	updateAverageVelocity();
+    if (abt_proximity->isProximity)
+        updateAverageVelocity();
+
+    if (getTimeStepSize() > 0.0)
+	    updateImpactZoneVelocityForRG(); // test for moving objects
 }
 
 // AABB tree for collision detection process
 void CollisionSolver3d::aabbCollision()
 {
+    clearCollisionTimes();
+
     if (!abt_collision)
     {
         abt_collision =
@@ -596,8 +614,10 @@ void CollisionSolver3d::aabbCollision()
     }
     else
     {
+        abt_collision->isCollsn = false;
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
+
         if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
         {
             build_count_col++;
@@ -634,7 +654,14 @@ void CollisionSolver3d::detectCollision()
         {
             std::cout << "    #" << niter << ": "
                 << abt_collision->getCount() 
-                << " collision pairs" << std::endl;
+                << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
         }
 
         if (++niter > MAX_ITER)
@@ -810,7 +837,7 @@ void CollisionSolver3d::modifyStrain()
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
             //TODO: THIS DOES NOT WORK! MISSES EDGES.
-            if (sorted(p[0]) && sorted(p[1])) continue;
+                //if (sorted(p[0]) && sorted(p[1])) continue;
 
             sl[0] = (STATE*)left_state(p[0]);
             sl[1] = (STATE*)left_state(p[1]);
@@ -868,8 +895,8 @@ void CollisionSolver3d::modifyStrain()
                 numStrainEdges++;
             }
         
-            sorted(p[0]) = YES;
-            sorted(p[1]) = YES;
+            //sorted(p[0]) = YES;
+            //sorted(p[1]) = YES;
         }
     }
     
@@ -1111,8 +1138,11 @@ void CollisionSolver3d::updateAverageVelocity()
 	    }
 	}
 	
+    /*
+    //TODO: Moved into detect_proximity(), if successful can remove.
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
 
 	if (debugging("average_velocity"))
     {
@@ -1276,6 +1306,12 @@ void unsortHseList(std::vector<CD_HSE*>& hseList)
 	    int np = (*it)->num_pts();
 	    for (int i = 0; i < np; ++i)
             sorted((*it)->Point_of_hse(i)) = NO;
+            
+        if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+        {
+            CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+            sorted(cd_tri->m_tri) = NO;
+        }
 	}
 }
 

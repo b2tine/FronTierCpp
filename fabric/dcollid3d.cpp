@@ -1003,12 +1003,12 @@ static bool EdgeToEdge(
     //TODO: handle another way -- restart with smaller dt for example
     if (dist > 0)
         scalarMult(1.0/dist,vec,vec);
-    else
+    else if (dist == 0 && mstate == MotionState::STATIC)
     {
         //printf("\n\tEdgeToEdge() WARNING: dist < 0\n\n");
-        printf("\n\tEdgeToEdge() ERROR: dist <= 0");
-        if (mstate == MotionState::MOVING)
-        printf(",\tcollsn_dt = %g\n\n",root);
+        printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
+        printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
+        printf(",\t dist = %g\n\n",dist);
         clean_up(ERROR);
     }
 
@@ -1077,7 +1077,7 @@ static void EdgeToEdgeImpulse(
     }
     double overlap = h - dist;
 
-	//apply impulses to the average (linear trajectory) velocity
+	//apply impulses to the average velocity (linear trajectory)
 	for (int j = 0; j < 3; ++j)
 	{
 	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
