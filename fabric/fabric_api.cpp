@@ -353,6 +353,8 @@ extern void SMM_InitSpringMassParams()
 	if ((dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	    (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
+        af_params->strings_present = true;
+
         CursorAfterString(infile,"Enter string spring constant:");
         fscanf(infile,"%lf",&af_params->kl);
         (void) printf("%f\n",af_params->kl);
@@ -401,10 +403,12 @@ extern void SMM_InitSpringMassParams()
             
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    af_params->m_g = af_params->m_s;
-            if (af_params->attach_gores == YES)
+	    //af_params->m_g = af_params->m_s;
+        if (af_params->attach_gores == YES)
 	    {
-		CursorAfterString(infile,"Enter gore spring constant:");
+            af_params->gores_present = true;
+
+		    CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
         	(void) printf("%f\n",af_params->kg);
         	CursorAfterString(infile,"Enter gore damping constant:");
@@ -521,7 +525,7 @@ extern void SMM_TestDriver()
         FrontPreAdvance(front);
         FT_Propagate(front);
         FT_RelinkGlobalIndex(front);
-        FT_InteriorPropagate(front);
+            //FT_InteriorPropagate(front);
 
         FT_SetOutputCounter(front);
         FT_SetTimeStep(front);
@@ -533,8 +537,8 @@ extern void SMM_TestDriver()
     }
 
     //TEMP: debug restart for triangle gindex
-    printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
-    printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
+    //printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
+    //printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
 
     FT_TimeControlFilter(front);
     FT_PrintTimeStamp(front);
@@ -583,8 +587,7 @@ extern void SMM_TestDriver()
         /* Output section */
 
         //print_airfoil_stat(front,OutName(front));
-        print_strings(front,OutName(front));
-
+        //print_strings(front,OutName(front));
 
         if (FT_IsSaveTime(front))
             SMM_Save();
