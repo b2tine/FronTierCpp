@@ -1484,26 +1484,6 @@ static boolean curve_in_pointer_list(
 	return NO;
 }	/* end curve_in_pointer_list */
 
-extern boolean is_registered_point(
-	SURFACE *surf,
-	POINT *p)
-{
-	REGISTERED_PTS *rgp = (REGISTERED_PTS*)surf->extra;
-	int i,num_pts;
-	int *global_ids;
-	
-	if (rgp == NULL) return NO;
-
-	num_pts = rgp->num_pts;
-	global_ids = rgp->global_ids;
-	for (i = 0; i < num_pts; ++i)
-	{
-	    if (Gindex(p) == global_ids[i])
-		return YES;
-	}
-	return NO;
-}	/* end is_registered_point */
-
 extern void propagate_surface(
         ELASTIC_SET *geom_set,
         SURFACE *surf,

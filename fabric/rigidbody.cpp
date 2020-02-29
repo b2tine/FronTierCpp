@@ -1,5 +1,6 @@
 #include "cgal_intfc.h"
 #include "rigidbody.h"
+#include "fluid.h"
 
 
 static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 

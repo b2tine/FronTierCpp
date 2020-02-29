@@ -1,94 +1,103 @@
-#include <vtkCellData.h>
-#include <vtkCellArray.h>
-#include <vtkFloatArray.h>
-#include <vtkPoints.h>
-#include <vtkPolygon.h>
-#include <vtkCellArray.h>
-#include <vtkPolyData.h>
-#include <vtkPointData.h>
-#include <vtkSmartPointer.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkVersion.h>
+#include "vtk.h"
 
-#include "collid.h"
 
-void vtkplotVectorSurface(std::vector<CD_HSE*>& hse_list, const char* fname)
+static void mkdirTree(std::string sub, std::string dir);
+
+/*
+void vtk_write_pointset(
+        const POINT** points,
+        const std::string& fname,
+        int setID)
 {
-  vtkSmartPointer<vtkPoints> pts =
-    vtkSmartPointer<vtkPoints>::New();
+    std::ofstream outfile(fname);
+    int npts = points.size();
 
-  vtkSmartPointer<vtkCellArray> cells =
-    vtkSmartPointer<vtkCellArray>::New();
+	outfile << "# vtk DataFile Version 3.0\n";
+    outfile << "annotated point set\n";
+    outfile << "ASCII\n";
+    outfile << "DATASET POLYDATA\n";
 
-  vtkSmartPointer<vtkUnsignedCharArray> colors =
-    vtkSmartPointer<vtkUnsignedCharArray>::New();
-  colors->SetNumberOfComponents(3);
-  colors->SetName("CollsnRegion");
+	outfile << "POINTS " << npts << " float\n";
+    for (int i = 0; i < npts; ++i)
+    {
+        double* coords = Coords(points[i]);
+        outfile << coords[0] << " "
+                << coords[1] << " "
+                << coords[2] << "\n";
+    }
+    
+	outfile << "VERTICES " << npts << " " << 2*npts << "\n";
+    for (int i = 0; i < npts; ++i)
+        outfile << 1 << " " << i << "\n";
+    
+	outfile << "CELL_DATA " << npts << "\n";
+    outfile << "SCALARS collision int 1\n";
+    outfile << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < npts; ++i)
+	    outfile << setID << "\n";
+    
+    outfile.close();
+}*/	/* end vtk_write_pointset */
 
-  vtkSmartPointer<vtkFloatArray> impulses =
-    vtkSmartPointer<vtkFloatArray>::New();
-  impulses->SetNumberOfComponents(3);
-  impulses->SetName("CollsnImpulse");
+void vtk_write_pointset(
+        const std::vector<POINT*>& points,
+        const std::string& fname, const int setID)
+{
+    std::ofstream outfile(fname+".vtk");
+    int npts = points.size();
 
-  unsigned char red[3] = {255, 0, 0};
-  unsigned char green[3] = {0, 255, 0};
+	outfile << "# vtk DataFile Version 3.0\n";
+    outfile << "annotated point set\n";
+    outfile << "ASCII\n";
+    outfile << "DATASET POLYDATA\n";
 
-  int id = 0;
-  unsortHseList(hse_list);
-  for (unsigned i = 0; i < hse_list.size(); ++i)
-  for (int j = 0; j < hse_list[i]->num_pts(); ++j){
-	POINT* p = hse_list[i]->Point_of_hse(j);
-	if (sorted(p)) continue;
-	p->indx = id++;
-	sorted(p) = YES;
-  }
-  for (unsigned i = 0; i < hse_list.size(); ++i)
-  {
-         vtkSmartPointer<vtkPolygon>cell =
-         vtkSmartPointer<vtkPolygon>::New();
-	 cell->GetPointIds()->SetNumberOfIds(hse_list[i]->num_pts());
-	 
-	 bool has_collsn = false;
-     	 for (int j = 0; j < hse_list[i]->num_pts(); ++j){
-	     //insert geometry
-	     POINT* p = hse_list[i]->Point_of_hse(j);
-	     id = p->indx;
-             pts->InsertPoint(id,Coords(p));
-	     cell->GetPointIds()->SetId (j,id);
-	  
-	     //insert field
-	     STATE* sl = (STATE*)left_state(p);
-	     impulses->InsertTuple(id,sl->collsnImpulse);
-	     if (sl->collsn_num > 0)
-	         has_collsn = true;
-	 }
-         cells->InsertNextCell(cell);
-	 if (has_collsn) colors->InsertNextTupleValue(red);
-	 else colors->InsertNextTupleValue(green);
-  }
-  vtkSmartPointer<vtkPolyData> polydata =
-    vtkSmartPointer<vtkPolyData>::New();
+	outfile << "POINTS " << npts << " float\n";
+    for (int i = 0; i < npts; ++i)
+    {
+        double* coords = Coords(points[i]);
+        outfile << coords[0] << " "
+                << coords[1] << " "
+                << coords[2] << "\n";
+    }
+    
+	outfile << "VERTICES " << npts << " " << 2*npts << "\n";
+    for (int i = 0; i < npts; ++i)
+        outfile << 1 << " " << i << "\n";
+    
+	outfile << "CELL_DATA " << npts << "\n";
+    outfile << "SCALARS collision int 1\n";
+    outfile << "LOOKUP_TABLE default\n";
+    for (int i = 0; i < npts; ++i)
+	    outfile << setID << "\n";
+    
+    outfile.close();
+}	/* end vtk_write_pointset */
 
-  polydata->SetPolys(cells);
-  polydata->GetCellData()->SetScalars(colors);
-  polydata->SetPoints(pts);
-  polydata->GetPointData()->SetVectors(impulses);
 
-  std::cout<<"vtk plot: "<<polydata->GetNumberOfPoints()<<" points"<<std::endl;
-  std::cout<<"vtk plot: "<<polydata->GetNumberOfCells()<<" cells"<<std::endl;
-  // Write the file
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =  
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName(fname);
-#if VTK_MAJOR_VERSION <= 5
-  writer->SetInput(polydata);
-#else
-  writer->SetInputData(polydata);
-#endif
-  // Optional - set the mode. The default is binary.
-  writer->SetDataModeToBinary();
-  //writer->SetDataModeToAscii();
-  writer->Write();
-  
-  return;
+void createDirectory(std::string new_dir)
+{
+    struct stat st;
+    int status = stat(new_dir.c_str(), &st);
+    if( status != 0 && !S_ISDIR(st.st_mode) )
+        mkdirTree(new_dir, "");
 }
+
+void mkdirTree(std::string sub, std::string dir)
+{
+    if(sub.length() == 0)
+        return;
+
+    int i = 0;
+    for( i; i < sub.length(); i++)
+    {
+        dir += sub[i];
+        if (sub[i] == '/')
+            break;
+    }
+
+    mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    if(i+1 < sub.length())
+        mkdirTree(sub.substr(i+1), dir);
+}
+

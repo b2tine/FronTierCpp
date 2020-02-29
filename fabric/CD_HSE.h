@@ -3,8 +3,7 @@
 
 #include <FronTier.h>
 #include "state.h"
-
-#include <string>
+#include "vtk.h"
 
 
 enum class CD_HSE_TYPE

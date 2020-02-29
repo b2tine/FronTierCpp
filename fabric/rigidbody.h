@@ -2,7 +2,6 @@
 #define RIGIDBODY_H
 
 #include <FronTier.h>
-#include "fluid.h"
 
 struct RG_PARAMS
 {

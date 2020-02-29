@@ -237,9 +237,10 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         if (!debugging("collision_off"))
         {
             setCollisionFreePoints3d(fr->interf);
+            collision_solver->initializeSystem(fr);
 
-            collision_solver->assembleFromInterface(fr->interf,fr->dt);
-            collision_solver->recordOriginalPosition();
+            //collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            //collision_solver->recordOriginalPosition();
         
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);
@@ -261,10 +262,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
-            //TODO: Same for global bonds; need to add gbonds to Front class
         }
 
-        //write to GLOBAL_POINT** point_set
         get_point_set_from(&geom_set,point_set);
 
 	    for (i = 0; i < pp_numnodes(); i++)

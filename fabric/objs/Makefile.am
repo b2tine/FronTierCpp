@@ -14,6 +14,8 @@ noinst_LTLIBRARIES = libfabric.la
 
 
 libfabric_la_SOURCES = \
+../vtk.h \
+../vtk.cpp \
 ../fabric.h \
 ../fabric_sv.h \
 ../state.h \

@@ -2,6 +2,7 @@
 #define COLLID_H
 
 #include "AABB.h"
+#include "rigidbody.h"
 
 #include <numeric>
 
@@ -12,7 +13,6 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -35,12 +35,6 @@ public:
     CollisionSolver3d(CollisionSolver3d&&) = delete;
     CollisionSolver3d& operator=(CollisionSolver3d&&) = delete;
 
-	static void setTimeStepSize(double);
-	static double getTimeStepSize();
-	static void setRestitutionCoef(double);
-	static double getRestitutionCoef();
-	static bool getImpZoneStatus();	
-	
     static void setFabricThickness(double);
 	static double getFabricThickness();
 	static void setFabricSpringConstant(double);
@@ -63,46 +57,39 @@ public:
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
 
+	static void setRestitutionCoef(double);
+	static double getRestitutionCoef();
+	static bool getImpZoneStatus();	
+	
+    static void setTimeStepSize(double);
+	static double getTimeStepSize();
     
-    static void clearCollisionTimes()
-    {
-        CollisionTimes.clear();
-    }
-
-    static void setSizeCollisionTimes(unsigned int size)
-    {
-        CollisionTimes.reserve(size);
-    }
-
-    static void addCollisionTime(double collsn_dt)
-    {
-        CollisionTimes.push_back(collsn_dt);
-    }
-
-    static double getAverageCollisionTime()
-    {
-        double avg_dt =
-            std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
-        avg_dt /= CollisionTimes.size();
-        return avg_dt;
-    }
-
+	static int getStep() {return tstep;}
+    static void setStep(int step) {tstep = step;}
+    
+    static std::string getOutputDirectory() {return outdir;}
+    static void setOutputDirectory(std::string dir) {outdir = dir;}
+    
+    static void clearCollisionTimes();
+    static void setSizeCollisionTimes(unsigned int size);
+    static void addCollisionTime(double collsn_dt);
+    static double getAverageCollisionTime();
 	
     void setStrainLimit(double);
 	//double getStrainLimit();
 	void setStrainRateLimit(double);
 	//double getStrainRateLimit();
 
-
     double setVolumeDiff(double);
 
-	void clearHseList();
-	void assembleFromInterface(const INTERFACE*,double dt);
+
+    void initializeSystem(const Front* front);
 	void createImpZoneForRG(const INTERFACE*);
 	
     void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
+	void clearHseList();
+	
+    void setDomainBoundary(double* L,double *U);
 
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	bool hasCollision() {return has_collision;}
@@ -128,8 +115,9 @@ private:
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
-    double volume;
-    double vol_diff {0.0};
+    
+    static int tstep;
+    static std::string outdir;
     
     static std::vector<double> CollisionTimes;
 
@@ -151,11 +139,13 @@ private:
     double strain_limit {0.1};
     double strainrate_limit {0.1};
 
-    static bool s_detImpZone;
-
     int numImpactZones {0};
     int numImpactZonePoints {0};
 	
+    double volume;
+    double vol_diff {0.0};
+
+    static bool s_detImpZone;
     static void turnOffImpZone();
 	static void turnOnImpZone();
 
@@ -167,6 +157,9 @@ private:
     void limitStrain();
     void modifyStrain();
 
+    void assembleFromInterface(const INTERFACE*);
+	void recordOriginalPosition();	
+	
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();

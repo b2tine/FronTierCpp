@@ -265,12 +265,6 @@ struct REGISTERED_PTS
 	int *global_ids;
 };
 
-//NOTE: these never had a definition
-/*
-void read_movie_options(char*,F_PARAMS*);
-void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
-                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-*/
 
 // afinit.cpp
 extern void read_Fparams(char*,F_PARAMS*);
@@ -342,7 +336,6 @@ extern void compute_center_of_mass_velo(ELASTIC_SET*);
 extern void propagate_surface(ELASTIC_SET*,SURFACE*,double**,int*);
 extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
-extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
 extern void setSpecialNodeForce(Front*,double);
 extern void break_strings(Front*);
@@ -405,11 +398,13 @@ extern int numOfGoreNodes(INTERFACE*);
 extern int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
 extern int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
 extern int getGoreNodes(INTERFACE*,NODE**);
+extern double springCharTimeStep(Front*);	// spring characteristic time
+
+extern boolean is_registered_point(SURFACE*,POINT*);
 extern boolean is_load_node(NODE*);
 extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
-extern double springCharTimeStep(Front*);	// spring characteristic time
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
