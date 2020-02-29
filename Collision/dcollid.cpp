@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cfenv>
-
 #include <omp.h>
 
 //union find functions
@@ -19,17 +18,17 @@ double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
 
-double CollisionSolver3d::s_eps = EPS;
-double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_k = 5000;
 double CollisionSolver3d::s_m = 0.001;
-double CollisionSolver3d::s_mu = 0.5;
+double CollisionSolver3d::s_mu = 0.15;
+double CollisionSolver3d::s_thickness = 0.001;
+double CollisionSolver3d::s_eps = EPS;
 
-double CollisionSolver3d::l_eps = 10.0*EPS;
-double CollisionSolver3d::l_thickness = 0.005;
 double CollisionSolver3d::l_k = 50000;
-double CollisionSolver3d::l_m = 0.002;
-double CollisionSolver3d::l_mu = 0.5;
+double CollisionSolver3d::l_m = 0.0015;
+double CollisionSolver3d::l_mu = 0.15;
+double CollisionSolver3d::l_thickness = 0.004;
+double CollisionSolver3d::l_eps = 4.0*EPS;
 
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
@@ -38,8 +37,15 @@ int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
 
+int CollisionSolver3d::tstep;
+std::string CollisionSolver3d::outdir;
+
 std::vector<double> CollisionSolver3d::CollisionTimes;
 
+
+void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
+void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
+bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
@@ -50,8 +56,6 @@ double CollisionSolver3d::getFabricRoundingTolerance(){return s_eps;}
 void CollisionSolver3d::setStringRoundingTolerance(double neweps){l_eps = neweps;}
 double CollisionSolver3d::getStringRoundingTolerance(){return l_eps;}
 
-
-//set restitution coefficient between rigid bodies
 void   CollisionSolver3d::setRestitutionCoef(double new_cr){s_cr = new_cr;}
 double CollisionSolver3d::getRestitutionCoef(){return s_cr;}
 
@@ -81,11 +85,33 @@ double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
+double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
+
 void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
 
-double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
+void CollisionSolver3d::clearCollisionTimes()
+{
+    CollisionTimes.clear();
+}
 
+void CollisionSolver3d::setSizeCollisionTimes(unsigned int size)
+{
+    CollisionTimes.reserve(size);
+}
+
+void CollisionSolver3d::addCollisionTime(double collsn_dt)
+{
+    CollisionTimes.push_back(collsn_dt);
+}
+
+double CollisionSolver3d::getAverageCollisionTime()
+{
+    double avg_dt =
+        std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
+    avg_dt /= CollisionTimes.size();
+    return avg_dt;
+}
 
 CollisionSolver3d::~CollisionSolver3d()
 {
@@ -103,11 +129,17 @@ void CollisionSolver3d::clearHseList()
 	hseList.clear();
 }
 
-//NOTE: Must be called before calling the spring solver
-void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc, const double dt)
+void CollisionSolver3d::initializeSystem(const Front* front)
 {
-	setTimeStepSize(dt);
+    setStep(front->step);
+    setTimeStepSize(front->dt);
+    setOutputDirectory(OutName(front));
+    assembleFromInterface(front->interf);
+    recordOriginalPosition();
+}
+
+void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc)
+{
 	clearHseList();
 
 	SURFACE** s;
@@ -168,8 +200,6 @@ void CollisionSolver3d::assembleFromInterface(
 	}
 }
 
-//NOTE: Must be called after assembleFromInterface()
-//      and before calling the spring solver.
 void CollisionSolver3d::recordOriginalPosition()
 {
     std::vector<CD_HSE*>::iterator it;
@@ -210,7 +240,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 	}
 }
 
-//TODO: investigate
+//TODO: Fix this
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFabricFrictionConstant();
@@ -352,10 +382,6 @@ void CollisionSolver3d::resetPositionCoordinates()
         }
     }
 }
-
-void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
-void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 void CollisionSolver3d::computeImpactZone()
 {

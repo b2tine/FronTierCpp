@@ -1005,10 +1005,16 @@ static bool EdgeToEdge(
         scalarMult(1.0/dist,vec,vec);
     else if (dist == 0 && mstate == MotionState::STATIC)
     {
-        //printf("\n\tEdgeToEdge() WARNING: dist < 0\n\n");
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
+        
+        std::string fname = CollisionSolver3d::getOutputDirectory();
+        fname += "/EdgeToEdge_error";
+
+        std::vector<POINT*> edge_pts(pts,pts+4);
+        vtk_write_pointset(edge_pts,fname,ERROR);
+
         clean_up(ERROR);
     }
 

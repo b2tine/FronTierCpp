@@ -15,6 +15,8 @@ noinst_LTLIBRARIES = libCollision.la
 
 
 libCollision_la_SOURCES = \
+../vtk.h \
+../vtk.cpp \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
