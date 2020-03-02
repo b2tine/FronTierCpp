@@ -129,6 +129,11 @@ void CollisionSolver3d::clearHseList()
 	hseList.clear();
 }
 
+const std::vector<CD_HSE*>& CollisionSolver3d::getHseList() const
+{
+    return hseList;
+}
+
 void CollisionSolver3d::initializeSystem(const Front* front)
 {
     setStep(front->step);
@@ -608,6 +613,8 @@ void CollisionSolver3d::detectProximity()
         std::cout << abt_proximity->getCount()
             << " proximity pairs" << std::endl;
     }
+
+    clean_up(0);
 
     if (abt_proximity->isProximity)
         updateAverageVelocity();

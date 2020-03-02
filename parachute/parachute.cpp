@@ -233,8 +233,8 @@ void airfoil_driver(Front *front,
 	FT_PrintTimeStamp(front);
 
     //TEMP: debug restart for triangle gindex
-    printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
-    printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
+        //printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
+        //printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
 	
         // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 

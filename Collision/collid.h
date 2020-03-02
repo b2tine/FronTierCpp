@@ -87,6 +87,7 @@ public:
 	
     void resolveCollision();
 	void clearHseList();
+    const std::vector<CD_HSE*>& getHseList() const;
 	
     void setDomainBoundary(double* L,double *U);
 

@@ -1000,7 +1000,6 @@ static bool EdgeToEdge(
     if (dist > tol)
         return false;
 
-    //TODO: handle another way -- restart with smaller dt for example
     if (dist > 0)
         scalarMult(1.0/dist,vec,vec);
     else if (dist == 0 && mstate == MotionState::STATIC)
@@ -1008,14 +1007,35 @@ static bool EdgeToEdge(
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
-        
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[0]);
+            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
+
+        /*
+        auto hseList = CollisionSolver3d::getHseList();
+        for (auto it : hseList)
+        {
+            CD_HSE* hse = *it;
+            if (hse->Point_of_hse(0) == pts[0])
+            {
+            }
+        }
+        */
+
+        static int ecount = 0;
         std::string fname = CollisionSolver3d::getOutputDirectory();
-        fname += "/EdgeToEdge_error";
+        fname += "/EdgeToEdge_error-" + std::to_string(ecount);
+        ecount++;
 
         std::vector<POINT*> edge_pts(pts,pts+4);
         vtk_write_pointset(edge_pts,fname,ERROR);
 
-        clean_up(ERROR);
+
+        //clean_up(ERROR);
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.

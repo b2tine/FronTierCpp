@@ -40,8 +40,8 @@ Start parameters for spring-mass system
 Enter the number of fabric optimization rounds: 0
 
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.01
-Enter fabric friction constant: 0.2
+Enter fabric damping constant: 0.02
+Enter fabric friction constant: 0.1
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
