@@ -7,11 +7,19 @@
 #include <string>
 
 
+enum class CD_HSE_TYPE
+{
+    FABRIC_TRI,
+    STRING_BOND,
+    RIGID_TRI
+};
+
+
 //abstract base class for hypersurface element(HSE)
 //can be a point, bond, or triangle
 struct CD_HSE
 {
-    std::string name;
+    CD_HSE_TYPE type;
 	virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;
 	virtual double max_moving_coord(int,double) = 0;
@@ -26,10 +34,10 @@ struct CD_TRI: public CD_HSE
 {
     TRI* m_tri;
 	
-    CD_TRI(TRI* tri, const char* n)
-        : m_tri(tri)
+    CD_TRI(TRI* tri, CD_HSE_TYPE tag)
+        : m_tri{tri}
     {
-        name = n;
+        type = tag;
     }
 
 	double max_static_coord(int);
@@ -46,10 +54,18 @@ struct CD_BOND: public CD_HSE
 	int m_dim;
     BOND* m_bond;
 	
-    CD_BOND(BOND* bond, int dim, const char* n)
-        : m_bond(bond), m_dim(dim)
+    CD_BOND(BOND* bond, CD_HSE_TYPE tag)
+        : m_bond{bond}
     {
-        name = n;
+        type = tag;
+        if (type == CD_HSE_TYPE::STRING_BOND)
+        {
+            STATE* sl;
+            sl = (STATE*)left_state(m_bond->start);
+            sl->is_stringpt = true;
+            sl = (STATE*)left_state(m_bond->end);
+            sl->is_stringpt = true;
+        }
     }
 
 	double max_static_coord(int);
@@ -60,6 +76,7 @@ struct CD_BOND: public CD_HSE
 	int num_pts()const{return 2;}
 };
 
+/*
 //wrap class for point
 struct CD_POINT: public CD_HSE
 {
@@ -76,5 +93,11 @@ struct CD_POINT: public CD_HSE
 	POINT* Point_of_hse(int) const;
 	int num_pts()const {return 1;}
 };
+*/
+
+
+bool adjacentHSE(CD_HSE* A, CD_HSE* B);
+
+
 
 #endif

@@ -189,9 +189,6 @@ int main(int argc, char **argv)
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
 
-    //print_interface(front.interf);
-    //exit(0);
-
 	/* Propagate the front */
 
 	airfoil_driver(&front,l_cartesian);

@@ -2149,7 +2149,6 @@ extern void InstallNewLoadNode(
 	int num_canopy)
 {
 	INTERFACE *intfc = front->interf;
-	FILE *infile = fopen(InName(front),"r");
 	NODE **n, *sec_nload, *nload;
 	CURVE **string_curves;
 	AF_NODE_EXTRA *extra;
@@ -2159,8 +2158,10 @@ extern void InstallNewLoadNode(
 	int i,j,k,nb;
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	int string_curve_onenode = 10; // test
+	
+    int string_curve_onenode = 10; // test
 
+	FILE *infile = fopen(InName(front),"r");
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))
 	{
 	    fscanf(infile,"%lf %lf %lf",newload,newload+1,newload+2);
