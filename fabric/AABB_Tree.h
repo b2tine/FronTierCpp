@@ -33,7 +33,9 @@ class AABB_Tree
         AABB_Tree(AABB_Tree&&) = delete;
         AABB_Tree& operator=(AABB_Tree&&) = delete;
 
-        static AABB_Node* createLeafNode(CD_HSE* const hse, double pad);
+        static AABB_Node* createLeafNode(CD_HSE* const Hse, double Pad);
+        static AABB_Node* createMovingLeafNode(
+                CD_HSE* const Hse, double Dt, double Pad);
         static AABB_Node* createInternalNode(
                 AABB_Node* const lc, AABB_Node* const rc);
 
@@ -42,6 +44,7 @@ class AABB_Tree
 
         void setFabricPad(double pad) noexcept;
         void setStringPad(double pad) noexcept;
+        void setTimeStepSize(double delta_t) noexcept;
 
         void buildTree(const std::vector<CD_HSE*>& hseList);
 
@@ -52,6 +55,7 @@ class AABB_Tree
 
         double fabricPad {0.0};
         double stringPad {0.0};
+        double dt {0.0};
 
         std::vector<AABB_Node*> leaves;
 
@@ -60,6 +64,7 @@ class AABB_Tree
         int sort_iter {0};
 
         void constructLeafNodes(const std::vector<CD_HSE*>& hseList);
+        void constructMovingLeafNodes(const std::vector<CD_HSE*>& hseList);
 
         void initChildren();
         Point_Node_Vector getLeafSortingData() const;

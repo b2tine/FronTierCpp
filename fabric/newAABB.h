@@ -24,7 +24,7 @@ class AABB
 
         AABB();
         AABB(const CD_HSE* const hse, double pad);
-        //AABB(const CD_HSE* const hse, double dt, double dt);
+        AABB(const CD_HSE* const hse, double dt, double pad);
         
             //AABB(const CD_HSE* const hse, double TOL);
             //AABB(const CD_HSE* const hse, double TOL, double DT);

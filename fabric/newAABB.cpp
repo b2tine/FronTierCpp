@@ -16,6 +16,13 @@ AABB::AABB(const CD_HSE* const hse, double pad)
     expand(pad);
 }
 
+AABB::AABB(const CD_HSE* const hse, double dt, double pad)
+    : AABB()
+{
+    encloseMovingHSE(hse,dt);
+    expand(pad);
+}
+
 /*
 //AABB::AABB(const CD_HSE* const hse, double TOL)
 AABB::AABB(const CD_HSE* const hse, double pad)
@@ -37,9 +44,8 @@ AABB::AABB(const CD_HSE* const hse, double pad)
 */
 
 /*
-TODO: do we really need this ctor?
 //AABB::AABB(const CD_HSE* const hse, double TOL, double DT)
-AABB::AABB(const CD_HSE* const hse, double pad, double dt)
+AABB::AABB(const CD_HSE* const hse, double dt, double pad)
     : AABB()
 {
     //dt = DT;

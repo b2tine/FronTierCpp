@@ -586,7 +586,8 @@ void CollisionSolver3d::aabbProximity()
 
         abt_proximity->buildTree(hseList);
         
-        clean_up(0);
+        //clean_up(0);
+
         /*
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
@@ -683,15 +684,16 @@ void CollisionSolver3d::aabbCollision()
         abt_collision =
             std::unique_ptr<AABB_Tree>(new AABB_Tree(MotionState::MOVING));
 
-        for (auto it = hseList.begin(); it != hseList.end(); it++)
-        {
-            double tol = CollisionSolver3d::getFabricRoundingTolerance();
-            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-                tol = CollisionSolver3d::getStringRoundingTolerance();
+        abt_collision->setTimeStepSize(getTimeStepSize());
+        abt_collision->setFabricPad(getFabricRoundingTolerance());
+        abt_collision->setStringPad(getStringRoundingTolerance());
+
+        abt_collision->buildTree(hseList);
+
+        clean_up(0);
 
             //AABB* ab = new AABB(tol,*it,s_dt);
             //abt_collision->addAABB(ab);
-        }
         //abt_collision->updatePointMap(hseList);
         //volume = abt_collision->getVolume();
     }

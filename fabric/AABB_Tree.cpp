@@ -5,10 +5,17 @@ AABB_Tree::AABB_Tree(MotionState ms)
 {}
 
 //AABB_Node* AABB_Tree::createLeafNode(CD_HSE* hse, double pad)
-AABB_Node* AABB_Tree::createLeafNode(CD_HSE* const hse, double pad)
+AABB_Node* AABB_Tree::createLeafNode(CD_HSE* const Hse, double Pad)
 {
-    assert(hse);
-    return new LeafNode(hse,pad);
+    assert(Hse);
+    return new LeafNode(Hse,Pad);
+}
+
+AABB_Node* AABB_Tree::createMovingLeafNode(
+        CD_HSE* const Hse, double Dt, double Pad)
+{
+    assert(Hse);
+    return new LeafNode(Hse,Dt,Pad);
 }
 
 AABB_Node* AABB_Tree::createInternalNode(
@@ -38,9 +45,17 @@ void AABB_Tree::setStringPad(double pad) noexcept
     stringPad = pad;
 }
 
+void AABB_Tree::setTimeStepSize(double delta_t) noexcept
+{
+    dt = delta_t;
+}
+
 void AABB_Tree::buildTree(const std::vector<CD_HSE*>& hseList)
 {
-    constructLeafNodes(hseList);
+    if (mstate == MotionState::STATIC)
+        constructLeafNodes(hseList);
+    else
+        constructMovingLeafNodes(hseList);
 
     initChildren();
     while( children.size() != 1 )
@@ -72,6 +87,25 @@ void AABB_Tree::constructLeafNodes(const std::vector<CD_HSE*>& hseList)
             pad = stringPad;
 
         AABB_Node* leaf = AABB_Tree::createLeafNode(*it,pad);
+        leaves.push_back(leaf);
+    }
+}
+
+void AABB_Tree::constructMovingLeafNodes(const std::vector<CD_HSE*>& hseList)
+{
+    assert(dt > 0);
+
+    leaves.clear();
+    leaves.reserve(hseList.size());
+
+    std::vector<CD_HSE*>::const_iterator it;
+    for (it = hseList.cbegin(); it != hseList.cend(); ++it)
+    {
+        double pad = fabricPad;
+        if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+            pad = stringPad;
+
+        AABB_Node* leaf = AABB_Tree::createMovingLeafNode(*it,dt,pad);
         leaves.push_back(leaf);
     }
 }

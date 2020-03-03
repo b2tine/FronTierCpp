@@ -88,13 +88,16 @@ class LeafNode : public AABB_Node
 {
     public:
 
-        LeafNode(CD_HSE* const hse, double pad);
+        LeafNode(CD_HSE* const Hse, double Pad);
+        LeafNode(CD_HSE* const Hse, double Dt, double Pad);
 
         const bool isLeaf() const noexcept;
 
     private:
 
-        double pad;
+        //MotionState mstate;
+        double dt {0.0};
+        double pad {0.0};
         CD_HSE* hse {nullptr};
 
 };

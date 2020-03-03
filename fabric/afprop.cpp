@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 //NOTE: collid.h must come before fabric.h to avoid
-//      collisions with FronTier and CGAL
+//      collisions between FronTier and CGAL
 #include "collid.h"
 #include "fabric.h"
 

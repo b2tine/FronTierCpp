@@ -53,6 +53,12 @@ LeafNode::LeafNode(CD_HSE* const Hse, double Pad)
     bv = AABB(hse,pad);
 }
 
+LeafNode::LeafNode(CD_HSE* const Hse, double Dt, double Pad)
+    : hse{Hse}, dt{Dt}, pad{Pad}
+{
+    bv = AABB(hse,dt,pad);
+}
+
 const bool LeafNode::isLeaf() const noexcept
 {
     return true;
