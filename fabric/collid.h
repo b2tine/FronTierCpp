@@ -122,6 +122,7 @@ public:
     int num_res_tris;
 
 private:
+
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 

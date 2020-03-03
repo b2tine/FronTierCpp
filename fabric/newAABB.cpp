@@ -21,6 +21,7 @@ AABB::AABB(const CD_HSE* const h, double TOL)
     }
 
     /*
+    //TODO:
     for (int i = 0; i < 3; ++i)
         indices.push_back(h->Point_of_hse(i)->global_index); 
     */
@@ -40,6 +41,7 @@ AABB::AABB(const CD_HSE* const h, double TOL, double DT)
     }
 
     /*
+    //TODO:
     for (int i = 0; i < 3; ++i)
         indices.push_back(h->Point_of_hse(i)->global_index); 
     */

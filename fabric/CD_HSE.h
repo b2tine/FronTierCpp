@@ -23,7 +23,7 @@ struct CD_HSE
 	virtual double min_moving_coord(int dim, double dt) const = 0;
 	virtual POINT* Point_of_hse(int i) const  = 0;
 	virtual int num_pts() const noexcept = 0;
-	virtual ~CD_HSE(){};
+	virtual ~CD_HSE() = default;
 };
 
 struct CD_BOND: public CD_HSE
