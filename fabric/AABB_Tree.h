@@ -8,6 +8,10 @@ class AABB_Tree
 {
     public:
 
+        MotionState mstate;
+
+        explicit AABB_Tree(MotionState ms);
+
         AABB_Tree() = default;
         ~AABB_Tree() = default;
 
@@ -20,9 +24,9 @@ class AABB_Tree
         const bool isEmpty() const noexcept;
         const AABB_Node* const getRoot() const noexcept;
 
-        static AABB_Node* createLeafNode(const CD_HSE* const hse);
+        static AABB_Node* createLeafNode(CD_HSE* const hse, double pad);
         static AABB_Node* createInternalNode(
-                const AABB_Node* const lc, const AABB_Node* const rc);
+                AABB_Node* const lc, AABB_Node* const rc);
 
 
     private:

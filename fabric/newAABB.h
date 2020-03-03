@@ -15,9 +15,11 @@
 #include <set>
 #include <map>
 
+
 using BV_Point = std::vector<double>;
 
 enum class MotionState {STATIC, MOVING};
+
 
 class AABB
 {

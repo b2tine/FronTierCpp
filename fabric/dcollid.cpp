@@ -359,6 +359,7 @@ bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 void CollisionSolver3d::computeImpactZone()
 {
+    /*
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
 	int niter = 0;
@@ -400,6 +401,7 @@ void CollisionSolver3d::computeImpactZone()
     }
 	
     turnOffImpZone();
+    */
 }
 
 void CollisionSolver3d::infoImpactZones()
@@ -538,6 +540,7 @@ void CollisionSolver3d::resolveCollision()
 
 // function to perform AABB tree building, updating structure
 // and query for proximity detection process
+/*
 void CollisionSolver3d::aabbProximity()
 {
     if (!abt_proximity)
@@ -569,14 +572,48 @@ void CollisionSolver3d::aabbProximity()
         }
     }
 }
+*/
+
+void CollisionSolver3d::aabbProximity()
+{
+    if (!abt_proximity)
+    {
+        abt_proximity =
+            std::unique_ptr<AABB_Tree>(new AABB_Tree(MotionState::STATIC));
+
+        for (auto it = hseList.begin(); it != hseList.end(); it++)
+        {
+            double tol = CollisionSolver3d::getFabricThickness();
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                tol = CollisionSolver3d::getStringThickness();
+
+            //AABB* ab = new AABB(tol,*it);
+            //abt_proximity->addAABB(ab);
+        }
+        //abt_proximity->updatePointMap(hseList);
+        //volume = abt_proximity->getVolume();
+    }
+    /*
+    else
+    {
+        abt_proximity->isProximity = false;
+        abt_proximity->updateAABBTree(hseList);
+        if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
+        {
+            abt_proximity->updateTreeStructure();
+            volume = abt_proximity->getVolume();
+            build_count_pre++;
+        }
+    }
+    */
+}
 
 void CollisionSolver3d::detectProximity()
 {
-    start_clock("dynamic_AABB_proximity");
     aabbProximity();
-    abt_proximity->query();
-    stop_clock("dynamic_AABB_proximity");
+    //abt_proximity->query();
 
+    /*
 	if (debugging("proximity"))
     {
         std::cout << abt_proximity->getCount()
@@ -588,8 +625,10 @@ void CollisionSolver3d::detectProximity()
 
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
 }
 
+/*
 // AABB tree for collision detection process
 void CollisionSolver3d::aabbCollision()
 {
@@ -626,6 +665,45 @@ void CollisionSolver3d::aabbCollision()
         }
     }
 }
+*/
+
+void CollisionSolver3d::aabbCollision()
+{
+    clearCollisionTimes();
+
+    if (!abt_collision)
+    {
+        abt_collision =
+            std::unique_ptr<AABB_Tree>(new AABB_Tree(MotionState::MOVING));
+
+        for (auto it = hseList.begin(); it != hseList.end(); it++)
+        {
+            double tol = CollisionSolver3d::getFabricRoundingTolerance();
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                tol = CollisionSolver3d::getStringRoundingTolerance();
+
+            //AABB* ab = new AABB(tol,*it,s_dt);
+            //abt_collision->addAABB(ab);
+        }
+        //abt_collision->updatePointMap(hseList);
+        //volume = abt_collision->getVolume();
+    }
+    /*
+    else
+    {
+        abt_collision->isCollsn = false;
+        abt_collision->setTimeStep(s_dt);
+        abt_collision->updateAABBTree(hseList);
+
+        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
+        {
+            build_count_col++;
+            abt_collision->updateTreeStructure();
+            volume = abt_collision->getVolume();
+        }
+    }
+    */
+}
 
 void CollisionSolver3d::detectCollision()
 {
@@ -639,17 +717,17 @@ void CollisionSolver3d::detectCollision()
     int niter = 1;
 	int cd_count = 0;
    
+    /*
     while(is_collision)
     {
 	    is_collision = false;
-	    
-        start_clock("dynamic_AABB_collision");
+	*/    
         aabbCollision();
-        abt_collision->query();
-        stop_clock("dynamic_AABB_collision");
+        //abt_collision->query();
 
-        is_collision = abt_collision->getCollsnState();
+        //is_collision = abt_collision->getCollsnState();
 
+        /*
 	    if (debugging("collision"))
         {
             std::cout << "    #" << niter << ": "
@@ -663,15 +741,20 @@ void CollisionSolver3d::detectCollision()
             }
             std::cout << std::endl;
         }
+        */
 
+    /*
         if (++niter > MAX_ITER)
             break;
 	}
+    */
 
+    /*
     start_clock("computeImpactZone");
 	if (is_collision) 
 	    computeImpactZone();
     stop_clock("computeImpactZone");
+    */
 }
 
 //Note: num has default value of 4,

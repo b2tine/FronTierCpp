@@ -1,7 +1,8 @@
 #ifndef COLLID_H
 #define COLLID_H
 
-#include "AABB.h"
+#include "AABB_Tree.h"
+//#include "AABB.h"
 
 #include <numeric>
 
@@ -12,7 +13,6 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -123,8 +123,10 @@ public:
 
 private:
 
-	std::unique_ptr<AABBTree> abt_proximity {nullptr};
-    std::unique_ptr<AABBTree> abt_collision {nullptr};
+	std::unique_ptr<AABB_Tree> abt_proximity {nullptr};
+    std::unique_ptr<AABB_Tree> abt_collision {nullptr};
+	    //std::unique_ptr<AABBTree> abt_proximity {nullptr};
+        //std::unique_ptr<AABBTree> abt_collision {nullptr};
 
     bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]

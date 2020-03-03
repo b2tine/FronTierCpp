@@ -5,9 +5,9 @@
 ////////           AABB_Node Methods            ////////
 ///////////////////////////////////////////////////////
 
-void AABB_Node::setParent(AABB_Node* const node) noexcept
+void AABB_Node::setParent(AABB_Node* node) noexcept
 {
-    parent = p;
+    parent = node;
 }
 
 const AABB& AABB_Node::getAABB() const noexcept
@@ -22,7 +22,7 @@ const AABB& AABB_Node::getAABB() const noexcept
 ///////////////////////////////////////////////////////
 
 InternalNode::InternalNode(
-        const AABB_Node* const lc, const AABB_Node* const rc)
+        AABB_Node* const lc, AABB_Node* const rc)
 {
     bv = AABB(lc->getAABB(),rc->getAABB());
     lc->setParent(this);
@@ -47,7 +47,7 @@ const bool InternalNode::isLeaf() const noexcept
 ////////            LeafNode Methods            ////////
 ///////////////////////////////////////////////////////
 
-LeafNode::LeafNode(const CD_HSE* const Hse, double Pad)
+LeafNode::LeafNode(CD_HSE* const Hse, double Pad)
     : hse{Hse}, pad{Pad}
 {
     bv = AABB(hse,pad);

@@ -33,8 +33,12 @@ libfabric_la_SOURCES = \
 ../dcollid3d.cpp \
 ../CD_HSE.h \
 ../CD_HSE.cpp \
-../AABB.h \
-../AABB.cpp \
+../newAABB.h \
+../AABB_Node.h \
+../AABB_Tree.h \
+../newAABB.cpp \
+../AABB_Node.cpp \
+../AABB_Tree.cpp \
 ../fluid.h \
 ../fluidinit.cpp \
 ../fluidprop.cpp \

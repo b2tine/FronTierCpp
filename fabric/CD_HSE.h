@@ -5,6 +5,7 @@
 #include "state.h"
 
 #include <string>
+#include <cassert>
 
 
 enum class CD_HSE_TYPE

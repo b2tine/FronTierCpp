@@ -60,6 +60,15 @@ class InternalNode : public AABB_Node
 {
     public:
 
+        InternalNode(AABB_Node* const lc, AABB_Node* const rc);
+
+        InternalNode(InternalNode&&) = default;
+        InternalNode& operator=(InternalNode&&) = default;
+
+        InternalNode() = delete;
+        InternalNode(const InternalNode&) = delete;
+        InternalNode& operator=(const InternalNode&) = delete;
+
         const bool isLeaf() const noexcept;
 
 
@@ -74,9 +83,9 @@ class LeafNode : public AABB_Node
 {
     public:
 
-        LeafNode(const CD_HSE* const hse, double pad);
+        LeafNode(CD_HSE* const hse, double pad);
 
-        const isLeaf() const noexcept;
+        const bool isLeaf() const noexcept;
 
     private:
 

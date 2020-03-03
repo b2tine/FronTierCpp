@@ -5,7 +5,7 @@
 /////////////////////////////////
 
 AABB::AABB()
-    : lower(3,HUGE), upper(3,-HUGE)
+    : lowerbound(3,HUGE), upperbound(3,-HUGE)
 {}
 
 AABB::AABB(const CD_HSE* const hse, double pad)
