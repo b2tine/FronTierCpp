@@ -1,11 +1,18 @@
 #ifndef CD_HSE_H
 #define CD_HSE_H
 
-#include <FronTier.h>
-#include "state.h"
-
 #include <string>
 #include <cassert>
+#include <fstream>
+#include <memory>
+#include <functional>
+#include <vector>
+#include <queue>
+#include <set>
+#include <map>
+
+#include <FronTier.h>
+#include "state.h"
 
 
 enum class CD_HSE_TYPE

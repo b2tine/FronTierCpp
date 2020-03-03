@@ -1,4 +1,4 @@
-#include <FronTier.h>
+//#include <FronTier.h>
 #include "collid.h"
 
 #include <vector>
@@ -19,17 +19,17 @@ double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
 
-double CollisionSolver3d::s_eps = EPS;
-double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_k = 5000;
 double CollisionSolver3d::s_m = 0.001;
-double CollisionSolver3d::s_mu = 0.5;
+double CollisionSolver3d::s_mu = 0.15;
+double CollisionSolver3d::s_thickness = 0.001;
+double CollisionSolver3d::s_eps = EPS;
 
-double CollisionSolver3d::l_eps = 10.0*EPS;
-double CollisionSolver3d::l_thickness = 0.005;
 double CollisionSolver3d::l_k = 50000;
-double CollisionSolver3d::l_m = 0.002;
-double CollisionSolver3d::l_mu = 0.5;
+double CollisionSolver3d::l_m = 0.0015;
+double CollisionSolver3d::l_mu = 0.15;
+double CollisionSolver3d::l_thickness = 0.004;
+double CollisionSolver3d::l_eps = 4.0*EPS;
 
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
@@ -40,6 +40,10 @@ int CollisionSolver3d::pt_to_tri = 0;
 
 std::vector<double> CollisionSolver3d::CollisionTimes;
 
+
+void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
+void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
+bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 void CollisionSolver3d::setTimeStepSize(double new_dt){s_dt = new_dt;}
 double CollisionSolver3d::getTimeStepSize(){return s_dt;}
@@ -210,7 +214,7 @@ void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 	}
 }
 
-//TODO: investigate
+//TODO: fix this
 void CollisionSolver3d::detectDomainBoundaryCollision() {
 	double dt = getTimeStepSize();
 	double mu = getFabricFrictionConstant();
@@ -352,10 +356,6 @@ void CollisionSolver3d::resetPositionCoordinates()
         }
     }
 }
-
-void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
-void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
 void CollisionSolver3d::computeImpactZone()
 {
@@ -580,16 +580,23 @@ void CollisionSolver3d::aabbProximity()
     {
         abt_proximity =
             std::unique_ptr<AABB_Tree>(new AABB_Tree(MotionState::STATIC));
+       
+        abt_proximity->setFabricPad(getFabricThickness());
+        abt_proximity->setStringPad(getStringThickness());
 
+        abt_proximity->buildTree(hseList);
+        
+        clean_up(0);
+        /*
         for (auto it = hseList.begin(); it != hseList.end(); it++)
         {
-            double tol = CollisionSolver3d::getFabricThickness();
             if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-                tol = CollisionSolver3d::getStringThickness();
+
 
             //AABB* ab = new AABB(tol,*it);
             //abt_proximity->addAABB(ab);
         }
+        */
         //abt_proximity->updatePointMap(hseList);
         //volume = abt_proximity->getVolume();
     }

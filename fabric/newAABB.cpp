@@ -1,4 +1,5 @@
 #include "newAABB.h"
+#include "CD_HSE.h"
 
 ///////////////////////////////////
 //////     AABB methods     //////
@@ -155,5 +156,13 @@ void AABB::expand(double pad)
         lowerbound[i] -= pad;
         upperbound[i] += pad;
     }
+}
+
+const CGAL_Point AABB::centroid() const
+{
+    double ctr[3];
+    for (int i = 0; i < 3; ++i)
+        ctr[i] = 0.5*(lowerbound[i] + upperbound[i]);
+    return CGAL_Point(ctr[0],ctr[1],ctr[2]);
 }
 

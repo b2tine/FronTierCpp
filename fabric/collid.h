@@ -17,6 +17,8 @@ const double EPS = 1.0e-06;
 const double DT = 0.001;
 
 
+class AABB_Tree;
+
 class CollisionSolver3d {
 public:
 	
@@ -230,6 +232,6 @@ bool isRigidBody(const CD_HSE*);
 
 extern void SpreadImpactZoneImpulse(POINT*, double, double*);
 
-void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
+//void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 #endif

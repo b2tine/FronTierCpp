@@ -21,8 +21,10 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "fabric.h"
+//NOTE: collid.h must come before fabric.h to avoid
+//      collisions with FronTier and CGAL
 #include "collid.h"
+#include "fabric.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 

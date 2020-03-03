@@ -1,8 +1,6 @@
 #ifndef AIRFOIL_H
 #define AIRFOIL_H
 
-#include <FronTier.h>
-
 #include "fluid.h"
 #include "state.h"
 #include "rigidbody.h"

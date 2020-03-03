@@ -1,25 +1,19 @@
 #ifndef AABB_H
 #define AABB_H
 
-#include "CD_HSE.h"
-
-#include <fstream>
-#include <memory>
-#include <functional>
-#include <unordered_set>
-#include <unordered_map>
-#include <vector>
-#include <utility>
-#include <stack>
-#include <queue>
-#include <set>
-#include <map>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 
-using BV_Point = std::vector<double>;
+using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+using CGAL_Point = Kernel::Point_3;
+
 
 enum class MotionState {STATIC, MOVING};
 
+using BV_Point = std::vector<double>;
+
+
+class CD_HSE;
 
 class AABB
 {
@@ -52,6 +46,8 @@ class AABB
         const double volume() const noexcept;
         const bool overlaps(const AABB& box) const;
         const bool contains(const AABB& box) const;
+
+        const CGAL_Point centroid() const;
 
     //AABB merge(const AABB&) const;//replaced by ctor taking 2 AABBs
     //bool isCollid(const AABB&);//replaced by overlaps()
