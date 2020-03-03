@@ -19,6 +19,9 @@ class AABB_Node
 
         virtual const bool isLeaf() const noexcept = 0;
 
+        void setParent(AABB_Node* const node) noexcept;
+        const AABB& getAABB() const noexcept;
+
 
 
 
@@ -45,7 +48,8 @@ class AABB_Node
     */
 
 
-    private:
+    //private:
+    protected:
 
         AABB bv;
         AABB_Node* parent {nullptr};
@@ -70,12 +74,14 @@ class LeafNode : public AABB_Node
 {
     public:
 
+        LeafNode(const CD_HSE* const hse, double pad);
+
         const isLeaf() const noexcept;
 
     private:
 
+        double pad;
         CD_HSE* hse {nullptr};
-
 
 };
 

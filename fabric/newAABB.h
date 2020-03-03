@@ -27,8 +27,12 @@ class AABB
         BV_Point upperbound;
 
         AABB();
-        AABB(const CD_HSE* const h, double TOL);
-        AABB(const CD_HSE* const h, double TOL, double DT);
+        AABB(const CD_HSE* const hse, double pad);
+        //AABB(const CD_HSE* const hse, double dt, double dt);
+        
+            //AABB(const CD_HSE* const hse, double TOL);
+            //AABB(const CD_HSE* const hse, double TOL, double DT);
+    
         AABB(const AABB& A, const AABB& B);
     
         AABB(const AABB&) = default;
@@ -37,21 +41,26 @@ class AABB
         AABB& operator=(AABB&&) = default;
         ~AABB() = default;
     
-        const double volume() const noexcept;
-        const bool overlaps(const AABB& BB) const;
-        const bool contains(const AABB& BB) const;
-
-        void encloseHSE(const CD_HSE* const h);
+        void encloseHSE(const CD_HSE* const hse);
+        void encloseMovingHSE(const CD_HSE* const hse, double dt);
+            //void encloseHSE(const CD_HSE* const hse, double pad);
+            //void encloseMovingHSE(const CD_HSE* const hse, double dt, double pad);
+        void expand(double pad);
     
+        const double volume() const noexcept;
+        const bool overlaps(const AABB& box) const;
+        const bool contains(const AABB& box) const;
+
     //AABB merge(const AABB&) const;//replaced by ctor taking 2 AABBs
     //bool isCollid(const AABB&);//replaced by overlaps()
     //bool contain(const AABB*);//replaced by contains()
 
+    //protected:
     private:
     
-        double tol;
-        double dt {-1.0};
-        MotionState mstate;
+        //double tol;
+        //double dt {-1.0};
+        //MotionState mstate;
     
     //void updateAABBInfo(double);//replaced by encloseHSE()
                                   //and AABB_Node::update()

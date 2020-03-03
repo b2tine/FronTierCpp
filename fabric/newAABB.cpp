@@ -8,46 +8,55 @@ AABB::AABB()
     : lower(3,HUGE), upper(3,-HUGE)
 {}
 
-AABB::AABB(const CD_HSE* const h, double TOL)
+AABB::AABB(const CD_HSE* const hse, double pad)
     : AABB()
 {
-    tol = TOL;
-    mstate = MotionState::STATIC;
+    encloseHSE(hse);
+    expand(pad);
+}
+
+/*
+//AABB::AABB(const CD_HSE* const hse, double TOL)
+AABB::AABB(const CD_HSE* const hse, double pad)
+    : AABB()
+{
+    //tol = TOL;
+    //mstate = MotionState::STATIC;
 
     for (int i = 0; i < 3; ++i)
     {
-        lowerbound[i] = h->min_static_coord(i) - tol;
-        upperbound[i] = h->max_static_coord(i) + tol;
+        lowerbound[i] = hse->min_static_coord(i) - pad;
+        upperbound[i] = hse->max_static_coord(i) + pad;
     }
 
-    /*
     //TODO:
-    for (int i = 0; i < 3; ++i)
-        indices.push_back(h->Point_of_hse(i)->global_index); 
-    */
+    //for (int i = 0; i < 3; ++i)
+      //  indices.push_back(h->Point_of_hse(i)->global_index); 
 }
+*/
 
-AABB::AABB(const CD_HSE* const h, double TOL, double DT)
+/*
+TODO: do we really need this ctor?
+//AABB::AABB(const CD_HSE* const hse, double TOL, double DT)
+AABB::AABB(const CD_HSE* const hse, double pad, double dt)
     : AABB()
 {
-    dt = DT;
-    tol = TOL;
-    mstate = MotionState::MOVING;
+    //dt = DT;
+    //tol = TOL;
+    //mstate = MotionState::MOVING;
 
     for (int i = 0; i < 3; ++i)
     {
-        lowerbound[i] = h->min_moving_coord(i,dt) - tol;
-        upperbound[i] = h->max_moving_coord(i,dt) + tol;
+        lowerbound[i] = hse->min_moving_coord(i,dt) - pad;
+        upperbound[i] = hse->max_moving_coord(i,dt) + pad;
     }
 
-    /*
     //TODO:
-    for (int i = 0; i < 3; ++i)
-        indices.push_back(h->Point_of_hse(i)->global_index); 
-    */
+    //for (int i = 0; i < 3; ++i)
+      //  indices.push_back(h->Point_of_hse(i)->global_index); 
 }
+*/
 
-//replaces AABB::merge() method
 AABB::AABB(const AABB& A, const AABB& B)
     : AABB()
 {
@@ -67,35 +76,63 @@ const double AABB::volume() const noexcept
     return vol;
 }
 
-const bool AABB::overlaps(const AABB& BB) const
+const bool AABB::overlaps(const AABB& box) const
 {
     for (int i = 0; i < 3; ++i)
     {
-        if (BB.upperbound[i] < lowerbound[i]) return false;
-        if (BB.lowerbound[i] > upperbound[i]) return false;
+        if (box.upperbound[i] < lowerbound[i]) return false;
+        if (box.lowerbound[i] > upperbound[i]) return false;
     }
     return true;
 }
 
-const bool AABB::contains(const AABB& BB) const
+const bool AABB::contains(const AABB& box) const
 {
     for (int i = 0; i < 3; ++i)
     {
-        if (BB.lowerbound[i] <= lowerbound[i]) return false;
-        if (BB.upperbound[i] >= upperbound[i]) return false;
+        if (box.lowerbound[i] <= lowerbound[i]) return false;
+        if (box.upperbound[i] >= upperbound[i]) return false;
     }
     return true;
 }
 
-void AABB::encloseHSE(const CD_HSE* const h)
+//void AABB::encloseHSE(const CD_HSE* const hse, double pad)
+void AABB::encloseHSE(const CD_HSE* const hse)
 {
-    assert(h != nullptr);
+    assert(hse);
+    for (int i = 0; i < 3; ++i)
+    {
+        lowerbound[i] = hse->min_static_coord(i);
+        upperbound[i] = hse->max_static_coord(i);
+        //lowerbound[i] = hse->min_static_coord(i) - pad;
+        //upperbound[i] = hse->max_static_coord(i) + pad;
+    }
+}
+
+//void AABB::encloseMovingHSE(const CD_HSE* const hse, double dt, double pad)
+void AABB::encloseMovingHSE(const CD_HSE* const hse, double dt)
+{
+    assert(hse);
+    for (int i = 0; i < 3; ++i)
+    {
+        lowerbound[i] = hse->min_moving_coord(i,dt);
+        upperbound[i] = hse->max_moving_coord(i,dt);
+        //lowerbound[i] = hse->min_moving_coord(i,dt) - pad;
+        //upperbound[i] = hse->max_moving_coord(i,dt) + pad;
+    }
+}
+
+//TODO: see header
+/*
+void AABB::encloseHSE(const CD_HSE* const hse, double pad)
+{
+    assert(hse != nullptr);
     if (mstate == MotionState::STATIC)
     {
         for (int i = 0; i < 3; ++i)
         {
-            lowerbound[i] = h->min_static_coord(i) - tol;
-            upperbound[i] = h->max_static_coord(i) + tol;
+            lowerbound[i] = hse->min_static_coord(i) - pad;
+            upperbound[i] = hse->max_static_coord(i) + pad;
         }
     }
     else
@@ -103,8 +140,20 @@ void AABB::encloseHSE(const CD_HSE* const h)
         assert(dt > 0);
         for (int i = 0; i < 3; ++i)
         {
-            lowerbound[i] = h->min_moving_coord(i,dt) - tol;
-            upperbound[i] = h->max_moving_coord(i,dt) + tol;
+            lowerbound[i] = hse->min_moving_coord(i,dt) - pad;
+            upperbound[i] = hse->max_moving_coord(i,dt) + pad;
         }
     }
 }
+*/
+
+void AABB::expand(double pad)
+{
+    assert(pad >= 0);
+    for (int i = 0; i < 3; ++i)
+    {
+        lowerbound[i] -= pad;
+        upperbound[i] += pad;
+    }
+}
+

@@ -20,6 +20,11 @@ class AABB_Tree
         const bool isEmpty() const noexcept;
         const AABB_Node* const getRoot() const noexcept;
 
+        static AABB_Node* createLeafNode(const CD_HSE* const hse);
+        static AABB_Node* createInternalNode(
+                const AABB_Node* const lc, const AABB_Node* const rc);
+
+
     private:
 
         AABB_Node* root {nullptr};
