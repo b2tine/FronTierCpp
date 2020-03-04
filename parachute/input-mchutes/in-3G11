@@ -91,6 +91,9 @@ Enter connection position: 0 0 2
 *************Airfoil parameters*************
 Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: no
+Enter yes to use porosity: yes
+Enter viscous parameter: 604.333
+Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 600

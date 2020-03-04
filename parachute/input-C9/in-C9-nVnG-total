@@ -45,19 +45,30 @@ Enter initial position of load: 6 6 12.451
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: no
+Enter yes to use porosity: yes
+Enter viscous parameter: 604.333
+Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 100
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
-Enter yes to use total mass: yes
 Enter fabric spring constant: 5000
-Enter fabric friction constant: 0.02
-Enter fabric total mass: 10.0
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
+Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
 Enter string spring constant: 50000
-Enter string friction constant: 0.001
-Enter string total mass: 4.0
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
+
+
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
