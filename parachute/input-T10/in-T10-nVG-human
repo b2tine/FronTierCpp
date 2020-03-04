@@ -35,7 +35,7 @@ Enter number of rigid bodies: 1
 For rigid body 1
 Enter yes to add rigid body: yes
 Enter type of rigid body: Human
-Enter the vtk file name for human body: vtk-human/human_body.vtk
+Enter the vtk file name for human body: input-vtk/human_body.vtk
 Enter center of the human body: 7 7 2
 Enter enlargement coefficient: 1.5
 Enter yes to skip rg_nodes in y direction for 1: yes
