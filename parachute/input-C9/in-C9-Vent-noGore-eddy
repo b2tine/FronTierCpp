@@ -26,7 +26,7 @@ Projection type can be
 **************Fluid parameters***************
 Enter projection type: SIMPLE
 Enter advection order: 4
-Enter density and viscosity of the fluid: 1.2 0.000015
+Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter yes to use eddy viscosity: yes
 Enter turbulence model: BALDWIN_LOMAX
 Enter maximum distance for eddy viscosity: 0.5
