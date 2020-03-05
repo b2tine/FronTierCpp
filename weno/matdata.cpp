@@ -412,8 +412,8 @@ static void sine_func(
 {
     for (int i = 0; i < mesh_size; i++)
     {
-        double arg = x[i];
-	    u[i] = -sin(PI*arg);
+        double arg = a*PI*x[i];
+	    u[i] = -sin(arg);
 	}
 }
 
