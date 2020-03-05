@@ -324,6 +324,8 @@ static void readWenoParams(
         case 'S':
             if (string[1] == 'i' || string[1] == 'I')
                 params->init_type = SINE;
+            else if (string[1] == 'u' || string[1] == 'U')
+                params->init_type = SUPERPOSITION_SINE;
             else
                 params->init_type = SQUARE;
 	        break;
@@ -417,6 +419,25 @@ static void sine_func(
 	}
 }
 
+static void superposition_sine_func(
+        double a,
+        double time,
+        double *x,
+        double *u,
+        int mesh_size)
+{
+    for (int i = 0; i < mesh_size; i++)
+    {
+        double sol = 0.0;
+        for (int i = 1; i <= a; ++i)
+        {
+            double arg = i*PI*x[i];
+	        sol += -sin(arg);
+        }
+	    u[i] = sol;
+	}
+}
+
 static void square_func(
         double a,
         double time,
@@ -441,25 +462,28 @@ static void square_func(
 static void setSolutionType(
         INIT_TYPE init_type)
 {
-        switch (init_type)
-        {
-        case WAVE:
-	    exact_soln = wave_func;
-            break;
-        case HAMP:
-	    exact_soln = hamp_func;
-            break;
-	    case COSINE:
-	    exact_soln = cosine_func;
-	    break;
-	    case SINE:
-	    exact_soln = sine_func;
-	    break;
-        case SQUARE:
-	    exact_soln = square_func;
-            break;
-        default:
-            (void) printf("Unknown equation type!\n");
-            clean_up(ERROR);
-        }
+    switch (init_type)
+    {
+    case WAVE:
+        exact_soln = wave_func;
+        break;
+    case HAMP:
+        exact_soln = hamp_func;
+        break;
+    case COSINE:
+        exact_soln = cosine_func;
+        break;
+    case SINE:
+        exact_soln = sine_func;
+        break;
+    case SUPERPOSITION_SINE:
+        exact_soln = superposition_sine_func;
+        break;
+    case SQUARE:
+        exact_soln = square_func;
+        break;
+    default:
+        (void) printf("Unknown equation type!\n");
+        clean_up(ERROR);
+    }
 }       /* end setSolutionType */

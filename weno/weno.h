@@ -22,6 +22,7 @@ enum _INIT_TYPE {
 	SQUARE = 1,
         HAMP,
 	SINE,
+    SUPERPOSITION_SINE,
 	COSINE,
         WAVE
 };
