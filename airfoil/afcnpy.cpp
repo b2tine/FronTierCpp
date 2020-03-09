@@ -2426,11 +2426,8 @@ extern void collectNodeExtra(
 }	/* end collectNodeExtra */
 
 
-//TODO: Is this function as useless as it looks?
-//      Unless hypersurface elements need to be able
-//      to change their boundary (wave) type in the
-//      middle of a run, this can just be done during
-//      initialization and cached in the STATE.
+//TODO: this should be done during
+//      initialization and stored in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;

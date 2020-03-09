@@ -1489,8 +1489,14 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
+
 	if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
+
+    double* mu_t;
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == KEPSILON)
+        mu_t = computeMuOfKepsModel();
 
 	for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
@@ -1549,6 +1555,9 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 		    break;
 		case SMAGORINSKY:
 		    mu[index] = computeMuofSmagorinskyModel(icoords); 
+		    break;
+		case KEPSILON:
+		    mu[index] = mu_t[index];
 		    break;
 		default:
 		    (void) printf("Unknown eddy viscosity model!\n");
@@ -2259,8 +2268,14 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
-	if (iFparams->use_eddy_visc)
+
+    if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
+
+    double* mu_t;
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == KEPSILON)
+        mu_t = computeMuOfKepsModel();
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
@@ -2320,6 +2335,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 		    break;
 		case SMAGORINSKY:
 		    mu[index] = computeMuofSmagorinskyModel(icoords);
+		    break;
+		case KEPSILON:
+		    mu[index] = mu_t[index];
 		    break;
 		default:
 		    (void) printf("Unknown eddy viscosity model!\n");
@@ -3615,6 +3633,28 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         mu = field->rho[index0]*sqr(C_s*delta)*sum_S;
         return mu;
 }       /* end of computeMuofSmagorinskyModel */
+
+#include "keps.h"
+double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
+{
+        static boolean first = YES;
+        static KE_PARAMS params;
+        static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+        if (first)
+        {
+            first = NO;
+            keps_solver->read_params(InName(front),&params);
+            keps_solver->eqn_params = &params;
+            keps_solver->field = NULL;
+            keps_solver->initMesh();
+            keps_solver->field->vel = iFparams->field->vel;
+            keps_solver->eqn_params->mu = iFparams->mu2;
+            keps_solver->eqn_params->rho = iFparams->rho2;
+            keps_solver->setInitialCondition();
+        }
+        keps_solver->solve(front->dt);
+	return keps_solver->field->mu_t;
+}
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 {

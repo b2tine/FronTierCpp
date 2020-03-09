@@ -1,0 +1,74 @@
+Domain limit in 0-th dimension: 0 16
+Domain limit in 1-th dimension: 0 2
+Computational grid: 100 50
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+
+Max time: 200.0
+Max step: 100000
+Print interval: 10000.0
+Movie frame interval: 2.0 
+CFL factor: 0.75
+Redistribution interval: 5
+
+Problem type can be
+	TWO_FLUID_BUBBLE
+	TWO_FLUID_RT
+	TWO_FLUID_KH
+	FLUID_SOLID_CIRCLE
+Enter problem type: CHANNEL_FLOW
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+Enter projection type: SIMPLE
+Enter density and viscosity of the fluid: 1.0 0.0033333333333
+Enter gravity: 0.0 0.0
+Enter surface tension: 0.0
+Enter factor of smoothing radius: 1
+
+******************Turbulence Parameters****************
+Enter yes to use eddy viscosity: no
+Available tuebulence models are:
+        Baldwin-Lomax (B)
+        Moin (M)
+        Smagorinski (S)
+        KEPSILON  (K)
+Enter turbulence model: K
+Enter type of k-eps model: RNG
+Enter turbulent Prandtl number for k: 0.7194
+Enter turbulent Prandtl number for epsilon: 0.7194
+Enter C1: 1.42
+Enter C2: 1.68
+Enter Cmu: 0.0845
+Enter Cbc: 0.01
+Enter l0: 0.01
+Enter mu0: 0.001
+Enter y+: 30.0 
+*******************************************************
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: Q 
+Enter velocity: 1.0 0
+Enter pressure: 0.0
+Enter height: 1.0
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+Type y to make movie of pressure: y
+Type y to make movie of vorticity: y
+Type y to make movie of velocity: y
+Type y to make movie of viscosity: y
+
+Type y to make vector velocity field movie: y
+
+************Debugging options*****************
+
+Enter yes for debugging: no
+Enter the debugging string: trace
+Enter the debugging string: CLOCK
+Enter the debugging string: step_size
+

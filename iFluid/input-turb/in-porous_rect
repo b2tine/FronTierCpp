@@ -1,0 +1,127 @@
+Domain limit in 0-th dimension: 0 10
+Domain limit in 1-th dimension: 0 10
+Domain limit in 2-th dimension: 0 30
+Computational grid: 10 10 30 
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+Max time: 20.0 
+Max step: 1000 
+Print interval: 1.0 
+Movie frame interval: 0.1
+CFL factor: 0.75
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+Entering yes to turn off fluid solver: no
+Enter velocity function: z 
+Enter interior propagator: e4 
+Enter interior sub step number: 10
+
+Problem type can be
+        TWO_FLUID_BUBBLE
+        TWO_FLUID_RT
+        TWO_FLUID_KH
+        FLUID_SOLID_CIRCLE
+        CHANNEL_FLOW
+Enter problem type: CHANNEL_FLOW
+
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+Enter projection type: SIMPLE
+
+Initial surface type can be
+	PLANE
+	ELLIPSE
+	SINE_WAVE
+	CIRCULAR_PERT
+Enter number of canopy surfaces: 1
+Enter initial canopy surface type: P
+Enter the height of the plane: 5.0 
+Enter type of plane edge: R 
+Enter the box lower boundary: 0.0 0.0 5.0
+Enter the box upper boundary: 10.0 10.0 5.0
+Enter yes to attach strings to canopy: n
+Enter yes to change canopy boundary: y
+For direction 0
+Enter yes to fix lower boundary: yes
+Enter yes to fix upper boundary: yes
+For direction 1
+Enter yes to fix lower boundary: yes
+Enter yes to fix upper boundary: yes
+Entering perturbation type: n
+Entering yes to turn off fluid solver: n
+
+Enter density and viscosity of the fluid: 1.29 0.075
+Enter gravity: 0.0 0.0 0.0 
+Enter payload: 0.0
+Enter interior sub step number: 10
+Enter surface tension: 0.0
+Enter yes to use porosity: yes 
+Enter viscous parameter: 0.0 
+Enter inertial parameter: 0.0
+Enter area density of canopy: 0.547
+Enter factor of smoothing radius: 2
+
+Enter yes to use total mass: no
+Enter fabric spring constant: 30000 
+Enter fabric friction constant: 10.0
+Enter fabric point mass: 0.1
+Enter string spring constant: 50000.0
+Enter string friction constant: 0.0
+Enter string point mass: 0.01
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 0
+Enter pressure: 0
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 0
+Enter pressure: 0
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 0
+Enter pressure: 0
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 0
+Enter pressure: 0
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: P
+Enter direction: 2
+Enter velocity: 0 0 10.0 
+Enter pressure: 10
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+Enter pressure: 0.0
+
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+Type y to make cross sectional component movie: n
+Type y to make vector velocity field movie: y
+Type y to plot bullet in gd movie: y
+
+************Debugging options*****************
+
+Enter yes for debugging: y 
+Enter the debugging string: PETSc 
+Enter the debugging string: no_optimize
+Enter the debugging string: field_var 
+Enter the debugging string: ttrace
+Enter the debugging string: tCLOCK
+Enter the debugging string: xseg_comp 
+Enter the debugging string: xtsample_velocity
+Enter yes to use GPU solver: no 
+
+Type y to plot surface stress: y

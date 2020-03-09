@@ -75,6 +75,7 @@ struct _IF_FIELD {
 	double **f_surf;		// Surface force (such as tension)
 	double **old_var;		// For debugging purpose
 
+        //double *d_phi;          //Dual grid phi
 	double *div_U;
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
@@ -97,11 +98,13 @@ enum _ADVEC_METHOD {
 };
 typedef enum _ADVEC_METHOD ADVEC_METHOD;
 
+//TODO: DUAL_ELLIP
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
 };
+
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
 
 enum _DOMAIN_METHOD {
@@ -114,7 +117,8 @@ typedef enum _DOMAIN_METHOD DOMAIN_METHOD;
 enum _EDDY_VISC {
 	BALDWIN_LOMAX		= 1,
 	MOIN,
-	SMAGORINSKY
+	SMAGORINSKY,
+    KEPSILON
 };
 typedef enum _EDDY_VISC EDDY_VISC;
 
@@ -203,6 +207,13 @@ struct _PARABOLIC_STATE_PARAMS {
 	STATE state;
 };
 typedef struct _PARABOLIC_STATE_PARAMS PARABOLIC_STATE_PARAMS;
+
+struct CUBIC_STATE_PARAMS {
+    STATE state;
+    double h;
+    enum FLOW_TYPE {LAMINAR, TURBULENCE};
+    FLOW_TYPE flow_type;
+};
 
 struct _OPEN_PIPE_PARAMS
 {
@@ -439,6 +450,7 @@ protected:
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
+	double computeMuOfKepsModel();
 	void   computeFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
@@ -513,6 +525,7 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
+	    //void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
