@@ -41,6 +41,7 @@ static void wave_func(double,double,double*,double*,int);
 static void hamp_func(double,double,double*,double*,int);
 static void cosine_func(double,double,double*,double*,int);
 static void sine_func(double,double,double*,double*,int);
+static void superposition_sine_func(double,double,double*,double*,int);
 static void square_func(double,double,double*,double*,int);
 static void error_func(double*,double*,double*,int);
 
@@ -429,9 +430,9 @@ static void superposition_sine_func(
     for (int i = 0; i < mesh_size; i++)
     {
         double sol = 0.0;
-        for (int i = 1; i <= a; ++i)
+        for (int j = 1; j <= a; ++j)
         {
-            double arg = i*PI*x[i];
+            double arg = j*PI*x[i];
 	        sol += -sin(arg);
         }
 	    u[i] = sol;

@@ -39,6 +39,8 @@ static void (*exact_soln)(double,double,double*,double*,int);
 static void wave_func(double,double,double*,double*,int);
 static void hamp_func(double,double,double*,double*,int);
 static void cosine_func(double,double,double*,double*,int);
+static void sine_func(double,double,double*,double*,int);
+static void superposition_sine_func(double,double,double*,double*,int);
 static void square_func(double,double,double*,double*,int);
 static void error_func(double*,double*,double*,int);
 
@@ -263,8 +265,13 @@ static void readWenoParams(
         {
         case 's':
         case 'S':
-	    params->init_type = SQUARE;
-	    break;
+            if (string[1] == 'i' || string[1] == 'I')
+                params->init_type = SINE;
+            else if (string[1] == 'u' || string[1] == 'U')
+                params->init_type = SUPERPOSITION_SINE;
+            else
+                params->init_type = SQUARE;
+	        break;
         case 'h':
         case 'H':
 	    params->init_type = HAMP;
@@ -341,6 +348,39 @@ static void cosine_func(
 	}
 }
 
+static void sine_func(
+        double a,
+        double time,
+        double *x,
+        double *u,
+        int mesh_size)
+{
+    for (int i = 0; i < mesh_size; i++)
+    {
+        double arg = a*PI*x[i];
+	    u[i] = -sin(arg);
+	}
+}
+
+static void superposition_sine_func(
+        double a,
+        double time,
+        double *x,
+        double *u,
+        int mesh_size)
+{
+    for (int i = 0; i < mesh_size; i++)
+    {
+        double sol = 0.0;
+        for (int j = 1; j <= a; ++j)
+        {
+            double arg = j*PI*x[i];
+	        sol += -sin(arg);
+        }
+	    u[i] = sol;
+	}
+}
+
 static void square_func(
         double a,
         double time,
@@ -365,22 +405,29 @@ static void square_func(
 static void setSolutionType(
         INIT_TYPE init_type)
 {
-        switch (init_type)
-        {
-        case WAVE:
-	    exact_soln = wave_func;
-            break;
-        case HAMP:
-	    exact_soln = hamp_func;
-            break;
-	case COSINE:
-	    exact_soln = cosine_func;
-	    break;
-        case SQUARE:
-	    exact_soln = square_func;
-            break;
-        default:
-            (void) printf("Unknown equation type!\n");
-            clean_up(ERROR);
-        }
+    switch (init_type)
+    {
+    case WAVE:
+        exact_soln = wave_func;
+        break;
+    case HAMP:
+        exact_soln = hamp_func;
+        break;
+    case COSINE:
+        exact_soln = cosine_func;
+        break;
+    case SINE:
+        exact_soln = sine_func;
+        break;
+    case SUPERPOSITION_SINE:
+        exact_soln = superposition_sine_func;
+        break;
+    case SQUARE:
+        exact_soln = square_func;
+        break;
+    default:
+        (void) printf("Unknown equation type!\n");
+        clean_up(ERROR);
+    }
 }       /* end setSolutionType */
+
