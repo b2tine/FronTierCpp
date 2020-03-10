@@ -1,11 +1,11 @@
 
 Cannot find the string, using default
 
-matdata.cpp:267: error: calling clean_up
+matdata.cpp:268: error: calling clean_up
 
 
 		EXECUTION TIME DATA:
 
 		CPU TIME: 4 Seconds
-		SYS TIME: 1 Second
+		SYS TIME: 0 Seconds
 		MAX RSS = 4014784 Kilobytes
