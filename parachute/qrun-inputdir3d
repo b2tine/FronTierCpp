@@ -70,10 +70,10 @@ for infile in "$INDIR"/in-* ; do
     outdir="$PARENTOUTDIR/out-$infile"; mkdir -p $outdir
     qrunfile="$QRUNDIR/qrun-$infile"
     jobname="$EXENAME-$infile-np$NP"
-    eval cat $QRUNHEADER > $qrunfile
+    cat $QRUNHEADER > $qrunfile
     echo -e "\nmpirun -np $NP $EXE -d 3 -p $PX $PY $PZ -i $INDIR/$infile -o $outdir" >> $qrunfile
     chmod 700 $qrunfile
-    eval qsub -N $jobname -o $outdir/qsubout -e $outdir/qsuberror $qrunfile
+    qsub -N $jobname -o $outdir/qsubout -e $outdir/qsuberror $qrunfile
 done
 
 

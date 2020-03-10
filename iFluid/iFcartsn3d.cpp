@@ -85,6 +85,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.solveRungeKutta();
 
+        max_speed = 0.0;
         for (k = 0; k <= top_gmax[2]; k++)
         for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
@@ -146,15 +147,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 		    vel[l][index] = 0.0;
 		continue;
 	    }
-	    rho = field->rho[index];
+	    
+        rho = field->rho[index];
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-	    if (iFparams->with_porosity)
-                computeFieldPointGradJump(icoords,phi,grad_phi);
-            else
-   	        computeFieldPointGrad(icoords,array,grad_phi);
-	    speed = 0.0;
+        
+        computeFieldPointGradJump(icoords,phi,grad_phi);
+
+        speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
 	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
@@ -219,6 +220,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	}
 	m_dt = dt;
 
+    if (debugging("step_size"))
+    {
+        computeMaxSpeed();
+        printf("max speed entering solve(): %20.14f\n",max_speed);
+    }
+
 	start_clock("solve");
 	setDomain();
 
@@ -242,7 +249,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	start_clock("computeAdvection");
 	computeAdvection();
 	stop_clock("computeAdvection");
-	if (debugging("check_div"))
+	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
 	    checkVelocityDiv("After computeAdvection()");
@@ -310,6 +317,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
             setReferencePressure();
 
 	setAdvectionDt();
+
+    if (debugging("step_size"))
+    {
+        computeMaxSpeed();
+        printf("max speed leaving solve(): %20.14f\n",max_speed);
+    }
+
 	stop_clock("solve");
 }	/* end solve */
 
@@ -1142,6 +1156,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             index  = d_index(icoords,top_gmax,dim);
             source[index] = computeFieldPointDiv(icoords,vel);
             diff_coeff[index] = 1.0/field->rho[index];
+            div_U[index] = source[index];
+            source[index] /= accum_dt;
+
+            /*Compute pressure jump due to porosity*/
+            source[index] += computeFieldPointPressureJump(icoords,
+                             iFparams->porous_coeff[0],
+                             iFparams->porous_coeff[1]);
+            array[index] = phi[index];
+
 	    if (debugging("check_div"))
             {
                 for (l = 0; l < dim; ++l)
@@ -1153,8 +1176,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
                 }
             }
         }
-	FT_ParallelExchGridArrayBuffer(source,front,NULL);
+
+        FT_ParallelExchGridArrayBuffer(source,front,NULL);
         FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+    
+        /*
         for (k = 0; k <= top_gmax[2]; k++)
         for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
@@ -1162,16 +1188,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             index  = d_index3d(i,j,k,top_gmax);
             div_U[index] = source[index];
             source[index] /= accum_dt;
-	    /*Compute pressure jump due to porosity*/
             icoords[0] = i; 
 	    icoords[1] = j;
 	    icoords[2] = k;
             source[index] += computeFieldPointPressureJump(icoords,
                              iFparams->porous_coeff[0],
                              iFparams->porous_coeff[1]);
-            /*end of computing pressure jump*/
             array[index] = phi[index];
         }
+        */
 
         if(debugging("step_size"))
         {
@@ -1219,14 +1244,26 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         {
             checkVelocityDiv("Before computeProjection()");
         }
-        elliptic_solver.D = diff_coeff;
-        elliptic_solver.source = source;
-        elliptic_solver.soln = array;
-        elliptic_solver.set_solver_domain();
-        elliptic_solver.getStateVar = getStatePhi;
-        elliptic_solver.findStateAtCrossing = findStateAtCrossing;
+        
+    elliptic_solver.D = diff_coeff;
+    elliptic_solver.source = source;
+    elliptic_solver.soln = array;
+    elliptic_solver.set_solver_domain();
+    elliptic_solver.getStateVar = getStatePhi;
+    elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 	
+    paintAllGridPoint(TO_SOLVE);
+    setGlobalIndex();
+    setIndexMap();
+
+    elliptic_solver.ijk_to_I = ijk_to_I;
+    elliptic_solver.ilower = ilower;
+    elliptic_solver.iupper = iupper;
+    elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+    elliptic_solver.solve(array);
+
+    /*
 	if (iFparams->with_porosity)
 	{
 	    paintAllGridPoint(TO_SOLVE);
@@ -1238,7 +1275,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.skip_neumann_solver = skip_neumann_solver;
             elliptic_solver.solve(array);
 	}
-        else
+    else
 	{	
 	    int num_colors = drawColorMap();
             std::vector<int> ncell;
@@ -1259,15 +1296,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
                 elliptic_solver.solve(array);
                 paintSolvedGridPoint();
             }
-            /*
-            for (i = 1; i < num_colors; ++i)
-            {
-                if (ncell[i] > 10) continue;
-                setIsolatedSoln(i,array);
-            }
-            */
+            //for (i = 1; i < num_colors; ++i)
+            //{
+            //    if (ncell[i] > 10) continue;
+            //    setIsolatedSoln(i,array);
+            //}
 
 	}
+    */
+
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
 
 	min_phi =  HUGE;

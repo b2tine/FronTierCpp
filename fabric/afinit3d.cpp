@@ -2523,10 +2523,6 @@ static void initWingsPlaneEdge(
 
 extern void initIsolated3dCurves(Front* front)
 {
-    double pt_s[3];
-    double pt_e[3];
-    int hsb_type = STRING_HSBDRY; //default
-    AF_NODE_TYPE nd_type = STRING_NODE; //default
     FILE *infile = fopen(InName(front),"r");
     char string[200];
 
@@ -2544,9 +2540,10 @@ extern void initIsolated3dCurves(Front* front)
 	CursorAfterString(infile,"Enter the number of curves:");
 	fscanf(infile,"%d",&num_curves);
 	(void) printf("%d\n",num_curves);
-	for (int i = 0; i < num_curves; ++i)
+	
+    for (int i = 0; i < num_curves; ++i)
 	{
-	    nd_type = STRING_NODE;
+        double pt_s[3];
 	    sprintf(string, "Enter the start of curve %d:", i);
 	    CursorAfterString(infile, string);
 	    for (int j = 0; j < 3; ++j)
@@ -2555,6 +2552,8 @@ extern void initIsolated3dCurves(Front* front)
 		(void) printf("%f ",pt_s[j]);
 	    }
 	    (void) printf("\n");
+        
+        double pt_e[3];
 	    sprintf(string, "Enter the end of curve %d:", i);
 	    CursorAfterString(infile, string);
 	    for (int j = 0; j < 3; ++j)
@@ -2563,16 +2562,18 @@ extern void initIsolated3dCurves(Front* front)
 		(void) printf("%f ",pt_e[j]);
 	    }
 	    (void) printf("\n");
-	    sprintf(string, "Enter yes to fix the endpoints of curve %d:", i);
+	    
+        AF_NODE_TYPE nd_type = STRING_NODE;
+        sprintf(string, "Enter yes to fix the endpoints of curve %d:", i);
 	    if (CursorAfterStringOpt(infile, string))
 	    {
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
                 nd_type = PRESET_NODE;
-            else
-                nd_type = STRING_NODE;
 	    }
+
+        int hsb_type = STRING_HSBDRY;
 	    init3dCurves(front,pt_s,pt_e,hsb_type,nd_type);
 
 	    sprintf(string, "Enter yes to have parallel curves for curve %d:", i);
@@ -2586,12 +2587,7 @@ extern void initIsolated3dCurves(Front* front)
 	    else
             continue;
 
-	    double pt_new_s[3];
-        double pt_new_e[3];
         int local_num = 0;
-        int shift_dir[3] = {0,0,0}; //default
-        double shift = 0.0; //default
-
         if (CursorAfterStringOpt(infile,
                         "Enter the number of curves in each side:"))
         {
@@ -2599,6 +2595,7 @@ extern void initIsolated3dCurves(Front* front)
             (void) printf("%d\n",local_num);
         }
         
+        int shift_dir[3] = {0,0,0};
         if (CursorAfterStringOpt(infile,"Enter the shift direction:"))
 	    {
             for (int j = 0; j < 3; ++j)
@@ -2609,11 +2606,15 @@ extern void initIsolated3dCurves(Front* front)
 	    }
         (void) printf("\n");
         
+        double shift = 0.0;
         if (CursorAfterStringOpt(infile,"Enter unit shifted displacement:"))
         {
             fscanf(infile,"%lf",&shift);
             (void) printf("%f\n",shift);
         }
+        
+	    double pt_new_s[3];
+        double pt_new_e[3];
         
         for (int i = 0; i < local_num; ++i)
         {
@@ -2624,7 +2625,9 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] += shift*(i+1)*shift_dir[j];
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
+
             init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
             for (int j = 0; j < 3; ++j)
@@ -2632,6 +2635,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] -= shift*(i+1)*shift_dir[j];
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
+
             init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
         }
 	}
@@ -2644,17 +2648,16 @@ static void init3dCurves(
 	int hsb_type,
 	AF_NODE_TYPE nd_type)
 {
-        NODE      *string_nodes[2];
-        CURVE     *curve;
-        AF_NODE_EXTRA *extra;
-        INTERFACE *intfc = front->interf;
+        NODE* string_nodes[2];
         string_nodes[0] = make_node(Point(pt_s));
         string_nodes[1] = make_node(Point(pt_e));
-
-        curve = make_curve(0,0,string_nodes[0],string_nodes[1]);
+        
+        CURVE* curve = make_curve(0,0,string_nodes[0],string_nodes[1]);
         hsbdry_type(curve) = hsb_type;
+
         double spacing = separation(string_nodes[0]->posn,
                                     string_nodes[1]->posn,3);
+        
         double dir[3];
         for (int j = 0; j < 3; ++j)
         {
@@ -2662,23 +2665,30 @@ static void init3dCurves(
                       Coords(string_nodes[0]->posn)[j])/spacing;
         }
 
-        double *h = computational_grid(intfc)->h;
+        INTERFACE* intfc = front->interf;
+        double* h = computational_grid(intfc)->h;
         int nb = (int)(spacing/(0.5*h[0]));
         spacing /= (double)nb;
+        
         BOND* b = curve->first;
-        double coords[3];
         for (int j = 1; j < nb; ++j)
         {
+            double coords[3];
             for (int k = 0; k < 3; ++k)
-                coords[k] = Coords(string_nodes[0]->posn)[k] +
-                                   j*dir[k]*spacing;
+            {
+                coords[k] = Coords(string_nodes[0]->posn)[k]
+                            + j*dir[k]*spacing;
+            }
             insert_point_in_bond(Point(coords),b,curve);
-	    b->length0 = spacing;
+    
+            b->length0 = spacing;
             b = b->next;
         }
-	b->length0 = spacing;
+        b->length0 = spacing;
 
-        for (int i = 0; i < 2; ++i){
+        for (int i = 0; i < 2; ++i)
+        {
+            AF_NODE_EXTRA* extra;
             FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
             extra->af_node_type = nd_type;
             string_nodes[i]->extra = (POINTER)extra;
