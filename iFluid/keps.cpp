@@ -2216,15 +2216,26 @@ void KE_CARTESIAN::setSlipBoundary(
         for (j = 0; j < dim; ++j)
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
         	getStateVel[j],&v_tmp[j],&vel[j][index]);
-	/*nomral component equal to zero while tangential component is permitted*/
+	/*normal component equal to zero while tangential component is permitted*/
         for (j = 0; j < dim; ++j)
 	    v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
         for (j = 0; j < dim; ++j)
 	    v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
-		
-        for (j = 0; j < dim; ++j)
-	    v[j] /= mag_vector(v,dim);
-	vn = 0.0;
+	
+        double mag_v = mag_vector(v,dim);
+        if (mag_v > 0)
+        {
+            for (j = 0; j < dim; ++j)
+                v[j] /= mag_vector(v,dim);
+        }
+        else
+        {
+            for (j = 0; j < dim; ++j)
+                v[j] = 0.0;
+            
+        }
+
+	    vn = 0.0;
         for (j = 0; j < dim; ++j)
 	    vn += v[j] * v_tmp[j]; 	
         for (j = 0; j < dim; ++j)
