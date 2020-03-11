@@ -434,6 +434,8 @@ protected:
 	int    getComponent(double *coords);	
 	void   save(char *filename);
 	double computeFieldPointDiv(int*, double**);
+	double computeFieldPointDivSimple(int*, double**);
+	double computeFieldPointDivDouble(int*, double**);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);

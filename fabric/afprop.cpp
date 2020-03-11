@@ -110,9 +110,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: these "first" initialization procedures
-    //      should be seperate function called before
-    //      any propagation functions are called
 	if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
@@ -146,16 +143,18 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-                elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                                ELASTIC_BOUNDARY);
-                collectNodeExtra(fr,elastic_intfc,owner_id);
+            elastic_intfc =
+                FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            
+            collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
             elastic_intfc = fr->interf;
 	    
-            start_clock("set_data");
-	    if (myid == owner_id)
-            {
+        start_clock("set_data");
+        if (myid == owner_id)
+        {
+
 		if (client_size_old != NULL)
 		    FT_FreeThese(3, client_size_old, client_size_new, 
 					client_point_set_store);
@@ -198,12 +197,13 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    {
 	    	size = client_size;
 	    	if (point_set_store != NULL)
-		{
-		    FT_FreeThese(2,point_set_store,sv);
-		}
-	    	FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
+            {
+	    	    FT_FreeThese(2,point_set_store,sv);
+            }
+	
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
                                         sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
 	    }
 	    for (i = 0; i < max_point_gindex; ++i)
                 point_set[i] = NULL;
@@ -234,40 +234,39 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
     if (myid == owner_id)
 	{
-            if (!debugging("collision_off"))
-            {
-                // TODO: This function just identifies which triangles and edges
-                // have the potential to collide with each other based on their
-                // the material/boundary type alone. We already know this from
-                // initialization of the interface, so this should only be done
-                // once at start up.
-                setCollisionFreePoints3d(fr->interf);
+        if (!debugging("collision_off"))
+        {
+            setCollisionFreePoints3d(fr->interf);
 
-                collision_solver->assembleFromInterface(fr->interf,fr->dt);
-                collision_solver->recordOriginalPosition();
+            collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            collision_solver->recordOriginalPosition();
+        
+            collision_solver->setRestitutionCoef(1.0);
+            collision_solver->setVolumeDiff(af_params->vol_diff);
             
-                collision_solver->setFrictionConstant(af_params->mu_s);
-                //collision_solver->setFrictionConstant(0.4);
-            
-                collision_solver->setSpringConstant(af_params->ks); 
-                collision_solver->setPointMass(af_params->m_s);
+            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
 
-                collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setStringRoundingTolerance(af_params->string_eps);
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
 
-                //TODO: coefficient of restitution varies between materials,
-                //      and should be determined at runtime using the STATE
-                //      data of the colliding pairs. 
-                collision_solver->setRestitutionCoef(1.0);
-            
-                //TODO: remove this feature
-                //change in volume of root bounding box to refit tree
-                collision_solver->setVolumeDiff(af_params->vol_diff);
-                
-                collision_solver->gpoints = fr->gpoints;
-                collision_solver->gtris = fr->gtris;
-            }
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
-            get_point_set_from(&geom_set,point_set);
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
+            //TODO: Same for global bonds; need to add gbonds to Front class
+        }
+
+        //write to GLOBAL_POINT** point_set
+        get_point_set_from(&geom_set,point_set);
+
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
@@ -303,26 +302,28 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
                 generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
+	    /* Owner send and patch point_set_store from other processors */	
 	    for (i = 0; i < pp_numnodes(); i++)
-            {
-                if (i == myid) continue;
-                copy_to_client_point_set(point_set,
-                            client_point_set_store[i], client_size_new[i]);
-                pp_send(3,client_point_set_store[i],
-                            client_size_new[i]*sizeof(GLOBAL_POINT),i);
-            }
+        {
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                        client_point_set_store[i], client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                        client_size_new[i]*sizeof(GLOBAL_POINT),i);
+        }
 	}
 
-        if (myid != owner_id)
-        {
-            pp_recv(3,owner_id,point_set_store,
-            client_size*sizeof(GLOBAL_POINT));
-        }
-
-	/* Owner send and patch point_set_store from other processors */	
-	put_point_set_to(&geom_set,point_set);
-	/* Calculate the real force on load_node and rg_string_node */
-	setSpecialNodeForce(fr, geom_set.kl);
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,
+        client_size*sizeof(GLOBAL_POINT));
+    }
+	
+    //  write from point_set to geom_set
+    put_point_set_to(&geom_set,point_set);
+	
+    /* Calculate the real force on load_node and rg_string_node */
+	setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
@@ -335,7 +336,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             if (FT_Dimension() == 3)
                 collision_solver->resolveCollision();
         }
-        setSpecialNodeForce(fr, geom_set.kl);
+        
+        setSpecialNodeForce(fr,geom_set.kl);
 
         delete collision_solver;
     }
@@ -344,9 +346,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
 
-//TODO: Is this function as useless as it looks?
-//      This can just be done during initialization
-//      and cached in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;
@@ -360,7 +359,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 
     next_point(intfc,NULL,NULL,NULL);
-    while(next_point(intfc,&p,&hse,&hs))
+    while (next_point(intfc,&p,&hse,&hs))
     {
         STATE* sl = (STATE*)left_state(p);
         sl->is_fixed = false;
@@ -380,8 +379,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY and ELASTIC_STRING tags
-    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)
@@ -401,10 +398,9 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     {
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
-        AF_NODE_EXTRA* extra;
-
-        if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
-                (extra->af_node_type == PRESET_NODE))
+        
+        AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
+        if (extra && extra->af_node_type == PRESET_NODE)
         {
             sl->is_fixed = true;
         }

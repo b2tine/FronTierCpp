@@ -166,9 +166,9 @@ void Folder3d::doFolding() {
     
     //configure collision solver
     cd_solver->assembleFromInterface(m_intfc,getFrameStepSize());
-    cd_solver->setSpringConstant(getSpringParams().k);
-    cd_solver->setFrictionConstant(getSpringParams().lambda);
-    cd_solver->setPointMass(getSpringParams().m);
+    cd_solver->setFabricSpringConstant(getSpringParams().k);
+    cd_solver->setFabricFrictionConstant(getSpringParams().lambda);
+    cd_solver->setFabricPointMass(getSpringParams().m);
     cd_solver->setFabricThickness(getThickness());
   
     //configure spring solver

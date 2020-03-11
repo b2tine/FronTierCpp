@@ -243,23 +243,22 @@ extern void SMM_InitModules()
         if (!fbasic->RestartRun)
         {
             FILE *infile = fopen(InName(front),"r");
+            printf("\n");
+            CursorAfterString(infile,"Start parameters for modules");
+            printf("\n");
+            fclose(infile);
+
             if (FT_Dimension() == 3) // 2D initialization used old method
             {
-                printf("\n");
-                CursorAfterString(infile,"Start parameters for modules");
-                printf("\n");
                 initParachuteModules(front);
                 initPerturbation3d(front);
+                initIsolated3dCurves(front);
                 optimizeElasticMesh(front);
             }
             set_equilibrium_mesh(front);
             FT_SetGlobalIndex(front);
             static_mesh(front->interf) = YES;
-            fclose(infile);
         }
-        //TODO: Does static_mesh need to be set to YES for restart also?
-        //      Or does it inherit it from copying the interface?
-            //static_mesh(front->interf) = YES;
 }       /* end SMM_InitModules */
 
 extern void SMM_InitPropagator()
@@ -287,21 +286,29 @@ extern void SMM_InitSpringMassParams()
     CursorAfterString(infile,"Start parameters for spring-mass system");
     printf("\n");
 
+    af_params->num_opt_round = 0;
+    if (CursorAfterStringOpt(infile,
+                "Enter the number of fabric optimization rounds: "))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+
     af_params->n_sub = 1;
 	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
-        {
-	    fscanf(infile,"%d",&af_params->n_sub);
-	    (void) printf("%d\n",af_params->n_sub);
-        }
+    {
+    fscanf(infile,"%d",&af_params->n_sub);
+    (void) printf("%d\n",af_params->n_sub);
+    }
 
-        af_params->use_total_mass = NO;
-        if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->use_total_mass = YES;
-        }
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
+    }
 
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
@@ -317,6 +324,18 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%lf",&af_params->mu_s);
             (void) printf("%f\n",af_params->mu_s);
 
+            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_thickness);
+                (void) printf("%f\n",af_params->fabric_thickness);
+            }
+    
+            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_eps);
+                (void) printf("%f\n",af_params->fabric_eps);
+            }
+    
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -324,42 +343,72 @@ extern void SMM_InitSpringMassParams()
                 (void) printf("%f\n",af_params->total_canopy_mass);
             }
             else
-	    {
-	        CursorAfterString(infile,"Enter fabric point mass:");
+            {
+	            CursorAfterString(infile,"Enter fabric point mass:");
                 fscanf(infile,"%lf",&af_params->m_s);
                 (void) printf("%f\n",af_params->m_s);
-	    }
+	        }
 	}
 
 	if ((dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	    (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
-	    CursorAfterString(infile,"Enter string spring constant:");
-            fscanf(infile,"%lf",&af_params->kl);
-            (void) printf("%f\n",af_params->kl);
-            CursorAfterString(infile,"Enter string damping constant:");
-            fscanf(infile,"%lf",&af_params->lambda_l);
-            (void) printf("%f\n",af_params->lambda_l);
-            if (af_params->use_total_mass)
-            {
-                CursorAfterString(infile,"Enter string total mass:");
-                fscanf(infile,"%lf",&af_params->total_string_mass);
-                (void) printf("%f\n",af_params->total_string_mass);
-            }
-            else
-            {
-                CursorAfterString(infile,"Enter string point mass:");
-                fscanf(infile,"%lf",&af_params->m_l);
-                (void) printf("%f\n",af_params->m_l);
-            }
+        af_params->strings_present = true;
+
+        CursorAfterString(infile,"Enter string spring constant:");
+        fscanf(infile,"%lf",&af_params->kl);
+        (void) printf("%f\n",af_params->kl);
+        
+        CursorAfterString(infile,"Enter string damping constant:");
+        fscanf(infile,"%lf",&af_params->lambda_l);
+        (void) printf("%f\n",af_params->lambda_l);
+        
+        CursorAfterString(infile,"Enter string friction constant:");
+        fscanf(infile,"%lf",&af_params->mu_l);
+        (void) printf("%f\n",af_params->mu_l);
+
+        if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_thickness);
+            (void) printf("%f\n",af_params->string_thickness);
+        }
+        
+        if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_eps);
+            (void) printf("%f\n",af_params->string_eps);
+        }
+    
+        if (af_params->use_total_mass)
+        {
+            CursorAfterString(infile,"Enter string total mass:");
+            fscanf(infile,"%lf",&af_params->total_string_mass);
+            (void) printf("%f\n",af_params->total_string_mass);
+        }
+        else
+        {
+            CursorAfterString(infile,"Enter string point mass:");
+            fscanf(infile,"%lf",&af_params->m_l);
+            (void) printf("%f\n",af_params->m_l);
+        }
 	}
 
+    CursorAfterStringOpt(infile,"Enter strain limit:");
+    fscanf(infile,"%lf",&af_params->strain_limit);
+    (void) printf("%f\n",af_params->strain_limit);
+            
+    CursorAfterStringOpt(infile,"Enter strain rate limit:");
+    fscanf(infile,"%lf",&af_params->strainrate_limit);
+    (void) printf("%f\n",af_params->strainrate_limit);
+            
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    af_params->m_g = af_params->m_s;
-            if (af_params->attach_gores == YES)
+	    //af_params->m_g = af_params->m_s;
+        if (af_params->attach_gores == YES)
 	    {
-		CursorAfterString(infile,"Enter gore spring constant:");
+            af_params->gores_present = true;
+
+		    CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
         	(void) printf("%f\n",af_params->kg);
         	CursorAfterString(infile,"Enter gore damping constant:");
@@ -381,8 +430,10 @@ extern void SMM_InitSpringMassParams()
 	}
 
 
-        if (af_params->use_total_mass)
-            convert_to_point_mass(front,af_params);
+    if (af_params->use_total_mass)
+        convert_to_point_mass(front,af_params);
+
+    /*
 	if (af_params->is_parachute_system == NO)
 	{
 	    if (af_params->m_s == 0)
@@ -390,55 +441,34 @@ extern void SMM_InitSpringMassParams()
 	    if (af_params->m_l == 0)
 		af_params->m_l = af_params->m_s;
 	}
+    */
 
-        if (dim == 3)
-        {
-	    printf("canopy points count (fabric+gore)  = %d, "
-		    "string points count = %d\n",
-	    countSurfPoints(front->interf), 
-	    countStringPoints(front->interf,af_params->is_parachute_system));
-	    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
-		    "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
-		    af_params->m_g);
-        }
+    if (dim == 3)
+    {
+    printf("canopy points count (fabric+gore)  = %d, "
+        "string points count = %d\n",
+    countSurfPoints(front->interf), 
+    countStringPoints(front->interf,af_params->is_parachute_system));
+    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
+        "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
+        af_params->m_g);
+    }
 
+    //TODO: what does this do?
 	af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
 	{
             fscanf(infile,"%d",&af_params->num_smooth_layers);
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
-        af_params->payload = af_params->m_s;       // default
+
+    //TODO: move to init parachute module
+    af_params->payload = af_params->m_s;// default
 	if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
 	}
-
-    //TODO: this can be start of an InitAABBParams function
-    
-    if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
-    {
-        fscanf(infile,"%lf",&af_params->fabric_thickness);
-        (void) printf("%f\n",af_params->fabric_thickness);
-    }
-    if (CursorAfterStringOpt(infile,"Enter vol_diff coefficient:"))
-    {
-        fscanf(infile,"%lf",&af_params->vol_diff);
-        (void) printf("%f\n",af_params->vol_diff);
-    }
-
-    /*
-     * TODO: implement in order to test large range of parameters
-     *       for friction, vol_diff, rounding tolerance etc.
-     *
-        CursorAfterString(infile,"Enter preximity test tolerance:");
-        fscanf(infile,"%lf",&af_params->pre_tol);
-        (void) printf("%f\n",af_params->pre_tol);
-        CursorAfterString(infile,"Enter restitution coefficient:");
-        fscanf(infile,"%lf",&af_params->rest);
-        (void) printf("%f\n",af_params->rest);
-    */
 
 	fclose(infile);
 }	/* end SMM_InitSpringMassParams */
@@ -475,111 +505,114 @@ extern void SMM_Driver()
 
 extern void SMM_TestDriver()
 {
-        Front *front = SMM_GetFront();
-        F_BASIC_DATA *f_basic = SMM_GetBasicData();
+    Front *front = SMM_GetFront();
+    F_BASIC_DATA *f_basic = SMM_GetBasicData();
 	FILE *infile = fopen(InName(front),"r");
-        double CFL;
-        int  dim = front->rect_grid->dim;
+    double CFL;
+    int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        if (CursorAfterStringOpt(infile,"Turn off test run"))
-            return;
+    if (CursorAfterStringOpt(infile,"Turn off test run"))
+        return;
 
-        CFL = Time_step_factor(front);
+    CFL = Time_step_factor(front);
 
-	    SMM_Save();
-        SMM_Plot();
+    SMM_Save();
+    SMM_Plot();
 
-        if (!f_basic->RestartRun)
-        {
-	    FT_Propagate(front);
-            FT_RelinkGlobalIndex(front);
-	    FT_InteriorPropagate(front);
+    if (!f_basic->RestartRun)
+    {
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+            //FT_InteriorPropagate(front);
 
-            FT_SetOutputCounter(front);
-	    FT_SetTimeStep(front);
+        FT_SetOutputCounter(front);
+        FT_SetTimeStep(front);
+    }
+    else
+    {
+        setSpecialNodeForce(front,af_params->kl);
+        FT_SetOutputCounter(front);
+    }
 
-            FT_TimeControlFilter(front);
-        }
-        else
-        {
-            setSpecialNodeForce(front,af_params->kl);
-            FT_SetOutputCounter(front);
-	    FT_TimeControlFilter(front);
-        }
-        FT_PrintTimeStamp(front);
+    //TEMP: debug restart for triangle gindex
+    //printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
+    //printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
+
+    FT_TimeControlFilter(front);
+    FT_PrintTimeStamp(front);
 	
-        // For restart debugging 
+    // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    SMM_Save();
 	    return;
 	}
     
-        for (;;)
+    for (;;)
+    {
+        /* Propagating interface for time step dt */
+        reset_clock();
+        start_clock("timeStep");
+
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+        FT_InteriorPropagate(front);
+
+        if (debugging("trace"))
         {
-            /* Propagating interface for time step dt */
-            if(debugging("CLOCK"))
-                reset_clock();
-
-	    start_clock("timeStep");
-
-            FrontPreAdvance(front);
-            FT_Propagate(front);
-            FT_RelinkGlobalIndex(front);
-            FT_InteriorPropagate(front);
-
-            if (debugging("trace"))
-            {
-                (void) printf("After solve()\n");
-                (void) print_storage("at end of time step","trace");
-            }
-
-            // TMP
+            (void) printf("After Front Propagation\n");
             (void) print_storage("at end of time step","trace");
-
-	    FT_AddTimeStepToCounter(front);
-
-	    //Next time step determined by maximum speed of previous
-	    //step, assuming the propagation is hyperbolic and
-	    //is not dependent on second order derivatives of
-	    //the interface such as curvature, and etc.
-
-	    FT_SetTimeStep(front);
-            if (debugging("step_size"))
-            {
-                (void) printf("Time step from FrontHypTimeStep(): %f\n",
-                                    front->dt);
-            }
-            
-	    /* Output section */
-
-            if (FT_IsSaveTime(front))
-                SMM_Save();
-        
-            if (FT_IsDrawTime(front))
-                SMM_Plot();
-
-            if (FT_TimeLimitReached(front))
-	    {
-                FT_PrintTimeStamp(front);
-                if (!FT_IsSaveTime(front))
-                    SMM_Save();
-                if (!FT_IsDrawTime(front))
-                    SMM_Plot();
-	    	stop_clock("timeStep");
-                break;
-	    }
-
-	    /* Time and step control section */
-
-	    FT_TimeControlFilter(front);
-	    print_storage("after time loop","trace");
-
-	    FT_PrintTimeStamp(front);
-            fflush(stdout);
-	    stop_clock("timeStep");
         }
+
+        /* Time and step control section */
+
+        FT_AddTimeStepToCounter(front);
+
+        //Next time step determined by maximum speed of previous
+        //step, assuming the propagation is hyperbolic and
+        //is not dependent on second order derivatives of
+        //the interface such as curvature, and etc.
+
+        FT_SetTimeStep(front);
+        
+        if (debugging("step_size"))
+        {
+            (void) printf("Time step from FrontHypTimeStep(): %f\n",
+                                front->dt);
+        }
+            
+        /* Output section */
+
+        //print_airfoil_stat(front,OutName(front));
+        //print_strings(front,OutName(front));
+
+        if (FT_IsSaveTime(front))
+            SMM_Save();
+    
+        if (FT_IsDrawTime(front))
+            SMM_Plot();
+
+        if (FT_TimeLimitReached(front))
+        {
+            FT_PrintTimeStamp(front);
+            if (!FT_IsSaveTime(front))
+                SMM_Save();
+            if (!FT_IsDrawTime(front))
+                SMM_Plot();
+            stop_clock("timeStep");
+            break;
+        }
+
+        FT_TimeControlFilter(front);
+        //print_storage("after time loop","trace");
+        FT_PrintTimeStamp(front);
+        
+        stop_clock("timeStep");
+        fflush(stdout);
+    }
     
         FT_FreeMainIntfc(front);
 }       /* end fabric_driver */

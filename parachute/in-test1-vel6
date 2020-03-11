@@ -10,8 +10,8 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 4.0
-Max step: 2000
-Print interval: 0.5
+Max step: 1000
+Print interval: 0.05
 Movie frame interval: 0.05
 CFL factor: 0.5
 Redistribution interval: 10000000
@@ -26,7 +26,7 @@ Projection type can be
 **************Fluid parameters***************
 Enter projection type: SIMPLE
 Enter advection order: 4
-Enter density and viscosity of the fluid: 1.2 0.000628
+Enter density and viscosity of the fluid: 1.29 0.000628
 Enter gravity: 0 0 -9.8
 
 ************Rigid body parameters*************
@@ -63,7 +63,7 @@ Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: no
 Enter yes to use porosity: yes
 Enter viscous parameter: 30.0
-Enter inertial parameter: 5.0
+Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 100
@@ -71,16 +71,26 @@ Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
 Enter fabric spring constant: 5000
-Enter fabric friction constant: 0.02
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
 Enter string spring constant: 50000
-Enter string friction constant: 0.001
-Enter string point mass: 0.002
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
+
+Enter strain limit: 0.3
+Enter strain rate limit: 0.1
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTAT_STATE
-Enter velocity: 0 0 3
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 6.0
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -93,7 +103,12 @@ Type y to make vector velocity field movie: y
 Type y to plot surface stress: n
 
 ************Debugging options*****************
-Enter yes for debugging: no
+Enter yes for debugging: yes
+Enter the debugging string: max_speed
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size

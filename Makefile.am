@@ -43,6 +43,7 @@ endif
 
 SUBDIRS = lib \
 		  weno \
+		  timeSeries \
 		  cFluid \
 		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \

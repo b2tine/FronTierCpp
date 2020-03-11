@@ -52,7 +52,141 @@ static boolean find_crx_between_box_line(double*,double*,double*,double*,double,
 
 static void print_rgb3d(Front *,char *);
 static void print_drag3d(Front *,char *);
-static void print_strings(Front *,char *);
+//static void print_strings(Front *,char *);
+
+extern void second_order_elastic_curve_propagate(
+	Front           *fr,
+        Front           *newfr,
+        INTERFACE       *intfc,
+        CURVE           *oldc,
+        CURVE           *newc,
+        double           fr_dt)
+{
+	static int size = 0;
+	static double **x_old,**x_new,**v_old,**v_new,**f_old,**f_new;
+	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+	int i,j,num_pts,count;
+	int n,n_sub = af_params->n_sub;
+	double dt_tol,dt = fr_dt/(double)n_sub;
+	NODE *ns,*ne;
+	int is,ie;
+        double *g = af_params->gravity;
+        double mass, payload = af_params->payload;
+        ELASTIC_SET geom_set;
+        STRING_NODE_TYPE start_type = af_params->start_type;
+        STRING_NODE_TYPE end_type = af_params->end_type;
+	void (*compute_node_accel)(ELASTIC_SET*,NODE*,double**,
+				double**,double **,int*);
+	void (*compute_curve_accel)(ELASTIC_SET*,CURVE*,double**,
+				double**,double **,int*);
+
+	switch (af_params->spring_model)
+	{
+	case MODEL1:
+	    compute_curve_accel = compute_curve_accel1;
+	    compute_node_accel = compute_node_accel1;
+	    break;
+	case MODEL2:
+	    compute_curve_accel = compute_curve_accel2;
+	    compute_node_accel = compute_node_accel2;
+	    break;
+	case MODEL3:
+	    compute_curve_accel = compute_curve_accel3;
+	    compute_node_accel = compute_node_accel3;
+	    break;
+	default:
+	    (void) printf("Model function not implemented yet!\n");
+	    clean_up(ERROR);
+	}
+
+
+	if (wave_type(newc) != ELASTIC_BOUNDARY &&
+	    wave_type(newc) != ELASTIC_STRING)
+	    return;
+	if (debugging("trace"))
+	    (void) printf("Entering "
+			"second_order_elastic_curve_propagate()\n");
+	dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
+	if (dt > dt_tol)
+        {
+            n_sub = (int)(fr_dt/dt_tol);
+            dt = fr_dt/(double)n_sub;
+        }
+
+	num_pts = I_NumOfCurvePoints(oldc);
+	if (size < num_pts)
+	{
+	    size = num_pts;
+	    if (x_old != NULL)
+		free_these(6,x_old,x_new,v_old,v_new,f_old,f_new);
+            FT_MatrixMemoryAlloc((POINTER*)&x_old,size,2,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&x_new,size,2,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_old,size,2,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_new,size,2,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&f_old,size,2,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&f_new,size,2,sizeof(double));
+	}
+
+	geom_set.front = fr;
+        geom_set.kl = af_params->kl;
+        geom_set.lambda_l = af_params->lambda_l;
+        geom_set.m_l = mass = af_params->m_l;
+        geom_set.dt = dt;
+
+	ns = newc->start;	ne = newc->end;
+	is = 0;                 ie = size - 1;
+
+	count = 0;
+        compute_node_accel(&geom_set,ns,f_old,x_old,v_old,&count);
+        compute_curve_accel(&geom_set,newc,f_old,x_old,v_old,&count);
+        compute_node_accel(&geom_set,ne,f_old,x_old,v_old,&count);
+
+	for (n = 0; n < n_sub; ++n)
+	{
+	    adjust_for_node_type(ns,is,start_type,f_old,v_old,mass,payload,g);
+            adjust_for_node_type(ne,ie,end_type,f_old,v_old,mass,payload,g);
+	    for (i = 0; i < size; ++i)
+	    for (j = 0; j < 2; ++j)
+	    {
+	    	x_new[i][j] = x_old[i][j] + v_old[i][j]*dt;
+	    	v_new[i][j] = v_old[i][j] + f_old[i][j]*dt;
+	    }
+
+	    count = 0;
+	    assign_node_field(ns,x_new,v_new,&count);
+	    assign_curve_field(newc,x_new,v_new,&count);
+	    assign_node_field(ne,x_new,v_new,&count);
+	    count = 0;
+            compute_node_accel(&geom_set,ns,f_new,x_new,v_new,&count);
+            compute_curve_accel(&geom_set,newc,f_new,x_new,v_new,&count);
+            compute_node_accel(&geom_set,ne,f_new,x_new,v_new,&count);
+            adjust_for_node_type(ns,is,start_type,f_new,v_new,mass,payload,g);
+            adjust_for_node_type(ne,ie,end_type,f_new,v_new,mass,payload,g);
+
+	    for (i = 0; i < size; ++i)
+	    for (j = 0; j < 2; ++j)
+	    {
+	    	x_new[i][j] = x_old[i][j] + 0.5*dt*(v_old[i][j] + v_new[i][j]);
+	    	v_new[i][j] = v_old[i][j] + 0.5*dt*(f_old[i][j] + f_new[i][j]);
+	    }
+	    count = 0;
+	    propagate_curve(&geom_set,newc,x_new);
+	    assign_node_field(ns,x_new,v_new,&count);
+	    assign_curve_field(newc,x_new,v_new,&count);
+	    assign_node_field(ne,x_new,v_new,&count);
+	    if (n != n_sub-1)
+	    {
+		count = 0;
+                compute_node_accel(&geom_set,ns,f_old,x_old,v_old,&count);
+                compute_curve_accel(&geom_set,newc,f_old,x_old,v_old,&count);
+                compute_node_accel(&geom_set,ne,f_old,x_old,v_old,&count);
+	    }
+	}
+	
+	if (debugging("trace"))
+	    (void) printf("Leaving "
+			"second_order_elastic_curve_propagate()\n");
+}	/* end second_order_elastic_curve_propagate */
 
 extern void set_equilibrium_mesh(
 	Front *front)
@@ -159,17 +293,26 @@ static void set_equilibrium_mesh3d(
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY ||
+            hsbdry_type(*c) != GORE_HSBDRY) continue;
+
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
-		set_bond_length(b,3);
-		b->length0 = bond_length(b);
-		if (hsbdry_type(*c) == GORE_HSBDRY)
-		    b->length0 *= gore_len_fac;
-		for (i = 0; i < 3; ++i)
-		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])/
-					b->length0;	
+		    set_bond_length(b,3);
+		    b->length0 = bond_length(b);
+		
+            if (hsbdry_type(*c) == GORE_HSBDRY)
+		        b->length0 *= gore_len_fac;
+		
+            for (i = 0; i < 3; ++i)
+            {
+                b->dir0[i] =
+                    (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
+            }
 	    }
+	    never_redistribute(Hyper_surf(*c)) = YES;
 	}
+
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
@@ -201,10 +344,12 @@ static void set_equilibrium_mesh3d(
 	    }
 	    never_redistribute(Hyper_surf(surf)) = YES;
 	}
+    /*  
 	printf("Original length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -325,10 +470,12 @@ static void set_equilibrium_mesh3d(
 		}
 	    }
 	}
+    /*
 	printf("Perturbed length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 }	/* end set_equilibrium_mesh3d */
 
 
@@ -2167,7 +2314,7 @@ static void print_drag3d(
         return;
 }       /* end print_drag3d */
 
-static void print_strings(
+extern void print_strings(
 	Front *front,
 	char *out_name)
 {
