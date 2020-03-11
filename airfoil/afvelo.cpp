@@ -319,9 +319,27 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter fabric spring constant:");
             fscanf(infile,"%lf",&af_params->ks);
             (void) printf("%f\n",af_params->ks);
-            CursorAfterString(infile,"Enter fabric friction constant:");
+
+            CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
+
+            CursorAfterString(infile,"Enter fabric friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_s);
+            (void) printf("%f\n",af_params->mu_s);
+
+            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_thickness);
+                (void) printf("%f\n",af_params->fabric_thickness);
+            }
+
+            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_eps);
+                (void) printf("%f\n",af_params->fabric_eps);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -342,9 +360,27 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter string spring constant:");
             fscanf(infile,"%lf",&af_params->kl);
             (void) printf("%f\n",af_params->kl);
-            CursorAfterString(infile,"Enter string friction constant:");
+            
+            CursorAfterString(infile,"Enter string damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_l);
             (void) printf("%f\n",af_params->lambda_l);
+            
+            CursorAfterString(infile,"Enter string friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_l);
+            (void) printf("%f\n",af_params->mu_l);
+            
+            if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_thickness);
+                (void) printf("%f\n",af_params->string_thickness);
+            }
+
+            if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_eps);
+                (void) printf("%f\n",af_params->string_eps);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter string total mass:");
@@ -358,6 +394,14 @@ void setMotionParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 	}
+	    
+    CursorAfterStringOpt(infile,"Enter strain limit:");
+    fscanf(infile,"%lf",&af_params->strain_limit);
+    (void) printf("%f\n",af_params->strain_limit);
+            
+    CursorAfterStringOpt(infile,"Enter strain rate limit:");
+    fscanf(infile,"%lf",&af_params->strainrate_limit);
+    (void) printf("%f\n",af_params->strainrate_limit);
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{

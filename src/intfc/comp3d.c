@@ -2972,13 +2972,22 @@ LOCAL void blocks_on_tri(
 	    for(i=0; i<3; ++i)
 		i_diff[i] = 0;
 
-	if (i_diff[0] > 6)
+    //TODO: why just check first element of i_diff?
+    if (i_diff[0] > 6)
 	{
 	    printf("In blocks_on_tri():\n");
 	    print_int_vector("i_diff = ", i_diff, 3, "\n");
 	    print_tri_global_index(t);
 	    print_tri_coords(t);
 	    clean_up(ERROR);
+        
+        //TEMP: debug
+        /*
+            char dname[100];
+            sprintf(dname,"bad_i_diff-%ld",Gindex(t));
+            gview_plot_tri_list(dname,&t,1);
+            clean_up(ERROR);
+        */
 	}
 
 	/*check if the array tri_blocks is out of range. */

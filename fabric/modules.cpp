@@ -128,6 +128,7 @@ extern void initParachuteModules(Front *front)
                     complex_set = YES;
             }
         }
+
 	fclose(infile);
 
 	if (num_canopy == 1 && !complex_set)
@@ -178,8 +179,8 @@ static void initSingleModule(
 	CgalCanopySurface(infile,front,&surf);
 	fclose(infile);
 
-        if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
-	    InstallNewLoadNode(front,1);
+    if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
+        InstallNewLoadNode(front,1);
 }	/* end initSingleModule */
 
 static void initMultiModule(

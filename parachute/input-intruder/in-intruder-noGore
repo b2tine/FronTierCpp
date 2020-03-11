@@ -26,7 +26,7 @@ Projection type can be
 **************Fluid parameters***************
 Enter projection type: SIMPLE
 Enter advection order: 4
-Enter density and viscosity of the fluid: 1.2 0.000628
+Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 -9.8
 Enter fluid ambient velocity: 0 0 4
 
@@ -50,18 +50,29 @@ Enter initial position of load: 10 4.0 13
 *************Airfoil parameters*************
 Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: no
+Enter yes to use porosity: yes
+Enter viscous parameter: 604.333
+Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 100
 Enter interior sub step number: 10
-Enter area density of canopy: 10.0
+Enter area density of canopy: 5.0
 
 Enter fabric spring constant: 5000
-Enter fabric friction constant: 0.02 
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
 Enter string spring constant: 50000
-Enter string friction constant: 0.001
-Enter string point mass: 0.002
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
+
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension

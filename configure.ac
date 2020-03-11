@@ -458,6 +458,7 @@ AC_CONFIG_FILES([Makefile
                  src/front/objs/Makefile
                  src/front/tests/Makefile
                  weno/Makefile
+                 timeSeries/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
                  cFluid/tests/Makefile

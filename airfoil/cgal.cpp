@@ -953,6 +953,239 @@ static void CgalEllipse(
 	setMonoCompBdryZeroLength(*surf);
 }	/* end CgalEllipse */
 
+/* This is a special function for the T11 parachute only */
+static void checkAndSeparateOverlappingPoints(SURFACE *surf)
+{
+        CURVE **c;
+        BOND *b1,*b2;
+        POINT *p1,*p2;
+        TRI *tri1,*tri2;
+        BOND_TRI **btris;
+        double tol = grid_tolerance(computational_grid(surf->interface));
+        double n1[MAXD],n2[MAXD];
+
+        surf_pos_curve_loop(surf,c)
+        {
+            if (!is_closed_curve(*c)) continue;
+            curve_bond_loop(*c,b1)
+            {
+                curve_bond_loop(*c,b2)
+                {
+                    if (b1 == b2) continue;
+                    p1 = b1->start;     p2 = b2->start;
+                    if (p1 == p2) continue;
+                    if (separation(p1,p2,3) < tol)
+                    {
+                        for (btris = Btris(b1); btris && *btris; btris++)
+                        {
+                            tri1 = (*btris)->tri;
+                            if (tri1->surf = surf) break;
+                        }
+                        for (btris = Btris(b2); btris && *btris; btris++)
+                        {
+                            tri2 = (*btris)->tri;
+                            if (tri2->surf = surf) break;
+                        }
+                        set_normal_of_tri(tri1);
+                        set_normal_of_tri(tri2);
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            n1[j] = Tri_normal(tri1)[j]/sqrt(sqr_norm(tri1));
+                            n2[j] = Tri_normal(tri2)[j]/sqrt(sqr_norm(tri2));
+                        }
+                        for (int i = 0; i < 3; ++i)
+                        {
+                            Coords(p1)[i] += 0.5*tol*n1[i];
+                            Coords(p2)[i] += 0.5*tol*n2[i];
+                        }
+                    }
+                }
+            }
+        }
+        surf_neg_curve_loop(surf,c)
+        {
+            if (!is_closed_curve(*c)) continue;
+            curve_bond_loop(*c,b1)
+            {
+                curve_bond_loop(*c,b2)
+                {
+                    if (b1 == b2) continue;
+                    p1 = b1->start;     p2 = b2->start;
+                    if (p1 == p2) continue;
+                    if (separation(p1,p2,3) < tol)
+                    {
+                        for (btris = Btris(b1); btris && *btris; btris++)
+                        {
+                            tri1 = (*btris)->tri;
+                            if (tri1->surf = surf) break;
+                        }
+                        for (btris = Btris(b2); btris && *btris; btris++)
+                        {
+                            tri2 = (*btris)->tri;
+                            if (tri2->surf = surf) break;
+                        }
+                        set_normal_of_tri(tri1);
+                        set_normal_of_tri(tri2);
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            n1[j] = Tri_normal(tri1)[j]/sqrt(sqr_norm(tri1));
+                            n2[j] = Tri_normal(tri2)[j]/sqrt(sqr_norm(tri2));
+                        }
+                        for (int i = 0; i < 3; ++i)
+                        {
+                            Coords(p1)[i] += 0.5*tol*n1[i];
+                            Coords(p2)[i] += 0.5*tol*n2[i];
+                        }
+                    }
+                }
+            }
+        }
+}       /* end checkAndSeparateOverlappingPoints */
+
+static void CgalCross(
+	FILE *infile,
+	Front *front,
+	SURFACE **surf)
+{
+	double height;
+	double L[2][2],U[2][2];
+	char gore_bool[10];
+	int num_strings;
+	int num_out_vtx;
+	int num_gore_oneside;
+	POINT **string_node_pts;
+	double *out_nodes_coords,*out_vtx_coords;
+	CDT cdt;
+	CDT::Finite_faces_iterator fit;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	CURVE *cbdry;
+
+	Vertex_handle *v_out;
+	double width;
+	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+	int i,j;
+
+        CursorAfterString(infile,"Enter the height of the plane:");
+        fscanf(infile,"%lf",&height);
+        (void) printf("%f\n",height);
+	(void) printf("Input the two crossing rectangles\n");
+        CursorAfterString(infile,"Enter lower bounds of first rectangle:");
+        fscanf(infile,"%lf %lf",&L[0][0],&L[0][1]);
+        (void) printf("%f %f\n",L[0][0],L[0][1]);
+        CursorAfterString(infile,"Enter upper bounds of first rectangle:");
+        fscanf(infile,"%lf %lf",&U[0][0],&U[0][1]);
+        (void) printf("%f %f\n",U[0][0],U[0][1]);
+        CursorAfterString(infile,"Enter lower bounds of second rectangle:");
+        fscanf(infile,"%lf %lf",&L[1][0],&L[1][1]);
+        (void) printf("%f %f\n",L[1][0],L[1][1]);
+        CursorAfterString(infile,"Enter upper bounds of second rectangle:");
+        fscanf(infile,"%lf %lf",&U[1][0],&U[1][1]);
+        (void) printf("%f %f\n",U[1][0],U[1][1]);
+	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
+	fscanf(infile,"%s",gore_bool);
+        (void) printf("%s\n",gore_bool);		
+	if (gore_bool[0] == 'y' || gore_bool[0] == 'Y')
+	    af_params->attach_gores = YES;
+	else
+	    af_params->attach_gores = NO;
+	CursorAfterStringOpt(infile,"Enter number of chords on one side:");
+        fscanf(infile,"%d",&num_gore_oneside);
+        (void) printf("%d\n",num_gore_oneside);
+
+
+	num_strings = 4*num_gore_oneside;
+	num_out_vtx = num_strings + 4;
+	out_nodes_coords = new double[num_strings*2];
+	out_vtx_coords = new double[num_out_vtx*2];
+	v_out = new Vertex_handle[num_out_vtx];
+	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,
+				sizeof(POINT*));
+
+	width=(U[0][0]-L[0][0])/(num_gore_oneside-1);
+
+	for (i=0; i<num_gore_oneside; i++)
+	{
+	    out_nodes_coords[i]=L[0][0]+i*width;
+	    out_nodes_coords[i+num_strings]=L[0][1];
+	    out_nodes_coords[i+num_gore_oneside]=U[1][0];
+	    out_nodes_coords[i+num_gore_oneside+num_strings]=U[1][1]-
+			(num_gore_oneside-i-1)*width;
+	    out_nodes_coords[i+2*num_gore_oneside]=U[0][0]-i*width;
+            out_nodes_coords[i+2*num_gore_oneside+num_strings]=U[0][1];
+	    out_nodes_coords[i+3*num_gore_oneside]=L[1][0];
+            out_nodes_coords[i+3*num_gore_oneside+num_strings]=L[1][1]+
+			(num_gore_oneside-i-1)*width;
+	}
+	for (i=0; i<4; i++)
+	{
+	    for(j=0; j<num_gore_oneside; j++)
+	    {
+		out_vtx_coords[i*(num_gore_oneside+1)+j]=
+			out_nodes_coords[i*num_gore_oneside+j];	
+		out_vtx_coords[i*(num_gore_oneside+1)+j+num_out_vtx]=
+		    out_nodes_coords[i*num_gore_oneside+j+num_strings];
+	    }
+	}
+	out_vtx_coords[num_gore_oneside]=U[0][0];
+	out_vtx_coords[num_gore_oneside+num_out_vtx]=L[1][1];
+	out_vtx_coords[2*num_gore_oneside+1]=U[0][0];
+        out_vtx_coords[2*num_gore_oneside+1+num_out_vtx]=U[1][1];
+	out_vtx_coords[3*num_gore_oneside+2]=L[0][0];
+        out_vtx_coords[3*num_gore_oneside+2+num_out_vtx]=U[1][1];
+	out_vtx_coords[4*num_gore_oneside+3]=L[0][0];
+        out_vtx_coords[4*num_gore_oneside+3+num_out_vtx]=L[1][1];
+
+	for (i=0; i<num_out_vtx; i++)
+	    v_out[i]=cdt.insert(Cgal_Point(out_vtx_coords[i],
+			out_vtx_coords[i+num_out_vtx]));
+	for (i=0; i<num_out_vtx-1; i++)
+	    cdt.insert_constraint(v_out[i],v_out[i+1]);
+	cdt.insert_constraint(v_out[0],v_out[num_out_vtx-1]);
+
+	CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, cri_dx)); 
+
+	int *flag;
+	flag = new int[cdt.number_of_faces()];
+	double tri_center[2];
+
+	i=0;
+	for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); 
+			++fit)
+        {
+            tri_center[0] = (fit->vertex(0)->point()[0] + 
+			fit->vertex(1)->point()[0] 
+		+ fit->vertex(2)->point()[0]) / 3.0;
+            tri_center[1] = (fit->vertex(0)->point()[1] + 
+			fit->vertex(1)->point()[1] 
+		+ fit->vertex(2)->point()[1]) / 3.0;
+
+            if (ptinbox(tri_center, L[0], U[0]) || ptinbox(tri_center, L[1], 
+			U[1]))
+                flag[i] = 1;
+            else
+                flag[i] = 0;
+            i++;
+        }
+
+	GenerateCgalSurf(front,surf,&cdt,flag,height);
+        wave_type(*surf) = ELASTIC_BOUNDARY;
+        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+	setMonoCompBdryZeroLength(*surf);
+	findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
+				num_strings,&cbdry);
+	foldSurface(infile,*surf);
+	if (sewSurface(infile,*surf))
+	{
+	    resetStringNodePoints(*surf,string_node_pts,&num_strings,&cbdry);
+	}
+	setSurfZeroMesh(*surf);
+	setMonoCompBdryZeroLength(*surf);
+        checkAndSeparateOverlappingPoints(*surf);
+	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
+	FT_FreeThese(1,string_node_pts);
+}	/* end CgalCross */
+
+/*
 static void CgalCross(
 	FILE *infile,
 	Front *front,
@@ -1093,7 +1326,7 @@ static void CgalCross(
 	setMonoCompBdryZeroLength(*surf);
 	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	FT_FreeThese(1,string_node_pts);
-}	/* end CgalCross */
+}*/	/* end CgalCross */
 
 static void foldSurface(
 	FILE *infile,
@@ -2149,7 +2382,6 @@ extern void InstallNewLoadNode(
 	int num_canopy)
 {
 	INTERFACE *intfc = front->interf;
-	FILE *infile = fopen(InName(front),"r");
 	NODE **n, *sec_nload, *nload;
 	CURVE **string_curves;
 	AF_NODE_EXTRA *extra;
@@ -2159,8 +2391,10 @@ extern void InstallNewLoadNode(
 	int i,j,k,nb;
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	int string_curve_onenode = 10; // test
+	
+    int string_curve_onenode = 10; // test
 
+	FILE *infile = fopen(InName(front),"r");
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))
 	{
 	    fscanf(infile,"%lf %lf %lf",newload,newload+1,newload+2);

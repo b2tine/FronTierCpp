@@ -105,7 +105,7 @@ EXPORT void print_execution_times(void)
 EXPORT void reset_clock()
 {
     top = 0;
-    for( int i = 0; i < MAX_TIMES; ++i )
+    for (int i = 0; i < MAX_TIMES; ++i)
         cputime[i] = 0.0;
 }
 
