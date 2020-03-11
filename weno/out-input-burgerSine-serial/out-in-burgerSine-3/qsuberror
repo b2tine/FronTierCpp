@@ -6,6 +6,6 @@ matdata.cpp:268: error: calling clean_up
 
 		EXECUTION TIME DATA:
 
-		CPU TIME: 4 Seconds
-		SYS TIME: 0 Seconds
-		MAX RSS = 4014784 Kilobytes
+		CPU TIME: 23 Seconds
+		SYS TIME: 1 Second
+		MAX RSS = 8017024 Kilobytes

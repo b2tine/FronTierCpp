@@ -1,7 +1,7 @@
 ****************Called by FrontReadRegularDomainInfo*****
 
 Domain limit in 0-th dimension: -1.0 1.0
-Computational grid: 512
+Computational grid: 1024
 Lower boundary in 0-th dimension: PERIODIC
 Upper boundary in 0-th dimension: PERIODIC
 
@@ -9,8 +9,8 @@ Upper boundary in 0-th dimension: PERIODIC
 
 Max time: 1.0
 Max step: 1000000
-Print interval: 0.0025
-Movie frame interval: 0.0025
+Print interval: 0.00125
+Movie frame interval: 0.00125
 CFL factor: 0.5
 Redistribution interval: 0
 
