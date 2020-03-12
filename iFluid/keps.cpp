@@ -2238,24 +2238,25 @@ void KE_CARTESIAN::setSlipBoundary(
     
     boolean status;
     status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
-        /*
     if (status == NO)
     {
+        return;
+        /*
         printf("no crossing found\n");
         printf("\tcoords: %f %f %f\n",coords[0],coords[1],coords[2]);
         clean_up(ERROR);
-    }
         */
+    }
 
+    /*
 checkpoint("1");
 printf("nor: %f %f %f\n",nor[0],nor[1],nor[2]);
 printf("coords: %f %f %f\n",coords[0],coords[1],coords[2]);
 printf("dir: %s\n",dir2String(dir).c_str());
-/*
 printf("coords_ref: %f %f %f\n",coords_ref[0],coords_ref[1],coords_ref[2]);
 printf("crx_coords: %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
 printf("v: %f %f %f\n",v[0],v[1],v[2]);
-*/
+    */
 
     for (j = 0; j < dim; ++j)
         coords_ref[j] = top_L[j] + ic[j]*top_h[j];
