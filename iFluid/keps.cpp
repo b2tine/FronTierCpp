@@ -1271,7 +1271,7 @@ void KE_CARTESIAN::solve(double dt)
 	if (debugging("trace")) printf("Passing computeMuTurb()\n");
 
 	//setAdvectionDt();
-	if (debugging("trace")) printf("Passing setAdvectionDt()\n");
+	//if (debugging("trace")) printf("Passing setAdvectionDt()\n");
 
 	stop_clock("solve");
 	if (debugging("trace")) printf("Leaving solve()\n");
@@ -2167,6 +2167,35 @@ void KE_CARTESIAN::setTKEatWall(
 	*K_nb = K[index];
 }
 
+//TODO: make a global utility function
+static std::string dir2String(GRID_DIRECTION dir)
+{
+    switch (dir)
+    {
+        case EAST:
+           return "EAST";
+           break;
+        case WEST:
+           return "WEST";
+           break;
+        case NORTH:
+           return "NORTH";
+           break;
+        case SOUTH:
+           return "SOUTH";
+           break;
+        case UPPER:
+           return "UPPER";
+           break;
+        case LOWER:
+           return "LOWER";
+           break;
+        default:
+           printf("not a known GRID_DIRECTION\n");
+           clean_up(ERROR);
+    }
+}
+
 void KE_CARTESIAN::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -2178,68 +2207,119 @@ void KE_CARTESIAN::setSlipBoundary(
 	double* v_tmp)
 {
 	int             i,j,index;
-        int             ic[MAXD];
-        double          coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
-        double          nor[MAXD],vn,v[MAXD];
-        GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-        GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
-        GRID_DIRECTION  dir;
-        double  vel_ref[MAXD];
+    int             ic[MAXD];
+    double          coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+
+    /*
+    double nor[MAXD] = {0.0};
+    double v[MAXD] = {0.0};
+    double vn = 0.0;
+    */
+    double nor[MAXD];
+    double v[MAXD];
+    double vn;
+
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    GRID_DIRECTION  dir;
+    double  vel_ref[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	for (i = 0; i < dim; ++i)
-        {
-            vel_ref[i] = (*getStateVel[i])(state);
-            coords[i] = top_L[i] + icoords[i]*top_h[i];
-            ic[i] = icoords[i];
-        }
-	dir = (nb == 0) ? ldir[idir] : rdir[idir];
-        FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
-	ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-        for (j = 0; j < dim; ++j)
-            coords_ref[j] = top_L[j] + ic[j]*top_h[j];
-
-        /* Reflect ghost point through intfc-mirror at crossing */
-        coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
-        vn = 0.0;
-        for (j = 0; j < dim; ++j)
-        {
-            v[j] = coords_ref[j] - crx_coords[j];
-            vn += v[j]*nor[j];
-        }
-        for (j = 0; j < dim; ++j)
-            v[j] = 2.0*vn*nor[j] - v[j];
-        for (j = 0; j < dim; ++j)
-            coords_ref[j] = crx_coords[j] + v[j];
-
-        /* Interpolate the state at the reflected point */
-        for (j = 0; j < dim; ++j)
-            FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
-        	getStateVel[j],&v_tmp[j],&vel[j][index]);
-	/*normal component equal to zero while tangential component is permitted*/
-        for (j = 0; j < dim; ++j)
-	    v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
-        for (j = 0; j < dim; ++j)
-	    v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
+    {
+        vel_ref[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*0.5*top_h[i];
+            //coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ic[i] = icoords[i];
+    }
 	
-        double mag_v = mag_vector(v,dim);
-        if (mag_v > 0)
-        {
-            for (j = 0; j < dim; ++j)
-                v[j] /= mag_vector(v,dim);
-        }
-        else
-        {
-            for (j = 0; j < dim; ++j)
-                v[j] = 0.0;
-            
-        }
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+    ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    
+    boolean status;
+    status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+        /*
+    if (status == NO)
+    {
+        printf("no crossing found\n");
+        printf("\tcoords: %f %f %f\n",coords[0],coords[1],coords[2]);
+        clean_up(ERROR);
+    }
+        */
 
-	    vn = 0.0;
+checkpoint("1");
+printf("nor: %f %f %f\n",nor[0],nor[1],nor[2]);
+printf("coords: %f %f %f\n",coords[0],coords[1],coords[2]);
+printf("dir: %s\n",dir2String(dir).c_str());
+/*
+printf("coords_ref: %f %f %f\n",coords_ref[0],coords_ref[1],coords_ref[2]);
+printf("crx_coords: %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+printf("v: %f %f %f\n",v[0],v[1],v[2]);
+*/
+
+    for (j = 0; j < dim; ++j)
+        coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+
+    /* Reflect ghost point through intfc-mirror at crossing */
+    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+    vn = 0.0;
+    
+    for (j = 0; j < dim; ++j)
+    {
+        v[j] = coords_ref[j] - crx_coords[j];
+        vn += v[j]*nor[j];
+    }
+
+/*
+checkpoint("2");
+printf("vn = %f\n",vn);
+*/
+
+    for (j = 0; j < dim; ++j)
+        v[j] = 2.0*vn*nor[j] - v[j];
+  
+    for (j = 0; j < dim; ++j)
+        coords_ref[j] = crx_coords[j] + v[j];
+
+/*
+checkpoint("3");
+printf("coords: %f %f %f\n",coords[0],coords[1],coords[2]);
+printf("coords_ref: %f %f %f\n",coords_ref[0],coords_ref[1],coords_ref[2]);
+printf("crx_coords: %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+printf("v: %f %f %f\n",v[0],v[1],v[2]);
+printf("dim = %d\n", dim);
+*/
+
+    /* Interpolate the state at the reflected point */
+    for (j = 0; j < dim; ++j)
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
+        	getStateVel[j],&v_tmp[j],&vel[j][index]);
+	
+    /*normal component equal to zero while tangential component is permitted*/
+    for (j = 0; j < dim; ++j)
+        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
+   
+    for (j = 0; j < dim; ++j)
+        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
+
+    double mag_v = mag_vector(v,dim);
+    if (mag_v > 0)
+    {
         for (j = 0; j < dim; ++j)
-	    vn += v[j] * v_tmp[j]; 	
+            v[j] /= mag_vector(v,dim);
+    }
+    else
+    {
         for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= vn*v[j];    
+            v[j] = 0.0;
+    }
+
+    vn = 0.0;
+    for (j = 0; j < dim; ++j)
+        vn += v[j] * v_tmp[j]; 	
+   
+    for (j = 0; j < dim; ++j)
+        v_tmp[j] -= vn*v[j];    
 }
 
 void KE_CARTESIAN::computeSource()
@@ -2295,7 +2375,7 @@ void KE_CARTESIAN::computeSource()
 			    }
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY))
+                                wave_type(hs) == ELASTIC_BOUNDARY))
 			    {
 				setSlipBoundary(icrds,m,nb,comp,hs,
 						intfc_state,field->vel,v_tmp);
@@ -2391,7 +2471,7 @@ void KE_CARTESIAN::computeSource()
 			    }
 			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY)
+                                wave_type(hs) == ELASTIC_BOUNDARY)
 			    {
 				setSlipBoundary(icrds,l,nb,comp,hs,
 						intfc_state,field->vel,v_tmp);
