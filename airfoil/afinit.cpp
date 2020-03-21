@@ -90,6 +90,7 @@ static void setInitialIntfcAF3d(
 	fscanf(infile,"%d",&num_canopy);
 	(void) printf("%d\n",num_canopy);
 	level_func_pack->num_mono_hs = num_canopy;
+    if (num_canopy == 0) return;
 
 	(void) printf("Choices of initial surface are:\n");
 	(void) printf("\tEllipsoid (E)\n");
