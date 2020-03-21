@@ -18,7 +18,9 @@ libiFluid_la_SOURCES = \
 ../iFcartsn2d.cpp \
 ../iFcartsn3d.cpp \
 ../iFinit.cpp \
-../iFsub.cpp
+../iFsub.cpp \
+../keps.h \
+../keps.cpp
 								
 
 libiFluid_la_LIBADD = $(LIB_SOLVER)
