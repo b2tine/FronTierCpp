@@ -243,6 +243,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	stop_clock("setSmoothedProperties");
 	if (debugging("trace"))
 	    printf("Passed setSmoothedProperties()\n");
+    
+    addImmersedForce();
 	
 	appendOpenEndStates();
 	// 1) solve for intermediate velocity
@@ -2010,3 +2012,85 @@ void Incompress_Solver_Smooth_Basis::setIsolatedSoln(
             break;
         }
 }       /* end setIsolatedSoln */
+
+//For string-fluid interaction
+void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
+{
+	INTERFACE *grid_intfc = front->grid_intfc;
+        CURVE **c,*curve;
+        BOND *b;
+        POINT *p;
+        double local_vel[MAXD];
+	double **f_surf = field->f_surf;
+	double **vel = field->vel;
+        double speed;
+        double coords[MAXD];
+        int icoords[MAXD],ic;
+	COMPONENT comp = grid_intfc->default_comp;
+	int i,j,k,l; 
+        double force[MAXD];
+	double center[MAXD],point[MAXD],H,D;
+	double *rho = field->rho;
+	double dist,alpha;
+	int range = (int)(m_smoothing_radius+1);
+
+        printf("Entering addImmersedForce()\n");
+        intfc_curve_loop(grid_intfc,c)
+        {
+            if (hsbdry_type(*c) == STRING_HSBDRY)
+            {
+                FINITE_STRING *params;
+                curve = *c;
+                if (curve->extra == NULL) continue;
+                params = (FINITE_STRING*)curve->extra;
+                double d = 4.0;
+                for (b = curve->first; b != curve->last; b = b->next)
+                {
+                    p = b->end;
+                    rect_in_which(Coords(p),icoords,top_grid);
+                    speed = 0.0;
+                    for (l = 0; l < 3; ++l)
+                    {
+                        FT_IntrpStateVarAtCoords(front,comp,Coords(p),vel[l],
+                                getStateVel[l],&local_vel[l],&vel[l][ic]);
+                        speed += sqr(local_vel[l]);
+                    }
+                    printf("p = %f %f %f v = %f %f %f\n",
+                                Coords(p)[0],Coords(p)[1],Coords(p)[2],
+                                local_vel[0],local_vel[1],local_vel[2]);
+                    speed = sqrt(speed);
+                    for (l = 0; l < 3; ++l)
+                        force[l] = -params->c_drag*speed*local_vel[l];
+	            for (k = icoords[2]-2; k <= icoords[2]+2; k++)
+	            for (j = icoords[1]-2; j <= icoords[1]+2; j++)
+	            for (i = icoords[0]-2; i <= icoords[0]+2; i++)
+                    {
+                        if (i < 0 || j < 0 || k < 0) continue;
+                        if (i > top_gmax[0] || j > top_gmax[1] || 
+                            k > top_gmax[2]) continue;
+                        coords[0] = top_L[0] + i*top_h[0];
+                        coords[1] = top_L[1] + j*top_h[1];
+                        coords[2] = top_L[2] + k*top_h[2];
+                        ic = d_index3d(i,j,k,top_gmax);
+                        dist = distance_between_positions(Coords(p),coords,3);
+                        if (dist > top_h[0]*4) continue;
+                        alpha = top_h[0]*4 - dist;
+                        ic = d_index3d(i,j,k,top_gmax);
+                        f_surf[0][ic] += alpha*force[0];
+                        f_surf[1][ic] += alpha*force[1];
+                        f_surf[2][ic] += alpha*force[2];
+                        
+                        /*
+                        printf("crds = %f %f %f d = %f f = %f %f %f\n",
+                                coords[0],coords[1],coords[2],dist,
+                                alpha*force[0],alpha*force[1],alpha*force[2]);
+                        */
+                    }
+                }
+            }
+        }
+
+	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+}	/* end addImmersedForce in 3D */
+
+

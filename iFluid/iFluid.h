@@ -500,6 +500,7 @@ protected:
 	double smoothedStepFunction(double*, double*, int);
 	void sampleVelocity();
 	void setSmoothedProperties(void);
+    void addImmersedForce();
 };
 
 class Incompress_Solver_Smooth_2D_Cartesian:
