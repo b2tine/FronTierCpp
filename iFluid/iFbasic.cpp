@@ -2253,6 +2253,8 @@ void Incompress_Solver_Smooth_Basis::initSampleVelocity(char *in_name)
         fclose(infile);
 }	/* end initSampleVelocity */
 
+//Compute force due to surface tension and eddy viscosity of
+//selected turbulence model.
 void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
