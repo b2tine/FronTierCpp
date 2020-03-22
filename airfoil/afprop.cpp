@@ -239,37 +239,81 @@ extern void airfoil_curve_propagate(
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+    CURVE *oldc,
+    CURVE *newc,
         double dt)
 {
-	BOND *oldb,*newb;
-	POINT *oldp,*newp;
+    BOND *oldb,*newb;
+    POINT *oldp,*newp;
+        FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
 
-	if (!is_load_node(oldc->start))
-	{
-	    oldp = oldc->start->posn;
-	    newp = newc->start->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->start))
+    {
+        oldp = oldc->start->posn;
+        newp = newc->start->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	if (!is_load_node(oldc->end))
-	{
-	    oldp = oldc->end->posn;
-	    newp = newc->end->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->end))
+    {
+        oldp = oldc->end->posn;
+        newp = newc->end->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
-		oldb = oldb->next, newb = newb->next)
-	{
-	    oldp = oldb->end;
-	    newp = newb->end;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
+        oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
+
+    //string-fluid interaction
+    if (params != NULL)
+    {
+        STATE *sl,*sr,*newsl,*newsr;
+        COMPONENT base_comp = front->interf->default_comp;
+        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        IF_FIELD *field = iFparams->field;
+        double **vel,speed;
+        double c_drag = params->c_drag;
+        int i;
+        int count = 0;
+
+        vel = field->vel;
+    for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
+        oldb = oldb->next, newb = newb->next)
+        {
+        oldp = oldb->end;
+        newp = newb->end;
+            sl = (STATE*)left_state(oldp);
+            sr = (STATE*)right_state(oldp);
+            newsl = (STATE*)left_state(newp);
+            newsr = (STATE*)right_state(newp);
+            speed = 0.0;
+            count++;
+            for (i = 0; i < 3; ++i)
+            {
+                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
+                speed += sqr(newsl->vel[i]);
+                newsr->vel[i] = newsl->vel[i];
+            }
+            speed = sqrt(speed);
+            for (i = 0; i < 3; ++i)
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] =
+                            c_drag*speed*newsl->vel[i];
+            if (count == 5)
+                printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
+                        newsl->vel[0],newsl->vel[1],newsl->vel[2],
+                        newsl->fluid_accel[0],newsl->fluid_accel[1],
+                        newsl->fluid_accel[2]);
+        }
+    }
 }	/* end string_curve_propagation */
 
 static void gore_curve_propagation(
