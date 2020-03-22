@@ -1748,15 +1748,47 @@ static void installString(
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
 		return;
+        //TODO: find better way to bypass next block of code
+        //      instead of this early return.
 	    }
 	}
 
-	/* make the all initial springs at their equilibruim length */
+    //TODO: Not getting read when we attach to RGB.
+    //      see return statement in preceeding block
+    //      This block moved inside connectStringtoRGB()
+    /*
+    FINITE_STRING* finite_string = nullptr;
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    {
+    fscanf(infile,"%s",string);
+    (void) printf("%s\n",string);
+    if (string[0] != 'y' || string[0] != 'Y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+            CursorAfterString(infile,"Enter string radius: ");
+            fscanf(infile,"%lf",&finite_string->radius); 
+            printf("%f\n",finite_string->radius);
+            CursorAfterString(infile,"Enter string mass density: ");
+            fscanf(infile,"%lf",&finite_string->dens); 
+            printf("%f\n",finite_string->dens);
+            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
+            {
+                fscanf(infile,"%lf",&finite_string->c_drag); 
+                printf("%f\n",finite_string->c_drag);
+            }
+        }
+    }
+    */
+
+
+    /* make the all initial springs at their equilibruim length */
         FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
                                 sizeof(CURVE*));
 	for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
+        //string_curves[i]->extra = (POINTER)finite_string;
+
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
@@ -2084,9 +2116,36 @@ static void connectStringtoRGB(
 	    multi_para = YES;
 	    string_curve_onenode = 10;
 	}
+
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
 						sizeof(CURVE*));
-	for (k = 0; k < num_strings; ++k)
+	
+    FINITE_STRING* finite_string = nullptr;
+    FILE* infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    {
+        char string[100];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' || string[0] != 'Y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+            CursorAfterString(infile,"Enter string radius: ");
+            fscanf(infile,"%lf",&finite_string->radius); 
+            printf("%f\n",finite_string->radius);
+            CursorAfterString(infile,"Enter string mass density: ");
+            fscanf(infile,"%lf",&finite_string->dens); 
+            printf("%f\n",finite_string->dens);
+            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
+            {
+                fscanf(infile,"%lf",&finite_string->c_drag); 
+                printf("%f\n",finite_string->c_drag);
+            }
+        }
+    }
+    fclose(infile);
+
+    for (k = 0; k < num_strings; ++k)
 	{
 	    NODE *start, *end;
 	    if (multi_para == NO)
@@ -2111,9 +2170,12 @@ static void connectStringtoRGB(
 		start = *string_nodes;
 		end = rg_string_nodes[k];
 	    }
-	    for (int l = 0; l < string_curve_onenode; ++l)
+	    
+        for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[k] = make_curve(0,0,start,end);
+        string_curves[k]->extra = (POINTER)finite_string;
+
 		hsbdry_type(string_curves[k]) = STRING_HSBDRY;
 		spacing = separation(start->posn,end->posn,3);
 		for (j = 0; j < 3; ++j)

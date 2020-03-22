@@ -2902,7 +2902,6 @@ extern void initIsolated3dCurves(Front* front)
         FILE *infile = fopen(InName(front),"r");
         char string[200];
         CURVE *curve;
-        FINITE_STRING *finite_string = NULL;
 
         if (CursorAfterStringOpt(infile,"Enter yes to add isolated curves:"))
         {
@@ -2913,6 +2912,8 @@ extern void initIsolated3dCurves(Front* front)
         }
         else
             return;
+        
+        FINITE_STRING *finite_string = NULL;
         if (CursorAfterStringOpt(infile,"Enter yes to have finite radius: "))
         {
 	    fscanf(infile,"%s",string);

@@ -172,6 +172,9 @@ struct _STRING_PARAMS {
 	double phi;
 	double L[MAXD],U[MAXD];
 	double P[MAXD];
+    //TODO: add string-fluid params here, and use to 
+    //      construct FINITE_STRING structs that curves
+    //      hold in the extra data member?
 };
 typedef struct _STRING_PARAMS STRING_PARAMS;
 

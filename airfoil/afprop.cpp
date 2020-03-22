@@ -308,11 +308,13 @@ static void string_curve_propagation(
             for (i = 0; i < 3; ++i)
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] =
                             c_drag*speed*newsl->vel[i];
+            /*
             if (count == 5)
                 printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
                         newsl->vel[0],newsl->vel[1],newsl->vel[2],
                         newsl->fluid_accel[0],newsl->fluid_accel[1],
                         newsl->fluid_accel[2]);
+            */
         }
     }
 }	/* end string_curve_propagation */
