@@ -245,7 +245,6 @@ static void string_curve_propagation(
 {
     BOND *oldb,*newb;
     POINT *oldp,*newp;
-        FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
 
     if (!is_load_node(oldc->start))
     {
@@ -273,6 +272,8 @@ static void string_curve_propagation(
     }
 
     //string-fluid interaction
+    
+    FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
     if (params != NULL)
     {
         STATE *sl,*sr,*newsl,*newsr;

@@ -65,11 +65,18 @@ Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
 Enter fabric spring constant: 5000
-Enter fabric friction constant: 0.5
-Enter fabric point mass: 0.002
-Enter string spring constant: 20000
-Enter string friction constant: 1.5
-Enter string point mass: 0.01
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
+Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
+Enter string spring constant: 50000
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
 
 Enter yes to add rigid body: n 
 Available type of rigid body include:
