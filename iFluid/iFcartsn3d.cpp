@@ -191,6 +191,79 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
+void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
+{
+    int index;
+    int icoords[MAXD];
+
+    int index_xnb0, index_xnb1;
+    int icnb_x0[MAXD], icnb_x1[MAXD];
+
+    int index_ynb0, index_ynb1;
+    int icnb_y0[MAXD], icnb_y1[MAXD];
+
+    int index_znb0, index_znb1;
+    int icnb_z0[MAXD], icnb_z1[MAXD];
+	
+    double **vel = field->vel;
+	double **vorticity = field->vorticity;
+
+    int dim = 3;
+	for (int k = kmin; k <= kmax; k++)
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
+	{
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
+	    index = d_index(icoords,top_gmax,dim);
+
+        for (int l = 0; l < dim; ++l)
+        {
+            icnb_x0[l] = icoords[l];
+            icnb_x1[l] = icoords[l];
+            icnb_y0[l] = icoords[l];
+            icnb_y1[l] = icoords[l];
+            icnb_z0[l] = icoords[l];
+            icnb_z1[l] = icoords[l];
+        }
+
+        //cell centered derivative indices wrt x
+        icnb_x0[0] = icoords[0] - 1;
+        icnb_x1[0] = icoords[0] + 1;
+        index_xnb0 = d_index(icnb_x0,top_gmax,dim);
+        index_xnb1 = d_index(icnb_x1,top_gmax,dim);
+
+        //cell centered derivative indices wrt y
+        icnb_y0[1] = icoords[1] - 1;
+        icnb_y1[1] = icoords[1] + 1;
+        index_ynb0 = d_index(icnb_y0,top_gmax,dim);
+        index_ynb1 = d_index(icnb_y1,top_gmax,dim);
+
+        //cell centered derivative indices wrt z
+        icnb_z0[2] = icoords[2] - 1;
+        icnb_z1[2] = icoords[2] + 1;
+        index_znb0 = d_index(icnb_z0,top_gmax,dim);
+        index_znb1 = d_index(icnb_z1,top_gmax,dim);
+
+
+        //x component vorticity
+        double u2_wrty = 0.5*(vel[2][index_ynb1] - vel[2][index_ynb0])/top_h[1];
+        double u1_wrtz = 0.5*(vel[1][index_znb1] - vel[1][index_znb0])/top_h[2];
+        vorticity[0][index] = u2_wrty - u1_wrtz;
+
+        //y component vorticity
+        double u0_wrtz = 0.5*(vel[0][index_znb1] - vel[0][index_znb0])/top_h[2];
+        double u2_wrtx = 0.5*(vel[2][index_xnb1] - vel[2][index_xnb0])/top_h[0];
+        vorticity[1][index] = u0_wrtz - u2_wrtx;
+
+        //z component vorticity
+        double u1_wrtx = 0.5*(vel[1][index_xnb1] - vel[1][index_xnb0])/top_h[0];
+        double u0_wrty = 0.5*(vel[0][index_ynb1] - vel[0][index_ynb0])/top_h[1];
+        vorticity[2][index] = u1_wrtx - u0_wrty;
+    }
+}
+
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
@@ -296,7 +369,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    appendOpenEndStates(); //necessary since phi is updated
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
-	    accum_dt = 0.0;
+	    
+        computeVorticity();
+
+        accum_dt = 0.0;
 	}
 	computeMaxSpeed();
 
@@ -327,7 +403,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	stop_clock("solve");
 }	/* end solve */
 
-
 void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
 {
 	int i,j,k,d,index;
@@ -338,10 +413,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
 	for (k = kmin; k <= kmax; ++k)
 	{
 	    index  = d_index3d(i,j,k,top_gmax);
-	    if (!ifluid_comp(top_comp[index]))
+        if (!ifluid_comp(top_comp[index]))
 	    	pres[index] = 0.0;
 	}
-	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }	/* end copyMeshStates */
 
 void Incompress_Solver_Smooth_3D_Cartesian::

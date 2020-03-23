@@ -8,7 +8,7 @@ struct STATE
     double pres;                /* Pressure */
     double phi;                 /* Potential */
     double vel[MAXD];           /* Velocity */
-    double vort;                /* Vorticity in 2D */
+    double vort;                /* Magnitude of Vorticity in 2D */
 	double solute;			    /* For subsurface problem */
 
 	double temperature;         /* For melting with flow problem */

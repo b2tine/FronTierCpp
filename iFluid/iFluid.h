@@ -64,11 +64,12 @@ typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct _IF_FIELD {
 	double **vel;			/* Velocities */
+	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
 	double *q;
 	double *pres;			/* Pressure */
-	double *vort;			/* Vorticity in 2D */
+	double *vort;			/* Magnitude of Vorticity in 2D */
 	double *mu;
 	double *rho;
 	double **grad_q;
@@ -581,6 +582,8 @@ protected:
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 	void appendOpenEndStates();
+
+    void computeVorticity();
 };
 
 extern double getStatePres(POINTER);

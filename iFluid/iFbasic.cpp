@@ -535,9 +535,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(14,field,array,source,diff_coeff,field->mu,
+		    FT_FreeThese(15,field,array,source,diff_coeff,field->mu,
 				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vel,
+				field->div_U,field->vel,field->vorticity,
 				field->grad_q,field->f_surf,domain_status);
 		}
 		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
@@ -558,6 +558,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,
+					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,3,size,
 					sizeof(double));
@@ -975,12 +977,18 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	    }
 	}
 	/* Added for vtk movie of vector field */
+    /*
 	CursorAfterString(infile,"Type y to make vector velocity field movie:");
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] == 'Y' || string[0] == 'y')
 	    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
+    */
+
 	FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
+    if (dim == 3)
+        FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vorticity);
 
 	fclose(infile);
 }	/* end initMovieVariables */
