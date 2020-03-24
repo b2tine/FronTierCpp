@@ -1,0 +1,96 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 50 50 50
+
+Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+
+Start parameters for modules
+
+*****************Rigid Body parameters*******************
+
+Available type of rigid body include:
+Sphere (S)
+Box (B)
+Human (H)
+Cylinder (C)
+
+Enter yes to add rigid body: yes
+Enter the number of rigid bodies: 2
+
+For rigid body 1
+Enter type of rigid body: Box
+Enter center of the box: 0.3 0.5 0.5
+Enter edges of the box: 0.2 0.1 0.1
+Type yes if the rigid body is fixed: no
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the total mass for rigid body: 1.0
+Enter the initial center of mass for rigid body: 0.3 0.5 0.5
+Enter the initial center of mass velocity: 1.0 0 0
+Type yes to use CGAL for rigid body: yes
+
+For rigid body 2
+Enter type of rigid body: Sphere
+Enter center of the sphere: 0.7 0.5 0.5
+Enter radius of the sphere: 0.15
+Type yes if the rigid body is fixed: no
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the total mass for rigid body: 1.0
+Enter the initial center of mass for rigid body: 0.7 0.5 0.5
+Enter the initial center of mass velocity: 0.0 0.0 0.0
+Type yes to use CGAL for rigid body: yes
+
+Start parameters for spring-mass system
+
+Enter fabric spring constant: 5000
+Enter fabric damping constant: 0.02
+Enter fabric friction constant: 0.5
+Enter fabric point mass: 0.002
+Enter fabric thickness: 0.001
+Enter vol_diff coefficient: 0.0
+
+Start test velocity function set
+
+Available velocity functions are:
+        Vortex velocity (R)
+        Double vortex velocity (D)
+        Vertical velocity (V)
+        Toroidal velocity (T)
+        Parabolic velocity (P)
+        Singular velocity (S)
+        Zero velocity (Z)
+        Fixed area velocity (FA)
+        Fixed point velocity (FP)
+        Free fall velocity (FF)
+
+Enter velocity function: Zero
+Enter gravity: 0.0 0.0 0.0
+
+
+***************time control parameters******************* 
+
+Start test time control parameters
+
+Max time: 0.5
+Max step: 500
+Print interval: 0.01
+Movie frame interval: 0.01
+CFL factor: 0.5
+
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+
+
+************Debugging options*****************
+
+Enter yes for debugging: yes
+Enter the debugging string: trace
+

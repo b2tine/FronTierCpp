@@ -1,0 +1,32 @@
+Example 1:
+
+To run the in-swing file, use the following command.
+
+    ./fabric_Fortn -d 2 -i in-swing -o out-swing
+
+The output will be written to the directory ./out-swing.
+Upon completion, a gif of the simulation will be created in ./out-swing/gd,
+and can be viewed with the ImageMagick animate command
+
+    i.e. animate intfc-gd.gif
+
+All 2d input files generate this file; 3d input files do not.
+
+Several vtk files will also be generated in the subdirectories of ./out-swing/vtk
+To prepare these for postprocessing with Paraview or Visit, change the working
+directory to ./out-swing/vtk and use the lsp2d command from FronTierCpp/bin (add to your PATH).
+This will create a movie_index directory with data groups that can be loaded into
+Paraview or Visit.
+
+
+Example 2:
+
+To run the in-drumC file, use the following command.
+
+    ./fabric_Fortn -d 3 -i in-drumC -o out-drumC
+
+The lsp3d command (also in FronTierCpp/bin) can be used in the ./out-drumC/vtk directory
+to generate the movie_index.
+
+
+Same procedure for examples 3 and 4 of report-III

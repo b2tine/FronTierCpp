@@ -26,6 +26,7 @@ endif
 
 if CGAL_ARMA_OPT
 MAYBE_FABRIC = fabric
+MAYBE_CFABRIC = cfabric
 endif
 
 
@@ -56,6 +57,7 @@ SUBDIRS = lib \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_FABRIC) \
+		  $(MAYBE_CFABRIC) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
 		  $(MAYBE_FRONTWRAPPER)
