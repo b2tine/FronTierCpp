@@ -262,6 +262,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
         double u0_wrty = 0.5*(vel[0][index_ynb1] - vel[0][index_ynb0])/top_h[1];
         vorticity[2][index] = u1_wrtx - u0_wrty;
     }
+	
+    //TODO: Test that this works
+    FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
 
 void Incompress_Solver_Smooth_3D_Cartesian::
