@@ -13,25 +13,29 @@ struct FABRIC_STATE
 	/* collision handling */
     struct UF   
     {
-        POINT* next_pt;
+        int num_pts;
         POINT* root;
         POINT* tail;
-        int num_pts;
+        POINT* next_pt;
     };
 
     UF impZone;
-    
+    double collsn_dt;
     double collsnImpulse[3];
     double collsnImpulse_RG[3];
+    double strainImpulse[3];
     double friction[3];
     double avgVel[3];
     double avgVel_old[3];
     double x_old[3];
-    int    collsn_num;
-    int    collsn_num_RG;
-    bool   has_collsn;
-    bool   is_fixed;
-    bool   is_movableRG;
+    int strain_num;
+    int collsn_num;
+    int collsn_num_RG;
+    bool has_collsn;
+    bool has_strainlim;
+    bool is_fixed;
+    bool is_movableRG;
+    bool is_stringpt;
 };
 
 

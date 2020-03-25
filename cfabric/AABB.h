@@ -38,12 +38,11 @@ class AABB {
     MotionState abType;
     double tol;
 public:
-    AABB() {}
-    AABB(double, CD_HSE*, MotionState);
-    AABB(double, CD_HSE*, MotionState, double);
+    AABB(double, CD_HSE*);
+    AABB(double, CD_HSE*, double);
     AABB(const CPoint&, const CPoint&);
-    // explicit saying that we need a default version of 
-    // copy and move operations 
+    
+    AABB() = default;
     AABB(const AABB&) = default;
     AABB& operator=(const AABB&) = default;
     AABB(AABB&&) = default;
@@ -63,7 +62,8 @@ public:
     // AABB stored in node. May store information for branch AABB
     // and may be adjusted for dynamic AABB 
     AABB box;
-    // if leaf, point to the corresponding AABB empty for branch
+    // if leaf, point to the corresponding AABB
+    // empty for branch
     std::unique_ptr<AABB> data;
     // parent node
     std::weak_ptr<Node> parent;
@@ -98,11 +98,11 @@ public:
     int numLeaf {0};
     double treeHeight(Node*); 
     double dt;
-    bool isProximity;
-    bool isCollsn;
+    bool isProximity {false};
+    bool isCollsn {false};
     
     // query all collid pairs
-    void query(double tol);
+    void query();
 
     // insert a node into the subtree with parent 
     // as the root
@@ -134,14 +134,14 @@ public:
 
 private:
 
-    bool queryProximity(Node* n,double tol);
-    bool queryCollision(Node* n,double tol);
+    bool queryProximity(Node* n);
+    bool queryCollision(Node* n);
 };
 
 
 //dcollid.cpp
-bool getProximity(const CD_HSE*,const CD_HSE*,double);
-bool getCollision(const CD_HSE*,const CD_HSE*,double);
+bool getProximity(const CD_HSE*,const CD_HSE*);
+bool getCollision(const CD_HSE*,const CD_HSE*);
 
 
 #endif

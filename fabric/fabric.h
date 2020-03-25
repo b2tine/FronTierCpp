@@ -1,5 +1,5 @@
-#ifndef AIRFOIL_H
-#define AIRFOIL_H
+#ifndef FABRIC_H
+#define FABRIC_H
 
 #include <FronTier.h>
 
@@ -264,13 +264,6 @@ struct REGISTERED_PTS
 	int num_pts;
 	int *global_ids;
 };
-
-//NOTE: these never had a definition
-/*
-void read_movie_options(char*,F_PARAMS*);
-void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
-                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-*/
 
 // afinit.cpp
 extern void read_Fparams(char*,F_PARAMS*);
