@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
-static void setCollisionFreePoints3d(INTERFACE*);
-
 static void string_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
 static void mono_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
 static void gore_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
@@ -37,6 +35,7 @@ static void load_node_propagate(Front*,NODE*,NODE*,double);
 static void rg_string_node_propagate(Front*,NODE*,NODE*,double);
 static void fourth_order_elastic_set_propagate2d(Front*,double);
 static void fourth_order_elastic_set_propagate3d(Front*,double);
+static void setCollisionFreePoints3d(INTERFACE*);
 
 static void coating_mono_hyper_surf3d(Front*);
 
@@ -261,7 +260,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
-            //TODO: Same for global bonds; need to add gbonds to Front class
         }
 
         //write to GLOBAL_POINT** point_set

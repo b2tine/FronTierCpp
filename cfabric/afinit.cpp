@@ -26,7 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static void setInitialIntfcAF2d(Front*,LEVEL_FUNC_PACK*,char*);
 static void setInitialIntfcAF3d(Front*,LEVEL_FUNC_PACK*,char*);
 
-
+//TODO: Only used for 2d now, and we can probably just remove all
+//      2d code since fabric is inherently 3d.
 void setInitialIntfcAF(
         Front *front,
         LEVEL_FUNC_PACK *level_func_pack,

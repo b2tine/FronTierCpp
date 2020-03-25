@@ -113,9 +113,6 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    first = YES;
 	}
 
-    //TODO: these "first" initialization procedures
-    //      should be seperate function called before
-    //      any propagation functions are called
 	if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
@@ -149,8 +146,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-                elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                                ELASTIC_BOUNDARY);
+                elastic_intfc =
+                    FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
                 collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -237,35 +234,38 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
     if (myid == owner_id)
 	{
-            if (!debugging("collision_off"))
-            {
-                // TODO: This function just identifies which triangles and edges
-                // have the potential to collide with each other based on their
-                // the material/boundary type alone. We already know this from
-                // initialization of the interface, so this should only be done
-                // once at start up.
-                setCollisionFreePoints3d(fr->interf);
+        if (!debugging("collision_off"))
+        {
+            setCollisionFreePoints3d(fr->interf);
 
-                collision_solver->assembleFromInterface(fr->interf,fr->dt);
-                collision_solver->recordOriginalPosition();
+            collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            collision_solver->recordOriginalPosition();
+        
+            collision_solver->setRestitutionCoef(1.0);
+            collision_solver->setVolumeDiff(af_params->vol_diff);
             
-                collision_solver->setFrictionConstant(af_params->mu_s);
-            
-                collision_solver->setSpringConstant(af_params->ks); 
-                collision_solver->setPointMass(af_params->m_s);
+            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
 
-                collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setStringRoundingTolerance(af_params->string_eps);
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
 
-                //TODO: coefficient of restitution varies between materials,
-                //      and should be determined at runtime using the STATE
-                //      data of the colliding pairs. 
-                collision_solver->setRestitutionCoef(1.0);
-            
-                collision_solver->gpoints = fr->gpoints;
-                collision_solver->gtris = fr->gtris;
-            }
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
-            get_point_set_from(&geom_set,point_set);
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
+        }
+
+        //write to GLOBAL_POINT** point_set
+        get_point_set_from(&geom_set,point_set);
+
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
@@ -376,8 +376,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY and ELASTIC_STRING tags
-    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)
@@ -397,10 +395,9 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     {
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
-        AF_NODE_EXTRA* extra;
-
-        if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
-                (extra->af_node_type == PRESET_NODE))
+        
+        AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
+        if (extra && extra->af_node_type == PRESET_NODE)
         {
             sl->is_fixed = true;
         }

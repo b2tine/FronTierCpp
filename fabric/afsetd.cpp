@@ -246,7 +246,7 @@ extern void set_spring_vertex_memory(
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
 	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
-    		sv[i].ext_accel[j] = 0.0;
+            sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
 
@@ -278,7 +278,8 @@ extern void compute_spring_accel1(
         }
 	}
 
-        //TODO: investigate this function
+        //TODO: Try to salvage this function, or just use
+        //      qqshi implementation in AngStiff_sprModel?
         //computeElasticForce(sv,f);
 
 	for (int k = 0; k < dim; ++k)
@@ -947,7 +948,7 @@ extern void set_curve_spring_vertex(
 
         if (dim == 3)
 	    {
-	    	if (hsbdry_type(curve) == FIXED_HSBDRY || g == NULL)
+            if (hsbdry_type(curve) == FIXED_HSBDRY || g == NULL)
 	    	{
                 for (j = 0; j < dim; ++j)
                     sv[i].ext_accel[j] = 0;
@@ -964,7 +965,7 @@ extern void set_curve_spring_vertex(
                 	sv[i].ext_accel[j] = g[j];
 	    }
 
-	    SURFACE** surf;
+        SURFACE** surf;
 	    boolean is_stationary_point = NO;
 	    intfc_surface_loop(front->interf, surf)
 	    {
@@ -1054,16 +1055,16 @@ extern void set_surf_spring_vertex(
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
 	int dim = front->rect_grid->dim;
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-        double *g;
-	STATE *sl,*sr;
+
+    STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-	if (af_params != NULL)
+    double* g = nullptr;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	if (af_params != nullptr)
  	    g = af_params->gravity;
-	else g = NULL;
 
 	unsort_surf_point(surf);
 	i = *n;
@@ -1112,7 +1113,7 @@ extern void set_surf_spring_vertex(
 		    	sv[i].k[k] = 0.0;
 		    else
 		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];;
+		    sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;

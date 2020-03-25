@@ -189,7 +189,8 @@ extern void second_order_elastic_curve_propagate(
 			"second_order_elastic_curve_propagate()\n");
 }	/* end second_order_elastic_curve_propagate */
 
-extern void second_order_elastic_surf_propagate(//revised
+//TODO: marked as "revised", what was revised?
+extern void second_order_elastic_surf_propagate(
         Front           *newfr,
         double           fr_dt)
 {
@@ -524,6 +525,9 @@ static void set_equilibrium_mesh3d(
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY ||
+                hsbdry_type(*c) != GORE_HSBDRY) continue;
+
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
 		set_bond_length(b,3);
@@ -531,9 +535,12 @@ static void set_equilibrium_mesh3d(
 		if (hsbdry_type(*c) == GORE_HSBDRY)
 		    b->length0 *= gore_len_fac;
 		for (i = 0; i < 3; ++i)
-		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])/
-					b->length0;	
+        {
+		    b->dir0[i] =
+                (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
+        }
 	    }
+        never_redistribute(Hyper_surf(*c)) = YES;
 	}
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -566,10 +573,12 @@ static void set_equilibrium_mesh3d(
 	    }
 	    never_redistribute(Hyper_surf(surf)) = YES;
 	}
+    /*
 	printf("Original length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -690,10 +699,12 @@ static void set_equilibrium_mesh3d(
 		}
 	    }
 	}
+    /*
 	printf("Perturbed length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 }	/* end set_equilibrium_mesh3d */
 
 

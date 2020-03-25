@@ -248,37 +248,36 @@ static void CgalRectangular(
 		++fit)
 	    flag[i++] = 1;	
 
-	GenerateCgalSurf(front,surf,&cdt,flag,height);
+	    GenerateCgalSurf(front,surf,&cdt,flag,height);
         wave_type(*surf) = ELASTIC_BOUNDARY;
 
-        to_split = false;
-        if (CursorAfterStringOpt(infile,
-                "Enter yes to install boundary on each side: "))
+        fixed_bdry = false;
+        if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
         {
             fscanf(infile,"%s",string);
             printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
-                to_split = true;
+                fixed_bdry = true;
         }
-        if (to_split == false)
+        
+        if (fixed_bdry == true)
+            FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+        else
         {
-            fixed_bdry = false;
-            if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
+            FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+
+            to_split = false;
+            if (CursorAfterStringOpt(infile,
+                    "Enter yes to install boundary on each side: "))
             {
                 fscanf(infile,"%s",string);
                 printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-                    fixed_bdry = true;
+                    to_split = true;
+
+                if (to_split == true)
+                    splitRectEdge(infile,front,*surf,out_nodes_coords);
             }
-            if (fixed_bdry == true)
-                FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
-            else
-                FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
-        }
-        else
-        {
-            FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
-            splitRectEdge(infile,front,*surf,out_nodes_coords);
         }
 
 	setSurfZeroMesh(*surf);
@@ -2248,7 +2247,6 @@ extern void InstallNewLoadNode(
 	int i,j,k,nb;
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-
 	int string_curve_onenode = 10; // test
 
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))
