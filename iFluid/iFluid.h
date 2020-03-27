@@ -584,6 +584,7 @@ protected:
 	void appendOpenEndStates();
 
     void computeVorticity();
+    std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
 
 extern double getStatePres(POINTER);
