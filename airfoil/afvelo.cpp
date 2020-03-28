@@ -989,6 +989,7 @@ static int singular_velo(
 	return YES;
 }	/* end sigular_velo */
 
+//TODO: Make shape_id an enum
 struct _SHAPE_PARAMS {
 	int shape_id;
 	double L[2];
@@ -1075,6 +1076,8 @@ static void init_fixarea_params(
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
+            //TODO: Add hsbdry_type() == STRING_HSBDRY, GORE_HSBDRY etc.
+            //      to facilitate other kinds initialization procedures.
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
 		wave_type(hs) != ELASTIC_STRING) 
 		continue;
