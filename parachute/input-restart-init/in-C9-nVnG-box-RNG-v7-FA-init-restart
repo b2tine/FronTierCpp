@@ -11,8 +11,8 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 35.0
 Max step: 10000000
-Print interval: 0.05
-Movie frame interval: 0.05
+Print interval: 0.01
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -61,6 +61,13 @@ Enter the body index of the target RGB: 1
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: no
+
+Enter velocity function: FA
+Enter initial shape of fixed area: Ellipse
+Enter center of ellipse: 6 6
+Enter radii of ellipse: 0.175 0.175
+Enter area velocity: 0 0 10
+Enter gravityX: 0 0 0
 
 Enter yes to use porosity: yes
 Enter viscous parameter: 604.333

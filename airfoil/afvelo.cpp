@@ -276,10 +276,11 @@ void setMotionParams(Front* front)
             CursorAfterString(infile,"Enter factor of smoothing radius:");
             fscanf(infile,"%lf",&iFparams->smoothing_radius);
             (void) printf("%f\n",iFparams->smoothing_radius);
-	}
+    
+            for (i = 0; i < dim; ++i)
+                af_params->gravity[i] = iFparams->gravity[i];
 
-    for (i = 0; i < dim; ++i)
-        af_params->gravity[i] = iFparams->gravity[i];
+	}
 
     CursorAfterStringOpt(infile,"Enter payload:");
         fscanf(infile,"%lf",&af_params->payload);

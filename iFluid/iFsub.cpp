@@ -1140,6 +1140,18 @@ extern void read_iFparams(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = iFparams->dim;
 
+    if (CursorAfterStringOpt(infile,
+        "Entering yes to turn off fluid solver: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            fclose(infile);
+            return;
+        }
+    }
+
 	/* defaults numerical schemes */
 	iFparams->num_scheme.projc_method = SIMPLE;
 	iFparams->num_scheme.advec_method = WENO;
