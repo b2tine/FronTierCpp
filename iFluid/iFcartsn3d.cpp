@@ -288,7 +288,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
         icoords[0] = i;
         icoords[1] = j;
         icoords[2] = k;
-
+        
         curl_vel = computePointVorticity(icoords,vel);
 
         vorticity[0][index] = curl_vel[0];
