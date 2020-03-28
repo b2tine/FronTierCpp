@@ -141,12 +141,11 @@ int main(int argc, char **argv)
 	    set_equilibrium_mesh(&front);
 	}
 	    
-	/* Initialize velocity field function */
-
-	setMotionParams(&front);
-
 	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
+
+	/* Initialize velocity field function */
+	setMotionParams(&front);
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
@@ -236,7 +235,7 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-        FT_InteriorPropagate(front);
+        FT_RelinkGlobalIndex(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -279,8 +278,10 @@ void airfoil_driver(Front *front,
 	    }
 
 	    break_strings(front);
-	    FrontPreAdvance(front);
+	    
+        FrontPreAdvance(front);
         FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
 	    
         if (debugging("trace"))
