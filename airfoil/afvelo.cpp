@@ -233,12 +233,12 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-        {
-	    front->interior_propagate = fourth_order_elastic_set_propagate;
-        }
+    {
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
 
-
-	if (af_params->no_fluid == NO)
+    
+    if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
 	    {
@@ -278,28 +278,13 @@ void setMotionParams(Front* front)
             (void) printf("%f\n",iFparams->smoothing_radius);
 	}
 
-	for (i = 0; i < dim; ++i)
-	    af_params->gravity[i] = iFparams->gravity[i];
+    for (i = 0; i < dim; ++i)
+        af_params->gravity[i] = iFparams->gravity[i];
 
-	if (af_params->is_parachute_system == YES)
-	{
-	    CursorAfterStringOpt(infile,"Enter payload:");
-            fscanf(infile,"%lf",&af_params->payload);
-            (void) printf("%f\n",af_params->payload);
-	}
-
-    /*
-        CursorAfterString(infile,"Enter preximity test tolerance:");
-        fscanf(infile,"%lf",&af_params->pre_tol);
-        (void) printf("%f\n",af_params->pre_tol);
-        CursorAfterString(infile,"Enter volume diff criteria:");
-        fscanf(infile,"%lf",&af_params->vol_diff);
-        (void) printf("%f\n",af_params->vol_diff);
-        CursorAfterString(infile,"Enter restitution coefficient:");
-        fscanf(infile,"%lf",&af_params->rest);
-        (void) printf("%f\n",af_params->rest);
-    */
-
+    CursorAfterStringOpt(infile,"Enter payload:");
+        fscanf(infile,"%lf",&af_params->payload);
+        (void) printf("%f\n",af_params->payload);
+	
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
@@ -812,6 +797,17 @@ static void initVelocityFunc(
                 break;
             }	
 	}
+
+    if (CursorAfterStringOpt(infile,"Enter gravity:"))
+    {
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf",af_params->gravity+i);
+            printf(" %f",af_params->gravity[i]);
+        }
+        printf("\n");
+    }
+
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
 

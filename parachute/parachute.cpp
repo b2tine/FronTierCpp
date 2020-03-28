@@ -117,8 +117,11 @@ int main(int argc, char **argv)
 
 	FT_ReadTimeControl(in_name,&front);
 
-	/* Initialize velocity field function */
+    //Must be called before setMotionParams()
+	if (!RestartRun)
+	    FT_SetGlobalIndex(&front);
 
+	/* Initialize velocity field function */
 	setMotionParams(&front);
 
 	record_break_strings_gindex(&front);
@@ -161,8 +164,9 @@ int main(int argc, char **argv)
 	{
             l_cartesian->setInitialCondition();
 	}
-	if (!RestartRun)
-	    FT_SetGlobalIndex(&front);
+	//if (!RestartRun)
+	  //  FT_SetGlobalIndex(&front);
+        
         /*
         else
 	    FT_SetTriGlobalIndex(&front);
@@ -212,8 +216,9 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-	    FT_InteriorPropagate(front);
-	    if (!af_params->no_fluid)
+        FT_RelinkGlobalIndex(front);
+	    
+        if (!af_params->no_fluid)
 	    {
                 l_cartesian->solve(front->dt);
 	    }
@@ -259,9 +264,11 @@ void airfoil_driver(Front *front,
 	    }
 
 	    break_strings(front); // test
-	    FrontPreAdvance(front);
-            FT_Propagate(front);
-            FT_InteriorPropagate(front);
+
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+        FT_InteriorPropagate(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -274,9 +281,9 @@ void airfoil_driver(Front *front,
                 l_cartesian->solve(front->dt);
 	    }
 	    else
-            {
-                l_cartesian->max_dt = HUGE;
-            }
+        {
+            l_cartesian->max_dt = HUGE;
+        }
 
             if (debugging("trace"))
             {
