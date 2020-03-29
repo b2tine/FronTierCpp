@@ -137,7 +137,9 @@ extern void initParachuteModules(Front *front)
 
 	if (debugging("trace"))
 	{
-	    gview_plot_interface("ginit",front->interf);
+        std::string gvdir = OutName(front);
+        gvdir += "/ginit";
+	    gview_plot_interface(gvdir.c_str(),front->interf);
 	    (void) printf("Leaving initParachuteModules()\n");
 	}
 }	/* end initParachuteModules */
