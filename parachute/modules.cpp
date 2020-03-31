@@ -101,7 +101,7 @@ extern void initParachuteModules(Front *front)
 	int i,num_canopy;
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
-	static RG_PARAMS rgb_params;
+    RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
         boolean complex_set = NO;
 
 	if (debugging("trace"))
@@ -119,6 +119,7 @@ extern void initParachuteModules(Front *front)
         if (num_canopy == 1)
         {
             char string[100];
+            //TODO: when is this used?
 	    CursorAfterStringOpt(infile,"Enter yes for complex connection:");
             fscanf(infile,"%s",string);
             printf("%s\n",string);

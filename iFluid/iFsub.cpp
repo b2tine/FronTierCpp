@@ -1140,6 +1140,11 @@ extern void read_iFparams(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = iFparams->dim;
 
+	/* defaults numerical schemes */
+	iFparams->num_scheme.projc_method = SIMPLE;
+	iFparams->num_scheme.advec_method = WENO;
+	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
+
     if (CursorAfterStringOpt(infile,
         "Entering yes to turn off fluid solver: "))
     {
@@ -1151,11 +1156,6 @@ extern void read_iFparams(
             return;
         }
     }
-
-	/* defaults numerical schemes */
-	iFparams->num_scheme.projc_method = SIMPLE;
-	iFparams->num_scheme.advec_method = WENO;
-	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 
 	CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
@@ -2319,9 +2319,8 @@ static void promptForDirichletBdryState(
 	}
 }	/* end promptForDirichletBdryState */
 
-//TODO: why is RGB_PARAMS being passed by value
 extern void rgb_init(Front *front,
-        RG_PARAMS rgb_params)
+        RG_PARAMS* rgb_params)
 {
     int dim = FT_Dimension();
     if (dim == 1) return;
@@ -2336,7 +2335,7 @@ extern void rgb_init(Front *front,
         {
             if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
@@ -2347,7 +2346,7 @@ extern void rgb_init(Front *front,
         {
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
@@ -2675,37 +2674,37 @@ extern  void prompt_for_rigid_body_params(
 }       /* end prompt_for_rigid_body_params */
 
 extern void set_rgbody_params(
-        RG_PARAMS rg_params,
+        RG_PARAMS* rg_params,
         HYPER_SURF *hs)
 {
-        int i,dim = rg_params.dim;
-	body_index(hs) = rg_params.body_index;
-        total_mass(hs) = rg_params.total_mass;
-        mom_inertial(hs) = rg_params.moment_of_inertial;
-        angular_velo(hs) = rg_params.angular_velo;
-        motion_type(hs) = rg_params.motion_type;
-        vparams(hs) = rg_params.vparams;
-        vel_func(hs) = rg_params.vel_func;
+        int i,dim = rg_params->dim;
+	body_index(hs) = rg_params->body_index;
+        total_mass(hs) = rg_params->total_mass;
+        mom_inertial(hs) = rg_params->moment_of_inertial;
+        angular_velo(hs) = rg_params->angular_velo;
+        motion_type(hs) = rg_params->motion_type;
+        vparams(hs) = rg_params->vparams;
+        vel_func(hs) = rg_params->vel_func;
         surface_tension(hs) = 0.0;
         for (i = 0; i < dim; ++i)
         {
-            center_of_mass(hs)[i] = rg_params.center_of_mass[i];
+            center_of_mass(hs)[i] = rg_params->center_of_mass[i];
             center_of_mass_velo(hs)[i] =
-                                rg_params.cen_of_mass_velo[i];
+                                rg_params->cen_of_mass_velo[i];
             rotation_center(hs)[i] =
-                                rg_params.rotation_cen[i];
-            translation_dir(hs)[i] = rg_params.translation_dir[i];
+                                rg_params->rotation_cen[i];
+            translation_dir(hs)[i] = rg_params->translation_dir[i];
             if (dim == 3)
             {
-                rotation_direction(hs)[i] = rg_params.rotation_dir[i];
-                p_mom_inertial(hs)[i] = rg_params.p_moment_of_inertial[i];
-                p_angular_velo(hs)[i] = rg_params.p_angular_velo[i];
+                rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+                p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+                p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
             }
         }
         if (dim == 3)
         {
             for (i = 0; i < 4; i++)
-                euler_params(hs)[i] = rg_params.euler_params[i];
+                euler_params(hs)[i] = rg_params->euler_params[i];
         }
 }       /* end set_rgbody_params */
 
