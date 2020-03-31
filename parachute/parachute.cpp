@@ -143,6 +143,7 @@ int main(int argc, char **argv)
 	    if (ReSetTime)
 	    {
 		    readAfExtraData(&front,restart_state_name);
+            clearRegisteredPoints(&front);
             modifyInitialization(&front);
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh();

@@ -541,6 +541,28 @@ void readAfExtraData(
     fclose(infile);
 }	/* end readAfExtraData */
 
+void clearRegisteredPoints(Front* front)
+{
+    FILE *infile = fopen(InName(front),"r");
+    char string[100];
+
+    if (CursorAfterStringOpt(infile,"Enter yes to keep registered points: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            return;
+    }
+
+    SURFACE** s;
+    intfc_surface_loop(front->interf,s)
+    {
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
+        (*s)->extra = nullptr;
+    }
+}
+
 void printHyperSurfQuality(
 	Front *front)
 {

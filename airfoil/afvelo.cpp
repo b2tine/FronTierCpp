@@ -131,6 +131,9 @@ void setMotionParams(Front* front)
                 af_params->no_fluid = YES;
         }
 
+    front->vfunc = nullptr;
+    front->vparams = nullptr;
+
 	if (af_params->no_fluid == YES)
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
@@ -279,7 +282,6 @@ void setMotionParams(Front* front)
     
             for (i = 0; i < dim; ++i)
                 af_params->gravity[i] = iFparams->gravity[i];
-
 	}
 
     CursorAfterStringOpt(infile,"Enter payload:");

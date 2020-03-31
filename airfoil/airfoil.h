@@ -385,6 +385,7 @@ extern void init2DModules(Front*);
 // afdata.cpp
 extern void printAfExtraData(Front*,char*);
 extern void readAfExtraData(Front*,char*);
+extern void clearRegisteredPoints(Front*);
 extern void printHyperSurfQuality(Front*);
 extern void optimizeElasticMesh(Front*);
 extern void modifyInitialization(Front*);
