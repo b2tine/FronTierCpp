@@ -79,6 +79,7 @@ static void setNodePoints(CURVE*,double*,int,POINT**,double);
 static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,
                     int);
 static void connectTwoStringNodes(Front*,NODE*,NODE*);
+static void checkAndSeparateOverlappingPoints(SURFACE *surf);
 
 extern void CgalCanopySurface(
 	FILE *infile,
@@ -953,6 +954,96 @@ static void CgalEllipse(
 	setMonoCompBdryZeroLength(*surf);
 }	/* end CgalEllipse */
 
+
+static void checkAndSeparateOverlappingPoints(SURFACE *surf)
+{
+        CURVE **c;
+        BOND *b1,*b2;
+        POINT *p1,*p2;
+        TRI *tri1,*tri2;
+        BOND_TRI **btris;
+        double tol = grid_tolerance(computational_grid(surf->interface));
+        double n1[MAXD],n2[MAXD];
+
+        surf_pos_curve_loop(surf,c)
+        {
+            if (!is_closed_curve(*c)) continue;
+            curve_bond_loop(*c,b1)
+            {
+                curve_bond_loop(*c,b2)
+                {
+                    if (b1 == b2) continue;
+                    p1 = b1->start;     p2 = b2->start;
+                    if (p1 == p2) continue;
+                    if (separation(p1,p2,3) < tol)
+                    {
+                        for (btris = Btris(b1); btris && *btris; btris++)
+                        {
+                            tri1 = (*btris)->tri;
+                            if (tri1->surf = surf) break;
+                        }
+                        for (btris = Btris(b2); btris && *btris; btris++)
+                        {
+                            tri2 = (*btris)->tri;
+                            if (tri2->surf = surf) break;
+                        }
+                        set_normal_of_tri(tri1);
+                        set_normal_of_tri(tri2);
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            n1[j] = Tri_normal(tri1)[j]/sqrt(sqr_norm(tri1));
+                            n2[j] = Tri_normal(tri2)[j]/sqrt(sqr_norm(tri2));
+                        }
+                        for (int i = 0; i < 3; ++i)
+                        {
+                            Coords(p1)[i] += 0.5*tol*n1[i];
+                            Coords(p2)[i] += 0.5*tol*n2[i];
+                        }
+                    }
+                }
+            }
+        }
+        surf_neg_curve_loop(surf,c)
+        {
+            if (!is_closed_curve(*c)) continue;
+            curve_bond_loop(*c,b1)
+            {
+                curve_bond_loop(*c,b2)
+                {
+                    if (b1 == b2) continue;
+                    p1 = b1->start;     p2 = b2->start;
+                    if (p1 == p2) continue;
+                    if (separation(p1,p2,3) < tol)
+                    {
+                        for (btris = Btris(b1); btris && *btris; btris++)
+                        {
+                            tri1 = (*btris)->tri;
+                            if (tri1->surf = surf) break;
+                        }
+                        for (btris = Btris(b2); btris && *btris; btris++)
+                        {
+                            tri2 = (*btris)->tri;
+                            if (tri2->surf = surf) break;
+                        }
+                        set_normal_of_tri(tri1);
+                        set_normal_of_tri(tri2);
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            n1[j] = Tri_normal(tri1)[j]/sqrt(sqr_norm(tri1));
+                            n2[j] = Tri_normal(tri2)[j]/sqrt(sqr_norm(tri2));
+                        }
+                        for (int i = 0; i < 3; ++i)
+                        {
+                            Coords(p1)[i] += 0.5*tol*n1[i];
+                            Coords(p2)[i] += 0.5*tol*n2[i];
+                        }
+                    }
+                }
+            }
+        }
+}       /* end checkAndSeparateOverlappingPoints */
+
+
 static void CgalCross(
 	FILE *infile,
 	Front *front,
@@ -1091,6 +1182,7 @@ static void CgalCross(
 	}
 	setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
+        checkAndSeparateOverlappingPoints(*surf);
 	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	FT_FreeThese(1,string_node_pts);
 }	/* end CgalCross */
@@ -1808,7 +1900,27 @@ static void connectStringtoRGB(
 
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
+    
+    if (num_strings == 1)
+    {
+        int max_zindex = 0;
+        double max_zcoord = Coords(target[0])[2];
+
+        for (int l = 0; l < num; ++l)
+        {
+            if (Coords(target[l])[2] > max_zcoord)
+            {
+                max_zcoord = Coords(target[l])[2] > max_zcoord;
+                max_zindex = l;
+            }
+        }
+
+        POINT* max_zpoint = target[max_zindex];
+        target.clear();
+        target.push_back(max_zpoint);
+    }
 	num = target.size();
+
 	FT_VectorMemoryAlloc((POINTER*)&rg_string_nodes, num, sizeof(NODE*));
 	for (i = 0; i < num; ++i)
 	{
@@ -1847,10 +1959,11 @@ static void connectStringtoRGB(
 	int string_curve_onenode = 1; //test
 	if (num_strings == 1)
 	{
-	    num_strings = num;
-	    multi_para = YES;
-	    string_curve_onenode = 10;
+	    //num_strings = num;
+	    //multi_para = YES;
+	    //string_curve_onenode = 10;
 	}
+
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
 						sizeof(CURVE*));
 	for (k = 0; k < num_strings; ++k)
@@ -2159,7 +2272,8 @@ extern void InstallNewLoadNode(
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	
-    int string_curve_onenode = 10; // test
+    //int string_curve_onenode = 10; // test
+    int string_curve_onenode = 1;
 
 	FILE *infile = fopen(InName(front),"r");
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))
@@ -2194,6 +2308,7 @@ extern void InstallNewLoadNode(
 	    if (extra == NULL) continue;
 	    if (extra->af_node_type != LOAD_NODE) continue;
 	    extra->af_node_type = THR_LOAD_NODE;
+
 	    for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[i] = make_curve(0,0,(*n),sec_nload);
@@ -2202,7 +2317,7 @@ extern void InstallNewLoadNode(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(sec_nload->posn)[j] - 
 					Coords((*n)->posn)[j])/spacing;
-		nb = rint(spacing/(0.40*h[0])) + 1;
+		nb = rint(spacing/(0.40*h[2])) + 1;
 		spacing /= (double)nb;
 		bond = string_curves[i]->first;
 		for (j = 1; j < nb; ++j)
@@ -2232,6 +2347,16 @@ extern void InstallNewLoadNode(
         }
 	nload->extra = (POINTER)extra;
 	nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+
+            //DEBUG
+            ///////////////////////////////////////////////////////
+            /*
+            char* outdirname = OutName(front);
+            std::string outdir = outdirname;
+            std::string outfile = outdir + "/test-DGB-0";
+            gview_plot_interface(outfile.c_str(),front->interf);
+            */
+            ///////////////////////////////////////////////////////
 
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the multi-parachute to RGB:"))
@@ -2515,10 +2640,14 @@ static void CgalCircleBelt(
                                 lbelt_node_pts,num_strings,offset);
 	    findStringNodePoints(*surf,out_nodes_coords,circle_node_pts,
                                 num_strings,&cbdry);
-	    installString(infile,front,belt,curves[1],lbelt_node_pts,
-                                num_strings);
-            installCircleBeltString(front,*surf,belt,circle_node_pts,
+	    
+        installCircleBeltString(front,*surf,belt,circle_node_pts,
                                 ubelt_node_pts,num_strings);
+            
+        installString(infile,front,belt,curves[1],lbelt_node_pts,
+                                num_strings);
+        
+            //gview_plot_interface("test-DGB0",front->interf);
 	}
 	setSurfZeroMesh(*surf);
 	setSurfZeroMesh(belt);

@@ -614,7 +614,10 @@ void CollisionSolver3d::detectProximity()
             << " proximity pairs" << std::endl;
     }
 
+    //DEBUG
+    ///////////////////////////
     clean_up(0);
+    ///////////////////////////
 
     if (abt_proximity->isProximity)
         updateAverageVelocity();
