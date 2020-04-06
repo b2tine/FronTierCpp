@@ -222,8 +222,8 @@ void airfoil_driver(Front *front,
 	    print_airfoil_stat(front,out_name);
 	    
         //TODO: need this?
-        //if (ReSetTime)
-           //setSpecialNodeForce(front,af_params->kl);
+        if (ReSetTime)
+           setSpecialNodeForce(front,af_params->kl);
 
             FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
