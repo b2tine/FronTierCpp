@@ -191,7 +191,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
-/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     int index;
@@ -267,8 +266,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 	
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
-*/
 
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     double** vel = field->vel;
@@ -298,8 +297,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 	
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
+*/
 
-//TODO: Turn into global cross product function
+//TODO: Turn into global curl function
 std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     computePointVorticity(int* icoords, double** vel)
 {
