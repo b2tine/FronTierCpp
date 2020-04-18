@@ -79,6 +79,7 @@ static void setNodePoints(CURVE*,double*,int,POINT**,double);
 static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,
                     int);
 static void connectTwoStringNodes(Front*,NODE*,NODE*);
+static void checkAndSeparateOverlappingPoints(SURFACE *surf);
 
 extern void CgalCanopySurface(
 	FILE *infile,
@@ -953,7 +954,7 @@ static void CgalEllipse(
 	setMonoCompBdryZeroLength(*surf);
 }	/* end CgalEllipse */
 
-/* This is a special function for the T11 parachute only */
+
 static void checkAndSeparateOverlappingPoints(SURFACE *surf)
 {
         CURVE **c;
@@ -1041,6 +1042,7 @@ static void checkAndSeparateOverlappingPoints(SURFACE *surf)
             }
         }
 }       /* end checkAndSeparateOverlappingPoints */
+
 
 static void CgalCross(
 	FILE *infile,
@@ -1184,149 +1186,6 @@ static void CgalCross(
 	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	FT_FreeThese(1,string_node_pts);
 }	/* end CgalCross */
-
-/*
-static void CgalCross(
-	FILE *infile,
-	Front *front,
-	SURFACE **surf)
-{
-	double height;
-	double L[2][2],U[2][2];
-	char gore_bool[10];
-	int num_strings;
-	int num_out_vtx;
-	int num_gore_oneside;
-	POINT **string_node_pts;
-	double *out_nodes_coords,*out_vtx_coords;
-	CDT cdt;
-	CDT::Finite_faces_iterator fit;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	CURVE *cbdry;
-
-	Vertex_handle *v_out;
-	double width;
-	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
-	int i,j;
-
-        CursorAfterString(infile,"Enter the height of the plane:");
-        fscanf(infile,"%lf",&height);
-        (void) printf("%f\n",height);
-	(void) printf("Input the two crossing rectangles\n");
-        CursorAfterString(infile,"Enter lower bounds of first rectangle:");
-        fscanf(infile,"%lf %lf",&L[0][0],&L[0][1]);
-        (void) printf("%f %f\n",L[0][0],L[0][1]);
-        CursorAfterString(infile,"Enter upper bounds of first rectangle:");
-        fscanf(infile,"%lf %lf",&U[0][0],&U[0][1]);
-        (void) printf("%f %f\n",U[0][0],U[0][1]);
-        CursorAfterString(infile,"Enter lower bounds of second rectangle:");
-        fscanf(infile,"%lf %lf",&L[1][0],&L[1][1]);
-        (void) printf("%f %f\n",L[1][0],L[1][1]);
-        CursorAfterString(infile,"Enter upper bounds of second rectangle:");
-        fscanf(infile,"%lf %lf",&U[1][0],&U[1][1]);
-        (void) printf("%f %f\n",U[1][0],U[1][1]);
-	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
-	fscanf(infile,"%s",gore_bool);
-        (void) printf("%s\n",gore_bool);		
-	if (gore_bool[0] == 'y' || gore_bool[0] == 'Y')
-	    af_params->attach_gores = YES;
-	else
-	    af_params->attach_gores = NO;
-	CursorAfterStringOpt(infile,"Enter number of chords on one side:");
-        fscanf(infile,"%d",&num_gore_oneside);
-        (void) printf("%d\n",num_gore_oneside);
-
-
-	num_strings = 4*num_gore_oneside;
-	num_out_vtx = num_strings + 4;
-	out_nodes_coords = new double[num_strings*2];
-	out_vtx_coords = new double[num_out_vtx*2];
-	v_out = new Vertex_handle[num_out_vtx];
-	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,
-				sizeof(POINT*));
-
-	width=(U[0][0]-L[0][0])/(num_gore_oneside-1);
-
-	for (i=0; i<num_gore_oneside; i++)
-	{
-	    out_nodes_coords[i]=L[0][0]+i*width;
-	    out_nodes_coords[i+num_strings]=L[0][1];
-	    out_nodes_coords[i+num_gore_oneside]=U[1][0];
-	    out_nodes_coords[i+num_gore_oneside+num_strings]=U[1][1]-
-			(num_gore_oneside-i-1)*width;
-	    out_nodes_coords[i+2*num_gore_oneside]=U[0][0]-i*width;
-            out_nodes_coords[i+2*num_gore_oneside+num_strings]=U[0][1];
-	    out_nodes_coords[i+3*num_gore_oneside]=L[1][0];
-            out_nodes_coords[i+3*num_gore_oneside+num_strings]=L[1][1]+
-			(num_gore_oneside-i-1)*width;
-	}
-	for (i=0; i<4; i++)
-	{
-	    for(j=0; j<num_gore_oneside; j++)
-	    {
-		out_vtx_coords[i*(num_gore_oneside+1)+j]=
-			out_nodes_coords[i*num_gore_oneside+j];	
-		out_vtx_coords[i*(num_gore_oneside+1)+j+num_out_vtx]=
-		    out_nodes_coords[i*num_gore_oneside+j+num_strings];
-	    }
-	}
-	out_vtx_coords[num_gore_oneside]=U[0][0];
-	out_vtx_coords[num_gore_oneside+num_out_vtx]=L[1][1];
-	out_vtx_coords[2*num_gore_oneside+1]=U[0][0];
-        out_vtx_coords[2*num_gore_oneside+1+num_out_vtx]=U[1][1];
-	out_vtx_coords[3*num_gore_oneside+2]=L[0][0];
-        out_vtx_coords[3*num_gore_oneside+2+num_out_vtx]=U[1][1];
-	out_vtx_coords[4*num_gore_oneside+3]=L[0][0];
-        out_vtx_coords[4*num_gore_oneside+3+num_out_vtx]=L[1][1];
-
-	for (i=0; i<num_out_vtx; i++)
-	    v_out[i]=cdt.insert(Cgal_Point(out_vtx_coords[i],
-			out_vtx_coords[i+num_out_vtx]));
-	for (i=0; i<num_out_vtx-1; i++)
-	    cdt.insert_constraint(v_out[i],v_out[i+1]);
-	cdt.insert_constraint(v_out[0],v_out[num_out_vtx-1]);
-
-	CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, cri_dx)); 
-
-	int *flag;
-	flag = new int[cdt.number_of_faces()];
-	double tri_center[2];
-
-	i=0;
-	for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); 
-			++fit)
-        {
-            tri_center[0] = (fit->vertex(0)->point()[0] + 
-			fit->vertex(1)->point()[0] 
-		+ fit->vertex(2)->point()[0]) / 3.0;
-            tri_center[1] = (fit->vertex(0)->point()[1] + 
-			fit->vertex(1)->point()[1] 
-		+ fit->vertex(2)->point()[1]) / 3.0;
-
-            if (ptinbox(tri_center, L[0], U[0]) || ptinbox(tri_center, L[1], 
-			U[1]))
-                flag[i] = 1;
-            else
-                flag[i] = 0;
-            i++;
-        }
-
-	GenerateCgalSurf(front,surf,&cdt,flag,height);
-        wave_type(*surf) = ELASTIC_BOUNDARY;
-        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
-	setMonoCompBdryZeroLength(*surf);
-	findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
-				num_strings,&cbdry);
-	foldSurface(infile,*surf);
-	if (sewSurface(infile,*surf))
-	{
-	    resetStringNodePoints(*surf,string_node_pts,&num_strings,&cbdry);
-	}
-	setSurfZeroMesh(*surf);
-	setMonoCompBdryZeroLength(*surf);
-	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
-	FT_FreeThese(1,string_node_pts);
-}*/	/* end CgalCross */
 
 static void foldSurface(
 	FILE *infile,
@@ -2073,7 +1932,27 @@ static void connectStringtoRGB(
 
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
+    
+    if (num_strings == 1)
+    {
+        int max_zindex = 0;
+        double max_zcoord = Coords(target[0])[2];
+
+        for (int l = 0; l < num; ++l)
+        {
+            if (Coords(target[l])[2] > max_zcoord)
+            {
+                max_zcoord = Coords(target[l])[2] > max_zcoord;
+                max_zindex = l;
+            }
+        }
+
+        POINT* max_zpoint = target[max_zindex];
+        target.clear();
+        target.push_back(max_zpoint);
+    }
 	num = target.size();
+
 	FT_VectorMemoryAlloc((POINTER*)&rg_string_nodes, num, sizeof(NODE*));
 	for (i = 0; i < num; ++i)
 	{
@@ -2112,9 +1991,9 @@ static void connectStringtoRGB(
 	int string_curve_onenode = 1; //test
 	if (num_strings == 1)
 	{
-	    num_strings = num;
-	    multi_para = YES;
-	    string_curve_onenode = 10;
+	    //num_strings = num;
+	    //multi_para = YES;
+	    //string_curve_onenode = 10;
 	}
 
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
@@ -2454,7 +2333,8 @@ extern void InstallNewLoadNode(
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	
-    int string_curve_onenode = 10; // test
+    //int string_curve_onenode = 10; // test
+    int string_curve_onenode = 1;
 
 	FILE *infile = fopen(InName(front),"r");
 	if (CursorAfterStringOpt(infile,"Enter new load position:"))
@@ -2489,6 +2369,7 @@ extern void InstallNewLoadNode(
 	    if (extra == NULL) continue;
 	    if (extra->af_node_type != LOAD_NODE) continue;
 	    extra->af_node_type = THR_LOAD_NODE;
+
 	    for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[i] = make_curve(0,0,(*n),sec_nload);
@@ -2497,7 +2378,7 @@ extern void InstallNewLoadNode(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(sec_nload->posn)[j] - 
 					Coords((*n)->posn)[j])/spacing;
-		nb = rint(spacing/(0.40*h[0])) + 1;
+		nb = rint(spacing/(0.40*h[2])) + 1;
 		spacing /= (double)nb;
 		bond = string_curves[i]->first;
 		for (j = 1; j < nb; ++j)
@@ -2527,6 +2408,16 @@ extern void InstallNewLoadNode(
         }
 	nload->extra = (POINTER)extra;
 	nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+
+            //DEBUG
+            ///////////////////////////////////////////////////////
+            /*
+            char* outdirname = OutName(front);
+            std::string outdir = outdirname;
+            std::string outfile = outdir + "/test-DGB-0";
+            gview_plot_interface(outfile.c_str(),front->interf);
+            */
+            ///////////////////////////////////////////////////////
 
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the multi-parachute to RGB:"))
@@ -2810,10 +2701,14 @@ static void CgalCircleBelt(
                                 lbelt_node_pts,num_strings,offset);
 	    findStringNodePoints(*surf,out_nodes_coords,circle_node_pts,
                                 num_strings,&cbdry);
-	    installString(infile,front,belt,curves[1],lbelt_node_pts,
-                                num_strings);
-            installCircleBeltString(front,*surf,belt,circle_node_pts,
+	    
+        installCircleBeltString(front,*surf,belt,circle_node_pts,
                                 ubelt_node_pts,num_strings);
+            
+        installString(infile,front,belt,curves[1],lbelt_node_pts,
+                                num_strings);
+        
+            //gview_plot_interface("test-DGB0",front->interf);
 	}
 	setSurfZeroMesh(*surf);
 	setSurfZeroMesh(belt);

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             level_func_pack.set_3d_bdry = YES;
 	    
         FT_InitIntfc(&front,&level_func_pack);
-        rgb_init(&front,rgb_params);
+        rgb_init(&front,&rgb_params);
 	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 
 	    if (debugging("trace"))

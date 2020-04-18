@@ -64,11 +64,12 @@ typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct _IF_FIELD {
 	double **vel;			/* Velocities */
+	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
 	double *q;
 	double *pres;			/* Pressure */
-	double *vort;			/* Vorticity in 2D */
+	double *vort;			/* Magnitude of Vorticity in 2D */
 	double *mu;
 	double *rho;
 	double **grad_q;
@@ -588,6 +589,9 @@ protected:
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 	void appendOpenEndStates();
+
+    void computeVorticity();
+    std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
 
 extern double getStatePres(POINTER);
@@ -640,8 +644,8 @@ extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
 
 extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
-extern void rgb_init(Front*,RG_PARAMS);
+extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
+extern void rgb_init(Front*,RG_PARAMS*);
 
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);
