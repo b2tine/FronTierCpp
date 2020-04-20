@@ -272,6 +272,23 @@ static void string_curve_propagation(
     }
 
     //string-fluid interaction
+    //
+    //TODO: Use F_drag = 0.5 rho C_d A |u| u
+    //
+    //      with drag coefficient C_d = 1.05
+    //      and A is orthographic projection of the cylindrical area
+    //      onto the plane perpendicular to the local oncoming flow.
+    //
+    //      Need to come up with an efficient method for the Area
+    //      projection. Use projective geometry to find the correct
+    //      mapping of the boundary points onto such a perpendicular
+    //      plane. Likely reduces to mapping a rectangle through the
+    //      central axis of each cylinder onto the plane.
+    //
+    //      Further optimization would involve finding a matrix
+    //      representation of the affine (or linear) transformation
+    //      potentially making use of homogeneous coordinates
+    //      (in which case the representation would be a 4x4 matrix).
     
     FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
     if (params != NULL)
