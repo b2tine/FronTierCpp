@@ -108,10 +108,11 @@ extern void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
-		dv[i] = 0.0;
+            dv[i] = 0.0;
 	    else if (front->step > 5)
-		dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+	
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
@@ -272,27 +273,10 @@ static void string_curve_propagation(
     }
 
     //string-fluid interaction
-    //
-    //TODO: Use F_drag = 0.5*rho*C_d*A*|u|*u
-    //
+    //    
+    //      dragForce = 0.5*rho*C_d*A_ref*|u|*u
     //      with drag coefficient C_d = 1.05
-    //      and A is orthographic projection of the cylindrical area
-    //      onto the plane perpendicular to the local oncoming flow.
-    //
-    //      Need to come up with an efficient method for the Area
-    //      projection. Use projective geometry to find the correct
-    //      mapping of the boundary points onto such a perpendicular
-    //      plane. Likely reduces to mapping a rectangle through the
-    //      central axis of each cylinder onto the plane.
-    //
-    //      Further optimization would involve finding a matrix
-    //      representation of the affine (or linear) transformation
-    //      potentially making use of homogeneous coordinates
-    //      (in which case the representation would be a 4x4 matrix).
-    //
-    //      OR try using ReferenceArea = Vol_cyl^(3/2)
-    //      
-    //      USE surface area first.
+    //      and A_ref is the cylinder enclosing the bond's surface area
     
     FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
     if (params != NULL)
@@ -308,7 +292,6 @@ static void string_curve_propagation(
         double radius = params->radius;
         double rhoS = params->dens;
         
-        int i;
         int count = 0;
 
         vel = field->vel;
@@ -328,7 +311,7 @@ static void string_curve_propagation(
 
             //TODO: Interpolate at midpoint instead of endpoint (oldp),
             //      ..... if possible, get basic version working first.
-            for (i = 0; i < 3; ++i)
+            for (int i = 0; i < 3; ++i)
             {
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                         vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
@@ -340,9 +323,9 @@ static void string_curve_propagation(
             double length = separation(oldb->start,oldb->end,3);
             double A_ref = 2.0*PI*radius*length;
             double Vol = PI*radius*radius*length;
-            double mass = 0.5*rhoS*Vol; //only use half for each point
+            double mass = rhoS*Vol;
 
-            for (i = 0; i < 3; ++i)
+            for (int i = 0; i < 3; ++i)
             {
                 double dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
                 newsl->fluid_accel[i] = dragForce/mass;
