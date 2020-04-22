@@ -168,6 +168,7 @@ typedef struct {
         int base_step;
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
+    int fsi_startstep;
 } IF_PARAMS;
 
 struct _FLOW_THROUGH_PARAMS {

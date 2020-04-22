@@ -118,6 +118,8 @@ typedef struct {
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
     
+    int fsi_startstep;
+
     //for Collision Handling
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};

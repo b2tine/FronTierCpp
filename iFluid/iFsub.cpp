@@ -1890,7 +1890,9 @@ static  void ifluid_compute_force_and_torque2d(
             force[i] = 0.0;
         }
         *torque = 0.0;
-	if (front->step > 5)
+
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (b = curve->first; b != NULL; b = b->next)
             {
@@ -2014,7 +2016,8 @@ static  void ifluid_compute_force_and_torque3d(
         }
 	/* end of counting the force on RG_STRING_NODE */
 
-	if (front->step > 5)
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface);
                         tri = tri->next)
