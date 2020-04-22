@@ -340,7 +340,7 @@ static void string_curve_propagation(
             double length = separation(oldb->start,oldb->end,3);
             double A_ref = 2.0*PI*radius*length;
             double Vol = PI*radius*radius*length;
-            double mass = rhoS*Vol;
+            double mass = 0.5*rhoS*Vol; //only use half for each point
 
             for (i = 0; i < 3; ++i)
             {
