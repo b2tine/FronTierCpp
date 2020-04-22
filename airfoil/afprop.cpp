@@ -239,8 +239,8 @@ extern void airfoil_curve_propagate(
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
-    CURVE *oldc,
-    CURVE *newc,
+        CURVE *oldc,
+         CURVE *newc,
         double dt)
 {
     BOND *oldb,*newb;
@@ -273,7 +273,7 @@ static void string_curve_propagation(
 
     //string-fluid interaction
     //
-    //TODO: Use F_drag = 0.5 rho C_d A |u| u
+    //TODO: Use F_drag = 0.5*rho*C_d*A*|u|*u
     //
     //      with drag coefficient C_d = 1.05
     //      and A is orthographic projection of the cylindrical area
@@ -289,6 +289,10 @@ static void string_curve_propagation(
     //      representation of the affine (or linear) transformation
     //      potentially making use of homogeneous coordinates
     //      (in which case the representation would be a 4x4 matrix).
+    //
+    //      OR try using ReferenceArea = Vol_cyl^(3/2)
+    //      
+    //      USE surface area first.
     
     FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
     if (params != NULL)
@@ -297,23 +301,33 @@ static void string_curve_propagation(
         COMPONENT base_comp = front->interf->default_comp;
         IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
         IF_FIELD *field = iFparams->field;
+        double rhoF = iFparams->rho2;
         double **vel,speed;
+
         double c_drag = params->c_drag;
+        double radius = params->radius;
+        double rhoS = params->dens;
+        
         int i;
         int count = 0;
 
         vel = field->vel;
-    for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
-        oldb = oldb->next, newb = newb->next)
-        {
+    for (oldb = oldc->first, newb = newc->first;
+            oldb != oldc->last; oldb = oldb->next, newb = newb->next)
+    {
         oldp = oldb->end;
         newp = newb->end;
+
             sl = (STATE*)left_state(oldp);
             sr = (STATE*)right_state(oldp);
+
             newsl = (STATE*)left_state(newp);
             newsr = (STATE*)right_state(newp);
             speed = 0.0;
             count++;
+
+            //TODO: Interpolate at midpoint instead of endpoint (oldp),
+            //      ..... if possible, get basic version working first.
             for (i = 0; i < 3; ++i)
             {
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
@@ -322,9 +336,20 @@ static void string_curve_propagation(
                 newsr->vel[i] = newsl->vel[i];
             }
             speed = sqrt(speed);
+
+            double length = separation(oldb->start,oldb->end,3);
+            double A_ref = 2.0*PI*radius*length;
+            double Vol = PI*radius*radius*length;
+            double mass = rhoS*Vol;
+
             for (i = 0; i < 3; ++i)
-                newsl->fluid_accel[i] = newsr->fluid_accel[i] =
-                            c_drag*speed*newsl->vel[i];
+            {
+                double dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+                newsl->fluid_accel[i] = dragForce/mass;
+                newsr->fluid_accel[i] = dragForce/mass;
+                //newsl->fluid_accel[i] = c_drag*speed*newsl->vel[i];
+                //newsr->fluid_accel[i] = c_drag*speed*newsl->vel[i];
+            }
             /*
             if (count == 5)
                 printf("Interpolated vel = %f %f %f accel = %f %f %f\n",

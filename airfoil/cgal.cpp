@@ -1999,6 +1999,8 @@ static void connectStringtoRGB(
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
 						sizeof(CURVE*));
 	
+    //TODO: would like to have this outside of this function,
+    //      see comments in calling function.
     FINITE_STRING* finite_string = nullptr;
     FILE* infile = fopen(InName(front),"r");
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
@@ -2053,7 +2055,8 @@ static void connectStringtoRGB(
         for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[k] = make_curve(0,0,start,end);
-        string_curves[k]->extra = (POINTER)finite_string;
+            
+            string_curves[k]->extra = (POINTER)finite_string;
 
 		hsbdry_type(string_curves[k]) = STRING_HSBDRY;
 		spacing = separation(start->posn,end->posn,3);

@@ -2914,7 +2914,7 @@ extern void initIsolated3dCurves(Front* front)
             return;
         
         FINITE_STRING *finite_string = NULL;
-        if (CursorAfterStringOpt(infile,"Enter yes to have finite radius: "))
+        if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
         {
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);

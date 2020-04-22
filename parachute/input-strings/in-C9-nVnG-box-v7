@@ -61,8 +61,8 @@ Enter the body index of the target RGB: 1
 
 Enter yes for string-fluid interaction: yes
 Enter string radius: 0.004
-Enter string mass density: 0.05
-Enter drag coefficient: 1.0;
+Enter string mass density: 5.0
+Enter drag coefficient: 1.05;
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
