@@ -336,7 +336,10 @@ static void string_curve_propagation(
 
             for (int i = 0; i < 3; ++i)
             {
-                double dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+                double dragForce = 0.0;
+                if (front->step > 5)
+                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];

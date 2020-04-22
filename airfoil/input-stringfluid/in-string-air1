@@ -9,8 +9,8 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 0.40 
-Max step: 1000
+Max time: 0.15 
+Max step: 200
 Print interval: 1
 Movie frame interval: 0.01
 CFL factor: 0.5
@@ -38,14 +38,14 @@ Enter number of canopy surfaces: 0
 Entering yes to turn off fluid solver: n
 
 Enter yes to add isolated curves: yes
-Enter yes to have finite radius: y
-Enter string radius: 0.05
-Enter string mass density: 0.05
-Enter drag coefficient: 1.0;
+Enter yes for string-fluid interaction: y
+Enter string radius: 0.002
+Enter string mass density: 50
+Enter drag coefficient: 0.6;
 
 Enter the number of curves: 1
-Enter the start of curve 0: 0.5 0.1 0.45
-Enter the end of curve 0: 0.5 0.9 0.45
+Enter the start of curve 0: 0.5 0.2 0.45
+Enter the end of curve 0: 0.5 0.8 0.45
 Enter yes to fix the endpoints of curve 0: y
 
 Enter density and viscosity of the fluid: 1 0.00628
@@ -62,7 +62,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.01
+Enter string damping constant: 0.1
 Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
