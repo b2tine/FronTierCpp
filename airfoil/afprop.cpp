@@ -316,10 +316,19 @@ static void string_curve_propagation(
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                         vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
                 speed += sqr(newsl->vel[i]);
-                newsr->vel[i] = newsl->vel[i];
+
+                //newsr->vel[i] = newsl->vel[i];//TODO: this looks suspicious
+                                                //      compare to elastic_point_propagate().
             }
             speed = sqrt(speed);
 
+        //From elastic_point_propagate() for reference
+        /*
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+        */
             double length = separation(oldb->start,oldb->end,3);
             double A_ref = 2.0*PI*radius*length;
             double Vol = PI*radius*radius*length;
@@ -328,10 +337,10 @@ static void string_curve_propagation(
             for (int i = 0; i < 3; ++i)
             {
                 double dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
-                newsl->fluid_accel[i] = dragForce/mass;
-                newsr->fluid_accel[i] = dragForce/mass;
-                //newsl->fluid_accel[i] = c_drag*speed*newsl->vel[i];
-                //newsr->fluid_accel[i] = c_drag*speed*newsl->vel[i];
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
+                newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            newsr->vel[i] = newsl->vel[i] = sl->vel[i];
             }
             /*
             if (count == 5)
