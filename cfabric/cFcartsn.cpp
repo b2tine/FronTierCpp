@@ -429,6 +429,7 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
+//TODO: need to pass by value?
 void G_CARTESIAN::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux,
@@ -448,7 +449,9 @@ void G_CARTESIAN::computeMeshFlux(
 	    stop_clock("solve_exp_value");
 	}
 
-	resetFlux(m_flux);
+    //TODO: but below m_vst passed by pointer 
+	
+    resetFlux(m_flux);
 	for (dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
@@ -744,7 +747,7 @@ void G_CARTESIAN::solve(double dt)
 	start_clock("solve");
 	setDomain();
 	appendOpenEndStates(); /* open boundary test */
-	scatMeshStates();
+	scatMeshStates();//TODO: pass by const reference inside not by value
 
 	adjustGFMStates();
 	setComponent();
@@ -2936,6 +2939,7 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
+//TODO: need pass by value?
 void G_CARTESIAN::copyFromMeshVst(
 	SWEEP m_vst)
 {
@@ -2950,9 +2954,10 @@ void G_CARTESIAN::copyFromMeshVst(
 	//GFM
 	if(eqn_params->tracked)
 	{
+        //TODO: copy by value here too
 	    start_clock("get_ghost_state");
-	    get_ghost_state(m_vst, 2, 0);
-	    get_ghost_state(m_vst, 3, 1);
+	    get_ghost_state(m_vst, 2, 0);//GAS_COMP1 = 2
+	    get_ghost_state(m_vst, 3, 1);//GAS_COMP2 = 3
 	    scatMeshGhost();
 	    stop_clock("get_ghost_state");
 	}
@@ -3726,7 +3731,7 @@ void G_CARTESIAN::scatMeshStates()
 	allocMeshVst(&vst);
 	copyToMeshVst(&vst);
 	scatMeshVst(&vst);
-	copyFromMeshVst(vst);
+	copyFromMeshVst(vst);//TODO: pass by const reference instead of by value (slow)
 	freeVst(&vst);
 }	/* end scatMeshStates */
 
@@ -4589,7 +4594,6 @@ void G_CARTESIAN::appendGhostBuffer(
 }*/	/* end appendGhostBuffer */
 
 //ghost fluid method.
-
 void G_CARTESIAN::solve_exp_value()
 {
 	int		i, j, k, n;
@@ -4598,6 +4602,7 @@ void G_CARTESIAN::solve_exp_value()
 
 	fflush(NULL);
 
+    //modifies gnor
 	get_normal_from_front();
 
 	if (dim == 1)
@@ -5398,6 +5403,7 @@ EXPORT  void    tecplot_interface_states(
 	fclose(file);
 }	/* end tecplot_interface */
 
+//TODO: need pass by value?
 boolean G_CARTESIAN::get_ave_state(
 	SWEEP 		m_vst,
 	int		*ic,
@@ -5487,6 +5493,7 @@ boolean G_CARTESIAN::get_ave_state(
 	return YES;
 }
 
+//TODO: need pass by value?
 void G_CARTESIAN::get_ghost_state(
 	SWEEP 		m_vst,
 	int		comp,
@@ -5546,26 +5553,26 @@ void G_CARTESIAN::get_ghost_state(
 	    // set G* values and mark norset  for that cell to 1
 	    if(c == comp)
 	    {
-		norset[i][j][k] = 1;
-		Gdens[ind][index] = dens[index];
-		Gpres[ind][index] = pres[index];
-		Gvel[ind][0][index] = momn[0][index]/dens[index];
-		if(dim > 1)
-		    Gvel[ind][1][index] = momn[1][index]/dens[index];
-		if(dim > 2)
-		    Gvel[ind][2][index] = momn[2][index]/dens[index];
+            norset[i][j][k] = 1;
+            Gdens[ind][index] = dens[index];
+            Gpres[ind][index] = pres[index];
+            Gvel[ind][0][index] = momn[0][index]/dens[index];
+            if(dim > 1)
+                Gvel[ind][1][index] = momn[1][index]/dens[index];
+            if(dim > 2)
+                Gvel[ind][2][index] = momn[2][index]/dens[index];
 	    }
 	    else
 	    {
-		aghst.icoords[0] = i;
-		aghst.icoords[1] = j;
-		aghst.icoords[2] = k;
-		// hardcoded the stencil size to 4.... 
-		if(withinStencilLen(aghst.icoords, 1) )
-		{
-		    fillThese.push_back(aghst);
-		}
-		norset[i][j][k] = 0;
+            aghst.icoords[0] = i;
+            aghst.icoords[1] = j;
+            aghst.icoords[2] = k;
+            //second arg = 1 corresponds to stencil size of 4.... is hardcoded right now...
+            if (withinStencilLen(aghst.icoords,1))
+            {
+                fillThese.push_back(aghst);
+            }
+            norset[i][j][k] = 0;
 	    }
 	}
 
@@ -5580,34 +5587,36 @@ void G_CARTESIAN::get_ghost_state(
 	    num = 0;
 
 	    resetThese.clear();	
-	    for (it=fillThese.begin() ; it != fillThese.end(); )
+	    for (it=fillThese.begin() ; it != fillThese.end();)
 	    {
-		found = YES;
-		ic[0] = it->icoords[0]; 
-		ic[1] = it->icoords[1]; 
-		ic[2] = it->icoords[2]; 
+            found = YES;
+            ic[0] = it->icoords[0]; 
+            ic[1] = it->icoords[1]; 
+            ic[2] = it->icoords[2]; 
 
-		// if no neighbors are 1, return 0.
-		if(get_ave_state(m_vst, ic,norset,comp,ind))
-		{
-		    num++;
-		    norset[ ic[0] ][ ic[1] ][ ic[2] ] = 2;
- 		    aghst.icoords[0] = ic[0];
-		    aghst.icoords[1] = ic[1];
-		    aghst.icoords[2] = ic[2]; 
-		    resetThese.push_back(aghst);
-		    // erase returns the next valid entery 
-		    // after the one we just erased.
-		    it=fillThese.erase(it);
-		}
-		else
-		{
-		    ++it;
-		}
+            // if no neighbors are 1, return 0.
+            if (get_ave_state(m_vst,ic,norset,comp,ind))
+            {
+                num++;
+                norset[ ic[0] ][ ic[1] ][ ic[2] ] = 2;
+                aghst.icoords[0] = ic[0];
+                aghst.icoords[1] = ic[1];
+                aghst.icoords[2] = ic[2]; 
+                resetThese.push_back(aghst);
+                // erase returns the next valid entery 
+                // after the one we just erased.
+                it=fillThese.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
 	    }
+
 	    for (it=resetThese.begin(); it != resetThese.end(); it++)
-		 norset[it->icoords[0]][it->icoords[1]][it->icoords[2]] = 1;
+            norset[it->icoords[0]][it->icoords[1]][it->icoords[2]] = 1;
 	}
+
 	fillThese.clear();
 	resetThese.clear();	
 	loop_count = 0;
@@ -6346,7 +6355,11 @@ void G_CARTESIAN::addFluxAlongGridLine(
 //For dir 3, seg_min=1, seg_max=120, top_gmax=121
 //
 //
-	seg_min = imin[idir];	
+	
+	double ldir_crx_coords[MAXD];
+	double rdir_crx_coords[MAXD];
+    
+    seg_min = imin[idir];	
 //	printf("idir=%d,imin=%d, imax=%d\n",idir,imin[idir],imax[idir]);
 	while (seg_min <= imax[idir])
 	{
@@ -6400,6 +6413,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
             index = d_index(icoords,top_gmax,dim);
             
             boolean status1,status2;
+            
+            //TODO: use ldir_crx_coords and rdir_crx_coords to differentiate crossings
             status1 = FT_StateStructAtGridCrossing(front,grid_intfc,
                     icoords,rdir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
@@ -6408,27 +6423,26 @@ void G_CARTESIAN::addFluxAlongGridLine(
                     icoords_next,ldir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
 
-/*		For the following part, if needBufferFromIntfc is true, which means
- *		it meets a boundary, we have a break. If needBufferFromIntfc is not true,
- *		we check the two statuses. If one of them is true, we still have a break.
- *		If all three of them are false, we assume that it does not meet a boundary  		*/		
+//		For the following part, if needBufferFromIntfc is true, which means
+// 		it meets a boundary, we have a break. If needBufferFromIntfc is not true,
+// 		we check the two statuses. If one of them is true, we still have a break.
+// 		If all three of them are false, we assume that it does not meet a boundary
    
             //if (needBufferFromIntfc(comp,top_comp[index]))
             //{
             //    printf("get boundary \n");
             //    break;
 		    //}
-/*		if (status1){
-		    
-		    printf("Outside::: The wave_type is %d\n", wave_type(hs));
-		    if (!needBufferFromIntfc(comp,top_comp[index])){
-			seg_max=i;
-			n++;
-		    }
-		    break;
-		}
-
-		}*/
+//		if (status1){
+//		    
+//		    printf("Outside::: The wave_type is %d\n", wave_type(hs));
+//		    if (!needBufferFromIntfc(comp,top_comp[index])){
+//			seg_max=i;
+//			n++;
+//		    }
+//		    break;
+//		}
+//
             if (needBufferFromIntfc(comp,top_comp[index]))
             {
                 printf("get boundary \n");
@@ -6449,25 +6463,24 @@ void G_CARTESIAN::addFluxAlongGridLine(
                 if (status1)
                 {
 
-    /*			printf("icoords[0]=%d icoords[1]=%d, icoords[2]=%d, wave_type=%d\n",icoords[0],icoords[1], icoords[2],wave_type(hs));
-    */
+    //			printf("icoords[0]=%d icoords[1]=%d, icoords[2]=%d, wave_type=%d\n",icoords[0],icoords[1], icoords[2],wave_type(hs));
 
-    /*			if (wave_type(hs)==7)
-     *			{
-                    for (int ii=0;ii<dim;ii++)
-                    {
-                       printf("icoords[%d]=%d,",ii,icoords[ii]);
-                    }
-                    printf("    found\n");
-                    
-                    printf("crx_coords[0]=%f\n",crx_coords[0]);
-                    for (int ii=0;ii<dim;ii++)
-                    {
-                        printf("crx_coords[%d]=%f\n",ii,crx_coords[ii]);
-                    }
+   //			if (wave_type(hs)==7)
+   //  			{
+   //                 for (int ii=0;ii<dim;ii++)
+   //                 {
+   //                    printf("icoords[%d]=%d,",ii,icoords[ii]);
+   //                 }
+   //                 printf("    found\n");
+   //                 
+   //                 printf("crx_coords[0]=%f\n",crx_coords[0]);
+   //                 for (int ii=0;ii<dim;ii++)
+   //                 {
+   //                     printf("crx_coords[%d]=%f\n",ii,crx_coords[ii]);
+   //                 }
 
-                }
-    */
+   //             }
+   // 
                     
                     seg_max=i++;
                     break;
