@@ -2322,6 +2322,31 @@ static void promptForDirichletBdryState(
 	}
 }	/* end promptForDirichletBdryState */
 
+/*
+extern void rgb_modification(
+        Front *front,
+        RG_PARAMS* rgb_params
+        )
+{
+    int dim = FT_Dimension();
+    if (dim != 3) return;
+
+    SURFACE **s;
+    char* inname = InName(front);
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            //TODO: write new functions for modifications
+            //
+            //prompt_for_rigid_body_params(dim,inname,rgb_params);
+            //set_rgbody_params(rgb_params,Hyper_surf(*s));
+        }
+    }
+    
+}*/       /* end rgb_modification */
+
 extern void rgb_init(Front *front,
         RG_PARAMS* rgb_params)
 {

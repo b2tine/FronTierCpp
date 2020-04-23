@@ -637,9 +637,10 @@ extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
 
+extern void rgb_modification(Front*,RG_PARAMS*);
+extern void rgb_init(Front*,RG_PARAMS*);
 extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
 extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
-extern void rgb_init(Front*,RG_PARAMS*);
 
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);

@@ -608,6 +608,7 @@ static void initVelocityFunc(
 	static FIXAREA_PARAMS *fixarea_params;
 	int i,dim = front->rect_grid->dim;
 	char string[100];
+    IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	if (af_params->no_fluid == YES)
@@ -627,7 +628,7 @@ static void initVelocityFunc(
 	    (void) printf("\tFixed point velocity (FP)\n");
 	    (void) printf("\tFree fall velocity (FF)\n");
    
-            CursorAfterString(infile,"Enter velocity function: ");
+        CursorAfterString(infile,"Enter velocity function:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    
@@ -807,6 +808,7 @@ static void initVelocityFunc(
         {
             fscanf(infile,"%lf",af_params->gravity+i);
             printf(" %f",af_params->gravity[i]);
+            iF_params->gravity[i] = af_params->gravity[i];
         }
         printf("\n");
     }

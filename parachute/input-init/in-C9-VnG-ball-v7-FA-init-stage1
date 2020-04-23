@@ -59,6 +59,8 @@ Enter initial position of load: 6 6 12.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 
+Enter number of canopy optimization rounds: 1
+
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: yes
@@ -74,25 +76,26 @@ Enter yes to use porosity: yes
 Enter viscous parameter: 604.333
 Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
+Enter timestep to activate FSI: 5
 
 Enter interior propagator: p
 Enter payload: 100
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
-Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.01
-Enter fabric friction constant: 0.05
+Enter fabric spring constant: 15000
+Enter fabric damping constant: 0.03
+Enter fabric friction constant: 0.0
 Enter fabric point mass: 0.001
-Enter fabric thickness: 0.001
-Enter fabric rounding tolerance: 0.000001
+Enter fabric thickness: 0.01
+Enter fabric rounding tolerance: 0.001
 
-Enter string spring constant: 50000
+Enter string spring constant: 750000
 Enter string damping constant: 0.1
-Enter string friction constant: 0.05
+Enter string friction constant: 0.0
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
-Enter string rounding tolerance: 0.000004
+Enter string rounding tolerance: 0.0004
 
 ******************Turbulence Parameters****************
 Enter yes to use eddy viscosity: no

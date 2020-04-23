@@ -1,6 +1,6 @@
-Domain limit in 0-th dimension: 0 12
-Domain limit in 1-th dimension: 0 12
-Domain limit in 2-th dimension: 0 26
+Domain limit in 0-th dimension: -2 14
+Domain limit in 1-th dimension: -2 14
+Domain limit in 2-th dimension: 0 36
 Computational grid: 80 80 180
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
@@ -9,10 +9,10 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 12.0
+Max time: 2.0
 Max step: 100000
-Print interval: 0.025
-Movie frame interval: 0.0025
+Print interval: 0.005
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -27,7 +27,7 @@ Projection type can be
 Enter projection type: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
@@ -59,22 +59,24 @@ Enter initial position of load: 6 6 12.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 
+Enter number of canopy optimization rounds: 1
+
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
-Entering yes to turn off fluid solver: no
+Entering yes to turn off fluid solver: yes
 
 Enter velocity function: Zero
 Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
 Enter radii of ellipse: 0.275 0.275
 Enter area velocity: 0 0 10
-Enter gravityX: 0 0 0
+Enter gravity: 0 0 0
 
 Enter yes to use porosity: yes
-Enter viscous parameter: 64.333
-Enter inertial parameter: 30.0
+Enter viscous parameter: 604.333
+Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
-Enter timestep to activate FSI: 2
+Enter timestep to activate FSI: 5
 
 Enter interior propagator: p
 Enter payload: 100
@@ -84,14 +86,14 @@ Enter area density of canopy: 5.0
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.03
 Enter fabric friction constant: 0.0
-Enter fabric point mass: 0.0001
-Enter fabric thickness: 0.0015
-Enter fabric rounding tolerance: 0.0015
+Enter fabric point mass: 0.001
+Enter fabric thickness: 0.01
+Enter fabric rounding tolerance: 0.001
 
 Enter string spring constant: 50000
 Enter string damping constant: 0.1
 Enter string friction constant: 0.0
-Enter string point mass: 0.00015
+Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.0004
 
@@ -118,8 +120,8 @@ Enter time to active turbulence model: 0.0
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 10
-Enter pressure: 5
+Enter velocity: 0 0 7
+Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -127,12 +129,11 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-Type y to make vector velocity field movie: y
+Type y to make vector velocity field movie: n
 Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
 

@@ -216,8 +216,7 @@ int af_find_state_at_crossing(
             return NO_PDE_BOUNDARY;
         case MOVABLE_BODY_BOUNDARY:
             return CONST_V_PDE_BOUNDARY;
-        case 
-            DIRICHLET_BOUNDARY:
+        case DIRICHLET_BOUNDARY:
 	    if (boundary_state_function(*hs) &&
                 strcmp(boundary_state_function_name(*hs),
                 "flowThroughBoundaryState") == 0)

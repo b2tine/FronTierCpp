@@ -57,7 +57,10 @@ void printAfExtraData(
         sprintf(filename,"%s-afdata",filename);
         outfile = fopen(filename,"w");
 
-	fprintf(outfile,"\nAirfoil extra front state data:\n");
+        //TODO: STRING FLUID INTERACTION RESTART DATA WILL BE NEEDED
+        //          hsbdry_type() == STRING_HSBDRY;
+	
+    fprintf(outfile,"\nAirfoil extra front state data:\n");
 
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
@@ -145,22 +148,49 @@ void printAfExtraData(
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-        int num_pts;
-        REGISTERED_PTS *registered_pts;
-
-        if (wave_type(*s) != ELASTIC_BOUNDARY &&
-            wave_type(*s) != ELASTIC_STRING)
-            continue;
-        if ((*s)->extra == NULL)
-            num_pts = 0;
-        else
+            /*if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;*/
+        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
         {
-            registered_pts = (REGISTERED_PTS*)(*s)->extra;
-            num_pts = registered_pts->num_pts;
+            int num_pts;
+            REGISTERED_PTS *registered_pts;
+
+            if ((*s)->extra == NULL)
+                num_pts = 0;
+            else
+            {
+                registered_pts = (REGISTERED_PTS*)(*s)->extra;
+                num_pts = registered_pts->num_pts;
+            }
+            fprintf(outfile,"number of registered points = %d\n",num_pts);
+            for (i = 0; i < num_pts; ++i)
+                fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
         }
-        fprintf(outfile,"number of registered points = %d\n",num_pts);
-        for (i = 0; i < num_pts; ++i)
-            fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+        else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            fprintf(outfile,"body_index = %d\n",body_index(hs));
+            fprintf(outfile,"total_mass = %g\n",total_mass(hs));
+            fprintf(outfile,"moment_of_inertial = %g\n",mom_inertial(hs));
+            fprintf(outfile,"angular_velo = %g\n",angular_velo(hs));
+            fprintf(outfile,"motion_type = %d\n",motion_type(hs));
+            fprintf(outfile,"xcom = %g %g %g\n", center_of_mass(hs)[0],
+                    center_of_mass(hs)[1],center_of_mass(hs)[2]);
+            fprintf(outfile,"vcom = %g %g %g\n",center_of_mass_velo(hs)[0],
+                    center_of_mass_velo(hs)[1],center_of_mass_velo(hs)[2]);
+            fprintf(outfile,"crot = %g %g %g\n",rotation_center(hs)[0],
+                    rotation_center(hs)[1],rotation_center(hs)[2]);
+            fprintf(outfile,"tdir = %g %g %g\n",translation_dir(hs)[0],
+                    translation_dir(hs)[1],translation_dir(hs)[2]);
+            fprintf(outfile,"rotdir = %g %g %g\n",rotation_direction(hs)[0],
+                    rotation_direction(hs)[1],rotation_direction(hs)[2]);
+            fprintf(outfile,"pmomi = %g %g %g\n",p_mom_inertial(hs)[0],
+                    p_mom_inertial(hs)[1],p_mom_inertial(hs)[1]);
+            fprintf(outfile,"pangv = %g %g %g\n",p_angular_velo(hs)[0],
+                    p_angular_velo(hs)[1],p_angular_velo(hs)[2]);
+            fprintf(outfile,"eulerp = %g %g %g %g\n",euler_params(hs)[0],
+                    euler_params(hs)[1],euler_params(hs)[2],euler_params(hs)[3]);
+        }
     }
 
     fprintf(outfile,"\nCurve extra data:\n");
@@ -212,13 +242,12 @@ void printAfExtraData(
     intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
-            fprintf(outfile,"%ld\n",Gindex(p));
+        fprintf(outfile,"%ld\n",Gindex(p));
 	}
 
 	fprintf(outfile,"\nGlobal index of triangles\n");
     intfc_surface_loop(intfc,s)
     {
-        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
         surf_tri_loop(*s,t)
         {
             fprintf(outfile,"%ld\n",Gindex(t));
@@ -378,25 +407,64 @@ void readAfExtraData(
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        int num_pts;
-        if (wave_type(*s) != ELASTIC_BOUNDARY &&
-            wave_type(*s) != ELASTIC_STRING)
-            continue;
-    
-        fgetstring(infile,"number of registered points = ");
-        fscanf(infile,"%d",&num_pts);
-        if (num_pts != 0)
+        /*if (wave_type(*s) != ELASTIC_BOUNDARY &&
+        wave_type(*s) != ELASTIC_STRING) continue;*/
+        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
         {
-            static REGISTERED_PTS *registered_pts;
-            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                        sizeof(REGISTERED_PTS));
-            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
-                        num_pts,sizeof(int));
-            (*s)->extra = (REGISTERED_PTS*)registered_pts;
-            registered_pts->num_pts = num_pts;
-            for (i = 0; i < num_pts; ++i)
-                fscanf(infile,"%d",registered_pts->global_ids+i);
+            int num_pts;
+            fgetstring(infile,"number of registered points = ");
+            fscanf(infile,"%d",&num_pts);
+            if (num_pts != 0)
+            {
+                static REGISTERED_PTS *registered_pts;
+                FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                            sizeof(REGISTERED_PTS));
+                FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                            num_pts,sizeof(int));
+                (*s)->extra = (REGISTERED_PTS*)registered_pts;
+                registered_pts->num_pts = num_pts;
+                for (i = 0; i < num_pts; ++i)
+                    fscanf(infile,"%d",registered_pts->global_ids+i);
+            }
         }
+        else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+	        fgetstring(infile,"body_index = "); fscanf(infile,"%d",&body_index(hs));
+	        fgetstring(infile,"total_mass = "); fscanf(infile,"%g",&total_mass(hs));
+	        fgetstring(infile,"moment_of_inertial = "); fscanf(infile,"%g",&mom_inertial(hs));
+	        fgetstring(infile,"angular_velo = "); fscanf(infile,"%g",&angular_velo(hs));
+	        fgetstring(infile,"motion_type = "); fscanf(infile,"%d",&motion_type(hs));
+	        fgetstring(infile,"xcom = "); fscanf(infile,"%g %g %g",
+            &center_of_mass(hs)[0],&center_of_mass(hs)[1],&center_of_mass(hs)[2]);
+	        fgetstring(infile,"vcom = "); fscanf(infile,"%g %g %g",
+            &center_of_mass_velo(hs)[0],&center_of_mass_velo(hs)[1],&center_of_mass_velo(hs)[2]);
+            //TODO: FINISH REMAINING READS
+
+            /*
+            fprintf(outfile,"body_index = %d\n",body_index(hs));
+            fprintf(outfile,"total_mass = %g\n",total_mass(hs));
+            fprintf(outfile,"moment_of_inertial = %g\n",mom_inertial(hs));
+            fprintf(outfile,"angular_velo = %g\n",angular_velo(hs));
+            fprintf(outfile,"motion_type = %d\n",motion_type(hs));
+            fprintf(outfile,"xcom = %g %g %g\n", center_of_mass(hs)[0],
+                    center_of_mass(hs)[1],center_of_mass(hs)[2]);
+            fprintf(outfile,"vcom = %g %g %g\n",center_of_mass_velo(hs)[0],
+                    center_of_mass_velo(hs)[1],center_of_mass_velo(hs)[2]);
+            fprintf(outfile,"crot = %g %g %g\n",rotation_center(hs)[0],
+                    rotation_center(hs)[1],rotation_center(hs)[2]);
+            fprintf(outfile,"tdir = %g %g %g\n",translation_dir(hs)[0],
+                    translation_dir(hs)[1],translation_dir(hs)[2]);
+            fprintf(outfile,"rotdir = %g %g %g\n",rotation_direction(hs)[0],
+                    rotation_direction(hs)[1],rotation_direction(hs)[2]);
+            fprintf(outfile,"pmomi = %g %g %g\n",p_mom_inertial(hs)[0],
+                    p_mom_inertial(hs)[1],p_mom_inertial(hs)[1]);
+            fprintf(outfile,"pangv = %g %g %g\n",p_angular_velo(hs)[0],
+                    p_angular_velo(hs)[1],p_angular_velo(hs)[2]);
+            fprintf(outfile,"eulerp = %g %g %g %g\n",euler_params(hs)[0],
+                    euler_params(hs)[1],euler_params(hs)[2],euler_params(hs)[3]);
+            */
+        } 
     }
     
     next_output_line_containing_string(infile,"Curve extra data:");
@@ -483,7 +551,6 @@ void readAfExtraData(
     
     intfc_surface_loop(intfc,s)
     {
-        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
         surf_tri_loop(*s,t)
         {
             fscanf(infile,"%ld",&Gindex(t));
@@ -793,36 +860,44 @@ void modifyInitialization(
 	char string[200],input_string[200];
 	boolean bifurcate_initialization;
 	
-	if (!CursorAfterStringOpt(infile,
-            "Entering yes to modify initialization:"))
+	if (!CursorAfterStringOpt(infile,"Enter yes to modify initialization:"))
 	{
 	    fclose(infile);
 	    return;
 	}
 	else
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' && string[0] != 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] != 'y' && string[0] != 'Y')
-	    {
 	    	fclose(infile);
-		return;
+		    return;
 	    }
-        }
+    }
+
 	bifurcate_initialization = NO;
-	if (CursorAfterStringOpt(infile,
-            "Enter yes to bifurcate initialization:"))
+	if (CursorAfterStringOpt(infile,"Enter yes to bifurcate initialization:"))
 	{
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
-		bifurcate_initialization = YES;
-        }
-    	fclose(infile);
-	if (bifurcate_initialization)
+                bifurcate_initialization = YES;
+    }
+    fclose(infile);
+
+    if (bifurcate_initialization)
 	    bifurcateCanopyModification(front);
 	else
 	    singleCanopyModification(front);
+
+    /*
+	if (CursorAfterStringOpt(infile,"Enter yes to modify RGB motion"))
+    {
+        //rgb_modification(front);
+    }
+    */
+
 }	/* end modifyInitialization */
 
 void setStressColor(
