@@ -329,6 +329,8 @@ static void string_curve_propagation(
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         */
+
+            //TODO: too much area for just the point...
             double length = separation(oldb->start,oldb->end,3);
             double A_ref = 2.0*PI*radius*length;
             double Vol = PI*radius*radius*length;
