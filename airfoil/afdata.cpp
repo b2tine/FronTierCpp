@@ -57,9 +57,10 @@ void printAfExtraData(
         sprintf(filename,"%s-afdata",filename);
         outfile = fopen(filename,"w");
 
-        //TODO: STRING FLUID INTERACTION RESTART DATA WILL BE NEEDED
-        //          hsbdry_type() == STRING_HSBDRY;
-	
+    //TODO: don't think we need this anymore since calling FT_WriteFrontState() at end.
+    //      May still need p->vel[i] though...
+    
+    /*    
     fprintf(outfile,"\nAirfoil extra front state data:\n");
 
 	next_point(intfc,NULL,NULL,NULL);
@@ -144,12 +145,11 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
+    */
 
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-            /*if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                wave_type(*s) != ELASTIC_STRING) continue;*/
         if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
         {
             int num_pts;
@@ -166,6 +166,7 @@ void printAfExtraData(
             for (i = 0; i < num_pts; ++i)
                 fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
         }
+        /*
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);
@@ -191,6 +192,7 @@ void printAfExtraData(
             fprintf(outfile,"eulerp = %g %g %g %g\n",euler_params(hs)[0],
                     euler_params(hs)[1],euler_params(hs)[2],euler_params(hs)[3]);
         }
+        */
     }
 
     fprintf(outfile,"\nCurve extra data:\n");
@@ -315,10 +317,13 @@ void readAfExtraData(
 	long max_point_gindex = 0;
 	long max_tri_gindex = 0;
 
-        sprintf(filename,"%s-afdata",restart_name);
-        infile = fopen(filename,"r");
-
+    sprintf(filename,"%s-afdata",restart_name);
 	printf("filename = %s\n",filename);
+    infile = fopen(filename,"r");
+
+    //TODO: may still need p->vel[i]
+    
+    /*
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
@@ -403,12 +408,11 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
 	}
+    */
 	
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        /*if (wave_type(*s) != ELASTIC_BOUNDARY &&
-        wave_type(*s) != ELASTIC_STRING) continue;*/
         if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
         {
             int num_pts;
@@ -427,6 +431,7 @@ void readAfExtraData(
                     fscanf(infile,"%d",registered_pts->global_ids+i);
             }
         }
+        /*
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);
@@ -435,36 +440,24 @@ void readAfExtraData(
 	        fgetstring(infile,"moment_of_inertial = "); fscanf(infile,"%g",&mom_inertial(hs));
 	        fgetstring(infile,"angular_velo = "); fscanf(infile,"%g",&angular_velo(hs));
 	        fgetstring(infile,"motion_type = "); fscanf(infile,"%d",&motion_type(hs));
-	        fgetstring(infile,"xcom = "); fscanf(infile,"%g %g %g",
-            &center_of_mass(hs)[0],&center_of_mass(hs)[1],&center_of_mass(hs)[2]);
-	        fgetstring(infile,"vcom = "); fscanf(infile,"%g %g %g",
-            &center_of_mass_velo(hs)[0],&center_of_mass_velo(hs)[1],&center_of_mass_velo(hs)[2]);
-            //TODO: FINISH REMAINING READS
-
-            /*
-            fprintf(outfile,"body_index = %d\n",body_index(hs));
-            fprintf(outfile,"total_mass = %g\n",total_mass(hs));
-            fprintf(outfile,"moment_of_inertial = %g\n",mom_inertial(hs));
-            fprintf(outfile,"angular_velo = %g\n",angular_velo(hs));
-            fprintf(outfile,"motion_type = %d\n",motion_type(hs));
-            fprintf(outfile,"xcom = %g %g %g\n", center_of_mass(hs)[0],
-                    center_of_mass(hs)[1],center_of_mass(hs)[2]);
-            fprintf(outfile,"vcom = %g %g %g\n",center_of_mass_velo(hs)[0],
-                    center_of_mass_velo(hs)[1],center_of_mass_velo(hs)[2]);
-            fprintf(outfile,"crot = %g %g %g\n",rotation_center(hs)[0],
-                    rotation_center(hs)[1],rotation_center(hs)[2]);
-            fprintf(outfile,"tdir = %g %g %g\n",translation_dir(hs)[0],
-                    translation_dir(hs)[1],translation_dir(hs)[2]);
-            fprintf(outfile,"rotdir = %g %g %g\n",rotation_direction(hs)[0],
-                    rotation_direction(hs)[1],rotation_direction(hs)[2]);
-            fprintf(outfile,"pmomi = %g %g %g\n",p_mom_inertial(hs)[0],
-                    p_mom_inertial(hs)[1],p_mom_inertial(hs)[1]);
-            fprintf(outfile,"pangv = %g %g %g\n",p_angular_velo(hs)[0],
-                    p_angular_velo(hs)[1],p_angular_velo(hs)[2]);
-            fprintf(outfile,"eulerp = %g %g %g %g\n",euler_params(hs)[0],
-                    euler_params(hs)[1],euler_params(hs)[2],euler_params(hs)[3]);
-            */
-        } 
+	        fgetstring(infile,"xcom = "); fscanf(infile,"%g %g %g",&center_of_mass(hs)[0],
+                    &center_of_mass(hs)[1],&center_of_mass(hs)[2]);
+	        fgetstring(infile,"vcom = "); fscanf(infile,"%g %g %g",&center_of_mass_velo(hs)[0],
+                    &center_of_mass_velo(hs)[1],&center_of_mass_velo(hs)[2]);
+	        fgetstring(infile,"crot = "); fscanf(infile,"%g %g %g",&rotation_center(hs)[0],
+                    &rotation_center(hs)[1],&rotation_center(hs)[2]);
+	        fgetstring(infile,"tdir = "); fscanf(infile,"%g %g %g",&translation_dir(hs)[0],
+                    &translation_dir(hs)[1],&translation_dir(hs)[2]);
+	        fgetstring(infile,"rotdir = "); fscanf(infile,"%g %g %g",&rotation_direction(hs)[0],
+                    &rotation_direction(hs)[1],&rotation_direction(hs)[2]);
+	        fgetstring(infile,"pmomi = "); fscanf(infile,"%g %g %g",&p_mom_inertial(hs)[0],
+                    &p_mom_inertial(hs)[1],&p_mom_inertial(hs)[1]);
+            fgetstring(infile,"pangv = "); fscanf(infile,"%g %g %g",&p_angular_velo(hs)[0],
+                    &p_angular_velo(hs)[1],&p_angular_velo(hs)[2]);
+            fgetstring(infile,"eulerp = "); fscanf(infile,"%g %g %g %g",&euler_params(hs)[0],
+                    &euler_params(hs)[1],&euler_params(hs)[2],&euler_params(hs)[3]);
+        }
+        */
     }
     
     next_output_line_containing_string(infile,"Curve extra data:");
@@ -485,6 +478,7 @@ void readAfExtraData(
             fscanf(infile,"%d",&c_params->dir);
 	    (*c)->extra = (POINTER)c_params;
 	}
+
 	next_output_line_containing_string(infile,"Node extra data:");
 	for (n = intfc->nodes; n && *n; ++n)
 	{
@@ -502,6 +496,7 @@ void readAfExtraData(
 	    (*n)->extra = (POINTER)n_params;
 	    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
+
 	if (fgetstring(infile,"Global index of points") == FUNCTION_FAILED)
 	{
 	    (void) printf("String \"Global index of points\" not found\n");
@@ -578,7 +573,8 @@ void readAfExtraData(
 	}
 	for (s = intfc->surfaces; s && *s; ++s)
             fscanf(infile,"%d",&Gindex(*s));
-	if (fgetstring(infile,"Point periodic shift") == FUNCTION_FAILED)
+	
+    if (fgetstring(infile,"Point periodic shift") == FUNCTION_FAILED)
 	{
 	    (void) printf("String \"Point periodic shift\" not found\n");
 	    return;

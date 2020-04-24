@@ -148,6 +148,7 @@ int main(int argc, char **argv)
 	    {
 		    readAfExtraData(&front,restart_state_name);
             clearRegisteredPoints(&front);//TODO: setMotionParams() should be after this
+            resetRigidBodyVelocity(&front);
             modifyInitialization(&front);
 	            //rgb_init(&front,&rgb_params);//TODO: is this fucking up my run?
 
@@ -225,13 +226,12 @@ void airfoil_driver(Front *front,
 	    
         if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    print_airfoil_stat(front,out_name);
 	    
-        //TODO: need this?
-        //if (ReSetTime)
-          // setSpecialNodeForce(front,af_params->kl);
+        if (ReSetTime)
+           setSpecialNodeForce(front,af_params->kl);
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);

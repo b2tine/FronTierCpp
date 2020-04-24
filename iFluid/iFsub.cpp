@@ -2347,6 +2347,27 @@ extern void rgb_modification(
     
 }*/       /* end rgb_modification */
 
+//TODO: May eventually need to set other variables,
+//      and may want to be able to set them to a nonzero value.
+//      Was original idea behind rgb_modification(), this may
+//      end up taking its place.
+extern void resetRigidBodyVelocity(Front *front)
+{
+    SURFACE **s;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            for (int i = 0; i < 3; ++i)
+            {
+                center_of_mass_velo(hs)[i] = 0.0;
+            }
+        }
+    }
+}
+
 extern void rgb_init(Front *front,
         RG_PARAMS* rgb_params)
 {
@@ -2426,7 +2447,7 @@ extern  void prompt_for_rigid_body_params(
         (void) printf("\tPRESET_TRANSLATION\n");
         (void) printf("\tPRESET_ROTATION\n");
         (void) printf("\tPRESET_MOTION (general)\n");
-        CursorAfterString(infile,"Enter type of preset motion: ");
+        CursorAfterString(infile,"Enter type of preset motion:");
         fscanf(infile,"%s",s);
         (void) printf("%s\n",s);
         switch(s[7])

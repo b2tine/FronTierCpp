@@ -804,6 +804,8 @@ static void compute_center_of_mass_velo(
 	    	    vload[j] = state->vel[j];
 	    	    xload[j] = Coords(node->posn)[j];
 	  	}
+
+        //TODO: consolidate payload and rigid body mass 
 	  	payload = af_params->payload;
 	  	xcom = center_of_mass(Hyper_surf(canopy));
 	  	vcom = center_of_mass_velo(Hyper_surf(canopy));

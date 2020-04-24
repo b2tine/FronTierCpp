@@ -11,7 +11,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 3.0 
 Max step: 10000
-Print interval: 0.5
+Print interval: 0.05
 Movie frame interval: 0.05
 CFL factor: 0.5
 Redistribution interval: 100000
@@ -19,7 +19,7 @@ Type yes to turn off auto-redistribution: y
 
 Entering yes to turn off fluid solver: yes
 Enter velocity function: zero
-Enter gravity: 0 0 100
+Enter gravity: 0 0 50
 
 Enter interior propagator: p
 Enter interior sub step number: 10

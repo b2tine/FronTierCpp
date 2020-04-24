@@ -1078,6 +1078,7 @@ static void rg_string_node_propagate(
 	    for (i = 0; i < dim; ++i)
 		accel[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	    accel[i] -= g[i];
 

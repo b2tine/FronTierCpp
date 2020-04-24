@@ -284,9 +284,13 @@ void setMotionParams(Front* front)
                 af_params->gravity[i] = iFparams->gravity[i];
 	}
 
-    CursorAfterStringOpt(infile,"Enter payload:");
+    if (CursorAfterStringOpt(infile,"Enter payload:"))
+    {
         fscanf(infile,"%lf",&af_params->payload);
         (void) printf("%f\n",af_params->payload);
+        //TODO: consolidate payload with rigid body mass
+	        //RGB_PARAMS *rgb_params = (RG_PARAMS*)front->extra3;
+    }
 	
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
@@ -1219,8 +1223,11 @@ extern void resetFrontVelocity(Front *front)
 	    for (i = 0; i < dim; ++i)
 	    {
 		p->vel[i] = 0.0;
+        p->force[i] = 0.0;
 		sl->vel[i] = sr->vel[i] = 0.0;
 		sl->impulse[i] = sr->impulse[i] = 0.0;
+		sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+		sl->other_accel[i] = sr->other_accel[i] = 0.0;
 	    }
 	}
 	if (dim == 3)
@@ -1233,8 +1240,11 @@ extern void resetFrontVelocity(Front *front)
 	        for (i = 0; i < dim; ++i)
 		{
 		    p->vel[i] = 0.0;
+		    p->force[i] = 0.0;
 		    sl->vel[i] = sr->vel[i] = 0.0;
 		    sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		}
 		for (b = (*c)->first; b != (*c)->last; b = b->next)
 		{
@@ -1244,8 +1254,11 @@ extern void resetFrontVelocity(Front *front)
 	            for (i = 0; i < dim; ++i)
 		    {
 		    	p->vel[i] = 0.0;
+		        p->force[i] = 0.0;
 		    	sl->vel[i] = sr->vel[i] = 0.0;
 		    	sl->impulse[i] = sr->impulse[i] = 0.0;
+                sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		    }
 		}
 		p = (*c)->end->posn;
@@ -1254,8 +1267,11 @@ extern void resetFrontVelocity(Front *front)
 	        for (i = 0; i < dim; ++i)
 		{
 		    p->vel[i] = 0.0;
+		    p->force[i] = 0.0;
 		    sl->vel[i] = sr->vel[i] = 0.0;
 		    sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		}
 	    }
 	}

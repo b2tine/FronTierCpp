@@ -27,7 +27,7 @@ Projection type can be
 Enter projection type: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 0
+Enter gravityX: 0 0 1000
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
@@ -70,7 +70,7 @@ Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
 Enter radii of ellipse: 0.275 0.275
 Enter area velocity: 0 0 10
-Enter gravity: 0 0 100
+Enter gravity: 0 0 1000
 
 Enter yes to use porosity: yes
 Enter viscous parameter: 604.333
@@ -83,14 +83,14 @@ Enter payload: 100
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
-Enter fabric spring constant: 5000
+Enter fabric spring constant: 15000
 Enter fabric damping constant: 0.03
 Enter fabric friction constant: 0.0
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.01
 Enter fabric rounding tolerance: 0.001
 
-Enter string spring constant: 50000
+Enter string spring constant: 150000
 Enter string damping constant: 0.1
 Enter string friction constant: 0.0
 Enter string point mass: 0.0015
@@ -136,7 +136,9 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: Xrigid_body
 
+Enter the debugging string: Xcollision_off
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size
@@ -144,7 +146,6 @@ Enter the debugging string: XPETSc
 Enter the debugging string: Xcoat_comp
 Enter the debugging string: Xdirichlet_bdry
 Enter the debugging string: Xflow_through
-Enter the debugging string: Xcollision_off
 
 Enter the debugging string: Xsample_velocity
 Enter the sample line type: 2
