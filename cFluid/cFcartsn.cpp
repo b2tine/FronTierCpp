@@ -1011,6 +1011,8 @@ void G_CARTESIAN::setDomain()
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
 	}
+
+    //GFM
 	for (i = 0; i < size; ++i)
 	for (j = 0; j < 2; ++j)
 	{

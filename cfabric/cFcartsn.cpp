@@ -112,6 +112,7 @@ void G_CARTESIAN::initMesh()
 	    (void) printf("Leaving g_cartesian.initMesh()\n");
 }
 
+//Also assignes the ghost values for use in solver where appropriate
 void G_CARTESIAN::setComponent()
 {
 	int		i,j, ind;
@@ -154,6 +155,8 @@ void G_CARTESIAN::setComponent()
 		//GFM
 		state->dim = dim;
 		state->eos = &eqn_params->eos[new_comp];
+
+        //TODO: Does this evaluate true for fabric interface?
 		if (gas_comp(old_comp) && gas_comp(new_comp))
 		{
 		    if(new_comp == GAS_COMP1)
@@ -161,22 +164,23 @@ void G_CARTESIAN::setComponent()
 		    else
 			ind = 1;
 
-                    if (Gdens[ind][i] != 0.0) // Not unset
-                    {
-		        state->dens = Gdens[ind][i];
-		        state->pres = Gpres[ind][i];
-		        for(j = 0; j < dim; ++j)
-			    state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
-		        state->engy = EosEnergy(state);
-                    }
+            if (Gdens[ind][i] != 0.0) // Not unset
+            {
+                state->dens = Gdens[ind][i];
+                state->pres = Gpres[ind][i];
+                for(j = 0; j < dim; ++j)
+                    state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
+                state->engy = EosEnergy(state);
+            }
 		}
 
-		dens[i] = state->dens;
-		pres[i] = state->pres;
-		engy[i] = state->engy;
-		for (j = 0; j < dim; ++j)
-		    momn[j][i] = state->momn[j];
+		    dens[i] = state->dens;
+            pres[i] = state->pres;
+            engy[i] = state->engy;
+            for (j = 0; j < dim; ++j)
+                momn[j][i] = state->momn[j];
 	    }
+
 	    cell_center[i].comp = top_comp[i];
 	}
 }	/* end setComponent() */
@@ -445,7 +449,7 @@ void G_CARTESIAN::computeMeshFlux(
 	    scatMeshGhost();
 	    stop_clock("get_ghost_state");
 	    start_clock("solve_exp_value");
-	    solve_exp_value();
+	    solve_exp_value();//sets gnor array (interface normal vectors)
 	    stop_clock("solve_exp_value");
 	}
 
@@ -732,11 +736,6 @@ void G_CARTESIAN::addSourceTerm(
 	
 }	/* end addSourceTerm */
 
-// for initial condition: 
-// 		setInitialCondition();	
-// this function should be called before solve()
-// for the source term of the momentum equation: 	
-// 		computeSourceTerm();
 void G_CARTESIAN::solve(double dt)
 {
 	m_dt = dt;
@@ -988,6 +987,8 @@ void G_CARTESIAN::setDomain()
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
 	}
+
+    //GFM
 	for (i = 0; i < size; ++i)
 	for (j = 0; j < 2; ++j)
 	{
@@ -2846,6 +2847,7 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	*/
 }	/* end scatMeshStates */
 
+//TODO: pass by reference or pointer not by value
 void G_CARTESIAN::copyMeshVst(
 	SWEEP m_vst_orig,
 	SWEEP *m_vst)
@@ -3747,6 +3749,7 @@ void G_CARTESIAN::freeFlux(
 	FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }
 
+//TODO: pass by reference or pointer not by value
 void G_CARTESIAN::addMeshFluxToVst(
 	SWEEP *m_vst,
 	FSWEEP m_flux,
@@ -4034,12 +4037,10 @@ void G_CARTESIAN::appendGhostBuffer(
 		    {
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
-//			printf("I am entering Neumann boundary for case 0\n");
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,0,i,comp);
 		    	break;
 		    case ELASTIC_BOUNDARY:
-//			printf("I am entering Elastic boundary for case 0\n");
 		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,0,i,comp);
 			break;
@@ -4100,7 +4101,7 @@ void G_CARTESIAN::appendGhostBuffer(
 //For the needBufferFromIntfc function, if the two component are different,
 //YES is returned. Then for the following, the if statement is satisfied when 
 //the two component are the same, which means it does not meet the rectangle
-//boundary. It may meet the elasity boundary or does not meet any boundary.
+//boundary. It may meet the elastic boundary or does not meet any boundary.
 //Then !status exclude the possibility of meeting elastic boundary.
 
 
@@ -4203,12 +4204,10 @@ void G_CARTESIAN::appendGhostBuffer(
 		    {
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
-//			printf("I am entering Neumann boundary for case 1\n");
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,n,i,comp);
 		    	break;
 		    case ELASTIC_BOUNDARY:
-//			printf("I am entering Elastic boundary for case 1\n");
 		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,n,i,comp);
 		    	break;
@@ -4598,12 +4597,11 @@ void G_CARTESIAN::solve_exp_value()
 {
 	int		i, j, k, n;
 	int		index;
-	double		**gnor = eqn_params->gnor;
 
 	fflush(NULL);
 
-    //modifies gnor
-	get_normal_from_front();
+	double **gnor = eqn_params->gnor;
+	get_normal_from_front(); //modifies gnor
 
 	if (dim == 1)
 	{
@@ -4645,13 +4643,14 @@ void G_CARTESIAN::solve_exp_value()
 	{
 	    for(k=0; k<dim; k++)
 	    {
-		for (n = imin[2]; n <= imax[2]; ++n)
-		for (j = imin[1]; j <= imax[1]; ++j)
-		for (i = imin[0]; i <= imax[0]; ++i)
-		{
-	    	    index = d_index3d(i,j,n,top_gmax);
-	    	    array[index] = gnor[k][index];
-		}
+            for (n = imin[2]; n <= imax[2]; ++n)
+            for (j = imin[1]; j <= imax[1]; ++j)
+            for (i = imin[0]; i <= imax[0]; ++i)
+            {
+                    index = d_index3d(i,j,n,top_gmax);
+                    array[index] = gnor[k][index];
+            }
+
 	    	FT_ParallelExchGridArrayBuffer(array,front,NULL);
         	for (n = 0; n <= top_gmax[2]; n++)
         	for (j = 0; j <= top_gmax[1]; j++)
@@ -4659,7 +4658,7 @@ void G_CARTESIAN::solve_exp_value()
         	{
 	    	    index  = d_index3d(i,j,n,top_gmax);
 	    	    gnor[k][index] = array[index];
-		}
+		    }
 	    }
 	}
 }
@@ -5541,6 +5540,7 @@ void G_CARTESIAN::get_ghost_state(
 	for (j=0; j<=top_gmax[1]; j++)
 	for (k=0; k<=top_gmax[2]; k++)
 	{
+        //TODO: replace with with the single d_index(icoords,top_gmax,dim)
 	    if (dim == 1)
 	    	index = d_index1d(i,top_gmax);
 	    else if (dim == 2)
@@ -5556,6 +5556,7 @@ void G_CARTESIAN::get_ghost_state(
             norset[i][j][k] = 1;
             Gdens[ind][index] = dens[index];
             Gpres[ind][index] = pres[index];
+            //TODO: replace with for loop
             Gvel[ind][0][index] = momn[0][index]/dens[index];
             if(dim > 1)
                 Gvel[ind][1][index] = momn[1][index]/dens[index];
@@ -5850,9 +5851,8 @@ void G_CARTESIAN::setElasticStates(
 	
 	double 		gamma=eqn_params->porosity;
 
-
-
-//coords_fluid is used for the interpolation of the velocity of original fluid point and ghost point w.r.t. the porosity 
+    //coords_fluid is used for the interpolation of the velocity of
+    //original fluid point and ghost point w.r.t. the porosity 
 	
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
@@ -5861,26 +5861,18 @@ void G_CARTESIAN::setElasticStates(
 	STATE		st_tmp_ghost;	
 	//st_tmp.eos = state->eos;
 
-
-
 	st_tmp.eos = &eqn_params->eos[comp];
 	st_tmp.dim = dim;
 
-        st_tmp_ghost.eos = &eqn_params->eos[comp];
-        st_tmp_ghost.dim = dim;
-
+    st_tmp_ghost.eos = &eqn_params->eos[comp];
+    st_tmp_ghost.dim = dim;
 
 
 	index = d_index(icoords,top_gmax,dim);
 	for (i = 0; i < dim; ++i)
 	{
-	    //transform the coordinate index to real cartesian coordinate
-	    //coords[i], top_L[i], top_h[i] are all floating
-	    //icoords[i] is integer
 	    coords[i] = top_L[i] + icoords[i]*top_h[i];
 	    ic[i] = icoords[i];
-//	    printf("i=%d, coords[i]=%f, top_L[i]=%f, top_h[i]=%f, icoords[i]=%d\n",
-//			i,coords[i], top_L[i], top_h[i], icoords[i]);
 	}
 	dir = (nb == 0) ? ldir[idir] : rdir[idir];
 	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
@@ -5900,25 +5892,18 @@ void G_CARTESIAN::setElasticStates(
 	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
 	}
 
-	
-
-
-//Currently, istart=1
-
 	for (i = istart; i <= nrad; ++i)
 	{
 	    /* Find ghost point */
 	    ic[idir] = (nb == 0) ? icoords[idir] - (i - istart + 1) :
                                 icoords[idir] + (i - istart + 1);
-
 	    for (j=0;j<dim;j++)
-		ic_ghost[j]=ic[j];
-
+            ic_ghost[j]=ic[j];
 
 	    index_ghost=d_index(ic_ghost,top_gmax,dim);
 
 	    //if nb=0, i.e. the point is on the upper of the boundary, we select three points below the boundary
-	    //if nb=1, i.e. the point is on the lower of the boundary, we select three points up the boundary
+	    //if nb=1, i.e. the point is on the lower of the boundary, we select three points above the boundary
 
 	    for (j = 0; j < dim; ++j){
 		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
@@ -5931,75 +5916,70 @@ void G_CARTESIAN::setElasticStates(
 	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
 
-
-	   //vn=vector (x_{ref}-x_{cross}) \cdot vector n 
 	    for (j = 0; j < dim; ++j)
 	    {
-		v[j] = coords_ref[j] - crx_coords[j];
-		vn += v[j]*nor[j];
+		    v[j] = coords_ref[j] - crx_coords[j];
+		    vn += v[j]*nor[j];
 	    }
-
-
-           //vector v= vector (x_{ref}-x) * vector n -vector v
+           
 	    for (j = 0; j < dim; ++j)
-		v[j] = 2.0*vn*nor[j] - v[j];
-	   //vector x_ref_new=vector x_cross+2((x_ref-x_cross) \cdot  n) *n -(x_ref-x_cross) 
-	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = crx_coords[j] + v[j];
+		    v[j] = 2.0*vn*nor[j] - v[j];
+	    
+        for (j = 0; j < dim; ++j)
+		    coords_ref[j] = crx_coords[j] + v[j];
 			
-	    /* Interpolate the state at the reflected point */
+        //TODO: Instead of interpolation can we use Ergun equation jump condtion
+        //      to get the pressure?
+	    
+        /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
-			&m_vst->momn[0][index]);
+                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        //TODO: Replace these ifs with a for loop
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
 	    if (dim > 1)
 		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[1],getStateYmom,&st_tmp.momn[1],
-			&m_vst->momn[1][index]);
+			m_vst->momn[1],getStateYmom,&st_tmp.momn[1],&m_vst->momn[1][index]);
 	    if (dim > 2)
 		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
-			&m_vst->momn[2][index]);
+			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],&m_vst->momn[2][index]);
+
 		/* Galileo Transformation */
-	    vn = 0.0;
-
-
             //vn=(v_tmp-v_ref) \cdot n
 
+        //Copmute relative normal velocity in frame of interface crossing.
+        //vel_ref is the normal velocity of the interface
+	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
-		vn += v[j]*nor[j];
+            v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+            vn += v[j]*nor[j];
 	    }
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */
-
-
-	    //v_tmp=v_ref-((v_tmp-v_ref) \cdot n)  n 
-
-
-
+	    
+        //v_tmp=v_ref-((v_tmp-v_ref) \cdot n)  n 
             for (j = 0; j < dim; j++)
                 v[j] = vel_ref[j] - 1.0*vn*nor[j];
 
+            /* Only normal component is reflected, 
+               relative tangent velocity is zero */ //TODO: can we account for this too?
 
 	    st_tmp_ghost.dens=m_vst->dens[index_ghost];
 	    st_tmp_ghost.pres=m_vst->pres[index_ghost];
-
 	    
-	    st_tmp.dens=(1.0-gamma)*st_tmp.dens+gamma*st_tmp_ghost.dens;
-	    st_tmp.pres=(1.0-gamma)*st_tmp.pres+gamma*st_tmp_ghost.pres;
+        //TODO: Are all of these justified?
+        st_tmp.dens=(1.0 - gamma)*st_tmp.dens + gamma*st_tmp_ghost.dens;
+	    st_tmp.pres=(1.0 - gamma)*st_tmp.pres + gamma*st_tmp_ghost.pres;
 	  
-
-            for (j=0; j<dim; j++){
-                st_tmp_ghost.momn[j]=m_vst->momn[j][index_ghost];
-                v_ghost[j]=st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-		v[j]=(1.0-gamma)*v[j]+gamma*v_ghost[j];
-	        st_tmp.momn[j] = v[j]*st_tmp.dens;
-            }
+        for (j=0; j<dim; j++)
+        {
+            st_tmp_ghost.momn[j] = m_vst->momn[j][index_ghost];
+            v_ghost[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
+            v[j] = (1.0 - gamma)*v[j] + gamma*v_ghost[j];
+            st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
 	    
 	    st_tmp.engy = EosEnergy(&st_tmp);
 
@@ -6261,7 +6241,7 @@ boolean G_CARTESIAN::needBufferFromIntfc(
 }	/* needBufferFromIntfc */
 
 
-bool G_CARTESIAN::withinStencilLen( int *icrds, int stencil )
+bool G_CARTESIAN::withinStencilLen(int *icrds, int stencil)
 {
         int istart = std::max(0, icrds[0] - stencil);
         int jstart = std::max(0, icrds[1] - stencil);
@@ -6288,19 +6268,19 @@ bool G_CARTESIAN::withinStencilLen( int *icrds, int stencil )
             return NO;
         }
         else if (dim == 3)
-	{
+        {
             for (i = istart; i <= iend; i++)
             for (j = jstart; j <= jend; j++)
             for (k = kstart; k <= kend; k++)
-	    {
+            {
                 int ic[3];
                 ic[0] = i; ic[1] = j; ic[2] = k;
-                index  =  d_index(ic,top_gmax,dim);
+                index = d_index(ic,top_gmax,dim);
                 if(mycomp != cell_center[index].comp)
                     return true;
-	    }
+            }
             return NO;
-	}
+        }
 	return YES;
 }
 
@@ -6351,16 +6331,13 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    icoords[i] = grid_icoords[i];
 
 
-//For dir 1 2, seg_min=4, seg_max=64,top_gmax=67
-//For dir 3, seg_min=1, seg_max=120, top_gmax=121
-//
-//
-	
+    //TODO: use these below if checking 2 crossings..
+    //      if fabric not seperated well, will be able to tell from 
+    //      distance between the crossings
 	double ldir_crx_coords[MAXD];
 	double rdir_crx_coords[MAXD];
     
     seg_min = imin[idir];	
-//	printf("idir=%d,imin=%d, imax=%d\n",idir,imin[idir],imax[idir]);
 	while (seg_min <= imax[idir])
 	{
 	    for (; seg_min <= imax[idir]; ++seg_min)
@@ -6419,6 +6396,9 @@ void G_CARTESIAN::addFluxAlongGridLine(
                     icoords,rdir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
 
+            //TODO: status2 never gets checked...
+            //      Guessing is for case that fabric is folded, but the bugs never
+            //      quite got worked out so it was disabled.
             status2 = FT_StateStructAtGridCrossing(front,grid_intfc,
                     icoords_next,ldir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
@@ -6490,11 +6470,13 @@ void G_CARTESIAN::addFluxAlongGridLine(
             seg_max = i;
         }
 
+        //Elastic Boundary and Porosity accounted for in appendGhostBuffer()
 	    icoords[idir] = seg_min;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    
+        //TODO: artificial compression being used?
 	    eos = &(eqn_params->eos[comp]);
 	    EosSetTVDParams(&scheme_params, eos);
 	    numericalFlux((POINTER)&scheme_params,&vst,&vflux,n);
@@ -6513,7 +6495,6 @@ void G_CARTESIAN::addFluxAlongGridLine(
                 m_flux->momn_flux[(l+idir)%dim][index] +=
                     vflux.momn_flux[l][n+nrad];
             }
-
             for (l = dim; l < 3; ++l)
                 m_flux->momn_flux[l][index] = 0.0;
             
@@ -6634,7 +6615,7 @@ static void printInputStencil(
         int n)
 {
         int i;
-        printf("  density    momn[0]    memn[1]    momn[2]    energy\n");
+        printf("  density    momn[0]    momn[1]    momn[2]    energy\n");
         for (i = 0; i < n+6; ++i)
         {
             printf("  %7.3g    %7.3g    %7.3g    %7.3g    %7.3g\n",
@@ -6686,6 +6667,7 @@ void G_CARTESIAN::errFunction()
 }	/* end errFunction, check the accuracy in AccuracySineWave case */
 
 
+//Flood filling
 void G_CARTESIAN::adjustGFMStates()
 {
         if(eqn_params->tracked)
@@ -6717,7 +6699,7 @@ void G_CARTESIAN::adjustGFMStates()
                          icoords[1] = j+jj;
                          index1 = d_index(icoords,top_gmax,dim);
                          Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
+                         for (kk = 0; kk < dim; ++kk)
                              Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                          Gpres[ind][index] = Gpres[ind][index1];
 
@@ -6730,7 +6712,7 @@ void G_CARTESIAN::adjustGFMStates()
                          icoords[1] = j+jj;
                          index1 = d_index(icoords,top_gmax,dim);
                          Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
+                         for (kk = 0; kk < dim; ++kk)
                              Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                          Gpres[ind][index] = Gpres[ind][index1];
 
@@ -6743,7 +6725,7 @@ void G_CARTESIAN::adjustGFMStates()
                          icoords[0] = i+ii;
                          index1 = d_index(icoords,top_gmax,dim);
                          Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
+                         for (kk = 0; kk < dim; ++kk)
                              Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                          Gpres[ind][index] = Gpres[ind][index1];
 
@@ -6756,7 +6738,7 @@ void G_CARTESIAN::adjustGFMStates()
                          icoords[0] = i+ii;
                          index1 = d_index(icoords,top_gmax,dim);
                          Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
+			             for (kk = 0; kk < dim; ++kk)
                              Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                          Gpres[ind][index] = Gpres[ind][index1];
 

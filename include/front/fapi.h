@@ -516,7 +516,7 @@ extern "C" {
      function looks for the nearest interface cross on the grid line segment.
      The function returns YES if the crossing exists, in such case, the
      crossing coordinates are copied to crx_coords, the corresponding
-     hyper surface (curce in 2D and surface in 3D) is assigned to hs,
+     hyper surface (curve in 2D and surface in 3D) is assigned to hs,
      and the state on the side of comp is assigned to the state pointer.
      If no crossing exists, the function return NO;
     \param front @b in	Pointer to Front.
