@@ -106,11 +106,13 @@ Enter gravity: 0 0 -9.8
 Start test time control parameters
 Max time: 3.0
 Max step: 1000
-Print interval: 0.0025
-Movie frame interval: 0.0025
+Print interval: 0.001
+Movie frame interval: 0.001
 CFL factor: 0.5
 
 Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: Xcollision_off
 Enter the debugging string: Xtrace
-Enter the debugging string: collision_off
 

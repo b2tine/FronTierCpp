@@ -496,6 +496,9 @@ private:
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
+	void setElasticStatesOLD(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
 	//GFM
 	void solve_exp_value();
 	boolean get_ave_normal(int*,int***);

@@ -391,13 +391,15 @@ void G_CARTESIAN::initFabricStates()
 	double *pres = field.pres;
 	double **momn = field.momn;
 
-        next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-	    getFabricState(sl,eqn_params,Coords(p),negative_component(hs));
-	    getFabricState(sr,eqn_params,Coords(p),positive_component(hs));
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        //TODO: check if wave_type(hs) == ELASTIC_BOUNDARY ??
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        getFabricState(sl,eqn_params,Coords(p),negative_component(hs));
+        getFabricState(sr,eqn_params,Coords(p),positive_component(hs));
 	}
+
 	FT_MakeGridIntfc(front);
 	setDomain();
 
@@ -407,33 +409,34 @@ void G_CARTESIAN::initFabricStates()
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (i = imin[0]; i <= imax[0]; ++i)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		comp = top_comp[index];
-		getRectangleCenter(index,coords);
-	    	getFabricState(&state,eqn_params,coords,comp);
-		dens[index] = state.dens;
-		pres[index] = state.pres;
-		engy[index] = state.engy;
-		for (l = 0; l < dim; ++l)
-		    momn[l][index] = state.momn[l];
+            index = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+            getRectangleCenter(index,coords);
+                getFabricState(&state,eqn_params,coords,comp);
+            dens[index] = state.dens;
+            pres[index] = state.pres;
+            engy[index] = state.engy;
+            for (l = 0; l < dim; ++l)
+                momn[l][index] = state.momn[l];
 	    }
-	    break;
+        break;
 	case 3:
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (i = imin[0]; i <= imax[0]; ++i)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		comp = top_comp[index];
-		getRectangleCenter(index,coords);
-	    	getFabricState(&state,eqn_params,coords,comp);
-		dens[index] = state.dens;
-		pres[index] = state.pres;
-		engy[index] = state.engy;
-		for (l = 0; l < dim; ++l)
-		    momn[l][index] = state.momn[l];
-	    }
-	    break;
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
+            getRectangleCenter(index,coords);
+            getFabricState(&state,eqn_params,coords,comp);
+            
+            dens[index] = state.dens;
+            pres[index] = state.pres;
+            engy[index] = state.engy;
+            for (l = 0; l < dim; ++l)
+                momn[l][index] = state.momn[l];
+        }
+        break;
 	}
 	scatMeshStates();
 }	/* end initFabricStates */

@@ -156,7 +156,6 @@ void G_CARTESIAN::setComponent()
 		state->dim = dim;
 		state->eos = &eqn_params->eos[new_comp];
 
-        //TODO: Does this evaluate true for fabric interface?
 		if (gas_comp(old_comp) && gas_comp(new_comp))
 		{
 		    if(new_comp == GAS_COMP1)
@@ -5839,6 +5838,239 @@ void G_CARTESIAN::setElasticStates(
 	COMPONENT	comp)
 {
 	int 		i,j,index,index_ghost;
+	
+    int             ind2[2][2] = {{0,1},{1,0}};
+    int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+
+    int 		ic[MAXD];
+	int 		ic_ghost[MAXD];
+
+	double		*vel_ref = state->vel;//normal vel of interface
+	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+	double		nor[MAXD],vn,v[MAXD],v_ghost[MAXD];
+	double		coords_fluid[MAXD];
+	
+	double 		poro = eqn_params->porosity;
+
+    //coords_fluid is used for the interpolation of the velocity of
+    //original fluid point and ghost point w.r.t. the porosity 
+	
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+	GRID_DIRECTION  dir;
+	STATE		st_tmp;
+	STATE		st_tmp_ghost;	
+
+	st_tmp.eos = &eqn_params->eos[comp];
+	st_tmp.dim = dim;
+
+    st_tmp_ghost.eos = &eqn_params->eos[comp];
+    st_tmp_ghost.dim = dim;
+
+
+	index = d_index(icoords,top_gmax,dim);
+	for (i = 0; i < dim; ++i)
+	{
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ic[i] = icoords[i];
+	}
+	
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+    
+    //nor points back toward the comp we are in.
+	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+    //make nor point towards comp on other side of the interface
+    for (i = 0; i < 3; ++i)
+        nor[i] = -nor[i];
+   
+    //Interpolate fluid state at interface crossing, and use for
+    //constant extrapolation across interface
+    //
+    //TODO: try using comp = NO_COMP
+    FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+    FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+    
+    for (j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
+    }
+	
+    if (debugging("elastic_buffer"))
+	{
+	    (void) printf("Entering setElasticStates()\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	}
+
+	for (i = istart; i <= nrad; ++i)
+	{
+	    // Find ghost point
+	    ic[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+
+	    for (j = 0;j < dim; ++j)
+            ic_ghost[j] = ic[j];
+
+	    index_ghost = d_index(ic_ghost,top_gmax,dim);
+
+	    //if nb = 0, i.e. the point is on the upper of the boundary,
+        //              we select three points below the boundary
+	    //if nb = 1, i.e. the point is on the lower of the boundary,
+        //              we select three points above the boundary
+
+	    for (j = 0; j < dim; ++j)
+            coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+
+        /*
+	    // Reflect ghost point through intfc-mirror at crossing
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+	    vn = 0.0;
+
+	    for (j = 0; j < dim; ++j)
+	    {
+		    v[j] = coords_ref[j] - crx_coords[j];
+		    vn += v[j]*nor[j];
+	    }
+           
+	    for (j = 0; j < dim; ++j)
+		    v[j] = 2.0*vn*nor[j] - v[j];
+	    
+        for (j = 0; j < dim; ++j)
+		    coords_ref[j] = crx_coords[j] + v[j];
+			
+        // Interpolate the state at the reflected point
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        for (j = 0; j < dim; ++j)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
+        }
+        */
+
+		// Galilean Transformation
+
+        //Compute relative normal velocity in frame of interface crossing.
+        //vel_ref is the normal velocity of the interface
+	    vn = 0.0;
+	    for (j = 0; j < dim; j++)
+	    {
+            //v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+            v[j] = st_tmp.momn[j]/st_tmp.dens;
+            vn += v[j]*nor[j];
+	    }
+	    
+        //v_tmp=v_ref-((v_tmp-v_ref) \cdot n)  n 
+        for (j = 0; j < dim; j++)
+            v[j] = vn*nor[j] - vel_ref[j];
+            //v[j] = vel_ref[j] - 1.0*vn*nor[j];
+
+            /* Only normal component is reflected, 
+               relative tangent velocity is zero */
+
+	    st_tmp_ghost.dens = m_vst->dens[index_ghost];
+	    st_tmp_ghost.pres = m_vst->pres[index_ghost];
+	    
+        //TODO: Are all of these justified?
+        st_tmp.dens = (1.0 - poro)*st_tmp.dens + poro*st_tmp_ghost.dens;
+	    st_tmp.pres = (1.0 - poro)*st_tmp.pres + poro*st_tmp_ghost.pres;
+	  
+        for (j = 0; j < dim; j++)
+        {
+            st_tmp_ghost.momn[j] = m_vst->momn[j][index_ghost];
+            v_ghost[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
+            v[j] = (1.0 - poro)*v[j] + poro*v_ghost[j];
+            st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
+	    
+	    st_tmp.engy = EosEnergy(&st_tmp);
+
+	    /* debugging printout */
+	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+	    {
+		printf("negative engrgy! \n");
+		printf("icoords = %d %d %d \n", icoords[0],icoords[1],
+						icoords[2]);
+		printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],
+			st_tmp.momn[1],st_tmp.momn[2],st_tmp.pres,
+			st_tmp.engy);
+		printf("st_tmp.dim = %d, idir = %d, nb = %d \n",
+			st_tmp.dim,idir,nb);
+		printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+			st_tmp.eos->einf,st_tmp.eos->pinf);
+		printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
+						coords_ref[2]);
+		clean_up(0);
+	    }
+
+	    if (nb == 0)
+	    {
+            vst->dens[nrad-i] = st_tmp.dens;
+            vst->engy[nrad-i] = st_tmp.engy;
+            vst->pres[nrad-i] = st_tmp.pres;
+            
+            for (j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+            
+            if (dim == 1)
+                vst->momn[0][nrad-i] = st_tmp.momn[0];
+            else if (dim == 2)
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind2[idir][j]];
+            else if (dim == 3)
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind3[idir][j]];
+	    }
+	    else
+	    {
+            vst->dens[n+nrad+i-1] = st_tmp.dens;
+            vst->engy[n+nrad+i-1] = st_tmp.engy;
+            vst->pres[n+nrad+i-1] = st_tmp.pres;
+	    
+            for (j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+
+            if (dim == 1)
+               vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+	    	else if (dim == 2)
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind2[idir][j]];
+	    	else if (dim == 3)
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind3[idir][j]];
+	    }
+	}
+
+	if (debugging("elastic_buffer"))
+	    (void) printf("Leaving setElasticStates()\n");
+}	/* end setElasticStates */
+
+void G_CARTESIAN::setElasticStatesOLD(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
+	int 		i,j,index,index_ghost;
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic[MAXD];
@@ -6670,84 +6902,84 @@ void G_CARTESIAN::errFunction()
 //Flood filling
 void G_CARTESIAN::adjustGFMStates()
 {
-        if(eqn_params->tracked)
-        {
-           double ***Gvel = eqn_params->Gvel;
-           double **Gdens = eqn_params->Gdens;
-           double **Gpres = eqn_params->Gpres;
-           int i,j,k,ii,jj,kk,index,index1,ind;
-           int icoords[3];
+    if(eqn_params->tracked)
+    {
+       double ***Gvel = eqn_params->Gvel;
+       double **Gdens = eqn_params->Gdens;
+       double **Gpres = eqn_params->Gpres;
+       int i,j,k,ii,jj,kk,index,index1,ind;
+       int icoords[3];
 
-           for (i = 0; i <= top_gmax[0]; i++)
-           for (j = 0; j <= top_gmax[1]; j++)
-           for (k = 0; k <= top_gmax[2]; k++)
-           {
-                icoords[0] = i;
-                icoords[1] = j;
-                icoords[2] = k;
-                index = d_index(icoords,top_gmax,dim);
+       for (i = 0; i <= top_gmax[0]; i++)
+       for (j = 0; j <= top_gmax[1]; j++)
+       for (k = 0; k <= top_gmax[2]; k++)
+       {
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            index = d_index(icoords,top_gmax,dim);
 
-                if (cell_center[index].comp != top_comp[index])
+            if (cell_center[index].comp != top_comp[index])
+            {
+                if (top_comp[index] == GAS_COMP1)
+                    ind = 0;
+                else
+                    ind = 1;
+
+                for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
                 {
-                    if (top_comp[index] == GAS_COMP1)
-                        ind = 0;
-                    else
-                        ind = 1;
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
 
-                    for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-                         for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (jj = 0; (j+jj) >= 0; jj--)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-                         for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) >= 0; ii--)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-                         for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			             for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
+                     if (Gdens[ind][index] != 0)
+                         break;
                 }
-           }
-        }
+
+                for (jj = 0; (j+jj) >= 0; jj--)
+                {
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+
+                for (ii = 0; (i+ii) >= 0; ii--)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+
+                for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+            }
+       }
+    }
 }	/* end adjustGFMState */
 
 void G_CARTESIAN::appendOpenEndStates()
