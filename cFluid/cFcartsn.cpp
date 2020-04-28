@@ -430,29 +430,29 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	/* Compute flux and advance field */
 
 	copyToMeshVst(&st_field[0]);
-	computeMeshFlux(&st_field[0],&st_flux[0],delta_t);
+	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
 	
 	for (i = 0; i < order-1; ++i)
 	{
-	    copyMeshVst(&st_field[0],&st_field[i+1]);
+	    copyMeshVst(st_field[0],&st_field[i+1]);
 	    for (j = 0; j <= i; ++j)
 	    {
 		if (a[i][j] != 0.0)
-		    addMeshFluxToVst(&st_field[i+1],&st_flux[j],a[i][j]);
+		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
 	    }
-	    computeMeshFlux(&st_field[i+1],&st_flux[i+1],delta_t);
+	    computeMeshFlux(st_field[i+1],&st_flux[i+1],delta_t);
 	}
 	for (i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
-		addMeshFluxToVst(&st_field[0],&st_flux[i],b[i]);
+		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	}
-	copyFromMeshVst(&st_field[0]);
+	copyFromMeshVst(st_field[0]);
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
 void G_CARTESIAN::computeMeshFlux(
-	SWEEP* m_vst,
+	SWEEP m_vst,
 	FSWEEP *m_flux,
 	double delta_t)
 {
@@ -473,7 +473,7 @@ void G_CARTESIAN::computeMeshFlux(
 	resetFlux(m_flux);
 	for (dir = 0; dir < dim; ++dir)
 	{
-	    addFluxInDirection(dir,m_vst,m_flux,delta_t);
+	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
 	addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
@@ -664,7 +664,7 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 }	/* end scatMeshFlux */
 
 void G_CARTESIAN::addSourceTerm(
-	SWEEP *m_vst,
+	const SWEEP& m_vst,
 	FSWEEP *m_flux,
 	double delta_t)
 {
@@ -690,9 +690,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -715,9 +715,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -741,9 +741,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -1011,6 +1011,8 @@ void G_CARTESIAN::setDomain()
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
 	}
+
+    //GFM
 	for (i = 0; i < size; ++i)
 	for (j = 0; j < 2; ++j)
 	{
@@ -2867,7 +2869,7 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 }	/* end scatMeshStates */
 
 void G_CARTESIAN::copyMeshVst(
-	SWEEP* m_vst_orig,
+	const SWEEP& m_vst_orig,
 	SWEEP *m_vst)
 {
 	int i,j,k,l,index;
@@ -2877,11 +2879,11 @@ void G_CARTESIAN::copyMeshVst(
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		index = d_index1d(i,top_gmax);
-		m_vst->dens[index] = m_vst_orig->dens[index];
-		m_vst->engy[index] = m_vst_orig->engy[index];
-		m_vst->pres[index] = m_vst_orig->pres[index];
+		m_vst->dens[index] = m_vst_orig.dens[index];
+		m_vst->engy[index] = m_vst_orig.engy[index];
+		m_vst->pres[index] = m_vst_orig.pres[index];
 		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig->momn[l][index];
+		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	    break;
 	case 2:
@@ -2889,11 +2891,11 @@ void G_CARTESIAN::copyMeshVst(
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		index = d_index2d(i,j,top_gmax);
-		m_vst->dens[index] = m_vst_orig->dens[index];
-		m_vst->engy[index] = m_vst_orig->engy[index];
-		m_vst->pres[index] = m_vst_orig->pres[index];
+		m_vst->dens[index] = m_vst_orig.dens[index];
+		m_vst->engy[index] = m_vst_orig.engy[index];
+		m_vst->pres[index] = m_vst_orig.pres[index];
 		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig->momn[l][index];
+		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	    break;
 	case 3:
@@ -2902,11 +2904,11 @@ void G_CARTESIAN::copyMeshVst(
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		index = d_index3d(i,j,k,top_gmax);
-		m_vst->dens[index] = m_vst_orig->dens[index];
-		m_vst->engy[index] = m_vst_orig->engy[index];
-		m_vst->pres[index] = m_vst_orig->pres[index];
+		m_vst->dens[index] = m_vst_orig.dens[index];
+		m_vst->engy[index] = m_vst_orig.engy[index];
+		m_vst->pres[index] = m_vst_orig.pres[index];
 		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig->momn[l][index];
+		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	}
 }	/* end copyMeshVst */
@@ -2960,7 +2962,7 @@ void G_CARTESIAN::copyToMeshVst(
 }	/* end copyToMeshVst */
 
 void G_CARTESIAN::copyFromMeshVst(
-	SWEEP* m_vst)
+	const SWEEP& m_vst)
 {
 	int i,j,k,l,index;
 	STATE state;
@@ -2988,11 +2990,11 @@ void G_CARTESIAN::copyFromMeshVst(
 	    {
 		index = d_index1d(i,top_gmax);
 		comp = top_comp[index];
-		state.dens = m_vst->dens[index];
-		state.engy = m_vst->engy[index];
-		state.pres = m_vst->pres[index];
+		state.dens = m_vst.dens[index];
+		state.engy = m_vst.engy[index];
+		state.pres = m_vst.pres[index];
 		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst->momn[l][index];
+		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
 		{
 		    state.eos = &(eqn_params->eos[comp]);
@@ -3011,11 +3013,11 @@ void G_CARTESIAN::copyFromMeshVst(
 	    {
 		index = d_index2d(i,j,top_gmax);
 		comp = top_comp[index];
-		state.dens = m_vst->dens[index];
-		state.engy = m_vst->engy[index];
-		state.pres = m_vst->pres[index];
+		state.dens = m_vst.dens[index];
+		state.engy = m_vst.engy[index];
+		state.pres = m_vst.pres[index];
 		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst->momn[l][index];
+		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
 		{
 		    state.eos = &(eqn_params->eos[comp]);
@@ -3035,11 +3037,11 @@ void G_CARTESIAN::copyFromMeshVst(
 	    {
 		index = d_index3d(i,j,k,top_gmax);
 		comp = top_comp[index];
-		state.dens = m_vst->dens[index];
-		state.engy = m_vst->engy[index];
-		state.pres = m_vst->pres[index];
+		state.dens = m_vst.dens[index];
+		state.engy = m_vst.engy[index];
+		state.pres = m_vst.pres[index];
 		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst->momn[l][index];
+		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
 		{
 		    state.eos = &(eqn_params->eos[comp]);
@@ -3502,7 +3504,7 @@ void G_CARTESIAN::scatMeshStates()
 	allocMeshVst(&vst);
 	copyToMeshVst(&vst);
 	scatMeshVst(&vst);
-	copyFromMeshVst(&vst);
+	copyFromMeshVst(vst);
 	freeVst(&vst);
 }	/* end scatMeshStates */
 
@@ -3520,7 +3522,7 @@ void G_CARTESIAN::freeFlux(
 
 void G_CARTESIAN::addMeshFluxToVst(
 	SWEEP *m_vst,
-	FSWEEP* m_flux,
+	const FSWEEP& m_flux,
 	double chi)
 {
 	int 		i,j,k,l,index;
@@ -3547,13 +3549,13 @@ void G_CARTESIAN::addMeshFluxToVst(
 		}
 		eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux->dens_flux[index];
-		m_vst->engy[index] += chi*m_flux->engy_flux[index];
+		m_vst->dens[index] += chi*m_flux.dens_flux[index];
+		m_vst->engy[index] += chi*m_flux.engy_flux[index];
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
 		    m_vst->momn[l][index] += 
-			chi*m_flux->momn_flux[l][index];
+			chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -3587,13 +3589,13 @@ void G_CARTESIAN::addMeshFluxToVst(
 		}
 		eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux->dens_flux[index];
-		m_vst->engy[index] += chi*m_flux->engy_flux[index];
+		m_vst->dens[index] += chi*m_flux.dens_flux[index];
+		m_vst->engy[index] += chi*m_flux.engy_flux[index];
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
 		    m_vst->momn[l][index] += 
-			chi*m_flux->momn_flux[l][index];
+			chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -3620,13 +3622,13 @@ void G_CARTESIAN::addMeshFluxToVst(
 		comp = top_comp[index];
 		eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux->dens_flux[index];
-		m_vst->engy[index] += chi*m_flux->engy_flux[index];
+		m_vst->dens[index] += chi*m_flux.dens_flux[index];
+		m_vst->engy[index] += chi*m_flux.engy_flux[index];
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
 		    m_vst->momn[l][index] += 
-				chi*m_flux->momn_flux[l][index];
+				chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -4789,7 +4791,7 @@ EXPORT  void    tecplot_interface_states(
 }	/* end tecplot_interface */
 
 boolean G_CARTESIAN::get_ave_state(
-	SWEEP* 		m_vst,
+	const SWEEP& m_vst,
 	int		*ic,
 	int		***norset,
 	int		comp,
@@ -4798,9 +4800,9 @@ boolean G_CARTESIAN::get_ave_state(
 	int		i, j, k, l, num, ic1[3], dir;
 	float		gd, gp, gvel[3];
 	boolean		found = NO;
-	double		**momn = m_vst->momn;
-	double		*dens = m_vst->dens;
-	double		*pres = m_vst->pres;
+	double		**momn = m_vst.momn;
+	double		*dens = m_vst.dens;
+	double		*pres = m_vst.pres;
 	double		***Gvel = eqn_params->Gvel;
 	double		**Gdens = eqn_params->Gdens;
 	double		**Gpres = eqn_params->Gpres;
@@ -4878,7 +4880,7 @@ boolean G_CARTESIAN::get_ave_state(
 }
 
 void G_CARTESIAN::get_ghost_state(
-	SWEEP* 		m_vst,
+	const SWEEP& m_vst,
 	int		comp,
 	int		ind)
 {
@@ -4886,9 +4888,9 @@ void G_CARTESIAN::get_ghost_state(
 	int			ic[3],index;
 	int			c, num;
 	boolean			found;
-	double			**momn = m_vst->momn;
-	double			*dens = m_vst->dens;
-	double			*pres = m_vst->pres;
+	double			**momn = m_vst.momn;
+	double			*dens = m_vst.dens;
+	double			*pres = m_vst.pres;
 	double			***Gvel = eqn_params->Gvel;
 	double			**Gdens = eqn_params->Gdens;
 	double			**Gpres = eqn_params->Gpres;
