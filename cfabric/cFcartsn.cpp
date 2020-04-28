@@ -387,7 +387,7 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	    switch (order)
 	    {
 	    case 1:
-		b[0] = 1.0;
+            b[0] = 1.0;
 	    	break;
 	    case 2:
 	    	a[0][0] = 1.0;
@@ -432,14 +432,11 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
-//TODO: need to pass by value?
 void G_CARTESIAN::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux,
 	double delta_t)
 {
-	int dir;
-
 	if(eqn_params->tracked)
 	{
 	    start_clock("get_ghost_state");
@@ -452,14 +449,12 @@ void G_CARTESIAN::computeMeshFlux(
 	    stop_clock("solve_exp_value");
 	}
 
-    //TODO: but below m_vst passed by pointer 
-	
     resetFlux(m_flux);
-	for (dir = 0; dir < dim; ++dir)
+	for (int dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
-	addSourceTerm(&m_vst,m_flux,delta_t);
+	addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
 
 void G_CARTESIAN::resetFlux(FSWEEP *m_flux)
@@ -648,7 +643,7 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 }	/* end scatMeshFlux */
 
 void G_CARTESIAN::addSourceTerm(
-	SWEEP *m_vst,
+	const SWEEP& m_vst,
 	FSWEEP *m_flux,
 	double delta_t)
 {
@@ -674,9 +669,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -699,9 +694,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -725,9 +720,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst->dens[index];
+				delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst->momn[l][index];
+				delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -745,7 +740,7 @@ void G_CARTESIAN::solve(double dt)
 	start_clock("solve");
 	setDomain();
 	appendOpenEndStates(); /* open boundary test */
-	scatMeshStates();//TODO: pass by const reference inside not by value
+	scatMeshStates();
 
 	adjustGFMStates();
 	setComponent();
@@ -1048,11 +1043,11 @@ void G_CARTESIAN::allocDirVstFlux(
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::freeDirVstFlux(
-        SWEEP vst,
-        FSWEEP flux)
+        SWEEP* vst,
+        FSWEEP* flux)
 {
-        FT_FreeThese(4,vst.dens,vst.engy,vst.pres,vst.momn);
-        FT_FreeThese(3,flux.dens_flux,flux.engy_flux,flux.momn_flux);
+        FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
+        FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::checkVst(SWEEP *vst)
@@ -2846,9 +2841,8 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	*/
 }	/* end scatMeshStates */
 
-//TODO: pass by reference or pointer not by value
 void G_CARTESIAN::copyMeshVst(
-	SWEEP m_vst_orig,
+	const SWEEP& m_vst_orig,
 	SWEEP *m_vst)
 {
 	int i,j,k,l,index;
@@ -2940,9 +2934,8 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
-//TODO: need pass by value?
 void G_CARTESIAN::copyFromMeshVst(
-	SWEEP m_vst)
+	const SWEEP& m_vst)
 {
 	int i,j,k,l,index;
 	STATE state;
@@ -2955,7 +2948,6 @@ void G_CARTESIAN::copyFromMeshVst(
 	//GFM
 	if(eqn_params->tracked)
 	{
-        //TODO: copy by value here too
 	    start_clock("get_ghost_state");
 	    get_ghost_state(m_vst, 2, 0);//GAS_COMP1 = 2
 	    get_ghost_state(m_vst, 3, 1);//GAS_COMP2 = 3
@@ -3732,7 +3724,7 @@ void G_CARTESIAN::scatMeshStates()
 	allocMeshVst(&vst);
 	copyToMeshVst(&vst);
 	scatMeshVst(&vst);
-	copyFromMeshVst(vst);//TODO: pass by const reference instead of by value (slow)
+	copyFromMeshVst(vst);
 	freeVst(&vst);
 }	/* end scatMeshStates */
 
@@ -3748,10 +3740,9 @@ void G_CARTESIAN::freeFlux(
 	FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }
 
-//TODO: pass by reference or pointer not by value
 void G_CARTESIAN::addMeshFluxToVst(
 	SWEEP *m_vst,
-	FSWEEP m_flux,
+	const FSWEEP& m_flux,
 	double chi)
 {
 	int 		i,j,k,l,index;
@@ -3783,8 +3774,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -3823,8 +3813,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -3856,8 +3845,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-				chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
@@ -5401,9 +5389,8 @@ EXPORT  void    tecplot_interface_states(
 	fclose(file);
 }	/* end tecplot_interface */
 
-//TODO: need pass by value?
 boolean G_CARTESIAN::get_ave_state(
-	SWEEP 		m_vst,
+	const SWEEP& m_vst,
 	int		*ic,
 	int		***norset,
 	int		comp,
@@ -5491,13 +5478,11 @@ boolean G_CARTESIAN::get_ave_state(
 	return YES;
 }
 
-//TODO: need pass by value?
 void G_CARTESIAN::get_ghost_state(
-	SWEEP 		m_vst,
+	const SWEEP& m_vst,
 	int		comp,
 	int		ind)
 {
-	int			i,j,k;
 	int			ic[3],index;
 	int			c, num;
 	boolean			found;
@@ -5516,7 +5501,7 @@ void G_CARTESIAN::get_ghost_state(
 	if (norset == NULL)
 	{
 	    int ft_vec_size = 0;
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
 	    {
 		if (top_gmax[i]+8 > ft_vec_size)
 		    ft_vec_size = top_gmax[i]+8;
@@ -5535,17 +5520,12 @@ void G_CARTESIAN::get_ghost_state(
 
 	ToFill aghst;
 	
-	for (i=0; i<=top_gmax[0]; i++)
-	for (j=0; j<=top_gmax[1]; j++)
-	for (k=0; k<=top_gmax[2]; k++)
+	for (int i = 0; i <= top_gmax[0]; i++)
+	for (int j = 0; j <= top_gmax[1]; j++)
+	for (int k = 0; k <= top_gmax[2]; k++)
 	{
-        //TODO: replace with with the single d_index(icoords,top_gmax,dim)
-	    if (dim == 1)
-	    	index = d_index1d(i,top_gmax);
-	    else if (dim == 2)
-	    	index = d_index2d(i,j,top_gmax);
-	    else if (dim == 3)
-	    	index = d_index3d(i,j,k,top_gmax);
+        int icoords[3] = {i,j,k};
+        index = d_index(icoords,top_gmax,dim);
 	    c = cell_center[index].comp;
 
 	    // for each cell that has component "comp" we
@@ -5555,12 +5535,8 @@ void G_CARTESIAN::get_ghost_state(
             norset[i][j][k] = 1;
             Gdens[ind][index] = dens[index];
             Gpres[ind][index] = pres[index];
-            //TODO: replace with for loop
-            Gvel[ind][0][index] = momn[0][index]/dens[index];
-            if(dim > 1)
-                Gvel[ind][1][index] = momn[1][index]/dens[index];
-            if(dim > 2)
-                Gvel[ind][2][index] = momn[2][index]/dens[index];
+            for (int l = 0; l < dim; ++l)
+                Gvel[ind][l][index] = momn[l][index]/dens[index];
 	    }
 	    else
 	    {
@@ -5825,7 +5801,7 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) printf("Leaving setNeumannStates()\n");
 }	/* end setNeumannStates */
 
-void G_CARTESIAN::setElasticStates(
+void G_CARTESIAN::setElasticStatesOLD(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
 	HYPER_SURF 	*hs,
@@ -5898,7 +5874,19 @@ void G_CARTESIAN::setElasticStates(
         FT_IntrpStateVarAtCoords(front,comp,crx_coords,
             m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
     }
-	
+    /*
+    FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+    FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+    
+    for (j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,crx_coords,
+            m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
+    }
+	*/
+
     if (debugging("elastic_buffer"))
 	{
 	    (void) printf("Entering setElasticStates()\n");
@@ -6058,7 +6046,7 @@ void G_CARTESIAN::setElasticStates(
 	    (void) printf("Leaving setElasticStates()\n");
 }	/* end setElasticStates */
 
-void G_CARTESIAN::setElasticStatesOLD(
+void G_CARTESIAN::setElasticStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
 	HYPER_SURF 	*hs,
@@ -6551,6 +6539,9 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	
 	if (first)
     {
+        //TODO: more efficient to free and release?
+        //      freeing and reallocating could keep from fragmenting/page faulting
+        //      and improve efficiency...
         first = NO;
         allocDirVstFlux(&vst,&vflux);
     }
@@ -6708,7 +6699,6 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    
-        //TODO: artificial compression being used?
 	    eos = &(eqn_params->eos[comp]);
 	    EosSetTVDParams(&scheme_params, eos);
 	    numericalFlux((POINTER)&scheme_params,&vst,&vflux,n);
@@ -6735,6 +6725,9 @@ void G_CARTESIAN::addFluxAlongGridLine(
 
 	    seg_min = seg_max + 1;
 	}
+        
+    //TODO: see above todo in if (first) block
+        //freeDirVstFlux(&vst,&vflux);
 }	/* end addFluxAlongGridLine */
 
 
@@ -6839,7 +6832,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    }
 	    seg_min = seg_max + 1;
 	}
-        freeDirVstFlux(vst,vflux);
+        freeDirVstFlux(&vst,&vflux);
 }*/	/* end addFluxAlongGridLine */
 
 static void printInputStencil(
