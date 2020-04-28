@@ -267,6 +267,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
 
+//TODO: There seems to be a bug in one, or both, of the following two functions
 /*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
@@ -297,7 +298,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 	
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
-*/
 
 //TODO: Turn into global curl function
 std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
@@ -351,7 +351,7 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     }
 
     return curl_vel;
-}       /* end computePointVorticity */
+}*/       /* end computePointVorticity */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
