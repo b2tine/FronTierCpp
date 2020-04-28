@@ -415,7 +415,7 @@ private:
 	void allocMeshVst(SWEEP*);
 	void allocMeshFlux(FSWEEP*);
 	void allocDirVstFlux(SWEEP*,FSWEEP*);
-	void freeDirVstFlux(SWEEP,FSWEEP);
+	void freeDirVstFlux(SWEEP*,FSWEEP*);
 	void freeVst(SWEEP*);
 	void freeFlux(FSWEEP*);
 

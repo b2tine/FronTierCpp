@@ -1074,8 +1074,8 @@ void G_CARTESIAN::freeDirVstFlux(
         SWEEP vst,
         FSWEEP flux)
 {
-        FT_FreeThese(4,vst.dens,vst.engy,vst.pres,vst.momn);
-        FT_FreeThese(3,flux.dens_flux,flux.engy_flux,flux.momn_flux);
+        FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
+        FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::checkVst(SWEEP *vst)
@@ -5538,7 +5538,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    }
 	    seg_min = seg_max + 1;
 	}
-        freeDirVstFlux(vst,vflux);
+        freeDirVstFlux(&vst,&vflux);
 }	/* end addFluxAlongGridLine */
 
 static void printInputStencil(
