@@ -131,6 +131,9 @@ void setMotionParams(Front* front)
                 af_params->no_fluid = YES;
         }
 
+    front->vfunc = nullptr;
+    front->vparams = nullptr;
+
 	if (af_params->no_fluid == YES)
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
@@ -233,12 +236,12 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-        {
-	    front->interior_propagate = fourth_order_elastic_set_propagate;
-        }
+    {
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
 
-
-	if (af_params->no_fluid == NO)
+    
+    if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
 	    {
@@ -276,30 +279,15 @@ void setMotionParams(Front* front)
             CursorAfterString(infile,"Enter factor of smoothing radius:");
             fscanf(infile,"%lf",&iFparams->smoothing_radius);
             (void) printf("%f\n",iFparams->smoothing_radius);
+    
+            for (i = 0; i < dim; ++i)
+                af_params->gravity[i] = iFparams->gravity[i];
 	}
 
-	for (i = 0; i < dim; ++i)
-	    af_params->gravity[i] = iFparams->gravity[i];
-
-	if (af_params->is_parachute_system == YES)
-	{
-	    CursorAfterStringOpt(infile,"Enter payload:");
-            fscanf(infile,"%lf",&af_params->payload);
-            (void) printf("%f\n",af_params->payload);
-	}
-
-    /*
-        CursorAfterString(infile,"Enter preximity test tolerance:");
-        fscanf(infile,"%lf",&af_params->pre_tol);
-        (void) printf("%f\n",af_params->pre_tol);
-        CursorAfterString(infile,"Enter volume diff criteria:");
-        fscanf(infile,"%lf",&af_params->vol_diff);
-        (void) printf("%f\n",af_params->vol_diff);
-        CursorAfterString(infile,"Enter restitution coefficient:");
-        fscanf(infile,"%lf",&af_params->rest);
-        (void) printf("%f\n",af_params->rest);
-    */
-
+    CursorAfterStringOpt(infile,"Enter payload:");
+        fscanf(infile,"%lf",&af_params->payload);
+        (void) printf("%f\n",af_params->payload);
+	
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
@@ -812,6 +800,17 @@ static void initVelocityFunc(
                 break;
             }	
 	}
+
+    if (CursorAfterStringOpt(infile,"Enter gravity:"))
+    {
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf",af_params->gravity+i);
+            printf(" %f",af_params->gravity[i]);
+        }
+        printf("\n");
+    }
+
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
 
@@ -993,6 +992,7 @@ static int singular_velo(
 	return YES;
 }	/* end sigular_velo */
 
+//TODO: Make shape_id an enum
 struct _SHAPE_PARAMS {
 	int shape_id;
 	double L[2];
@@ -1079,6 +1079,8 @@ static void init_fixarea_params(
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
+            //TODO: Add hsbdry_type() == STRING_HSBDRY, GORE_HSBDRY etc.
+            //      to facilitate other kinds initialization procedures.
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
 		wave_type(hs) != ELASTIC_STRING) 
 		continue;

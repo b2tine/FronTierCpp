@@ -415,18 +415,18 @@ private:
 	void allocMeshVst(SWEEP*);
 	void allocMeshFlux(FSWEEP*);
 	void allocDirVstFlux(SWEEP*,FSWEEP*);
-	void freeDirVstFlux(SWEEP,FSWEEP);
+	void freeDirVstFlux(SWEEP*,FSWEEP*);
 	void freeVst(SWEEP*);
 	void freeFlux(FSWEEP*);
 
 	/* Mesh operations */
 	void solveRungeKutta(int);
-	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
+	void addMeshFluxToVst(SWEEP*,const FSWEEP&,double);
 	void computeMeshFlux(SWEEP,FSWEEP*,double);
-	void copyMeshVst(SWEEP,SWEEP*);
-	void copyFromMeshVst(SWEEP);
+	void copyMeshVst(const SWEEP&,SWEEP*);
+	void copyFromMeshVst(const SWEEP&);
 	void copyToMeshVst(SWEEP*);
-	void addSourceTerm(SWEEP*,FSWEEP*,double);
+	void addSourceTerm(const SWEEP&,FSWEEP*,double);
 
 	/* Directional flux solver */
 	void resetFlux(FSWEEP*);
@@ -521,10 +521,10 @@ private:
 	//GFM
 	void solve_exp_value();
 	boolean get_ave_normal(int*,int***);
-	boolean get_ave_state(SWEEP, int*,int***,int,int);
+	boolean get_ave_state(const SWEEP&, int*,int***,int,int);
 	boolean needBufferFromIntfc(COMPONENT,COMPONENT);
 	void get_normal_from_front();
-	void get_ghost_state(SWEEP, int,int);
+	void get_ghost_state(const SWEEP&, int,int);
 	void tecplot_interior_states(char*);
 	void scatMeshGhost();
 	void GFMGhostState(int*,int,STATE*);

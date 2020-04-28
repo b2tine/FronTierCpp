@@ -62,14 +62,18 @@ Enter the gap between canopy and drape: 0.1016
 Enter initial position of load: 0.5 0.5 1.9076
 Enter yes to fix the load node: no
 Enter yes to install the strings to RGB: no
+
 Entering yes to modify initialization: yes
 Enter yes for rotation of canopy: no
 
 Enter new load position: 0.5 0.5 1.5536
+Enter new load positionX: 0.5 0.5 1.5836
 Enter connection position: 0.5 0.5 1.70
 
 Enter yes to install the multi-parachute to RGB: yes
 Enter the body index of the target RGB: 1
+Enter yes to skip rg_nodes in x direction for 1: yes
+Enter yes to skip rg_nodes in y direction for 1: yes
 
 *************Airfoil parameters*************
 Enter yes to use GPU solver: no
@@ -119,7 +123,6 @@ Enter yes for debugging: yes
 Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
-Enter the debugging string: strain_limiting
 
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK

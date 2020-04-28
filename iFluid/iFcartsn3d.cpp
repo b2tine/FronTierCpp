@@ -191,6 +191,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     int index;
@@ -208,15 +209,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     double **vel = field->vel;
 	double **vorticity = field->vorticity;
 
-    int dim = 3;
 	for (int k = kmin; k <= kmax; k++)
 	for (int j = jmin; j <= jmax; j++)
     for (int i = imin; i <= imax; i++)
 	{
+        index = d_index3d(i,j,k,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+
         icoords[0] = i;
         icoords[1] = j;
         icoords[2] = k;
-	    index = d_index(icoords,top_gmax,dim);
 
         for (int l = 0; l < dim; ++l)
         {
@@ -263,9 +265,93 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
         vorticity[2][index] = u1_wrtx - u0_wrty;
     }
 	
-    //TODO: Test that this works
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
+*/
+
+void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
+{
+    double** vel = field->vel;
+    double** vorticity = field->vorticity;
+    std::vector<double> curl_vel(3);
+
+    int index;
+    int icoords[MAXD];
+
+    for (int k = kmin; k <= kmax; ++k)
+    for (int j = jmin; j <= jmax; ++j)
+    for (int i = imin; i <= imax; ++i)
+    {
+        index = d_index3d(i,j,k,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+        
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
+        
+        curl_vel = computePointVorticity(icoords,vel);
+
+        vorticity[0][index] = curl_vel[0];
+        vorticity[1][index] = curl_vel[1];
+        vorticity[2][index] = curl_vel[2];
+    }
+	
+    FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
+}
+
+//TODO: Turn into global cross product function
+std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
+    computePointVorticity(int* icoords, double** vel)
+{
+    HYPER_SURF *hs;
+    POINTER intfc_state;
+    GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+    double crx_coords[MAXD];
+    int status;
+
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+    
+    int icnb[MAXD], i_index_nb;
+    int iicnb[MAXD], ii_index_nb;
+
+    double vel_i[2];
+    double vel_ii[2];
+
+    std::vector<double> curl_vel(dim);
+    for (int idir = 0; idir < 3; ++idir)
+    {
+        for (int k = 0; k < 3; ++k)
+        {
+            icnb[k] = icoords[k];
+            iicnb[k] = icoords[k];
+        }
+
+        int i = (idir+1)%3;
+        int ii = (idir+2)%3;
+
+        for (int nb = 0; nb < 2; nb++)
+        {
+            icnb[i] = (nb == 0) ? icoords[i] - 1 : icoords[i] + 1;
+            iicnb[ii] = (nb == 0) ? icoords[ii] - 1 : icoords[ii] + 1;
+            
+            i_index_nb = d_index(icnb,top_gmax,dim);
+            ii_index_nb = d_index(iicnb,top_gmax,dim);
+
+            //differentiate vel[ii=(idir+2)%3] with respect to coordinate i = (idir+1)%3;
+            vel_ii[nb] = vel[ii][i_index_nb];
+
+            //differentiate vel[i=(idir+1)%3] with respect to coordinate ii = (idir+2)%3;
+            vel_i[nb] = vel[i][ii_index_nb];
+        }
+
+        double uii_wrt_xi = 0.5*(vel_ii[1] - vel_ii[0])/top_h[i];
+        double ui_wrt_xii = 0.5*(vel_i[1] - vel_i[0])/top_h[ii];
+        curl_vel[idir] = uii_wrt_xi - ui_wrt_xii;
+    }
+
+    return curl_vel;
+}       /* end computePointVorticity */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
