@@ -421,10 +421,10 @@ private:
 
 	/* Mesh operations */
 	void solveRungeKutta(int);
-	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
-	void computeMeshFlux(SWEEP,FSWEEP*,double);
-	void copyMeshVst(SWEEP,SWEEP*);
-	void copyFromMeshVst(SWEEP);
+	void addMeshFluxToVst(SWEEP*,FSWEEP*,double);
+	void computeMeshFlux(SWEEP*,FSWEEP*,double);
+	void copyMeshVst(SWEEP*,SWEEP*);
+	void copyFromMeshVst(SWEEP*);
 	void copyToMeshVst(SWEEP*);
 	void addSourceTerm(SWEEP*,FSWEEP*,double);
 
@@ -521,10 +521,10 @@ private:
 	//GFM
 	void solve_exp_value();
 	boolean get_ave_normal(int*,int***);
-	boolean get_ave_state(SWEEP, int*,int***,int,int);
+	boolean get_ave_state(SWEEP*, int*,int***,int,int);
 	boolean needBufferFromIntfc(COMPONENT,COMPONENT);
 	void get_normal_from_front();
-	void get_ghost_state(SWEEP, int,int);
+	void get_ghost_state(SWEEP*, int,int);
 	void tecplot_interior_states(char*);
 	void scatMeshGhost();
 	void GFMGhostState(int*,int,STATE*);
