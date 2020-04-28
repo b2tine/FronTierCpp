@@ -1071,8 +1071,8 @@ void G_CARTESIAN::allocDirVstFlux(
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::freeDirVstFlux(
-        SWEEP vst,
-        FSWEEP flux)
+        SWEEP* vst,
+        FSWEEP* flux)
 {
         FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
         FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
