@@ -417,9 +417,6 @@ extern F_BASIC_DATA *SMM_GetBasicData();
 extern G_CARTESIAN* SMM_GetFluidSolver();
 extern void SMM_InitCpp(int,char**);
 extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic);
-extern void getRestartNames(
-        char* restart_name, char* restart_state_name, F_BASIC_DATA* f_basic);
-
 extern void SMM_StartUpStep();
 extern void SMM_TimeMarch();
 

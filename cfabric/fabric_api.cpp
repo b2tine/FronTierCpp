@@ -121,9 +121,8 @@ extern void SMM_InitFluidSolver()
     else
     {
         //restart_set_dirichlet_bdry_function(&front);
-        char* restart_name;
-        char* restart_state_name;
-        getRestartNames(restart_name,restart_state_name,f_basic);
+        char* restart_name = f_basic->restart_name;
+        char* restart_state_name = f_basic->restart_state_name;
         //TODO: combine next two functions into single call 
         readFrontStates(front,restart_state_name);
         g_cartesian->readInteriorStates(restart_state_name);
@@ -132,31 +131,8 @@ extern void SMM_InitFluidSolver()
     g_cartesian->initMovieVariables();
 }
 
-extern void getRestartNames(
-        char* restart_name,
-        char* restart_state_name,
-        F_BASIC_DATA* f_basic)
-{
-        restart_name            = f_basic->restart_name;
-        restart_state_name      = f_basic->restart_state_name;
-
-        sprintf(restart_state_name,"%s/state.ts%s",restart_name,
-			right_flush(f_basic->RestartStep,7));
-        sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
-			right_flush(f_basic->RestartStep,7));
-	
-        if (pp_numnodes() > 1)
-        {
-            sprintf(restart_name,"%s-nd%s",restart_name,
-                    right_flush(pp_mynode(),4));
-            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
-                    right_flush(pp_mynode(),4));
-        }
-}
-
 extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
 {
-    /*
         char *restart_name            = f_basic->restart_name;
         char *restart_state_name      = f_basic->restart_state_name;
 
@@ -172,11 +148,6 @@ extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
             sprintf(restart_state_name,"%s-nd%s",restart_state_name,
                     right_flush(pp_mynode(),4));
         }
-    */
-
-        char *restart_name;
-        char *restart_state_name;
-        getRestartNames(restart_name,restart_state_name,f_basic);
 
         FT_StartUp(front,f_basic);
         FT_InitDebug(f_basic->in_name);
