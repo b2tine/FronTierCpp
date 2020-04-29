@@ -6038,8 +6038,13 @@ void G_CARTESIAN::setElasticStates(
             vn += v[j]*nor[j];
 	    }
 	    
+        //TODO:WHAT HAPPENS WHEN WE ADD INSTEAD
+        //     (NOT A REFLECTION LIKE NEUMANN BUT CONSTANT EXTRAPOLATION)
         for (j = 0; j < dim; j++)
-            v[j] = vel_ref[j] - 1.0*vn*nor[j];
+        {
+            v[j] = vel_ref[j] + vn*nor[j];
+            //v[j] = vel_ref[j] - 1.0*vn*nor[j];
+        }
 
             /* Only normal component is reflected, 
                relative tangent velocity is zero */ //TODO: can we account for this too?
