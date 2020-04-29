@@ -40,7 +40,16 @@ Type yes to track the interface: no
 
 Entering yes to turn off fluid solver: no
 
+
+//////////////////////////////////////////////////////////
+/////////            Movie Options            ////////////
+//////////////////////////////////////////////////////////
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
 Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+
 
 //////////////////////////////////////////////////////////
 /////////     Start parameters for modules    ////////////
@@ -65,7 +74,7 @@ Available types of canopy boundaries are:
 Enter type of canopy boundary: R
 Enter the height of the plane: 0.5
 Enter lower bounds of the rectangle: 0.19 0.19
-Enter upper bounds of the rectangle: 0.71 0.81
+Enter upper bounds of the rectangle: 0.81 0.81
 Enter yes for fixed boundary: yes
 Enter yes to install boundary on each side: no
 
@@ -106,8 +115,8 @@ Enter gravity: 0 0 -9.8
 Start test time control parameters
 Max time: 3.0
 Max step: 2000
-Print interval: 0.001
-Movie frame interval: 0.001
+Print interval: 0.0025
+Movie frame interval: 0.0025
 CFL factor: 0.5
 
 Enter yes for debugging: yes

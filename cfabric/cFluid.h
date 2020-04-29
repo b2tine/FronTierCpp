@@ -128,7 +128,8 @@ struct EQN_PARAMS
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;
+	double *vort;       //2d
+	double **vorticity; //3d
 
     //GFM
 	double **gnor;
@@ -272,7 +273,8 @@ struct FIELD
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;
+	double *vort;       //2d
+	double **vorticity; //3d
 };
 
 struct SWEEP
@@ -460,6 +462,7 @@ private:
 
 	// velocity field query
 	void getVelocityGradient(double *p,double *gradU,double *gradV);
+    void computeVorticity();
 
 	// ----------------------------------------------------------
 	// 		utility functions
@@ -496,6 +499,7 @@ private:
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
+    //TODO remove when finished with debug
 	void setElasticStatesOLD(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 

@@ -120,6 +120,8 @@ extern void SMM_InitFluidSolver()
     }
     else
     {
+        //TODO: if (ResetTime){}
+        
         //restart_set_dirichlet_bdry_function(&front);
         char* restart_name = f_basic->restart_name;
         char* restart_state_name = f_basic->restart_state_name;

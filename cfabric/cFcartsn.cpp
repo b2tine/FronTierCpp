@@ -760,6 +760,8 @@ void G_CARTESIAN::solve(double dt)
 	    sampleVelocity();
 	}
 
+    //TODO: Velocity and Vorticity computed in copyMeshStates(),
+    //      should factor into separate functions.
 	start_clock("copyMeshStates");
 	copyMeshStates();
 	stop_clock("copyMeshStates");
@@ -972,14 +974,22 @@ void G_CARTESIAN::setDomain()
 					sizeof(double));
 
 	    FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-	    if (dim == 2)
+	    
+        if (dim == 2)
 	    	FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,size,
-					sizeof(double));
+                    sizeof(double));
+        else if (dim == 3)
+            FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vorticity,
+                    dim,size,sizeof(double));
+
 	    field.dens = eqn_params->dens;
 	    field.engy = eqn_params->engy;
 	    field.pres = eqn_params->pres;
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
+	    
+        if (dim == 3)
+            field.vorticity = eqn_params->vorticity;
 	}
 
     //GFM
@@ -1538,20 +1548,9 @@ void G_CARTESIAN::initMovieVariables()
 		}
 	    }
 	}
-	/* Added for vtk movie of vector field */
+
 	if (dim != 1)
 	{
-	    if (CursorAfterStringOpt(infile,
-		"Type y to make vector velocity field movie:"))
-	    {
-            	fscanf(infile,"%s",string);
-            	(void) printf("%s\n",string);
-            	if (string[0] == 'Y' || string[0] == 'y')
-	    	    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field.vel);
-	    }
-        //TODO: compute vorticity array and add the vtk movie variable
-        //      same as we did in iFluid.
-
 	    if (CursorAfterStringOpt(infile,
                "Type y to make scalar density field movie:"))
             {
@@ -1568,10 +1567,113 @@ void G_CARTESIAN::initMovieVariables()
                 if (string[0] == 'Y' || string[0] == 'y')
                     FT_AddVtkScalarMovieVariable(front,"PRESSURE",field.pres);
             }
+	    if (CursorAfterStringOpt(infile,
+		"Type y to make vector velocity field movie:"))
+	    {
+            	fscanf(infile,"%s",string);
+            	(void) printf("%s\n",string);
+            	if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field.vel);
+	    }
+
+        if (dim == 3)
+        {
+            if (CursorAfterStringOpt(infile,
+            "Type y to make vector vorticity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkVectorMovieVariable(front,"VORTICITY",field.vorticity);
+            }
+        }
+
 	}
 
 	fclose(infile);
 }	/* end initMovieVariables */
+
+
+void G_CARTESIAN::computeVorticity()
+{
+    int index;
+    int icoords[MAXD];
+
+    int index_xnb0, index_xnb1;
+    int icnb_x0[MAXD], icnb_x1[MAXD];
+
+    int index_ynb0, index_ynb1;
+    int icnb_y0[MAXD], icnb_y1[MAXD];
+
+    int index_znb0, index_znb1;
+    int icnb_z0[MAXD], icnb_z1[MAXD];
+	
+    double **vel = field.vel;
+	double **vorticity = field.vorticity;
+
+	for (int k = imin[2]; k <= imax[2]; k++)
+	for (int j = imin[1]; j <= imax[1]; j++)
+    for (int i = imin[0]; i <= imax[0]; i++)
+	{
+        index = d_index3d(i,j,k,top_gmax);
+        if (!gas_comp(top_comp[index]))//TODO: or use cell_center[index].comp ??;
+        {
+            for (int l = 0; l < 3; ++l)
+                vorticity[l][index] = 0.0;
+            continue;
+        }
+
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
+
+        for (int l = 0; l < dim; ++l)
+        {
+            icnb_x0[l] = icoords[l];
+            icnb_x1[l] = icoords[l];
+            icnb_y0[l] = icoords[l];
+            icnb_y1[l] = icoords[l];
+            icnb_z0[l] = icoords[l];
+            icnb_z1[l] = icoords[l];
+        }
+
+        //cell centered derivative indices wrt x
+        icnb_x0[0] = icoords[0] - 1;
+        icnb_x1[0] = icoords[0] + 1;
+        index_xnb0 = d_index(icnb_x0,top_gmax,dim);
+        index_xnb1 = d_index(icnb_x1,top_gmax,dim);
+
+        //cell centered derivative indices wrt y
+        icnb_y0[1] = icoords[1] - 1;
+        icnb_y1[1] = icoords[1] + 1;
+        index_ynb0 = d_index(icnb_y0,top_gmax,dim);
+        index_ynb1 = d_index(icnb_y1,top_gmax,dim);
+
+        //cell centered derivative indices wrt z
+        icnb_z0[2] = icoords[2] - 1;
+        icnb_z1[2] = icoords[2] + 1;
+        index_znb0 = d_index(icnb_z0,top_gmax,dim);
+        index_znb1 = d_index(icnb_z1,top_gmax,dim);
+
+
+        //x component vorticity
+        double u2_wrty = 0.5*(vel[2][index_ynb1] - vel[2][index_ynb0])/top_h[1];
+        double u1_wrtz = 0.5*(vel[1][index_znb1] - vel[1][index_znb0])/top_h[2];
+        vorticity[0][index] = u2_wrty - u1_wrtz;
+
+        //y component vorticity
+        double u0_wrtz = 0.5*(vel[0][index_znb1] - vel[0][index_znb0])/top_h[2];
+        double u2_wrtx = 0.5*(vel[2][index_xnb1] - vel[2][index_xnb0])/top_h[0];
+        vorticity[1][index] = u0_wrtz - u2_wrtx;
+
+        //z component vorticity
+        double u1_wrtx = 0.5*(vel[1][index_xnb1] - vel[1][index_xnb0])/top_h[0];
+        double u0_wrty = 0.5*(vel[0][index_ynb1] - vel[0][index_ynb0])/top_h[1];
+        vorticity[2][index] = u1_wrtx - u0_wrty;
+    }
+	
+    //FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
+}
 
 double G_CARTESIAN::getVorticityX(int i, int j, int k)
 {
@@ -1682,6 +1784,7 @@ void G_CARTESIAN::copyMeshStates()
 	double *pres = eqn_params->pres;
 	double *engy = eqn_params->engy;
 	double *vort = eqn_params->vort;
+	double **vorticity = eqn_params->vorticity;
 	int symmetry[MAXD];
 
 	switch (dim)
@@ -1711,35 +1814,42 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    symmetry[0] = symmetry[1] = ODD;
-	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
 	    for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = EVEN;
-		symmetry[l] = ODD;
+		    symmetry[l] = ODD;
 	    	FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
 	    	FT_ParallelExchGridArrayBuffer(vel[l],front,symmetry);
 	    }
+	    symmetry[0] = symmetry[1] = ODD;
+	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
 	    break;
 	case 3:
 	    for (i = imin[0]; i <= imax[0]; ++i)
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
+            index = d_index3d(i,j,k,top_gmax);
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
 	    }
+        computeVorticity();
+
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    for (l = 0; l < dim; ++l)
+        
+        for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = symmetry[2] = EVEN;
-		symmetry[l] = ODD;
+		    symmetry[l] = ODD;
 	    	FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
 	    	FT_ParallelExchGridArrayBuffer(vel[l],front,symmetry);
 	    }
+        //TODO: check vorticity parallel communication is correct
+	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
+	    for (l = 0; l < dim; ++l)
+            FT_ParallelExchGridArrayBuffer(vorticity[l],front,symmetry);
 	    break;
 	}
 }	/* end copyMeshStates */
