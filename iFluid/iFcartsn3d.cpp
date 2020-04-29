@@ -213,7 +213,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     for (int i = imin; i <= imax; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        if (!ifluid_comp(top_comp[index])) continue;
+        if (!ifluid_comp(top_comp[index]))
+        {
+            for (int l = 0; l < 3; ++l)
+                vorticity[l][index] = 0.0;
+            continue;
+        }
 
         icoords[0] = i;
         icoords[1] = j;
