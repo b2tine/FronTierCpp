@@ -3763,7 +3763,8 @@ void G_CARTESIAN::appendGhostBuffer(
 	if (debugging("append_buffer"))
 		printf("Entering appendGhostBuffer()\n");
 
-	for (i = 0; i < dim; ++i) ic[i] = icoords[i];
+	for (i = 0; i < dim; ++i)
+        ic[i] = icoords[i];
 	
 	index = d_index(ic,top_gmax,dim);
 	comp = cell_center[index].comp;
@@ -3775,8 +3776,6 @@ void G_CARTESIAN::appendGhostBuffer(
 	    {
 		ic[idir] = icoords[idir] - i;
 		index = d_index(ic,top_gmax,dim);
-
-
 
 //	 	The following is for debugging		    
 		boolean status;
@@ -3804,7 +3803,7 @@ void G_CARTESIAN::appendGhostBuffer(
 		    if (dim == 1)
 			vst->momn[0][nrad-i] = m_vst->momn[0][index];
 		    else if (dim == 2)
-			for(j = 0; j < 2; j++)
+                for(j = 0; j < 2; j++)
 			    vst->momn[j][nrad-i] = 
 			    	 	m_vst->momn[ind2[idir][j]][index];
 		    else if (dim == 3){
@@ -5739,7 +5738,7 @@ void G_CARTESIAN::setElasticStatesOLD(
     for (j = 0; j < dim; ++j)
     {
         FT_IntrpStateVarAtCoords(front,comp,crx_coords,
-            m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
+            m_vst->momn[j],getStateMom[j],&st_tmp.momn[j],&m_vst->momn[j][index]);
     }
     /*
     FT_IntrpStateVarAtCoords(front,comp,crx_coords,
@@ -5812,7 +5811,7 @@ void G_CARTESIAN::setElasticStatesOLD(
         for (j = 0; j < dim; ++j)
         {
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->momn[j],getStateXmom,&st_tmp.momn[j],&m_vst->momn[j][index]);
+                m_vst->momn[j],getStateMom[j],&st_tmp.momn[j],&m_vst->momn[j][index]);
         }
         */
 
@@ -5961,7 +5960,11 @@ void G_CARTESIAN::setElasticStates(
 	    coords[i] = top_L[i] + icoords[i]*top_h[i];
 	    ic[i] = icoords[i];
 	}
-	dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+    
+    //TODO: Need to check if we actuallt get a cxing?
+    //      Or already guaranteed upon entering this function?
 	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
 
 
@@ -5984,20 +5987,21 @@ void G_CARTESIAN::setElasticStates(
 	    /* Find ghost point */
 	    ic[idir] = (nb == 0) ? icoords[idir] - (i - istart + 1) :
                                 icoords[idir] + (i - istart + 1);
-	    for (j=0;j<dim;j++)
-            ic_ghost[j]=ic[j];
+	    for (j = 0; j < dim; j++)
+            ic_ghost[j] = ic[j];
 
-	    index_ghost=d_index(ic_ghost,top_gmax,dim);
+	    index_ghost = d_index(ic_ghost,top_gmax,dim);
 
 	    //if nb=0, i.e. the point is on the upper of the boundary, we select three points below the boundary
 	    //if nb=1, i.e. the point is on the lower of the boundary, we select three points above the boundary
 
-	    for (j = 0; j < dim; ++j){
-		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
-//		coords_fluid[j]=coords_coords[j];
+	    for (j = 0; j < dim; ++j)
+        {
+            coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+            //coords_fluid[j] = coords_coords[j];
 	    }
 
-	    //at this stage, coords_ref=coords
+	    //at this stage, coords_ref=coords//TODO: does it????
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
 	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
@@ -6025,6 +6029,7 @@ void G_CARTESIAN::setElasticStates(
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
 	    
         //TODO: Replace these ifs with a for loop
+        //      Need to make array of function pointers to index getStateXYZmom
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
 	    if (dim > 1)
@@ -6468,16 +6473,14 @@ void G_CARTESIAN::addFluxAlongGridLine(
 
 //	    printf("Component=%d\n",comp);
 
-	    for (i = seg_min+1; i <= imax[idir]; i++)
+	    for (i = seg_min + 1; i <= imax[idir]; i++)
 	    {
             icoords[idir] = i;
-	
-            for (int ii=0;ii<dim;++ii)
-                icoords_next[ii]=icoords[ii];
-
-            icoords_next[idir]++;
-
             index = d_index(icoords,top_gmax,dim);
+	
+            for (int ii = 0; ii < dim; ++ii)
+                icoords_next[ii] = icoords[ii];
+            icoords_next[idir]++;
             
             boolean status1,status2;
             
@@ -6552,7 +6555,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
    //             }
    // 
                     
-                    seg_max=i++;
+                    seg_max = i++;
                     break;
                  }
             }

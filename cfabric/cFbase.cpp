@@ -26,8 +26,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *******************************************************************/
 #include "cFluid.h"
 
+//TODO: make extern
 static double (*getStateMom[MAXD])(Locstate) =
-               {getStateXmom,getStateYmom,getStateZmom};
+               {getStateXmom, getStateYmom, getStateZmom};
 
 void G_CARTESIAN::readBaseFront(int i)
 {

@@ -122,6 +122,8 @@ CFL factor: 0.5
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: Xelastic_buffer
+
 Enter the debugging string: Xcollision_off
 Enter the debugging string: Xtrace
 
