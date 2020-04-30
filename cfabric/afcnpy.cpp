@@ -236,11 +236,11 @@ static boolean is_pore(
 	SURFACE **s;
 	TRI *tri;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double gamma = af_params->gamma;
+	double porosity = af_params->porosity;
 	static int current_step = -1;
 
 	if (front->rect_grid->dim != 3) return NO;
-	if (gamma == 0.0) return NO;
+	if (porosity == 0.0) return NO;
 	if (front->step != current_step)
 	{
 	    double R;
@@ -252,7 +252,7 @@ static boolean is_pore(
 				tri = tri->next)
 		{
 		    R = drand48();
-		    if (R < gamma) Tri_index(tri) = 0;
+		    if (R < porosity) Tri_index(tri) = 0;
 		    else Tri_index(tri) = 1;
 		}
 	    }

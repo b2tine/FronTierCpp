@@ -310,6 +310,8 @@ void setFabricParams(char* inname, EQN_PARAMS* eqn_params)
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f\n",eqn_params->gravity[i]);
 	}
+
+    //TODO: do we need this for single phase?
 	CursorAfterString(infile,"Type yes to track the interface:");
 	fscanf(infile,"%s",s);
 	(void) printf("%s\n",s);

@@ -1087,8 +1087,7 @@ void G_CARTESIAN::checkFlux(FSWEEP *flux)
 	}
 }
 
-//TODO: rename to reflect that gas states on interface are also written
-void G_CARTESIAN::printFrontInteriorStates(char *out_name)
+void G_CARTESIAN::printGasStates(char *out_name)
 {
 	int i,j,k,l,index;
 	char filename[100];
@@ -1109,27 +1108,23 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	sprintf(filename,"%s-gas",filename);
 	outfile = fopen(filename,"w");
 
-    int WID = 24;
-    int DEC = 18;
-    if (debugging("integration_test"))
-    {
-        DEC = 1;
-    }
+    int WID = 24; int DEC = 18;
+    if (debugging("integration_test")) {DEC = 1;}
 
-        /* Initialize states at the interface */
-        fprintf(outfile,"Interface gas states:\n");
-        next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
-				WID,DEC,getStateDens(sr));
-            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
-				WID,DEC,getStateEngy(sr));
-	    for (i = 0; i < dim; ++i)
-            	fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
-				WID,DEC,getStateMom[i](sr));
-        }
+    /* Initialize states at the interface */
+    fprintf(outfile,"Interface gas states:\n");
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
+            WID,DEC,getStateDens(sr));
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
+            WID,DEC,getStateEngy(sr));
+    for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
+            WID,DEC,getStateMom[i](sr));
+    }
 	
 	fprintf(outfile,"\nInterior gas states:\n");
 	switch (dim)
@@ -1170,7 +1165,63 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	fclose(outfile);
 }
 
-void G_CARTESIAN::readInteriorStates(char *restart_name)
+void G_CARTESIAN::readGasStates(char* restart_state_name)
+{
+    readFrontStates(front,restart_state_name);
+    readInteriorStates(restart_state_name);
+}
+
+void G_CARTESIAN::readFrontStates(
+        Front* frt,
+        char* restart_state_name)
+{
+	FILE 		*infile;
+	EQN_PARAMS 	*eqn_params = (EQN_PARAMS*)frt->extra1;
+	INTERFACE 	*intfc = frt->interf;
+        STATE 		*sl,*sr;
+        POINT 		*p;
+        HYPER_SURF 	*hs;
+        HYPER_SURF_ELEMENT *hse;
+	STATE 		*lstate,*rstate;
+	char 		fname[100];
+	int 		i,dim = frt->rect_grid->dim;
+	int		comp;
+	EOS_PARAMS	*eos = eqn_params->eos;
+
+	sprintf(fname,"%s-gas",restart_state_name);
+	infile = fopen(fname,"r");
+	
+	/* Initialize states at the interface */
+        next_output_line_containing_string(infile,"Interface gas states:");
+        next_point(intfc,NULL,NULL,NULL);
+        while (next_point(intfc,&p,&hse,&hs))
+        {
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+	    lstate = (STATE*)sl;	rstate = (STATE*)sr;
+            fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
+            fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
+	    for (i = 0; i < dim; ++i)
+            	fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
+	    
+	    comp = negative_component(hs);
+	    lstate->eos = &eos[comp];
+	    lstate->dim = dim;
+	    if(gas_comp(comp))
+	    	lstate->pres = EosPressure(lstate);
+		
+	    comp = positive_component(hs);
+
+	    rstate->eos = &eos[comp];
+	    rstate->dim = dim;
+	    if(gas_comp(comp))
+	    	rstate->pres = EosPressure(rstate);
+	    lstate->dim = rstate->dim = dim;
+        }
+	FT_MakeGridIntfc(frt);
+	fclose(infile);
+}
+
+void G_CARTESIAN::readInteriorStates(char* restart_state_name)
 {
 	FILE *infile;
 	int i,j,k,l,index;
@@ -1200,7 +1251,7 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	
 	st_tmp.dim = eqn_params->dim;
 
-	sprintf(fname,"%s-gas",restart_name);
+	sprintf(fname,"%s-gas",restart_state_name);
 	infile = fopen(fname,"r");
 	
 	next_output_line_containing_string(infile,"Interior gas states:");

@@ -224,9 +224,9 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-        {
-	    front->interior_propagate = fourth_order_elastic_set_propagate;
-        }
+    {
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
 
 
         //TODO: Assignments to Fparams (formerly iFparams) likely

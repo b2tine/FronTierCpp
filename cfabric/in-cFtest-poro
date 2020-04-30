@@ -56,6 +56,7 @@ Type y to make vector vorticity field movie: y
 //////////////////////////////////////////////////////////
 
 Enter yes for parachute system: no
+Enter the number of fabric optimization rounds: 0
 
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n

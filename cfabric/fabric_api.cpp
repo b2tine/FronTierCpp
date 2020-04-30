@@ -55,6 +55,8 @@ extern void SMM_InitCpp(int argc, char **argv)
     
     FT_Init(argc,argv,f_basic);
     FT_ReadSpaceDomain(f_basic->in_name,f_basic);
+    FT_StartUp(front,f_basic);
+    FT_InitDebug(InName(front));
     
     static AF_PARAMS af_params;
     af_params.num_np = 1;
@@ -65,8 +67,6 @@ extern void SMM_InitCpp(int argc, char **argv)
     
     if (!f_basic->RestartRun)
     {
-        FT_StartUp(front,f_basic);
-        FT_InitDebug(InName(front));
     
         //TODO: get rid of all 2d code?
         if (FT_Dimension() == 2) // initialization using old method
@@ -76,7 +76,7 @@ extern void SMM_InitCpp(int argc, char **argv)
         else
         {
             level_func_pack.pos_component = GAS_COMP2;
-            //level_func_pack.pos_component = LIQUID_COMP2;
+                //level_func_pack.pos_component = LIQUID_COMP2;
         }
 
         FT_InitIntfc(front,&level_func_pack);
@@ -101,7 +101,7 @@ extern void SMM_InitFluidSolver()
     set_cFluid_params(f_basic->in_name,&cf_params);
 
     cf_params.with_porosity = af_params->with_porosity;
-    cf_params.porosity = af_params->gamma;
+    cf_params.porosity = af_params->porosity;
     
     for (int i = 0; i < 3; ++i)
         af_params->gravity[i] = cf_params.gravity[i];
@@ -113,21 +113,30 @@ extern void SMM_InitFluidSolver()
     G_CARTESIAN* g_cartesian = SMM_GetFluidSolver();
     g_cartesian->initMesh();
 
-    if (!f_basic->RestartRun)
+    if (f_basic->RestartRun)
     {
-        g_cartesian->setInitialStates();
-        resetFrontVelocity(front);
+        //TODO: cFluid needs a different resetFrontVelocity() function
+        //      than the one used in iFluid and airfoil
+        if (f_basic->ReSetTime)
+        {
+            printf("RESET TIME FEATURE NOT AVAILABLE RIGHT NOW\n");
+            clean_up(EXIT_FAILURE);
+            g_cartesian->setInitialStates();
+            //rgb_init(&front,&rgb_params);
+            //resetFrontVelocity(front);//TODO: or goes with fabric restart?
+        }
+        else
+        {
+            //char* restart_name = f_basic->restart_name;
+            char* restart_state_name = f_basic->restart_state_name;
+            g_cartesian->readGasStates(restart_state_name);
+            //restart_set_dirichlet_bdry_function(&front);
+        }
     }
     else
     {
-        //TODO: if (ResetTime){}
-        
-        //restart_set_dirichlet_bdry_function(&front);
-        char* restart_name = f_basic->restart_name;
-        char* restart_state_name = f_basic->restart_state_name;
-        //TODO: combine next two functions into single call 
-        readFrontStates(front,restart_state_name);
-        g_cartesian->readInteriorStates(restart_state_name);
+        g_cartesian->setInitialStates();
+        //resetFrontVelocity(front);//TODO: or goes with fabric restart?
     }
 
     g_cartesian->initMovieVariables();
@@ -344,7 +353,7 @@ extern void SMM_InitPropagator()
         front->node_propagate = airfoil_node_propagate;
         front->interior_propagate = fourth_order_elastic_set_propagate;
         front->_compute_force_and_torque = cfluid_compute_force_and_torque;
-        //front->_compute_force_and_torque = ifluid_compute_force_and_torque;
+            //front->_compute_force_and_torque = ifluid_compute_force_and_torque;
 }
 
 extern void SMM_InitSpringMassParams()
@@ -358,14 +367,6 @@ extern void SMM_InitSpringMassParams()
     printf("\n");
     CursorAfterString(infile,"Start parameters for spring-mass system");
     printf("\n");
-
-    af_params->num_opt_round = 0;
-    if (CursorAfterStringOpt(infile,
-                "Enter the number of fabric optimization rounds: "))
-    {
-        fscanf(infile,"%d",&af_params->num_opt_round);
-        (void) printf("%d\n",af_params->num_opt_round);
-    }
 
     af_params->n_sub = 1;
 	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
@@ -421,15 +422,15 @@ extern void SMM_InitSpringMassParams()
                 (void) printf("%f\n",af_params->m_s);
 	        }
 
-            af_params->gamma = 0.0;
+            af_params->porosity = 0.0;
             af_params->with_porosity = NO;
             if (CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
                 af_params->with_porosity = YES;
                 if (CursorAfterStringOpt(infile,"Enter fabric porosity:"))
                 {
-                    fscanf(infile,"%lf",&af_params->gamma);
-                    (void) printf("%f\n",af_params->gamma);
+                    fscanf(infile,"%lf",&af_params->porosity);
+                    (void) printf("%f\n",af_params->porosity);
                      CursorAfterString(infile,"Enter area density of canopy:");
                      fscanf(infile,"%lf",&af_params->area_dens);
                      (void) printf("%f\n",af_params->area_dens);
@@ -529,16 +530,16 @@ extern void SMM_InitSpringMassParams()
 	}
     */
 
-        if (dim == 3)
-        {
-	    printf("canopy points count (fabric+gore)  = %d, "
-		    "string points count = %d\n",
-	    countSurfPoints(front->interf), 
-	    countStringPoints(front->interf,af_params->is_parachute_system));
-	    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
-		    "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
-		    af_params->m_g);
-        }
+    if (dim == 3)
+    {
+    printf("canopy points count (fabric+gore)  = %d, "
+        "string points count = %d\n",
+    countSurfPoints(front->interf), 
+    countStringPoints(front->interf,af_params->is_parachute_system));
+    printf("fabric point mass  = %f,\nstring point mass = %f,\n"
+        "gore point mass = %f\n",af_params->m_s,af_params->m_l, 
+        af_params->m_g);
+    }
 
 	af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
@@ -603,22 +604,26 @@ extern void SMM_cFluidDriver()
     SMM_Save();
     SMM_Plot();
 
-    if (!f_basic->RestartRun)
+    if (!f_basic->RestartRun || f_basic->ReSetTime)
     {
-        g_cartesian->printFrontInteriorStates(OutName(front));
+        FT_ResetTime(front);
+
+        g_cartesian->printGasStates(OutName(front));
         printAfExtraData(front,OutName(front));
 
-        FrontPreAdvance(front); //TODO: was missing before?
+        FrontPreAdvance(front);
         FT_Propagate(front);
         FT_RelinkGlobalIndex(front);
-        //FT_InteriorPropagate(front);
 
         if (!af_params->no_fluid)
         {
-            if (debugging("trace")) printf("Calling cfluid solve()\n");
             g_cartesian->solve(front->dt);
-            if (debugging("trace")) printf("Passed cfluid solve()\n");
         }
+
+        /*
+        if (f_basic->ReSetTime)
+            setSpecialNodeForce(front,af_params->kl);
+        */
 
         FT_SetOutputCounter(front);
         FT_SetTimeStep(front);
@@ -642,6 +647,7 @@ extern void SMM_cFluidDriver()
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    SMM_Save();
+        //g_cartesian->printGasStates(OutName(front));
 	    return;
 	}
     
@@ -668,10 +674,7 @@ extern void SMM_cFluidDriver()
         {
             coating_mono_hyper_surf(front);
             g_cartesian->applicationSetStates();
-
-            if (debugging("trace")) printf("Calling cfluid solve()\n");
             g_cartesian->solve(front->dt);
-            if (debugging("trace")) printf("Passed cfluid solve()\n");
         }
         else
         {
@@ -694,12 +697,9 @@ extern void SMM_cFluidDriver()
         FT_SetTimeStep(front);
 
         if (debugging("step_size"))
-        {
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
-        }
 
-        if (!af_params->no_fluid)
-            front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
+        front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
             
         if (debugging("step_size"))
             printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);
@@ -709,7 +709,7 @@ extern void SMM_cFluidDriver()
         if (FT_IsSaveTime(front))
         {
             SMM_Save();
-            g_cartesian->printFrontInteriorStates(OutName(front));
+            g_cartesian->printGasStates(OutName(front));
         }
 
         if (FT_IsDrawTime(front))
@@ -721,7 +721,7 @@ extern void SMM_cFluidDriver()
             if (!FT_IsSaveTime(front))
             {
                 SMM_Save();
-                g_cartesian->printFrontInteriorStates(OutName(front));
+                g_cartesian->printGasStates(OutName(front));
             }
             if (!FT_IsDrawTime(front))
                 SMM_Plot();

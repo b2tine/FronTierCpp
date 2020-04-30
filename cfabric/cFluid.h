@@ -51,6 +51,8 @@ struct EOS_PARAMS
     double  einf;
 };
 
+//Now in state.h
+//
 //struct STATE {
 //	double dens;			/* density */
 //	double engy;			/* energy density */
@@ -163,6 +165,8 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
+//Now in rigid_body.h
+//
 //struct RG_PARAMS
 //{
 //    int dim;
@@ -312,8 +316,10 @@ public:
     void setInitialStates(); 	// setup initial state
     //void setProbParams(); 	// setup initial state
     void initMesh();		// setup the cartesian grid
-    void readInteriorStates(char*);
-    void printFrontInteriorStates(char*);
+    void readGasStates(char* restart_state_name);
+    void readFrontStates(Front* frt, char* restart_state_name);
+    void readInteriorStates(char* restart_state_name);
+    void printGasStates(char* out_name);
     void initMovieVariables();
     void getVelocity(double*,double*);
     void initSampleVelocity(char *in_name);
@@ -451,7 +457,6 @@ private:
 	
 	void readBaseFront(int i);
 	void readBaseStates(char *restart_name);
-	void readFrontInteriorStates(char *restart_state_name);
 
 	void compSGS(void);             // subgrid model by Hyunkyung Lim
 
@@ -517,12 +522,20 @@ private:
 	void adjustGFMStates();
 };
 
+// cFphys.cpp
+extern void read_cFluid_params(char*,EQN_PARAMS*);
+
 // cFsub.cpp
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
 extern void read_dirichlet_bdry_data(char*,Front*);
 extern void read_open_end_bdry_data(char*,Front*);
 extern void restart_set_dirichlet_bdry_function(Front*);
+extern void reflectVectorThroughPlane(double*,double*,double*,int);
+extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,
+			STATE*);
+extern void cfluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
+			double*);
 extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
 extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
@@ -533,14 +546,7 @@ extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
 
 /*	rgbody.c functions */
 extern void init_moving_bodies(EQN_PARAMS,char*,Front*);
-extern void cfluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
-			double*);
 extern void record_moving_body_data(char*,Front*);
-extern void read_cFluid_params(char*,EQN_PARAMS*);
-extern void readFrontStates(Front*,char*);
-extern void reflectVectorThroughPlane(double*,double*,double*,int);
-extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,
-			STATE*);
 
 // cFeos.cpp
 extern double EosPressure(STATE*);

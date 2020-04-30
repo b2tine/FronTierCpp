@@ -837,7 +837,7 @@ extern double linear_flux(
 	else
 	    return a*(ur - um);
 }	/* end net_uwind_flux */
-
+/*
 extern void readFrontStates(
 	Front		*front,
 	char		*restart_name)
@@ -858,7 +858,7 @@ extern void readFrontStates(
 	sprintf(fname,"%s-gas",restart_name);
 	infile = fopen(fname,"r");
 	
-	/* Initialize states at the interface */
+	// Initialize states at the interface
         next_output_line_containing_string(infile,"Interface gas states:");
         next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
@@ -887,6 +887,7 @@ extern void readFrontStates(
 	FT_MakeGridIntfc(front);
 	fclose(infile);
 }
+*/
 
 extern void reflectVectorThroughPlane(
 	double *vec,

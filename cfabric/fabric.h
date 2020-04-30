@@ -112,7 +112,7 @@ struct AF_PARAMS
         double total_gore_mass;         /* Total mass of gore */
 	boolean with_porosity;          /* with or without porosity*/
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
-	double gamma;			/* canopy porosity */
+	double porosity;			/* canopy porosity */
 	double area_dens;		/* canopy area density */
 	int n_sub;			/* number of sub-steps for tan prop */
 	int num_opt_round;		/* number of mesh optimizations rounds*/

@@ -120,7 +120,11 @@ extern void initFabricModules(Front* front)
                 complex_set = YES;
         }
     }
+    fclose(infile);
 
+    initFabricDefault(front);
+
+    /*
     AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
     af_params->is_parachute_system = NO;
     if (CursorAfterStringOpt(infile,"Enter yes for parachute system:"))
@@ -137,6 +141,15 @@ extern void initFabricModules(Front* front)
     else
         initFabricDefault(front);
 
+    af_params->num_opt_round = 0;
+    if (CursorAfterStringOpt(infile,
+                "Enter the number of fabric optimization rounds: "))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+    */
+
 	initRigidBodies(front);
 
 	if (num_canopy == 1 && !complex_set)
@@ -144,7 +157,11 @@ extern void initFabricModules(Front* front)
 	else if (num_canopy > 1)
         initMultiModule(front,num_canopy);
 
-	divideAtGoreBdry(front->interf);
+    AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
+	if (af_params->attach_gores == YES)
+    {
+        divideAtGoreBdry(front->interf);
+    }
 	setCanopyBodyIndex(front);
 
 	if (debugging("trace"))
@@ -160,23 +177,57 @@ extern void initFabricModules(Front* front)
 extern void initFabricDefault(Front* front)
 {
 	AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
-
     af_params->spring_model = MODEL1;
-	af_params->num_opt_round = 20;
+    af_params->num_opt_round = 0;
+	    //af_params->num_opt_round = 20;
 	af_params->cut_vent = NO;
 	af_params->attach_gores = NO;
 	af_params->gore_len_fac = 1.0;
 	af_params->use_gpu = NO;
+    
+	FILE *infile = fopen(InName(front),"r");
+    char string[100];
+    
+    af_params->is_parachute_system = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes for parachute system:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->is_parachute_system = YES;
+    }
+    
+    if (af_params->is_parachute_system)
+    {
+        if (CursorAfterStringOpt(infile,
+                "Enter yes to attach gores to canopy:"))
+        {
+            char string[100];
+            fscanf(infile,"%s",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                af_params->attach_gores = YES;
+        }
+    }
+        
+    if (CursorAfterStringOpt(infile,
+                "Enter the number of fabric optimization rounds:"))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+
+    fclose(infile);
 }
 
+/*
 extern void initParachuteDefault(Front *front)
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	
     af_params->spring_model = MODEL1;
-	af_params->num_opt_round = 20;
+	    //af_params->num_opt_round = 20;
     af_params->attach_gores = NO;
 	af_params->gore_len_fac = 1.0;
+	af_params->use_gpu = NO;
 
 	FILE *infile = fopen(InName(front),"r");
     if (CursorAfterStringOpt(infile,
@@ -188,7 +239,7 @@ extern void initParachuteDefault(Front *front)
             af_params->attach_gores = YES;
     }
     fclose(infile);
-}	/* end initParachuteDefault */
+}*/	/* end initParachuteDefault */
 
 static void initSingleModule(
         Front *front)

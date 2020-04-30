@@ -89,18 +89,20 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-        iFparams.dim = f_basic.dim;
-        front.extra1 = (POINTER)&iFparams;
-        front.extra2 = (POINTER)&af_params;
-            front.extra3 = (POINTER)&rgb_params;
-        read_iFparams(in_name,&iFparams);
+    iFparams.dim = f_basic.dim;
+    read_iFparams(in_name,&iFparams);
+    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+
+    front.extra1 = (POINTER)&iFparams;
+    front.extra2 = (POINTER)&af_params;
+    front.extra3 = (POINTER)&rgb_params;
 	initParachuteDefault(&front);
 
 	level_func_pack.pos_component = LIQUID_COMP2;
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	        //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    initParachuteModules(&front);
 	    if (debugging("trace"))
 	    {
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	}
 
 	FT_ReadTimeControl(in_name,&front);
@@ -138,36 +140,35 @@ int main(int argc, char **argv)
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
 
-        if (RestartRun)
-	    {
-	    if (ReSetTime)
-	    {
-		    readAfExtraData(&front,restart_state_name);
+    if (RestartRun)
+    {
+        readAfExtraData(&front,restart_state_name);
+
+        if (ReSetTime)
+        {
             clearRegisteredPoints(&front);
             modifyInitialization(&front);
-            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-            l_cartesian->initMesh();
+                //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->setInitialCondition();
-	        rgb_init(&front,&rgb_params);
+            rgb_init(&front,&rgb_params);
 
             if (debugging("trace"))
-	        {
+            {
                 if (consistent_interface(front.interf) == NO)
                     clean_up(ERROR);
                 gview_plot_interface("gmodified",front.interf);
-	        }
-	    }
-	    else
-	    {
-            l_cartesian->readFrontInteriorStates(restart_state_name);
-	    	readAfExtraData(&front,restart_state_name);
-	    }
-    
+            }
         }
         else
-	    {
-            l_cartesian->setInitialCondition();
-	    }
+        {
+            l_cartesian->readFrontInteriorStates(restart_state_name);
+        }
+
+    }
+    else
+    {
+        l_cartesian->setInitialCondition();
+    }
 
 	static_mesh(front.interf) = YES;
 
@@ -275,11 +276,7 @@ void airfoil_driver(Front *front,
 	    {
 	    	coating_mono_hyper_surf(front);
 	    	l_cartesian->applicationSetStates();
-	    }
-
-	    if (!af_params->no_fluid)
-	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    else
         {

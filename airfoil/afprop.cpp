@@ -74,7 +74,6 @@ extern void elastic_point_propagate(
 	    return;
 	}
 
-	//FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);

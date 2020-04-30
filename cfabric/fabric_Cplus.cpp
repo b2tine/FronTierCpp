@@ -37,6 +37,7 @@ int main(int argc, char **argv)
     SMM_InitSpringMassParams();
     SMM_InitPropagator();
     
+    //TODO: need to get setMotionParams() working
         //SMM_InitTestVelFunc();
     SMM_InitFluidSolver();
 
