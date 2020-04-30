@@ -1077,8 +1077,8 @@ void G_CARTESIAN::checkVst(SWEEP *vst)
 void G_CARTESIAN::checkFlux(FSWEEP *flux)
 {
 	int i,j,index;
-	//for (j = imin[1]; j < imax[1]; j++)
-	j = 140;
+	//j = 140;
+	for (j = imin[1]; j < imax[1]; j++)
 	for (i = imin[0]; i <= imax[0]; i++)
 	{	
 	    index  = d_index2d(i,j,top_gmax);
@@ -1087,6 +1087,7 @@ void G_CARTESIAN::checkFlux(FSWEEP *flux)
 	}
 }
 
+//TODO: rename to reflect that gas states on interface are also written
 void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 {
 	int i,j,k,l,index;
@@ -5687,16 +5688,12 @@ void G_CARTESIAN::setElasticStatesOLD(
     int 		ic[MAXD];
 	int 		ic_ghost[MAXD];
 
-	double		*vel_ref = state->vel;//normal vel of interface
+	double		*vel_ref = state->vel;
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
 	double		nor[MAXD],vn,v[MAXD],v_ghost[MAXD];
-	double		coords_fluid[MAXD];
 	
 	double 		poro = eqn_params->porosity;
 
-    //coords_fluid is used for the interpolation of the velocity of
-    //original fluid point and ghost point w.r.t. the porosity 
-	
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
 	GRID_DIRECTION  dir;
@@ -5912,53 +5909,48 @@ void G_CARTESIAN::setElasticStates(
 	int		istart,
 	COMPONENT	comp)
 {
-	int 		i,j,index,index_ghost;
-	int         ind2[2][2] = {{0,1},{1,0}};
-    int         ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
-	int 		ic[MAXD];
-	int 		ic_ghost[MAXD];
+	int i,j,index,index_ghost;
+	int ind2[2][2] = {{0,1},{1,0}};
+    int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+	int ic_ghost[MAXD];
 
-	double		*vel_ref = state->vel;
-	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
-	double		nor[MAXD],vn,v[MAXD],v_ghost[MAXD];
-	double		coords_fluid[MAXD];
+	double	coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+	double	nor[MAXD],v[MAXD],v_ghost[MAXD],v_real[MAXD];
 	
-	double 		poro = eqn_params->porosity;
-
-    //coords_fluid is used for the interpolation of the velocity of
-    //original fluid point and ghost point w.r.t. the porosity 
+	double 	poro = eqn_params->porosity;
+	double *vel_ref = state->vel;//TODO: rename to vel_intfc
+    double vn, vn_ref;
 	
+	GRID_DIRECTION  dir;
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
-	GRID_DIRECTION  dir;
-	STATE		st_tmp;
-	STATE		st_tmp_ghost;	
-	//st_tmp.eos = state->eos;
 
-	st_tmp.eos = &eqn_params->eos[comp];
-	st_tmp.dim = dim;
+	STATE st_tmp_real;
+	STATE st_tmp_ghost;	
 
-    st_tmp_ghost.eos = &eqn_params->eos[comp];
+	st_tmp_real.dim = dim;
+	st_tmp_real.eos = &eqn_params->eos[comp];
+
     st_tmp_ghost.dim = dim;
-
+    st_tmp_ghost.eos = &eqn_params->eos[comp];
+	//st_tmp_ghost.eos = state->eos;
 
 	index = d_index(icoords,top_gmax,dim);
 	for (i = 0; i < dim; ++i)
 	{
 	    coords[i] = top_L[i] + icoords[i]*top_h[i];
-	    ic[i] = icoords[i];
+	    ic_ghost[i] = icoords[i];
 	}
 	
-    dir = (nb == 0) ? ldir[idir] : rdir[idir];
-    
-    //TODO: Need to check if we actuallt get a crxing?
+    //TODO: Need to check if we actually get a crxing?
     //      Or already guaranteed upon entering this function?
+    
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
 	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
-
 
 	if (debugging("elastic_buffer"))
 	{
-	    (void) printf("Entering setElasticStates()\n");
+	    (void) printf("\nEntered setElasticStates():\n");
 	    (void) printf("comp = %d\n",comp);
 	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],
 				icoords[2]);
@@ -5970,32 +5962,32 @@ void G_CARTESIAN::setElasticStates(
 	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
 	}
 
+	    //if nb = 0, the point is above the boundary, and we
+        //           select three points below the boundary
+	    //if nb = 1, the point is below the boundary, and we
+        //           select three points above the boundary
+
 	for (i = istart; i <= nrad; ++i)
 	{
-	    /* Find ghost point */
-	    ic[idir] = (nb == 0) ? icoords[idir] - (i - istart + 1) :
-                                icoords[idir] + (i - istart + 1);
-	    for (j = 0; j < dim; j++)
-            ic_ghost[j] = ic[j];
+	    //ghost point icoords and index
+	    ic_ghost[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
 
 	    index_ghost = d_index(ic_ghost,top_gmax,dim);
 
-	    //if nb=0, i.e. the point is on the upper of the boundary, we select three points below the boundary
-	    //if nb=1, i.e. the point is on the lower of the boundary, we select three points above the boundary
-
+        //ghost point coords
 	    for (j = 0; j < dim; ++j)
         {
-            coords_ref[j] = top_L[j] + ic[j]*top_h[j];
-            //coords_fluid[j] = coords_coords[j];
+            //TODO: rename coords_ref to coords_ghost or similar
+            coords_ref[j] = top_L[j] + ic_ghost[j]*top_h[j];
+                //coords_ref[j] = top_L[j] + ic[j]*top_h[j];
 	    }
-
-	    //at this stage, coords_ref=coords//TODO: does it????
-
-	    /* Reflect ghost point through intfc-mirror at crossing */
+        
+        /* Reflect ghost point through intfc-mirror at crossing */
 
         //first reflect across the grid line containing the intfc crossing 
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 
 	    for (j = 0; j < dim; ++j)
 	    {
@@ -6015,7 +6007,20 @@ void G_CARTESIAN::setElasticStates(
         //      to get the pressure?
 	    
         /* Interpolate the state at the reflected point */
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->dens,getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->pres,getStatePres,&st_tmp_ghost.pres,&m_vst->pres[index]);
+	    
+        for (j = 0; j < dim; ++j)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,m_vst->momn[j],
+                    getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
+        }
+        
+        /*
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
@@ -6025,114 +6030,140 @@ void G_CARTESIAN::setElasticStates(
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                     m_vst->momn[j],getStateMom[j],&st_tmp.momn[j],&m_vst->momn[j][index]);
         }
+        */
 
 		/* Galileo Transformation */
-            //vn=(v_tmp-v_ref) \cdot n
 
-        //Copmute relative normal velocity in frame of interface crossing.
-        //vel_ref is the normal velocity of the interface
-	    vn = 0.0;
-	    for (j = 0; j < dim; j++)
+        //Compute relative normal velocity in frame of interface crossing.
+        //vel_ref is the normal velocity of the interface //TODO: is it??
+	    
+        vn = 0.0;
+        vn_ref = 0.0;
+	    
+        for (j = 0; j < dim; j++)
 	    {
-            v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+            v[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens - vel_ref[j];
+                //v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
             vn += v[j]*nor[j];
+            vn_ref += vel_ref[j]*nor[j];
 	    }
 	    
-        //TODO:WHAT HAPPENS WHEN WE ADD INSTEAD
-        //     (NOT A REFLECTION LIKE NEUMANN BUT CONSTANT EXTRAPOLATION)
+        //ghost vel is the reflected normal component of the velocity
         for (j = 0; j < dim; j++)
         {
-            v[j] = vel_ref[j] + vn*nor[j];
-            //v[j] = vel_ref[j] - 1.0*vn*nor[j];
+            v_ghost[j] = (vn_ref - vn)*nor[j];
+            //v[j] = vn_ref*nor[j] - vn*nor[j];
+                //v[j] = vel_ref[j] - vn*nor[j];
         }
 
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */ //TODO: can we account for this too?
+        /* Only normal component is reflected, 
+           relative tangent velocity is zero */
+        //TODO: can we account for tangential velocity too?
 
-	    st_tmp_ghost.dens = m_vst->dens[index_ghost];
-	    st_tmp_ghost.pres = m_vst->pres[index_ghost];
+	    st_tmp_real.dens = m_vst->dens[index_ghost];
+	    st_tmp_real.pres = m_vst->pres[index_ghost];
+	        //st_tmp_ghost.dens = m_vst->dens[index_ghost];
+	        //st_tmp_ghost.pres = m_vst->pres[index_ghost];
 	    
         //TODO: Are all of these justified?
         //      Should we be working with the pressure rather than the velocity?
-        st_tmp.dens = (1.0 - poro)*st_tmp.dens + poro*st_tmp_ghost.dens;
-	    st_tmp.pres = (1.0 - poro)*st_tmp.pres + poro*st_tmp_ghost.pres;
+        st_tmp_ghost.dens = poro*st_tmp_real.dens + (1.0 - poro)*st_tmp_ghost.dens;
+	    st_tmp_ghost.pres = poro*st_tmp_real.pres + (1.0 - poro)*st_tmp_ghost.pres;
+            //st_tmp.dens = (1.0 - poro)*st_tmp.dens + poro*st_tmp_ghost.dens;
+	        //st_tmp.pres = (1.0 - poro)*st_tmp.pres + poro*st_tmp_ghost.pres;
 	  
         for (j = 0; j < dim; ++j)
         {
-            st_tmp_ghost.momn[j] = m_vst->momn[j][index_ghost];
-            v_ghost[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-            v[j] = (1.0 - poro)*v[j] + poro*v_ghost[j];
-            st_tmp.momn[j] = v[j]*st_tmp.dens;
+            st_tmp_real.momn[j] = m_vst->momn[j][index_ghost];
+            v_real[j] = st_tmp_real.momn[j]/st_tmp_real.dens;
+            v_ghost[j] = poro*v_real[j] + (1.0 - poro)*v_ghost[j];
+            st_tmp_ghost.momn[j] = v_ghost[j]*st_tmp_ghost.dens;
+                //st_tmp_ghost.momn[j] = m_vst->momn[j][index_ghost];
+                //v_ghost[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
+                //v[j] = (1.0 - poro)*v[j] + poro*v_ghost[j];
+                //st_tmp.momn[j] = v[j]*st_tmp.dens;
         }
 	    
-	    st_tmp.engy = EosEnergy(&st_tmp);
+	    st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
+	        //st_tmp.engy = EosEnergy(&st_tmp);
 
 	    /* debugging printout */
-	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+	    //if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
 	    {
-		printf("negative engrgy! \n");
-		printf("icoords = %d %d %d \n", icoords[0],icoords[1],
-						icoords[2]);
-		printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],
-			st_tmp.momn[1],st_tmp.momn[2],st_tmp.pres,
-			st_tmp.engy);
-		printf("st_tmp.dim = %d, idir = %d, nb = %d \n",
-			st_tmp.dim,idir,nb);
-		printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
-			st_tmp.eos->einf,st_tmp.eos->pinf);
-		printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
-						coords_ref[2]);
-		clean_up(0);
+            printf("negative engrgy! \n");
+            printf("icoords = %d %d %d \n",icoords[0],icoords[1],icoords[2]);
+            printf("%f %f %f %f %f %f \n",st_tmp_ghost.dens,st_tmp_ghost.momn[0],
+                st_tmp_ghost.momn[1],st_tmp_ghost.momn[2],st_tmp_ghost.pres,
+                st_tmp_ghost.engy);
+            printf("st_tmp_ghost.dim = %d, idir = %d, nb = %d \n",
+                st_tmp_ghost.dim,idir,nb);
+            printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp_ghost.eos->gamma,
+                st_tmp_ghost.eos->einf,st_tmp_ghost.eos->pinf);
+            printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
+                            coords_ref[2]);
+            clean_up(0);
 	    }
 
 	    if (nb == 0)
 	    {
-		vst->dens[nrad-i] = st_tmp.dens;
-		vst->engy[nrad-i] = st_tmp.engy;
-		vst->pres[nrad-i] = st_tmp.pres;
+            vst->dens[nrad-i] = st_tmp_ghost.dens;
+            vst->engy[nrad-i] = st_tmp_ghost.engy;
+            vst->pres[nrad-i] = st_tmp_ghost.pres;
 	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-i] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][nrad-i] = st_tmp.momn[0];
+                vst->momn[j][nrad-i] = 0.0;
+
+            if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
 	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind3[idir][j]];
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
+            }
+            else
+            {
+                vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
+            }
 	    }
 	    else
 	    {
-		/* Debug selectively!
-		if (debugging("crx_reflection"))
-		{
-	            sprintf(fname,"intfc-%d-%d",count,i);
-	            sprintf(fname,"intfc-xx");
-	            xgraph_2d_reflection(fname,front->grid_intfc,coords,
-				crx_coords,coords_ref,nor);
-		}
-		*/
-		vst->dens[n+nrad+i-1] = st_tmp.dens;
-		vst->engy[n+nrad+i-1] = st_tmp.engy;
-		vst->pres[n+nrad+i-1] = st_tmp.pres;
+            /* Debug selectively!
+            if (debugging("crx_reflection"))
+            {
+                    sprintf(fname,"intfc-%d-%d",count,i);
+                    sprintf(fname,"intfc-xx");
+                    xgraph_2d_reflection(fname,front->grid_intfc,coords,
+                    crx_coords,coords_ref,nor);
+            }
+            */
+            vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
+            vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
+            vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
 	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+i-1] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+	    	if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
 	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind3[idir][j]];
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
+            }
+            else
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
+            }
 	    }
 	}
+
 	if (debugging("elastic_buffer"))
-	    (void) printf("Leaving setElasticStates()\n");
+        (void) printf("Leaving setElasticStates()\n");
 }	/* end setElasticStates */
 
 void G_CARTESIAN::setDirichletStates(
