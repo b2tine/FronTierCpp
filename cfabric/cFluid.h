@@ -504,8 +504,7 @@ private:
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
-    //TODO remove when finished with debug
-	void setElasticStatesOLD(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+	void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
 	//GFM
