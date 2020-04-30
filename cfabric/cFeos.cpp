@@ -76,14 +76,14 @@ extern double EosInternalEnergy(
 extern double EosEnergy(
 	STATE *state)
 {
-	int	i,dim = state->dim;
+	int	dim = state->dim;
 	double	dens = state->dens;
 	double	*momn = state->momn;
 	double	e;
 	
 	e = 0.0;
-	for (i = 0; i < dim; ++i)
-	    e += 0.5*sqr(momn[i])/dens;
+	for (int i = 0; i < dim; ++i)
+        e += 0.5*sqr(momn[i])/dens;
 	e += EosInternalEnergy(state);
 
 	return e;

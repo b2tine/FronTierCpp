@@ -144,17 +144,20 @@ extern boolean RiemannSolution(
 	}
 	else 
 	{
-	   printf("\nAdjusting p0 and p1...");
+	   //printf("\nAdjusting p0 and p1...");
 	   p0 = 0.001;
 	   p1 = 100;
 	}
-	params = (void*)&input;
+	
+    params = (void*)&input;
 	func = UlMinusUr;
 	func_prime = UlMinusUr_Prime;
-	//NewtonFindRoot(func,func_prime,params,&p_star,p0,delta,epsilon);
+	
+    //NewtonFindRoot(func,func_prime,params,&p_star,p0,delta,epsilon);
 	//BisectionFindRoot(func,params,&p_star,p0,p1,delta,epsilon);
 	SecantFindRoot(func,params,&p_star,p0,p1,delta,epsilon);
-	//Set left and right states the same as inputted states.
+	
+    //Set left and right states the same as inputted states.
 	riem_soln->left_state = input.left_state;
 	riem_soln->right_state = input.right_state;
 
@@ -211,8 +214,11 @@ extern boolean RiemannSolution(
 	    riem_soln->contact.speed_contact = riem_soln->right_center_state.u;
 	}
 	else
+    {
 	    riem_soln->contact.wave_type = VACUUM;
-	return YES;
+    }
+
+    return YES;
 }	/* end RiemannSolution */
 
 /*	bisection method to solve equation f(x) = 0        */

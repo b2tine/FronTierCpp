@@ -39,6 +39,7 @@ struct FABRIC_STATE
 };
 
 
+//TODO: make EOS_PARAMS non pointer in structs
 struct EOS_PARAMS;
 
 //generic
