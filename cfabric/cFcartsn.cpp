@@ -5965,12 +5965,12 @@ void G_CARTESIAN::setElasticStates(
     int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int ic_ghost[MAXD];
 
-	double	coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+	double	coords[MAXD],coords_ref[MAXD],coords_ghost[MAXD],crx_coords[MAXD];
 	double	nor[MAXD],v[MAXD],v_ghost[MAXD],v_real[MAXD];
 	
-	double 	poro = eqn_params->porosity;
-	double *vel_ref = state->vel;//TODO: rename to vel_intfc
-    double vn, vn_ref;
+	double* vel_intfc = state->vel;
+    double vn, vn_intfc;
+	double poro = eqn_params->porosity;
 	
 	GRID_DIRECTION  dir;
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -6010,7 +6010,7 @@ void G_CARTESIAN::setElasticStates(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
 	    //if nb = 0, the point is above the boundary, and we
@@ -6029,16 +6029,13 @@ void G_CARTESIAN::setElasticStates(
         //ghost point coords
 	    for (j = 0; j < dim; ++j)
         {
-            //TODO: rename coords_ref to coords_ghost or similar
-            coords_ref[j] = top_L[j] + ic_ghost[j]*top_h[j];
-                //coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+            coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
 	    }
         
         /* Reflect ghost point through intfc-mirror at crossing */
-
         //first reflect across the grid line containing the intfc crossing 
 	    vn = 0.0;
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
 
 	    for (j = 0; j < dim; ++j)
 	    {
@@ -6070,41 +6067,24 @@ void G_CARTESIAN::setElasticStates(
                     getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
         }
         
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	    
-        for (j = 0; j < dim; ++j)
-        {
-            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                    m_vst->momn[j],getStateMom[j],&st_tmp.momn[j],&m_vst->momn[j][index]);
-        }
-        */
-
 		/* Galileo Transformation */
-
         //Compute relative normal velocity in frame of interface crossing.
-        //vel_ref is the normal velocity of the interface //TODO: is it??
-	    
         vn = 0.0;
-        vn_ref = 0.0;
+        vn_intfc = 0.0;
 	    
         for (j = 0; j < dim; j++)
 	    {
-            v[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens - vel_ref[j];
-                //v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+            v[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens - vel_intfc[j];
             vn += v[j]*nor[j];
-            vn_ref += vel_ref[j]*nor[j];
+            vn_intfc += vel_intfc[j]*nor[j];
 	    }
 	    
         //ghost vel is the reflected normal component of the velocity
         for (j = 0; j < dim; j++)
         {
-            v_ghost[j] = (vn_ref - vn)*nor[j];
-            //v[j] = vn_ref*nor[j] - vn*nor[j];
-                //v[j] = vel_ref[j] - vn*nor[j];
+            v_ghost[j] = (vn_intfc - vn)*nor[j];
+            //v[j] = vn_intfc*nor[j] - vn*nor[j];
+                //v[j] = vel_intfc[j] - vn*nor[j];//Not clear if this is equivalent
         }
 
         /* Only normal component is reflected, 
@@ -6113,15 +6093,11 @@ void G_CARTESIAN::setElasticStates(
 
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
 	    st_tmp_real.pres = m_vst->pres[index_ghost];
-	        //st_tmp_ghost.dens = m_vst->dens[index_ghost];
-	        //st_tmp_ghost.pres = m_vst->pres[index_ghost];
 	    
         //TODO: Are all of these justified?
         //      Should we be working with the pressure rather than the velocity?
         st_tmp_ghost.dens = poro*st_tmp_real.dens + (1.0 - poro)*st_tmp_ghost.dens;
 	    st_tmp_ghost.pres = poro*st_tmp_real.pres + (1.0 - poro)*st_tmp_ghost.pres;
-            //st_tmp.dens = (1.0 - poro)*st_tmp.dens + poro*st_tmp_ghost.dens;
-	        //st_tmp.pres = (1.0 - poro)*st_tmp.pres + poro*st_tmp_ghost.pres;
 	  
         for (j = 0; j < dim; ++j)
         {
@@ -6129,17 +6105,11 @@ void G_CARTESIAN::setElasticStates(
             v_real[j] = st_tmp_real.momn[j]/st_tmp_real.dens;
             v_ghost[j] = poro*v_real[j] + (1.0 - poro)*v_ghost[j];
             st_tmp_ghost.momn[j] = v_ghost[j]*st_tmp_ghost.dens;
-                //st_tmp_ghost.momn[j] = m_vst->momn[j][index_ghost];
-                //v_ghost[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-                //v[j] = (1.0 - poro)*v[j] + poro*v_ghost[j];
-                //st_tmp.momn[j] = v[j]*st_tmp.dens;
         }
 	    
 	    st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
-	        //st_tmp.engy = EosEnergy(&st_tmp);
 
 	    /* debugging printout */
-	    //if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
 	    {
             printf("negative engrgy! \n");
@@ -6153,7 +6123,7 @@ void G_CARTESIAN::setElasticStates(
                 st_tmp_ghost.eos->einf,st_tmp_ghost.eos->pinf);
             printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
                             coords_ref[2]);
-            clean_up(0);
+            clean_up(EXIT_FAILURE);
 	    }
 
 	    if (nb == 0)
