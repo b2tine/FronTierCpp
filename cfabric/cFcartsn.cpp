@@ -6026,8 +6026,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         index_ghost = d_index(ic_ghost,top_gmax,dim);
 	    COMPONENT comp_ghost = cell_center[index_ghost].comp;
         
-        //Find the closest interface point in normal direction
-        //TODO: this may not be exactly what we want but it's close
+        //Find the closest interface point
         boolean status;
         double intrp_a[3];
         HYPER_SURF_ELEMENT* nearHse;
