@@ -1379,6 +1379,7 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
 			wave_type(hs) == ELASTIC_BOUNDARY)
 		{
+            //TODO: what is going on here??
 		    setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_tmp);
 		    vel_nb[nb] = v_tmp[l];
 		}
@@ -2208,7 +2209,7 @@ void KE_CARTESIAN::setSlipBoundary(
 {
 	int             i,j,index;
     int             ic[MAXD];
-    double          coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+    double  coords[MAXD],coords_ref[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
 
     double nor[MAXD];
     double v[MAXD];
@@ -2217,12 +2218,12 @@ void KE_CARTESIAN::setSlipBoundary(
     GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
     GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
     GRID_DIRECTION  dir;
-    double  vel_ref[MAXD];
+    double  vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	for (i = 0; i < dim; ++i)
     {
-        vel_ref[i] = (*getStateVel[i])(state);
+        vel_intfc[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ic[i] = icoords[i];
     }
@@ -2234,11 +2235,13 @@ void KE_CARTESIAN::setSlipBoundary(
     status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
     if (status == NO) return;
 
+    //ghost point coords
     for (j = 0; j < dim; ++j)
-        coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+        coords_ghost[j] = top_L[j] + ic[j]*top_h[j];
 
     /* Reflect ghost point through intfc-mirror at crossing */
-    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+    //first reflect across the grid line containing the intfc crossing
+    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
     vn = 0.0;
     
     for (j = 0; j < dim; ++j)
@@ -2247,9 +2250,11 @@ void KE_CARTESIAN::setSlipBoundary(
         vn += v[j]*nor[j];
     }
 
+    //reflect v across the line containing the normal vector
     for (j = 0; j < dim; ++j)
         v[j] = 2.0*vn*nor[j] - v[j];
   
+    //desired reflected point
     for (j = 0; j < dim; ++j)
         coords_ref[j] = crx_coords[j] + v[j];
 
@@ -2259,17 +2264,29 @@ void KE_CARTESIAN::setSlipBoundary(
         	getStateVel[j],&v_tmp[j],&vel[j][index]);
 	
     /*normal component equal to zero while tangential component is permitted*/
-    for (j = 0; j < dim; ++j)
-        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
-   
-    for (j = 0; j < dim; ++j)
-        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
+    double vn_intfc = 0.0;
+    vn = 0.0;
 
+    for (j = 0; j < dim; j++)
+    {
+        v[j] = v_tmp[j] - vel_intfc[j];
+        vn += v[j]*nor[j];
+        vn_intfc += vel_intfc[j]*nor[j];
+    }
+
+    for (j = 0; j < 3; ++j)
+        v_tmp[j] = (vn_intfc - vn)*nor[j];
+
+    /*
+    for (j = 0; j < dim; ++j)
+        v[j] = coords_ref[j] - coords_ghost[j];
+        //v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
+   
     double mag_v = mag_vector(v,dim);
     if (mag_v > 0)
     {
         for (j = 0; j < dim; ++j)
-            v[j] /= mag_vector(v,dim);
+            v[j] /= mag_v;
     }
     else
     {
@@ -2283,6 +2300,7 @@ void KE_CARTESIAN::setSlipBoundary(
    
     for (j = 0; j < dim; ++j)
         v_tmp[j] -= vn*v[j];    
+    */
 }
 
 void KE_CARTESIAN::computeSource()
