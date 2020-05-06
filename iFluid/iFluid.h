@@ -313,6 +313,7 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
+    void printEnstrophy();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -493,7 +494,6 @@ public:
         Incompress_Solver_Smooth_3D_Basis(Front &front):
 	Incompress_Solver_Smooth_Basis(front) {};
 	virtual ~Incompress_Solver_Smooth_3D_Basis() {};
-
 protected:
 	double getSmoothingFunction(double r);
 	double getSmoothingFunctionD(double*, double*);
@@ -556,6 +556,7 @@ public:
 	void solve(double dt);
 	void solveTest(const char *msg);
         void vtk_plot_scalar(char*, const char*);
+
 protected:
 	void copyMeshStates(void);
 	void computeAdvection(void);

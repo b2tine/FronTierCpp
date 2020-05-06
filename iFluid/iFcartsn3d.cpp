@@ -191,6 +191,52 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
+//TODO: Don't Think This is the Correct definition of enstrophy
+void Incompress_Solver_Smooth_Basis::printEnstrophy()
+{
+	if (FT_Dimension() != 3) return;
+
+    static bool first = true;
+    static FILE* efile;
+	static char fname[512];
+
+    if (first)
+    {
+	    sprintf(fname,"%s/enstrophy",OutName(front));
+        efile = fopen(fname,"w");
+        first = false;
+    }
+    else
+    {
+        efile = fopen(fname,"a");
+    }
+
+    int index;
+    double enstrophy = 0.0;
+    double** vorticity = field->vorticity;
+    
+    for (int i = imin; i < imax; ++i)
+    for (int j = jmin; j < jmax; ++j)
+    for (int k = kmin; k < kmax; ++k)
+    {
+        index = d_index3d(i,j,k,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+        
+        double sqrmag_vort = 0.0;
+        for (int l = 0; l < 3; ++l)
+            sqrmag_vort += sqr(vorticity[l][index]);
+
+        enstrophy += sqrmag_vort;
+    }
+    
+    double vol_elem = 8.0*top_h[0]*top_h[1]*top_h[2];
+    enstrophy *= vol_elem;
+
+    fprintf(efile,"%d %g\n",front->step,enstrophy);
+    fclose(efile);
+}
+
+
 /*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
