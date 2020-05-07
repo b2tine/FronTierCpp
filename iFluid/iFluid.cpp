@@ -285,6 +285,8 @@ static void ifluid_driver(Front *front,
 
         /* Output section */
 
+        l_cartesian->printEnstrophy();
+
         if (FT_IsSaveTime(front))
         {
             FT_Save(front);

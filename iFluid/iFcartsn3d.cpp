@@ -202,7 +202,7 @@ void Incompress_Solver_Smooth_Basis::printEnstrophy()
 
     if (first)
     {
-	    sprintf(fname,"%s/enstrophy",OutName(front));
+	    sprintf(fname,"%s/enstrophy.xg",OutName(front));
         efile = fopen(fname,"w");
         first = false;
     }

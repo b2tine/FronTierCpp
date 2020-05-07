@@ -2522,7 +2522,7 @@ void KE_CARTESIAN::computeSource()
 	}
 	return;
 }
-                                    
+
 /*read k-epsilon parameters*/
 void KE_CARTESIAN::read_params(
 	char *inname,
@@ -2546,7 +2546,8 @@ void KE_CARTESIAN::read_params(
 	eqn_params->t0 = 0.0;
 	keps_model = STANDARD;
 	/*end default parameter*/
-	CursorAfterStringOpt(infile,"Enter type of k-eps model:");
+	
+    CursorAfterStringOpt(infile,"Enter type of k-eps model:");
         fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	if (string[0] == 'S' || string[0] == 's')
@@ -2556,7 +2557,7 @@ void KE_CARTESIAN::read_params(
 	    if (string[1] == 'N' || string[1] == 'n')
 	        keps_model = RNG;
 	    else
-		keps_model = REALIZABLE;
+            keps_model = REALIZABLE;
 	}
 
 	CursorAfterStringOpt(infile,"Enter turbulent Prandtl number for k:");
@@ -2595,13 +2596,13 @@ void KE_CARTESIAN::read_params(
 	fscanf(infile,"%lf",&eqn_params->y_p);
 	(void) printf("%f\n",eqn_params->y_p);
 
-        CursorAfterStringOpt(infile,"Enter B:");
-        fscanf(infile,"%lf",&eqn_params->B);
-        (void) printf("%f\n",eqn_params->B);
+    CursorAfterStringOpt(infile,"Enter B:");
+    fscanf(infile,"%lf",&eqn_params->B);
+    (void) printf("%f\n",eqn_params->B);
 
-        CursorAfterStringOpt(infile,"Enter time to active turbulence model:");
-        fscanf(infile,"%lf",&eqn_params->t0);
-        (void) printf("%f\n",eqn_params->t0);
+    CursorAfterStringOpt(infile,"Enter time to active turbulence model:");
+    fscanf(infile,"%lf",&eqn_params->t0);
+    (void) printf("%f\n",eqn_params->t0);
 	fclose(infile);
 	return;
 }
