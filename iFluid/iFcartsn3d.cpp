@@ -191,7 +191,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
-//TODO: Don't Think This is the Correct definition of enstrophy
 void Incompress_Solver_Smooth_Basis::printEnstrophy()
 {
 	if (FT_Dimension() != 3) return;
@@ -229,7 +228,7 @@ void Incompress_Solver_Smooth_Basis::printEnstrophy()
         enstrophy += sqrmag_vort;
     }
     
-    double vol_elem = 8.0*top_h[0]*top_h[1]*top_h[2];
+    double vol_elem = top_h[0]*top_h[1]*top_h[2];
     enstrophy *= vol_elem;
 
     fprintf(efile,"%d %g\n",front->step,enstrophy);
