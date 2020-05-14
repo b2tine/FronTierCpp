@@ -366,13 +366,12 @@ void KE_CARTESIAN::computeAdvection()
 	sub_comp[1] = LIQUID_COMP2;
 	
 	for (i = 0; i < 2; ++i)
-	  {
-            if(sub_comp[i] == SOLID_COMP)
-                    continue;
+	{
+        if(sub_comp[i] == SOLID_COMP) continue;
+
 	   setGlobalIndex(sub_comp[i]);
 	   computeAdvectionK(sub_comp[i]);
-	   
-	   
+	   	   
 	   switch (keps_model)
 	   {
 		case STANDARD:
@@ -421,6 +420,7 @@ void KE_CARTESIAN::findBdryPoint()
 	}
 }
 
+//implicit time explicit space
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 {
         int i,j,k,l,m,ll,ic,icn,I,I_nb,icoords[MAXD];
@@ -495,7 +495,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 		  coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
 		else
 		  coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
-		if (isinf(coeff) || isnan(coeff) || isinf(rhs) || isnan(rhs))
+		
+        if (isinf(coeff) || isnan(coeff) || isinf(rhs) || isnan(rhs))
 		{
 		    printf("In computeAdvectionK(): ");
 		    printf("icoords[%d %d], index = %d\n",i,j,ic);
@@ -530,9 +531,11 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                             coeff_nb = -lambda + (pow(-1,m+1)*eta);
                             solver.Add_A(I,I_nb,coeff_nb);
                         }
+			/*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                    wave_type(hs) == ELASTIC_BOUNDARY)*/
 			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				 wave_type(hs) == ELASTIC_BOUNDARY)
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			{
 				setTKEatWall(icoords,l,m,comp,
 						hs,intfc_state,K,&K_nb);
@@ -568,111 +571,126 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             break;
         case 3:
             solver.Create(ilower, iupper-1, 7, 7);
-	    for (k = kmin; k <= kmax; ++k)
+	    
+            for (k = kmin; k <= kmax; ++k)
             for (j = jmin; j <= jmax; ++j)
             for (i = imin; i <= imax; ++i)
             {
                 icoords[0] = i;
                 icoords[1] = j;
-		icoords[2] = k;
+		        icoords[2] = k;
                 ic = d_index3d(i,j,k,top_gmax);
                 comp = top_comp[ic];
                 I = ijk_to_I[i][j][k];
-                if (comp != sub_comp)
-                    continue;
+                if (comp != sub_comp) continue;
+
                 K0 = K[ic];
-		Cmu = eqn_params->Cmu;
-		/*fully implicit to preserve positivity*/
-		rhs = K0+m_dt*Pk[ic];
-		coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
-		if (isinf(coeff) || isnan(coeff))
-		{
-		    printf("In computeAdvectionK(): ");
-		    printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
-			coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
-		    clean_up(ERROR);
-		}
-                for (l = 0; l < dim; ++l) v[l] = 0.0;
-                if (field->vel != NULL)
-                {
-                    for (l = 0; l < dim; ++l)
-                        v[l] = field->vel[l][ic];
-                }
+		        Cmu = eqn_params->Cmu;
+            /*fully implicit to preserve positivity*/
+            rhs = K0+m_dt*Pk[ic];
+            coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            if (isinf(coeff) || isnan(coeff))
+            {
+                printf("In computeAdvectionK(): ");
+                printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
+                coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
+                clean_up(ERROR);
+            }
+            
+            for (l = 0; l < dim; ++l)
+                v[l] = 0.0;
 
-               	D = nu+mu_t[ic]/eqn_params->delta_k/rho;
+            if (field->vel != NULL)
+            {
                 for (l = 0; l < dim; ++l)
-                {
-                    lambda = D*m_dt/sqr(top_h[l]);
-		    eta = v[l]*m_dt/(top_h[l]); //upwind difference
-                    double eta_p = std::max(eta, 0.0);
-                    double eta_m = std::min(eta, 0.0);
-                    coeff += 2*lambda;
+                    v[l] = field->vel[l][ic];
+            }
 
-                    for (m = 0; m < 2; ++m)
+            D = nu+mu_t[ic]/eqn_params->delta_k/rho;
+            
+            for (l = 0; l < dim; ++l)
+            {
+                lambda = D*m_dt/sqr(top_h[l]);
+                eta = v[l]*m_dt/(top_h[l]); //upwind difference
+                double eta_p = std::max(eta, 0.0);
+                double eta_m = std::min(eta, 0.0);
+                coeff += 2*lambda;
+
+                for (m = 0; m < 2; ++m)
+                {
+                    next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
+                    icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
+                    I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
+        
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                                        grid_intfc,icoords,dir[l][m],comp,
+                                        (POINTER*)&intfc_state,&hs,crx_coords);
+        
+                    coeff += ((m == 0) ? eta_p : -eta_m); //upwind
+                    if (!fr_crx_grid_seg) 
                     {
-                        next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
-                        icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
-                        I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
-			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);
-			coeff += ((m == 0) ? eta_p : -eta_m); //upwind
-                        if (!fr_crx_grid_seg) 
+                        coeff_nb = -lambda;
+                        coeff_nb += (m == 0) ? -eta_p : eta_m;
+                        solver.Add_A(I,I_nb,coeff_nb);
+                    }
+                    /*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                             wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                             wave_type(hs) == ELASTIC_BOUNDARY)*/
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                             wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        /*setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);*/
+
+                        //use wall function for frictiion velocity u_t
+                        double u_t = std::max(pow(eqn_params->Cmu, 0.25)
+                                                *sqrt(std::max(field->k[ic],0.0)),
+                                                Mag3d(intfc_state->vel)/eqn_params->y_p);
+                        
+                        K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
+                        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
+        
+                    }
+                    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (boundary_state_function(hs) &&
+                        strcmp(boundary_state_function_name(hs),
+                                        "flowThroughBoundaryState") == 0)
                         {
-			    coeff_nb = -lambda;
-			    coeff_nb += (m == 0) ? -eta_p : eta_m;
-                            solver.Add_A(I,I_nb,coeff_nb);
+                        K_nb = K0;
+                            rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
                         }
-			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				 wave_type(hs) == ELASTIC_BOUNDARY)
-			{
-			    /*setTKEatWall(icoords,l,m,comp,
-                                                hs,intfc_state,K,&K_nb);*/
-			    //use wall function
-			    double u_t = std::max(pow(eqn_params->Cmu, 0.25)
-                                        *sqrt(std::max(field->k[ic], 0.0)),
-                                        Mag3d(intfc_state->vel)/eqn_params->y_p);
-			    K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
-			    rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			}
-			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
-			{
-			    if (boundary_state_function(hs) &&
-				strcmp(boundary_state_function_name(hs),
-                            	"flowThroughBoundaryState") == 0)
-			    {
-				K_nb = K0;
-			        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			    }
-			    else
-			    {
-			        K_nb = eqn_params->Cbc
-				     * (sqr(intfc_state->vel[0])
-				     +  sqr(intfc_state->vel[1])
-				     +  sqr(intfc_state->vel[2]));
-			        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			    }
-			}
-			else
+                        else
                         {
-                            printf("Unknows boundary condition %d! \n",
-				    wave_type(hs));
-                            clean_up(ERROR);
+                            K_nb = eqn_params->Cbc
+                             * (sqr(intfc_state->vel[0])
+                             +  sqr(intfc_state->vel[1])
+                             +  sqr(intfc_state->vel[2]));
+                            rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
                         }
                     }
-		}
-                solver.Add_A(I,I,coeff);
-                solver.Add_b(I,rhs);
+                    else
+                    {
+                        printf("Unknows boundary condition %d! \n",wave_type(hs));
+                        clean_up(ERROR);
+                    }
+                }
+    
             }
+
+            solver.Add_A(I,I,coeff);
+            solver.Add_b(I,rhs);
+
+            }
+
             break;
-	}
+        }
+
         stop_clock("set_coefficients");
         start_clock("petsc_solve");
         solver.SetMaxIter(500);
         solver.SetTol(1e-8);
         solver.Solve();
-	solver.GetNumIterations(&num_iter);
+	    solver.GetNumIterations(&num_iter);
         solver.GetFinalRelativeResidualNorm(&rel_residual);
 
         if (debugging("PETSc"))
@@ -925,9 +943,12 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 		    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                                 grid_intfc,icoords,dir[l][m],comp,
                                 (POINTER*)&intfc_state,&hs,crx_coords);
+
+		    /*if (fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
+                        wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                        wave_type(hs) == ELASTIC_BOUNDARY))*/
 		    if (fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY))
+                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 		    {
 			if_adj_pt = YES;
 			for (ll = 0; ll < dim; ll++)
@@ -974,9 +995,11 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                             coeff_nb = -lambda + pow(-1,m+1)*eta;
                             solver.Add_A(I,I_nb,coeff_nb);
                         }
+			/*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                    wave_type(hs) == ELASTIC_BOUNDARY)*/
 			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY)
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			{
 				printf("decting Neumann Boundary, impossible, check!\n");
 			}
@@ -1089,9 +1112,11 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 			    coeff_nb += (m == 0) ? -eta_p : eta_m;
                             solver.Add_A(I,I_nb,coeff_nb);
                         }
+			/*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                    wave_type(hs) == ELASTIC_BOUNDARY)*/
 			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY)
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			{
 			    //use wall function
 			    double u_t = std::max(pow(eqn_params->Cmu, 0.25)
@@ -1261,8 +1286,9 @@ void KE_CARTESIAN::solve(double dt)
 	setComponent();
 	if (debugging("trace")) printf("Passing setComponent()\n");
 
-        computeSource();
-        if (debugging("trace")) printf("Passing computeSource()\n");
+    //computes the production term Pk
+    computeSource();
+    if (debugging("trace")) printf("Passing computeSource()\n");
 
 	computeAdvection();
 	if (debugging("trace")) printf("Passing computeAdvection()\n");
@@ -1375,11 +1401,12 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
 		    index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
 		    vel_nb[nb] = vel[l][index_nb];
 		}
+		/*else if(wave_type(hs) == NEUMANN_BOUNDARY ||
+                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                wave_type(hs) == ELASTIC_BOUNDARY)*/
 		else if(wave_type(hs) == NEUMANN_BOUNDARY ||
-                        wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-			wave_type(hs) == ELASTIC_BOUNDARY)
+                wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 		{
-            //TODO: what is going on here??
 		    setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_tmp);
 		    vel_nb[nb] = v_tmp[l];
 		}
@@ -1411,9 +1438,11 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
 		    index_nb = next_index_in_dir(icoords,dir[l][nb],dim,top_gmax);
 		    vel_nb[nb] = vel[m][index_nb];
 		}
+		/*else if(wave_type(hs) == NEUMANN_BOUNDARY ||
+                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                wave_type(hs) == ELASTIC_BOUNDARY)*/
 		else if(wave_type(hs) == NEUMANN_BOUNDARY ||
-                        wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-			wave_type(hs) == ELASTIC_BOUNDARY)
+                wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 		{
 			setSlipBoundary(icoords,l,nb,comp,hs,
 					intfc_state,field->vel,v_tmp);
@@ -2154,6 +2183,8 @@ void KE_CARTESIAN::setTKEatWall(
         /*for (j = 0; j < dim; ++j)
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,K,
         	getStateK,K_nb,NULL);*/
+        //TODO: add K to STATE so we can interpolate?
+
 	if (rect_in_which(coords_ref,ic,top_grid))
 	{
 	    index = d_index(ic,top_gmax,dim);
@@ -2347,25 +2378,28 @@ void KE_CARTESIAN::computeSource()
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                                 grid_intfc,icrds,dir[m][nb],comp,
                                 (POINTER*)&intfc_state,&hs,crx_coords); 
-			    d_h[nb] = top_h[m]; 
+			    
+                d_h[nb] = top_h[m]; 
+
 			    if (!fr_crx_grid_seg)
 			    {
-			        index_nb = 
-				next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
+			        index_nb = next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
 			        vel_nb[nb] = vel[l][index_nb];
 			    }
+			    /*else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                            wave_type(hs) == ELASTIC_BOUNDARY))*/
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-                                wave_type(hs) == ELASTIC_BOUNDARY))
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 			    {
-				setSlipBoundary(icrds,m,nb,comp,hs,
-						intfc_state,field->vel,v_tmp);
-				vel_nb[nb] = v_tmp[l];
+                    setSlipBoundary(icrds,m,nb,comp,hs,
+                            intfc_state,field->vel,v_tmp);
+				    vel_nb[nb] = v_tmp[l];
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
-				if (boundary_state_function_name(hs) &&
-                                strcmp(boundary_state_function_name(hs),
+				    if (boundary_state_function_name(hs) &&
+                        strcmp(boundary_state_function_name(hs),
                                 "flowThroughBoundaryState") == 0)
 				{
 				    vel_nb[nb] = vel[l][index];
@@ -2374,10 +2408,13 @@ void KE_CARTESIAN::computeSource()
 				{
 				    vel_nb[nb] = intfc_state->vel[l];
 				}
-			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
-			    }
+
+                d_h[nb] = distance_between_positions(center,crx_coords,dim);
+
+                }
 			}
-			S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+
+            S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
 
 			for (nb = 0; nb < 2; nb++)
 			{
@@ -2391,9 +2428,11 @@ void KE_CARTESIAN::computeSource()
 				next_index_in_dir(icrds,dir[l][nb],dim,top_gmax);
 			        vel_nb[nb] = vel[m][index_nb];
 			    }
+			    /*else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                            wave_type(hs) == ELASTIC_BOUNDARY))*/
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY))
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 			    {
 				setSlipBoundary(icrds,l,nb,comp,hs,
 						intfc_state,field->vel,v_tmp);
@@ -2450,9 +2489,11 @@ void KE_CARTESIAN::computeSource()
 				next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
 			        vel_nb[nb] = vel[l][index_nb];
 			    }
-			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
+			    /*else if(wave_type(hs) == NEUMANN_BOUNDARY ||
                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-                                wave_type(hs) == ELASTIC_BOUNDARY)
+                                wave_type(hs) == ELASTIC_BOUNDARY)*/
+			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
+                                wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			    {
 				setSlipBoundary(icrds,l,nb,comp,hs,
 						intfc_state,field->vel,v_tmp);
@@ -2487,9 +2528,11 @@ void KE_CARTESIAN::computeSource()
 				next_index_in_dir(icrds,dir[l][nb],dim,top_gmax);
 			        vel_nb[nb] = vel[m][index_nb];
 			    }
+			    /*else if(wave_type(hs) == NEUMANN_BOUNDARY ||
+                        wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                        wave_type(hs) == ELASTIC_BOUNDARY)*/
 			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
-                                wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				wave_type(hs) == ELASTIC_BOUNDARY)
+                        wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			    {
 				setSlipBoundary(icrds,l,nb,comp,hs,
 						intfc_state,field->vel,v_tmp);
@@ -2507,12 +2550,17 @@ void KE_CARTESIAN::computeSource()
 				{
 				    vel_nb[nb] = intfc_state->vel[m];
 				}
-			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
-			    }
-			}
-			S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+
+                d_h[nb] = distance_between_positions(center,crx_coords,dim);
+
+                }
+            }
+
+            S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 			J += (S*S);
-		    }
+
+            }
+
 		    Pk[index] = 0.5*mu_t[index]*J/rho; 
 		}	
 		break;
@@ -2520,6 +2568,7 @@ void KE_CARTESIAN::computeSource()
 		printf("In computeSource(), Unknown dim = %d\n",dim);
 		clean_up(ERROR);
 	}
+
 	return;
 }
 
