@@ -559,10 +559,10 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 			    }
 			}
 			else
-                        {
-                            printf("Unknows boundary condition! \n");
-                            clean_up(ERROR);
-                        }
+            {
+                //printf("Unknows boundary condition! \n");
+                //clean_up(ERROR);
+            }
                     }
                 }
                 solver.Add_A(I,I,coeff);
@@ -670,8 +670,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     }
                     else
                     {
-                        printf("Unknows boundary condition %d! \n",wave_type(hs));
-                        clean_up(ERROR);
+                        //printf("Unknows boundary condition %d! \n",wave_type(hs));
+                        //clean_up(ERROR);
                     }
                 }
     
@@ -1024,10 +1024,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 			    }
 			}
 			else
-                        {
-                            printf("Unknows boundary condition! \n");
-                            clean_up(ERROR);
-                        }
+            {
+                //printf("Unknows boundary condition! \n");
+                //clean_up(ERROR);
+            }
                     }  /*m*/
 		  }  /*l*/
                 }  /*if_adj_pt*/
@@ -1145,10 +1145,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                             }
 			}
 			else
-                        {
-                            printf("Unknows boundary condition! \n");
-                            clean_up(ERROR);
-                        }
+            {
+                //printf("Unknows boundary condition! \n");
+                //clean_up(ERROR);
+            }
                     }  /*m*/
 		  }  /*l*/
                 solver.Add_A(I,I,coeff);
