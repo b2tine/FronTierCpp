@@ -1,7 +1,7 @@
-Domain limit in 0-th dimension: -2 14
-Domain limit in 1-th dimension: -2 14
+Domain limit in 0-th dimension: -4 16
+Domain limit in 1-th dimension: -4 16
 Domain limit in 2-th dimension: -12 36
-Computational grid: 80 80 240
+Computational grid: 100 100 240
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -51,7 +51,8 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: no
+Enter yes to cut a vent on canopy: yes
+Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
 Enter initial position of load: 6 6 1.451
@@ -78,7 +79,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.01
+Enter string damping constant: 0.05
 Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
@@ -104,7 +105,6 @@ Enter mu0: 0.001
 Enter y+: 30.0
 Enter time to active turbulence model: 0.0
 
-
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTAT_STATE
@@ -121,7 +121,10 @@ Type y to make vector velocity field movie: y
 Type y to plot surface stress: n
 
 ************Debugging options*****************
-Enter yes for debugging: no
+Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size
