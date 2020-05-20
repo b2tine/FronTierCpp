@@ -5856,13 +5856,10 @@ void G_CARTESIAN::setElasticStates(
 
         /* Only normal component is reflected, 
            relative tangent velocity is zero */
-        //TODO: can we account for tangential velocity too?
 
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
 	    st_tmp_real.pres = m_vst->pres[index_ghost];
 	    
-        //TODO: Are all of these justified?
-        //      Should we be working with the pressure rather than the velocity?
         st_tmp_ghost.dens = poro*st_tmp_real.dens + (1.0 - poro)*st_tmp_ghost.dens;
 	    st_tmp_ghost.pres = poro*st_tmp_real.pres + (1.0 - poro)*st_tmp_ghost.pres;
 	  
