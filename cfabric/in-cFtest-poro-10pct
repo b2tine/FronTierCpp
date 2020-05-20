@@ -11,7 +11,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 72
+Enter velocity: 0 0 75
 Enter pressure: 2250
 Enter density: 3.675
 
@@ -29,10 +29,10 @@ Enter order of point propagator: 4
 Enter gamma, pinf, einf of the fluid with comp 2: 1.4 0 0
 Enter gamma, pinf, einf of the fluid with comp 3: 1.4 0 0
 
-Enter density and pressure of ambient air1: 1.225 750
-Enter density and pressure of ambient air2: 1.225 750
+Enter density and pressure of ambient air1: 1.29 750
+Enter density and pressure of ambient air2: 1.29 750
 
-Enter density and viscosity of the fluid: 1.225 0.000628
+Enter density and viscosity of the fluid: 1.29 0.00001813
 
 Enter gravity: 0 0 -9.8
 
@@ -86,7 +86,7 @@ Enter yes to install boundary on each side: no
 Enter interior sub step number: 10
 
 Enter yes to use porosity: yes
-Enter fabric porosity: 0.05
+Enter fabric porosity: 0.1
 Enter area density of canopy: 5.0
 
 Enter fabric spring constant: 5000
@@ -120,7 +120,7 @@ Print interval: 0.005
 Movie frame interval: 0.001
 CFL factor: 0.5
 
-Enter yes for debugging: yes
+Enter yes for debugging: no
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: Xelastic_buffer

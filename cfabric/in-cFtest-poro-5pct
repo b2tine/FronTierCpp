@@ -11,7 +11,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 72
+Enter velocity: 0 0 75
 Enter pressure: 2250
 Enter density: 3.675
 
@@ -120,7 +120,7 @@ Print interval: 0.005
 Movie frame interval: 0.001
 CFL factor: 0.5
 
-Enter yes for debugging: yes
+Enter yes for debugging: no
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: Xelastic_buffer
