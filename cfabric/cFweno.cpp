@@ -61,7 +61,8 @@ extern void WENO_flux(
 	flux[2] = vflux->momn_flux[1];
 	flux[3] = vflux->momn_flux[2];
 	flux[4] = vflux->engy_flux;
-	ghost_size = 3;
+	
+    ghost_size = 3;
 	extend_size = n + 2*ghost_size;
 
 #if defined(USE_GPU)
@@ -72,21 +73,24 @@ extern void WENO_flux(
 #else
 	weno5_get_flux(params,extend_size,ghost_size,u_old,flux);
 #endif
-	for (i = ghost_size; i < n+ghost_size; ++i)
+	
+    for (i = ghost_size; i < n+ghost_size; ++i)
 	{
 	    vflux->dens_flux[i] = -lambda*(flux[0][i+1] - flux[0][i]);
 	    vflux->momn_flux[0][i] = -lambda*(flux[1][i+1] - flux[1][i]);
 	    vflux->momn_flux[1][i] = -lambda*(flux[2][i+1] - flux[2][i]);
 	    vflux->momn_flux[2][i] = -lambda*(flux[3][i+1] - flux[3][i]);
 	    vflux->engy_flux[i] = -lambda*(flux[4][i+1] - flux[4][i]);
-	    if (isnan(vflux->dens_flux[i]))
+	    
+        if (isnan(vflux->dens_flux[i]))
 	    {
-		int j;
-		for (j = 0; j < extend_size; ++j)
-		    printf("u = %f %f %f %f %f\n",
-			u_old[0][j],u_old[1][j],u_old[2][j],
-			u_old[3][j],u_old[4][j]);
-		clean_up(ERROR);
+            for (int j = 0; j < extend_size; ++j)
+            {
+                printf("u = %f %f %f %f %f\n",
+                u_old[0][j],u_old[1][j],u_old[2][j],
+                u_old[3][j],u_old[4][j]);
+            }
+            clean_up(ERROR);
 	    }
 	}
 }	/* end weno5_flux */

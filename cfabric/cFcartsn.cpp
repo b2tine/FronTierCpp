@@ -1036,12 +1036,13 @@ void G_CARTESIAN::allocDirVstFlux(
         SWEEP *vst,
         FSWEEP *flux)
 {
-	int i,size;
-
-	size = 1;
-        for (i = 0; i < dim; ++i)
+	int size = 0;
+    for (int i = 0; i < dim; ++i)
+    {
 	    if (size < top_gmax[i]+7) 
-		size = top_gmax[i]+7;
+            size = top_gmax[i]+7;
+    }
+
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
@@ -3784,7 +3785,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 	}
 }	/* end addMeshFluxToVst */
 
-//copied from cxxu
 void G_CARTESIAN::appendGhostBuffer(
 	SWEEP *vst,
 	SWEEP *m_vst,
@@ -3940,7 +3940,7 @@ void G_CARTESIAN::appendGhostBuffer(
 
 		    switch (wave_type(hs))
 		    {
-                //TODO: is n = 0 always correct here?
+                //TODO: is n = 0 always correct here? i.e. when nb == 0
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
@@ -5964,8 +5964,6 @@ void G_CARTESIAN::setElasticStatesRiem(
 	COMPONENT	comp)
 {
 	int i,j,index,index_ghost;
-	int ind2[2][2] = {{0,1},{1,0}};
-    int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int ic_ghost[MAXD];
 
 	double	coords[MAXD],coords_ref[MAXD],coords_ghost[MAXD],crx_coords[MAXD];
@@ -6039,6 +6037,10 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
         
+        //TODO: Can we just use the left and right states of the interface?
+        //      These would need to have been appropriately assigned earlier
+        //      at some point...
+
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
         TRI* nearTri = Tri_of_hse(nearHse);
@@ -6174,8 +6176,9 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
 	    }
 
-        //TODO: Why is n = 0 harcoded here?
-        //      See arg passed in calling function and compare to nb == 1 case.
+	    int ind2[2][2] = {{0,1},{1,0}};
+        int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+
 	    if (nb == 0)
 	    {
             vst->dens[nrad-i] = state_ghost.dens;
@@ -6407,6 +6410,10 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 	state->engy = EosEnergy(state);
 }	/* end checkCorrectForTolerance */
 
+//TODO: Does this still work as intended with the fabric index coating algorithm?
+//      If the components on both side of the fabric are assigned values of 
+//      GAS_COMP1 and GAS_COMP2 (= 2 and 3 respectively), then this function
+//      will return NO. Is that what we want???
 boolean G_CARTESIAN::needBufferFromIntfc(
 	COMPONENT domain_comp,
 	COMPONENT comp)
@@ -6466,17 +6473,19 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	int *grid_icoords,
 	double dt,
 	SWEEP *m_vst,
-        FSWEEP *m_flux)
+    FSWEEP *m_flux)
 {
 	int i,l,n,index;
 	SCHEME_PARAMS scheme_params;
 	EOS_PARAMS	*eos;
-	static SWEEP vst;
-	//Xu: SWEEP is a data structure storing state values
-	static FSWEEP vflux;
-	//Xu: FSWEEP is a data structure storing flux of state values
+	
+    /*
+    static SWEEP vst;       //SWEEP is a data structure storing state values
+	static FSWEEP vflux;    //FSWEEP is a data structure storing flux of state values
 	static boolean first = YES;
-	COMPONENT comp;
+	*/
+
+    COMPONENT comp;
 	int seg_min,seg_max;
 	static int icoords[MAXD];
 	int icoords_next[MAXD];
@@ -6484,24 +6493,26 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	INTERFACE *grid_intfc=front->grid_intfc;
 	double crx_coords[MAXD];
 	HYPER_SURF *hs;
-	STATE *state;
-	GRID_DIRECTION	ldir[3]={WEST,SOUTH,LOWER};
-	GRID_DIRECTION 	rdir[3]={EAST,NORTH,UPPER};
-
-
 	SURFACE **s;
+	STATE *state;
+	
+    GRID_DIRECTION	ldir[3]={WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3]={EAST,NORTH,UPPER};
 
 //	printf("icoords={%d,%d,%d}\n",icoords[0],icoords[1],icoords[2]);
 //	printf("icoords=%d,%d,%d, wave_type=%d\n",grid_icoords[0],grid_icoords[1],grid_icoords[2],wave_type(hs));
 	
-	if (first)
+    SWEEP vst;
+    FSWEEP vflux;
+    allocDirVstFlux(&vst,&vflux);
+	/*if (first)
     {
         //TODO: more efficient to free and release?
         //      freeing and reallocating could keep from fragmenting/page faulting
         //      and improve efficiency...
         first = NO;
         allocDirVstFlux(&vst,&vflux);
-    }
+    }*/
 
 	scheme_params.lambda = dt/top_h[idir];
     scheme_params.beta = 0.0;
@@ -6517,6 +6528,10 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	double ldir_crx_coords[MAXD];
 	double rdir_crx_coords[MAXD];
     
+    //TODO: See the TODO needBufferFromIntfc() regarding gas_comp().
+    //      Need to make sure both work correctly with index coating
+    //      algorithm used for ELASTIC_BOUNDARYs
+    
     seg_min = imin[idir];	
 	while (seg_min <= imax[idir])
 	{
@@ -6530,6 +6545,9 @@ void G_CARTESIAN::addFluxAlongGridLine(
 
 	    if (seg_min > imax[idir]) break;
 	    
+        //TODO: is this good enough zeroing?
+        //      what about the +7 in size value in allocDirVstFlux()??
+        //      For now should be safe since allocating and freeing everytime.
         for (i = 0; i <= top_gmax[idir]; ++i)
 	    {
 	    	vst.dens[i] = 0.0; 
@@ -6548,6 +6566,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
         vst.engy[n+nrad] = m_vst->engy[index];
         vst.pres[n+nrad] = m_vst->pres[index];
 	    
+        //index cycling so 0-th component aligned along the idir-th gridline,
+        //and remaining chosen to form right hand coordinate system
         for (l = 0; l < dim; ++l)
             vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
 	    for (l = dim; l < 3; ++l)
@@ -6567,7 +6587,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
                 icoords_next[ii] = icoords[ii];
             icoords_next[idir]++;
             
-            boolean status1,status2;
+            boolean status1, status2;
             
             //TODO: use ldir_crx_coords and rdir_crx_coords to differentiate crossings
             status1 = FT_StateStructAtGridCrossing(front,grid_intfc,
@@ -6580,6 +6600,9 @@ void G_CARTESIAN::addFluxAlongGridLine(
             status2 = FT_StateStructAtGridCrossing(front,grid_intfc,
                     icoords_next,ldir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
+
+            //TODO: why did cxxu abandon/comment out these 2 blocks??
+            //      Dead code or unfinished code?
 
 //		For the following part, if needBufferFromIntfc is true, which means
 // 		it meets a boundary, we have a break. If needBufferFromIntfc is not true,
@@ -6623,7 +6646,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 
     //			printf("icoords[0]=%d icoords[1]=%d, icoords[2]=%d, wave_type=%d\n",icoords[0],icoords[1], icoords[2],wave_type(hs));
 
-   //			if (wave_type(hs)==7)
+   //			if (wave_type(hs)==7) //NOTE: 7 is NUEMANN_BOUNDARY
    //  			{
    //                 for (int ii=0;ii<dim;ii++)
    //                 {
@@ -6650,7 +6673,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
 
         //Elastic Boundary and Porosity accounted for in appendGhostBuffer()
 	    icoords[idir] = seg_min;
-	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
+	    appendGhostBuffer(&vst,m_vst,0,icoords,idir,0);
+	        //appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    
@@ -6682,7 +6706,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	}
         
     //TODO: see above todo in if (first) block
-        //freeDirVstFlux(&vst,&vflux);
+    freeDirVstFlux(&vst,&vflux);
 }	/* end addFluxAlongGridLine */
 
 
