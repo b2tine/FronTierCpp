@@ -55,9 +55,7 @@ extern void SMM_InitCpp(int argc, char **argv)
     
     FT_Init(argc,argv,f_basic);
     FT_ReadSpaceDomain(f_basic->in_name,f_basic);
-    FT_StartUp(front,f_basic);
-    FT_InitDebug(InName(front));
-    
+
     static AF_PARAMS af_params;
     af_params.num_np = 1;
     af_params.node_id[0] = 0;
@@ -67,8 +65,9 @@ extern void SMM_InitCpp(int argc, char **argv)
     
     if (!f_basic->RestartRun)
     {
+        FT_StartUp(front,f_basic);
+        FT_InitDebug(InName(front));
     
-        //TODO: get rid of all 2d code?
         if (FT_Dimension() == 2) // initialization using old method
         {
             setInitialIntfcAF(front,&level_func_pack,InName(front));
