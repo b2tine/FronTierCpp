@@ -5839,19 +5839,27 @@ void G_CARTESIAN::setElasticStates(
 		/* Galileo Transformation */
         //Compute relative normal velocity in frame of interface crossing.
         vn = 0.0;
-        vn_intfc = 0.0;
+            //vn_intfc = 0.0;
 	    
+        //double v_rel[3];
+        double v_reflect[3];
         for (j = 0; j < dim; j++)
 	    {
-            v[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens - vel_intfc[j];
-            vn += v[j]*nor[j];
-            vn_intfc += vel_intfc[j]*nor[j];
+            v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
+            vn += (v_reflect[j] - vel_intfc[j])*nor[j];
+            //v_rel[j] = v_reflect[j] - vel_intfc[j];
+                //v[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens - vel_intfc[j];
+            //vn += v_rel[j]*nor[j];
+            //vn += v[j]*nor[j];
+                //vn_intfc += vel_intfc[j]*nor[j];
 	    }
 	    
         //ghost vel is the reflected normal component of the velocity
+        //TODO: attempting to preserve relative tangential velocity wrt to intfc 
         for (j = 0; j < dim; j++)
         {
-            v_ghost[j] = (vn_intfc - vn)*nor[j];
+            v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
+                //v_ghost[j] = (vn_intfc - vn)*nor[j];
         }
 
         /* Only normal component is reflected, 
@@ -6045,6 +6053,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         double pl[MAXD], pr[MAXD], nor[MAXD];
         TRI* nearTri = Tri_of_hse(nearHse);
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
+            //nor = Tri_normal_vector(nearTri);
         double h = FT_GridSizeInDir(nor,front);
 
         for (j = 0; j < 3; ++j)
