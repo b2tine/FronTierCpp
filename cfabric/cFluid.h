@@ -204,6 +204,8 @@ struct VAR_BDRY_PARAMS
 *	Definition and structures for Riemann solution.              *
 **********************************************************************/
 
+//TODO: put these in an enum
+#define         NO_WAVE                 1
 #define         GAMMA_PLUS              2
 #define         GAMMA_MINUS             3
 #define         LF_SHOCK                4
@@ -560,7 +562,7 @@ extern void   findGhostState(STATE,STATE,STATE*);
 
 	/* Riemann solution functions */
 /* cFriem.cpp */
-extern boolean RiemannSolution(RIEMANN_INPUT,RIEMANN_SOLN*);
+extern boolean RiemannSolution(const RIEMANN_INPUT&,RIEMANN_SOLN*);
 extern boolean RiemannSolnAtXi(RIEMANN_SOLN*,RIEM_STATE*,double);
 
 	/* Structures and functions for TVD scheme */

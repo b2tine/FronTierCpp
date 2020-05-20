@@ -5973,7 +5973,6 @@ void G_CARTESIAN::setElasticStatesRiem(
 	
 	double* vel_intfc = state->vel;
     double vn, vn_intfc;
-	double poro = eqn_params->porosity;
 	
 	GRID_DIRECTION  dir;
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -6022,7 +6021,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         
         index_ghost = d_index(ic_ghost,top_gmax,dim);
 	    COMPONENT comp_ghost = cell_center[index_ghost].comp;
-        
+
         //Find the closest interface point
         boolean status;
         double intrp_a[3];
@@ -6107,7 +6106,6 @@ void G_CARTESIAN::setElasticStatesRiem(
         riem_input.right_state.p = sr.pres;
         riem_input.left_state.u = nor_vl;
         riem_input.right_state.u = nor_vr;
-
         riem_input.left_state.gamma = sl.eos->gamma;
         riem_input.right_state.gamma = sr.eos->gamma;
 
@@ -6145,6 +6143,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         }
 
         //take weighted average using porosity to get the modified ghost point
+	    double poro = eqn_params->porosity;
         state_ghost.dens = (1.0 - poro)*dens_ghost + poro*m_vst->dens[index_ghost];
         state_ghost.pres = (1.0 - poro)*pres_ghost + poro*m_vst->pres[index_ghost];
         
@@ -6175,6 +6174,8 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
 	    }
 
+        //TODO: Why is n = 0 harcoded here?
+        //      See arg passed in calling function and compare to nb == 1 case.
 	    if (nb == 0)
 	    {
             vst->dens[nrad-i] = state_ghost.dens;
