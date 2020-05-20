@@ -1109,9 +1109,9 @@ static void coating_mono_hyper_surf3d(
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
-		immersed_surf = *s;
-		comp = base_comp = negative_component(*s);
-		break;
+            immersed_surf = *s;
+            comp = base_comp = negative_component(*s);
+            break;
 	    }
 	}
 

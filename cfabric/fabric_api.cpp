@@ -76,7 +76,6 @@ extern void SMM_InitCpp(int argc, char **argv)
         else
         {
             level_func_pack.pos_component = GAS_COMP2;
-                //level_func_pack.pos_component = LIQUID_COMP2;
         }
 
         FT_InitIntfc(front,&level_func_pack);

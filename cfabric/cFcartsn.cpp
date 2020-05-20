@@ -3924,23 +3924,23 @@ void G_CARTESIAN::appendGhostBuffer(
 			    /* check if crossing is close enough */
 			    boolean close_enough = YES;
 			    for (k = 0; k < dim; ++k)
-                            {
-                                coords[k] = top_L[k] + ic[k] * top_h[k];
-                                wtol[k] = crx_coords[k] - coords[k];
-                                if (fabs(wtol[k]) > tol[k])
-                                    close_enough = NO;
-                            }
-                            if (!close_enough)
-                            {
-                                (void) printf("ERROR: Not close enough!\n");
-                                clean_up(ERROR);
+                {
+                    coords[k] = top_L[k] + ic[k] * top_h[k];
+                    wtol[k] = crx_coords[k] - coords[k];
+                    if (fabs(wtol[k]) > tol[k])
+                        close_enough = NO;
+                }
+                if (!close_enough)
+                {
+                    (void) printf("ERROR: Not close enough!\n");
+                    clean_up(ERROR);
 			    }
-                        }
-		    }
+            }
+		    
+            }
 
 		    switch (wave_type(hs))
 		    {
-                //TODO: is n = 0 always correct here? i.e. when nb == 0
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
@@ -3986,7 +3986,8 @@ void G_CARTESIAN::appendGhostBuffer(
 		    }
 		    break;
 		}
-	    }
+	    
+        }
 	    break;
 	case 1:
 	    for (i = 1; i <= nrad; ++i)  //nrad=3
@@ -6045,10 +6046,6 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
         
-        //TODO: Can we just use the left and right states of the interface?
-        //      These would need to have been appropriately assigned earlier
-        //      at some point...
-
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
         TRI* nearTri = Tri_of_hse(nearHse);
@@ -6128,24 +6125,34 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
 
-        RIEM_STATE riem_soln_intfc;
-        rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
-        if (!rp_status)
-        {
-            printf("ERROR: RiemannSolnAtXi()\n");
-            clean_up(EXIT_FAILURE);
-        }
+        //deprecated
+            /*
+            RIEM_STATE riem_soln_intfc;
+            rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
+            if (!rp_status)
+            {
+                printf("ERROR: RiemannSolnAtXi()\n");
+                clean_up(EXIT_FAILURE);
+            }
 
-        /*
-        printf("riem_soln_intfc:\n");
-        printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
-                riem_soln_intfc.u,riem_soln_intfc.p);
-        */
+            //printf("riem_soln_intfc:\n");
+            //printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
+              //      riem_soln_intfc.u,riem_soln_intfc.p);
 
-        //Assign the solution state values to the ghost point
-        double dens_ghost = riem_soln_intfc.d;
-        double pres_ghost = riem_soln_intfc.p;
-        double vn_ghost = riem_soln_intfc.u;
+            //Assign the solution state values to the ghost point
+            double dens_ghost = riem_soln_intfc.d;
+            double pres_ghost = riem_soln_intfc.p;
+            double vn_ghost = riem_soln_intfc.u;
+            */
+
+        //TODO: Now try using the weighted average of the left and right
+        //      center states instead of using the real fluid point at the
+        //      index_ghost index.
+        
+        RIEM_STATE left_center_state = riem_soln.left_center_state;
+        double dens_ghost = left_center_state.d;
+        double pres_ghost = left_center_state.p;
+        double vn_ghost = left_center_state.u;
 
         double vghost[3];
         for (j = 0; j < dim; ++j)
