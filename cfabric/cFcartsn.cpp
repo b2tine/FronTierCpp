@@ -5721,6 +5721,8 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) printf("Leaving setNeumannStates()\n");
 }	/* end setNeumannStates */
 
+//TODO: TEST THIS WITH NEW TANGENTIAL VELO PRESERVATION,
+//      AND COMPARE TO NORMAL VELO ONLY VERSION
 void G_CARTESIAN::setElasticStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -5766,9 +5768,6 @@ void G_CARTESIAN::setElasticStates(
 	    ic_ghost[i] = icoords[i];
 	}
 	
-    //TODO: Need to check if we actually get a crxing?
-    //      Or already guaranteed upon entering this function?
-    
     dir = (nb == 0) ? ldir[idir] : rdir[idir];
 	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
 
@@ -5857,6 +5856,7 @@ void G_CARTESIAN::setElasticStates(
 	    
         //ghost vel is the reflected normal component of the velocity
         //TODO: attempting to preserve relative tangential velocity wrt to intfc 
+        //      NEEDS TO BE TESTED
         for (j = 0; j < dim; j++)
         {
             v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
@@ -5978,7 +5978,6 @@ void G_CARTESIAN::setElasticStatesRiem(
 	double	coords[MAXD],coords_ref[MAXD],coords_ghost[MAXD],crx_coords[MAXD];
 	double	nor[MAXD],v[MAXD],v_ghost[MAXD],v_real[MAXD];
 	
-	double* vel_intfc = state->vel;
     double vn, vn_intfc;
 	
 	GRID_DIRECTION  dir;
@@ -6010,7 +6009,6 @@ void G_CARTESIAN::setElasticStatesRiem(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
     */
 
@@ -6149,10 +6147,6 @@ void G_CARTESIAN::setElasticStatesRiem(
         //      center states instead of using the real fluid point at the
         //      index_ghost index.
         
-        //THIS CODE IS READY TO GO, BUT NEED TO CHECK WHAT HAPPENS AFTER
-        //FIXING A BUG IN THE PREVIOUS FORMULATION BELOW.
-
-        /*
         //Take weighted average of center states using porosity
 	    double poro = eqn_params->porosity;
 
@@ -6175,8 +6169,8 @@ void G_CARTESIAN::setElasticStatesRiem(
             state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
         }
         state_ghost.engy = EosEnergy(&state_ghost);
-        */
 
+        /*
         ///////////////////////////////////////////////////////////////////////
         RIEM_STATE left_center_state = riem_soln.left_center_state;
         double dens_ghost = left_center_state.d;
@@ -6202,6 +6196,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         }
         state_ghost.engy = EosEnergy(&state_ghost);
         ///////////////////////////////////////////////////////////////////////
+        */
 
 	    // debugging printout
 	    if (state_ghost.engy < 0.0 || state_ghost.eos->gamma < 0.001)
@@ -6272,8 +6267,8 @@ void G_CARTESIAN::setElasticStatesRiem(
 	}
 
 	if (debugging("elastic_buffer"))
-        (void) printf("Leaving setElasticStates()\n");
-}	/* end setElasticStates */
+        (void) printf("Leaving setElasticStatesRiem()\n");
+}	/* end setElasticStatesRiem */
 
 void G_CARTESIAN::setDirichletStates(
 	STATE		*crx_state,
