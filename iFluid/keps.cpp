@@ -2294,19 +2294,20 @@ void KE_CARTESIAN::setSlipBoundary(
         	getStateVel[j],&v_tmp[j],&vel[j][index]);
 	
     /*normal component equal to zero while tangential component is permitted*/
-    double vn_intfc = 0.0;
     vn = 0.0;
+        //double vn_intfc = 0.0;
 
     for (j = 0; j < dim; j++)
     {
         v[j] = v_tmp[j] - vel_intfc[j];
         vn += v[j]*nor[j];
-        vn_intfc += vel_intfc[j]*nor[j];
+            //vn_intfc += vel_intfc[j]*nor[j];
     }
 
     //TODO: test when preserve tangential velocity
     for (j = 0; j < 3; ++j)
-        v_tmp[j] = v[j] - (vn - vn_intfc)*nor[j];
+        v_tmp[j] = v_tmp[j] - 2.0*vn*nor[j];
+            //v_tmp[j] = v[j] - (vn - vn_intfc)*nor[j];
             //v_tmp[j] = (vn_intfc - vn)*nor[j];
 
     /*
