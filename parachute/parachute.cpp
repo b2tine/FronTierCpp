@@ -279,7 +279,7 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    else
         {

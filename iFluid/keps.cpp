@@ -2309,31 +2309,6 @@ void KE_CARTESIAN::setSlipBoundary(
         v_tmp[j] = v_tmp[j] - 2.0*vn*nor[j];
             //v_tmp[j] = v[j] - (vn - vn_intfc)*nor[j];
             //v_tmp[j] = (vn_intfc - vn)*nor[j];
-
-    /*
-    for (j = 0; j < dim; ++j)
-        v[j] = coords_ref[j] - coords_ghost[j];
-        //v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]); 	
-   
-    double mag_v = mag_vector(v,dim);
-    if (mag_v > 0)
-    {
-        for (j = 0; j < dim; ++j)
-            v[j] /= mag_v;
-    }
-    else
-    {
-        for (j = 0; j < dim; ++j)
-            v[j] = 0.0;
-    }
-
-    vn = 0.0;
-    for (j = 0; j < dim; ++j)
-        vn += v[j] * v_tmp[j]; 	
-   
-    for (j = 0; j < dim; ++j)
-        v_tmp[j] -= vn*v[j];    
-    */
 }
 
 void KE_CARTESIAN::computeSource()
