@@ -6149,15 +6149,43 @@ void G_CARTESIAN::setElasticStatesRiem(
         //      center states instead of using the real fluid point at the
         //      index_ghost index.
         
+        //THIS CODE IS READY TO GO, BUT NEED TO CHECK WHAT HAPPENS AFTER
+        //FIXING A BUG IN THE PREVIOUS FORMULATION BELOW.
+
+        /*
+        //Take weighted average of center states using porosity
+	    double poro = eqn_params->porosity;
+
         RIEM_STATE left_center_state = riem_soln.left_center_state;
         double dens_ghost = left_center_state.d;
         double pres_ghost = left_center_state.p;
         double vn_ghost = left_center_state.u;
+        
+        RIEM_STATE right_center_state = riem_soln.right_center_state;
+        double dens_real = right_center_state.d;
+        double pres_real = right_center_state.p;
+        double vn_real = right_center_state.u;
 
-        double vghost[3];
+        state_ghost.dens = (1.0 - poro)*dens_ghost + poro*dens_real;
+        state_ghost.pres = (1.0 - poro)*pres_ghost + poro*pres_real;
+
         for (j = 0; j < dim; ++j)
         {
-            vghost[j] = vn_ghost*nor[j];
+            v_ghost[j] = ((1.0 - poro)*vn_ghost + poro*vn_real)*nor[j];
+            state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
+        }
+        state_ghost.engy = EosEnergy(&state_ghost);
+        */
+
+        ///////////////////////////////////////////////////////////////////////
+        RIEM_STATE left_center_state = riem_soln.left_center_state;
+        double dens_ghost = left_center_state.d;
+        double pres_ghost = left_center_state.p;
+        double vn_ghost = left_center_state.u;
+        
+        for (j = 0; j < dim; ++j)
+        {
+            v_ghost[j] = vn_ghost*nor[j];
         }
 
         //take weighted average using porosity to get the modified ghost point
@@ -6169,11 +6197,11 @@ void G_CARTESIAN::setElasticStatesRiem(
         for (j = 0; j < dim; ++j)
         {
             v_real[j] = m_vst->momn[j][index_ghost]/m_vst->dens[index_ghost];
-            vghost[j] = (1.0 - poro)*vghost[j] + poro*v_real[j];
+            v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*v_real[j];
             state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
         }
-	    
-	    state_ghost.engy = EosEnergy(&state_ghost);
+        state_ghost.engy = EosEnergy(&state_ghost);
+        ///////////////////////////////////////////////////////////////////////
 
 	    // debugging printout
 	    if (state_ghost.engy < 0.0 || state_ghost.eos->gamma < 0.001)
