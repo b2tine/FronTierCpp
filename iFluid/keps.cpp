@@ -587,7 +587,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 K0 = K[ic];
 		        Cmu = eqn_params->Cmu;
             /*fully implicit to preserve positivity*/
-            rhs = K0+m_dt*Pk[ic];
+            rhs = K0 + m_dt*Pk[ic];
             coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
             if (isinf(coeff) || isnan(coeff))
             {
@@ -606,7 +606,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     v[l] = field->vel[l][ic];
             }
 
-            D = nu+mu_t[ic]/eqn_params->delta_k/rho;
+            D = nu + mu_t[ic]/eqn_params->delta_k/rho;
             
             for (l = 0; l < dim; ++l)
             {
@@ -2183,7 +2183,6 @@ void KE_CARTESIAN::setTKEatWall(
         /*for (j = 0; j < dim; ++j)
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,K,
         	getStateK,K_nb,NULL);*/
-        //TODO: add K to STATE so we can interpolate?
 
 	if (rect_in_which(coords_ref,ic,top_grid))
 	{
@@ -2238,8 +2237,8 @@ void KE_CARTESIAN::setSlipBoundary(
 	double** vel,
 	double* v_tmp)
 {
-	int             i,j,index;
-    int             ic[MAXD];
+	int i,j,index;
+    int ic[MAXD];
     double  coords[MAXD],coords_ref[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
 
     double nor[MAXD];
@@ -2305,8 +2304,10 @@ void KE_CARTESIAN::setSlipBoundary(
         vn_intfc += vel_intfc[j]*nor[j];
     }
 
+    //TODO: test when preserve tangential velocity
     for (j = 0; j < 3; ++j)
-        v_tmp[j] = (vn_intfc - vn)*nor[j];
+        v_tmp[j] = v[j] - (vn - vn_intfc)*nor[j];
+            //v_tmp[j] = (vn_intfc - vn)*nor[j];
 
     /*
     for (j = 0; j < dim; ++j)
