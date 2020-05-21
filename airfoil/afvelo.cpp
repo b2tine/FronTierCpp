@@ -284,13 +284,15 @@ void setMotionParams(Front* front)
                 af_params->gravity[i] = iFparams->gravity[i];
 	}
 
+    //This now given default value of fabric mass, and if rgb
+    //is attached is assigned the total mass of the rgb.
+    /*
     if (CursorAfterStringOpt(infile,"Enter payload:"))
     {
         fscanf(infile,"%lf",&af_params->payload);
         (void) printf("%f\n",af_params->payload);
-        //TODO: consolidate payload with rigid body mass
-	        //RGB_PARAMS *rgb_params = (RG_PARAMS*)front->extra3;
     }
+    */
 	
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
