@@ -6128,31 +6128,10 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
 
-        //TODO: Remove when new method working. This was first attempt
-        //      that used the the center state (centered on interface) soln.
-            /*
-            RIEM_STATE riem_soln_intfc;
-            rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
-            if (!rp_status)
-            {
-                printf("ERROR: RiemannSolnAtXi()\n");
-                clean_up(EXIT_FAILURE);
-            }
-
-            //printf("riem_soln_intfc:\n");
-            //printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
-              //      riem_soln_intfc.u,riem_soln_intfc.p);
-
-            //Assign the solution state values to the ghost point
-            double dens_ghost = riem_soln_intfc.d;
-            double pres_ghost = riem_soln_intfc.p;
-            double vn_ghost = riem_soln_intfc.u;
-            */
-
-        //TODO: Now try using the weighted average of the left and right
-        //      center states instead of using the real fluid point at the
-        //      index_ghost index.
-        
+       
+        ///////////////////////////////////////////////////////////////////////
+        //TODO: This method did not work -- remove
+        /* 
         //Take weighted average of center states using porosity
 	    double poro = eqn_params->porosity;
 
@@ -6175,8 +6154,30 @@ void G_CARTESIAN::setElasticStatesRiem(
             state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
         }
         state_ghost.engy = EosEnergy(&state_ghost);
+        */
 
-        /*
+        ///////////////////////////////////////////////////////////////////////
+        //TODO: This was first attempt that used the center state
+        //          (centered on interface) soln.
+            /*
+            RIEM_STATE riem_soln_intfc;
+            rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
+            if (!rp_status)
+            {
+                printf("ERROR: RiemannSolnAtXi()\n");
+                clean_up(EXIT_FAILURE);
+            }
+
+            //printf("riem_soln_intfc:\n");
+            //printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
+              //      riem_soln_intfc.u,riem_soln_intfc.p);
+
+            //Assign the solution state values to the ghost point
+            double dens_ghost = riem_soln_intfc.d;
+            double pres_ghost = riem_soln_intfc.p;
+            double vn_ghost = riem_soln_intfc.u;
+            */
+
         ///////////////////////////////////////////////////////////////////////
         RIEM_STATE left_center_state = riem_soln.left_center_state;
         double dens_ghost = left_center_state.d;
@@ -6202,7 +6203,6 @@ void G_CARTESIAN::setElasticStatesRiem(
         }
         state_ghost.engy = EosEnergy(&state_ghost);
         ///////////////////////////////////////////////////////////////////////
-        */
 
 	    // debugging printout
 	    if (state_ghost.engy < 0.0 || state_ghost.eos->gamma < 0.001)
