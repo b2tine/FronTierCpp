@@ -65,12 +65,11 @@ extern void initRigidBodies(Front* front)
 
 	if (num_rgb == 1)
 	    initSingleRigidBody(infile,front);
-	else
+	else if (num_rgb > 1)
 	    initMultiRigidBodies(infile,front,num_rgb);
 
 
-	static RG_PARAMS rgb_params;
-    rgb_params.dim = FT_Dimension();
+	RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
 
     CURVE **c;
     SURFACE **s;
@@ -79,12 +78,12 @@ extern void initRigidBodies(Front* front)
     {
         if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
-            prompt_for_rigid_body_params(infile,&rgb_params);
-            set_rgbody_params(&rgb_params,Hyper_surf(*s));
+            prompt_for_rigid_body_params(infile,rgb_params);
+            set_rgbody_params(rgb_params,Hyper_surf(*s));
         }
     }
-
-	fclose(infile);
+    
+    fclose(infile);
 }
 
 /*
@@ -473,7 +472,6 @@ static void prompt_for_rigid_body_params(
         if (count == 1)
         {
             rgb_params->no_fluid = NO;
-
             if (CursorAfterStringOpt(infile,
                 "Entering yes to turn off fluid solver: "))
             {

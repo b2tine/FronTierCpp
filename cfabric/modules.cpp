@@ -122,35 +122,12 @@ extern void initFabricModules(Front* front)
     }
     fclose(infile);
 
-    initFabricDefault(front);
-
-    /*
-    AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
-    af_params->is_parachute_system = NO;
-    if (CursorAfterStringOpt(infile,"Enter yes for parachute system:"))
-    {
-        fscanf(infile,"%s",string);
-        printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->is_parachute_system = YES;
-    }
-    fclose(infile);
-
-    if (af_params->is_parachute_system)
-        initParachuteDefault(front);
-    else
-        initFabricDefault(front);
-
-    af_params->num_opt_round = 0;
-    if (CursorAfterStringOpt(infile,
-                "Enter the number of fabric optimization rounds: "))
-    {
-        fscanf(infile,"%d",&af_params->num_opt_round);
-        (void) printf("%d\n",af_params->num_opt_round);
-    }
-    */
-
+    static RG_PARAMS rgb_params;
+    rgb_params.dim = FT_Dimension();
+    front->extra3 = (POINTER)&rgb_params;
 	initRigidBodies(front);
+    
+    initFabricDefault(front);
 
 	if (num_canopy == 1 && !complex_set)
         initSingleModule(front);

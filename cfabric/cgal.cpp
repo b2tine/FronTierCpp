@@ -1579,8 +1579,16 @@ static void installString(
 		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
 			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
-			if (body_index(*rg_surf) == rg_index)
-			    break;
+			    if (body_index(*rg_surf) == rg_index)
+                {
+                    if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        HYPER_SURF* hs = Hyper_surf(*rg_surf);
+                        af_params->payload = total_mass(hs);
+                        af_params->rgb_payload = true;
+                    }
+			        break;
+                }
 		    }
 		}
                 if (*rg_surf == NULL)
@@ -1605,6 +1613,8 @@ static void installString(
 		return;
 	    }
 	}
+    //TODO: why early return if connecting to rigid body
+    //      before setting spring equilibrium length?
 
 	/* make the all initial springs at their equilibruim length */
         FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,

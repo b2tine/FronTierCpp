@@ -50,18 +50,17 @@ extern void SMM_InitCpp(int argc, char **argv)
 {
     Front *front = SMM_GetFront();
     F_BASIC_DATA *f_basic = SMM_GetBasicData();
+    static LEVEL_FUNC_PACK level_func_pack;
+    static AF_PARAMS af_params;
     
     f_basic->size_of_intfc_state = sizeof(STATE);
     
     FT_Init(argc,argv,f_basic);
     FT_ReadSpaceDomain(f_basic->in_name,f_basic);
 
-    static AF_PARAMS af_params;
     af_params.num_np = 1;
     af_params.node_id[0] = 0;
     front->extra2 = (POINTER)&af_params;
-    
-    static LEVEL_FUNC_PACK level_func_pack;
     
     if (!f_basic->RestartRun)
     {
@@ -84,6 +83,30 @@ extern void SMM_InitCpp(int argc, char **argv)
     {
         SMM_Restart(front,f_basic);
     }
+}
+
+extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
+{
+        char *restart_name            = f_basic->restart_name;
+        char *restart_state_name      = f_basic->restart_state_name;
+
+        sprintf(restart_state_name,"%s/state.ts%s",restart_name,
+			right_flush(f_basic->RestartStep,7));
+        sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
+			right_flush(f_basic->RestartStep,7));
+	
+        if (pp_numnodes() > 1)
+        {
+            sprintf(restart_name,"%s-nd%s",restart_name,
+                    right_flush(pp_mynode(),4));
+            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
+                    right_flush(pp_mynode(),4));
+        }
+
+        FT_StartUp(front,f_basic);
+        FT_InitDebug(f_basic->in_name);
+        readAfExtraData(front,restart_state_name);//TODO: move this to spring params
+        FT_SetOutputCounter(front);
 }
 
 extern void SMM_InitFluidSolver()
@@ -138,30 +161,6 @@ extern void SMM_InitFluidSolver()
     }
 
     g_cartesian->initMovieVariables();
-}
-
-extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
-{
-        char *restart_name            = f_basic->restart_name;
-        char *restart_state_name      = f_basic->restart_state_name;
-
-        sprintf(restart_state_name,"%s/state.ts%s",restart_name,
-			right_flush(f_basic->RestartStep,7));
-        sprintf(restart_name,"%s/intfc-ts%s",restart_name,	
-			right_flush(f_basic->RestartStep,7));
-	
-        if (pp_numnodes() > 1)
-        {
-            sprintf(restart_name,"%s-nd%s",restart_name,
-                    right_flush(pp_mynode(),4));
-            sprintf(restart_state_name,"%s-nd%s",restart_state_name,
-                    right_flush(pp_mynode(),4));
-        }
-
-        FT_StartUp(front,f_basic);
-        FT_InitDebug(f_basic->in_name);
-        readAfExtraData(front,restart_state_name);//TODO: move this to spring params
-        FT_SetOutputCounter(front);
 }
 
 extern void SMM_StartUpStep()
@@ -351,7 +350,6 @@ extern void SMM_InitPropagator()
         front->node_propagate = airfoil_node_propagate;
         front->interior_propagate = fourth_order_elastic_set_propagate;
         front->_compute_force_and_torque = cfluid_compute_force_and_torque;
-            //front->_compute_force_and_torque = ifluid_compute_force_and_torque;
 }
 
 extern void SMM_InitSpringMassParams()
@@ -368,19 +366,19 @@ extern void SMM_InitSpringMassParams()
 
     af_params->n_sub = 1;
 	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
-        {
+    {
 	    fscanf(infile,"%d",&af_params->n_sub);
 	    (void) printf("%d\n",af_params->n_sub);
-        }
+    }
 
-        af_params->use_total_mass = NO;
-        if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->use_total_mass = YES;
-        }
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
+    }
 
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
@@ -479,6 +477,7 @@ extern void SMM_InitSpringMassParams()
             }
 	}
 
+    /*
     CursorAfterStringOpt(infile,"Enter strain limit:");
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
@@ -486,33 +485,44 @@ extern void SMM_InitSpringMassParams()
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
+    */
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    //af_params->m_g = af_params->m_s;
+	        //af_params->m_g = af_params->m_s;
         if (af_params->attach_gores == YES)
 	    {
-            af_params->gores_present = true;
-
-		CursorAfterString(infile,"Enter gore spring constant:");
+		    CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
         	(void) printf("%f\n",af_params->kg);
         	CursorAfterString(infile,"Enter gore damping constant:");
         	fscanf(infile,"%lf",&af_params->lambda_g);
         	(void) printf("%f\n",af_params->lambda_g);
-		if (af_params->use_total_mass)
-		{
-		    CursorAfterString(infile,"Enter gore total mass:");
-		    fscanf(infile,"%lf",&af_params->total_gore_mass);
-		    (void) printf("%f\n",af_params->total_gore_mass);
-		}
-		else
-		{
-		    CursorAfterString(infile,"Enter gore point mass:");
-		    fscanf(infile,"%lf",&af_params->m_g);
-		    (void) printf("%f\n",af_params->m_g);
-		}
+		
+            if (af_params->use_total_mass)
+            {
+                CursorAfterString(infile,"Enter gore total mass:");
+                fscanf(infile,"%lf",&af_params->total_gore_mass);
+                (void) printf("%f\n",af_params->total_gore_mass);
             }
+            else
+            {
+                CursorAfterString(infile,"Enter gore point mass:");
+                fscanf(infile,"%lf",&af_params->m_g);
+                (void) printf("%f\n",af_params->m_g);
+            }
+            af_params->gores_present = true;
+        }
+            
+        //This now given default value of fabric mass, and if rgb
+        //is attached is assigned the total mass of the rgb.
+        /*
+        if (CursorAfterStringOpt(infile,"Enter payload:"))
+        {
+            fscanf(infile,"%lf",&af_params->payload);
+            (void) printf("%f\n",af_params->payload);
+        }
+        */
 	}
         
     if (af_params->use_total_mass)
@@ -544,13 +554,6 @@ extern void SMM_InitSpringMassParams()
 	{
             fscanf(infile,"%d",&af_params->num_smooth_layers);
             (void) printf("%d\n",af_params->num_smooth_layers);
-	}
-
-    af_params->payload = af_params->m_s;// default
-	if (CursorAfterStringOpt(infile,"Enter payload:"))
-	{
-            fscanf(infile,"%lf",&af_params->payload);
-            (void) printf("%f\n",af_params->payload);
 	}
 
 	fclose(infile);
