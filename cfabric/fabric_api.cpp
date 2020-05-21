@@ -331,6 +331,13 @@ extern void SMM_InitPropagator()
         Front* front = SMM_GetFront();
 	    AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
 
+        Tracking_algorithm(front) = STRUCTURE_TRACKING;
+        front->_point_propagate = airfoil_point_propagate;
+        front->curve_propagate = airfoil_curve_propagate;
+        front->node_propagate = airfoil_node_propagate;
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+        front->_compute_force_and_torque = cfluid_compute_force_and_torque;
+        
 	    char string[100];
         FILE *infile = fopen(InName(front),"r");
 
@@ -344,12 +351,9 @@ extern void SMM_InitPropagator()
                 af_params->no_fluid = YES;
         }
 
-        Tracking_algorithm(front) = STRUCTURE_TRACKING;
-        front->_point_propagate = airfoil_point_propagate;
-        front->curve_propagate = airfoil_curve_propagate;
-        front->node_propagate = airfoil_node_propagate;
-        front->interior_propagate = fourth_order_elastic_set_propagate;
-        front->_compute_force_and_torque = cfluid_compute_force_and_torque;
+        if (af_params->no_fluid == YES)
+            initVelocityFunc(infile,front);
+        fclose(infile);
 }
 
 extern void SMM_InitSpringMassParams()
@@ -576,7 +580,7 @@ extern void SMM_InitTestVelFunc()
 extern void SMM_InitTestTimeControl()
 {
         Front *front = SMM_GetFront();
-	FILE *infile = fopen(InName(front),"r");
+	    FILE *infile = fopen(InName(front),"r");
         printf("\n");
         CursorAfterString(infile,"Start test time control parameters");
         printf("\n");

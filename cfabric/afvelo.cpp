@@ -558,6 +558,7 @@ extern void initVelocityFunc(
 	static FIXAREA_PARAMS *fixarea_params;
 	int i,dim = front->rect_grid->dim;
 	char string[100];
+    EQN_PARAMS *cf_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	if (af_params->no_fluid == YES)
@@ -674,14 +675,15 @@ extern void initVelocityFunc(
 	}
 
 	if (CursorAfterStringOpt(infile,"Enter gravity:"))
+    {
+        for (i = 0; i < dim; ++i)
         {
-            for (i = 0; i < dim; ++i)
-            {
-                fscanf(infile,"%lf",af_params->gravity+i);
-                printf(" %f",af_params->gravity[i]);
-            }
-            printf("\n");
+            fscanf(infile,"%lf",af_params->gravity+i);
+            printf(" %f",af_params->gravity[i]);
+            cf_params->gravity[i] = af_params->gravity[i];
         }
+        printf("\n");
+    }
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
 
