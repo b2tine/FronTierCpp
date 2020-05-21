@@ -23,11 +23,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cFluid.h"
 
-static int BisectionFindRoot(double(*f)(double,void*),void*,double*,
+static boolean BisectionFindRoot(double(*f)(double,void*),void*,double*,
 			double,double,double,double);
-static int SecantFindRoot(double(*f)(double,void*),void*,double*,
+static boolean SecantFindRoot(double(*f)(double,void*),void*,double*,
 			double,double,double,double);
-static int NewtonFindRoot(double(*f)(double,void*),double(*f_prime)(double,void*),void*,double*,
+static boolean NewtonFindRoot(double(*f)(double,void*),double(*f_prime)(double,void*),void*,double*,
 			double,double,double);
 static double UlMinusUr(double,void*);
 static double UlMinusUr_Prime(double,void*);
@@ -138,37 +138,22 @@ extern boolean RiemannSolution(
 	double gamma_l = input.left_state.gamma;
 	double gamma_r = input.right_state.gamma;
 
-	double delta = 0.0000001;
-	double epsilon = 0.0000001;
+	double delta = 1.0e-06;
+	double epsilon = 1.0e-06;
 
     p0 = input.left_state.p;
     p1 = input.right_state.p;
 
-    /*
-	if(input.left_state.p != input.right_state.p)
-	{    
-        p0 = input.left_state.p;
-	    p1 = input.right_state.p;
-	}
-	else 
-	{
-        //TODO: This adjustment is erroneous, should use some
-        //      value based on input pressure
-        
-        //printf("\nAdjusting p0 and p1...");
-        p0 = 0.001;
-        p1 = 100;
-	}
-    */
-	
     params = (void*)&input;
 	func = UlMinusUr;
 	func_prime = UlMinusUr_Prime;
+    boolean root_found;
 	
     //NewtonFindRoot(func,func_prime,params,&p_star,p0,delta,epsilon);
 	//BisectionFindRoot(func,params,&p_star,p0,p1,delta,epsilon);
-	SecantFindRoot(func,params,&p_star,p0,p1,delta,epsilon);
-	
+	root_found = SecantFindRoot(func,params,&p_star,p0,p1,delta,epsilon);
+    if (!root_found) return NO;
+    
     //Set left and right states the same as inputted states.
 	riem_soln->left_state = input.left_state;
 	riem_soln->right_state = input.right_state;
@@ -234,7 +219,7 @@ extern boolean RiemannSolution(
 }	/* end RiemannSolution */
 
 /*	bisection method to solve equation f(x) = 0  */
-static int BisectionFindRoot(
+static boolean BisectionFindRoot(
 	double (*f)(double,void*),	/* function f(x) */
     void *f_params,         	/* function parameters, unknown type */
     double *px,              	/* pointer to solution */
@@ -269,7 +254,7 @@ static int BisectionFindRoot(
 }	/* end bisection_find_root */
 
 /*	secant method to solve equation f(x) = 0  */
-static int SecantFindRoot(        	
+static boolean SecantFindRoot(        	
 	 double (*f)(double,void*),	/* function f(x) */
      void *f_params,         	/* function parameters, unknown type */
      double *px,         	    /* pointer to solution */
@@ -280,37 +265,40 @@ static int SecantFindRoot(
 {
 	double xn = x1;
 	double xn_1 = x0;
-    if (fabs(xn - xn_1) <= delta)
-    {
-        xn = 0.5*(x1 + x0) + 0.25*(x0 - x1) + 10.0*delta;
-        xn_1 = 0.5*(x1 + x0);
-    }
-	
+    
     double fxn = f(xn,f_params);
 	double fxn_1 = f(xn_1,f_params);
-    
     double d;
+    
 	int count = 0;
-    while((fabs(xn - xn_1) > delta) && fabs(fxn - fxn_1) > epsilon)
+    const int MAXITER = 10000;
+
+    while (fabs(xn - xn_1) > delta && fabs(fxn - fxn_1) > epsilon)
 	{
-	    count++;
-	    d = (xn - xn_1)/(fxn - fxn_1)*fxn;
+	    d = fxn*(xn - xn_1)/(fxn - fxn_1);
 	    xn_1 = xn;
-	    xn = fabs(xn - d);
+        xn = std::max(xn - d, delta);
+            //xn = fabs(xn - d); //This often failed to converge
 	    fxn_1 = fxn;
 	    fxn = f(xn,f_params);
-	    if (count > 100)
+
+	    count++;
+	    if (count == MAXITER)
 	    {
-            printf("Riemann solution using secant method diverges!\n");
+            printf("\nERROR: Riemann solution using secant method diverges!\n");
+            printf("xn = %g , xn_1 = %g\n",xn,xn_1);
+            printf("fxn = %g , fxn_1 = %g\n",fxn,fxn_1);
+            printf("delta = %g , epsilon = %g , count = %d\n",delta,epsilon,count);
             clean_up(ERROR);
 	    }
 	}
+
 	*px = xn;
 	return YES;
 }	/* end SecantFindRoot */
 
 /*	Newton method to solve equatin f(x) = 0  */
-static int NewtonFindRoot(
+static boolean NewtonFindRoot(
 	double (*f)(double,void*),      /* function f(x) */
 	double (*f_prime)(double,void*),/* function f(x) prime */
     void *f_params,                 /* function parameters, unknown type */

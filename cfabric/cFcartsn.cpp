@@ -6107,23 +6107,29 @@ void G_CARTESIAN::setElasticStatesRiem(
         RIEMANN_SOLN riem_soln;
 
         riem_input.left_state.d = sl.dens;
-        riem_input.right_state.d = sr.dens;
         riem_input.left_state.p = sl.pres;
-        riem_input.right_state.p = sr.pres;
         riem_input.left_state.u = nor_vl;
-        riem_input.right_state.u = nor_vr;
         riem_input.left_state.gamma = sl.eos->gamma;
+
+        riem_input.right_state.d = sr.dens;
+        riem_input.right_state.p = sr.pres;
+        riem_input.right_state.u = nor_vr;
         riem_input.right_state.gamma = sr.eos->gamma;
 
-        boolean rp_status;
+        bool rp_status;
         rp_status = RiemannSolution(riem_input,&riem_soln);
         if (!rp_status)
         {
-            printf("ERROR: RiemannSolution()\n");
+            printf("\nERROR: RiemannSolution()\n");
+            printf("input states: sl sr\n");
+            printf("\tpres: %f %f\n",sl.pres,sr.pres);
+            printf("\tdens: %f %f\n",sl.dens,sr.dens);
+            printf("\tvn: %f %f\n",nor_vl,nor_vr);
             clean_up(EXIT_FAILURE);
         }
 
-        //deprecated
+        //TODO: Remove when new method working. This was first attempt
+        //      that used the the center state (centered on interface) soln.
             /*
             RIEM_STATE riem_soln_intfc;
             rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);

@@ -120,7 +120,7 @@ Print interval: 0.005
 Movie frame interval: 0.001
 CFL factor: 0.5
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: Xelastic_buffer
