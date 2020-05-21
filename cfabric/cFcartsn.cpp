@@ -6053,8 +6053,8 @@ void G_CARTESIAN::setElasticStatesRiem(
 
         for (j = 0; j < 3; ++j)
         {
-            pl[i] = crx_coords[j] - 1.5*h*nor[j];
-            pr[i] = crx_coords[j] + 1.5*h*nor[j];
+            pl[j] = crx_coords[j] - 1.5*h*nor[j];
+            pr[j] = crx_coords[j] + 1.5*h*nor[j];
         }
         
         //Interpolate states for the 2 points
