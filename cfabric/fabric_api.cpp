@@ -118,6 +118,8 @@ extern void SMM_InitFluidSolver()
     F_BASIC_DATA* f_basic = SMM_GetBasicData();
     
     cf_params.dim = f_basic->dim;
+    //TODO: These functions should be a single call,
+    //      or rename read_cFluid_params...name is misleading
     read_cFluid_params(f_basic->in_name,&cf_params);
     set_cFluid_params(f_basic->in_name,&cf_params);
 
@@ -133,6 +135,7 @@ extern void SMM_InitFluidSolver()
     read_dirichlet_bdry_data(InName(front),front);
 
     G_CARTESIAN* g_cartesian = SMM_GetFluidSolver();
+    g_cartesian->eqn_params = &cf_params;
     g_cartesian->initMesh();
 
     if (f_basic->RestartRun)
