@@ -435,12 +435,12 @@ extern void SMM_InitSpringMassParams()
             }
  
             af_params->poro_func = "REFLECTING_BOUNDARY";
-            if (CursorAfterString(infile,"Enter porosity ghost fluid method:"))
+            if (CursorAfterStringOpt(infile,"Enter porosity ghost fluid method:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
                 if (string[1] == 'i' || string[1] == 'I')
-                    af_params->poro_func = "RIEMANN_PROBLEM;
+                    af_params->poro_func = "RIEMANN_PROBLEM";
             }
         }
         

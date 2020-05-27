@@ -5733,8 +5733,8 @@ void G_CARTESIAN::setElasticStates(
 	int		istart,
 	COMPONENT	comp)
 {
-    std::string string = eqn_params.poro_func;
-    if (string[1] == "i" || string[1] == "I")
+    std::string string = eqn_params->poro_func;
+    if (string[1] == 'i' || string[1] == 'I')
         setElasticStatesRiem(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
     else
         setElasticStatesRFB(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
