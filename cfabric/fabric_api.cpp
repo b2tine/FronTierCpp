@@ -125,7 +125,7 @@ extern void SMM_InitFluidSolver()
 
     cf_params.with_porosity = af_params->with_porosity;
     cf_params.porosity = af_params->porosity;
-    cf_params.poro_func = af_params->poro_func;
+    cf_params.poro_scheme = af_params->poro_scheme;
     
     for (int i = 0; i < 3; ++i)
         af_params->gravity[i] = cf_params.gravity[i];
@@ -135,7 +135,7 @@ extern void SMM_InitFluidSolver()
     read_dirichlet_bdry_data(InName(front),front);
 
     G_CARTESIAN* g_cartesian = SMM_GetFluidSolver();
-    g_cartesian->eqn_params = &cf_params;
+        //g_cartesian->eqn_params = &cf_params;
     g_cartesian->initMesh();
 
     if (f_basic->RestartRun)
@@ -437,13 +437,13 @@ extern void SMM_InitSpringMassParams()
                 (void) printf("%f\n",af_params->porosity);
             }
  
-            af_params->poro_func = "REFLECTING_BOUNDARY";
+            af_params->poro_scheme = PORO_SCHEME::REFLECT;
             if (CursorAfterStringOpt(infile,"Enter porosity ghost fluid method:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
                 if (string[1] == 'i' || string[1] == 'I')
-                    af_params->poro_func = "RIEMANN_PROBLEM";
+                    af_params->poro_scheme = PORO_SCHEME::RIEMANN;
             }
         }
         

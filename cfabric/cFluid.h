@@ -90,6 +90,8 @@ enum SHOCK_PARAMETER
 	SHOCK_MACH_NUMBER
 };
 
+enum class PORO_SCHEME {REFLECT,RIEMANN};
+
 struct EQN_PARAMS
 {
     int dim;
@@ -149,7 +151,7 @@ struct EQN_PARAMS
 
     boolean with_porosity;
     double porosity;
-    std::string poro_func;
+    PORO_SCHEME poro_scheme;
 };
 
 struct SCHEME_PARAMS
@@ -307,7 +309,9 @@ public:
 
     G_CARTESIAN(Front* ft)
         : front{ft}
-    {}
+    {
+        eqn_params = (EQN_PARAMS*)front->extra1;
+    }
 
     //~G_CARTESIAN() = default;
 
@@ -335,8 +339,6 @@ public:
     void applicationSetComponent();
     void applicationSetStates();
 
-	EQN_PARAMS *eqn_params;
-
     // main step function
     void solve(double dt);		
 
@@ -348,7 +350,7 @@ private:
 	RECT_GRID *top_grid;
 	double *array;		// for scatter states;
 	COMPONENT *top_comp;
-	    //EQN_PARAMS *eqn_params;//make public temporarily
+	EQN_PARAMS *eqn_params;
 	FIELD field;
 	FIELD *base_field;
 	Front *base_front;
