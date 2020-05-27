@@ -112,6 +112,7 @@ struct AF_PARAMS
 	double total_canopy_mass;	/* Total mass of string chord */
         double total_gore_mass;         /* Total mass of gore */
 	boolean with_porosity;          /* with or without porosity*/
+    std::string poro_func;
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double porosity;			/* canopy porosity */
 	double area_dens;		/* canopy area density */

@@ -123,6 +123,7 @@ extern void SMM_InitFluidSolver()
 
     cf_params.with_porosity = af_params->with_porosity;
     cf_params.porosity = af_params->porosity;
+    cf_params.poro_func = af_params->poro_func;
     
     for (int i = 0; i < 3; ++i)
         af_params->gravity[i] = cf_params.gravity[i];
@@ -387,55 +388,65 @@ extern void SMM_InitSpringMassParams()
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
 	    CursorAfterString(infile,"Enter fabric spring constant:");
-            fscanf(infile,"%lf",&af_params->ks);
-            (void) printf("%f\n",af_params->ks);
-            
-            CursorAfterString(infile,"Enter fabric damping constant:");
-            fscanf(infile,"%lf",&af_params->lambda_s);
-            (void) printf("%f\n",af_params->lambda_s);
+        fscanf(infile,"%lf",&af_params->ks);
+        (void) printf("%f\n",af_params->ks);
+        
+        CursorAfterString(infile,"Enter fabric damping constant:");
+        fscanf(infile,"%lf",&af_params->lambda_s);
+        (void) printf("%f\n",af_params->lambda_s);
 
-            CursorAfterString(infile,"Enter fabric friction constant:");
-            fscanf(infile,"%lf",&af_params->mu_s);
-            (void) printf("%f\n",af_params->mu_s);
+        CursorAfterString(infile,"Enter fabric friction constant:");
+        fscanf(infile,"%lf",&af_params->mu_s);
+        (void) printf("%f\n",af_params->mu_s);
 
-            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
-            {
-                fscanf(infile,"%lf",&af_params->fabric_thickness);
-                (void) printf("%f\n",af_params->fabric_thickness);
-            }
-            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
-            {
-                fscanf(infile,"%lf",&af_params->fabric_eps);
-                (void) printf("%f\n",af_params->fabric_eps);
-            }
+        if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+        {
+            fscanf(infile,"%lf",&af_params->fabric_thickness);
+            (void) printf("%f\n",af_params->fabric_thickness);
+        }
+        if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+        {
+            fscanf(infile,"%lf",&af_params->fabric_eps);
+            (void) printf("%f\n",af_params->fabric_eps);
+        }
 
-            if (af_params->use_total_mass)
-            {
-                CursorAfterString(infile,"Enter fabric total mass:");
-                fscanf(infile,"%lf",&af_params->total_canopy_mass);
-                (void) printf("%f\n",af_params->total_canopy_mass);
-            }
-            else
-            {
-	            CursorAfterString(infile,"Enter fabric point mass:");
-                fscanf(infile,"%lf",&af_params->m_s);
-                (void) printf("%f\n",af_params->m_s);
-	        }
+        if (af_params->use_total_mass)
+        {
+            CursorAfterString(infile,"Enter fabric total mass:");
+            fscanf(infile,"%lf",&af_params->total_canopy_mass);
+            (void) printf("%f\n",af_params->total_canopy_mass);
+        }
+        else
+        {
+            CursorAfterString(infile,"Enter fabric point mass:");
+            fscanf(infile,"%lf",&af_params->m_s);
+            (void) printf("%f\n",af_params->m_s);
+        }
 
-            af_params->porosity = 0.0;
-            af_params->with_porosity = NO;
-            if (CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
+        af_params->porosity = 0.0;
+        af_params->with_porosity = NO;
+        if (CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
+        {
+            af_params->with_porosity = YES;
+            if (CursorAfterStringOpt(infile,"Enter fabric porosity:"))
             {
-                af_params->with_porosity = YES;
-                if (CursorAfterStringOpt(infile,"Enter fabric porosity:"))
-                {
-                    fscanf(infile,"%lf",&af_params->porosity);
-                    (void) printf("%f\n",af_params->porosity);
-                     CursorAfterString(infile,"Enter area density of canopy:");
-                     fscanf(infile,"%lf",&af_params->area_dens);
-                     (void) printf("%f\n",af_params->area_dens);
-                }
+                fscanf(infile,"%lf",&af_params->porosity);
+                (void) printf("%f\n",af_params->porosity);
             }
+ 
+            af_params->poro_func = "REFLECTING_BOUNDARY";
+            if (CursorAfterString(infile,"Enter porosity ghost fluid method:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[1] == 'i' || string[1] == 'I')
+                    af_params->poro_func = "RIEMANN_PROBLEM;
+            }
+        }
+        
+        CursorAfterString(infile,"Enter area density of canopy:");
+        fscanf(infile,"%lf",&af_params->area_dens);
+        (void) printf("%f\n",af_params->area_dens);
     }
 
 	if ((dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
@@ -443,42 +454,42 @@ extern void SMM_InitSpringMassParams()
     {
         af_params->strings_present = true;
 
-	        CursorAfterString(infile,"Enter string spring constant:");
-            fscanf(infile,"%lf",&af_params->kl);
-            (void) printf("%f\n",af_params->kl);
-            
-            CursorAfterString(infile,"Enter string damping constant:");
-            fscanf(infile,"%lf",&af_params->lambda_l);
-            (void) printf("%f\n",af_params->lambda_l);
+        CursorAfterString(infile,"Enter string spring constant:");
+        fscanf(infile,"%lf",&af_params->kl);
+        (void) printf("%f\n",af_params->kl);
+        
+        CursorAfterString(infile,"Enter string damping constant:");
+        fscanf(infile,"%lf",&af_params->lambda_l);
+        (void) printf("%f\n",af_params->lambda_l);
 
-            CursorAfterString(infile,"Enter string friction constant:");
-            fscanf(infile,"%lf",&af_params->mu_l);
-            (void) printf("%f\n",af_params->mu_l);
+        CursorAfterString(infile,"Enter string friction constant:");
+        fscanf(infile,"%lf",&af_params->mu_l);
+        (void) printf("%f\n",af_params->mu_l);
 
-            if (CursorAfterStringOpt(infile,"Enter string thickness:"))
-            {
-                fscanf(infile,"%lf",&af_params->string_thickness);
-                (void) printf("%f\n",af_params->string_thickness);
-            }
-            
-            if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
-            {
-                fscanf(infile,"%lf",&af_params->string_eps);
-                (void) printf("%f\n",af_params->string_eps);
-            }
+        if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_thickness);
+            (void) printf("%f\n",af_params->string_thickness);
+        }
+        
+        if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+        {
+            fscanf(infile,"%lf",&af_params->string_eps);
+            (void) printf("%f\n",af_params->string_eps);
+        }
 
-            if (af_params->use_total_mass)
-            {
-                CursorAfterString(infile,"Enter string total mass:");
-                fscanf(infile,"%lf",&af_params->total_string_mass);
-                (void) printf("%f\n",af_params->total_string_mass);
-            }
-            else
-            {
-                CursorAfterString(infile,"Enter string point mass:");
-                fscanf(infile,"%lf",&af_params->m_l);
-                (void) printf("%f\n",af_params->m_l);
-            }
+        if (af_params->use_total_mass)
+        {
+            CursorAfterString(infile,"Enter string total mass:");
+            fscanf(infile,"%lf",&af_params->total_string_mass);
+            (void) printf("%f\n",af_params->total_string_mass);
+        }
+        else
+        {
+            CursorAfterString(infile,"Enter string point mass:");
+            fscanf(infile,"%lf",&af_params->m_l);
+            (void) printf("%f\n",af_params->m_l);
+        }
 	}
 
     /*

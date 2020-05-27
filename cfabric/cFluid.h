@@ -5,6 +5,7 @@
 #include "state.h"
 
 #include <vector>
+#include <string>
 #include <list>
 #include <assert.h>
 
@@ -148,6 +149,7 @@ struct EQN_PARAMS
 
     boolean with_porosity;
     double porosity;
+    std::string poro_func;
 };
 
 struct SCHEME_PARAMS
@@ -504,6 +506,9 @@ private:
                             int*,int,int,int,int,int);
 
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
+	void setElasticStatesRFB(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
 	void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,

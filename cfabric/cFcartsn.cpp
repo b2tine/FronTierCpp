@@ -3947,7 +3947,7 @@ void G_CARTESIAN::appendGhostBuffer(
 						nb,0,i,comp);
 		    	break;
 		    case ELASTIC_BOUNDARY:
-		    	setElasticStatesRiem(vst,m_vst,hs,state,ic_next,idir,
+		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,0,i,comp);
 			break;
 		    case DIRICHLET_BOUNDARY:
@@ -4115,7 +4115,7 @@ void G_CARTESIAN::appendGhostBuffer(
 						nb,n,i,comp);
 		    	break;
 		    case ELASTIC_BOUNDARY:
-		    	setElasticStatesRiem(vst,m_vst,hs,state,ic_next,idir,
+		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
 						nb,n,i,comp);
 		    	break;
 		    case DIRICHLET_BOUNDARY:
@@ -5721,9 +5721,31 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) printf("Leaving setNeumannStates()\n");
 }	/* end setNeumannStates */
 
-//TODO: TEST THIS WITH NEW TANGENTIAL VELO PRESERVATION,
-//      AND COMPARE TO NORMAL VELO ONLY VERSION
 void G_CARTESIAN::setElasticStates(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
+    std::string string = eqn_params.poro_func;
+    if (string[1] == "i" || string[1] == "I")
+        setElasticStatesRiem(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+    else
+        setElasticStatesRFB(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+}
+
+//TODO: TEST REFLECTING BOUNDARY FORMULATION  WITH NEW
+//      TANGENTIAL VELO PRESERVATION, AND COMPARE TO
+//      NORMAL VELO ONLY VERSION
+
+//Reflection Boundary Formulation of Porosity
+void G_CARTESIAN::setElasticStatesRFB(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
 	HYPER_SURF 	*hs,
@@ -5773,7 +5795,7 @@ void G_CARTESIAN::setElasticStates(
 
 	if (debugging("elastic_buffer"))
 	{
-	    (void) printf("\nEntered setElasticStates():\n");
+	    (void) printf("\nEntered setElasticStates()RFB:\n");
 	    (void) printf("comp = %d\n",comp);
 	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],
 				icoords[2]);
@@ -5957,9 +5979,10 @@ void G_CARTESIAN::setElasticStates(
 	}
 
 	if (debugging("elastic_buffer"))
-        (void) printf("Leaving setElasticStates()\n");
-}	/* end setElasticStates */
+        (void) printf("Leaving setElasticStatesRFB()\n");
+}	/* end setElasticStatesRFB */
 
+//Riemann Problem Formulation of Porosity
 void G_CARTESIAN::setElasticStatesRiem(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -6051,12 +6074,13 @@ void G_CARTESIAN::setElasticStatesRiem(
             //nor = Tri_normal_vector(nearTri);
         double h = FT_GridSizeInDir(nor,front);
 
+        //TODO: switch left and right for clarity
         for (j = 0; j < 3; ++j)
         {
             pl[j] = crx_coords[j] - 1.5*h*nor[j];
             pr[j] = crx_coords[j] + 1.5*h*nor[j];
         }
-        
+
         //Interpolate states for the 2 points
         FT_IntrpStateVarAtCoords(front,comp_ghost,pl,
                 m_vst->dens,getStateDens,&sl.dens,&m_vst->dens[index_ghost]);
@@ -6128,61 +6152,46 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
 
+            /*
+            printf("right_state.u = %g\n",riem_soln.right_state.u);
+            printf("right_center_state.u = %g\n",riem_soln.right_center_state.u);
+            printf("left_center_state.u = %g\n",riem_soln.left_center_state.u);
+            printf("left_state.u = %g\n",riem_soln.left_state.u);
+            */
        
         ///////////////////////////////////////////////////////////////////////
-        //TODO: This method did not work -- remove
-        /* 
-        //Take weighted average of center states using porosity
-	    double poro = eqn_params->porosity;
-
-        RIEM_STATE left_center_state = riem_soln.left_center_state;
-        double dens_ghost = left_center_state.d;
-        double pres_ghost = left_center_state.p;
-        double vn_ghost = left_center_state.u;
-        
-        RIEM_STATE right_center_state = riem_soln.right_center_state;
-        double dens_real = right_center_state.d;
-        double pres_real = right_center_state.p;
-        double vn_real = right_center_state.u;
-
-        state_ghost.dens = (1.0 - poro)*dens_ghost + poro*dens_real;
-        state_ghost.pres = (1.0 - poro)*pres_ghost + poro*pres_real;
-
-        for (j = 0; j < dim; ++j)
-        {
-            v_ghost[j] = ((1.0 - poro)*vn_ghost + poro*vn_real)*nor[j];
-            state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
-        }
-        state_ghost.engy = EosEnergy(&state_ghost);
-        */
-
+        /*
         ///////////////////////////////////////////////////////////////////////
         //TODO: This was first attempt that used the center state
         //          (centered on interface) soln.
-            /*
-            RIEM_STATE riem_soln_intfc;
-            rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
-            if (!rp_status)
-            {
-                printf("ERROR: RiemannSolnAtXi()\n");
-                clean_up(EXIT_FAILURE);
-            }
+        RIEM_STATE riem_soln_intfc;
+        rp_status = RiemannSolnAtXi(&riem_soln,&riem_soln_intfc,0.0);
+        if (!rp_status)
+        {
+            printf("ERROR: RiemannSolnAtXi()\n");
+            clean_up(EXIT_FAILURE);
+        }
 
-            //printf("riem_soln_intfc:\n");
-            //printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
-              //      riem_soln_intfc.u,riem_soln_intfc.p);
+        //printf("riem_soln_intfc:\n");
+        //printf("\t(d,u,p) = %f %f %f\n",riem_soln_intfc.d,
+          //      riem_soln_intfc.u,riem_soln_intfc.p);
+        
+        //Assign the midpoint solution state to the ghost state
+        double dens_ghost = riem_soln_intfc.d;
+        double pres_ghost = riem_soln_intfc.p;
+        double vn_ghost = riem_soln_intfc.u;
+        */
 
-            //Assign the solution state values to the ghost point
-            double dens_ghost = riem_soln_intfc.d;
-            double pres_ghost = riem_soln_intfc.p;
-            double vn_ghost = riem_soln_intfc.u;
-            */
-
-        ///////////////////////////////////////////////////////////////////////
+        /*
         RIEM_STATE left_center_state = riem_soln.left_center_state;
         double dens_ghost = left_center_state.d;
         double pres_ghost = left_center_state.p;
         double vn_ghost = left_center_state.u;
+        */
+        RIEM_STATE right_center_state = riem_soln.right_center_state;
+        double dens_ghost = right_center_state.d;
+        double pres_ghost = right_center_state.p;
+        double vn_ghost = right_center_state.u;
         
         for (j = 0; j < dim; ++j)
         {
@@ -6191,18 +6200,20 @@ void G_CARTESIAN::setElasticStatesRiem(
 
         //take weighted average using porosity to get the modified ghost point
 	    double poro = eqn_params->porosity;
-        state_ghost.dens = (1.0 - poro)*dens_ghost + poro*m_vst->dens[index_ghost];
-        state_ghost.pres = (1.0 - poro)*pres_ghost + poro*m_vst->pres[index_ghost];
+        //state_ghost.dens = (1.0 - poro)*dens_ghost + poro*m_vst->dens[index_ghost];
+        //state_ghost.pres = (1.0 - poro)*pres_ghost + poro*m_vst->pres[index_ghost];
+        state_ghost.dens = m_vst->dens[index_ghost] + poro*dens_ghost;
+        state_ghost.pres = m_vst->pres[index_ghost] + poro*pres_ghost;
         
         double v_real[3];
         for (j = 0; j < dim; ++j)
         {
             v_real[j] = m_vst->momn[j][index_ghost]/m_vst->dens[index_ghost];
-            v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*v_real[j];
+            //v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*v_real[j];
+            v_ghost[j] = v_real[j] + poro*v_ghost[j];
             state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
         }
         state_ghost.engy = EosEnergy(&state_ghost);
-        ///////////////////////////////////////////////////////////////////////
 
 	    // debugging printout
 	    if (state_ghost.engy < 0.0 || state_ghost.eos->gamma < 0.001)

@@ -242,16 +242,17 @@ void setMotionParams(Front* front)
             	(void) printf("%f\n",Fparams->surf_tension);
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
-            {
+        {
 		        // default: no porosity
                 Fparams->with_porosity = af_params->with_porosity = NO;
                 if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
-		{
+		        {
                     fscanf(infile,"%s",string);
                     (void) printf("%s\n",string);
                     if (string[0] == 'y' || string[0] == 'Y')
                 	Fparams->with_porosity=af_params->with_porosity=YES;
-		}
+		        }
+
                 if (Fparams->with_porosity == YES)
                 {
                     CursorAfterString(infile,"Enter viscous parameter:");
@@ -263,6 +264,7 @@ void setMotionParams(Front* front)
                     Fparams->porous_coeff[0] = af_params->porous_coeff[0];
                     Fparams->porous_coeff[1] = af_params->porous_coeff[1];
                 }
+
                 CursorAfterString(infile,"Enter area density of canopy:");
                 fscanf(infile,"%lf",&af_params->area_dens);
                 (void) printf("%f\n",af_params->area_dens);
