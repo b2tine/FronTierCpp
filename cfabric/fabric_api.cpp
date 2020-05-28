@@ -437,12 +437,14 @@ extern void SMM_InitSpringMassParams()
                 (void) printf("%f\n",af_params->porosity);
             }
  
-            af_params->poro_scheme = PORO_SCHEME::REFLECT;
+            af_params->poro_scheme = PORO_SCHEME::NORMAL_REFLECTION;
             if (CursorAfterStringOpt(infile,"Enter porosity ghost fluid method:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
-                if (string[1] == 'i' || string[1] == 'I')
+                if (string[1] == 'e' || string[1] == 'E')
+                    af_params->poro_scheme = PORO_SCHEME::REFLECTION;
+                else if (string[1] == 'i' || string[1] == 'I')
                     af_params->poro_scheme = PORO_SCHEME::RIEMANN;
             }
         }

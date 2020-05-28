@@ -90,7 +90,12 @@ enum SHOCK_PARAMETER
 	SHOCK_MACH_NUMBER
 };
 
-enum class PORO_SCHEME {REFLECT,RIEMANN};
+enum class PORO_SCHEME
+{
+    NORMAL_REFLECTION,
+    REFLECTION,
+    RIEMANN
+};
 
 struct EQN_PARAMS
 {
@@ -513,6 +518,9 @@ private:
                             int*,int,int,int,int,int);
 
 	void setElasticStatesRFB(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
+	void setElasticStatesRFB_normal(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
 	void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,

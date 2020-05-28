@@ -86,8 +86,8 @@ Enter yes to install boundary on each side: no
 Enter interior sub step number: 10
 
 Enter yes to use porosity: yes
-Enter porosity ghost fluid method: RIEMANN_PROBLEM
 Enter fabric porosity: 0.1
+Enter porosity ghost fluid method: NORMAL_REFLECTION
 
 Enter area density of canopy: 5.0
 
