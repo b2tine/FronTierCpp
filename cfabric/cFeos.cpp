@@ -70,7 +70,7 @@ extern double EosInternalEnergy(
 	EOS_PARAMS	*eos = state->eos;
 	double		gamma = eos->gamma;
 
-	return (pres+gamma*eos->pinf)/(gamma-1) - dens*eos->einf;
+	return (pres+gamma*eos->pinf)/(gamma-1.0) - dens*eos->einf;
 }
 
 extern double EosEnergy(

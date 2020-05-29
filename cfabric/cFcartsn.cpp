@@ -5854,22 +5854,12 @@ void G_CARTESIAN::setElasticStatesRFB(
                     getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
         }
         
-		/* Galileo Transformation */
-        //Compute relative normal velocity in frame of interface crossing.
         vn = 0.0;
         double v_reflect[3], v_rel[3];
         for (j = 0; j < dim; j++)
 	    {
-            //allow tangential velo
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
             vn += (v_reflect[j] - vel_intfc[j])*nor[j];
-
-            /*
-            //only normal velo
-            v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-            v_rel[j] = v_reflect[j] - vel_intfc[j];
-            vn += v_rel[j]*nor[j];
-            */
 	    }
 	    
         //Ghost vel has relative normal velocity component equal in magnitude to
@@ -5880,11 +5870,11 @@ void G_CARTESIAN::setElasticStatesRFB(
         //      NEEDS TO BE TESTED
         for (j = 0; j < dim; j++)
         {
-            //allow tangential velo
+            //allow relative tangential velocity
             v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
 
             /*
-            //only normal velo
+            //zero relative tangential velocity
             v_ghost[j] = vel_intfc[j] - vn*nor[j];
             */
         }
@@ -6096,22 +6086,13 @@ void G_CARTESIAN::setElasticStatesRFB_normal(
                     getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
         }
         
-		/* Galileo Transformation */
         //Compute relative normal velocity in frame of interface crossing.
         vn = 0.0;
         double v_reflect[3], v_rel[3];
         for (j = 0; j < dim; j++)
 	    {
-            /*
-            //allow tangential velo
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
             vn += (v_reflect[j] - vel_intfc[j])*nor[j];
-            */
-
-            //only normal velo
-            v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-            v_rel[j] = v_reflect[j] - vel_intfc[j];
-            vn += v_rel[j]*nor[j];
 	    }
 	    
         //Ghost vel has relative normal velocity component equal in magnitude to
@@ -6123,11 +6104,11 @@ void G_CARTESIAN::setElasticStatesRFB_normal(
         for (j = 0; j < dim; j++)
         {
             /*
-            //allow tangential velo
+            //allow relative tangential velocity
             v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
             */
 
-            //only normal velo
+            //zero relative tangential velocity
             v_ghost[j] = vel_intfc[j] - vn*nor[j];
         }
 
@@ -6312,7 +6293,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
-        TRI* nearTri = Tri_of_hse(nearHse);
+        TRI* nearTri = Tri_of_hse(nearHse);//TODO: is there a state associated with the TRI?
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
             //nor = Tri_normal_vector(nearTri);
         double h = FT_GridSizeInDir(nor,front);
@@ -6335,11 +6316,14 @@ void G_CARTESIAN::setElasticStatesRiem(
                 m_vst->pres,getStatePres,&sr.pres,&m_vst->pres[index_ghost]);
         
         //Using relative velocity wrt to interface velocity
+        //TODO: can we do better than this interpolation?
         double intfc_dens;
         double intfc_momn[3], vel_intfc[3];
         FT_IntrpStateVarAtCoords(front,comp,crx_coords,
                 m_vst->dens,getStateDens,&intfc_dens,&m_vst->dens[index]);
 
+        //TODO: Should the left state velocity be set to the right state velocity
+        //      as in GFM for strong shock interaction part 1&2 (or is that a typo)
         double vl[3], vr[3];
         for (j = 0; j < dim; ++j)
         {
@@ -6362,7 +6346,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         double nor_vr = 0.0;
         for (j = 0; j < 3; ++j)
         {
-            //relative normal velos
+            //relative normal velocities
             nor_vl += vl[j]*nor[j];
             nor_vr += vr[j]*nor[j];
         }
@@ -6393,7 +6377,8 @@ void G_CARTESIAN::setElasticStatesRiem(
 
         riem_input.left_state.d = sl.dens;
         riem_input.left_state.p = sl.pres;
-        riem_input.left_state.u = nor_vl;
+        riem_input.left_state.u = nor_vr;//Typo or correct?
+            //riem_input.left_state.u = nor_vl;
         riem_input.left_state.gamma = sl.eos->gamma;
 
         riem_input.right_state.d = sr.dens;
@@ -6468,6 +6453,10 @@ void G_CARTESIAN::setElasticStatesRiem(
         double dens_ghost = right_center_state.d;
         double pres_ghost = right_center_state.p;
         double vn_ghost = right_center_state.u;
+        //TODO: Try using the interpolated left state pressure and density values,
+        //      and only derive the velocity from the riemann solution.
+            //double dens_ghost = sl.dens; //copy from the interpolated left state
+            //double pres_ghost = sl.pres;  //copy from the interpolated left state
 
         //take weighted average using porosity to get the modified ghost point
 	    double poro = eqn_params->porosity;
@@ -6477,9 +6466,10 @@ void G_CARTESIAN::setElasticStatesRiem(
         double v_real[3];
         for (j = 0; j < dim; ++j)
         {
+            v_ghost[j] = vn_ghost*nor[j] + vel_intfc[j];
             //reflect normal velocity component and convert back to world frame
-            v_ghost[j] = -1.0*vn_ghost*nor[j] + vel_intfc[j];
-                //v_ghost[j] = vn_ghost*nor[j];
+                //v_ghost[j] = vel_intfc[j] - vn_ghost*nor[j];
+                    //v_ghost[j] = vn_ghost*nor[j];
             v_real[j] = m_vst->momn[j][index_ghost]/m_vst->dens[index_ghost];
             v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*v_real[j];
             state_ghost.momn[j] = v_ghost[j]*state_ghost.dens;
