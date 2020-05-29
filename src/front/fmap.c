@@ -3284,12 +3284,12 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 EXPORT void FT_ResetTime(Front *front)
 {
 	front->time = 0.0;
-        front->dt = 0.0;
-        front->step = 0;
+    front->dt = 0.0;
+    front->step = 0;
 	front->im = front->ip = 0;
-        front->is_print_time = NO;
-        front->is_movie_time = NO;
-        front->time_limit_reached = NO;
+    front->is_print_time = NO;
+    front->is_movie_time = NO;
+    front->time_limit_reached = NO;
 }	/* end FT_ResetTime */
 
 EXPORT void FT_SetOutputCounter(Front *front)

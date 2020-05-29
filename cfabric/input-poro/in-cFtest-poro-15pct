@@ -1,0 +1,130 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 3
+Computational grid: 50 50 150
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 75
+Enter pressure: 2250
+Enter density: 3.675
+
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+//////////////////////////////////////////////////////////
+///////////  Start parameters for cFluid  ////////////////
+//////////////////////////////////////////////////////////
+
+Enter problem type: FABRIC
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Enter order of point propagator: 4
+
+Enter gamma, pinf, einf of the fluid with comp 2: 1.4 0 0
+Enter gamma, pinf, einf of the fluid with comp 3: 1.4 0 0
+
+Enter density and pressure of ambient air1: 1.29 750
+Enter density and pressure of ambient air2: 1.29 750
+
+Enter density and viscosity of the fluid: 1.29 0.00001813
+
+Enter gravity: 0 0 -9.8
+
+Type yes to track the interface: no
+
+Entering yes to turn off fluid solver: no
+
+
+//////////////////////////////////////////////////////////
+/////////            Movie Options            ////////////
+//////////////////////////////////////////////////////////
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+
+
+//////////////////////////////////////////////////////////
+/////////     Start parameters for modules    ////////////
+//////////////////////////////////////////////////////////
+
+Enter yes for parachute system: no
+Enter the number of fabric optimization rounds: 0
+
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
+
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: R
+Enter the height of the plane: 0.5
+Enter lower bounds of the rectangle: 0.19 0.19
+Enter upper bounds of the rectangle: 0.81 0.81
+Enter yes for fixed boundary: yes
+Enter yes to install boundary on each side: no
+
+//////////////////////////////////////////////////////////
+//////  Start parameters for spring-mass system   ////////
+//////////////////////////////////////////////////////////
+
+Enter interior sub step number: 10
+
+Enter yes to use porosity: yes
+Enter fabric porosity: 0.15
+Enter area density of canopy: 5.0
+
+Enter fabric spring constant: 5000
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.05
+Enter fabric point mass: 0.0001
+Enter fabric thickness: 0.0001
+Enter fabric rounding tolerance: 0.00001
+
+Type yes to perturb the surface: n
+
+Start test velocity function set
+Available velocity functions are:
+        Vortex velocity (R)
+        Double vortex velocity (D)
+        Vertical velocity (V)
+        Toroidal velocity (T)
+        Parabolic velocity (P)
+        Singular velocity (S)
+        Zero velocity (Z)
+        Fixed area velocity (FA)
+        Fixed point velocity (FP)
+        Free fall velocity (FF)
+Enter velocity function: Z
+Enter gravity: 0 0 -9.8
+
+Start test time control parameters
+Max time: 1.0
+Max step: 3000
+Print interval: 0.005
+Movie frame interval: 0.001
+CFL factor: 0.5
+
+Enter yes for debugging: no
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: Xelastic_buffer
+
+Enter the debugging string: Xcollision_off
+Enter the debugging string: Xtrace
+

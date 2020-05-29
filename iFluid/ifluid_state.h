@@ -12,8 +12,6 @@ struct STATE
 	double solute;			    /* For subsurface problem */
 
 	double temperature;         /* For melting with flow problem */
-	double vapor;               /* For climate problem */
-    double supersat;		    /* For climate problem */
 	double mu;			        /* For eddy viscosity */
 	double fluid_accel[MAXD];   /* acceleration from fluid force */
     double other_accel[MAXD];   /* acceleration for special nodes */

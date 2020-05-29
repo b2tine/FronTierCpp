@@ -1167,19 +1167,19 @@ static void spring_force_at_point2(
 		    length0 = tris[i]->side_length0[j];
 		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
 		    length = separation(p,p_nb,3);
-	    	    for (k = 0; k < 3; ++k)
+	    	    
+            for (k = 0; k < 3; ++k)
 		    {
-			dir[k] = tris[i]->side_dir0[j][k];
-			vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) -
-				//length0*tris[i]->side_dir0[j][k];
-				length0*dir[k];
-			f[k] += ks*vect[k];
+                dir[k] = tris[i]->side_dir0[j][k];
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
+                f[k] += ks*vect[k];
 		    }
+
 		    if (is_side_bdry(tris[i],(j+2)%3))
 		    {
-			(void) printf("Detect boundary "
-				"in spring_force_at_point2()\n");
-			clean_up(ERROR);
+                (void) printf("Detect boundary "
+                    "in spring_force_at_point2()\n");
+                clean_up(ERROR);
 		    }
 		}
 	    }

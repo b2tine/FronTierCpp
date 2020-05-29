@@ -377,13 +377,15 @@ AS_IF([test $with_nlopt = yes],
 
 
 
-#check if fabric, airfoil and Collsion should be built
+#check if fabric, cfabric, airfoil and Collsion should be built
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AC_CONFIG_FILES([fabric/Makefile
-                             fabric/objs/Makefile])])
+                             fabric/objs/Makefile
+                             cfabric/Makefile
+                             cfabric/objs/Makefile])])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],

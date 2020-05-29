@@ -77,6 +77,10 @@ fabric/fabric
 fabric/cgal_intfc_test
 fabric/fabric_Fortn
 fabric/fabric_Cplus
+cfabric/fabric
+cfabric/cgal_intfc_test
+cfabric/fabric_Fortn
+cfabric/fabric_Cplus
 FrontWrapper/example00
 *Tests
 *.txt

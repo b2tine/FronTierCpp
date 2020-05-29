@@ -64,36 +64,33 @@ extern  int countSurfPoints(INTERFACE* intfc)
 	int num_fabric_pts  = 0;
 	int surf_count = 0;
 	for (SURFACE** s = intfc->surfaces; s && *s; ++s)
-    {
-        if (wave_type(*s) == ELASTIC_BOUNDARY)
         {
-            num_fabric_pts += I_NumOfSurfPoints(*s);
-    		surf_count++;
+            if (wave_type(*s) == ELASTIC_BOUNDARY)
+	    {
+                num_fabric_pts += I_NumOfSurfPoints(*s);
+		surf_count++;
 	    }
-    }
+        }
 	return num_fabric_pts;
 }
 
 extern  int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) 
 {
-    int num_str_pts = 0;
-    for (CURVE** c = intfc->curves; c && *c; ++c)
-    {
-        if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
-            num_str_pts += I_NumOfCurvePoints(*c);
-        else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
-            num_str_pts += I_NumOfCurvePoints(*c);
-        else
-            continue;
-    
-        if (is_parachute_system == YES)
-            num_str_pts -= 2; //exclude curve boundaries
-    }
-	
-    if (is_parachute_system == YES)
+	int num_str_pts = 0;
+        for (CURVE** c = intfc->curves; c && *c; ++c)
+        {
+            if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
+		num_str_pts += I_NumOfCurvePoints(*c);
+	    else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
+		num_str_pts += I_NumOfCurvePoints(*c);
+	    else
+		continue;
+	    if (is_parachute_system == YES)
+		num_str_pts -= 2; //exclude curve boundaries
+        }
+	if (is_parachute_system == YES)
 	    num_str_pts += 1; //load node
-	
-    return num_str_pts;
+	return num_str_pts;
 }
 
 void setMotionParams(Front* front)
@@ -101,7 +98,11 @@ void setMotionParams(Front* front)
 	FILE *infile = fopen(InName(front),"r");
 	int i,dim = front->rect_grid->dim;
 	char string[100];
-	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+	
+    F_PARAMS* Fparams = (F_PARAMS*)front->extra1;
+    //EQN_PARAMS* cFparams = (EQN_PARAMS*)front->extra1;
+    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	INTERFACE *intfc = front->interf;
 	boolean status;
@@ -275,7 +276,7 @@ void setMotionParams(Front* front)
 	for (i = 0; i < dim; ++i)
 	    af_params->gravity[i] = Fparams->gravity[i];
 
-        if (CursorAfterStringOpt(infile,"Enter payload:"))
+    if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
@@ -671,6 +672,7 @@ extern void initVelocityFunc(
                 break;
             }	
 	}
+
 	if (CursorAfterStringOpt(infile,"Enter gravity:"))
         {
             for (i = 0; i < dim; ++i)
