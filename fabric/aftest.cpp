@@ -188,6 +188,8 @@ extern void second_order_elastic_curve_propagate(
 			"second_order_elastic_curve_propagate()\n");
 }	/* end second_order_elastic_curve_propagate */
 
+//TODO: why was second_order_elastic_surf_propagate() removed?
+
 extern void set_equilibrium_mesh(
 	Front *front)
 {

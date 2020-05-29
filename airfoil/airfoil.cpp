@@ -139,10 +139,8 @@ int main(int argc, char **argv)
 	{
 	    optimizeElasticMesh(&front);
 	    set_equilibrium_mesh(&front);
-	}
-	    
-	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
+	}
 
 	/* Initialize velocity field function */
 	setMotionParams(&front);
@@ -182,6 +180,7 @@ int main(int argc, char **argv)
     l_cartesian->initMovieVariables();
     initMovieStress(in_name,&front);
 
+    //TODO: NEED TO ZERO OUT OTHER FIELDS IN resetFronVelocity()?
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
 

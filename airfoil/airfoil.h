@@ -77,12 +77,13 @@ typedef struct {
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
+	double payload {0.001};//defaults to same as m_s
+    bool rgb_payload {false};
     bool strings_present {false};
     bool gores_present {false};
 
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
-	double payload;
 	double ks {5000.0};  /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
@@ -118,6 +119,8 @@ typedef struct {
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
     
+    int fsi_startstep;
+
     //for Collision Handling
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};

@@ -830,6 +830,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	switch (dim)
 	{
 	case 2:
+        //TODO: make optional CursorAfterStringOpt()
 	    CursorAfterString(infile,"Type y to make movie of pressure:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
@@ -900,6 +901,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	    }
 	    break;
 	case 3:
+        //TODO: make optional CursorAfterStringOpt()
 	    CursorAfterString(infile,"Type y to make yz cross section movie:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
@@ -976,19 +978,40 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 		}
 	    }
 	}
-	/* Added for vtk movie of vector field */
-    /*
-	CursorAfterString(infile,"Type y to make vector velocity field movie:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'Y' || string[0] == 'y')
-	    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
-    */
 
-	FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
-    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
-    if (dim == 3)
-        FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vorticity);
+    //TODO: make movies optional with input file
+	
+    if (dim != 1)
+    {
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make scalar pressure field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+        }
+	    if (CursorAfterStringOpt(infile,
+                    "Type y to make vector velocity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
+        }
+
+        if (dim == 3)
+        {
+            if (CursorAfterStringOpt(infile,
+                        "Type y to make vector velocity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vorticity);
+            }
+        }
+    }
 
 	fclose(infile);
 }	/* end initMovieVariables */

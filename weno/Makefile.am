@@ -5,7 +5,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/weno \
 
 
 
-noinst_PROGRAMS = test
+noinst_PROGRAMS = test \
+				  advection_diffusion \
+				  matdata
 
 
 test_SOURCES = test.cpp \
@@ -14,10 +16,22 @@ test_SOURCES = test.cpp \
 
 test_LDADD = $(top_builddir)/lib/libFronTier.la
 
+advection_diffusion_SOURCES = advection_diffusion.cpp \
+			   weno.cpp \
+			   weno.h
 
-$(test_DEPENDENCIES): FORCE
+advection_diffusion_LDADD = $(top_builddir)/lib/libFronTier.la
+
+
+matdata_SOURCES = matdata.cpp \
+				  weno.cpp \
+   				  weno.h
+
+matdata_LDADD = $(top_builddir)/lib/libFronTier.la
+
+
+$(matdata_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/lib all
-
 
 FORCE:
 

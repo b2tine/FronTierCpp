@@ -2973,6 +2973,7 @@ LOCAL void blocks_on_tri(
 		i_diff[i] = 0;
 
     //TODO: why just check first element of i_diff?
+    //TODO: can this be bypassed in some circumstances, e.g fabric surface stretching?
     if (i_diff[0] > 6)
 	{
 	    printf("In blocks_on_tri():\n");

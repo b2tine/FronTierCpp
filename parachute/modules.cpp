@@ -148,6 +148,7 @@ extern void initParachuteModules(Front *front)
 extern void initParachuteDefault(
 	Front *front)
 {
+	IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	FILE *infile = fopen(InName(front),"r");
         char string[100];
@@ -156,14 +157,23 @@ extern void initParachuteDefault(
         af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
         af_params->attach_gores = NO;
-	if (CursorAfterStringOpt(infile,
+	
+    if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))
-        {
-            fscanf(infile,"%s",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->attach_gores = YES;
-        }
-        fclose(infile);
+    {
+        fscanf(infile,"%s",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->attach_gores = YES;
+    }
+    
+    af_params->fsi_startstep = 5;
+    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
+    {
+        fscanf(infile,"%d",&af_params->fsi_startstep);
+    }
+    iF_params->fsi_startstep = af_params->fsi_startstep;
+
+    fclose(infile);
 }	/* end initParachuteDefault */
 
 static void initSingleModule(

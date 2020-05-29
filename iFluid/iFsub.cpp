@@ -1890,7 +1890,9 @@ static  void ifluid_compute_force_and_torque2d(
             force[i] = 0.0;
         }
         *torque = 0.0;
-	if (front->step > 5)
+
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (b = curve->first; b != NULL; b = b->next)
             {
@@ -2014,7 +2016,8 @@ static  void ifluid_compute_force_and_torque3d(
         }
 	/* end of counting the force on RG_STRING_NODE */
 
-	if (front->step > 5)
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface);
                         tri = tri->next)
@@ -2319,6 +2322,52 @@ static void promptForDirichletBdryState(
 	}
 }	/* end promptForDirichletBdryState */
 
+/*
+extern void rgb_modification(
+        Front *front,
+        RG_PARAMS* rgb_params
+        )
+{
+    int dim = FT_Dimension();
+    if (dim != 3) return;
+
+    SURFACE **s;
+    char* inname = InName(front);
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            //TODO: write new functions for modifications
+            //
+            //prompt_for_rigid_body_params(dim,inname,rgb_params);
+            //set_rgbody_params(rgb_params,Hyper_surf(*s));
+        }
+    }
+    
+}*/       /* end rgb_modification */
+
+//TODO: May eventually need to set other variables,
+//      and may want to be able to set them to a nonzero value.
+//      Was original idea behind rgb_modification(), this may
+//      end up taking its place.
+extern void resetRigidBodyVelocity(Front *front)
+{
+    SURFACE **s;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            for (int i = 0; i < 3; ++i)
+            {
+                center_of_mass_velo(hs)[i] = 0.0;
+            }
+        }
+    }
+}
+
 extern void rgb_init(Front *front,
         RG_PARAMS* rgb_params)
 {
@@ -2398,7 +2447,7 @@ extern  void prompt_for_rigid_body_params(
         (void) printf("\tPRESET_TRANSLATION\n");
         (void) printf("\tPRESET_ROTATION\n");
         (void) printf("\tPRESET_MOTION (general)\n");
-        CursorAfterString(infile,"Enter type of preset motion: ");
+        CursorAfterString(infile,"Enter type of preset motion:");
         fscanf(infile,"%s",s);
         (void) printf("%s\n",s);
         switch(s[7])
