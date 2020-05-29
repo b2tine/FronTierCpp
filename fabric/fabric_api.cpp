@@ -258,6 +258,7 @@ extern void SMM_InitModules()
             set_equilibrium_mesh(front);
             FT_SetGlobalIndex(front);
             static_mesh(front->interf) = YES;
+            fclose(infile);
         }
 }       /* end SMM_InitModules */
 
@@ -393,6 +394,7 @@ extern void SMM_InitSpringMassParams()
         }
 	}
 
+    /*
     CursorAfterStringOpt(infile,"Enter strain limit:");
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
@@ -400,8 +402,9 @@ extern void SMM_InitSpringMassParams()
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
-            
-	if (dim == 3 && af_params->is_parachute_system == YES)
+    */      
+	
+    if (dim == 3 && af_params->is_parachute_system == YES)
 	{
 	    //af_params->m_g = af_params->m_s;
         if (af_params->attach_gores == YES)
@@ -462,7 +465,8 @@ extern void SMM_InitSpringMassParams()
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
 
-    //TODO: move to init parachute module
+    //TODO: move to init parachute module,
+    //      and consolidate with rigid body mass
     af_params->payload = af_params->m_s;// default
 	if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{

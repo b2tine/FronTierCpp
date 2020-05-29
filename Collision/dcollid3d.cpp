@@ -1410,10 +1410,16 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
-        //TODO: Create cgal interface construction library
-        //      and remove when this case can be safely omitted.
-        printf("\n\tPointToTri() ERROR: fabs(det) < MACH_EPS\n\n");
-        clean_up(ERROR);
+        //TODO: I've only seen this occur with DGB parachute model.
+        //      Disabling fatal error for now.
+        //
+        //      Determine why this happens, and if ignoring it is an
+        //      acceptable solution. Intuitively, if the triangle reduces
+        //      to a point, then the neighboring triangles will just accept
+        //      any computed impulses it would have received.
+        printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
+                \t\t\t (fabs(det) < MACH_EPS)\n\n");
+            //clean_up(ERROR);
 	}
 	else
     {

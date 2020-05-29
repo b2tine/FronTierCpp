@@ -136,6 +136,8 @@ extern void initParachuteModules(Front *front)
 	else if (num_canopy > 1)
         initMultiModule(front,num_canopy);
 
+    //TODO: divideAtGoreBdry() shouldn't be
+    //      called if attach_gores == false
 	divideAtGoreBdry(front->interf);
 	setCanopyBodyIndex(front);
 

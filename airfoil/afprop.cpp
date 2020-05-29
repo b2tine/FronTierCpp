@@ -108,10 +108,13 @@ extern void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
-		dv[i] = 0.0;
-	    else if (front->step > 5)
-		dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+            dv[i] = 0.0;
+	    else if (front->step > af_params->fsi_startstep)
+            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    //else if (front->step > 5)
+          //  dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+	
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
@@ -392,9 +395,13 @@ static void gore_point_propagate(
         {
 	    dv = 0.0;
 
-	    if (front->step > 5)
-		dv = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    if (debugging("rigid_canopy"))
+	    if (front->step > af_params->fsi_startstep)
+		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    
+        //if (front->step > 5)
+		  //  dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    
+        if (debugging("rigid_canopy"))
 	    	dv = 0.0;
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
@@ -1071,6 +1078,7 @@ static void rg_string_node_propagate(
 	    for (i = 0; i < dim; ++i)
 		accel[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	    accel[i] -= g[i];
 

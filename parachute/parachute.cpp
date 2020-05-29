@@ -89,18 +89,18 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-        iFparams.dim = f_basic.dim;
-        front.extra1 = (POINTER)&iFparams;
-        front.extra2 = (POINTER)&af_params;
-            front.extra3 = (POINTER)&rgb_params;
-        read_iFparams(in_name,&iFparams);
+    iFparams.dim = f_basic.dim;
+    front.extra1 = (POINTER)&iFparams;
+    front.extra2 = (POINTER)&af_params;
+    front.extra3 = (POINTER)&rgb_params;
+    read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
 	level_func_pack.pos_component = LIQUID_COMP2;
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	        //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    initParachuteModules(&front);
 	    if (debugging("trace"))
 	    {
@@ -112,19 +112,21 @@ int main(int argc, char **argv)
             gview_plot_interface(gvdir,front.interf);
 	    }
 	}
-	else
-	{
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-	}
+	//else
+	//{
+	    //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	//}
 
 	FT_ReadTimeControl(in_name,&front);
 
-    //Must be called before setMotionParams()
 	if (!RestartRun)
-	    FT_SetGlobalIndex(&front);
-
-	/* Initialize velocity field function */
-	setMotionParams(&front);
+    {
+        optimizeElasticMesh(&front);
+        set_equilibrium_mesh(&front);
+	    static_mesh(front.interf) = YES;
+        FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
+    }
+	    //setMotionParams(&front);
 
 	record_break_strings_gindex(&front);
 	set_unequal_strings(&front);
@@ -132,24 +134,28 @@ int main(int argc, char **argv)
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
-	l_cartesian->initMesh();
+	    //l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
 
-        if (RestartRun)
-	    {
+    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+
+    if (RestartRun)
+    {
 	    if (ReSetTime)
 	    {
 		    readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);
+            clearRegisteredPoints(&front);//TODO: setMotionParams() should be after this
+            resetRigidBodyVelocity(&front);
             modifyInitialization(&front);
-            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	            //rgb_init(&front,&rgb_params);//TODO: is this fucking up my run?
+
+            //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh();
             l_cartesian->setInitialCondition();
-	        rgb_init(&front,&rgb_params);
-
+            
             if (debugging("trace"))
 	        {
                 if (consistent_interface(front.interf) == NO)
@@ -159,17 +165,20 @@ int main(int argc, char **argv)
 	    }
 	    else
 	    {
-            l_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
+            l_cartesian->readFrontInteriorStates(restart_state_name);
 	    }
     
-        }
-        else
-	    {
-            l_cartesian->setInitialCondition();
-	    }
+    }
+    else
+    {
+        l_cartesian->initMesh();
+        l_cartesian->setInitialCondition();
+    }
 
-	static_mesh(front.interf) = YES;
+	setMotionParams(&front);
+
+    	//static_mesh(front.interf) = YES;
 
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
@@ -217,15 +226,14 @@ void airfoil_driver(Front *front,
 	    
         if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    print_airfoil_stat(front,out_name);
 	    
-        //TODO: need this?
         if (ReSetTime)
            setSpecialNodeForce(front,af_params->kl);
 
-            FT_SetOutputCounter(front);
+        FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
 	    front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
@@ -238,11 +246,7 @@ void airfoil_driver(Front *front,
         FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
 
-    //TEMP: debug restart for triangle gindex
-    printf("intfc->max_point_gindex = %ld\n",front->interf->max_point_gindex);
-    printf("intfc->max_tri_gindex = %ld\n",front->interf->max_tri_gindex);
-	
-        // For restart debugging 
+    // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    FT_Save(front);

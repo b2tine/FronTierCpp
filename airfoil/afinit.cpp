@@ -90,6 +90,7 @@ static void setInitialIntfcAF3d(
 	fscanf(infile,"%d",&num_canopy);
 	(void) printf("%d\n",num_canopy);
 	level_func_pack->num_mono_hs = num_canopy;
+    if (num_canopy == 0) return;
 
 	(void) printf("Choices of initial surface are:\n");
 	(void) printf("\tEllipsoid (E)\n");
@@ -212,7 +213,7 @@ static void setInitialIntfcAF3d(
     }
 
 	if (CursorAfterStringOpt(infile,
-            "Entering number of canopy optimization rounds: "))
+            "Enter number of canopy optimization rounds: "))
     {
         fscanf(infile,"%d",&af_params->num_opt_round);
         (void) printf("%d\n",af_params->num_opt_round);

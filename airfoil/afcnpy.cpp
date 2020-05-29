@@ -216,8 +216,7 @@ int af_find_state_at_crossing(
             return NO_PDE_BOUNDARY;
         case MOVABLE_BODY_BOUNDARY:
             return CONST_V_PDE_BOUNDARY;
-        case 
-            DIRICHLET_BOUNDARY:
+        case DIRICHLET_BOUNDARY:
 	    if (boundary_state_function(*hs) &&
                 strcmp(boundary_state_function_name(*hs),
                 "flowThroughBoundaryState") == 0)
@@ -805,6 +804,8 @@ static void compute_center_of_mass_velo(
 	    	    vload[j] = state->vel[j];
 	    	    xload[j] = Coords(node->posn)[j];
 	  	}
+
+        //TODO: consolidate payload and rigid body mass 
 	  	payload = af_params->payload;
 	  	xcom = center_of_mass(Hyper_surf(canopy));
 	  	vcom = center_of_mass_velo(Hyper_surf(canopy));

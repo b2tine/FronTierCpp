@@ -191,7 +191,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
-/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     int index;
@@ -214,7 +213,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     for (int i = imin; i <= imax; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        if (!ifluid_comp(top_comp[index])) continue;
+        if (!ifluid_comp(top_comp[index]))
+        {
+            for (int l = 0; l < 3; ++l)
+                vorticity[l][index] = 0.0;
+            continue;
+        }
 
         icoords[0] = i;
         icoords[1] = j;
@@ -265,10 +269,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
         vorticity[2][index] = u1_wrtx - u0_wrty;
     }
 	
-    FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
+    //TODO: where/how to do this? See cFluid copyMeshStates() ...
+    //FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
-*/
 
+//TODO: There seems to be a bug in one, or both, of the following two functions
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     double** vel = field->vel;
@@ -299,7 +305,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
 
-//TODO: Turn into global cross product function
+//TODO: Turn into global curl function
 std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     computePointVorticity(int* icoords, double** vel)
 {
@@ -351,7 +357,7 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     }
 
     return curl_vel;
-}       /* end computePointVorticity */
+}*/       /* end computePointVorticity */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
@@ -496,6 +502,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
 {
 	int i,j,k,d,index;
 	double *pres = field->pres;
+    
+    //TODO: what about velocity?
 
 	for (i = imin; i <= imax; ++i)
 	for (j = jmin; j <= jmax; ++j)
@@ -505,6 +513,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
         if (!ifluid_comp(top_comp[index]))
 	    	pres[index] = 0.0;
 	}
+    //TODO: compare to cFluid G_CARTESIAN::copyMeshStates()
     FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }	/* end copyMeshStates */
 
