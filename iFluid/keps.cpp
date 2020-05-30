@@ -16,6 +16,7 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
 static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
+static std::string dir2String(GRID_DIRECTION dir);
 
 //----------------------------------------------------------------
 //		KE_RECTANGLE
@@ -421,7 +422,7 @@ void KE_CARTESIAN::findBdryPoint()
 //implicit time explicit space
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 {
-    int i,j,k,l,m,ll,ic,icn,I,I_nb,icoords[MAXD];
+    int i,j,k,ll,ic,icn,I,I_nb,icoords[MAXD];
     int gmin[MAXD],ipn[MAXD];
     double crx_coords[MAXD];
 	double nor[MAXD];
@@ -505,21 +506,21 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 			coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
 		    clean_up(ERROR);
 		}
-                for (l = 0; l < dim; ++l) v[l] = 0.0;
+                for (int l = 0; l < dim; ++l) v[l] = 0.0;
                 if (field->vel != NULL)
                 {
-                    for (l = 0; l < dim; ++l)
+                    for (int l = 0; l < dim; ++l)
                         v[l] = field->vel[l][ic];
                 }
                 
                	D = nu + mu_t[ic]/eqn_params->delta_k/rho;
-                for (l = 0; l < dim; ++l)
+                for (int l = 0; l < dim; ++l)
                 {
                     lambda = D*m_dt/sqr(top_h[l]);
                     eta = v[l]*m_dt/(2.0*top_h[l]);
                     coeff += 2*lambda;
 
-                    for (m = 0; m < 2; ++m)
+                    for (int m = 0; m < 2; ++m)
                     {
                         next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
                         icn = d_index2d(ipn[0],ipn[1],top_gmax);
@@ -598,18 +599,18 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 clean_up(ERROR);
             }
             
-            for (l = 0; l < dim; ++l)
+            for (int l = 0; l < dim; ++l)
                 v[l] = 0.0;
 
             if (field->vel != NULL)
             {
-                for (l = 0; l < dim; ++l)
+                for (int l = 0; l < dim; ++l)
                     v[l] = field->vel[l][ic];
             }
 
             D = nu + mu_t[ic]/eqn_params->delta_k/rho;
             
-            for (l = 0; l < dim; ++l)
+            for (int l = 0; l < dim; ++l)
             {
                 lambda = D*m_dt/sqr(top_h[l]);
                 eta = v[l]*m_dt/(top_h[l]); //upwind difference
@@ -617,19 +618,22 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 double eta_m = std::min(eta, 0.0);
                 coeff += 2*lambda;
 
-                for (m = 0; m < 2; ++m)
+                for (int m = 0; m < 2; ++m)
                 {
                     next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
                     icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
                     I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
         
-                    /*fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+    //printf("dir[%d][%d] = ",l,m);
+    //printf("%s\n",dir2String(dir[l][m]).c_str());
+
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                                         grid_intfc,icoords,dir[l][m],comp,
-                                        (POINTER*)&intfc_state,&hs,crx_coords);*/
+                                        (POINTER*)&intfc_state,&hs,crx_coords);
         
-                    fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
+                    /*fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
                                         dir[l][m],comp,(POINTER*)&intfc_state,
-                                        &hs,&hse,crx_coords);
+                                        &hs,&hse,crx_coords);*/
         
                     coeff += ((m == 0) ? eta_p : -eta_m); //upwind
                     if (!fr_crx_grid_seg) 
@@ -651,18 +655,23 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         //      stress acting in opposition to the the local
                         //      velocity
                         
+                        boolean status;
+                        status = FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                                comp,nor,&hs,crx_coords);
+
                         //use wall function for friction velocity u_t
-                        TRI* tri_crx = Tri_of_hse(hse);
-                        FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
+                            //TRI* tri_crx = Tri_of_hse(hse);
+                            //nor = Tri_normal_vector(tri_crx);
+                                //FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
                         
                         vn = 0.0;
                         double* vel = intfc_state->vel;
-                        for (l = 0; l < 3; ++l)
-                            vn += vel[l]*nor[l];
+                        for (int kk = 0; kk < 3; ++kk)
+                            vn += vel[kk]*nor[kk];
                         
                         double v_tan[3];
-                        for (l = 0; l < 3; ++l)
-                            v_tan[l] = v[l] - vn*nor[l];
+                        for (int kk = 0; kk < 3; ++kk)
+                            v_tan[kk] = v[kk] - vn*nor[kk];
 
                         double u_t = std::max(
                                 pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
@@ -1118,8 +1127,8 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                         v[l] = field->vel[l][ic];
                 }
 		D = nu+mu_t[ic]/eqn_params->delta_eps/rho;
-                for (l = 0; l < dim; ++l)
-                {
+        for (l = 0; l < dim; ++l)
+        {
                     lambda = D*m_dt/sqr(top_h[l]);
 		    eta = v[l]*m_dt/(top_h[l]); //upwind difference
 		    double eta_p = std::max(eta, 0.0);
@@ -1132,13 +1141,13 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
             I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
 
-			/*fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
 				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);*/
+				(POINTER*)&intfc_state,&hs,crx_coords);
 
-            fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
+            /*fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
                                 dir[l][m],comp,(POINTER*)&intfc_state,
-                                &hs,&hse,crx_coords);
+                                &hs,&hse,crx_coords);*/
         
 
 
@@ -1158,19 +1167,27 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 			{
                 //TODO: If new wall function method works, should consolidate
                 //      this with identical procedure in TKE transport solver.
+                        
+                boolean status;
+                status = FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                        comp,nor,&hs,crx_coords);
+
                 
                 //use wall function for friction velocity u_t
-                TRI* tri_crx = Tri_of_hse(hse);
-                FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
-                
+                    //TRI* tri_crx = Tri_of_hse(hse);
+                    //nor = Tri_normal_vector(tri_crx);
+                    //FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
+                //TODO: Problem with the point passed into FT_NormalAtPoint()
+                //      need to debug...
+
                 vn = 0.0;
                 double* vel = intfc_state->vel;
-                for (l = 0; l < 3; ++l)
-                    vn += vel[l]*nor[l];
+                for (int kk = 0; kk < 3; ++kk)
+                    vn += vel[kk]*nor[kk];
                 
                 double v_tan[3];
-                for (l = 0; l < 3; ++l)
-                    v_tan[l] = v[l] - vn*nor[l];
+                for (int kk = 0; kk < 3; ++kk)
+                    v_tan[kk] = v[kk] - vn*nor[kk];
 
                 double u_t = std::max(
                         pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
@@ -1657,8 +1674,7 @@ void KE_CARTESIAN::computeMuTurb()
 		    else
 			Cmu = eqn_params->Cmu;
 	    	
-		    field->mu_t[index] = Cmu*sqr(field->k[index])
-				       / field->eps[index]*eqn_params->rho;
+		    field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
 		    field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
 		}
 	    	break;

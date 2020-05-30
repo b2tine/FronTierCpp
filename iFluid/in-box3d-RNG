@@ -1,0 +1,109 @@
+Domain limit in 0-th dimension: 0 0.2
+Domain limit in 1-th dimension: 0 0.4
+Domain limit in 2-th dimension: 0 0.2
+Computational grid: 40 60 40 
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
+
+Max time: 1.0
+Max step: 10000
+Print interval: 0.01
+Movie frame interval: 0.001
+CFL factor: 0.75
+Redistribution interval: 5
+
+Problem type can be
+	TWO_FLUID_BUBBLE
+	TWO_FLUID_RT
+	TWO_FLUID_KH
+	FLUID_SOLID_CIRCLE
+	FLUID_SOLID_RECT
+	FLUID_SOLID_CUBOID
+Enter problem type: FLUID_SOLID_RECT
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+Enter projection type: SIMPLE
+Enter yes if the object is fixed: yes
+Enter the center of the rectangle: 0.1 0.1 0.1
+Enter lengths of the rectangle: 0.05 0.05 0.05
+Enter density and viscosity of the fluid: 1.0 0.000015
+Enter gravity: 0.0 0.0 0.0
+Enter surface tension: 0.0
+Enter factor of smoothing radius: 1
+
+******************Turbulence Parameters****************
+Enter yes to use eddy viscosity: yes
+Available tuebulence models are:
+        Baldwin-Lomax (B)
+        Moin (M)
+        Smagorinski (S)
+        KEPSILON  (K)
+Enter turbulence model: K
+Enter type of k-eps model: RNG
+Enter turbulent Prandtl number for k: 0.7194
+Enter turbulent Prandtl number for epsilon: 0.7194
+Enter C1: 1.42
+Enter C2: 1.68
+Enter Cmu: 0.0845
+Enter Cbc: 0.01
+Enter l0: 0.01
+Enter mu0: 0.001
+Enter y+: 30.0 
+Enter time to active turbulence model: 0.0
+*******************************************************
+
+
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: CONSTANT
+Enter velocity: 0 10.0 0 
+Enter pressure: 1
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+Type y to make movie of pressure: y
+Type y to make movie of vorticity: y
+Type y to make movie of velocity: y
+
+Type y to make vector velocity field movie: y
+
+************Debugging options*****************
+
+Enter yes for debugging: yes
+Enter the debugging string: Xtrace
+Enter the debugging string: XPETSc 
+Enter the debugging string: Xdirichlet_bdry
+Enter the debugging string: Xgrid_line_comp
+Enter the debugging string: Xseg_comp
+Enter the debugging string: XCLOCK
+Enter the debugging string: Xstep_size
+Enter the debugging string: Xsample_velocity
+Enter the debugging string: Xcheck_div
+Enter the debugging string: Xelliptic_error
+Enter the debugging string: Xmake_grid_intfc
+
+Enter the sample line typeX: X
+Enter the sample line coordinate: 0.5
+Enter the start step for sample: 5
+Enter the end step for sample: 20
+Enter the step interval for sample: 3
+Enter direction for grid line debugging: 2
+Enter icoords for grid line debugging: 12 12 0
+
+Available elliptic methods are:
+        Simple elliptic (S)
+        CIM elliptic (C)
+        Double elliptic (DB)
+        Dual elliptic (DU)
+Enter elliptic method: S 
+
