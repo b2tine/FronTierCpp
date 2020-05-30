@@ -924,9 +924,9 @@ void HYPERB_SOLVER::setNeumannStates(
 	int istart,
 	int comp)
 {
-	int 		i,j,index;
-	int 		ic[MAXD];
-	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
+	int 		index;
+	int 		ic_ghost[MAXD];
+	double		coords[MAXD],coords_reflect[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
 	double		nor[MAXD],vn,v[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
@@ -934,11 +934,11 @@ void HYPERB_SOLVER::setNeumannStates(
 	double vel_reflect[MAXD],vel_ref[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    vel_intfc[i] = (*getStateVel[i])(state);
 	    coords[i] = top_L[i] + icoords[i]*top_h[i];
-	    ic[i] = icoords[i];
+	    ic_ghost[i] = icoords[i];
 	}
 	dir = (nb == 0) ? ldir[idir] : rdir[idir];
 	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
@@ -957,37 +957,43 @@ void HYPERB_SOLVER::setNeumannStates(
 	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
-	for (i = istart; i <= nrad; ++i)
+	for (int i = istart; i <= nrad; ++i)
 	{
 	    /* Find ghost point */
-	    ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
-	    for (j = 0; j < dim; ++j)
-            coords_ghost[j] = top_L[j] + ic[j]*top_h[j];
+	    ic_ghost[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+	        //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
+	    for (int j = 0; j < dim; ++j)
+        {
+            coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_reflect[j] = coords_ghost[j];
+        }
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+	    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
 	    vn = 0.0;
-        for (j = 0; j < dim; ++j)
+        for (int j = 0; j < dim; ++j)
 	    {
-            v[j] = coords_ref[j] - crx_coords[j];
+            v[j] = coords_reflect[j] - crx_coords[j];
             vn += v[j]*nor[j];
 	    }
 
-	    for (j = 0; j < dim; ++j)
+	    for (int j = 0; j < dim; ++j)
             v[j] = 2.0*vn*nor[j] - v[j];
-	    for (j = 0; j < dim; ++j)
-            coords_ref[j] = crx_coords[j] + v[j];
-			
+	    for (int j = 0; j < dim; ++j)
+            coords_reflect[j] = crx_coords[j] + v[j];
+		
 	    /* Interpolate the state at the reflected point */
-	    for (j = 0; j < dim; ++j)
+	    for (int j = 0; j < dim; ++j)
         {
-	    	FT_IntrpStateVarAtCoords(front,comp,coords_ref,m_vst->vel[j],
-			getStateVel[j],&vel_reflect[j],&m_vst->vel[j][index]);
+	    	FT_IntrpStateVarAtCoords(front,comp,coords_reflect,
+                    m_vst->vel[j],getStateVel[j],&vel_reflect[j],
+                    &m_vst->vel[j][index]);
         }
 
 		/* Galileo Transformation */
 	    vn = 0.0;
-	    for (j = 0; j < dim; j++)
+	    for (int j = 0; j < dim; ++j)
 	    {
             /* Relative velocity of reflected point to boundary */
             vel_ref[j] = vel_reflect[j] - vel_intfc[j];
@@ -997,13 +1003,13 @@ void HYPERB_SOLVER::setNeumannStates(
 
 	    /* Only normal component is reflected, 
 	       relative tangent velocity is zero */
-	    for (j = 0; j < dim; j++)
+	    for (int j = 0; j < dim; ++j)
             v_ghost[j] = vel_intfc[j] - vn*nor[j];
             //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
 
 	    if (nb == 0)
 	    {
-	    	for (j = 0; j < dim; j++)
+	    	for (int j = 0; j < dim; ++j)
 		    {
                 vst->vel[j][nrad-i] = v_ghost[j];
     		}
@@ -1011,13 +1017,15 @@ void HYPERB_SOLVER::setNeumannStates(
 	    }
 	    else
 	    {
-	    	for (j = 0; j < dim; j++)
+	    	for (int j = 0; j < dim; ++j)
 		    {   
                 vst->vel[j][n+nrad+i-1] = v_ghost[j];
             }
             vst->rho[n+nrad+i-1] = rho_of_comp(comp);
 	    }
-	}
+	
+    }// i loop
+
 	if (debugging("neumann_buffer"))
 	    (void) printf("Leaving setNeumannStates()\n");
 }

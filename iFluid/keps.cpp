@@ -1661,24 +1661,28 @@ void KE_CARTESIAN::computeMuTurb()
 		for (j = jmin; j <= jmax; j++)
 		for (i = imin; i <= imax; i++)
 		{
-	    	    icoords[0] = i;
-	    	    icoords[1] = j;
+            icoords[0] = i;
+            icoords[1] = j;
 		    icoords[2] = k;
-	    	    index = d_index3d(i,j,k,top_gmax);
-	    	    comp = top_comp[index];
-		    if (keps_model == REALIZABLE)
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
+		    
+            if (keps_model == REALIZABLE)
 		    {
-			Cmu = computePointFieldCmu(icoords);
-			field->Cmu[index] = Cmu;
+                Cmu = computePointFieldCmu(icoords);
+                field->Cmu[index] = Cmu;
 		    }
 		    else
-			Cmu = eqn_params->Cmu;
+                Cmu = eqn_params->Cmu;
 	    	
-		    field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
-		    field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+		    field->mu_t[index] = 
+                Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+		    field->mu_t[index] = 
+                std::max(field->mu_t[index],0.0001*eqn_params->mu);
 		}
-	    	break;
+        break;
 	}
+
 	FT_ParallelExchGridArrayBuffer(field->k,front,NULL);
 	FT_ParallelExchGridArrayBuffer(field->eps,front,NULL);
 	FT_ParallelExchGridArrayBuffer(field->mu_t,front,NULL);
@@ -1694,14 +1698,14 @@ void KE_CARTESIAN::computeMuTurb()
 	}
 	else if (dim == 3)
 	{
-            sprintf(fname,"%s/K_field",OutName(front));
-            printField3d(field->k,fname,lmin,lmax,top_gmax);
-            sprintf(fname,"%s/E_field",OutName(front));
-            printField3d(field->eps,fname,lmin,lmax,top_gmax);
+        sprintf(fname,"%s/K_field",OutName(front));
+        printField3d(field->k,fname,lmin,lmax,top_gmax);
+        sprintf(fname,"%s/E_field",OutName(front));
+        printField3d(field->eps,fname,lmin,lmax,top_gmax);
 	    if (keps_model == REALIZABLE)
 	    {
-		sprintf(fname,"%s/Cmu",OutName(front));
-		printField3d(field->Cmu,fname,lmin,lmax,top_gmax);
+            sprintf(fname,"%s/Cmu",OutName(front));
+            printField3d(field->Cmu,fname,lmin,lmax,top_gmax);
 	    }
 	}
 
