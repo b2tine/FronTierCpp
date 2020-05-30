@@ -2347,7 +2347,10 @@ void KE_CARTESIAN::setSlipBoundary(
 
     //ghost point coords
     for (j = 0; j < dim; ++j)
+    {
         coords_ghost[j] = top_L[j] + ic[j]*top_h[j];
+        coords_ref[j] = coords_ghost[j];
+    }
 
     /* Reflect ghost point through intfc-mirror at crossing */
     //first reflect across the grid line containing the intfc crossing
