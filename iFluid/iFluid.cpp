@@ -245,10 +245,9 @@ static void ifluid_driver(Front *front,
         printf("Time step from start: %f\n",front->dt);
     
     //int N = mesh_size;
-    int T = front.max_step;
+    //int T = front.max_step + 1;
     //TODO: handle solmat -- may not want to hold in class due to memory constraints
     //std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
-    std::vector<double> timevec;
     l_cartesian->writeMeshFile();
 
     int tt = 0;

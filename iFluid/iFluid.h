@@ -306,8 +306,10 @@ public:
 	int icrds_max[MAXD];
 
 	void initMesh(void);
+
     void writeMeshFile();
     void writeTimeFile();
+    std::vector<std::vector<double>> getCurrentVelData();
     std::vector<double> timeVec;
 
 	void computeMaxSpeed(void);
@@ -596,6 +598,7 @@ protected:
 extern double getStatePres(POINTER);
 extern double getStatePhi(POINTER);
 extern double getStateVort(POINTER);
+extern double getStateVelMag2d(POINTER state);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
 extern double getStateZvel(POINTER);
