@@ -269,12 +269,13 @@ class Incompress_Solver_Basis;
 class L_RECTANGLE {
 public:
 	int comp;			 
-	double m_coords[MAXD]; // x,y,z data of mesh block's center
+	double m_coords[MAXD] = {0.0}; // x,y,z data of mesh block's center
 	int icoords[MAXD];     // i,j,k indices of mesh block
 
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
+    std::vector<double> void getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -305,6 +306,10 @@ public:
 	int icrds_max[MAXD];
 
 	void initMesh(void);
+    void writeMeshFile();
+    void writeTimeFile();
+    std::vector<double> timeVec;
+
 	void computeMaxSpeed(void);
 	void setAdvectionDt(void); 
 			//using max speed and hmin to determine max_dt, min_dt

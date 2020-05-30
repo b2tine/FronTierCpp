@@ -54,8 +54,13 @@ int main(int argc, char **argv)
 	Incompress_Solver_Smooth_Basis *l_cartesian = nullptr;
 	if (f_basic.dim == 2)
 	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
-	else if (f_basic.dim == 3)
-	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
+    else
+    {
+        printf("dim must == 2\n");
+        clean_up(EXIT_FAILURE);
+    }
+	/*else if (f_basic.dim == 3)
+	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);*/
 
     in_name                 = f_basic.in_name;
     restart_state_name      = f_basic.restart_state_name;
@@ -239,8 +244,28 @@ static void ifluid_driver(Front *front,
 	if (debugging("step_size"))
         printf("Time step from start: %f\n",front->dt);
     
+    //int N = mesh_size;
+    int T = front.max_step;
+    //TODO: handle solmat -- may not want to hold in class due to memory constraints
+    //std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
+    std::vector<double> timevec;
+    l_cartesian->writeMeshFile();
+
+    int tt = 0;
     for (;;)
     {
+        if (FT_IsSaveTime(&front) || tt == 0)
+        {
+            //TODO: replace with 2d sol
+            //save solution to solmat column tt
+            /*for (int i = 0; i < N; ++i)
+            {
+                solmat[i][tt] = u_old[i];
+            }*/
+            l_cartesian->timevec.push_back(front.time);
+            tt++;
+        }
+        
         /* Propagating interface for time step dt */
 
         if (debugging("CLOCK"))
@@ -327,6 +352,48 @@ static void ifluid_driver(Front *front,
 
     if (debugging("trace"))
         printf("After time loop\n");
+
+    /* PINN training data */
+
+    // Write timevec file
+    char tv_name[100];
+    sprintf(tv_name,"%s/time-%d.txt",out_name,(int)timevec.size());
+    FILE* tv_file = fopen(tv_name,"w");
+    for (int i = 0; i < timevec.size(); ++i)
+    {
+        fprintf(tv_file,"%20.14f\n",timevec[i]);
+    }
+    
+    //TODO: replace with writeMeshFile()
+    //      can even do it before entering driver function
+    /*
+    // Write xvec file
+    char xv_name[100];
+    sprintf(xv_name,"%s/x-%d.txt",out_name,N);
+    FILE* xv_file = fopen(xv_name,"w");
+    for (int i = 0; i < N; ++i)
+    {
+        fprintf(xv_file,"%20.14f\n",x[i]);
+    }
+    */
+
+    //TODO: replace with solver 2d velocities, and vorticity
+    /*
+    // Write solmat file
+    char sm_name[100];
+    sprintf(sm_name,"%s/solmat-%d-%d.txt",out_name,N,(int)timevec.size());
+    FILE* sm_file = fopen(sm_name,"w");
+    for (int i = 0; i < N; ++i)
+    {
+        for (int j = 0; j < timevec.size(); ++j)
+        {
+            fprintf(sm_file,"%f ",solmat[i][j]);
+            //fprintf(sm_file,"%g ",solmat[i][j]);
+        }
+        fprintf(sm_file,"\n");
+    }
+    */
+
 
 }       /* end ifluid_driver */
 

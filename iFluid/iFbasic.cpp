@@ -50,10 +50,16 @@ void L_RECTANGLE::setCoords(
 	double *coords,
 	int dim)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
-	    m_coords[i] = coords[i];
+	for (int i = 0; i < dim; ++i)
+        m_coords[i] = coords[i];
 }
+
+std::vector<double> L_RECTANGLE::getCoords()
+{
+    std::vector<double> coords(m_coords,m_coords+3);
+    return coords;
+}
+
 //--------------------------------------------------------------------------
 //               Incompress_Solver_Basis
 //               Pure virtual class	
@@ -64,7 +70,8 @@ void L_RECTANGLE::setCoords(
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_Basis
 //------------------------------------------------------------------------------
-Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front):front(&front)
+Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front)
+    :front(&front)
 {
 	skip_neumann_solver = 0;
 }
@@ -132,6 +139,40 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	FT_FreeGridIntfc(front);
 	if (debugging("trace"))
             (void) printf("Leaving initMesh()\n");
+}
+
+void Incompress_Solver_Smooth_Basis::writeMeshFile()
+{
+    char xy_name[250];
+    sprintf(xy_name,"%s/xy-%d-%d.txt",OutName(front),
+            top_gmax[0],top_gmax[1]);
+
+    FILE* xy_file = fopen(xy_name,"w");
+
+    for (int i = 0; i <= top_gmax[0]; ++i)
+    {
+        //coords[0] = top_L[0] + top_h[0]*i;
+        for (int j = 0; j <= top_gmax[1]; ++j)
+        {
+            //coords[1] = top_L[1] + top_h[1]*j;
+            int index = d_index2d(i,j,top_gmax);
+            auto coords = cell_center[index].getCoords();
+            fprintf(xy_file,"%20.14f %20.14f\n",coords[0],coords[1]);
+        }
+    }
+
+    fclose(xy_file);
+}
+
+void Incompress_Solver_Smooth_Basis::writeTimeFile()
+{
+    char tv_name[100];
+    sprintf(tv_name,"%s/time-%d.txt",out_name,(int)timevec.size());
+    FILE* tv_file = fopen(tv_name,"w");
+    for (int i = 0; i < timevec.size(); ++i)
+    {
+        fprintf(tv_file,"%20.14f\n",timevec[i]);
+    }
 }
 
 void Incompress_Solver_Smooth_Basis::setComponent(void)
