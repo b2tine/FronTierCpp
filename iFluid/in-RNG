@@ -3,13 +3,13 @@ Domain limit in 1-th dimension: 0 0.41
 Computational grid: 250 50
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
-Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 
-Max time: 4.5
+Max time: 1.0
 Max step: 100000
 Print interval: 1.0
-Movie frame interval: 0.05
+Movie frame interval: 0.01
 CFL factor: 0.75
 Redistribution interval: 5
 
@@ -50,7 +50,7 @@ Enter Cmu: 0.0845
 Enter Cbc: 0.01
 Enter l0: 0.01
 Enter mu0: 0.001
-Enter y+: 30.0 
+Enter y+: 11.067 
 *******************************************************
 
 For lower boundary in 0-th dimension

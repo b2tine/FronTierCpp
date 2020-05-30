@@ -62,7 +62,7 @@ enum _DOMAIN_STATUS {
 };
 typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
-struct _IF_FIELD {
+struct IF_FIELD {
 	double **vel;			/* Velocities */
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
@@ -81,7 +81,6 @@ struct _IF_FIELD {
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
 };
-typedef struct _IF_FIELD IF_FIELD;
 
 enum _PROJC_METHOD {
 	ERROR_PROJC_SCHEME		= -1,

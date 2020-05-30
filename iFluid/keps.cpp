@@ -517,7 +517,10 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 for (int l = 0; l < dim; ++l)
                 {
                     lambda = D*m_dt/sqr(top_h[l]);
-                    eta = v[l]*m_dt/(2.0*top_h[l]);
+                    eta = v[l]*m_dt/(top_h[l]); //upwind difference
+                    double eta_p = std::max(eta, 0.0);
+                    double eta_m = std::min(eta, 0.0);
+                        //eta = v[l]*m_dt/(2.0*top_h[l]);
                     coeff += 2*lambda;
 
                     for (int m = 0; m < 2; ++m)
@@ -525,12 +528,17 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
                         icn = d_index2d(ipn[0],ipn[1],top_gmax);
                         I_nb = ij_to_I[ipn[0]][ipn[1]];
-			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);
+            
+                        fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                                grid_intfc,icoords,dir[l][m],comp,
+                                (POINTER*)&intfc_state,&hs,crx_coords);
+                        
+                        coeff += ((m == 0) ? eta_p : -eta_m); //upwind
                         if (!fr_crx_grid_seg) 
                         {
-                            coeff_nb = -lambda + (pow(-1,m+1)*eta);
+                            coeff_nb = -lambda;
+                            coeff_nb += (m == 0) ? -eta_p : eta_m;
+                                //coeff_nb = -lambda + (pow(-1,m+1)*eta);
                             solver.Add_A(I,I_nb,coeff_nb);
                         }
 			/*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -539,9 +547,37 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			{
+                /*
 				setTKEatWall(icoords,l,m,comp,
 						hs,intfc_state,K,&K_nb);
 				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                */
+
+                //use wall function for friction velocity u_t
+                boolean status;
+                status = FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                        comp,nor,&hs,crx_coords);
+                
+                vn = 0.0;
+                double* vel = intfc_state->vel;
+                for (int kk = 0; kk < 2; ++kk)
+                    vn += (v[kk] - vel[kk])*nor[kk];
+                        //vn += vel[kk]*nor[kk];
+                
+                double v_tan[2];
+                for (int kk = 0; kk < 2; ++kk)
+                    v_tan[kk] = v[kk] - vn*nor[kk];
+
+                double u_t = std::max(
+                        pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
+                                        Mag2d(v_tan)/eqn_params->y_p);
+                
+                /*double u_t = std::max(
+                        pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
+                                        Mag3d(intfc_state->vel)/eqn_params->y_p);*/
+                
+                K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
+                rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
 			}
 			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			{
@@ -549,15 +585,19 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 				strcmp(boundary_state_function_name(hs),
                             	"flowThroughBoundaryState") == 0)
 			    {
-				K_nb = K0;
-				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                    //Outlet
+				    K_nb = K0;
+                    rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
+				        //rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
 			    }
 			    else
 			    {
+                    //Inlet
 			        K_nb = eqn_params->Cbc
 				     * (sqr(intfc_state->vel[0])
 				     +  sqr(intfc_state->vel[1]));
-				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                    rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
+				        //rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
 			    }
 			}
 			else
@@ -588,12 +628,18 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 
                 K0 = K[ic];
 		        Cmu = eqn_params->Cmu;
+                rhs = K0 + m_dt*Pk[ic];
+
             /*fully implicit to preserve positivity*/
-            rhs = K0 + m_dt*Pk[ic];
-            coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            if (keps_model == REALIZABLE)
+                coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
+            else
+                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+
             if (isinf(coeff) || isnan(coeff))
             {
                 printf("In computeAdvectionK(): ");
+		        printf("icoords[%d %d %d], index = %d\n",i,j,k,ic);
                 printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
                 coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
                 clean_up(ERROR);
@@ -624,16 +670,10 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
                     I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
         
-    //printf("dir[%d][%d] = ",l,m);
-    //printf("%s\n",dir2String(dir[l][m]).c_str());
 
                     fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                                         grid_intfc,icoords,dir[l][m],comp,
                                         (POINTER*)&intfc_state,&hs,crx_coords);
-        
-                    /*fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
-                                        dir[l][m],comp,(POINTER*)&intfc_state,
-                                        &hs,&hse,crx_coords);*/
         
                     coeff += ((m == 0) ? eta_p : -eta_m); //upwind
                     if (!fr_crx_grid_seg) 
@@ -648,10 +688,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     {
-                        //TODO: Test new implementation of Wall function
-                        //      for determining the friction velocity u_t.
-                        //
-                        //      If successful, use to compute the wall shear
+                        //TODO: Use friction velocity to compute the wall shear
                         //      stress acting in opposition to the the local
                         //      velocity
                         
@@ -660,14 +697,12 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                                 comp,nor,&hs,crx_coords);
 
                         //use wall function for friction velocity u_t
-                            //TRI* tri_crx = Tri_of_hse(hse);
-                            //nor = Tri_normal_vector(tri_crx);
-                                //FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
                         
                         vn = 0.0;
                         double* vel = intfc_state->vel;
                         for (int kk = 0; kk < 3; ++kk)
-                            vn += vel[kk]*nor[kk];
+                            vn += (v[kk] - vel[kk])*nor[kk];
+                                //vn += vel[kk]*nor[kk];
                         
                         double v_tan[3];
                         for (int kk = 0; kk < 3; ++kk)
@@ -683,7 +718,6 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         
                         K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
                         rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-        
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -691,11 +725,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         strcmp(boundary_state_function_name(hs),
                                         "flowThroughBoundaryState") == 0)
                         {
-                        K_nb = K0;
+                            //Outlet
+                            K_nb = K0;
                             rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
                         }
                         else
                         {
+                            //Inlet
                             K_nb = eqn_params->Cbc
                              * (sqr(intfc_state->vel[0])
                              +  sqr(intfc_state->vel[1])
@@ -705,7 +741,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     }
                     else
                     {
-                        //printf("Unknows boundary condition %d! \n",wave_type(hs));
+                        //printf("Unknown boundary condition %d! \n",wave_type(hs));
                         //clean_up(ERROR);
                     }
                 }
@@ -947,7 +983,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 		    rhs = E0 + m_dt*std::max(computePointFieldC1_REAL(icoords,S)*S*E0,0.0);
 		}
 		else
-            rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*E0/K0,0.0); 
+            rhs = E0 + m_dt*std::max(Pk[ic]*eqn_params->C1*E0/K0,0.0); 
 
 		if (keps_model == RNG)
 		{
@@ -970,8 +1006,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                     for (l = 0; l < dim; ++l)
                         v[l] = field->vel[l][ic];
                 }
-		/*set values at points adjacent to wall interface*/
-		/*skip these points after settings*/
+
+        /*        
+		//set values at points adjacent to wall interface
+		//skip these points after settings
 		if_adj_pt = NO;
 		for (l = 0; l < dim; ++l)
 		for (m = 0; m < 2; ++m)
@@ -980,9 +1018,9 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                                 grid_intfc,icoords,dir[l][m],comp,
                                 (POINTER*)&intfc_state,&hs,crx_coords);
 
-		    /*if (fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
-                        wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-                        wave_type(hs) == ELASTIC_BOUNDARY))*/
+		    //if (fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
+              //          wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                //        wave_type(hs) == ELASTIC_BOUNDARY))//
 		    if (fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 		    {
@@ -994,14 +1032,14 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 		
 		if (if_adj_pt == YES)
 		{
-		    /*found adjacent point, use wall function*/
+		    //found adjacent point, use wall function
 		    getRectangleCenter(ic,center);
 		    dist = distance_between_positions(center,crds_wall,dim);
-		    /*set a lower bound for dist, since y+ > 11.067*/
+		    //set a lower bound for dist, since y+ > 11.067
 		    if (field->k[ic] > 0.0)
 		        dist = std::max(nu*eqn_params->y_p/(pow(eqn_params->Cmu,
 				0.25)*pow(field->k[ic],0.25)),dist);
-                    /*found adjacent point, use wall function*/
+                    //found adjacent point, use wall function
 		    if (field->k[ic] > 0.0)
                         rhs = pow(eqn_params->Cmu,0.75)*pow(field->k[ic],1.5)
                               /(0.41*dist);
@@ -1010,12 +1048,15 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 		    coeff = 1.0;
 		}
 		else
-		{
-		D = nu+mu_t[ic]/eqn_params->delta_eps/rho;
+		{*/
+		    D = nu+mu_t[ic]/eqn_params->delta_eps/rho;
                 for (l = 0; l < dim; ++l)
                 {
                     lambda = D*m_dt/sqr(top_h[l]);
-                    eta = v[l]*m_dt/(2*top_h[l]);
+                    eta = v[l]*m_dt/(top_h[l]); //upwind difference
+                    double eta_p = std::max(eta, 0.0);
+                    double eta_m = std::min(eta, 0.0);
+                        //eta = v[l]*m_dt/(2*top_h[l]);
                     coeff += 2*lambda;
 
                     for (m = 0; m < 2; ++m)
@@ -1023,12 +1064,17 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                         next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
                         icn = d_index2d(ipn[0],ipn[1],top_gmax);
                         I_nb = ij_to_I[ipn[0]][ipn[1]];
-			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);
+            
+                        fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                                grid_intfc,icoords,dir[l][m],comp,
+                                (POINTER*)&intfc_state,&hs,crx_coords);
+                        
+                        coeff += ((m == 0) ? eta_p : -eta_m); //upwind
                         if (!fr_crx_grid_seg) 
                         {
-                            coeff_nb = -lambda + pow(-1,m+1)*eta;
+                            coeff_nb = -lambda;
+                            coeff_nb += (m == 0) ? -eta_p : eta_m;
+                                //coeff_nb = -lambda + pow(-1,m+1)*eta;
                             solver.Add_A(I,I_nb,coeff_nb);
                         }
 			/*else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -1037,9 +1083,34 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			{
-                //TODO: Is this actually impossible without
-                //      a variational formulation?
-				printf("decting Neumann Boundary, impossible, check!\n");
+                //TODO: is this impposible claim legitimate?
+				    //printf("decting Neumann Boundary, impossible, check!\n");
+                
+                //use wall function for friction velocity u_t
+                boolean status;
+                status = FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                        comp,nor,&hs,crx_coords);
+
+                vn = 0.0;
+                double* vel = intfc_state->vel;
+                for (int kk = 0; kk < 2; ++kk)
+                    vn += (v[kk] - vel[kk])*nor[kk];
+                        //vn += vel[kk]*nor[kk];
+                
+                double v_tan[2];
+                for (int kk = 0; kk < 2; ++kk)
+                    v_tan[kk] = v[kk] - vn*nor[kk];
+
+                double u_t = std::max(
+                        pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
+                                        Mag2d(v_tan)/eqn_params->y_p);
+                        
+			    /*double u_t = std::max(pow(eqn_params->Cmu, 0.25)
+					*sqrt(std::max(field->k[ic], 0.0)), 
+					Mag2d(intfc_state->vel)/eqn_params->y_p);*/
+			    
+                E_nb = pow(u_t,4.0)/(0.41*eqn_params->y_p*nu);
+			    rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
 			}
 			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			{
@@ -1048,27 +1119,36 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 				strcmp(boundary_state_function_name(hs),
                             	"flowThroughBoundaryState") == 0)
 			    {
+                    //Outlet
                     E_nb = E0;
-                    rhs += lambda*E_nb + eta*pow(-1,m)*E_nb;
+			    	rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
+                        //rhs += lambda*E_nb + eta*pow(-1,m)*E_nb;
 			    }
 			    else
 			    {
+                    //Inlet
 			        E_nb = eqn_params->Cmu
+				     *pow(eqn_params->Cbc,1.5)
+				     *pow(Mag2d(intfc_state->vel), 3.0)
+				     /eqn_params->l0;
+			    	rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
+			        /*E_nb = eqn_params->Cmu
 				     *pow(eqn_params->Cbc,1.5)
 				     *pow(sqr(intfc_state->vel[0])
 				     +sqr(intfc_state->vel[1]),1.5)
 				     /eqn_params->l0;
-                                rhs += lambda*E_nb + eta*pow(-1,m)*E_nb;
+                        //rhs += lambda*E_nb + eta*pow(-1,m)*E_nb;*/
 			    }
 			}
 			else
             {
-                //printf("Unknows boundary condition! \n");
+                //printf("Unknown boundary condition! \n");
                 //clean_up(ERROR);
             }
                     }  /*m*/
 		  }  /*l*/
-                }  /*if_adj_pt*/
+                
+        //}  /*if_adj_pt*/
 
 		if (isnan(coeff) || isinf(coeff) || isnan(rhs) || isinf(rhs))
 		{
@@ -1145,14 +1225,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 				grid_intfc,icoords,dir[l][m],comp,
 				(POINTER*)&intfc_state,&hs,crx_coords);
 
-            /*fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,icoords,
-                                dir[l][m],comp,(POINTER*)&intfc_state,
-                                &hs,&hse,crx_coords);*/
-        
-
-
 			coeff += ((m == 0) ? eta_p : -eta_m); //upwind
-
             if (!fr_crx_grid_seg) 
             {
                 coeff_nb = -lambda;
@@ -1168,22 +1241,16 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                 //TODO: If new wall function method works, should consolidate
                 //      this with identical procedure in TKE transport solver.
                         
+                //use wall function for friction velocity u_t
                 boolean status;
                 status = FT_NormalAtGridCrossing(front,icoords,dir[l][m],
                         comp,nor,&hs,crx_coords);
 
-                
-                //use wall function for friction velocity u_t
-                    //TRI* tri_crx = Tri_of_hse(hse);
-                    //nor = Tri_normal_vector(tri_crx);
-                    //FT_NormalAtPoint(Point_of_tri(tri_crx)[0],front,nor,comp);
-                //TODO: Problem with the point passed into FT_NormalAtPoint()
-                //      need to debug...
-
                 vn = 0.0;
                 double* vel = intfc_state->vel;
                 for (int kk = 0; kk < 3; ++kk)
-                    vn += vel[kk]*nor[kk];
+                    vn += (v[kk] - vel[kk])*nor[kk];
+                        //vn += vel[kk]*nor[kk];
                 
                 double v_tan[3];
                 for (int kk = 0; kk < 3; ++kk)
@@ -1197,7 +1264,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 					*sqrt(std::max(field->k[ic], 0.0)), 
 					Mag3d(intfc_state->vel)/eqn_params->y_p);*/
 			    
-                E_nb = pow(u_t, 4.0)/(0.41*eqn_params->y_p * nu);
+                E_nb = pow(u_t,4.0)/(0.41*eqn_params->y_p*nu);
 			    rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
 			}
 			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
@@ -1207,17 +1274,19 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 				strcmp(boundary_state_function_name(hs),
                             	"flowThroughBoundaryState") == 0)
 			    {
+                    //Outlet
 				    E_nb = E0;
 			    	rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
 			    }
 			    else
 			    {
+                    //Inlet
 			        E_nb = eqn_params->Cmu
 				     *pow(eqn_params->Cbc,1.5)
 				     *pow(Mag3d(intfc_state->vel), 3.0)
 				     /eqn_params->l0;
 			    	rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
-                            }
+                }
 			}
 			else
             {
@@ -2075,7 +2144,8 @@ void KE_CARTESIAN::setDomain()
 	    if (hmin > top_h[i]) hmin = top_h[i];
 
 	if (field == NULL)
-	    FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
+	    FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(KE_FIELD));
+	    //FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
 	switch (dim)
 	{
 	case 1:
@@ -2259,6 +2329,15 @@ void KE_CARTESIAN::setTKEatWall(
         for (j = 0; j < dim; ++j)
             coords_ref[j] = crx_coords[j] + v[j];
 
+    //TODO: Need to generate ghost value for k so that
+    //      the gradient does not change in direction normal
+    //      to the wall. 
+    
+    /* Interpolate the state at the reflected point */
+    /*for (j = 0; j < dim; ++j)
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,K,
+                        getStateK,K_nb,NULL);*/
+
 	if (rect_in_which(coords_ref,ic,top_grid))
 	{
 	    index = d_index(ic,top_gmax,dim);
@@ -2270,11 +2349,7 @@ void KE_CARTESIAN::setTKEatWall(
 	    LOC();
 	    clean_up(ERROR);
 	}
-        
-    //TODO: Need to generate ghost value for k so that
-    //      the gradient does not change in direction normal
-    //      to the wall. 
-
+    
 	*K_nb = K[index];
 }
 
