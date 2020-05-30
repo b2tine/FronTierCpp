@@ -5820,6 +5820,7 @@ void G_CARTESIAN::setElasticStatesRFB(
 	    for (j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_ref[j] = coords_ghost[j];
 	    }
         
         /* Reflect ghost point through intfc-mirror at crossing */
@@ -6052,6 +6053,7 @@ void G_CARTESIAN::setElasticStatesRFB_normal(
 	    for (j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_ref[j] = coords_ghost[j];
 	    }
         
         /* Reflect ghost point through intfc-mirror at crossing */
@@ -6377,7 +6379,7 @@ void G_CARTESIAN::setElasticStatesRiem(
 
         riem_input.left_state.d = sl.dens;
         riem_input.left_state.p = sl.pres;
-        riem_input.left_state.u = nor_vr;//Typo or correct?
+        riem_input.left_state.u = nor_vr;//Typo or correct?UPDATE: not a typo
             //riem_input.left_state.u = nor_vl;
         riem_input.left_state.gamma = sl.eos->gamma;
 
