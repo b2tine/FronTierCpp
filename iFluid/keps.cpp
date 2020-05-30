@@ -2422,11 +2422,14 @@ void KE_CARTESIAN::computeSource()
 		    comp = cell_center[index].comp;
 		    if (!ifluid_comp(comp)) continue;
 
+            //TODO: factor out this common l,m,nb loop into function
+            //      that takes the same args plus the icrds array.
 		    J = 0.0;
 		    /*compute module of the strain rate tensor*/
 		    for (l = 0; l < dim; l++)
 		    for (m = 0; m < dim; m++)
-		    {		
+		    {
+            //l components in the m direction
 			for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -2455,21 +2458,20 @@ void KE_CARTESIAN::computeSource()
 				    if (boundary_state_function_name(hs) &&
                         strcmp(boundary_state_function_name(hs),
                                 "flowThroughBoundaryState") == 0)
-				{
-				    vel_nb[nb] = vel[l][index];
-				}
-				else
-				{
-				    vel_nb[nb] = intfc_state->vel[l];
-				}
-
-                d_h[nb] = distance_between_positions(center,crx_coords,dim);
-
+                    {
+                        vel_nb[nb] = vel[l][index];
+                    }
+                    else
+                    {
+                        vel_nb[nb] = intfc_state->vel[l];
+                    }
+                    d_h[nb] = distance_between_positions(center,crx_coords,dim);
                 }
 			}
 
-            S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+            S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 
+            //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -2526,11 +2528,14 @@ void KE_CARTESIAN::computeSource()
 		    comp = cell_center[index].comp;
 		    if (!ifluid_comp(comp)) continue;
 
+            //TODO: factor out this common l,m,nb loop into function
+            //      that takes the same args plus the icrds array.
 		    J = 0.0;
 		    /*compute module of the strain rate tensor*/
 		    for (l = 0; l < dim; l++)
 		    for (m = 0; m < dim; m++)
 		    {		
+            //l components in the m direction
 			for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -2540,7 +2545,7 @@ void KE_CARTESIAN::computeSource()
 			    if (!fr_crx_grid_seg)
 			    {
 			        index_nb = 
-				next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
+                        next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
 			        vel_nb[nb] = vel[l][index_nb];
 			    }
 			    /*else if(wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -2549,27 +2554,28 @@ void KE_CARTESIAN::computeSource()
 			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			    {
-				setSlipBoundary(icrds,l,nb,comp,hs,
-						intfc_state,field->vel,v_tmp);
-				vel_nb[nb] = v_tmp[l];
+                    setSlipBoundary(icrds,m,nb,comp,hs,
+                            intfc_state,field->vel,v_tmp);
+                    vel_nb[nb] = v_tmp[l];
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
-				if (boundary_state_function_name(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
-				{
-				    vel_nb[nb] = vel[l][index];
-				}
-				else
-				{
-				    vel_nb[nb] = intfc_state->vel[l];
-				}
+                    if (boundary_state_function_name(hs) &&
+                                    strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
+                    {
+                        vel_nb[nb] = vel[l][index];
+                    }
+                    else
+                    {
+                        vel_nb[nb] = intfc_state->vel[l];
+                    }
 			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
 			    }
 			}
 			S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
 
+            //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -2618,7 +2624,7 @@ void KE_CARTESIAN::computeSource()
 		    Pk[index] = 0.5*mu_t[index]*J/rho; 
 		}	
 		break;
-	  defualt: 
+	  default: 
 		printf("In computeSource(), Unknown dim = %d\n",dim);
 		clean_up(ERROR);
 	}
