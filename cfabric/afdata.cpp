@@ -57,6 +57,7 @@ void printAfExtraData(
         sprintf(filename,"%s-afdata",filename);
         outfile = fopen(filename,"w");
 
+    /*
 	fprintf(outfile,"\nAirfoil extra front state data:\n");
 
 	next_point(intfc,NULL,NULL,NULL);
@@ -141,6 +142,7 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
+    */
 
 	fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
@@ -286,11 +288,12 @@ void readAfExtraData(
 	long max_point_gindex = 0;
 	long max_tri_gindex = 0;
 
-        sprintf(filename,"%s-afdata",restart_name);
-        infile = fopen(filename,"r");
-
+    sprintf(filename,"%s-afdata",restart_name);
 	printf("filename = %s\n",filename);
-	next_output_line_containing_string(infile,
+    infile = fopen(filename,"r");
+	
+    /*
+    next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
 	next_point(intfc,NULL,NULL,NULL);
@@ -374,7 +377,9 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
 	}
-	next_output_line_containing_string(infile,"Surface extra data:");
+    */
+	
+    next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
         int num_pts;

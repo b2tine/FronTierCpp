@@ -59,7 +59,8 @@ Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
 
 Enter number of canopy surfaces: 1
-Enter yes for complex connection: n
+Enter yes for complex connection: no
+Enter yes to add rigid body: no
 
 Available canopy surface types are:
         FLAT (F)
