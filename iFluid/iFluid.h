@@ -129,6 +129,12 @@ struct _NS_SCHEME {
 };
 typedef struct _NS_SCHEME NS_SCHEME;
 
+struct FINITE_STRING {         // For fluid drag on string chord
+        double radius;
+        double dens;
+        double c_drag;
+};
+
 typedef struct {
         int dim;
         POINTER level_func_params;
@@ -501,6 +507,7 @@ protected:
 	double smoothedStepFunction(double*, double*, int);
 	void sampleVelocity();
 	void setSmoothedProperties(void);
+    void addImmersedForce();
 };
 
 class Incompress_Solver_Smooth_2D_Cartesian:
