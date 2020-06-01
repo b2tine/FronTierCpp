@@ -252,6 +252,23 @@ struct _RG_PARAMS {
 };
 typedef struct _RG_PARAMS RG_PARAMS;
 
+/////////////////////////////////////////////////////
+//For generating PINN training data
+struct VENTRY
+{
+    int icoords[2];
+    double vel[2];
+};
+
+struct VDATA
+{
+    int tstep;
+    double time;
+    std::vector<VENTRY> data;
+};
+/////////////////////////////////////////////////////
+
+
 /******************************************************************************
  * 		lcartsn.h
  * A simple incompressible flow solver using the ghost fluid method and the
@@ -275,7 +292,7 @@ public:
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
-    std::vector<double> void getCoords();
+    std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -307,10 +324,14 @@ public:
 
 	void initMesh(void);
 
+    /////////////////////////////////////////////////////
+    //For generating PINN training data
     void writeMeshFile();
-    void writeTimeFile();
-    std::vector<std::vector<double>> getCurrentVelData();
-    std::vector<double> timeVec;
+        //void writeTimeFile();
+    VDATA getVelData();
+    std::vector<int> getMaxIJ();
+    std::vector<int> getTopGMax();
+    /////////////////////////////////////////////////////
 
 	void computeMaxSpeed(void);
 	void setAdvectionDt(void); 

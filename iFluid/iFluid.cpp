@@ -244,25 +244,17 @@ static void ifluid_driver(Front *front,
 	if (debugging("step_size"))
         printf("Time step from start: %f\n",front->dt);
     
-    //int N = mesh_size;
-    //int T = front.max_step + 1;
-    //TODO: handle solmat -- may not want to hold in class due to memory constraints
-    //std::vector<std::vector<double>> solmat(N,std::vector<double>(T,0.0));
-    l_cartesian->writeMeshFile();
+    //For generating PINN training data
+    std::vector<VDATA> velmat;
 
-    int tt = 0;
+    int tdata = 0;
     for (;;)
     {
-        if (FT_IsSaveTime(&front) || tt == 0)
+        //For generating PINN training data
+        if (FT_IsSaveTime(front) || tdata == 0)
         {
-            //TODO: replace with 2d sol
-            //save solution to solmat column tt
-            /*for (int i = 0; i < N; ++i)
-            {
-                solmat[i][tt] = u_old[i];
-            }*/
-            l_cartesian->timevec.push_back(front.time);
-            tt++;
+            velmat.push_back(l_cartesian->getVelData());
+            tdata++;
         }
         
         /* Propagating interface for time step dt */
@@ -352,46 +344,39 @@ static void ifluid_driver(Front *front,
     if (debugging("trace"))
         printf("After time loop\n");
 
-    /* PINN training data */
+    /* Write PINN training data */
 
-    // Write timevec file
+    // Write mesh file
+    l_cartesian->writeMeshFile();
+
+    //TODO: write vort file
+    // Write time and velocity files
     char tv_name[100];
-    sprintf(tv_name,"%s/time-%d.txt",out_name,(int)timevec.size());
+    sprintf(tv_name,"%s/time-%d.txt",out_name,tdata);
     FILE* tv_file = fopen(tv_name,"w");
-    for (int i = 0; i < timevec.size(); ++i)
-    {
-        fprintf(tv_file,"%20.14f\n",timevec[i]);
-    }
     
-    //TODO: replace with writeMeshFile()
-    //      can even do it before entering driver function
-    /*
-    // Write xvec file
-    char xv_name[100];
-    sprintf(xv_name,"%s/x-%d.txt",out_name,N);
-    FILE* xv_file = fopen(xv_name,"w");
-    for (int i = 0; i < N; ++i)
-    {
-        fprintf(xv_file,"%20.14f\n",x[i]);
-    }
-    */
+    char vm_name[100];
+    auto imax = l_cartesian->getMaxIJ();
+    sprintf(vm_name,"%s/velmat-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],tdata);
+    FILE* vm_file = fopen(vm_name,"w");
 
-    //TODO: replace with solver 2d velocities, and vorticity
-    /*
-    // Write solmat file
-    char sm_name[100];
-    sprintf(sm_name,"%s/solmat-%d-%d.txt",out_name,N,(int)timevec.size());
-    FILE* sm_file = fopen(sm_name,"w");
-    for (int i = 0; i < N; ++i)
+    auto top_gmax = l_cartesian->getTopGMax();
+    for (int t = 0; t < tdata; ++t)
     {
-        for (int j = 0; j < timevec.size(); ++j)
+        fprintf(tv_file,"time = %20.14f",velmat[t].time);
+        fprintf(tv_file,"\ttstep = %d\n",velmat[t].tstep);
+        for (auto it : velmat[t].data)
         {
-            fprintf(sm_file,"%f ",solmat[i][j]);
-            //fprintf(sm_file,"%g ",solmat[i][j]);
+            auto iv = it.vel;
+            auto ic = it.icoords;
+            fprintf(vm_file,"%20.14f %20.14f",iv[0],iv[1]);
+            fprintf(vm_file,"\t (%d,%d) index = %d\n",
+                ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
         }
-        fprintf(sm_file,"\n");
     }
-    */
+    fclose(tv_file);
+    fclose(vm_file);
 
 
 }       /* end ifluid_driver */

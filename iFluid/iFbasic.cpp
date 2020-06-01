@@ -141,6 +141,10 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
             (void) printf("Leaving initMesh()\n");
 }
 
+/////////////////////////////////////////////////////
+//For generating PINN training data
+
+/*
 void Incompress_Solver_Smooth_Basis::writeTimeFile()
 {
     char tv_name[100];
@@ -151,55 +155,62 @@ void Incompress_Solver_Smooth_Basis::writeTimeFile()
         fprintf(tv_file,"%20.14f\n",timevec[i]);
     }
 }
+*/
 
-//TODO: need to use imin,imax etc.? or us 0 to top_gmax correct?
 void Incompress_Solver_Smooth_Basis::writeMeshFile()
 {
-    char xy_name[250];
-    sprintf(xy_name,"%s/xy-%d-%d.txt",OutName(front),
+    char mesh_name[250];
+    sprintf(mesh_name,"%s/mesh-%d-%d.txt",OutName(front),
             top_gmax[0],top_gmax[1]);
-
-    FILE* xy_file = fopen(xy_name,"w");
+    FILE* mesh_file = fopen(mesh_name,"w");
 
     for (int i = imin; i <= imax; ++i)
+    for (int j = jmin; j <= jmax; ++j)
     {
-        //coords[0] = top_L[0] + top_h[0]*i;
-        for (int j = jmin; j <= jmax; ++j)
-        {
-            //coords[1] = top_L[1] + top_h[1]*j;
-            int index = d_index2d(i,j,top_gmax);
-            auto coords = cell_center[index].getCoords();
-            fprintf(xy_file,"%20.14f %20.14f\n",coords[0],coords[1]);
-        }
+        int index = d_index2d(i,j,top_gmax);
+        auto coords = cell_center[index].getCoords();
+        fprintf(mesh_file,"%20.14f %20.14f",coords[0],coords[1]);
+        fprintf(mesh_file,"\t (%d,%d) index = %d\n",i,j,
+                d_index2d(i,j,top_gmax));
     }
-
-    fclose(xy_file);
+    fclose(mesh_file);
 }
 
-//TODO: test if this works
-std::vector<std::vector<double>>
-    Incompress_Solver_Smooth_Basis::getCurrentVelData()
+VDATA Incompress_Solver_Smooth_Basis::getVelData()
 {
     double **vel = field->vel;
-    std::vector<std::vector<double> velmat;
+    VDATA veldata;
+    veldata.tstep = front->step;
+    veldata.time = front->time;
+    veldata.data.reserve(imax*jmax);
     
+    //TODO: add vort
     for (int i = imin; i <= imax; ++i)
+    for (int j = jmin; j <= jmax; ++j)
     {
-        for (int j = jmin; j <= jmax; ++j)
-        {
-            int index  = d_index2d(i,j,top_gmax);
-            velmat.push_back(
-            std::vector<double>{vel[0][index],vel[1][index]});
-        }
+        int index  = d_index2d(i,j,top_gmax);
+        VENTRY ventry = {i,j,vel[0][index],vel[1][index]};
+        veldata.data.push_back(ventry);
     }
-    return velmat;
+    return veldata;
 }
+
+std::vector<int> Incompress_Solver_Smooth_Basis::getMaxIJ()
+{
+    return std::vector<int>{imax,jmax};
+}
+
+std::vector<int> Incompress_Solver_Smooth_Basis::getTopGMax()
+{
+    return std::vector<int>(top_gmax,top_gmax+1);
+}
+/////////////////////////////////////////////////////
 
 void Incompress_Solver_Smooth_Basis::setComponent(void)
 {
 	int i;
 	static POINTER state;
-        double coords[MAXD];
+    double coords[MAXD];
 	int size = (int)cell_center.size();
 	double **vel = field->vel;
 	double *pres = field->pres;
@@ -933,15 +944,21 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                         fscanf(infile,"%lf %lf",&var_min,&var_max);
                         (void) printf("%f %f\n",var_min,var_max);
             }
+            /*
+            //TODO: field->vel is 2d, but functions requires 1d array.
+            //      Could add another function argument and pass in each
+            //      component individually, and for all the other existing
+            //      movie variables pass nullpointer as the extra argument.
+            //
             FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
                     "vel",0,field->vel,getStateVelMag2d,
-                    var_max,var_min);
-            /*FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    var_max,var_min);*/
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
                     "xvel",0,field->vel[0],getStateXvel,
                     var_max,var_min);
             FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
                     "yvel",0,field->vel[1],getStateYvel,
-                    var_max,var_min);*/
+                    var_max,var_min);
 	    }
 	    if (CursorAfterStringOpt(infile,
 		"Type y to make movie of viscosity:"))
