@@ -355,11 +355,15 @@ static void ifluid_driver(Front *front,
     sprintf(tv_name,"%s/time-%d.txt",out_name,tdata);
     FILE* tv_file = fopen(tv_name,"w");
     
-    char vm_name[100];
+    char velm_name[100];
+    char vortm_name[100];
     auto imax = l_cartesian->getMaxIJ();
-    sprintf(vm_name,"%s/velmat-%d-%d-%d.txt",
+    sprintf(velm_name,"%s/velmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],tdata);
-    FILE* vm_file = fopen(vm_name,"w");
+    sprintf(vortm_name,"%s/vortmat-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],tdata);
+    FILE* velm_file = fopen(velm_name,"w");
+    FILE* vortm_file = fopen(vortm_name,"w");
 
     auto top_gmax = l_cartesian->getTopGMax();
     for (int t = 0; t < tdata; ++t)
@@ -370,13 +374,19 @@ static void ifluid_driver(Front *front,
         {
             auto iv = it.vel;
             auto ic = it.icoords;
-            fprintf(vm_file,"%20.14f %20.14f",iv[0],iv[1]);
-            fprintf(vm_file,"\t (%d,%d) index = %d\n",
+            fprintf(velm_file,"%20.14f %20.14f",iv[0],iv[1]);
+            fprintf(velm_file,"\t (%d,%d) index = %d\n",
+                ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
+
+            auto vort = it.vort;
+            fprintf(vortm_file,"%20.14f",vort);
+            fprintf(vortm_file,"\t (%d,%d) index = %d\n",
                 ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
         }
     }
     fclose(tv_file);
-    fclose(vm_file);
+    fclose(velm_file);
+    fclose(vortm_file);
 
 
 }       /* end ifluid_driver */

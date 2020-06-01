@@ -258,6 +258,7 @@ struct VENTRY
 {
     int icoords[2];
     double vel[2];
+    double vort;
 };
 
 struct VDATA

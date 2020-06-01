@@ -179,6 +179,8 @@ void Incompress_Solver_Smooth_Basis::writeMeshFile()
 VDATA Incompress_Solver_Smooth_Basis::getVelData()
 {
     double **vel = field->vel;
+    double *vort = field->vort;
+
     VDATA veldata;
     veldata.tstep = front->step;
     veldata.time = front->time;
@@ -189,7 +191,7 @@ VDATA Incompress_Solver_Smooth_Basis::getVelData()
     for (int j = jmin; j <= jmax; ++j)
     {
         int index  = d_index2d(i,j,top_gmax);
-        VENTRY ventry = {i,j,vel[0][index],vel[1][index]};
+        VENTRY ventry = {i,j,vel[0][index],vel[1][index],vort[index]};
         veldata.data.push_back(ventry);
     }
     return veldata;
