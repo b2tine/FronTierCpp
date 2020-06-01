@@ -282,71 +282,92 @@ static void string_curve_propagation(
     FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
     if (params != NULL)
     {
-        STATE *sl,*sr,*newsl,*newsr;
+        STATE *state_intfc;
+            //STATE *sl,*sr;
+        STATE *newsl,*newsr;
         COMPONENT base_comp = front->interf->default_comp;
         IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
         IF_FIELD *field = iFparams->field;
         double rhoF = iFparams->rho2;
-        double **vel,speed;
+        double **vel = field->vel;
 
         double c_drag = params->c_drag;
         double radius = params->radius;
         double rhoS = params->dens;
         
-        int count = 0;
+            //int count = 0;
 
-        vel = field->vel;
     for (oldb = oldc->first, newb = newc->first;
             oldb != oldc->last; oldb = oldb->next, newb = newb->next)
     {
         oldp = oldb->end;
         newp = newb->end;
 
-            sl = (STATE*)left_state(oldp);
-            sr = (STATE*)right_state(oldp);
+        //TODO: vel_string = sl->vel; ?
+            state_intfc = (STATE*)left_state(oldp);
+            double* vel_intfc = state_intfc->vel;
+            //sl = (STATE*)left_state(oldp);
+            //sr = (STATE*)right_state(oldp);
 
             newsl = (STATE*)left_state(newp);
             newsr = (STATE*)right_state(newp);
-            speed = 0.0;
-            count++;
+                //count++;
+ 
+            //tangential direction along string BOND
+            double ldir[3];
+            for (int i = 0; i < 3; ++i)	
+                ldir[i] = Coords(oldb->end)[i] - Coords(oldb->start)[i];
+            double length = Mag3d(ldir);
+            if (length < MACH_EPS)
+            {
+                printf("BOND length < MACH_EPS\n");
+                clean_up(EXIT_FAILURE);
+            }
+            
+            for (int i = 0; i < 3; ++i)
+                ldir[i] /= length;
 
-            //TODO: Interpolate at midpoint instead of endpoint (oldp),
-            //      ..... if possible, get basic version working first.
+            double vt = 0.0;
+            double vfluid[3], vrel[3];
             for (int i = 0; i < 3; ++i)
             {
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
-                speed += sqr(newsl->vel[i]);
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+                vrel[i] = vfluid[i] - vel_intfc[i];
+                vt += vrel[i]*ldir[i];
+                /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
+            }
 
-                //newsr->vel[i] = newsl->vel[i];//TODO: this looks suspicious
-                                                //      compare to elastic_point_propagate().
+            double speed = 0.0;
+            double vtan[3], vnor[3];
+            for (int i = 0; i < 3; ++i)
+            {
+                //vtan[i] = vt*ldir[i];
+                //vnor[i] = vrel[i] - vtan[i];
+                vnor[i] = vrel[i] - vt*ldir[i];
+                speed += sqr(vnor[i]);
             }
             speed = sqrt(speed);
 
-        //From elastic_point_propagate() for reference
-        /*
-        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
-	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
-        */
-
-            //TODO: too much area for just the point...
-            double length = separation(oldb->start,oldb->end,3);
-            double A_ref = 2.0*PI*radius*length;
-            double Vol = PI*radius*radius*length;
+            double A_ref = 2.0*PI*radius*(0.1*length);
+            double Vol = PI*radius*radius*(0.1*length);
             double mass = rhoS*Vol;
 
             for (int i = 0; i < 3; ++i)
             {
                 double dragForce = 0.0;
-                if (front->step > 5)
-                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+                if (front->step > af_params->fsi_startstep)
+                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                    //dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
 
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	            newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            //newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
             }
             /*
             if (count == 5)
