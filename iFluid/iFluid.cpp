@@ -356,38 +356,44 @@ static void ifluid_driver(Front *front,
     FILE* tv_file = fopen(tv_name,"w");
     
     char velm_name[100];
-    char vortm_name[100];
     auto imax = l_cartesian->getMaxIJ();
     sprintf(velm_name,"%s/velmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],tdata);
+    FILE* velm_file = fopen(velm_name,"w");
+    
+    char vortm_name[100];
     sprintf(vortm_name,"%s/vortmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],tdata);
-    FILE* velm_file = fopen(velm_name,"w");
     FILE* vortm_file = fopen(vortm_name,"w");
 
-    auto top_gmax = l_cartesian->getTopGMax();
+        //auto top_gmax = l_cartesian->getTopGMax();
     for (int t = 0; t < tdata; ++t)
     {
-        fprintf(tv_file,"time = %20.14f",velmat[t].time);
-        fprintf(tv_file,"\ttstep = %d\n",velmat[t].tstep);
+        fprintf(tv_file,"%20.14f %20.14f\n",
+                velmat[t].time,velmat[t].dt);
+            //fprintf(tv_file,"time = %20.14f",velmat[t].time);
+            //fprintf(tv_file," dt = %20.14f",velmat[t].dt);
+            //fprintf(tv_file," tstep = %d\n",velmat[t].tstep);
         for (auto it : velmat[t].data)
         {
             auto iv = it.vel;
             auto ic = it.icoords;
-            fprintf(velm_file,"%20.14f %20.14f",iv[0],iv[1]);
-            fprintf(velm_file,"\t (%d,%d) index = %d\n",
-                ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
+            fprintf(velm_file,"%20.14f %20.14f\n",iv[0],iv[1]);
+                //fprintf(velm_file,"%20.14f %20.14f",iv[0],iv[1]);
+                //fprintf(velm_file," (%d,%d) index = %d\n",
+                  //ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
 
             auto vort = it.vort;
-            fprintf(vortm_file,"%20.14f",vort);
-            fprintf(vortm_file,"\t (%d,%d) index = %d\n",
-                ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
+            fprintf(vortm_file,"%20.14f\n",vort);
+                //fprintf(vortm_file,"%20.14f",vort);
+                //fprintf(vortm_file," (%d,%d) index = %d\n",
+                  //ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
         }
     }
+
     fclose(tv_file);
     fclose(velm_file);
     fclose(vortm_file);
-
 
 }       /* end ifluid_driver */
 

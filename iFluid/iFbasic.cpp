@@ -169,9 +169,10 @@ void Incompress_Solver_Smooth_Basis::writeMeshFile()
     {
         int index = d_index2d(i,j,top_gmax);
         auto coords = cell_center[index].getCoords();
-        fprintf(mesh_file,"%20.14f %20.14f",coords[0],coords[1]);
-        fprintf(mesh_file,"\t (%d,%d) index = %d\n",i,j,
-                d_index2d(i,j,top_gmax));
+        fprintf(mesh_file,"%20.14f %20.14f\n",coords[0],coords[1]);
+            //fprintf(mesh_file,"%20.14f %20.14f",coords[0],coords[1]);
+            //fprintf(mesh_file,"\t (%d,%d) index = %d\n",i,j,
+            //      d_index2d(i,j,top_gmax));
     }
     fclose(mesh_file);
 }
@@ -183,10 +184,10 @@ VDATA Incompress_Solver_Smooth_Basis::getVelData()
 
     VDATA veldata;
     veldata.tstep = front->step;
+    veldata.dt = front->dt;
     veldata.time = front->time;
     veldata.data.reserve(imax*jmax);
     
-    //TODO: add vort
     for (int i = imin; i <= imax; ++i)
     for (int j = jmin; j <= jmax; ++j)
     {

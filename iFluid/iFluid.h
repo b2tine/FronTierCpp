@@ -264,6 +264,7 @@ struct VENTRY
 struct VDATA
 {
     int tstep;
+    double dt;
     double time;
     std::vector<VENTRY> data;
 };

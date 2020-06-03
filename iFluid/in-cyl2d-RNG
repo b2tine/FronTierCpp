@@ -6,10 +6,10 @@ Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 
-Max time: 1.0
-Max step: 2
-Print interval: 0.2
-Movie frame interval: 0.2
+Max time: 5.0
+Max step: 150
+Print interval: 0.02
+Movie frame interval: 0.02
 CFL factor: 0.9
 Redistribution interval: 5
 
