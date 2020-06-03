@@ -670,23 +670,18 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 		    }
         }
 
-                //TODO: Absence of mixed derivatives shows mixed partials
-                //      shows the transposed jacobian from the RANS equation
-                //       is not included.. see setSlipBoundary() in keps.cpp
-                //       for how to compute the mean strain tensor.
-                //       Also need the friction velocity from the turbulence
-                //       model (via wall functions) to compute the tangential
-                //       shear stress at boundaries. 
-                //
-                //       should be discretizing div(grad(u) + grad(u)^T)
-            	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+                //TODO: Need the friction velocity from the turbulence
+                //      model (via wall functions) to compute the tangential
+                //      shear stress at boundaries. 
+            	
+                 coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
             	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
             	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
             	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
 
-                //TODO: RHS should also contain the advective flux...
+                //TODO: RHS should also contain the advective flux?
                 //      We are first computing the solution as if it was
                 //      a pure advection/hyperbolic equation. Then using
                 //      that solution as the input for ths diffusion solver...
