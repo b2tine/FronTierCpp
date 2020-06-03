@@ -1586,7 +1586,9 @@ static void reorder_string_curves(NODE *node)
 	CURVE **c,**string_curves,*c_tmp;
 	int i,j,num_curves;
 	POINT **nb_points,*p_tmp;
+    INTERFACE *save_intfc = current_interface();
 
+    set_current_interface(node->interface);
 	num_curves = I_NumOfNodeCurves(node);
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_curves,
 				sizeof(CURVE*));
@@ -1631,6 +1633,7 @@ static void reorder_string_curves(NODE *node)
 		unique_add_to_pointers(string_curves[i],&node->out_curves);
 	}
 	FT_FreeThese(2,string_curves,nb_points);
+    set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
 extern void set_vertex_impulse(
