@@ -337,7 +337,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,double);
+extern void setSpecialNodeForce(Front*,INTERFACE*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);
 extern void set_unequal_strings(Front*);

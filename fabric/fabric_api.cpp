@@ -125,7 +125,7 @@ extern void SMM_StartUpStep()
         }
         else
         {
-            setSpecialNodeForce(front,af_params->kl);
+                //setSpecialNodeForce(front,af_params->kl);
             FT_SetOutputCounter(front);
 	        FT_TimeControlFilter(front);
         }
@@ -536,7 +536,7 @@ extern void SMM_TestDriver()
     }
     else
     {
-        setSpecialNodeForce(front,af_params->kl);
+            //setSpecialNodeForce(front,af_params->kl);
         FT_SetOutputCounter(front);
     }
 

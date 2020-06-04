@@ -514,13 +514,13 @@ static void link_surf_point_set(
 	{
 	    for (j = 0; j < 3; ++j)
 	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		gindex = Gindex(p);
-		point_set[gindex] = point_set_store + i;
-	    	point_set[gindex]->gindex = gindex;
-		sorted(p) = YES;
-		i++;
+            p = Point_of_tri(tri)[j];
+            if (sorted(p) || Boundary_point(p)) continue;
+            gindex = Gindex(p);
+            point_set[gindex] = point_set_store + i;
+            point_set[gindex]->gindex = gindex;
+            sorted(p) = YES;
+            i++;
 	    }
 	}
 	*n = i;
@@ -1234,10 +1234,10 @@ static void surf_put_point_set_to(
 	{
 	    for (j = 0; j < 3; ++j)
 	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		put_point_value_to(p,point_set);
-		sorted(p) = YES;
+            p = Point_of_tri(tri)[j];
+            if (sorted(p) || Boundary_point(p)) continue;
+            put_point_value_to(p,point_set);
+            sorted(p) = YES;
 	    }
 	}
 }	/* end surf_put_point_set_to */
@@ -1668,7 +1668,10 @@ static void set_node_impulse(
 	sr = (STATE*)right_state(node->posn);
 
 	for (i = 0; i < dim; ++i)
-	    sl->impulse[i] = sr->impulse[i] = point_set[gindex]->impuls[i];
+    {
+	    sl->impulse[i] = point_set[gindex]->impuls[i];
+        sr->impulse[i] = point_set[gindex]->impuls[i];
+    }
 }	/* end set_node_impulse */
 
 static void set_curve_impulse(
@@ -1688,9 +1691,11 @@ static void set_curve_impulse(
 	    gindex = Gindex(b->end);
 	    sl = (STATE*)left_state(b->end);
 	    sr = (STATE*)right_state(b->end);
-            for (j = 0; j < dim; ++j)
-            {
-	    	sl->impulse[j] = sr->impulse[j] = point_set[gindex]->impuls[j];
+
+        for (j = 0; j < dim; ++j)
+        {
+	    	sl->impulse[j] = point_set[gindex]->impuls[j]; 
+            sr->impulse[j] = point_set[gindex]->impuls[j];
 	    }
 	}
 }	/* end set_curve_impulse */
@@ -1716,16 +1721,17 @@ static void set_surf_impulse(
 	    hse = Hyper_surf_element(tri);
 	    for (j = 0; j < 3; ++j)
 	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		sorted(p) = YES;
-		gindex = Gindex(p);
-		FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            	for (k = 0; k < 3; ++k)
-            	{
-	    	    sl->impulse[k] = sr->impulse[k] 
-				= point_set[gindex]->impuls[k];
-	    	}
+            p = Point_of_tri(tri)[j];
+            if (sorted(p) || Boundary_point(p)) continue;
+            sorted(p) = YES;
+            gindex = Gindex(p);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+                
+            for (k = 0; k < 3; ++k)
+            {
+                sl->impulse[k] = point_set[gindex]->impuls[k];
+                sr->impulse[k] = point_set[gindex]->impuls[k];
+            }
 	    }
 	}
 }	/* end set_surf_impulse */
