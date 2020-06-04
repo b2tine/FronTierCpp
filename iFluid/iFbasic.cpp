@@ -161,7 +161,7 @@ void Incompress_Solver_Smooth_Basis::writeMeshFile()
 {
     char mesh_name[250];
     sprintf(mesh_name,"%s/mesh-%d-%d.txt",OutName(front),
-            top_gmax[0],top_gmax[1]);
+            imax,jmax);
     FILE* mesh_file = fopen(mesh_name,"w");
 
     for (int i = imin; i <= imax; ++i)
