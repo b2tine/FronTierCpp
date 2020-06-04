@@ -5820,6 +5820,7 @@ void G_CARTESIAN::setElasticStatesRFB(
 	    for (j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_ref[j] = coords_ghost[j];
 	    }
         
         /* Reflect ghost point through intfc-mirror at crossing */
@@ -6052,6 +6053,7 @@ void G_CARTESIAN::setElasticStatesRFB_normal(
 	    for (j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_ref[j] = coords_ghost[j];
 	    }
         
         /* Reflect ghost point through intfc-mirror at crossing */
@@ -6293,8 +6295,13 @@ void G_CARTESIAN::setElasticStatesRiem(
         
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
-        TRI* nearTri = Tri_of_hse(nearHse);//TODO: is there a state associated with the TRI?
+
+        //TODO: can we get a better normal vector and intfc state?
+        //      Without taking an average of the values from each
+        //      point on the triangle that is.
+        TRI* nearTri = Tri_of_hse(nearHse);
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
+        STATE* state_intfc = (STATE*)left_state(Point_of_tri(nearTri)[0]);
             //nor = Tri_normal_vector(nearTri);
         double h = FT_GridSizeInDir(nor,front);
 
@@ -6317,28 +6324,36 @@ void G_CARTESIAN::setElasticStatesRiem(
         
         //Using relative velocity wrt to interface velocity
         //TODO: can we do better than this interpolation?
+        /*
         double intfc_dens;
         double intfc_momn[3], vel_intfc[3];
         FT_IntrpStateVarAtCoords(front,comp,crx_coords,
                 m_vst->dens,getStateDens,&intfc_dens,&m_vst->dens[index]);
+        */
 
         //TODO: Should the left state velocity be set to the right state velocity
         //      as in GFM for strong shock interaction part 1&2 (or is that a typo)
+        //      Don't think it is a typo as results are much better.
+        //      Need to understand why.
         double vl[3], vr[3];
         for (j = 0; j < dim; ++j)
         {
+            /*
             FT_IntrpStateVarAtCoords(front,comp,crx_coords,m_vst->momn[j],
                     getStateMom[j],&intfc_momn[j],&m_vst->momn[j][index]);
             vel_intfc[j] = intfc_momn[j]/intfc_dens;
+            */
             
             FT_IntrpStateVarAtCoords(front,comp,pl,m_vst->momn[j],
                     getStateMom[j],&sl.momn[j],&m_vst->momn[j][index]);
-            vl[j] = sl.momn[j]/sl.dens - vel_intfc[j];//relative left state vel
+            vl[j] = sl.momn[j]/sl.dens - state_intfc->vel[j];//relative left state vel
+            //vl[j] = sl.momn[j]/sl.dens - vel_intfc[j];//relative left state vel
                 //vl[j] = sl.momn[j]/sl.dens;
 
             FT_IntrpStateVarAtCoords(front,comp_ghost,pr,m_vst->momn[j],
                     getStateMom[j],&sr.momn[j],&m_vst->momn[j][index_ghost]);
-            vr[j] = sr.momn[j]/sr.dens - vel_intfc[j];//relative right state vel
+            vr[j] = sr.momn[j]/sr.dens - state_intfc->vel[j];//relative right state vel
+            //vr[j] = sr.momn[j]/sr.dens - vel_intfc[j];//relative right state vel
                 //vr[j] = sr.momn[j]/sr.dens;
         }
 
@@ -6351,7 +6366,8 @@ void G_CARTESIAN::setElasticStatesRiem(
             nor_vr += vr[j]*nor[j];
         }
 
-        //debug: assuming centerline is through (0.5, 0.5, z)
+        /*
+        //DEBUG: assuming centerline is through (0.5, 0.5, z)
         double ctrlinedist = sqrt(sqr(coords[0] - 0.5) + sqr(coords[1] - 0.5));
         double tolprint = sqrt(sqr(top_h[0]) + sqr(top_h[1]));
         if (ctrlinedist < tolprint)
@@ -6370,6 +6386,7 @@ void G_CARTESIAN::setElasticStatesRiem(
             printf("\tvn: %f %f\n",nor_vl,nor_vr);
             printf("\tpres: %f %f\n",sl.pres,sr.pres);
         }
+        */
 
         //solve 1d riemann problem in interface normal direction
         RIEMANN_INPUT riem_input;
@@ -6377,7 +6394,7 @@ void G_CARTESIAN::setElasticStatesRiem(
 
         riem_input.left_state.d = sl.dens;
         riem_input.left_state.p = sl.pres;
-        riem_input.left_state.u = nor_vr;//Typo or correct?
+        riem_input.left_state.u = nor_vr;//Typo or correct? UPDATE: not a typo
             //riem_input.left_state.u = nor_vl;
         riem_input.left_state.gamma = sl.eos->gamma;
 
@@ -6398,6 +6415,8 @@ void G_CARTESIAN::setElasticStatesRiem(
             clean_up(EXIT_FAILURE);
         }
 
+        /*
+        //DEBUG
         if (ctrlinedist < tolprint)
         {
             printf("\nsoln states, velocity\n");
@@ -6418,6 +6437,7 @@ void G_CARTESIAN::setElasticStatesRiem(
             printf("left_center_state.p = %g\n",riem_soln.left_center_state.p);
             printf("left_state.p = %g\n",riem_soln.left_state.p);
         }
+        */
        
         ///////////////////////////////////////////////////////////////////////
         /*
@@ -6466,7 +6486,9 @@ void G_CARTESIAN::setElasticStatesRiem(
         double v_real[3];
         for (j = 0; j < dim; ++j)
         {
-            v_ghost[j] = vn_ghost*nor[j] + vel_intfc[j];
+            v_ghost[j] = vn_ghost*nor[j] + state_intfc->vel[j];
+                //v_ghost[j] = vn_ghost*nor[j] + vel_intfc[j];
+
             //reflect normal velocity component and convert back to world frame
                 //v_ghost[j] = vel_intfc[j] - vn_ghost*nor[j];
                     //v_ghost[j] = vn_ghost*nor[j];

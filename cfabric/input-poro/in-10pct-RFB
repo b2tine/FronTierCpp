@@ -59,7 +59,8 @@ Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
 
 Enter number of canopy surfaces: 1
-Enter yes for complex connection: n
+Enter yes for complex connection: no
+Enter yes to add rigid body: no
 
 Available canopy surface types are:
         FLAT (F)
@@ -86,10 +87,12 @@ Enter yes to install boundary on each side: no
 Enter interior sub step number: 10
 
 Enter yes to use porosity: yes
-Enter fabric porosity: 0.2
+Enter fabric porosity: 0.1
+Enter porosity ghost fluid method: REFLECTION
+
 Enter area density of canopy: 5.0
 
-Enter fabric spring constant: 5000
+Enter fabric spring constant: 1000
 Enter fabric damping constant: 0.01
 Enter fabric friction constant: 0.05
 Enter fabric point mass: 0.0001
@@ -115,12 +118,12 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 1.0
-Max step: 3000
-Print interval: 0.005
-Movie frame interval: 0.001
+Max step: 1000
+Print interval: 0.001
+Movie frame interval: 0.0005
 CFL factor: 0.5
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: Xelastic_buffer
