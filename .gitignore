@@ -71,6 +71,7 @@ folding/test
 parachute/parachute
 parachute/ginit
 parachute/intfc
+AngStiff_sprModel/spring
 fabric/fabric
 fabric/cgal_intfc_test
 fabric/fabric_Fortn
