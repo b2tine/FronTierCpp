@@ -282,13 +282,13 @@ extern void set_spring_vertex_memory(
 	}
 }	/* end set_spring_vertex_memory */
 
+/*
 extern void compute_spring_accel1(
 	SPRING_VERTEX *sv,
 	double* accel,
 	int dim)
 {
 	double vec[MAXD];
-	double v_rel[MAXD];
 
 	for (int k = 0; k < dim; ++k)
         accel[k] = 0.0;
@@ -319,6 +319,102 @@ extern void compute_spring_accel1(
 	    sv->f[k] = accel[k]*sv->m;
     }
 	
+    for (int k = 0; k < dim; ++k)
+	{
+	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+        
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
+                    + sv->other_accel[k];
+	}
+}*/	/* end compute_spring_accel */
+
+extern void compute_spring_accel1(
+	SPRING_VERTEX* sv,
+	double* accel,
+	int dim)
+{
+	double len, dl;
+    double vec[MAXD];
+
+	for (int k = 0; k < dim; ++k)
+        accel[k] = 0.0;
+
+	for (int i = 0; i < sv->num_nb; ++i)
+	{
+	    //tensile stiffness
+	    len = 0.0;
+	    for (int k = 0; k < dim; ++k)
+	    {
+            vec[k] = sv->x_nb[i][k] - sv->x[k];
+            len += sqr(vec[k]);
+	    }
+	    len = sqrt(len);
+	    
+        for (int k = 0; k < dim; ++k)
+	    {
+            vec[k] /= len;
+            dl = len - sv->len0[i];
+            accel[k] += sv->k[i]*dl*vec[k]/sv->m;
+	    }
+
+	    //angular stiffness included if left side neighbor exists
+	    if (sv->x_ajl[i] != nullptr)
+	    {
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+                len += sqr(sv->x[k] - sv->x_ajl[i][k]);
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj00[i];
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj00[i]*dl*vec[k]/sv->m;
+
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+                len += sqr(sv->x_nb[i][k] - sv->x_ajl[i][k]);
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj01[i];
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj01[i]*dl*vec[k]/sv->m;
+	    }
+
+	    //angular stiffness included if right side neighbor exists
+	    if (sv->x_ajr[i] != nullptr)
+	    {
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+                len += sqr(sv->x[k] - sv->x_ajr[i][k]);
+            len = sqrt(len);
+
+            dl = len - sv->len0_adj10[i];
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj10[i]*dl*vec[k]/sv->m;
+
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+                len += sqr(sv->x_nb[i][k] - sv->x_ajr[i][k]);
+            len = sqrt(len);
+
+            dl = len - sv->len0_adj11[i];
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj11[i]*dl*vec[k]/sv->m;
+	    }
+	}
+
+    //force and acceleration of spring vertex
+	for (int k = 0; k < dim; ++k)
+    {
+	    sv->f[k] = accel[k]*sv->m;
+    }
+
+    /*
+	for (int k = 0; k < dim; ++k)
+	{
+	    accel[k] -= sv->lambda*sv->v[k]/sv->m + sv->ext_accel[k];
+	}
+    */
+    
     for (int k = 0; k < dim; ++k)
 	{
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;

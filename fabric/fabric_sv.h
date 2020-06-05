@@ -26,10 +26,10 @@ struct SPRING_VERTEX
 	double *gam_adj01;		// gamma between x and x_ajr
 	double *gam_adj10;		// gamma between x_nb and x_ajl
 	double *gam_adj11;		// gamma between x_nb and x_ajr
-	double *len0_adj00;		// equilibrium length x - a_ajl
-	double *len0_adj01;		// equilibrium length x - a_ajr
-	double *len0_adj10;		// equilibrium length xnb - a_ajl
-	double *len0_adj11;		// equilibrium length xnb - a_ajr
+	double *len0_adj00;		// equilibrium length x - x_ajl
+	double *len0_adj01;		// equilibrium length x - x_ajr
+	double *len0_adj10;		// equilibrium length xnb - x_ajl
+	double *len0_adj11;		// equilibrium length xnb - x_ajr
     
     double ext_accel[3];    // gravity
     double *ext_impul;      // velocity comp due to impulse of external force

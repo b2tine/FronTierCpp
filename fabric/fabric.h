@@ -85,6 +85,7 @@ struct AF_PARAMS
 	boolean cut_vent;
         boolean use_total_mass;
 	boolean use_gpu;
+    boolean uni_k;
 	PERT_PARAMS pert_params;
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
@@ -95,6 +96,7 @@ struct AF_PARAMS
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
 	double payload;
+    double max_k;
 	double ks {5000.0};	 /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
@@ -113,12 +115,15 @@ struct AF_PARAMS
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double gamma;			/* canopy porosity */
 	double area_dens;		/* canopy area density */
+    double min_len;
+    double E;           /* Young's modules */
+    double nu;          /* Poisson ration */
+    double cut_limit;   //stiffness cutoff
 	int n_sub;			/* number of sub-steps for tan prop */
 	int num_opt_round;		/* number of mesh optimizations rounds*/
 	int num_smooth_layers;	/* number of layer to smooth high frequency velocity */
-	int    num_np;			/* number of master node to run spring model */
-    
-	int    node_id[10];		/* master node id */
+	int num_np;			/* number of master node to run spring model */
+	int node_id[10];		/* master node id */
 	
         double break_strings_time;	/* time to break some strings */
 	int    break_strings_num;	/* number of strings to break */
@@ -297,6 +302,7 @@ extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void second_order_elastic_surf_propagate(Front*,double);
 extern void set_equilibrium_mesh(Front*);
+extern void setSpringConstant(Front*);
 extern void print_airfoil_stat(Front*,char*);
 extern void print_strings(Front*,char*);
 extern void fixed_length_tan_curve_propagate(Front*,Front*,INTERFACE*,
@@ -337,7 +343,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,INTERFACE*,double);
+extern void setSpecialNodeForce(Front*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);
 extern void set_unequal_strings(Front*);

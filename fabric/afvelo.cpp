@@ -439,9 +439,6 @@ void setMotionParams(Front* front)
 	    }
 	}
 
-
-        if (af_params->use_total_mass)
-            convert_to_point_mass(front,af_params);
 	if (af_params->is_parachute_system == NO)
 	{
 	    if (af_params->m_s == 0)
@@ -464,6 +461,27 @@ void setMotionParams(Front* front)
             fscanf(infile,"%d",&af_params->num_smooth_layers);
             (void) printf("%d\n",af_params->num_smooth_layers);
 	}
+
+    if (af_params->use_total_mass)
+        convert_to_point_mass(front,af_params);
+
+	CursorAfterString(infile,"Enter Young's modules:");
+        fscanf(infile,"%lf",&af_params->E);
+        (void) printf("%f\n",af_params->E);
+	CursorAfterString(infile,"Enter Poisson ratio:");
+        fscanf(infile,"%lf",&af_params->nu);
+        (void) printf("%f\n",af_params->nu);
+	af_params->uni_k = NO;
+        if (CursorAfterStringOpt(infile,"Enter yes to use uni_stiffness:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                af_params->uni_k = YES;
+        }
+	CursorAfterString(infile,"Enter stiffness cut limit percent:");
+        fscanf(infile,"%lf",&af_params->cut_limit);
+        (void) printf("%f\n",af_params->cut_limit);
 	
 	fclose(infile);
 }	/* end setMotionParams */

@@ -54,6 +54,15 @@ static void print_rgb3d(Front *,char *);
 static void print_drag3d(Front *,char *);
 //static void print_strings(Front *,char *);
 
+/*TMP*/
+static double ang2K(double,double,double,double);
+static double ang2Gamma(double,double,double,double);
+static void sidesToAngles(double*,double*);
+static void setTriSpringConstant(Front*,TRI*,double,double);
+static void setSpringConstantToLimit(Front*,double);
+
+
+
 extern void second_order_elastic_curve_propagate(
 	Front           *fr,
         Front           *newfr,
@@ -822,6 +831,7 @@ static void print_airfoil_stat3d_1(
 		    side_length = separation(Point_of_tri(tri)[j],
                                 Point_of_tri(tri)[(j+1)%3],3);
 		    x_diff = side_length - tri->side_length0[j];
+            ks = tri->k[j];
 		    if (!is_side_bdry(tri,j))
                     	epi += 0.5*ks*sqr(x_diff);
 		}
@@ -2381,3 +2391,348 @@ extern void print_strings(
 
 	first = NO;
 }	/* end print_strings */
+
+extern void setSpringConstant(Front *front)
+{
+	INTERFACE *intfc = front->interf;
+	SURFACE **s;
+	TRI *tri;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	int i,j;
+	double E = af_params->E;
+	double nu = af_params->nu;
+	double lambda = E*nu/(1 - sqr(nu));
+	double mu = E*(1.0 - nu)/(1 - sqr(nu));
+
+	printf("Young's Modulus = %f  Poisson Ratio = %f\n",E,nu);
+	printf("lambda = %f  mu = %f\n\n",lambda,mu);
+
+	/* mark all side to negative stiffness */
+	intfc_surface_loop(intfc,s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf_tri_loop(*s,tri)
+	    {
+		for (i = 0; i < 3; ++i)
+		    tri->k[i] = -1.0;
+	    }
+	}
+
+	/* assign tensile and angular stiffness to every side */
+	intfc_surface_loop(intfc,s)
+        {
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+            surf_tri_loop(*s,tri)
+            {
+		setTriSpringConstant(front,tri,lambda,mu);
+            }
+        }
+
+	/* statistics & limit setting of tensile stiffness*/
+	double limit_percent = af_params->cut_limit;
+	setSpringConstantToLimit(front,limit_percent);
+	//clean_up(0);
+}	/* end setSpringConstant */
+
+static void setSpringConstantToLimit(
+	Front 	*front,
+	double	limit_percent)
+{
+	char *outname = OutName(front);
+	INTERFACE *intfc = front->interf;
+	SURFACE **s;
+	TRI *tri;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *t_stiff = NULL;
+	int num_sides = 0;
+	int cut_limit = 0;
+	double t_min, t_max, dk;
+	const int nbins = 20;
+	int pdf[nbins];
+	int i,j;
+	char tensile_k_raw_name[200];
+	char tensile_k_dis_name[200];
+	sprintf(tensile_k_raw_name,"%s/tensile_stiff_raw.txt",outname);
+	sprintf(tensile_k_dis_name,"%s/tensile_stiff_dis.xg",outname);
+	FILE *t_raw = fopen(tensile_k_raw_name,"w");
+	FILE *t_dis = fopen(tensile_k_dis_name,"w");
+
+	/* count number of sides and allocate memory */
+	intfc_surface_loop(intfc,s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf_tri_loop(*s,tri)
+	    {
+		for (i = 0; i < 3; ++i)
+		    num_sides++;
+	    }
+	}
+
+	FT_VectorMemoryAlloc((POINTER*)&t_stiff,num_sides,sizeof(double));
+
+	/* initialize t_stiff and sort it */
+	j = 0;
+	intfc_surface_loop(intfc,s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf_tri_loop(*s,tri)
+	    {
+		for (i = 0; i < 3; ++i)
+		    t_stiff[j++] = tri->k[i];
+	    }
+	}
+
+	for (i = 0; i < num_sides-1; i++)
+	for (j = i+1; j < num_sides; j++)
+	{
+	    if (t_stiff[i] > t_stiff[j])
+	    {
+		double tmp;
+		tmp = t_stiff[i];
+		t_stiff[i] = t_stiff[j];
+		t_stiff[j] = tmp;
+	    }
+	}
+
+	/* find cut_limit and reset all huge t_stiff to the limit */
+	cut_limit = (int)(num_sides*limit_percent);
+	t_min = t_stiff[0];
+	t_max = t_stiff[cut_limit-1];
+	printf("min tensile stiffness is %f\n",t_min);
+	printf("max tensile stiffness is %f\n",t_max);
+
+	af_params->max_k = t_max;
+
+	intfc_surface_loop(intfc,s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf_tri_loop(*s,tri)
+	    {
+		for (i = 0; i < 3; ++i)
+		    if (tri->k[i] > t_max)
+		    	tri->k[i] = t_max;
+	    }
+	}
+	for (i = 0; i < num_sides; i++)
+	{
+	    if (t_stiff[i] > t_max)
+		t_stiff[i] = t_max;
+	}
+
+	/* statistics results and output */
+	dk = (t_max - t_min) / nbins;
+	for (i = 0; i < nbins; i++)
+		pdf[i] = 0;
+	for (i = 0; i < num_sides; i++)
+	{
+	    fprintf(t_raw,"%f\n",t_stiff[i]);
+	    for (j = 0; j < nbins; j++)
+	    {
+		if (t_stiff[i] >= t_min+j*dk && t_stiff[i] < t_min+(j+1)*dk)
+		{
+		    pdf[j] += 1;
+		    break;
+		}
+	    }
+	    if (fabs(t_stiff[i] - t_max) < 1E-6)
+	    {
+		pdf[nbins-1] += 1;
+	    }
+	}
+	for (i = 0; i < nbins; i++)
+	    fprintf(t_dis,"%f %d\n",t_min+i*dk,pdf[i]);
+
+	fclose(t_raw);
+	fclose(t_dis);
+
+	double *g_stiff = NULL;
+        char gamma_k_raw_name[200];
+        char gamma_k_dis_name[200];
+        sprintf(gamma_k_raw_name,"%s/angular_stiff_raw.txt",outname);
+        sprintf(gamma_k_dis_name,"%s/angular_stiff_dis.xg",outname);
+        FILE *g_raw = fopen(gamma_k_raw_name,"w");
+        FILE *g_dis = fopen(gamma_k_dis_name,"w");
+
+	FT_VectorMemoryAlloc((POINTER*)&g_stiff,num_sides,sizeof(double));
+
+	/* initialize g_stiff and sort it */
+        j = 0;
+        intfc_surface_loop(intfc,s)
+        {
+            if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+            surf_tri_loop(*s,tri)
+            {
+                for (i = 0; i < 3; ++i)
+                    g_stiff[j++] = tri->gam[i];
+            }
+        }
+
+        for (i = 0; i < num_sides-1; i++)
+        for (j = i+1; j < num_sides; j++)
+        {
+            if (g_stiff[i] > g_stiff[j])
+            {
+                double tmp;
+                tmp = g_stiff[i];
+                g_stiff[i] = g_stiff[j];
+                g_stiff[j] = tmp;
+            }
+        }
+
+        t_min = g_stiff[num_sides-cut_limit];
+        t_max = g_stiff[cut_limit-1];
+        printf("min angular stiffness is %f\n",t_min);
+        printf("max angular stiffness is %f\n",t_max);
+
+	/* reset all huge g_stiff to the limit */
+        intfc_surface_loop(intfc,s)
+        {
+            if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+            surf_tri_loop(*s,tri)
+            {
+                for (i = 0; i < 3; ++i)
+		{
+                    if (tri->gam[i] > t_max)
+                        tri->gam[i] = t_max;
+		    else if (tri->gam[i] < t_min)
+			tri->gam[i] = t_min;
+		} 
+            }
+        }
+        for (i = 0; i < num_sides; i++)
+        {
+            if (g_stiff[i] > t_max)
+                g_stiff[i] = t_max;
+            else if (g_stiff[i] < t_min)
+                g_stiff[i] = t_min;
+        }
+
+        /* g_stiff statistics results and output */
+        dk = (t_max - t_min) / nbins;
+        for (i = 0; i < nbins; i++)
+                pdf[i] = 0;
+        for (i = 0; i < num_sides; i++)
+        {
+            fprintf(g_raw,"%f\n",g_stiff[i]);
+            for (j = 0; j < nbins; j++)
+            {
+                if (g_stiff[i] >= t_min+j*dk && g_stiff[i] < t_min+(j+1)*dk)
+                {
+                    pdf[j] += 1;
+                    break;
+                }
+            }
+            if (fabs(g_stiff[i] - t_max) < 1E-6)
+            {
+                pdf[nbins-1] += 1;
+            }
+        }
+        for (i = 0; i < nbins; i++)
+            fprintf(g_dis,"%f %d\n",t_min+i*dk,pdf[i]);
+
+        fclose(g_raw);
+        fclose(g_dis);
+
+	FT_FreeThese(2,t_stiff,g_stiff);
+}	/* end setSpringConstantToLimit */
+
+static void setTriSpringConstant(
+	Front 	*front,
+	TRI 	*tri,
+	double lambda,
+	double mu)
+{
+	INTERFACE *intfc = front->interf;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	TRI *nbtri;
+	double angle[3];
+	double nbang[3];
+	double k_1, k_2;
+	int i, j;
+
+	sidesToAngles(tri->side_length0,angle);
+	for (i = 0; i < 3; i++)
+	{
+	    if (tri->k[i] != -1)
+		continue;
+	    k_1 = ang2K(angle[i],angle[(i+1)%3],lambda,mu);
+	    tri->gam[i] = ang2Gamma(angle[(i+1)%3],angle[(i+2)%3],lambda,mu);
+
+	    /* if side is boundary, double or not the stiffness and return */
+	    if (is_side_bdry(tri,i))
+	    {
+		tri->k[i] = k_1;
+		//tri->k[i] = 2*k_1;
+	    	if (af_params->uni_k == YES)
+		{
+		    tri->k[i] = af_params->ks;
+		    tri->gam[i] = 0;
+		}
+		continue;
+	    }
+	
+	    /* find neighbor tri and side num */
+	    nbtri = Tri_on_side(tri,i);
+	    for (j = 0; j < 3; ++j)
+	    {
+		if (Tri_on_side(nbtri,j) == tri)
+		    break;
+	    }
+
+	    sidesToAngles(nbtri->side_length0,nbang);
+	    k_2 = ang2K(nbang[j],nbang[(j+1)%3],lambda,mu);
+
+	    tri->k[i] = k_1 + k_2;
+	    nbtri->gam[j] = ang2Gamma(nbang[(j+1)%3],
+					nbang[(j+2)%3],lambda,mu);
+
+	    if (af_params->uni_k == YES)
+	    {
+		tri->k[i] = af_params->ks;
+		tri->gam[i] = 0;
+		nbtri->gam[j] = 0;
+	    }
+	    nbtri->k[j] = tri->k[i];
+
+	}
+}	/* end setTriSpringConstant */
+
+static double ang2K(
+	double ang_1,
+	double ang_2,
+	double lambda,
+	double mu)
+{
+	double cot_1 = cos(ang_1)/sin(ang_1);
+	double cot_2 = cos(ang_2)/sin(ang_2);
+	double cot_3 = cos(ang_1+ang_2)/sin(ang_1+ang_2);
+	double tensile_k = (cot_1 + cot_2)*(2*(lambda+mu)*(cot_3*cot_3)+mu)/4.0;
+	return tensile_k;
+}	/* end ang2K */
+	
+static double ang2Gamma(
+	double ang_1,
+	double ang_2,
+	double lambda,
+	double mu)
+{
+	double cot_1 = cos(ang_1)/sin(ang_1);
+	double cot_2 = cos(ang_2)/sin(ang_2);
+	double sin_3 = sin(ang_1+ang_2);	
+	double gamma = (2*(lambda+mu)*cot_1*cot_2-mu)/4.0/sin_3;
+	return 0;
+//	return gamma;
+}	/* end ang2Gamma */
+
+static void sidesToAngles(
+	double 	*side,
+	double 	*ang)
+{
+	ang[0] = acos((side[0]*side[0] + side[2]*side[2] - side[1]*side[1])/ 
+			(2*side[0]*side[2]));
+	ang[1] = acos((side[1]*side[1] + side[0]*side[0] - side[2]*side[2])/ 
+			(2*side[1]*side[0]));
+	ang[2] = acos((side[2]*side[2] + side[1]*side[1] - side[0]*side[0])/ 
+			(2*side[2]*side[1]));
+}	/* end sidesToAngles */
+
