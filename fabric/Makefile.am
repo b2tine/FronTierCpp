@@ -32,6 +32,7 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 noinst_PROGRAMS = fabric_Cplus \
 				  cgal_intfc_test \
+				  spring \
 				  fabric_Fortn
 
 				  
@@ -40,6 +41,9 @@ fabric_Cplus_LDADD = $(builddir)/objs/libfabric.la
 
 cgal_intfc_test_SOURCES = cgal_intfc_test.cpp
 cgal_intfc_test_LDADD = $(builddir)/objs/libfabric.la
+
+spring_SOURCES = spring.cpp
+spring_LDADD = $(builddir)/objs/libfabric.la
 
 
 
