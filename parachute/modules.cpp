@@ -101,7 +101,7 @@ extern void initParachuteModules(Front *front)
 	int i,num_canopy;
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
-	static RG_PARAMS rgb_params;
+    RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
         boolean complex_set = NO;
 
 	if (debugging("trace"))
@@ -119,6 +119,7 @@ extern void initParachuteModules(Front *front)
         if (num_canopy == 1)
         {
             char string[100];
+            //TODO: when is this used?
 	    CursorAfterStringOpt(infile,"Enter yes for complex connection:");
             fscanf(infile,"%s",string);
             printf("%s\n",string);
@@ -137,7 +138,9 @@ extern void initParachuteModules(Front *front)
 
 	if (debugging("trace"))
 	{
-	    gview_plot_interface("ginit",front->interf);
+        std::string gvdir = OutName(front);
+        gvdir += "/ginit";
+	    gview_plot_interface(gvdir.c_str(),front->interf);
 	    (void) printf("Leaving initParachuteModules()\n");
 	}
 }	/* end initParachuteModules */
@@ -145,22 +148,32 @@ extern void initParachuteModules(Front *front)
 extern void initParachuteDefault(
 	Front *front)
 {
+	IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	FILE *infile = fopen(InName(front),"r");
-        char string[100];
-	af_params->is_parachute_system = YES;
+    char string[100];
+
+    af_params->is_parachute_system = YES;
 	af_params->num_opt_round = 20;
-        af_params->spring_model = MODEL1;
+    af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
-        af_params->attach_gores = NO;
-	if (CursorAfterStringOpt(infile,
+    af_params->attach_gores = NO;
+    if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))
-        {
-            fscanf(infile,"%s",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->attach_gores = YES;
-        }
-        fclose(infile);
+    {
+        fscanf(infile,"%s",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->attach_gores = YES;
+    }
+    
+    af_params->fsi_startstep = 5;
+    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
+    {
+        fscanf(infile,"%d",&af_params->fsi_startstep);
+    }
+    iF_params->fsi_startstep = af_params->fsi_startstep;
+
+    fclose(infile);
 }	/* end initParachuteDefault */
 
 static void initSingleModule(

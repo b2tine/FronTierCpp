@@ -97,7 +97,6 @@ start_loop:
 
 extern void initParachuteModules(Front *front)
 {
-	int i,num_canopy;
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
 	static RG_PARAMS *rgb_params;
@@ -113,7 +112,8 @@ extern void initParachuteModules(Front *front)
         FT_ScalarMemoryAlloc((POINTER*)&rgb_params,sizeof(RG_PARAMS));
 	rgb_init(front,rgb_params);
 
-	CursorAfterString(infile,"Enter number of canopy surfaces:");
+	int num_canopy = 0;
+	CursorAfterStringOpt(infile,"Enter number of canopy surfaces:");
         fscanf(infile,"%d",&num_canopy);
         (void) printf("%d\n",num_canopy);
         if (num_canopy == 1)
@@ -128,13 +128,16 @@ extern void initParachuteModules(Front *front)
                     complex_set = YES;
             }
         }
+
 	fclose(infile);
 
 	if (num_canopy == 1 && !complex_set)
 	    initSingleModule(front);
-	else
-	    initMultiModule(front,num_canopy);
+	else if (num_canopy > 1)
+        initMultiModule(front,num_canopy);
 
+    //TODO: divideAtGoreBdry() shouldn't be
+    //      called if attach_gores == false
 	divideAtGoreBdry(front->interf);
 	setCanopyBodyIndex(front);
 
@@ -178,8 +181,8 @@ static void initSingleModule(
 	CgalCanopySurface(infile,front,&surf);
 	fclose(infile);
 
-        if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
-	    InstallNewLoadNode(front,1);
+    if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
+        InstallNewLoadNode(front,1);
 }	/* end initSingleModule */
 
 static void initMultiModule(

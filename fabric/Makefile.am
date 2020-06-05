@@ -27,25 +27,37 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+
+
 noinst_PROGRAMS = fabric_Cplus \
-				  fabric_Fortn \
-				  cgal_intfc_test
+				  cgal_intfc_test \
+				  fabric_Fortn
 
 				  
 fabric_Cplus_SOURCES = fabric_Cplus.cpp
 fabric_Cplus_LDADD = $(builddir)/objs/libfabric.la
-
-fabric_Fortn_SOURCES = fabric_Fortn.F90
-fabric_Fortn_LDADD = $(builddir)/objs/libfabric.la -lstdc++
 
 cgal_intfc_test_SOURCES = cgal_intfc_test.cpp
 cgal_intfc_test_LDADD = $(builddir)/objs/libfabric.la
 
 
 
+fabric_Fortn_SOURCES = fortran_api.F90 \
+					   fabric_Fortn.F90
+
+fabric_Fortn_LDADD = $(builddir)/objs/libfabric.la -lstdc++
+
+%.o %.mod: %.F90
+	$(AM_V_PPFC)$(PPFCCOMPILE) -c $<
+
+fabric_Fortn.o: fortran_api.mod
+
+clean-local:
+	$(RM) *.mod
+
+
+
 tagsfile:
 	ctags *.h *.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
-
-
-

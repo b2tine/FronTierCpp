@@ -27,6 +27,7 @@ endif
 
 if CGAL_ARMA_OPT
 MAYBE_FABRIC = fabric
+MAYBE_CFABRIC = cfabric
 endif
 
 
@@ -43,6 +44,8 @@ MAYBE_FRONTWRAPPER = FrontWrapper
 endif
 
 SUBDIRS = lib \
+		  weno \
+		  timeSeries \
 		  cFluid \
 		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \
@@ -56,6 +59,7 @@ SUBDIRS = lib \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_FABRIC) \
 		  $(MAYBE_ANGSTIFF_SPRMODEL) \
+		  $(MAYBE_CFABRIC) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
 		  $(MAYBE_FRONTWRAPPER)

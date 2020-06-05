@@ -20,7 +20,7 @@ AM_PROG_AR
 LT_INIT([disable-shared])
 
 #Check for compilers
-AC_PROG_CXX([mpic++ mpicxx])
+AC_PROG_CXX
 AC_PROG_FC
 AC_FC_SRCEXT([F90])
 AC_FC_LIBRARY_LDFLAGS
@@ -253,17 +253,17 @@ AC_ARG_WITH([cgal-lib],[AS_HELP_STRING([--with-cgal-lib=path],
             [specify location of libraries])],
             [cgal_lib=${withval}],[cgal_lib=no])
 
-cgal_libflags="-lCGAL_Core -lCGAL_ImageIO -lCGAL -lgmp -lmpfr"
+cgal_libflags="-lCGAL_Core -lCGAL -lgmp -lmpfr"
 
 with_cgal=no
 AS_IF([test "x${cgal_dir}" != xno],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
-       cgallib="-L${cgal_dir}/lib ${cgal_libflags}"],
+       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}lib -Wl,-rpath=${cgal_dir}/lib"],
        [test "x${cgal_inc}" != xno && test "x${cgal_lib}" != xno],
        [with_cgal=yes
         cgalinc="-I${cgal_inc} -frounding-math"
-        cgallib="-L${cgal_lib} ${cgal_libflags}"])
+        cgallib="-L${cgal_lib} ${cgal_libflags} -Wl,-rpath-link=${cgal_lib} -Wl,-rpath=${cgal_lib}"])
 
 AC_SUBST(CGAL_CFLAGS,${cgalinc})
 AC_SUBST(CGAL_LIBS,${cgallib})
@@ -377,13 +377,15 @@ AS_IF([test $with_nlopt = yes],
 
 
 
-#check if fabric, airfoil and Collsion should be built
+#check if fabric, cfabric, airfoil and Collsion should be built
 AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AC_CONFIG_FILES([fabric/Makefile
-                             fabric/objs/Makefile])])
+                             fabric/objs/Makefile
+                             cfabric/Makefile
+                             cfabric/objs/Makefile])])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
@@ -459,6 +461,8 @@ AC_CONFIG_FILES([Makefile
                  src/front/Makefile
                  src/front/objs/Makefile
                  src/front/tests/Makefile
+                 weno/Makefile
+                 timeSeries/Makefile
                  cFluid/Makefile
                  cFluid/objs/Makefile
                  cFluid/tests/Makefile

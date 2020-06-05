@@ -1,5 +1,5 @@
-#ifndef AIRFOIL_H
-#define AIRFOIL_H
+#ifndef FABRIC_H
+#define FABRIC_H
 
 #include <FronTier.h>
 
@@ -7,7 +7,7 @@
 #include "state.h"
 #include "rigidbody.h"
 
-#include "airfoil_sv.h"
+#include "fabric_sv.h"
 
 #include <map>
 #include <cassert>
@@ -89,18 +89,23 @@ struct AF_PARAMS
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
-        double gore_len_fac;
-        double gravity[MAXD];		/* gravitational force */
+    bool strings_present {false};
+    bool gores_present {false};
+
+    double gore_len_fac;
+    double gravity[MAXD];		/* gravitational force */
 	double payload;
-	double ks;			/* spring constant of surface */
-	double kl;			/* spring constant of string curves */
-	double kg;                      /* spring constant of gore curves */
-	double lambda_s;		/* damping/friction factor of surface */
-	double lambda_l;		/* damping/friction factor of string curves */
+	double ks {5000.0};	 /* spring constant of surface */
+	double kl {50000.0}; /* spring constant of string curves */
+	double kg {0.0};     /*(disabled) spring constant of gore curves */
+    double mu_s;         /* fabric static friction consant */
+    double mu_l;         /* string curves static friction consant */
+	double lambda_s;	 /* damping factor of surface */
+	double lambda_l;	 /* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
-	double m_s;			/* point mass of surface */
-	double m_l;			/* point mass of string curves */
-	double m_g;                     /* point mass of gore curves */
+	double m_s {0.001};	 /* point mass of surface */
+	double m_l {0.0015}; /* point mass of string curves */
+	double m_g {0.0};       /*(disabled) point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
         double total_gore_mass;         /* Total mass of gore */
@@ -108,12 +113,11 @@ struct AF_PARAMS
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double gamma;			/* canopy porosity */
 	double area_dens;		/* canopy area density */
-	int    n_sub;			/* number of sub-steps for tan prop */
-	int    num_opt_round;		/* number of mesh optimizations rounds*/
-	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */
+	int n_sub;			/* number of sub-steps for tan prop */
+	int num_opt_round;		/* number of mesh optimizations rounds*/
+	int num_smooth_layers;	/* number of layer to smooth high frequency velocity */
 	int    num_np;			/* number of master node to run spring model */
     
-    //TODO: Why has this changed to fixed sized array?
 	int    node_id[10];		/* master node id */
 	
         double break_strings_time;	/* time to break some strings */
@@ -127,9 +131,42 @@ struct AF_PARAMS
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */
     
-    double fabric_thickness {1.0e-03};  //for collision handling
+    //for collision handling
+    double fabric_eps {1.0e-06};
+    double fabric_thickness {0.001};
+    
+    double string_eps {4.0e-06};
+    double string_thickness {0.004};
+
+    double strain_limit {0.1};
+    double strainrate_limit {0.1};
+
     double vol_diff {0.0};              //for refitting AABBTree
 }; 
+
+struct ELASTIC_SET
+{
+	Front *front;
+    NODE *load_node;
+	SURFACE *surfs[100];
+	CURVE *curves[1000];
+	NODE *nodes[1000];
+	int num_surfs;
+	int num_curves;
+	int num_nodes;
+	double ks;
+	double kl;
+	double kg;
+	double lambda_s;
+	double lambda_l;
+	double lambda_g;
+	double m_s;
+	double m_l;
+	double m_g;
+	int num_verts;		/* Total number of spring-mass points */
+	double dt_tol;
+	double dt;
+};
 
 
 /*	airfoil.cpp functions */
@@ -228,37 +265,6 @@ struct REGISTERED_PTS
 	int *global_ids;
 };
 
-struct ELASTIC_SET
-{
-	Front *front;
-    NODE *load_node;
-	SURFACE *surfs[100];
-	CURVE *curves[1000];
-	NODE *nodes[1000];
-	int num_surfs;
-	int num_curves;
-	int num_nodes;
-	double ks;
-	double kl;
-	double kg;
-	double lambda_s;
-	double lambda_l;
-	double lambda_g;
-	double m_s;
-	double m_l;
-	double m_g;
-	int num_verts;		/* Total number of spring-mass points */
-	double dt_tol;
-	double dt;
-};
-
-//NOTE: these never had a definition
-/*
-void read_movie_options(char*,F_PARAMS*);
-void liquid_point_propagate(Front*,POINTER,POINT*,POINT*,
-                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-*/
-
 // afinit.cpp
 extern void read_Fparams(char*,F_PARAMS*);
 extern void read_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
@@ -292,6 +298,7 @@ extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
 extern void second_order_elastic_surf_propagate(Front*,double);
 extern void set_equilibrium_mesh(Front*);
 extern void print_airfoil_stat(Front*,char*);
+extern void print_strings(Front*,char*);
 extern void fixed_length_tan_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void fourth_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
@@ -330,7 +337,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,double);
+extern void setSpecialNodeForce(Front*,INTERFACE*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);
 extern void set_unequal_strings(Front*);
@@ -409,6 +416,9 @@ extern F_BASIC_DATA *SMM_GetBasicData();
 extern void SMM_InitCpp(int,char**);
 extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic);
 
+extern void SMM_StartUpStep();
+extern void SMM_TimeMarch();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -419,9 +429,10 @@ extern void SMM_InitModules();
 extern void SMM_InitPropagator();
 extern void SMM_InitSpringMassParams();
 extern void SMM_InitTestVelFunc();
-extern void SMM_InitTestTimeContrl();
+extern void SMM_InitTestTimeControl();
 extern void SMM_Plot();
 extern void SMM_Save();
+extern void SMM_Driver();
 extern void SMM_TestDriver();
 extern void SMM_CleanUp(int exitcode = 0);
 

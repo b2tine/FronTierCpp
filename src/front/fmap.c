@@ -64,10 +64,13 @@ EXPORT	void FT_Propagate(
             }
 	    FT_MakeGridIntfc(front);
 	}
-	FrontAdvance(front->dt,&dt_frac,front,&newfront,(POINTER)NULL);
 
-        assign_interface_and_free_front(front,newfront);
-	if (front->grid_intfc != NULL)
+    FrontAdvance(front->dt,&dt_frac,front,&newfront,(POINTER)NULL);
+ 
+    //assign newfront to front
+    assign_interface_and_free_front(front,newfront);
+
+    if (front->grid_intfc != NULL)
 	{
 	    if (TwoStepIntfc(front) == YES)
 	    {
@@ -125,29 +128,30 @@ EXPORT	int FrontAdvance(
 	*dt_frac = 1.0;
 	front->dt_frac = dt_frac;
 	*front->max_scaled_propagation = 0.0;
-        status = advance_front(front->dt,dt_frac,front,newfront,wave);
+        
+    status = advance_front(front->dt,dt_frac,front,newfront,wave);
 
-        count = 0;
-        while (status == MODIFY_TIME_STEP || status == REPEAT_TIME_STEP)
-        {
-	    (void) printf("\ndt_frac = %f reduced dt = %f\n",
-			*dt_frac,(*dt_frac)*front->dt);
-	    if (status == MODIFY_TIME_STEP)
-            	front->dt = (*dt_frac)*start_dt;
-	    start_dt = front->dt;
-	    *front->max_scaled_propagation = 0.0;
-	    /* For 2D: advance_front2d()
-	       For 3D: advance_front3d_tracking_control()
-	    */
-            status = advance_front(front->dt,dt_frac,front,newfront,wave);
-            count++;
-            if (count > 15) 
-	    {
-		screen("ERROR: in FrontAdvance() modified step 15 times\n");
-	    	clean_up(ERROR);
-	    }
-	    printf("Final front->dt = %f\n",front->dt);
-        }
+    count = 0;
+    while (status == MODIFY_TIME_STEP || status == REPEAT_TIME_STEP)
+    {
+    (void) printf("\ndt_frac = %f reduced dt = %f\n",
+        *dt_frac,(*dt_frac)*front->dt);
+    if (status == MODIFY_TIME_STEP)
+            front->dt = (*dt_frac)*start_dt;
+    start_dt = front->dt;
+    *front->max_scaled_propagation = 0.0;
+    /* For 2D: advance_front2d()
+       For 3D: advance_front3d_tracking_control()
+    */
+        status = advance_front(front->dt,dt_frac,front,newfront,wave);
+        count++;
+        if (count > 15) 
+    {
+    screen("ERROR: in FrontAdvance() modified step 15 times\n");
+        clean_up(ERROR);
+    }
+    printf("Final front->dt = %f\n",front->dt);
+    }
 }	/* end FrontAdvance */
 
 EXPORT	double FrontHypTimeStep(
@@ -3280,12 +3284,12 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 EXPORT void FT_ResetTime(Front *front)
 {
 	front->time = 0.0;
-        front->dt = 0.0;
-        front->step = 0;
+    front->dt = 0.0;
+    front->step = 0;
 	front->im = front->ip = 0;
-        front->is_print_time = NO;
-        front->is_movie_time = NO;
-        front->time_limit_reached = NO;
+    front->is_print_time = NO;
+    front->is_movie_time = NO;
+    front->time_limit_reached = NO;
 }	/* end FT_ResetTime */
 
 EXPORT void FT_SetOutputCounter(Front *front)

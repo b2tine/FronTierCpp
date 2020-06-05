@@ -661,6 +661,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	double *pres = field->pres;
 	double *vort = field->vort;
 	int symmetry[MAXD];
+
+    //TODO: what about pressure and velocity?
 	
 	for (i = imin; i <= imax; ++i)
 	for (j = jmin; j <= jmax; ++j)
@@ -671,6 +673,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	    else
 		vort[index] = 0.0;
 	}
+    //TODO: compare to cFluid G_CARTESIAN::copyMeshStates()
 	symmetry[0] = symmetry[1] = ODD;
 	FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
 }	/* end copyMeshStates */

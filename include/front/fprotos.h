@@ -747,6 +747,7 @@ IMPORT  void    average_btris(TRI*,SURFACE*,TRI*,SURFACE*);
 	/* fscat3d3.c*/
 IMPORT	boolean	f_intfc_communication3d3(Front*);
 IMPORT 	INTERFACE *collect_hyper_surface(Front*,int*,int);
+IMPORT 	INTERFACE *collect_hyper_surfaces(Front*,int*,int*,int);
 
 	/* fstate.c*/
 IMPORT	ConstantFlowRegion	*SetConstantFlowRegion(COMPONENT,Locstate,

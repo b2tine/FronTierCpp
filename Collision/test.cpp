@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 static void propagation_driver(Front *front)
 {
     double CFL;
-	CollisionSolver *collision_solver = new CollisionSolver3d();
+	CollisionSolver3d *collision_solver = new CollisionSolver3d();
 
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
@@ -110,7 +110,7 @@ static void propagation_driver(Front *front)
 
         //collision detect and handling
         collision_solver->assembleFromInterface(front->interf,front->dt);
-        collision_solver->setFrictionConstant(0.0);
+        collision_solver->setFabricFrictionConstant(0.0);
         collision_solver->resolveCollision();
 
         FT_AddTimeStepToCounter(front);

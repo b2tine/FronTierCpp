@@ -21,6 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
+
 #include "fabric.h"
 
 static void naturalStressOfTri(TRI*,double);
@@ -45,6 +46,7 @@ void printAfExtraData(
 	CURVE **c;
 	NODE **n;
 	BOND *b;
+    TRI *t;
 
 	sprintf(filename,"%s/state.ts%s",out_name,
                         right_flush(front->step,7));
@@ -139,28 +141,30 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
-	fprintf(outfile,"\nSurface extra data:\n");
-        intfc_surface_loop(intfc,s) 
-        {
-            int num_pts;
-            REGISTERED_PTS *registered_pts;
 
-            if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                wave_type(*s) != ELASTIC_STRING)
-                continue;
-            if ((*s)->extra == NULL)
-                num_pts = 0;
-            else
-            {
-                registered_pts = (REGISTERED_PTS*)(*s)->extra;
-                num_pts = registered_pts->num_pts;
-            }
-            fprintf(outfile,"number of registered points = %d\n",num_pts);
-            for (i = 0; i < num_pts; ++i)
-                fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+	fprintf(outfile,"\nSurface extra data:\n");
+    intfc_surface_loop(intfc,s) 
+    {
+        int num_pts;
+        REGISTERED_PTS *registered_pts;
+
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING)
+            continue;
+        if ((*s)->extra == NULL)
+            num_pts = 0;
+        else
+        {
+            registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            num_pts = registered_pts->num_pts;
         }
-	fprintf(outfile,"\nCurve extra data:\n");
-        intfc_curve_loop(intfc,c)
+        fprintf(outfile,"number of registered points = %d\n",num_pts);
+        for (i = 0; i < num_pts; ++i)
+            fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+    }
+	
+    fprintf(outfile,"\nCurve extra data:\n");
+    intfc_curve_loop(intfc,c)
 	{
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
@@ -174,8 +178,9 @@ void printAfExtraData(
                 fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
 	}
-	fprintf(outfile,"\nNode extra data:\n");
-        intfc_node_loop(intfc,n)
+	
+    fprintf(outfile,"\nNode extra data:\n");
+    intfc_node_loop(intfc,n)
 	{
 	    AF_NODE_EXTRA *n_params = (AF_NODE_EXTRA*)(*n)->extra;
 	    if (n_params == NULL)
@@ -186,11 +191,14 @@ void printAfExtraData(
                 fprintf(outfile,"af_node_type = %d\n",n_params->af_node_type);
 	    }
 	}
-	fprintf(outfile,"\nGlobal index of points\n");
+	
+    fprintf(outfile,"\nGlobal index of points\n");
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-            fprintf(outfile,"%ld\n",Gindex(p));
-	for (c = intfc->curves; c && *c; ++c)
+    while (next_point(intfc,&p,&hse,&hs))
+        fprintf(outfile,"%ld\n",Gindex(p));
+    
+    //TODO: why are these extra traversals needed for global point index?
+    for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
             fprintf(outfile,"%ld\n",Gindex(p));
@@ -200,11 +208,22 @@ void printAfExtraData(
             	fprintf(outfile,"%ld\n",Gindex(p));
 	    }
 	}
-        intfc_node_loop(intfc,n)
+
+    intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
             fprintf(outfile,"%ld\n",Gindex(p));
 	}
+
+	fprintf(outfile,"\nGlobal index of triangles\n");
+    intfc_surface_loop(intfc,s)
+    {
+        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
+        surf_tri_loop(*s,t)
+        {
+            fprintf(outfile,"%ld\n",Gindex(t));
+        }
+    }
 
 	fprintf(outfile,"\nGlobal index of curves\n");
 	for (c = intfc->curves; c && *c; ++c)
@@ -213,7 +232,8 @@ void printAfExtraData(
 	fprintf(outfile,"\nGlobal index of surfaces\n");
 	for (s = intfc->surfaces; s && *s; ++s)
 	    fprintf(outfile,"%d\n",Gindex(*s));
-	fprintf(outfile,"\nPoint periodic shift\n");
+	
+    fprintf(outfile,"\nPoint periodic shift\n");
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
 	{
@@ -232,15 +252,16 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	    }
 	}
-        intfc_node_loop(intfc,n)
+       
+    intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
             fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
 				p->pshift[1],p->pshift[2]);
 	}
 
-        FT_WriteFrontState(outfile,front);
-	fclose(outfile);
+    FT_WriteFrontState(outfile,front);
+    fclose(outfile);
 }	/* end printAfExtraData */
 
 void readAfExtraData(
@@ -259,8 +280,11 @@ void readAfExtraData(
 	CURVE **c;
 	NODE **n;
 	BOND *b;
+    TRI *t;
+
 	char string[100];
 	long max_point_gindex = 0;
+	long max_tri_gindex = 0;
 
         sprintf(filename,"%s-afdata",restart_name);
         infile = fopen(filename,"r");
@@ -351,27 +375,29 @@ void readAfExtraData(
 	    fscanf(infile,"\n");
 	}
 	next_output_line_containing_string(infile,"Surface extra data:");
-        intfc_surface_loop(intfc,s)
+    intfc_surface_loop(intfc,s)
+    {
+        int num_pts;
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING)
+            continue;
+    
+        fgetstring(infile,"number of registered points = ");
+        fscanf(infile,"%d",&num_pts);
+        if (num_pts != 0)
         {
-            int num_pts;
-            if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                wave_type(*s) != ELASTIC_STRING)
-                continue;
-	    fgetstring(infile,"number of registered points = ");
-            fscanf(infile,"%d",&num_pts);
-            if (num_pts != 0)
-            {
-                static REGISTERED_PTS *registered_pts;
-                FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                            sizeof(REGISTERED_PTS));
-                FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
-                            num_pts,sizeof(int));
-                (*s)->extra = (REGISTERED_PTS*)registered_pts;
-                registered_pts->num_pts = num_pts;
-                for (i = 0; i < num_pts; ++i)
-                    fscanf(infile,"%d",registered_pts->global_ids+i);
-            }
+            static REGISTERED_PTS *registered_pts;
+            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                        sizeof(REGISTERED_PTS));
+            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                        num_pts,sizeof(int));
+            (*s)->extra = (REGISTERED_PTS*)registered_pts;
+            registered_pts->num_pts = num_pts;
+            for (i = 0; i < num_pts; ++i)
+                fscanf(infile,"%d",registered_pts->global_ids+i);
         }
+    }
+
 	next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
@@ -407,18 +433,22 @@ void readAfExtraData(
 	    (*n)->extra = (POINTER)n_params;
 	    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
-	if (fgetstring(infile,"Global index of points") == FUNCTION_FAILED)
+	
+    if (fgetstring(infile,"Global index of points") == FUNCTION_FAILED)
 	{
 	    (void) printf("String \"Global index of points\" not found\n");
 	    clean_up(ERROR);
 	}
-	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
+	
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
 	{
-            fscanf(infile,"%ld",&Gindex(p));
+        fscanf(infile,"%ld",&Gindex(p));
 	    if (max_point_gindex < Gindex(p))
-		max_point_gindex = Gindex(p);
+            max_point_gindex = Gindex(p);
 	}
+
+    //TODO: why are these extra traversals needed for global point index?
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -433,16 +463,39 @@ void readAfExtraData(
 		    max_point_gindex = Gindex(p);
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+	
+    for (n = intfc->nodes; n && *n; ++n)
 	{
 	    p = (*n)->posn;
             fscanf(infile,"%ld",&Gindex(p));
 	    if (max_point_gindex < Gindex(p))
 		max_point_gindex = Gindex(p);
 	}
+
 	max_point_gindex++;
 	pp_global_lmax(&max_point_gindex,1);
 	intfc->max_point_gindex = max_point_gindex;
+
+	if (fgetstring(infile,"Global index of triangles") == FUNCTION_FAILED)
+	{
+	    (void) printf("String \"Global index of triangles\" not found\n");
+	    clean_up(ERROR);
+	}
+    
+    intfc_surface_loop(intfc,s)
+    {
+        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
+        surf_tri_loop(*s,t)
+        {
+            fscanf(infile,"%ld",&Gindex(t));
+            if (max_tri_gindex < Gindex(t))
+                max_tri_gindex = Gindex(t);
+        }
+    }
+
+	max_tri_gindex++;
+	pp_global_lmax(&max_tri_gindex,1);
+	intfc->max_tri_gindex = max_tri_gindex;
 
 	if (fgetstring(infile,"Global index of curves") == FUNCTION_FAILED)
 	{
@@ -485,8 +538,8 @@ void readAfExtraData(
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
 
-        FT_ReadFrontState(infile,front);
-        fclose(infile);
+    FT_ReadFrontState(infile,front);
+    fclose(infile);
 }	/* end readAfExtraData */
 
 void printHyperSurfQuality(

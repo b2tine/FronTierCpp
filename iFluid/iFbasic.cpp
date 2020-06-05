@@ -535,9 +535,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(14,field,array,source,diff_coeff,field->mu,
+		    FT_FreeThese(15,field,array,source,diff_coeff,field->mu,
 				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vel,
+				field->div_U,field->vel,field->vorticity,
 				field->grad_q,field->f_surf,domain_status);
 		}
 		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
@@ -558,6 +558,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,
+					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,3,size,
 					sizeof(double));
@@ -828,6 +830,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	switch (dim)
 	{
 	case 2:
+        //TODO: make optional CursorAfterStringOpt()
 	    CursorAfterString(infile,"Type y to make movie of pressure:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
@@ -898,6 +901,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	    }
 	    break;
 	case 3:
+        //TODO: make optional CursorAfterStringOpt()
 	    CursorAfterString(infile,"Type y to make yz cross section movie:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
@@ -974,13 +978,40 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 		}
 	    }
 	}
-	/* Added for vtk movie of vector field */
-	CursorAfterString(infile,"Type y to make vector velocity field movie:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'Y' || string[0] == 'y')
-	    FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
-	FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+
+    //TODO: make movies optional with input file
+	
+    if (dim != 1)
+    {
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make scalar pressure field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+        }
+	    if (CursorAfterStringOpt(infile,
+                    "Type y to make vector velocity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
+        }
+
+        if (dim == 3)
+        {
+            if (CursorAfterStringOpt(infile,
+                        "Type y to make vector velocity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vorticity);
+            }
+        }
+    }
 
 	fclose(infile);
 }	/* end initMovieVariables */
@@ -1489,11 +1520,17 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
+
 	if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
 
+    double* mu_t;
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == KEPSILON)
+        mu_t = computeMuOfKepsModel();
+
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);			
 	    comp  = cell_center[index].comp;
@@ -1503,12 +1540,55 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    status = FT_FindNearestIntfcPointInRange(front,comp,center,
 				NO_BOUNDARIES,point,t,&hse,&hs,range);
 
-	    for (l = 0; l < dim; ++l) force[l] = 0.0;
+	    if (iFparams->use_eddy_visc == YES)
+	    {
+            int icoords[MAXD];
+            icoords[0] = i;
+            icoords[1] = j;
+            mu[index] = 0.0;
+            switch (iFparams->eddy_visc_model)
+            {
+            case BALDWIN_LOMAX:
+                if (status == YES &&
+                (wave_type(hs) == NEUMANN_BOUNDARY ||
+                 wave_type(hs) == ELASTIC_BOUNDARY))
+                {
+                dist = distance_between_positions(center,point,dim);
+                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    first = NO;
+                }
+                break;
+            case MOIN:
+                mu[index] = computeMuOfMoinModel(icoords);
+                break;
+            case SMAGORINSKY:
+                mu[index] = computeMuofSmagorinskyModel(icoords); 
+                break;
+            case KEPSILON:
+                mu[index] = mu_t[index];
+                break;
+            default:
+                (void) printf("Unknown eddy viscosity model!\n");
+                clean_up(ERROR);
+            }
 
-	    if (status == YES && 
-		ifluid_comp(positive_component(hs)) &&
-		ifluid_comp(negative_component(hs)) &&
-		positive_component(hs) != negative_component(hs))
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] += m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] += m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+	    
+        }
+        else if (status == YES && 
+            ifluid_comp(positive_component(hs)) &&
+            ifluid_comp(negative_component(hs)) &&
+            positive_component(hs) != negative_component(hs))
 	    {
 		sign = (comp == m_comp[0]) ? -1 : 1;
 		D = smoothedDeltaFunction(center,point);
@@ -1516,69 +1596,31 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 		mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
 		rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
 		
-		if (m_sigma != 0.0 && D != 0.0)
-		{
-		    surfaceTension(center,hse,hs,force,m_sigma);
-		    for (l = 0; l < dim; ++l)
-		    {
-			force[l] /= -rho[index];
-			f_surf[l][index] = force[l];
-		    }
-		}
-	    }
-	    else if (iFparams->use_eddy_visc == YES)
-	    {
-		int icoords[MAXD];
-		icoords[0] = i;
-		icoords[1] = j;
-		mu[index] = 0.0;
-		switch (iFparams->eddy_visc_model)
-		{
-		case BALDWIN_LOMAX:
-		    if (status == YES &&
-			(wave_type(hs) == NEUMANN_BOUNDARY ||
-			 wave_type(hs) == ELASTIC_BOUNDARY))
-		    {
-			dist = distance_between_positions(center,point,dim);
-		    	mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
-		    	first = NO;
-		    }
-		    break;
-		case MOIN:
-		    mu[index] = computeMuOfMoinModel(icoords);
-		    break;
-		case SMAGORINSKY:
-		    mu[index] = computeMuofSmagorinskyModel(icoords); 
-		    break;
-		default:
-		    (void) printf("Unknown eddy viscosity model!\n");
-		    clean_up(ERROR);
-		}
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] += m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] += m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            if (m_sigma != 0.0 && D != 0.0)
+            {
+	            for (l = 0; l < dim; ++l) force[l] = 0.0;
+
+                surfaceTension(center,hse,hs,force,m_sigma);
+                for (l = 0; l < dim; ++l)
+                {
+                force[l] /= -rho[index];
+                f_surf[l][index] = force[l];
+                }
+            }
 	    }
 	    else
 	    {
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] = m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] = m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
 	    }
 	}
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -2244,6 +2286,8 @@ void Incompress_Solver_Smooth_Basis::initSampleVelocity(char *in_name)
         fclose(infile);
 }	/* end initSampleVelocity */
 
+//Compute force due to surface tension and eddy viscosity of
+//selected turbulence model.
 void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
@@ -2259,8 +2303,14 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
-	if (iFparams->use_eddy_visc)
+
+    if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
+
+    double* mu_t;
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == KEPSILON)
+        mu_t = computeMuOfKepsModel();
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
@@ -2320,6 +2370,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 		    break;
 		case SMAGORINSKY:
 		    mu[index] = computeMuofSmagorinskyModel(icoords);
+		    break;
+		case KEPSILON:
+		    mu[index] = mu_t[index];
 		    break;
 		default:
 		    (void) printf("Unknown eddy viscosity model!\n");
@@ -2772,6 +2825,87 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         int *icoords,
         double **field)
 {
+        switch (iFparams->num_scheme.ellip_method)
+        {
+        case SIMPLE_ELLIP:
+            return computeFieldPointDivSimple(icoords,field);
+        case DOUBLE_ELLIP:
+            return computeFieldPointDivDouble(icoords,field);
+        default:
+            printf("Elliptic Method Not Implemented\n");
+            clean_up(1);
+        }
+}       /* end computeFieldPointDiv */
+
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
+        int *icoords,
+        double **field)
+{
+	int icnb[MAXD];
+        int i,j,index,index_nb;
+        COMPONENT comp;
+	double div,u_edge[3][2];
+        double crx_coords[MAXD];
+        POINTER intfc_state;
+        HYPER_SURF *hs;
+	int status;
+        GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+	int idir,nb;
+	double u0,u_ref;
+
+	index = d_index(icoords,top_gmax,dim);
+        comp = top_comp[index];
+
+        if (!ifluid_comp(comp)) return 0.0;
+
+        for (idir = 0; idir < dim; idir++)
+        {
+            u0 = field[idir][index];
+            for (j = 0; j < dim; ++j)
+                icnb[j] = icoords[j];
+            for (nb = 0; nb < 2; nb++)
+            {
+                u_edge[idir][nb] = 0.0;
+                icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                index_nb = d_index(icnb,top_gmax,dim);
+                status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                                comp,&intfc_state,&hs,crx_coords);
+                if (status == NO_PDE_BOUNDARY)
+                {
+                    u_edge[idir][nb] = field[idir][index_nb];
+                }
+                else if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    u_edge[idir][nb] = u0; 
+                }
+                else if (status == CONST_V_PDE_BOUNDARY)
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    {
+                        u_edge[idir][nb] = u0;
+                    }
+                    else
+                    {
+                        u_edge[idir][nb] = u0;
+                    }
+                }
+            }
+        }
+
+	div = 0.0;
+	for (i = 0; i < dim; ++i)
+	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
+        return div;
+}       /* end computeFieldPointDivSimple */
+
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
+        int *icoords,
+        double **field)
+{
 	int icnb[MAXD];
         int i,j,index,index_nb;
         COMPONENT comp;
@@ -2841,7 +2975,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
 	for (i = 0; i < dim; ++i)
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
         return div;
-}       /* end computeFieldPointDiv */
+}       /* end computeFieldPointDivDouble */
 
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
@@ -3137,6 +3271,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		}
 		for (j = 0; j < dim; ++j)
 		    vel[j][id] = state.vel[j];
+        //double speed = sqrt(sqr(vel[0][id]) + sqr(vel[1][id]) + sqr(vel[2][id]));
 	    }
         }
 	FT_FreeGridIntfc(front);
@@ -3534,6 +3669,28 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         return mu;
 }       /* end of computeMuofSmagorinskyModel */
 
+#include "keps.h"
+double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
+{
+        static boolean first = YES;
+        static KE_PARAMS params;
+        static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+        if (first)
+        {
+            first = NO;
+            keps_solver->read_params(InName(front),&params);
+            keps_solver->eqn_params = &params;
+            keps_solver->field = NULL;
+            keps_solver->initMesh();
+            keps_solver->field->vel = iFparams->field->vel;
+            keps_solver->eqn_params->mu = iFparams->mu2;
+            keps_solver->eqn_params->rho = iFparams->rho2;
+            keps_solver->setInitialCondition();
+        }
+        keps_solver->solve(front->dt);
+	return keps_solver->field->mu_t;
+}
+
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 {
 	double speed;
@@ -3556,10 +3713,11 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		index = d_index2d(i,j,top_gmax);
 		for (l = 0; l < dim; ++l)
 		{
-		    speed += fabs(vel[l][index]);
+		    speed += sqr(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
+        speed = sqrt(speed);
 		if (max_speed < speed) 
 		{
 		    max_speed = speed;
@@ -3577,10 +3735,11 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 		index = d_index3d(i,j,k,top_gmax);
 		for (l = 0; l < dim; ++l)
 		{
-		    speed += fabs(vel[l][index]);
+		    speed += sqr(vel[l][index]);
 		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                     if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
 		}
+        speed = sqrt(speed);
 		if (max_speed < speed) 
 		{
 		    max_speed = speed;

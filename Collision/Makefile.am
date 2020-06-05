@@ -18,11 +18,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/Collision \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+
 
 noinst_PROGRAMS = test
 
 				  
-test_SOURCES = test.cpp
+test_SOURCES = test.cpp \
+			   cdinit.cpp
 
 test_LDADD = $(builddir)/objs/libCollision.la
 

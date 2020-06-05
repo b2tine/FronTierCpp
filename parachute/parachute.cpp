@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static IF_PARAMS iFparams;
 	static AF_PARAMS af_params;
+    static RG_PARAMS rgb_params;  
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.dim = 3;
@@ -88,17 +89,18 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-        iFparams.dim = f_basic.dim;
-        front.extra1 = (POINTER)&iFparams;
-        front.extra2 = (POINTER)&af_params;
-        read_iFparams(in_name,&iFparams);
+    iFparams.dim = f_basic.dim;
+    front.extra1 = (POINTER)&iFparams;
+    front.extra2 = (POINTER)&af_params;
+    front.extra3 = (POINTER)&rgb_params;
+    read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
 	level_func_pack.pos_component = LIQUID_COMP2;
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	        //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    initParachuteModules(&front);
 	    if (debugging("trace"))
 	    {
@@ -110,16 +112,21 @@ int main(int argc, char **argv)
             gview_plot_interface(gvdir,front.interf);
 	    }
 	}
-	else
-	{
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-	}
+	//else
+	//{
+	    //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	//}
 
 	FT_ReadTimeControl(in_name,&front);
 
-	/* Initialize velocity field function */
-
-	setMotionParams(&front);
+	if (!RestartRun)
+    {
+        optimizeElasticMesh(&front);
+        set_equilibrium_mesh(&front);
+	    static_mesh(front.interf) = YES;
+        FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
+    }
+	    //setMotionParams(&front);
 
 	record_break_strings_gindex(&front);
 	set_unequal_strings(&front);
@@ -127,54 +134,57 @@ int main(int argc, char **argv)
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
-	l_cartesian->initMesh();
+	    //l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
 
-        if (RestartRun)
-	{
+    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+
+    if (RestartRun)
+    {
 	    if (ReSetTime)
 	    {
-		readAfExtraData(&front,restart_state_name);
-                modifyInitialization(&front);
-                read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-                l_cartesian->initMesh();
-                l_cartesian->setInitialCondition();
-	    	
-                if (debugging("trace"))
+		    readAfExtraData(&front,restart_state_name);
+            clearRegisteredPoints(&front);//TODO: setMotionParams() should be after this
+            resetRigidBodyVelocity(&front);
+            modifyInitialization(&front);
+	            //rgb_init(&front,&rgb_params);//TODO: is this fucking up my run?
+
+            //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+            l_cartesian->initMesh();
+            l_cartesian->setInitialCondition();
+            
+            if (debugging("trace"))
 	        {
-                    if (consistent_interface(front.interf) == NO)
-                        clean_up(ERROR);
-                    gview_plot_interface("gmodified",front.interf);
+                if (consistent_interface(front.interf) == NO)
+                    clean_up(ERROR);
+                gview_plot_interface("gmodified",front.interf);
 	        }
 	    }
 	    else
 	    {
-                l_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
+            l_cartesian->readFrontInteriorStates(restart_state_name);
 	    }
     
-        }
-        else
-	{
-            l_cartesian->setInitialCondition();
-	}
-	if (!RestartRun)
-	    FT_SetGlobalIndex(&front);
-        /*
-        else
-	    FT_SetTriGlobalIndex(&front);
-        */
+    }
+    else
+    {
+        l_cartesian->initMesh();
+        l_cartesian->setInitialCondition();
+    }
 
-	static_mesh(front.interf) = YES;
+	setMotionParams(&front);
 
-        l_cartesian->initMovieVariables();
+    	//static_mesh(front.interf) = YES;
+
+    l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
 	if (!RestartRun || ReSetTime)
-            resetFrontVelocity(&front);
+        resetFrontVelocity(&front);
 
 	/* Propagate the front */
 
@@ -212,14 +222,18 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-	    FT_InteriorPropagate(front);
-	    if (!af_params->no_fluid)
+        FT_RelinkGlobalIndex(front);
+	    
+        if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    print_airfoil_stat(front,out_name);
+	    
+        if (ReSetTime)
+           setSpecialNodeForce(front,af_params->kl);
 
-            FT_SetOutputCounter(front);
+        FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
 	    front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
@@ -231,8 +245,8 @@ void airfoil_driver(Front *front,
 
         FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
-	
-        // For restart debugging 
+
+    // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    FT_Save(front);
@@ -255,9 +269,11 @@ void airfoil_driver(Front *front,
 	    }
 
 	    break_strings(front); // test
-	    FrontPreAdvance(front);
-            FT_Propagate(front);
-            FT_InteriorPropagate(front);
+
+        FrontPreAdvance(front);
+        FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+        FT_InteriorPropagate(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -267,12 +283,12 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    else
-            {
-                l_cartesian->max_dt = HUGE;
-            }
+        {
+            l_cartesian->max_dt = HUGE;
+        }
 
             if (debugging("trace"))
             {
@@ -304,6 +320,9 @@ void airfoil_driver(Front *front,
 	    /* Output section */
 
 	    print_airfoil_stat(front,out_name);
+
+        if (!af_params->no_fluid)
+            l_cartesian->printEnstrophy();
 
             if (FT_IsSaveTime(front))
 	    {

@@ -52,7 +52,7 @@ public:
     void setupMovie(std::string, std::string, double);
     void check_force(SpringSolver*);
 private:
-    void doFolding(Drag*,SpringSolver*,CollisionSolver*);
+    void doFolding(Drag*,SpringSolver*,CollisionSolver3d*);
     void straightenStrings();
     double computePotentialEnergy();
     double computeBendingEnergy();

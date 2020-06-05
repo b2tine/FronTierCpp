@@ -62,24 +62,25 @@ enum _DOMAIN_STATUS {
 };
 typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
-struct _IF_FIELD {
+struct IF_FIELD {
 	double **vel;			/* Velocities */
+	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
 	double *q;
 	double *pres;			/* Pressure */
-	double *vort;			/* Vorticity in 2D */
+	double *vort;			/* Magnitude of Vorticity in 2D */
 	double *mu;
 	double *rho;
 	double **grad_q;
 	double **f_surf;		// Surface force (such as tension)
 	double **old_var;		// For debugging purpose
 
+        //double *d_phi;          //Dual grid phi
 	double *div_U;
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
 };
-typedef struct _IF_FIELD IF_FIELD;
 
 enum _PROJC_METHOD {
 	ERROR_PROJC_SCHEME		= -1,
@@ -97,11 +98,13 @@ enum _ADVEC_METHOD {
 };
 typedef enum _ADVEC_METHOD ADVEC_METHOD;
 
+//TODO: DUAL_ELLIP
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
 };
+
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
 
 enum _DOMAIN_METHOD {
@@ -114,7 +117,8 @@ typedef enum _DOMAIN_METHOD DOMAIN_METHOD;
 enum _EDDY_VISC {
 	BALDWIN_LOMAX		= 1,
 	MOIN,
-	SMAGORINSKY
+	SMAGORINSKY,
+    KEPSILON
 };
 typedef enum _EDDY_VISC EDDY_VISC;
 
@@ -124,6 +128,12 @@ struct _NS_SCHEME {
 	ELLIP_METHOD ellip_method;
 };
 typedef struct _NS_SCHEME NS_SCHEME;
+
+struct FINITE_STRING {         // For fluid drag on string chord
+        double radius;
+        double dens;
+        double c_drag;
+};
 
 typedef struct {
         int dim;
@@ -163,6 +173,7 @@ typedef struct {
         int base_step;
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
+    int fsi_startstep;
 } IF_PARAMS;
 
 struct _FLOW_THROUGH_PARAMS {
@@ -203,6 +214,13 @@ struct _PARABOLIC_STATE_PARAMS {
 	STATE state;
 };
 typedef struct _PARABOLIC_STATE_PARAMS PARABOLIC_STATE_PARAMS;
+
+struct CUBIC_STATE_PARAMS {
+    STATE state;
+    double h;
+    enum FLOW_TYPE {LAMINAR, TURBULENCE};
+    FLOW_TYPE flow_type;
+};
 
 struct _OPEN_PIPE_PARAMS
 {
@@ -301,6 +319,7 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
+    void printEnstrophy();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -434,9 +453,12 @@ protected:
 	int    getComponent(double *coords);	
 	void   save(char *filename);
 	double computeFieldPointDiv(int*, double**);
+	double computeFieldPointDivSimple(int*, double**);
+	double computeFieldPointDivDouble(int*, double**);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
+	double* computeMuOfKepsModel();
 	void   computeFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
@@ -478,7 +500,6 @@ public:
         Incompress_Solver_Smooth_3D_Basis(Front &front):
 	Incompress_Solver_Smooth_Basis(front) {};
 	virtual ~Incompress_Solver_Smooth_3D_Basis() {};
-
 protected:
 	double getSmoothingFunction(double r);
 	double getSmoothingFunctionD(double*, double*);
@@ -486,6 +507,7 @@ protected:
 	double smoothedStepFunction(double*, double*, int);
 	void sampleVelocity();
 	void setSmoothedProperties(void);
+    void addImmersedForce();
 };
 
 class Incompress_Solver_Smooth_2D_Cartesian:
@@ -511,6 +533,7 @@ protected:
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
+	    //void computeProjectionDual(void);
 	void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
@@ -540,6 +563,7 @@ public:
 	void solve(double dt);
 	void solveTest(const char *msg);
         void vtk_plot_scalar(char*, const char*);
+
 protected:
 	void copyMeshStates(void);
 	void computeAdvection(void);
@@ -566,6 +590,9 @@ protected:
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 	void appendOpenEndStates();
+
+    void computeVorticity();
+    std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
 
 extern double getStatePres(POINTER);
@@ -617,9 +644,11 @@ extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
 
+extern void resetRigidBodyVelocity(Front *front);
+//extern void rgb_modification(Front*,RG_PARAMS*);
+extern void rgb_init(Front*,RG_PARAMS*);
 extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
-extern void rgb_init(Front*,RG_PARAMS);
+extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
 
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);

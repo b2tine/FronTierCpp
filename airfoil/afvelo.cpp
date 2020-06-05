@@ -131,6 +131,9 @@ void setMotionParams(Front* front)
                 af_params->no_fluid = YES;
         }
 
+    front->vfunc = nullptr;
+    front->vparams = nullptr;
+
 	if (af_params->no_fluid == YES)
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
@@ -233,12 +236,12 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-        {
-	    front->interior_propagate = fourth_order_elastic_set_propagate;
-        }
+    {
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
 
-
-	if (af_params->no_fluid == NO)
+    
+    if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
 	    {
@@ -276,30 +279,21 @@ void setMotionParams(Front* front)
             CursorAfterString(infile,"Enter factor of smoothing radius:");
             fscanf(infile,"%lf",&iFparams->smoothing_radius);
             (void) printf("%f\n",iFparams->smoothing_radius);
+    
+            for (i = 0; i < dim; ++i)
+                af_params->gravity[i] = iFparams->gravity[i];
 	}
 
-	for (i = 0; i < dim; ++i)
-	    af_params->gravity[i] = iFparams->gravity[i];
-
-	if (af_params->is_parachute_system == YES)
-	{
-	    CursorAfterStringOpt(infile,"Enter payload:");
-            fscanf(infile,"%lf",&af_params->payload);
-            (void) printf("%f\n",af_params->payload);
-	}
-
+    //This now given default value of fabric mass, and if rgb
+    //is attached is assigned the total mass of the rgb.
     /*
-        CursorAfterString(infile,"Enter preximity test tolerance:");
-        fscanf(infile,"%lf",&af_params->pre_tol);
-        (void) printf("%f\n",af_params->pre_tol);
-        CursorAfterString(infile,"Enter volume diff criteria:");
-        fscanf(infile,"%lf",&af_params->vol_diff);
-        (void) printf("%f\n",af_params->vol_diff);
-        CursorAfterString(infile,"Enter restitution coefficient:");
-        fscanf(infile,"%lf",&af_params->rest);
-        (void) printf("%f\n",af_params->rest);
+    if (CursorAfterStringOpt(infile,"Enter payload:"))
+    {
+        fscanf(infile,"%lf",&af_params->payload);
+        (void) printf("%f\n",af_params->payload);
+    }
     */
-
+	
 	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
@@ -319,9 +313,27 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter fabric spring constant:");
             fscanf(infile,"%lf",&af_params->ks);
             (void) printf("%f\n",af_params->ks);
-            CursorAfterString(infile,"Enter fabric friction constant:");
+
+            CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
+
+            CursorAfterString(infile,"Enter fabric friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_s);
+            (void) printf("%f\n",af_params->mu_s);
+
+            if (CursorAfterStringOpt(infile,"Enter fabric thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_thickness);
+                (void) printf("%f\n",af_params->fabric_thickness);
+            }
+
+            if (CursorAfterStringOpt(infile,"Enter fabric rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->fabric_eps);
+                (void) printf("%f\n",af_params->fabric_eps);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter fabric total mass:");
@@ -342,9 +354,27 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter string spring constant:");
             fscanf(infile,"%lf",&af_params->kl);
             (void) printf("%f\n",af_params->kl);
-            CursorAfterString(infile,"Enter string friction constant:");
+            
+            CursorAfterString(infile,"Enter string damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_l);
             (void) printf("%f\n",af_params->lambda_l);
+            
+            CursorAfterString(infile,"Enter string friction constant:");
+            fscanf(infile,"%lf",&af_params->mu_l);
+            (void) printf("%f\n",af_params->mu_l);
+            
+            if (CursorAfterStringOpt(infile,"Enter string thickness:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_thickness);
+                (void) printf("%f\n",af_params->string_thickness);
+            }
+
+            if (CursorAfterStringOpt(infile,"Enter string rounding tolerance:"))
+            {
+                fscanf(infile,"%lf",&af_params->string_eps);
+                (void) printf("%f\n",af_params->string_eps);
+            }
+
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter string total mass:");
@@ -358,6 +388,14 @@ void setMotionParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 	}
+	    
+    CursorAfterStringOpt(infile,"Enter strain limit:");
+    fscanf(infile,"%lf",&af_params->strain_limit);
+    (void) printf("%f\n",af_params->strain_limit);
+            
+    CursorAfterStringOpt(infile,"Enter strain rate limit:");
+    fscanf(infile,"%lf",&af_params->strainrate_limit);
+    (void) printf("%f\n",af_params->strainrate_limit);
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
@@ -576,6 +614,7 @@ static void initVelocityFunc(
 	static FIXAREA_PARAMS *fixarea_params;
 	int i,dim = front->rect_grid->dim;
 	char string[100];
+    IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	if (af_params->no_fluid == YES)
@@ -595,7 +634,7 @@ static void initVelocityFunc(
 	    (void) printf("\tFixed point velocity (FP)\n");
 	    (void) printf("\tFree fall velocity (FF)\n");
    
-            CursorAfterString(infile,"Enter velocity function: ");
+        CursorAfterString(infile,"Enter velocity function:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    
@@ -768,6 +807,18 @@ static void initVelocityFunc(
                 break;
             }	
 	}
+
+    if (CursorAfterStringOpt(infile,"Enter gravity:"))
+    {
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf",af_params->gravity+i);
+            printf(" %f",af_params->gravity[i]);
+            iF_params->gravity[i] = af_params->gravity[i];
+        }
+        printf("\n");
+    }
+
 	FT_InitFrontVeloFunc(front,&velo_func_pack);
 }	/* end initVelocityFunc */
 
@@ -949,6 +1000,7 @@ static int singular_velo(
 	return YES;
 }	/* end sigular_velo */
 
+//TODO: Make shape_id an enum
 struct _SHAPE_PARAMS {
 	int shape_id;
 	double L[2];
@@ -1035,6 +1087,8 @@ static void init_fixarea_params(
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
+            //TODO: Add hsbdry_type() == STRING_HSBDRY, GORE_HSBDRY etc.
+            //      to facilitate other kinds initialization procedures.
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
 		wave_type(hs) != ELASTIC_STRING) 
 		continue;
@@ -1171,8 +1225,11 @@ extern void resetFrontVelocity(Front *front)
 	    for (i = 0; i < dim; ++i)
 	    {
 		p->vel[i] = 0.0;
+        p->force[i] = 0.0;
 		sl->vel[i] = sr->vel[i] = 0.0;
 		sl->impulse[i] = sr->impulse[i] = 0.0;
+		sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+		sl->other_accel[i] = sr->other_accel[i] = 0.0;
 	    }
 	}
 	if (dim == 3)
@@ -1185,8 +1242,11 @@ extern void resetFrontVelocity(Front *front)
 	        for (i = 0; i < dim; ++i)
 		{
 		    p->vel[i] = 0.0;
+		    p->force[i] = 0.0;
 		    sl->vel[i] = sr->vel[i] = 0.0;
 		    sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		}
 		for (b = (*c)->first; b != (*c)->last; b = b->next)
 		{
@@ -1196,8 +1256,11 @@ extern void resetFrontVelocity(Front *front)
 	            for (i = 0; i < dim; ++i)
 		    {
 		    	p->vel[i] = 0.0;
+		        p->force[i] = 0.0;
 		    	sl->vel[i] = sr->vel[i] = 0.0;
 		    	sl->impulse[i] = sr->impulse[i] = 0.0;
+                sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		    }
 		}
 		p = (*c)->end->posn;
@@ -1206,8 +1269,11 @@ extern void resetFrontVelocity(Front *front)
 	        for (i = 0; i < dim; ++i)
 		{
 		    p->vel[i] = 0.0;
+		    p->force[i] = 0.0;
 		    sl->vel[i] = sr->vel[i] = 0.0;
 		    sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
 		}
 	    }
 	}

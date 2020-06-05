@@ -98,7 +98,11 @@ void setMotionParams(Front* front)
 	FILE *infile = fopen(InName(front),"r");
 	int i,dim = front->rect_grid->dim;
 	char string[100];
-	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
+	
+    F_PARAMS* Fparams = (F_PARAMS*)front->extra1;
+    //EQN_PARAMS* cFparams = (EQN_PARAMS*)front->extra1;
+    //IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	INTERFACE *intfc = front->interf;
 	boolean status;
@@ -272,7 +276,7 @@ void setMotionParams(Front* front)
 	for (i = 0; i < dim; ++i)
 	    af_params->gravity[i] = Fparams->gravity[i];
 
-        if (CursorAfterStringOpt(infile,"Enter payload:"))
+    if (CursorAfterStringOpt(infile,"Enter payload:"))
 	{
             fscanf(infile,"%lf",&af_params->payload);
             (void) printf("%f\n",af_params->payload);
@@ -668,6 +672,7 @@ extern void initVelocityFunc(
                 break;
             }	
 	}
+
 	if (CursorAfterStringOpt(infile,"Enter gravity:"))
         {
             for (i = 0; i < dim; ++i)

@@ -48,6 +48,7 @@ static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);
+static void print_max_fabric_speed(Front* fr);
 
 #define 	MAX_NUM_RING1		30
 
@@ -184,6 +185,50 @@ int airfoil_velo(
 	return YES;
 }
 
+//GFM at ELASTIC_BOUNDARY:
+//      Add artificial source terms at boundary and have
+//      the fluid solver treat as NO_PDE_BOUNDARY
+int af_find_state_at_crossing(
+    Front *front,
+    int *icoords,
+    GRID_DIRECTION dir,
+    int comp,
+    POINTER *state,
+    HYPER_SURF **hs,
+    double *crx_coords)
+{
+    boolean status;
+    HYPER_SURF_ELEMENT *hse;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+    status = FT_StateStructAtGridCrossing2(front,icoords,
+            dir,comp,state,hs,&hse,crx_coords);
+    
+    if (status == NO)
+        return NO_PDE_BOUNDARY;
+    else
+    {
+        switch (wave_type(*hs))
+        {
+        case FIRST_PHYSICS_WAVE_TYPE:
+        case ELASTIC_STRING:
+        case ELASTIC_BOUNDARY:
+            return NO_PDE_BOUNDARY;
+        case MOVABLE_BODY_BOUNDARY:
+            return CONST_V_PDE_BOUNDARY;
+        case DIRICHLET_BOUNDARY:
+	    if (boundary_state_function(*hs) &&
+                strcmp(boundary_state_function_name(*hs),
+                "flowThroughBoundaryState") == 0)
+                return CONST_P_PDE_BOUNDARY;
+            else
+                return CONST_V_PDE_BOUNDARY;
+        }
+    }
+    return NEUMANN_PDE_BOUNDARY;
+}       /* af_find_state_at_crossing */
+
+/*
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -229,7 +274,7 @@ int af_find_state_at_crossing(
 
     return NEUMANN_PDE_BOUNDARY;
 
-}       /* af_find_state_at_crossing */
+}*/       /* af_find_state_at_crossing */
 
 static boolean is_pore(
 	Front *front,
@@ -759,6 +804,8 @@ static void compute_center_of_mass_velo(
 	    	    vload[j] = state->vel[j];
 	    	    xload[j] = Coords(node->posn)[j];
 	  	}
+
+        //TODO: consolidate payload and rigid body mass 
 	  	payload = af_params->payload;
 	  	xcom = center_of_mass(Hyper_surf(canopy));
 	  	vcom = center_of_mass_velo(Hyper_surf(canopy));
@@ -1782,13 +1829,6 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	static int break_strings_num = af_params->break_strings_num;
 
 
-    static CollisionSolver* collision_solver = new CollisionSolver3d();
-	if (!debugging("collision_off"))
-        printf("COLLISION DETECTION ON\n");
-    else
-        printf("COLLISION DETECTION OFF\n");
-
-
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
 	geom_set.front = fr;
@@ -1908,6 +1948,16 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	else
 	    size = owner_size;
 
+    CollisionSolver3d* collision_solver;
+    if (!debugging("collision_off"))
+    {
+        collision_solver = new CollisionSolver3d();
+        printf("COLLISION DETECTION ON\n");
+    }
+    else
+        printf("COLLISION DETECTION OFF\n");
+
+
 	if (myid == owner_id)
 	{
 	
@@ -1915,48 +1965,31 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
     {
 	    if (FT_Dimension() == 3)
         {
-            //TODO: This function just identifies which triangles and edges
-            //      have the potential to collide with each other based on their
-            //      the material/boundary type alone. We already know this from
-            //      initialization of the interface, so this is either an expensive
-            //      no-op, or the boundary type/condition of hypersurface elements
-            //      are artificially being changed midrun for some reason.
             setCollisionFreePoints3d(fr->interf);
 
             collision_solver->assembleFromInterface(fr->interf,fr->dt);
             collision_solver->recordOriginalPosition();
             
-            //TODO: Is friction component working?
-            collision_solver->setFrictionConstant(0.0);
-            //collision_solver->setFrictionConstant(af_params->lambda_s);
-            
-            collision_solver->setSpringConstant(af_params->ks); 
-            collision_solver->setPointMass(af_params->m_s);
-
-            //TODO: What is going on here?
-            //      Unphysical penetration using the thicker 1.0e-03 m
-            //      leads me to believe that bugs in the collision code is
-            //      outweighing any potential rounding errors currently.
-            collision_solver->setFabricThickness(1.0e-4);
-                //collision_solver->setFabricThickness(1.0e-3);
-                //collision_solver->setFabricThickness(af_params->pre_tol);
-
-            //TODO: coefficient of restitution varies between materials,
-            //      and should be determined at runtime using the STATE
-            //      data of the colliding pairs. 
             collision_solver->setRestitutionCoef(1.0);
-		        //collision_solver->setRestitutionCoef(af_params->rest);
-                
-            //Default value is 0.0, so only worry about setting it
-            //(to 1.0 for example) when the collision is between two
-            //rigid bodies. Alternatively could set it the value for
-            //rigid-rigid collision here, because it appears that it was
-            //ommitted from all the cloth impulse calculations making it
-            //effectively 0.0 by default again.
-                
-            //For updating aabb tree
-            collision_solver->setVolumeDiff(0.05);
-                //collision_solver->setVolumeDiff(af_params->vol_diff);
+            collision_solver->setVolumeDiff(0.0);
+
+            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
+
+            collision_solver->setStringRoundingTolerance(af_params->string_eps);
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
+
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
         }
     }
 
@@ -2024,16 +2057,68 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	if(!debugging("collision_off"))
     {
         if (myid == owner_id)
-            {
-                if (FT_Dimension() == 3)
-                    collision_solver->resolveCollision();
-            }
-        setSpecialNodeForce(fr, geom_set.kl);
+        {
+            if (FT_Dimension() == 3)
+                collision_solver->resolveCollision();
+        }
+        setSpecialNodeForce(fr,geom_set.kl);
+	    //compute_center_of_mass_velo(&geom_set);
+
+        delete collision_solver;
+    }
+
+    if (debugging("max_speed"))
+    {
+        print_max_fabric_speed(fr);
     }
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
 }	/* end fourth_order_elastic_set_propagate() */
+
+static void print_max_fabric_speed(Front* fr)
+{
+    SURFACE **s;
+    TRI *tri;
+    POINT *pt;
+    STATE *state;
+    
+    double speed;
+    double max_speed = 0.0;
+    POINT* max_pt = nullptr;
+
+    intfc_surface_loop(fr->interf,s)
+    {
+        if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+        surf_tri_loop(*s,tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                pt = Point_of_tri(tri)[i];
+                state = (STATE*)left_state(pt);
+                speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
+                            + sqr(state->vel[2]));
+                if (max_speed < speed)
+                {
+                    max_speed = speed;
+                    max_pt = pt;
+                }
+            }
+        }
+    }
+    
+    printf("max speed of fabric/canopy: %f\n",max_speed);
+    if (max_pt != nullptr)
+    {
+        printf("Point Gindex: %d  coords = %f %f %f\n",
+                Gindex(max_pt),Coords(max_pt)[0],
+                Coords(max_pt)[1],Coords(max_pt)[2]);
+
+        state = (STATE*)left_state(max_pt);
+        printf("Velocity: %f %f %f\n",
+                state->vel[0],state->vel[1],state->vel[2]);
+    }
+}
 
 static void setSurfVelocity(
 	ELASTIC_SET *geom_set,
@@ -2342,11 +2427,8 @@ extern void collectNodeExtra(
 }	/* end collectNodeExtra */
 
 
-//TODO: Is this function as useless as it looks?
-//      Unless hypersurface elements need to be able
-//      to change their boundary (wave) type in the
-//      middle of a run, this can just be done during
-//      initialization and cached in the STATE.
+//TODO: this should be done during
+//      initialization and stored in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;

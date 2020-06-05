@@ -14,8 +14,9 @@ noinst_LTLIBRARIES = libfabric.la
 
 
 libfabric_la_SOURCES = \
-../airfoil.h \
-../airfoil_sv.h \
+../fabric.h \
+../fabric_sv.h \
+../state.h \
 ../afprop.cpp \
 ../afcnpy.cpp \
 ../afdata.cpp \
@@ -30,8 +31,11 @@ libfabric_la_SOURCES = \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
+../CD_HSE.h \
+../CD_HSE.cpp \
 ../AABB.h \
 ../AABB.cpp \
+../fluid.h \
 ../fluidinit.cpp \
 ../fluidprop.cpp \
 ../rigidbody.h \

@@ -1145,6 +1145,18 @@ extern void read_iFparams(
 	iFparams->num_scheme.advec_method = WENO;
 	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 
+    if (CursorAfterStringOpt(infile,
+        "Entering yes to turn off fluid solver: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            fclose(infile);
+            return;
+        }
+    }
+
 	CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
@@ -1261,7 +1273,11 @@ extern void read_iFparams(
 		case 'S':
 		case 's':
 		    iFparams->eddy_visc_model = SMAGORINSKY;
-                    break;
+            break;
+		case 'K':
+		case 'k':
+		    iFparams->eddy_visc_model = KEPSILON;
+            break;
 		default:
 		    (void) printf("Unknown eddy viscosity model!\n");
 		    clean_up(ERROR);
@@ -1874,7 +1890,9 @@ static  void ifluid_compute_force_and_torque2d(
             force[i] = 0.0;
         }
         *torque = 0.0;
-	if (front->step > 5)
+
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (b = curve->first; b != NULL; b = b->next)
             {
@@ -1998,7 +2016,8 @@ static  void ifluid_compute_force_and_torque3d(
         }
 	/* end of counting the force on RG_STRING_NODE */
 
-	if (front->step > 5)
+	//if (front->step > 5)
+	if (front->step > iFparams->fsi_startstep)
 	{
             for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface);
                         tri = tri->next)
@@ -2303,9 +2322,54 @@ static void promptForDirichletBdryState(
 	}
 }	/* end promptForDirichletBdryState */
 
-//TODO: why is RGB_PARAMS being passed by value
+/*
+extern void rgb_modification(
+        Front *front,
+        RG_PARAMS* rgb_params
+        )
+{
+    int dim = FT_Dimension();
+    if (dim != 3) return;
+
+    SURFACE **s;
+    char* inname = InName(front);
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            //TODO: write new functions for modifications
+            //
+            //prompt_for_rigid_body_params(dim,inname,rgb_params);
+            //set_rgbody_params(rgb_params,Hyper_surf(*s));
+        }
+    }
+    
+}*/       /* end rgb_modification */
+
+//TODO: May eventually need to set other variables,
+//      and may want to be able to set them to a nonzero value.
+//      Was original idea behind rgb_modification(), this may
+//      end up taking its place.
+extern void resetRigidBodyVelocity(Front *front)
+{
+    SURFACE **s;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            for (int i = 0; i < 3; ++i)
+            {
+                center_of_mass_velo(hs)[i] = 0.0;
+            }
+        }
+    }
+}
+
 extern void rgb_init(Front *front,
-        RG_PARAMS rgb_params)
+        RG_PARAMS* rgb_params)
 {
     int dim = FT_Dimension();
     if (dim == 1) return;
@@ -2320,7 +2384,7 @@ extern void rgb_init(Front *front,
         {
             if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
@@ -2331,7 +2395,7 @@ extern void rgb_init(Front *front,
         {
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                prompt_for_rigid_body_params(dim,inname,&rgb_params);
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
@@ -2383,7 +2447,7 @@ extern  void prompt_for_rigid_body_params(
         (void) printf("\tPRESET_TRANSLATION\n");
         (void) printf("\tPRESET_ROTATION\n");
         (void) printf("\tPRESET_MOTION (general)\n");
-        CursorAfterString(infile,"Enter type of preset motion: ");
+        CursorAfterString(infile,"Enter type of preset motion:");
         fscanf(infile,"%s",s);
         (void) printf("%s\n",s);
         switch(s[7])
@@ -2659,37 +2723,37 @@ extern  void prompt_for_rigid_body_params(
 }       /* end prompt_for_rigid_body_params */
 
 extern void set_rgbody_params(
-        RG_PARAMS rg_params,
+        RG_PARAMS* rg_params,
         HYPER_SURF *hs)
 {
-        int i,dim = rg_params.dim;
-	body_index(hs) = rg_params.body_index;
-        total_mass(hs) = rg_params.total_mass;
-        mom_inertial(hs) = rg_params.moment_of_inertial;
-        angular_velo(hs) = rg_params.angular_velo;
-        motion_type(hs) = rg_params.motion_type;
-        vparams(hs) = rg_params.vparams;
-        vel_func(hs) = rg_params.vel_func;
+        int i,dim = rg_params->dim;
+	body_index(hs) = rg_params->body_index;
+        total_mass(hs) = rg_params->total_mass;
+        mom_inertial(hs) = rg_params->moment_of_inertial;
+        angular_velo(hs) = rg_params->angular_velo;
+        motion_type(hs) = rg_params->motion_type;
+        vparams(hs) = rg_params->vparams;
+        vel_func(hs) = rg_params->vel_func;
         surface_tension(hs) = 0.0;
         for (i = 0; i < dim; ++i)
         {
-            center_of_mass(hs)[i] = rg_params.center_of_mass[i];
+            center_of_mass(hs)[i] = rg_params->center_of_mass[i];
             center_of_mass_velo(hs)[i] =
-                                rg_params.cen_of_mass_velo[i];
+                                rg_params->cen_of_mass_velo[i];
             rotation_center(hs)[i] =
-                                rg_params.rotation_cen[i];
-            translation_dir(hs)[i] = rg_params.translation_dir[i];
+                                rg_params->rotation_cen[i];
+            translation_dir(hs)[i] = rg_params->translation_dir[i];
             if (dim == 3)
             {
-                rotation_direction(hs)[i] = rg_params.rotation_dir[i];
-                p_mom_inertial(hs)[i] = rg_params.p_moment_of_inertial[i];
-                p_angular_velo(hs)[i] = rg_params.p_angular_velo[i];
+                rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+                p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+                p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
             }
         }
         if (dim == 3)
         {
             for (i = 0; i < 4; i++)
-                euler_params(hs)[i] = rg_params.euler_params[i];
+                euler_params(hs)[i] = rg_params->euler_params[i];
         }
 }       /* end set_rgbody_params */
 

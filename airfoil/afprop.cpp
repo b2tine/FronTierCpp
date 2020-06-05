@@ -74,7 +74,6 @@ extern void elastic_point_propagate(
 	    return;
 	}
 
-	//FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);
@@ -108,10 +107,13 @@ extern void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
-		dv[i] = 0.0;
-	    else if (front->step > 5)
-		dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+            dv[i] = 0.0;
+	    else if (front->step > af_params->fsi_startstep)
+            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    //else if (front->step > 5)
+          //  dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+	
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
@@ -239,37 +241,122 @@ extern void airfoil_curve_propagate(
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+        CURVE *oldc,
+         CURVE *newc,
         double dt)
 {
-	BOND *oldb,*newb;
-	POINT *oldp,*newp;
+    BOND *oldb,*newb;
+    POINT *oldp,*newp;
 
-	if (!is_load_node(oldc->start))
-	{
-	    oldp = oldc->start->posn;
-	    newp = newc->start->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->start))
+    {
+        oldp = oldc->start->posn;
+        newp = newc->start->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	if (!is_load_node(oldc->end))
-	{
-	    oldp = oldc->end->posn;
-	    newp = newc->end->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->end))
+    {
+        oldp = oldc->end->posn;
+        newp = newc->end->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
-		oldb = oldb->next, newb = newb->next)
-	{
-	    oldp = oldb->end;
-	    newp = newb->end;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
+        oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
+
+    //string-fluid interaction
+    //    
+    //      dragForce = 0.5*rho*C_d*A_ref*|u|*u
+    //      with drag coefficient C_d = 1.05
+    //      and A_ref is the cylinder enclosing the bond's surface area
+    
+    FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
+    if (params != NULL)
+    {
+        STATE *sl,*sr,*newsl,*newsr;
+        COMPONENT base_comp = front->interf->default_comp;
+        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        IF_FIELD *field = iFparams->field;
+        double rhoF = iFparams->rho2;
+        double **vel,speed;
+
+        double c_drag = params->c_drag;
+        double radius = params->radius;
+        double rhoS = params->dens;
+        
+        int count = 0;
+
+        vel = field->vel;
+    for (oldb = oldc->first, newb = newc->first;
+            oldb != oldc->last; oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+
+            sl = (STATE*)left_state(oldp);
+            sr = (STATE*)right_state(oldp);
+
+            newsl = (STATE*)left_state(newp);
+            newsr = (STATE*)right_state(newp);
+            speed = 0.0;
+            count++;
+
+            //TODO: Interpolate at midpoint instead of endpoint (oldp),
+            //      ..... if possible, get basic version working first.
+            for (int i = 0; i < 3; ++i)
+            {
+                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
+                speed += sqr(newsl->vel[i]);
+
+                //newsr->vel[i] = newsl->vel[i];//TODO: this looks suspicious
+                                                //      compare to elastic_point_propagate().
+            }
+            speed = sqrt(speed);
+
+        //From elastic_point_propagate() for reference
+        /*
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+        */
+
+            //TODO: too much area for just the point...
+            double length = separation(oldb->start,oldb->end,3);
+            double A_ref = 2.0*PI*radius*length;
+            double Vol = PI*radius*radius*length;
+            double mass = rhoS*Vol;
+
+            for (int i = 0; i < 3; ++i)
+            {
+                double dragForce = 0.0;
+                if (front->step > 5)
+                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
+                newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+            }
+            /*
+            if (count == 5)
+                printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
+                        newsl->vel[0],newsl->vel[1],newsl->vel[2],
+                        newsl->fluid_accel[0],newsl->fluid_accel[1],
+                        newsl->fluid_accel[2]);
+            */
+        }
+    }
 }	/* end string_curve_propagation */
 
 static void gore_curve_propagation(
@@ -392,9 +479,13 @@ static void gore_point_propagate(
         {
 	    dv = 0.0;
 
-	    if (front->step > 5)
-		dv = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    if (debugging("rigid_canopy"))
+	    if (front->step > af_params->fsi_startstep)
+		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    
+        //if (front->step > 5)
+		  //  dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+	    
+        if (debugging("rigid_canopy"))
 	    	dv = 0.0;
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
@@ -1071,6 +1162,7 @@ static void rg_string_node_propagate(
 	    for (i = 0; i < dim; ++i)
 		accel[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	    accel[i] -= g[i];
 

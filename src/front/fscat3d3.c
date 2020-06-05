@@ -63,6 +63,7 @@ LOCAL	int	append_buffer_surface3(SURFACE*,SURFACE*,RECT_GRID*,int,int,
 LOCAL	void	clip_intfc_at_grid_bdry3(INTERFACE*);
 LOCAL	void	synchronize_tris_at_subdomain_bdry(TRI**,TRI**,int,P_LINK*,int);
 LOCAL 	INTERFACE *cut_intfc_to_wave_type(INTERFACE*,int);
+LOCAL 	INTERFACE *cut_intfc_to_wave_types(INTERFACE*,int*,int);
 LOCAL 	void 	delete_surface_set(SURFACE*);
 LOCAL   boolean append_other_curves3(INTERFACE*,INTERFACE*,P_LINK*,int);
 LOCAL   boolean bond_match3(BOND*,BOND*);
@@ -941,6 +942,267 @@ LOCAL void clip_intfc_at_grid_bdry3(
 	DEBUG_LEAVE(clip_intfc_at_grid_bdry3)
 }		/*end clip_intfc_at_grid_bdry3*/
 
+EXPORT INTERFACE *collect_hyper_surfaces(
+	Front *fr,
+        int *owner,                     /* Destination of collection */
+        int* w_type,
+        int ntypes)
+{
+	PP_GRID *pp_grid = fr->pp_grid;
+	int 	*G = pp_grid->gmax;	
+	int	dim = FT_Dimension();
+	int 	dst_id,owner_id = domain_id(owner,G,dim);
+	int	myid = pp_mynode();
+	int	i,num_ids = pp_numnodes();
+	boolean      sav_copy;
+	INTERFACE *intfc = fr->interf;
+	INTERFACE *cut_intfc,*recv_intfc;
+	int myic[MAXD],ip[MAXD];
+	int imax = 0;
+	char fname[100];
+	RECT_GRID *gr,*recv_gr;
+	boolean status;
+
+	for (i = 0; i < dim; ++i)
+	    if (imax < G[i])  imax = G[i];
+	find_Cartesian_coordinates(myid,pp_grid,myic);
+
+	if (debugging("collect_intfc"))
+	{
+	    (void) printf("Entering collect_hyper_surface()\n");
+	    (void) printf("myid = %d  owner_id = %d\n",myid,owner_id);
+	    (void) printf("myic = (%d %d %d) owner = (%d %d %d)\n",myic[0],
+				myic[1],myic[2],owner[0],owner[1],owner[2]);
+	}
+
+	    /* prepare interface to send */
+	sav_copy = copy_intfc_states();
+        set_copy_intfc_states(YES);
+
+	cut_intfc = cut_intfc_to_wave_types(intfc,w_type,ntypes);
+	    //cut_intfc = cut_intfc_to_wave_type(intfc,w_type);
+	gr = computational_grid(cut_intfc);
+
+	/* Patch in x-direction */
+	if (myic[0] != owner[0]) 
+	{
+	    ip[0] = owner[0];
+	    ip[1] = myic[1];
+	    ip[2] = myic[2];
+	    dst_id = domain_id(ip,G,dim);
+	    send_interface(cut_intfc,dst_id);
+	}
+	else if (myic[0] == owner[0])
+	{
+	    ip[1] = myic[1];
+	    ip[2] = myic[2];
+	    for (i = 1; i < G[0]; ++i)
+	    {
+		ip[0] = myic[0] + i;
+		if (ip[0] < G[0])
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					0,1,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+		ip[0] = myic[0] - i;
+		if (ip[0] >= 0)
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					0,0,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+	    }
+	}
+	pp_gsync();
+
+	/* Patch in y-direction */
+	if (myic[0] == owner[0] && myic[1] != owner[1]) 
+	{
+	    ip[0] = owner[0];
+	    ip[1] = owner[1];
+	    ip[2] = myic[2];
+	    dst_id = domain_id(ip,G,dim);
+	    send_interface(cut_intfc,dst_id);
+	}
+	else if (myic[0] == owner[0] && myic[1] == owner[1])
+	{
+	    ip[0] = owner[0];
+	    ip[2] = myic[2];
+	    for (i = 1; i < G[1]; ++i)
+	    {
+		ip[1] = myic[1] + i;
+		if (ip[1] < G[1])
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					1,1,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+		ip[1] = myic[1] - i;
+		if (ip[1] >= 0)
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					1,0,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+	    }
+	}
+	pp_gsync();
+
+	/* Patch in z-direction */
+	if (myic[0] == owner[0] && myic[1] == owner[1] && myic[2] != owner[2]) 
+	{
+	    ip[0] = owner[0];
+	    ip[1] = owner[1];
+	    ip[2] = owner[2];
+	    dst_id = domain_id(ip,G,dim);
+	    send_interface(cut_intfc,dst_id);
+	}
+	else if (myic[0] == owner[0] && myic[1] == owner[1] && 
+		 myic[2] == owner[2])
+	{
+	    ip[0] = owner[0];
+	    ip[1] = owner[1];
+	    for (i = 1; i < G[2]; ++i)
+	    {
+		ip[2] = myic[2] + i;
+		if (ip[2] < G[2])
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					2,1,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+		ip[2] = myic[2] - i;
+		if (ip[2] >= 0)
+		{
+	    	    dst_id = domain_id(ip,G,dim);
+		    recv_intfc = receive_interface(dst_id);
+		    status = buffer_extension3d3(cut_intfc,recv_intfc,
+					2,0,status);
+		    recv_gr = computational_grid(recv_intfc);
+		    merge_rect_grids(gr,gr,recv_gr);
+		    delete_interface(recv_intfc);
+		}
+	    }
+	}
+	pp_gsync();
+	if (debugging("collect_intfc"))
+	{
+	    (void) printf("Leaving collect_hyper_surface()\n");
+	    sprintf(fname,"final-intfc.%d",myid);
+	    gview_plot_interface(fname,cut_intfc);
+	    (void) printf("Checking consistency:\n");
+	    null_sides_are_consistent();
+	    consistent_interface(cut_intfc);
+	    (void) printf("Passed consistent_interface()\n");
+	}
+	
+    if (myid == owner_id)
+	{
+	    install_subdomain_bdry_curves(cut_intfc);    
+	    return cut_intfc;
+	}
+	else
+	{
+	    delete_interface(cut_intfc);
+	    return NULL;
+	}
+}	/* end collect_hyper_surfaces */
+
+#define		MAX_DELETE	20
+
+LOCAL INTERFACE *cut_intfc_to_wave_types(
+	INTERFACE *intfc,
+	int* w_type,
+    int ntypes)
+{
+	INTERFACE *tmp_intfc = copy_interface(intfc);
+	SURFACE **s,*surfs_del[MAX_DELETE];
+	CURVE **c;
+	int i,dir,nb,num_delete = 0;
+	INTERFACE *cut_intfc;
+	RECT_GRID *gr = computational_grid(intfc);
+	int dim = gr->dim;
+	char fname[100];
+
+	set_floating_point_tolerance1(computational_grid(intfc)->h);
+	intfc_surface_loop(tmp_intfc,s)
+	{
+        boolean deletesurf = YES;
+        for (int n = 0; n < ntypes; ++n)
+        {
+            if (wave_type(*s) == w_type[n])
+            {
+                deletesurf = NO;
+                for (dir = 0; dir < dim; ++dir)
+                for (nb = 0; nb < 2; ++nb)
+                {
+                    open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
+                }
+                break;
+            }
+        }
+
+        if (deletesurf)
+        {
+            boolean anywavetype = NO;
+            for (int n = 0; n < ntypes; ++n)
+            {
+                if (w_type[n] == ANY_WAVE_TYPE)
+                    anywavetype = YES;
+            }
+
+            if (!anywavetype)
+                surfs_del[num_delete++] = *s;
+        }
+
+        /*
+	    if (wave_type(*s) != w_type && w_type != ANY_WAVE_TYPE)
+            surfs_del[num_delete++] = *s;
+	    else
+	    {
+            for (dir = 0; dir < dim; ++dir)
+            for (nb = 0; nb < 2; ++nb)
+            {
+                open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
+            }
+	    }
+        */
+	}
+
+	for (i = 0; i < num_delete; ++i)
+	    delete_surface_set(surfs_del[i]);
+
+	for (dir = 0; dir < dim; ++dir)
+	for (nb = 0; nb < 2; ++nb)
+	    open_null_bonds(tmp_intfc,gr->L,gr->U,dir,nb);
+
+	reset_intfc_num_points(tmp_intfc);
+	cut_intfc = copy_interface(tmp_intfc);
+	delete_interface(tmp_intfc);
+	return cut_intfc;
+}	/* end cut_intfc_to_wave_types */
+
 EXPORT INTERFACE *collect_hyper_surface(
 	Front *fr,
         int *owner,                     /* Destination of collection */
@@ -1124,8 +1386,6 @@ EXPORT INTERFACE *collect_hyper_surface(
 	    return NULL;
 	}
 }	/* end collect_hyper_surface */
-
-#define		MAX_DELETE	20
 
 LOCAL INTERFACE *cut_intfc_to_wave_type(
 	INTERFACE *intfc,

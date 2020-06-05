@@ -18,9 +18,10 @@ libCollision_la_SOURCES = \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \
-../cdinit.cpp \
+../AABB.h \
 ../AABB.cpp \
-../AABB.h
+../CD_HSE.h \
+../CD_HSE.cpp
 
 
 libCollision_la_LIBADD = $(top_builddir)/iFluid/objs/libiFluid.la

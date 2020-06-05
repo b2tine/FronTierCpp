@@ -105,7 +105,7 @@ EXPORT void print_execution_times(void)
 EXPORT void reset_clock()
 {
     top = 0;
-    for( int i = 0; i < MAX_TIMES; ++i )
+    for (int i = 0; i < MAX_TIMES; ++i)
         cputime[i] = 0.0;
 }
 
@@ -270,7 +270,7 @@ EXPORT char *date_string(void)
 }		/*end date_string*/
 
 /*  #bjet2 */
-#define    ADD_MAX_LEN   20
+#define    ADD_MAX_LEN   500
 LOCAL int  add_top = 0;
 LOCAL double add_time[ADD_MAX_LEN], add_time_st[ADD_MAX_LEN];
 

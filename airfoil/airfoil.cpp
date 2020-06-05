@@ -112,7 +112,7 @@ int main(int argc, char **argv)
             initIsolated3dCurves(&front);
 	    
         initRigidBody(&front);
-	    rgb_init(&front, rgb_params);
+	    rgb_init(&front,&rgb_params);
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {
@@ -139,14 +139,11 @@ int main(int argc, char **argv)
 	{
 	    optimizeElasticMesh(&front);
 	    set_equilibrium_mesh(&front);
-	}
-	    
-	/* Initialize velocity field function */
-
-	setMotionParams(&front);
-
-	if (!RestartRun)
 	    FT_SetGlobalIndex(&front);
+	}
+
+	/* Initialize velocity field function */
+	setMotionParams(&front);
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
@@ -183,14 +180,12 @@ int main(int argc, char **argv)
     l_cartesian->initMovieVariables();
     initMovieStress(in_name,&front);
 
+    //TODO: NEED TO ZERO OUT OTHER FIELDS IN resetFronVelocity()?
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
 
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
-
-    //print_interface(front.interf);
-    //exit(0);
 
 	/* Propagate the front */
 
@@ -239,7 +234,7 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-        FT_InteriorPropagate(front);
+        FT_RelinkGlobalIndex(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -282,8 +277,10 @@ void airfoil_driver(Front *front,
 	    }
 
 	    break_strings(front);
-	    FrontPreAdvance(front);
+	    
+        FrontPreAdvance(front);
         FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
 	    
         if (debugging("trace"))

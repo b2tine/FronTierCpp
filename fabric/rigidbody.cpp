@@ -12,8 +12,8 @@ static void initMultiRigidBodies(FILE*,Front*,int);
 
 static void init_rigid_sphere(FILE*,Front*);
 static void init_rigid_box(FILE*,Front*);
-static void init_rigid_human(FILE*,Front*);
 static void init_rigid_cylinder(FILE*,Front*);
+static void init_rigid_human(FILE*,Front*);
 
 // functions for changing the human body surface
 static void surf_com_translation(SURFACE*,double*);
@@ -56,7 +56,7 @@ static void initSingleRigidBody(
 	FILE *infile,
 	Front *front)
 {
-    char string[100];
+        char string[100];
 	(void) printf("Available type of rigid body include:\n");
 	(void) printf("\tSphere (S)\n");
 	(void) printf("\tBox (B)\n");
@@ -71,21 +71,21 @@ static void initSingleRigidBody(
 	case 'S':
 	    init_rigid_sphere(infile, front);
             break;
-        case 'b':
-        case 'B':
-	    init_rigid_box(infile, front);
-            break;
-	case 'h':
-	case 'H':
-	    init_rigid_human(infile, front);
-	    break;
+    case 'b':
+    case 'B':
+        init_rigid_box(infile, front);
+        break;
 	case 'c':
 	case 'C':
 	    init_rigid_cylinder(infile, front);
 	    break;
-        default:
-            (void) printf("Unknow type of rigid body!\n");
-            clean_up(ERROR);
+	case 'h':
+	case 'H':
+	    init_rigid_human(infile, front);
+	    break;
+    default:
+        (void) printf("Unknow type of rigid body!\n");
+        clean_up(ERROR);
         }
 }	/* end initSingleRigidBody */
 
@@ -112,58 +112,53 @@ static void init_rigid_sphere(
 	FILE *infile,
 	Front *front)
 {
-    char string[100];
-    double cen[MAXD];
-    double radius,radii[MAXD];
-    int w_type;
-    int i,dim = FT_Dimension();
-    int neg_comp,pos_comp;
-    SURFACE *surf;
+        char string[100];
+        double cen[MAXD];
+        double radius,radii[MAXD];
+        int w_type;
+        int i,dim = FT_Dimension();
+        int neg_comp,pos_comp;
+        SURFACE *surf;
 
-    CursorAfterString(infile,"Enter center of the sphere:");
-    fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
-    (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
-    CursorAfterString(infile,"Enter radius of the sphere:");
-    fscanf(infile,"%lf",&radius);
-    (void) printf("%f\n",radius);
-    for (i = 0; i < dim; ++i) radii[i] = radius;
+        CursorAfterString(infile,"Enter center of the sphere:");
+        fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
+        (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
+        CursorAfterString(infile,"Enter radius of the sphere:");
+        fscanf(infile,"%lf",&radius);
+        (void) printf("%f\n",radius);
+        for (i = 0; i < dim; ++i) radii[i] = radius;
 
-    (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
-    (void) printf("The default is Movable (M)\n");
-    w_type = MOVABLE_BODY_BOUNDARY;
-    neg_comp = SOLID_COMP;
-    pos_comp = LIQUID_COMP2;
-    if (CursorAfterStringOpt(infile,
-                        "Type yes if the rigid body is fixed:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            w_type = NEUMANN_BOUNDARY;
-    }
+        (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
+        (void) printf("The default is Movable (M)\n");
+        w_type = MOVABLE_BODY_BOUNDARY;
+        neg_comp = SOLID_COMP;
+        pos_comp = LIQUID_COMP2;
+        if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                w_type = NEUMANN_BOUNDARY;
+        }
+        bool cgal_mesh = false;
+        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                cgal_mesh = true;
+        }
 
-    bool cgal_mesh = false;
-    if (CursorAfterStringOpt(infile,
-                "Type yes to use CGAL for rigid body:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            cgal_mesh = true;
-    }
-
-    if (cgal_mesh)
-    {
-         CGAL_MakeEllipsoidalSurf(front,cen,radii,
-                 neg_comp,pos_comp,w_type,1,&surf);
-    }
-    else
-    {
-        FT_MakeEllipticSurf(front,cen,radii,
-                neg_comp,pos_comp,w_type,2,&surf);
-    }
-        
-    return;
+        if (cgal_mesh)
+        {
+            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,w_type,
+                                        1,&surf);
+        }
+        else
+        {
+            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
+                                        &surf);
+        }
 }	/* end init_rigid_sphere */
 
 static void init_rigid_box(
@@ -176,50 +171,104 @@ static void init_rigid_box(
 	int neg_comp,pos_comp;
 	SURFACE *surf;
 
-    CursorAfterString(infile,"Enter center of the box:");
-    fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
-    (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
-    CursorAfterString(infile,"Enter edges of the box:");
-    fscanf(infile,"%lf %lf %lf",edge,edge+1,edge+2);
-    (void) printf("%f %f %f\n",edge[0],edge[1],edge[2]);
-    (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
-    (void) printf("The default is Movable (M)\n");
-    w_type = MOVABLE_BODY_BOUNDARY;
-    neg_comp = SOLID_COMP;
-    pos_comp = LIQUID_COMP2;
-    if (CursorAfterStringOpt(infile,
-                        "Type yes if the rigid body is fixed:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            w_type = NEUMANN_BOUNDARY;
-    }
+        CursorAfterString(infile,"Enter center of the box:");
+        fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
+        (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
+        CursorAfterString(infile,"Enter edges of the box:");
+        fscanf(infile,"%lf %lf %lf",edge,edge+1,edge+2);
+        (void) printf("%f %f %f\n",edge[0],edge[1],edge[2]);
+        (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
+        (void) printf("The default is Movable (M)\n");
+        w_type = MOVABLE_BODY_BOUNDARY;
+        neg_comp = SOLID_COMP;
+        pos_comp = LIQUID_COMP2;
+        if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                w_type = NEUMANN_BOUNDARY;
+        }
 
 
-    bool cgal_mesh = false;
-    if (CursorAfterStringOpt(infile,
-                "Type yes to use CGAL for rigid body:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            cgal_mesh = true;
-    }
+        bool cgal_mesh = false;
+        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                cgal_mesh = true;
+        }
 
-    if (cgal_mesh)
-    {
-         CGAL_MakeCuboidSurf(front,cen,edge,
-                 neg_comp,pos_comp,w_type,1,&surf);
-    }
-    else
-    {
-        FT_MakeCuboidSurf(front,cen,edge,
-                neg_comp,pos_comp,w_type,2,&surf);
-    }
-        
-	return;
+        if (cgal_mesh)
+        {
+            CGAL_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,1,
+                                    &surf);
+        }
+        else
+        {
+            FT_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,2,&surf);
+        }
 }	/* end init_rigid_box */
+
+static void init_rigid_cylinder(
+	FILE *infile,
+	Front *front)
+{
+	char string[100];
+	double cen[MAXD], radius, height;
+    int idir;
+	SURFACE* surf;
+	int w_type;
+	int neg_comp,pos_comp;
+
+        CursorAfterString(infile,"Enter center of the cylinder:");
+            fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
+            (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
+        CursorAfterString(infile,"Enter radius of the cylinder:");
+            fscanf(infile,"%lf",&radius);
+            (void) printf("%f\n",radius);
+        CursorAfterString(infile,"Enter height of the cylinder:");
+            fscanf(infile,"%lf",&height);
+            (void) printf("%f\n",height);
+        CursorAfterString(infile,"Enter central axis of the cylinder:");
+            fscanf(infile,"%ld",&idir);
+            (void) printf("%d\n",idir);
+        (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
+        (void) printf("The default is Movable (M)\n");
+        w_type = MOVABLE_BODY_BOUNDARY;
+            neg_comp = SOLID_COMP;
+            pos_comp = LIQUID_COMP2;
+        if (CursorAfterStringOpt(infile,
+                    "Type yes if the rigid body is fixed:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                w_type = NEUMANN_BOUNDARY;
+        }
+
+        bool cgal_mesh = false;
+        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                cgal_mesh = true;
+        }
+
+        if (cgal_mesh)
+        {
+            CGAL_MakeCylindricalSurf(front,cen,radius,height,
+                    idir,neg_comp,pos_comp,w_type,1,&surf);
+            
+        }
+        else
+        {
+	        FT_MakeCylinderSurf(front,cen,radius,height/2,
+                    idir,neg_comp,pos_comp,w_type,&surf);
+        }
+}	/* end init_rigid_cylinder */
 
 static void init_rigid_human(
 	FILE *infile,
@@ -261,68 +310,7 @@ static void init_rigid_human(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	        wave_type(surf) = NEUMANN_BOUNDARY;
 	}
-	return;
 }	/* end init_rigid_human */
-
-static void init_rigid_cylinder(
-	FILE *infile,
-	Front *front)
-{
-	char string[100];
-	double cen[MAXD], radius, height;
-	SURFACE* surf;
-	int w_type;
-	int neg_comp,pos_comp;
-
-	CursorAfterString(infile,"Enter center of the cylinder:");
-        fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
-        (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
-	CursorAfterString(infile,"Enter radius of the cylinder:");
-        fscanf(infile,"%lf",&radius);
-        (void) printf("%f\n",radius);
-	CursorAfterString(infile,"Enter height of the cylinder:");
-        fscanf(infile,"%lf",&height);
-	(void) printf("%f\n",height);
-	(void) printf("Rigid body can be fixed (F) or Movable (M)\n");
-	(void) printf("The default is Movable (M)\n");
-	wave_type(surf) = MOVABLE_BODY_BOUNDARY;
-        neg_comp = SOLID_COMP;
-        pos_comp = LIQUID_COMP2;
-	if (CursorAfterStringOpt(infile,
-	    		"Type yes if the rigid body is fixed:"))
-	{
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0] == 'y' || string[0] == 'Y')
-	        w_type = NEUMANN_BOUNDARY;
-	}
-
-    bool cgal_mesh = false;
-    if (CursorAfterStringOpt(infile,
-                "Type yes to use CGAL for rigid body:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            cgal_mesh = true;
-    }
-
-    if (cgal_mesh)
-    {
-        printf("ERROR: no cgal level function for cylindrical surface\n");
-        clean_up(ERROR);
-         /*CGAL_MakeCylindricalSurf(front,cen,radius,height/2,
-                 3,neg_comp,pos_comp,w_type,1,&surf);
-         */
-    }
-    else
-    {
-	    FT_MakeCylinderSurf(front,cen,radius,height/2,
-                2,neg_comp,pos_comp,w_type,&surf);
-    }
-        
-	return;
-}	/* end init_rigid_cylinder */
 
 extern void unsort_surf_point(SURFACE *surf)
 {
@@ -415,35 +403,35 @@ static void surf_enlargement(
 
 extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
 {
-    int dim = FT_Dimension();
-    if (dim == 1) return;
+        int dim = FT_Dimension();
+        if (dim == 1) return;
 
-    CURVE **c;
-    SURFACE **s;
-    char* inname = InName(front);
+        CURVE **c;
+        SURFACE **s;
+        char* inname = InName(front);
 
-    if (dim == 2)
-    {
-        for (c = front->interf->curves; c && *c; ++c)
+        if (dim == 2)
         {
-            if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
+            for (c = front->interf->curves; c && *c; ++c)
             {
-                prompt_for_rigid_body_params(dim,inname,rgb_params);
-                set_rgbody_params(rgb_params,Hyper_surf(*c));
+                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
+                {
+                    prompt_for_rigid_body_params(dim,inname,rgb_params);
+                    set_rgbody_params(rgb_params,Hyper_surf(*c));
+                }
             }
         }
-    }
-    else
-    {
-        for (s = front->interf->surfaces; s && *s; ++s)
+        else
         {
-            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+            for (s = front->interf->surfaces; s && *s; ++s)
             {
-                prompt_for_rigid_body_params(dim,inname,rgb_params);
-                set_rgbody_params(rgb_params,Hyper_surf(*s));
+                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+                {
+                    prompt_for_rigid_body_params(dim,inname,rgb_params);
+                    set_rgbody_params(rgb_params,Hyper_surf(*s));
+                }
             }
         }
-    }
 
 }       /* end rgb_init */
 
@@ -452,356 +440,354 @@ static void prompt_for_rigid_body_params(
         char* inname,
         RG_PARAMS* rgb_params)
 {
-    int i;
-    char msg[100],s[100],ss[100];
-    FILE *infile = fopen(inname,"r");
-    boolean is_preset_motion = NO;
-    double mag_dir;
-    static int count = 1;
+        int i;
+        char msg[100],s[100],ss[100];
+        FILE *infile = fopen(inname,"r");
+        boolean is_preset_motion = NO;
+        double mag_dir;
+        static int count = 1;
 
-    if (debugging("rgbody"))
-        (void) printf("Enter prompt_for_rigid_body_params()\n");
+        if (debugging("rgbody"))
+            (void) printf("Enter prompt_for_rigid_body_params()\n");
 
-    if( count == 1 )
-    {
-        rgb_params->dim = dim;
-        rgb_params->no_fluid = NO;
-
-        if (CursorAfterStringOpt(infile,
-            "Entering yes to turn off fluid solver: "))
+        if( count == 1 )
         {
-            fscanf(infile,"%s",s);
-            (void) printf("%s\n",s);
-            if (s[0] == 'y' || s[0] == 'Y')
-                rgb_params->no_fluid = YES;
-        }
-    }
+            rgb_params->dim = dim;
+            rgb_params->no_fluid = NO;
 
-    rgb_params->body_index = count++;
-    sprintf(s, "For rigid body %d", rgb_params->body_index);
-    CursorAfterString(infile, s); printf("\n");
-    long idpos = ftell(infile);
-
-    CursorAfterString(infile,"Type yes if motion is preset: ");
-    fscanf(infile,"%s",s);
-    (void) printf("%s\n",s);
-    if (s[0] == 'y' || s[0] == 'Y')
-    {
-        (void) printf("Available preset motion types are:\n");
-        (void) printf("\tPRESET_TRANSLATION\n");
-        (void) printf("\tPRESET_ROTATION\n");
-        (void) printf("\tPRESET_MOTION (general)\n");
-        CursorAfterString(infile,"Enter type of preset motion: ");
-        fscanf(infile,"%s",s);
-        (void) printf("%s\n",s);
-        switch(s[7])
-        {
-        case 'M':
-            rgb_params->motion_type = PRESET_MOTION;
-            break;
-        case 'C':
-            rgb_params->motion_type = PRESET_COM_MOTION;
-            break;
-        case 'T':
-            rgb_params->motion_type = PRESET_TRANSLATION;
-            break;
-        case 'R':
-            rgb_params->motion_type = PRESET_ROTATION;
-            break;
-        default:
-            (void) printf("Unknown type of preset motion!\n");
-            clean_up(ERROR);
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-    else
-    {
-        (void) printf("Available dynamic motion types are:\n");
-        (void) printf("\tFREE_MOTION\n");
-        (void) printf("\tCOM_MOTION (center of mass)\n");
-        (void) printf("\tTRANSLATION\n");
-        (void) printf("\tROTATION\n");
-        CursorAfterString(infile,"Enter type of dynamic motion:");
-        fscanf(infile,"%s",s);
-        (void) printf("%s\n",s);
-        switch(s[0])
-        {
-        case 'F':
-            rgb_params->motion_type = FREE_MOTION;
-            break;
-        case 'C':
-            rgb_params->motion_type = COM_MOTION;
-            break;
-        case 'T':
-            rgb_params->motion_type = TRANSLATION;
-            break;
-        case 'R':
-            rgb_params->motion_type = ROTATION;
-            break;
-        default:
-            (void) printf("Unknown type of motion!\n");
-            clean_up(ERROR);
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-
-    if (rgb_params->motion_type == TRANSLATION ||
-        rgb_params->motion_type == PRESET_TRANSLATION)
-    {
-        mag_dir = 0.0;
-        CursorAfterString(infile,"Enter the direction of motion:");
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf",&rgb_params->translation_dir[i]);
-            (void) printf("%f ",rgb_params->translation_dir[i]);
-            mag_dir += sqr(rgb_params->translation_dir[i]);
-        }
-        (void) printf("\n");
-        mag_dir = sqrt(mag_dir);
-        for (i = 0; i < dim; ++i)
-            rgb_params->translation_dir[i] /= mag_dir;
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-    
-    if (rgb_params->motion_type == FREE_MOTION ||
-        rgb_params->motion_type == COM_MOTION ||
-        rgb_params->motion_type == TRANSLATION)
-    {
-        sprintf(msg,"Enter the total mass for rigid body:");
-        CursorAfterString(infile,msg);
-        fscanf(infile,"%lf",&rgb_params->total_mass);
-        (void) printf("%f\n",rgb_params->total_mass);
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-
-   if (rgb_params->motion_type == FREE_MOTION ||
-        rgb_params->motion_type == COM_MOTION ||
-        rgb_params->motion_type == TRANSLATION ||
-        rgb_params->motion_type == PRESET_MOTION ||
-        rgb_params->motion_type == PRESET_TRANSLATION)
-    {
-        sprintf(msg,"Enter the initial center of mass for rigid body:");
-        CursorAfterString(infile,msg);
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf",&rgb_params->center_of_mass[i]);
-            (void) printf("%f ",rgb_params->center_of_mass[i]);
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-
-        (void) printf("\n");
-        sprintf(msg,"Enter the initial center of mass velocity:");
-        CursorAfterString(infile,msg);
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf",&rgb_params->cen_of_mass_velo[i]);
-            (void) printf("%f ",rgb_params->cen_of_mass_velo[i]);
-        }
-        (void) printf("\n");
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-
-    if (rgb_params->motion_type == PRESET_ROTATION)
-    {
-        /* 2D preset rotation is always about the z-axis */
-        /* 3D preset rotation axis along rotation_dir */
-        if (dim == 3)
-        {
-            mag_dir = 0.0;
-            CursorAfterString(infile,"Enter the direction of rotation:");
-            for (i = 0; i < dim; ++i)
+            if (CursorAfterStringOpt(infile,
+                "Entering yes to turn off fluid solver: "))
             {
-                fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
-                (void) printf("%f ",rgb_params->rotation_dir[i]);
-                mag_dir += sqr(rgb_params->rotation_dir[i]);
+                fscanf(infile,"%s",s);
+                (void) printf("%s\n",s);
+                if (s[0] == 'y' || s[0] == 'Y')
+                    rgb_params->no_fluid = YES;
             }
-            (void) printf("\n");
-            mag_dir = sqrt(mag_dir);
-            for (i = 0; i < dim; ++i)
-                rgb_params->rotation_dir[i] /= mag_dir;
-            /* initialize the euler parameters */
-            rgb_params->euler_params[0] = 1.0;
-            for (i = 1; i < 4; ++i)
-                rgb_params->euler_params[i] = 0.0;
         }
-        (void) fseek(infile,idpos,SEEK_SET);
 
-        /* Center of axis is the coordinate of a point on the axis */
-        CursorAfterString(infile,"Enter rotation center:");
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
-            (void) printf("%f ",rgb_params->rotation_cen[i]);
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
+        rgb_params->body_index = count++;
+        sprintf(s, "For rigid body %d", rgb_params->body_index);
+        CursorAfterString(infile, s); printf("\n");
+        long idpos = ftell(infile);
 
-        (void) printf("\n");
-        CursorAfterString(infile,"Enter preset angular velocity:");
-        fscanf(infile,"%lf",&rgb_params->angular_velo);
-        (void) printf("%f\n",rgb_params->angular_velo);
-        (void) fseek(infile,idpos,SEEK_SET);
-        
-        if (dim == 3)
+        CursorAfterString(infile,"Type yes if motion is preset: ");
+        fscanf(infile,"%s",s);
+        (void) printf("%s\n",s);
+        if (s[0] == 'y' || s[0] == 'Y')
         {
-            /* used to update the maximum speed in 3D cases */
-            for (i = 0; i < dim; ++i)
-                rgb_params->p_angular_velo[i] = rgb_params->angular_velo
-                                    * rgb_params->rotation_dir[i];
-        }
-    }
-
-    if (rgb_params->motion_type == ROTATION)
-    {
-        if (CursorAfterStringOpt(infile,
-            "Type yes if rigid body will rotate about an point:"))
-        {
+            (void) printf("Available preset motion types are:\n");
+            (void) printf("\tPRESET_TRANSLATION\n");
+            (void) printf("\tPRESET_ROTATION\n");
+            (void) printf("\tPRESET_MOTION (general)\n");
+            CursorAfterString(infile,"Enter type of preset motion: ");
             fscanf(infile,"%s",s);
             (void) printf("%s\n",s);
-            if (s[0] == 'y' || s[0] == 'Y')
+            switch(s[7])
             {
-                sprintf(msg,"Enter rotation center:");
-                CursorAfterString(infile,msg);
-                for (i = 0; i < dim; ++i)
-                {
-                    fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
-                    (void) printf("%f ",rgb_params->rotation_cen[i]);
-                }
-                (void) printf("\n");
+            case 'M':
+                rgb_params->motion_type = PRESET_MOTION;
+                break;
+            case 'C':
+                rgb_params->motion_type = PRESET_COM_MOTION;
+                break;
+            case 'T':
+                rgb_params->motion_type = PRESET_TRANSLATION;
+                break;
+            case 'R':
+                rgb_params->motion_type = PRESET_ROTATION;
+                break;
+            default:
+                (void) printf("Unknown type of preset motion!\n");
+                clean_up(ERROR);
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+        else
+        {
+            (void) printf("Available dynamic motion types are:\n");
+            (void) printf("\tFREE_MOTION\n");
+            (void) printf("\tCOM_MOTION (center of mass)\n");
+            (void) printf("\tTRANSLATION\n");
+            (void) printf("\tROTATION\n");
+            CursorAfterString(infile,"Enter type of dynamic motion:");
+            fscanf(infile,"%s",s);
+            (void) printf("%s\n",s);
+            switch(s[0])
+            {
+            case 'F':
+                rgb_params->motion_type = FREE_MOTION;
+                break;
+            case 'C':
+                rgb_params->motion_type = COM_MOTION;
+                break;
+            case 'T':
+                rgb_params->motion_type = TRANSLATION;
+                break;
+            case 'R':
+                rgb_params->motion_type = ROTATION;
+                break;
+            default:
+                (void) printf("Unknown type of motion!\n");
+                clean_up(ERROR);
             }
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        if (CursorAfterStringOpt(infile,
-            "Type yes if rigid body will rotate about an axis:"))
+        if (rgb_params->motion_type == TRANSLATION ||
+            rgb_params->motion_type == PRESET_TRANSLATION)
         {
-            fscanf(infile,"%s",s);
-            (void) printf("%s\n",s);
-            if (s[0] == 'y' || s[0] == 'Y')
+            mag_dir = 0.0;
+            CursorAfterString(infile,"Enter the direction of motion:");
+            for (i = 0; i < dim; ++i)
             {
-                /* For 2D, it is always about the z-axis */
-                if (dim == 3)
+                fscanf(infile,"%lf",&rgb_params->translation_dir[i]);
+                (void) printf("%f ",rgb_params->translation_dir[i]);
+                mag_dir += sqr(rgb_params->translation_dir[i]);
+            }
+            (void) printf("\n");
+            mag_dir = sqrt(mag_dir);
+            for (i = 0; i < dim; ++i)
+                rgb_params->translation_dir[i] /= mag_dir;
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+    
+        if (rgb_params->motion_type == FREE_MOTION ||
+            rgb_params->motion_type == COM_MOTION ||
+            rgb_params->motion_type == TRANSLATION)
+        {
+            sprintf(msg,"Enter the total mass for rigid body:");
+            CursorAfterString(infile,msg);
+            fscanf(infile,"%lf",&rgb_params->total_mass);
+            (void) printf("%f\n",rgb_params->total_mass);
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+
+        if (rgb_params->motion_type == FREE_MOTION ||
+            rgb_params->motion_type == COM_MOTION ||
+            rgb_params->motion_type == TRANSLATION ||
+            rgb_params->motion_type == PRESET_MOTION ||
+            rgb_params->motion_type == PRESET_TRANSLATION)
+        {
+            sprintf(msg,"Enter the initial center of mass for rigid body:");
+            CursorAfterString(infile,msg);
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%lf",&rgb_params->center_of_mass[i]);
+                (void) printf("%f ",rgb_params->center_of_mass[i]);
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+
+            (void) printf("\n");
+            sprintf(msg,"Enter the initial center of mass velocity:");
+            CursorAfterString(infile,msg);
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%lf",&rgb_params->cen_of_mass_velo[i]);
+                (void) printf("%f ",rgb_params->cen_of_mass_velo[i]);
+            }
+            (void) printf("\n");
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+
+        if (rgb_params->motion_type == PRESET_ROTATION)
+        {
+            /* 2D preset rotation is always about the z-axis */
+            /* 3D preset rotation axis along rotation_dir */
+            if (dim == 3)
+            {
+                mag_dir = 0.0;
+                CursorAfterString(infile,"Enter the direction of rotation:");
+                for (i = 0; i < dim; ++i)
                 {
-                    sprintf(msg,"Enter direction of the axis:");
+                    fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
+                    (void) printf("%f ",rgb_params->rotation_dir[i]);
+                    mag_dir += sqr(rgb_params->rotation_dir[i]);
+                }
+                (void) printf("\n");
+                mag_dir = sqrt(mag_dir);
+                for (i = 0; i < dim; ++i)
+                    rgb_params->rotation_dir[i] /= mag_dir;
+                /* initialize the euler parameters */
+                rgb_params->euler_params[0] = 1.0;
+                for (i = 1; i < 4; ++i)
+                    rgb_params->euler_params[i] = 0.0;
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+
+            /* Center of axis is the coordinate of a point on the axis */
+            CursorAfterString(infile,"Enter rotation center:");
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
+                (void) printf("%f ",rgb_params->rotation_cen[i]);
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+
+            (void) printf("\n");
+            CursorAfterString(infile,"Enter preset angular velocity:");
+            fscanf(infile,"%lf",&rgb_params->angular_velo);
+            (void) printf("%f\n",rgb_params->angular_velo);
+            (void) fseek(infile,idpos,SEEK_SET);
+        
+            if (dim == 3)
+            {
+                /* used to update the maximum speed in 3D cases */
+                for (i = 0; i < dim; ++i)
+                    rgb_params->p_angular_velo[i] = rgb_params->angular_velo
+                                    * rgb_params->rotation_dir[i];
+            }
+        }
+
+        if (rgb_params->motion_type == ROTATION)
+        {
+            if (CursorAfterStringOpt(infile,
+                "Type yes if rigid body will rotate about an point:"))
+            {
+                fscanf(infile,"%s",s);
+                (void) printf("%s\n",s);
+                if (s[0] == 'y' || s[0] == 'Y')
+                {
+                    sprintf(msg,"Enter rotation center:");
                     CursorAfterString(infile,msg);
                     for (i = 0; i < dim; ++i)
                     {
-                        fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
-                        (void) printf("%f ",rgb_params->rotation_dir[i]);
-                        mag_dir += sqr(rgb_params->rotation_dir[i]);
+                        fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
+                        (void) printf("%f ",rgb_params->rotation_cen[i]);
                     }
-                    mag_dir = sqrt(mag_dir);
-                    for (i = 0; i < dim; ++i)
-                        rgb_params->rotation_dir[i] /= mag_dir;
                     (void) printf("\n");
                 }
+                (void) fseek(infile,idpos,SEEK_SET);
             }
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
 
-    if (rgb_params->motion_type == FREE_MOTION ||
-        rgb_params->motion_type == ROTATION)
-    {
-        CursorAfterString(infile,"Enter the moment of inertial: ");
-        /*
-        if (dim == 2)
-        {
-            fscanf(infile,"%lf",&rgb_params->moment_of_inertial);
-            (void) printf("%f\n",rgb_params->moment_of_inertial);
-        }
-        else if (dim == 3)*/
-        if (dim == 3)
-        {
-            for (i = 0; i < dim; ++i)
+            if (CursorAfterStringOpt(infile,
+                "Type yes if rigid body will rotate about an axis:"))
             {
-                fscanf(infile,"%lf",&rgb_params->p_moment_of_inertial[i]);
-                (void) printf("%f ",rgb_params->p_moment_of_inertial[i]);
+                fscanf(infile,"%s",s);
+                (void) printf("%s\n",s);
+                if (s[0] == 'y' || s[0] == 'Y')
+                {
+                    /* For 2D, it is always about the z-axis */
+                    if (dim == 3)
+                    {
+                        sprintf(msg,"Enter direction of the axis:");
+                        CursorAfterString(infile,msg);
+                        for (i = 0; i < dim; ++i)
+                        {
+                            fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
+                            (void) printf("%f ",rgb_params->rotation_dir[i]);
+                            mag_dir += sqr(rgb_params->rotation_dir[i]);
+                        }
+                        mag_dir = sqrt(mag_dir);
+                        for (i = 0; i < dim; ++i)
+                            rgb_params->rotation_dir[i] /= mag_dir;
+                        (void) printf("\n");
+                    }
+                }
             }
-            (void) printf("\n");
+            (void) fseek(infile,idpos,SEEK_SET);
         }
-        (void) fseek(infile,idpos,SEEK_SET);
 
-        CursorAfterString(infile,"Enter initial angular velocity: ");
-        /*
-        if (dim == 2)
+        if (rgb_params->motion_type == FREE_MOTION ||
+            rgb_params->motion_type == ROTATION)
         {
-            fscanf(infile,"%lf",&rgb_params->angular_velo);
-            (void) printf("%f\n",rgb_params->angular_velo);
-        }
-        else if (dim == 3)*/
-        if (dim == 3)
-        {
-            for (i = 0; i < dim; ++i)
+            CursorAfterString(infile,"Enter the moment of inertial: ");
+            /*
+            if (dim == 2)
             {
-                fscanf(infile,"%lf",&rgb_params->p_angular_velo[i]);
-                (void) printf("%f ",rgb_params->p_angular_velo[i]);
+                fscanf(infile,"%lf",&rgb_params->moment_of_inertial);
+                (void) printf("%f\n",rgb_params->moment_of_inertial);
             }
-            (void) printf("\n");
-            /* initialize the euler parameters */
-            rgb_params->euler_params[0] = 1.0;
-            for (i = 1; i < 4; ++i)
-                rgb_params->euler_params[i] = 0.0;
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-
-    if (rgb_params->motion_type == PRESET_ROTATION ||
-        rgb_params->motion_type == PRESET_MOTION ||
-        rgb_params->motion_type == PRESET_TRANSLATION)
-    {
-        rgb_params->vparams = NULL;
-        rgb_params->vel_func = NULL;
-        if (CursorAfterStringOpt(infile,
-            "Type yes to use prescribed velocity function:"))
-        {
-            fscanf(infile,"%s",s);
-            (void) printf("%s\n",s);
-            if (s[0] == 'y' || s[0] == 'Y')
+            else if (dim == 3)*/
+            if (dim == 3)
             {
-                prompt_for_velocity_func(dim,inname,rgb_params);
+                for (i = 0; i < dim; ++i)
+                {
+                    fscanf(infile,"%lf",&rgb_params->p_moment_of_inertial[i]);
+                    (void) printf("%f ",rgb_params->p_moment_of_inertial[i]);
+                }
+                (void) printf("\n");
             }
-        }
-        (void) fseek(infile,idpos,SEEK_SET);
-    }
-    fclose(infile);
+            (void) fseek(infile,idpos,SEEK_SET);
 
-    if (debugging("rgbody"))
-        (void) printf("Leaving prompt_for_rigid_body_params()\n");
+            CursorAfterString(infile,"Enter initial angular velocity: ");
+            /*
+            if (dim == 2)
+            {
+                fscanf(infile,"%lf",&rgb_params->angular_velo);
+                (void) printf("%f\n",rgb_params->angular_velo);
+            }
+            else if (dim == 3)*/
+            if (dim == 3)
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    fscanf(infile,"%lf",&rgb_params->p_angular_velo[i]);
+                    (void) printf("%f ",rgb_params->p_angular_velo[i]);
+                }
+                (void) printf("\n");
+                /* initialize the euler parameters */
+                rgb_params->euler_params[0] = 1.0;
+                for (i = 1; i < 4; ++i)
+                    rgb_params->euler_params[i] = 0.0;
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+
+        if (rgb_params->motion_type == PRESET_ROTATION ||
+            rgb_params->motion_type == PRESET_MOTION ||
+            rgb_params->motion_type == PRESET_TRANSLATION)
+        {
+            rgb_params->vparams = NULL;
+            rgb_params->vel_func = NULL;
+            if (CursorAfterStringOpt(infile,
+                "Type yes to use prescribed velocity function:"))
+            {
+                fscanf(infile,"%s",s);
+                (void) printf("%s\n",s);
+                if (s[0] == 'y' || s[0] == 'Y')
+                {
+                    prompt_for_velocity_func(dim,inname,rgb_params);
+                }
+            }
+            (void) fseek(infile,idpos,SEEK_SET);
+        }
+        fclose(infile);
+
+        if (debugging("rgbody"))
+            (void) printf("Leaving prompt_for_rigid_body_params()\n");
 }       /* end prompt_for_rigid_body_params */
 
 static void set_rgbody_params(
         RG_PARAMS* rg_params,
         HYPER_SURF* hs)
 {
-    int i,dim = rg_params->dim;
+        int i,dim = rg_params->dim;
 	body_index(hs) = rg_params->body_index;
-    total_mass(hs) = rg_params->total_mass;
-    mom_inertial(hs) = rg_params->moment_of_inertial;
-    angular_velo(hs) = rg_params->angular_velo;
-    motion_type(hs) = rg_params->motion_type;
-    vparams(hs) = rg_params->vparams;
-    vel_func(hs) = rg_params->vel_func;
-    surface_tension(hs) = 0.0;
-    for (i = 0; i < dim; ++i)
-    {
-        center_of_mass(hs)[i] = rg_params->center_of_mass[i];
-        center_of_mass_velo(hs)[i] =
-                            rg_params->cen_of_mass_velo[i];
-        rotation_center(hs)[i] =
-                            rg_params->rotation_cen[i];
-        translation_dir(hs)[i] = rg_params->translation_dir[i];
+        total_mass(hs) = rg_params->total_mass;
+        mom_inertial(hs) = rg_params->moment_of_inertial;
+        angular_velo(hs) = rg_params->angular_velo;
+        motion_type(hs) = rg_params->motion_type;
+        vparams(hs) = rg_params->vparams;
+        vel_func(hs) = rg_params->vel_func;
+        surface_tension(hs) = 0.0;
+        for (i = 0; i < dim; ++i)
+        {
+            center_of_mass(hs)[i] = rg_params->center_of_mass[i];
+            center_of_mass_velo(hs)[i] = rg_params->cen_of_mass_velo[i];
+            rotation_center(hs)[i] = rg_params->rotation_cen[i];
+            translation_dir(hs)[i] = rg_params->translation_dir[i];
+            if (dim == 3)
+            {
+                rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+                p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+                p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
+            }
+        }
         if (dim == 3)
         {
-            rotation_direction(hs)[i] = rg_params->rotation_dir[i];
-            p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
-            p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
+            for (i = 0; i < 4; i++)
+                euler_params(hs)[i] = rg_params->euler_params[i];
         }
-    }
-    if (dim == 3)
-    {
-        for (i = 0; i < 4; i++)
-            euler_params(hs)[i] = rg_params->euler_params[i];
-    }
 }       /* end set_rgbody_params */
 
 static void prompt_for_velocity_func(
@@ -809,7 +795,7 @@ static void prompt_for_velocity_func(
         char *inname,
         RG_PARAMS *rgb_params)
 {
-    clean_up(1);
+        clean_up(1);
 
     /*
     FILE *infile = fopen(inname,"r");

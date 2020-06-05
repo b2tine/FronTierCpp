@@ -69,3 +69,22 @@ EXPORT void FT_ReadFrontState(
             fread(sr,1,front->sizest,infile);
         }
 }       /* end FT_ReadFrontState */
+
+/*
+EXPORT void FT_ClearFrontState(Front *front)
+{
+        INTERFACE *intfc = front->interf;
+        Locstate *sl,*sr;
+        POINT *p;
+        HYPER_SURF *hs;
+        HYPER_SURF_ELEMENT *hse;
+
+        next_point(intfc,NULL,NULL,NULL);
+        while (next_point(intfc,&p,&hse,&hs))
+        {
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            //TODO: clear states .. use memset() ?
+        }
+}*/       /* end FT_ClearFrontState */
+
+

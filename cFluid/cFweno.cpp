@@ -363,6 +363,7 @@ static void u2f(
     	f[4] = v*(u[4] + u[5]);
 }
 
+//TODO: Not working correctly
 static void arti_compression(
 	POINTER params,
 	double *sten,
@@ -379,6 +380,7 @@ static void arti_compression(
 
 	c = 0.0;
 	if (scheme_params->artificial_compression == NO) return;
+
 	ac_alpha_nume = fabs(sten[3] - 2.0*sten[2] + sten[1]);
 	ac_alpha_deno = fabs(sten[3] - sten[2]) + fabs(sten[2] - sten[1]);
 	f_ac_tmp = weno5_scal(sten_tmp);

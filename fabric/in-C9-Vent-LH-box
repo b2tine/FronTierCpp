@@ -1,0 +1,105 @@
+Domain limit in 0-th dimension: 0 12
+Domain limit in 1-th dimension: 0 12
+Domain limit in 2-th dimension: 0 24
+Computational grid: 60 60 120
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+Start parameters for modules
+
+************Rigid body parameters*************
+Enter yes to add rigid body: yes
+Enter the number of rigid bodies: 1
+For rigid body 1
+Enter type of rigid body: Box
+Enter center of the box: 6 6 11.5
+Enter edges of the box: 0.5 0.5 0.5
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 100
+Enter the initial center of mass for rigid body: 6 6 11.5
+Enter the initial center of mass velocity: 0 0 0
+
+************Parachute parameters*************
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: c
+Enter the height of the plane: 18
+Enter circle center: 6 6
+Enter circle radius: 4.2672
+Enter yes to attach gores to canopy: n
+Enter yes to cut a vent on canopy: yes
+Enter radius of the vent: 0.42672
+Enter yes to attach strings to canopy: yes
+Enter number of chords: 28
+Enter initial position of load: 7 7 11.75
+Enter yes to fix the load node: no
+Enter yes to install the strings to RGB: yes
+Enter the body index of the target RGB: 1
+
+******************************************
+
+Enter type of plane edge: c
+Enter start angle of chord: 6.263185
+Enter rotation angles: 0.0
+
+Start parameters for spring-mass system
+Enter yes to use total mass: no
+Enter fabric spring constant: 5000
+Enter fabric damping constant: 0.01
+Enter fabric point mass: 0.001
+Enter string spring constant: 5000
+Enter string damping constant: 0.0
+Enter string point mass: 0.01
+Enter payload: 100
+
+
+Start test velocity function set
+Available velocity functions are:
+        Vortex velocity (R)
+        Double vortex velocity (D)
+        Vertical velocity (V)
+        Toroidal velocity (T)
+        Parabolic velocity (P)
+        Singular velocity (S)
+        Zero velocity (Z)
+        Fixed area velocity (FA)
+        Fixed point velocity (FP)
+        Free fall velocity (FF)
+Enter velocity function: FA
+Enter initial shape of fixed area: E
+Enter center of ellipse: 6 6
+Enter radii of ellipse: 0.5 0.5
+Enter area velocity: 0 0 0
+Enter gravity: 0 0 -9.8
+
+Start test time control parameters
+Max time: 3
+Max step: 1000
+Print interval: 0.1
+Movie frame interval: 0.1
+CFL factor: 0.5
+
+////////////////////////////////////////
+
+Enter yes for debugging: yes
+Enter the debugging string: trace
+Enter the debugging string: collision
+
+
+

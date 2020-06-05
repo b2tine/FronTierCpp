@@ -6,10 +6,16 @@
 
 
 function config_opportunity {
-    export CC=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicc
-    export CXX=/home/ext.bballentine/FT_External/mpich-3.3.1/bin/mpicxx
-    export CPPFLAGS="-I/home/ext.bballentine/FT_External/gmp-6.1.2/include -I/home/ext.bballentine/FT_External/mpfr-4.0.2/include"
-    CONF="--with-mpi --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.11/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.11/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
+    OPENMPI_DIR=/shared/openmpi-2.1.1/gcc-6.2.1
+    export CC="${OPENMPI_DIR}/bin/mpicc"
+    export CXX="${OPENMPI_DIR}/bin/mpicxx"
+    export CFLAGS="-std=gnu11 $CFLAGS"
+    CONF="--with-openmpi-dir=${OPENMPI_DIR} --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
+}
+
+function config_opportunity_serial {
+    export CFLAGS="-std=gnu11 $CFLAGS"
+    CONF="--with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
 }
 
 function config_intruder {
@@ -17,14 +23,15 @@ function config_intruder {
     export CC=mpicc
     export CXX=mpicxx
     export CFLAGS="-std=gnu11 $CFLAGS"
-    CONF="--with-mpi --with-petsc-dir=/opt/petsc-3.11.0-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-dir=/opt/cgal --with-boost-dir=/opt/boost-1.58.0 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
+    CGAL_DIR="/opt/CGAL-4.14"
+    CONF="--with-mpi --with-petsc-dir=/opt/petsc-3.11.0-mpich2 --with-hdf4-dir=/opt/hdf --with-gd-dir=/opt/gd --with-cgal-inc=${CGAL_DIR}/include --with-cgal-lib=${CGAL_DIR}/lib64 --with-boost-dir=/opt/boost-1.65.1 --with-arma-inc=/opt/armadillo-9/include --with-arma-lib=/opt/armadillo-9/lib64 --with-cvode-dir=/opt/cvode --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib64"
 }
 
 function config_omega {
-    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
@@ -32,14 +39,15 @@ function config_lambda {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_alpha {
-    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
@@ -47,28 +55,31 @@ function config_beta {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-function config_grad01 {
+function config_delta {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
-    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-inc=/usr/include --with-cgal-lib=/usr/lib/x86_64-linux-gnu --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-function config_jarretlaptop {
-	PETSC_DIR="/home/jarret/petsc-3.11.0-dbg"
-    	export CC=${PETSC_DIR}/bin/mpicc
-    	export CXX=${PETSC_DIR}/bin/mpicxx
-    	CONF="--with-mpi --with-petsc-dir=${PETSC_DIR}"
+function config_gamma {
+    PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
 function config_defiant {
-    CGAL_DIR="/opt/CGAL-4.14-${ARCH}"
     PETSC_DIR="/opt/petsc-3.11.0-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/opt/CGAL-4.14-${ARCH}"
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
@@ -94,6 +105,8 @@ for arg in $@ ; do
         WARNING="-Wall"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
+    elif [[ "$arg" == "-s" ]]; then
+        SERIAL=1
     fi
 done
 
@@ -120,18 +133,22 @@ elif [[ "$HOST" == alpha ]]; then
 elif [[ "$HOST" == beta.ams.stonybrook.edu ]]; then
     echo "Machine recognized as beta."
     config_beta
+elif [[ "$HOST" == delta.ams.stonybrook.edu ]]; then
+    echo "Machine recognized as delta."
+    config_delta
+elif [[ "$HOST" == gamma.ams.stonybrook.edu ]]; then
+    echo "Machine recognized as gamma."
+    config_gamma
 elif [[ "$HOST" == defiant ]]; then
     echo "Machine recognized as defiant."
     config_defiant
-elif [[ "$HOST" == grad01 ]]; then
-    echo "Machine recognized as grad01."
-    config_grad01
-elif [[ "$HOST" == jarret-MacBookAir ]]; then
-	echo "Jarret RECOGNIZED"
-	config_jarretlaptop
 elif [[ "$HOST" == head ]]; then
     echo "Machine recognized as opportunity."
-    config_opportunity
+    if [[ "$SERIAL" == 1 ]]; then
+        config_opportunity_serial
+    else
+        config_opportunity
+    fi
 else 
     echo Unrecognized machine.
     exit 1
@@ -144,7 +161,7 @@ echo "configure options: ${CONF}"
 
 ./configure ${CONF}
 
-if [[ -z "$NOMAKE" ]]; then
+if [[ "$NOMAKE" != 1 ]]; then
     make -j 4
 fi
 
