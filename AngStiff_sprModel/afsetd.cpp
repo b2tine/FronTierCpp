@@ -394,23 +394,23 @@ extern void set_node_spring_vertex(
 	    }
 	    if (!is_load_node(node))
 	    {
-		sv[*n].lambda = lambda_s;
+		    sv[*n].lambda = lambda_s;
 	    }
 	    if (is_fixed) 
 	    {
-		sv[*n].lambda = 0.0;
+		    sv[*n].lambda = 0.0;
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
-		    sv[*n].k[i] = 0.0;
+		        sv[*n].k[i] = 0.0;
 	    }
 	    if (is_fixed) 
 	    {
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
-		{
-		    sv[*n].x_ajl[i] = NULL;
-		    sv[*n].x_ajr[i] = NULL;
-		    sv[*n].ix_ajl[i] = -1;
-		    sv[*n].ix_ajr[i] = -1;
-		}
+            {
+                sv[*n].x_ajl[i] = NULL;
+                sv[*n].x_ajr[i] = NULL;
+                sv[*n].ix_ajl[i] = -1;
+                sv[*n].ix_ajr[i] = -1;
+            }
 	    }
 	}
 	else
@@ -619,7 +619,7 @@ extern void set_surf_spring_vertex(
 		    {
 		    	sv[i].k[k] = tris[k]->k[l];
 		    }
-		    sv[i].len0[k] = tris[k]->side_length0[l];;
+		    sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;
