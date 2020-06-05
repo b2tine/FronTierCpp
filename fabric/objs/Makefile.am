@@ -41,6 +41,7 @@ libfabric_la_SOURCES = \
 ../rigidbody.h \
 ../rigidbody.cpp \
 ../modules.cpp \
+../spring_modules.cpp \
 ../fabric_api.cpp
 
 
