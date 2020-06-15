@@ -58,6 +58,7 @@ example2d/example*
 example3d/example*
 cFluid/cFluid
 cFluid/init_intfc-*
+timeSeries/timeSeries
 weno/test
 weno/matdata
 iFluid/iFluid
