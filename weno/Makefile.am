@@ -6,7 +6,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/weno \
 
 
 noinst_PROGRAMS = test \
-				  advection_diffusion \
 				  matdata
 
 
@@ -15,12 +14,6 @@ test_SOURCES = test.cpp \
 			   weno.h
 
 test_LDADD = $(top_builddir)/lib/libFronTier.la
-
-advection_diffusion_SOURCES = advection_diffusion.cpp \
-			   weno.cpp \
-			   weno.h
-
-advection_diffusion_LDADD = $(top_builddir)/lib/libFronTier.la
 
 
 matdata_SOURCES = matdata.cpp \
