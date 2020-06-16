@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include "iFluid.h"
+#include <cstdio>
 
 	/*  Function Declarations */
 static void ifluid_driver(Front*,Incompress_Solver_Smooth_Basis*);
@@ -245,15 +246,62 @@ static void ifluid_driver(Front *front,
         printf("Time step from start: %f\n",front->dt);
     
     //For generating PINN training data
-    std::vector<VDATA> velmat;
+            //std::vector<VDATA> velmat;
+
+    // Write mesh file
+    l_cartesian->writeMeshFile();
+
+    char tv_name[100];
+    sprintf(tv_name,"%s/time.txt",out_name);
+        //FILE* tv_file = fopen(tv_name,"w");
+
+    char velm_name[100];
+    auto imax = l_cartesian->getMaxIJ();
+    sprintf(velm_name,"%s/velmat-%d-%d.txt",
+                out_name,imax[0],imax[1]);
+        //FILE* velm_file = fopen(velm_name,"w");
+    
+    char vortm_name[100];
+    sprintf(vortm_name,"%s/vortmat-%d-%d.txt",
+                out_name,imax[0],imax[1]);
+        //FILE* vortm_file = fopen(vortm_name,"w");
 
     int tdata = 0;
     for (;;)
     {
         //For generating PINN training data
-        if (FT_IsSaveTime(front) || tdata == 0)
+        if (FT_IsSaveTime(front) || FT_IsDrawTime(front) || tdata == 0)
         {
-            velmat.push_back(l_cartesian->getVelData());
+            FILE* tv_file = fopen(tv_name,"a");
+            FILE* velm_file = fopen(velm_name,"a");
+            FILE* vortm_file = fopen(vortm_name,"a");
+
+            //velmat.push_back(l_cartesian->getVelData());
+            auto vdata = l_cartesian->getVelData();
+            
+            fprintf(tv_file,"%20.14f %20.14f\n",
+                    vdata.time,vdata.dt);
+            
+            for (auto it : vdata.data)
+            {
+                auto iv = it.vel;
+                auto ic = it.icoords;
+                fprintf(velm_file,"%20.14f %20.14f\n",iv[0],iv[1]);
+                    //fprintf(velm_file,"%20.14f %20.14f",iv[0],iv[1]);
+                    //fprintf(velm_file," (%d,%d) index = %d\n",
+                      //ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
+
+                auto vort = it.vort;
+                fprintf(vortm_file,"%20.14f\n",vort);
+                    //fprintf(vortm_file,"%20.14f",vort);
+                    //fprintf(vortm_file," (%d,%d) index = %d\n",
+                      //ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
+            }
+        
+            fclose(tv_file);
+            fclose(velm_file);
+            fclose(vortm_file);
+
             tdata++;
         }
         
@@ -305,13 +353,13 @@ static void ifluid_driver(Front *front,
 
         if (FT_IsSaveTime(front))
         {
-            FT_Save(front);
-            l_cartesian->printFrontInteriorStates(out_name);
+            //FT_Save(front);
+            //l_cartesian->printFrontInteriorStates(out_name);
         }
         
         if (FT_IsDrawTime(front))
         {
-            FT_Draw(front);
+            //FT_Draw(front);
         }
     
         //recordBdryEnergyFlux(front,out_name);
@@ -347,14 +395,17 @@ static void ifluid_driver(Front *front,
     /* Write PINN training data */
 
     // Write mesh file
-    l_cartesian->writeMeshFile();
+        //l_cartesian->writeMeshFile();
 
-    //TODO: write vort file
-    // Write time and velocity files
+
+    //TODO: RENAME VEL AND VORT FILES -- APPEND NUM STEPS
+        //std::rename()
+
+    /*
     char tv_name[100];
     sprintf(tv_name,"%s/time-%d.txt",out_name,tdata);
     FILE* tv_file = fopen(tv_name,"w");
-    
+
     char velm_name[100];
     auto imax = l_cartesian->getMaxIJ();
     sprintf(velm_name,"%s/velmat-%d-%d-%d.txt",
@@ -365,7 +416,7 @@ static void ifluid_driver(Front *front,
     sprintf(vortm_name,"%s/vortmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],tdata);
     FILE* vortm_file = fopen(vortm_name,"w");
-
+    
         //auto top_gmax = l_cartesian->getTopGMax();
     for (int t = 0; t < tdata; ++t)
     {
@@ -390,10 +441,26 @@ static void ifluid_driver(Front *front,
                   //ic[0],ic[1],d_index2d(ic[0],ic[1],top_gmax));
         }
     }
+    */
 
-    fclose(tv_file);
+    /*fclose(tv_file);
     fclose(velm_file);
-    fclose(vortm_file);
+    fclose(vortm_file);*/
+
+    char new_tv_name[100];
+    sprintf(new_tv_name,"%s/time-%d.txt",out_name,tdata);
+    std::rename(tv_name,new_tv_name);
+
+    char new_velm_name[100];
+        //auto imax = l_cartesian->getMaxIJ();
+    sprintf(new_velm_name,"%s/velmat-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],tdata);
+    std::rename(velm_name,new_velm_name);
+    
+    char new_vortm_name[100];
+    sprintf(new_vortm_name,"%s/vortmat-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],tdata);
+    std::rename(vortm_name,new_vortm_name);
 
 }       /* end ifluid_driver */
 

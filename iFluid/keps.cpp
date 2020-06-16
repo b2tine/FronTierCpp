@@ -1758,6 +1758,8 @@ void KE_CARTESIAN::computeMuTurb()
 	if (keps_model == REALIZABLE)
 	    FT_ParallelExchGridArrayBuffer(field->Cmu,front,NULL);
 
+    //TODO: make optional print
+    /*
 	if (dim == 2)
 	{
 	    sprintf(fname,"%s/K_field",OutName(front));
@@ -1777,7 +1779,7 @@ void KE_CARTESIAN::computeMuTurb()
             printField3d(field->Cmu,fname,lmin,lmax,top_gmax);
 	    }
 	}
-
+    */
 }
 	
 void KE_CARTESIAN::setAdvectionDt()
