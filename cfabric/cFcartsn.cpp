@@ -6296,13 +6296,12 @@ void G_CARTESIAN::setElasticStatesRiem(
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
 
-        //TODO: can we get a better normal vector and intfc state?
-        //      Without taking an average of the values from each
-        //      point on the triangle that is.
+        //TODO: Use all three points of triangle in approximation,
+        //      and use the triangle normal like in compute_total_canopy_force3d()
         TRI* nearTri = Tri_of_hse(nearHse);
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
         STATE* state_intfc = (STATE*)left_state(Point_of_tri(nearTri)[0]);
-            //nor = Tri_normal_vector(nearTri);
+            //nor = Tri_normal_vector(nearTri);//USE THIS
         double h = FT_GridSizeInDir(nor,front);
 
         for (j = 0; j < 3; ++j)
@@ -6322,6 +6321,10 @@ void G_CARTESIAN::setElasticStatesRiem(
 	    FT_IntrpStateVarAtCoords(front,comp_ghost,pr,
                 m_vst->pres,getStatePres,&sr.pres,&m_vst->pres[index_ghost]);
         
+        //TODO: retain the tangential velocities of the interpolated states
+        //      and add to the normal ghost velocity obtained from the
+        //      riemann problem.
+        //
         //Using relative velocity wrt to interface velocity
         //TODO: can we do better than this interpolation?
         /*
