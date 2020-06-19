@@ -21,6 +21,7 @@ struct SPRING_VERTEX
     double lambda;          // damping coefficient
     double *k;              // spring constant
     double *len0;           // equilibrium lengths to neighbors
+    double *len_prev;       // previous step lengths to neighbors
     
     double *gam_adj00;      // gamma between x and x_ajl
 	double *gam_adj01;		// gamma between x and x_ajr

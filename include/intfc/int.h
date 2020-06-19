@@ -129,7 +129,7 @@ struct _BOND
 	double length;
 	double length0;			/* for fixed length bond */
 	double dir0[MAXD];		/* initial direction */
-        long global_index;
+    long global_index;
 
 	struct _BOND_TRI **_btris;	/* Bounding triangles in angle order */
 };

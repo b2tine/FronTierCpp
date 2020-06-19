@@ -706,6 +706,7 @@ static void link_node_point_set(
 	(*n)++;
 }	/* end link_node_point_set */
 
+//TODO: see how qqshi code handles gore boundary curves
 extern void set_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv,
@@ -716,11 +717,20 @@ extern void set_vertex_neighbors(
 	if (debugging("canopy"))
 	    (void) printf("Entering set_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
+    //TODO: in all of the below functions the len0 arrays
+    //      should instead be len_prev and store the edge length
+    //      from the previous time step. For the model being
+    //      implemented the spring elongations need to be computed
+    //      by taking the difference between the current edge lengths
+    //      and the previous edge lengths.
+    //
+    //      NOT the difference between the current edge lengths and the
+    //      equilibrium rest legnths!
+	
+    ns = geom_set->num_surfs;
 	nc = geom_set->num_curves;
 	nn = geom_set->num_nodes;
 	n = 0;
-    //TODO: see how qqshi code handles gore boundary curves
 	for (i = 0; i < ns; ++i)
         set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,point_set);
 	for (i = 0; i < nc; ++i)
