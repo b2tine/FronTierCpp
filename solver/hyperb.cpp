@@ -94,6 +94,8 @@ void HYPERB_SOLVER::solveRungeKutta()
 
 	/* Compute flux and advance field */
 
+    //TODO: Can we inlcude the viscous terms in
+    //      computeMeshFlux()?
 	copyToMeshVst(&st_field[0]);
 	computeMeshFlux(st_field[0],&st_flux[0]);
 	
@@ -102,18 +104,19 @@ void HYPERB_SOLVER::solveRungeKutta()
 	    copyMeshVst(st_field[0],&st_field[i+1]);
 	    for (j = 0; j <= i; ++j)
 	    {
-		if (a[i][j] != 0.0)
-		{
-		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
-		}
+            if (a[i][j] != 0.0)
+            {
+                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+            }
 	    }
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1]);
 	}
+
 	for (i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
 	    {
-		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+		    addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	    }
 	}
 	copyFromMeshVst(st_field[0]);
