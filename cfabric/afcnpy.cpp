@@ -2013,6 +2013,8 @@ extern void set_geomset_velocity(
 	int nc = geom_set->num_curves;
 	int nn = geom_set->num_nodes;
 
+    //TODO: ensure not using only the normal component of velocity
+    //      does not create any problems
 	for (int i = 0; i < ns; ++i)
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
 	for (int i = 0; i < nc; ++i)
