@@ -13,7 +13,9 @@ struct STATE
 
 	double temperature;         /* For melting with flow problem */
 	double mu;			        /* For eddy viscosity */
-	double fluid_accel[MAXD];   /* acceleration from fluid force */
+
+        //double drag_force[MAXD];    /* temporary for line drag model prototyping*/
+    double fluid_accel[MAXD];   /* acceleration from fluid force */
     double other_accel[MAXD];   /* acceleration for special nodes */
 
     double impulse[MAXD];       /* Accum impact from external force */

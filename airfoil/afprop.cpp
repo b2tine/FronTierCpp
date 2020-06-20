@@ -351,24 +351,38 @@ static void string_curve_propagation(
             }
             speed = sqrt(speed);
 
-            double A_ref = 2.0*PI*radius*(0.1*length);
-            double Vol = PI*radius*radius*(0.1*length);
+                //double A_ref = 2.0*PI*radius*length;
+                //double Vol = PI*radius*radius*length;
+            double A_ref = 2.0*PI*radius*(0.25*length);
+            double Vol = PI*radius*radius*(0.25*length);
             double mass = rhoS*Vol;
 
+            double dragForce[MAXD] = {0.0};
             for (int i = 0; i < 3; ++i)
             {
-                double dragForce = 0.0;
+                    //double dragForce = 0.0;
                 if (front->step > af_params->fsi_startstep)
-                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
-                    //dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+                    dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                    //dragForce = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                        //dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
 
-                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
+                //Save to dragForce to newp's left state, newsl, for use in
+                //addImmersedForce() in the application of equal but opposite
+                //reaction force on the fluid.
+                newsl->drag_force[i] = dragForce[i];
+                newsr->drag_force[i] = dragForce[i];
+
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/mass;
+                    //newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	            //newsr->vel[i] = newsl->vel[i] = sl->vel[i];
 	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
             }
+
+            printf("newsl->drag_force = %g %g %g\n",
+                    newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
             /*
             if (count == 5)
                 printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
