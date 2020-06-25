@@ -142,11 +142,10 @@ Type yes to perturb the surface: n
 
 Start test time control parameters
 Max time: 5
-Max step: 5000
-Print interval: 1
-Movie frame interval: 0.1
+Max step: 33
+Print interval: 0.01
+Movie frame interval: 0.005
 CFL factor: 0.5
-
 
 Enter yes for debugging: yes
 Enter the debugging string: proximity
