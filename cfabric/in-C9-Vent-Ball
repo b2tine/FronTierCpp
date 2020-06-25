@@ -70,6 +70,7 @@ Enter radius of the sphere: 0.5 0.5 0.5
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
 Type yes if the rigid body is fixed: no
+Type yes to use CGAL for rigid body: yes
 
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n
@@ -93,10 +94,19 @@ Enter yes to cut a vent on canopy: yes
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
-Enter initial position of load: 6 6 12.451
+
+Enter initial position of load: 6 6 12.5
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to fix the load node: no
+
+For rigid body 1
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 100
+Enter the initial center of mass for rigid body: 6 6 12
+Enter the initial center of mass velocity: 0 0 0
 
 Enter type of plane edge: c
 Enter start angle of chord: 6.263185
@@ -111,7 +121,7 @@ Enter interior sub step number: 10
 
 Enter yes to use porosity: yes
 Enter fabric porosity: 0.025
-Enter porosity ghost fluid method: REFLECTION
+Enter porosity ghost fluid method: NORMAL_REFLECTION
 
 Enter area density of canopy: 5.0
 
@@ -142,3 +152,4 @@ CFL factor: 0.5
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: Xtrace

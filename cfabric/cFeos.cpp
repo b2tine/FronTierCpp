@@ -67,7 +67,7 @@ extern double EosInternalEnergy(
 {
 	double		pres = state->pres;
 	double		dens = state->dens;
-	EOS_PARAMS	*eos = state->eos;
+	EOS_PARAMS* eos = state->eos;
 	double		gamma = eos->gamma;
 
 	return (pres+gamma*eos->pinf)/(gamma-1.0) - dens*eos->einf;

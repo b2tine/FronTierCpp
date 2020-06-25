@@ -568,24 +568,34 @@ static  void neumann_point_propagate(
             for (i = 0; i < dim; ++i)
 	    	vel[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
             Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
 	    newst->vel[i] = vel[i];
             FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
 			getStatePres,&newst->pres,&oldst->pres);
-        newst->eos = oldst->eos;
-	for (i = 0; i < dim; ++i)
+
+    //TODO: need to make a hard copy of eos?
+        //memcpy(&(newst->eos),&(oldst->eos),sizeof(oldst->eos));
+            // sizeof(EQN_PARAMS)*MAX_COMP);
+
+    newst->eos = &(eqn_params->eos[comp]);
+        //newst->eos = oldst->eos;
+    
+    for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
 	    newst->momn[i] = newst->dens*vel[i];
 	}
 	newst->engy = EosEnergy(newst);
-	s = mag_vector(vel,dim);
+	
+    s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
 }	/* end neumann_point_propagate */

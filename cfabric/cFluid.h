@@ -104,7 +104,7 @@ struct EQN_PARAMS
     POINTER level_func_params;
 	NUM_SCHEME num_scheme;
     POINT_PROP_SCHEME point_prop_scheme;
-	EOS_PARAMS eos[MAX_COMP];
+    EOS_PARAMS eos[MAX_COMP];
 	boolean tracked;
 	boolean articomp;
 	boolean contact_stationary;

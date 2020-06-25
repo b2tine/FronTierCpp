@@ -3814,12 +3814,16 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 }
                 for (i = 0; i < dim; i++)
                 {
-                    vec[i] = crx_coords[i]-coords[i];
+                    vec[i] = coords[i] - crx_coords[i];
+                    //vec[i] = crx_coords[i]-coords[i];
                 }
+
                 /*project to normal direction*/
                 Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
-		side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
-                if (side <= 0)
+                side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+                
+                //if (side <= 0)
+                if (side > 0)
                 {
                     ans += Un*(alpha+fabs(Un)*beta)/sqr(top_h[nb/2]);
                 }
