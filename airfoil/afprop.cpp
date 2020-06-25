@@ -369,8 +369,8 @@ static void string_curve_propagation(
                 //Save to dragForce to newp's left state, newsl, for use in
                 //addImmersedForce() in the application of equal but opposite
                 //reaction force on the fluid.
-                newsl->drag_force[i] = dragForce[i];
-                newsr->drag_force[i] = dragForce[i];
+                    //newsl->drag_force[i] = dragForce[i];
+                    //newsr->drag_force[i] = dragForce[i];
 
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/mass;
                     //newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
@@ -381,8 +381,8 @@ static void string_curve_propagation(
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
             }
 
-            printf("newsl->drag_force = %g %g %g\n",
-                    newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
+                //printf("newsl->drag_force = %g %g %g\n",
+                    //  newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
             /*
             if (count == 5)
                 printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
