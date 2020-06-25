@@ -1527,7 +1527,9 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
+    {
         mu_t = computeMuOfKepsModel();
+    }
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)

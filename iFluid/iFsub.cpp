@@ -1251,8 +1251,9 @@ extern void read_iFparams(
 	    {
 	    	iFparams->use_eddy_visc = YES;
 		(void) printf("Available turbulence models are:\n");
-		(void) printf("\tBaldwin-Lomax (B)\n");
-		(void) printf("\tMoin (M)\n");
+		//(void) printf("\tBaldwin-Lomax (B)\n");
+		//(void) printf("\tMoin (M)\n");
+		(void) printf("\tKEPSILON (K)\n");
         	CursorAfterString(infile,"Enter turbulence model:");
 	    	fscanf(infile,"%s",string);
 	    	(void) printf("%s\n",string);
