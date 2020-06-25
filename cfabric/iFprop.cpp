@@ -666,7 +666,7 @@ static void ifluid_compute_force_and_torque3d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t[MAXD],tdir,pres;
-        double area[MAXD],posn[MAXD];
+        double area,posn[MAXD],tnor[MAXD];
         TRI *tri;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -761,11 +761,16 @@ static void ifluid_compute_force_and_torque3d(
 		    continue;
 		}
                 if (force_on_hse(Hyper_surf_element(tri),Hyper_surf(surface),gr,
-                        &pres,area,posn,pos_side))
+                        &pres,tnor,posn,pos_side))
                 {
+                    area = 0.5*Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area[i];
+                        //TODO: THIS IS WRONG ... there is no per element area.
+                        //      Force magnitude is pres*area with direction normal to tri.
+                            //f[i] = pres*area[i];
+                        
+                        f[i] = pres*area*tnor[i];
                         force[i] += f[i];
                         rr[i] = posn[i] - rotation_center(surface)[i];
                     }
@@ -817,7 +822,7 @@ static boolean force_on_hse3d(
         HYPER_SURF *hs,
         RECT_GRID *gr,
         double *pres,
-        double *area,
+        double *tnor,
         double *posn,
         boolean pos_side)
 {
@@ -841,12 +846,16 @@ static boolean force_on_hse3d(
                 *pres += getStatePres(sl);
         }
         *pres /= 3.0;
+
+            //double tnor[3];
         for (i = 0; i < dim; ++i)
         {
-            area[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
-	    area[i] *= 0.5; /*Tri_normal is the twice of the area vector */
+            tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
             posn[i] /= 3.0;
         }
+
+        //*area = 0.5*Mag3d(tnor);
+
         /* Need to treat subdomain boundary */
         return YES;
 }       /* end force_on_hse3d */

@@ -67,13 +67,15 @@ static void set_state_max_speed(Front*,STATE*,double*);
 static void get_variable_bdry_params(int,FILE*,POINTER*);
 static void cF_variableBoundaryState2d(double*,HYPER_SURF*,Front*,
 					POINTER,POINTER);
-
 static void cF_variableBoundaryState3d(double*,HYPER_SURF*,Front*,
 					POINTER,POINTER);
 
 /* test of open boundary */
 static void pipe_end_func(Front*,POINTER,int*,COMPONENT,
 				int,int,int*,Locstate);
+
+static boolean coords_in_subdomain(double *coords, RECT_GRID *gr);
+
 
 
 extern void read_dirichlet_bdry_data(
@@ -980,7 +982,6 @@ static void rgbody_point_propagate_in_fluid(
         double              *V)
 {
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-	    //F_FIELD *field = Fparams->field;
     double vel[MAXD];
     int i, dim = front->rect_grid->dim;
 	double dn,*h = front->rect_grid->h;
@@ -1410,6 +1411,13 @@ extern	void cfluid_compute_force_and_torque(
 	double *force,
 	double *torque)
 {
+    if (fr->rect_grid->dim != 3)
+    {
+        printf("cfluid_compute_force_and_torque() ERROR: dim must be equal to 3\n");
+        clean_up(EXIT_FAILURE);
+    }
+    return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
+    /*
 	switch (fr->rect_grid->dim)
 	{
 	case 2:
@@ -1417,6 +1425,7 @@ extern	void cfluid_compute_force_and_torque(
 	case 3:
 	    return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
 	}
+    */
 }	/* end cfluid_compute_force_and_torque */
 
 static	void cfluid_compute_force_and_torque2d(
@@ -1480,6 +1489,152 @@ static	void cfluid_compute_force_and_torque2d(
 }	/* end cfluid_compute_force_and_torque2d */
 
 #define         MAX_TRI_FOR_INTEGRAL            100
+static void cfluid_compute_force_and_torque3d(
+        Front *front,
+        HYPER_SURF *hs,
+        double dt,
+        double *force,
+        double *torque)
+{
+        RECT_GRID *gr = computational_grid(front->interf);
+        double f[MAXD],rr[MAXD];
+        double t[MAXD],tdir,pres;
+        double area,posn[MAXD],tnor[MAXD];
+        TRI *tri;
+        boolean pos_side;
+        int i,dim = gr->dim;
+        EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+        double *gravity = eqn_params->gravity;
+        SURFACE *surface = Surface_of_hs(hs);
+	CURVE **c;
+        NODE *rg_string_nodes[10];
+        int j, k, num = 0;
+	NODE **n;
+	BOND *b;
+	double tri_cen[MAXD];
+
+        if (debugging("rigid_body"))
+	    (void) printf("Entering cfluid_compute_force_and_torque3d()\n"); 
+        if (gas_comp(negative_component(surface)))
+            pos_side = NO;
+        else
+            pos_side = YES;
+
+        for (i = 0; i < dim; ++i)
+        {
+            force[i] = 0.0;
+            torque[i] = 0.0;
+        }
+	/* count in the force and torque on the RG_STRING_NODE */
+	intfc_node_loop(front->interf, n)
+	{
+	    for (k = 0; k < dim; ++k)
+            {
+                if (Coords((*n)->posn)[k] <= gr->L[k] ||
+                    Coords((*n)->posn)[k] > gr->U[k])
+                    break;
+            }
+            if (k != dim || (*n)->extra == NULL) continue;
+	    node_out_curve_loop(*n,c)
+	    {
+                if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+		    break;
+	    }
+	    if (c == NULL || (*c) == NULL)
+	    {
+		node_in_curve_loop(*n,c)
+		{
+		    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+			break;
+		}
+	    }
+	    if (c == NULL || (*c) == NULL) continue;
+	    b = (*c)->first;
+	    if (wave_type(b->_btris[0]->surface) == MOVABLE_BODY_BOUNDARY)
+		rg_string_nodes[num++] = *n;
+	}
+        for (j = 0; j < num; ++j)
+        {
+            POINT *p = rg_string_nodes[j]->posn;
+	    if (!coords_in_subdomain(Coords(p),gr)) 
+	    {
+		continue;
+	    }
+            for (i = 0; i < dim; ++i)
+            {
+                force[i] += p->force[i];
+                rr[i] = Coords(p)[i] - rotation_center(surface)[i];
+            }
+            Cross3d(rr, p->force, t);
+            for (i = 0; i < dim; ++i)
+                torque[i] += t[i];
+	    if (debugging("rigid_body"))
+	    {
+	        printf("rg_string_nodes coords = %f %f %f\n", 
+				Coords(p)[0], Coords(p)[1], Coords(p)[2]);
+	        printf("rg_string_nodes force = %f %f %f\n", 
+				p->force[0], p->force[1], p->force[2]);
+	    }
+        }
+	/* end of counting the force on RG_STRING_NODE */
+
+	if (front->step > 5)
+	{
+            for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface);
+                        tri = tri->next)
+            {
+		for (i = 0; i < dim; ++i)
+		{
+		    tri_cen[i] = (Coords(Point_of_tri(tri)[0])[i] +
+				  Coords(Point_of_tri(tri)[1])[i] +
+				  Coords(Point_of_tri(tri)[2])[i])/3.0;
+		}
+	    	if (!coords_in_subdomain(tri_cen,gr)) 
+		{
+		    continue;
+		}
+                if (force_on_hse(Hyper_surf_element(tri),Hyper_surf(surface),gr,
+                        &pres,tnor,posn,pos_side))
+                {
+                    area = 0.5*Mag3d(tnor);
+                    for (i = 0; i < dim; ++i)
+                    {
+                        f[i] = pres*area*tnor[i];
+                        force[i] += f[i];
+                        rr[i] = posn[i] - rotation_center(surface)[i];
+                    }
+                    Cross3d(rr,f,t);
+//		    tdir = Dot3d(t,(rotation_direction(hs)));
+                    for (i = 0; i < dim; ++i)
+                    {
+//		        t[i] = tdir*rotation_direction(hs)[i];
+                        torque[i] += t[i];
+                    }
+                }
+            }
+	}
+         /* Add gravity to the total force */
+        if (motion_type(surface) != ROTATION &&
+	    motion_type(surface) != PRESET_ROTATION)
+        {
+            for (i = 0; i < dim; ++i)
+                force[i] += gravity[i]*total_mass(surface)/num_clips(surface);
+        }
+        if (debugging("rigid_body"))
+        {
+            printf("In cfluid_compute_force_and_torque3d()\n");
+            printf("total_force = %f %f %f\n",force[0],force[1],force[2]);
+            printf("torque = %f %f %f\n",torque[0],torque[1],torque[2]);
+	    printf("# of rg_string_node in processor %d = %d\n", 
+			pp_mynode(), num);
+	    printf("number of clips = %d \n", num_clips(surface));
+	
+        }
+        if (debugging("rigid_body"))
+	    (void) printf("Leaving cfluid_compute_force_and_torque3d()\n"); 
+}       /* end cfluid_compute_force_and_torque3d */
+
+/*
 static	void cfluid_compute_force_and_torque3d(
 	Front *fr,
 	HYPER_SURF *hs,
@@ -1529,7 +1684,7 @@ static	void cfluid_compute_force_and_torque3d(
 		}
 	    }
 	}
-	 /* Add gravity to the total force */
+	 // Add gravity to the total force //
 	if (motion_type(surface) != ROTATION)
 	{
 	    for (i = 0; i < dim; ++i)
@@ -1541,8 +1696,7 @@ static	void cfluid_compute_force_and_torque3d(
 	    printf("total_force = %f %f %f\n",force[0],force[1],force[2]);
 	    printf("torque = %f %f %f\n",torque[0],torque[1],torque[2]);
 	}
-}	/* end cfluid_compute_force_and_torque3d */
-
+}*/	/* end cfluid_compute_force_and_torque3d */
 
 static boolean force_on_hse(
 	HYPER_SURF_ELEMENT *hse,	/* Bond (2D) or tri (3D) */
@@ -1665,7 +1819,7 @@ static boolean force_on_hse3d(
 	HYPER_SURF *hs,
 	RECT_GRID *gr,
 	double *pres,
-	double *area,
+	double *tnor,
 	double *posn,
 	boolean pos_side)
 {
@@ -1689,13 +1843,19 @@ static boolean force_on_hse3d(
 		*pres += getStatePres(sl);
 	}
 	*pres /= 3.0;
+
+        //double tnor[3];
 	for (i = 0; i < dim; ++i)
 	{
-	    area[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
+	    tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
 	    posn[i] /= 3.0;
 	}
-	/* Need to treat subdomain boundary */
-	return YES;
+
+    //*area = 0.5*Mag3d(tnor);
+
+	/* TODO:Need to treat subdomain boundary */
+	
+    return YES;
 }	/* end force_on_hse3d */
 
 static double intrp_between(
@@ -2157,3 +2317,19 @@ static void pipe_end_func(
 
 	return;
 }
+
+static boolean coords_in_subdomain(
+	double *coords,
+	RECT_GRID *gr)
+{
+	int dim = gr->dim;
+	for (int i = 0; i < dim; ++i)
+	{
+	    if (coords[i] < gr->L[i] || coords[i] >= gr->U[i])
+		return NO;
+	}
+	return YES;
+}	/* end coords_in_subdomain */
+
+
+
