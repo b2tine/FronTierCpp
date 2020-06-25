@@ -61,7 +61,7 @@ Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 50000
+Enter string spring constant: 750000
 Enter string damping constant: 0.1
 Enter string friction constant: 0.05
 Enter string point mass: 0.0015
@@ -72,7 +72,7 @@ Enter yes to add rigid body: n
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 1.5
+Enter velocity: 0 0 10.5
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

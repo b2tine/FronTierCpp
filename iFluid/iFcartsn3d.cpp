@@ -2429,9 +2429,11 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                 //      dragForce computation? If not, make it consistent.
                 //
 
-                double A_ref = 2.0*PI*radius*(0.25*length);
-                double Vol = PI*radius*radius*(0.25*length);
-                double mass = rhoS*Vol;
+                double A_ref = 2.0*PI*radius*length;
+                double Vol = PI*radius*radius*length;
+                    //double A_ref = 2.0*PI*radius*(0.25*length);
+                    //double Vol = PI*radius*radius*(0.25*length);
+                    //double mass = rhoS*Vol;
                 
                 for (int i = 0; i < 3; ++i)
                 {
@@ -2451,8 +2453,8 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     coords[2] = top_L[2] + k*top_h[2];
                     ic = d_index3d(i,j,k,top_gmax);
                     dist = distance_between_positions(Coords(p),coords,3);
-                    if (dist > top_h[0]*4) continue;
-                    alpha = top_h[0]*4 - dist;
+                    if (dist > top_h[0]*4.0) continue;
+                    alpha = top_h[0]*4.0 - dist;
                     ic = d_index3d(i,j,k,top_gmax);
                     f_surf[0][ic] += alpha*force[0];
                     f_surf[1][ic] += alpha*force[1];
