@@ -587,10 +587,10 @@ extern void compute_node_accel1(
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_s;
+                    mass = geom_set->m_l;
 	    }
 	    else
-                mass = geom_set->m_s;
+            mass = geom_set->m_s;
 	}
 	else if (dim == 2)
 	{
@@ -899,10 +899,10 @@ extern void compute_node_accel2(
 		else if (extra->af_node_type == GORE_NODE)
 		    mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-		    mass = geom_set->m_s;
+		    mass = geom_set->m_l;
 	    }
 	    else
-		mass = geom_set->m_s;
+            mass = geom_set->m_s;
 	}
 	else
 	    mass = geom_set->m_l;

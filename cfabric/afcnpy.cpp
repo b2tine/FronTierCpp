@@ -178,7 +178,6 @@ int airfoil_velo(
 	return YES;
 }
 
-/*
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -201,12 +200,9 @@ int af_find_state_at_crossing(
 	    return NO_PDE_BOUNDARY;
 	if (wave_type(*hs) == ELASTIC_STRING)//2d string 
 	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == ELASTIC_BOUNDARY && 
-		af_params->with_porosity)
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == ELASTIC_BOUNDARY) //TMP
+	if (wave_type(*hs) == ELASTIC_BOUNDARY)
 	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY) //TMP
+	if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY)
 	    return CONST_V_PDE_BOUNDARY;
 	if (wave_type(*hs) == DIRICHLET_BOUNDARY)
 	{
@@ -223,9 +219,7 @@ int af_find_state_at_crossing(
     }
 
     return NEUMANN_PDE_BOUNDARY;
-
-}       // af_find_state_at_crossing //
-*/
+}       /* end af_find_state_at_crossing */
 
 static boolean is_pore(
 	Front *front,
@@ -1519,8 +1513,10 @@ extern void propagate_surface(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double *g = af_params->gravity;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
+        //AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	    //double *g = af_params->gravity;
 
 	hs = Hyper_surf(surf);
 	unsort_surf_point(surf);
@@ -1568,8 +1564,10 @@ extern void propagate_node(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double *g = af_params->gravity;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
+        //AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	    //double *g = af_params->gravity;
 	
         int dim = front->rect_grid->dim;
 
@@ -1596,8 +1594,10 @@ extern void propagate_curve(
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
 	
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double *g = af_params->gravity;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
+        //AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	    //double *g = af_params->gravity;
 	
         int dim = front->rect_grid->dim;
 

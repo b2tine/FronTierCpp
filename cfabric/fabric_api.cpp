@@ -136,6 +136,8 @@ extern void SMM_InitFluidSolver()
 
     G_CARTESIAN* g_cartesian = SMM_GetFluidSolver();
         //g_cartesian->eqn_params = &cf_params;
+    g_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+    //g_cartesian->getInitialState = zero_state;
     g_cartesian->initMesh();
 
     if (f_basic->RestartRun)

@@ -34,6 +34,4 @@ extern void initRigidBodies(Front *front);
 //extern void initRigidBody(Front *front);
 //extern void rgb_init(Front*,RG_PARAMS*);
 
-
-
 #endif

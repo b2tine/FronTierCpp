@@ -1009,6 +1009,13 @@ static bool EdgeToEdge(
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[i]);
+            printf("\t\tpts[%d]: %24.14g %24.14g %24.14g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
         clean_up(ERROR);
     }
 

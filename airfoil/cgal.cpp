@@ -1916,6 +1916,7 @@ static void connectStringtoRGB(
         int max_zindex = 0;
         double max_zcoord = Coords(target[0])[2];
 
+	    num = target.size();
         for (int l = 0; l < num; ++l)
         {
             if (Coords(target[l])[2] > max_zcoord)

@@ -57,20 +57,24 @@ Type y to make vector vorticity field movie: y
 Enter yes for parachute system: yes
 Enter the number of fabric optimization rounds: 0
 
-Enter yes to add rigid body: y
+************Rigid body parameters*************
+Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
-Available type of rigid body include:
-        Sphere (S)
-        Box (B)
-        Human (H)
-        Cylinder (C)
-Enter type of rigid body: S
-Enter center of the sphere: 6 6 12
-Enter radius of the sphere: 0.5 0.5 0.5
-Rigid body can be fixed (F) or Movable (M)
-The default is Movable (M)
+
+For rigid body 1
+Enter type of rigid body: Box
+Enter center of the box: 6 6 12
+Enter edges of the box: 0.5 0.5 0.5
 Type yes if the rigid body is fixed: no
-Type yes to use CGAL for rigid body: yes
+Type yes to use CGAL for rigid body: no
+
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 100
+Enter the initial center of mass for rigid body: 6 6 12
+Enter the initial center of mass velocity: 0 0 0
+***********************************************
 
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n
@@ -78,14 +82,17 @@ Enter yes for complex connection: n
 Available canopy surface types are:
         FLAT (F)
         PARABOLIC (P)
+
 Enter canopy surface type: F
+
 Available types of canopy boundaries are:
         Circular (C)
         Rectangular (R)
         Elliptic (E)
         Cross (X)
         Circular with belt (S)
-Enter type of canopy boundary: c
+
+Enter type of canopy boundary: C
 Enter the height of the plane: 18
 Enter circle center: 6 6
 Enter circle radius: 4.2672
@@ -95,22 +102,14 @@ Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
 
-Enter initial position of load: 6 6 12.25
+Enter yes to fix the load node: no
+Enter initial position of load: 6 6 12.45
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
-Enter yes to fix the load node: no
 
-For rigid body 1
-Type yes if motion is preset: no
-Enter type of dynamic motion: COM_MOTION
-Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 100
-Enter the initial center of mass for rigid body: 6 6 12
-Enter the initial center of mass velocity: 0 0 0
-
-Enter type of plane edge: c
-Enter start angle of chord: 6.263185
-Enter rotation angles: 0.0
+Enter type of plane edgeX: c
+Enter start angle of chordX: 6.263185
+Enter rotation anglesX: 0.0
 
 
 //////////////////////////////////////////////////////////

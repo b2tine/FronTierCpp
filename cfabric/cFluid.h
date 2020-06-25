@@ -307,6 +307,18 @@ struct FSWEEP
     double *engy_flux;  /* internal energy flux */
 };
 
+//copied in from ../solver/solver.h for use with af_find_state_at_crossing()
+enum
+{
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
+};
+
 
 class G_CARTESIAN
 {
@@ -329,6 +341,10 @@ public:
     void setInitialStates(); 	// setup initial state
     //void setProbParams(); 	// setup initial state
     void initMesh();		// setup the cartesian grid
+ 	
+    int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+				POINTER*,HYPER_SURF**,double*);
+    
     void readGasStates(char* restart_state_name);
     void readFrontStates(Front* frt, char* restart_state_name);
     void readInteriorStates(char* restart_state_name);
