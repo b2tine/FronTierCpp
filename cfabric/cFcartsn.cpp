@@ -5575,7 +5575,7 @@ void G_CARTESIAN::setNeumannStates(
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic[MAXD];
-	double		*vel_ref = state->vel;
+	double		*vel_intfc = state->vel;
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
 	double		nor[MAXD],vn,v[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -5606,7 +5606,7 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
 	for (i = istart; i <= nrad; ++i)
@@ -5614,27 +5614,34 @@ void G_CARTESIAN::setNeumannStates(
 	    /* Find ghost point */
 	    ic[idir] = (nb == 0) ? icoords[idir] - (i - istart + 1) :
                                 icoords[idir] + (i - istart + 1);
-	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+	
+        for (j = 0; j < dim; ++j)
+            coords_ref[j] = top_L[j] + ic[j]*top_h[j];//coords_ghost[j]
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+
 	    for (j = 0; j < dim; ++j)
 	    {
-		v[j] = coords_ref[j] - crx_coords[j];
-		vn += v[j]*nor[j];
+            v[j] = coords_ref[j] - crx_coords[j];
+            vn += v[j]*nor[j];
 	    }
+
+        //reflect v across the line containing the normal vector
 	    for (j = 0; j < dim; ++j)
-		v[j] = 2.0*vn*nor[j] - v[j];
+		    v[j] = 2.0*vn*nor[j] - v[j];
+
+        //desired reflected point
 	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = crx_coords[j] + v[j];
+		    coords_ref[j] = crx_coords[j] + v[j];
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+		    m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+		    m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
 			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
 			&m_vst->momn[0][index]);
@@ -5646,22 +5653,26 @@ void G_CARTESIAN::setNeumannStates(
 		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
 			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
 			&m_vst->momn[2][index]);
-		/* Galileo Transformation */
+		
+        /* Galileo Transformation */
 	    vn = 0.0;
+        double vel_reflect[3];
 	    for (j = 0; j < dim; j++)
 	    {
-		v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
-		vn += v[j]*nor[j];
+            vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+            vn += (vel_reflect[j] - vel_intfc[j])*nor[j];
 	    }
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */
-            for (j = 0; j < dim; j++)
+            
+        /* Only normal component is reflected, 
+            relative tangent velocity is zero */
+        for (j = 0; j < dim; j++)
 	    {
-                v[j] = vel_ref[j] - 1.0*vn*nor[j];
-		st_tmp.momn[j] = v[j]*st_tmp.dens;
+            v[j] = vel_intfc[j] - vn*nor[j];
+		    st_tmp.momn[j] = v[j]*st_tmp.dens;
 	    }
 
 	    st_tmp.engy = EosEnergy(&st_tmp);
+
 	    /* debugging printout */
 	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    {

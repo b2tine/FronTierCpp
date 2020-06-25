@@ -142,10 +142,10 @@ static void weno5_get_flux(
 	    {
 	    	u_mid[j] = 0.5*(u_old[j][i-1] + u_old[j][i]);
 	    }
-	    u_mid[5] = u_mid[1]/u_mid[0];
-	    u_mid[6] = u_mid[2]/u_mid[0];
-	    u_mid[7] = u_mid[3]/u_mid[0];
-	    u_mid[9] = sqr(u_mid[5]) + sqr(u_mid[6]) + sqr(u_mid[7]);
+	    u_mid[5] = u_mid[1]/u_mid[0];//vel_i
+	    u_mid[6] = u_mid[2]/u_mid[0];//vel_j
+	    u_mid[7] = u_mid[3]/u_mid[0];//vel_k
+	    u_mid[9] = sqr(u_mid[5]) + sqr(u_mid[6]) + sqr(u_mid[7]);//sqr_velmag
 	    u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9])*(gamma - 1.0);
 	    u_mid[10] = sqrt(gamma*u_mid[8]/u_mid[0]);
 
@@ -213,9 +213,22 @@ static void weno5_get_flux(
 	    L[4][3] = -1.0*u_mid[7];
 	    L[4][4] = 1.0;
 
+        if (fabs(u_mid[10]) < MACH_EPS)
+        {
+            printf("gamma = %g\n",gamma);
+            for (int n = 0; n < 11; ++n)
+            {
+                printf("u_mid[%d] = %g\n",n,u_mid[n]);
+            }
+            printf("division by zero\n");
+            clean_up(EXIT_FAILURE);
+        }
+
 	    for(j = 0; j < 5; ++j)
 	    for(k = 0; k < 5; ++k)
-		L[j][k] *= gm/(2.0*sqr(u_mid[10])); 
+        {
+		    L[j][k] *= gm/(2.0*sqr(u_mid[10])); 
+        }
 
 	    /*** Get R^-1 * u and R^-1 * F ***/	    
 
