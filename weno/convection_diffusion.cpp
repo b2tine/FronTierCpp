@@ -104,11 +104,13 @@ int main(int argc, char **argv)
 	dx = (U - L)/(mesh_size - 1);
         FT_TimeControlFilter(&front);
 
-	/* Set the initial condition */
+	/* domain discretization */
     for (int i = imin; i < imax; ++i)
     {
         x[i] = L + i*dx;
     }
+
+	/* Set the initial condition */
     exact_soln(wave_speed,0.0,x,u_old,mesh_size);
     for (int i = 0; i < mesh_size; ++i)
     {
@@ -116,20 +118,20 @@ int main(int argc, char **argv)
     }
 	
 	/* Set frame margin for GD movie output */
-        xmin = L;       xmax = U;
-        umin = HUGE;    umax = -HUGE;
-        for (int i = 0; i < mesh_size; i++)
-        {
-            if (umin > u_old[i]) umin = u_old[i];
-            if (umax < u_old[i]) umax = u_old[i];
-        }
-        height = umax - umin;
-        umin -= 0.15*height;    umax += 0.15*height;
+    xmin = L;       xmax = U;
+    umin = HUGE;    umax = -HUGE;
+    for (int i = 0; i < mesh_size; i++)
+    {
+        if (umin > u_old[i]) umin = u_old[i];
+        if (umax < u_old[i]) umax = u_old[i];
+    }
+    height = umax - umin;
+    umin -= 0.15*height;    umax += 0.15*height;
 
-        /* Open and initialize GD movie output */
-        sprintf(movie_caption,"u vs. x");
-        sprintf(gd_name,"%s/soln.gif",out_name);
-        gd_initplot(gd_name,movie_caption,xmin,xmax,umin,umax,2);
+    /* Open and initialize GD movie output */
+    sprintf(movie_caption,"u vs. x");
+    sprintf(gd_name,"%s/soln.gif",out_name);
+    gd_initplot(gd_name,movie_caption,xmin,xmax,umin,umax,2);
 
 	/* Time loop */
 	front.dt = dt = CFL*pow(dx,1.5)/wave_speed;
@@ -139,10 +141,8 @@ int main(int argc, char **argv)
         /* Advancing numerical solution */
         printf("dx = %f  dt = %f\n",dx,dt);
     
-        //WenoFlux(mesh_size,u_old,cflux,dx,front.dt);
-        for (int i = 0; i < mesh_size; ++i) cflux[i] = 0.0;
+        WenoFlux(mesh_size,u_old,cflux,dx,front.dt);
         implicitSolver(mesh_size,u_old,u_new,cflux,dx,front.dt);
-       //Weno5(mesh_size,u_old,u_new,dx,front.dt);
 
         /* Swapping solution storage */
         for (int i = imin; i < imax; i++)
@@ -164,10 +164,10 @@ int main(int argc, char **argv)
             gd_plotdata(mesh_size,x_movie,y_movie);
 
             /* Exact solution */
-            exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+            /*exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
             x_movie = x;
             y_movie = u_sol;
-            gd_plotdata(mesh_size,x_movie,y_movie);
+            gd_plotdata(mesh_size,x_movie,y_movie);*/
 
             /* Time label */
             sprintf(time_label,"Time = %6.3f",front.time);
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
         if (FT_IsSaveTime(&front))
         {
             /* Numerical solution */
-    sprintf(xg_name,"%s/num_sol-%d.xg",out_name,front.ip);
+            sprintf(xg_name,"%s/num_sol-%d.xg",out_name,front.ip);
             xg_file = fopen(xg_name,"w");
             fprintf(xg_file,"\"u vs. x\"\n");
             for (int i = imin; i < imax; i++)
@@ -187,15 +187,15 @@ int main(int argc, char **argv)
             fclose(xg_file);
 
             /* Exact solution */
-            exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+            /*exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
             sprintf(xg_name,"%s/exc-%d.xg",out_name,front.ip);
             xg_file = fopen(xg_name,"w");
             fprintf(xg_file,"\"u vs. x\"\n");
             for (int i = imin; i < imax; i++)
             {
                 fprintf(xg_file,"%f  %f\n",x[i],u_sol[i]);
-    }
-            fclose(xg_file);
+            }
+            fclose(xg_file);*/
         }
 
     /* Termination control */
@@ -204,8 +204,8 @@ int main(int argc, char **argv)
             front.dt = dt;
             FT_TimeControlFilter(&front); /* reduce time step for output */
             (void) printf("next dt = %20.14f\n",front.dt);
-        exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
-    error_func(u_sol,u_old,err,mesh_size);
+            exact_soln(wave_speed,front.time,x,u_sol,mesh_size);
+            error_func(u_sol,u_old,err,mesh_size);
             break;
         }
 
@@ -213,7 +213,8 @@ int main(int argc, char **argv)
         FT_TimeControlFilter(&front); /* reduce time step for output */
         (void) printf("next dt = %20.14f\n",front.dt);
     }
-        gd_closeplot();
+
+    gd_closeplot();
 	
     vmfree(x);
 	vmfree(u_old);
