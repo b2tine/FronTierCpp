@@ -644,7 +644,7 @@ extern void set_node_spring_vertex(
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_s;
+                    mass = geom_set->m_l;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
 	    	else if (extra->af_node_type == SEC_LOAD_NODE)
@@ -1085,7 +1085,7 @@ extern void set_surf_spring_vertex(
 		    	sv[i].k[k] = 0.0;
 		    else
 		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];;
+		    sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;

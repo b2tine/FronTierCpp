@@ -1771,10 +1771,10 @@ static void setSurfVelocity(
             
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j]; 
-                sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j]; 
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
 
             sorted(p) = YES;
@@ -1827,10 +1827,10 @@ static void setCurveVelocity(
 
             for (int j = 0; j < dim; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
@@ -1948,10 +1948,10 @@ static void newSetNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
@@ -1994,10 +1994,10 @@ static void newSetNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
