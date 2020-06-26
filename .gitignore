@@ -60,6 +60,7 @@ cFluid/cFluid
 cFluid/init_intfc-*
 weno/test
 weno/matdata
+weno/convection_diffusion
 iFluid/iFluid
 melting/melting
 crystal/crystal

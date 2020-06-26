@@ -102,10 +102,10 @@ void HYPERB_SOLVER::solveRungeKutta()
 	    copyMeshVst(st_field[0],&st_field[i+1]);
 	    for (j = 0; j <= i; ++j)
 	    {
-		if (a[i][j] != 0.0)
-		{
-		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
-		}
+            if (a[i][j] != 0.0)
+            {
+                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+            }
 	    }
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1]);
 	}
@@ -113,7 +113,7 @@ void HYPERB_SOLVER::solveRungeKutta()
 	{
 	    if (b[i] != 0.0)
 	    {
-		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+		    addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	    }
 	}
 	copyFromMeshVst(st_field[0]);
