@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/weno \
+			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
@@ -6,8 +7,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/weno \
 
 
 noinst_PROGRAMS = test \
-				  advection_diffusion \
-				  matdata
+				  matdata \
+				  convection_diffusion
 
 
 test_SOURCES = test.cpp \
@@ -16,11 +17,8 @@ test_SOURCES = test.cpp \
 
 test_LDADD = $(top_builddir)/lib/libFronTier.la
 
-advection_diffusion_SOURCES = advection_diffusion.cpp \
-			   weno.cpp \
-			   weno.h
-
-advection_diffusion_LDADD = $(top_builddir)/lib/libFronTier.la
+$(test_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/lib all
 
 
 matdata_SOURCES = matdata.cpp \
@@ -30,12 +28,21 @@ matdata_SOURCES = matdata.cpp \
 matdata_LDADD = $(top_builddir)/lib/libFronTier.la
 
 
-$(matdata_DEPENDENCIES): FORCE
-	@$(MAKE) -C $(top_builddir)/lib all
+
+convection_diffusion_SOURCES = convection_diffusion.cpp \
+			 				   implicit.cpp \
+			 				   implicit.h \
+			 				   weno.cpp \
+			 				   weno.h
+
+convection_diffusion_LDADD = $(top_builddir)/solver/objs/libsolver.la
+
 
 FORCE:
 
 
 tagsfile:
-	ctags *.h *.cpp $(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
+	ctags *.h *.cpp \
+		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 

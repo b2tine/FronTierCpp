@@ -1,10 +1,11 @@
 #include "iFluid.h"
 /*keps.h*/
 /*Following is for turbulence model RNG k-eps model*/
-struct _IF_FIELD;
-typedef struct _IF_FIELD IF_FIELD;
+    
+    //struct _IF_FIELD;
+    //typedef struct _IF_FIELD IF_FIELD;
 
-struct _FIELD {
+struct KE_FIELD {
 	double *k;
 	double *eps;
 	double *Pk;
@@ -13,10 +14,9 @@ struct _FIELD {
 	double *temp; /*temporary field for debugging, not temperature*/
 	double **vel;
 };
-typedef struct _FIELD FIELD;
 
-struct _KE_PARAMS {
-        int dim;
+struct KE_PARAMS {
+    int dim;
 	double delta_k;
 	double delta_eps;
 	double C2;
@@ -30,12 +30,14 @@ struct _KE_PARAMS {
 	double l0;
 	double y_p;
 	double t0;
-	FIELD* field;
+	KE_FIELD* field;
 };
-typedef struct _KE_PARAMS KE_PARAMS;
 
-enum _KEPS_MODEL{STANDARD = 0,RNG,REALIZABLE};
-typedef enum _KEPS_MODEL KEPS_MODEL;
+enum KEPS_MODEL {
+    STANDARD = 0,
+    RNG,
+    REALIZABLE
+};
 
 class KE_RECTANGLE {
 public:
@@ -67,7 +69,7 @@ public:
 	int *top_gmax;
 	COMPONENT *top_comp;
 	KE_PARAMS *eqn_params;
-	FIELD *field;
+	KE_FIELD *field;
 	int comp_size;
 
 	int *lbuf,*ubuf,*gmax;
@@ -83,7 +85,8 @@ public:
 		BC_PERIODIC = 1,
 		BC_Extrapolation0 = 2,
 		BC_Extrapolation1 = 3,
-		BC_InflowOutflow = 4};	
+		BC_InflowOutflow = 4
+    };	
 	BC_TYPE m_bc[4];								// down, right, up, left 		
 
 	// member data: mesh storage
@@ -98,7 +101,7 @@ public:
 
 	// for parallel partition
 	int             NLblocks,ilower,iupper;
-        int             *n_dist;
+    int             *n_dist;
 
 	// mesh: full cells mesh
 	void initMesh(void);		// setup the cartesian grid
@@ -138,7 +141,7 @@ public:
 	void initMovieVariables();
 	void augmentMovieVariables(const char*);
 	void vtk_plot_temperature2d(char*);
-        void vtk_plot3d(const char*);
+    void vtk_plot3d(const char*);
 
 	// Extra movie functions
 	void temperatureMovie(char*);
@@ -157,8 +160,6 @@ public:
 		// for compProjWithSmoothProperty(), 
 		// should be changed to use setIndexMap() only.
 
-	// -------------------------------------------------------
-	// 		incompressible solver functions
 
 	// main step function
 	void solve(double dt);		

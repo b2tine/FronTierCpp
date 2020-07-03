@@ -91,6 +91,12 @@ extern double getStateVort(POINTER state)
 	return fstate->vort;
 }	/* end getStateVort */
 
+extern double getStateVelMag2d(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return sqrt(sqr(fstate->vel[0]) + sqr(fstate->vel[1]));
+}	/* end getStateVelMag2d */
+
 extern double getStateXvel(POINTER state)
 {
 	STATE *fstate = (STATE*)state;

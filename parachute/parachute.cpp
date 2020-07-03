@@ -283,7 +283,7 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
-                l_cartesian->solve(front->dt);
+            l_cartesian->solve(front->dt);
 	    }
 	    else
         {
@@ -320,6 +320,9 @@ void airfoil_driver(Front *front,
 	    /* Output section */
 
 	    print_airfoil_stat(front,out_name);
+
+        if (!af_params->no_fluid)
+            l_cartesian->printEnstrophy();
 
             if (FT_IsSaveTime(front))
 	    {

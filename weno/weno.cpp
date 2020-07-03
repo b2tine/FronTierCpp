@@ -112,7 +112,7 @@ void TVD_RK_3th(
 	int nrad = 3; /* 5th-order weno */
 	int extend_size = mesh_size + 2 * nrad;
 	double *u_extend;
-	double lambda = -dt/dx;
+	    //double lambda = -dt/dx;
 
 	FT_VectorMemoryAlloc((POINTER*)&u1,mesh_size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&u2,mesh_size,sizeof(double));
@@ -128,9 +128,9 @@ void TVD_RK_3th(
 	    u_extend[nrad + mesh_size - 1 + i] = u_old[i];
 	}
 
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u1[i] = u_old[i] + flux[i];
+		u1[i] = u_old[i] + dt*flux[i];
 
 	for (i = 0; i < mesh_size; i++) {
 	    u_extend[i + nrad] = u1[i];
@@ -140,9 +140,9 @@ void TVD_RK_3th(
 	    u_extend[nrad + mesh_size - 1 + i] = u1[i];
 	}
 
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u2[i] = 0.75*u_old[i] + 0.25*u1[i] + 0.25*flux[i];
+		u2[i] = 0.75*u_old[i] + 0.25*u1[i] + 0.25*dt*flux[i];
 
 	for (i = 0; i < mesh_size; i++) {
 	    u_extend[i + nrad] = u2[i];
@@ -152,9 +152,9 @@ void TVD_RK_3th(
 	    u_extend[nrad + mesh_size - 1 + i] = u2[i];
 	}
 
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u_new[i] = 1.0/3.0*u_old[i] + 2.0/3.0*u2[i] + 2.0/3.0*flux[i];
+		u_new[i] = 1.0/3.0*u_old[i] + 2.0/3.0*u2[i] + 2.0/3.0*dt*flux[i];
 	FT_FreeThese(4,u1,u2,u_extend,flux);
 }
 
@@ -171,7 +171,7 @@ void Runge_Kutta_4th(
 	int nrad = 3; /* 5th-order weno */
 	int extend_size = mesh_size + 2 * nrad;
 	double *u_extend;
-	double lambda = -dt/dx;
+	    //double lambda = -dt/dx;
 
 	FT_VectorMemoryAlloc((POINTER*)&u1,mesh_size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&u2,mesh_size,sizeof(double));
@@ -188,9 +188,14 @@ void Runge_Kutta_4th(
 	    u_extend[nrad + mesh_size - 1 + i] = u_old[i];
 	}
 
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+    //u^1
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
+	    //Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u1[i] = u_old[i] + 0.5*flux[i];
+    {
+		u1[i] = u_old[i] + 0.5*dt*flux[i];
+		    //u1[i] = u_old[i] + 0.5*flux[i];
+    }
 
 	/* Set the value on extended mesh */
 	for (i = 0; i < mesh_size; i++) {
@@ -200,9 +205,15 @@ void Runge_Kutta_4th(
 	    u_extend[nrad - i] = u1[mesh_size - 1 - i];
 	    u_extend[nrad + mesh_size - 1 + i] = u1[i];
 	}
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+
+    //u^2
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
+	    //Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u2[i] = u_old[i] + 0.5*flux[i];
+    {
+		u2[i] = u_old[i] + 0.5*dt*flux[i];
+		    //u2[i] = u_old[i] + 0.5*flux[i];
+    }
 
 	/* Set the value on extended mesh */
 	for (i = 0; i < mesh_size; i++) {
@@ -212,9 +223,15 @@ void Runge_Kutta_4th(
 	    u_extend[nrad - i] = u2[mesh_size - 1 - i];
 	    u_extend[nrad + mesh_size - 1 + i] = u2[i];
 	}
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+
+    //u^3
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
+	    //Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-		u3[i] = u_old[i] + flux[i];
+    {
+		u3[i] = u_old[i] + dt*flux[i];
+		    //u3[i] = u_old[i] + flux[i];
+    }
 
 	/* Set the value on extended mesh */
 	for (i = 0; i < mesh_size; i++) {
@@ -224,17 +241,25 @@ void Runge_Kutta_4th(
 	    u_extend[nrad - i] = u3[mesh_size - 1 - i];
 	    u_extend[nrad + mesh_size - 1 + i] = u3[i];
 	}
-	Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
+
+    //u^{n+1}
+	Weno5_Get_Flux(u_extend,flux,dx,mesh_size);
+	    //Weno5_Get_Flux(u_extend,flux,lambda,mesh_size);
 	for (i = 0; i < mesh_size; i++)
-	    u_new[i] = 1.0/3*(- u_old[i] + u1[i] + 2.0*u2[i] + u3[i])
-		     + 1.0/6*flux[i];
-	FT_FreeThese(5,u1,u2,u3,u_extend,flux);
+    {
+	    u_new[i] = 1.0/3.0*(- u_old[i] + u1[i] + 2.0*u2[i] + u3[i])
+		     + dt/6.0*flux[i];
+	        //u_new[i] = 1.0/3.0*(- u_old[i] + u1[i] + 2.0*u2[i] + u3[i])
+		    //   + 1.0/6.0*flux[i];
+    }
+	
+    FT_FreeThese(5,u1,u2,u3,u_extend,flux);
 }
 
 void Weno5_Get_Flux(
 	double *u, 
 	double *flux, 
-	double lambda,
+	double dx,
 	int n)
 {
 	int nrad = 3; /* 5th-order weno */
@@ -370,6 +395,9 @@ void Weno5_Get_Flux(
 	}
 
 	for (j = 0; j < n; j++)
-	    flux[j] = lambda*(fp[j+1] + fm[j+1] - fp[j] - fm[j]);
+    {
+	    flux[j] = (-1.0/dx)*(fp[j+1] + fm[j+1] - fp[j] - fm[j]);
+	        //flux[j] = lambda*(fp[j+1] + fm[j+1] - fp[j] - fm[j]);
+    }
 
 }
