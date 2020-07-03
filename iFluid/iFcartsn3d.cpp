@@ -234,7 +234,7 @@ void Incompress_Solver_Smooth_Basis::printEnstrophy()
     double vol_elem = top_h[0]*top_h[1]*top_h[2];
     enstrophy *= vol_elem;
 
-    fprintf(efile,"%d %g\n",front->step,enstrophy);
+    fprintf(efile,"%d %g\n",front->time,enstrophy);
     fclose(efile);
 }
 
