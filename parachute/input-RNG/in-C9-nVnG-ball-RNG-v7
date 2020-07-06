@@ -51,7 +51,7 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: yes
+Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
@@ -102,7 +102,7 @@ Enter Cmu: 0.0845
 Enter Cbc: 0.01
 Enter l0: 0.01
 Enter mu0: 0.001
-Enter y+: 30.0
+Enter y+: 11.067
 Enter time to active turbulence model: 0.0
 
 *************Boundary parameters*************
