@@ -672,11 +672,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 		    }
         }
 
-                //TODO: Need the friction velocity from the turbulence
-                //      model (via wall functions) to compute the tangential
-                //      shear stress at boundaries. 
+                //TODO: The tangential shear stress opposing the fluid flow,
+                //      is stored in the interface STATE::tan_stress variable.
+                //
+                //      Need to compute the stress, T = n (dot) [grad(U) + grad(U^T)],
+                //      and the normal stress sigma_n = T (dot) n.
+                //      The tangential stress is then sigma_t = T - (sigma_n)*n.
+                //      This is the value that should be effectively modified...
+                //
+                //      Need to use impulses? Or can we do this directly?
             	
-                 coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+                coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
             	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
