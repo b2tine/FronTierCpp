@@ -104,7 +104,7 @@ Enter C2: 1.68
 Enter Cmu: 0.0845
 Enter Cbc: 0.01
 Enter l0: 0.01
-Enter mu0: 0.001
+Enter mu0: 0.00001813
 Enter y+: 11.067
 Enter time to active turbulence model: 0.0
 
