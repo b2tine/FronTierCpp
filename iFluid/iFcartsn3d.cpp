@@ -676,7 +676,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 //      model (via wall functions) to compute the tangential
                 //      shear stress at boundaries. 
             	
-                 coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+                coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
             	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
