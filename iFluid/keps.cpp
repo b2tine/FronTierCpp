@@ -250,6 +250,8 @@ void KE_CARTESIAN::computeLiftDrag(Front* front)
 	    
         if (skip) continue;
 	    
+        //TODO: force computation should include effects of shear stress from
+        //      turbulence model + wall functions (see to computeDiffusionCN() todos).
         if (wave_type(*c) == NEUMANN_BOUNDARY || wave_type(*c) == ELASTIC_BOUNDARY)
             ifluid_compute_force_and_torque(front,Hyper_surf(*c),dt,force,&torque);
 	}

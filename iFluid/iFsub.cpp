@@ -2053,7 +2053,14 @@ static  void ifluid_compute_force_and_torque3d(
                 }
             }
 	}
-         /* Add gravity to the total force */
+
+
+        //TODO: force computation should include effects of shear stress from
+        //      turbulence model + wall functions (see to computeDiffusionCN() todos).
+        //
+        
+    
+        /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&
 	    motion_type(surface) != PRESET_ROTATION)
         {

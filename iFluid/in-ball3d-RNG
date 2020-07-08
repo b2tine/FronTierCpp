@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 Max time: 1.0
 Max step: 15000
 Print interval: 0.01
-Movie frame interval: 0.005
+Movie frame interval: 0.001
 CFL factor: 0.75
 Redistribution interval: 5
 
@@ -23,7 +23,7 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 	FLUID_SOLID_RECT
 	FLUID_SOLID_CUBOID
-Enter problem type: FLUID_SOLID_RECT
+Enter problem type: FLUID_SOLID_CIRCLE
 
 Projection type can be
         SIMPLE
@@ -32,8 +32,8 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter the center of the rectangle: 0.2 0.22 0.22
-Enter lengths of the rectangle: 0.075
+Enter the center of the circle: 0.2 0.22 0.22
+Enter radius of the circle: 0.075
 Enter density and viscosity of the fluid: 1.0 0.0001
 Enter yes if the object is fixed: yes
 Enter gravity: 0 0 0

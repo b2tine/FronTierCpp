@@ -633,13 +633,13 @@ void Incompress_Solver_Smooth_Basis::setGlobalIndex()
 	n_dist[myid] = NLblocks;
 	pp_global_imax(n_dist,num_nodes);
 	ilower = 0;
-        iupper = n_dist[0];
+    iupper = n_dist[0];
 
-        for (i = 1; i <= myid; i++)
-        {
-            ilower += n_dist[i-1];
-            iupper += n_dist[i];
-        }	
+    for (i = 1; i <= myid; i++)
+    {
+        ilower += n_dist[i-1];
+        iupper += n_dist[i];
+    }	
 }
 
 void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
