@@ -208,8 +208,7 @@ void KE_CARTESIAN::setInitialCondition(void)
         if (top_h[i] > lmin)
             lmin = top_h[i];
     }
-    lmin = 2.0*lmin;
-    //TODO: check if lmin < l0
+    lmin = 2.0*lmin; //TODO: check if lmin < l0
 
 	// cell_center
 	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
@@ -1749,18 +1748,36 @@ void KE_CARTESIAN::computeMuTurb()
 		    else
 			    Cmu = eqn_params->Cmu;
 
-		    if (field->eps[index] != 0.0)
-		        field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
-		    else
-			    field->mu_t[index] = 0.0001*eqn_params->mu;
-		    
+            double limited_mix_length = lmax;
+            if (Cmu*pow(field->k[index],1.5) < field->eps[index]*lmax)
+            {
+                limited_mix_length =
+                    Cmu*pow(field->k[index],1.5)/field->eps[index];
+            }
+            
+            double nu_t = std::max(0.0001*nu,
+                    limited_mix_length*sqrt(field->k[index]));
+            
+            field->mu_t[index] = nu_t*rho;
+
+                /*
+                if (field->eps[index] != 0.0)
+                    field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
+                else
+                    field->mu_t[index] = 0.0001*eqn_params->mu;
+                */
+
             if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
-			    printf("Warning: mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
-			    field->mu_t[index],Cmu,field->k[index],field->eps[index]);
-			    field->mu_t[index] = 0.0001*eqn_params->mu;
+			    printf("Warning: eddy viscosity is nan or inf\n \
+                        \t mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
+                        field->mu_t[index],Cmu,field->k[index],field->eps[index]);
+                
+                clean_up(EXIT_FAILURE);
+                    //field->mu_t[index] = 0.0001*eqn_params->mu;
 		    }
-            field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+            
+                //field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
 		}
 		break;
 	    case 3:
@@ -1782,10 +1799,35 @@ void KE_CARTESIAN::computeMuTurb()
 		    else
                 Cmu = eqn_params->Cmu;
 	    	
-		    field->mu_t[index] = 
-                Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
-		    field->mu_t[index] = 
-                std::max(field->mu_t[index],0.0001*eqn_params->mu);
+            double limited_mix_length = lmax;
+            if (Cmu*pow(field->k[index],1.5) < field->eps[index]*lmax)
+            {
+                limited_mix_length =
+                    Cmu*pow(field->k[index],1.5)/field->eps[index];
+            }
+            
+            double nu_t = std::max(0.0001*nu,
+                    limited_mix_length*sqrt(field->k[index]));
+            
+            field->mu_t[index] = nu_t*rho;
+
+                /*
+                field->mu_t[index] = 
+                    Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+                field->mu_t[index] = 
+                    std::max(field->mu_t[index],0.0001*eqn_params->mu);
+                */
+
+            if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
+		    {
+			    printf("Warning: eddy viscosity is nan or inf\n \
+                        \t mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
+                        field->mu_t[index],Cmu,field->k[index],field->eps[index]);
+                
+                clean_up(EXIT_FAILURE);
+                    //field->mu_t[index] = 0.0001*eqn_params->mu;
+		    }
+
 		}
         break;
 	}

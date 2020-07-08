@@ -33,7 +33,7 @@ Projection type can be
 Enter projection type: SIMPLE
 
 Enter the center of the rectangle: 0.2 0.22 0.22
-Enter lengths of the rectangle: 0.075
+Enter lengths of the rectangle: 0.075 0.075 0.075
 Enter density and viscosity of the fluid: 1.0 0.0001
 Enter yes if the object is fixed: yes
 Enter gravity: 0 0 0
