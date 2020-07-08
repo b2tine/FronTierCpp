@@ -3677,23 +3677,26 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 #include "keps.h"
 double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
-        static boolean first = YES;
-        static KE_PARAMS params;
-        static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
-        if (first)
-        {
-            first = NO;
-            keps_solver->read_params(InName(front),&params);
-            keps_solver->eqn_params = &params;
-            keps_solver->field = NULL;
-            keps_solver->initMesh();
-            keps_solver->field->vel = iFparams->field->vel;
-            keps_solver->eqn_params->mu = iFparams->mu2;
-            keps_solver->eqn_params->rho = iFparams->rho2;
-            keps_solver->setInitialCondition();
-        }
-        keps_solver->solve(front->dt);
-	return keps_solver->field->mu_t;
+    static boolean first = YES;
+    static KE_PARAMS params;
+    static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+
+    if (first)
+    {
+        first = NO;
+        keps_solver->read_params(InName(front),&params);
+        keps_solver->eqn_params = &params;
+        keps_solver->field = NULL;
+        keps_solver->initMesh();
+        keps_solver->field->vel = iFparams->field->vel;
+        keps_solver->eqn_params->mu = iFparams->mu2;
+        keps_solver->eqn_params->rho = iFparams->rho2;
+        keps_solver->setInitialCondition();
+    }
+
+    keps_solver->solve(front->dt);
+
+    return keps_solver->field->mu_t;
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

@@ -185,7 +185,6 @@ void KE_CARTESIAN::setComponent(void)
 
 void KE_CARTESIAN::setInitialCondition(void)
 {
-	int i;
 	double coords[MAXD],k0,eps0;
 	INTERFACE *intfc = front->interf;
 	POINT *p;
@@ -196,13 +195,27 @@ void KE_CARTESIAN::setInitialCondition(void)
 	short unsigned int seed[3] = {2,72,7172};
 
 	FT_MakeGridIntfc(front);
-        setDomain();
+    setDomain();
+
+    //compute mixing length limits
+    lmax = HUGE;
+    lmin = -HUGE;
+    for (int i = 0; i < dim; ++i)
+    {
+        double domain_size = top_U[i] - top_L[i];
+        if (domain_size < lmax)
+            lmax = domain_size;
+        if (top_h[i] > lmin)
+            lmin = top_h[i];
+    }
+    lmin = 2.0*lmin;
+    //TODO: check if lmin < l0
 
 	// cell_center
 	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
 	eps0 = eqn_params->Cmu*pow(k0,1.5)/eqn_params->l0;
 
-	for (i = 0; i < cell_center.size(); i++)
+	for (int i = 0; i < cell_center.size(); ++i)
 	{
 	    c = top_comp[i];
 	    getRectangleCenter(i,coords);
@@ -1461,6 +1474,7 @@ void KE_CARTESIAN::solve(double dt)
     computeSource();
     if (debugging("trace")) printf("Passing computeSource()\n");
 
+    //TODO: rename this -- misleading
 	computeAdvection();
 	if (debugging("trace")) printf("Passing computeAdvection()\n");
 
@@ -1476,18 +1490,17 @@ void KE_CARTESIAN::solve(double dt)
 
 static void printField(double *var,
 		       const char* varname, 
-		       int* lmin, 
-		       int* lmax,
+		       int* ic_min, 
+		       int* ic_max,
 		       int* top_gmax)
 {
-	int i, j, index;
 	FILE* outfile;
 	outfile = fopen(varname,"w");
-	for (j = lmin[1]; j <= lmax[1]; j++)
+	for (int j = ic_min[1]; j <= ic_max[1]; j++)
 	{
-	    for (i = lmin[0]; i <= lmax[0]; i++)
+	    for (int i = ic_min[0]; i <= ic_max[0]; i++)
 	    {
-	        index = d_index2d(i,j,top_gmax);
+	        int index = d_index2d(i,j,top_gmax);
 	        fprintf(outfile,"%e ",var[index]);
 	    }
 	    fprintf(outfile,"\n");
@@ -1497,19 +1510,18 @@ static void printField(double *var,
 
 static void printField3d(double *var,
 		       const char* varname, 
-		       int* lmin, 
-		       int* lmax,
+		       int* ic_min, 
+		       int* ic_max,
 		       int* top_gmax)
 {
-	int i, j, k, index;
 	FILE* outfile;
 	outfile = fopen(varname,"w");
-	i = (lmin[0] + lmax[0])/2;
-	for (k = lmin[2]; k <= lmax[2]; k++)
+	int i = (ic_min[0] + ic_max[0])/2;
+	for (int k = ic_min[2]; k <= ic_max[2]; k++)
 	{
-	    for (j = lmin[1]; j <= lmax[1]; j++)
+	    for (int j = ic_min[1]; j <= ic_max[1]; j++)
 	    {
-	        index = d_index3d(i,j,k,top_gmax);
+	        int index = d_index3d(i,j,k,top_gmax);
 	        fprintf(outfile,"%e ",var[index]);
 	    }
 	    fprintf(outfile,"\n");
@@ -1531,7 +1543,6 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
 	int i,j,k,l,m,index;
 	char fname[200];
 	static int count = 0;
-	int lmin[MAXD], lmax[MAXD];
 	INTERFACE *grid_intfc = front->grid_intfc;
 	GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
         STATE* intfc_state;
@@ -1699,7 +1710,7 @@ void KE_CARTESIAN::computeMuTurb()
 	int i,j,k,l,m,ll,index;
 	char fname[200];
 	static int count = 0;
-	int lmin[MAXD], lmax[MAXD];
+	int ic_min[MAXD], ic_max[MAXD];
 	INTERFACE *grid_intfc = front->grid_intfc;
 	GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
         POINTER intfc_state;
@@ -1716,8 +1727,8 @@ void KE_CARTESIAN::computeMuTurb()
 	double nu = eqn_params->mu/rho;
 	double Cmu = eqn_params->Cmu;
 
-	lmin[0] = imin; lmin[1] = jmin; lmin[2] = kmin;
-	lmax[0] = imax; lmax[1] = jmax; lmax[2] = kmax;
+	ic_min[0] = imin; ic_min[1] = jmin; ic_min[2] = kmin;
+	ic_max[0] = imax; ic_max[1] = jmax; ic_max[2] = kmax;
 
 	switch(dim)
 	{
@@ -1725,29 +1736,31 @@ void KE_CARTESIAN::computeMuTurb()
 		for (i = imin; i <= imax; i++)
 		for (j = jmin; j <= jmax; j++)
 		{
-	    	    icoords[0] = i;
-	    	    icoords[1] = j;
-	    	    index = d_index2d(i,j,top_gmax);
-	    	    comp = top_comp[index];
+            icoords[0] = i;
+            icoords[1] = j;
+            index = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+
 		    if (keps_model == REALIZABLE)
 		    {
-			Cmu = computePointFieldCmu(icoords);
-			field->Cmu[index] = Cmu;
+                Cmu = computePointFieldCmu(icoords);
+                field->Cmu[index] = Cmu;
 		    }
 		    else
-			Cmu = eqn_params->Cmu;
+			    Cmu = eqn_params->Cmu;
 
 		    if (field->eps[index] != 0.0)
 		        field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
 		    else
-			field->mu_t[index] = 0.0001*eqn_params->mu;
-		    if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
+			    field->mu_t[index] = 0.0001*eqn_params->mu;
+		    
+            if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
-			printf("Warning: mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
-			field->mu_t[index],Cmu,field->k[index],field->eps[index]);
-			field->mu_t[index] = 0.0001*eqn_params->mu;
+			    printf("Warning: mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
+			    field->mu_t[index],Cmu,field->k[index],field->eps[index]);
+			    field->mu_t[index] = 0.0001*eqn_params->mu;
 		    }
-		    field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+            field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
 		}
 		break;
 	    case 3:
@@ -1786,20 +1799,20 @@ void KE_CARTESIAN::computeMuTurb()
 	if (dim == 2)
 	{
 	    sprintf(fname,"%s/K_field",OutName(front));
-	    printField(field->k,fname,lmin,lmax,top_gmax);
+	    printField(field->k,fname,ic_min,ic_max,top_gmax);
 	    sprintf(fname,"%s/E_field",OutName(front));
-	    printField(field->eps,fname,lmin,lmax,top_gmax);
+	    printField(field->eps,fname,ic_min,ic_max,top_gmax);
 	}
 	else if (dim == 3)
 	{
         sprintf(fname,"%s/K_field",OutName(front));
-        printField3d(field->k,fname,lmin,lmax,top_gmax);
+        printField3d(field->k,fname,ic_min,ic_max,top_gmax);
         sprintf(fname,"%s/E_field",OutName(front));
-        printField3d(field->eps,fname,lmin,lmax,top_gmax);
+        printField3d(field->eps,fname,ic_min,ic_max,top_gmax);
 	    if (keps_model == REALIZABLE)
 	    {
             sprintf(fname,"%s/Cmu",OutName(front));
-            printField3d(field->Cmu,fname,lmin,lmax,top_gmax);
+            printField3d(field->Cmu,fname,ic_min,ic_max,top_gmax);
 	    }
 	}
 
@@ -2164,6 +2177,7 @@ void KE_CARTESIAN::setDomain()
 	dim = grid_intfc->dim;
 	T = table_of_interface(grid_intfc);
 	top_comp = T->components;
+
 	hmin = top_h[0];
 	for (i = 1; i < dim; ++i)
 	    if (hmin > top_h[i]) hmin = top_h[i];
@@ -2769,7 +2783,7 @@ void KE_CARTESIAN::read_params(
 	eqn_params->Cbc = 0.01; /*typicaly 0.003 ~ 0.01*/
 	eqn_params->rho = 1.0;
 	eqn_params->B = 5.2; /*5.2 for smooth wall*/
-	eqn_params->y_p = 11.067;
+	eqn_params->y_p = 30.0;
 	eqn_params->t0 = 0.0;
 	keps_model = STANDARD;
 	/*end default parameter*/

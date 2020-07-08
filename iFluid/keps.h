@@ -67,6 +67,7 @@ public:
 	double *source;		// for source of parabolic solver;
 	double *top_L,*top_U,*top_h,hmin;
 	int *top_gmax;
+    double lmin, lmax;
 	COMPONENT *top_comp;
 	KE_PARAMS *eqn_params;
 	KE_FIELD *field;
