@@ -208,7 +208,10 @@ void KE_CARTESIAN::setInitialCondition(void)
         if (top_h[i] > lmin)
             lmin = top_h[i];
     }
-    lmin = 2.0*lmin; //TODO: check if lmin < l0
+    
+    lmin = 2.0*lmin;
+    if (eqn_params->l0 < lmin)
+        eqn_params->l0 = lmin;
 
 	// cell_center
 	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
