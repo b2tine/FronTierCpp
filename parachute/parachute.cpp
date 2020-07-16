@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
-	    //l_cartesian->initMesh();
+    l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
