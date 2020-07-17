@@ -421,11 +421,17 @@ private:
 	void scatMeshStates();
 	void scatMeshVst(SWEEP*);
 	void scatMeshFlux(FSWEEP*);
+    void setGlobalIndex();//TODO: implement
+
+
 	void appendOpenEndStates();
 
 	// compressible solver functions
-	void setAdvectionDt(void);
-	void computeAdvection(void);
+	void setAdvectionDt();
+	void computeAdvection();
+	void computeConvectiveFlux();
+        FSWEEP *cFlux;
+	void computeDiffusion();
 
 	/* Mesh memory management */
 	bool withinStencilLen(int*,int);

@@ -143,7 +143,7 @@ Type yes to perturb the surface: n
 
 Start test time control parameters
 Max time: 5
-Max step: 5000
+Max step: 2
 Print interval: 1
 Movie frame interval: 0.1
 CFL factor: 0.5

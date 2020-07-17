@@ -333,7 +333,42 @@ void G_CARTESIAN::setInitialStates()
 	copyMeshStates();
 }*/	/* end setInitialStates */
 
-void G_CARTESIAN::computeAdvection(void)
+void G_CARTESIAN::computeConvectiveFlux()
+{
+    nrad = 3;
+    int order = 1;
+
+	static SWEEP *st_field;
+	static FSWEEP *st_flux;
+	
+	if (st_flux == NULL)
+	{
+	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+	    
+        for (i = 0; i < order; ++i)
+	    {
+	    	allocMeshVst(&st_field[i]);
+	    	allocMeshFlux(&st_flux[i]);
+	    }
+    }
+
+    double delta_t = m_dt;
+	copyToMeshVst(&st_field[0]);
+	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
+        //addMeshFluxToVst(&st_field[0],st_flux[0],1.0);
+	    //copyFromMeshVst(st_field[0]);
+    cFlux = &st_flux[0];
+}
+
+void G_CARTESIAN::computeDiffusion()
+{
+    //TODO: cFlux goes to RHS vector.
+    //      See iFcartsn3d.cpp for template of this implementation.
+
+}
+
+void G_CARTESIAN::computeAdvection()
 {
 	int order;
 	switch (eqn_params->num_scheme)
@@ -738,27 +773,47 @@ void G_CARTESIAN::solve(double dt)
 	if (debugging("trace"))
 	    printf("Entering solve()\n");
 	start_clock("solve");
-	setDomain();
+	
+    setDomain();
 	appendOpenEndStates(); /* open boundary test */
 	scatMeshStates();
 
 	adjustGFMStates();
 	setComponent();
+
+    ////////////////////////////////////////////////////////////////
+    //TODO: part of diffusion implementation
+    setGlobalIndex();
+    ////////////////////////////////////////////////////////////////
 	
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
-	// 1) solve for intermediate velocity
+    //TODO: Need to save the current solution, and keep in a seperate array
+    //      the solution of the predictor step for use in step 2.
+	
+    // 1) Explicit Predictor Step
 	start_clock("computeAdvection");
-	computeAdvection();
+	computeConvectiveFlux();
+	    //computeAdvection();
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
 	stop_clock("computeAdvection");
-	
-	if (debugging("sample_velocity"))
+
+    ///////////////////////////////////////////////////////////////
+    //TODO: diffusion implementation here
+    
+    // 2) Implicit Corrector Step
+    start_clock("computeDiffusion");
+    computeDiffusion();
+    stop_clock("computeDiffusion");
+
+    ///////////////////////////////////////////////////////////////
+
+    /*if (debugging("sample_velocity"))
 	{
 	    sampleVelocity();
-	}
+	}*/
 
     //TODO: Velocity and Vorticity computed in copyMeshStates(),
     //      should factor into separate functions.
@@ -776,16 +831,16 @@ void G_CARTESIAN::solve(double dt)
 // check http://en.wikipedia.org/wiki/Bilinear_interpolation
 void G_CARTESIAN::getVelocity(double *p, double *U)
 {
-        double **vel = eqn_params->vel;
+    double **vel = eqn_params->vel;
 
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
-					NULL);
-        if (dim > 1)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
-					NULL);
-        if (dim > 2)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
-					NULL);
+    FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
+                NULL);
+    if (dim > 1)
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
+                NULL);
+    if (dim > 2)
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
+                NULL);
 }
 
 void G_CARTESIAN::getRectangleIndex(int index, int &i, int &j)
