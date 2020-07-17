@@ -675,12 +675,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 //TODO: The tangential shear stress opposing the fluid flow,
                 //      is stored in the interface STATE::tan_stress variable.
                 //
-                //      Need to compute the stress, T = n (dot) [grad(U) + grad(U^T)],
-                //      and the normal stress sigma_n = T (dot) n.
-                //      The tangential stress is then sigma_t = T - (sigma_n)*n.
-                //      This is the value that should be effectively modified...
-                //
-                //      Need to use impulses? Or can we do this directly?
+                //      Create slip boundary ghost point, modify its
+                //      (tangential) velocity to account for the shear stress
+                //      acting in opposition to it.
             	
                 coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
@@ -689,10 +686,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
             	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
 
-                //TODO: RHS should also contain the advective flux?
-                //      We are first computing the solution as if it was
-                //      a pure advection/hyperbolic equation. Then using
-                //      that solution as the input for ths diffusion solver...
             	getRectangleCenter(index, coords);
             	computeSourceTerm(coords, source);
 

@@ -10,7 +10,7 @@ Lower boundary in 2-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 
 Max time: 1.0
-Max step: 15000
+Max step: 5000
 Print interval: 0.01
 Movie frame interval: 0.005
 CFL factor: 0.75
@@ -32,8 +32,8 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter the center of the rectangle: 0.2 0.22 0.22
-Enter lengths of the rectangle: 0.075 0.075 0.075
+Enter the center of the rectangle: 0.275 0.22 0.22
+Enter lengths of the rectangle: 0.15 0.075 0.075
 Enter density and viscosity of the fluid: 1.0 0.0001
 Enter yes if the object is fixed: yes
 Enter gravity: 0 0 0
@@ -58,13 +58,13 @@ Enter Cbc: 0.01
 Enter l0: 0.025
 Enter mu0: 0.0001
 Enter y+: 30.0
-Enter time to active turbulence model: 0.005
+Enter time to active turbulence model: 0.075
 *******************************************************
 
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 10 0 0 
+Enter velocity: 3 0 0 
 Enter pressure: 0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

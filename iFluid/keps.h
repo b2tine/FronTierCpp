@@ -127,6 +127,8 @@ public:
 	void findBdryPoint();
 
 	void computeSource();
+	double computeWallPk(int*,int,int,int,
+			     HYPER_SURF*,POINTER,double**);
 	void setSlipBoundary(int*,int,int,int,
 			     HYPER_SURF*,POINTER,double**,double*);
 	void setTKEatWall(int*,int,int,int,

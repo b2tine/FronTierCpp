@@ -2544,7 +2544,11 @@ void KE_CARTESIAN::setSlipBoundary(
         vn += v[j]*nor[j];
     }
 
-    //TODO: Continue testing this wall function method.
+    for (int j = 0; j < 3; ++j)
+        v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
+    
+    /*
+    //TODO: Don't think this is appropriate ... remove when sure of it.
     for (int j = 0; j < dim; ++j)
         v_tan[j] = v_tmp[j] - vn*nor[j];
     double mag_vtan = Magd(v_tan,dim);
@@ -2562,13 +2566,53 @@ void KE_CARTESIAN::setSlipBoundary(
 
     for (int j = 0; j < dim; ++j)
         v_tan[j] = u_t*unit_tan[j] - vn*nor[j];
-    
-    //TODO: can we remove this old method? keep testing above wall function method.
-    /*
-    for (int j = 0; j < 3; ++j)
-        v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
     */
+}
 
+//Pk wall boundary condition
+double KE_CARTESIAN::computeWallPk(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER intfc_state,
+	double** vel)
+{
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    GRID_DIRECTION dir = (nb == 0) ? ldir[idir] : rdir[idir];
+    
+    boolean status;
+    double nor[MAXD], crx_coords[MAXD];
+    status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+        //if (status == NO) return;
+
+	int index = d_index(icoords,top_gmax,dim);
+    
+    double v[MAXD] = {0.0};
+    double vel_intfc[MAXD] = {0.0};
+    for (int i = 0; i < dim; ++i)
+    {
+        v[i] = vel[i][index];
+        vel_intfc[i] = (*getStateVel[i])(intfc_state);
+    }
+
+    double vn = 0.0;
+    for (int k = 0; k < dim; ++k)
+        vn += (v[k] - vel_intfc[k])*nor[k];
+    
+    double v_tan[MAXD] = {0.0};
+    for (int k = 0; k < dim; ++k)
+        v_tan[k] = v[k] - vn*nor[k];
+
+    double u_t = std::max(
+            pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[index],0.0)),
+                            Magd(v_tan,dim)/eqn_params->y_p);
+
+    double nu_t = field->mu_t[index]/eqn_params->rho;
+    double Pk_Wall = pow(u_t,3.0)*Magd(v_tan,dim)/(nu_t*eqn_params->y_p);
+    return Pk_Wall;
 }
 
 void KE_CARTESIAN::computeSource()
@@ -2580,9 +2624,10 @@ void KE_CARTESIAN::computeSource()
 	double vel_nb[2],d_h[2];
 	const GRID_DIRECTION dir[3][2] =
                 {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
-	double rho = eqn_params->rho;
+	
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
+	double rho = eqn_params->rho;
 
 	/*find crx*/
 	HYPER_SURF *hs;
@@ -2591,6 +2636,8 @@ void KE_CARTESIAN::computeSource()
 	int fr_crx_grid_seg;
 	int comp;
 	double crx_coords[MAXD],center[MAXD],v_tan[MAXD];
+    double Pk_Wall = 0.0;;
+    bool ON_WALL = false;
 
 	switch (dim)
 	{
@@ -2607,7 +2654,8 @@ void KE_CARTESIAN::computeSource()
 
             //TODO: factor out this common l,m,nb loop into function
             //      that takes the same args plus the icrds array.
-		    J = 0.0;
+
+            J = 0.0;
 		    /*compute module of the strain rate tensor*/
 		    for (l = 0; l < dim; l++)
 		    for (m = 0; m < dim; m++)
@@ -2632,8 +2680,13 @@ void KE_CARTESIAN::computeSource()
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 			    {
-                    setSlipBoundary(icrds,m,nb,comp,hs,intfc_state,field->vel,v_tan);
-				    vel_nb[nb] = v_tan[l];
+                    //setSlipBoundary(icrds,m,nb,comp,hs,intfc_state,field->vel,v_tan);
+                    //vel_nb[nb] = v_tan[l];
+                    
+                    //Pk wall boundary condition
+                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
+                    ON_WALL = true;
+                    break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2651,7 +2704,8 @@ void KE_CARTESIAN::computeSource()
                 }
 			}
 
-            S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            if (!ON_WALL)
+                S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
@@ -2672,8 +2726,13 @@ void KE_CARTESIAN::computeSource()
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 			    {
-    				setSlipBoundary(icrds,l,nb,comp,hs,intfc_state,field->vel,v_tan);
-                    vel_nb[nb] = v_tan[m];
+                    //setSlipBoundary(icrds,l,nb,comp,hs,intfc_state,field->vel,v_tan);
+                    //vel_nb[nb] = v_tan[m];
+                    
+                    //Pk wall boundary condition
+                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
+                    ON_WALL = true;
+                    break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2690,12 +2749,22 @@ void KE_CARTESIAN::computeSource()
 			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
 			    }
 			}
-			S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-			J += (S*S);
+            
+                if (!ON_WALL)
+                {
+                    S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+                    J += (S*S);
+                }
+
 		    }
-		    Pk[index] = 0.5*mu_t[index]*J/rho; 
-		}	
-		break;
+
+            if (!ON_WALL)
+		        Pk[index] = 0.5*mu_t[index]*J/rho; 
+            else
+                Pk[index] = Pk_Wall;
+
+		}
+        break;
 	    case 3:
 		for (i = imin; i <= imax; i++)
 		for (j = jmin; j <= jmax; j++)
@@ -2735,8 +2804,13 @@ void KE_CARTESIAN::computeSource()
 			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			    {
-                    setSlipBoundary(icrds,m,nb,comp,hs,intfc_state,field->vel,v_tan);
-                    vel_nb[nb] = v_tan[l];
+                    //setSlipBoundary(icrds,m,nb,comp,hs,intfc_state,field->vel,v_tan);
+                    //vel_nb[nb] = v_tan[l];
+                    
+                    //Pk wall boundary condition
+                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
+                    ON_WALL = true;
+                    break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2753,7 +2827,9 @@ void KE_CARTESIAN::computeSource()
 			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
 			    }
 			}
-			S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+
+            if (!ON_WALL)
+                S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
@@ -2773,8 +2849,13 @@ void KE_CARTESIAN::computeSource()
 			    else if(wave_type(hs) == NEUMANN_BOUNDARY ||
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
 			    {
-				    setSlipBoundary(icrds,l,nb,comp,hs,intfc_state,field->vel,v_tan);
-                    vel_nb[nb] = v_tan[m];
+                    //setSlipBoundary(icrds,l,nb,comp,hs,intfc_state,field->vel,v_tan);
+                    //vel_nb[nb] = v_tan[m];
+                    
+                    //Pk wall boundary condition
+                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
+                    ON_WALL = true;
+                    break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2793,14 +2874,21 @@ void KE_CARTESIAN::computeSource()
                 }
             }
 
-            S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-			J += (S*S);
+                if (!ON_WALL)
+                {
+                    S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+                    J += (S*S);
+                }
 
             }
 
-		    Pk[index] = 0.5*mu_t[index]*J/rho; 
-		}	
-		break;
+            if (!ON_WALL)
+                Pk[index] = 0.5*mu_t[index]*J/rho; 
+            else
+                Pk[index] = Pk_Wall;
+
+		}
+        break;
 	  default: 
 		printf("In computeSource(), Unknown dim = %d\n",dim);
 		clean_up(ERROR);
@@ -2828,7 +2916,7 @@ void KE_CARTESIAN::read_params(
 	eqn_params->Cbc = 0.01; /*typicaly 0.003 ~ 0.01*/
 	eqn_params->rho = 1.0;
 	eqn_params->B = 5.2; /*5.2 for smooth wall*/
-	eqn_params->y_p = 30.0;
+	eqn_params->y_p = 11.06;
 	eqn_params->t0 = 0.0;
 	keps_model = STANDARD;
 	/*end default parameter*/
