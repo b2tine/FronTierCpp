@@ -2334,4 +2334,38 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end addImmersedForce in 3D */
 
+void Incompress_Solver_Smooth_Basis::addVortexDisturbance(
+        VPARAMS vparams)
+{
+	double **vel = field->vel;
+        double *center = vparams.center;
+        double D = vparams.D;
+        double A = vparams.A;
+        double L0[MAXD],coords[MAXD];
+        int i,j,k,ic;
+
+        printf("Entering addVortexDisturbance()\n");
+        for (i = 0; i < dim; ++i)
+            L0[i] = center[i] - 0.5*D;
+        for (k = kmin; k <= kmax; k++)
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            coords[0] = top_L[0] + i*top_h[0];
+            coords[1] = top_L[1] + j*top_h[1];
+            coords[2] = top_L[2] + k*top_h[2];
+            if (coords[0] < L0[0] || coords[0] > L0[0]+D ||
+                coords[2] < L0[2] || coords[2] > L0[2]+D)
+                continue;
+            double u,w;
+            u =  A*sin(PI*(coords[0] - L0[0])/D)*cos(PI*(coords[2] - L0[2])/D);
+            w = -A*cos(PI*(coords[0] - L0[0])/D)*sin(PI*(coords[2] - L0[2])/D);
+            u *= sin(PI*(coords[1] - L0[1])/D);
+            w *= sin(PI*(coords[1] - L0[1])/D);
+            ic = d_index3d(i,j,k,top_gmax);
+            vel[0][ic] += u;
+            vel[2][ic] += w;
+        }
+	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+}       /* end addVortexDisturbance */
 
