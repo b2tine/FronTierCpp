@@ -346,7 +346,7 @@ void G_CARTESIAN::computeConvectiveFlux()
 	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
 	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
 	    
-        for (i = 0; i < order; ++i)
+        for (int i = 0; i < order; ++i)
 	    {
 	    	allocMeshVst(&st_field[i]);
 	    	allocMeshFlux(&st_flux[i]);
@@ -964,7 +964,7 @@ void G_CARTESIAN::solve(double dt)
 
     ////////////////////////////////////////////////////////////////
     //TODO: part of diffusion implementation
-    setGlobalIndex();
+        //setGlobalIndex();
     ////////////////////////////////////////////////////////////////
 	
 	if (debugging("trace"))
@@ -983,9 +983,9 @@ void G_CARTESIAN::solve(double dt)
 
     /////////////////////////////////////////////////////////////// 
     // 2) Implicit Corrector Step
-    start_clock("computeDiffusion");
-    computeDiffusion(); //TODO: diffusion implementation here
-    stop_clock("computeDiffusion");
+    //start_clock("computeDiffusion");
+        //computeDiffusion(); //TODO: diffusion implementation here
+    //stop_clock("computeDiffusion");
 
     ///////////////////////////////////////////////////////////////
 
