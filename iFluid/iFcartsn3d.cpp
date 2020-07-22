@@ -72,8 +72,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 					iFparams->adv_order);
 	    clean_up(ERROR);
 	}
-    //TODO: probably need to save field->vel before overwriting with soln..
-    //      flux soln should be sent to rhs of diffusion computation.... 
 	hyperb_solver.dt = m_dt;
 	hyperb_solver.var = field->vel;
 	hyperb_solver.soln = field->vel;
@@ -137,10 +135,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    index = d_index3d(i,j,k,top_gmax);
 	    array[index] = phi[index];
 	}
-	
-    for (k = kmin; k <= kmax; k++)
+	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
-    for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    comp = top_comp[index];
@@ -194,51 +191,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
-void Incompress_Solver_Smooth_Basis::printEnstrophy()
-{
-	if (FT_Dimension() != 3) return;
-
-    static bool first = true;
-    static FILE* efile;
-	static char fname[512];
-
-    if (first)
-    {
-	    sprintf(fname,"%s/enstrophy.xg",OutName(front));
-        efile = fopen(fname,"w");
-        first = false;
-    }
-    else
-    {
-        efile = fopen(fname,"a");
-    }
-
-    int index;
-    double enstrophy = 0.0;
-    double** vorticity = field->vorticity;
-    
-    for (int i = imin; i < imax; ++i)
-    for (int j = jmin; j < jmax; ++j)
-    for (int k = kmin; k < kmax; ++k)
-    {
-        index = d_index3d(i,j,k,top_gmax);
-        if (!ifluid_comp(top_comp[index])) continue;
-        
-        double sqrmag_vort = 0.0;
-        for (int l = 0; l < 3; ++l)
-            sqrmag_vort += sqr(vorticity[l][index]);
-
-        enstrophy += sqrmag_vort;
-    }
-    
-    double vol_elem = top_h[0]*top_h[1]*top_h[2];
-    enstrophy *= vol_elem;
-
-    fprintf(efile,"%d %g\n",front->step,enstrophy);
-    fclose(efile);
-}
-
-/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     int index;
@@ -320,8 +272,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     //TODO: where/how to do this? See cFluid copyMeshStates() ...
     //FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
-*/
 
+//TODO: There seems to be a bug in one, or both, of the following two functions
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     double** vel = field->vel;
@@ -404,7 +357,7 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     }
 
     return curl_vel;
-}       /* end computePointVorticity */
+}*/       /* end computePointVorticity */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
@@ -581,7 +534,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double coords[MAXD], crx_coords[MAXD];
 	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
         double *x;
-    //TODO: index by direction and behind ahead nb = 0,1 like advection
 	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	POINTER intfc_state;
 	HYPER_SURF *hs;
@@ -641,44 +593,31 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	mu0   = field->mu[index];
             	rho   = field->rho[index];
 
-        //TODO: index by dir = 0,1,2 and nb = 0,1
-        for (nb = 0; nb < 6; nb++)
-        {
+            	for (nb = 0; nb < 6; nb++)
+            	{
 		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
                                 &intfc_state,&hs,crx_coords))
 		    {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                                boundary_state_function(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
-                {
-                    U_nb[nb] = vel[l][index];
-                }
-                else
-                    U_nb[nb] = getStateVel[l](intfc_state);
-
-                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
-                    mu[nb] = mu0;
-                else
-                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    
-            }
-            else
-		    {
-                U_nb[nb] = vel[l][index_nb[nb]];
-    			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                    	    boundary_state_function(hs) &&
+                    	    strcmp(boundary_state_function_name(hs),
+                    	    "flowThroughBoundaryState") == 0)
+                    	    U_nb[nb] = vel[l][index];
+			else
+			    U_nb[nb] = getStateVel[l](intfc_state);
+			if (wave_type(hs) == DIRICHLET_BOUNDARY || 
+			    neumann_type_bdry(wave_type(hs)))
+			    mu[nb] = mu0;
+			else
+			    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
 		    }
-        }
+                    else
+		    {
+                    	U_nb[nb] = vel[l][index_nb[nb]];
+			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    }
+            	}
 
-                //TODO: Absence of mixed derivatives shows mixed partials
-                //      shows the transposed jacobian from the RANS equation
-                //       is not included.. see setSlipBoundary() in keps.cpp
-                //       for how to compute the mean strain tensor.
-                //       Also need the friction velocity from the turbulence
-                //       model (via wall functions) to compute the tangential
-                //       shear stress at boundaries. 
-                //
-                //       should be discretizing div(grad(u) + grad(u)^T)
             	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
@@ -686,44 +625,39 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
             	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
 
-                //TODO: RHS should also contain the advective flux...
-                //      We are first computing the solution as if it was
-                //      a pure advection/hyperbolic equation. Then using
-                //      that solution as the input for ths diffusion solver...
             	getRectangleCenter(index, coords);
             	computeSourceTerm(coords, source);
 
-		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
-		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
+		aII = 1+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
+		rhs = (1-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*
+		      		(vel[l][index]);
 
-        //TODO: index by dir = 0,1,2 and nb = 0,1
 		for(nb = 0; nb < 6; nb++)
 		{
-            //TODO: Neumann boundary at solid walls does not appear to be implemented.
-            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
+	            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
 			        &intfc_state,&hs,crx_coords))
 		    {
-                solver.Set_A(I,I_nb[nb],-coeff[nb]);
-                rhs += coeff[nb]*U_nb[nb];
+			solver.Set_A(I,I_nb[nb],-coeff[nb]);
+			rhs += coeff[nb]*U_nb[nb];
 		    }
 		    else
 		    {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                                boundary_state_function(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
-                {
-                    aII -= coeff[nb];
-                    rhs += coeff[nb]*U_nb[nb];
-                }
-                else
-                    rhs += 2.0*coeff[nb]*U_nb[nb];
+			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                    	    boundary_state_function(hs) &&
+                    	    strcmp(boundary_state_function_name(hs),
+                    	    "flowThroughBoundaryState") == 0)
+			{
+			    aII -= coeff[nb];
+			    rhs += coeff[nb]*U_nb[nb];
+			}
+			else
+			    rhs += 2.0*coeff[nb]*U_nb[nb];
 		    }
 		}
 		rhs += m_dt*source[l];
 		rhs += m_dt*f_surf[l][index];
-		    //rhs -= m_dt*grad_q[l][index]/rho;
-        solver.Set_A(I,I,aII);
+		//rhs -= m_dt*grad_q[l][index]/rho;
+            	solver.Set_A(I,I,aII);
 		solver.Set_b(I, rhs);
             }
 
@@ -968,36 +902,35 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	mu0   = field->mu[index];
             	rho   = field->rho[index];
 
-        for (nb = 0; nb < 6; nb++)
-        {
-            if (FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+            	for (nb = 0; nb < 6; nb++)
+            	{
+                    if (FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
 				dir[nb],comp,&intfc_state,&hs,crx_coords) &&
-                wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+                                wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
 		    {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                                boundary_state_function(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
-                {
-                                U_nb[nb] = vel[l][index];
-                }
-                else
-                {
-                    U_nb[nb] = getStateVel[l](intfc_state);
-                }
-
-                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
-                    mu[nb] = mu0;
-                else
-                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    
-            }
-            else
-		    {
-                U_nb[nb] = vel[l][index_nb[nb]];
+			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                    	    boundary_state_function(hs) &&
+                    	    strcmp(boundary_state_function_name(hs),
+                    	    "flowThroughBoundaryState") == 0)
+			{
+                    	    U_nb[nb] = vel[l][index];
+			}
+			else
+			{
+			    U_nb[nb] = getStateVel[l](intfc_state);
+			}
+			if (wave_type(hs) == DIRICHLET_BOUNDARY || 
+			    neumann_type_bdry(wave_type(hs)))
+			    mu[nb] = mu0;
+			else
 			    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
 		    }
-        }
+                    else
+		    {
+                    	U_nb[nb] = vel[l][index_nb[nb]];
+			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    }
+            	}
 
             	coeff[0] = m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = m_dt/rho*mu[1]/(top_h[0]*top_h[0]);

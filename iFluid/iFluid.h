@@ -62,7 +62,7 @@ enum _DOMAIN_STATUS {
 };
 typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
-struct IF_FIELD {
+struct _IF_FIELD {
 	double **vel;			/* Velocities */
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
@@ -81,6 +81,7 @@ struct IF_FIELD {
 	double *nu_t;			/* Turbulent viscosity */
 	double **ext_accel;		/*external forcing from other field*/
 };
+typedef struct _IF_FIELD IF_FIELD;
 
 enum _PROJC_METHOD {
 	ERROR_PROJC_SCHEME		= -1,
@@ -252,25 +253,6 @@ struct _RG_PARAMS {
 };
 typedef struct _RG_PARAMS RG_PARAMS;
 
-/////////////////////////////////////////////////////
-//For generating PINN training data
-struct VENTRY
-{
-    int icoords[2];
-    double vel[2];
-    double vort;
-};
-
-struct VDATA
-{
-    int tstep;
-    double dt;
-    double time;
-    std::vector<VENTRY> data;
-};
-/////////////////////////////////////////////////////
-
-
 /******************************************************************************
  * 		lcartsn.h
  * A simple incompressible flow solver using the ghost fluid method and the
@@ -288,13 +270,12 @@ class Incompress_Solver_Basis;
 class L_RECTANGLE {
 public:
 	int comp;			 
-	double m_coords[MAXD] = {0.0}; // x,y,z data of mesh block's center
+	double m_coords[MAXD]; // x,y,z data of mesh block's center
 	int icoords[MAXD];     // i,j,k indices of mesh block
 
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
-    std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -325,16 +306,6 @@ public:
 	int icrds_max[MAXD];
 
 	void initMesh(void);
-
-    /////////////////////////////////////////////////////
-    //For generating PINN training data
-    void writeMeshFile();
-        //void writeTimeFile();
-    VDATA getVelData();
-    std::vector<int> getMaxIJ();
-    std::vector<int> getTopGMax();
-    /////////////////////////////////////////////////////
-
 	void computeMaxSpeed(void);
 	void setAdvectionDt(void); 
 			//using max speed and hmin to determine max_dt, min_dt
@@ -343,7 +314,6 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
-    void printEnstrophy();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -524,6 +494,7 @@ public:
         Incompress_Solver_Smooth_3D_Basis(Front &front):
 	Incompress_Solver_Smooth_Basis(front) {};
 	virtual ~Incompress_Solver_Smooth_3D_Basis() {};
+
 protected:
 	double getSmoothingFunction(double r);
 	double getSmoothingFunctionD(double*, double*);
@@ -586,7 +557,6 @@ public:
 	void solve(double dt);
 	void solveTest(const char *msg);
         void vtk_plot_scalar(char*, const char*);
-
 protected:
 	void copyMeshStates(void);
 	void computeAdvection(void);
@@ -621,7 +591,6 @@ protected:
 extern double getStatePres(POINTER);
 extern double getStatePhi(POINTER);
 extern double getStateVort(POINTER);
-extern double getStateVelMag2d(POINTER state);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
 extern double getStateZvel(POINTER);

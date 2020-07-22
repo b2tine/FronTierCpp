@@ -378,7 +378,7 @@ private:
 	void copyMeshVst(SWEEP,SWEEP*);
 	void computeMeshFlux(SWEEP,FSWEEP*);
 	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
-	void copyFromMeshVst(const SWEEP&);
+	void copyFromMeshVst(SWEEP);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection1d(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection2d(int,SWEEP*,FSWEEP*);

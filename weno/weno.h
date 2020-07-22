@@ -39,7 +39,6 @@ void setEquationType(_PARAMS PARAMS);
 void Weno5(int mesh_size, double *u_old, double *u_new, double dx, double dt);
 void Runge_Kutta_4th(int mesh_size, double *u_old, double *u_new, double dx, double dt);
 void TVD_RK_3th(int mesh_size, double *u_old, double *u_new, double dx, double dt);
-void Weno5_Get_Flux(double *u_old, double *flux, double dx, int mesh_size);
-
+void Weno5_Get_Flux(double *u_old, double *flux, double lambda, int mesh_size);
 
 #endif /* WENO_H_ */
