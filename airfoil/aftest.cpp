@@ -2426,7 +2426,6 @@ static void print_drag3d(
         double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
         FILE* pafile;
-        double parea = 0.0;
 	FILE *xforce, *yforce, *zforce;
 
         if (FT_Dimension() == 2)
@@ -2439,6 +2438,8 @@ static void print_drag3d(
         double free_vel[MAXD] = {0};
         double drag[MAXD]={0},lift[MAXD]={0};
         double fvel_mag = 0.0;
+
+
         for (s = intfc->surfaces; s && *s; ++s)
         {
             HYPER_SURF *hs = Hyper_surf(*s);
@@ -2448,12 +2449,13 @@ static void print_drag3d(
                 for (i = 0; i < dim; i++)
                     free_vel[i] = getStateVel[i](boundary_state(hs));
                 fvel_mag = Mag3d(free_vel);
-                if (fvel_mag != 0.0)
+                if (fabs(fvel_mag) > MACH_EPS)
                     break;
             }
         }
+
         /*normalize freestream vel*/
-        if (fvel_mag != 0.0)
+        if (fabs(fvel_mag) > MACH_EPS)
         {
             for (i = 0; i < dim; i++)
                     free_vel[i] /= fvel_mag;
@@ -2465,6 +2467,7 @@ static void print_drag3d(
                 free_vel[i] = 0.0;
             free_vel[dim-1] = 1.0;
         }
+
         /*compute total force on fabric canopy*/
         /*for multiparachute problem*/
         /* one file is generated for each canopy*/
@@ -2511,7 +2514,8 @@ static void print_drag3d(
             
             fcount++;
             
-            double force[MAXD] = {0};
+            double parea = 0.0;
+            double force[MAXD] = {0.0};
             for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
                         tri = tri->next)
             {
@@ -2524,16 +2528,28 @@ static void print_drag3d(
                     pres_drop += getStatePres(sr)-getStatePres(sl);
                 }
                 pres_drop /= 3.0;
+
+                double unit_nor_tri[MAXD];
+                auto nor_tri = Tri_normal(tri);
+                double mag_nor = Mag3d(nor_tri);
+                double area_tri = tri_area(tri);
+
                 for (i = 0; i < dim; i++)
-                    force[i] += pres_drop * Tri_normal(tri)[i] * 0.5;
-                parea += Dot3d(Tri_normal(tri), free_vel) * 0.5;
+                {
+                    unit_nor_tri[i] = nor_tri[i]/mag_nor;
+                    force[i] += pres_drop*unit_nor_tri[i]*area_tri;
+                }
+                parea += Dot3d(unit_nor_tri,free_vel)*area_tri;
             }
+            
             /*compute drag force and lift force*/
+            double mag_drag = Dot3d(force,free_vel);
             for (i = 0; i < dim; i++)
             {
-                drag[i] = Dot3d(force,free_vel)*free_vel[i];
+                drag[i] = mag_drag*free_vel[i];
                 lift[i] = force[i] - drag[i];
             }
+
             fprintf(dfile,"%16.12f  %16.12f\n",front->time,Mag3d(drag));
             fclose(dfile);
             fprintf(lfile,"%16.12f  %16.12f\n",front->time,Mag3d(lift));
@@ -2547,6 +2563,7 @@ static void print_drag3d(
             fprintf(zforce,"%16.12f  %16.12f\n",front->time,force[2]);
             fclose(zforce);
         }
+
         first = NO;
         return;
 }       /* end print_drag3d */

@@ -6302,7 +6302,7 @@ void G_CARTESIAN::setElasticStatesRiem(
         TRI* nearTri = Tri_of_hse(nearHse);
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
         STATE* state_intfc = (STATE*)left_state(Point_of_tri(nearTri)[0]);
-            //nor = Tri_normal_vector(nearTri);
+            //nor = Tri_normal_vector(nearTri); //is not normalized
         double h = FT_GridSizeInDir(nor,front);
 
         for (j = 0; j < 3; ++j)
