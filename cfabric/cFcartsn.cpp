@@ -361,12 +361,193 @@ void G_CARTESIAN::computeConvectiveFlux()
     cFlux = &st_flux[0];
 }
 
+/*
 void G_CARTESIAN::computeDiffusion()
 {
-    //TODO: cFlux goes to RHS vector.
-    //      See iFcartsn3d.cpp for template of this implementation.
+    printf("computeDiffusion() not yet implemented\n");
+    clean_up(EXIT_FAILURE);
 
+    //TODO: cFlux goes to RHS vector.
+    //      below is iFcartsn3d.cpp implementation for template.
+
+    COMPONENT comp;
+    int index,index_nb[6],size;
+    int I,I_nb[6];
+	int i,j,k,l,nb,icoords[MAXD];
+	double coords[MAXD], crx_coords[MAXD];
+	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
+    double *x;
+
+    //TODO: index by direction and behind ahead nb = 0,1 like advection
+	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+	POINTER intfc_state;
+	HYPER_SURF *hs;
+	PetscInt num_iter;
+	double rel_residual;
+	double aII;
+	double source[MAXD];
+	double **vel = field->vel;
+	double **f_surf = field->f_surf;
+	INTERFACE *grid_intfc = front->grid_intfc;
+
+    //TODO: Need everything for setIndexMap() to implement (global indexing for petsc).
+    setIndexMap();
+
+    size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    //TODO: fix above and pick up here.
+
+	for (l = 0; l < dim; ++l)
+	{
+            PETSc solver;
+            solver.Create(ilower, iupper-1, 7, 7);
+	    solver.Reset_A();
+	    solver.Reset_b();
+	    solver.Reset_x();
+
+            for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+            	I  = ijk_to_I[i][j][k];
+            	if (I == -1) continue;
+
+            	index  = d_index3d(i,j,k,top_gmax);
+            	index_nb[0] = d_index3d(i-1,j,k,top_gmax);
+            	index_nb[1] = d_index3d(i+1,j,k,top_gmax);
+            	index_nb[2] = d_index3d(i,j-1,k,top_gmax);
+            	index_nb[3] = d_index3d(i,j+1,k,top_gmax);
+            	index_nb[4] = d_index3d(i,j,k-1,top_gmax);
+            	index_nb[5] = d_index3d(i,j,k+1,top_gmax);
+
+		icoords[0] = i;
+		icoords[1] = j;
+		icoords[2] = k;
+		comp = top_comp[index];
+
+            	I_nb[0] = ijk_to_I[i-1][j][k]; //west
+            	I_nb[1] = ijk_to_I[i+1][j][k]; //east
+            	I_nb[2] = ijk_to_I[i][j-1][k]; //south
+            	I_nb[3] = ijk_to_I[i][j+1][k]; //north
+            	I_nb[4] = ijk_to_I[i][j][k-1]; //lower
+            	I_nb[5] = ijk_to_I[i][j][k+1]; //upper
+
+
+            	mu0   = field->mu[index];
+            	rho   = field->rho[index];
+
+        //TODO: index by dir = 0,1,2 and nb = 0,1
+        for (nb = 0; nb < 6; nb++)
+        {
+		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                                &intfc_state,&hs,crx_coords))
+		    {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    U_nb[nb] = vel[l][index];
+                }
+                else
+                    U_nb[nb] = getStateVel[l](intfc_state);
+
+                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    mu[nb] = mu0;
+                else
+                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    
+            }
+            else
+		    {
+                U_nb[nb] = vel[l][index_nb[nb]];
+    			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    }
+        }
+
+                //       should be discretizing div(grad(u) + grad(u)^T)
+            	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+            	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
+            	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
+            	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
+            	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
+            	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
+
+                //TODO: RHS should also contain the advective flux...
+            	getRectangleCenter(index, coords);
+            	computeSourceTerm(coords, source);
+
+		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
+		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
+
+        //TODO: index by dir = 0,1,2 and nb = 0,1
+		for(nb = 0; nb < 6; nb++)
+		{
+            //TODO: Neumann boundary at solid walls does not appear to be implemented.
+            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
+			        &intfc_state,&hs,crx_coords))
+		    {
+                solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                rhs += coeff[nb]*U_nb[nb];
+		    }
+		    else
+		    {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    aII -= coeff[nb];
+                    rhs += coeff[nb]*U_nb[nb];
+                }
+                else
+                    rhs += 2.0*coeff[nb]*U_nb[nb];
+		    }
+		}
+	
+        rhs += m_dt*source[l];
+		rhs += m_dt*f_surf[l][index];
+		    //rhs -= m_dt*grad_q[l][index]/rho;
+        solver.Set_A(I,I,aII);
+		solver.Set_b(I, rhs);
+            }
+
+            solver.SetMaxIter(40000);
+            solver.SetTol(1e-14);
+
+	    start_clock("Befor Petsc solve");
+            solver.Solve();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+	    stop_clock("After Petsc solve");
+
+            // get back the solution
+            solver.Get_x(x);
+
+            if (debugging("PETSc"))
+                (void) printf("L_CARTESIAN::"
+			"computeDiffusionCN: "
+                        "num_iter = %d, rel_residual = %g. \n",
+                        num_iter,rel_residual);
+
+	    for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+                I = ijk_to_I[i][j][k];
+                index = d_index3d(i,j,k,top_gmax);
+                if (I >= 0)
+                    vel[l][index] = x[I-ilower];
+                else
+                    vel[l][index] = 0.0;
+            }
+        }
+	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+
+        FT_FreeThese(1,x);
 }
+*/
 
 void G_CARTESIAN::computeAdvection()
 {
@@ -794,18 +975,16 @@ void G_CARTESIAN::solve(double dt)
 	
     // 1) Explicit Predictor Step
 	start_clock("computeAdvection");
-	computeConvectiveFlux();
-	    //computeAdvection();
+    computeAdvection();
+	    //computeConvectiveFlux();
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
 	stop_clock("computeAdvection");
 
-    ///////////////////////////////////////////////////////////////
-    //TODO: diffusion implementation here
-    
+    /////////////////////////////////////////////////////////////// 
     // 2) Implicit Corrector Step
     start_clock("computeDiffusion");
-    computeDiffusion();
+    computeDiffusion(); //TODO: diffusion implementation here
     stop_clock("computeDiffusion");
 
     ///////////////////////////////////////////////////////////////
