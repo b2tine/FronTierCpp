@@ -53,12 +53,16 @@ void G_CARTESIAN::initMesh()
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
-	/*TMP*/
+	
+    //TODO: why was this done?
+    /*TMP*/
 	min_dens = 0.0001;
 	min_pres = 0.0001;
-	FT_MakeGridIntfc(front);
+	
+    FT_MakeGridIntfc(front);
 	setDomain();
-	num_cells = 1;
+	
+    num_cells = 1;
 	for (i = 0; i < dim; ++i)
 	{
 	    num_cells *= (top_gmax[i] + 1);

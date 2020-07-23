@@ -65,12 +65,20 @@ Available type of rigid body include:
         Human (H)
         Cylinder (C)
 Enter type of rigid body: S
-Enter center of the sphere: 6 6 12
+Enter center of the sphere: 6.01 6.01 12
 Enter radius of the sphere: 0.5 0.5 0.5
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
 Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: yes
+
+For rigid body 1
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 100
+Enter the initial center of mass for rigid body: 6.01 6.01 12
+Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n
@@ -95,18 +103,10 @@ Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
 
-Enter initial position of load: 6 6 12.25
+Enter initial position of load: 6.01 6.01 12.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to fix the load node: no
-
-For rigid body 1
-Type yes if motion is preset: no
-Enter type of dynamic motion: COM_MOTION
-Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 100
-Enter the initial center of mass for rigid body: 6 6 12
-Enter the initial center of mass velocity: 0 0 0
 
 Enter type of plane edge: c
 Enter start angle of chord: 6.263185
@@ -133,8 +133,8 @@ Enter fabric thickness: 0.0001
 Enter fabric rounding tolerance: 0.00001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.01
-Enter string friction constant: 0.15
+Enter string damping constant: 0.1
+Enter string friction constant: 0.05
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
@@ -143,10 +143,10 @@ Type yes to perturb the surface: n
 
 Start test time control parameters
 Max time: 5
-Max step: 2
-Print interval: 1
-Movie frame interval: 0.1
-CFL factor: 0.5
+Max step: 500
+Print interval: 0.01
+Movie frame interval: 0.01
+CFL factor: 0.75
 
 
 Enter yes for debugging: yes

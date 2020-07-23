@@ -244,8 +244,7 @@ static void weno5_get_flux(
 	    for(k = 0; k < 5; ++k)
 	    {
 		gfluxp[j][k] = 0.5*(sten_f[k][j] + maxeig[j]*sten_u[k][j]);
-		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*
-				sten_u[5 - k][j]);
+		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*sten_u[5 - k][j]);
 	    }
 
 	    for(j = 0; j < 5; ++j)

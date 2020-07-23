@@ -323,11 +323,13 @@ enum
 class G_CARTESIAN
 {
 public:
+	
+    EQN_PARAMS *eqn_params;
 
     G_CARTESIAN(Front* ft)
         : front{ft}
     {
-        eqn_params = (EQN_PARAMS*)front->extra1;
+        //eqn_params = (EQN_PARAMS*)front->extra1;
     }
 
     //~G_CARTESIAN() = default;
@@ -371,7 +373,7 @@ private:
 	RECT_GRID *top_grid;
 	double *array;		// for scatter states;
 	COMPONENT *top_comp;
-	EQN_PARAMS *eqn_params;
+	    //EQN_PARAMS *eqn_params;
 	FIELD field;
 	FIELD *base_field;
 	Front *base_front;
