@@ -407,7 +407,7 @@ struct _HYPER_SURF
 	 * has direction given by the vector cross product (p1 - p0)X(p2 - p0)
 	 * so standing on point p0 and looking into the normal direction we
 	 * are looking into the local positive side of surface.  The negative
-	 * side is of curve the side opposite to the positive side.
+	 * side is of course the side opposite to the positive side.
 	 */
 
 	COMPONENT pos_comp, neg_comp;

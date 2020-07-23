@@ -2036,10 +2036,11 @@ static  void ifluid_compute_force_and_torque3d(
                 if (force_on_hse(Hyper_surf_element(tri),Hyper_surf(surface),gr,
                         &pres,tnor,posn,pos_side))
                 {
-                    area = 0.5*Mag3d(tnor);
+                    area = tri_area(tri);
+                    double mag_tnor = Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area*tnor[i];
+                        f[i] = pres*area*tnor[i]/mag_tnor;
                         force[i] += f[i];
                         rr[i] = posn[i] - rotation_center(surface)[i];
                     }

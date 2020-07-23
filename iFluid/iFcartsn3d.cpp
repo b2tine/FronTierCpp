@@ -1211,6 +1211,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    (void) printf("Unknown computePressure() scheme!\n");
 	    clean_up(ERROR);
 	}
+    //TODO: do we need this still?
         computeGradientQ();
 }	/* end computePressure */
 
