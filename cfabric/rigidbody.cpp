@@ -76,8 +76,11 @@ extern void initRigidBodies(Front* front)
 
     for (s = front->interf->surfaces; s && *s; ++s)
     {
-        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(*s) == NEUMANN_BOUNDARY)
         {
+            if (wave_type(*s) == NEUMANN_BOUNDARY)
+                rgb_params->is_fixed = true;
             prompt_for_rigid_body_params(infile,rgb_params);
             set_rgbody_params(rgb_params,Hyper_surf(*s));
         }
@@ -202,7 +205,7 @@ static void init_rigid_sphere(
         (void) printf("The default is Movable (M)\n");
         w_type = MOVABLE_BODY_BOUNDARY;
         neg_comp = SOLID_COMP;
-        pos_comp = LIQUID_COMP2;
+        pos_comp = GAS_COMP2;
         if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
         {
             fscanf(infile,"%s",string);
@@ -483,6 +486,8 @@ static void prompt_for_rigid_body_params(
         }
 
         rgb_params->body_index = count++;
+        if (rgb_params->is_fixed) return;
+
         sprintf(s, "For rigid body %d", rgb_params->body_index);
         CursorAfterString(infile, s); printf("\n");
         long idpos = ftell(infile);

@@ -246,6 +246,11 @@ static void weno5_get_flux(
 		gfluxp[j][k] = 0.5*(sten_f[k][j] + maxeig[j]*sten_u[k][j]);
 		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*sten_u[5 - k][j]);
 	    }
+        
+        /*
+        printf("maxeig = %g %g %g %g %g\n",
+            maxeig[0],maxeig[1],maxeig[2],maxeig[3],maxeig[4]);
+        */
 
 	    for(j = 0; j < 5; ++j)
 	    {
@@ -314,9 +319,19 @@ static double weno5_scal(double *f)
 
     	for(i = 0; i < 3; ++i)
     	{
-	    alpha[i] = d[i]/pow(eps + is[i],p);
+            double val = eps + is[i];
+            if (val > 1.0e67)
+            {
+                printf("WARNING: is[%d] = %g\n",i,is[i]);
+                printf("f = %g %g %g %g %g\n",
+                        f[0],f[1],f[2],f[3],f[4]);
+                //clean_up(EXIT_FAILURE);
+            }
+	    alpha[i] = d[i]/pow(val,p);
+	    //alpha[i] = d[i]/pow(eps + is[i],p);
 	    sum += alpha[i];
     	}
+
     	for(i = 0; i < 3; ++i)
     	{
 	    omega[i] = alpha[i] / sum;
@@ -341,11 +356,11 @@ static void f2is(
 	double *f, 
 	double *s)
 {
-	s[0] = 13.0/12*sqr((f[0] - 2.0*f[1] + f[2])) +
+	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2])) +
                 0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
-        s[1] = 13.0/12*sqr((f[1] - 2.0*f[2] + f[3])) +
+        s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) +
                 0.25*sqr((f[1] - f[3]));
-        s[2] = 13.0/12*sqr((f[2] - 2.0*f[3] + f[4])) +
+        s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) +
                 0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
 }
 
