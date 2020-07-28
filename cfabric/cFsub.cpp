@@ -1578,6 +1578,8 @@ static void cfluid_compute_force_and_torque3d(
         }
 	/* end of counting the force on RG_STRING_NODE */
 
+    //TODO: add fsi_startstep, can be much higher than 5 for cFluid
+    //if (front->step > iFparams->fsi_startstep)
 	if (front->step > 5)
 	{
             for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface);
@@ -1596,10 +1598,11 @@ static void cfluid_compute_force_and_torque3d(
                 if (force_on_hse(Hyper_surf_element(tri),Hyper_surf(surface),gr,
                         &pres,tnor,posn,pos_side))
                 {
-                    area = 0.5*Mag3d(tnor);
+                    area = tri_area(tri);
+                    double mag_tnor = Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area*tnor[i];
+                        f[i] = pres*area*tnor[i]/mag_tnor;
                         force[i] += f[i];
                         rr[i] = posn[i] - rotation_center(surface)[i];
                     }
@@ -1613,6 +1616,11 @@ static void cfluid_compute_force_and_torque3d(
                 }
             }
 	}
+
+
+    //TODO: force computation should include effects of
+    //      shear stress from turbulence model + wall functions
+
          /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&
 	    motion_type(surface) != PRESET_ROTATION)
@@ -1844,17 +1852,12 @@ static boolean force_on_hse3d(
 	}
 	*pres /= 3.0;
 
-        //double tnor[3];
 	for (i = 0; i < dim; ++i)
 	{
 	    tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
 	    posn[i] /= 3.0;
 	}
-
-    //*area = 0.5*Mag3d(tnor);
-
-	/* TODO:Need to treat subdomain boundary */
-	
+	/* Need to treat subdomain boundary */
     return YES;
 }	/* end force_on_hse3d */
 
