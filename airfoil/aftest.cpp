@@ -2566,11 +2566,13 @@ static void print_drag3d(
                 }
                 parea += Dot3d(unit_nor_tri,free_vel_dir)*area_tri;//projected to xy plane
 
+                //TODO: put inside a if (debugging(...)) block
+                /*
                 printf("pres_drop = %g - %g = %g  |  unit_nor_tri = %g %g %g  |"
                         "  force_tri = %g %g %g  |  tri_cen %g %g %g\n",
                         pl,pr,pres_drop,unit_nor_tri[0],unit_nor_tri[1],unit_nor_tri[2],
                         force_tri[0],force_tri[1],force_tri[2],
-                        centroid[0],centroid[1],centroid[2]);
+                        centroid[0],centroid[1],centroid[2]);*/
             }
             
             /*compute drag force and lift force*/
@@ -2581,10 +2583,12 @@ static void print_drag3d(
                 lift[i] = force[i] - drag[i];
             }
 
+            //TODO: put inside a if (debugging(...)) block
+            /*
             printf("\t force = %g %g %g  |  drag = %g %g %g  |  lift = %g %g %g\n",
                     force[0],force[1],force[2],
                     drag[0],drag[1],drag[2],
-                    lift[0],lift[1],lift[2]);
+                    lift[0],lift[1],lift[2]);*/
 
             fprintf(dfile,"%16.12f  %16.12f\n",front->time,drag[2]);
                 //fprintf(dfile,"%16.12f  %16.12f\n",front->time,Mag3d(drag));
