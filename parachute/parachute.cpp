@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	        //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    initParachuteModules(&front);
         
             if (consistent_interface(front.interf) == NO)
@@ -109,10 +109,10 @@ int main(int argc, char **argv)
                 clean_up(ERROR);
             }
 	}
-	//else
-	//{
-	    //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-	//}
+	else
+	{
+	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	}
 
 	FT_ReadTimeControl(in_name,&front);
 
@@ -133,13 +133,11 @@ int main(int argc, char **argv)
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
-        l_cartesian->initMesh();
-	    //l_cartesian->initMesh();
+    l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
-        l_cartesian->initMesh();
 
 
         if (RestartRun)
@@ -227,6 +225,7 @@ void airfoil_driver(Front *front,
                 printf("%f\n",start_time);
             }
         }
+        fclose(infile);
 
 	if (!RestartRun || ReSetTime)
 	{
