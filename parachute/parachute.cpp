@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static IF_PARAMS iFparams;
 	static AF_PARAMS af_params;
-    static RG_PARAMS rgb_params;  
+        static RG_PARAMS rgb_params;  
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.dim = 3;
@@ -89,43 +89,42 @@ int main(int argc, char **argv)
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
-    iFparams.dim = f_basic.dim;
-    front.extra1 = (POINTER)&iFparams;
-    front.extra2 = (POINTER)&af_params;
-    front.extra3 = (POINTER)&rgb_params;
-    read_iFparams(in_name,&iFparams);
+        iFparams.dim = f_basic.dim;
+        front.extra1 = (POINTER)&iFparams;
+        front.extra2 = (POINTER)&af_params;
+        front.extra3 = (POINTER)&rgb_params;
+        read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
 	level_func_pack.pos_component = LIQUID_COMP2;
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	        //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    initParachuteModules(&front);
-	    if (debugging("trace"))
-	    {
+        
             if (consistent_interface(front.interf) == NO)
+            {
+                printf("consistent_interface(front.interf) == NO\n");
                 clean_up(ERROR);
-
-            char gvdir[100];
-            sprintf(gvdir,"%s/gv-init",out_name);
-            gview_plot_interface(gvdir,front.interf);
-	    }
+            }
 	}
-	//else
-	//{
-	    //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-	//}
+	else
+	{
+	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	}
 
 	FT_ReadTimeControl(in_name,&front);
 
 	if (!RestartRun)
-    {
-        optimizeElasticMesh(&front);
-        set_equilibrium_mesh(&front);
+        {
+            optimizeElasticMesh(&front);
+            set_equilibrium_mesh(&front);
 	    static_mesh(front.interf) = YES;
-        FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
-    }
+            FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
+        }
+        else
+            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    //setMotionParams(&front);
 
 	record_break_strings_gindex(&front);
@@ -134,53 +133,50 @@ int main(int argc, char **argv)
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->getInitialState = zero_state;
-	    //l_cartesian->initMesh();
+    l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
         l_cartesian->initSampleVelocity(in_name);
 
-    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 
-    if (RestartRun)
-    {
+        if (RestartRun)
+        {
 	    if (ReSetTime)
 	    {
-		    readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);//TODO: setMotionParams() should be after this
-            resetRigidBodyVelocity(&front);
-            modifyInitialization(&front);
-	            //rgb_init(&front,&rgb_params);//TODO: is this fucking up my run?
+	        readAfExtraData(&front,restart_state_name);
+                clearRegisteredPoints(&front);//TODO: setMotionParams() should be after this
+                resetRigidBodyVelocity(&front);
+                modifyInitialization(&front);
+	        //rgb_init(&front,&rgb_params);//TODO: is this fucking up my run?
 
-            //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-            l_cartesian->initMesh();
-            l_cartesian->setInitialCondition();
+                //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+                l_cartesian->setInitialCondition();
             
-            if (debugging("trace"))
+                if (debugging("trace"))
 	        {
-                if (consistent_interface(front.interf) == NO)
-                    clean_up(ERROR);
-                gview_plot_interface("gmodified",front.interf);
+                    if (consistent_interface(front.interf) == NO)
+                        clean_up(ERROR);
+                    gview_plot_interface("gmodified",front.interf);
 	        }
 	    }
 	    else
 	    {
 	    	readAfExtraData(&front,restart_state_name);
-            l_cartesian->readFrontInteriorStates(restart_state_name);
+                l_cartesian->readFrontInteriorStates(restart_state_name);
 	    }
     
-    }
-    else
-    {
-        l_cartesian->initMesh();
-        l_cartesian->setInitialCondition();
-    }
+        }
+        else
+        {
+            l_cartesian->setInitialCondition();
+        }
 
 	setMotionParams(&front);
 
     	//static_mesh(front.interf) = YES;
 
-    l_cartesian->initMovieVariables();
+        l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
 	if (!RestartRun || ReSetTime)
@@ -198,9 +194,38 @@ void airfoil_driver(Front *front,
         double CFL;
         int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+        VPARAMS vort_params;
+        double start_time;
 
         CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
+
+        FILE *infile = fopen(InName(front),"r");
+        if (CursorAfterStringOpt(infile,"Type yes to add vortex disturbance:"))
+        {
+            char answer[100];
+            fscanf(infile,"%s",answer);
+            printf("%s\n",answer);
+            start_time = -1.0;
+            if (answer[0] == 'y')
+            {
+                CursorAfterString(infile,"Enter center of vortex: ");
+                fscanf(infile,"%lf %lf %lf",vort_params.center,vort_params.center+1,
+                                    vort_params.center+2);
+                printf("%f %f %f\n",vort_params.center[0],vort_params.center[1],
+                                    vort_params.center[2]);
+                CursorAfterString(infile,"Enter size of vortex: ");
+                fscanf(infile,"%lf",&vort_params.D);
+                printf("%f\n",vort_params.D);
+                CursorAfterString(infile,"Enter intensity of vortex: ");
+                fscanf(infile,"%lf",&vort_params.A);
+                printf("%f\n",vort_params.A);
+                CursorAfterString(infile,"Enter vortex start time: ");
+                fscanf(infile,"%lf",&start_time);
+                printf("%f\n",start_time);
+            }
+        }
+        fclose(infile);
 
 	if (!RestartRun || ReSetTime)
 	{
@@ -222,18 +247,18 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-        FT_RelinkGlobalIndex(front);
+            FT_RelinkGlobalIndex(front);
 	    
-        if (!af_params->no_fluid)
+            if (!af_params->no_fluid)
 	    {
-            l_cartesian->solve(front->dt);
+                l_cartesian->solve(front->dt);
 	    }
 	    print_airfoil_stat(front,out_name);
 	    
-        if (ReSetTime)
-           setSpecialNodeForce(front,af_params->kl);
+            if (ReSetTime)
+                setSpecialNodeForce(front,af_params->kl);
 
-        FT_SetOutputCounter(front);
+            FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
 	    front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
@@ -246,7 +271,7 @@ void airfoil_driver(Front *front,
         FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
 
-    // For restart debugging 
+        // For restart debugging 
 	if (FT_TimeLimitReached(front) && debugging("restart")) 
 	{
 	    FT_Save(front);
@@ -270,10 +295,10 @@ void airfoil_driver(Front *front,
 
 	    break_strings(front); // test
 
-        FrontPreAdvance(front);
-        FT_Propagate(front);
-        FT_RelinkGlobalIndex(front);
-        FT_InteriorPropagate(front);
+            FrontPreAdvance(front);
+            FT_Propagate(front);
+            FT_RelinkGlobalIndex(front);
+            FT_InteriorPropagate(front);
 
 	    if (!af_params->no_fluid)
 	    {
@@ -283,12 +308,18 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
+                if (start_time != -1.0 && front->time >= start_time) 
+                {
+                    start_time = -1.0;          // apply only once
+                    printf("Time to add vortex\n");
+                    l_cartesian->addVortexDisturbance(vort_params);
+                }
                 l_cartesian->solve(front->dt);
 	    }
 	    else
-        {
-            l_cartesian->max_dt = HUGE;
-        }
+            {
+                l_cartesian->max_dt = HUGE;
+            }
 
             if (debugging("trace"))
             {
@@ -320,6 +351,9 @@ void airfoil_driver(Front *front,
 	    /* Output section */
 
 	    print_airfoil_stat(front,out_name);
+
+            if (!af_params->no_fluid)
+                l_cartesian->printEnstrophy();
 
             if (FT_IsSaveTime(front))
 	    {
