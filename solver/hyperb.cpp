@@ -94,8 +94,6 @@ void HYPERB_SOLVER::solveRungeKutta()
 
 	/* Compute flux and advance field */
 
-    //TODO: Can we inlcude the viscous terms in
-    //      computeMeshFlux()?
 	copyToMeshVst(&st_field[0]);
 	computeMeshFlux(st_field[0],&st_flux[0]);
 	
@@ -104,19 +102,18 @@ void HYPERB_SOLVER::solveRungeKutta()
 	    copyMeshVst(st_field[0],&st_field[i+1]);
 	    for (j = 0; j <= i; ++j)
 	    {
-            if (a[i][j] != 0.0)
-            {
-                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
-            }
+		if (a[i][j] != 0.0)
+		{
+		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+		}
 	    }
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1]);
 	}
-
 	for (i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
 	    {
-		    addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	    }
 	}
 	copyFromMeshVst(st_field[0]);
@@ -134,7 +131,7 @@ void HYPERB_SOLVER::computeMeshFlux(
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux);
 	}
-	addSourceTerm(&m_vst,m_flux);
+	addSourceTerm(&m_vst,m_flux);//empty
 }	/* end computeMeshFlux */
 
 void HYPERB_SOLVER::resetFlux(FSWEEP *m_flux)
@@ -706,8 +703,10 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 2:
             for (l = 0; l < dim; ++l)
             {
-                for (j = 0; j <= top_gmax[1]; ++j)
-                for (i = 0; i <= top_gmax[0]; ++i)
+                //for (j = 0; j <= top_gmax[1]; ++j)
+                //for (i = 0; i <= top_gmax[0]; ++i)
+                for (j = jmin; j <= jmax; ++j)
+                for (i = imin; i <= imax; ++i)
                 {
 		    index = d_index2d(i,j,top_gmax);
 		    array[index] = state->vel[l][index] + 
@@ -727,9 +726,12 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 3:
             for (l = 0; l < dim; ++l)
             {
-            	for (k = 0; k <= top_gmax[2]; ++k)
-            	for (j = 0; j <= top_gmax[1]; ++j)
-            	for (i = 0; i <= top_gmax[0]; ++i)
+            	//for (k = 0; k <= top_gmax[2]; ++k)
+            	//for (j = 0; j <= top_gmax[1]; ++j)
+            	//for (i = 0; i <= top_gmax[0]; ++i)
+            	for (k = kmin; k <= kmax; ++k)
+                for (j = jmin; j <= jmax; ++j)
+                for (i = imin; i <= imax; ++i)
                 {
 		    index = d_index3d(i,j,k,top_gmax);
 		    array[index] = state->vel[l][index] + 
@@ -749,7 +751,7 @@ void HYPERB_SOLVER::addMeshFluxToVst(
 	}
 }
 
-void HYPERB_SOLVER::copyFromMeshVst(SWEEP state)
+void HYPERB_SOLVER::copyFromMeshVst(const SWEEP& state)
 {
 	int i,j,k,l,index;
 	int c;
@@ -825,7 +827,7 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    index = d_index(ic,top_gmax,dim);
 		    for (j = 0; j < dim; j++)
 		    {
-			vst->vel[j][nrad-i] = m_vst->vel[j][index];
+                vst->vel[j][nrad-i] = m_vst->vel[j][index];
 		    }
 		    vst->rho[nrad-i] = rho_of_comp(top_comp[index]);
 		}
@@ -922,6 +924,125 @@ void HYPERB_SOLVER::setNeumannStates(
 	int istart,
 	int comp)
 {
+	int 		index;
+	int 		ic_ghost[MAXD];
+	double		coords[MAXD],coords_reflect[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
+	double		nor[MAXD],vn,v[MAXD];
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+	GRID_DIRECTION  dir;
+	double vel_reflect[MAXD],vel_ref[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
+
+	index = d_index(icoords,top_gmax,dim);
+	for (int i = 0; i < dim; ++i)
+	{
+	    vel_intfc[i] = (*getStateVel[i])(state);
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ic_ghost[i] = icoords[i];
+	}
+	dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+	if (debugging("neumann_buffer"))
+	{
+	    (void) printf("Entering setNeumannStates()\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],
+				icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
+	}
+
+	for (int i = istart; i <= nrad; ++i)
+	{
+	    /* Find ghost point */
+	    ic_ghost[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+	        //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
+	    for (int j = 0; j < dim; ++j)
+        {
+            coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_reflect[j] = coords_ghost[j];
+        }
+
+	    /* Reflect ghost point through intfc-mirror at crossing */
+	    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+	    vn = 0.0;
+        for (int j = 0; j < dim; ++j)
+	    {
+            v[j] = coords_reflect[j] - crx_coords[j];
+            vn += v[j]*nor[j];
+	    }
+
+	    for (int j = 0; j < dim; ++j)
+            v[j] = 2.0*vn*nor[j] - v[j];
+	    for (int j = 0; j < dim; ++j)
+            coords_reflect[j] = crx_coords[j] + v[j];
+		
+	    /* Interpolate the state at the reflected point */
+	    for (int j = 0; j < dim; ++j)
+        {
+	    	FT_IntrpStateVarAtCoords(front,comp,coords_reflect,
+                    m_vst->vel[j],getStateVel[j],&vel_reflect[j],
+                    &m_vst->vel[j][index]);
+        }
+
+		/* Galileo Transformation */
+	    vn = 0.0;
+	    for (int j = 0; j < dim; ++j)
+	    {
+            /* Relative velocity of reflected point to boundary */
+            vel_ref[j] = vel_reflect[j] - vel_intfc[j];
+            /* Normal component of the relative velocity */
+            vn += vel_ref[j]*nor[j];
+	    }
+
+	    /* Only normal component is reflected, 
+	       relative tangent velocity is zero */
+	    for (int j = 0; j < dim; ++j)
+            v_ghost[j] = vel_intfc[j] - vn*nor[j];
+            //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
+
+	    if (nb == 0)
+	    {
+	    	for (int j = 0; j < dim; ++j)
+		    {
+                vst->vel[j][nrad-i] = v_ghost[j];
+    		}
+            vst->rho[nrad-i] = rho_of_comp(comp);
+	    }
+	    else
+	    {
+	    	for (int j = 0; j < dim; ++j)
+		    {   
+                vst->vel[j][n+nrad+i-1] = v_ghost[j];
+            }
+            vst->rho[n+nrad+i-1] = rho_of_comp(comp);
+	    }
+	
+    }// i loop
+
+	if (debugging("neumann_buffer"))
+	    (void) printf("Leaving setNeumannStates()\n");
+}
+
+/*
+void HYPERB_SOLVER::setNeumannStates(
+	SWEEP *vst, 
+	SWEEP *m_vst,
+	HYPER_SURF *hs,
+	POINTER state,
+	int *icoords,
+	int idir,
+	int nb,
+	int n,
+	int istart,
+	int comp)
+{
 	int 		i,j,index;
 	int 		ic[MAXD];
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
@@ -957,12 +1078,12 @@ void HYPERB_SOLVER::setNeumannStates(
 
 	for (i = istart; i <= nrad; ++i)
 	{
-	    /* Find ghost point */
+	    // Find ghost point //
 	    ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
 	    for (j = 0; j < dim; ++j)
 		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
 
-	    /* Reflect ghost point through intfc-mirror at crossing */
+	    // Reflect ghost point through intfc-mirror at crossing //
 	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
 	    for (j = 0; j < dim; ++j)
@@ -975,29 +1096,29 @@ void HYPERB_SOLVER::setNeumannStates(
 	    for (j = 0; j < dim; ++j)
 		coords_ref[j] = crx_coords[j] + v[j];
 			
-	    /* Interpolate the state at the reflected point */
+	    // Interpolate the state at the reflected point //
 	    for (j = 0; j < dim; ++j)
 	    	FT_IntrpStateVarAtCoords(front,comp,coords_ref,m_vst->vel[j],
 			getStateVel[j],&v_tmp[j],&m_vst->vel[j][index]);
 
-		/* Galileo Transformation */
+		// Galileo Transformation //
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		/* Relative velocity of reflected point to boundary */
+		// Relative velocity of reflected point to boundary //
 		v[j] = v_tmp[j] - vel_ref[j];
-		/* Normal component of the relative velocity */
+		// Normal component of the relative velocity //
 		vn += v[j]*nor[j];
 	    }
-	    /*
-	    for (j = 0; j < dim; j++)
-	    {
-		v[j] += vel_ref[j] - 2.0*vn*nor[j];
-		v_tmp[j] = v[j];
-	    }
-	    */
-	    /* Only normal component is reflected, 
-	       relative tangent velocity is zero */
+	    //
+	    //for (j = 0; j < dim; j++)
+	    //{
+		//v[j] += vel_ref[j] - 2.0*vn*nor[j];
+		//v_tmp[j] = v[j];
+	    //}
+	    //
+	    
+        // Only normal component is reflected, relative tangent velocity is zero //
 	    for (j = 0; j < dim; j++)
 		v_tmp[j] = vel_ref[j] - 2.0*vn*nor[j];
 
@@ -1006,41 +1127,46 @@ void HYPERB_SOLVER::setNeumannStates(
 	    	for (j = 0; j < dim; j++)
 		{
 		    double v_leak = 0.0;
-		    if (porosity != 0.0)
-		    {
-			v_leak = porosity*(-v_tmp[j] +
-				m_vst->vel[j][d_index(ic,top_gmax,dim)]);
-		    }
+            //
+		    //if (porosity != 0.0)
+		    //{
+			//v_leak = porosity*(-v_tmp[j] +
+			//	m_vst->vel[j][d_index(ic,top_gmax,dim)]);
+		    //}
+            //
 		    vst->vel[j][nrad-i] = v_tmp[j] + v_leak;
-		    /*
-		    vst->vel[j][nrad-i] = (1.0 - porosity)*v_tmp[j] +
-                        porosity*m_vst->vel[j][d_index(ic,top_gmax,dim)];
-		    */
+		    //
+		    //vst->vel[j][nrad-i] = (1.0 - porosity)*v_tmp[j] +
+            //            porosity*m_vst->vel[j][d_index(ic,top_gmax,dim)];
+		    //
 		}
 		vst->rho[nrad-i] = rho_of_comp(comp);
 	    }
 	    else
 	    {
 	    	for (j = 0; j < dim; j++)
-		{
-		    double v_leak = 0.0;
-		    if (porosity != 0.0)
-		    {
-			v_leak = porosity*(-v_tmp[j] +
-				m_vst->vel[j][d_index(ic,top_gmax,dim)]);
-		    }
-		    vst->vel[j][n+nrad+i-1] = v_tmp[j] + v_leak;
-		    /*
-		    vst->vel[j][n+nrad+i-1] = (1.0 - porosity)*v_tmp[j] +
-                        porosity*m_vst->vel[j][d_index(ic,top_gmax,dim)];
-		    */
-		}
+		    {   
+                double v_leak = 0.0;
+                //
+                //if (porosity != 0.0)
+                //{
+                //    v_leak = porosity*(-v_tmp[j] +
+                //        m_vst->vel[j][d_index(ic,top_gmax,dim)]);
+                //}
+                //
+                vst->vel[j][n+nrad+i-1] = v_tmp[j] + v_leak;
+                //
+                //vst->vel[j][n+nrad+i-1] = (1.0 - porosity)*v_tmp[j] +
+                //            porosity*m_vst->vel[j][d_index(ic,top_gmax,dim)];
+                //
+            }
 		vst->rho[n+nrad+i-1] = rho_of_comp(comp);
 	    }
 	}
 	if (debugging("neumann_buffer"))
 	    (void) printf("Leaving setNeumannStates()\n");
 }
+*/
 
 void HYPERB_SOLVER::setDirichletStates(
 	SWEEP		*vst,

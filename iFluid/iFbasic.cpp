@@ -1532,7 +1532,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
     }
 
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);			
 	    comp  = cell_center[index].comp;
@@ -1542,12 +1542,55 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    status = FT_FindNearestIntfcPointInRange(front,comp,center,
 				NO_BOUNDARIES,point,t,&hse,&hs,range);
 
-	    for (l = 0; l < dim; ++l) force[l] = 0.0;
+	    if (iFparams->use_eddy_visc == YES)
+	    {
+            int icoords[MAXD];
+            icoords[0] = i;
+            icoords[1] = j;
+            mu[index] = 0.0;
+            switch (iFparams->eddy_visc_model)
+            {
+            case BALDWIN_LOMAX:
+                if (status == YES &&
+                (wave_type(hs) == NEUMANN_BOUNDARY ||
+                 wave_type(hs) == ELASTIC_BOUNDARY))
+                {
+                dist = distance_between_positions(center,point,dim);
+                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    first = NO;
+                }
+                break;
+            case MOIN:
+                mu[index] = computeMuOfMoinModel(icoords);
+                break;
+            case SMAGORINSKY:
+                mu[index] = computeMuofSmagorinskyModel(icoords); 
+                break;
+            case KEPSILON:
+                mu[index] = mu_t[index];
+                break;
+            default:
+                (void) printf("Unknown eddy viscosity model!\n");
+                clean_up(ERROR);
+            }
 
-	    if (status == YES && 
-		ifluid_comp(positive_component(hs)) &&
-		ifluid_comp(negative_component(hs)) &&
-		positive_component(hs) != negative_component(hs))
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] += m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] += m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+	    
+        }
+        else if (status == YES && 
+            ifluid_comp(positive_component(hs)) &&
+            ifluid_comp(negative_component(hs)) &&
+            positive_component(hs) != negative_component(hs))
 	    {
 		sign = (comp == m_comp[0]) ? -1 : 1;
 		D = smoothedDeltaFunction(center,point);
@@ -1555,72 +1598,31 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 		mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
 		rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
 		
-		if (m_sigma != 0.0 && D != 0.0)
-		{
-		    surfaceTension(center,hse,hs,force,m_sigma);
-		    for (l = 0; l < dim; ++l)
-		    {
-			force[l] /= -rho[index];
-			f_surf[l][index] = force[l];
-		    }
-		}
-	    }
-	    else if (iFparams->use_eddy_visc == YES)
-	    {
-		int icoords[MAXD];
-		icoords[0] = i;
-		icoords[1] = j;
-		mu[index] = 0.0;
-		switch (iFparams->eddy_visc_model)
-		{
-		case BALDWIN_LOMAX:
-		    if (status == YES &&
-			(wave_type(hs) == NEUMANN_BOUNDARY ||
-			 wave_type(hs) == ELASTIC_BOUNDARY))
-		    {
-			dist = distance_between_positions(center,point,dim);
-		    	mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
-		    	first = NO;
-		    }
-		    break;
-		case MOIN:
-		    mu[index] = computeMuOfMoinModel(icoords);
-		    break;
-		case SMAGORINSKY:
-		    mu[index] = computeMuofSmagorinskyModel(icoords); 
-		    break;
-		case KEPSILON:
-		    mu[index] = mu_t[index];
-		    break;
-		default:
-		    (void) printf("Unknown eddy viscosity model!\n");
-		    clean_up(ERROR);
-		}
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] += m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] += m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            if (m_sigma != 0.0 && D != 0.0)
+            {
+	            for (l = 0; l < dim; ++l) force[l] = 0.0;
+
+                surfaceTension(center,hse,hs,force,m_sigma);
+                for (l = 0; l < dim; ++l)
+                {
+                force[l] /= -rho[index];
+                f_surf[l][index] = force[l];
+                }
+            }
 	    }
 	    else
 	    {
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] = m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] = m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
 	    }
 	}
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -3822,16 +3824,12 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 }
                 for (i = 0; i < dim; i++)
                 {
-                    vec[i] = coords[i] - crx_coords[i];
-                    //vec[i] = crx_coords[i]-coords[i];
+                    vec[i] = crx_coords[i]-coords[i];
                 }
-
                 /*project to normal direction*/
                 Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
-                side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
-                
-                //if (side <= 0)
-                if (side > 0)
+		side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+                if (side <= 0)
                 {
                     ans += Un*(alpha+fabs(Un)*beta)/sqr(top_h[nb/2]);
                 }
