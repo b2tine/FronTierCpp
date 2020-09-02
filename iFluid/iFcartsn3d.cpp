@@ -72,6 +72,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 					iFparams->adv_order);
 	    clean_up(ERROR);
 	}
+    //TODO: probably need to save field->vel before overwriting with soln..
+    //      flux soln should be sent to rhs of diffusion computation.... 
 	hyperb_solver.dt = m_dt;
 	hyperb_solver.var = field->vel;
 	hyperb_solver.soln = field->vel;
@@ -135,9 +137,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    index = d_index3d(i,j,k,top_gmax);
 	    array[index] = phi[index];
 	}
-	for (k = kmin; k <= kmax; k++)
+	
+    for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    comp = top_comp[index];
@@ -191,6 +194,51 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
+void Incompress_Solver_Smooth_Basis::printEnstrophy()
+{
+	if (FT_Dimension() != 3) return;
+
+    static bool first = true;
+    static FILE* efile;
+	static char fname[512];
+
+    if (first)
+    {
+	    sprintf(fname,"%s/enstrophy.xg",OutName(front));
+        efile = fopen(fname,"w");
+        first = false;
+    }
+    else
+    {
+        efile = fopen(fname,"a");
+    }
+
+    int index;
+    double enstrophy = 0.0;
+    double** vorticity = field->vorticity;
+    
+    for (int i = imin; i < imax; ++i)
+    for (int j = jmin; j < jmax; ++j)
+    for (int k = kmin; k < kmax; ++k)
+    {
+        index = d_index3d(i,j,k,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+        
+        double sqrmag_vort = 0.0;
+        for (int l = 0; l < 3; ++l)
+            sqrmag_vort += sqr(vorticity[l][index]);
+
+        enstrophy += sqrmag_vort;
+    }
+    
+    double vol_elem = top_h[0]*top_h[1]*top_h[2];
+    enstrophy *= vol_elem;
+
+    fprintf(efile,"%d %g\n",front->time,enstrophy);
+    fclose(efile);
+}
+
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     int index;
@@ -272,9 +320,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     //TODO: where/how to do this? See cFluid copyMeshStates() ...
     //FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
+*/
 
-//TODO: There seems to be a bug in one, or both, of the following two functions
-/*
 void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 {
     double** vel = field->vel;
@@ -357,7 +404,7 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     }
 
     return curl_vel;
-}*/       /* end computePointVorticity */
+}       /* end computePointVorticity */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
@@ -411,6 +458,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	stop_clock("setSmoothedProperties");
 	if (debugging("trace"))
 	    printf("Passed setSmoothedProperties()\n");
+    
+    addImmersedForce();
 	
 	appendOpenEndStates();
 	// 1) solve for intermediate velocity
@@ -534,6 +583,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double coords[MAXD], crx_coords[MAXD];
 	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
         double *x;
+    //TODO: index by direction and behind ahead nb = 0,1 like advection
 	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	POINTER intfc_state;
 	HYPER_SURF *hs;
@@ -593,32 +643,43 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	mu0   = field->mu[index];
             	rho   = field->rho[index];
 
-            	for (nb = 0; nb < 6; nb++)
-            	{
+        //TODO: index by dir = 0,1,2 and nb = 0,1
+        for (nb = 0; nb < 6; nb++)
+        {
 		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
                                 &intfc_state,&hs,crx_coords))
 		    {
-			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                    	    boundary_state_function(hs) &&
-                    	    strcmp(boundary_state_function_name(hs),
-                    	    "flowThroughBoundaryState") == 0)
-                    	    U_nb[nb] = vel[l][index];
-			else
-			    U_nb[nb] = getStateVel[l](intfc_state);
-			if (wave_type(hs) == DIRICHLET_BOUNDARY || 
-			    neumann_type_bdry(wave_type(hs)))
-			    mu[nb] = mu0;
-			else
-			    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    }
-                    else
-		    {
-                    	U_nb[nb] = vel[l][index_nb[nb]];
-			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    }
-            	}
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    U_nb[nb] = vel[l][index];
+                }
+                else
+                    U_nb[nb] = getStateVel[l](intfc_state);
 
-            	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    mu[nb] = mu0;
+                else
+                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    
+            }
+            else
+		    {
+                U_nb[nb] = vel[l][index_nb[nb]];
+    			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    }
+        }
+
+                //TODO: The tangential shear stress opposing the fluid flow,
+                //      is stored in the interface STATE::tan_stress variable.
+                //
+                //      Create slip boundary ghost point, modify its
+                //      (tangential) velocity to account for the shear stress
+                //      acting in opposition to it.
+            	
+                coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
             	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
@@ -628,36 +689,37 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	getRectangleCenter(index, coords);
             	computeSourceTerm(coords, source);
 
-		aII = 1+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
-		rhs = (1-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*
-		      		(vel[l][index]);
+		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
+		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
 
+        //TODO: index by dir = 0,1,2 and nb = 0,1
 		for(nb = 0; nb < 6; nb++)
 		{
-	            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
+            //TODO: Neumann boundary at solid walls does not appear to be implemented.
+            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
 			        &intfc_state,&hs,crx_coords))
 		    {
-			solver.Set_A(I,I_nb[nb],-coeff[nb]);
-			rhs += coeff[nb]*U_nb[nb];
+                solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                rhs += coeff[nb]*U_nb[nb];
 		    }
 		    else
 		    {
-			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                    	    boundary_state_function(hs) &&
-                    	    strcmp(boundary_state_function_name(hs),
-                    	    "flowThroughBoundaryState") == 0)
-			{
-			    aII -= coeff[nb];
-			    rhs += coeff[nb]*U_nb[nb];
-			}
-			else
-			    rhs += 2.0*coeff[nb]*U_nb[nb];
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    aII -= coeff[nb];
+                    rhs += coeff[nb]*U_nb[nb];
+                }
+                else
+                    rhs += 2.0*coeff[nb]*U_nb[nb];
 		    }
 		}
 		rhs += m_dt*source[l];
 		rhs += m_dt*f_surf[l][index];
-		//rhs -= m_dt*grad_q[l][index]/rho;
-            	solver.Set_A(I,I,aII);
+		    //rhs -= m_dt*grad_q[l][index]/rho;
+        solver.Set_A(I,I,aII);
 		solver.Set_b(I, rhs);
             }
 
@@ -902,35 +964,36 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	mu0   = field->mu[index];
             	rho   = field->rho[index];
 
-            	for (nb = 0; nb < 6; nb++)
-            	{
-                    if (FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+        for (nb = 0; nb < 6; nb++)
+        {
+            if (FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
 				dir[nb],comp,&intfc_state,&hs,crx_coords) &&
-                                wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+                wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
 		    {
-			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                    	    boundary_state_function(hs) &&
-                    	    strcmp(boundary_state_function_name(hs),
-                    	    "flowThroughBoundaryState") == 0)
-			{
-                    	    U_nb[nb] = vel[l][index];
-			}
-			else
-			{
-			    U_nb[nb] = getStateVel[l](intfc_state);
-			}
-			if (wave_type(hs) == DIRICHLET_BOUNDARY || 
-			    neumann_type_bdry(wave_type(hs)))
-			    mu[nb] = mu0;
-			else
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                                U_nb[nb] = vel[l][index];
+                }
+                else
+                {
+                    U_nb[nb] = getStateVel[l](intfc_state);
+                }
+
+                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    mu[nb] = mu0;
+                else
+                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    
+            }
+            else
+		    {
+                U_nb[nb] = vel[l][index_nb[nb]];
 			    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
 		    }
-                    else
-		    {
-                    	U_nb[nb] = vel[l][index_nb[nb]];
-			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    }
-            	}
+        }
 
             	coeff[0] = m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             	coeff[1] = m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
@@ -1174,7 +1237,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-	    computeFieldPointGrad(icoords,array,point_grad_q);
+        //TODO: if (iFparams->with_porosity) ???
+	    computeFieldPointGradJump(icoords,array,point_grad_q);
+	        //computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
 		grad_q[l][index] = point_grad_q[l];
 	}
@@ -2183,3 +2248,126 @@ void Incompress_Solver_Smooth_Basis::setIsolatedSoln(
             break;
         }
 }       /* end setIsolatedSoln */
+
+//For string-fluid interaction: compute force on the string bonds.
+void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
+{
+	INTERFACE *grid_intfc = front->grid_intfc;
+        CURVE **c,*curve;
+        BOND *b;
+        POINT *p;
+        double local_vel[MAXD];
+	double **f_surf = field->f_surf;
+	double **vel = field->vel;
+        double speed;
+        double coords[MAXD];
+        int icoords[MAXD],ic;
+	COMPONENT comp = grid_intfc->default_comp;
+	int i,j,k,l; 
+        double force[MAXD];
+	double center[MAXD],point[MAXD],H,D;
+	double *rho = field->rho;
+	double dist,alpha;
+	int range = (int)(m_smoothing_radius+1);
+
+    if (debugging("trace"))
+        printf("Entering addImmersedForce()\n");
+
+    intfc_curve_loop(grid_intfc,c)
+    {
+        if (hsbdry_type(*c) == STRING_HSBDRY)
+        {
+            FINITE_STRING *params;
+            curve = *c;
+            if (curve->extra == NULL) continue;
+            params = (FINITE_STRING*)curve->extra;
+            double d = 4.0;
+            for (b = curve->first; b != curve->last; b = b->next)
+            {
+                p = b->end;
+                rect_in_which(Coords(p),icoords,top_grid);
+                speed = 0.0;
+                for (l = 0; l < 3; ++l)
+                {
+                    FT_IntrpStateVarAtCoords(front,comp,Coords(p),vel[l],
+                            getStateVel[l],&local_vel[l],&vel[l][ic]);
+                    speed += sqr(local_vel[l]);
+                }
+
+                /*
+                printf("p = %f %f %f v = %f %f %f\n",
+                            Coords(p)[0],Coords(p)[1],Coords(p)[2],
+                            local_vel[0],local_vel[1],local_vel[2]);
+                */
+
+                speed = sqrt(speed);
+                for (l = 0; l < 3; ++l)
+                    force[l] = -params->c_drag*speed*local_vel[l];
+
+                for (k = icoords[2]-2; k <= icoords[2]+2; k++)
+                for (j = icoords[1]-2; j <= icoords[1]+2; j++)
+                for (i = icoords[0]-2; i <= icoords[0]+2; i++)
+                {
+                    if (i < 0 || j < 0 || k < 0) continue;
+                    if (i > top_gmax[0] || j > top_gmax[1] || 
+                        k > top_gmax[2]) continue;
+                    coords[0] = top_L[0] + i*top_h[0];
+                    coords[1] = top_L[1] + j*top_h[1];
+                    coords[2] = top_L[2] + k*top_h[2];
+                    ic = d_index3d(i,j,k,top_gmax);
+                    dist = distance_between_positions(Coords(p),coords,3);
+                    if (dist > top_h[0]*4) continue;
+                    alpha = top_h[0]*4 - dist;
+                    ic = d_index3d(i,j,k,top_gmax);
+                    f_surf[0][ic] += alpha*force[0];
+                    f_surf[1][ic] += alpha*force[1];
+                    f_surf[2][ic] += alpha*force[2];
+                    
+                    /*
+                    printf("crds = %f %f %f d = %f f = %f %f %f\n",
+                            coords[0],coords[1],coords[2],dist,
+                            alpha*force[0],alpha*force[1],alpha*force[2]);
+                    */
+                }
+            }
+        }
+    }
+
+	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+}	/* end addImmersedForce in 3D */
+
+void Incompress_Solver_Smooth_Basis::addVortexDisturbance(
+        VPARAMS vparams)
+{
+	double **vel = field->vel;
+        double *center = vparams.center;
+        double D = vparams.D;
+        double A = vparams.A;
+        double L0[MAXD],coords[MAXD];
+        int i,j,k,ic;
+
+        printf("Entering addVortexDisturbance()\n");
+        for (i = 0; i < dim; ++i)
+            L0[i] = center[i] - 0.5*D;
+        for (k = kmin; k <= kmax; k++)
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            coords[0] = top_L[0] + i*top_h[0];
+            coords[1] = top_L[1] + j*top_h[1];
+            coords[2] = top_L[2] + k*top_h[2];
+            if (coords[0] < L0[0] || coords[0] > L0[0]+D ||
+                coords[2] < L0[2] || coords[2] > L0[2]+D)
+                continue;
+            double u,w;
+            u =  A*sin(PI*(coords[0] - L0[0])/D)*cos(PI*(coords[2] - L0[2])/D);
+            w = -A*cos(PI*(coords[0] - L0[0])/D)*sin(PI*(coords[2] - L0[2])/D);
+            u *= sin(PI*(coords[1] - L0[1])/D);
+            w *= sin(PI*(coords[1] - L0[1])/D);
+            ic = d_index3d(i,j,k,top_gmax);
+            vel[0][ic] += u;
+            vel[2][ic] += w;
+        }
+	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+}       /* end addVortexDisturbance */
+
