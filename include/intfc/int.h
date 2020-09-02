@@ -1072,6 +1072,9 @@ enum {
 
 #define	Mag2d(A) sqrt(Dot2d(A,A))
 #define	Mag3d(A) sqrt(Dot3d(A,A))
+#define	Magd(A,dim) \
+    ((dim) == 1 ? sqrt(sqr((A)[0])) : \
+     (dim) == 2 ? Mag2d(A) : Mag3d(A))
 
 #define QDot3d(A,B)							\
 	(A ## 0*B ## 0 + A ## 1*B ## 1 + A ## 2*B ## 2)

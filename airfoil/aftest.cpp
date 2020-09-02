@@ -2405,6 +2405,7 @@ static void print_rgb3d(
         }
 }       /* end print_rgb3d */
 
+//TODO: REVIEW FOR ACCURACY -- also need to incoroporate shear stress effects
 static void print_drag3d(
         Front *front,
         char *out_name)
@@ -2505,7 +2506,9 @@ static void print_drag3d(
                 zforce = fopen(fname,"w");
             else
                 zforce = fopen(fname,"a");
+            
             fcount++;
+            
             double force[MAXD] = {0};
             for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
                         tri = tri->next)

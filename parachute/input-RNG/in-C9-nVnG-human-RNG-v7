@@ -33,9 +33,13 @@ Enter gravity: 0 0 -9.8
 Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
-Enter type of rigid body: Box
-Enter center of the box: 6 6 0.951
-Enter edges of the box: 0.5 0.5 0.5
+
+Enter type of rigid body: Human
+Enter the vtk file name for human body: input-vtk/human_body.vtk
+Enter center of the human body: 6 6 0.951
+Enter enlargement coefficient: 1.5
+Enter yes to skip rg_nodes in y direction for 1: yes
+
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
@@ -108,7 +112,7 @@ Enter time to active turbulence model: 0.0
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTAT_STATE
-Enter velocity: 0 0 12
+Enter velocity: 0 0 7
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

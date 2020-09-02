@@ -19,6 +19,7 @@ function config_opportunity_serial {
 }
 
 function config_intruder {
+    source /act/etc/profile.d/actbin.sh
     module load mvapich2-2.1/gcc-4.9.2
     export CC=mpicc
     export CXX=mpicxx
@@ -44,7 +45,7 @@ function config_lambda {
 }
 
 function config_alpha {
-    PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
+    PETSC_DIR="/usr/local/pkg/petsc-3.13.4-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
     CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
@@ -69,6 +70,30 @@ function config_delta {
 
 function config_gamma {
     PETSC_DIR="/usr/local/pkg/petsc-3.11.0-${ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+}
+
+function config_workstation01 {
+    PETSC_DIR="/usr/local/pkg/petsc-3.13.4-${ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+}
+
+function config_workstation03 {
+    PETSC_DIR="/usr/local/pkg/petsc-3.13.4-${ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/usr/local/pkg/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib/x86_64-linux-gnu --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+}
+
+function config_workstation04 {
+    PETSC_DIR="/usr/local/pkg/petsc-3.13.4-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
     CGAL_DIR="/usr/local/pkg/CGAL-4.14-${ARCH}"
@@ -139,6 +164,15 @@ elif [[ "$HOST" == delta.ams.stonybrook.edu ]]; then
 elif [[ "$HOST" == gamma.ams.stonybrook.edu ]]; then
     echo "Machine recognized as gamma."
     config_gamma
+elif [[ "$HOST" == workstation01 ]]; then
+    echo "Machine recognized as workstation01."
+    config_workstation01
+elif [[ "$HOST" == workstation03 ]]; then
+    echo "Machine recognized as workstation03."
+    config_workstation03
+elif [[ "$HOST" == workstation04 ]]; then
+    echo "Machine recognized as workstation04."
+    config_workstation04
 elif [[ "$HOST" == defiant ]]; then
     echo "Machine recognized as defiant."
     config_defiant

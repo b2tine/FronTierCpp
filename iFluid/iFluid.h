@@ -130,6 +130,12 @@ struct _NS_SCHEME {
 };
 typedef struct _NS_SCHEME NS_SCHEME;
 
+struct FINITE_STRING {         // For fluid drag on string chord
+        double radius;
+        double dens;
+        double c_drag;
+};
+
 typedef struct {
         int dim;
         POINTER level_func_params;
@@ -253,6 +259,12 @@ struct _RG_PARAMS {
 };
 typedef struct _RG_PARAMS RG_PARAMS;
 
+struct VPARAMS {
+        double center[MAXD];            // center of vortex
+        double D;                       // size of vortex
+        double A;                       // intensity of vortex
+};
+
 /******************************************************************************
  * 		lcartsn.h
  * A simple incompressible flow solver using the ghost fluid method and the
@@ -335,6 +347,7 @@ public:
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
 	void solveTest(const char *msg);
+        void addVortexDisturbance(VPARAMS);
 
 	//User interface
 	virtual void setInitialCondition(void) = 0;
@@ -502,6 +515,7 @@ protected:
 	double smoothedStepFunction(double*, double*, int);
 	void sampleVelocity();
 	void setSmoothedProperties(void);
+    void addImmersedForce();
 };
 
 class Incompress_Solver_Smooth_2D_Cartesian:

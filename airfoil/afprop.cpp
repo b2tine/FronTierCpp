@@ -241,37 +241,143 @@ extern void airfoil_curve_propagate(
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+        CURVE *oldc,
+         CURVE *newc,
         double dt)
 {
-	BOND *oldb,*newb;
-	POINT *oldp,*newp;
+    BOND *oldb,*newb;
+    POINT *oldp,*newp;
 
-	if (!is_load_node(oldc->start))
-	{
-	    oldp = oldc->start->posn;
-	    newp = newc->start->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->start))
+    {
+        oldp = oldc->start->posn;
+        newp = newc->start->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	if (!is_load_node(oldc->end))
-	{
-	    oldp = oldc->end->posn;
-	    newp = newc->end->posn;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    if (!is_load_node(oldc->end))
+    {
+        oldp = oldc->end->posn;
+        newp = newc->end->posn;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
 
-	for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
-		oldb = oldb->next, newb = newb->next)
-	{
-	    oldp = oldb->end;
-	    newp = newb->end;
-	    ft_assign(left_state(newp),left_state(oldp),front->sizest);
-	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
-	}
+    for (oldb = oldc->first, newb = newc->first; oldb != oldc->last;
+        oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+        ft_assign(left_state(newp),left_state(oldp),front->sizest);
+        ft_assign(right_state(newp),right_state(oldp),front->sizest);
+    }
+
+    //string-fluid interaction
+    //    
+    //      dragForce = 0.5*rho*C_d*A_ref*|u|*u
+    //      with drag coefficient C_d = 1.05
+    //      and A_ref is the cylinder enclosing the bond's surface area
+    
+    FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
+    if (params != NULL)
+    {
+        STATE *state_intfc;
+            //STATE *sl,*sr;
+        STATE *newsl,*newsr;
+        COMPONENT base_comp = front->interf->default_comp;
+        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+        IF_FIELD *field = iFparams->field;
+        double rhoF = iFparams->rho2;
+        double **vel = field->vel;
+
+        double c_drag = params->c_drag;
+        double radius = params->radius;
+        double rhoS = params->dens;
+        
+            //int count = 0;
+
+    for (oldb = oldc->first, newb = newc->first;
+            oldb != oldc->last; oldb = oldb->next, newb = newb->next)
+    {
+        oldp = oldb->end;
+        newp = newb->end;
+
+        //TODO: vel_string = sl->vel; ?
+            state_intfc = (STATE*)left_state(oldp);
+            double* vel_intfc = state_intfc->vel;
+            //sl = (STATE*)left_state(oldp);
+            //sr = (STATE*)right_state(oldp);
+
+            newsl = (STATE*)left_state(newp);
+            newsr = (STATE*)right_state(newp);
+                //count++;
+ 
+            //tangential direction along string BOND
+            double ldir[3];
+            for (int i = 0; i < 3; ++i)	
+                ldir[i] = Coords(oldb->end)[i] - Coords(oldb->start)[i];
+            double length = Mag3d(ldir);
+            if (length < MACH_EPS)
+            {
+                printf("BOND length < MACH_EPS\n");
+                clean_up(EXIT_FAILURE);
+            }
+            
+            for (int i = 0; i < 3; ++i)
+                ldir[i] /= length;
+
+            double vt = 0.0;
+            double vfluid[3], vrel[3];
+            for (int i = 0; i < 3; ++i)
+            {
+                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+                vrel[i] = vfluid[i] - vel_intfc[i];
+                vt += vrel[i]*ldir[i];
+                /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
+            }
+
+            double speed = 0.0;
+            double vtan[3], vnor[3];
+            for (int i = 0; i < 3; ++i)
+            {
+                //vtan[i] = vt*ldir[i];
+                //vnor[i] = vrel[i] - vtan[i];
+                vnor[i] = vrel[i] - vt*ldir[i];
+                speed += sqr(vnor[i]);
+            }
+            speed = sqrt(speed);
+
+            double A_ref = 2.0*PI*radius*(0.1*length);
+            double Vol = PI*radius*radius*(0.1*length);
+            double mass = rhoS*Vol;
+
+            for (int i = 0; i < 3; ++i)
+            {
+                double dragForce = 0.0;
+                if (front->step > af_params->fsi_startstep)
+                    dragForce = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                    //dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
+
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
+                newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            //newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
+            }
+            /*
+            if (count == 5)
+                printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
+                        newsl->vel[0],newsl->vel[1],newsl->vel[2],
+                        newsl->fluid_accel[0],newsl->fluid_accel[1],
+                        newsl->fluid_accel[2]);
+            */
+        }
+    }
 }	/* end string_curve_propagation */
 
 static void gore_curve_propagation(
