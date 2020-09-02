@@ -255,14 +255,14 @@ extern void set_spring_vertex_memory(
 
 extern void compute_spring_accel1(
 	SPRING_VERTEX *sv,
-	double *f,
+	double *accel,
 	int dim)
 {
 	int i,k;
 	double len,vec[MAXD];
 
 	for (k = 0; k < dim; ++k)
-	    f[k] = 0.0;
+	    accel[k] = 0.0;
 	for (i = 0; i < sv->num_nb; ++i)
 	{
 	    len = 0.0;
@@ -276,7 +276,7 @@ extern void compute_spring_accel1(
 	    for (k = 0; k < dim; ++k)
 	    {
 		vec[k] /= len;
-		f[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
+		accel[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
 	    }
 	}
 
@@ -284,15 +284,16 @@ extern void compute_spring_accel1(
         //computeElasticForce(sv,f);
 
 	for (k = 0; k < dim; ++k)
-	    sv->f[k] = f[k]*sv->m;
-	for (k = 0; k < dim; ++k)
+    {
+	    sv->f[k] = accel[k]*sv->m;
+    }
+	
+    for (k = 0; k < dim; ++k)
 	{
-	    f[k] += -sv->lambda*(sv->v[k]-sv->ext_impul[k])/sv->m;
-	}
-	for (k = 0; k < dim; ++k)
-	{
-	    f[k] += sv->ext_accel[k] + sv->fluid_accel[k] 
-			+ sv->other_accel[k];
+	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+
+	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
+                    + sv->other_accel[k];
 	}
 }	/* end compute_spring_accel */
 
@@ -644,7 +645,7 @@ extern void set_node_spring_vertex(
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_l;
+                    mass = geom_set->m_s;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
 	    	else if (extra->af_node_type == SEC_LOAD_NODE)
@@ -1085,7 +1086,7 @@ extern void set_surf_spring_vertex(
 		    	sv[i].k[k] = 0.0;
 		    else
 		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];
+		    sv[i].len0[k] = tris[k]->side_length0[l];;
 		}
 		sorted(p) = YES;
 	    	++i;
