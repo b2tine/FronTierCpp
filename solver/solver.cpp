@@ -166,8 +166,11 @@ void PETSc::Get_row_of_A(PetscInt i, PetscInt *ncol, PetscInt **cols, double **r
 {	
 	ierr = MatGetRow(A,i,ncol,(const PetscInt**)cols,
 			(const PetscScalar**)row);
+    //TODO: can't call MatRestoreRow() until after using the values in row.
 	ierr = MatRestoreRow(A,i,ncol,(const PetscInt**)cols,
 			(const PetscScalar**)row);
+    //At this point all the values in row have been zeroed out,
+    //and the calling function will always get an array of zeros.
 }
 
 // x
