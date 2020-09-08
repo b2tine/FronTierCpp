@@ -154,7 +154,6 @@ extern void initParachuteDefault(
     char string[100];
 
     af_params->is_parachute_system = YES;
-	af_params->num_opt_round = 20;
     af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
     af_params->attach_gores = NO;
@@ -166,6 +165,14 @@ extern void initParachuteDefault(
             af_params->attach_gores = YES;
     }
     
+	af_params->num_opt_round = 20;
+    if (CursorAfterStringOpt(infile,
+                "Enter number of canopy optimization rounds:"))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+
     af_params->fsi_startstep = 5;
     if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
     {
