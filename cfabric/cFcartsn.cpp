@@ -53,12 +53,16 @@ void G_CARTESIAN::initMesh()
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
-	/*TMP*/
+	
+    //TODO: why was this done?
+    /*TMP*/
 	min_dens = 0.0001;
 	min_pres = 0.0001;
-	FT_MakeGridIntfc(front);
+	
+    FT_MakeGridIntfc(front);
 	setDomain();
-	num_cells = 1;
+	
+    num_cells = 1;
 	for (i = 0; i < dim; ++i)
 	{
 	    num_cells *= (top_gmax[i] + 1);
@@ -333,7 +337,223 @@ void G_CARTESIAN::setInitialStates()
 	copyMeshStates();
 }*/	/* end setInitialStates */
 
-void G_CARTESIAN::computeAdvection(void)
+void G_CARTESIAN::computeConvectiveFlux()
+{
+    nrad = 3;
+    int order = 1;
+
+	static SWEEP *st_field;
+	static FSWEEP *st_flux;
+	
+	if (st_flux == NULL)
+	{
+	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+	    
+        for (int i = 0; i < order; ++i)
+	    {
+	    	allocMeshVst(&st_field[i]);
+	    	allocMeshFlux(&st_flux[i]);
+	    }
+    }
+
+    double delta_t = m_dt;
+	copyToMeshVst(&st_field[0]);
+	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
+        //addMeshFluxToVst(&st_field[0],st_flux[0],1.0);
+	    //copyFromMeshVst(st_field[0]);
+    cFlux = &st_flux[0];
+}
+
+/*
+void G_CARTESIAN::computeDiffusion()
+{
+    printf("computeDiffusion() not yet implemented\n");
+    clean_up(EXIT_FAILURE);
+
+    //TODO: cFlux goes to RHS vector.
+    //      below is iFcartsn3d.cpp implementation for template.
+
+    COMPONENT comp;
+    int index,index_nb[6],size;
+    int I,I_nb[6];
+	int i,j,k,l,nb,icoords[MAXD];
+	double coords[MAXD], crx_coords[MAXD];
+	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
+    double *x;
+
+    //TODO: index by direction and behind ahead nb = 0,1 like advection
+	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+	POINTER intfc_state;
+	HYPER_SURF *hs;
+	PetscInt num_iter;
+	double rel_residual;
+	double aII;
+	double source[MAXD];
+	double **vel = field->vel;
+	double **f_surf = field->f_surf;
+	INTERFACE *grid_intfc = front->grid_intfc;
+
+    //TODO: Need everything for setIndexMap() to implement (global indexing for petsc).
+    setIndexMap();
+
+    size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    //TODO: fix above and pick up here.
+
+	for (l = 0; l < dim; ++l)
+	{
+            PETSc solver;
+            solver.Create(ilower, iupper-1, 7, 7);
+	    solver.Reset_A();
+	    solver.Reset_b();
+	    solver.Reset_x();
+
+            for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+            	I  = ijk_to_I[i][j][k];
+            	if (I == -1) continue;
+
+            	index  = d_index3d(i,j,k,top_gmax);
+            	index_nb[0] = d_index3d(i-1,j,k,top_gmax);
+            	index_nb[1] = d_index3d(i+1,j,k,top_gmax);
+            	index_nb[2] = d_index3d(i,j-1,k,top_gmax);
+            	index_nb[3] = d_index3d(i,j+1,k,top_gmax);
+            	index_nb[4] = d_index3d(i,j,k-1,top_gmax);
+            	index_nb[5] = d_index3d(i,j,k+1,top_gmax);
+
+		icoords[0] = i;
+		icoords[1] = j;
+		icoords[2] = k;
+		comp = top_comp[index];
+
+            	I_nb[0] = ijk_to_I[i-1][j][k]; //west
+            	I_nb[1] = ijk_to_I[i+1][j][k]; //east
+            	I_nb[2] = ijk_to_I[i][j-1][k]; //south
+            	I_nb[3] = ijk_to_I[i][j+1][k]; //north
+            	I_nb[4] = ijk_to_I[i][j][k-1]; //lower
+            	I_nb[5] = ijk_to_I[i][j][k+1]; //upper
+
+
+            	mu0   = field->mu[index];
+            	rho   = field->rho[index];
+
+        //TODO: index by dir = 0,1,2 and nb = 0,1
+        for (nb = 0; nb < 6; nb++)
+        {
+		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                                &intfc_state,&hs,crx_coords))
+		    {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    U_nb[nb] = vel[l][index];
+                }
+                else
+                    U_nb[nb] = getStateVel[l](intfc_state);
+
+                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    mu[nb] = mu0;
+                else
+                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    
+            }
+            else
+		    {
+                U_nb[nb] = vel[l][index_nb[nb]];
+    			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+		    }
+        }
+
+                //       should be discretizing div(grad(u) + grad(u)^T)
+            	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+            	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
+            	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
+            	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
+            	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
+            	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
+
+                //TODO: RHS should also contain the advective flux...
+            	getRectangleCenter(index, coords);
+            	computeSourceTerm(coords, source);
+
+		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
+		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
+
+        //TODO: index by dir = 0,1,2 and nb = 0,1
+		for(nb = 0; nb < 6; nb++)
+		{
+            //TODO: Neumann boundary at solid walls does not appear to be implemented.
+            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
+			        &intfc_state,&hs,crx_coords))
+		    {
+                solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                rhs += coeff[nb]*U_nb[nb];
+		    }
+		    else
+		    {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
+                                boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    aII -= coeff[nb];
+                    rhs += coeff[nb]*U_nb[nb];
+                }
+                else
+                    rhs += 2.0*coeff[nb]*U_nb[nb];
+		    }
+		}
+	
+        rhs += m_dt*source[l];
+		rhs += m_dt*f_surf[l][index];
+		    //rhs -= m_dt*grad_q[l][index]/rho;
+        solver.Set_A(I,I,aII);
+		solver.Set_b(I, rhs);
+            }
+
+            solver.SetMaxIter(40000);
+            solver.SetTol(1e-14);
+
+	    start_clock("Befor Petsc solve");
+            solver.Solve();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+	    stop_clock("After Petsc solve");
+
+            // get back the solution
+            solver.Get_x(x);
+
+            if (debugging("PETSc"))
+                (void) printf("L_CARTESIAN::"
+			"computeDiffusionCN: "
+                        "num_iter = %d, rel_residual = %g. \n",
+                        num_iter,rel_residual);
+
+	    for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+                I = ijk_to_I[i][j][k];
+                index = d_index3d(i,j,k,top_gmax);
+                if (I >= 0)
+                    vel[l][index] = x[I-ilower];
+                else
+                    vel[l][index] = 0.0;
+            }
+        }
+	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+
+        FT_FreeThese(1,x);
+}
+*/
+
+void G_CARTESIAN::computeAdvection()
 {
 	int order;
 	switch (eqn_params->num_scheme)
@@ -738,27 +958,45 @@ void G_CARTESIAN::solve(double dt)
 	if (debugging("trace"))
 	    printf("Entering solve()\n");
 	start_clock("solve");
-	setDomain();
+	
+    setDomain();
 	appendOpenEndStates(); /* open boundary test */
 	scatMeshStates();
 
 	adjustGFMStates();
 	setComponent();
+
+    ////////////////////////////////////////////////////////////////
+    //TODO: part of diffusion implementation
+        //setGlobalIndex();
+    ////////////////////////////////////////////////////////////////
 	
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
-	// 1) solve for intermediate velocity
+    //TODO: Need to save the current solution, and keep in a seperate array
+    //      the solution of the predictor step for use in step 2.
+	
+    // 1) Explicit Predictor Step
 	start_clock("computeAdvection");
-	computeAdvection();
+    computeAdvection();
+	    //computeConvectiveFlux();
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
 	stop_clock("computeAdvection");
-	
-	if (debugging("sample_velocity"))
+
+    /////////////////////////////////////////////////////////////// 
+    // 2) Implicit Corrector Step
+    //start_clock("computeDiffusion");
+        //computeDiffusion(); //TODO: diffusion implementation here
+    //stop_clock("computeDiffusion");
+
+    ///////////////////////////////////////////////////////////////
+
+    /*if (debugging("sample_velocity"))
 	{
 	    sampleVelocity();
-	}
+	}*/
 
     //TODO: Velocity and Vorticity computed in copyMeshStates(),
     //      should factor into separate functions.
@@ -776,16 +1014,16 @@ void G_CARTESIAN::solve(double dt)
 // check http://en.wikipedia.org/wiki/Bilinear_interpolation
 void G_CARTESIAN::getVelocity(double *p, double *U)
 {
-        double **vel = eqn_params->vel;
+    double **vel = eqn_params->vel;
 
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
-					NULL);
-        if (dim > 1)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
-					NULL);
-        if (dim > 2)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
-					NULL);
+    FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
+                NULL);
+    if (dim > 1)
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
+                NULL);
+    if (dim > 2)
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
+                NULL);
 }
 
 void G_CARTESIAN::getRectangleIndex(int index, int &i, int &j)
@@ -5575,7 +5813,7 @@ void G_CARTESIAN::setNeumannStates(
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic[MAXD];
-	double		*vel_ref = state->vel;
+	double		*vel_intfc = state->vel;
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
 	double		nor[MAXD],vn,v[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -5606,7 +5844,7 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
 	for (i = istart; i <= nrad; ++i)
@@ -5614,27 +5852,34 @@ void G_CARTESIAN::setNeumannStates(
 	    /* Find ghost point */
 	    ic[idir] = (nb == 0) ? icoords[idir] - (i - istart + 1) :
                                 icoords[idir] + (i - istart + 1);
-	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+	
+        for (j = 0; j < dim; ++j)
+            coords_ref[j] = top_L[j] + ic[j]*top_h[j];//coords_ghost[j]
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+
 	    for (j = 0; j < dim; ++j)
 	    {
-		v[j] = coords_ref[j] - crx_coords[j];
-		vn += v[j]*nor[j];
+            v[j] = coords_ref[j] - crx_coords[j];
+            vn += v[j]*nor[j];
 	    }
+
+        //reflect v across the line containing the normal vector
 	    for (j = 0; j < dim; ++j)
-		v[j] = 2.0*vn*nor[j] - v[j];
+		    v[j] = 2.0*vn*nor[j] - v[j];
+
+        //desired reflected point
 	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = crx_coords[j] + v[j];
+		    coords_ref[j] = crx_coords[j] + v[j];
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+		    m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+		    m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
 			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
 			&m_vst->momn[0][index]);
@@ -5646,22 +5891,26 @@ void G_CARTESIAN::setNeumannStates(
 		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
 			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
 			&m_vst->momn[2][index]);
-		/* Galileo Transformation */
+		
+        /* Galileo Transformation */
 	    vn = 0.0;
+        double vel_reflect[3];
 	    for (j = 0; j < dim; j++)
 	    {
-		v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
-		vn += v[j]*nor[j];
+            vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+            vn += (vel_reflect[j] - vel_intfc[j])*nor[j];
 	    }
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */
-            for (j = 0; j < dim; j++)
+            
+        /* Only normal component is reflected, 
+            relative tangent velocity is zero */
+        for (j = 0; j < dim; j++)
 	    {
-                v[j] = vel_ref[j] - 1.0*vn*nor[j];
-		st_tmp.momn[j] = v[j]*st_tmp.dens;
+            v[j] = vel_intfc[j] - vn*nor[j];
+		    st_tmp.momn[j] = v[j]*st_tmp.dens;
 	    }
 
 	    st_tmp.engy = EosEnergy(&st_tmp);
+
 	    /* debugging printout */
 	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    {
@@ -6296,13 +6545,12 @@ void G_CARTESIAN::setElasticStatesRiem(
         //Get 2 points straddling interface in normal direction
         double pl[MAXD], pr[MAXD], nor[MAXD];
 
-        //TODO: can we get a better normal vector and intfc state?
-        //      Without taking an average of the values from each
-        //      point on the triangle that is.
+        //TODO: Use all three points of triangle in approximation,
+        //      and use the triangle normal like in compute_total_canopy_force3d()
         TRI* nearTri = Tri_of_hse(nearHse);
         FT_NormalAtPoint(Point_of_tri(nearTri)[0],front,nor,comp);
         STATE* state_intfc = (STATE*)left_state(Point_of_tri(nearTri)[0]);
-            //nor = Tri_normal_vector(nearTri); //is not normalized
+            //nor = Tri_normal_vector(nearTri);//USE THIS
         double h = FT_GridSizeInDir(nor,front);
 
         for (j = 0; j < 3; ++j)
@@ -6322,6 +6570,10 @@ void G_CARTESIAN::setElasticStatesRiem(
 	    FT_IntrpStateVarAtCoords(front,comp_ghost,pr,
                 m_vst->pres,getStatePres,&sr.pres,&m_vst->pres[index_ghost]);
         
+        //TODO: retain the tangential velocities of the interpolated states
+        //      and add to the normal ghost velocity obtained from the
+        //      riemann problem.
+        //
         //Using relative velocity wrt to interface velocity
         //TODO: can we do better than this interpolation?
         /*
