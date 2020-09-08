@@ -156,13 +156,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    icoords[1] = j;
 	    icoords[2] = k;
         
+        //Coupling of the velocity impulse due to force of the
+        //immersed porous interface accounted for by the addition
+        //of GFM pressure jump source terms into grad_phi 
         computeFieldPointGradJump(icoords,phi,grad_phi);
 
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
 	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
-		speed += fabs(vel[l][index]);
+		    speed += fabs(vel[l][index]);
 	    }
 	    mag_grad_phi = Mag3d(grad_phi);
 	    ave_grad_phi += mag_grad_phi;
@@ -510,6 +513,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 			min_pressure,max_pressure);
 
 	    start_clock("computeNewVelocity");
+        //TODO: appendOpenEndStates() appears to be deprecated,
+        //      and the OPEN_BOUNDARY condition replaced by the
+        //      FLOW_THROUGH_BOUNDARY condition.
 	    appendOpenEndStates(); //necessary since phi is updated
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
@@ -2250,7 +2256,7 @@ void Incompress_Solver_Smooth_Basis::setIsolatedSoln(
         }
 }       /* end setIsolatedSoln */
 
-//For string-fluid interaction: compute force on the string bonds.
+/*
 void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 {
 	INTERFACE *grid_intfc = front->grid_intfc;
@@ -2281,33 +2287,165 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
             FINITE_STRING *params;
             curve = *c;
             if (curve->extra == NULL) continue;
-            params = (FINITE_STRING*)curve->extra;
+            
             double d = 4.0;
+            params = (FINITE_STRING*)curve->extra;
+            STATE* sl;
+            
             for (b = curve->first; b != curve->last; b = b->next)
             {
                 p = b->end;
                 rect_in_which(Coords(p),icoords,top_grid);
-                speed = 0.0;
-                for (l = 0; l < 3; ++l)
-                {
-                    FT_IntrpStateVarAtCoords(front,comp,Coords(p),vel[l],
-                            getStateVel[l],&local_vel[l],&vel[l][ic]);
-                    speed += sqr(local_vel[l]);
-                }
+                sl = (STATE*)left_state(p);
+                
+                //
+                //printf("sl->drag_force = %g %g %g\n",
+                //        sl->drag_force[0],sl->drag_force[1],sl->drag_force[2]);
+                
 
-                /*
-                printf("p = %f %f %f v = %f %f %f\n",
-                            Coords(p)[0],Coords(p)[1],Coords(p)[2],
-                            local_vel[0],local_vel[1],local_vel[2]);
-                */
-
-                speed = sqrt(speed);
+                //TODO: This didn't even work a little bit
                 for (l = 0; l < 3; ++l)
-                    force[l] = -params->c_drag*speed*local_vel[l];
+                    force[l] = -1.0*sl->drag_force[l];
+
 
                 for (k = icoords[2]-2; k <= icoords[2]+2; k++)
                 for (j = icoords[1]-2; j <= icoords[1]+2; j++)
                 for (i = icoords[0]-2; i <= icoords[0]+2; i++)
+                {
+                    if (i < 0 || j < 0 || k < 0) continue;
+                    if (i > top_gmax[0] || j > top_gmax[1] || 
+                        k > top_gmax[2]) continue;
+                    
+                    coords[0] = top_L[0] + i*top_h[0];
+                    coords[1] = top_L[1] + j*top_h[1];
+                    coords[2] = top_L[2] + k*top_h[2];
+                    
+                    dist = distance_between_positions(Coords(p),coords,3);
+                    if (dist > 4.0*top_h[0]) continue;
+                    
+                    alpha = 4.0*top_h[0] - dist;
+                    ic = d_index3d(i,j,k,top_gmax);
+                    f_surf[0][ic] += alpha*force[0];
+                    f_surf[1][ic] += alpha*force[1];
+                    f_surf[2][ic] += alpha*force[2];
+
+                    //printf("crds = %f %f %f \td = %f \talpha = %f \tf = %f %f %f\n",
+                     //       coords[0],coords[1],coords[2],dist,alpha,
+                       //     alpha*force[0],alpha*force[1],alpha*force[2]);
+                }
+            }
+        }
+    }
+
+	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+}*/	/* end addImmersedForce in 3D */
+
+void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
+{
+	INTERFACE *grid_intfc = front->grid_intfc;
+        CURVE **c,*curve;
+        BOND *b;
+        POINT *p;
+        double local_vel[MAXD];
+	double **f_surf = field->f_surf;
+	double **vel = field->vel;
+        double coords[MAXD];
+        int icoords[MAXD],ic;
+	COMPONENT comp = grid_intfc->default_comp;
+        double force[MAXD];
+	double center[MAXD],point[MAXD],H,D;
+	double *rho = field->rho;
+	double dist,alpha;
+	int range = (int)(m_smoothing_radius+1);
+
+    if (debugging("trace"))
+        printf("Entering addImmersedForce()\n");
+
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    double rhoF = iFparams->rho2;
+
+    intfc_curve_loop(grid_intfc,c)
+    {
+        if (hsbdry_type(*c) == STRING_HSBDRY)
+        {
+            FINITE_STRING *params;
+            curve = *c;
+            if (curve->extra == NULL) continue;
+            
+            params = (FINITE_STRING*)curve->extra;
+            double c_drag = params->c_drag;
+            double radius = params->radius;
+            double rhoS = params->dens;
+            double d = 4.0;
+
+            for (b = curve->first; b != curve->last; b = b->next)
+            {
+                p = b->end;
+                rect_in_which(Coords(p),icoords,top_grid);
+
+                //tangential direction along string BOND
+                double ldir[3];
+                for (int i = 0; i < 3; ++i)	
+                    ldir[i] = Coords(b->end)[i] - Coords(b->start)[i];
+                double length = Mag3d(ldir);
+                if (length < MACH_EPS)
+                {
+                    printf("BOND length < MACH_EPS\n");
+                    clean_up(EXIT_FAILURE);
+                }
+                
+                for (int i = 0; i < 3; ++i)
+                    ldir[i] /= length;
+
+                STATE* state_intfc = (STATE*)left_state(p);
+                double* vel_intfc = state_intfc->vel;
+                double vt = 0.0;
+                double vfluid[3], vrel[3];
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    FT_IntrpStateVarAtCoords(front,comp,Coords(p),vel[i],
+                            getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+                        //FT_IntrpStateVarAtCoords(front,comp,Coords(p),vel[i],
+                        //      getStateVel[i],&local_vel[i],&vel[i][ic]);
+                    vrel[i] = vfluid[i] - vel_intfc[i];
+                    vt += vrel[i]*ldir[i];
+                }
+
+                double speed = 0.0;
+                double vtan[3], vnor[3];
+                for (int i = 0; i < 3; ++i)
+                {
+                    vnor[i] = vrel[i] - vt*ldir[i];
+                    speed += sqr(vnor[i]);
+                }
+                speed = sqrt(speed);
+
+                //
+                //printf("p = %f %f %f v = %f %f %f\n",
+                  //          Coords(p)[0],Coords(p)[1],Coords(p)[2],
+                    //        local_vel[0],local_vel[1],local_vel[2]);
+                //
+
+                //TODO: consistent with string_curve_propagation()
+                //      dragForce computation? If not, make it consistent.
+                //
+
+                double A_ref = 2.0*PI*radius*length;
+                double Vol = PI*radius*radius*length;
+                    //double A_ref = 2.0*PI*radius*(0.25*length);
+                    //double Vol = PI*radius*radius*(0.25*length);
+                    //double mass = rhoS*Vol;
+                
+                for (int i = 0; i < 3; ++i)
+                {
+                    force[i] = -0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                        //force[i] = -params->c_drag*speed*local_vel[i];
+                }
+
+                for (int k = icoords[2]-2; k <= icoords[2]+2; k++)
+                for (int j = icoords[1]-2; j <= icoords[1]+2; j++)
+                for (int i = icoords[0]-2; i <= icoords[0]+2; i++)
                 {
                     if (i < 0 || j < 0 || k < 0) continue;
                     if (i > top_gmax[0] || j > top_gmax[1] || 
@@ -2317,18 +2455,18 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     coords[2] = top_L[2] + k*top_h[2];
                     ic = d_index3d(i,j,k,top_gmax);
                     dist = distance_between_positions(Coords(p),coords,3);
-                    if (dist > top_h[0]*4) continue;
-                    alpha = top_h[0]*4 - dist;
+                    if (dist > top_h[0]*4.0) continue;
+                    alpha = top_h[0]*4.0 - dist;
                     ic = d_index3d(i,j,k,top_gmax);
                     f_surf[0][ic] += alpha*force[0];
                     f_surf[1][ic] += alpha*force[1];
                     f_surf[2][ic] += alpha*force[2];
                     
-                    /*
-                    printf("crds = %f %f %f d = %f f = %f %f %f\n",
-                            coords[0],coords[1],coords[2],dist,
-                            alpha*force[0],alpha*force[1],alpha*force[2]);
-                    */
+                    //
+                    //printf("crds = %f %f %f d = %f f = %f %f %f\n",
+                      //      coords[0],coords[1],coords[2],dist,
+                      //      alpha*force[0],alpha*force[1],alpha*force[2]);
+                    //
                 }
             }
         }
