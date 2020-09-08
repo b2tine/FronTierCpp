@@ -258,6 +258,12 @@ struct _RG_PARAMS {
 };
 typedef struct _RG_PARAMS RG_PARAMS;
 
+struct VPARAMS {
+        double center[MAXD];            // center of vortex
+        double D;                       // size of vortex
+        double A;                       // intensity of vortex
+};
+
 /******************************************************************************
  * 		lcartsn.h
  * A simple incompressible flow solver using the ghost fluid method and the
@@ -341,6 +347,7 @@ public:
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
 	void solveTest(const char *msg);
+        void addVortexDisturbance(VPARAMS);
 
 	//User interface
 	virtual void setInitialCondition(void) = 0;

@@ -67,6 +67,7 @@ public:
 	double *source;		// for source of parabolic solver;
 	double *top_L,*top_U,*top_h,hmin;
 	int *top_gmax;
+    double lmin, lmax;
 	COMPONENT *top_comp;
 	KE_PARAMS *eqn_params;
 	KE_FIELD *field;
@@ -126,6 +127,8 @@ public:
 	void findBdryPoint();
 
 	void computeSource();
+	double computeWallPk(int*,int,int,int,
+			     HYPER_SURF*,POINTER,double**);
 	void setSlipBoundary(int*,int,int,int,
 			     HYPER_SURF*,POINTER,double**,double*);
 	void setTKEatWall(int*,int,int,int,

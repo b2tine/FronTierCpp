@@ -633,13 +633,13 @@ void Incompress_Solver_Smooth_Basis::setGlobalIndex()
 	n_dist[myid] = NLblocks;
 	pp_global_imax(n_dist,num_nodes);
 	ilower = 0;
-        iupper = n_dist[0];
+    iupper = n_dist[0];
 
-        for (i = 1; i <= myid; i++)
-        {
-            ilower += n_dist[i-1];
-            iupper += n_dist[i];
-        }	
+    for (i = 1; i <= myid; i++)
+    {
+        ilower += n_dist[i-1];
+        iupper += n_dist[i];
+    }	
 }
 
 void Incompress_Solver_Smooth_Basis::printFrontInteriorStates(char *out_name)
@@ -1527,7 +1527,9 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
+    {
         mu_t = computeMuOfKepsModel();
+    }
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -2314,7 +2316,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index3d(i,j,k,top_gmax);			
 	    comp  = cell_center[index].comp;
@@ -2326,70 +2328,73 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             for (l = 0; l < dim; ++l) force[l] = 0.0;
 
 	    if (status  == YES && 
-		ifluid_comp(positive_component(hs)) &&
-                ifluid_comp(negative_component(hs)) && 
-		positive_component(hs) != negative_component(hs))
-	    {
-		sign = (comp == m_comp[0]) ? -1 : 1;
-                D = smoothedDeltaFunction(center,point);
-                H = smoothedStepFunction(center,point,sign);
-                mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
-                rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
+		    ifluid_comp(positive_component(hs)) &&
+            ifluid_comp(negative_component(hs)) && 
+		    positive_component(hs) != negative_component(hs))
+        {
+		    sign = (comp == m_comp[0]) ? -1 : 1;
+            D = smoothedDeltaFunction(center,point);
+            H = smoothedStepFunction(center,point,sign);
+            mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
+            rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
 
-                if (m_sigma != 0.0 && D != 0.0)
+            if (m_sigma != 0.0 && D != 0.0)
+            {
+                surfaceTension(center,hse,hs,force,m_sigma);
+                for (l = 0; l < dim; ++l)
                 {
-                    surfaceTension(center,hse,hs,force,m_sigma);
-                    for (l = 0; l < dim; ++l)
-                    {
-                        force[l] /= -rho[index];
-			f_surf[l][index] = force[l];
-                    }
+                    force[l] /= -rho[index];
+                    f_surf[l][index] = force[l];
                 }
+            }
 	    }
 	    else if (iFparams->use_eddy_visc == YES)
+        {
+            int icoords[MAXD];
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            mu[index] = 0.0;
+
+            switch (iFparams->eddy_visc_model)
             {
-                int icoords[MAXD];
-                icoords[0] = i;
-                icoords[1] = j;
-                icoords[2] = k;
-		mu[index] = 0.0;
-		switch (iFparams->eddy_visc_model)
-		{
-		case BALDWIN_LOMAX:
-		    if (status == YES &&
-                        (wave_type(hs) == NEUMANN_BOUNDARY ||
-                         wave_type(hs) == ELASTIC_BOUNDARY))
-                    {
-                	dist = distance_between_positions(center,point,dim);
-		    	mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
-		    	first = NO;
-		    }
-		    break;
-		case MOIN:
-		    mu[index] = computeMuOfMoinModel(icoords);
-		    break;
-		case SMAGORINSKY:
-		    mu[index] = computeMuofSmagorinskyModel(icoords);
-		    break;
-		case KEPSILON:
-		    mu[index] = mu_t[index];
-		    break;
-		default:
-		    (void) printf("Unknown eddy viscosity model!\n");
-		    clean_up(ERROR);
-		}
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] += m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] += m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            case BALDWIN_LOMAX:
+                if (status == YES &&
+                    (wave_type(hs) == NEUMANN_BOUNDARY ||
+                     wave_type(hs) == ELASTIC_BOUNDARY))
+                {
+                    dist = distance_between_positions(center,point,dim);
+                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    first = NO;
+                }
+                break;
+            case MOIN:
+                mu[index] = computeMuOfMoinModel(icoords);
+                break;
+            case SMAGORINSKY:
+                mu[index] = computeMuofSmagorinskyModel(icoords);
+                break;
+            case KEPSILON:
+                mu[index] = mu_t[index];
+                break;
+            default:
+                (void) printf("Unknown eddy viscosity model!\n");
+                clean_up(ERROR);
             }
+    
+            //add regular visc to the eddy visc to obtain an effective visc
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] += m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] += m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+        }
 	    else
 	    {
 		switch (comp)
@@ -3672,23 +3677,26 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 #include "keps.h"
 double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
-        static boolean first = YES;
-        static KE_PARAMS params;
-        static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
-        if (first)
-        {
-            first = NO;
-            keps_solver->read_params(InName(front),&params);
-            keps_solver->eqn_params = &params;
-            keps_solver->field = NULL;
-            keps_solver->initMesh();
-            keps_solver->field->vel = iFparams->field->vel;
-            keps_solver->eqn_params->mu = iFparams->mu2;
-            keps_solver->eqn_params->rho = iFparams->rho2;
-            keps_solver->setInitialCondition();
-        }
-        keps_solver->solve(front->dt);
-	return keps_solver->field->mu_t;
+    static boolean first = YES;
+    static KE_PARAMS params;
+    static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+
+    if (first)
+    {
+        first = NO;
+        keps_solver->read_params(InName(front),&params);
+        keps_solver->eqn_params = &params;
+        keps_solver->field = NULL;
+        keps_solver->initMesh();
+        keps_solver->field->vel = iFparams->field->vel;
+        keps_solver->eqn_params->mu = iFparams->mu2;
+        keps_solver->eqn_params->rho = iFparams->rho2;
+        keps_solver->setInitialCondition();
+    }
+
+    keps_solver->solve(front->dt);
+
+    return keps_solver->field->mu_t;
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

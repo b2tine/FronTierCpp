@@ -270,6 +270,7 @@ static void initCirclePlaneIntfc(
             (void) printf("%f\n",circle_params->H);
             circle_params->add_plan_surf = YES;
         }
+
 	level_func_pack->func_params = (POINTER)circle_params;
 
 	switch (prob_type)
@@ -310,7 +311,8 @@ static void initCirclePlaneIntfc(
 	    (void) printf("ERROR: entering wrong initialization function\n");
 	    clean_up(ERROR);
 	}
-	CursorAfterString(infile,"Enter gravity:");
+	
+    CursorAfterString(infile,"Enter gravity:");
         for (i = 0; i < dim; ++i)
 	{
             fscanf(infile,"%lf\n",&iFparams->gravity[i]);
