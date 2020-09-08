@@ -47,7 +47,9 @@ airfoil_LDADD =	$(builddir)/objs/libairfoil.la
 tagsfile:
 	ctags *.h *.cpp \
 		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
-		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/*.cpp \
+		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/iFcartsn3d.cpp \
+		$(top_srcdir)/iFluid/iFinit.cpp $(top_srcdir)/iFluid/iFbasic.cpp \
+		$(top_srcdir)/iFluid/iFsub.cpp $(top_srcdir)/iFluid/keps.cpp \
 		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
