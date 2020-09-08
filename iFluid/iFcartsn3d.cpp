@@ -1238,8 +1238,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
 	    icoords[1] = j;
 	    icoords[2] = k;
         //TODO: if (iFparams->with_porosity) ???
-	    computeFieldPointGradJump(icoords,array,point_grad_q);
-	        //computeFieldPointGrad(icoords,array,point_grad_q);
+	            //computeFieldPointGradJump(icoords,array,point_grad_q);
+        computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
 		grad_q[l][index] = point_grad_q[l];
 	}
