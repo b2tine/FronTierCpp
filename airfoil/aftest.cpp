@@ -2453,7 +2453,7 @@ static void print_drag3d(
             }
         }
 
-        printf("free_vel = %g %g %g\n",free_vel[0],free_vel[1],free_vel[2]);
+        //printf("free_vel = %g %g %g\n",free_vel[0],free_vel[1],free_vel[2]);
 
         /*normalize freestream vel*/
         if (fabs(fvel_mag) > MACH_EPS)
