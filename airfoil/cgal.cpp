@@ -1582,6 +1582,7 @@ static void installString(
 	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
 	}
 
+    //TODO: add check for RGB before entering this block
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the strings to RGB:"))
 	{
@@ -1648,7 +1649,6 @@ static void installString(
         }
     }
     */
-
 
     /* make the all initial springs at their equilibruim length */
         FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
