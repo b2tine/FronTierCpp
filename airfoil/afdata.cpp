@@ -767,7 +767,7 @@ void optimizeElasticMesh(
 	    gview_plot_interface(gvdir,intfc);
 	}
 
-    int num_opt_round = 1;
+    int num_opt_round = 0;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if(af_params)
     {
@@ -811,6 +811,11 @@ void optimizeElasticMesh(
 				scaled_redist_params);
 	    	status *= (int)nothing_done;
 	    }
+
+        //TODO: FT_OptimizeSurfMesh() should probably be skipped
+        //      if CGAL is used to generate the canopy mesh.
+        //      Unlikely to improve mesh quality and the iterative
+        //      process can stall. 
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
 	    	if (wave_type(*s) != ELASTIC_BOUNDARY)
@@ -820,6 +825,7 @@ void optimizeElasticMesh(
 				scaled_redist_params);
 	    	status *= (int)nothing_done;
 	    }
+
 	    FT_ParallelExchIntfcBuffer(front);
 	    if (debugging("optimize_intfc"))
 	    {
