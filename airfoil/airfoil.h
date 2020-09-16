@@ -35,13 +35,13 @@ typedef enum _STRING_NODE_TYPE STRING_NODE_TYPE;
 
 enum _AF_NODE_TYPE {
 	UNKNOWN_AF_NODE = -1,
-	LOAD_NODE	= 1,
+	LOAD_NODE = 1,
 	RG_STRING_NODE,
 	GORE_NODE,
 	STRING_NODE,
 	PRESET_NODE,
 	SEC_LOAD_NODE,
-        THR_LOAD_NODE
+    THR_LOAD_NODE
 };
 typedef enum _AF_NODE_TYPE AF_NODE_TYPE;
 
@@ -77,7 +77,7 @@ typedef struct {
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
-	double payload {0.001};//defaults to same as m_s
+	double payload {100.0};//default to 100kg
     bool rgb_payload {false};
     bool strings_present {false};
     bool gores_present {false};
