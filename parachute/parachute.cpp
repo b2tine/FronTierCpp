@@ -195,7 +195,8 @@ void airfoil_driver(Front *front,
         int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
         VPARAMS vort_params;
-        double start_time;
+        bool inject_vortex = false;
+        double start_time = HUGE;
 
         CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
@@ -206,9 +207,10 @@ void airfoil_driver(Front *front,
             char answer[100];
             fscanf(infile,"%s",answer);
             printf("%s\n",answer);
-            start_time = -1.0;
+                //start_time = -1.0;
             if (answer[0] == 'y')
             {
+                inject_vortex = true;
                 CursorAfterString(infile,"Enter center of vortex: ");
                 fscanf(infile,"%lf %lf %lf",vort_params.center,vort_params.center+1,
                                     vort_params.center+2);
@@ -308,13 +310,16 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
-                if (start_time != -1.0 && front->time >= start_time) 
-                {
-                    start_time = -1.0;          // apply only once
-                    printf("Time to add vortex\n");
-                    l_cartesian->addVortexDisturbance(vort_params);
-                }
-                l_cartesian->solve(front->dt);
+                    //if (start_time != -1.0 && front->time >= start_time) 
+            if (inject_vortex && front->time >= start_time) 
+            {
+                inject_vortex = false;
+                    //start_time = HUGE;          // apply only once
+                    //start_time = -1.0;          // apply only once
+                printf("Time to add vortex\n");
+                l_cartesian->addVortexDisturbance(vort_params);
+            }
+            l_cartesian->solve(front->dt);
 	    }
 	    else
             {
