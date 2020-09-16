@@ -1285,6 +1285,9 @@ extern void read_iFparams(
 		}
 	    }
 	}
+    
+        for (i = 0; i < dim; ++i)
+            iFparams->gravity[i] = 0.0;
         if (CursorAfterStringOpt(infile,"Enter gravity:"))
         {
             for (i = 0; i < dim; ++i)
@@ -1294,7 +1297,8 @@ extern void read_iFparams(
             }
             (void) printf("\n");
         }
-	iFparams->scalar_field = NO;
+	
+        iFparams->scalar_field = NO;
         if (CursorAfterStringOpt(infile,"Enter yes to consider scalar field:"))
         {
             fscanf(infile,"%s",string);
