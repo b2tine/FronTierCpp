@@ -58,7 +58,8 @@ Enter number of chords: 28
 Enter initial position of load: 7 7 11.75
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
-Enter number of canopy optimization rounds: 10
+
+Enter number of canopy optimization rounds: 20
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no

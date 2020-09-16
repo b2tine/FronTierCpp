@@ -291,17 +291,9 @@ void setMotionParams(Front* front)
         CursorAfterString(infile,"Enter payload:");
         fscanf(infile,"%lf",&af_params->payload);
         (void) printf("%f\n",af_params->payload);
-        /*
-        if (CursorAfterStringOpt(infile,"Enter payload:"))
-        {
-            fscanf(infile,"%lf",&af_params->payload);
-            (void) printf("%f\n",af_params->payload);
-        }
-        */
     }
 	
 	af_params->n_sub = 10;
-	    //af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
 	(void) printf("%d\n",af_params->n_sub);
