@@ -338,32 +338,32 @@ static void modifyCanopySet(
 	double center[MAXD];		// Center of rotation
 	double phi,theta;		// Spherical angles of rotation
 
-        if (CursorAfterStringOpt(infile,
-            "Entering yes to modify initialization:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] != 'y' && string[0] != 'Y')
-                return;
-        }
+    if (CursorAfterStringOpt(infile,
+        "Entering yes to modify initialization:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' && string[0] != 'Y')
+            return;
+    }
 	else
 	    return;
 
-        CursorAfterString(infile,
-                "Enter yes for rotation of canopy:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-        {
-            CursorAfterString(infile,"Enter center of rotation:");
-            fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
-            (void) printf("%f %f %f\n",center[0],center[1],center[2]);
-            CursorAfterString(infile,"Enter azimuthal and polar angles:");
-            fscanf(infile,"%lf %lf",&phi,&theta);
-            (void) printf("%f %f\n",phi,theta);
-            theta *= PI/180.0;
-            phi *= PI/180.0;
-        }
+    CursorAfterString(infile,
+            "Enter yes for rotation of canopy:");
+    fscanf(infile,"%s",string);
+    (void) printf("%s\n",string);
+    if (string[0] == 'y' || string[0] == 'Y')
+    {
+        CursorAfterString(infile,"Enter center of rotation:");
+        fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
+        (void) printf("%f %f %f\n",center[0],center[1],center[2]);
+        CursorAfterString(infile,"Enter azimuthal and polar angles:");
+        fscanf(infile,"%lf %lf",&phi,&theta);
+        (void) printf("%f %f\n",phi,theta);
+        theta *= PI/180.0;
+        phi *= PI/180.0;
+    }
 
-        I_RotateSurfaceSet(canopy,center,phi,theta);
+    I_RotateSurfaceSet(canopy,center,phi,theta);
 }	/* end modifyCanopySet */
