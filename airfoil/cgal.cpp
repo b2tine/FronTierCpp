@@ -2494,6 +2494,7 @@ extern void InstallNewLoadNode(
             */
             ///////////////////////////////////////////////////////
 
+    //TODO: should be fine for DGB and multi-chute cluster
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the multi-parachute to RGB:"))
 	{

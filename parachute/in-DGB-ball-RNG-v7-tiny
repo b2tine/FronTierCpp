@@ -69,12 +69,13 @@ Enter yes for rotation of canopy: no
 
 Enter connection position: 0.5 0.5 1.70
 Enter new load position: 0.5 0.5 1.5536
-    XXXEnter new load positionXXX: 0.5 0.5 1.5836
 
 Enter yes to install the multi-parachute to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to skip rg_nodes in x direction for 1: yes
 Enter yes to skip rg_nodes in y direction for 1: yes
+
+nter number of canopy optimization rounds: 20
 
 *************Airfoil parameters*************
 Enter yes to use GPU solver: no
@@ -125,7 +126,7 @@ Enter time to active turbulence model: 0.0
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTAT_STATE
+Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 7
 Enter pressure: 0
 For upper boundary in 2-th dimension
