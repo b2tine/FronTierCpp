@@ -105,6 +105,7 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: max_speed
 
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK

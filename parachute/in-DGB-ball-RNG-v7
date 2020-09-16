@@ -59,7 +59,7 @@ Enter initial position of load: 6 6 1.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 
-Enter number of canopy optimization rounds: 1
+Enter number of canopy optimization rounds: 20
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
@@ -110,7 +110,7 @@ Enter time to active turbulence model: 0.0
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTAT_STATE
+Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 7
 Enter pressure: 0
 For upper boundary in 2-th dimension
