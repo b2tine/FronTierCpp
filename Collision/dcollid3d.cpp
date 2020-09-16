@@ -1414,9 +1414,10 @@ static bool PointToTri(
         //      Disabling fatal error for now.
         //
         //      Determine why this happens, and if ignoring it is an
-        //      acceptable solution. Intuitively, if the triangle reduces
-        //      to a point, then the neighboring triangles will just accept
-        //      any computed impulses it would have received.
+        //      acceptable solution. There is a danger of dividing by
+        //      zero when computing the barycentric weights w[0] and w[1],
+        //      however large but noninfinite weights will result in an
+        //      early exit and return false. 
         printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
             //clean_up(ERROR);

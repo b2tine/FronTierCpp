@@ -10,9 +10,9 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 15.0
-Max step: 1000
+Max step: 5
 Print interval: 0.005
-Movie frame interval: 0.005
+Movie frame interval: 0.0005
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -125,7 +125,6 @@ Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: zero_mesh
 Enter the debugging string: proximity
 Enter the debugging string: collision
 
