@@ -638,8 +638,12 @@ extern void set_node_spring_vertex(
 		else if (extra->af_node_type == LOAD_NODE || 
 			extra->af_node_type == RG_STRING_NODE)
 		{
-	    	    Front *front = geom_set->front;
-	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+            Front *front = geom_set->front;
+            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+            //TODO: If multiple RG_STRING_NODE nodes,
+            //      should the mass be a fraction of the total
+            //      payload (which is the mass of the RGB)?
+            //      i.e. mass = payload/(double)num_rg_string_nodes;
 		    mass = af_params->payload;
 		}
 		else if (extra->af_node_type == GORE_NODE)
@@ -648,7 +652,7 @@ extern void set_node_spring_vertex(
                     mass = geom_set->m_s;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
-	    	else if (extra->af_node_type == SEC_LOAD_NODE)
+        else if (extra->af_node_type == SEC_LOAD_NODE)
 		    mass = geom_set->m_l;
 	    }
 	    else
@@ -656,7 +660,7 @@ extern void set_node_spring_vertex(
 	}
 	else
 	{
-            mass = geom_set->m_l;
+        mass = geom_set->m_l;
 	    boolean on_canopy = NO;
 	    node_out_curve_loop(node, c)
 	    {

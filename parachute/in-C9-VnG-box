@@ -58,7 +58,8 @@ Enter number of chords: 28
 Enter initial position of load: 7 7 11.75
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
-Enter number of canopy optimization rounds: 10
+
+Enter number of canopy optimization rounds: 20
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
@@ -105,6 +106,7 @@ Type y to plot surface stress: n
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: max_speed
 
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK

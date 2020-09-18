@@ -808,7 +808,9 @@ static void compute_center_of_mass_velo(
 	    	    xload[j] = Coords(node->posn)[j];
 	  	}
 
-        //TODO: consolidate payload and rigid body mass 
+        //NOTE: payload and rigid body mass are equal when a
+        //      rigid body is attached to the suspension lines.
+        //      See installString() and InstallNewLoadNode().
 	  	payload = af_params->payload;
 	  	xcom = center_of_mass(Hyper_surf(canopy));
 	  	vcom = center_of_mass_velo(Hyper_surf(canopy));

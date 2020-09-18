@@ -265,7 +265,7 @@ static void CgalCircle(
         double *out_nodes_coords,*in_nodes_coords;
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
-	int out_vtx_oneside = 15, in_vtx_oneside = 2;
+	int out_vtx_oneside = 15, in_vtx_oneside = 2;//TODO: Why these hardcoded values?
 	char gore_bool[10],vent_bool[10], string_bool[10];
 	std::list<Cgal_Point> list_of_seeds;
 	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
@@ -273,36 +273,38 @@ static void CgalCircle(
 	int i;
 	CURVE *cbdry;
 
-        CursorAfterString(infile,"Enter the height of the plane:");
-        fscanf(infile,"%lf",&height);
-        (void) printf("%f\n",height);
-        CursorAfterString(infile,"Enter circle center:");
-        fscanf(infile,"%lf %lf",&CirCenter[0],&CirCenter[1]);
-        (void) printf("%f %f\n",CirCenter[0],CirCenter[1]);
-        CursorAfterString(infile,"Enter circle radius:");
-        fscanf(infile,"%lf",&CirR[0]);
-        (void) printf("%f\n",CirR[0]);
+    CursorAfterString(infile,"Enter the height of the plane:");
+    fscanf(infile,"%lf",&height);
+    (void) printf("%f\n",height);
+    CursorAfterString(infile,"Enter circle center:");
+    fscanf(infile,"%lf %lf",&CirCenter[0],&CirCenter[1]);
+    (void) printf("%f %f\n",CirCenter[0],CirCenter[1]);
+    CursorAfterString(infile,"Enter circle radius:");
+    fscanf(infile,"%lf",&CirR[0]);
+    (void) printf("%f\n",CirR[0]);
 
 	CirR[1] = 0;
 	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
-        fscanf(infile,"%s",gore_bool);
-        (void) printf("%s\n",gore_bool);
-        if (gore_bool[0]=='y' || gore_bool[0]=='Y')
-        {
-	    CirR[1] = 0.1 * CirR[0];
-	    af_params->attach_gores = YES;
+    fscanf(infile,"%s",gore_bool);
+    (void) printf("%s\n",gore_bool);
+    if (gore_bool[0]=='y' || gore_bool[0]=='Y')
+    {
+        //TODO: Bug? CirR[1] gets overwritten if vent present.
+        CirR[1] = 0.1 * CirR[0];
+        af_params->attach_gores = YES;
 	}
 	else
 	    af_params->attach_gores = NO;
+
 	CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:");
 	fscanf(infile,"%s",vent_bool);
 	(void) printf("%s\n",vent_bool);
 	if (vent_bool[0]=='y' || vent_bool[0]=='Y')
-        {
-            CursorAfterString(infile,"Enter radius of the vent:");
-	    fscanf(infile,"%lf",&CirR[1]);
-	    (void) printf("%f\n",CirR[1]);
-        }
+    {
+        CursorAfterString(infile,"Enter radius of the vent:");
+        fscanf(infile,"%lf",&CirR[1]);
+        (void) printf("%f\n",CirR[1]);
+    }
 
 	num_strings = 28;   //default
 	CursorAfterStringOpt(infile,"Enter yes to attach strings to canopy:");
@@ -331,14 +333,14 @@ static void CgalCircle(
 	for (i = 0; i < num_out_vtx; i++)
 	{
 	    v_out[i] = cdt.insert(Cgal_Point(
-				CirCenter[0]+CirR[0]*cos(i*ang_out+offset),
-				CirCenter[1]+CirR[0]*sin(i*ang_out+offset)));
-	    if (0 == i%out_vtx_oneside)
+                    CirCenter[0] + CirR[0]*cos(i*ang_out+offset),
+                    CirCenter[1] + CirR[0]*sin(i*ang_out+offset)));
+	    if (0 == i % out_vtx_oneside)
 	    {
-		out_nodes_coords[i/out_vtx_oneside] = CirCenter[0]+
-				CirR[0]*cos(i*ang_out+offset);
+		out_nodes_coords[i/out_vtx_oneside] =
+            CirCenter[0] + CirR[0]*cos(i*ang_out+offset);
 		out_nodes_coords[i/out_vtx_oneside+num_strings] = 
-				CirCenter[1]+CirR[0]*sin(i*ang_out+offset);
+            CirCenter[1] + CirR[0]*sin(i*ang_out+offset);
 	    }
 	}
 
@@ -346,20 +348,19 @@ static void CgalCircle(
 		cdt.insert_constraint(v_out[i],v_out[i+1]);
 	cdt.insert_constraint(v_out[0],v_out[num_out_vtx-1]);
 
-
 	if (CirR[1] != 0)
 	{
 	    for (i = 0; i < num_in_vtx; i++)
 	    {
-	        v_in[i] = cdt.insert(Cgal_Point(CirCenter[0]+
-				CirR[1]*cos(i*ang_in+offset),
-				CirCenter[1]+CirR[1]*sin(i*ang_in+offset)));
-	        if (0 == i%in_vtx_oneside)
+	        v_in[i] = cdt.insert(Cgal_Point(
+                        CirCenter[0] + CirR[1]*cos(i*ang_in+offset),
+                        CirCenter[1] + CirR[1]*sin(i*ang_in+offset)));
+	        if (0 == i % in_vtx_oneside)
 	        {
-		    in_nodes_coords[i/in_vtx_oneside] = CirCenter[0]+
-				CirR[1]*cos(i*ang_in+offset);
-		    in_nodes_coords[i/in_vtx_oneside+num_strings] = 
-				CirCenter[1]+CirR[1]*sin(i*ang_in+offset);
+		    in_nodes_coords[i/in_vtx_oneside] =
+                CirCenter[0] + CirR[1]*cos(i*ang_in+offset);
+		    in_nodes_coords[i/in_vtx_oneside+num_strings] =
+                CirCenter[1] + CirR[1]*sin(i*ang_in+offset);
 	        }
 	    }
 	    for (i = 0; i < num_in_vtx-1; i++)
@@ -414,15 +415,19 @@ static void CgalCircle(
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
 	checkReducedTri(*surf);
-        wave_type(*surf) = ELASTIC_BOUNDARY;
-        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+    wave_type(*surf) = ELASTIC_BOUNDARY;
+    FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(*surf);
+
 	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
 	{
 	    findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
                                 num_strings,&cbdry);
 	    installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	}
+
+    //TODO: Gore installation fails. Needs to be debugged.
+    //      See above TODO where the bool "attach_gore" is set.
 	if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
         {
             if (vent_bool[0] !='y' && vent_bool[0] !='Y')
@@ -440,7 +445,8 @@ static void CgalCircle(
 	    InstallGore(front,*surf,num_strings,out_nodes_coords,
 				in_nodes_coords);
 	}
-	setSurfZeroMesh(*surf);
+	
+    setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
 	FT_FreeThese(1,string_node_pts);
 	if (consistent_interface(front->interf) == NO)
@@ -1522,23 +1528,29 @@ static void installString(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-        CursorAfterString(infile,"Enter initial position of load:");
-        fscanf(infile,"%lf %lf %lf",&cload[0],&cload[1],&cload[2]);
-        (void) printf("%f %f %f\n",cload[0],cload[1],cload[2]);
+    //TODO: Need these calls below? -- see usage in InstallNewLoadNode()
+	    //cur_intfc = current_interface();
+	    //set_current_interface(intfc);
+
+    //For point mass only?
+    CursorAfterString(infile,"Enter initial position of load:");
+    fscanf(infile,"%lf %lf %lf",&cload[0],&cload[1],&cload[2]);
+    (void) printf("%f %f %f\n",cload[0],cload[1],cload[2]);
 
 	nload = make_node(Point(cload));
 	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-        extra->af_node_type = LOAD_NODE;
+    extra->af_node_type = LOAD_NODE;
+
 	if (CursorAfterStringOpt(infile,"Enter yes to fix the load node:"))
 	{
 	    char s[100];
 	    fscanf(infile,"%s",s);
-            (void) printf("%s\n",s);
+        (void) printf("%s\n",s);
 	    if (s[0] == 'Y' || s[0] == 'y')
-		extra->af_node_type = PRESET_NODE;
+            extra->af_node_type = PRESET_NODE;
 	}
-        nload->extra = (POINTER)extra;
-        nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+    nload->extra = (POINTER)extra;
+    nload->size_of_extra = sizeof(AF_NODE_EXTRA);
 
 	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,
                                 sizeof(NODE*));
@@ -1582,6 +1594,9 @@ static void installString(
 	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
 	}
 
+    //TODO: Add check for an RGB before entering this block.
+    //      Leaving this line in input file when not intended
+    //      can lead to several interface initialization problems.
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the strings to RGB:"))
 	{
@@ -1595,10 +1610,11 @@ static void installString(
 				"Enter the body index of the target RGB:");
 		fscanf(infile,"%d",&rg_index);
 		(void) printf("%d\n",rg_index);
-		intfc_surface_loop(intfc, rg_surf)
+
+		intfc_surface_loop(intfc,rg_surf)
 		{
 		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
-			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
+			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
                 if (body_index(*rg_surf) == rg_index)
                 {
@@ -1614,17 +1630,16 @@ static void installString(
 		}
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
+        //TODO: Need this call below? -- see usage in InstallNewLoadNode()
+		    //set_current_interface(cur_intfc);
 		return;
-        //TODO: find better way to bypass next block of code
-        //      instead of this early return.
 	    }
 	}
-    //TODO: why early return if connecting to rigid body
-    //      before setting spring equilibrium length?
 
-    //TODO: Not getting read when we attach to RGB.
-    //      see return statement in preceeding block
-    //      This block moved inside connectStringtoRGB()
+    //TODO: This block temporarily moved inside connectStringtoRGB().
+    //      Ideally we would like to initialize string-fluid interaction
+    //      in its own function after the interface has been constructed.
+    
     /*
     FINITE_STRING* finite_string = nullptr;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
@@ -1649,21 +1664,22 @@ static void installString(
     }
     */
 
-
     /* make the all initial springs at their equilibruim length */
-        FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
-                                sizeof(CURVE*));
-	for (i = 0; i < num_strings; ++i)
+    FT_VectorMemoryAlloc((POINTER*)&string_curves,
+            num_strings,sizeof(CURVE*));
+	
+    for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
-        //string_curves[i]->extra = (POINTER)finite_string;
+            //string_curves[i]->extra = (POINTER)finite_string;
 
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 			Coords(string_nodes[i]->posn)[j])/spacing;
-	    nb = rint(spacing/(0.40*h[0])) + 1;
+	    nb = rint(spacing/(0.40*h[2])) + 1;
+	        //nb = rint(spacing/(0.40*h[0])) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
@@ -1678,6 +1694,9 @@ static void installString(
 	    bond->length0 = spacing;
 	    af_params->string_curves.push_back(string_curves[i]);
 	}
+        
+    //TODO: Need this call below? -- see use in InstallNewLoadNode()
+        //set_current_interface(cur_intfc);
 	FT_FreeThese(1,string_curves);
 }	/* end installString */
 
@@ -1767,7 +1786,7 @@ static void setSurfZeroMesh(
 {
 	TRI *t;
 	int i,j;
-	double total_num_sides;
+	    //double total_num_sides;
 	double max_len,min_len,ave_len,len;
 
 	if (debugging("zero_mesh"))
@@ -1776,7 +1795,8 @@ static void setSurfZeroMesh(
 	ave_len = 0.0;
 	max_len = 0.0;
 	min_len = HUGE;
-	total_num_sides = 0.0;
+    int total_num_sides = 0;
+	    //total_num_sides = 0.0;
 
 	surf_tri_loop(surf,t)
 	{
@@ -1797,7 +1817,8 @@ static void setSurfZeroMesh(
 		if (min_len > t->side_length0[i])
 		    min_len = t->side_length0[i];
 		ave_len += t->side_length0[i];
-		total_num_sides += 1.0;
+		total_num_sides++;
+		    //total_num_sides += 1.0;
 	    }
 	}
 	never_redistribute(Hyper_surf(surf)) = YES;
@@ -1805,17 +1826,20 @@ static void setSurfZeroMesh(
 	if (debugging("zero_mesh"))
 	{
 	    (void) printf("Leaving setSurfZeroMesh()\n");
-	    if (total_num_sides == 0.0)
+	        //if (total_num_sides == 0.0)
+	    if (total_num_sides == 0)
 	    {
 		(void) printf("Nothing done.\n");
 	    }
 	    else
 	    {
 	    	(void) printf("Equilibrium length:\n");
-	    	(void) printf("total_num_sides = %d\n",(int)total_num_sides);
+	    	(void) printf("total_num_sides = %d\n",total_num_sides);
+	    	    //(void) printf("total_num_sides = %d\n",(int)total_num_sides);
 	    	(void) printf("min_len = %16.12f\n",min_len);
 	    	(void) printf("max_len = %16.12f\n",max_len);
-	    	(void) printf("ave_len = %16.12f\n",ave_len/total_num_sides);
+	    	(void) printf("ave_len = %16.12f\n",ave_len/((double)total_num_sides));
+	    	    //(void) printf("ave_len = %16.12f\n",ave_len/total_num_sides);
 	    }
 	}
 }	/* end setSurfZeroMesh */
@@ -1942,9 +1966,19 @@ static void connectStringtoRGB(
 
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
+    int num_target = target.size();
+    //TODO: Need to save number of attachement points
+    //      for use in set_node_spring_vertex() when assigning
+    //      node mass.
+    //      mass_per_rg_string_node = payload/num_rg_string_nodes
     
     if (num_strings == 1)
     {
+        //TODO: Correct for DGB or Cluster attached to SPHERE,
+        //      but NOT for DGB or Cluster attached to BOX???
+        //      Box should keep 4 target points. There is always
+        //      just 1 target point after leaving this block.
+        
         int max_zindex = 0;
         double max_zcoord = Coords(target[0])[2];
 
@@ -1958,10 +1992,13 @@ static void connectStringtoRGB(
             }
         }
 
+        //TODO: Could declare max_zpoint outside of this block,
+        //      and then use below when num_strings == 1
         POINT* max_zpoint = target[max_zindex];
         target.clear();
         target.push_back(max_zpoint);
     }
+    //TODO: probably need seperate "num_target" variable
 	num = target.size();
 
 	FT_VectorMemoryAlloc((POINTER*)&rg_string_nodes, num, sizeof(NODE*));
@@ -1973,6 +2010,7 @@ static void connectStringtoRGB(
 	    rg_string_nodes[i]->extra = (POINTER)extra;
 	    rg_string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
+
 	/* install a one-bond curve at each rg_string_node */
 	FT_VectorMemoryAlloc((POINTER*)&rg_curves,num,sizeof(CURVE*));
 	for (i = 0; i < num; ++i)
@@ -1990,28 +2028,35 @@ static void connectStringtoRGB(
 		    break;
 	    }
 	    NODE *rg_node = make_node(Point_of_tri(t)[Next_m3(vertex)]);
-            rg_curves[i] = make_curve(0,0,rg_string_nodes[i], rg_node);
-            install_curve_in_surface_bdry(rg_surf,rg_curves[i],
-					POSITIVE_ORIENTATION);
+        rg_curves[i] = make_curve(0,0,rg_string_nodes[i], rg_node);
+        install_curve_in_surface_bdry(rg_surf,rg_curves[i],POSITIVE_ORIENTATION);
 	    hsbdry_type(rg_curves[i]) = PASSIVE_HSBDRY;
 	    linkCurveTriBond(rg_curves[i],rg_surf);
 	}
 
 	/* distinguish single parachute system from multi-parachute system */
-	boolean multi_para = NO;
-	int string_curve_onenode = 1; //test
+	
+    boolean multi_para = NO;
+	int string_curve_onenode = 1;
 	if (num_strings == 1)
 	{
-	    //num_strings = num;
-	    //multi_para = YES;
-	    //string_curve_onenode = 10;
+        //TODO: This doesn't consider a DGB with sphere run.
+        //      See TODO in previous if (num_strings == 1) block.
+        
+        /*
+        num_strings = num;
+	    multi_para = YES;
+        string_curve_onenode = 10;
+        */
 	}
 
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
 						sizeof(CURVE*));
 	
-    //TODO: would like to have this outside of this function,
-    //      see comments in calling function.
+    //TODO: would like to have string-fluid initialization outside
+    //      of this function. See comment in installString().
+    
+    //string-fluid interaction
     FINITE_STRING* finite_string = nullptr;
     FILE* infile = fopen(InName(front),"r");
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
@@ -2037,59 +2082,68 @@ static void connectStringtoRGB(
     }
     fclose(infile);
 
+    //TODO: Need to distinguish the multi-chute initialization
+    //      from DGB style initialization.
+    //      
+    //      For DGB: num_strings == 1
+    //               multi_para == NO
     for (k = 0; k < num_strings; ++k)
 	{
 	    NODE *start, *end;
-	    if (multi_para == NO)
+	    if (multi_para == NO)//TODO: should probably enclose the for loop
 	    {
-		start = string_nodes[k];
-		end = rg_string_nodes[0];
-		dist = distance_between_positions(Coords(start->posn),
-					Coords(target[0]),3);
-		for (i = 1; i < num; ++i)
-		{
-		    dist1 = distance_between_positions(Coords(start->posn),
-					Coords(target[i]),3);
-		    if (dist1 < dist)
-		    {
-			end = rg_string_nodes[i];
-			dist = dist1;
-		    }
-		}
+            start = string_nodes[k];
+            end = rg_string_nodes[0];
+            dist = distance_between_positions(Coords(start->posn),
+                        Coords(target[0]),3);
+            for (i = 1; i < num; ++i)
+            {
+                dist1 = distance_between_positions(Coords(start->posn),
+                        Coords(target[i]),3);
+                if (dist1 < dist)
+                {
+                    end = rg_string_nodes[i];
+                    dist = dist1;
+                }
+            }
 	    }
 	    else
 	    {
-		start = *string_nodes;
-		end = rg_string_nodes[k];
+            //TODO: probably need to move this into seperate for loop
+            start = *string_nodes;
+            end = rg_string_nodes[k];
 	    }
 	    
         for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[k] = make_curve(0,0,start,end);
-            
-            string_curves[k]->extra = (POINTER)finite_string;
+        string_curves[k]->extra = (POINTER)finite_string;
 
 		hsbdry_type(string_curves[k]) = STRING_HSBDRY;
 		spacing = separation(start->posn,end->posn,3);
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])
 							/ spacing;
-		nb = rint(spacing/(0.40 * h[0])) + 1;
+		nb = rint(spacing/(0.40 * h[2])) + 1;
+		    //nb = rint(spacing/(0.40 * h[0])) + 1;
 		spacing /= (double)nb;
 		b = string_curves[k]->first;
 		for (i = 1; i < nb; ++i)
 		{
 		    for (j = 0; j < 3; ++j)
-			coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
+                coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
 		    insert_point_in_bond(Point(coords),b,string_curves[k]);
 		    b->length0 = spacing;
 		    b = b->next;
 		}
-		b->length0 = spacing;
+		
+        b->length0 = spacing;
 		af_params->string_curves.push_back(string_curves[k]);
 	    }
-	}
-	FT_FreeThese(1,string_curves);
+	
+    }
+	
+    FT_FreeThese(1,string_curves);
 
 	if (debugging("trace"))
 	    printf("Leaving connectStringtoRGB() \n");
@@ -2132,7 +2186,8 @@ static void findPointsonRGB(
                 find_y = NO;
         }
 	fclose(infile);
-	/* find points with the max z coordinate */
+	
+    /* find points with the max z coordinate */
 	surf_tri_loop(rg_surf, tri)
 	{
 	    for (i = 0; i < 3; ++i)
@@ -2157,6 +2212,7 @@ static void findPointsonRGB(
 		}
 	    }
 	}
+
 	/* for one-point cases, repeat finding with a lower z coordinate */
 	if (candidate.size() == 1)
 	{
@@ -2174,6 +2230,7 @@ static void findPointsonRGB(
 		}
 	    }
 	}
+
 	if (candidate.size() <= 4)
 	{
 	    target = candidate;
@@ -2225,8 +2282,9 @@ static void findPointsonRGB(
 		y_min.clear();
 		y_min.push_back(*it);
 	    }
-	}
-	candidate.clear();
+	}	
+    candidate.clear();
+
 	if (find_x == YES)
 	{
 	    if (x_max.size() == 1)
@@ -2238,7 +2296,8 @@ static void findPointsonRGB(
 	    else
 		vector_extreme(x_min, 1, candidate);
 	}
-	if (find_y == YES)
+	
+    if (find_y == YES)
 	{
 	    if (y_max.size() == 1)
 		candidate.push_back(y_max.front());
@@ -2347,7 +2406,8 @@ extern void InstallNewLoadNode(
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	
-    //int string_curve_onenode = 10; // test
+    //TODO: Seems that string_curve_onenode should always be 1.
+    //      See below comments for explanation.
     int string_curve_onenode = 1;
 
 	FILE *infile = fopen(InName(front),"r");
@@ -2362,14 +2422,19 @@ extern void InstallNewLoadNode(
 	    return;
 	}
 
+    //TODO: Should the original load node just become the connection node?
 	CursorAfterString(infile,"Enter connection position:");
 	fscanf(infile,"%lf %lf %lf",connection,connection+1,connection+2);
 	(void) printf("%f %f %f\n",connection[0],connection[1],connection[2]);
 
 	cur_intfc = current_interface();
 	set_current_interface(intfc);
+
+    //TODO: num_canopy value doesn't seem relevant ...
+    //      At least for the typical set ups we are using.
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_canopy+1,
 							sizeof(CURVE*));
+
 	sec_nload = make_node(Point(connection));
 	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
 	extra->af_node_type = SEC_LOAD_NODE;
@@ -2382,8 +2447,13 @@ extern void InstallNewLoadNode(
 	    extra = (AF_NODE_EXTRA*)((*n)->extra);
 	    if (extra == NULL) continue;
 	    if (extra->af_node_type != LOAD_NODE) continue;
+
+        //Relabels the original load node
 	    extra->af_node_type = THR_LOAD_NODE;
 
+        //TODO: string_curve_onenode should always be 1.
+        //      Otherwise creating multiple distinct copies
+        //      of the same curve -- crashes the CollisionSolver 
 	    for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[i] = make_curve(0,0,(*n),sec_nload);
@@ -2413,13 +2483,13 @@ extern void InstallNewLoadNode(
 	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
 	extra->af_node_type = LOAD_NODE;
 	if(CursorAfterStringOpt(infile,"Enter yes to fix new load node:"))
-        {
-            char string[256];
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'Y' || string[0] == 'y')
-                extra->af_node_type = PRESET_NODE;
-        }
+    {
+        char string[256];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+            extra->af_node_type = PRESET_NODE;
+    }
 	nload->extra = (POINTER)extra;
 	nload->size_of_extra = sizeof(AF_NODE_EXTRA);
 
@@ -2433,6 +2503,7 @@ extern void InstallNewLoadNode(
             */
             ///////////////////////////////////////////////////////
 
+    //For multi-chute cluster and DGB parachute
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the multi-parachute to RGB:"))
 	{
@@ -2447,13 +2518,22 @@ extern void InstallNewLoadNode(
 				"Enter the body index of the target RGB:");
 		fscanf(infile,"%d",&rg_index);
 		(void) printf("%d\n",rg_index);
-		intfc_surface_loop(intfc, rg_surf)
+		
+        intfc_surface_loop(intfc, rg_surf)
 		{
-		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) ||
-			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
+		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
+			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
-			if (body_index(*rg_surf) == rg_index)
-			    break;
+                if (body_index(*rg_surf) == rg_index)
+                {
+                    if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        HYPER_SURF* hs = Hyper_surf(*rg_surf);
+                        af_params->payload = total_mass(hs);
+                        af_params->rgb_payload = true;
+                    }
+                    break;
+                }
 		    }
 		}
 		connectStringtoRGB(front,*rg_surf,&sec_nload,1);
@@ -2465,6 +2545,12 @@ extern void InstallNewLoadNode(
 	    }
 	}
 
+    
+    //For pointmass run
+    
+    //TODO: string_curve_onenode should always be 1.
+    //      Otherwise creating multiple distinct copies
+    //      of the same curve -- crashes the CollisionSolver 
 	for (int l = 0; l < string_curve_onenode; ++l)
 	{
 	    string_curves[i] = make_curve(0,0,sec_nload,nload);
@@ -2473,7 +2559,8 @@ extern void InstallNewLoadNode(
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 				Coords(sec_nload->posn)[j])/spacing;
-	    nb = rint(spacing/(0.40*h[0])) + 1;
+	    nb = rint(spacing/(0.40*h[2])) + 1;
+	        //nb = rint(spacing/(0.40*h[0])) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)

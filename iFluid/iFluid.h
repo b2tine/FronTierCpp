@@ -135,12 +135,13 @@ struct FINITE_STRING {         // For fluid drag on string chord
         double c_drag;
 };
 
-typedef struct {
-        int dim;
-        POINTER level_func_params;
+struct IF_PARAMS
+{
+    int dim;
+    POINTER level_func_params;
 	NS_SCHEME num_scheme;
-        double rho1;
-        double rho2;
+    double rho1;
+    double rho2;
 	double mu1;
 	double mu2;
 	double U1[MAXD];
@@ -167,14 +168,15 @@ typedef struct {
 	double  Amplitute; 	/*Amplitute of velocity*/
 	double	ymax;	   	/* Maximum distance in Baldwin-Lomax model */
 	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
-        double  porous_coeff[2];   /*dp = a*v + b*v^2*/
+        
+    double  porous_coeff[2];   /*dp = a*v + b*v^2*/
 	double	porosity;
 	char base_dir_name[200];
-        int base_step;
+    int base_step;
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
     int fsi_startstep;
-} IF_PARAMS;
+};
 
 struct _FLOW_THROUGH_PARAMS {
         POINT *oldp;
