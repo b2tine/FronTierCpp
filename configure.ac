@@ -1,7 +1,6 @@
 AC_PREREQ([2.69])
 #Initialize autoconf with project name and version number
 AC_INIT([FronTier],[1.1])
-AC_CANONICAL_HOST
 
 #Include macro directory
 AC_CONFIG_MACRO_DIR([m4])
