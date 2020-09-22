@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/fabric \
+			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/include \
@@ -25,8 +26,6 @@ libfabric_la_SOURCES = \
 ../afsetd.cpp \
 ../aftest.cpp \
 ../afvelo.cpp \
-../cgal_intfc.h \
-../cgal_intfc.cpp \
 ../cgal.cpp \
 ../collid.h \
 ../dcollid.cpp \
@@ -45,7 +44,11 @@ libfabric_la_SOURCES = \
 
 
 
+if CGAL_INTFC_OPT
+libfabric_la_LIBADD = $(top_builddir)/CGAL_Interface/objs/libCgalIntfc.la
+else
 libfabric_la_LIBADD = $(top_builddir)/lib/libFronTier.la
+endif
 
 
 

@@ -21,6 +21,7 @@ EXTRA_DIST = $(input_directories) airfoil_gpu.cuh  airfoil_gpu.cu
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/fabric \
+			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ @MPI_CFLAGS@ \
 			  -I$(abs_top_srcdir)/include \
@@ -31,15 +32,11 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
 noinst_PROGRAMS = fabric_Cplus \
-				  cgal_intfc_test \
 				  fabric_Fortn
 
 				  
 fabric_Cplus_SOURCES = fabric_Cplus.cpp
 fabric_Cplus_LDADD = $(builddir)/objs/libfabric.la
-
-cgal_intfc_test_SOURCES = cgal_intfc_test.cpp
-cgal_intfc_test_LDADD = $(builddir)/objs/libfabric.la
 
 
 
@@ -60,4 +57,5 @@ clean-local:
 
 tagsfile:
 	ctags *.h *.cpp \
+		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

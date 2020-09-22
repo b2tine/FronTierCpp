@@ -214,10 +214,8 @@ int af_find_state_at_crossing(
         case ELASTIC_STRING:
         case ELASTIC_BOUNDARY:
             return NO_PDE_BOUNDARY;
-            break;
         case MOVABLE_BODY_BOUNDARY:
             return CONST_V_PDE_BOUNDARY;
-            break;
         case DIRICHLET_BOUNDARY:
 	        if (boundary_state_function(*hs) &&
                 strcmp(boundary_state_function_name(*hs),
@@ -225,7 +223,6 @@ int af_find_state_at_crossing(
                 return CONST_P_PDE_BOUNDARY;
             else
                 return CONST_V_PDE_BOUNDARY;
-            break;
         }
     }
     return NEUMANN_PDE_BOUNDARY;
