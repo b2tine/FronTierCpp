@@ -29,6 +29,9 @@ MAYBE_FABRIC = fabric
 MAYBE_CFABRIC = cfabric
 endif
 
+if CGAL_INTFC_OPT
+MAYBE_CGAL_INTFC = CGAL_Interface
+endif
 
 if EX2D_OPT
 MAYBE_EX2D = example2d
@@ -45,6 +48,7 @@ endif
 SUBDIRS = lib \
 		  weno \
 		  timeSeries \
+		  $(MAYBE_CGAL_INTFC) \
 		  cFluid \
 		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \

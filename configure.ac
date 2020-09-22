@@ -238,7 +238,8 @@ AC_SUBST(BOOST_LIBS,${boostlib})
 AS_IF([test $with_boost = yes],
       [AC_DEFINE([HAVE_BOOST],[1],[build with boost])])
 
-
+#TODO: ARMA_OPT, see CGAL_INTFC_OPT below and others.
+#      Should consolidate/reorganize options at some point.
 
 #configure with CGAL
 AC_ARG_WITH([cgal-dir],[AS_HELP_STRING([--with-cgal-dir=path],
@@ -272,6 +273,14 @@ AC_SUBST(CGAL_LIBS,${cgallib})
 AS_IF([test $with_cgal = yes],
       [AC_DEFINE([HAVE_CGAL],[1],[build with cgal])])
 
+
+#check if CGAL_Interface library should be built
+AM_CONDITIONAL([CGAL_INTFC_OPT],
+               [test $with_cgal = yes])
+
+AM_COND_IF([CGAL_INTFC_OPT],
+           [AC_CONFIG_FILES([CGAL_Interface/Makefile
+                             CGAL_Interface/objs/Makefile])])
 
 
 #configure with Armadillo
