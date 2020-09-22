@@ -427,6 +427,7 @@ static void CgalCircle(
 	}
 
     //TODO: Gore installation fails. Needs to be debugged.
+    //      See above TODO where the bool "attach_gore" is set.
 	if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
         {
             if (vent_bool[0] !='y' && vent_bool[0] !='Y')
@@ -1527,7 +1528,7 @@ static void installString(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: Need these calls below? -- see use in InstallNewLoadNode()
+    //TODO: Need these calls below? -- see usage in InstallNewLoadNode()
 	    //cur_intfc = current_interface();
 	    //set_current_interface(intfc);
 
@@ -1593,7 +1594,9 @@ static void installString(
 	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
 	}
 
-    //TODO: add check for RGB before entering this block
+    //TODO: Add check for an RGB before entering this block.
+    //      Leaving this line in input file when not intended
+    //      can lead to several interface initialization problems.
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the strings to RGB:"))
 	{
@@ -1627,15 +1630,16 @@ static void installString(
 		}
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
-        //TODO: Need this call below? -- see use in InstallNewLoadNode()
+        //TODO: Need this call below? -- see usage in InstallNewLoadNode()
 		    //set_current_interface(cur_intfc);
 		return;
 	    }
 	}
 
-    //TODO: Not getting read when we attach to RGB.
-    //      see return statement in preceeding block
-    //      This block moved inside connectStringtoRGB()
+    //TODO: This block temporarily moved inside connectStringtoRGB().
+    //      Ideally we would like to initialize string-fluid interaction
+    //      in its own function after the interface has been constructed.
+    
     /*
     FINITE_STRING* finite_string = nullptr;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
@@ -1667,7 +1671,7 @@ static void installString(
     for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
-        //string_curves[i]->extra = (POINTER)finite_string;
+            //string_curves[i]->extra = (POINTER)finite_string;
 
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
@@ -1962,7 +1966,7 @@ static void connectStringtoRGB(
 
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
-    int num_targets = target.size();
+    int num_target = target.size();
     //TODO: Need to save number of attachement points
     //      for use in set_node_spring_vertex() when assigning
     //      node mass.
@@ -1970,8 +1974,8 @@ static void connectStringtoRGB(
     
     if (num_strings == 1)
     {
-        //TODO: Correct for DGB or Cluster attached to sphere,
-        //      but not for DGB or Cluster attached to box???
+        //TODO: Correct for DGB or Cluster attached to SPHERE,
+        //      but NOT for DGB or Cluster attached to BOX???
         //      Box should keep 4 target points. There is always
         //      just 1 target point after leaving this block.
         
@@ -2037,13 +2041,13 @@ static void connectStringtoRGB(
 	if (num_strings == 1)
 	{
         //TODO: This doesn't consider a DGB with sphere run.
-        //      See todo in previous if (num_strings == 1) block.
-	
-        //TODO: probably need seperate "num_target" variable
+        //      See TODO in previous if (num_strings == 1) block.
         
-        //num_strings = num;
-	    //multi_para = YES;
-	        //string_curve_onenode = 10;
+        /*
+        num_strings = num;
+	    multi_para = YES;
+        string_curve_onenode = 10;
+        */
 	}
 
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
@@ -2078,7 +2082,10 @@ static void connectStringtoRGB(
     }
     fclose(infile);
 
-    //TODO: For DGB: num_strings == 1
+    //TODO: Need to distinguish the multi-chute initialization
+    //      from DGB style initialization.
+    //      
+    //      For DGB: num_strings == 1
     //               multi_para == NO
     for (k = 0; k < num_strings; ++k)
 	{
@@ -2399,7 +2406,8 @@ extern void InstallNewLoadNode(
  	INTERFACE *cur_intfc;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	
-    //TODO: Should always be 1? See below.
+    //TODO: Seems that string_curve_onenode should always be 1.
+    //      See below comments for explanation.
     int string_curve_onenode = 1;
 
 	FILE *infile = fopen(InName(front),"r");
@@ -2414,6 +2422,7 @@ extern void InstallNewLoadNode(
 	    return;
 	}
 
+    //TODO: Should the original load node just become the connection node?
 	CursorAfterString(infile,"Enter connection position:");
 	fscanf(infile,"%lf %lf %lf",connection,connection+1,connection+2);
 	(void) printf("%f %f %f\n",connection[0],connection[1],connection[2]);
@@ -2439,10 +2448,10 @@ extern void InstallNewLoadNode(
 	    if (extra == NULL) continue;
 	    if (extra->af_node_type != LOAD_NODE) continue;
 
-        //Relabel the original load node
+        //Relabels the original load node
 	    extra->af_node_type = THR_LOAD_NODE;
 
-        //TODO: string_curve_onenode should always be 1?
+        //TODO: string_curve_onenode should always be 1.
         //      Otherwise creating multiple distinct copies
         //      of the same curve -- crashes the CollisionSolver 
 	    for (int l = 0; l < string_curve_onenode; ++l)
@@ -2494,7 +2503,7 @@ extern void InstallNewLoadNode(
             */
             ///////////////////////////////////////////////////////
 
-    //TODO: should be fine for DGB and multi-chute cluster
+    //For multi-chute cluster and DGB parachute
 	if (CursorAfterStringOpt(infile,
 			"Enter yes to install the multi-parachute to RGB:"))
 	{
@@ -2512,14 +2521,6 @@ extern void InstallNewLoadNode(
 		
         intfc_surface_loop(intfc, rg_surf)
 		{
-            /*
-		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) ||
-			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
-		    {
-			if (body_index(*rg_surf) == rg_index)
-			    break;
-		    }
-            */
 		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
 			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
@@ -2547,7 +2548,7 @@ extern void InstallNewLoadNode(
     
     //For pointmass run
     
-    //TODO: string_curve_onenode should always be 1?
+    //TODO: string_curve_onenode should always be 1.
     //      Otherwise creating multiple distinct copies
     //      of the same curve -- crashes the CollisionSolver 
 	for (int l = 0; l < string_curve_onenode; ++l)
