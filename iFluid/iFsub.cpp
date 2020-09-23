@@ -1250,6 +1250,7 @@ extern void read_iFparams(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    {
 	    	iFparams->use_eddy_visc = YES;
+
 		(void) printf("Available turbulence models are:\n");
 		//(void) printf("\tBaldwin-Lomax (B)\n");
 		//(void) printf("\tMoin (M)\n");

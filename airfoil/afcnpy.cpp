@@ -1987,8 +1987,8 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
             collision_solver->setStringSpringConstant(af_params->kl); 
             collision_solver->setStringPointMass(af_params->m_l);
 
-            collision_solver->setStrainLimit(af_params->strain_limit);
-            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+            //collision_solver->setStrainLimit(af_params->strain_limit);
+            //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;

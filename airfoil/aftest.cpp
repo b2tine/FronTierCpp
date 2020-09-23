@@ -505,6 +505,8 @@ static void set_equilibrium_mesh2d(
 	}
 }	/* end set_equilibrium_mesh2d */
 
+//TODO: Compare to set{Curve,Surf}ZeroMesh() functions in cgal.cpp
+//      Consolidate functionality if possible.
 static void set_equilibrium_mesh3d(
 	Front *front)
 {

@@ -2312,7 +2312,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
+    {
         mu_t = computeMuOfKepsModel();
+    }
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
@@ -2323,32 +2325,13 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	    if (!ifluid_comp(comp)) continue;
 
 	    getRectangleCenter(index, center);
-            status = FT_FindNearestIntfcPointInRange(front,comp,center,
-				INCLUDE_BOUNDARIES,point,t,&hse,&hs,range);
-            for (l = 0; l < dim; ++l) force[l] = 0.0;
+        //TODO: compare to 2d
+        //status = FT_FindNearestIntfcPointInRange(front,comp,center,
+          //      INCLUDE_BOUNDARIES,point,t,&hse,&hs,range);
+        status = FT_FindNearestIntfcPointInRange(front,comp,center,
+                NO_BOUNDARIES,point,t,&hse,&hs,range);
 
-	    if (status  == YES && 
-		    ifluid_comp(positive_component(hs)) &&
-            ifluid_comp(negative_component(hs)) && 
-		    positive_component(hs) != negative_component(hs))
-        {
-		    sign = (comp == m_comp[0]) ? -1 : 1;
-            D = smoothedDeltaFunction(center,point);
-            H = smoothedStepFunction(center,point,sign);
-            mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
-            rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
-
-            if (m_sigma != 0.0 && D != 0.0)
-            {
-                surfaceTension(center,hse,hs,force,m_sigma);
-                for (l = 0; l < dim; ++l)
-                {
-                    force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
-                }
-            }
-	    }
-	    else if (iFparams->use_eddy_visc == YES)
+	    if (iFparams->use_eddy_visc == YES)
         {
             int icoords[MAXD];
             icoords[0] = i;
@@ -2395,6 +2378,28 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             }
         }
+        else if (status  == YES &&
+                ifluid_comp(positive_component(hs)) &&
+                ifluid_comp(negative_component(hs)) && 
+                positive_component(hs) != negative_component(hs))
+        {
+		    sign = (comp == m_comp[0]) ? -1 : 1;
+            D = smoothedDeltaFunction(center,point);
+            H = smoothedStepFunction(center,point,sign);
+            mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
+            rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
+
+            if (m_sigma != 0.0 && D != 0.0)
+            {
+                for (l = 0; l < dim; ++l) force[l] = 0.0;
+                surfaceTension(center,hse,hs,force,m_sigma);
+                for (l = 0; l < dim; ++l)
+                {
+                    force[l] /= -rho[index];
+                    f_surf[l][index] = force[l];
+                }
+            }
+	    }
 	    else
 	    {
 		switch (comp)
@@ -3679,11 +3684,11 @@ double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
     static boolean first = YES;
     static KE_PARAMS params;
-    static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+    static KE_CARTESIAN *keps_solver;
 
     if (first)
     {
-        first = NO;
+        keps_solver = new KE_CARTESIAN(*front);
         keps_solver->read_params(InName(front),&params);
         keps_solver->eqn_params = &params;
         keps_solver->field = NULL;
@@ -3692,6 +3697,7 @@ double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
         keps_solver->eqn_params->mu = iFparams->mu2;
         keps_solver->eqn_params->rho = iFparams->rho2;
         keps_solver->setInitialCondition();
+        first = NO;
     }
 
     keps_solver->solve(front->dt);

@@ -96,44 +96,6 @@ start_loop:
 	}
 }	/* end divideAtGoreBdry */
 
-extern void initParachuteDefault(
-	Front *front)
-{
-	IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	FILE *infile = fopen(InName(front),"r");
-    char string[100];
-
-    af_params->is_parachute_system = YES;
-    af_params->spring_model = MODEL1;
-	af_params->gore_len_fac = 1.0;
-    af_params->attach_gores = NO;
-    if (CursorAfterStringOpt(infile,
-            "Enter yes to attach gores to canopy:"))
-    {
-        fscanf(infile,"%s",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->attach_gores = YES;
-    }
-    
-	af_params->num_opt_round = 20;
-    if (CursorAfterStringOpt(infile,
-                "Enter number of canopy optimization rounds:"))
-    {
-        fscanf(infile,"%d",&af_params->num_opt_round);
-        (void) printf("%d\n",af_params->num_opt_round);
-    }
-
-    af_params->fsi_startstep = 5;
-    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
-    {
-        fscanf(infile,"%d",&af_params->fsi_startstep);
-    }
-    iF_params->fsi_startstep = af_params->fsi_startstep;
-
-    fclose(infile);
-}	/* end initParachuteDefault */
-
 extern void initParachuteModules(Front *front)
 {
 	int i,num_canopy;
@@ -144,9 +106,6 @@ extern void initParachuteModules(Front *front)
 
 	if (debugging("trace"))
 	    (void) printf("Entering initParachuteModules()\n");
-
-	if (debugging("set_module"))
-	    gview_plot_interface("module-step-1",front->interf);
 
 	initRigidBody(front);
 	rgb_init(front,rgb_params);
@@ -174,7 +133,7 @@ extern void initParachuteModules(Front *front)
 	divideAtGoreBdry(front->interf);
 	setCanopyBodyIndex(front);
 
-	if (debugging("trace"))
+	if (debugging("init_para"))
 	{
         std::string gvdir = OutName(front);
         gvdir += "/ginit";
@@ -182,6 +141,44 @@ extern void initParachuteModules(Front *front)
 	    (void) printf("Leaving initParachuteModules()\n");
 	}
 }	/* end initParachuteModules */
+
+extern void initParachuteDefault(
+	Front *front)
+{
+	IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	FILE *infile = fopen(InName(front),"r");
+    char string[100];
+
+    af_params->is_parachute_system = YES;
+    af_params->spring_model = MODEL1;
+	af_params->gore_len_fac = 1.0;
+    af_params->attach_gores = NO;
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to attach gores to canopy:"))
+    {
+        fscanf(infile,"%s",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->attach_gores = YES;
+    }
+    
+	af_params->num_opt_round = 0;
+    if (CursorAfterStringOpt(infile,
+                "Enter number of canopy optimization rounds:"))
+    {
+        fscanf(infile,"%d",&af_params->num_opt_round);
+        (void) printf("%d\n",af_params->num_opt_round);
+    }
+
+    af_params->fsi_startstep = 5;
+    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
+    {
+        fscanf(infile,"%d",&af_params->fsi_startstep);
+    }
+    iF_params->fsi_startstep = af_params->fsi_startstep;
+
+    fclose(infile);
+}	/* end initParachuteDefault */
 
 static void initSingleModule(
         Front *front)

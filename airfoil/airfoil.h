@@ -393,6 +393,7 @@ extern void readAfExtraData(Front*,char*);
 extern void clearRegisteredPoints(Front*);
 extern void printHyperSurfQuality(Front*);
 extern void optimizeElasticMesh(Front*);
+extern void optimizeElasticStrings(Front*);
 extern void modifyInitialization(Front*);
 extern void setStressColor(Front*);
 extern void vtkPlotSurfaceStress(Front*);

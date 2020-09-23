@@ -26,13 +26,11 @@ libiFluid_la_SOURCES = \
 ../rigidbody.cpp
 								
 
-libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la \
-					  $(top_builddir)/CGAL_Interface/objs/libCgalIntfc.la
+libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la
 
 
 $(libiFluid_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
-	@$(MAKE) -C $(top_builddir)/CGAL_Interface/objs libCgalIntfc.la
 
 FORCE:
 

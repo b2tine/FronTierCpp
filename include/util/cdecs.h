@@ -588,6 +588,5 @@ typedef struct _GH_PARAMS GH_PARAMS;
 
 #include <util/fnamedebug.h>
 #include <util/uprotos.h>
-#include <util/vmalloc.h>
 
 #endif /* !defined(_CDECS_H) */

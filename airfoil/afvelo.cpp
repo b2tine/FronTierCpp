@@ -293,7 +293,7 @@ void setMotionParams(Front* front)
         (void) printf("%f\n",af_params->payload);
     }
 	
-	af_params->n_sub = 10;
+	af_params->n_sub = 10;//TODO: move to parachute_defaults()?
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
 	(void) printf("%d\n",af_params->n_sub);

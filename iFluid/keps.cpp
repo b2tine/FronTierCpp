@@ -22,8 +22,8 @@ static std::string dir2String(GRID_DIRECTION dir);
 //		KE_RECTANGLE
 //----------------------------------------------------------------
 
-//KE_RECTANGLE::KE_RECTANGLE()
-KE_RECTANGLE::KE_RECTANGLE(): index(-1), comp(-1)
+KE_RECTANGLE::KE_RECTANGLE()
+    : index(-1), comp(-1)
 {
 }
 
@@ -31,8 +31,7 @@ void KE_RECTANGLE::setCoords(
 	double *crds,
 	int dim)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	    coords[i] = crds[i];
 }
 //--------------------------------------------------------------------------
@@ -209,7 +208,7 @@ void KE_CARTESIAN::setInitialCondition(void)
             lmin = top_h[i];
     }
     
-    lmin = 2.0*lmin;
+    lmin *= 3.0;
     if (eqn_params->l0 < lmin)
         eqn_params->l0 = lmin;
 
@@ -232,6 +231,8 @@ void KE_CARTESIAN::setInitialCondition(void)
 }	/* end setInitialCondition */
 
 //TODO: update this method
+//
+//NOTE: not called anywhere
 void KE_CARTESIAN::computeLiftDrag(Front* front)
 {
 	double force[MAXD];
@@ -1863,13 +1864,13 @@ void KE_CARTESIAN::computeMuTurb()
 
 }
 	
+//TODO: Need to to stability analysis to compute correct dt
 void KE_CARTESIAN::setAdvectionDt()
 {
-	int i;
+	double D, Dl, Ds;
 	double mu_max = -HUGE;
-	double D,Dl,Ds;
 
-	for (i = 0; i < comp_size; i++)
+	for (int i = 0; i < comp_size; i++)
 		mu_max = std::max(field->mu_t[i],mu_max);
 	Dl = mu_max/eqn_params->delta_k   + eqn_params->mu;
 	Ds = mu_max/eqn_params->delta_eps + eqn_params->mu;
@@ -1997,7 +1998,8 @@ void KE_CARTESIAN::save(char *filename)
 	fclose(hfile);
 }
 
-KE_CARTESIAN::KE_CARTESIAN(Front &front):front(&front)
+KE_CARTESIAN::KE_CARTESIAN(Front &front)
+    : front(&front)
 {
 }
 
@@ -2229,56 +2231,63 @@ void KE_CARTESIAN::setDomain()
 
 	if (field == NULL)
 	    FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(KE_FIELD));
-	    //FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
+
 	switch (dim)
 	{
 	case 1:
-            if (first)
-            {
-		comp_size = top_gmax[0]+1;
-                FT_VectorMemoryAlloc((POINTER*)&array,comp_size,FLOAT);
-                FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
-                FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
-                FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
-                first = NO;
-            }	
-	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
-	    imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
-	    eqn_params->field = field;
-	    break;
+        if (first)
+        {
+            comp_size = top_gmax[0]+1;
+            FT_VectorMemoryAlloc((POINTER*)&array,comp_size,FLOAT);
+            FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
+            FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
+            FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
+            first = NO;
+        }	
+    
+        imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+        imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+        eqn_params->field = field;
+        break;
+
 	case 2:
 	    if (first)
 	    {
-		comp_size = (top_gmax[0]+1)*(top_gmax[1]+1);
+		    comp_size = (top_gmax[0]+1)*(top_gmax[1]+1);
 	    	FT_VectorMemoryAlloc((POINTER*)&array,comp_size,FLOAT);
-                FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
+            FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->temp,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
-		if (keps_model == REALIZABLE)
-		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
-	    	first = NO;
+		    
+            if (keps_model == REALIZABLE)
+                FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
+	    	
+            first = NO;
 	    }
-	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+	    
+        imin = (lbuf[0] == 0) ? 1 : lbuf[0];
 	    jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
 	    imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
 	    jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
 	    eqn_params->field = field;
 	    break;
+
 	case 3:
 	    if (first)
 	    {
-		comp_size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
+		    comp_size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
 	    	FT_VectorMemoryAlloc((POINTER*)&array,comp_size,FLOAT);
-                FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
+            FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
-		if (keps_model == REALIZABLE)
-		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
+		    if (keps_model == REALIZABLE)
+                FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
 	    	first = NO;
 	    }
+
 	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
 	    jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
 	    kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
@@ -2905,7 +2914,6 @@ void KE_CARTESIAN::read_params(
 	char string[100];
 	FILE* infile;
 	infile = fopen(inname,"r");
-	int i;
 
 	/*default parameter*/
 	eqn_params->delta_k = 1.0;
