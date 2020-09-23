@@ -2,10 +2,10 @@ Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
 Domain limit in 2-th dimension: 0 1
 Computational grid: 50 50 50
-Lower boundary in 0-th dimension: NEUMANN_BOUNDARY
-Upper boundary in 0-th dimension: NEUMANN_BOUNDARY
-Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
-Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
@@ -51,6 +51,7 @@ Enter type of rigid body: Sphere
 Enter center of the sphere: 0.5 0.5 0.5
 Enter radius of the sphere: 0.15
 Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
@@ -73,8 +74,8 @@ Enter projection type: SIMPLE
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 1
-Enter pressure: 10
+Enter velocity: 0 0
+Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
