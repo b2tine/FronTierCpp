@@ -2418,7 +2418,7 @@ static void print_drag3d(
         int i,j,count = 0;
         double pres_drop, area;
         char fname[200];
-        FILE *dfile, *lfile;
+        FILE *dfile, *xlfile, *ylfile;
         static boolean first = YES;
         int fcount = 0, dim;
         double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
@@ -2435,7 +2435,7 @@ static void print_drag3d(
         /*freestream is the air far upstream of an aerodynamic body*/
         double free_vel[MAXD] = {0};
         double free_vel_dir[MAXD] = {0};
-        double drag[MAXD]={0},lift[MAXD]={0};
+        double drag[MAXD]={0}, lift[MAXD]={0};
         double fvel_mag = 0.0;
 
 
@@ -2483,12 +2483,20 @@ static void print_drag3d(
                 dfile = fopen(fname,"w");
             else
                 dfile = fopen(fname,"a");
+            
             /* lift force */
-            sprintf(fname,"%s/lift-%d.xg",OutName(front),fcount);
+            sprintf(fname,"%s/xlift-%d.xg",OutName(front),fcount);
             if (first)
-                lfile = fopen(fname,"w");
+                xlfile = fopen(fname,"w");
             else
-                lfile = fopen(fname,"a");
+                xlfile = fopen(fname,"a");
+            
+            sprintf(fname,"%s/ylift-%d.xg",OutName(front),fcount);
+            if (first)
+                ylfile = fopen(fname,"w");
+            else
+                ylfile = fopen(fname,"a");
+
             /* projected area */
             sprintf(fname,"%s/parea-%d.xg",OutName(front),fcount);
             if (first)
@@ -2588,19 +2596,27 @@ static void print_drag3d(
                     drag[0],drag[1],drag[2],
                     lift[0],lift[1],lift[2]);*/
 
-            fprintf(dfile,"%16.12f  %16.12f\n",front->time,drag[2]);
                 //fprintf(dfile,"%16.12f  %16.12f\n",front->time,Mag3d(drag));
+            fprintf(dfile,"%16.12f  %16.12f\n",front->time,drag[2]);
             fclose(dfile);
-            fprintf(lfile,"%16.12f  %16.12f\n",front->time,Mag3d(lift));
-            fclose(lfile);
-            fprintf(pafile,"%16.12f  %16.12f\n",front->time,parea);
-            fclose(pafile);
+
+                /*fprintf(lfile,"%16.12f  %16.12f\n",front->time,Mag3d(lift));
+                fclose(lfile);*/
+            fprintf(xlfile,"%16.12f  %16.12f\n",front->time,lift[0]);
+            fclose(xlfile);
+            fprintf(ylfile,"%16.12f  %16.12f\n",front->time,lift[1]);
+            fclose(ylfile);
+
             fprintf(xforce,"%16.12f  %16.12f\n",front->time,force[0]);
             fclose(xforce);
             fprintf(yforce,"%16.12f  %16.12f\n",front->time,force[1]);
             fclose(yforce);
             fprintf(zforce,"%16.12f  %16.12f\n",front->time,force[2]);
             fclose(zforce);
+
+            fprintf(pafile,"%16.12f  %16.12f\n",front->time,parea);
+            fclose(pafile);
+
         }
 
         first = NO;
