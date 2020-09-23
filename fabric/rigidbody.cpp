@@ -312,6 +312,7 @@ static void init_rigid_human(
 	}
 }	/* end init_rigid_human */
 
+/*
 extern void unsort_surf_point(SURFACE *surf)
 {
 	TRI *tri;
@@ -326,7 +327,7 @@ extern void unsort_surf_point(SURFACE *surf)
             sorted(p) = NO;
 	    }
 	}
-}	/* end unsort_surf_point */
+}*/	/* end unsort_surf_point */
 
 static void surf_com_translation(
 	SURFACE *surf,

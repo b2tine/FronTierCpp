@@ -58,6 +58,8 @@ static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
 static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
 
+//TODO: Rigid Body functions to be removed once
+//      rigidbody.h and rigidbody.cpp in iFluid are stable.
 static void initSingleRigidBody(FILE*,Front*);
 static void initMultiRigidBodies(FILE*,Front*,int);
 static void init_rigid_sphere(FILE*,Front*);
@@ -2532,7 +2534,7 @@ static void initWingsPlaneEdge(
 	}
 }	/* end initWingsPlaneEdge */
 
-extern void initRigidBody(
+extern void initRigidBody_OLD(
 	Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");

@@ -16,6 +16,7 @@ EXTRA_DIST = $(input_directories)
 AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
+			  -I$(top_srcdir)/CGAL_Interface \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
@@ -33,6 +34,7 @@ iFluid_LDADD = $(builddir)/objs/libiFluid.la
 
 tagsfile:
 	ctags *.h *.cpp $(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
+		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
 
 

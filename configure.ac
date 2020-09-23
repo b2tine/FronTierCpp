@@ -199,9 +199,6 @@ AM_COND_IF([PETSC_OPT],
            [AC_CONFIG_FILES([solver/Makefile
                              solver/objs/Makefile
                              solver/tests/Makefile
-                             iFluid/Makefile
-                             iFluid/objs/Makefile
-                             iFluid/tests/Makefile
                              melting/Makefile
                              crystal/Makefile
                              subsurf/Makefile])])
@@ -281,6 +278,12 @@ AM_CONDITIONAL([CGAL_INTFC_OPT],
 AM_COND_IF([CGAL_INTFC_OPT],
            [AC_CONFIG_FILES([CGAL_Interface/Makefile
                              CGAL_Interface/objs/Makefile])])
+
+AM_COND_IF([CGAL_INTFC_OPT],
+           [AM_COND_IF([PETSC_OPT],
+                       [AC_CONFIG_FILES([iFluid/Makefile
+                                         iFluid/objs/Makefile
+                                         iFluid/tests/Makefile])])])
 
 
 #configure with Armadillo

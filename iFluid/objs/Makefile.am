@@ -1,10 +1,11 @@
 AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/solver \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
+			  -I$(top_srcdir)/CGAL_Interface \
+			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-LIB_SOLVER = $(top_builddir)/solver/objs/libsolver.la
 
 
 noinst_LTLIBRARIES = libiFluid.la
@@ -20,14 +21,18 @@ libiFluid_la_SOURCES = \
 ../iFinit.cpp \
 ../iFsub.cpp \
 ../keps.h \
-../keps.cpp
+../keps.cpp \
+../rigidbody.h \
+../rigidbody.cpp
 								
 
-libiFluid_la_LIBADD = $(LIB_SOLVER)
+libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la \
+					  $(top_builddir)/CGAL_Interface/objs/libCgalIntfc.la
 
 
 $(libiFluid_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
+	@$(MAKE) -C $(top_builddir)/CGAL_Interface/objs libCgalIntfc.la
 
 FORCE:
 

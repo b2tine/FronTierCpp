@@ -123,7 +123,8 @@ void CollisionSolver3d::assembleFromInterface(
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
-	    unsort_surface_point(*s);
+	    unsort_surf_point(*s);
+	    //unsort_surface_point(*s);
 	    
         surf_tri_loop(*s,tri)
 	    {
@@ -1315,6 +1316,7 @@ void unsortHseList(std::vector<CD_HSE*>& hseList)
 	}
 }
 
+/*
 void unsort_surface_point(SURFACE *surf)
 {
     TRI* tri = first_tri(surf);
@@ -1326,7 +1328,7 @@ void unsort_surface_point(SURFACE *surf)
             sorted(p) = NO;
         }
     }
-}       /* end unsort_surface_point */
+}*/      /* end unsort_surface_point */
 
 
 

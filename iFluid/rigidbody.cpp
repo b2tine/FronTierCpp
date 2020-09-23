@@ -1,13 +1,12 @@
 #include "cgal_intfc.h"
 #include "rigidbody.h"
+#include "iFluid.h"
 
 
-static void prompt_for_rigid_body_params(FILE*,RG_PARAMS*); 
-//static void prompt_for_rigid_body_params(int,FILE*,RG_PARAMS*); 
+static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 
 static void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
-static void prompt_for_velocity_func(int,FILE*,RG_PARAMS*);
-//static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
-//static void sine_vel_func(Front*,POINTER,double*,double*);
+static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
+static void sine_vel_func(Front*,POINTER,double*,double*);
 
 static void initSingleRigidBody(FILE*,Front*);
 static void initMultiRigidBodies(FILE*,Front*,int);
@@ -22,42 +21,25 @@ static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
 
 
-/*
-extern void unsort_surf_point(SURFACE *surf)
-{
-	TRI *tri;
-	POINT *p;
-
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (int i = 0; i < 3; ++i)
-	    {
-            p = Point_of_tri(tri)[i];
-            sorted(p) = NO;
-	    }
-	}
-}*/	/* end unsort_surf_point */
-
-
-extern void initRigidBodies(Front* front)
+//TODO: rgb_init() should be tail call of this function
+extern void initRigidBody(
+	Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
-    
-    char string[100];
-    if (CursorAfterStringOpt(infile,"Enter yes to add rigid body:"))
+        char string[100];
+	int num_rgb;
+
+	if (CursorAfterStringOpt(infile,"Enter yes to add rigid body:"))
 	{
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
+	    if (string[0] != 'y' && string[0] != 'Y')
+		return;
 	}
-
-    if (string[0] != 'y' && string[0] != 'Y')
-    {
-        fclose(infile);
+	else
 	    return;
-    }
 
-	int num_rgb = 1;
+	num_rgb = 1;
 	if (CursorAfterStringOpt(infile,"Enter the number of rigid bodies:"))
 	{
 	    fscanf(infile,"%d",&num_rgb);
@@ -66,65 +48,10 @@ extern void initRigidBodies(Front* front)
 
 	if (num_rgb == 1)
 	    initSingleRigidBody(infile,front);
-	else if (num_rgb > 1)
+	else
 	    initMultiRigidBodies(infile,front,num_rgb);
-
-
-	RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
-
-    CURVE **c;
-    SURFACE **s;
-
-    for (s = front->interf->surfaces; s && *s; ++s)
-    {
-        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(*s) == NEUMANN_BOUNDARY)
-        {
-            if (wave_type(*s) == NEUMANN_BOUNDARY)
-                rgb_params->is_fixed = true;
-            prompt_for_rigid_body_params(infile,rgb_params);
-            set_rgbody_params(rgb_params,Hyper_surf(*s));
-        }
-    }
-    
-    fclose(infile);
+	fclose(infile);
 }
-
-/*
-extern void rgb_init(Front* front, RG_PARAMS* rgb_params)
-{
-        int dim = FT_Dimension();
-        if (dim == 1) return;
-
-        CURVE **c;
-        SURFACE **s;
-        char* inname = InName(front);
-
-        if (dim == 2)
-        {
-            for (c = front->interf->curves; c && *c; ++c)
-            {
-                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*c));
-                }
-            }
-        }
-        else
-        {
-            for (s = front->interf->surfaces; s && *s; ++s)
-            {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*s));
-                }
-            }
-        }
-
-}*/       /* end rgb_init */
-
 
 static void initSingleRigidBody(
 	FILE *infile,
@@ -206,7 +133,7 @@ static void init_rigid_sphere(
         (void) printf("The default is Movable (M)\n");
         w_type = MOVABLE_BODY_BOUNDARY;
         neg_comp = SOLID_COMP;
-        pos_comp = GAS_COMP2;
+        pos_comp = LIQUID_COMP2;
         if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
         {
             fscanf(infile,"%s",string);
@@ -459,23 +386,61 @@ static void surf_enlargement(
         }
 }
 
+//TODO: should be combined with InitRigidBody()
+extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
+{
+        int dim = FT_Dimension();
+        if (dim == 1) return;
+
+        CURVE **c;
+        SURFACE **s;
+        char* inname = InName(front);
+
+        if (dim == 2)
+        {
+            for (c = front->interf->curves; c && *c; ++c)
+            {
+                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
+                {
+                    prompt_for_rigid_body_params(dim,inname,rgb_params);
+                    set_rgbody_params(rgb_params,Hyper_surf(*c));
+                }
+            }
+        }
+        else
+        {
+            for (s = front->interf->surfaces; s && *s; ++s)
+            {
+                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+                {
+                    prompt_for_rigid_body_params(dim,inname,rgb_params);
+                    set_rgbody_params(rgb_params,Hyper_surf(*s));
+                }
+            }
+        }
+
+}       /* end rgb_init */
+
 static void prompt_for_rigid_body_params(
-        FILE* infile,
+        int dim,
+        char* inname,
         RG_PARAMS* rgb_params)
 {
+        int i;
         char msg[100],s[100],ss[100];
-        static int count = 1;
-
-        int dim = rgb_params->dim;
+        FILE *infile = fopen(inname,"r");
         boolean is_preset_motion = NO;
-        double mag_dir = 0.0;
+        double mag_dir;
+        static int count = 1;
 
         if (debugging("rgbody"))
             (void) printf("Enter prompt_for_rigid_body_params()\n");
 
-        if (count == 1)
+        if( count == 1 )
         {
+            rgb_params->dim = dim;
             rgb_params->no_fluid = NO;
+
             if (CursorAfterStringOpt(infile,
                 "Entering yes to turn off fluid solver: "))
             {
@@ -487,8 +452,6 @@ static void prompt_for_rigid_body_params(
         }
 
         rgb_params->body_index = count++;
-        if (rgb_params->is_fixed) return;
-
         sprintf(s, "For rigid body %d", rgb_params->body_index);
         CursorAfterString(infile, s); printf("\n");
         long idpos = ftell(infile);
@@ -561,7 +524,7 @@ static void prompt_for_rigid_body_params(
         {
             mag_dir = 0.0;
             CursorAfterString(infile,"Enter the direction of motion:");
-            for (int i = 0; i < dim; ++i)
+            for (i = 0; i < dim; ++i)
             {
                 fscanf(infile,"%lf",&rgb_params->translation_dir[i]);
                 (void) printf("%f ",rgb_params->translation_dir[i]);
@@ -569,7 +532,7 @@ static void prompt_for_rigid_body_params(
             }
             (void) printf("\n");
             mag_dir = sqrt(mag_dir);
-            for (int i = 0; i < dim; ++i)
+            for (i = 0; i < dim; ++i)
                 rgb_params->translation_dir[i] /= mag_dir;
             (void) fseek(infile,idpos,SEEK_SET);
         }
@@ -593,7 +556,7 @@ static void prompt_for_rigid_body_params(
         {
             sprintf(msg,"Enter the initial center of mass for rigid body:");
             CursorAfterString(infile,msg);
-            for (int i = 0; i < dim; ++i)
+            for (i = 0; i < dim; ++i)
             {
                 fscanf(infile,"%lf",&rgb_params->center_of_mass[i]);
                 (void) printf("%f ",rgb_params->center_of_mass[i]);
@@ -603,7 +566,7 @@ static void prompt_for_rigid_body_params(
             (void) printf("\n");
             sprintf(msg,"Enter the initial center of mass velocity:");
             CursorAfterString(infile,msg);
-            for (int i = 0; i < dim; ++i)
+            for (i = 0; i < dim; ++i)
             {
                 fscanf(infile,"%lf",&rgb_params->cen_of_mass_velo[i]);
                 (void) printf("%f ",rgb_params->cen_of_mass_velo[i]);
@@ -620,7 +583,7 @@ static void prompt_for_rigid_body_params(
             {
                 mag_dir = 0.0;
                 CursorAfterString(infile,"Enter the direction of rotation:");
-                for (int i = 0; i < dim; ++i)
+                for (i = 0; i < dim; ++i)
                 {
                     fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
                     (void) printf("%f ",rgb_params->rotation_dir[i]);
@@ -628,18 +591,18 @@ static void prompt_for_rigid_body_params(
                 }
                 (void) printf("\n");
                 mag_dir = sqrt(mag_dir);
-                for (int i = 0; i < dim; ++i)
+                for (i = 0; i < dim; ++i)
                     rgb_params->rotation_dir[i] /= mag_dir;
                 /* initialize the euler parameters */
                 rgb_params->euler_params[0] = 1.0;
-                for (int i = 1; i < 4; ++i)
+                for (i = 1; i < 4; ++i)
                     rgb_params->euler_params[i] = 0.0;
             }
             (void) fseek(infile,idpos,SEEK_SET);
 
             /* Center of axis is the coordinate of a point on the axis */
             CursorAfterString(infile,"Enter rotation center:");
-            for (int i = 0; i < dim; ++i)
+            for (i = 0; i < dim; ++i)
             {
                 fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
                 (void) printf("%f ",rgb_params->rotation_cen[i]);
@@ -655,7 +618,7 @@ static void prompt_for_rigid_body_params(
             if (dim == 3)
             {
                 /* used to update the maximum speed in 3D cases */
-                for (int i = 0; i < dim; ++i)
+                for (i = 0; i < dim; ++i)
                     rgb_params->p_angular_velo[i] = rgb_params->angular_velo
                                     * rgb_params->rotation_dir[i];
             }
@@ -672,7 +635,7 @@ static void prompt_for_rigid_body_params(
                 {
                     sprintf(msg,"Enter rotation center:");
                     CursorAfterString(infile,msg);
-                    for (int i = 0; i < dim; ++i)
+                    for (i = 0; i < dim; ++i)
                     {
                         fscanf(infile,"%lf",&rgb_params->rotation_cen[i]);
                         (void) printf("%f ",rgb_params->rotation_cen[i]);
@@ -694,14 +657,14 @@ static void prompt_for_rigid_body_params(
                     {
                         sprintf(msg,"Enter direction of the axis:");
                         CursorAfterString(infile,msg);
-                        for (int i = 0; i < dim; ++i)
+                        for (i = 0; i < dim; ++i)
                         {
                             fscanf(infile,"%lf",&rgb_params->rotation_dir[i]);
                             (void) printf("%f ",rgb_params->rotation_dir[i]);
                             mag_dir += sqr(rgb_params->rotation_dir[i]);
                         }
                         mag_dir = sqrt(mag_dir);
-                        for (int i = 0; i < dim; ++i)
+                        for (i = 0; i < dim; ++i)
                             rgb_params->rotation_dir[i] /= mag_dir;
                         (void) printf("\n");
                     }
@@ -714,16 +677,14 @@ static void prompt_for_rigid_body_params(
             rgb_params->motion_type == ROTATION)
         {
             CursorAfterString(infile,"Enter the moment of inertial: ");
-            /*
             if (dim == 2)
             {
                 fscanf(infile,"%lf",&rgb_params->moment_of_inertial);
                 (void) printf("%f\n",rgb_params->moment_of_inertial);
             }
-            else if (dim == 3)*/
-            if (dim == 3)
+            else if (dim == 3)
             {
-                for (int i = 0; i < dim; ++i)
+                for (i = 0; i < dim; ++i)
                 {
                     fscanf(infile,"%lf",&rgb_params->p_moment_of_inertial[i]);
                     (void) printf("%f ",rgb_params->p_moment_of_inertial[i]);
@@ -733,16 +694,14 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
 
             CursorAfterString(infile,"Enter initial angular velocity: ");
-            /*
             if (dim == 2)
             {
                 fscanf(infile,"%lf",&rgb_params->angular_velo);
                 (void) printf("%f\n",rgb_params->angular_velo);
             }
-            else if (dim == 3)*/
-            if (dim == 3)
+            else if (dim == 3)
             {
-                for (int i = 0; i < dim; ++i)
+                for (i = 0; i < dim; ++i)
                 {
                     fscanf(infile,"%lf",&rgb_params->p_angular_velo[i]);
                     (void) printf("%f ",rgb_params->p_angular_velo[i]);
@@ -750,7 +709,7 @@ static void prompt_for_rigid_body_params(
                 (void) printf("\n");
                 /* initialize the euler parameters */
                 rgb_params->euler_params[0] = 1.0;
-                for (int i = 1; i < 4; ++i)
+                for (i = 1; i < 4; ++i)
                     rgb_params->euler_params[i] = 0.0;
             }
             (void) fseek(infile,idpos,SEEK_SET);
@@ -769,11 +728,12 @@ static void prompt_for_rigid_body_params(
                 (void) printf("%s\n",s);
                 if (s[0] == 'y' || s[0] == 'Y')
                 {
-                    prompt_for_velocity_func(dim,infile,rgb_params);
+                    prompt_for_velocity_func(dim,inname,rgb_params);
                 }
             }
             (void) fseek(infile,idpos,SEEK_SET);
         }
+        fclose(infile);
 
         if (debugging("rgbody"))
             (void) printf("Leaving prompt_for_rigid_body_params()\n");
@@ -812,17 +772,57 @@ static void set_rgbody_params(
         }
 }       /* end set_rgbody_params */
 
+/*
+extern void rgb_modification(
+        Front *front,
+        RG_PARAMS* rgb_params
+        )
+{
+    int dim = FT_Dimension();
+    if (dim != 3) return;
+
+    SURFACE **s;
+    char* inname = InName(front);
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            //TODO: write new functions for modifications
+            //
+            //prompt_for_rigid_body_params(dim,inname,rgb_params);
+            //set_rgbody_params(rgb_params,Hyper_surf(*s));
+        }
+    }
+    
+}*/  /* end rgb_modification */
+
+//TODO: May eventually need to set other variables,
+//      and may want to be able to set them to a nonzero value.
+//      Was original idea behind rgb_modification(), this may
+//      end up taking its place.
+extern void resetRigidBodyVelocity(Front *front)
+{
+    SURFACE **s;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            for (int i = 0; i < 3; ++i)
+            {
+                center_of_mass_velo(hs)[i] = 0.0;
+            }
+        }
+    }
+}
+
 static void prompt_for_velocity_func(
         int dim,
-        FILE *infile,
+        char *inname,
         RG_PARAMS *rgb_params)
 {
-        clean_up(1);
-
-        //TODO: No need to bring in other iFluid data structures at this time..
-        //      eventually will attempt to unify the iFluid and cFluid interfaces.
-
-    /*
     FILE *infile = fopen(inname,"r");
     char s[100];
     int i;
@@ -864,11 +864,8 @@ static void prompt_for_velocity_func(
         clean_up(ERROR);
     }
     fclose(infile);
-    */
-
 }       /* end prompt_for_velocity_func */
 
-/*
 static void sine_vel_func(
         Front* front,
         POINTER vparams,
@@ -884,5 +881,5 @@ static void sine_vel_func(
         for (i = 0; i < dim; ++i)
             velo[i] = td_params->v_amp[i] * sin(td_params->omega*time
                         + td_params->phase);
-}*/       /* end sine_vel_func */
+}       /* end sine_vel_func */
 

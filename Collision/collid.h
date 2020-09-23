@@ -211,7 +211,7 @@ extern void printPointList(POINT**, const int);
 extern void createImpZone(POINT*[],int num = 4,bool first = NO);
 extern void makeSet(std::vector<CD_HSE*>&);
 void unsortHseList(std::vector<CD_HSE*>&);
-void unsort_surface_point(SURFACE *surf);
+//void unsort_surface_point(SURFACE *surf);
 
 POINT* findSet(POINT* p);
 POINT*& next_pt(POINT* p);

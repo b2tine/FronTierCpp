@@ -274,8 +274,8 @@ extern void initEllipticSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initParabolicSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initPlaneSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initAirbag(FILE*,Front*,LEVEL_FUNC_PACK*);
-extern void initRigidBody(Front*);
 extern void initIsolated3dCurves(Front*);
+extern void initRigidBody_OLD(Front*);//TODO: to be removed
 
 // afprop.cpp
 extern void airfoil_point_propagate(Front*,POINTER,POINT*,POINT*,
@@ -309,7 +309,6 @@ extern void second_order_elastic_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);
 extern void second_order_elastic_surf_propagate(Front*,double);
 extern void set_equilibrium_mesh(Front*);
-extern void unsort_surf_point(SURFACE*);
 extern void print_airfoil_stat(Front*,char*);
 extern void fixed_length_tan_curve_propagate(Front*,Front*,INTERFACE*,
                                 CURVE*,CURVE*,double);

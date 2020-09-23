@@ -103,8 +103,14 @@ int main(int argc, char **argv)
     if (debugging("trace")) 
         (void) printf("Passed read_iFparams()\n");
 
-
-	setInitialIntfcAF(&front,&level_func_pack,in_name);
+    //2d initialization using old method 
+    if (FT_Dimension() == 2)
+        setInitialIntfcAF(&front,&level_func_pack,in_name);
+    else
+        level_func_pack.pos_component = LIQUID_COMP2;
+       
+    //TODO: to be removed along with initRigidBody_OLD()
+	    //setInitialIntfcAF(&front,&level_func_pack,in_name);
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
@@ -112,6 +118,7 @@ int main(int argc, char **argv)
             initIsolated3dCurves(&front);
 	    
         initRigidBody(&front);
+            //initRigidBody_OLD(&front);
 	    rgb_init(&front,&rgb_params);
 	    
         if (f_basic.dim == 3 && debugging("trace"))

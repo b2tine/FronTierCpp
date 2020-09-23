@@ -2,8 +2,6 @@
 #define RIGIDBODY_H
 
 #include <FronTier.h>
-#include "cFluid.h"
-#include "fluid.h"
 
 struct RG_PARAMS
 {
@@ -25,14 +23,14 @@ struct RG_PARAMS
 	void	(*vel_func)(Front*,POINTER,double*,double*);
 	POINTER vparams;
     MOTION_TYPE motion_type;
-    bool is_fixed {false};
 };
 
 
 // rigidbody.cpp
-//extern void unsort_surf_point(SURFACE*);
-extern void initRigidBodies(Front *front);
-//extern void initRigidBody(Front *front);
-//extern void rgb_init(Front*,RG_PARAMS*);
+extern void initRigidBody(Front *front);
+extern void rgb_init(Front*,RG_PARAMS*);
+extern void resetRigidBodyVelocity(Front *front);
+//extern void rgb_modification(Front*,RG_PARAMS*);
+
 
 #endif
