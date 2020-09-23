@@ -36,6 +36,8 @@ For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 0
 Enter radius of the sphere: 0.5 0.5 0.5
+Type yes to use CGAL for rigid body: yes
+
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
