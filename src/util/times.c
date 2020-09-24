@@ -146,6 +146,7 @@ EXPORT void stop_clock(
 	    return;
 	if (cputime == NULL)
 	    return;
+
 	top--;
 	if (top < 0)
 	{
