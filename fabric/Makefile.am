@@ -57,5 +57,9 @@ clean-local:
 
 tagsfile:
 	ctags *.h *.cpp \
-		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp
+		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
+
+
+
+

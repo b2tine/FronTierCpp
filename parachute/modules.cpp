@@ -109,6 +109,7 @@ extern void initParachuteModules(Front *front)
 
 	initRigidBody(front);
 	rgb_init(front,rgb_params);
+    printRigidBodyMeshQuality(front);
 
 	CursorAfterString(infile,"Enter number of canopy surfaces:");
         fscanf(infile,"%d",&num_canopy);

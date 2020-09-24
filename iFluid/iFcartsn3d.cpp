@@ -1339,8 +1339,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    if (getInitialState != NULL)
 	    {
 	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
-		pres[i] = getPressure(front,coords,NULL);
-                phi[i] = getPhiFromPres(front,pres[i]);
+		    pres[i] = getPressure(front,coords,NULL);
+            phi[i] = getPhiFromPres(front,pres[i]);
 	    }
         }
 

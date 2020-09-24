@@ -1571,6 +1571,7 @@ static void get_time_dependent_params(
 	*params = (POINTER)td_params;	
 }	/* end get_time_dependent_params */
 
+//TODO: see addToEnergyFlux() below
 extern void recordBdryEnergyFlux(
 	Front *front,
 	char *out_name)
@@ -1628,6 +1629,8 @@ extern void recordBdryEnergyFlux(
 }	/* end recordBdryEnergyFlux */
 
 
+//TODO: Fix this.
+//     partial_x (e+p)u + partial_y (e+p)v + partial_z (e+p)w
 static void addToEnergyFlux(
 	RECT_GRID *rgr,
 	HYPER_SURF *hs,
@@ -1792,7 +1795,9 @@ extern double getPressure(
         double rho = iFparams->rho2;
         boolean hyper_surf_found = NO;
 
+        //TODO: Can we implement a better scheme?
         return 0.0;
+
         pres0 = 1.0;
         if (dim == 2)
         {

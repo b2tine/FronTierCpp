@@ -819,6 +819,54 @@ extern void resetRigidBodyVelocity(Front *front)
     }
 }
 
+extern void printRigidBodyMeshQuality(Front* front)
+{
+    SURFACE** s;
+    TRI* t;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(*s) == NEUMANN_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            int rgb_index = body_index(hs);
+            int n_tri = I_NumOfSurfTris(*s);
+            int n_pts = I_NumOfSurfPoints(*s);
+
+            printf("For rigid body index %d:\n",rgb_index);
+            printf("ntri = %d  npts = %d\n",n_tri,n_pts);
+
+            double ave_len = 0.0;
+            double min_len = HUGE;
+            double max_len = -HUGE;
+
+            int count = 0;
+            surf_tri_loop(*s,t)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    t->side_length0[i] = separation(Point_of_tri(t)[i],
+                            Point_of_tri(t)[(i+1)%3],3);
+
+                    if (t->side_length0[i] > max_len )
+                        max_len = t->side_length0[i];
+                    if (t->side_length0[i] < min_len )
+                        min_len = t->side_length0[i];
+                    
+                    ave_len += t->side_length0[i];
+                    count++;
+                }
+            }
+            ave_len /= (double)count;
+            
+            printf("min_len = %g\n",min_len);
+            printf("max_len = %g\n",max_len);
+            printf("ave_len = %g\n\n",ave_len);
+        }
+    }
+}
+
 static void prompt_for_velocity_func(
         int dim,
         char *inname,

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #include <front/fdecs.h>		/* includes int.h, table.h */
+#include <fenv.h>
 
 LOCAL 	boolean build_linear_element(INTRP_CELL*,double*);
 LOCAL 	void collect_cell_ptst(INTRP_CELL*,int*,double*,COMPONENT,Front*,
@@ -3295,6 +3296,7 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	HYPER_SURF         **phs,
 	int range)
 {
+    feenableexcept(FE_ALL_EXCEPT);
 	return nearest_interface_point_within_range(coords,comp,front->interf,
             NO_BOUNDARIES,NULL,p,t,phse,phs,range);
 	/*return nearest_interface_point_within_range(coords,comp,front->interf,
