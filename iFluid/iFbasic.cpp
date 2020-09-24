@@ -1521,8 +1521,10 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
+    /*
 	if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
+    */
 
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
@@ -1537,20 +1539,25 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    index  = d_index2d(i,j,top_gmax);			
 	    comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
-
-	    getRectangleCenter(index, center);
-	    status = FT_FindNearestIntfcPointInRange(front,comp,center,
+ 
+        getRectangleCenter(index, center);
+	    
+        /*
+        status = FT_FindNearestIntfcPointInRange(front,comp,center,
 				NO_BOUNDARIES,point,t,&hse,&hs,range);
+        */
+
+        int icoords[MAXD];
+        icoords[0] = i;
+        icoords[1] = j;
+        mu[index] = 0.0;
 
 	    if (iFparams->use_eddy_visc == YES)
 	    {
-            int icoords[MAXD];
-            icoords[0] = i;
-            icoords[1] = j;
-            mu[index] = 0.0;
             switch (iFparams->eddy_visc_model)
             {
-            case BALDWIN_LOMAX:
+                /*
+            case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
                 if (status == YES &&
                 (wave_type(hs) == NEUMANN_BOUNDARY ||
                  wave_type(hs) == ELASTIC_BOUNDARY))
@@ -1560,6 +1567,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                     first = NO;
                 }
                 break;
+                */
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
                 break;
@@ -1586,30 +1594,10 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             }
 	    
+            //Do not consider case of turbulence and surface tension
+            //simultaneously right now.
+            continue;
         }
-        else if (status == YES && 
-            ifluid_comp(positive_component(hs)) &&
-            ifluid_comp(negative_component(hs)) &&
-            positive_component(hs) != negative_component(hs))
-	    {
-		sign = (comp == m_comp[0]) ? -1 : 1;
-		D = smoothedDeltaFunction(center,point);
-		H = smoothedStepFunction(center,point,sign);
-		mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
-		rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
-		
-            if (m_sigma != 0.0 && D != 0.0)
-            {
-	            for (l = 0; l < dim; ++l) force[l] = 0.0;
-
-                surfaceTension(center,hse,hs,force,m_sigma);
-                for (l = 0; l < dim; ++l)
-                {
-                force[l] /= -rho[index];
-                f_surf[l][index] = force[l];
-                }
-            }
-	    }
 	    else
 	    {
             switch (comp)
@@ -1624,7 +1612,38 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             }
 	    }
+
+        if (iFparams->with_surface_tension)
+        {
+            status = FT_FindNearestIntfcPointInRange(front,comp,center,
+                    NO_BOUNDARIES,point,t,&hse,&hs,range);
+
+            if (status == YES && 
+                    ifluid_comp(positive_component(hs)) &&
+                    ifluid_comp(negative_component(hs)) &&
+                    positive_component(hs) != negative_component(hs))
+            {
+                sign = (comp == m_comp[0]) ? -1 : 1;
+                D = smoothedDeltaFunction(center,point);
+                H = smoothedStepFunction(center,point,sign);
+                mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
+                rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
+            
+                if (m_sigma != 0.0 && D != 0.0)
+                {
+                    for (l = 0; l < dim; ++l) force[l] = 0.0;
+
+                    surfaceTension(center,hse,hs,force,m_sigma);
+                    for (l = 0; l < dim; ++l)
+                    {
+                    force[l] /= -rho[index];
+                    f_surf[l][index] = force[l];
+                    }
+                }
+            }
+        }
 	}
+
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
@@ -2306,8 +2325,10 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
+    /*
     if (iFparams->use_eddy_visc)
 	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
+    */
 
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
@@ -2316,7 +2337,10 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         mu_t = computeMuOfKepsModel();
     }
 
-	for (k = kmin; k <= kmax; k++)
+    //TODO: Turbulence and Surface Tension need to be seperated,
+    //      Not an if or else situation.
+	
+    for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
@@ -2328,20 +2352,22 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         //TODO: compare to 2d
         //status = FT_FindNearestIntfcPointInRange(front,comp,center,
           //      INCLUDE_BOUNDARIES,point,t,&hse,&hs,range);
-        status = FT_FindNearestIntfcPointInRange(front,comp,center,
-                NO_BOUNDARIES,point,t,&hse,&hs,range);
+        /*status = FT_FindNearestIntfcPointInRange(front,comp,center,
+                NO_BOUNDARIES,point,t,&hse,&hs,range);*/
+
+        int icoords[MAXD];
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
+        mu[index] = 0.0;
 
 	    if (iFparams->use_eddy_visc == YES)
         {
-            int icoords[MAXD];
-            icoords[0] = i;
-            icoords[1] = j;
-            icoords[2] = k;
-            mu[index] = 0.0;
-
             switch (iFparams->eddy_visc_model)
             {
-            case BALDWIN_LOMAX:
+                /*
+                //TODO: Add algebraic model option
+            case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
                 if (status == YES &&
                     (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == ELASTIC_BOUNDARY))
@@ -2351,6 +2377,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                     first = NO;
                 }
                 break;
+                */
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
                 break;
@@ -2377,43 +2404,54 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 rho[index] = m_rho[1];
                 break;
             }
+
+            //Do not consider case of turbulence and surface tension
+            //simultaneously right now.
+            continue;
         }
-        else if (status  == YES &&
+	    else
+	    {
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+	    }
+
+        if (iFparams->with_surface_tension)
+        {
+            status = FT_FindNearestIntfcPointInRange(front,comp,center,
+                    NO_BOUNDARIES,point,t,&hse,&hs,range);
+
+            if (status  == YES &&
                 ifluid_comp(positive_component(hs)) &&
                 ifluid_comp(negative_component(hs)) && 
                 positive_component(hs) != negative_component(hs))
-        {
-		    sign = (comp == m_comp[0]) ? -1 : 1;
-            D = smoothedDeltaFunction(center,point);
-            H = smoothedStepFunction(center,point,sign);
-            mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
-            rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
-
-            if (m_sigma != 0.0 && D != 0.0)
             {
-                for (l = 0; l < dim; ++l) force[l] = 0.0;
-                surfaceTension(center,hse,hs,force,m_sigma);
-                for (l = 0; l < dim; ++l)
+                sign = (comp == m_comp[0]) ? -1 : 1;
+                D = smoothedDeltaFunction(center,point);
+                H = smoothedStepFunction(center,point,sign);
+                mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
+                rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H;
+
+                if (m_sigma != 0.0 && D != 0.0)
                 {
-                    force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
+                    for (l = 0; l < dim; ++l) force[l] = 0.0;
+                    surfaceTension(center,hse,hs,force,m_sigma);
+                    for (l = 0; l < dim; ++l)
+                    {
+                        force[l] /= -rho[index];
+                        f_surf[l][index] = force[l];
+                    }
                 }
             }
-	    }
-	    else
-	    {
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] = m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] = m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
-	    }
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -3205,7 +3243,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 {
 	double coords[MAXD];
 	int *icoords;
-	int i,j,size = (int)cell_center.size();
+	int j;
 	int id;
 	STATE state;
 	int ave_comp;
@@ -3218,13 +3256,15 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 	double *phi = field->phi;
 	
 	setDomain();
-	for (i = 0; i < size; i++)
-        {
+
+    int size = (int)cell_center.size();
+	for (int i = 0; i < size; i++)
+    {
             icoords = cell_center[i].icoords;
             if (cell_center[i].comp != -1 &&
                 cell_center[i].comp != top_comp[i])
             {
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    coords[j] = top_L[j] + icoords[j]*top_h[j];
 		id = d_index(icoords,top_gmax,dim);
 		if (fabs(cell_center[i].comp - top_comp[i]) != 2)
@@ -3249,7 +3289,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		    continue;
 
 		dist = 0.0;
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    dist += sqr(coords[j] - p_intfc[j]);
 		dist = sqrt(dist);
 		if (debugging("set_crossed_state"))
@@ -3279,11 +3319,12 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		    printf("Intfc pressure = %f  Intfc phi = %f\n",
 				state.pres,state.phi);
 		}
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    vel[j][id] = state.vel[j];
         //double speed = sqrt(sqr(vel[0][id]) + sqr(vel[1][id]) + sqr(vel[2][id]));
 	    }
-        }
+    }
+
 	FT_FreeGridIntfc(front);
 	FT_MakeGridIntfc(front);
 }	/* end applicationSetStates */

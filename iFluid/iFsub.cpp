@@ -1241,6 +1241,7 @@ extern void read_iFparams(
             fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
             (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
 	}
+
 	iFparams->use_eddy_visc = NO;
         if (CursorAfterStringOpt(infile,
 		"Enter yes to use eddy viscosity:"))
@@ -1260,6 +1261,7 @@ extern void read_iFparams(
 	    	(void) printf("%s\n",string);
 		switch (string[0])
 		{
+            /*
 		case 'b':
 		case 'B':
 		    iFparams->eddy_visc_model = BALDWIN_LOMAX;
@@ -1268,6 +1270,7 @@ extern void read_iFparams(
             	    fscanf(infile,"%lf",&iFparams->ymax);
             	    (void) printf("%f\n",iFparams->ymax);
 		    break;
+            */
 		case 'm':
 		case 'M':
 		    iFparams->eddy_visc_model = MOIN;
@@ -1286,7 +1289,23 @@ extern void read_iFparams(
 		}
 	    }
 	}
-    
+   
+    if (CursorAfterStringOpt(infile,"Enter yes for surface tension:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            iFparams->with_surface_tension = true;
+            CursorAfterString(infile,"Enter surface tension:");
+            fscanf(infile,"%lf",&iFparams->surf_tension);
+            printf("%f\n",iFparams->surf_tension);
+            CursorAfterString(infile,"Enter factor of smoothing radius:");
+            fscanf(infile,"%lf",&iFparams->smoothing_radius);
+            printf("%f\n",iFparams->smoothing_radius);
+        }
+    }
+
         for (i = 0; i < dim; ++i)
             iFparams->gravity[i] = 0.0;
         if (CursorAfterStringOpt(infile,"Enter gravity:"))

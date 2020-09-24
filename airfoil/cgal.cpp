@@ -1844,6 +1844,7 @@ static void setSurfZeroMesh(
 	}
 }	/* end setSurfZeroMesh */
 
+//Compare to set_equilibrium_mesh3d()
 static void setCurveZeroLength(
 	CURVE *curve,
 	double len_fac)

@@ -1460,35 +1460,43 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 // 		computeSourceTerm();
 void KE_CARTESIAN::solve(double dt)
 {
-	if (debugging("trace")) printf("Entering solve()\n");
-	start_clock("solve");
+	if (debugging("keps_solve")) printf("Entering keps_solve()\n");
+	start_clock("keps_solve");
 	
     m_dt = dt;
 
-	if (front->time <= eqn_params->t0) return;
+	if (front->time <= eqn_params->t0)
+    {
+	    if (debugging("keps_solve"))
+        {
+            printf("Turbulence activation time not yet reached.\n");
+            printf("Leaving keps_solve()\n");
+        }
+        return;
+    }
 
 	setDomain();
-    if (debugging("trace")) printf("Passing setDomain()\n");
+    if (debugging("keps_solve")) printf("Passing setDomain()\n");
 
 	setComponent();
-	if (debugging("trace")) printf("Passing setComponent()\n");
+	if (debugging("keps_solve")) printf("Passing setComponent()\n");
 
     //computes the production term Pk
     computeSource();
-    if (debugging("trace")) printf("Passing computeSource()\n");
+    if (debugging("keps_solve")) printf("Passing computeSource()\n");
 
     //TODO: rename this -- misleading
 	computeAdvection();
-	if (debugging("trace")) printf("Passing computeAdvection()\n");
+	if (debugging("keps_solve")) printf("Passing computeAdvection()\n");
 
 	computeMuTurb();
-	if (debugging("trace")) printf("Passing computeMuTurb()\n");
+	if (debugging("keps_solve")) printf("Passing computeMuTurb()\n");
 
 	//setAdvectionDt();
-	//if (debugging("trace")) printf("Passing setAdvectionDt()\n");
+	//if (debugging("keps_solve")) printf("Passing setAdvectionDt()\n");
 
-	stop_clock("solve");
-	if (debugging("trace")) printf("Leaving solve()\n");
+	stop_clock("keps_solve");
+	if (debugging("keps_solve")) printf("Leaving keps_solve()\n");
 }
 
 static void printField(double *var,
@@ -1759,7 +1767,9 @@ void KE_CARTESIAN::computeMuTurb()
                     Cmu*pow(field->k[index],1.5)/field->eps[index];
             }
             
-            double nu_t = std::max(0.0001*nu,
+            //TODO: make 0.001 a variable fraction
+            double nu_min = 0.001*nu;
+            double nu_t = std::max(nu_min,
                     limited_mix_length*sqrt(field->k[index]));
             
             field->mu_t[index] = nu_t*rho;
@@ -1810,7 +1820,9 @@ void KE_CARTESIAN::computeMuTurb()
                     Cmu*pow(field->k[index],1.5)/field->eps[index];
             }
             
-            double nu_t = std::max(0.0001*nu,
+            //TODO: make 0.001 a variable fraction
+            double nu_min = 0.001*nu;
+            double nu_t = std::max(nu_min,
                     limited_mix_length*sqrt(field->k[index]));
             
             field->mu_t[index] = nu_t*rho;
@@ -2974,13 +2986,13 @@ void KE_CARTESIAN::read_params(
 	fscanf(infile,"%lf",&eqn_params->mu0);
 	(void) printf("%f\n",eqn_params->mu0);
 
-	CursorAfterStringOpt(infile,"Enter y+:");
-	fscanf(infile,"%lf",&eqn_params->y_p);
-	(void) printf("%f\n",eqn_params->y_p);
-
     CursorAfterStringOpt(infile,"Enter B:");
     fscanf(infile,"%lf",&eqn_params->B);
     (void) printf("%f\n",eqn_params->B);
+
+	CursorAfterStringOpt(infile,"Enter y+:");
+	fscanf(infile,"%lf",&eqn_params->y_p);
+	(void) printf("%f\n",eqn_params->y_p);
 
     CursorAfterStringOpt(infile,"Enter time to active turbulence model:");
     fscanf(infile,"%lf",&eqn_params->t0);

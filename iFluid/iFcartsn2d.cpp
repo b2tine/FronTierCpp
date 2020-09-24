@@ -1077,10 +1077,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	FT_MakeGridIntfc(front);
 	setDomain();
 
-        m_rho[0] = iFparams->rho1;
-        m_rho[1] = iFparams->rho2;
-        m_mu[0] = iFparams->mu1;
-        m_mu[1] = iFparams->mu2;
+    m_rho[0] = iFparams->rho1;
+    m_rho[1] = iFparams->rho2;
+    m_mu[0] = iFparams->mu1;
+    m_mu[1] = iFparams->mu2;
 	m_comp[0] = iFparams->m_comp1;
 	m_comp[1] = iFparams->m_comp2;
 	m_smoothing_radius = iFparams->smoothing_radius;

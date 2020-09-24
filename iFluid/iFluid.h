@@ -147,9 +147,12 @@ struct IF_PARAMS
 	double U2[MAXD];
 	double gravity[MAXD];
 	double U_ambient[MAXD];
+
+    bool with_surface_tension {false};
 	double surf_tension;
 	double smoothing_radius;
-	double ub_speed;
+	
+    double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */
 	COMPONENT m_comp1;
 	COMPONENT m_comp2;
@@ -165,7 +168,7 @@ struct IF_PARAMS
 	EDDY_VISC eddy_visc_model;
 	POINTER eddy_params;
 	double  Amplitute; 	/*Amplitute of velocity*/
-	double	ymax;	   	/* Maximum distance in Baldwin-Lomax model */
+	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
 	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
         
     double  porous_coeff[2];   /*dp = a*v + b*v^2*/
