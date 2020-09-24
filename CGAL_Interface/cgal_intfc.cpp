@@ -50,7 +50,9 @@ extern void CGAL_MakeEllipsoidalSurf(
         //      in remain cgal meshing functions.
         double epsilon = 0.16;
         double max_lfs = max_radius;
-        epsilon /= (int)refinement_level;
+
+        epsilon /= (double)refinement_level;
+        max_lfs *= (double)refinement_level;
 
         CGAL::Surface_mesh_default_criteria_3<Tr>
             cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);

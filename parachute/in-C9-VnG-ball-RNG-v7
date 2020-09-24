@@ -1,8 +1,8 @@
 *************Time parameters*************
 Max time: 15.0
 Max step: 5000
-Print interval: 0.025
-Movie frame interval: 0.025
+Print interval: 0.05
+Movie frame interval: 0.05
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -11,7 +11,7 @@ Type yes to turn off auto-redistribution: y
 Domain limit in 0-th dimension: -4 16
 Domain limit in 1-th dimension: -4 16
 Domain limit in 2-th dimension: -12 24
-Computational grid: 115 115 200
+Computational grid: 100 100 180
 
 *************Boundary parameters*************
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
@@ -47,12 +47,12 @@ For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6.0 6.0 1.0
 Enter radius of the sphere: 0.5 0.5 0.5
-Type yes to use CGAL for rigid body: yes
+Type yes to use CGAL for rigid body: no
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 100
+Enter the total mass for rigid body: 200
 Enter the initial center of mass for rigid body: 6.0 6.0 1.0
 Enter the initial center of mass velocity: 0 0 0
 
@@ -80,7 +80,7 @@ Enter viscous parameter: 604.333
 Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 100
+Enter payload: 200
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
@@ -132,12 +132,12 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: max_speed
-Enter the debugging string: XPETSc
+Enter the debugging string: CLOCK
 
 Enter the debugging string: Xmake_tri_lists
 Enter the debugging string: Xmake_tri_comp_lists
 
-Enter the debugging string: XCLOCK
+Enter the debugging string: XPETSc
 Enter the debugging string: Xtrace
 Enter the debugging string: Xno_optimize
 
