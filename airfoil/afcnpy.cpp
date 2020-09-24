@@ -2061,10 +2061,14 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
         if (myid == owner_id)
         {
             if (FT_Dimension() == 3)
+            {
+                start_clock("resolveCollision");
                 collision_solver->resolveCollision();
+                stop_clock("resolveCollision");
+            }
         }
         setSpecialNodeForce(fr,geom_set.kl);
-	    //compute_center_of_mass_velo(&geom_set);
+	    compute_center_of_mass_velo(&geom_set);
 
         delete collision_solver;
     }

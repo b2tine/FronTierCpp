@@ -22,7 +22,7 @@ public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
-	std::map< int, std::vector<double> > mrg_com;
+	std::map<int,std::vector<double>> mrg_com;
 	
     int build_count_pre = 1;
     int build_count_col = 1;
@@ -171,6 +171,7 @@ private:
     void resetPositionCoordinates();
 	void updateFinalPosition();
 	void updateFinalVelocity();
+    void updateFinalStates();
 	void updateAverageVelocity();
 	void updateExternalImpulse();
 	void computeImpactZone();
