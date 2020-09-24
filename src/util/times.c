@@ -118,12 +118,12 @@ EXPORT void start_clock(
 
 	if (cputime == NULL)
 	{
-	    MAX_TIMES = 40;
+	    MAX_TIMES = 50;
 	    cputime = (double*)malloc(MAX_TIMES*sizeof(double));
 	    zero_scalar(cputime,MAX_TIMES*sizeof(double));
 	}
 
-	if (top >= MAX_TIMES)
+	if (top > MAX_TIMES - 1)
 	{
         top++;
 	    (void) printf("ERROR: start_clock(%s): CLOCK STACK FULL\n",s);
@@ -152,7 +152,7 @@ EXPORT void stop_clock(
 	    (void) printf("ERROR: stop_clock(%s): CLOCK STACK EMPTY\n",s);
 	    top = 0;
 	}
-	else if (top >= MAX_TIMES) 
+	else if (top > MAX_TIMES - 1) 
 	    (void) printf("ERROR: stop_clock(%s): CLOCK STACK FULL\n",s);
 	else
 	{
