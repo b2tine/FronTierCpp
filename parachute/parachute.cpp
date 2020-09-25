@@ -237,8 +237,7 @@ void airfoil_driver(Front *front,
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
-            //FT_RelinkGlobalIndex(front);
-	    FT_InteriorPropagate(front);
+        FT_RelinkGlobalIndex(front);
 	    
         if (!af_params->no_fluid)
 	    {
@@ -246,8 +245,8 @@ void airfoil_driver(Front *front,
 	    }
 	    print_airfoil_stat(front,out_name);
 	    
-        //if (ReSetTime)
-          //  setSpecialNodeForce(front,af_params->kl);
+        if (ReSetTime)
+            setSpecialNodeForce(front,af_params->kl);
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
@@ -259,7 +258,7 @@ void airfoil_driver(Front *front,
 	}
 	else
 	{
-	    //setSpecialNodeForce(front,af_params->kl);
+	    setSpecialNodeForce(front,af_params->kl);
 	    FT_SetOutputCounter(front);
 	}
 
