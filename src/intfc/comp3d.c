@@ -2592,6 +2592,330 @@ LIB_LOCAL boolean make_tri_lists(
 	return status;
 }		/*end make_tri_lists*/
 
+
+enum { END_BOND = -1 }; /* Any integer that cannot be a grid block index */
+LOCAL int total_num_of_bonds;	/* Computes sum of num_of_bonds[iy][ix] */
+LOCAL int *Bond_blocks,		/* Temporary Array */	
+	  *bond_blocks;		/* Points to temporary array */
+static	int bcount,bmax_size;
+
+LIB_LOCAL boolean make_bond_lists3d(
+	INTERFACE	*intfc)
+{
+	boolean		status;
+	int		ix,iy,iz;
+	CURVE		*c;
+	BOND		*b;
+	struct Table	*T;
+	RECT_GRID	*grid;
+#if defined(OLD_BOND_BLOCKS)
+	double		Length;
+#else /* defined(OLD_BOND_BLOCKS) */
+	double		hx, hy, hz, nlx, nly, nlz;
+#endif /* defined(OLD_BOND_BLOCKS) */
+
+	if (DEBUG) (void) printf("Entered make_bond_lists()\n");
+	if ((T = table_of_interface(intfc)) == NULL)
+	{
+	    (void) printf("WARNING in make_bond_lists(), "
+	                  "table_of_interface = NULL\n");
+	    return FUNCTION_FAILED;
+	}
+	grid = &T->rect_grid;
+
+			/* Free old storage */
+
+	if (T->num_of_bonds3d != NULL)
+	    vmfree(T->num_of_bonds3d);
+	if (T->bondstore != NULL)
+	    vmfree(T->bondstore);
+	if (T->curvestore != NULL)
+	    vmfree(T->curvestore);
+	//if (T->compon2d != NULL)
+	  //  vmfree(T->compon2d);
+	if (T->bonds3d != NULL)
+	    vmfree(T->bonds3d);
+	if (T->curves3d != NULL)
+	   vmfree(T->curves3d);
+
+			/* Create a Grid if Needed: */
+
+	if (!T->fixed_grid)
+	    set_topological_grid(intfc,(RECT_GRID *)NULL);
+
+
+		/* Allocate New num_of_bonds[][], compon2d[][]: */
+	
+	tri_array(&T->num_of_bonds,grid->gmax[2],grid->gmax[1],grid->gmax[0],INT);
+	if (T->num_of_bonds3d == NULL)
+	{
+	    (void) printf("WARNING in make_bond_lists(), "
+	                  "can not allocate T->num_of_bonds\n");
+	    return FUNCTION_FAILED;
+	}
+	/* NOTE:
+	 * matrix returns data initialized to 0, so 
+	 * T->num_of_bonds3d[k][j][i] = 0 for all i, j, k initially
+	 */
+	
+    /*
+    bi_array(&T->compon2d,grid->gmax[1],grid->gmax[0],sizeof(COMPONENT));
+	if (T->compon2d == NULL)
+	{
+	    (void) printf("WARNING in make_bond_lists(), matrix failed\n"
+	                  "can not allocate T->compon2d\n");
+	    return FUNCTION_FAILED;
+	}
+	if (DEBUG)
+	    (void) printf("T->num_of_bonds, T->compon2d allocated\n");
+	for (iy = 0; iy < grid->gmax[1]; ++iy)
+	for (ix = 0; ix < grid->gmax[0]; ++ix)
+	    T->compon2d[iy][ix] = NO_COMP;
+
+
+		/* Find Length of and Allocate Bond_blocks array: */
+
+#if defined(OLD_BOND_BLOCKS)
+						/* Find intfc length: */
+	Length = 0.0;
+	(void) next_bond(intfc,NULL,NULL);
+	while (next_bond(intfc,&b,&c))
+	    Length += bond_length(b);
+
+	bmax_size = 3*intfc->num_points +
+			(int)(4*Length/min3(grid->h[0],grid->h[1],grid->h[2]));
+#else /* defined(OLD_BOND_BLOCKS) */
+	hx = grid->h[0];
+    hy = grid->h[1];
+    hz = grid->h[2];
+	bmax_size = 0;
+	(void) next_bond(intfc,NULL,NULL);
+	while (next_bond(intfc,&b,&c))
+	{
+	    nlx = fabs(Coords(b->end)[0] - Coords(b->start)[0])/hx;
+	    nly = fabs(Coords(b->end)[1] - Coords(b->start)[1])/hy;
+	    nlz = fabs(Coords(b->end)[2] - Coords(b->start)[2])/hz;
+	    bmax_size += (int) (nlx + nly + nlz);
+	}
+	bmax_size = 7*intfc->num_points + 2*bmax_size;
+#endif /* defined(OLD_BOND_BLOCKS) */
+
+							/* See Lemma 1 */
+	uni_array(&Bond_blocks,bmax_size,INT); 
+	if (Bond_blocks == NULL)  
+	{
+	    (void) printf("WARNING in make_bond_lists(), "
+	                  "can not allocate Bond_blocks\n");
+	    return FUNCTION_FAILED;
+	}
+	bond_blocks = Bond_blocks;
+
+		/* Fill the num_of_bonds[][] and Bond_square arrays: */
+
+	total_num_of_bonds = 0;
+	bcount = 0;
+	(void) next_bond(intfc,NULL,NULL);
+	while (next_bond(intfc,&b,&c))
+	{
+        //TODO: write blocks_bond3d().
+        //      See blocks_on_tri()
+	    if (blocks_on_bond3d(b,c,T->num_of_bonds3d,grid) ==
+		FUNCTION_FAILED)
+	    {
+		(void) printf("WARNING in make_bond_lists(), "
+		              "blocks_on_bond() failed\n");
+		return FUNCTION_FAILED;
+	    }
+        }
+
+			/* Assign bonds[][] and curves[][]: */
+	status=set_bond_and_curve_list_pointers3d(T,grid->gmax[0],grid->gmax[1],grid->gmax[2]);
+	if (status == FUNCTION_SUCCEEDED)
+	{
+
+			/* Copy in the grid blocks from Bond_blocks: */
+	    fill_bond_and_curve_lists3d(T->num_of_bonds3d,T->bonds3d,T->curves3d,intfc);
+
+				/* Set the compon2d[][] array: */
+
+	    //set_off_front_comp2d(T->compon2d,intfc);
+	}
+
+	vmfree(Bond_blocks);
+
+	if (DEBUG)
+	{
+	    //show_COMP_2d(stdout,intfc);
+	    show_BOND_list3d(intfc);
+	    (void) printf("Leaving make_bond_lists()\n\n");
+	}
+	return status;
+}		/*end make_bond_lists*/
+
+/*
+*			set_bond_and_curve_list_pointers():
+*
+*	Does what its name implies! Read documentation above for the
+*	function make_bond_list().
+*	Returns 1 if successful, or 0 if unable to allocate enough
+*	space.
+*/
+
+LOCAL boolean set_bond_and_curve_list_pointers3d(
+	struct Table	*T,
+	int		xmax,
+	int		ymax,
+    int     zmax)
+{
+	int		ix,iy,iz;
+	BOND		**lastb;
+	CURVE		**lastc;
+
+	if (DEBUG)
+	    (void) printf("\n\nEntered set_bond_and_curve_list_pointers3d()\n");
+
+			/* Allocate bonds and curves arrays: */
+
+	tri_array(&T->bonds3d,zmax,ymax,xmax,sizeof(BOND **));
+	if (T->bonds3d == NULL)
+	{
+	    (void) printf("WARNING in set_bond_and_curve_list_pointers3d(), ");
+	    (void) printf("can not allocate T->bonds\n");
+	    return FUNCTION_FAILED;
+	}
+					
+	tri_array(&T->curves3d,zmax,ymax,xmax,sizeof(CURVE **));
+	if (T->curves3d == NULL)
+	{
+	    (void) printf("WARNING in set_bond_and_curve_list_pointers3d(), ");
+	    (void) printf("can not allocate T->curves\n");
+	    return FUNCTION_FAILED;
+	}
+
+			/* Allocate bondstore, curvestore arrays: */
+
+	uni_array(&T->bondstore,total_num_of_bonds, sizeof(BOND *));
+	if (T->bondstore == NULL)
+	{
+	    (void) printf("WARNING in set_bond_and_curve_list_pointers3d(), ");
+	    (void) printf("can not allocate T->bondstore\n");
+	    return FUNCTION_FAILED;
+	}
+
+
+	uni_array(&T->curvestore,total_num_of_bonds, sizeof(CURVE *));
+	if (T->curvestore == NULL)
+	{
+	    (void) printf("WARNING in set_bond_and_curve_list_pointers3d(), ");
+	    (void) printf("can not allocate T->curvestore\n");
+	    return FUNCTION_FAILED;
+	}
+
+	lastb = T->bondstore;
+	lastc = T->curvestore;
+	for (iz = 0; iz < zmax; ++iz)
+	for (iy = 0; iy < ymax; ++iy)
+		for (ix = 0; ix < xmax; ++ix)
+		{
+			T->bonds3d[iz][iy][ix] = lastb;
+			T->curves3d[iz][iy][ix] = lastc;
+			lastb += T->num_of_bonds3d[iz][iy][ix];
+			lastc += T->num_of_bonds3d[iz][iy][ix];
+			T->num_of_bonds3d[iz][iy][ix] = 0;
+		}
+
+	if (DEBUG)
+		(void) printf("Leaving set_bond_and_curve_list_pointers()\n\n");
+	return FUNCTION_SUCCEEDED;
+}		/*end set_bond_and_curve_list_pointers*/
+
+/*                       
+*				fill_bond_and_curve_lists():
+*
+*	Does what its name implies!  Read the documentation above 
+*	for function  make_bond_lists().
+*/
+
+LOCAL void fill_bond_and_curve_lists3d(
+	int		***num_of_bonds,
+	BOND		*****bonds,
+	CURVE		*****curves,
+	INTERFACE	*intfc)
+{
+	int		ix,iy,iz;
+	BOND		*b;
+	CURVE		*c;
+
+	if (DEBUG) (void) printf("\n\nEntered fill_bond_and_curve_lists3d()\n");
+	bond_blocks = Bond_blocks;
+
+	(void) 	next_bond(intfc,NULL,NULL);
+	while (next_bond(intfc,&b,&c))
+	{
+	    while (*bond_blocks != END_BOND)
+	    {
+	        ix = *(bond_blocks++);
+	        iy = *(bond_blocks++);
+	        iz = *(bond_blocks++);
+	        bonds[iz][iy][ix][num_of_bonds[iz][iy][ix]] = b;
+	        curves[iz][iy][ix][num_of_bonds[iz][iy][ix]++] = c;
+	    }
+	    ++bond_blocks;	/* Skip END_BOND */
+	}
+	if (DEBUG) (void) printf("Leaving fill_bond_and_curve_lists3d()\n\n");
+}		/*end fill_bond_and_curve_lists*/
+
+LOCAL void show_BOND_list3d(
+	INTERFACE	*intfc)
+{
+	int		ix,iy,iz,i;
+	int		ixmax, iymax,zmax;
+	BOND		*b;
+
+	ixmax = topological_grid(intfc).gmax[0];
+	iymax = topological_grid(intfc).gmax[1];
+	izmax = topological_grid(intfc).gmax[2];
+	(void) printf("\n\nBond Numbers for INTERFACE %llu:\n",
+	       (long long unsigned int)interface_number(intfc));
+	for (iz = 0; iz < izmax; ++iz)
+	{
+	    for (iy = iymax - 1; iy >= 0; --iy)
+        {
+            for (ix = 0; ix < ixmax; ++ix)
+                (void) printf("%d ",intfc->table->num_of_bonds3d[iz][iy][ix]);
+            (void) printf("\n");
+        }
+    }
+	(void) printf("\n\n");
+
+	(void) printf("\n\nBondlists for INTERFACE %llu\n",
+		(long long unsigned int)interface_number(intfc));
+	for (iz = 0; iz < izmax; ++iz)
+	{
+	    for (iy = iymax - 1; iy>=0;  --iy) 
+        {
+            for (ix = 0; ix < ixmax; ++ix)
+            {
+                if (intfc->table->num_of_bonds3d[iz][iy][ix] == 0) continue;
+                (void) printf("Block %2d %2d %2d, num_of_bonds = %2d:",
+                       iy,ix,iz,intfc->table->num_of_bonds3d[iz][iy][ix]);
+                for (i = 0; i < intfc->table->num_of_bonds3d[iz][iy][ix]; ++i)
+                {
+                    (void) printf("%s",(i%2)?"  ":"\n");
+                    b = intfc->table->bonds3d[iz][iy][ix][i];
+                    (void) printf("%g %g %g <-> %g %g %g,",
+                       Coords(b->start)[0],Coords(b->start)[1],Coords(b->start)[2],
+                       Coords(b->end)[0],Coords(b->end)[1],Coords(b->end)[2]);
+                }
+                         
+                (void) printf("\n\n");
+            }
+        }
+    }
+	(void) printf("End Bondlists3d\n\n");
+}		/*end show_BOND_list3d*/
+
+
 EXPORT  void assign_tri_icoords(
 	RECT_GRID *grid,
 	TRI *tri)

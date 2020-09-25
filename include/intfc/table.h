@@ -133,13 +133,21 @@ struct Table {
 
 	/* THREED */
 	COMPONENT	***compon3d;	/* COMPONENT in each Grid Block */
+    
+    int		***num_of_bonds3d;	/* Number BONDS in each Grid Block */
+	BOND		*****bonds3d;	/* BOND lists in each Grid Block */
+	CURVE		*****curves3d;	/* CURVE lists in each Grid Block */
+	BLOCK		*curve_blocks3d;	/* bounding boxes for each curve */
+	int		num_curve_blocks3d;
+    
 	int		***num_of_tris;	/* Number TRIS in each Grid Block */
 	TRI		*****tris;	/* TRI lists in each Grid Block */
-	SURFACE		*****surfaces;	/* SURFACE lists in each Grid Block */
+    SURFACE		*****surfaces;	/* SURFACE lists in each Grid Block */
 	double		***area;	/* Surface area in each Grid Block */
 	double		***vol_frac;	/* Volume frac in each Grid Block */
 	BLOCK		*surf_blocks;	/* bounding boxes for each surface */
 	int		num_surf_blocks;
+	
 
 			/* Quantities used by loc_comp_list: */
 	
