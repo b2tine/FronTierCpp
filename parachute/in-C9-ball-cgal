@@ -23,7 +23,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 7
+Enter velocity: 0 0 15
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -81,7 +81,7 @@ Enter viscous parameter: 604.333
 Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 200
+Enter payload: 300
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
@@ -119,7 +119,7 @@ Enter mu0: 0.0000185
 Enter B: 5.3
 Enter y+: 30.0
 
-Enter time to active turbulence model: 0.055
+Enter time to active turbulence model: 0.2
 
 ****************Movie options*****************
 Type y to make yz cross section movie: n

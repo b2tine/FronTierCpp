@@ -668,13 +668,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                     mu[nb] = mu0;
                 else
-                    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+                    mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
 		    
             }
             else
 		    {
                 U_nb[nb] = vel[l][index_nb[nb]];
-    			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+    			mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
 		    }
         }
 
@@ -730,7 +730,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
 
             solver.SetMaxIter(40000);
-            solver.SetTol(1e-14);
+            solver.SetTol(1e-10);
+                //solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
             solver.Solve();
@@ -1039,7 +1040,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
 
             solver.SetMaxIter(40000);
-            solver.SetTol(1e-14);
+            solver.SetTol(1e-10);
+                //solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
             solver.Solve();
