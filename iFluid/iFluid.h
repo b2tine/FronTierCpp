@@ -239,29 +239,6 @@ struct _OPEN_PIPE_PARAMS
         STATE state[2];
 };
 typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
-/*
-struct _RG_PARAMS {
-        int dim;
-	boolean no_fluid;		// For benchmark tests //
-	int 	body_index;		// Body index //
-        double  total_mass;             // Total mass //
-        double  moment_of_inertial;     // Moment of inertial about the axis //
-        double  center_of_mass[MAXD];   // Center of mass //
-        double  rotation_dir[MAXD];     // Direction of rotation //
-	double	translation_dir[MAXD];	// Restricted direction of motion //
-        double  rotation_cen[MAXD];     // Center of rotation //
-        double  cen_of_mass_velo[MAXD]; // Center of mass velocity //
-        double  angular_velo;           // Angular velocity of rotation //
-	double  p_moment_of_inertial[MAXD];
-	double  p_angular_velo[MAXD];
-	double  euler_params[4];
-        double  old_euler_params[4];
-	void	(*vel_func)(Front*,POINTER,double*,double*);
-	POINTER vparams;
-        MOTION_TYPE motion_type;
-};
-typedef struct _RG_PARAMS RG_PARAMS;
-*/
 
 struct VPARAMS {
         double center[MAXD];            // center of vortex
@@ -655,12 +632,6 @@ extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
 extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
-
-//extern void resetRigidBodyVelocity(Front *front);
-//extern void rgb_modification(Front*,RG_PARAMS*);
-//extern void rgb_init(Front*,RG_PARAMS*);
-//extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-//extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
 
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);

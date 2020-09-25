@@ -2908,7 +2908,7 @@ LOCAL void fill_tri_and_surface_lists(
 *	The function blocks_on_grid_based_tri computes the same list but
 *	is specialized to a grid reconstructed interface.
 */
-/*hmintol should be less than gfac(=4e-3, defined in set_floating_point_tolerance1) */
+/*hmintol should be less than gfac(=4e-5, defined in set_floating_point_tolerance1) */
 /*because the cutting surfaces in the scatter_front part.  */
 /*cut_buf_interface1 */
 /*    open_null_sides1 */
