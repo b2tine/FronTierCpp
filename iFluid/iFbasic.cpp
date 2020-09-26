@@ -83,8 +83,10 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");
-	iFparams = (IF_PARAMS*)front->extra1;
-	FT_MakeGridIntfc(front);
+	
+    FT_MakeGridIntfc(front);
+	
+    iFparams = (IF_PARAMS*)front->extra1;
 	setDomain();
 
 	num_cells = 1;
@@ -466,7 +468,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	dim = grid_intfc->dim;
 	T = table_of_interface(grid_intfc);
 	top_comp = T->components;
-	field = iFparams->field;
+
+    //TODO: invert this relationship
+	        //field = iFparams->field;
 
 	hmin = top_h[0];
 	size = top_gmax[0]+1;
@@ -1523,6 +1527,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
     */
 
+    //TODO: This is extremely inefficient to check if using
+    //      KEPSILON model at every index.
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
@@ -2330,6 +2336,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
     */
 
+    //TODO: This is extremely inefficient to check if using
+    //      KEPSILON model at every index.
     double* mu_t;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
@@ -3739,8 +3747,12 @@ double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
     }
 
     keps_solver->solve(front->dt);
-
+    
+    //TODO: assing mu_t to field->mu directly
     return keps_solver->field->mu_t;
+    
+    //TODO: add TKE (k) to pressure
+    //      i.e. P_eff = P + 2/3*k
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

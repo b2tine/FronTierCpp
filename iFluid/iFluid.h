@@ -156,7 +156,11 @@ struct IF_PARAMS
 	double min_speed;	/* Limit time step in zero ambient velocity */
 	COMPONENT m_comp1;
 	COMPONENT m_comp2;
-	IF_FIELD *field;
+	
+    //TODO: What is the point of this, since it gets assigned
+    //      to the IF_FIELD member of the solver
+    IF_FIELD *field;
+
 	int adv_order;
 	boolean total_div_cancellation;
 	boolean buoyancy_flow;

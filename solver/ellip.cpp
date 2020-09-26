@@ -574,11 +574,13 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
+    //TODO: Use last time step soln as initial guess for x.
 	PETSc solver;
 	solver.Create(ilower, iupper-1, 7, 7);
 	solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
+
 	size = iupper - ilower;
 	max_soln = -HUGE;
 	min_soln = HUGE;

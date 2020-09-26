@@ -52,9 +52,12 @@ extern void elastic_point_propagate(
 {
 	STATE *newsl,*newsr;
 	STATE *sl,*sr;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-        IF_FIELD *field = iFparams->field;
+	
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    IF_FIELD *field = iFparams->field;
+	
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
 	int i, dim = front->rect_grid->dim;
 	double *vort = field->vort;
 	double **vel = field->vel;
