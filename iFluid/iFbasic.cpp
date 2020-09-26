@@ -25,9 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		         iFbasic.cpp
  *******************************************************************/
 #include "iFluid.h"
-//#include <solver.h>
 
-//C++ STL
 #include <iostream>
 #include <fstream>
 #include <numeric>
@@ -1530,12 +1528,16 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         iFparams->eddy_visc_model == KEPSILON)
     {
         mu_t = computeMuOfKepsModel();
+        //TODO: Return TKE (k) to add to pressure
+        //      i.e. P_eff = P + 2/3*k
     }
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);			
+        mu[index] = 0.0;
+
 	    comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
  
@@ -1549,7 +1551,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         int icoords[MAXD];
         icoords[0] = i;
         icoords[1] = j;
-        mu[index] = 0.0;
 
 	    if (iFparams->use_eddy_visc == YES)
 	    {
@@ -2334,6 +2335,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         iFparams->eddy_visc_model == KEPSILON)
     {
         mu_t = computeMuOfKepsModel();
+        //TODO: Return TKE (k) to add to pressure
+        //      i.e. P_eff = P + 2/3*k
     }
 
     for (k = kmin; k <= kmax; k++)
@@ -2341,10 +2344,12 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
     for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index3d(i,j,k,top_gmax);			
-	    comp  = cell_center[index].comp;
+        mu[index] = 0.0;
+	    
+        comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
 
-	    getRectangleCenter(index, center);
+	    getRectangleCenter(index,center);
         /*status = FT_FindNearestIntfcPointInRange(front,comp,center,
                 NO_BOUNDARIES,point,t,&hse,&hs,range);*/
 
@@ -2352,7 +2357,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         icoords[0] = i;
         icoords[1] = j;
         icoords[2] = k;
-        mu[index] = 0.0;
 
 	    if (iFparams->use_eddy_visc == YES)
         {

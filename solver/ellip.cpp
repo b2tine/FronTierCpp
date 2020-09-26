@@ -345,7 +345,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 		if (num_nb == 0) break;
 		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
-		if (status == NO_PDE_BOUNDARY)
+		
+        if (status == NO_PDE_BOUNDARY)
                 {
                     solver.Set_A(I,I_nb[l],coeff[l]);
                     aII += -coeff[l];
@@ -359,6 +360,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 		else if (status == CONST_V_PDE_BOUNDARY &&
                         wave_type(hs) == NEUMANN_BOUNDARY)
                 {
+            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+            //      dp/dn = 0 (reflecting boundary for pressure)
+	    
 		    if (porosity != 0.0)
 		    {
                     	solver.Set_A(I,I_nb[l],porosity*coeff[l]);
@@ -375,6 +379,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 		break;
 		if (refl_side[l] == YES)
 		{
+            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+            //      dp/dn = 0 (reflecting boundary for pressure)
+	    
 		    double alpha = 1.0;
                     solver.Set_A(I,I_oppnb[l],(1.0-alpha)*coeff[l]);
                     aII -= -alpha*coeff[l];
