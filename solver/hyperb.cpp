@@ -1001,11 +1001,9 @@ void HYPERB_SOLVER::setNeumannStates(
             vn += vel_ref[j]*nor[j];
 	    }
 
-	    /* Only normal component is reflected, 
-	       relative tangent velocity is zero */
+	    /* reflect normal component of velocity */
 	    for (int j = 0; j < dim; ++j)
-            v_ghost[j] = vel_intfc[j] - vn*nor[j];
-            //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
+            v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
 
 	    if (nb == 0)
 	    {
@@ -1118,7 +1116,7 @@ void HYPERB_SOLVER::setNeumannStates(
 	    //}
 	    //
 	    
-        // Only normal component is reflected, relative tangent velocity is zero //
+        // Only normal component is reflected
 	    for (j = 0; j < dim; j++)
 		v_tmp[j] = vel_ref[j] - 2.0*vn*nor[j];
 

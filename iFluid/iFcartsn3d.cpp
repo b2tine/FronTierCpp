@@ -582,6 +582,251 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
+    const GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER} };
+
+    INTERFACE *grid_intfc = front->grid_intfc;
+    double **vel = field->vel;
+	double **f_surf = field->f_surf;
+    double *mu = field->mu;
+    double *rho = field->rho;
+	
+    POINTER intfc_state;
+	HYPER_SURF *hs;
+    
+    COMPONENT comp;
+    int index,index_nb;
+    int I, I_nb;
+    int crx_status;
+    boolean status;
+
+	int icoords[MAXD], icnb[MAXD];
+	double coords[MAXD], crx_coords[MAXD];
+    double nor[MAXD];
+
+	PetscInt num_iter;
+	double rel_residual;
+    double *x;
+
+	if (debugging("trace"))
+	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
+			"computeDiffusionCN()\n");
+
+    setIndexMap();
+
+    int size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+
+	double source[MAXD];
+    for (int l = 0; l < dim; ++l)
+        source[l] = iFparams->gravity[l];
+
+    //TODO: save last step solns and provide as initial guess?
+    for (int l = 0; l < 3; ++l)
+    {
+        PETSc solver;
+        solver.Create(ilower, iupper-1, 7, 7);
+        solver.Reset_A();
+        solver.Reset_b();
+        solver.Reset_x();
+
+        for (int k = kmin; k <= kmax; k++)
+        for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
+        {
+            I  = ijk_to_I[i][j][k];
+            if (I == -1) continue;
+            
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            
+            index = d_index3d(i,j,k,top_gmax);
+            getRectangleCenter(index,coords);
+            comp = top_comp[index];
+            
+            if (!ifluid_comp(comp))
+            {
+                for (int m = 0; m < 3; ++m)
+                    vel[m][index] = 0.0;
+                continue;
+            }
+            
+            double coeff = 1.0;
+            double coeff_rhs = 1.0;
+            double RHS = 0.0;
+
+            for (int idir = 0; idir < 3; ++idir)
+            {
+                for (int m = 0; m < 3; ++m)
+                    icnb[m] = icoords[m];
+                    
+                double lambda = 0.5*m_dt/sqr(top_h[idir]);
+                double nu_index = mu[index]/rho[index];
+
+                for (int nb = 0; nb < 2; ++nb)
+                {
+                    icnb[idir] = (nb == 0) ?
+                        icoords[idir] - 1 : icoords[idir] + 1;
+
+                    index_nb  = d_index(icnb,top_gmax,3);
+                    I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
+
+                    crx_status = (*findStateAtCrossing)(front,icoords,
+                            dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+                    double coeff_nb = 0.0;
+                    double nu_halfidx = 0.5*nu_index;
+                    
+                    if (crx_status)
+                    {
+                        if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                        {
+                            nu_halfidx += 0.5*getStateMu(intfc_state)/rho[index_nb];
+                            coeff_nb = -1.0*lambda*nu_halfidx;
+                            coeff -= coeff_nb;
+                            coeff_rhs += coeff_nb;
+                            RHS -= coeff_nb*getStateVel[l](intfc_state);
+                        }
+                        else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                        {
+                            status = FT_NormalAtGridCrossing(front,icoords,
+                                    dir[idir][nb],comp,nor,&hs,crx_coords);
+
+                            //ghost point
+                            double coords_ghost[MAXD];
+                            getRectangleCenter(index_nb,coords_ghost);
+                            
+                            //Reflect the ghost point through intfc-mirror at crossing.
+                            //first reflect across the grid line containing intfc crossing.
+                            double coords_reflect[MAXD];
+                            for (int m = 0; m < 3; ++m)
+                                coords_reflect[m] = coords_ghost[m];
+                            coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                            //(^should just be the coords at the index at this point)
+
+                            //Reflect the displacement vector across the line
+                            //containing the intfc normal vector
+                            double v[MAXD];
+                            double vn = 0.0;
+
+                            for (int m = 0; m < 3; ++m)
+                            {
+                                v[m] =  coords_reflect[m] - crx_coords[m];
+                                vn += v[m]*nor[m];
+                            }
+
+                            for (int m = 0; m < 3; ++m)
+                                v[m] = 2.0*vn*nor[m] - v[m];
+
+                            //The desired reflected point
+                            for (int m = 0; m < 3; ++m)
+                                coords_reflect[m] = crx_coords[m] + v[m];
+
+                            //Interpolate the velocity at the reflected point
+                            double vel_reflect[MAXD];
+                            for (int m = 0; m < 3; ++m)
+                            {
+                                FT_IntrpStateVarAtCoords(front,comp,
+                                        coords_reflect,vel[m],getStateVel[m],
+                                        &vel_reflect[m],&vel[m][index]);
+                            }
+
+                            //Ghost vel has relative normal velocity component equal
+                            //in magnitude to reflected point's relative normal velocity
+                            //and going in the opposite direction.
+                            vn = 0.0;
+                            double vel_rel[MAXD];
+                            double* vel_intfc = ((STATE*)intfc_state)->vel;
+                            for (int m = 0; m < 3; ++m)
+                            {
+                                vel_rel[m] = vel_reflect[m] - vel_intfc[m];
+                                vn += vel_rel[m]*nor[m];
+                            }
+
+                            double vel_ghost[MAXD];
+                            for (int m = 0; m < 3; ++m)
+                                vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
+                        
+                            //nu_halfidx += 0.0;
+                            coeff_nb = -1.0*lambda*nu_halfidx;
+                            solver.Set_A(I,I_nb,coeff_nb);
+                            coeff -= coeff_nb;
+                            coeff_rhs += coeff_nb;
+                            RHS -= coeff_nb*vel_ghost[l];
+                        }
+                    }
+                    else
+                    {
+                        //NO_PDE_BOUNDARY
+                        nu_halfidx += 0.5*mu[index_nb]/rho[index_nb];
+                        coeff_nb = -1.0*lambda*nu_halfidx;
+                        solver.Set_A(I,I_nb,coeff_nb);
+                        coeff -= coeff_nb;
+                        coeff_rhs += coeff_nb;
+                        RHS -= coeff_nb*vel[l][index_nb];
+                    }
+                }
+
+            }
+
+            solver.Set_A(I,I,coeff);
+
+            RHS += coeff_rhs*vel[l][index];
+		    RHS += m_dt*source[l];
+		    RHS += m_dt*f_surf[l][index];
+            solver.Set_b(I,RHS);
+        }
+
+        solver.SetMaxIter(40000);
+        solver.SetTol(1e-10);
+
+	    start_clock("Befor Petsc solve");
+        solver.Solve();
+        solver.GetNumIterations(&num_iter);
+        solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+	    stop_clock("After Petsc solve");
+
+        // get back the solution
+        solver.Get_x(x);
+
+        if (debugging("PETSc"))
+        {
+            printf("L_CARTESIAN::computeDiffusionCN(): \
+                    num_iter = %d, rel_residual = %g. \n",
+                    num_iter,rel_residual);
+        }
+
+	    for (int k = kmin; k <= kmax; k++)
+        for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
+        {
+            I = ijk_to_I[i][j][k];
+            index = d_index3d(i,j,k,top_gmax);
+            if (I >= 0)
+                vel[l][index] = x[I-ilower];
+            else
+                vel[l][index] = 0.0;
+        }
+
+    }
+	
+    FT_ParallelExchGridVectorArrayBuffer(vel,front);
+    FT_FreeThese(1,x);
+
+	if (debugging("trace"))
+    {
+        printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::\
+                computeDiffusionCN()\n");
+    }
+}       /* end computeDiffusionCN */
+
+/*
+void Incompress_Solver_Smooth_3D_Cartesian::
+	computeDiffusionCN(void)
+{
         COMPONENT comp;
         int index,index_nb[6],size;
         int I,I_nb[6];
@@ -768,7 +1013,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	if (debugging("trace"))
 	    (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionCN()\n");
-}       /* end computeDiffusion */
+}*/       /* end computeDiffusionCN */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionExplicit(void)

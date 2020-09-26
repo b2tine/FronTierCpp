@@ -621,20 +621,23 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    aII = 0.0;
 	    for (l = 0; l < 6; ++l)
 	    {
-		if (num_nb == 0) break;
-		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+		    if (num_nb == 0) break;
+		
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
-                if (status == NO_PDE_BOUNDARY)
-		{
-		    solver.Set_A(I,I_nb[l],coeff[l]);
-                    aII += -coeff[l];
-		}
-		else if (status == CONST_P_PDE_BOUNDARY)
-		{
-                    aII += -coeff[l];
-		    rhs += -coeff[l]*getStateVar(intfc_state);
-		    use_neumann_solver = NO;
-		}
+            
+            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+            if (status == NO_PDE_BOUNDARY)
+            {
+                solver.Set_A(I,I_nb[l],coeff[l]);
+                        aII += -coeff[l];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                        aII += -coeff[l];
+                rhs += -coeff[l]*getStateVar(intfc_state);
+                use_neumann_solver = NO;
+            }
 	    }
 	    /*
 	     * This change reflects the need to treat point with only one

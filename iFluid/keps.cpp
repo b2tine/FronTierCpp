@@ -442,6 +442,8 @@ void KE_CARTESIAN::findBdryPoint()
 	}
 }
 
+//TODO: Rename and implement Crank Nicholson scheme (2nd order time)
+
 //implicit time explicit space
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 {
@@ -955,6 +957,7 @@ void KE_CARTESIAN::computeAdvectionE_REAL(COMPONENT sub_comp)
 	return  computeAdvectionE_STD(sub_comp);
 }       /* end computeAdvectionE */
 
+//TODO: Rename and implement Crank Nicholson scheme (2nd order time)
 void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 {
         int i,j,k,l,ll,m,ic,icn,I,I_nb,icoords[MAXD];

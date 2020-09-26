@@ -302,8 +302,7 @@ void Incompress_Solver_Smooth_Basis::getRectangleCenter(
 	int index, 
 	double *coords)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	    coords[i] = cell_center[index].m_coords[i];
 }
 
@@ -2337,9 +2336,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         mu_t = computeMuOfKepsModel();
     }
 
-    //TODO: Turbulence and Surface Tension need to be seperated,
-    //      Not an if or else situation.
-	
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -2349,9 +2345,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	    if (!ifluid_comp(comp)) continue;
 
 	    getRectangleCenter(index, center);
-        //TODO: compare to 2d
-        //status = FT_FindNearestIntfcPointInRange(front,comp,center,
-          //      INCLUDE_BOUNDARIES,point,t,&hse,&hs,range);
         /*status = FT_FindNearestIntfcPointInRange(front,comp,center,
                 NO_BOUNDARIES,point,t,&hse,&hs,range);*/
 
