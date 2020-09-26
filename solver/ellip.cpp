@@ -555,6 +555,384 @@ void ELLIPTIC_SOLVER::printIsolatedCells()
         }
 }       /* end printIsolatedCells */
 
+//TODO: remove arg, is unnecesarry
+void ELLIPTIC_SOLVER::solve3d(double *soln)
+{
+	const GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+	
+	POINTER intfc_state;
+    HYPER_SURF *hs;
+
+	COMPONENT comp;
+	int index,index_nb;
+    int I,I_nb;
+	int crx_status;
+    boolean status;
+
+    int icoords[MAXD], icnb[MAXD];
+	double coords[MAXD], crx_coords[MAXD];
+	double nor[MAXD];
+
+    //TODO: Use last time step soln as initial guess for x.
+	PETSc solver;
+	solver.Create(ilower, iupper-1, 7, 7);
+	solver.Reset_A();
+	solver.Reset_b();
+	solver.Reset_x();
+    boolean use_neumann_solver = YES;
+
+	for (int k = kmin; k <= kmax; k++)
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
+	{
+	    index  = d_index3d(i,j,k,top_gmax);
+	    comp = top_comp[index];
+	    I = ijk_to_I[i][j][k];
+	    if (I == -1) continue;
+
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    icoords[2] = k;
+
+        //TODO: Replace with correct vals for projection
+        //
+        //double aII = 1.0;
+        //double coeff_rhs = 1.0;
+        //double RHS = 0.0;
+
+        for (int idir = 0; idir < 3; ++idir)
+        {
+            for (int m = 0; m < 3; ++m)
+                icnb[m] = icoords[m];
+
+            //TODO: Replace with correct vals for projection
+            //
+            //WATCH THE m_dt!!!!!!!!!!!!!! Leaving for now to match analysis.
+            double lambda = m_dt/sqr(top_h[idir]);
+            double rho_index = rho[index];
+
+            //half_rho = ....
+            //inv_rho = ...
+            for (int nb = 0; nb < 2; ++nb)
+            {
+                icnb[idir] = (nb == 0) ?
+                    icoords[idir] - 1 : icoords[idir] + 1;
+
+                index_nb  = d_index(icnb,top_gmax,3);
+                I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
+
+                //TODO: Replace with correct vals for projection
+                //
+                //double coeff_nb = 0.0;
+                //double nu_halfidx = 0.5*nu_index;
+
+                crx_status = (*findStateAtCrossing)(front,icoords,
+                        dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+                if (crx_status)
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        //TODO:
+                        /*
+                        coeff_nb = -1.0*lambda*nu_halfidx;
+                        aII -= coeff_nb;
+                        RHS -= coeff_nb*getStateVar(intfc_state);
+                        */
+                        use_neumann_solver = NO;
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                             wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        status = FT_NormalAtGridCrossing(front,icoords,
+                                dir[idir][nb],comp,nor,&hs,crx_coords);
+
+                        //ghost point
+                        //double coords_ghost[MAXD];
+                        //TODO:^ probably don't need this
+
+                        /*
+                        double coords_reflect[MAXD];
+                        for (int m = 0; m < 3; ++m)
+                            coords_reflect[m] = coords_ghost[m];
+                        coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                        */
+                        //(^should just be the coords at current index)
+                        //TODO: assign current index coords to coords_reflect
+                        
+                        //Reflect the ghost point through intfc-mirror at crossing.
+                        //first reflect across the grid line containing intfc crossing,
+                        //which is just the coords at the current index.
+                        double coords_reflect[MAXD];
+                        for (int m = 0; m < 3; ++m)
+                            coords_reflect[m] = top_L[m] + icoords[m]*top_h[m];
+
+                        //Reflect the displacement vector across the line
+                        //containing the intfc normal vector
+                        double v[MAXD];
+                        double vn = 0.0;
+
+                        for (int m = 0; m < 3; ++m)
+                        {
+                            v[m] =  coords_reflect[m] - crx_coords[m];
+                            vn += v[m]*nor[m];
+                        }
+
+                        for (int m = 0; m < 3; ++m)
+                            v[m] = 2.0*vn*nor[m] - v[m];
+
+                        //The desired reflected point
+                        for (int m = 0; m < 3; ++m)
+                            coords_reflect[m] = crx_coords[m] + v[m];
+
+                        //Interpolate the pressure at the reflected point,
+                        //which will serve as the ghost point pressure.
+                        double pres_reflect;
+                        FT_IntrpStateVarAtCoords(front,comp,
+                                coords_reflect,soln,getStateVar,
+                                &pres_reflect,&soln[index]);
+
+                        //TODO: assign the ghost pressure according to
+                        //      dp/dn = 0 (reflecting boundary for pressure)
+                        //
+
+                        //TODO:
+                        /*
+                        coeff_nb = -1.0*lambda*nu_halfidx;
+                        solver.Set_A(I,I_nb,coeff_nb);
+                        aII -= coeff_nb;
+                        RHS -= coeff_nb*pres_reflect;
+                        */
+                    }
+                }
+                else
+                {
+                    //NO_PDE_BOUNDARY
+                    //TODO:
+                    /*
+                    coeff_nb = -1.0*lambda*nu_halfidx;
+                    solver.Set_A(I,I_nb,coeff_nb);
+                    aII -= coeff_nb;
+                    */
+                }
+            }
+        }
+
+        //solver.Set_A(I,I,aII);
+        //solver.Set_b(I,RHS);
+    }
+	   
+        /*
+        k0 = D[index];
+	    num_nb = 0;
+	    for (l = 0; l < 6; ++l)
+	    {
+            status = (*findStateAtCrossing)(front,icoords,
+                    dir[l],comp,&intfc_state,&hs,crx_coords);
+
+            if (status != CONST_V_PDE_BOUNDARY)
+                num_nb++;
+            if (status == CONST_V_PDE_BOUNDARY ||
+                status == CONST_P_PDE_BOUNDARY)
+                index_nb[l] = index;
+
+            k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+	    }
+
+	    rhs = source[index];
+
+	    aII = 0.0;
+	    for (l = 0; l < 6; ++l)
+	    {
+            if (num_nb == 0) break;
+		
+            status = (*findStateAtCrossing)(front,icoords,
+                    dir[l],comp,&intfc_state,&hs,crx_coords);
+            
+            if (status == NO_PDE_BOUNDARY)
+            {
+                solver.Set_A(I,I_nb[l],coeff[l]);
+                        aII += -coeff[l];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                aII += -coeff[l];
+                rhs += -coeff[l]*getStateVar(intfc_state);
+                use_neumann_solver = NO;
+            }
+
+            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+            //      dp/dn = 0 (reflecting boundary for pressure)
+	    
+        }
+	    
+        if(num_nb > 0)
+	    {
+            solver.Set_A(I,I,aII);
+	    }
+        else
+        {
+            printf("WARNING: isolated value!\n");
+            solver.Set_A(I,I,1.0);
+            rhs = soln[index];
+        }
+        solver.Set_b(I,rhs);
+	}
+    */
+
+	solver.SetMaxIter(40000);
+	solver.SetTol(1e-10);
+
+	use_neumann_solver = pp_min_status(use_neumann_solver);
+    bool Try_GMRES = false;
+
+	PetscInt num_iter;
+	double rel_residual;
+
+	start_clock("Petsc Solver");
+	if (use_neumann_solver)
+	{
+	    if (skip_neumann_solver)
+	    {
+	        if (debugging("PETSc"))
+            {
+                printf("Skip isolated small region for solve3d()\n");
+                printIsolatedCells();
+            }
+            stop_clock("Petsc Solver");
+            return;
+            //TODO: go on to gmres??
+	    }
+
+        printf("\nELLIPTIC_SOLVER: Using Neumann Solver!\n");
+	    solver.Solve_withPureNeumann();
+	    solver.GetNumIterations(&num_iter);
+	    solver.GetFinalRelativeResidualNorm(&rel_residual);
+	    if (rel_residual > 1)
+	    {
+		    printf("\n The solution diverges! The residual "
+                    "is %g. Solve again using GMRES!\n",rel_residual);
+            Try_GMRES = true;
+	    }
+	}
+	else
+	{
+	    printf("\nELLIPTIC_SOLVER: Using non-Neumann Solver!\n");
+	    solver.Solve();
+	    solver.GetNumIterations(&num_iter);
+	    solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+	    if (rel_residual > 1)
+	    {
+            printf("\n The solution diverges! The residual "
+                    "is %g. Solve again using GMRES!\n",rel_residual);
+            Try_GMRES = true;
+	    }
+	}
+
+    if (Try_GMRES)
+    {
+        solver.Reset_x();
+        solver.Solve_GMRES();
+        solver.GetNumIterations(&num_iter);
+        solver.GetFinalRelativeResidualNorm(&rel_residual);
+	    
+        if (rel_residual > 1)
+	    {
+            printf("\n The solution diverges using GMRES. \
+                    The residual is %g. Exiting ...\n",rel_residual);
+            clean_up(EXIT_FAILURE);
+        }
+    }
+
+	stop_clock("Petsc Solver");
+
+	double *x;
+	int size = iupper - ilower;
+	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+	solver.Get_x(x);
+
+	if (debugging("PETSc"))
+    {
+        printf("In poisson_solver(): \
+                num_iter = %d, rel_residual = %g\n", 
+                num_iter,rel_residual);
+    }
+
+	for (int k = kmin; k <= kmax; k++)
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
+	{
+	    index = d_index3d(i,j,k,top_gmax);
+	    I = ijk_to_I[i][j][k];
+	    if (I == -1) continue;
+	    
+        soln[index] = x[I-ilower];
+
+        /*
+	    if (max_soln < soln[index]) 
+	    {
+            max_soln = soln[index];
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
+	    }
+	    if (min_soln > soln[index]) 
+	    {
+            min_soln = soln[index];
+            icrds_min[0] = i;
+            icrds_min[1] = j;
+            icrds_min[2] = k;
+	    }
+        */
+	}
+	/*
+    pp_global_max(&max_soln,1);
+	pp_global_min(&min_soln,1);
+
+	if (debugging("step_size"))
+	{
+	    printf("Max solution = %20.14f occuring at: %d %d %d\n",
+                        max_soln,icrds_max[0],icrds_max[1],icrds_max[2]);
+            checkSolver(icrds_max,YES);
+            printf("Min solution = %20.14f occuring at: %d %d %d\n",
+                        min_soln,icrds_min[0],icrds_min[1],icrds_min[2]);
+            checkSolver(icrds_min,YES);
+	}
+	if (debugging("elliptic_error"))
+        {
+            double error,max_error = 0.0;
+            for (k = kmin; k <= kmax; k++)
+            for (j = jmin; j <= jmax; j++)
+            for (i = imin; i <= imax; i++)
+            {
+                icoords[0] = i;
+                icoords[1] = j;
+                icoords[2] = k;
+                if (ijk_to_I[i][j][k] == -1) continue;
+                error = checkSolver(icoords,NO);
+                if (error > max_error)
+                {
+                    max_error = error;
+                    icrds_max[0] = i;
+                    icrds_max[1] = j;
+                    icrds_max[2] = k;
+                }
+            }
+            (void) printf("In elliptic solver:\n");
+            (void) printf("Max relative elliptic error: %20.14f\n",max_error);
+            (void) printf("Occuring at (%d %d %d)\n",icrds_max[0],
+                                icrds_max[1],icrds_max[2]);
+            error = checkSolver(icrds_max,YES);
+        }
+    */
+	FT_FreeThese(1,x);
+}	/* end solve3d */
+
+/*
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	int index,index_nb[6],size;
@@ -651,12 +1029,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             //      dp/dn = 0 (reflecting boundary for pressure)
 	    
         }
-	    /*
-	     * This change reflects the need to treat point with only one
-	     * interior neighbor (a convex point). Not sure why PETSc cannot
-	     * handle such case. If we have better understanding, this should
-	     * be changed back.
-	     */
+	    ///
+	    //  This change reflects the need to treat point with only one
+	    //  interior neighbor (a convex point). Not sure why PETSc cannot
+	    //  handle such case. If we have better understanding, this should
+	    //  be changed back.
+	    // /
 	    if(num_nb > 0)
 	    {
                 solver.Set_A(I,I,aII);
@@ -715,12 +1093,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    {
             printf("\n The solution diverges! The residual "
                     "is %g. Solve again using GMRES!\n",rel_residual);
-            /*
-            solver.Reset_x();
-            solver.Solve_GMRES();
-            solver.GetNumIterations(&num_iter);
-            solver.GetFinalRelativeResidualNorm(&rel_residual);
-            */
+            ///
+            //solver.Reset_x();
+            //solver.Solve_GMRES();
+            //solver.GetNumIterations(&num_iter);
+            //solver.GetFinalRelativeResidualNorm(&rel_residual);
+            ///
             Try_GMRES = true;
 	    }
 	}
@@ -814,7 +1192,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         }
 
 	FT_FreeThese(1,x);
-}	/* end solve3d */
+}*/	/* end solve3d */
 
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,

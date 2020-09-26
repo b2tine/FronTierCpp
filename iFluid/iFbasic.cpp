@@ -2923,6 +2923,8 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 index_nb = d_index(icnb,top_gmax,dim);
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
+                //TODO: IMPLEMENT REFLECTING BOUNDAR FOR
+                //      NUEMANN_BOUNDARY AND MOVABLE_BODY_BOUNDARY
                 if (status == NO_PDE_BOUNDARY)
                 {
                     u_edge[idir][nb] = field[idir][index_nb];
@@ -3061,6 +3063,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    	index_nb = d_index(icnb,top_gmax,dim);
 	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
 				comp,&intfc_state,&hs,crx_coords);
+            //TODO: implement reflecting boundaries at solid walls
 	    	if (status == NO_PDE_BOUNDARY)
                 {
 		    p_edge[idir][nb] = field[index_nb];
@@ -3748,11 +3751,13 @@ double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 
     keps_solver->solve(front->dt);
     
-    //TODO: assing mu_t to field->mu directly
+    //TODO: assign mu_t to field->mu directly
     return keps_solver->field->mu_t;
     
     //TODO: add TKE (k) to pressure
     //      i.e. P_eff = P + 2/3*k
+    //
+    //      Can assign P_eff to q.
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

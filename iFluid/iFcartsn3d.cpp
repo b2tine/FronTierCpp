@@ -583,9 +583,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
     const GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER} };
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
 
-    INTERFACE *grid_intfc = front->grid_intfc;
     double **vel = field->vel;
 	double **f_surf = field->f_surf;
     double *mu = field->mu;
@@ -596,7 +596,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     
     COMPONENT comp;
     int index,index_nb;
-    int I, I_nb;
+    int I,I_nb;
     int crx_status;
     boolean status;
 
@@ -618,8 +618,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     for (int l = 0; l < dim; ++l)
         source[l] = iFparams->gravity[l];
 
-    //TODO: save last step solns and provide as initial guess?
-    //      Or pass in as argument like in ELLIPTIC_SOLVER::solve3d()?
+    //TODO: Save last step solns and provide as initial guess.
+    //      Pass in as argument like in ELLIPTIC_SOLVER::solve3d()?
     for (int l = 0; l < 3; ++l)
     {
         PETSc solver;
@@ -636,12 +636,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             I  = ijk_to_I[i][j][k];
             if (I == -1) continue;
             
-            icoords[0] = i;
-            icoords[1] = j;
-            icoords[2] = k;
-            
             index = d_index3d(i,j,k,top_gmax);
-            getRectangleCenter(index,coords);
             comp = top_comp[index];
             
             if (!ifluid_comp(comp))
@@ -651,7 +646,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 continue;
             }
             
-            double coeff = 1.0;
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            
+            double aII = 1.0;
             double coeff_rhs = 1.0;
             double RHS = 0.0;
 
@@ -671,19 +670,19 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     index_nb  = d_index(icnb,top_gmax,3);
                     I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
 
-                    crx_status = (*findStateAtCrossing)(front,icoords,
-                            dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
-
                     double coeff_nb = 0.0;
                     double nu_halfidx = 0.5*nu_index;
                     
+                    crx_status = (*findStateAtCrossing)(front,icoords,
+                            dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
                     if (crx_status)
                     {
                         if (wave_type(hs) == DIRICHLET_BOUNDARY)
                         {
                             nu_halfidx += 0.5*getStateMu(intfc_state)/rho[index_nb];
                             coeff_nb = -1.0*lambda*nu_halfidx;
-                            coeff -= coeff_nb;
+                            aII -= coeff_nb;
                             coeff_rhs += coeff_nb;
                             RHS -= coeff_nb*getStateVel[l](intfc_state);
                             use_neumann_solver = NO;
@@ -704,7 +703,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             for (int m = 0; m < 3; ++m)
                                 coords_reflect[m] = coords_ghost[m];
                             coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                            //(^should just be the coords at the index at this point)
+                            //(^should just be the coords at current index)
 
                             //Reflect the displacement vector across the line
                             //containing the intfc normal vector
@@ -735,7 +734,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
                             //Ghost vel has relative normal velocity component equal
                             //in magnitude to reflected point's relative normal velocity
-                            //and going in the opposite direction.
+                            //and opposite in direction.
                             vn = 0.0;
                             double vel_rel[MAXD];
                             double* vel_intfc = ((STATE*)intfc_state)->vel;
@@ -752,7 +751,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //nu_halfidx += 0.0;
                             coeff_nb = -1.0*lambda*nu_halfidx;
                             solver.Set_A(I,I_nb,coeff_nb);
-                            coeff -= coeff_nb;
+                            aII -= coeff_nb;
                             coeff_rhs += coeff_nb;
                             RHS -= coeff_nb*vel_ghost[l];
                         }
@@ -763,7 +762,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         nu_halfidx += 0.5*mu[index_nb]/rho[index_nb];
                         coeff_nb = -1.0*lambda*nu_halfidx;
                         solver.Set_A(I,I_nb,coeff_nb);
-                        coeff -= coeff_nb;
+                        aII -= coeff_nb;
                         coeff_rhs += coeff_nb;
                         RHS -= coeff_nb*vel[l][index_nb];
                     }
@@ -771,7 +770,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             }
 
-            solver.Set_A(I,I,coeff);
+            solver.Set_A(I,I,aII);
 
             RHS += coeff_rhs*vel[l][index];
 		    RHS += m_dt*source[l];
@@ -803,12 +802,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             solver.GetNumIterations(&num_iter);
             solver.GetFinalRelativeResidualNorm(&rel_residual);
 
-            if(rel_residual > 1)
+            if (rel_residual > 1)
             {
                 printf("\n The solution diverges! The residual \
                    is %g. Solve again using GMRES!\n",rel_residual);
-                //clean_up(ERROR);
-                //TODO: go on to GMRES??
                 Try_GMRES = true;
             }
         }
@@ -819,12 +816,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             solver.GetNumIterations(&num_iter);
             solver.GetFinalRelativeResidualNorm(&rel_residual);
 
-            if(rel_residual > 1)
+            if (rel_residual > 1)
             {
                 printf("\n The solution diverges! The residual \
                    is %g. Solve again using GMRES!\n",rel_residual);
-                //clean_up(ERROR);
-                //TODO: go on to GMRES??
                 Try_GMRES = true;
             }
         }
@@ -1705,6 +1700,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             icoords[1] = j;
             icoords[2] = k;
             index  = d_index(icoords,top_gmax,dim);
+            //TODO: divergence computation doesn't look correct
+            //      for rigid body/solid walls
             source[index] = computeFieldPointDiv(icoords,vel);
             diff_coeff[index] = 1.0/field->rho[index];
             div_U[index] = source[index];
@@ -1812,7 +1809,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.ilower = ilower;
     elliptic_solver.iupper = iupper;
     elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-    elliptic_solver.solve(array);
+    elliptic_solver.solve(array);//TODO: don't need to pass array here
 
     /*
 	if (iFparams->with_porosity)
