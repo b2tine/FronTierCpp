@@ -788,7 +788,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         PetscInt num_iter;
 	    double rel_residual;
 
-	    start_clock("Befor Petsc solve");
+	    start_clock("Before Petsc solve");
         if (use_neumann_solver)
         {
             /*
@@ -798,7 +798,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
             */
 
-            printf("\nUsing Neumann Solver!\n");
+            printf("\ncomputeDiffusionCN(): Using Neumann Solver!\n");
             solver.Solve_withPureNeumann();
             solver.GetNumIterations(&num_iter);
             solver.GetFinalRelativeResidualNorm(&rel_residual);
@@ -814,7 +814,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
         else
         {
-            printf("\nUsing non-Neumann Solver!\n");
+            printf("\ncomputeDiffusionCN(): Using non-Neumann Solver!\n");
             solver.Solve();
             solver.GetNumIterations(&num_iter);
             solver.GetFinalRelativeResidualNorm(&rel_residual);

@@ -681,7 +681,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 		return;
         //TODO: go on to gmres??
 	    }
-	    printf("\nUsing Neumann Solver!\n");
+	    printf("\nELLIPTIC_SOLVER: Using Neumann Solver!\n");
 	    solver.Solve_withPureNeumann();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetFinalRelativeResidualNorm(&rel_residual);
@@ -697,7 +697,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 	else
 	{
-	    (void) printf("\nUsing non-Neumann Solver!\n");
+	    printf("\nELLIPTIC_SOLVER: Using non-Neumann Solver!\n");
 	    solver.Solve();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetFinalRelativeResidualNorm(&rel_residual);

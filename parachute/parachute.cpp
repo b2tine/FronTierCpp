@@ -118,6 +118,7 @@ int main(int argc, char **argv)
 
 	if (!RestartRun)
     {
+        //TODO: optimize mesh
         //optimizeElasticStrings(&front);
         //optimizeElasticMesh(&front);
         set_equilibrium_mesh(&front);
