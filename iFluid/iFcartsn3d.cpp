@@ -604,17 +604,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double coords[MAXD], crx_coords[MAXD];
     double nor[MAXD];
 
-	PetscInt num_iter;
-	double rel_residual;
-    double *x;
-
 	if (debugging("trace"))
 	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionCN()\n");
 
     setIndexMap();
-
     int size = iupper - ilower;
+    
+    double *x;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
 	double source[MAXD];
@@ -622,6 +619,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         source[l] = iFparams->gravity[l];
 
     //TODO: save last step solns and provide as initial guess?
+    //      Or pass in as argument like in ELLIPTIC_SOLVER::solve3d()?
     for (int l = 0; l < 3; ++l)
     {
         PETSc solver;
@@ -629,6 +627,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         solver.Reset_A();
         solver.Reset_b();
         solver.Reset_x();
+        boolean use_neumann_solver = YES;
 
         for (int k = kmin; k <= kmax; k++)
         for (int j = jmin; j <= jmax; j++)
@@ -687,6 +686,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             coeff -= coeff_nb;
                             coeff_rhs += coeff_nb;
                             RHS -= coeff_nb*getStateVel[l](intfc_state);
+                            use_neumann_solver = NO;
                         }
                         else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                                  wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -782,10 +782,67 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         solver.SetMaxIter(40000);
         solver.SetTol(1e-10);
 
+        use_neumann_solver = pp_min_status(use_neumann_solver);
+        bool Try_GMRES = false;
+	
+        PetscInt num_iter;
+	    double rel_residual;
+
 	    start_clock("Befor Petsc solve");
-        solver.Solve();
-        solver.GetNumIterations(&num_iter);
-        solver.GetFinalRelativeResidualNorm(&rel_residual);
+        if (use_neumann_solver)
+        {
+            /*
+            if (skip_neumann_solver)
+            {
+                //TODO: is this needed??
+            }
+            */
+
+            printf("\nUsing Neumann Solver!\n");
+            solver.Solve_withPureNeumann();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+            if(rel_residual > 1)
+            {
+                printf("\n The solution diverges! The residual \
+                   is %g. Solve again using GMRES!\n",rel_residual);
+                //clean_up(ERROR);
+                //TODO: go on to GMRES??
+                Try_GMRES = true;
+            }
+        }
+        else
+        {
+            printf("\nUsing non-Neumann Solver!\n");
+            solver.Solve();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+
+            if(rel_residual > 1)
+            {
+                printf("\n The solution diverges! The residual \
+                   is %g. Solve again using GMRES!\n",rel_residual);
+                //clean_up(ERROR);
+                //TODO: go on to GMRES??
+                Try_GMRES = true;
+            }
+        }
+
+        if (Try_GMRES)
+        {
+            solver.Reset_x();
+            solver.Solve_GMRES();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+            
+            if(rel_residual > 1)
+            {
+                printf("\n The solution diverges using GMRES! \
+                        The residual is %g. Exiting ...\n",rel_residual);
+                clean_up(EXIT_FAILURE);
+            }
+        }
 
 	    stop_clock("After Petsc solve");
 
@@ -803,6 +860,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         for (int j = jmin; j <= jmax; j++)
         for (int i = imin; i <= imax; i++)
         {
+            //TODO: write to another soln array instead
+            //      of immediately overwriting the vel array.
             I = ijk_to_I[i][j][k];
             index = d_index3d(i,j,k,top_gmax);
             if (I >= 0)

@@ -626,7 +626,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
             
-            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
             if (status == NO_PDE_BOUNDARY)
             {
                 solver.Set_A(I,I_nb[l],coeff[l]);
@@ -638,7 +637,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 rhs += -coeff[l]*getStateVar(intfc_state);
                 use_neumann_solver = NO;
             }
-	    }
+
+            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+            //      dp/dn = 0 (reflecting boundary for pressure)
+	    
+        }
 	    /*
 	     * This change reflects the need to treat point with only one
 	     * interior neighbor (a convex point). Not sure why PETSc cannot
@@ -657,10 +660,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
             solver.Set_b(I,rhs);
 	}
-	use_neumann_solver = pp_min_status(use_neumann_solver);
-	
+
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
+
+	use_neumann_solver = pp_min_status(use_neumann_solver);
+    bool Try_GMRES = false;
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -674,6 +679,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 }
 		stop_clock("Petsc Solver");
 		return;
+        //TODO: go on to gmres??
 	    }
 	    printf("\nUsing Neumann Solver!\n");
 	    solver.Solve_withPureNeumann();
@@ -681,9 +687,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    solver.GetFinalRelativeResidualNorm(&rel_residual);
 	    if(rel_residual > 1)
 	    {
-		(void) printf("\n The solution diverges! The residual "
-		       "is %g. Solve again using GMRES!\n",rel_residual);
-		clean_up(ERROR);
+		    printf("\n The solution diverges! The residual "
+                    "is %g. Solve again using GMRES!\n",rel_residual);
+            //clean_up(ERROR);
+            //TODO: go on to gmres??
+            Try_GMRES = true;
 	    }
 
 	}
@@ -696,15 +704,33 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	    if(rel_residual > 1)
 	    {
-		(void) printf("\n The solution diverges! The residual "
-		       "is %g. Solve again using GMRES!\n",rel_residual);
-		solver.Reset_x();
-		solver.Solve_GMRES();
-		solver.GetNumIterations(&num_iter);
-		solver.GetFinalRelativeResidualNorm(&rel_residual);
+            printf("\n The solution diverges! The residual "
+                    "is %g. Solve again using GMRES!\n",rel_residual);
+            /*
+            solver.Reset_x();
+            solver.Solve_GMRES();
+            solver.GetNumIterations(&num_iter);
+            solver.GetFinalRelativeResidualNorm(&rel_residual);
+            */
+            Try_GMRES = true;
 	    }
-
 	}
+
+    if (Try_GMRES)
+    {
+        solver.Reset_x();
+        solver.Solve_GMRES();
+        solver.GetNumIterations(&num_iter);
+        solver.GetFinalRelativeResidualNorm(&rel_residual);
+	    
+        if(rel_residual > 1)
+	    {
+            printf("\n The solution diverges using GMRES. \
+                    The residual is %g. Exiting ...\n",rel_residual);
+            clean_up(EXIT_FAILURE);
+        }
+    }
+
 	stop_clock("Petsc Solver");
 
 	double *x;
