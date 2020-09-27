@@ -220,7 +220,7 @@ int af_find_state_at_crossing(
 	        if (boundary_state_function(*hs) &&
                 strcmp(boundary_state_function_name(*hs),
                 "flowThroughBoundaryState") == 0)
-                return CONST_P_PDE_BOUNDARY;
+                return CONST_P_PDE_BOUNDARY;//TODO: are these flipped?
             else
                 return CONST_V_PDE_BOUNDARY;
         }

@@ -596,25 +596,20 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    icoords[1] = j;
 	    icoords[2] = k;
 
-        //TODO: Replace with correct vals for projection
-        //
-        //double aII = 1.0;
-        //double coeff_rhs = 1.0;
-        //double RHS = 0.0;
+        double aII = 0.0;
+        double RHS = source[index];
+
+        double rho_index = rho[index];
 
         for (int idir = 0; idir < 3; ++idir)
         {
             for (int m = 0; m < 3; ++m)
                 icnb[m] = icoords[m];
 
-            //TODO: Replace with correct vals for projection
-            //
-            //WATCH THE m_dt!!!!!!!!!!!!!! Leaving for now to match analysis.
-            double lambda = m_dt/sqr(top_h[idir]);
-            double rho_index = rho[index];
+            //WATCH THE m_dt!!!!!!!!!!!!!!
+            double lambda = 1.0/sqr(top_h[idir]);
+                //double lambda = m_dt/sqr(top_h[idir]);
 
-            //half_rho = ....
-            //inv_rho = ...
             for (int nb = 0; nb < 2; ++nb)
             {
                 icnb[idir] = (nb == 0) ?
@@ -623,10 +618,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 index_nb  = d_index(icnb,top_gmax,3);
                 I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
 
-                //TODO: Replace with correct vals for projection
-                //
-                //double coeff_nb = 0.0;
-                //double nu_halfidx = 0.5*nu_index;
+                double coeff_nb = 0.0;
+                double rho_halfidx = 0.5*rho_index;
 
                 crx_status = (*findStateAtCrossing)(front,icoords,
                         dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
@@ -635,17 +628,17 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 {
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
-                        //TODO:
-                        /*
-                        coeff_nb = -1.0*lambda*nu_halfidx;
+                        //INFLOW/OUTFLOW BOUNDARY ONLY, NOT NOSLIP WALL BOUNDARY!
+                        rho_halfidx += 0.5*rho[index_nb];
+                        coeff_nb = 1.0*lambda/rho_halfidx;
                         aII -= coeff_nb;
                         RHS -= coeff_nb*getStateVar(intfc_state);
-                        */
                         use_neumann_solver = NO;
                     }
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     {
+                        //dp/dn = 0 (reflecting boundary for pressure)
                         status = FT_NormalAtGridCrossing(front,icoords,
                                 dir[idir][nb],comp,nor,&hs,crx_coords);
 
@@ -668,6 +661,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         double coords_reflect[MAXD];
                         for (int m = 0; m < 3; ++m)
                             coords_reflect[m] = top_L[m] + icoords[m]*top_h[m];
+                        //TODO: verify this ^ gets the correct coordinates 
 
                         //Reflect the displacement vector across the line
                         //containing the intfc normal vector
@@ -694,95 +688,28 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                                 coords_reflect,soln,getStateVar,
                                 &pres_reflect,&soln[index]);
 
-                        //TODO: assign the ghost pressure according to
-                        //      dp/dn = 0 (reflecting boundary for pressure)
-                        //
-
-                        //TODO:
-                        /*
-                        coeff_nb = -1.0*lambda*nu_halfidx;
-                        solver.Set_A(I,I_nb,coeff_nb);
+                        //rho_halfidx += 0.0;
+                        coeff_nb = 1.0*lambda/rho_halfidx;
                         aII -= coeff_nb;
                         RHS -= coeff_nb*pres_reflect;
-                        */
                     }
                 }
                 else
                 {
                     //NO_PDE_BOUNDARY
-                    //TODO:
-                    /*
-                    coeff_nb = -1.0*lambda*nu_halfidx;
+                    rho_halfidx += 0.5*rho[index_nb];
+                    coeff_nb = 1.0*lambda/rho_halfidx;
                     solver.Set_A(I,I_nb,coeff_nb);
                     aII -= coeff_nb;
-                    */
                 }
             }
         }
 
-        //solver.Set_A(I,I,aII);
-        //solver.Set_b(I,RHS);
+        solver.Set_A(I,I,aII);
+        solver.Set_b(I,RHS);
     }
 	   
-        /*
-        k0 = D[index];
-	    num_nb = 0;
-	    for (l = 0; l < 6; ++l)
-	    {
-            status = (*findStateAtCrossing)(front,icoords,
-                    dir[l],comp,&intfc_state,&hs,crx_coords);
-
-            if (status != CONST_V_PDE_BOUNDARY)
-                num_nb++;
-            if (status == CONST_V_PDE_BOUNDARY ||
-                status == CONST_P_PDE_BOUNDARY)
-                index_nb[l] = index;
-
-            k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
-	    }
-
-	    rhs = source[index];
-
-	    aII = 0.0;
-	    for (l = 0; l < 6; ++l)
-	    {
-            if (num_nb == 0) break;
-		
-            status = (*findStateAtCrossing)(front,icoords,
-                    dir[l],comp,&intfc_state,&hs,crx_coords);
-            
-            if (status == NO_PDE_BOUNDARY)
-            {
-                solver.Set_A(I,I_nb[l],coeff[l]);
-                        aII += -coeff[l];
-            }
-            else if (status == CONST_P_PDE_BOUNDARY)
-            {
-                aII += -coeff[l];
-                rhs += -coeff[l]*getStateVar(intfc_state);
-                use_neumann_solver = NO;
-            }
-
-            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-            //      dp/dn = 0 (reflecting boundary for pressure)
-	    
-        }
-	    
-        if(num_nb > 0)
-	    {
-            solver.Set_A(I,I,aII);
-	    }
-        else
-        {
-            printf("WARNING: isolated value!\n");
-            solver.Set_A(I,I,1.0);
-            rhs = soln[index];
-        }
-        solver.Set_b(I,rhs);
-	}
-    */
-
+        
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
 

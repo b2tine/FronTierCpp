@@ -762,7 +762,8 @@ static  void dirichlet_point_propagate(
 	    }
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
-            newst->pres = bstate->pres;
+
+        newst->pres = bstate->pres;
 	    newst->phi = bstate->phi;
             newst->vort = 0.0;
 

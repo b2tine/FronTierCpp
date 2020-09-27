@@ -519,12 +519,18 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    appendOpenEndStates(); //necessary since phi is updated
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
-	    
-        computeVorticity();
 
         accum_dt = 0.0;
 	}
+    else
+    {
+        printf("\n\n\tWARNING: Projection step skipped\n");
+        printf("\t m_dt = %g   accum_dt = %g   min_dt = %g\n",
+                m_dt, accum_dt, min_dt);
+        //clean_up(EXIT_FAILURE);
+    }
 	computeMaxSpeed();
+    computeVorticity();
 
 	if (debugging("step_size"))
 	{
@@ -654,13 +660,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             double coeff_rhs = 1.0;
             double RHS = 0.0;
 
+            double nu_index = mu[index]/rho[index];
+            
             for (int idir = 0; idir < 3; ++idir)
             {
                 for (int m = 0; m < 3; ++m)
                     icnb[m] = icoords[m];
                     
                 double lambda = 0.5*m_dt/sqr(top_h[idir]);
-                double nu_index = mu[index]/rho[index];
 
                 for (int nb = 0; nb < 2; ++nb)
                 {
@@ -680,11 +687,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     {
                         if (wave_type(hs) == DIRICHLET_BOUNDARY)
                         {
+                            //INFLOW/OUTFLOW BOUNDARY ONLY, NOT NOSLIP WALL BOUNDARY!
                             nu_halfidx += 0.5*getStateMu(intfc_state)/rho[index_nb];
                             coeff_nb = -1.0*lambda*nu_halfidx;
                             aII -= coeff_nb;
                             coeff_rhs += coeff_nb;
-                            RHS -= coeff_nb*getStateVel[l](intfc_state);
+                            RHS -= 2.0*coeff_nb*getStateVel[l](intfc_state);
+                                //RHS -= coeff_nb*getStateVel[l](intfc_state);
                             use_neumann_solver = NO;
                         }
                         else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -750,10 +759,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         
                             //nu_halfidx += 0.0;
                             coeff_nb = -1.0*lambda*nu_halfidx;
-                            solver.Set_A(I,I_nb,coeff_nb);
+                                //solver.Set_A(I,I_nb,coeff_nb);
                             aII -= coeff_nb;
                             coeff_rhs += coeff_nb;
-                            RHS -= coeff_nb*vel_ghost[l];
+                                //RHS -= coeff_nb*vel[l][index_nb];
+                            RHS -= 2.0*coeff_nb*vel_ghost[l];
                         }
                     }
                     else
@@ -1703,7 +1713,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             //TODO: divergence computation doesn't look correct
             //      for rigid body/solid walls
             source[index] = computeFieldPointDiv(icoords,vel);
-            diff_coeff[index] = 1.0/field->rho[index];
+                //diff_coeff[index] = 1.0/field->rho[index];
             div_U[index] = source[index];
             source[index] /= accum_dt;
 
@@ -1726,7 +1736,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
 
         FT_ParallelExchGridArrayBuffer(source,front,NULL);
-        FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+            //FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
     
         /*
         for (k = 0; k <= top_gmax[2]; k++)
@@ -1793,7 +1803,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             checkVelocityDiv("Before computeProjection()");
         }
         
-    elliptic_solver.D = diff_coeff;
+    elliptic_solver.rho = field->rho;
+    //elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();

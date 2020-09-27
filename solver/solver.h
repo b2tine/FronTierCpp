@@ -286,6 +286,9 @@ public:
 	double *source;		/* source field */
         double **vel;       /* velocity field */
         double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+    
+    //TEMP VARIABLE FOR PROJECTION STEP DEBUG
+    double* rho;
 
 	void set_solver_domain(void);
 	void solve(double *soln);
