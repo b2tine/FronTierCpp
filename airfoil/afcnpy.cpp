@@ -1968,10 +1968,8 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	    if (FT_Dimension() == 3)
         {
             setCollisionFreePoints3d(fr->interf);
+            collision_solver->initializeSystem(fr);
 
-            collision_solver->assembleFromInterface(fr->interf,fr->dt);
-            collision_solver->recordOriginalPosition();
-            
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);
 

@@ -63,41 +63,18 @@ public:
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
 
-    
-    static void clearCollisionTimes()
-    {
-        CollisionTimes.clear();
-    }
-
-    static void setSizeCollisionTimes(unsigned int size)
-    {
-        CollisionTimes.reserve(size);
-    }
-
-    static void addCollisionTime(double collsn_dt)
-    {
-        CollisionTimes.push_back(collsn_dt);
-    }
-
-    static double getAverageCollisionTime()
-    {
-        double avg_dt =
-            std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
-        avg_dt /= CollisionTimes.size();
-        return avg_dt;
-    }
-
 	
     void setStrainLimit(double);
 	//double getStrainLimit();
 	void setStrainRateLimit(double);
 	//double getStrainRateLimit();
-
-
     double setVolumeDiff(double);
 
 	void clearHseList();
-	void assembleFromInterface(const INTERFACE*,double dt);
+    const std::vector<CD_HSE*>& getHseList() const;
+    
+    void initializeSystem(const Front* front);
+	void assembleFromInterface(const INTERFACE*);
 	void createImpZoneForRG(const INTERFACE*);
 	
     void resolveCollision();
@@ -120,6 +97,19 @@ public:
 
     TRI *res_tris[100];
     int num_res_tris;
+
+    static void clearCollisionTimes();
+    static void setSizeCollisionTimes(unsigned int size);
+    static void addCollisionTime(double collsn_dt);
+    static double getAverageCollisionTime();
+
+    static int tstep;
+    static int getStep() {return tstep;}
+    static void setStep(int step) {tstep = step;}
+
+    static std::string outdir;
+    static std::string getOutputDirectory() {return outdir;}
+    static void setOutputDirectory(std::string dir) {outdir = dir;}
 
 private:
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};

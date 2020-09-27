@@ -3,6 +3,7 @@
 
 #include <FronTier.h>
 #include "ifluid_state.h"
+#include "vtk.h"
 
 #include <string>
 

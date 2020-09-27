@@ -38,6 +38,9 @@ int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
 
+int CollisionSolver3d::tstep;
+std::string CollisionSolver3d::outdir;
+
 std::vector<double> CollisionSolver3d::CollisionTimes;
 
 
@@ -86,6 +89,29 @@ void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srl
 
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
+void CollisionSolver3d::clearCollisionTimes()
+{
+    CollisionTimes.clear();
+}
+
+void CollisionSolver3d::setSizeCollisionTimes(unsigned int size)
+{
+    CollisionTimes.reserve(size);
+}
+
+void CollisionSolver3d::addCollisionTime(double collsn_dt)
+{
+    CollisionTimes.push_back(collsn_dt);
+}
+
+double CollisionSolver3d::getAverageCollisionTime()
+{
+    double avg_dt =
+        std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
+    avg_dt /= CollisionTimes.size();
+    return avg_dt;
+}
+
 
 CollisionSolver3d::~CollisionSolver3d()
 {
@@ -103,11 +129,23 @@ void CollisionSolver3d::clearHseList()
 	hseList.clear();
 }
 
-//NOTE: Must be called before calling the spring solver
-void CollisionSolver3d::assembleFromInterface(
-	const INTERFACE* intfc, const double dt)
+const std::vector<CD_HSE*>& CollisionSolver3d::getHseList() const
 {
-	setTimeStepSize(dt);
+    return hseList;
+}
+
+void CollisionSolver3d::initializeSystem(const Front* front)
+{
+    setStep(front->step);
+    setTimeStepSize(front->dt);
+    setOutputDirectory(OutName(front));
+    assembleFromInterface(front->interf);
+    recordOriginalPosition();
+}
+
+//NOTE: Must be called before calling the spring solver
+void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc)
+{
 	clearHseList();
 
 	SURFACE** s;
@@ -124,7 +162,6 @@ void CollisionSolver3d::assembleFromInterface(
 	{
 	    if (is_bdry(*s)) continue;
 	    unsort_surf_point(*s);
-	    //unsort_surface_point(*s);
 	    
         surf_tri_loop(*s,tri)
 	    {
@@ -169,8 +206,6 @@ void CollisionSolver3d::assembleFromInterface(
 	}
 }
 
-//NOTE: Must be called after assembleFromInterface()
-//      and before calling the spring solver.
 void CollisionSolver3d::recordOriginalPosition()
 {
     std::vector<CD_HSE*>::iterator it;
@@ -497,7 +532,7 @@ void CollisionSolver3d::updateImpactZoneVelocity()
 void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
-	    //feenableexcept(FE_INVALID | FE_OVERFLOW);
+    feenableexcept(FE_INVALID | FE_OVERFLOW);
 
     start_clock("computeAverageVelocity");
 	computeAverageVelocity();
@@ -1382,21 +1417,7 @@ void unsortHseList(std::vector<CD_HSE*>& hseList)
 	}
 }
 
-/*
-void unsort_surface_point(SURFACE *surf)
-{
-    TRI* tri = first_tri(surf);
-    for (tri; !at_end_of_tri_list(tri,surf); tri = tri->next)
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            POINT* p = Point_of_tri(tri)[i];
-            sorted(p) = NO;
-        }
-    }
-}*/      /* end unsort_surface_point */
-
-
+//TODO: check Union Find and Impact Zone handling is correct
 
 //functions for UF alogrithm
 int& weight(POINT* p){
@@ -1419,6 +1440,7 @@ inline POINT*& tail(POINT* p){
 	return sl->impZone.tail;
 }
 
+//TODO: verify anything related to this and impact zones
 extern void makeSet(std::vector<CD_HSE*>& hseList)
 {
 	STATE* sl;
