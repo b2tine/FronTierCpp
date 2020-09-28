@@ -607,7 +607,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     boolean status;
 
 	int icoords[MAXD], icnb[MAXD];
-	double coords[MAXD], crx_coords[MAXD];
+	double crx_coords[MAXD];
     double nor[MAXD];
 
 	if (debugging("trace"))
