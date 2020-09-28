@@ -1762,24 +1762,27 @@ extern double grad_p_jump_t(
 	return 0.0;
 }	/* end grad_p_jump_t */
 
+//TODO: should be called getQFromPres()
 extern double getPhiFromPres(
         Front *front,
         double pres)
 {
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        switch (iFparams->num_scheme.projc_method)
-        {
-        case BELL_COLELLA:
-            return 0.0;
-        case KIM_MOIN:
-            return 0.0;
+    return pres;
+    /*
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    switch (iFparams->num_scheme.projc_method)
+    {
         case SIMPLE:
+        case BELL_COLELLA:
+        case KIM_MOIN:
         case PEROT_BOTELLA:
             return pres;
+            break;
         default:
             (void) printf("Unknown projection type\n");
             clean_up(0);
-        }
+    }
+    */
 }       /* end getPhiFromPres */
 
 extern double getPressure(
@@ -1799,7 +1802,7 @@ extern double getPressure(
         //TODO: Can we implement a better scheme?
         return 0.0;
 
-        pres0 = 1.0;
+        pres0 = 0.0;
         if (dim == 2)
         {
             CURVE **c;

@@ -119,7 +119,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 {
 	int i, j, k, l, index;
-	double grad_phi[MAXD], rho;
 	COMPONENT comp;
 	int icoords[MAXD];
 	double **vel = field->vel;
@@ -127,6 +126,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	double mag_grad_phi,max_grad_phi,ave_grad_phi;
 	double speed;
 	int icrds_max[MAXD];
+
+    double** grad_phi = field->grad_phi;
+	double grad_phi_point[MAXD];
+    double rho;
 
 	max_grad_phi = ave_grad_phi = 0.0;
 
@@ -159,18 +162,18 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         //Coupling of the velocity impulse due to force of the
         //immersed porous interface accounted for by the addition
         //of GFM pressure jump source terms into grad_phi 
-        computeFieldPointGradJump(icoords,phi,grad_phi);
+        computeFieldPointGradJump(icoords,phi,grad_phi_point);
 
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
-	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
+            grad_phi[l][index] = grad_phi_point[l];
+	    	vel[l][index] -= accum_dt/rho*grad_phi_point[l];
 		    speed += sqr(vel[l][index]);
-		    //speed += fabs(vel[l][index]);
 	    }
         speed = sqrt(speed);
 
-	    mag_grad_phi = Mag3d(grad_phi);
+	    mag_grad_phi = Mag3d(grad_phi_point);
 	    ave_grad_phi += mag_grad_phi;
 	    if (mag_grad_phi > max_grad_phi)
 	    {
@@ -186,8 +189,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
             speed = iFparams->ub_speed;
 	    }
 	}
+
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	if (debugging("step_size"))
+	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
+	
+    if (debugging("step_size"))
 	{
 	    (void) printf("Max gradient phi = %f  occuring at: %d %d %d\n",
 			max_grad_phi,icrds_max[0],icrds_max[1],icrds_max[2]);
@@ -597,6 +603,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
 
+    double **grad_phi = field->grad_phi;
     double **vel = field->vel;
 	double **f_surf = field->f_surf;
     double *mu = field->mu;
@@ -701,7 +708,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             double bval = getStateVel[idir](intfc_state);
                             if (iFparams->num_scheme.projc_method == KIM_MOIN)
                             {
-                                bval += m_dt*field->grad_q[idir][index_nb];
+                                bval += m_dt*field->grad_phi[idir][index_nb];
                             }
                             RHS -= 2.0*coeff_nb*bval;
                                 //RHS -= 2.0*coeff_nb*getStateVel[l](intfc_state);
@@ -1425,9 +1432,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
     for (int i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-            //pres[index] += phi[index];
-        pres[index] = phi[index];
 	    q[index] = pres[index];
+        pres[index] += phi[index];
 	    
         if (i < imin || i > imax ||
             j < jmin || j > jmax ||
@@ -1464,14 +1470,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 {
     int i,j,k,index;
-    //double mu0;
-    double nu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
 	double *div_U = field->div_U;
 
-	if (debugging("trace"))
+    double nu0;
+        //double mu0;
+	
+    if (debugging("trace"))
 	    (void) printf("Entering computePressurePmII()\n");
     for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
@@ -1480,9 +1487,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
         index = d_index3d(i,j,k,top_gmax);
         nu0 = 0.5*field->mu[index]/field->rho[index];
         pres[index] = phi[index] - accum_dt*nu0*div_U[index];
-        //mu0 = 0.5*field->mu[index];
-        //pres[index] += phi[index] - accum_dt*mu0*div_U[index];
-	    q[index] = pres[index];
+            //mu0 = 0.5*field->mu[index];
+            //pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+
+        q[index] = pres[index];
+        //q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
@@ -1497,7 +1506,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 {
     int i,j,k,index;
     double mu0;
-        //double nu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1510,12 +1518,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-            //nu0 = 0.5*field->mu[index]/field->rho[index];
-            //pres[index] = phi[index] - accum_dt*nu0*div_U[index];
-        mu0 = 0.5*field->mu[index];
-        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
-
+        pres[index] += phi[index];
 	    q[index] = pres[index];
+
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
 	    if (max_pressure < pres[index])
@@ -1548,24 +1553,55 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	case BELL_COLELLA:
 	    computePressurePmI();
 	    break;
+	case SIMPLE:
 	case KIM_MOIN:
 	    computePressurePmII();
 	    break;
-	case SIMPLE:
 	case PEROT_BOTELLA:
-	    computePressurePmI(); /* computePressurePmIII() not working */
 	    //computePressurePmIII();
-	    break;
+	    //break;
 	case ERROR_PROJC_SCHEME:
 	default:
 	    (void) printf("Unknown computePressure() scheme!\n");
 	    clean_up(ERROR);
 	}
 
+    //computeGradientPhi();
     computeGradientQ();
 }	/* end computePressure */
 
-void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
+/*
+void Incompress_Solver_Smooth_3D_Cartesian::computeGradientPhi()
+{
+	int i,j,k,l,index;
+	double **grad_phi = field->grad_phi;
+	int icoords[MAXD];
+	double *phi = field->phi;
+	double point_grad_phi[MAXD];
+
+	for (k = 0; k < top_gmax[2]; ++k)
+	for (j = 0; j < top_gmax[1]; ++j)
+	for (i = 0; i < top_gmax[0]; ++i)
+	{
+	    index = d_index3d(i,j,k,top_gmax);
+	    array[index] = phi[index];
+	}
+	for (k = kmin; k <= kmax; k++)
+	for (j = jmin; j <= jmax; j++)
+	for (i = imin; i <= imax; i++)
+	{
+	    index = d_index3d(i,j,k,top_gmax);
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    icoords[2] = k;
+        computeFieldPointGrad(icoords,array,point_grad_phi);
+	    for (l = 0; l < dim; ++l)
+            grad_phi[l][index] = point_grad_phi[l];
+	}
+	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
+}*/	/* end computeGradientPhi */
+
+void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
 {
 	int i,j,k,l,index;
 	double **grad_q = field->grad_q;
@@ -1590,7 +1626,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
 	    icoords[2] = k;
         computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
-		grad_q[l][index] = point_grad_q[l];
+            grad_q[l][index] = point_grad_q[l];
 	}
 	FT_ParallelExchGridVectorArrayBuffer(grad_q,front);
 }	/* end computeGradientQ */
@@ -1683,7 +1719,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    {
 	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
 		    pres[i] = getPressure(front,coords,NULL);
-            phi[i] = getPhiFromPres(front,pres[i]);
+            phi[i] = pres[i];
+            //phi[i] = getPhiFromPres(front,pres[i]);
             q[i] = pres[i];
 	    }
         }
@@ -1921,7 +1958,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 		icrds_max[2] = k;
 	    }
         }
-        if(debugging("step_size"))
+        
+    if(debugging("projection"))
 	{
 	    (void) printf("After computeProjection:\n");
 	    (void) printf("min_phi = %f  occuring at: %d %d %d\n",

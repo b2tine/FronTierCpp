@@ -42,6 +42,15 @@ KE_CARTESIAN::~KE_CARTESIAN()
 {
 }
 
+KE_CARTESIAN::KE_CARTESIAN(Front &front)
+    : front(&front)
+{
+}
+
+bool KE_CARTESIAN::activated = false;
+void KE_CARTESIAN::activateKE() {activated = true;}
+void KE_CARTESIAN::deactivateKE() {activated = false;}
+
 //---------------------------------------------------------------
 //	initMesh
 // include the following parts
@@ -187,8 +196,8 @@ void KE_CARTESIAN::setInitialCondition(void)
 	double coords[MAXD],k0,eps0;
 	INTERFACE *intfc = front->interf;
 	POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
 	STATE *sl,*sr;
 	int c;
 	short unsigned int seed[3] = {2,72,7172};
@@ -215,16 +224,23 @@ void KE_CARTESIAN::setInitialCondition(void)
 	// cell_center
 	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
 	eps0 = eqn_params->Cmu*pow(k0,1.5)/eqn_params->l0;
+    
+    //save the initial conditions for activation time
+    eqn_params->k0 = k0;
+    eqn_params->eps0 = eps0;
 
 	for (int i = 0; i < cell_center.size(); ++i)
 	{
 	    c = top_comp[i];
 	    getRectangleCenter(i,coords);
-	    field->k[i] = k0;
-	    field->eps[i] = eps0;
-	    if (keps_model == REALIZABLE)
+	    
+        //Don't assign k0 and eps0 until front->time > t0
+        field->k[i] = 0.0;
+	    field->eps[i] = 0.0;;
+	    field->mu_t[i] = 0.0;
+	    
+        if (keps_model == REALIZABLE)
             field->Cmu[i] = eqn_params->Cmu;
-	    field->mu_t[i] = eqn_params->mu0;
 	}
 	printf("k0 = %e, eps0 = %e\n",k0,eps0);
 	printf("mu0 = %e\n",eqn_params->mu0);
@@ -1463,10 +1479,24 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 // 		computeSourceTerm();
 void KE_CARTESIAN::solve(double dt)
 {
+    m_dt = dt;
+
+    if (!activated)
+    {
+        if (front->time <= eqn_params->t0)
+        {
+            if (debugging("keps_solve"))
+            {
+                printf("Turbulence activation time = %f \
+                    not yet reached.\n",eqn_params->t0);
+            }
+            return;
+        }
+        activateKE();
+    }
+
 	if (debugging("trace")) printf("Entering keps_solve()\n");
 	start_clock("keps_solve");
-	
-    m_dt = dt;
 
 	setDomain();
     //if (debugging("keps_solve")) printf("Passing setDomain()\n");
@@ -2004,11 +2034,6 @@ void KE_CARTESIAN::save(char *filename)
 		}					
 	}		
 	fclose(hfile);
-}
-
-KE_CARTESIAN::KE_CARTESIAN(Front &front)
-    : front(&front)
-{
 }
 
 void KE_CARTESIAN::deleteGridIntfc()

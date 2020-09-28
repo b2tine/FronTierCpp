@@ -85,9 +85,9 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");
 	
-    FT_MakeGridIntfc(front);
-	
     iFparams = (IF_PARAMS*)front->extra1;
+    
+    FT_MakeGridIntfc(front);
 	setDomain();
 
 	num_cells = 1;
@@ -486,9 +486,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(14,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vort,field->vel,
+		    FT_FreeThese(15,array,source,diff_coeff,field->mu,
+				field->rho,field->pres,field->phi,field->grad_phi,
+                field->q,field->div_U,field->vort,field->vel,
 				field->grad_q,field->f_surf,domain_status);
 		    if (debugging("field_var"))
 		    	FT_FreeThese(1,field->old_var);
@@ -498,6 +498,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 		iFparams->field = field;
 	    	FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,
+					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
@@ -535,9 +537,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(15,field,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vel,field->vorticity,
+		    FT_FreeThese(16,field,array,source,diff_coeff,field->mu,
+				field->rho,field->pres,field->phi,field->grad_phi,
+                field->q,field->div_U,field->vel,field->vorticity,
 				field->grad_q,field->f_surf,domain_status);
 		}
 		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
@@ -552,6 +554,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->pres,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,
+					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,3,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,
 					sizeof(double));
@@ -1516,7 +1520,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	double *phi = field->phi;
+	double *pres = field->pres;
+	    //double *phi = field->phi;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -1584,7 +1589,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             case KEPSILON:
                 rho[index] = ke_params->rho;
                 mu[index] = mu_t[index] + ke_params->mu;
-                phi[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
+                    //phi[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -1656,7 +1662,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+        //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2332,7 +2339,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	double *phi = field->phi;
+	double *pres = field->pres;
+	    //double *phi = field->phi;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -2400,7 +2408,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             case KEPSILON:
                 rho[index] = ke_params->rho;
                 mu[index] = mu_t[index] + ke_params->mu;
-                phi[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
+                    //phi[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -2471,7 +2480,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+	    //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
@@ -2952,12 +2962,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     double bval = getStateVel[idir](intfc_state);
-                    if (iFparams->num_scheme.projc_method == KIM_MOIN)
+                    if (iFparams->num_scheme.projc_method == SIMPLE ||
+                        iFparams->num_scheme.projc_method == KIM_MOIN)
                     {
-                        bval += m_dt*this->field->grad_q[idir][index_nb];
+                        bval += m_dt*this->field->grad_phi[idir][index_nb];
                     }
                     div += coeff_nb*bval;
-                        //div += coeff_nb*getStateVel[idir](intfc_state);
+                    //div += coeff_nb*getStateVel[idir](intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                          wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -3236,7 +3247,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     grad_field[idir] += coeff_nb*getStatePhi(intfc_state);
-                    //grad_field[idir] += coeff_nb*getStatePres(intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                          wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -3291,8 +3301,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                             coords_reflect,field,getStatePhi,
                             &pres_reflect,&field[index]);
                     //FT_IntrpStateVarAtCoords(front,comp,
-                      //      coords_reflect,field,getStatePres,
-                        //    &pres_reflect,&field[index]);
+                    //        coords_reflect,field,getStatePres,
+                    //        &pres_reflect,&field[index]);
 
                     grad_field[idir] += coeff_nb*pres_reflect;
                 }
@@ -4009,9 +4019,6 @@ KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
     static KE_CARTESIAN *keps_solver;
     static bool first = true;
 
-    static double tstart;
-    static bool initialized = false;
-
     if (first)
     {
         keps_solver = new KE_CARTESIAN(*front);
@@ -4022,27 +4029,10 @@ KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
         keps_solver->field->vel = iFparams->field->vel;
         keps_solver->eqn_params->mu = iFparams->mu2;
         keps_solver->eqn_params->rho = iFparams->rho2;
-        tstart = keps_solver->eqn_params->t0;
+        keps_solver->setInitialCondition();
         first = false;
     }
 
-	
-    if (front->time <= tstart)
-    {
-	    if (debugging("keps_solve"))
-        {
-            printf("Turbulence activation time = %f \
-                    not yet reached.\n",tstart);
-        }
-        return &params;
-    }
-
-    if (!initialized)
-    {
-        keps_solver->setInitialCondition();
-        initialized = true;
-    }
- 
     keps_solver->solve(front->dt);
     return &params;
 }
@@ -4211,7 +4201,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         computeFieldPointGrad(icoords,var,grad_var);
 
-        if (iFparams->with_porosity) return;
+        if (!iFparams->with_porosity) return;
 
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)

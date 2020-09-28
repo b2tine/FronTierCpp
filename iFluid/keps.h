@@ -29,6 +29,8 @@ struct KE_PARAMS {
 	double l0;
 	double y_p;
 	double t0;
+    double k0;
+    double eps0;
 	KE_FIELD* field;
 };
 
@@ -52,9 +54,19 @@ public:
 };
 
 class KE_CARTESIAN{
-	Front *front;
+
+private:
+
+    Front *front;
+
+    static bool activated;
+
 public:
-	KE_CARTESIAN(Front &front);
+	
+    static void activateKE();
+    static void deactivateKE();
+    
+    KE_CARTESIAN(Front &front);
 	KEPS_MODEL keps_model;
 	
 	// member data: RECT_GRID

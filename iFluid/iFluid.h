@@ -66,6 +66,7 @@ struct IF_FIELD {
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
+	double **grad_phi;
 	double *q;
 	double *pres;			/* Pressure */
 	double *vort;			/* Magnitude of Vorticity in 2D */
@@ -578,6 +579,7 @@ protected:
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
+	//void computeGradientPhi();
 	void computeNewVelocity(void);
 	void updateComponent(void);
 	void extractFlowThroughVelocity(void);
