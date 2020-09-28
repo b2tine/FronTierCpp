@@ -284,8 +284,8 @@ public:
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
-        double **vel;       /* velocity field */
-        double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+    double **vel;       /* velocity field */
+    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
     
     //TEMP VARIABLE FOR PROJECTION STEP DEBUG
     double* rho;
@@ -294,13 +294,13 @@ public:
 	void solve(double *soln);
 	void dsolve(double *soln);
 	
-        double (*getStateVar)(POINTER);
-        double (*getStateVel[3])(POINTER);
+    double (*getStateVar)(POINTER);
+    double (*getStateVel[3])(POINTER);
 
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
-        void printIsolatedCells();
+    void printIsolatedCells();
 	int skip_neumann_solver;
 private:
         // Dimension

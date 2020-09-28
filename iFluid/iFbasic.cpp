@@ -469,8 +469,6 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	dim = grid_intfc->dim;
 	T = table_of_interface(grid_intfc);
 	top_comp = T->components;
-
-    //TODO: invert this relationship
     field = iFparams->field;
 
 	hmin = top_h[0];
@@ -1529,20 +1527,16 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
     */
 
-    //TODO: This is extremely inefficient to check if using
-    //      KEPSILON model at every index.
-    
     KE_PARAMS* ke_params;
     double* mu_t;
     double* tke;
+
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
         ke_params = computeMuOfKepsModel();
         mu_t = ke_params->field->mu_t;
         tke = ke_params->field->k;
-        //computeMuOfKepsModel(mu_t,tke);
-            //mu_t = computeMuOfKepsModel();
     }
 
 	for (j = jmin; j <= jmax; j++)
@@ -1588,7 +1582,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
                 break;
             case KEPSILON:
-                mu[index] = mu_t[index];
+                rho[index] = ke_params->rho;
+                mu[index] = mu_t[index] + ke_params->mu;
                 phi[index] += 2.0/3.0*tke[index];
                 break;
             default:
@@ -1596,6 +1591,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 clean_up(ERROR);
             }
 
+            /*
             switch (comp)
             {
                 case LIQUID_COMP1:
@@ -1607,6 +1603,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                     rho[index] = m_rho[1];
                     break;
             }
+            */
 	    
             //Do not consider case of turbulence and surface tension
             //simultaneously right now.
@@ -2346,19 +2343,16 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
     */
 
-    //TODO: This is extremely inefficient to check if using
-    //      KEPSILON model at every index.
     KE_PARAMS* ke_params;
     double* mu_t;
     double* tke;
+    
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
         ke_params = computeMuOfKepsModel();
         mu_t = ke_params->field->mu_t;
         tke = ke_params->field->k;
-        //computeMuOfKepsModel(mu_t,tke);
-            //mu_t = computeMuOfKepsModel();
     }
 
     for (k = kmin; k <= kmax; k++)
@@ -2404,7 +2398,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 mu[index] = computeMuofSmagorinskyModel(icoords);
                 break;
             case KEPSILON:
-                mu[index] = mu_t[index];
+                rho[index] = ke_params->rho;
+                mu[index] = mu_t[index] + ke_params->mu;
                 phi[index] += 2.0/3.0*tke[index];
                 break;
             default:
@@ -2412,9 +2407,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 clean_up(ERROR);
             }
     
-            //add regular visc to the eddy visc to obtain an effective visc
-            //
-            //NOTE: already added to mu_t
+            /*
             switch (comp)
             {
                 case LIQUID_COMP1:
@@ -2426,6 +2419,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                     rho[index] = m_rho[1];
                     break;
             }
+            */
 
             //Do not consider case of turbulence and surface tension
             //simultaneously right now.
@@ -4009,13 +4003,14 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         return mu;
 }       /* end of computeMuofSmagorinskyModel */
 
-//double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
-//void Incompress_Solver_Smooth_Basis::computeMuOfKepsModel(double* mu, double* k)
 KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
-    static boolean first = YES;
     static KE_PARAMS params;
     static KE_CARTESIAN *keps_solver;
+    static bool first = true;
+
+    static double tstart;
+    static bool initialized = false;
 
     if (first)
     {
@@ -4027,17 +4022,29 @@ KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
         keps_solver->field->vel = iFparams->field->vel;
         keps_solver->eqn_params->mu = iFparams->mu2;
         keps_solver->eqn_params->rho = iFparams->rho2;
-        keps_solver->setInitialCondition();
-        first = NO;
+        tstart = keps_solver->eqn_params->t0;
+        first = false;
     }
 
+	
+    if (front->time <= tstart)
+    {
+	    if (debugging("keps_solve"))
+        {
+            printf("Turbulence activation time = %f \
+                    not yet reached.\n",tstart);
+        }
+        return &params;
+    }
+
+    if (!initialized)
+    {
+        keps_solver->setInitialCondition();
+        initialized = true;
+    }
+ 
     keps_solver->solve(front->dt);
     return &params;
-
-    //mu = keps_solver->field->mu_t;
-    //k = keps_solver->field->k;
-        
-    //return keps_solver->field->mu_t;
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

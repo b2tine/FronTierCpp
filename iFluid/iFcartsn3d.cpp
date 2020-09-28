@@ -1465,7 +1465,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 {
     int i,j,k,index;
     //double mu0;
-        double nu0;
+    double nu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1478,12 +1478,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-            nu0 = 0.5*field->mu[index]/field->rho[index];
-            pres[index] = phi[index] - accum_dt*nu0*div_U[index];
+        nu0 = 0.5*field->mu[index]/field->rho[index];
+        pres[index] = phi[index] - accum_dt*nu0*div_U[index];
         //mu0 = 0.5*field->mu[index];
         //pres[index] += phi[index] - accum_dt*mu0*div_U[index];
-
 	    q[index] = pres[index];
+
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
 	    if (max_pressure < pres[index])
@@ -1745,7 +1745,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             icoords[2] = k;
             index  = d_index(icoords,top_gmax,dim);
             source[index] = computeFieldPointDiv(icoords,vel);
-                diff_coeff[index] = 1.0/field->rho[index];
+            diff_coeff[index] = 1.0/field->rho[index];
             div_U[index] = source[index];
             source[index] /= accum_dt;
 
@@ -1836,7 +1836,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
         
     elliptic_solver.rho = field->rho;
-        elliptic_solver.D = diff_coeff;
+    elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();

@@ -1463,21 +1463,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 // 		computeSourceTerm();
 void KE_CARTESIAN::solve(double dt)
 {
-	if (debugging("keps_solve")) printf("Entering keps_solve()\n");
+	if (debugging("trace")) printf("Entering keps_solve()\n");
 	start_clock("keps_solve");
 	
     m_dt = dt;
-
-	if (front->time <= eqn_params->t0)
-    {
-	    if (debugging("keps_solve"))
-        {
-            printf("Turbulence activation time = %f \
-                    not yet reached.\n",eqn_params->t0);
-            printf("Leaving keps_solve()\n");
-        }
-        return;
-    }
 
 	setDomain();
     //if (debugging("keps_solve")) printf("Passing setDomain()\n");
@@ -1500,7 +1489,7 @@ void KE_CARTESIAN::solve(double dt)
 	//if (debugging("keps_solve")) printf("Passing setAdvectionDt()\n");
 
 	stop_clock("keps_solve");
-	if (debugging("keps_solve")) printf("Leaving keps_solve()\n");
+	if (debugging("trace")) printf("Leaving keps_solve()\n");
 }
 
 static void printField(double *var,
@@ -1858,6 +1847,8 @@ void KE_CARTESIAN::computeMuTurb()
 	if (keps_model == REALIZABLE)
 	    FT_ParallelExchGridArrayBuffer(field->Cmu,front,NULL);
 
+    /*
+    //TODO: Add hdf/vtk movie variables for visualization
 	if (dim == 2)
 	{
 	    sprintf(fname,"%s/K_field",OutName(front));
@@ -1877,6 +1868,7 @@ void KE_CARTESIAN::computeMuTurb()
             printField3d(field->Cmu,fname,ic_min,ic_max,top_gmax);
 	    }
 	}
+    */
 
 }
 	
@@ -2347,21 +2339,26 @@ static int find_state_at_crossing(
 
 	status = FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir,
 				comp,state,hs,crx_coords);
-        if (status == NO) return NO_PDE_BOUNDARY;
+    
+    if (status == NO) return NO_PDE_BOUNDARY;
 
-        if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE) 
-	    return NO_PDE_BOUNDARY;
-	else if (wave_type(*hs) == DIRICHLET_BOUNDARY)
+    if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE)
+    {
+        return NO_PDE_BOUNDARY;
+    }
+    else if (wave_type(*hs) == DIRICHLET_BOUNDARY)
 	{
-            return DIRICHLET_PDE_BOUNDARY;
+        return DIRICHLET_PDE_BOUNDARY;
 	}
 	else if (wave_type(*hs) == GROWING_BODY_BOUNDARY)
 	{
-            return DIRICHLET_PDE_BOUNDARY;
+        return DIRICHLET_PDE_BOUNDARY;
 	}
 	else if (wave_type(*hs) == NEUMANN_BOUNDARY || 
 		 wave_type(*hs) == ELASTIC_BOUNDARY)
-            return NEUMANN_PDE_BOUNDARY;
+    {
+        return NEUMANN_PDE_BOUNDARY;
+    }
 }       /* find_state_at_crossing */
 
 static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gmax)

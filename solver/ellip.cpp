@@ -555,7 +555,6 @@ void ELLIPTIC_SOLVER::printIsolatedCells()
         }
 }       /* end printIsolatedCells */
 
-/*
 //TODO: remove arg, is unnecesarry
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
@@ -600,7 +599,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         double aII = 0.0;
         double RHS = source[index];
 
+        //double D_index = D[index];
         double rho_index = rho[index];
+            
+        int skip_count = 0;
 
         for (int idir = 0; idir < 3; ++idir)
         {
@@ -618,6 +620,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
 
                 double coeff_nb = 0.0;
+                //double D_halfidx = 0.5*D_index;
                 double rho_halfidx = 0.5*rho_index;
 
                 crx_status = (*findStateAtCrossing)(front,icoords,
@@ -628,12 +631,23 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
                         //INFLOW/OUTFLOW BOUNDARY ONLY, NOT NOSLIP WALL BOUNDARY!
-                        rho_halfidx += 0.5*rho[index_nb];
-                        coeff_nb = 1.0*lambda/rho_halfidx;
-                            //coeff_nb = 1.0*lambda/rho_index;
-                        aII -= coeff_nb;
-                        RHS -= coeff_nb*getStateVar(intfc_state);
-                        use_neumann_solver = NO;
+                        if (crx_status == CONST_P_PDE_BOUNDARY)
+                        {
+                             //coeff_nb = 1.0*lambda/rho_index;
+                            //D_halfidx += 0.5*D[index_nb];
+                            //coeff_nb = lambda*D_halfidx;
+                            rho_halfidx += 0.5*rho[index_nb];
+                            coeff_nb = lambda/rho_halfidx;
+                            aII -= coeff_nb;
+                            RHS -= coeff_nb*getStateVar(intfc_state);
+                            use_neumann_solver = NO;
+                        }
+                        else
+                        {
+                            //skip for constant velocity inlet boundary since
+                            //we require the Bdry(grad_phi) = 0.
+                            skip_count++;
+                        }
                     }
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -676,7 +690,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                         //coeff_nb = 1.0*lambda/rho_index;
                         rho_halfidx += 0.5*rho_index;
-                        coeff_nb = 1.0*lambda/rho_halfidx;
+                        coeff_nb = lambda/rho_halfidx;
                         aII -= coeff_nb;
                         RHS -= coeff_nb*pres_reflect;
                     }
@@ -686,11 +700,19 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     //NO_PDE_BOUNDARY
                     //coeff_nb = 1.0*lambda/rho_index;
                     rho_halfidx += 0.5*rho[index_nb];
-                    coeff_nb = 1.0*lambda/rho_halfidx;
+                    coeff_nb = lambda/rho_halfidx;
                     solver.Set_A(I,I_nb,coeff_nb);
                     aII -= coeff_nb;
                 }
             }
+        }
+
+        if (skip_count == 6)
+        {
+            printf("\n\nELLIPTIC_SOLVER::solve3d(): WARNING, \
+                    skip_count = %d\n\n",skip_count);
+            //solver.Set_A(I,I,1.0);
+            //RHS = soln[index];//what about the source term?
         }
 
         solver.Set_A(I,I,aII);
@@ -705,7 +727,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     bool Try_GMRES = false;
 
 	PetscInt num_iter;
-	double rel_residual;
+    double rel_residual;
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -845,8 +867,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 //        }
 //    //
 	FT_FreeThese(1,x);
-}*/	/* end solve3d */
+}	/* end solve3d */
 
+/*
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	int index,index_nb[6],size;
@@ -1106,7 +1129,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         }
 
 	FT_FreeThese(1,x);
-}	/* end solve3d */
+}*/   /* end solve3d */
 
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,
