@@ -134,8 +134,9 @@ const std::vector<CD_HSE*>& CollisionSolver3d::getHseList() const
     return hseList;
 }
 
-void CollisionSolver3d::initializeSystem(const Front* front)
+void CollisionSolver3d::initializeSystem(Front* front)
 {
+    ft = front;
     setStep(front->step);
     setTimeStepSize(front->dt);
     setOutputDirectory(OutName(front));
@@ -144,7 +145,7 @@ void CollisionSolver3d::initializeSystem(const Front* front)
 }
 
 //NOTE: Must be called before calling the spring solver
-void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc)
+void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 {
 	clearHseList();
 
@@ -185,6 +186,8 @@ void CollisionSolver3d::assembleFromInterface(const INTERFACE* intfc)
 	{
 	    if (hsbdry_type(*c) != STRING_HSBDRY)
             continue; 
+
+        unsort_curve_point(*c);
 
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
@@ -398,10 +401,11 @@ void CollisionSolver3d::computeImpactZone()
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
 	int niter = 0;
-	bool is_collision = true;
+    const int MAXITER = 100;
 
 	turnOnImpZone();
     
+	bool is_collision = true;
     while(is_collision)
     {
         is_collision = false;
@@ -433,9 +437,68 @@ void CollisionSolver3d::computeImpactZone()
             std::cout << "     " << numImpactZonePoints
                       << " total impact zone points" << std::endl;
         }
+        
+        if (niter == MAXITER)
+        {
+            printf("computeImpactZone(): ERROR\n\t\
+                    maxiters %d without convergence!\n",
+                    MAXITER);
+            
+            debugImpactZones();
+            clean_up(EXIT_FAILURE);
+        }
     }
 	
     turnOffImpZone();
+}
+
+void CollisionSolver3d::debugImpactZones()
+{
+    std::string outdir = CollisionSolver3d::getOutputDirectory();
+    
+    unsortHseList(hseList);
+	int numImpactZone = 0;
+
+	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
+            
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(head) == 1)
+                continue;
+            else
+            {
+                //markImpactZonePoints(head);
+                std::vector<POINT*> impactzone_pts;
+                std::string fname = outdir + "/impzone-" +
+                    std::to_string(numImpactZone);
+                
+                printf("Impact Zone #%d -- %d points",
+                        numImpactZones,weight(head));
+                
+                POINT* p = head;
+                while (p)
+                {
+                    double* coords = Coords(p);
+                    printf("\t\tGindex = %ld coords = %g %g %g\n",
+                            Gindex(p),coords[0],coords[1],coords[2]);
+                    
+                    sorted(p) = YES;
+                    impactzone_pts.push_back(p);
+                    p = next_pt(p);
+                }
+                printf("\n\n");
+                vtk_write_pointset(impactzone_pts,fname,numImpactZone);
+                numImpactZone++;
+            }
+        }
+    }
+    
+    FT_Save(ft);
+    FT_Draw(ft);
 }
 
 void CollisionSolver3d::infoImpactZones()
@@ -532,7 +595,7 @@ void CollisionSolver3d::updateImpactZoneVelocity()
 void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
-    feenableexcept(FE_INVALID | FE_OVERFLOW);
+        //feenableexcept(FE_INVALID | FE_OVERFLOW);
 
     start_clock("computeAverageVelocity");
 	computeAverageVelocity();
@@ -732,8 +795,8 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 	{
 	    for (int j = 0; j < i; ++j)
 	    {
-	        if ((!first) && (isMovableRigidBody(pts[i]) || 
-				 isMovableRigidBody(pts[j])))
+	        if (!first && (isMovableRigidBody(pts[i])
+                 || isMovableRigidBody(pts[j])))
             {
                 continue;
             }
@@ -1417,8 +1480,6 @@ void unsortHseList(std::vector<CD_HSE*>& hseList)
 	}
 }
 
-//TODO: check Union Find and Impact Zone handling is correct
-
 //functions for UF alogrithm
 int& weight(POINT* p){
 	STATE* sl = (STATE*)left_state(p);
@@ -1461,17 +1522,22 @@ extern void makeSet(std::vector<CD_HSE*>& hseList)
     }
 }
 
-POINT* findSet(POINT* p){
+POINT* findSet(POINT* p)
+{
 	if (root(p) != p)
-		root(p) = findSet(root(p));
-	return root(p);
+        return root(p) = findSet(root(p));
+    return p;
 }
 
-void mergePoint(POINT* X, POINT* Y){
-	POINT* PX = findSet(X);
+//TODO: Don't think next_pt pointers being properly updated.
+void mergePoint(POINT* X, POINT* Y)
+{
+    POINT* PX = findSet(X);
 	POINT* PY = findSet(Y);
 	if (PX == PY) return;
-	if (weight(PX) > weight(PY)){
+	
+    if (weight(PX) > weight(PY))
+    {
 	    //update root after merge
 	    weight(PX) += weight(PY);
 	    root(PY) = PX;
@@ -1479,7 +1545,8 @@ void mergePoint(POINT* X, POINT* Y){
 	    next_pt(tail(PX)) = PY;
 	    tail(PX) = tail(PY); 
 	}
-	else{
+	else
+    {
 	    //update root after merge
 	    weight(PY) += weight(PX);
 	    root(PX) = PY;
@@ -1490,45 +1557,58 @@ void mergePoint(POINT* X, POINT* Y){
 }
 //end of UF functions
 
-void printPointList(POINT** plist,const int n){
-	for (int i = 0; i < n; ++i){
+void printPointList(POINT** plist,const int n)
+{
+	for (int i = 0; i < n; ++i)
+    {
 	    printf("pt[%d] = [%f %f %f]\n",i,Coords(plist[i])[0],
 		Coords(plist[i])[1],Coords(plist[i])[2]);
 	}
 }
 
-bool isStaticRigidBody(const POINT* p){
+bool isStaticRigidBody(const POINT* p)
+{
     STATE* sl = (STATE*)left_state(p);
     return sl->is_fixed;
 }
 
-bool isStaticRigidBody(const CD_HSE* hse){
+bool isStaticRigidBody(const CD_HSE* hse)
+{
     for (int i = 0; i < hse->num_pts(); ++i)
-   	if (isStaticRigidBody(hse->Point_of_hse(i)))
-	    return true;
+    {
+        if (isStaticRigidBody(hse->Point_of_hse(i)))
+            return true;
+    }
     return false;
 }
 
-bool isMovableRigidBody(const POINT* p){
+bool isMovableRigidBody(const POINT* p)
+{
     STATE* sl = (STATE*)left_state(p);
     return sl->is_movableRG;
 }
 
-bool isMovableRigidBody(const CD_HSE* hse){
+bool isMovableRigidBody(const CD_HSE* hse)
+{
     for (int i = 0; i < hse->num_pts(); ++i)
+    {
         if (isMovableRigidBody(hse->Point_of_hse(i)))
             return true;
+    }
     return false;
 }
 
-bool isRigidBody(const POINT* p){
+bool isRigidBody(const POINT* p)
+{
     return isStaticRigidBody(p) || isMovableRigidBody(p);
 }
 
-bool isRigidBody(const CD_HSE* hse){
+bool isRigidBody(const CD_HSE* hse)
+{
     return isStaticRigidBody(hse) || isMovableRigidBody(hse);
 }
 
+//HACK, should never be used
 extern void SpreadImpactZoneImpulse(
         POINT* p,
         double impulse,

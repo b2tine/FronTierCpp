@@ -606,9 +606,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             for (int m = 0; m < 3; ++m)
                 icnb[m] = icoords[m];
 
-            //WATCH THE m_dt!!!!!!!!!!!!!!
             double lambda = 1.0/sqr(top_h[idir]);
-                //double lambda = m_dt/sqr(top_h[idir]);
 
             for (int nb = 0; nb < 2; ++nb)
             {

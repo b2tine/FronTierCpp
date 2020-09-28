@@ -73,9 +73,9 @@ public:
 	void clearHseList();
     const std::vector<CD_HSE*>& getHseList() const;
     
-    void initializeSystem(const Front* front);
-	void assembleFromInterface(const INTERFACE*);
-	void createImpZoneForRG(const INTERFACE*);
+    void initializeSystem(Front* front);
+	void assembleFromInterface(INTERFACE*);
+	void createImpZoneForRG(INTERFACE*);
 	
     void resolveCollision();
 	void recordOriginalPosition();	
@@ -112,6 +112,9 @@ public:
     static void setOutputDirectory(std::string dir) {outdir = dir;}
 
 private:
+
+    Front* ft;
+
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
@@ -166,6 +169,7 @@ private:
 	void updateExternalImpulse();
 	void computeImpactZone();
 	void infoImpactZones();
+	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();

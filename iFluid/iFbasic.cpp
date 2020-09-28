@@ -470,7 +470,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	top_comp = T->components;
 
     //TODO: invert this relationship
-	        //field = iFparams->field;
+    field = iFparams->field;
 
 	hmin = top_h[0];
 	size = top_gmax[0]+1;

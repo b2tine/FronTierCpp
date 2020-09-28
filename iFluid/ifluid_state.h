@@ -31,7 +31,7 @@ struct STATE
         POINT* next_pt;
     };
     
-    UF     impZone;
+    UF impZone;
     double collsn_dt;
     double collsnImpulse[3];
 	double collsnImpulse_RG[3];

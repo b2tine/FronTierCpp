@@ -159,6 +159,7 @@ IMPORT  void 	delete_scn(SURFACE *);
 IMPORT  boolean    change_node_of_closed_curve(POINT*, CURVE*);
 IMPORT  void    reset_nodes_posn(INTERFACE *);
 IMPORT  void unsort_surf_point(SURFACE *surf);
+IMPORT  void unsort_curve_point(CURVE *curve);
 
 
 /*	irefl.c*/
