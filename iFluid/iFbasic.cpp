@@ -2326,6 +2326,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
+	double *phi = field->phi;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -2339,10 +2340,13 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
     //TODO: This is extremely inefficient to check if using
     //      KEPSILON model at every index.
     double* mu_t;
+    double* tke;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
-        mu_t = computeMuOfKepsModel();
+        computeMuOfKepsModel(mu_t,tke);
+            //mu_t = computeMuOfKepsModel();
+        
         //TODO: Return TKE (k) to add to pressure
         //      i.e. P_eff = P + 2/3*k
     }
@@ -2391,6 +2395,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] = mu_t[index];
+                phi[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -2460,6 +2465,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
@@ -3985,7 +3991,8 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 }       /* end of computeMuofSmagorinskyModel */
 
 #include "keps.h"
-double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
+//double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
+void Incompress_Solver_Smooth_Basis::computeMuOfKepsModel(double* mu, double* k)
 {
     static boolean first = YES;
     static KE_PARAMS params;
@@ -4005,15 +4012,24 @@ double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
         first = NO;
     }
 
+	if (front->time <= eqn_params->t0)
+    {
+	    if (debugging("keps_solve"))
+        {
+            printf("Turbulence activation time = %f \
+                    not yet reached.\n",eqn_params->t0);
+        }
+        mu = keps_solver->field->mu_t;
+        k = keps_solver->field->k;
+        return;
+            //return keps_solver->field->mu_t;
+    }
+
     keps_solver->solve(front->dt);
-    
-    //TODO: assign mu_t to field->mu directly
-    return keps_solver->field->mu_t;
-    
-    //TODO: add TKE (k) to pressure
-    //      i.e. P_eff = P + 2/3*k
-    //
-    //      Can assign P_eff to q.
+    mu = keps_solver->field->mu_t;
+    k = keps_solver->field->k;
+
+    //return keps_solver->field->mu_t;
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)

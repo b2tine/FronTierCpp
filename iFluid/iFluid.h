@@ -451,7 +451,8 @@ protected:
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
-	double* computeMuOfKepsModel();
+	void computeMuOfKepsModel(double* mu, double* k);
+	    //double* computeMuOfKepsModel();
 	void   computeFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
