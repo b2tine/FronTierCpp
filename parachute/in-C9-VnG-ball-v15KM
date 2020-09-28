@@ -24,7 +24,7 @@ Projection type can be
         PEROT_BOTELLA
 
 **************Fluid parameters***************
-Enter projection type: SIMPLE
+Enter projection type: KIM_MOIN
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 -9.8

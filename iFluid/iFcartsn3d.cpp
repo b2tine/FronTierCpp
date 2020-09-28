@@ -697,8 +697,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             coeff_nb = -1.0*lambda*nu_halfidx;
                             aII -= coeff_nb;
                             coeff_rhs += coeff_nb;
-                            RHS -= 2.0*coeff_nb*getStateVel[l](intfc_state);
-                                //RHS -= coeff_nb*getStateVel[l](intfc_state);
+                            
+                            double bval = getStateVel[idir](intfc_state);
+                            if (iFparams->num_scheme.projc_method == KIM_MOIN)
+                            {
+                                bval += m_dt*field->grad_q[idir][index_nb];
+                            }
+                            RHS -= 2.0*coeff_nb*bval;
+                                //RHS -= 2.0*coeff_nb*getStateVel[l](intfc_state);
+                                    //RHS -= coeff_nb*getStateVel[l](intfc_state);
                             use_neumann_solver = NO;
                         }
                         else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -1456,8 +1463,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 {
-        int i,j,k,index;
-        double mu0;
+    int i,j,k,index;
+    //double mu0;
+        double nu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1465,13 +1473,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 
 	if (debugging("trace"))
 	    (void) printf("Entering computePressurePmII()\n");
-        for (k = 0; k <= top_gmax[2]; k++)
+    for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index3d(i,j,k,top_gmax);
-            mu0 = 0.5*field->mu[index];
-            pres[index] += phi[index] - accum_dt*mu0*div_U[index];
+        index = d_index3d(i,j,k,top_gmax);
+            nu0 = 0.5*field->mu[index]/field->rho[index];
+            pres[index] = phi[index] - accum_dt*nu0*div_U[index];
+        //mu0 = 0.5*field->mu[index];
+        //pres[index] += phi[index] - accum_dt*mu0*div_U[index];
+
 	    q[index] = pres[index];
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
@@ -1484,8 +1495,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 {
-        int i,j,k,index;
-        double mu0;
+    int i,j,k,index;
+    double mu0;
+        //double nu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1493,13 +1505,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 
 	if (debugging("trace"))
 	    (void) printf("Entering computePressurePmIII()\n");
-        for (k = 0; k <= top_gmax[2]; k++)
+    for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index3d(i,j,k,top_gmax);
-            mu0 = 0.5*field->mu[index];
-            pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+        index = d_index3d(i,j,k,top_gmax);
+            //nu0 = 0.5*field->mu[index]/field->rho[index];
+            //pres[index] = phi[index] - accum_dt*nu0*div_U[index];
+        mu0 = 0.5*field->mu[index];
+        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+
 	    q[index] = pres[index];
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
@@ -1546,8 +1561,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    (void) printf("Unknown computePressure() scheme!\n");
 	    clean_up(ERROR);
 	}
-    //TODO: do we need this still?
-        computeGradientQ();
+
+    computeGradientQ();
 }	/* end computePressure */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
@@ -1573,8 +1588,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ(void)
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-        //TODO: if (iFparams->with_porosity) ???
-	            //computeFieldPointGradJump(icoords,array,point_grad_q);
         computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
 		grad_q[l][index] = point_grad_q[l];
@@ -1637,14 +1650,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	int size = (int)cell_center.size();
 	double *pres = field->pres;
 	double *phi = field->phi;
+	double *q = field->q;
 
 	FT_MakeGridIntfc(front);
 	setDomain();
 
-        m_rho[0] = iFparams->rho1;
-        m_rho[1] = iFparams->rho2;
-        m_mu[0] = iFparams->mu1;
-        m_mu[1] = iFparams->mu2;
+    m_rho[0] = iFparams->rho1;
+    m_rho[1] = iFparams->rho2;
+    m_mu[0] = iFparams->mu1;
+    m_mu[1] = iFparams->mu2;
 	m_comp[0] = iFparams->m_comp1;
 	m_comp[1] = iFparams->m_comp2;
 	m_smoothing_radius = iFparams->smoothing_radius;
@@ -1670,11 +1684,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
 		    pres[i] = getPressure(front,coords,NULL);
             phi[i] = getPhiFromPres(front,pres[i]);
+            q[i] = pres[i];
 	    }
         }
 
-        computeGradientQ();
-        copyMeshStates();
+    computeGradientQ();
+    copyMeshStates();
 	setAdvectionDt();
 }       /* end setInitialCondition */
 
@@ -1721,9 +1736,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
 
         /* Compute velocity divergence */
-        //for (k = 0; k <= top_gmax[2]; k++)
-        //for (j = 0; j <= top_gmax[1]; j++)
-        //for (i = 0; i <= top_gmax[0]; i++)
         for (k = kmin; k <= kmax; k++)
         for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
@@ -1733,7 +1745,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             icoords[2] = k;
             index  = d_index(icoords,top_gmax,dim);
             source[index] = computeFieldPointDiv(icoords,vel);
-                //diff_coeff[index] = 1.0/field->rho[index];
+                diff_coeff[index] = 1.0/field->rho[index];
             div_U[index] = source[index];
             source[index] /= accum_dt;
 
@@ -1756,7 +1768,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
 
         FT_ParallelExchGridArrayBuffer(source,front,NULL);
-            //FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+        FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
     
         /*
         for (k = 0; k <= top_gmax[2]; k++)
@@ -1824,7 +1836,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
         
     elliptic_solver.rho = field->rho;
-        //elliptic_solver.D = diff_coeff;
+        elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();

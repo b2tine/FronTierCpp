@@ -2051,6 +2051,8 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 	setSpecialNodeForce(fr, geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
+    //TODO: why only normal component of velocities retained?
+    //      see set_geomset_velocity()
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
 
@@ -2158,6 +2160,8 @@ static void setSurfVelocity(
 		nor_speed = scalar_product(vel,nor,3);
 		for (j = 0; j < 3; ++j)
 		{
+		    //sl->vel[j] = vel[j];
+		    //sr->vel[j] = vel[j];
 		    sl->vel[j] = nor_speed*nor[j];
 		    sr->vel[j] = nor_speed*nor[j];
 		}
@@ -2188,23 +2192,32 @@ static void setCurveVelocity(
 	int dim = FT_Dimension();
 
 	for (b = curve->first; b != curve->last; b = b->next)
-        {
-            p = b->end;
+    {
+        p = b->end;
 	    for (btris = Btris(b); btris && *btris; ++btris)
+        {
+            p->hse = hse = Hyper_surf_element((*btris)->tri);
+            p->hs = hs = Hyper_surf((*btris)->surface);
+    		gindex = Gindex(p);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            FT_NormalAtPoint(p,front,nor,NO_COMP);
+            vel = point_set[gindex]->v;
+            nor_speed = scalar_product(vel,nor,3);
+            
+            for (j = 0; j < 3; ++j)
             {
-                p->hse = hse = Hyper_surf_element((*btris)->tri);
-                p->hs = hs = Hyper_surf((*btris)->surface);
-		gindex = Gindex(p);
-                FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		FT_NormalAtPoint(p,front,nor,NO_COMP);
-		vel = point_set[gindex]->v;
-		nor_speed = scalar_product(vel,nor,3);
-                for (j = 0; j < 3; ++j)
-		    sl->vel[j] = sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
         }
-	for (b = curve->first; b != NULL; b = b->next)
+    }
+
+    for (b = curve->first; b != NULL; b = b->next)
+    {
 	    set_bond_length(b,dim);
+    }
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2239,7 +2252,7 @@ static void new_setNodeVelocity2d(
 	if (is_load_node(node))
 	{
 	    sl = (STATE*)left_state(node->posn);
-            sr = (STATE*)right_state(node->posn);
+        sr = (STATE*)right_state(node->posn);
 	    gindex = Gindex(node->posn);
 	    vel = point_set[gindex]->v;
             for (j = 0; j < 3; ++j)
@@ -2271,73 +2284,98 @@ static void new_setNodeVelocity3d(
 	long gindex;
 
 	for (c = node->out_curves; c && *c; ++c)
-        {
+    {
 		if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
 		    hsbdry_type(*c) != GORE_HSBDRY && 
-		    hsbdry_type(*c) != PASSIVE_HSBDRY) 
-		    continue;
-                b = (*c)->first;
-                p = b->start;
+		    hsbdry_type(*c) != PASSIVE_HSBDRY) continue;
+
+        b = (*c)->first;
+        p = b->start;
 		for (btris = Btris(b); btris && *btris; ++btris)
 		{
-                    p->hse = hse = Hyper_surf_element((*btris)->tri);
-                    p->hs = hs = Hyper_surf((*btris)->surface);
-                    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            p->hse = hse = Hyper_surf_element((*btris)->tri);
+            p->hs = hs = Hyper_surf((*btris)->surface);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 		    FT_NormalAtPoint(p,front,nor,NO_COMP);
 		    gindex = Gindex(p);
 		    vel = point_set[gindex]->v;
-		    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+		    
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
-			for (j = 0; j < 3; ++j)
-			    sl->vel[j] = sr->vel[j] = vel[j];
-			continue;
+                for (j = 0; j < 3; ++j)
+                {
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
+                }
+    			continue;
 		    }
+
 		    nor_speed = scalar_product(vel,nor,3);
 		    if (max_speed < fabs(nor_speed)) 
 		    {
 		    	max_speed = fabs(nor_speed);
 		    	gindex_max = Gindex(p);
 		    	for (j = 0; j < 3; ++j)
-			    crds_max[j] = Coords(p)[j];
+                    crds_max[j] = Coords(p)[j];
 		    }
-                    for (j = 0; j < 3; ++j)
-		    	sl->vel[j] = sr->vel[j] =  nor_speed*nor[j];
+
+            for (j = 0; j < 3; ++j)
+            {
+		    	//sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+		    	sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+            }
 		}
-        }
-        for (c = node->in_curves; c && *c; ++c)
+        
+    }
+
+    for (c = node->in_curves; c && *c; ++c)
+    {
+        if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
+            hsbdry_type(*c) != GORE_HSBDRY && 
+            hsbdry_type(*c) != PASSIVE_HSBDRY) continue;
+
+        b = (*c)->last;
+        p = b->end;
+
+        for (btris = Btris(b); btris && *btris; ++btris)
         {
-		if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
-		    hsbdry_type(*c) != GORE_HSBDRY && 
-		    hsbdry_type(*c) != PASSIVE_HSBDRY) 
-		    continue;
-                b = (*c)->last;
-                p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-                    p->hse = hse = Hyper_surf_element((*btris)->tri);
-                    p->hs = hs = Hyper_surf((*btris)->surface);
-                    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		    FT_NormalAtPoint(p,front,nor,NO_COMP);
-		    gindex = Gindex(p);
-		    vel = point_set[gindex]->v;
-		    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
-		    {
-			for (j = 0; j < 3; ++j)
-			    sl->vel[j] = sr->vel[j] = vel[j];
-			continue;
-		    }
-		    nor_speed = scalar_product(vel,nor,3);
-		    if (max_speed < fabs(nor_speed)) 
-		    {
-		    	max_speed = fabs(nor_speed);
-		    	gindex_max = Gindex(p);
-		    	for (j = 0; j < 3; ++j)
-			    crds_max[j] = Coords(p)[j];
-		    }
-                    for (j = 0; j < 3; ++j)
-		    	sl->vel[j] = sr->vel[j] = nor_speed*nor[j];
-		}
+            p->hse = hse = Hyper_surf_element((*btris)->tri);
+            p->hs = hs = Hyper_surf((*btris)->surface);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            FT_NormalAtPoint(p,front,nor,NO_COMP);
+            gindex = Gindex(p);
+            vel = point_set[gindex]->v;
+        
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+            {
+                for (j = 0; j < 3; ++j)
+                {
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
+                }
+                continue;
+            }
+
+            nor_speed = scalar_product(vel,nor,3);
+            if (max_speed < fabs(nor_speed))
+            {
+                max_speed = fabs(nor_speed);
+                gindex_max = Gindex(p);
+                for (j = 0; j < 3; ++j)
+                    crds_max[j] = Coords(p)[j];
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+            }
         }
+    }
 }	/* end setNodeVelocity3d */
 
 extern void set_geomset_velocity(

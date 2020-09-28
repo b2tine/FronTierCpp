@@ -1659,7 +1659,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2957,7 +2957,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
             {
                 if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
-                    div += coeff_nb*getStateVel[idir](intfc_state);
+                    double bval = getStateVel[idir](intfc_state);
+                    if (iFparams->num_scheme.projc_method == KIM_MOIN)
+                    {
+                        bval += m_dt*this->field->grad_q[idir][index_nb];
+                    }
+                    div += coeff_nb*bval;
+                        //div += coeff_nb*getStateVel[idir](intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                          wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -2966,19 +2972,19 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     status = FT_NormalAtGridCrossing(front,icoords,
                             dir[idir][nb],comp,nor,&hs,crx_coords);
                     
-                    /*
-                    double coords_ghost[MAXD];
-                    getRectangleCenter(index_nb,coords_ghost);
-
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //first reflect across the grid line containing intfc crossing.
-                    double coords_reflect[MAXD];
-                    for (int m = 0; m < 3; ++m)
-                        coords_reflect[m] = coords_ghost[m];
-                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                    //(^should just be the coords at current index)
-                    */
-
+//                    //
+//                    double coords_ghost[MAXD];
+//                    getRectangleCenter(index_nb,coords_ghost);
+//
+//                    //Reflect the ghost point through intfc-mirror at crossing.
+//                    //first reflect across the grid line containing intfc crossing.
+//                    double coords_reflect[MAXD];
+//                    for (int m = 0; m < 3; ++m)
+//                        coords_reflect[m] = coords_ghost[m];
+//                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+//                    //(^should just be the coords at current index)
+//                    //
+//
                     //Reflect the ghost point through intfc-mirror at crossing.
                     //
                     //first reflect across the grid line containing intfc crossing.
@@ -3077,8 +3083,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 index_nb = d_index(icnb,top_gmax,dim);
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
-                //TODO: IMPLEMENT REFLECTING BOUNDAR FOR
-                //      NUEMANN_BOUNDARY AND MOVABLE_BODY_BOUNDARY
                 if (status == NO_PDE_BOUNDARY)
                 {
                     u_edge[idir][nb] = field[idir][index_nb];
@@ -3109,7 +3113,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 	for (i = 0; i < dim; ++i)
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
         return div;
-} */      /* end computeFieldPointDivSimple */
+}*/       /* end computeFieldPointDivSimple */
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         int *icoords,
@@ -3238,6 +3242,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     grad_field[idir] += coeff_nb*getStatePhi(intfc_state);
+                    //grad_field[idir] += coeff_nb*getStatePres(intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                          wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -3246,18 +3251,18 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     status = FT_NormalAtGridCrossing(front,icoords,
                             dir[idir][nb],comp,nor,&hs,crx_coords);
 
-                    /*
-                    double coords_ghost[MAXD];
-                    getRectangleCenter(index_nb,coords_ghost);
-
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //first reflect across the grid line containing intfc crossing.
-                    double coords_reflect[MAXD];
-                    for (int m = 0; m < 3; ++m)
-                        coords_reflect[m] = coords_ghost[m];
-                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                    //(^should just be the coords at current index)
-                    */
+//                    //
+//                    double coords_ghost[MAXD];
+//                    getRectangleCenter(index_nb,coords_ghost);
+//
+//                    //Reflect the ghost point through intfc-mirror at crossing.
+//                    //first reflect across the grid line containing intfc crossing.
+//                    double coords_reflect[MAXD];
+//                    for (int m = 0; m < 3; ++m)
+//                        coords_reflect[m] = coords_ghost[m];
+//                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+//                    //(^should just be the coords at current index)
+//                    //
 
 
                     //Reflect the ghost point through intfc-mirror at crossing.
@@ -3291,6 +3296,9 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     FT_IntrpStateVarAtCoords(front,comp,
                             coords_reflect,field,getStatePhi,
                             &pres_reflect,&field[index]);
+                    //FT_IntrpStateVarAtCoords(front,comp,
+                      //      coords_reflect,field,getStatePres,
+                        //    &pres_reflect,&field[index]);
 
                     grad_field[idir] += coeff_nb*pres_reflect;
                 }
@@ -3303,7 +3311,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         }
     }
 
-}       /* end computeFieldPointGrad */
+}      /* end computeFieldPointGrad */
 
 /*
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
@@ -3337,7 +3345,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    	index_nb = d_index(icnb,top_gmax,dim);
 	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
 				comp,&intfc_state,&hs,crx_coords);
-            //TODO: implement reflecting boundaries at solid walls
 	    	if (status == NO_PDE_BOUNDARY)
                 {
 		    p_edge[idir][nb] = field[index_nb];
@@ -3367,7 +3374,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	}
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
-}*/       /* end computeFieldPointGrad */
+} */      /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {

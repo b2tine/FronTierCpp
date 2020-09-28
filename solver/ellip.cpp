@@ -555,6 +555,7 @@ void ELLIPTIC_SOLVER::printIsolatedCells()
         }
 }       /* end printIsolatedCells */
 
+/*
 //TODO: remove arg, is unnecesarry
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
@@ -629,6 +630,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         //INFLOW/OUTFLOW BOUNDARY ONLY, NOT NOSLIP WALL BOUNDARY!
                         rho_halfidx += 0.5*rho[index_nb];
                         coeff_nb = 1.0*lambda/rho_halfidx;
+                            //coeff_nb = 1.0*lambda/rho_index;
                         aII -= coeff_nb;
                         RHS -= coeff_nb*getStateVar(intfc_state);
                         use_neumann_solver = NO;
@@ -640,26 +642,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         status = FT_NormalAtGridCrossing(front,icoords,
                                 dir[idir][nb],comp,nor,&hs,crx_coords);
 
-                        //ghost point
-                        //double coords_ghost[MAXD];
-                        //TODO:^ probably don't need this
-
-                        /*
-                        double coords_reflect[MAXD];
-                        for (int m = 0; m < 3; ++m)
-                            coords_reflect[m] = coords_ghost[m];
-                        coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                        */
-                        //(^should just be the coords at current index)
-                        //TODO: assign current index coords to coords_reflect
-                        
                         //Reflect the ghost point through intfc-mirror at crossing.
                         //first reflect across the grid line containing intfc crossing,
                         //which is just the coords at the current index.
                         double coords_reflect[MAXD];
                         for (int m = 0; m < 3; ++m)
-                            coords_reflect[m] = top_L[m] + icoords[m]*top_h[m];
-                        //TODO: verify this ^ gets the correct coordinates 
+                            coords_reflect[m] = top_L[m] + top_h[m]*icoords[m];
 
                         //Reflect the displacement vector across the line
                         //containing the intfc normal vector
@@ -686,7 +674,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                                 coords_reflect,soln,getStateVar,
                                 &pres_reflect,&soln[index]);
 
-                        //rho_halfidx += 0.0;
+                        //coeff_nb = 1.0*lambda/rho_index;
+                        rho_halfidx += 0.5*rho_index;
                         coeff_nb = 1.0*lambda/rho_halfidx;
                         aII -= coeff_nb;
                         RHS -= coeff_nb*pres_reflect;
@@ -695,6 +684,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 else
                 {
                     //NO_PDE_BOUNDARY
+                    //coeff_nb = 1.0*lambda/rho_index;
                     rho_halfidx += 0.5*rho[index_nb];
                     coeff_nb = 1.0*lambda/rho_halfidx;
                     solver.Set_A(I,I_nb,coeff_nb);
@@ -797,67 +787,66 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    
         soln[index] = x[I-ilower];
 
-        /*
-	    if (max_soln < soln[index]) 
-	    {
-            max_soln = soln[index];
-            icrds_max[0] = i;
-            icrds_max[1] = j;
-            icrds_max[2] = k;
-	    }
-	    if (min_soln > soln[index]) 
-	    {
-            min_soln = soln[index];
-            icrds_min[0] = i;
-            icrds_min[1] = j;
-            icrds_min[2] = k;
-	    }
-        */
+//        //
+//	    if (max_soln < soln[index]) 
+//	    {
+//            max_soln = soln[index];
+//            icrds_max[0] = i;
+//            icrds_max[1] = j;
+//            icrds_max[2] = k;
+//	    }
+//	    if (min_soln > soln[index]) 
+//	    {
+//            min_soln = soln[index];
+//            icrds_min[0] = i;
+//            icrds_min[1] = j;
+//            icrds_min[2] = k;
+//	    }
+//        //
 	}
-	/*
-    pp_global_max(&max_soln,1);
-	pp_global_min(&min_soln,1);
-
-	if (debugging("step_size"))
-	{
-	    printf("Max solution = %20.14f occuring at: %d %d %d\n",
-                        max_soln,icrds_max[0],icrds_max[1],icrds_max[2]);
-            checkSolver(icrds_max,YES);
-            printf("Min solution = %20.14f occuring at: %d %d %d\n",
-                        min_soln,icrds_min[0],icrds_min[1],icrds_min[2]);
-            checkSolver(icrds_min,YES);
-	}
-	if (debugging("elliptic_error"))
-        {
-            double error,max_error = 0.0;
-            for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                icoords[0] = i;
-                icoords[1] = j;
-                icoords[2] = k;
-                if (ijk_to_I[i][j][k] == -1) continue;
-                error = checkSolver(icoords,NO);
-                if (error > max_error)
-                {
-                    max_error = error;
-                    icrds_max[0] = i;
-                    icrds_max[1] = j;
-                    icrds_max[2] = k;
-                }
-            }
-            (void) printf("In elliptic solver:\n");
-            (void) printf("Max relative elliptic error: %20.14f\n",max_error);
-            (void) printf("Occuring at (%d %d %d)\n",icrds_max[0],
-                                icrds_max[1],icrds_max[2]);
-            error = checkSolver(icrds_max,YES);
-        }
-    */
+//	//
+//    pp_global_max(&max_soln,1);
+//	pp_global_min(&min_soln,1);
+//
+//	if (debugging("step_size"))
+//	{
+//	    printf("Max solution = %20.14f occuring at: %d %d %d\n",
+//                        max_soln,icrds_max[0],icrds_max[1],icrds_max[2]);
+//            checkSolver(icrds_max,YES);
+//            printf("Min solution = %20.14f occuring at: %d %d %d\n",
+//                        min_soln,icrds_min[0],icrds_min[1],icrds_min[2]);
+//            checkSolver(icrds_min,YES);
+//	}
+//	if (debugging("elliptic_error"))
+//        {
+//            double error,max_error = 0.0;
+//            for (k = kmin; k <= kmax; k++)
+//            for (j = jmin; j <= jmax; j++)
+//            for (i = imin; i <= imax; i++)
+//            {
+//                icoords[0] = i;
+//                icoords[1] = j;
+//                icoords[2] = k;
+//                if (ijk_to_I[i][j][k] == -1) continue;
+//                error = checkSolver(icoords,NO);
+//                if (error > max_error)
+//                {
+//                    max_error = error;
+//                    icrds_max[0] = i;
+//                    icrds_max[1] = j;
+//                    icrds_max[2] = k;
+//                }
+//            }
+//            (void) printf("In elliptic solver:\n");
+//            (void) printf("Max relative elliptic error: %20.14f\n",max_error);
+//            (void) printf("Occuring at (%d %d %d)\n",icrds_max[0],
+//                                icrds_max[1],icrds_max[2]);
+//            error = checkSolver(icrds_max,YES);
+//        }
+//    //
 	FT_FreeThese(1,x);
-}	/* end solve3d */
+}*/	/* end solve3d */
 
-/*
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	int index,index_nb[6],size;
@@ -1117,7 +1106,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         }
 
 	FT_FreeThese(1,x);
-}*/	/* end solve3d */
+}	/* end solve3d */
 
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,
