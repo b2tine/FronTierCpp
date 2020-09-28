@@ -572,7 +572,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     boolean status;
 
     int icoords[MAXD], icnb[MAXD];
-	double coords[MAXD], crx_coords[MAXD];
+	double crx_coords[MAXD];
 	double nor[MAXD];
 
     //TODO: Use last time step soln as initial guess for x.

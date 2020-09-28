@@ -2890,6 +2890,141 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         }
 }       /* end computeFieldPointDiv */
 
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
+        int *icoords,
+        double **field)
+{
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+    
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+	
+	int crx_status;
+    boolean status;
+	
+    int icnb[MAXD];
+    double crx_coords[MAXD];
+    double nor[MAXD];
+
+    int index_nb;
+	int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    double div = 0.0;
+    if (!ifluid_comp(comp)) return div;
+
+
+    for (int idir = 0; idir < dim; idir++)
+    {
+        for (int j = 0; j < dim; ++j)
+            icnb[j] = icoords[j];
+
+        double lambda = 0.5/top_h[idir];
+
+        for (int nb = 0; nb < 2; nb++)
+        {
+            icnb[idir] = (nb == 0) ?
+                icoords[idir] - 1 : icoords[idir] + 1;
+
+            index_nb = d_index(icnb,top_gmax,dim);
+            
+            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
+
+            crx_status = (*findStateAtCrossing)(front,icoords,
+                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+            if (crx_status)
+            {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                {
+                    div += coeff_nb*getStateVel[idir](intfc_state);
+                }
+                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                {
+                    //REFLECTING BOUNDARY
+                    status = FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+                    
+                    /*
+                    double coords_ghost[MAXD];
+                    getRectangleCenter(index_nb,coords_ghost);
+
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //first reflect across the grid line containing intfc crossing.
+                    double coords_reflect[MAXD];
+                    for (int m = 0; m < 3; ++m)
+                        coords_reflect[m] = coords_ghost[m];
+                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                    //(^should just be the coords at current index)
+                    */
+
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //
+                    //first reflect across the grid line containing intfc crossing.
+                    //Should be the coords of the current index.
+                    double coords_reflect[MAXD];
+                    getRectangleCenter(index,coords_reflect);
+
+                    //Reflect the displacement vector across the line
+                    //containing the intfc normal vector
+                    double v[MAXD];
+                    double vn = 0.0;
+
+                    for (int m = 0; m < 3; ++m)
+                    {
+                        v[m] =  coords_reflect[m] - crx_coords[m];
+                        vn += v[m]*nor[m];
+                    }
+
+                    for (int m = 0; m < 3; ++m)
+                        v[m] = 2.0*vn*nor[m] - v[m];
+
+                    //The desired reflected point
+                    for (int m = 0; m < 3; ++m)
+                        coords_reflect[m] = crx_coords[m] + v[m];
+
+                    //Interpolate the velocity at the reflected point
+                    double vel_reflect[MAXD];
+                    for (int m = 0; m < 3; ++m)
+                    {
+                        FT_IntrpStateVarAtCoords(front,comp,
+                                coords_reflect,field[m],getStateVel[m],
+                                &vel_reflect[m],&field[m][index]);
+                    }
+
+                    //Ghost vel has relative normal velocity component equal
+                    //in magnitude to reflected point's relative normal velocity
+                    //and opposite in direction.
+                    vn = 0.0;
+                    double vel_rel[MAXD];
+                    double* vel_intfc = ((STATE*)intfc_state)->vel;
+                    for (int m = 0; m < 3; ++m)
+                    {
+                        vel_rel[m] = vel_reflect[m] - vel_intfc[m];
+                        vn += vel_rel[m]*nor[m];
+                    }
+
+                    double vel_ghost[MAXD];
+                    for (int m = 0; m < 3; ++m)
+                        vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
+                
+                    div += coeff_nb*vel_ghost[idir];
+                }
+                else
+                {
+                    //NO_PDE_BOUNDARY
+                    div += coeff_nb*field[idir][index_nb];
+                }
+            }
+        }
+    } 
+
+    return div;
+}       /* end computeFieldPointDivSimple */
+
 /*
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
@@ -2957,129 +3092,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
         return div;
 } */      /* end computeFieldPointDivSimple */
-
-double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
-        int *icoords,
-        double **field)
-{
-    GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-    
-    POINTER intfc_state;
-    HYPER_SURF *hs;
-	
-	int crx_status;
-    boolean status;
-	
-    int icnb[MAXD];
-    double crx_coords[MAXD];
-    double nor[MAXD];
-
-    int index_nb;
-	int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-
-    if (!ifluid_comp(comp)) return 0.0;
-
-    double div = 0.0;
-
-    for (int idir = 0; idir < dim; idir++)
-    {
-        for (int j = 0; j < dim; ++j)
-            icnb[j] = icoords[j];
-
-        double lambda = 0.5/top_h[idir];
-
-        for (int nb = 0; nb < 2; nb++)
-        {
-            icnb[idir] = (nb == 0) ?
-                icoords[idir] - 1 : icoords[idir] + 1;
-
-            index_nb = d_index(icnb,top_gmax,dim);
-            
-            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
-
-            crx_status = (*findStateAtCrossing)(front,icoords,
-                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
-
-            if (crx_status)
-            {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY)
-                {
-                    div += coeff_nb*getStateVel[idir](intfc_state);
-                }
-                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
-                {
-                    //REFLECTING BOUNDARY
-                    double coords_ghost[MAXD];
-                    getRectangleCenter(index_nb,coords_ghost);
-
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //first reflect across the grid line containing intfc crossing.
-                    double coords_reflect[MAXD];
-                    for (int m = 0; m < 3; ++m)
-                        coords_reflect[m] = coords_ghost[m];
-                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                    //(^should just be the coords at current index)
-
-                    //Reflect the displacement vector across the line
-                    //containing the intfc normal vector
-                    double v[MAXD];
-                    double vn = 0.0;
-
-                    for (int m = 0; m < 3; ++m)
-                    {
-                        v[m] =  coords_reflect[m] - crx_coords[m];
-                        vn += v[m]*nor[m];
-                    }
-
-                    for (int m = 0; m < 3; ++m)
-                        v[m] = 2.0*vn*nor[m] - v[m];
-
-                    //The desired reflected point
-                    for (int m = 0; m < 3; ++m)
-                        coords_reflect[m] = crx_coords[m] + v[m];
-
-                    //Interpolate the velocity at the reflected point
-                    double vel_reflect[MAXD];
-                    for (int m = 0; m < 3; ++m)
-                    {
-                        FT_IntrpStateVarAtCoords(front,comp,
-                                coords_reflect,field[m],getStateVel[m],
-                                &vel_reflect[m],&field[m][index]);
-                    }
-
-                    //Ghost vel has relative normal velocity component equal
-                    //in magnitude to reflected point's relative normal velocity
-                    //and opposite in direction.
-                    vn = 0.0;
-                    double vel_rel[MAXD];
-                    double* vel_intfc = ((STATE*)intfc_state)->vel;
-                    for (int m = 0; m < 3; ++m)
-                    {
-                        vel_rel[m] = vel_reflect[m] - vel_intfc[m];
-                        vn += vel_rel[m]*nor[m];
-                    }
-
-                    double vel_ghost[MAXD];
-                    for (int m = 0; m < 3; ++m)
-                        vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
-                
-                    div += coeff_nb*vel_ghost[idir];
-                }
-                else
-                {
-                    //NO_PDE_BOUNDARY
-                    div += coeff_nb*field[idir][index_nb];
-                }
-            }
-        }
-    } 
-
-    return div;
-}       /* end computeFieldPointDivSimple */
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         int *icoords,
@@ -3161,6 +3173,126 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         double *field,
         double *grad_field)
 {
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+    
+	int crx_status;
+    boolean status;
+    
+    int icnb[MAXD];
+    double crx_coords[MAXD];
+    double nor[MAXD];
+
+    int index_nb;
+	int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    for (int i = 0; i < dim; ++i)
+        grad_field[i] = 0.0;
+    if (!ifluid_comp(comp)) return;
+
+
+	for (int idir = 0; idir < dim; idir++)
+	{
+	    for (int j = 0; j < dim; ++j)
+            icnb[j] = icoords[j];
+
+        double lambda = 0.5/top_h[idir];
+
+        for (int nb = 0; nb < 2; ++nb)
+	    {
+	    	icnb[idir] = (nb == 0) ?
+                icoords[idir] - 1 : icoords[idir] + 1;
+	    	
+            index_nb = d_index(icnb,top_gmax,dim);
+
+            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
+
+            crx_status = (*findStateAtCrossing)(front,icoords,
+                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+      
+            if (crx_status)
+            {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                {
+                    grad_field[idir] += coeff_nb*getStatePhi(intfc_state);
+                }
+                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                {
+                    //REFLECTING_BOUNDARY
+                    status = FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+
+                    /*
+                    double coords_ghost[MAXD];
+                    getRectangleCenter(index_nb,coords_ghost);
+
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //first reflect across the grid line containing intfc crossing.
+                    double coords_reflect[MAXD];
+                    for (int m = 0; m < 3; ++m)
+                        coords_reflect[m] = coords_ghost[m];
+                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                    //(^should just be the coords at current index)
+                    */
+
+
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //
+                    //first reflect across the grid line containing intfc crossing.
+                    //Should be the coords of the current index.
+                    double coords_reflect[MAXD];
+                    getRectangleCenter(index,coords_reflect);
+
+                    //Reflect the displacement vector across the line
+                    //containing the intfc normal vector
+                    double v[MAXD];
+                    double vn = 0.0;
+
+                    for (int m = 0; m < 3; ++m)
+                    {
+                        v[m] =  coords_reflect[m] - crx_coords[m];
+                        vn += v[m]*nor[m];
+                    }
+
+                    for (int m = 0; m < 3; ++m)
+                        v[m] = 2.0*vn*nor[m] - v[m];
+
+                    //The desired reflected point
+                    for (int m = 0; m < 3; ++m)
+                        coords_reflect[m] = crx_coords[m] + v[m];
+
+                    //Interpolate the pressure at the reflected point,
+                    //which will serve as the ghost point pressure.
+                    double pres_reflect;
+                    FT_IntrpStateVarAtCoords(front,comp,
+                            coords_reflect,field,getStatePhi,
+                            &pres_reflect,&field[index]);
+
+                    grad_field[idir] += coeff_nb*pres_reflect;
+                }
+                else
+                {
+                    //NO_PDE_BOUNDARY
+                    grad_field[idir] += coeff_nb*field[index_nb];
+                }
+            }
+        }
+    }
+
+}       /* end computeFieldPointGrad */
+
+/*
+void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
+        int *icoords,
+        double *field,
+        double *grad_field)
+{
         int index,index_nb,icnb[MAXD];
         COMPONENT comp;
         int i,j,idir,nb;
@@ -3217,7 +3349,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	}
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
-}       /* end computeFieldPointGrad */
+}*/       /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {
@@ -4048,9 +4180,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         computeFieldPointGrad(icoords,var,grad_var);
 
-	/*if (iFparams->porous_coeff[0] == 0.0 &&
-	    iFparams->porous_coeff[1] == 0.0)
-	    return;*/
+        if (iFparams->with_porosity) return;
 
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)

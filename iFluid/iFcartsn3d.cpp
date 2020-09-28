@@ -146,9 +146,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    comp = top_comp[index];
 	    if (!ifluid_comp(comp))
 	    {
-		for (l = 0; l < 3; ++l)
-		    vel[l][index] = 0.0;
-		continue;
+		    for (l = 0; l < 3; ++l)
+                vel[l][index] = 0.0;
+    		continue;
 	    }
 	    
         rho = field->rho[index];
@@ -165,8 +165,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    for (l = 0; l < 3; ++l)
 	    {
 	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
-		    speed += fabs(vel[l][index]);
+		    speed += sqr(vel[l][index]);
+		    //speed += fabs(vel[l][index]);
 	    }
+        speed = sqrt(speed);
+
 	    mag_grad_phi = Mag3d(grad_phi);
 	    ave_grad_phi += mag_grad_phi;
 	    if (mag_grad_phi > max_grad_phi)
@@ -179,8 +182,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    if (speed > iFparams->ub_speed)
 	    {
 	    	for (l = 0; l < 3; ++l)
-		    vel[l][index] *= iFparams->ub_speed/speed;
-		speed = iFparams->ub_speed;
+                vel[l][index] *= iFparams->ub_speed/speed;
+            speed = iFparams->ub_speed;
 	    }
 	}
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
@@ -516,7 +519,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         //TODO: appendOpenEndStates() appears to be deprecated,
         //      and the OPEN_BOUNDARY condition replaced by the
         //      FLOW_THROUGH_BOUNDARY condition.
-	    appendOpenEndStates(); //necessary since phi is updated
+        
+        //Is this getting taken care of??
+        appendOpenEndStates(); //necessary since phi is updated
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
 
@@ -702,6 +707,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             status = FT_NormalAtGridCrossing(front,icoords,
                                     dir[idir][nb],comp,nor,&hs,crx_coords);
 
+                            /*
                             //ghost point
                             double coords_ghost[MAXD];
                             getRectangleCenter(index_nb,coords_ghost);
@@ -713,6 +719,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                                 coords_reflect[m] = coords_ghost[m];
                             coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                             //(^should just be the coords at current index)
+                            */
+
+                            //Reflect the ghost point through intfc-mirror at crossing.
+                            //
+                            //first reflect across the grid line containing intfc crossing.
+                            //Should be the coords of the current index
+                            double coords_reflect[MAXD];
+                            getRectangleCenter(index,coords_reflect);
 
                             //Reflect the displacement vector across the line
                             //containing the intfc normal vector
@@ -1390,7 +1404,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 {
-        int i,j,k,index;
+    int index;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1398,32 +1412,36 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 
 	if (debugging("trace"))
 	    (void) printf("Entering computePressurePmI()\n");
-        for (k = 0; k <= top_gmax[2]; k++)
-	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+
+    for (int k = 0; k <= top_gmax[2]; k++)
+	for (int j = 0; j <= top_gmax[1]; j++)
+    for (int i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index3d(i,j,k,top_gmax);
+        index = d_index3d(i,j,k,top_gmax);
             //pres[index] += phi[index];
-            pres[index] = phi[index];
+        pres[index] = phi[index];
 	    q[index] = pres[index];
-	    if (i < imin || i > imax || j < jmin || j > jmax || 
-		k < kmin || k > kmax)
-		continue;
+	    
+        if (i < imin || i > imax ||
+            j < jmin || j > jmax ||
+            k < kmin || k > kmax) continue;
+
 	    if (min_pressure > pres[index])
 	    {
-		min_pressure = pres[index];
-		icrds_min[0] = i;
-		icrds_min[1] = j;
-		icrds_min[2] = k;
+            min_pressure = pres[index];
+            icrds_min[0] = i;
+            icrds_min[1] = j;
+            icrds_min[2] = k;
 	    }
 	    if (max_pressure < pres[index])
 	    {
-		max_pressure = pres[index];
-		icrds_max[0] = i;
-		icrds_max[1] = j;
-		icrds_max[2] = k;
+            max_pressure = pres[index];
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
 	    }
 	}
+
 	if (debugging("step_size"))
 	{
 	    (void) printf(" Max pressure = %f  occuring at: %d %d %d\n",
@@ -1701,7 +1719,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             vmin[l] = HUGE;
             vmax[l] = -HUGE;
         }
+
         /* Compute velocity divergence */
+        //for (k = 0; k <= top_gmax[2]; k++)
+        //for (j = 0; j <= top_gmax[1]; j++)
+        //for (i = 0; i <= top_gmax[0]; i++)
         for (k = kmin; k <= kmax; k++)
         for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
@@ -1710,8 +1732,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             icoords[1] = j;
             icoords[2] = k;
             index  = d_index(icoords,top_gmax,dim);
-            //TODO: divergence computation doesn't look correct
-            //      for rigid body/solid walls
             source[index] = computeFieldPointDiv(icoords,vel);
                 //diff_coeff[index] = 1.0/field->rho[index];
             div_U[index] = source[index];
@@ -1804,7 +1824,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
         
     elliptic_solver.rho = field->rho;
-    //elliptic_solver.D = diff_coeff;
+        //elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();
@@ -2458,6 +2478,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::appendOpenEndStates()
         if (debugging("trace"))
             printf("Entering appendOpenEndStates() \n");
         if (dim != 3) return;
+
         for (idir = 0; idir < dim; ++idir)
         for (side = 0; side < 2; ++side)
         {
@@ -2483,7 +2504,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::appendOpenEndStates()
                             field->vel[ii][index] = state.vel[ii];
                         }
                         field->pres[index] = state.pres;
-		        field->phi[index] = state.phi; 
+                        field->phi[index] = state.phi; 
                     }
                 }
             }
