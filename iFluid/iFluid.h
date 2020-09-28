@@ -264,6 +264,8 @@ struct VPARAMS {
 class SOLVER;
 class Incompress_Solver_Basis;
 
+class KE_PARAMS;
+
 class L_RECTANGLE {
 public:
 	int comp;			 
@@ -451,7 +453,8 @@ protected:
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
-	void computeMuOfKepsModel(double* mu, double* k);
+	KE_PARAMS* computeMuOfKepsModel();
+	    //void computeMuOfKepsModel(double* mu, double* k);
 	    //double* computeMuOfKepsModel();
 	void   computeFieldPointGrad(int*, double*, double*);
 	void   checkVelocityDiv(const char*);

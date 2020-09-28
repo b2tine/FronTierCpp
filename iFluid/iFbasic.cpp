@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		         iFbasic.cpp
  *******************************************************************/
 #include "iFluid.h"
+#include "keps.h"
 
 #include <iostream>
 #include <fstream>
@@ -1530,12 +1531,17 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 
     //TODO: This is extremely inefficient to check if using
     //      KEPSILON model at every index.
+    
+    KE_PARAMS* ke_params;
     double* mu_t;
     double* tke;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
-        computeMuOfKepsModel(mu_t,tke);
+        ke_params = computeMuOfKepsModel();
+        mu_t = ke_params->field->mu_t;
+        tke = ke_params->field->k;
+        //computeMuOfKepsModel(mu_t,tke);
             //mu_t = computeMuOfKepsModel();
     }
 
@@ -1592,14 +1598,14 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 
             switch (comp)
             {
-            case LIQUID_COMP1:
-                mu[index] += m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] += m_mu[1];
-                rho[index] = m_rho[1];
-                break;
+                case LIQUID_COMP1:
+                    //mu[index] += m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    //mu[index] += m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
             }
 	    
             //Do not consider case of turbulence and surface tension
@@ -2342,12 +2348,16 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 
     //TODO: This is extremely inefficient to check if using
     //      KEPSILON model at every index.
+    KE_PARAMS* ke_params;
     double* mu_t;
     double* tke;
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
-        computeMuOfKepsModel(mu_t,tke);
+        ke_params = computeMuOfKepsModel();
+        mu_t = ke_params->field->mu_t;
+        tke = ke_params->field->k;
+        //computeMuOfKepsModel(mu_t,tke);
             //mu_t = computeMuOfKepsModel();
     }
 
@@ -2403,16 +2413,18 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             }
     
             //add regular visc to the eddy visc to obtain an effective visc
+            //
+            //NOTE: already added to mu_t
             switch (comp)
             {
-            case LIQUID_COMP1:
-                mu[index] += m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] += m_mu[1];
-                rho[index] = m_rho[1];
-                break;
+                case LIQUID_COMP1:
+                    //mu[index] += m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    //mu[index] += m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
             }
 
             //Do not consider case of turbulence and surface tension
@@ -3990,9 +4002,9 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         return mu;
 }       /* end of computeMuofSmagorinskyModel */
 
-#include "keps.h"
 //double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
-void Incompress_Solver_Smooth_Basis::computeMuOfKepsModel(double* mu, double* k)
+//void Incompress_Solver_Smooth_Basis::computeMuOfKepsModel(double* mu, double* k)
+KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
     static boolean first = YES;
     static KE_PARAMS params;
@@ -4012,22 +4024,11 @@ void Incompress_Solver_Smooth_Basis::computeMuOfKepsModel(double* mu, double* k)
         first = NO;
     }
 
-	if (front->time <= params.t0)
-    {
-	    if (debugging("keps_solve"))
-        {
-            printf("Turbulence activation time = %f \
-                    not yet reached.\n",params.t0);
-        }
-        mu = keps_solver->field->mu_t;
-        k = keps_solver->field->k;
-        return;
-            //return keps_solver->field->mu_t;
-    }
-
     keps_solver->solve(front->dt);
-    mu = keps_solver->field->mu_t;
-    k = keps_solver->field->k;
+    return &params;
+
+    //mu = keps_solver->field->mu_t;
+    //k = keps_solver->field->k;
         
     //return keps_solver->field->mu_t;
 }

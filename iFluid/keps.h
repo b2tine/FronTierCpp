@@ -1,10 +1,9 @@
+#ifndef KEPS_H
+#define KEPS_H
+
 #include "iFluid.h"
-/*keps.h*/
 /*Following is for turbulence model RNG k-eps model*/
     
-    //struct _IF_FIELD;
-    //typedef struct _IF_FIELD IF_FIELD;
-
 struct KE_FIELD {
 	double *k;
 	double *eps;
@@ -192,4 +191,6 @@ public:
 };
 
 
-extern double getStateTemp(POINTER);
+//extern double getStateTemp(POINTER);
+
+#endif

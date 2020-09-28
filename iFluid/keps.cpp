@@ -1472,28 +1472,29 @@ void KE_CARTESIAN::solve(double dt)
     {
 	    if (debugging("keps_solve"))
         {
-            printf("Turbulence activation time not yet reached.\n");
+            printf("Turbulence activation time = %f \
+                    not yet reached.\n",eqn_params->t0);
             printf("Leaving keps_solve()\n");
         }
         return;
     }
 
 	setDomain();
-    if (debugging("keps_solve")) printf("Passing setDomain()\n");
+    //if (debugging("keps_solve")) printf("Passing setDomain()\n");
 
 	setComponent();
-	if (debugging("keps_solve")) printf("Passing setComponent()\n");
+	//if (debugging("keps_solve")) printf("Passing setComponent()\n");
 
     //computes the production term Pk
     computeSource();
-    if (debugging("keps_solve")) printf("Passing computeSource()\n");
+    //if (debugging("keps_solve")) printf("Passing computeSource()\n");
 
     //TODO: rename this -- misleading
 	computeAdvection();
-	if (debugging("keps_solve")) printf("Passing computeAdvection()\n");
+	//if (debugging("keps_solve")) printf("Passing computeAdvection()\n");
 
 	computeMuTurb();
-	if (debugging("keps_solve")) printf("Passing computeMuTurb()\n");
+	//if (debugging("keps_solve")) printf("Passing computeMuTurb()\n");
 
 	//setAdvectionDt();
 	//if (debugging("keps_solve")) printf("Passing setAdvectionDt()\n");
