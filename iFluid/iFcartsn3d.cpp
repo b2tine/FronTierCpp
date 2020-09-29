@@ -1615,7 +1615,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-        computeFieldPointGrad(icoords,array,point_grad_q,false);
+        computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
             grad_q[l][index] = point_grad_q[l];
 	}
