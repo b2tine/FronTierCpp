@@ -109,7 +109,7 @@ static void propagation_driver(Front *front)
         dummySpringSolver(front);
 
         //collision detect and handling
-        collision_solver->assembleFromInterface(front->interf,front->dt);
+        collision_solver->initializeSystem(front);
         collision_solver->setFabricFrictionConstant(0.0);
         collision_solver->resolveCollision();
 
