@@ -115,7 +115,7 @@ function config_defiant {
 
 
 ARCH="opt"
-OPT_FLAGS="-O2 --ffloat-store"
+OPT_FLAGS="-O2 -ffloat-store"
 
 DEBUG_FLAGS="-rdynamic"
 WARNING="-w"
