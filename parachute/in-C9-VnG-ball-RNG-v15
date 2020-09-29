@@ -10,9 +10,9 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 15.0
-Max step: 2000
-Print interval: 0.05
-Movie frame interval: 0.025
+Max step: 5000
+Print interval: 0.5
+Movie frame interval: 0.05
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -109,7 +109,7 @@ Enter C2: 1.68
 Enter Cmu: 0.0845
 Enter Cbc: 0.01
 Enter l0: 0.75
-Enter mu0: 0.01
+Enter mu0: 0.000001813
 Enter B: 5.2
 Enter y+: 30.0
 
@@ -149,7 +149,7 @@ Enter the debugging string: Xdirichlet_bdry
 Enter the debugging string: Xflow_through
 Enter the debugging string: Xcollision_off
 
-Enter the debugging string: sample_velocity
+Enter the debugging string: Xsample_velocity
 Enter the sample line type: 2
 Enter the sample line coordinate: 6.0 6.0
 Enter the start step for sample: 0

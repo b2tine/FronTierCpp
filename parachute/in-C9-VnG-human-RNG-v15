@@ -43,7 +43,7 @@ Enter yes to skip rg_nodes in y direction for 1: yes
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 300
+Enter the total mass for rigid body: 200
 Enter the initial center of mass for rigid body: 6 6 0.951
 Enter the initial center of mass velocity: 0 0 0
 
@@ -73,7 +73,7 @@ Enter viscous parameter: 604.333
 Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 300
+Enter payload: 200
 Enter interior sub step number: 10
 Enter area density of canopy: 5.0
 
@@ -106,15 +106,16 @@ Enter C1: 1.42
 Enter C2: 1.68
 Enter Cmu: 0.0845
 Enter Cbc: 0.01
-Enter l0: 0.01
-Enter mu0: 0.00001813
-Enter y+: 11.067
+Enter l0: 0.75
+Enter mu0: 0.000001813
+Enter B: 5.2
+Enter y+: 30.0
 
-Enter time to active turbulence model: 0.0
+Enter time to active turbulence model: 0.25
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: CONSTAT_STATE
+Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 15
 Enter pressure: 0
 For upper boundary in 2-th dimension
