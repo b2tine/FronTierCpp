@@ -361,7 +361,7 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 
 void PETSc::Solve_withPureNeumann(void)
 {
-#if defined HAVE_HYPRE
+#ifdef HAVE_HYPRE
 	Solve_withPureNeumann_HYPRE();
 #else
 	Solve_withPureNeumann_BCGSL();

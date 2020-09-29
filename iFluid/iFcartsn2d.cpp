@@ -420,12 +420,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 {
 	int i,j,k,l,index;
-	double grad_phi_point[2],rho;
+	double grad_phi[2],rho;
 	COMPONENT comp;
 	int icoords[MAXD];
 	double **vel = field->vel;
 	double *phi = field->phi;
-    double** grad_phi = field->grad_phi;
 
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
@@ -450,18 +449,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	    icoords[1] = j;
 
         if (iFparams->with_porosity)
-                computeFieldPointGradJump(icoords,phi,grad_phi_point);
+                computeFieldPointGradJump(icoords,phi,grad_phi);
         else
-            computeFieldPointGrad(icoords,phi,grad_phi_point);
+            computeFieldPointGrad(icoords,phi,grad_phi);
 
-        vel[0][index] -= accum_dt/rho*grad_phi_point[0];
-	    vel[1][index] -= accum_dt/rho*grad_phi_point[1];
-        grad_phi[0][index] = grad_phi_point[0];
-        grad_phi[1][index] = grad_phi_point[1];
+        vel[0][index] -= accum_dt/rho*grad_phi[0];
+	    vel[1][index] -= accum_dt/rho*grad_phi[1];
 	}
 
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 	
     //extractFlowThroughVelocity();
 	computeVelDivergence();
@@ -1012,7 +1008,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ(void)
 	    index = d_index2d(i,j,top_gmax);
 	    icoords[0] = i;
 	    icoords[1] = j;
-	    computeFieldPointGrad(icoords,array,point_grad_q,false);
+	    computeFieldPointGrad(icoords,array,point_grad_q);
 	    for (l = 0; l < dim; ++l)
 	    	grad_q[l][index] = point_grad_q[l];
 	}

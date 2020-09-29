@@ -158,8 +158,6 @@ struct IF_PARAMS
 	COMPONENT m_comp1;
 	COMPONENT m_comp2;
 	
-    //TODO: What is the point of this, since it gets assigned
-    //      to the IF_FIELD member of the solver
     IF_FIELD *field;
 
 	int adv_order;
@@ -456,9 +454,9 @@ protected:
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	
-    //void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
-    void computeFieldPointGrad(int* icoords,double* field,
-            double* grad_field, bool is_phi_field = true);
+    void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
+    /*void computeFieldPointGrad(int* icoords,double* field,
+            double* grad_field, bool is_phi_field = true);*/
 
 	void   checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/

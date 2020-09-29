@@ -203,6 +203,6 @@ public:
 };
 
 
-//extern double getStateTemp(POINTER);
+extern double getStateTemp(POINTER);
 
 #endif

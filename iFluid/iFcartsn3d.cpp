@@ -127,8 +127,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	double speed;
 	int icrds_max[MAXD];
 
-    double** grad_phi = field->grad_phi;
-	double grad_phi_point[MAXD];
+	double grad_phi[MAXD];
     double rho;
 
 	max_grad_phi = ave_grad_phi = 0.0;
@@ -162,18 +161,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         //Coupling of the velocity impulse due to force of the
         //immersed porous interface accounted for by the addition
         //of GFM pressure jump source terms into grad_phi 
-        computeFieldPointGradJump(icoords,phi,grad_phi_point);
+        computeFieldPointGradJump(icoords,phi,grad_phi);
 
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
-            grad_phi[l][index] = grad_phi_point[l];
-	    	vel[l][index] -= accum_dt/rho*grad_phi_point[l];
+	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
 		    speed += sqr(vel[l][index]);
 	    }
         speed = sqrt(speed);
 
-	    mag_grad_phi = Mag3d(grad_phi_point);
+	    mag_grad_phi = Mag3d(grad_phi);
 	    ave_grad_phi += mag_grad_phi;
 	    if (mag_grad_phi > max_grad_phi)
 	    {
@@ -191,7 +189,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 	
     if (debugging("step_size"))
 	{
@@ -533,14 +530,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 
         accum_dt = 0.0;
 	}
-    else
-    {
-        printf("\n\n\tWARNING: Projection step skipped\n");
-        printf("\t m_dt = %g   accum_dt = %g   min_dt = %g\n",
-                m_dt, accum_dt, min_dt);
-        //clean_up(EXIT_FAILURE);
-    }
-	computeMaxSpeed();
+	
+    computeMaxSpeed();
     computeVorticity();
 
 	if (debugging("step_size"))
@@ -596,6 +587,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	//return computeDiffusionImplicit();
 }	/* end computeDiffusion */
 
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
@@ -710,10 +702,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             RHS -= 2.0*coeff_nb*bval;
                             use_neumann_solver = NO;
                             
-                            /*if (iFparams->num_scheme.projc_method == SIMPLE ||
-                             *    iFparams->num_scheme.projc_method == KIM_MOIN)
-                                bval += m_dt*field->grad_phi[idir][index_nb];
-                            }*/
+                            //if (iFparams->num_scheme.projc_method == SIMPLE ||
+                            //    iFparams->num_scheme.projc_method == KIM_MOIN)
+                            //    bval += m_dt*field->grad_phi[idir][index_nb];
+                            }//
                         }
                         else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                                  wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -721,19 +713,19 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             status = FT_NormalAtGridCrossing(front,icoords,
                                     dir[idir][nb],comp,nor,&hs,crx_coords);
 
-                            /*
-                            //ghost point
-                            double coords_ghost[MAXD];
-                            getRectangleCenter(index_nb,coords_ghost);
-                            
-                            //Reflect the ghost point through intfc-mirror at crossing.
-                            //first reflect across the grid line containing intfc crossing.
-                            double coords_reflect[MAXD];
-                            for (int m = 0; m < dim; ++m)
-                                coords_reflect[m] = coords_ghost[m];
-                            coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                            //(^should just be the coords at current index)
-                            */
+                  //          //
+                  //          //ghost point
+                  //          double coords_ghost[MAXD];
+                  //          getRectangleCenter(index_nb,coords_ghost);
+                  //          
+                  //          //Reflect the ghost point through intfc-mirror at crossing.
+                  //          //first reflect across the grid line containing intfc crossing.
+                  //          double coords_reflect[MAXD];
+                  //          for (int m = 0; m < dim; ++m)
+                  //              coords_reflect[m] = coords_ghost[m];
+                  //          coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                  //          //(^should just be the coords at current index)
+                  //          //
 
                             //Reflect the ghost point through intfc-mirror at crossing.
                             //
@@ -828,12 +820,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	    start_clock("Before Petsc solve");
         if (use_neumann_solver)
         {
-            /*
-            if (skip_neumann_solver)
-            {
-                //TODO: is this needed??
-            }
-            */
+            //
+            //if (skip_neumann_solver)
+            //{
+            //    //TODO: is this needed??
+            //}
+            ///
 
             printf("\ncomputeDiffusionCN(): Using Neumann Solver!\n");
             solver.Solve_withPureNeumann();
@@ -913,9 +905,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::\
                 computeDiffusionCN()\n");
     }
-}       /* end computeDiffusionCN */
+}*/       /* end computeDiffusionCN */
 
-/*
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
@@ -926,7 +917,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double coords[MAXD], crx_coords[MAXD];
 	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
         double *x;
-    //TODO: index by direction and behind ahead nb = 0,1 like advection
 	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	POINTER intfc_state;
 	HYPER_SURF *hs;
@@ -986,7 +976,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             	mu0   = field->mu[index];
             	rho   = field->rho[index];
 
-        //TODO: index by dir = 0,1,2 and nb = 0,1
         for (nb = 0; nb < 6; nb++)
         {
 		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
@@ -1035,7 +1024,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
 		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
 
-        //TODO: index by dir = 0,1,2 and nb = 0,1
 		for(nb = 0; nb < 6; nb++)
 		{
             //TODO: Neumann boundary at solid walls does not appear to be implemented.
@@ -1066,6 +1054,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 		solver.Set_b(I, rhs);
             }
 
+            //TODO:
             solver.SetMaxIter(40000);
             solver.SetTol(1e-10);
                 //solver.SetTol(1e-14);
@@ -1105,7 +1094,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	if (debugging("trace"))
 	    (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionCN()\n");
-}*/       /* end computeDiffusionCN */
+}       /* end computeDiffusionCN */
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionExplicit(void)
@@ -1432,8 +1421,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
     for (int i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
+            //pres[index] += phi[index];
+        pres[index] = phi[index];
 	    q[index] = pres[index];
-        pres[index] += phi[index];
 	    
         if (i < imin || i > imax ||
             j < jmin || j > jmax ||
@@ -1475,8 +1465,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	double *q = field->q;
 	double *div_U = field->div_U;
 
-    double nu0;
-        //double mu0;
+    //TODO: verify if mu or nu
+    double mu0;
+        //double nu0;
 	
     if (debugging("trace"))
 	    (void) printf("Entering computePressurePmII()\n");
@@ -1485,13 +1476,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        nu0 = 0.5*field->mu[index]/field->rho[index];
-        pres[index] = phi[index] - accum_dt*nu0*div_U[index];
-            //mu0 = 0.5*field->mu[index];
-            //pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+        mu0 = 0.5*field->mu[index];
+        pres[index] += phi[index] - accum_dt*mu0*div_U[index];
+            //nu0 = 0.5*field->mu[index]/field->rho[index];
+            //pres[index] = phi[index] - accum_dt*nu0*div_U[index];
 
         q[index] = pres[index];
-        //q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
@@ -1518,7 +1508,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        pres[index] += phi[index];
+        mu0 = 0.5*field->mu[index];
+        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
 	    q[index] = pres[index];
 
 	    if (min_pressure > pres[index])
@@ -1553,20 +1544,20 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	case BELL_COLELLA:
 	    computePressurePmI();
 	    break;
-	case SIMPLE:
 	case KIM_MOIN:
 	    computePressurePmII();
 	    break;
+	case SIMPLE:
 	case PEROT_BOTELLA:
+	    computePressurePmI();
 	    //computePressurePmIII();
-	    //break;
+	    break;
 	case ERROR_PROJC_SCHEME:
 	default:
 	    (void) printf("Unknown computePressure() scheme!\n");
 	    clean_up(ERROR);
 	}
 
-    //computeGradientPhi();
     computeGradientQ();
 }	/* end computePressure */
 
@@ -1686,7 +1677,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	int size = (int)cell_center.size();
 	double *pres = field->pres;
 	double *phi = field->phi;
-	double *q = field->q;
 
 	FT_MakeGridIntfc(front);
 	setDomain();
@@ -1870,7 +1860,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             checkVelocityDiv("Before computeProjection()");
         }
         
-    elliptic_solver.rho = field->rho;
     elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
@@ -1887,7 +1876,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.ilower = ilower;
     elliptic_solver.iupper = iupper;
     elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-    elliptic_solver.solve(array);//TODO: don't need to pass array here
+    elliptic_solver.solve(array);
 
     /*
 	if (iFparams->with_porosity)

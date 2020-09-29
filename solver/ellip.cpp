@@ -555,7 +555,7 @@ void ELLIPTIC_SOLVER::printIsolatedCells()
         }
 }       /* end printIsolatedCells */
 
-//TODO: remove arg, is unnecesarry
+/*
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	const GRID_DIRECTION dir[3][2] = {
@@ -870,9 +870,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 //        }
 //    //
 	FT_FreeThese(1,x);
-}	/* end solve3d */
+}*/	/* end solve3d */
 
-/*
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
 	int index,index_nb[6],size;
@@ -1132,7 +1131,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         }
 
 	FT_FreeThese(1,x);
-}*/   /* end solve3d */
+}   /* end solve3d */
 
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,

@@ -375,8 +375,8 @@ void airfoil_driver(Front *front,
         print_storage("after time loop","trace");
 
         FT_PrintTimeStamp(front);
-        stop_clock("timeStep");
         fflush(stdout);
+        stop_clock("timeStep");
     }
     
     FT_FreeMainIntfc(front);
