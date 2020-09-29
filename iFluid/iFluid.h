@@ -455,9 +455,10 @@ protected:
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
-	    //void computeMuOfKepsModel(double* mu, double* k);
-	    //double* computeMuOfKepsModel();
-	void   computeFieldPointGrad(int*, double*, double*);
+	
+    void computeFieldPointGrad(int* icoords,double* field,
+            double* grad_field, bool is_phi_field = true);
+
 	void   checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
 

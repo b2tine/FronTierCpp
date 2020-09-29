@@ -1624,7 +1624,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
-        computeFieldPointGrad(icoords,array,point_grad_q);
+        computeFieldPointGrad(icoords,array,point_grad_q,false);
 	    for (l = 0; l < dim; ++l)
             grad_q[l][index] = point_grad_q[l];
 	}
@@ -1720,7 +1720,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
 		    pres[i] = getPressure(front,coords,NULL);
             phi[i] = pres[i];
-            //phi[i] = getPhiFromPres(front,pres[i]);
+            //phi[i] = getPhiFromPres(front,pres[i]);//See TODO at definition
             q[i] = pres[i];
 	    }
         }

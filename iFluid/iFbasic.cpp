@@ -3195,10 +3195,12 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         return div;
 }       /* end computeFieldPointDivDouble */
 
+//Default Value: is_phi_field = true
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
         double *field,
-        double *grad_field)
+        double *grad_field,
+        bool is_phi_field)
 {
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
@@ -3297,12 +3299,18 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     //Interpolate the pressure at the reflected point,
                     //which will serve as the ghost point pressure.
                     double pres_reflect;
-                    FT_IntrpStateVarAtCoords(front,comp,
-                            coords_reflect,field,getStatePhi,
-                            &pres_reflect,&field[index]);
-                    //FT_IntrpStateVarAtCoords(front,comp,
-                    //        coords_reflect,field,getStatePres,
-                    //        &pres_reflect,&field[index]);
+                    if (is_phi_field)
+                    {
+                        FT_IntrpStateVarAtCoords(front,comp,
+                                coords_reflect,field,getStatePhi,
+                                &pres_reflect,&field[index]);
+                    }
+                    else
+                    {
+                        FT_IntrpStateVarAtCoords(front,comp,
+                                coords_reflect,field,getStatePres,
+                                &pres_reflect,&field[index]);
+                    }
 
                     grad_field[idir] += coeff_nb*pres_reflect;
                 }
