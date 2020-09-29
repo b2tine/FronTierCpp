@@ -116,12 +116,14 @@ int main(int argc, char **argv)
 
 	FT_ReadTimeControl(in_name,&front);
 
+    //FT_SetGlobalIndex() Must be called before setMotionParams()
+    //in order to allow advanced restart scenarios
 	if (!RestartRun)
     {
         optimizeElasticMesh(&front);
         set_equilibrium_mesh(&front);
+        FT_SetGlobalIndex(&front);
         static_mesh(front.interf) = YES;
-        FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
     }
 
     setMotionParams(&front);

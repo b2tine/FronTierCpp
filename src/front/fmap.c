@@ -3295,11 +3295,8 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	HYPER_SURF         **phs,
 	int range)
 {
-    //feenableexcept(FE_ALL_EXCEPT);
 	return nearest_interface_point_within_range(coords,comp,front->interf,
             NO_BOUNDARIES,NULL,p,t,phse,phs,range);
-	/*return nearest_interface_point_within_range(coords,comp,front->interf,
-				bdry,NULL,p,t,phse,phs,range);*/
 }	/* FrontGetNearestPoint */
 
 EXPORT void FT_ResetTime(Front *front)

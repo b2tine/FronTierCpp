@@ -3778,7 +3778,7 @@ LOCAL	void set_tri_list_tolerance(RECT_GRID *rgr)
     */
 
     double* h = rgr->h;
-	double hmin = max3(h[0],h[1],h[2]);
+	double hmin = min3(h[0],h[1],h[2]);
 
 	//crx_tol = hmin*1.0e-6;
 	crx_tol = hmin*1.0e-10;/*TOLERANCE*/

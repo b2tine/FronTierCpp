@@ -271,7 +271,7 @@ EXPORT char *date_string(void)
 }		/*end date_string*/
 
 /*  #bjet2 */
-#define    ADD_MAX_LEN   500
+#define    ADD_MAX_LEN   75
 LOCAL int  add_top = 0;
 LOCAL double add_time[ADD_MAX_LEN], add_time_st[ADD_MAX_LEN];
 
