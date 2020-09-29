@@ -1491,9 +1491,13 @@ void KE_CARTESIAN::solve(double dt)
     {
         if (front->time <= eqn_params->t0)
             return;
+
+        FT_Save(front);
+        FT_Draw(front);
         
-        activateKE();
         applyInitialConditions();
+        activateKE();
+        
         printf("\n\nTurbulence Model Activated\n\n");
     }
 
@@ -2348,9 +2352,6 @@ void KE_CARTESIAN::initMovieVariables()
             FT_AddVtkScalarMovieVariable(front,"mu_t",field->mu_t);
 	    break;
 	}
-
-        if (debugging("trace"))
-            printf("Leaving initMovieVariables()\n");
 }	/* end initMovieVariables */
 
 static int find_state_at_crossing(
