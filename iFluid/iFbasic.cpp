@@ -2914,7 +2914,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
-        double **field)
+        double **var)
 {
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
@@ -2934,7 +2934,9 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 	int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
+    double** grad_phi = field->grad_phi;
     double div = 0.0;
+
     if (!ifluid_comp(comp)) return div;
 
 
@@ -2962,12 +2964,14 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     double bval = getStateVel[idir](intfc_state);
-                    if (iFparams->num_scheme.projc_method == SIMPLE ||
+                    bval += m_dt*grad_phi[idir][index_nb];
+                    div += coeff_nb*bval;
+
+                    /*if (iFparams->num_scheme.projc_method == SIMPLE ||
                         iFparams->num_scheme.projc_method == KIM_MOIN)
                     {
-                        bval += m_dt*this->field->grad_phi[idir][index_nb];
-                    }
-                    div += coeff_nb*bval;
+                        bval += m_dt*grad_phi[idir][index_nb];
+                    }*/
                     //div += coeff_nb*getStateVel[idir](intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -2984,7 +2988,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 //                    //Reflect the ghost point through intfc-mirror at crossing.
 //                    //first reflect across the grid line containing intfc crossing.
 //                    double coords_reflect[MAXD];
-//                    for (int m = 0; m < 3; ++m)
+//                    for (int m = 0; m < dim; ++m)
 //                        coords_reflect[m] = coords_ghost[m];
 //                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
 //                    //(^should just be the coords at current index)
@@ -3002,26 +3006,26 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     double v[MAXD];
                     double vn = 0.0;
 
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                     {
                         v[m] =  coords_reflect[m] - crx_coords[m];
                         vn += v[m]*nor[m];
                     }
 
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                         v[m] = 2.0*vn*nor[m] - v[m];
 
                     //The desired reflected point
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                         coords_reflect[m] = crx_coords[m] + v[m];
 
                     //Interpolate the velocity at the reflected point
                     double vel_reflect[MAXD];
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                     {
                         FT_IntrpStateVarAtCoords(front,comp,
-                                coords_reflect,field[m],getStateVel[m],
-                                &vel_reflect[m],&field[m][index]);
+                                coords_reflect,var[m],getStateVel[m],
+                                &vel_reflect[m],&var[m][index]);
                     }
 
                     //Ghost vel has relative normal velocity component equal
@@ -3030,14 +3034,14 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     vn = 0.0;
                     double vel_rel[MAXD];
                     double* vel_intfc = ((STATE*)intfc_state)->vel;
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                     {
                         vel_rel[m] = vel_reflect[m] - vel_intfc[m];
                         vn += vel_rel[m]*nor[m];
                     }
 
                     double vel_ghost[MAXD];
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                         vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
                 
                     div += coeff_nb*vel_ghost[idir];
@@ -3045,7 +3049,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 else
                 {
                     //NO_PDE_BOUNDARY
-                    div += coeff_nb*field[idir][index_nb];
+                    div += coeff_nb*var[idir][index_nb];
                 }
             }
         }
@@ -3264,7 +3268,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 //                    //Reflect the ghost point through intfc-mirror at crossing.
 //                    //first reflect across the grid line containing intfc crossing.
 //                    double coords_reflect[MAXD];
-//                    for (int m = 0; m < 3; ++m)
+//                    for (int m = 0; m < dim; ++m)
 //                        coords_reflect[m] = coords_ghost[m];
 //                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
 //                    //(^should just be the coords at current index)
@@ -3283,17 +3287,17 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     double v[MAXD];
                     double vn = 0.0;
 
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                     {
                         v[m] =  coords_reflect[m] - crx_coords[m];
                         vn += v[m]*nor[m];
                     }
 
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                         v[m] = 2.0*vn*nor[m] - v[m];
 
                     //The desired reflected point
-                    for (int m = 0; m < 3; ++m)
+                    for (int m = 0; m < dim; ++m)
                         coords_reflect[m] = crx_coords[m] + v[m];
 
                     //Interpolate the pressure at the reflected point,

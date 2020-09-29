@@ -674,9 +674,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             double nu_index = mu[index]/rho[index];
             
-            for (int idir = 0; idir < 3; ++idir)
+            for (int idir = 0; idir < dim; ++idir)
             {
-                for (int m = 0; m < 3; ++m)
+                for (int m = 0; m < dim; ++m)
                     icnb[m] = icoords[m];
                     
                 double lambda = 0.5*m_dt/sqr(top_h[idir]);
@@ -686,7 +686,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     icnb[idir] = (nb == 0) ?
                         icoords[idir] - 1 : icoords[idir] + 1;
 
-                    index_nb  = d_index(icnb,top_gmax,3);
+                    index_nb  = d_index(icnb,top_gmax,dim);
                     I_nb = ijk_to_I[icnb[0]][icnb[1]][icnb[2]];
 
                     double coeff_nb = 0.0;
@@ -706,14 +706,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             coeff_rhs += coeff_nb;
                             
                             double bval = getStateVel[idir](intfc_state);
-                            if (iFparams->num_scheme.projc_method == KIM_MOIN)
-                            {
-                                bval += m_dt*field->grad_phi[idir][index_nb];
-                            }
+                            bval += m_dt*field->grad_phi[idir][index_nb];
                             RHS -= 2.0*coeff_nb*bval;
-                                //RHS -= 2.0*coeff_nb*getStateVel[l](intfc_state);
-                                    //RHS -= coeff_nb*getStateVel[l](intfc_state);
                             use_neumann_solver = NO;
+                            
+                            /*if (iFparams->num_scheme.projc_method == SIMPLE ||
+                             *    iFparams->num_scheme.projc_method == KIM_MOIN)
+                                bval += m_dt*field->grad_phi[idir][index_nb];
+                            }*/
                         }
                         else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                                  wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -729,7 +729,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //Reflect the ghost point through intfc-mirror at crossing.
                             //first reflect across the grid line containing intfc crossing.
                             double coords_reflect[MAXD];
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                                 coords_reflect[m] = coords_ghost[m];
                             coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                             //(^should just be the coords at current index)
@@ -747,22 +747,22 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             double v[MAXD];
                             double vn = 0.0;
 
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                             {
                                 v[m] =  coords_reflect[m] - crx_coords[m];
                                 vn += v[m]*nor[m];
                             }
 
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                                 v[m] = 2.0*vn*nor[m] - v[m];
 
                             //The desired reflected point
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                                 coords_reflect[m] = crx_coords[m] + v[m];
 
                             //Interpolate the velocity at the reflected point
                             double vel_reflect[MAXD];
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                             {
                                 FT_IntrpStateVarAtCoords(front,comp,
                                         coords_reflect,vel[m],getStateVel[m],
@@ -775,14 +775,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             vn = 0.0;
                             double vel_rel[MAXD];
                             double* vel_intfc = ((STATE*)intfc_state)->vel;
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                             {
                                 vel_rel[m] = vel_reflect[m] - vel_intfc[m];
                                 vn += vel_rel[m]*nor[m];
                             }
 
                             double vel_ghost[MAXD];
-                            for (int m = 0; m < 3; ++m)
+                            for (int m = 0; m < dim; ++m)
                                 vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
                         
                             //nu_halfidx += 0.0;

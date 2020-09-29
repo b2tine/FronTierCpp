@@ -711,11 +711,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         {
             printf("\n\nELLIPTIC_SOLVER::solve3d(): WARNING, \
                     skip_count = %d\n\n",skip_count);
-            //solver.Set_A(I,I,1.0);
-            //RHS = soln[index];//what about the source term?
+            solver.Set_A(I,I,1.0);
+            RHS = soln[index];
+        }
+        else
+        {
+            solver.Set_A(I,I,aII);
         }
 
-        solver.Set_A(I,I,aII);
         solver.Set_b(I,RHS);
     }
 	   
