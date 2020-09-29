@@ -778,8 +778,8 @@ void optimizeElasticMesh(
     scaled_redist_params.min_scaled_bond_length = 0.45/2.0;
 	scaled_redist_params.max_scaled_bond_length = 1.05/2.0;
 
-	//scaled_redist_params.min_scaled_tri_area = 0.1083;
-	//scaled_redist_params.max_scaled_tri_area = 0.4330;
+	scaled_redist_params.min_scaled_tri_area = 0.1083;
+	scaled_redist_params.max_scaled_tri_area = 0.4330;
 	scaled_redist_params.min_scaled_tri_area = 0.1083/2.0;
 	scaled_redist_params.max_scaled_tri_area = 0.4330/2.0;
 	
@@ -815,10 +815,6 @@ void optimizeElasticMesh(
 	    	status *= (int)nothing_done;
 	    }
 
-        //TODO: FT_OptimizeSurfMesh() should probably be skipped
-        //      if CGAL is used to generate the canopy mesh.
-        //      Unlikely to improve mesh quality and the iterative
-        //      process can stall. 
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
 	    	if (wave_type(*s) != ELASTIC_BOUNDARY)

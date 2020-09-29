@@ -1767,22 +1767,20 @@ extern double getPhiFromPres(
         Front *front,
         double pres)
 {
-    return pres;
-    /*
     IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
     switch (iFparams->num_scheme.projc_method)
     {
-        case SIMPLE:
         case BELL_COLELLA:
+            return 0.0;
         case KIM_MOIN:
+            return 0.0;
+        case SIMPLE:
         case PEROT_BOTELLA:
             return pres;
-            break;
         default:
             (void) printf("Unknown projection type\n");
             clean_up(0);
     }
-    */
 }       /* end getPhiFromPres */
 
 extern double getPressure(
@@ -1799,10 +1797,11 @@ extern double getPressure(
         double rho = iFparams->rho2;
         boolean hyper_surf_found = NO;
 
-        //TODO: Can we implement a better scheme?
+        
         return 0.0;
+        //TODO: Does below work???
 
-        pres0 = 0.0;
+        pres0 = 1.0;
         if (dim == 2)
         {
             CURVE **c;

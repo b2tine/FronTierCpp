@@ -2368,22 +2368,14 @@ static int find_state_at_crossing(
     if (status == NO) return NO_PDE_BOUNDARY;
 
     if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE)
-    {
         return NO_PDE_BOUNDARY;
-    }
     else if (wave_type(*hs) == DIRICHLET_BOUNDARY)
-	{
         return DIRICHLET_PDE_BOUNDARY;
-	}
 	else if (wave_type(*hs) == GROWING_BODY_BOUNDARY)
-	{
         return DIRICHLET_PDE_BOUNDARY;
-	}
-	else if (wave_type(*hs) == NEUMANN_BOUNDARY || 
-		 wave_type(*hs) == ELASTIC_BOUNDARY)
-    {
+	else if (wave_type(*hs) == NEUMANN_BOUNDARY ||
+             wave_type(*hs) == ELASTIC_BOUNDARY)
         return NEUMANN_PDE_BOUNDARY;
-    }
 }       /* find_state_at_crossing */
 
 static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gmax)

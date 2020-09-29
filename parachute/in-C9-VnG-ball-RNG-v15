@@ -64,7 +64,7 @@ Enter initial position of load: 6 6 1.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 
-Enter number of canopy optimization roundsX: 0
+Enter number of canopy optimization rounds: 20
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
@@ -137,7 +137,7 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: max_speed
-Enter the debugging string: projection
+Enter the debugging string: Xprojection
 Enter the debugging string: Xkeps_solve
 Enter the debugging string: XCLOCK
 
@@ -149,8 +149,9 @@ Enter the debugging string: Xdirichlet_bdry
 Enter the debugging string: Xflow_through
 Enter the debugging string: Xcollision_off
 
-Enter the debugging string: Xsample_velocity
+Enter the debugging string: sample_velocity
 Enter the sample line type: 2
 Enter the sample line coordinate: 6.0 6.0
 Enter the start step for sample: 0
 Enter the end step for sample: 10
+Enter the step interval for sample: 1

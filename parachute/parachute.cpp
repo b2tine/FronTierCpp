@@ -118,10 +118,9 @@ int main(int argc, char **argv)
 
 	if (!RestartRun)
     {
-        //TODO: optimize mesh
-        //optimizeElasticStrings(&front);
-        //optimizeElasticMesh(&front);
+        optimizeElasticMesh(&front);
         set_equilibrium_mesh(&front);
+        static_mesh(front.interf) = YES;
         FT_SetGlobalIndex(&front);//Must be called before setMotionParams()
     }
 
@@ -173,7 +172,6 @@ int main(int argc, char **argv)
     }
 
 	    //setMotionParams(&front);
-    static_mesh(front.interf) = YES;
 
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);

@@ -456,6 +456,7 @@ protected:
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	
+    //void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
     void computeFieldPointGrad(int* icoords,double* field,
             double* grad_field, bool is_phi_field = true);
 
