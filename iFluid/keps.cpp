@@ -199,7 +199,6 @@ void KE_CARTESIAN::setInitialCondition(void)
     HYPER_SURF *hs;
     HYPER_SURF_ELEMENT *hse;
 	STATE *sl,*sr;
-	int c;
 	short unsigned int seed[3] = {2,72,7172};
 
 	FT_MakeGridIntfc(front);
@@ -217,7 +216,7 @@ void KE_CARTESIAN::setInitialCondition(void)
             lmin = top_h[i];
     }
     
-    lmin *= 3.0;
+    lmin *= 2.0;
     if (eqn_params->l0 < lmin)
         eqn_params->l0 = lmin;
 
@@ -228,23 +227,30 @@ void KE_CARTESIAN::setInitialCondition(void)
     //save the initial conditions for activation time
     eqn_params->k0 = k0;
     eqn_params->eps0 = eps0;
+	
+    printf("k0 = %e, eps0 = %e\n",k0,eps0);
+	printf("mu0 = %e\n",eqn_params->mu0);
+}	/* end setInitialCondition */
+
+
+void KE_CARTESIAN::applyInitialConditions()
+{
+    double k0 = eqn_params->k0;
+    double eps0 = eqn_params->eps0;
+    double mu0 = eqn_params->mu0;
+    double Cmu = eqn_params->Cmu;
 
 	for (int i = 0; i < cell_center.size(); ++i)
 	{
-	    c = top_comp[i];
-	    getRectangleCenter(i,coords);
-	    
-        //Don't assign k0 and eps0 until front->time > t0
-        field->k[i] = 0.0;
-	    field->eps[i] = 0.0;;
-	    field->mu_t[i] = 0.0;
-	    
+        field->k[i] = k0;
+	    field->eps[i] = eps0;;
+	    field->mu_t[i] = mu0;;
+        
         if (keps_model == REALIZABLE)
             field->Cmu[i] = eqn_params->Cmu;
 	}
-	printf("k0 = %e, eps0 = %e\n",k0,eps0);
-	printf("mu0 = %e\n",eqn_params->mu0);
-}	/* end setInitialCondition */
+}
+
 
 //TODO: update this method
 //
@@ -1484,16 +1490,13 @@ void KE_CARTESIAN::solve(double dt)
     if (!activated)
     {
         if (front->time <= eqn_params->t0)
-        {
-            if (debugging("keps_solve"))
-            {
-                printf("Turbulence activation time = %f \
-                    not yet reached.\n",eqn_params->t0);
-            }
             return;
-        }
+        
         activateKE();
+        applyInitialConditions();
+        printf("\n\nTurbulence Model Activated\n\n");
     }
+
 
 	if (debugging("trace")) printf("Entering keps_solve()\n");
 	start_clock("keps_solve");

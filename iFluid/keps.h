@@ -60,6 +60,7 @@ private:
     Front *front;
 
     static bool activated;
+    void applyInitialConditions();
 
 public:
 	
