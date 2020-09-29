@@ -1007,7 +1007,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
         if (dim == 3)
         {
             if (CursorAfterStringOpt(infile,
-                        "Type y to make vector velocity field movie:"))
+                        "Type y to make vector vorticity field movie:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
