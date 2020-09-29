@@ -1520,8 +1520,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	double *pres = field->pres;
-	    //double *phi = field->phi;
+	    //double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -1589,8 +1588,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             case KEPSILON:
                 rho[index] = ke_params->rho;
                 mu[index] = mu_t[index] + ke_params->mu;
-                pres[index] += 2.0/3.0*tke[index];
-                    //phi[index] += 2.0/3.0*tke[index];
+                    //pres[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -1662,8 +1660,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
-        //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+        //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2339,8 +2336,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	double *pres = field->pres;
-	    //double *phi = field->phi;
+	    //double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -2408,8 +2404,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             case KEPSILON:
                 rho[index] = ke_params->rho;
                 mu[index] = mu_t[index] + ke_params->mu;
-                pres[index] += 2.0/3.0*tke[index];
-                    //phi[index] += 2.0/3.0*tke[index];
+                    //pres[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -2480,8 +2475,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
-	    //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+	    //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
@@ -2912,6 +2906,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         }
 }       /* end computeFieldPointDiv */
 
+/*
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
         double **var)
@@ -2967,11 +2962,11 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     bval += m_dt*grad_phi[idir][index_nb];
                     div += coeff_nb*bval;
 
-                    /*if (iFparams->num_scheme.projc_method == SIMPLE ||
-                        iFparams->num_scheme.projc_method == KIM_MOIN)
-                    {
-                        bval += m_dt*grad_phi[idir][index_nb];
-                    }*/
+                    //if (iFparams->num_scheme.projc_method == SIMPLE ||
+                    //   iFparams->num_scheme.projc_method == KIM_MOIN)
+                    //{
+                    //    bval += m_dt*grad_phi[idir][index_nb];
+                    //}//
                     //div += coeff_nb*getStateVel[idir](intfc_state);
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -3056,9 +3051,8 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
     } 
 
     return div;
-}       /* end computeFieldPointDivSimple */
+}*/      /* end computeFieldPointDivSimple */
 
-/*
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
         double **field)
@@ -3122,7 +3116,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 	for (i = 0; i < dim; ++i)
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
         return div;
-}*/       /* end computeFieldPointDivSimple */
+}       /* end computeFieldPointDivSimple */
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         int *icoords,
@@ -3199,6 +3193,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         return div;
 }       /* end computeFieldPointDivDouble */
 
+/*
 //Default Value: is_phi_field = true
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
@@ -3327,9 +3322,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         }
     }
 
-}      /* end computeFieldPointGrad */
+}*/     /* end computeFieldPointGrad */
 
-/*
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
         double *field,
@@ -3390,7 +3384,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	}
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
-} */      /* end computeFieldPointGrad */
+}      /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {
@@ -4213,7 +4207,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         computeFieldPointGrad(icoords,var,grad_var);
 
-        if (!iFparams->with_porosity) return;
+        //if (!iFparams->with_porosity) return;
 
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)
