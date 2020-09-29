@@ -36,7 +36,7 @@ For rigid body 1
 Enter type of rigid body: Box
 Enter center of the box: 6 6 0.951
 Enter edges of the box: 0.5 0.5 0.5
-Type yes to use CGAL for rigid body: yes
+Type yes to use CGAL for rigid body: no
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
