@@ -340,8 +340,13 @@ void airfoil_driver(Front *front,
         }
         
         if (!af_params->no_fluid)
+        {
             front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-   
+            //TODO:necessary?
+            //
+            //front->dt = std::min(front->dt,springCharTimeStep(front));
+        }
+
         if (debugging("step_size"))
         {
             printf("Time step from l_cartesian->max_dt(): %f\n",front->dt);
