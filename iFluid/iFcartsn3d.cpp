@@ -2848,10 +2848,13 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 }	/* end addImmersedForce in 3D */
 
 void Incompress_Solver_Smooth_Basis::addVortexDisturbance(
-        VPARAMS vparams)
+        const VPARAMS& vparams)
 {
-	double **vel = field->vel;
-        double *center = vparams.center;
+	    double **vel = field->vel;
+        double center[3] = {vparams.center[0],
+                            vparams.center[1],
+                            vparams.center[2]};
+
         double D = vparams.D;
         double A = vparams.A;
         double L0[MAXD],coords[MAXD];

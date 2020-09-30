@@ -187,8 +187,6 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
-//TODO: Put vortex initialization and injection
-//      code into functions and link into libiFluid.la
 void airfoil_driver(Front *front,
         Incompress_Solver_Smooth_Basis *l_cartesian)
 {
@@ -198,7 +196,9 @@ void airfoil_driver(Front *front,
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
     
-    VORTEX_PARAMS vort_params;
+    //TODO: Put vortex initialization and injection
+    //      code into functions and link into libiFluid.la
+    VPARAMS vort_params;
     bool inject_vortex = false;
     double start_time = HUGE;
 

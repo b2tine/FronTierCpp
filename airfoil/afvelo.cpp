@@ -248,6 +248,9 @@ void setMotionParams(Front* front)
             	CursorAfterString(infile,"Enter surface tension:");
             	fscanf(infile,"%lf",&iFparams->surf_tension);
             	(void) printf("%f\n",iFparams->surf_tension);
+                CursorAfterString(infile,"Enter factor of smoothing radius:");
+                fscanf(infile,"%lf",&iFparams->smoothing_radius);
+                (void) printf("%f\n",iFparams->smoothing_radius);
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
             {
@@ -276,10 +279,6 @@ void setMotionParams(Front* front)
                 (void) printf("%f\n",af_params->area_dens);
 
             }
-            CursorAfterString(infile,"Enter factor of smoothing radius:");
-            fscanf(infile,"%lf",&iFparams->smoothing_radius);
-            (void) printf("%f\n",iFparams->smoothing_radius);
-    
             for (i = 0; i < dim; ++i)
                 af_params->gravity[i] = iFparams->gravity[i];
 	}

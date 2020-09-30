@@ -136,6 +136,12 @@ struct FINITE_STRING {         // For fluid drag on string chord
         double c_drag;
 };
 
+struct VPARAMS {
+    double center[MAXD];            // center of vortex
+    double D;                       // size of vortex
+    double A;                       // intensity of vortex
+};
+
 struct IF_PARAMS
 {
     int dim;
@@ -329,7 +335,7 @@ public:
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
 	void solveTest(const char *msg);
-        void addVortexDisturbance(VPARAMS);
+        void addVortexDisturbance(const VPARAMS&);
 
 	//User interface
 	int skip_neumann_solver;

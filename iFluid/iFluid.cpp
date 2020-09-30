@@ -319,6 +319,7 @@ static void ifluid_driver(Front *front,
         
         FT_TimeControlFilter(front);
         FT_PrintTimeStamp(front);
+        fflush(stdout);
         
         if (debugging("step_size"))
             (void) printf("Time step from FT_TimeControlFilter(): %f\n",
