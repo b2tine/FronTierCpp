@@ -11,6 +11,7 @@
 #include <solver.h>
 #include "ifluid_state.h"
 #include "rigidbody.h"
+#include "iFinjection.h"
 
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2
@@ -243,12 +244,6 @@ struct _OPEN_PIPE_PARAMS
 };
 typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
 
-struct VPARAMS {
-        double center[MAXD];            // center of vortex
-        double D;                       // size of vortex
-        double A;                       // intensity of vortex
-};
-
 /******************************************************************************
  * 		lcartsn.h
  * A simple incompressible flow solver using the ghost fluid method and the
@@ -337,12 +332,17 @@ public:
         void addVortexDisturbance(VPARAMS);
 
 	//User interface
+	int skip_neumann_solver;
 	virtual void setInitialCondition(void) = 0;
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
 
-	int skip_neumann_solver;
+
+    //std::priority_queue<IF_Injection*> InjectionEvents;
+    //void scheduleInjectionEvent(IF_Injection*);
+    //void consumeInjectionEvent(IF_Injection*);
+
 
 protected:
 	Front *front;
@@ -458,7 +458,7 @@ protected:
     /*void computeFieldPointGrad(int* icoords,double* field,
             double* grad_field, bool is_phi_field = true);*/
 
-	void   checkVelocityDiv(const char*);
+	void checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim

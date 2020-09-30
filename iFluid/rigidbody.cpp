@@ -21,7 +21,6 @@ static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
 
 
-//TODO: rgb_init() should be tail call of this function
 extern void initRigidBody(
 	Front *front)
 {
@@ -391,40 +390,41 @@ static void surf_enlargement(
         }
 }
 
-//TODO: should be combined with InitRigidBody()
-extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
+void setRigidBodyMotionParams(
+        Front* front,
+        RG_PARAMS* rgb_params)
 {
-        int dim = FT_Dimension();
-        if (dim == 1) return;
+    int dim = FT_Dimension();
+    if (dim == 1) return;
 
-        CURVE **c;
-        SURFACE **s;
-        char* inname = InName(front);
+    CURVE **c;
+    SURFACE **s;
+    char* inname = InName(front);
 
-        if (dim == 2)
+    if (dim == 2)
+    {
+        for (c = front->interf->curves; c && *c; ++c)
         {
-            for (c = front->interf->curves; c && *c; ++c)
+            if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*c));
-                }
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
-        else
+    }
+    else
+    {
+        for (s = front->interf->surfaces; s && *s; ++s)
         {
-            for (s = front->interf->surfaces; s && *s; ++s)
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*s));
-                }
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
+    }
 
-}       /* end rgb_init */
+}       /* end setRigidBodyMotionParams */
 
 static void prompt_for_rigid_body_params(
         int dim,

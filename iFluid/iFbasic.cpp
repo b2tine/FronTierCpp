@@ -2481,7 +2481,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 }	/* end setSmoothedProperties in 3D */
 
 // Flux of Riemann solution of Burgers equation u_t + uu_x = 0
-
 double burger_flux(	
 	double ul,
 	double um,

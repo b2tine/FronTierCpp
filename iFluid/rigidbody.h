@@ -28,7 +28,7 @@ struct RG_PARAMS
 
 // rigidbody.cpp
 extern void initRigidBody(Front *front);
-extern void rgb_init(Front*,RG_PARAMS*);
+extern void setRigidBodyMotionParams(Front*,RG_PARAMS*);
 extern void resetRigidBodyVelocity(Front *front);
 //extern void rgb_modification(Front*,RG_PARAMS*);
 extern void printRigidBodyMeshQuality(Front *front);

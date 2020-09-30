@@ -1327,7 +1327,8 @@ extern void read_iFparams(
             if (string[0] == 'y' || string[0] == 'Y')
                 iFparams->scalar_field = YES;
         }
-	iFparams->min_speed = 0.0;
+	
+        iFparams->min_speed = 0.0;
         if (CursorAfterStringOpt(infile,
 			"Enter minimum speed to limit time step:"))
         {

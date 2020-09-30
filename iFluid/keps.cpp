@@ -1529,6 +1529,7 @@ void KE_CARTESIAN::solve(double dt)
 	if (debugging("trace")) printf("Leaving keps_solve()\n");
 }
 
+//TODO: give these hdf and vtk movie variables
 static void printField(double *var,
 		       const char* varname, 
 		       int* ic_min, 

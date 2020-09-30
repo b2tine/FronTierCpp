@@ -225,6 +225,9 @@ int af_find_state_at_crossing(
                 return CONST_V_PDE_BOUNDARY;
         }
     }
+    //TODO: this should return CONST_V_PDE_BOUNDARY
+    //      or MOVABLE_BODY_BOUNDAY should return
+    //      NEUMANN_PDE_BOUNDARY in order to be consistent
     return NEUMANN_PDE_BOUNDARY;
 }       /* af_find_state_at_crossing */
 
@@ -273,7 +276,6 @@ int af_find_state_at_crossing(
     }
 
     return NEUMANN_PDE_BOUNDARY;
-
 }*/       /* af_find_state_at_crossing */
 
 static boolean is_pore(
@@ -2892,7 +2894,7 @@ extern void set_unequal_strings(Front *front)
 	af_params->string_curves.clear();
 
 	if (debugging("trace"))
-	    printf("Leaving record_break_strings_gindex()\n");
+	    printf("Leaving set_unequal_strings()\n");
 }	/* end set_unequal_strings */
 
 static void linkGlobalIndexToTri(

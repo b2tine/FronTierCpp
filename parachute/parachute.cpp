@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static IF_PARAMS iFparams;
 	static AF_PARAMS af_params;
-        static RG_PARAMS rgb_params;  
+    static RG_PARAMS rgb_params;  
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.dim = 3;
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
                 //clearRegisteredPoints(&front);
                 //resetRigidBodyVelocity(&front);
             modifyInitialization(&front);
-                //rgb_init(&front,&rgb_params);
+                //setRigidBodyMotionParams(&front,&rgb_params);
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh(); //TODO: may be able to remove this one
             l_cartesian->setInitialCondition();
@@ -163,17 +163,17 @@ int main(int argc, char **argv)
         }
         else
         {
+            //TODO: Want to be able to load restart state even
+            //      when we are reseting the time of the simulation.
+            //      For generating turbulent flow initial conditions.
             l_cartesian->readFrontInteriorStates(restart_state_name);
             readAfExtraData(&front,restart_state_name);
         }
-
     }
     else
     {
         l_cartesian->setInitialCondition();
     }
-
-	    //setMotionParams(&front);
 
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
@@ -182,49 +182,52 @@ int main(int argc, char **argv)
         resetFrontVelocity(&front);
 
 	/* Propagate the front */
-
 	airfoil_driver(&front,l_cartesian);
+
 	clean_up(0);
 }
 
+//TODO: Put vortex initialization and injection
+//      code into functions and link into libiFluid.la
 void airfoil_driver(Front *front,
         Incompress_Solver_Smooth_Basis *l_cartesian)
 {
     int  dim = front->rect_grid->dim;
+    double CFL = Time_step_factor(front);
+	Tracking_algorithm(front) = STRUCTURE_TRACKING;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-    VPARAMS vort_params;
+
+    
+    VORTEX_PARAMS vort_params;
     bool inject_vortex = false;
     double start_time = HUGE;
 
-    double CFL = Time_step_factor(front);
-	Tracking_algorithm(front) = STRUCTURE_TRACKING;
-
-        FILE *infile = fopen(InName(front),"r");
-        if (CursorAfterStringOpt(infile,"Type yes to add vortex disturbance:"))
+    FILE *infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Type yes to add vortex disturbance:"))
+    {
+        char answer[100];
+        fscanf(infile,"%s",answer);
+        printf("%s\n",answer);
+        if (answer[0] == 'y')
         {
-            char answer[100];
-            fscanf(infile,"%s",answer);
-            printf("%s\n",answer);
-            if (answer[0] == 'y')
-            {
-                inject_vortex = true;
-                CursorAfterString(infile,"Enter center of vortex: ");
-                fscanf(infile,"%lf %lf %lf",vort_params.center,vort_params.center+1,
-                                    vort_params.center+2);
-                printf("%f %f %f\n",vort_params.center[0],vort_params.center[1],
-                                    vort_params.center[2]);
-                CursorAfterString(infile,"Enter size of vortex: ");
-                fscanf(infile,"%lf",&vort_params.D);
-                printf("%f\n",vort_params.D);
-                CursorAfterString(infile,"Enter intensity of vortex: ");
-                fscanf(infile,"%lf",&vort_params.A);
-                printf("%f\n",vort_params.A);
-                CursorAfterString(infile,"Enter vortex start time: ");
-                fscanf(infile,"%lf",&start_time);
-                printf("%f\n",start_time);
-            }
+            inject_vortex = true;
+            CursorAfterString(infile,"Enter center of vortex: ");
+            fscanf(infile,"%lf %lf %lf",vort_params.center,
+                    vort_params.center+1,vort_params.center+2);
+            printf("%f %f %f\n",vort_params.center[0],
+                    vort_params.center[1],vort_params.center[2]);
+            CursorAfterString(infile,"Enter size of vortex: ");
+            fscanf(infile,"%lf",&vort_params.D);
+            printf("%f\n",vort_params.D);
+            CursorAfterString(infile,"Enter intensity of vortex: ");
+            fscanf(infile,"%lf",&vort_params.A);
+            printf("%f\n",vort_params.A);
+            CursorAfterString(infile,"Enter vortex start time: ");
+            fscanf(infile,"%lf",&start_time);
+            printf("%f\n",start_time);
         }
-        fclose(infile);
+    }
+    fclose(infile);
 
 	if (!RestartRun || ReSetTime)
 	{
@@ -385,16 +388,16 @@ void airfoil_driver(Front *front,
 }       /* end airfoil_driver */
 
 
-void    zero_state(
-        COMPONENT comp,
-        double *coords,
-        IF_FIELD *field,
-        int index, int dim,
-        IF_PARAMS *iFparams)
+void zero_state(
+    COMPONENT comp,
+    double *coords,
+    IF_FIELD *field,
+    int index, int dim,
+    IF_PARAMS *iFparams)
 {
-        for (int i = 0; i < dim; ++i)
-            field->vel[i][index] = 0.0;
-        field->pres[index] = 0.0;
+    for (int i = 0; i < dim; ++i)
+        field->vel[i][index] = 0.0;
+    field->pres[index] = 0.0;
 }
 
 
