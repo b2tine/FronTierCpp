@@ -1,6 +1,6 @@
 *************Time parameters*************
 Max time: 7.5
-Max step: 100
+Max step: 1000
 Print interval: 0.05
 Movie frame interval: 0.05
 CFL factor: 0.75
@@ -43,7 +43,7 @@ Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 -9.8
 
 ************Rigid body parameters*************
-Enter yes to add rigid body: no
+Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Sphere

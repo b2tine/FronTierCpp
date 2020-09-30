@@ -1586,49 +1586,28 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
                 break;
             case KEPSILON:
-                rho[index] = ke_params->rho;
-                mu[index] = mu_t[index] + ke_params->mu;
-                    //pres[index] += 2.0/3.0*tke[index];
+                mu[index] = mu_t[index];
+                //pres[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
             }
 
-            /*
             switch (comp)
             {
                 case LIQUID_COMP1:
-                    //mu[index] += m_mu[0];
+                    mu[index] += m_mu[0];
                     rho[index] = m_rho[0];
                     break;
                 case LIQUID_COMP2:
-                    //mu[index] += m_mu[1];
+                    mu[index] += m_mu[1];
                     rho[index] = m_rho[1];
                     break;
             }
-            */
 	    
-            //Do not consider case of turbulence and surface tension
-            //simultaneously right now.
-            continue;
         }
-	    else
-	    {
-            switch (comp)
-            {
-            case LIQUID_COMP1:
-                mu[index] = m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] = m_mu[1];
-                rho[index] = m_rho[1];
-                break;
-            }
-	    }
-
-        if (iFparams->with_surface_tension)
+        else if (iFparams->with_surface_tension)
         {
             status = FT_FindNearestIntfcPointInRange(front,comp,center,
                     NO_BOUNDARIES,point,t,&hse,&hs,range);
@@ -1656,7 +1635,22 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                     }
                 }
             }
-        }
+        }	    
+        else
+	    {
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+	    }
+
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -2402,49 +2396,27 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 mu[index] = computeMuofSmagorinskyModel(icoords);
                 break;
             case KEPSILON:
-                rho[index] = ke_params->rho;
-                mu[index] = mu_t[index] + ke_params->mu;
-                    //pres[index] += 2.0/3.0*tke[index];
+                mu[index] = mu_t[index];
+                //pres[index] += 2.0/3.0*tke[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
             }
     
-            /*
             switch (comp)
             {
                 case LIQUID_COMP1:
-                    //mu[index] += m_mu[0];
+                    mu[index] += m_mu[0];
                     rho[index] = m_rho[0];
                     break;
                 case LIQUID_COMP2:
-                    //mu[index] += m_mu[1];
+                    mu[index] += m_mu[1];
                     rho[index] = m_rho[1];
                     break;
             }
-            */
-
-            //Do not consider case of turbulence and surface tension
-            //simultaneously right now.
-            continue;
         }
-	    else
-	    {
-            switch (comp)
-            {
-            case LIQUID_COMP1:
-                mu[index] = m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] = m_mu[1];
-                rho[index] = m_rho[1];
-                break;
-            }
-	    }
-
-        if (iFparams->with_surface_tension)
+        else if (iFparams->with_surface_tension)
         {
             status = FT_FindNearestIntfcPointInRange(front,comp,center,
                     NO_BOUNDARIES,point,t,&hse,&hs,range);
@@ -2472,6 +2444,21 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 }
             }
         }
+	    else
+	    {
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
+	    }
+
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
