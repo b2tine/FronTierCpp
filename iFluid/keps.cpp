@@ -2568,6 +2568,8 @@ static std::string dir2String(GRID_DIRECTION dir)
     }
 }
 
+//TODO: previously vel was getting set to v_tan as well.
+//      Is that the desired behavior?
 void KE_CARTESIAN::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -2608,7 +2610,7 @@ void KE_CARTESIAN::setSlipBoundary(
     if (status == NO) return;
 
     //ghost point coords
-    //TODO: can use getRectangleCenter()
+    //TODO: can use getRectangleCenter()???
     for (int j = 0; j < dim; ++j)
     {
         coords_ghost[j] = top_L[j] + ic[j]*top_h[j];
@@ -2788,6 +2790,8 @@ void KE_CARTESIAN::computeSource()
 			    else if(fr_crx_grid_seg && (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY))
 			    {
+                    //TODO: previously vel was getting set to v_tan as well.
+                    //      Is that the desired behavior?
                     setSlipBoundary(icrds,m,nb,comp,hs,intfc_state,field->vel,v_tan);
                     vel_nb[nb] = v_tan[l];
                     
