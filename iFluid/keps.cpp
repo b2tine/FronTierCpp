@@ -984,8 +984,8 @@ double KE_CARTESIAN::computePointFieldC2_RNG(int* icoords)
 	else
 	    r = S*K0/E0;
 	return eqn_params->C2
-                        + (eqn_params->Cmu*r*r*r*(1-r/4.38))
-                        / (1 + 0.012*r*r*r);
+                        + (eqn_params->Cmu*r*r*r*(1.0-r/4.38))
+                        / (1.0 + 0.012*r*r*r);
 }
 
 double KE_CARTESIAN::computePointFieldC1_REAL(int* icoords,double S)
@@ -1849,6 +1849,7 @@ void KE_CARTESIAN::computeMuTurb()
 		    else
 			    Cmu = eqn_params->Cmu;
 
+            /*
             double limited_mix_length = lmax;
             if (Cmu*pow(field->k[index],1.5) < field->eps[index]*lmax)
             {
@@ -1862,13 +1863,12 @@ void KE_CARTESIAN::computeMuTurb()
                     limited_mix_length*sqrt(field->k[index]));
             
             field->mu_t[index] = nu_t*rho;
+            */
 
-                /*
-                if (field->eps[index] != 0.0)
-                    field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
-                else
-                    field->mu_t[index] = 0.0001*eqn_params->mu;
-                */
+            if (field->eps[index] != 0.0)
+                field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
+            else
+                field->mu_t[index] = 0.0001*eqn_params->mu;
 
             if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
@@ -1876,14 +1876,15 @@ void KE_CARTESIAN::computeMuTurb()
                         \t mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
                         field->mu_t[index],Cmu,field->k[index],field->eps[index]);
                 
-                clean_up(EXIT_FAILURE);
-                    //field->mu_t[index] = 0.0001*eqn_params->mu;
+                //clean_up(EXIT_FAILURE);
+                field->mu_t[index] = 0.0001*eqn_params->mu;
 		    }
-            
-                //field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+
+            field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
 		}
 		break;
-	    case 3:
+
+        case 3:
 		for (k = kmin; k <= kmax; k++)
 		for (j = jmin; j <= jmax; j++)
 		for (i = imin; i <= imax; i++)
@@ -1902,6 +1903,7 @@ void KE_CARTESIAN::computeMuTurb()
 		    else
                 Cmu = eqn_params->Cmu;
 	    	
+            /*
             double limited_mix_length = lmax;
             if (Cmu*pow(field->k[index],1.5) < field->eps[index]*lmax)
             {
@@ -1913,15 +1915,14 @@ void KE_CARTESIAN::computeMuTurb()
             double nu_min = 0.001*nu;
             double nu_t = std::max(nu_min,
                     limited_mix_length*sqrt(field->k[index]));
-            
-            field->mu_t[index] = nu_t*rho;
 
-                /*
-                field->mu_t[index] = 
-                    Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
-                field->mu_t[index] = 
-                    std::max(field->mu_t[index],0.0001*eqn_params->mu);
-                */
+            field->mu_t[index] = nu_t*rho;
+            */
+
+            field->mu_t[index] = 
+                Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+            field->mu_t[index] = 
+                std::max(field->mu_t[index],0.0001*eqn_params->mu);
 
             if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
@@ -1930,7 +1931,7 @@ void KE_CARTESIAN::computeMuTurb()
                         field->mu_t[index],Cmu,field->k[index],field->eps[index]);
                 
                 clean_up(EXIT_FAILURE);
-                    //field->mu_t[index] = 0.0001*eqn_params->mu;
+                //field->mu_t[index] = 0.0001*eqn_params->mu;
 		    }
 
 		}
@@ -1943,7 +1944,6 @@ void KE_CARTESIAN::computeMuTurb()
 	if (keps_model == REALIZABLE)
 	    FT_ParallelExchGridArrayBuffer(field->Cmu,front,NULL);
 
-    /*
     //TODO: Add hdf/vtk movie variables for visualization
 	if (dim == 2)
 	{
@@ -1964,8 +1964,6 @@ void KE_CARTESIAN::computeMuTurb()
             printField3d(field->Cmu,fname,ic_min,ic_max,top_gmax);
 	    }
 	}
-    */
-
 }
 	
 //TODO: Need to to stability analysis to compute correct dt
@@ -2683,9 +2681,13 @@ void KE_CARTESIAN::setSlipBoundary(
         vn += v[j]*nor[j];
     }
 
+    //NOTE: Don't enforce du/dn = 0 here, since we are not at the wall!
+    //      Only zero the normal velocity
     for (int j = 0; j < dim; ++j)
-        v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
-    
+    {
+        v_tan[j] = v_tmp[j] - vn*nor[j];
+        //v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
+    }
     /*
     //TODO: Don't think this is appropriate ... remove when sure of it.
     for (int j = 0; j < dim; ++j)
@@ -2830,10 +2832,10 @@ void KE_CARTESIAN::computeSource()
                     vel_nb[nb] = v_tan[l];
                     
                     //Pk wall boundary condition
-                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
+                    //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                         //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
-                    ON_WALL = true;
-                    break;
+                    //ON_WALL = true;
+                    //break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2851,8 +2853,10 @@ void KE_CARTESIAN::computeSource()
                 }
 			}
 
-            if (!ON_WALL)
-                S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            //if (!ON_WALL)
+              //  S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+                
+            S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
@@ -2877,10 +2881,10 @@ void KE_CARTESIAN::computeSource()
                     vel_nb[nb] = v_tan[m];
                     
                     //Pk wall boundary condition
-                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
+                    //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                         //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
-                    ON_WALL = true;
-                    break;
+                    //ON_WALL = true;
+                    //break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2898,21 +2902,29 @@ void KE_CARTESIAN::computeSource()
 			    }
 			}
             
+            S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            J += (S*S);
+            Pk[index] = 0.5*mu_t[index]*J/rho; 
+            
+            /*
                 if (!ON_WALL)
                 {
                     S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
                     J += (S*S);
                 }
+                */
 
 		    }
-
+                /*
             if (!ON_WALL)
 		        Pk[index] = 0.5*mu_t[index]*J/rho; 
             else
                 Pk[index] = Pk_Wall;
+                */
 
 		}
         break;
+
 	    case 3:
 		for (i = imin; i <= imax; i++)
 		for (j = jmin; j <= jmax; j++)
@@ -2956,10 +2968,10 @@ void KE_CARTESIAN::computeSource()
                     vel_nb[nb] = v_tan[l];
                     
                     //Pk wall boundary condition
-                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
+                    //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                         //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
-                    ON_WALL = true;
-                    break;
+                    //ON_WALL = true;
+                    //break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -2977,8 +2989,10 @@ void KE_CARTESIAN::computeSource()
 			    }
 			}
 
-            if (!ON_WALL)
-                S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+            //if (!ON_WALL)
+              //  S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+            
+            S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
 			for (nb = 0; nb < 2; nb++)
@@ -3002,10 +3016,10 @@ void KE_CARTESIAN::computeSource()
                     vel_nb[nb] = v_tan[m];
                     
                     //Pk wall boundary condition
-                    Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
+                    //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                         //Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,field->vel);
-                    ON_WALL = true;
-                    break;
+                    //ON_WALL = true;
+                    //break;
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -3024,18 +3038,24 @@ void KE_CARTESIAN::computeSource()
                 }
             }
 
+            S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            J += (S*S);
+            Pk[index] = 0.5*mu_t[index]*J/rho; 
+            /*
                 if (!ON_WALL)
                 {
                     S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
                     J += (S*S);
                 }
+                */
 
             }
-
+                /*
             if (!ON_WALL)
                 Pk[index] = 0.5*mu_t[index]*J/rho; 
             else
                 Pk[index] = Pk_Wall;
+            */
 
 		}
         break;
@@ -3128,5 +3148,5 @@ void KE_CARTESIAN::read_params(
     (void) printf("%f\n",eqn_params->t0);
 	fclose(infile);
 
-    initMovieVariables();
+    //initMovieVariables();
 }
