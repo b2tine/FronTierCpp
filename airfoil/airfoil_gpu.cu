@@ -25,30 +25,41 @@ static void HandleError( cudaError_t err, const char *file, int line )
 }
 
 __global__ void update_ext_impulse(SPRING_VERTEX*,int,int,double);
+
 __global__ void preset_kernel_spring(SPRING_VERTEX*,
 			double**,double**,double*,double*,int*,int);
+
 __global__ void set_kernel_spring(SPRING_VERTEX*,
 			double*,double*,double*,double*,double**,double**,
 			double*,double*,double**,double**,
 			double*,double*,double**,double**,
 			double*,double*,double**,int,int);
+
 __global__ void pos_to_old(double**,double**,
 			double**,double**,int,int);
+
 __global__ void comp_spring_accel(SPRING_VERTEX*,double**,int,int);
+
 __global__ void RK_1(double**,double**,
 			double**,double**,double**,double**,
 			double**,double,int,int);
+
 __global__ void RK_2(double**,double**,
 			double**,double**,double**,double**,
 			double**,double,int,int);
+
 __global__ void RK_3(double**,double**,
 			double**,double**,double**,double**,
 			double**,double,int,int);
+
 __global__ void RK_4(double**,double**,
 			double**,double**,double**,double**,
 			double**,double,int,int);
+
 __global__ void Update_x_new(SPRING_VERTEX*,double**,double,int,int);
+
 __device__ void dev_comp_spring_accel(SPRING_VERTEX,double*,int);
+
 
 extern void gpu_spring_solver(
 	SPRING_VERTEX *sv,
