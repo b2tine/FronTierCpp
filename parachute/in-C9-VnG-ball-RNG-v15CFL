@@ -132,9 +132,9 @@ Type y to make xy cross section movie: n
 Type y to make scalar pressure field movie: n
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: n
-Type y to make eddy viscosity field movie: y
-Type y to make turbulent kinetic energy field movie: y
-Type y to make turbulent kinetic energy dissipation field movie: y
+Type y to make viscosity field movie: y
+Type y to make turbulent kinetic energy field movie: n
+Type y to make turbulent kinetic energy dissipation field movie: n
 Type y to plot surface stress: n
 
 ************Debugging options*****************
@@ -142,7 +142,8 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: max_speed
-Enter the debugging string: keps_solve
+
+Enter the debugging string: Xkeps_solve
 Enter the debugging string: Xprojection
 Enter the debugging string: XCLOCK
 
