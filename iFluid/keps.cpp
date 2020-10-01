@@ -3127,4 +3127,6 @@ void KE_CARTESIAN::read_params(
     fscanf(infile,"%lf",&eqn_params->t0);
     (void) printf("%f\n",eqn_params->t0);
 	fclose(infile);
+
+    initMovieVariables();
 }
