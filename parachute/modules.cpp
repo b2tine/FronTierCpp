@@ -114,7 +114,7 @@ extern void initParachuteModules(Front *front)
     fscanf(infile,"%d",&num_canopy); printf("%d\n",num_canopy);
     fclose(infile);
 
-    if (num_canopy > 1)
+    if (num_canopy >= 1)
     {
         if (num_canopy == 1)
             initSingleModule(front);
