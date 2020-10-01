@@ -2400,6 +2400,11 @@ void KE_CARTESIAN::setDomain()
 
 void KE_CARTESIAN::initMovieVariables()
 {
+	FILE* infile;
+    char* inname = InName(front);
+	infile = fopen(inname,"r");
+	char string[100];
+
 	switch (dim)
 	{
 	case 2:
@@ -2407,10 +2412,36 @@ void KE_CARTESIAN::initMovieVariables()
 				field->mu_t,getStateTemp,0,0);
 	    break;
 	case 3:
-            /* Added for vtk movie of scalar field */
-            FT_AddVtkScalarMovieVariable(front,"mu_t",field->mu_t);
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make eddy viscosity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"EDDYVISCOSITY",field->mu_t);
+        }
+
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make turbulent kinetic energy field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"TKE",field->k);
+        }
+
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make turbulent kinetic energy dissipation field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"EPS",field->eps);
+        }
 	    break;
 	}
+
+    fclose(infile);
 }	/* end initMovieVariables */
 
 static int find_state_at_crossing(
@@ -2605,6 +2636,9 @@ void KE_CARTESIAN::setSlipBoundary(
     dir = (nb == 0) ? ldir[idir] : rdir[idir];
     ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
     
+    //TODO: really don't need this call since we already know this,
+    //      but should be passing in the the values computed by the calling
+    //      function
     boolean status;
     status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
     if (status == NO) return;
@@ -3093,5 +3127,4 @@ void KE_CARTESIAN::read_params(
     fscanf(infile,"%lf",&eqn_params->t0);
     (void) printf("%f\n",eqn_params->t0);
 	fclose(infile);
-	return;
 }
