@@ -5,6 +5,7 @@
 /*Following is for turbulence model RNG k-eps model*/
     
 struct KE_FIELD {
+    double *lambda
 	double *k;
 	double *eps;
 	double *Pk;
@@ -76,6 +77,8 @@ public:
 	// On topological grid
 	RECT_GRID *top_grid;
 	double *array;		// for scatter states;
+	double *Earray;		// for scatter states;
+	double *Karray;		// for scatter states;
 	double *source;		// for source of parabolic solver;
 	double *top_L,*top_U,*top_h,hmin;
 	int *top_gmax;
@@ -125,8 +128,11 @@ public:
 	void readFrontInteriorState(char*);
 	void printFrontInteriorState(char*);
 
-	void computeAdvection();
+    void explicitComputeKE(COMPONENT sub_comp);
+    void explicitComputeKE2d(COMPONENT sub_comp);
+    void explicitComputeKE3d(COMPONENT sub_comp);
 
+	void computeAdvection();
 	void computeAdvectionK(COMPONENT);
 	void computeAdvectionE_STD(COMPONENT);
 	void computeAdvectionE_RNG(COMPONENT);
@@ -138,6 +144,7 @@ public:
 	double computePointFieldC1_REAL(int*,double);
 	void findBdryPoint();
 
+	void updateLambda(COMPONENT);
 	void computeSource();
 	double computeWallPk(int*,int,int,int,
 			     HYPER_SURF*,POINTER,double*);
@@ -149,7 +156,7 @@ public:
 			     HYPER_SURF*,POINTER,double*,double*);
 
 	// interface functions
-	void makeGridIntfc();
+	void makeGridIntfc();//doesn't exist
 	void deleteGridIntfc();
 
 	// Extra plot functions
