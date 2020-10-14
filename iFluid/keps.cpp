@@ -416,6 +416,21 @@ void KE_CARTESIAN::setIndexMap(COMPONENT sub_comp)
 
 }	/* end setIndexMap */
 
+void KE_CARTESIAN::computeKE()
+{
+	COMPONENT sub_comp[2];
+	sub_comp[0] = SOLID_COMP;
+	sub_comp[1] = LIQUID_COMP2;
+	
+	for (int i = 0; i < 2; ++i)
+	{
+        if(sub_comp[i] == SOLID_COMP) continue;
+        
+        setGlobalIndex(sub_comp[i]);//Need this for explicit soln?
+        explicitComputeKE(sub_comp[i]);
+    }
+}
+
 void KE_CARTESIAN::computeAdvection()
 {
 	COMPONENT sub_comp[2];
@@ -477,35 +492,60 @@ void KE_CARTESIAN::findBdryPoint()
 	}
 }
 
-void KE_CARTESIAN::updateLambda(COMPONENT sub_comp)
+void KE_CARTESIAN::updateGamma()
 {
-    double *lambda = field->lambda;
+    switch (dim)
+    {
+        case 2:
+            updateGamma2d();
+            break;
+        case 3:
+            printf("3d code not implemented!\n"); LOC();
+            clean_up(EXIT_FAILURE);
+            //updateGamma3d();
+            break;
+        default:
+            printf("Invalid Dimension! dim = %d\n",dim); LOC();
+            clean_up(EXIT_FAILURE);
+    }
+}
+
+void KE_CARTESIAN::updateGamma2d()
+{
+    double *gamma = field->gamma;
     double *K = field->k;
 	double *mu_t = field->mu_t;
 	double rho = eqn_params->rho;
     double Cmu = eqn_params->Cmu;
 
+    //double icoords[MAXD] = {0};
+
     for (int j = jmin; j <= jmax; ++j)
     for (int i = imin; i <= imax; ++i)
     {
-        icoords[0] = i;
-        icoords[1] = j;
+        //icoords[0] = i;
+        //icoords[1] = j;
         int index = d_index2d(i,j,top_gmax);
         
         COMPONENT comp = top_comp[index];
-        if (comp != sub_comp)
+        if (!ifluid_comp(comp))
         {
-            lambda[index] = 0.0;
+            gamma[index] = 0.0;
             continue;
         }
 
+        //TODO: may need a gamma_k and gamma_eps that are updated
+        //      slightly differently with values from different time levels
         double nu_t = mu_t[index]/rho;
         if (fabs(nu_t) < MACH_EPS)
-            lambda[index] = 0.0;
+            gamma[index] = 0.0;
         else
-            lambda[index] = Cmu*K[index]/nu_t;
+            gamma[index] = Cmu*K[index]/nu_t;
+
+        gamma[index] = std::max(gamma[index],0.0);
     }
 
+    //TODO: need to scatter?
     /*
     scatMeshArray();
 
@@ -515,7 +555,61 @@ void KE_CARTESIAN::updateLambda(COMPONENT sub_comp)
         ic = d_index2d(i,j,top_gmax);
         comp = cell_center[ic].comp;
         if (comp == sub_comp)
-            lambda[ic] = array[ic];
+            gamma[ic] = array[ic];
+    }
+    */
+}
+
+void KE_CARTESIAN::updateGamma3d()
+{
+    double *gamma = field->gamma;
+    double *K = field->k;
+	double *mu_t = field->mu_t;
+	double rho = eqn_params->rho;
+    double Cmu = eqn_params->Cmu;
+
+    //double icoords[MAXD] = {0};
+
+    for (int k = kmin; k <= kmax; ++k)
+    for (int j = jmin; j <= jmax; ++j)
+    for (int i = imin; i <= imax; ++i)
+    {
+        //icoords[0] = i;
+        //icoords[1] = j;
+        //icoords[2] = k;
+        int index = d_index3d(i,j,k,top_gmax);
+        
+        COMPONENT comp = top_comp[index];
+        if (!ifluid_comp(comp))
+        {
+            gamma[index] = 0.0;
+            continue;
+        }
+
+        //TODO: may need a gamma_k and gamma_eps that are updated
+        //      slightly differently with values from different time levels
+        double nu_t = mu_t[index]/rho;
+        if (fabs(nu_t) < MACH_EPS)
+            gamma[index] = 0.0;
+        else
+            gamma[index] = Cmu*K[index]/nu_t;
+
+        gamma[index] = std::max(gamma[index],0.0);
+    }
+
+    //TODO: need to scatter?
+    //
+    /*
+    scatMeshArray();
+
+    for (int k = 0; k <= top_gmax[2]; ++k)
+    for (int j = 0; j <= top_gmax[1]; ++j)
+    for (int i = 0; i <= top_gmax[0]; ++i)
+    {
+        ic = d_index3d(i,j,k,top_gmax);
+        comp = cell_center[ic].comp;
+        if (comp == sub_comp)
+            gamma[ic] = array[ic];
     }
     */
 }
@@ -528,71 +622,64 @@ void KE_CARTESIAN::explicitComputeKE(COMPONENT sub_comp)
             explicitComputeKE2d(sub_comp);
             break;
         case 3:
-            printf("not implemented!\n"); LOC();
+            printf("explicitComputeKE3d() not implemented!\n"); LOC();
             clean_up(EXIT_FAILURE);
             //explicitComputeKE3d(sub_comp);
             break;
         default:
-            printf("Invalid Dimension!\n"); LOC();
+            printf("Invalid Dimension! dim = %d\n",dim); LOC();
             clean_up(EXIT_FAILURE);
-            break;
     }
 }
 
-//TODO: 2. add epsilon and rename function
-//      3. Test
-//      4. Extend to 3d if successful
+//TODO: 1. add epsilon and rename function
+//      2. Test
+//      3. Extend to 3d if successful
 void KE_CARTESIAN::explicitComputeKE2d(COMPONENT sub_comp)
 {
+	INTERFACE* grid_intfc = front->grid_intfc;
+	HYPER_SURF_ELEMENT *hse;
+	HYPER_SURF *hs;
+	STATE *intfc_state;
+
     int icoords[MAXD], icoords_nb[MAXD];
     double crx_coords[MAXD];
 	double nor[MAXD];
     COMPONENT comp;
     
+    boolean fr_crx_grid_seg;
     const GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
-    boolean fr_crx_grid_seg;
 
-    double *lambda = field->lambda;
+    double *gamma = field->gamma;
 	double *Pk = field->Pk;
-	double delta_k = eqn_params->delta_k;
     double *K = field->k;
+    double *E = field->eps;
 	double *mu_t = field->mu_t;
+
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
-	double y_pp,dist,center[MAXD];
-    double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
-    double eta;
-	double Ut,Ut_old,vn;
-	int    niter;
+	double delta_k = eqn_params->delta_k;
+	double delta_eps = eqn_params->delta_eps;
+    double C1 = eqn_params->C1;
+    double C2 = eqn_params->C2;
+    double Cmu = eqn_params->Cmu;
+    double Cbc = eqn_params->Cbc;
+    double l0 = eqn_params->l0;
 	
-    /*For boundary state*/
-	HYPER_SURF *hs;
-	HYPER_SURF_ELEMENT *hse;
-	STATE *intfc_state;
-	INTERFACE* grid_intfc = front->grid_intfc;
-	double coords[MAXD];
-	boolean if_adj_pt;
-	double point[MAXD],t[MAXD];
-	double Cmu;
 
     start_clock("computeK");
     if (debugging("trace")) printf("Entering explicitComputeK2d()\n");
 
-    //for (int i = 0; i < dim; ++i)
-    //{
-    //  gmin[i] = 0;
-    //}
-     
-    //setIndexMap(sub_comp);
+        //setIndexMap(sub_comp);
 
     if (debugging("trace"))
     {
         int domain_size = 1;
         printf("ilower = %d  iupper = %d\n",ilower,iupper);
-        for (i = 0; i < dim; ++i)
-        printf("domain_size = %d\n",domain_size);
+        for (int i = 0; i < dim; ++i)
+            printf("domain_size = %d\n",domain_size);
     }
 
     for (int j = jmin; j <= jmax; ++j)
@@ -603,31 +690,43 @@ void KE_CARTESIAN::explicitComputeKE2d(COMPONENT sub_comp)
         int ic = d_index2d(i,j,top_gmax);
         
             //I = ij_to_I[i][j];
+        
         comp = top_comp[ic];
         if (comp != sub_comp) 
         {
             Karray[ic] = 0.0;
+            Earray[ic] = 0.0;
             continue;
         }
         
         double nu_t = mu_t[ic]/rho;
 
         //K[ic] at time n+1 written into Karray[ic] to prevent data race
-        Karray[ic] = K[ic]*(1.0 - lambda[ic]*m_dt) + Pk[ic]*m_dt;
-        //Earray[ic] = ...
+        //E[ic] at time n+1 written into Earray[ic] to prevent data race
+        
+        Karray[ic] = K[ic]*(1.0 - gamma[ic]*m_dt) + Pk[ic]*m_dt;
+        Earray[ic] = E[ic]*(1.0 - C2*gamma[ic]*m_dt) + C1*gamma[ic]*Pk[ic]*m_dt;
+
+        //TODO: C1*gamma[ic]*Pk[ic] may need a separate update using gamma_eps,
+        //      which gets computed witht the latest k data (at time n+1).
+        //      Would also have a gamma_k which is updated with the previous
+        //      k data (at time n).
 
         for (int l = 0; l < dim; ++l)
         {
-            double alpha = 0.5*m_dt*field->vel[l][index]/top_h[l];
-            double beta = m_dt*nu_t/eqn_params->delta_k/sqr(top_h[l]);
+            double alpha = 0.5*m_dt*field->vel[l][ic]/top_h[l];
+            double beta = m_dt*nu_t/delta_k/sqr(top_h[l]);
+            double omega = m_dt*nu_t/delta_eps/sqr(top_h[l]);
         
             Karray[ic] -= 2.0*beta*K[ic];
+            Earray[ic] -= 2.0*omega*E[ic];
         
             for (int nb = 0; nb < 2; ++nb)
             {
-
                 for (int n = 0; n < dim; ++n)
                     icoords_nb[n] = icoords[n];
+
+                int sign = pow(-1,nb);
 
                 icoords_nb[l] =
                     (nb == 0) ? icoords[l] - 1 : icoords[l] + 1;
@@ -638,43 +737,46 @@ void KE_CARTESIAN::explicitComputeKE2d(COMPONENT sub_comp)
                         grid_intfc,icoords,dir[l][nb],comp,
                         (POINTER*)&intfc_state,&hs,crx_coords);
                 
-                int sign = pow(-1,nb);
                 if (!fr_crx_grid_seg) 
                 {
                     //no cross
-                    Karray[ic] += sign*alpha*K[icnb];
-                    Karray[ic] += beta*K[icnb];
+                    Karray[ic] += sign*alpha*K[icnb] + beta*K[icnb];
+                    Earray[ic] += sign*alpha*E[icnb] + omega*E[icnb];
                 }
                 else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
-                    //Inlet/Outlet on rectangular boundaries only
+                    // Inlet/Outlet on rectangular boundaries only
                     if (boundary_state_function(hs) &&
                     strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
                     {
-                        //Outlet
+                        //OUTLET
                         // n dot grad(k) = 0
-                        K_nb = K[ic];
+                        double K_nb = K[ic];
+                        Karray[ic] += sign*alpha*K_nb + beta*K_nb;
                         
-                        Karray[ic] += sign*alpha*K_nb;
-                        Karray[ic] += beta*K_nb;
+                        // n dot grad(eps) = 0
+                        double E_nb = E[ic];
+                        Earray[ic] += sign*alpha*E_nb + omega*E_nb;
                     }
                     else
                     {
-                        //Inlet
+                        //INLET
                         // k = Cbc*|u|^2 where Cbc \in [0.003,0.01]
                         double sqrmag_vel = Dot2d(intfc_state->vel,intfc_state->vel);
-                        K_nb = eqn_params->Cbc*sqrmag_vel;
+                        double K_nb = eqn_params->Cbc*sqrmag_vel;
+                        Karray[ic] += sign*alpha*K_nb + beta*K_nb;
 
-                        Karray[ic] += sign*alpha*K_nb;
-                        Karray[ic] += beta*K_nb;
+                        // eps = Cmu*k^(3/2)/l0
+                        double E_nb = Cmu*pow(K_nb,1.5)/l0;
+                        Earray[ic] += sign*alpha*E_nb + omega*E_nb;
                     }
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                          wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                 {
                     double v_tan[MAXD];
-                    setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_tan);
+                    setSlipBoundary(icoords,l,nb,comp,hs,intfc_state,field->vel,v_tan);
 
                     double mag_vtan = Magd(v_tan,dim);
 
@@ -683,47 +785,52 @@ void KE_CARTESIAN::explicitComputeKE2d(COMPONENT sub_comp)
                             pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
                                             mag_vtan/eqn_params->y_p);
                     
-                    K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
-                    Karray[ic] += sign*alpha*K_nb;
-                    Karray[ic] += beta*K_nb;
+                    double K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
+                    Karray[ic] += sign*alpha*K_nb + beta*K_nb;
+                
+                    double E_nb = pow(u_t,4.0)/(0.41*eqn_params->y_p*nu);
+                    Earray[ic] += sign*alpha*E_nb + omega*E_nb;
                 }
                 else
                 {
-                    printf("UNKNOWN BOUNDARY TYPE!\n");
-                    LOC();
+                    printf("UNKNOWN BOUNDARY TYPE!\n"); LOC();
                     clean_up(EXIT_FAILURE);
                 }
-            }
-        }
-    }
+            
+            }//nb
+
+        }//l
+    
+    }//i,j
             
         
-    /*
-    for (int j = jmin; j <= jmax; j++)
-    for (int i = imin; i <= imax; i++)
-    {
-        I = ij_to_I[i][j];
-        ic = d_index2d(i,j,top_gmax);
-        comp = cell_center[ic].comp;
-        if (comp == sub_comp)
-            array[ic] = x[I-ilower];
-        else
-            array[ic] = 0.0;
-    }
-    */
+        /*
+        for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
+        {
+            I = ij_to_I[i][j];
+            ic = d_index2d(i,j,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                array[ic] = x[I-ilower];
+            else
+                array[ic] = 0.0;
+        }
+        */
     
 	FT_ParallelExchGridArrayBuffer(Karray,front,NULL);
-	//FT_ParallelExchGridArrayBuffer(Earray,front,NULL);
+	FT_ParallelExchGridArrayBuffer(Earray,front,NULL);
 
+    //Write Karray and Earray back into K and E
     for (int j = 0; j <= top_gmax[1]; ++j)
     for (int i = 0; i <= top_gmax[0]; ++i)
     {
-        ic = d_index2d(i,j,top_gmax);
+        int ic = d_index2d(i,j,top_gmax);
         comp = cell_center[ic].comp;
         if (comp == sub_comp)
         {
             K[ic] = Karray[ic];
-            //E[ic] = Earray[ic];
+            E[ic] = Earray[ic];
         }
     }
     
@@ -733,191 +840,10 @@ void KE_CARTESIAN::explicitComputeKE2d(COMPONENT sub_comp)
 }       /* end explicitComputeKE2d */
             
 /*
-//TODO: sub K for epsilon
-void KE_CARTESIAN::explicitComputeEpsilon2d(COMPONENT sub_comp)
-{
-    int icoords[MAXD], icoords_nb[MAXD];
-    double crx_coords[MAXD];
-	double nor[MAXD];
-    COMPONENT comp;
-    
-    const GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-    boolean fr_crx_grid_seg;
+//TODO: write
+void KE_CARTESIAN::explicitComputeKE3d(COMPONENT sub_comp){}
+*/
 
-    double *lambda = field->lambda;
-	double *Pk = field->Pk;
-	double delta_k = eqn_params->delta_k;
-    double *K = field->k;
-	double *mu_t = field->mu_t;
-	double rho = eqn_params->rho;
-	double nu = eqn_params->mu/eqn_params->rho;
-	double y_pp,dist,center[MAXD];
-    double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
-    double eta;
-	double Ut,Ut_old,vn;
-	int    niter;
-	
-	HYPER_SURF *hs;
-	HYPER_SURF_ELEMENT *hse;
-	STATE *intfc_state;
-	INTERFACE* grid_intfc = front->grid_intfc;
-	double coords[MAXD];
-	boolean if_adj_pt;
-	double point[MAXD],t[MAXD];
-	double Cmu;
-
-    start_clock("explicitComputeK2d");
-    if (debugging("trace")) printf("Entering explicitComputeK2d()\n");
-
-    //for (int i = 0; i < dim; ++i)
-    //{
-    //  gmin[i] = 0;
-    //}
-     
-    //setIndexMap(sub_comp);
-
-    if (debugging("trace"))
-    {
-        int domain_size = 1;
-        printf("ilower = %d  iupper = %d\n",ilower,iupper);
-        for (i = 0; i < dim; ++i)
-        printf("domain_size = %d\n",domain_size);
-    }
-
-    for (int j = jmin; j <= jmax; ++j)
-    for (int i = imin; i <= imax; ++i)
-    {
-        icoords[0] = i;
-        icoords[1] = j;
-        int ic = d_index2d(i,j,top_gmax);
-        
-            //I = ij_to_I[i][j];
-        comp = top_comp[ic];
-        if (comp != sub_comp) 
-        {
-            array[ic] = 0.0;
-            continue;
-        }
-        
-        double nu_t = mu_t[ic]/rho;
-
-        //K[ic] at time n+1 written into array[ic] to prevent data race
-        array[ic] = K[ic]*(1.0 - lambda[ic]*m_dt) + Pk[ic]*m_dt;
-
-        for (int l = 0; l < dim; ++l)
-        {
-            double alpha = 0.5*m_dt*field->vel[l][index]/top_h[l];
-            double beta = m_dt*nu_t/eqn_params->delta_k/sqr(top_h[l]);
-        
-            array[ic] -= 2.0*beta*K[ic];
-        
-            for (int nb = 0; nb < 2; ++nb)
-            {
-
-                for (int n = 0; n < dim; ++n)
-                    icoords_nb[n] = icoords[n];
-
-                icoords_nb[l] =
-                    (nb == 0) ? icoords[l] - 1 : icoords[l] + 1;
-
-                int icnb = d_index(icoords_nb,top_gmax,dim);
-
-                fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-                        grid_intfc,icoords,dir[l][nb],comp,
-                        (POINTER*)&intfc_state,&hs,crx_coords);
-                
-                int sign = pow(-1,nb);
-                if (!fr_crx_grid_seg) 
-                {
-                    //no cross
-                    array[ic] += sign*alpha*K[icnb];
-                    array[ic] += beta*K[icnb];
-                }
-                else if (wave_type(hs) == DIRICHLET_BOUNDARY)
-                {
-                    //Inlet/Outlet on rectangular boundaries only
-                    if (boundary_state_function(hs) &&
-                    strcmp(boundary_state_function_name(hs),
-                                    "flowThroughBoundaryState") == 0)
-                    {
-                        //Outlet
-                        // n dot grad(k) = 0
-                        K_nb = K[ic];
-                        
-                        array[ic] += sign*alpha*K_nb;
-                        array[ic] += beta*K_nb;
-                    }
-                    else
-                    {
-                        //Inlet
-                        // k = Cbc*|u|^2 where Cbc \in [0.003,0.01]
-                        double sqrmag_vel = Dot2d(intfc_state->vel,intfc_state->vel);
-                        K_nb = eqn_params->Cbc*sqrmag_vel;
-
-                        array[ic] += sign*alpha*K_nb;
-                        array[ic] += beta*K_nb;
-                    }
-                }
-                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
-                {
-                    double v_tan[MAXD];
-                    setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_tan);
-
-                    double mag_vtan = Magd(v_tan,dim);
-
-                    //friction velocity
-                    double u_t = std::max(
-                            pow(eqn_params->Cmu,0.25)*sqrt(std::max(field->k[ic],0.0)),
-                                            mag_vtan/eqn_params->y_p);
-                    
-                    K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
-                    array[ic] += sign*alpha*K_nb;
-                    array[ic] += beta*K_nb;
-                }
-                else
-                {
-                    printf("UNKNOWN BOUNDARY TYPE!\n");
-                    LOC();
-                    clean_up(EXIT_FAILURE);
-                }
-            }
-        }
-    }
-            
-        
-// 
-//    for (int j = jmin; j <= jmax; j++)
-//    for (int i = imin; i <= imax; i++)
-//    {
-//        I = ij_to_I[i][j];
-//        ic = d_index2d(i,j,top_gmax);
-//        comp = cell_center[ic].comp;
-//        if (comp == sub_comp)
-//            array[ic] = x[I-ilower];
-//        else
-//            array[ic] = 0.0;
-//    }
-//
-    
-    scatMeshArray();
-
-    for (int j = 0; j <= top_gmax[1]; ++j)
-    for (int i = 0; i <= top_gmax[0]; ++i)
-    {
-        ic = d_index2d(i,j,top_gmax);
-        comp = cell_center[ic].comp;
-        if (comp == sub_comp)
-            K[ic] = array[ic];
-    }
-    
-    
-    if (debugging("trace")) printf("Leaving computeEpsilonExplicit()\n");
-    stop_clock("computeEpsilonExplicit");
-}*/       /* end computeEpsilonExplicit */
-            
 //TODO: Rename and implement Crank Nicholson scheme (2nd order time)
 //implicit time explicit space
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
@@ -2023,15 +1949,18 @@ void KE_CARTESIAN::solve(double dt)
 	setComponent();
 	//if (debugging("keps_solve")) printf("Passing setComponent()\n");
 
-    updateLambda();
+    updateGamma();
 
     //computes the production term Pk
     computeSource();
     //if (debugging("keps_solve")) printf("Passing computeSource()\n");
 
+    computeKE();
+
     //TODO: rename this -- misleading
-	computeAdvection();
-	//if (debugging("keps_solve")) printf("Passing computeAdvection()\n");
+    //
+	    //computeAdvection();
+	    //if (debugging("keps_solve")) printf("Passing computeAdvection()\n");
 
 	computeMuTurb();
 	//if (debugging("keps_solve")) printf("Passing computeMuTurb()\n");
@@ -2321,22 +2250,29 @@ void KE_CARTESIAN::computeMuTurb()
             field->mu_t[index] = nu_t*rho;
             */
 
-            if (field->eps[index] != 0.0)
-                field->mu_t[index] = Cmu*sqr(field->k[index])/field->eps[index];
+            if (fabs(field->eps[index]) < MACH_EPS)
+            {
+                field->mu_t[index] =
+                    Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+            }
             else
+            {
                 field->mu_t[index] = 0.0001*eqn_params->mu;
+            }
 
+            
             if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
 			    printf("Warning: eddy viscosity is nan or inf\n \
                         \t mu_t=%f,Cmu=%f, k=%f, eps=%f\n",
                         field->mu_t[index],Cmu,field->k[index],field->eps[index]);
                 
-                //clean_up(EXIT_FAILURE);
-                field->mu_t[index] = 0.0001*eqn_params->mu;
+                clean_up(EXIT_FAILURE);
 		    }
 
+            
             field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+
 		}
 		break;
 
@@ -2375,13 +2311,17 @@ void KE_CARTESIAN::computeMuTurb()
             field->mu_t[index] = nu_t*rho;
             */
 
-            field->mu_t[index] = 
-                Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
-            field->mu_t[index] = 
-                std::max(field->mu_t[index],0.0001*eqn_params->mu);
+            if (fabs(field->eps[index]) < MACH_EPS)
+            {
+                field->mu_t[index] =
+                    Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+            }
+            else
+            {
+                field->mu_t[index] = 0.0001*eqn_params->mu;
+            }
 
-            /*if (isnan(field->mu_t[index]) || isinf(field->mu_t[index])
-                    || field->mu_t[index] > 10.0*eqn_params->mu)*/
+
             if (isnan(field->mu_t[index]) || isinf(field->mu_t[index]))
 		    {
 			    printf("Warning: eddy viscosity is nan or inf\n \
@@ -2389,8 +2329,10 @@ void KE_CARTESIAN::computeMuTurb()
                         field->mu_t[index],Cmu,field->k[index],field->eps[index]);
                 
                 clean_up(EXIT_FAILURE);
-                //field->mu_t[index] = 0.0001*eqn_params->mu;
 		    }
+
+
+            field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
 
 		}
         break;
@@ -2797,6 +2739,7 @@ void KE_CARTESIAN::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&Karray,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&Earray,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
             first = NO;
@@ -2815,7 +2758,7 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&Karray,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&Earray,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
-	    	FT_VectorMemoryAlloc((POINTER*)&field->lambda,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->temp,comp_size,FLOAT);
@@ -2842,7 +2785,7 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&Karray,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&Earray,comp_size,FLOAT);
             FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
-	    	FT_VectorMemoryAlloc((POINTER*)&field->lambda,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
@@ -3152,7 +3095,7 @@ void KE_CARTESIAN::setSlipBoundary(
     for (int j = 0; j < dim; ++j)
     {
         v_tan[j] = v_tmp[j] - vn*nor[j];
-        //v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
+            //v_tan[j] = v_tmp[j] - 2.0*vn*nor[j];
     }
 }
 
@@ -3166,35 +3109,6 @@ double KE_CARTESIAN::computeWallPk(
 	POINTER intfc_state,
 	double* v_tan)
 {
-    /*
-    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
-    GRID_DIRECTION dir = (nb == 0) ? ldir[idir] : rdir[idir];
-    
-    boolean status;
-    double nor[MAXD], crx_coords[MAXD];
-    status = FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
-        //if (status == NO) return;
-
-	int index = d_index(icoords,top_gmax,dim);
-    
-    double v[MAXD] = {0.0};
-    double vel_intfc[MAXD] = {0.0};
-    for (int i = 0; i < dim; ++i)
-    {
-        v[i] = vel[i][index];
-        vel_intfc[i] = (*getStateVel[i])(intfc_state);
-    }
-
-    double vn = 0.0;
-    for (int k = 0; k < dim; ++k)
-        vn += (v[k] - vel_intfc[k])*nor[k];
-    
-    double v_tan[MAXD] = {0.0};
-    for (int k = 0; k < dim; ++k)
-        v_tan[k] = v[k] - vn*nor[k];
-    */
-
 	int index = d_index(icoords,top_gmax,dim);
 
     double u_t = std::max(
@@ -3230,29 +3144,36 @@ void KE_CARTESIAN::computeSource()
 	double crx_coords[MAXD],center[MAXD],v_tan[MAXD];
     double Pk_Wall = 0.0;
 
+    //TODO: Factor into calling function that passes icrds = {i,j,k},
+    //      and a function that returns a double of the source term Pk
+    //      at the corresponding index. This will allow for an early
+    //      return of the computed Pk value rather than having to break
+    //      out of 3 nested loops when ON_WALL becomes true.
+
 	switch (dim)
 	{
-	    case 2:
-		for (i = imin; i <= imax; i++)
-		for (j = jmin; j <= jmax; j++)
-		{
-		    icrds[0] = i;
-		    icrds[1] = j;
-		    index = d_index2d(i,j,top_gmax);
-		    getRectangleCenter(index,center);
-		    comp = cell_center[index].comp;
-		    if (!ifluid_comp(comp)) continue;
-    
-            bool ON_WALL = false;
+    case 2:
+    for (i = imin; i <= imax; i++)
+    for (j = jmin; j <= jmax; j++)
+    {
+        icrds[0] = i;
+        icrds[1] = j;
+        index = d_index2d(i,j,top_gmax);
+        getRectangleCenter(index,center);
+        comp = cell_center[index].comp;
+        if (!ifluid_comp(comp)) continue;
 
-            //TODO: factor out this common l,m,nb loop into function
-            //      that takes the same args plus the icrds array.
+        bool ON_WALL = false;
 
-            J = 0.0;
-		    /*compute module of the strain rate tensor*/
-		    for (l = 0; l < dim; l++)
-		    for (m = 0; m < dim; m++)
-		    {
+        //TODO: factor out this common l,m,nb loop into function
+        //      that takes the same args plus the icrds array.
+
+        J = 0.0;
+        /*compute modulus (squared frobenius matrix norm) of the strain rate tensor*/
+        for (l = 0; l < dim; l++)
+        {
+        for (m = 0; m < dim; m++)
+        {
             //l components in the m direction
 			for (nb = 0; nb < 2; nb++)
 			{
@@ -3282,7 +3203,7 @@ void KE_CARTESIAN::computeSource()
                     //Pk wall boundary condition
                     Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                     ON_WALL = true;
-                    break;
+                    break; //breaks out of nb loop
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -3298,16 +3219,15 @@ void KE_CARTESIAN::computeSource()
                     }
                     d_h[nb] = distance_between_positions(center,crx_coords,dim);
                 }
-			}
+			
+            }//nb
 
                 
-            //S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            if (ON_WALL) break; //breaks out of m loop
+
+            S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
-            if (!ON_WALL) {
-
-                S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-
             for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -3335,68 +3255,69 @@ void KE_CARTESIAN::computeSource()
                     //Pk wall boundary condition
                     Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                     ON_WALL = true;
-                    break;
+                    break; //breaks out of nb loop
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
-				if (boundary_state_function_name(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
-				{
-				    vel_nb[nb] = vel[m][index];
-				}
-				else
-				{
-				    vel_nb[nb] = intfc_state->vel[m];
-				}
-			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
-			    }
-			}
+                    if (boundary_state_function_name(hs) &&
+                                    strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
+                    {
+                        vel_nb[nb] = vel[m][index];
+                    }
+                    else
+                    {
+                        vel_nb[nb] = intfc_state->vel[m];
+                    }
+    
+                    d_h[nb] = distance_between_positions(center,crx_coords,dim);
+                }
+
+			}//nb
             
-                //S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-                //J += (S*S);
-                //Pk[index] = 0.5*mu_t[index]*J/rho; 
+            if (ON_WALL) break; //breaks out of m loop
+           
+            S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+            J += (S*S);
             
-            if (!ON_WALL)
-            {
-                S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-                J += (S*S);
-            }
+        }//m
 
-		    }
-            }//if (!ON_WALL)
+        if (ON_WALL) break; //breaks out of l loop
 
-            if (!ON_WALL)
-		        Pk[index] = 0.5*mu_t[index]*J/rho; 
-            else
-                Pk[index] = Pk_Wall;
+        }//l
 
-		}
-        break;
+        if (ON_WALL)
+            Pk[index] = Pk_Wall;
+        else
+            Pk[index] = 0.5*mu_t[index]*J/rho; 
+		
+    }//j,i
+    break;
 
-	    case 3:
-		for (i = imin; i <= imax; i++)
-		for (j = jmin; j <= jmax; j++)
-		for (k = kmin; k <= kmax; k++)
-		{
-		    icrds[0] = i;
-		    icrds[1] = j;
-		    icrds[2] = k;
-		    index = d_index3d(i,j,k,top_gmax);
-		    getRectangleCenter(index,center);
-		    comp = cell_center[index].comp;
-		    if (!ifluid_comp(comp)) continue;
+    case 3:
+    for (i = imin; i <= imax; i++)
+    for (j = jmin; j <= jmax; j++)
+    for (k = kmin; k <= kmax; k++)
+    {
+        icrds[0] = i;
+        icrds[1] = j;
+        icrds[2] = k;
+        index = d_index3d(i,j,k,top_gmax);
+        getRectangleCenter(index,center);
+        comp = cell_center[index].comp;
+        if (!ifluid_comp(comp)) continue;
 
-            bool ON_WALL = false;
+        bool ON_WALL = false;
 
-            //TODO: factor out this common l,m,nb loop into function
-            //      that takes the same args plus the icrds array.
-		    J = 0.0;
-		    
-            /*compute module of the strain rate tensor*/
-		    for (l = 0; l < dim; l++)
-		    for (m = 0; m < dim; m++)
-		    {		
+        //TODO: factor out this common l,m,nb loop into function
+        //      that takes the same args plus the icrds array.
+        J = 0.0;
+        
+        /*compute module of the strain rate tensor*/
+        for (l = 0; l < dim; l++)
+        {
+        for (m = 0; m < dim; m++)
+        {		
             //l components in the m direction
 			for (nb = 0; nb < 2; nb++)
 			{
@@ -3425,7 +3346,7 @@ void KE_CARTESIAN::computeSource()
                     //Pk wall boundary condition
                     Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                     ON_WALL = true;
-                    break;
+                    break; //breaks out of nb loop
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -3439,20 +3360,18 @@ void KE_CARTESIAN::computeSource()
                     {
                         vel_nb[nb] = intfc_state->vel[l];
                     }
-			        d_h[nb] = distance_between_positions(center,crx_coords,dim);
+			    
+                    d_h[nb] = distance_between_positions(center,crx_coords,dim);
 			    }
-			}
 
-            /*if (!ON_WALL)
-                S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);*/
-            
-                //S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+			}//nb
+
+
+            if (ON_WALL) break; //breaks out of m loop
+
+            S = (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
 
             //m components in the l direction
-            if (!ON_WALL) {
-
-                S = (vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
-
 			for (nb = 0; nb < 2; nb++)
 			{
 			    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
@@ -3479,7 +3398,7 @@ void KE_CARTESIAN::computeSource()
                     //Pk wall boundary condition
                     Pk_Wall = computeWallPk(icrds,m,nb,comp,hs,intfc_state,v_tan);
                     ON_WALL = true;
-                    break;
+                    break; //breaks out of nb loop
 			    }
 			    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
 			    {
@@ -3496,31 +3415,29 @@ void KE_CARTESIAN::computeSource()
     
                     d_h[nb] = distance_between_positions(center,crx_coords,dim);
                 }
-            }
-            }//if (!ON_WALL)
+            
+            }//nb
 
-            /*
+            if (ON_WALL) break; //breaks out of m loop
+
             S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
             J += (S*S);
+            
+        }//m
+            
+        if (ON_WALL) break; //breaks out of l loop
+
+        }//l
+        
+        if (ON_WALL)
+            Pk[index] = Pk_Wall;
+        else
             Pk[index] = 0.5*mu_t[index]*J/rho; 
-            */
-            
-            if (!ON_WALL)
-            {
-                S += (vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
-                J += (S*S);
-            }
 
-            }
-            
-            if (!ON_WALL)
-                Pk[index] = 0.5*mu_t[index]*J/rho; 
-            else
-                Pk[index] = Pk_Wall;
+    }//k,j,i
+    break;
 
-		}
-        break;
-	  default: 
+    default: 
 		printf("In computeSource(), Unknown dim = %d\n",dim);
 		clean_up(ERROR);
 	}

@@ -5,7 +5,7 @@
 /*Following is for turbulence model RNG k-eps model*/
     
 struct KE_FIELD {
-    double *lambda
+    double *gamma;
 	double *k;
 	double *eps;
 	double *Pk;
@@ -71,14 +71,14 @@ public:
     KE_CARTESIAN(Front &front);
 	KEPS_MODEL keps_model;
 	
-	// member data: RECT_GRID
 	int dim;
+
+    double *array;		// for scatter states;
+	double *Earray;		// for scatter states;
+	double *Karray;		// for scatter states;
 
 	// On topological grid
 	RECT_GRID *top_grid;
-	double *array;		// for scatter states;
-	double *Earray;		// for scatter states;
-	double *Karray;		// for scatter states;
 	double *source;		// for source of parabolic solver;
 	double *top_L,*top_U,*top_h,hmin;
 	int *top_gmax;
@@ -93,7 +93,7 @@ public:
 	int **ij_to_I,**I_to_ij;	// Index mapping for 2D
 	int ***ijk_to_I,**I_to_ijk;	// Index mapping for 3D
 
-	// Sweeping limites
+	// Sweeping limits
 	int imin,jmin,kmin;
 	int imax,jmax,kmax;
 
@@ -112,7 +112,7 @@ public:
 	double m_dt;			// time increment
 	double min_dt;			// Minimum dt to use non-explicit
 
-	// constructor
+	// destructor
 	~KE_CARTESIAN();
 
 	// for parallel partition
@@ -128,6 +128,11 @@ public:
 	void readFrontInteriorState(char*);
 	void printFrontInteriorState(char*);
 
+	void updateGamma();
+	void updateGamma2d();
+	void updateGamma3d();
+
+	void computeKE();
     void explicitComputeKE(COMPONENT sub_comp);
     void explicitComputeKE2d(COMPONENT sub_comp);
     void explicitComputeKE3d(COMPONENT sub_comp);
@@ -144,7 +149,6 @@ public:
 	double computePointFieldC1_REAL(int*,double);
 	void findBdryPoint();
 
-	void updateLambda(COMPONENT);
 	void computeSource();
 	double computeWallPk(int*,int,int,int,
 			     HYPER_SURF*,POINTER,double*);
