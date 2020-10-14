@@ -1575,6 +1575,16 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    {
             switch (iFparams->eddy_visc_model)
             {
+            case KEPSILON:
+                mu[index] = mu_t[index];
+                //pres[index] += 2.0/3.0*tke[index];
+                break;
+            case MOIN:
+                mu[index] = computeMuOfMoinModel(icoords);
+                break;
+            case SMAGORINSKY:
+                mu[index] = computeMuofSmagorinskyModel(icoords); 
+                break;
                 /*
             case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
                 if (status == YES &&
@@ -1587,16 +1597,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 }
                 break;
                 */
-            case MOIN:
-                mu[index] = computeMuOfMoinModel(icoords);
-                break;
-            case SMAGORINSKY:
-                mu[index] = computeMuofSmagorinskyModel(icoords); 
-                break;
-            case KEPSILON:
-                mu[index] = mu_t[index];
-                //pres[index] += 2.0/3.0*tke[index];
-                break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
@@ -2384,6 +2384,16 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         {
             switch (iFparams->eddy_visc_model)
             {
+            case KEPSILON:
+                mu[index] = mu_t[index];
+                //pres[index] += 2.0/3.0*tke[index];
+                break;
+            case MOIN:
+                mu[index] = computeMuOfMoinModel(icoords);
+                break;
+            case SMAGORINSKY:
+                mu[index] = computeMuofSmagorinskyModel(icoords);
+                break;
                 /*
                 //TODO: Add algebraic model option
             case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
@@ -2397,16 +2407,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 }
                 break;
                 */
-            case MOIN:
-                mu[index] = computeMuOfMoinModel(icoords);
-                break;
-            case SMAGORINSKY:
-                mu[index] = computeMuofSmagorinskyModel(icoords);
-                break;
-            case KEPSILON:
-                mu[index] = mu_t[index];
-                //pres[index] += 2.0/3.0*tke[index];
-                break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);

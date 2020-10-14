@@ -5,7 +5,7 @@
 /*Following is for turbulence model RNG k-eps model*/
     
 struct KE_FIELD {
-    double *gamma;
+    double *gamma;//TODO: can probably remove since not the same for k and eps anymore
 	double *k;
 	double *eps;
 	double *Pk;
@@ -22,6 +22,7 @@ struct KE_PARAMS {
 	double C2;
 	double C1;
 	double B; /*constant in log law, 5.2 for smooth wall*/
+	double E; /*alt constant in log law, 9.0 for smooth wall*/
 	double Cbc;
 	double Cmu;
 	double mu0;
@@ -64,11 +65,10 @@ private:
     void applyInitialConditions();
 
 public:
-	
-    static void activateKE();
-    static void deactivateKE();
-    
+		
     KE_CARTESIAN(Front &front);
+	~KE_CARTESIAN();
+
 	KEPS_MODEL keps_model;
 	
 	int dim;
@@ -112,13 +112,13 @@ public:
 	double m_dt;			// time increment
 	double min_dt;			// Minimum dt to use non-explicit
 
-	// destructor
-	~KE_CARTESIAN();
-
 	// for parallel partition
 	int             NLblocks,ilower,iupper;
     int             *n_dist;
 
+    static void activateKE();
+    static void deactivateKE();
+    
 	// mesh: full cells mesh
 	void initMesh(void);		// setup the cartesian grid
 	void setDomain(void);
@@ -128,14 +128,21 @@ public:
 	void readFrontInteriorState(char*);
 	void printFrontInteriorState(char*);
 
+    //TODO: remove these since gamma no longer the same for k and eps
 	void updateGamma();
 	void updateGamma2d();
 	void updateGamma3d();
 
 	void computeKE();
     void explicitComputeKE(COMPONENT sub_comp);
+    
     void explicitComputeKE2d(COMPONENT sub_comp);
+    void explicitComputeK2d(COMPONENT sub_comp);
+    void explicitComputeE2d(COMPONENT sub_comp);
+    
     void explicitComputeKE3d(COMPONENT sub_comp);
+    void explicitComputeK3d(COMPONENT sub_comp);
+    void explicitComputeE3d(COMPONENT sub_comp);
 
 	void computeAdvection();
 	void computeAdvectionK(COMPONENT);
