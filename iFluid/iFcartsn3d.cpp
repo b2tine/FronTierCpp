@@ -800,6 +800,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             }
 
+            //TODO: Was this not working because the solver isn't in the correct loop block????
+            //      Or did a bracket get deleted when commenting out everything?
             solver.Set_A(I,I,aII);
 
             RHS += coeff_rhs*vel[l][index];

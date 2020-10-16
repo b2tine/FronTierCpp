@@ -723,8 +723,8 @@ void KE_CARTESIAN::explicitComputeK2d(COMPONENT sub_comp)
     double C1 = eqn_params->C1;
     double C2 = eqn_params->C2;
     double Cbc = eqn_params->Cbc;
-	double delta_k = eqn_params->delta_k;
-	double delta_eps = eqn_params->delta_eps;
+	double sigma_k = eqn_params->sigma_k;
+	double sigma_eps = eqn_params->sigma_eps;
     double l0 = eqn_params->l0;
 	
 
@@ -768,8 +768,8 @@ void KE_CARTESIAN::explicitComputeK2d(COMPONENT sub_comp)
         for (int l = 0; l < dim; ++l)
         {
             double alpha = 0.5*m_dt*field->vel[l][ic]/top_h[l];
-            double beta = m_dt*(nu + nu_t/delta_k)/sqr(top_h[l]);
-                //double beta = m_dt*nu_t/delta_k/sqr(top_h[l]);
+            double beta = m_dt*(nu + nu_t/sigma_k)/sqr(top_h[l]);
+                //double beta = m_dt*nu_t/sigma_k/sqr(top_h[l]);
         
             Karray[ic] -= 2.0*beta*K[ic];
         
@@ -894,8 +894,8 @@ void KE_CARTESIAN::explicitComputeE2d(COMPONENT sub_comp)
     double C1 = eqn_params->C1;
     double C2 = eqn_params->C2;
     double Cbc = eqn_params->Cbc;
-	double delta_k = eqn_params->delta_k;
-	double delta_eps = eqn_params->delta_eps;
+	double sigma_k = eqn_params->sigma_k;
+	double sigma_eps = eqn_params->sigma_eps;
     double l0 = eqn_params->l0;
 	
 
@@ -942,8 +942,8 @@ void KE_CARTESIAN::explicitComputeE2d(COMPONENT sub_comp)
         for (int l = 0; l < dim; ++l)
         {
             double alpha = 0.5*m_dt*field->vel[l][ic]/top_h[l];
-            double beta = m_dt*(nu + nu_t/delta_eps)/sqr(top_h[l]);
-                //double beta = m_dt*nu_t/delta_eps/sqr(top_h[l]);
+            double beta = m_dt*(nu + nu_t/sigma_eps)/sqr(top_h[l]);
+                //double beta = m_dt*nu_t/sigma_eps/sqr(top_h[l]);
         
             Earray[ic] -= 2.0*beta*E[ic];
         
@@ -1061,7 +1061,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K = field->k;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
-	double delta_k = eqn_params->delta_k;
+	double sigma_k = eqn_params->sigma_k;
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
 	double y_pp,dist,center[MAXD];
@@ -1088,7 +1088,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
         setIndexMap(sub_comp);
         if (debugging("trace"))
         {
-            //TODO: should domain_size be getting multiplied by top_g[i]??
+            //TODO: Unfinished feature that comment at top of file refers to?
             int domain_size = 1;
             printf("ilower = %d  iupper = %d\n",ilower,iupper);
             for (i = 0; i < dim; ++i)
@@ -1138,7 +1138,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 }
                 
                 //TODO: this looks like a bug -- adding nu!
-               	D = nu + mu_t[ic]/eqn_params->delta_k/rho;
+               	D = nu + mu_t[ic]/eqn_params->sigma_k/rho;
 
                 for (int l = 0; l < dim; ++l)
                 {
@@ -1310,7 +1310,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     v[l] = field->vel[l][ic];
             }
 
-            D = nu + mu_t[ic]/eqn_params->delta_k/rho;
+            D = nu + mu_t[ic]/eqn_params->sigma_k/rho;
             
             for (int l = 0; l < dim; ++l)
             {
@@ -1609,7 +1609,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
         double *E = field->eps;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
-	double delta_eps = eqn_params->delta_eps;
+	double sigma_eps = eqn_params->sigma_eps;
 	double rho = eqn_params->rho;
         double v[MAXD],v_wall[MAXD];
         double eta;
@@ -1735,7 +1735,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 		}
 		else
 		{*/
-		    D = nu+mu_t[ic]/eqn_params->delta_eps/rho;
+		    D = nu+mu_t[ic]/eqn_params->sigma_eps/rho;
                 for (l = 0; l < dim; ++l)
                 {
                     lambda = D*m_dt/sqr(top_h[l]);
@@ -1897,7 +1897,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                     for (l = 0; l < dim; ++l)
                         v[l] = field->vel[l][ic];
                 }
-		D = nu+mu_t[ic]/eqn_params->delta_eps/rho;
+		D = nu+mu_t[ic]/eqn_params->sigma_eps/rho;
         for (l = 0; l < dim; ++l)
         {
                     lambda = D*m_dt/sqr(top_h[l]);
@@ -2728,8 +2728,8 @@ void KE_CARTESIAN::setAdvectionDt()
 	for (int i = 0; i < comp_size; i++)
 		mu_max = std::max(field->mu_t[i],mu_max);
 
-	Dl = mu_max/eqn_params->delta_k + eqn_params->mu;
-	Ds = mu_max/eqn_params->delta_eps + eqn_params->mu;
+	Dl = mu_max/eqn_params->sigma_k + eqn_params->mu;
+	Ds = mu_max/eqn_params->sigma_eps + eqn_params->mu;
 	D = std::max(Dl,Ds)/eqn_params->rho;
 	m_dt = sqr(hmin)/D*Time_step_factor(front);
 
@@ -3798,8 +3798,8 @@ void KE_CARTESIAN::read_params(
 	infile = fopen(inname,"r");
 
 	/*default parameter*/
-	eqn_params->delta_k = 1.0;
-	eqn_params->delta_eps = 1.3;
+	eqn_params->sigma_k = 1.0;
+	eqn_params->sigma_eps = 1.3;
 	eqn_params->Cmu = 0.09;
 	eqn_params->C1 = 1.44;
 	eqn_params->C2 = 1.92;
@@ -3826,12 +3826,12 @@ void KE_CARTESIAN::read_params(
 	}
 
 	CursorAfterStringOpt(infile,"Enter turbulent Prandtl number for k:");
-	fscanf(infile,"%lf",&eqn_params->delta_k);
-	(void) printf("%f\n",eqn_params->delta_k);
+	fscanf(infile,"%lf",&eqn_params->sigma_k);
+	(void) printf("%f\n",eqn_params->sigma_k);
 
 	CursorAfterStringOpt(infile,"Enter turbulent Prandtl number for epsilon:");
-	fscanf(infile,"%lf",&eqn_params->delta_eps);
-	(void) printf("%f\n",eqn_params->delta_eps);
+	fscanf(infile,"%lf",&eqn_params->sigma_eps);
+	(void) printf("%f\n",eqn_params->sigma_eps);
 
 	CursorAfterStringOpt(infile,"Enter C1:");
 	fscanf(infile,"%lf",&eqn_params->C1);
@@ -3864,6 +3864,10 @@ void KE_CARTESIAN::read_params(
     CursorAfterStringOpt(infile,"Enter E:");
     fscanf(infile,"%lf",&eqn_params->E);
     (void) printf("%f\n",eqn_params->E);
+
+	CursorAfterStringOpt(infile,"Enter delta:");
+	fscanf(infile,"%lf",&eqn_params->delta);
+	(void) printf("%f\n",eqn_params->delta);
 
 	CursorAfterStringOpt(infile,"Enter y+:");
 	fscanf(infile,"%lf",&eqn_params->y_p);

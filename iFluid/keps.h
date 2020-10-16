@@ -17,8 +17,8 @@ struct KE_FIELD {
 
 struct KE_PARAMS {
     int dim;
-	double delta_k;
-	double delta_eps;
+	double sigma_k;
+	double sigma_eps;
 	double C2;
 	double C1;
 	double B; /*constant in log law, 5.2 for smooth wall*/
@@ -29,6 +29,8 @@ struct KE_PARAMS {
 	double mu;
 	double rho;
 	double l0;
+	double lmax;
+	double delta; //specify boundary layer width
 	double y_p;
 	double t0;
     double k0;
