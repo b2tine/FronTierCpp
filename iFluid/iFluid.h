@@ -391,6 +391,7 @@ protected:
 	// Index shift between dual and comp grids 
 	int ishift[MAXD];
 
+    //TODO: should rename this to avoid confusion/collision with the macro in geom.h
 	//member data: mesh storage
 	std::vector<L_RECTANGLE>   cell_center;
 

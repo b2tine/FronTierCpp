@@ -15,8 +15,8 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT 
-Enter velocity: 1.5 0
-Enter pressure: 1
+Enter velocity: 1 0
+Enter pressure: 0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -31,7 +31,7 @@ Enter yes if the object is fixed: yes
 Enter the center of the circle: 0.2 0.0 
 Enter radius of the circle: 0.05
 
-Enter density and viscosity of the fluid: 1.0 0.001
+Enter density and viscosity of the fluid: 1.0 0.0001
 Enter gravity: 0.0 0.0
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
@@ -60,11 +60,11 @@ Enter C1: 1.44
 Enter C2: 1.92
 Enter Cmu: 0.09
 Enter Cbc: 0.01
-Enter l0: 0.01
+Enter l0: 0.05
 Enter mu0: 0.001
-Enter y+: 11.067
+Enter y+: 30
 
-Enter time to active turbulence model: 0.0
+Enter time to active turbulence model: 1.0
 *******************************************************
 
 Type y to make movie of pressure: y

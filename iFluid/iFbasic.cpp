@@ -1577,7 +1577,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             {
             case KEPSILON:
                 mu[index] = mu_t[index];
-                //pres[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -3622,81 +3622,6 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 	FT_MakeGridIntfc(front);
 }	/* end applicationSetStates */
 
-double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
-        int *icoords,
-	double dist,
-	boolean first)
-{
-	int i,j,k,index;
-	COMPONENT comp;
-	static double udif;
-	static double Fmax;
-	double speed, umax = -HUGE, umin = HUGE;
-	double vort, wmax = -HUGE;
-	double mu_t, mu_in, mu_out,l;
-	double rho = iFparams->rho2;
-	double nu = iFparams->mu2/rho;
-	double Fkleb, Fwake;
-	double ymax = iFparams->ymax;
-	vort = 50.0;
-
-	if (first == YES)
-	{
-	    first = NO;
-	    switch(dim)
-	    {
-	    case 2:
-	    	for (j = jmin; j < jmax; j++)
-	    	for (i = imin; i < imax; i++)
-	    	{
-		    index = d_index2d(i,j,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-		    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index]));
-		    vort = abs(field->vort[index]);
-		    umax = std::max(umax,speed);
-		    umin = std::min(umin,speed);
-		    wmax = std::max(wmax,vort);
-	    	}
-		break;
-	    case 3:	
-		for (k = kmin; k < kmax; k++)
-		for (j = jmin; j < jmax; j++)
-                for (i = imin; i < imax; i++)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-                    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index])+
-				sqr(field->vel[2][index]));
-                    umax = std::max(umax,speed);
-                    umin = std::min(umin,speed);
-                }
-                break;
-	    }
-	    udif = umax - umin;
-	    vort = wmax;
-	    Fmax = ymax*abs(vort);
-	}
-	index = d_index(icoords,top_gmax,dim);
-	vort = field->vort[index];
-
-	l = 0.41*dist;
-	mu_in = rho * l * l * abs(vort); 
-
-	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
-	Fkleb = 1.0/(1+5.5*pow((dist*0.3/ymax),6));
-	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
-
-	if (mu_in < mu_out)
-	    mu_t = mu_in;
-	else
-	    mu_t = mu_out;
-	return mu_t;
-}	/* end computeMuOfBaldwinLomax */
-
 static void initTestParams(Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
@@ -3894,6 +3819,81 @@ void Incompress_Solver_Smooth_Basis::readBaseStates(
         base_front->extra1 = (POINTER)&params;
         fclose(infile);
 }       /* end readBaseStates */
+
+double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
+        int *icoords,
+	double dist,
+	boolean first)
+{
+	int i,j,k,index;
+	COMPONENT comp;
+	static double udif;
+	static double Fmax;
+	double speed, umax = -HUGE, umin = HUGE;
+	double vort, wmax = -HUGE;
+	double mu_t, mu_in, mu_out,l;
+	double rho = iFparams->rho2;
+	double nu = iFparams->mu2/rho;
+	double Fkleb, Fwake;
+	double ymax = iFparams->ymax;
+	vort = 50.0;
+
+	if (first == YES)
+	{
+	    first = NO;
+	    switch(dim)
+	    {
+	    case 2:
+	    	for (j = jmin; j < jmax; j++)
+	    	for (i = imin; i < imax; i++)
+	    	{
+		    index = d_index2d(i,j,top_gmax);
+		    comp  = cell_center[index].comp;
+            	    if (!ifluid_comp(comp)) continue;
+		    speed = sqrt(sqr(field->vel[0][index])+
+				sqr(field->vel[1][index]));
+		    vort = abs(field->vort[index]);
+		    umax = std::max(umax,speed);
+		    umin = std::min(umin,speed);
+		    wmax = std::max(wmax,vort);
+	    	}
+		break;
+	    case 3:	
+		for (k = kmin; k < kmax; k++)
+		for (j = jmin; j < jmax; j++)
+                for (i = imin; i < imax; i++)
+                {
+                    index = d_index3d(i,j,k,top_gmax);
+		    comp  = cell_center[index].comp;
+            	    if (!ifluid_comp(comp)) continue;
+                    speed = sqrt(sqr(field->vel[0][index])+
+				sqr(field->vel[1][index])+
+				sqr(field->vel[2][index]));
+                    umax = std::max(umax,speed);
+                    umin = std::min(umin,speed);
+                }
+                break;
+	    }
+	    udif = umax - umin;
+	    vort = wmax;
+	    Fmax = ymax*abs(vort);
+	}
+	index = d_index(icoords,top_gmax,dim);
+	vort = field->vort[index];
+
+	l = 0.41*dist;
+	mu_in = rho * l * l * abs(vort); 
+
+	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
+	Fkleb = 1.0/(1+5.5*pow((dist*0.3/ymax),6));
+	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
+
+	if (mu_in < mu_out)
+	    mu_t = mu_in;
+	else
+	    mu_t = mu_out;
+	return mu_t;
+}	/* end computeMuOfBaldwinLomax */
 
 double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)

@@ -134,6 +134,12 @@ public:
 	void updateGamma3d();
 
 	void computeKE();
+    void implicitComputeK(COMPONENT sub_comp);
+    void implicitComputeK2d(COMPONENT sub_comp);
+    void implicitComputeE(COMPONENT sub_comp);
+    void implicitComputeE2d(COMPONENT sub_comp);
+    
+    /*
     void explicitComputeKE(COMPONENT sub_comp);
     
     void explicitComputeKE2d(COMPONENT sub_comp);
@@ -143,6 +149,7 @@ public:
     void explicitComputeKE3d(COMPONENT sub_comp);
     void explicitComputeK3d(COMPONENT sub_comp);
     void explicitComputeE3d(COMPONENT sub_comp);
+    */
 
 	void computeAdvection();
 	void computeAdvectionK(COMPONENT);
