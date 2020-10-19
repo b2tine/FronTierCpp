@@ -1534,10 +1534,11 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-    /*
-	if (iFparams->use_eddy_visc)
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == BALDWIN_LOMAX)
+    {
 	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
-    */
+    }
 
     KE_PARAMS* ke_params;
     double* mu_t;
@@ -1575,9 +1576,24 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    {
             switch (iFparams->eddy_visc_model)
             {
+            case BALDWIN_LOMAX:
+                
+                status = FT_FindNearestIntfcPointInRange(front,
+                        comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
+
+                if (status == YES &&
+                   (wave_type(hs) == NEUMANN_BOUNDARY
+                    || wave_type(hs) == ELASTIC_BOUNDARY))
+                {
+                    dist = distance_between_positions(center,point,dim);
+                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    first = NO;
+                }
+                break;
+
             case KEPSILON:
                 mu[index] = mu_t[index];
-                pres[index] += 2.0/3.0*tke[index];
+                //pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -1585,18 +1601,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
                 break;
-                /*
-            case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
-                if (status == YES &&
-                (wave_type(hs) == NEUMANN_BOUNDARY ||
-                 wave_type(hs) == ELASTIC_BOUNDARY))
-                {
-                dist = distance_between_positions(center,point,dim);
-                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
-                    first = NO;
-                }
-                break;
-                */
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
@@ -3888,6 +3892,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 	Fkleb = 1.0/(1+5.5*pow((dist*0.3/ymax),6));
 	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
 
+    //TODO: this can use the wrong viscosity, use crossover formula
 	if (mu_in < mu_out)
 	    mu_t = mu_in;
 	else

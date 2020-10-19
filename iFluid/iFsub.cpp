@@ -1254,15 +1254,14 @@ extern void read_iFparams(
 	    	iFparams->use_eddy_visc = YES;
 
 		(void) printf("Available turbulence models are:\n");
-		//(void) printf("\tBaldwin-Lomax (B)\n");
-		//(void) printf("\tMoin (M)\n");
+		(void) printf("\tBaldwin-Lomax (B)\n");
+		(void) printf("\tMoin (M)\n");
 		(void) printf("\tKEPSILON (K)\n");
         	CursorAfterString(infile,"Enter turbulence model:");
 	    	fscanf(infile,"%s",string);
 	    	(void) printf("%s\n",string);
 		switch (string[0])
 		{
-            /*
 		case 'b':
 		case 'B':
 		    iFparams->eddy_visc_model = BALDWIN_LOMAX;
@@ -1271,7 +1270,6 @@ extern void read_iFparams(
             	    fscanf(infile,"%lf",&iFparams->ymax);
             	    (void) printf("%f\n",iFparams->ymax);
 		    break;
-            */
 		case 'm':
 		case 'M':
 		    iFparams->eddy_visc_model = MOIN;

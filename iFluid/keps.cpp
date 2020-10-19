@@ -437,8 +437,9 @@ void KE_CARTESIAN::computeKE()
         //TODO: Check iupper and ilower vals per the comment at top of file
         setGlobalIndex(sub_comp[i]);
 
-        implicitComputeK(sub_comp[i]);
-        implicitComputeE(sub_comp[i]);
+        LOC(); clean_up(EXIT_FAILURE);
+        //implicitComputeK(sub_comp[i]);
+        //implicitComputeE(sub_comp[i]);
     }
 }
 
@@ -447,7 +448,7 @@ void KE_CARTESIAN::implicitComputeK(COMPONENT sub_comp)
     switch (dim)
     {
         case 2:
-            implicitComputeK2d(sub_comp);
+            //implicitComputeK2d(sub_comp);
             break;
         case 3:
             printf("implicitComputeK3d() not implemented!\n"); LOC();
@@ -465,7 +466,7 @@ void KE_CARTESIAN::implicitComputeE(COMPONENT sub_comp)
     switch (dim)
     {
         case 2:
-            implicitComputeE2d(sub_comp);
+            //implicitComputeE2d(sub_comp);
             break;
         case 3:
             printf("implicitComputeE3d() not implemented!\n"); LOC();
