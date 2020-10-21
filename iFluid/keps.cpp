@@ -6,9 +6,7 @@
       
 */
 
-#include "iFluid.h"
 #include "keps.h"
-#include "solver.h"
 
 static void printField(double*,const char*,int*,int*,int*);
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
@@ -22,17 +20,16 @@ static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 //----------------------------------------------------------------
 
 //KE_RECTANGLE::KE_RECTANGLE()
-KE_RECTANGLE::KE_RECTANGLE(): index(-1), comp(-1)
-{
-}
+KE_RECTANGLE::KE_RECTANGLE()
+    : index(-1), comp(-1)
+{}
 
 void KE_RECTANGLE::setCoords(
 	double *crds,
 	int dim)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
-	    coords[i] = crds[i];
+	for (int i = 0; i < dim; ++i)
+        coords[i] = crds[i];
 }
 //--------------------------------------------------------------------------
 // 		KE_CARTESIAN
@@ -77,7 +74,7 @@ void KE_CARTESIAN::initMesh(void)
 	    for (i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	crds[0] = top_L[0] + top_h[0]*i;
-		index = d_index1d(i,top_gmax);
+            index = d_index1d(i,top_gmax);
 	    	cell_center[index].setCoords(crds,dim);
 	    	cell_center[index].icoords[0] = i;
 	    }
@@ -87,7 +84,7 @@ void KE_CARTESIAN::initMesh(void)
 	    {
 	    	crds[0] = top_L[0] + top_h[0]*i;
 	    	crds[1] = top_L[1] + top_h[1]*j;
-		index = d_index2d(i,j,top_gmax);
+            index = d_index2d(i,j,top_gmax);
 	    	cell_center[index].setCoords(crds,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
@@ -101,7 +98,7 @@ void KE_CARTESIAN::initMesh(void)
 	    	crds[0] = top_L[0] + top_h[0]*i;
 	    	crds[1] = top_L[1] + top_h[1]*j;
 	    	crds[2] = top_L[2] + top_h[2]*k;
-		index = d_index3d(i,j,k,top_gmax);
+            index = d_index3d(i,j,k,top_gmax);
 	    	cell_center[index].setCoords(crds,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
@@ -149,25 +146,32 @@ void KE_CARTESIAN::setComponent(void)
                         clean_up(ERROR);
                     }
                 }
-		else
+                else
                 {
                     double temp_nb = 0.0;
-                    int ii,jj,ic[MAXD],index;
+                    int ic[MAXD],index;
                     icoords = cell_center[i].icoords;
                     n = 0;
-                    for (ii = 0; ii < dim; ++ii)
+
+                    for (int ii = 0; ii < dim; ++ii)
                     {
-                        for (jj = 0; jj < dim; ++jj) ic[jj] = icoords[jj];
+                        for (int jj = 0; jj < dim; ++jj)
+                            ic[jj] = icoords[jj];
+
                         ic[ii] = (icoords[ii] == 0) ? 0 : icoords[ii] - 1;
                         index = d_index(ic,top_gmax,dim);
+                        
                         if (cell_center[index].comp != -1 &&
                             cell_center[index].comp == top_comp[index])
                         {
                             n++;
                         }
+                        
                         ic[ii] = (icoords[ii] == top_gmax[ii]) ? top_gmax[ii]
                                         : icoords[ii] + 1;
+                        
                         index = d_index(ic,top_gmax,dim);
+                        
                         if (cell_center[index].comp != -1 &&
                             cell_center[index].comp == top_comp[index])
                         {
@@ -177,8 +181,9 @@ void KE_CARTESIAN::setComponent(void)
                     }
                     //field->temperature[i] = temp_nb/n;
                 }
-	    }
-	    cell_center[i].comp = top_comp[i];
+	    
+            }
+            cell_center[i].comp = top_comp[i];
         }
 }	/* end setComponent */
 
@@ -200,6 +205,7 @@ void KE_CARTESIAN::setInitialCondition(void)
 	// cell_center
 	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
 	eps0 = eqn_params->Cmu*pow(k0,1.5)/eqn_params->l0;
+
 	for (i = 0; i < cell_center.size(); i++)
 	{
 	    c = top_comp[i];
@@ -215,7 +221,8 @@ void KE_CARTESIAN::setInitialCondition(void)
 }	/* end setInitialCondition */
 
 /*compute lift force*/
-#include "iFluid.h"
+//TODO: verify computation
+//not in use..
 void KE_CARTESIAN::computeLiftDrag(Front* front)
 {
 	double force[MAXD];
@@ -366,13 +373,13 @@ void KE_CARTESIAN::computeAdvection()
 	sub_comp[1] = LIQUID_COMP2;
 	
 	for (i = 0; i < 2; ++i)
-	  {
-            if(sub_comp[i] == SOLID_COMP)
-                    continue;
+    {
+        if(sub_comp[i] == SOLID_COMP) continue;
+
 	   setGlobalIndex(sub_comp[i]);
 	   computeAdvectionK(sub_comp[i]);
 	   
-	   
+       //NOTE: ONLY RNG model works
 	   switch (keps_model)
 	   {
 		case STANDARD:
@@ -391,6 +398,8 @@ void KE_CARTESIAN::computeAdvection()
 	}
 }
 
+//TODO: incomplete
+//not in use anywhere
 void KE_CARTESIAN::findBdryPoint()
 {
 	HYPER_SURF *hs;
@@ -423,30 +432,34 @@ void KE_CARTESIAN::findBdryPoint()
 
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 {
-        int i,j,k,l,m,ll,ic,icn,I,I_nb,icoords[MAXD];
-        int gmin[MAXD],ipn[MAXD];
-        double crx_coords[MAXD];
+    int i,j,k,l,m,ll,ic,icn,I,I_nb,icoords[MAXD];
+    int gmin[MAXD],ipn[MAXD];
+    double crx_coords[MAXD];
 	double nor[MAXD];
-        double K0,K_nb,D,lambda,coeff,coeff_nb,rhs;
-        COMPONENT comp;
-        PETSc solver;
-        double *x;
-        int num_iter = 0;
-        double rel_residual = 0;
-        boolean fr_crx_grid_seg;
-        const GRID_DIRECTION dir[3][2] =
-                {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
-        double *K = field->k;
+    double K0,K_nb,D,lambda,coeff,coeff_nb,rhs;
+    COMPONENT comp;
+    
+    PETSc solver;
+    double *x;
+    int num_iter = 0;
+    double rel_residual = 0;
+    
+    boolean fr_crx_grid_seg;
+    const GRID_DIRECTION dir[3][2] =
+            {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+    
+    double *K = field->k;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
 	double delta_k = eqn_params->delta_k;
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
 	double y_pp,dist,center[MAXD];
-        double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
-        double eta;
+    double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
+    double eta;
 	double Ut,Ut_old,vn;
 	int    niter;
+
 	/*For boundary state*/
 	HYPER_SURF *hs;
 	HYPER_SURF_ELEMENT *hse;
@@ -457,317 +470,348 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 	double point[MAXD],t[MAXD];
 	double Cmu;
 
-        start_clock("computeAdvectionK");
-        if (debugging("trace")) printf("Entering computeAdvectionK()\n");
+    start_clock("computeAdvectionK");
+    if (debugging("trace")) printf("Entering computeAdvectionK()\n");
 
-        for (i = 0; i < dim; ++i) gmin[i] = 0;
+    for (i = 0; i < dim; ++i) gmin[i] = 0;
 
-        setIndexMap(sub_comp);
-        if (debugging("trace"))
+    setIndexMap(sub_comp);
+    if (debugging("trace"))
+    {
+        int domain_size = 1;
+        printf("ilower = %d  iupper = %d\n",ilower,iupper);
+        for (i = 0; i < dim; ++i)
+        printf("domain_size = %d\n",domain_size);
+    }
+
+    start_clock("set_coefficients");
+
+    switch(dim)
+    {
+    case 2:
+
+        solver.Create(ilower, iupper-1, 5, 5);
+
+        for (j = jmin; j <= jmax; ++j)
+        for (i = imin; i <= imax; ++i)
         {
-            int domain_size = 1;
-            printf("ilower = %d  iupper = %d\n",ilower,iupper);
-            for (i = 0; i < dim; ++i)
-            printf("domain_size = %d\n",domain_size);
+            icoords[0] = i;
+            icoords[1] = j;
+            ic = d_index2d(i,j,top_gmax);
+            I = ij_to_I[i][j];
+            
+            comp = top_comp[ic];
+            if (comp != sub_comp) continue;
+
+            K0 = K[ic];
+            Cmu = eqn_params->Cmu;
+            rhs = K0+m_dt*Pk[ic];
+
+            if (keps_model == REALIZABLE)
+              coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
+            else
+              coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+
+            if (isinf(coeff) || isnan(coeff) || isinf(rhs) || isnan(rhs))
+            {
+                printf("In computeAdvectionK(): ");
+                printf("icoords[%d %d], index = %d\n",i,j,ic);
+                printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
+                coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
+                clean_up(ERROR);
+            }
+
+            for (l = 0; l < dim; ++l) v[l] = 0.0;
+
+            if (field->vel != NULL)
+            {
+                for (l = 0; l < dim; ++l)
+                    v[l] = field->vel[l][ic];
+            }
+            
+            D = nu + mu_t[ic]/eqn_params->delta_k/rho;
+
+            for (l = 0; l < dim; ++l)
+            {
+                lambda = D*m_dt/sqr(top_h[l]);
+                //NOTE: NO upwinding here
+                eta = v[l]*m_dt/(2.0*top_h[l]);
+                coeff += 2*lambda;
+
+                for (m = 0; m < 2; ++m)
+                {
+                    next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
+                    icn = d_index2d(ipn[0],ipn[1],top_gmax);
+                    I_nb = ij_to_I[ipn[0]][ipn[1]];
+            
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                            grid_intfc,icoords,dir[l][m],comp,
+                            (POINTER*)&intfc_state,&hs,crx_coords);
+
+                    if (!fr_crx_grid_seg) 
+                    {
+                        coeff_nb = -lambda + (pow(-1,m+1)*eta);
+                        solver.Add_A(I,I_nb,coeff_nb);
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                             wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                             wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
+                        rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                    }
+                    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
+                        {
+                            K_nb = K0;
+                            rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                        }
+                        else
+                        {
+                            K_nb = eqn_params->Cbc
+                             * (sqr(intfc_state->vel[0])
+                             +  sqr(intfc_state->vel[1]));
+                            rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+                        }
+                    }
+                    else
+                    {
+                        printf("Unknown boundary condition! \n");
+                        clean_up(ERROR);
+                    }
+                }
+            }
+
+            solver.Add_A(I,I,coeff);
+            solver.Add_b(I,rhs);
         }
+        break;
 
-        start_clock("set_coefficients");
+    case 3:
 
-        switch(dim)
+        solver.Create(ilower, iupper-1, 7, 7);
+    
+        for (k = kmin; k <= kmax; ++k)
+        for (j = jmin; j <= jmax; ++j)
+        for (i = imin; i <= imax; ++i)
         {
-        case 2:
-            solver.Create(ilower, iupper-1, 5, 5);
-            for (j = jmin; j <= jmax; ++j)
-            for (i = imin; i <= imax; ++i)
-            {
-                icoords[0] = i;
-                icoords[1] = j;
-                ic = d_index2d(i,j,top_gmax);
-                comp = top_comp[ic];
-                I = ij_to_I[i][j];
-                if (comp != sub_comp)
-                    continue;
-                K0 = K[ic];
-		Cmu = eqn_params->Cmu;
-		/*fully implicit to preserve positivity*/
-		rhs = K0+m_dt*Pk[ic];
-		if (keps_model == REALIZABLE)
-		  coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
-		else
-		  coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
-		if (isinf(coeff) || isnan(coeff) || isinf(rhs) || isnan(rhs))
-		{
-		    printf("In computeAdvectionK(): ");
-		    printf("icoords[%d %d], index = %d\n",i,j,ic);
-		    printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
-			coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
-		    clean_up(ERROR);
-		}
-                for (l = 0; l < dim; ++l) v[l] = 0.0;
-                if (field->vel != NULL)
-                {
-                    for (l = 0; l < dim; ++l)
-                        v[l] = field->vel[l][ic];
-                }
-                
-               	D = nu+mu_t[ic]/eqn_params->delta_k/rho;
-                for (l = 0; l < dim; ++l)
-                {
-                    lambda = D*m_dt/sqr(top_h[l]);
-                    eta = v[l]*m_dt/(2.0*top_h[l]);
-                    coeff += 2*lambda;
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            ic = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[ic];
+            I = ijk_to_I[i][j][k];
 
-                    for (m = 0; m < 2; ++m)
+            if (comp != sub_comp) continue;
+
+            K0 = K[ic];
+            Cmu = eqn_params->Cmu;
+            rhs = K0+m_dt*Pk[ic];
+
+            coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+
+            if (isinf(coeff) || isnan(coeff))
+            {
+                printf("In computeAdvectionK(): ");
+                printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
+                coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
+                clean_up(ERROR);
+            }
+
+            for (l = 0; l < dim; ++l) v[l] = 0.0;
+
+            if (field->vel != NULL)
+            {
+                for (l = 0; l < dim; ++l)
+                    v[l] = field->vel[l][ic];
+            }
+
+            D = nu + mu_t[ic]/eqn_params->delta_k/rho;
+            
+            for (l = 0; l < dim; ++l)
+            {
+                lambda = D*m_dt/sqr(top_h[l]);
+                eta = v[l]*m_dt/(top_h[l]); //upwind difference
+                double eta_p = std::max(eta, 0.0);
+                double eta_m = std::min(eta, 0.0);
+                coeff += 2*lambda;
+
+                for (m = 0; m < 2; ++m)
+                {
+                    next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
+                    icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
+                    I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
+            
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                            grid_intfc,icoords,dir[l][m],comp,
+                            (POINTER*)&intfc_state,&hs,crx_coords);
+            
+                    coeff += ((m == 0) ? eta_p : -eta_m); //upwind
+
+                    if (!fr_crx_grid_seg) 
                     {
-                        next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
-                        icn = d_index2d(ipn[0],ipn[1],top_gmax);
-                        I_nb = ij_to_I[ipn[0]][ipn[1]];
-			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);
-                        if (!fr_crx_grid_seg) 
+                        coeff_nb = -lambda;
+                        coeff_nb += (m == 0) ? -eta_p : eta_m;
+                        solver.Add_A(I,I_nb,coeff_nb);
+                    }
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                            wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
+
+                        //use wall function
+                        double u_t = std::max(
+                                pow(eqn_params->Cmu, 0.25)*sqrt(
+                                    std::max(field->k[ic], 0.0)),
+                                Mag3d(intfc_state->vel)/eqn_params->y_p);
+
+                        //TODO: Note that intfc_state->vel is not
+                        //      vel tangential to the wall
+                        
+                        K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
+                        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
+                    }
+                    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
                         {
-                            coeff_nb = -lambda + (pow(-1,m+1)*eta);
-                            solver.Add_A(I,I_nb,coeff_nb);
+                        K_nb = K0;
+                            rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
                         }
-			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				 wave_type(hs) == ELASTIC_BOUNDARY)
-			{
-				setTKEatWall(icoords,l,m,comp,
-						hs,intfc_state,K,&K_nb);
-				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
-			}
-			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
-			{
-			    if (boundary_state_function(hs) &&
-				strcmp(boundary_state_function_name(hs),
-                            	"flowThroughBoundaryState") == 0)
-			    {
-				K_nb = K0;
-				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
-			    }
-			    else
-			    {
-			        K_nb = eqn_params->Cbc
-				     * (sqr(intfc_state->vel[0])
-				     +  sqr(intfc_state->vel[1]));
-				rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
-			    }
-			}
-			else
+                        else
                         {
-                            printf("Unknows boundary condition! \n");
-                            clean_up(ERROR);
+                            K_nb = eqn_params->Cbc
+                             * (sqr(intfc_state->vel[0])
+                             +  sqr(intfc_state->vel[1])
+                             +  sqr(intfc_state->vel[2]));
+                            rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
                         }
                     }
-                }
-                solver.Add_A(I,I,coeff);
-                solver.Add_b(I,rhs);
-            }
-            break;
-        case 3:
-            solver.Create(ilower, iupper-1, 7, 7);
-	    for (k = kmin; k <= kmax; ++k)
-            for (j = jmin; j <= jmax; ++j)
-            for (i = imin; i <= imax; ++i)
-            {
-                icoords[0] = i;
-                icoords[1] = j;
-		icoords[2] = k;
-                ic = d_index3d(i,j,k,top_gmax);
-                comp = top_comp[ic];
-                I = ijk_to_I[i][j][k];
-                if (comp != sub_comp)
-                    continue;
-                K0 = K[ic];
-		Cmu = eqn_params->Cmu;
-		/*fully implicit to preserve positivity*/
-		rhs = K0+m_dt*Pk[ic];
-		coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
-		if (isinf(coeff) || isnan(coeff))
-		{
-		    printf("In computeAdvectionK(): ");
-		    printf("coeff=%f, K=%e, E=%e, mu_t=%e, Pk=%e\n",
-			coeff,K0,field->eps[ic],mu_t[ic],Pk[ic]);
-		    clean_up(ERROR);
-		}
-                for (l = 0; l < dim; ++l) v[l] = 0.0;
-                if (field->vel != NULL)
-                {
-                    for (l = 0; l < dim; ++l)
-                        v[l] = field->vel[l][ic];
-                }
-
-               	D = nu+mu_t[ic]/eqn_params->delta_k/rho;
-                for (l = 0; l < dim; ++l)
-                {
-                    lambda = D*m_dt/sqr(top_h[l]);
-		    eta = v[l]*m_dt/(top_h[l]); //upwind difference
-                    double eta_p = std::max(eta, 0.0);
-                    double eta_m = std::min(eta, 0.0);
-                    coeff += 2*lambda;
-
-                    for (m = 0; m < 2; ++m)
+                    else
                     {
-                        next_ip_in_dir(icoords,dir[l][m],ipn,gmin,top_gmax);
-                        icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
-                        I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
-			fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-				grid_intfc,icoords,dir[l][m],comp,
-				(POINTER*)&intfc_state,&hs,crx_coords);
-			coeff += ((m == 0) ? eta_p : -eta_m); //upwind
-                        if (!fr_crx_grid_seg) 
-                        {
-			    coeff_nb = -lambda;
-			    coeff_nb += (m == 0) ? -eta_p : eta_m;
-                            solver.Add_A(I,I_nb,coeff_nb);
-                        }
-			else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                                 wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-				 wave_type(hs) == ELASTIC_BOUNDARY)
-			{
-			    /*setTKEatWall(icoords,l,m,comp,
-                                                hs,intfc_state,K,&K_nb);*/
-			    //use wall function
-			    double u_t = std::max(pow(eqn_params->Cmu, 0.25)
-                                        *sqrt(std::max(field->k[ic], 0.0)),
-                                        Mag3d(intfc_state->vel)/eqn_params->y_p);
-			    K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
-			    rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			}
-			else if (wave_type(hs) == DIRICHLET_BOUNDARY)
-			{
-			    if (boundary_state_function(hs) &&
-				strcmp(boundary_state_function_name(hs),
-                            	"flowThroughBoundaryState") == 0)
-			    {
-				K_nb = K0;
-			        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			    }
-			    else
-			    {
-			        K_nb = eqn_params->Cbc
-				     * (sqr(intfc_state->vel[0])
-				     +  sqr(intfc_state->vel[1])
-				     +  sqr(intfc_state->vel[2]));
-			        rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
-			    }
-			}
-			else
-                        {
-                            printf("Unknows boundary condition %d! \n",
-				    wave_type(hs));
-                            clean_up(ERROR);
-                        }
+                        printf("Unknown boundary condition %d! \n",wave_type(hs));
+                        clean_up(ERROR);
                     }
-		}
-                solver.Add_A(I,I,coeff);
-                solver.Add_b(I,rhs);
+                }
             }
-            break;
-	}
-        stop_clock("set_coefficients");
-        start_clock("petsc_solve");
-        solver.SetMaxIter(500);
-        solver.SetTol(1e-8);
-        solver.Solve();
+
+            solver.Add_A(I,I,coeff);
+            solver.Add_b(I,rhs);
+        }
+    
+        break;
+    }
+
+    stop_clock("set_coefficients");
+    
+    solver.SetMaxIter(500);
+    solver.SetTol(1e-8);
+    
+    start_clock("petsc_solve");
+    solver.Solve();
+    stop_clock("petsc_solve");
+
 	solver.GetNumIterations(&num_iter);
-        solver.GetFinalRelativeResidualNorm(&rel_residual);
+    solver.GetFinalRelativeResidualNorm(&rel_residual);
 
-        if (debugging("PETSc"))
+    if (debugging("PETSc"))
+    {
+        (void) printf("KE_CARTESIAN::computeAdvectionK: "
+                    "num_iter = %d, rel_residual = %g \n",
+                    num_iter, rel_residual);
+    }
+
+    FT_VectorMemoryAlloc((POINTER*)&x,cell_center.size(),sizeof(double));
+    solver.Get_x(x);
+
+    start_clock("scatter_data");
+    switch (dim)
+    {
+    case 1:
+        for (i = imin; i <= imax; i++)
         {
-            (void) printf("KE_CARTESIAN::computeAdvectionK: "
-                        "num_iter = %d, rel_residual = %g \n",
-                        num_iter, rel_residual);
+            I = i_to_I[i];
+            ic = d_index1d(i,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                array[ic] = x[I-ilower];
+            else
+                array[ic] = 0.0;
         }
-
-        FT_VectorMemoryAlloc((POINTER*)&x,cell_center.size(),sizeof(double));
-        solver.Get_x(x);
-        stop_clock("petsc_solve");
-
-        start_clock("scatter_data");
-        switch (dim)
+        break;
+    case 2:
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
         {
-        case 1:
-            for (i = imin; i <= imax; i++)
-            {
-                I = i_to_I[i];
-                ic = d_index1d(i,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    array[ic] = x[I-ilower];
-                else
-                    array[ic] = 0.0;
-            }
-            break;
-        case 2:
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                I = ij_to_I[i][j];
-                ic = d_index2d(i,j,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    array[ic] = x[I-ilower];
-                else
-                    array[ic] = 0.0;
-            }
-            break;
-        case 3:
-            for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                I = ijk_to_I[i][j][k];
-                ic = d_index3d(i,j,k,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    array[ic] = x[I-ilower];
-                else
-                    array[ic] = 0.0;
-            }
-            break;
+            I = ij_to_I[i][j];
+            ic = d_index2d(i,j,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                array[ic] = x[I-ilower];
+            else
+                array[ic] = 0.0;
         }
-        scatMeshArray();
-        switch (dim)
+        break;
+    case 3:
+        for (k = kmin; k <= kmax; k++)
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
         {
-        case 1:
-            for (i = 0; i <= top_gmax[0]; ++i)
-            {
-                ic = d_index1d(i,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    K[ic] = array[ic];
-            }
-            break;
-        case 2:
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
-            {
-                ic = d_index2d(i,j,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    K[ic] = array[ic];
-            }
-            break;
-        case 3:
-            for (k = 0; k <= top_gmax[2]; ++k)
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
-            {
-                ic = d_index3d(i,j,k,top_gmax);
-                comp = cell_center[ic].comp;
-                if (comp == sub_comp)
-                    K[ic] = array[ic];
-            }
-            break;
+            I = ijk_to_I[i][j][k];
+            ic = d_index3d(i,j,k,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                array[ic] = x[I-ilower];
+            else
+                array[ic] = 0.0;
         }
-        stop_clock("scatter_data");
-        FT_FreeThese(1,x);
+        break;
+    }
+    scatMeshArray();
+    switch (dim)
+    {
+    case 1:
+        for (i = 0; i <= top_gmax[0]; ++i)
+        {
+            ic = d_index1d(i,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                K[ic] = array[ic];
+        }
+        break;
+    case 2:
+        for (j = 0; j <= top_gmax[1]; ++j)
+        for (i = 0; i <= top_gmax[0]; ++i)
+        {
+            ic = d_index2d(i,j,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                K[ic] = array[ic];
+        }
+        break;
+    case 3:
+        for (k = 0; k <= top_gmax[2]; ++k)
+        for (j = 0; j <= top_gmax[1]; ++j)
+        for (i = 0; i <= top_gmax[0]; ++i)
+        {
+            ic = d_index3d(i,j,k,top_gmax);
+            comp = cell_center[ic].comp;
+            if (comp == sub_comp)
+                K[ic] = array[ic];
+        }
+        break;
+    }
+    stop_clock("scatter_data");
+    FT_FreeThese(1,x);
 
-        if (debugging("trace")) printf("Leaving computeAdvectionK()\n");
-        stop_clock("computeAdvectionK");
+    if (debugging("trace")) printf("Leaving computeAdvectionK()\n");
+    stop_clock("computeAdvectionK");
 }       /* end computeAdvectionK */
 
 double KE_CARTESIAN::computePointFieldC2_RNG(int* icoords)

@@ -131,28 +131,28 @@ public:
 	void printFrontInteriorState(char*);
 
     //TODO: remove these since gamma no longer the same for k and eps
-	void updateGamma();
-	void updateGamma2d();
-	void updateGamma3d();
-
-	void computeKE();
-    void implicitComputeK(COMPONENT sub_comp);
-    void implicitComputeK2d(COMPONENT sub_comp);
-    void implicitComputeE(COMPONENT sub_comp);
-    void implicitComputeE2d(COMPONENT sub_comp);
-    
     /*
-    void explicitComputeKE(COMPONENT sub_comp);
+	    void updateGamma();
+	    void updateGamma2d();
+	    void updateGamma3d();
+
+        void implicitComputeK(COMPONENT sub_comp);
+        void implicitComputeK2d(COMPONENT sub_comp);
+        void implicitComputeE(COMPONENT sub_comp);
+        void implicitComputeE2d(COMPONENT sub_comp);
     
-    void explicitComputeKE2d(COMPONENT sub_comp);
-    void explicitComputeK2d(COMPONENT sub_comp);
-    void explicitComputeE2d(COMPONENT sub_comp);
+        void explicitComputeKE(COMPONENT sub_comp);
     
-    void explicitComputeKE3d(COMPONENT sub_comp);
-    void explicitComputeK3d(COMPONENT sub_comp);
-    void explicitComputeE3d(COMPONENT sub_comp);
+        void explicitComputeKE2d(COMPONENT sub_comp);
+        void explicitComputeK2d(COMPONENT sub_comp);
+        void explicitComputeE2d(COMPONENT sub_comp);
+    
+        void explicitComputeKE3d(COMPONENT sub_comp);
+        void explicitComputeK3d(COMPONENT sub_comp);
+        void explicitComputeE3d(COMPONENT sub_comp);
     */
 
+	//void computeKE();
 	void computeAdvection();
 	void computeAdvectionK(COMPONENT);
 	void computeAdvectionE_STD(COMPONENT);
