@@ -216,7 +216,7 @@ void KE_CARTESIAN::setInitialCondition(void)
     double nu = eqn_params->mu/eqn_params->rho;
 
     double k0 = 1.5*sqr(eqn_params->U0*eqn_params->I);
-    double eps0 = eqn_params->Cmu*sqr(k0)/nu/eqn_params->ViscRatio;
+    double eps0 = eqn_params->Cmu*sqr(k0)/nu/eqn_params->ViscRatioNear;
 
 
 	//double k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
@@ -1768,29 +1768,41 @@ void KE_CARTESIAN::computeMuTurb()
 		for (j = jmin; j <= jmax; j++)
 		for (i = imin; i <= imax; i++)
 		{
-	    	    icoords[0] = i;
-	    	    icoords[1] = j;
+            icoords[0] = i;
+            icoords[1] = j;
 		    icoords[2] = k;
-	    	    index = d_index3d(i,j,k,top_gmax);
-	    	    comp = top_comp[index];
+            
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
 		    if (keps_model == REALIZABLE)
 		    {
-			Cmu = computePointFieldCmu(icoords);
-			field->Cmu[index] = Cmu;
+                Cmu = computePointFieldCmu(icoords);
+                field->Cmu[index] = Cmu;
 		    }
 		    else
-			Cmu = eqn_params->Cmu;
+                Cmu = eqn_params->Cmu;
 	    	
-		    field->mu_t[index] = Cmu*sqr(field->k[index])
-				       / field->eps[index]*eqn_params->rho;
-		    field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+		    field->mu_t[index] =
+                Cmu*sqr(field->k[index])/field->eps[index]*eqn_params->rho;
+		    
+            field->mu_t[index] = std::max(field->mu_t[index],0.0001*eqn_params->mu);
+
+            //TODO: Limit far field eddy viscosity with ViscRatioFar.
+            //      Need to determine if "far" enough to impose freestream
+            //      boundary condition.
+            //
+            /*status = FT_FindNearestIntfcPointInRange(front,comp,coords,
+                    NO_BOUNDARIES,point,t,&hse,&hs,range);*/
+            //if (!status) .... mu_t[index] = ViscRatioFar*mu;
 		}
-	    	break;
+        break;
 	}
+
 	FT_ParallelExchGridArrayBuffer(field->k,front,NULL);
 	FT_ParallelExchGridArrayBuffer(field->eps,front,NULL);
 	FT_ParallelExchGridArrayBuffer(field->mu_t,front,NULL);
-	if (keps_model == REALIZABLE)
+	
+    if (keps_model == REALIZABLE)
 	    FT_ParallelExchGridArrayBuffer(field->Cmu,front,NULL);
 
 	if (dim == 2)
@@ -2737,7 +2749,8 @@ void KE_CARTESIAN::read_params(
 	eqn_params->t0 = 0.0;
 
 	eqn_params->I = 0.01;
-	eqn_params->ViscRatio = 0.1;
+	eqn_params->ViscRatioFar = 0.1;
+	eqn_params->ViscRatioNear = 100;
     
 	eqn_params->U0 = 1.0;
 	eqn_params->rho = 1.0;
@@ -2784,9 +2797,13 @@ void KE_CARTESIAN::read_params(
 	fscanf(infile,"%lf",&eqn_params->I);
 	(void) printf("%f\n",eqn_params->I);
 
-    CursorAfterString(infile,"Enter ViscRatio:");
-	fscanf(infile,"%lf",&eqn_params->ViscRatio);
-	(void) printf("%f\n",eqn_params->ViscRatio);
+    CursorAfterString(infile,"Enter ViscRatioFar:");
+	fscanf(infile,"%lf",&eqn_params->ViscRatioFar);
+	(void) printf("%f\n",eqn_params->ViscRatioFar);
+
+    CursorAfterString(infile,"Enter ViscRatioNear:");
+	fscanf(infile,"%lf",&eqn_params->ViscRatioNear);
+	(void) printf("%f\n",eqn_params->ViscRatioNear);
 
 	CursorAfterString(infile,"Enter l0:");
 	fscanf(infile,"%lf",&eqn_params->l0);

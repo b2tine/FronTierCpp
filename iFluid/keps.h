@@ -30,7 +30,8 @@ struct KE_PARAMS {
 	double rho;
 	double l0;      //turbulence length scale
 	double I;       //turbulence intensity
-    double ViscRatio;      //eddy viscosity ratio
+    double ViscRatioFar;      //eddy viscosity ratio far-field
+    double ViscRatioNear;      //eddy viscosity ratio near-field
     double U0;      //freestream average velocity
 	double lmax;
 	double delta;   //specify boundary layer width
