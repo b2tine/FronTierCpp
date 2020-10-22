@@ -1529,6 +1529,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
     double *pres = field->pres;
+    double *phi = field->phi;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -1592,7 +1593,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] = mu_t[index];
-                pres[index] += 2.0/3.0*tke[index];
+                phi[index] += 2.0/3.0*tke[index];
+                //pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -1665,7 +1667,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+        //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2342,6 +2345,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
     double *pres = field->pres;
+    double *phi = field->phi;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -2404,7 +2408,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] = mu_t[index];
-                pres[index] += 2.0/3.0*tke[index];
+                phi[index] += 2.0/3.0*tke[index];
+                    //pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -2475,7 +2480,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
+	    //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
