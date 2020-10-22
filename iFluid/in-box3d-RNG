@@ -51,9 +51,9 @@ Enter turbulence model: K
 Enter type of k-eps model: RNG
 Enter turbulent Prandtl number for k: 0.7194
 Enter turbulent Prandtl number for epsilon: 0.7194
+Enter Cmu: 0.0845
 Enter C1: 1.42
 Enter C2: 1.68
-Enter Cmu: 0.0845
 Enter Cbc: 0.01
 Enter l0: 0.025
 Enter mu0: 0.0001
@@ -64,7 +64,7 @@ Enter time to active turbulence model: 0.075
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 3 0 0 
+Enter velocity: 12 0 0 
 Enter pressure: 0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -77,15 +77,17 @@ Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 
+Type y to make viscosity field movie: y
 Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: trace
+Enter the debugging string: PETSc 
 
+Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
-Enter the debugging string: XPETSc 
 Enter the debugging string: Xdirichlet_bdry
 Enter the debugging string: Xgrid_line_comp
 Enter the debugging string: Xseg_comp
