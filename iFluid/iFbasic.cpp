@@ -1528,7 +1528,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	    //double *pres = field->pres;
+    double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
@@ -1582,18 +1582,17 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                         comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
 
                 if (status == YES &&
-                   (wave_type(hs) == NEUMANN_BOUNDARY
-                    || wave_type(hs) == ELASTIC_BOUNDARY))
+                        (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
                     mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
-
             case KEPSILON:
                 mu[index] = mu_t[index];
-                //pres[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -1666,7 +1665,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-        //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2342,16 +2341,17 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
-	    //double *pres = field->pres;
+    double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-    /*
-    if (iFparams->use_eddy_visc)
-	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
-    */
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == BALDWIN_LOMAX)
+    {
+	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
+    }
 
     KE_PARAMS* ke_params;
     double* mu_t;
@@ -2388,9 +2388,23 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         {
             switch (iFparams->eddy_visc_model)
             {
+            case BALDWIN_LOMAX:
+        
+                status = FT_FindNearestIntfcPointInRange(front,comp,center,
+                        NO_BOUNDARIES,point,t,&hse,&hs,range);
+
+                if (status == YES &&
+                        (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == ELASTIC_BOUNDARY))
+                {
+                    dist = distance_between_positions(center,point,dim);
+                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    first = NO;
+                }
+                break;
             case KEPSILON:
                 mu[index] = mu_t[index];
-                //pres[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -2398,19 +2412,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords);
                 break;
-                /*
-                //TODO: Add algebraic model option
-            case BALDWIN_LOMAX://NOT AN EDDY VISCOSITY MODEL
-                if (status == YES &&
-                    (wave_type(hs) == NEUMANN_BOUNDARY ||
-                     wave_type(hs) == ELASTIC_BOUNDARY))
-                {
-                    dist = distance_between_positions(center,point,dim);
-                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
-                    first = NO;
-                }
-                break;
-                */
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
@@ -2474,7 +2475,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */

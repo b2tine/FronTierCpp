@@ -116,7 +116,11 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
+
+Type y to make viscosity field movie: y
 Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+
 Type y to plot surface stress: n
 
 ************Debugging options*****************
