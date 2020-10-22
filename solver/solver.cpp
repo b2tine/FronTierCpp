@@ -235,7 +235,12 @@ void PETSc::SetTol(double val)
 	double rtol, atol, dtol;
 	
 	KSPGetTolerances(ksp, &rtol, &atol, &dtol, &maxits);
-	ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+
+    //TODO: this only sets rtol
+	    //ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+	
+    //absolute tol is the intended tolerance
+    ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)
@@ -248,6 +253,13 @@ void PETSc::GetNumIterations(PetscInt *num_iterations)
 	KSPGetIterationNumber(ksp,num_iterations);        
 }	/* end GetNumIterations */
 
+void PETSc::GetResidualNorm(double *rel_resid_norm)
+{
+	KSPGetResidualNorm(ksp,rel_resid_norm);
+}	/* end GetResidualNorm */
+
+//TODO: No reason this needs to be "Final" and this is also not the
+//      relative residual norm, which is defined as ||Ax-b||/||b||
 void PETSc::GetFinalRelativeResidualNorm(double *rel_resid_norm)
 {
 	KSPGetResidualNorm(ksp,rel_resid_norm);

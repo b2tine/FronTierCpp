@@ -699,7 +699,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
         POINTER intfc_state;
         HYPER_SURF *hs;
         PetscInt num_iter;
-        double rel_residual;
+        double residual;
         double aII;
         double source[MAXD];
         double **vel = field->vel;
@@ -837,7 +837,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 	    start_clock("Befor Petsc solve");
             solver.Solve();
             solver.GetNumIterations(&num_iter);
-            solver.GetFinalRelativeResidualNorm(&rel_residual);
+            solver.GetResidualNorm(&residual);
 
 	    stop_clock("After Petsc solve");
 
@@ -847,8 +847,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             if (debugging("PETSc"))
                 (void) printf("Incompress_Solver_Smooth_2D_Cartesian::"
 			"computeDiffusion: "
-       			"num_iter = %d, rel_residual = %g. \n", 
-                        num_iter,rel_residual);
+       			"num_iter = %d, residual = %g. \n", 
+                        num_iter,residual);
 
             for (j = jmin; j <= jmax; j++)
             for (i = imin; i <= imax; i++)

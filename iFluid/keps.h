@@ -28,10 +28,13 @@ struct KE_PARAMS {
 	double mu0;
 	double mu;
 	double rho;
-	double l0;
+	double l0;      //turbulence length scale
+	double I;       //turbulence intensity
+    double ViscRatio;      //eddy viscosity ratio
+    double U0;      //freestream average velocity
 	double lmax;
-	double delta; //specify boundary layer width
-	double y_p;
+	double delta;   //specify boundary layer width
+	double y_p;     //non-dimensional wall distance
 	double t0;
     double k0;
     double eps0;

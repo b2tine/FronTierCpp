@@ -923,7 +923,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	POINTER intfc_state;
 	HYPER_SURF *hs;
 	PetscInt num_iter;
-	double rel_residual;
+	double residual;
 	double aII;
 	double source[MAXD];
 	double **vel = field->vel;
@@ -941,157 +941,174 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
 	for (l = 0; l < dim; ++l)
 	{
-            PETSc solver;
-            solver.Create(ilower, iupper-1, 7, 7);
+        PETSc solver;
+        solver.Create(ilower, iupper-1, 7, 7);
 	    solver.Reset_A();
 	    solver.Reset_b();
 	    solver.Reset_x();
 
-            for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-            	I  = ijk_to_I[i][j][k];
-            	if (I == -1) continue;
-
-            	index  = d_index3d(i,j,k,top_gmax);
-            	index_nb[0] = d_index3d(i-1,j,k,top_gmax);
-            	index_nb[1] = d_index3d(i+1,j,k,top_gmax);
-            	index_nb[2] = d_index3d(i,j-1,k,top_gmax);
-            	index_nb[3] = d_index3d(i,j+1,k,top_gmax);
-            	index_nb[4] = d_index3d(i,j,k-1,top_gmax);
-            	index_nb[5] = d_index3d(i,j,k+1,top_gmax);
-
-		icoords[0] = i;
-		icoords[1] = j;
-		icoords[2] = k;
-		comp = top_comp[index];
-
-            	I_nb[0] = ijk_to_I[i-1][j][k]; //west
-            	I_nb[1] = ijk_to_I[i+1][j][k]; //east
-            	I_nb[2] = ijk_to_I[i][j-1][k]; //south
-            	I_nb[3] = ijk_to_I[i][j+1][k]; //north
-            	I_nb[4] = ijk_to_I[i][j][k-1]; //lower
-            	I_nb[5] = ijk_to_I[i][j][k+1]; //upper
-
-
-            	mu0   = field->mu[index];
-            	rho   = field->rho[index];
-
-        for (nb = 0; nb < 6; nb++)
+        for (k = kmin; k <= kmax; k++)
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
         {
-		    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                                &intfc_state,&hs,crx_coords))
-		    {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                                boundary_state_function(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
+            I  = ijk_to_I[i][j][k];
+            if (I == -1) continue;
+
+            index  = d_index3d(i,j,k,top_gmax);
+            index_nb[0] = d_index3d(i-1,j,k,top_gmax);
+            index_nb[1] = d_index3d(i+1,j,k,top_gmax);
+            index_nb[2] = d_index3d(i,j-1,k,top_gmax);
+            index_nb[3] = d_index3d(i,j+1,k,top_gmax);
+            index_nb[4] = d_index3d(i,j,k-1,top_gmax);
+            index_nb[5] = d_index3d(i,j,k+1,top_gmax);
+
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            comp = top_comp[index];
+
+            I_nb[0] = ijk_to_I[i-1][j][k]; //west
+            I_nb[1] = ijk_to_I[i+1][j][k]; //east
+            I_nb[2] = ijk_to_I[i][j-1][k]; //south
+            I_nb[3] = ijk_to_I[i][j+1][k]; //north
+            I_nb[4] = ijk_to_I[i][j][k-1]; //lower
+            I_nb[5] = ijk_to_I[i][j][k+1]; //upper
+
+
+            mu0 = field->mu[index];
+            rho = field->rho[index];
+
+            for (nb = 0; nb < 6; nb++)
+            {
+                if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                                    &intfc_state,&hs,crx_coords))
                 {
-                    U_nb[nb] = vel[l][index];
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (boundary_state_function(hs) &&
+                            strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                        {
+                            //OUTLET
+                            U_nb[nb] = vel[l][index];
+                        }
+                        else
+                        {
+                            //INLET
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                    }
+
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                        mu[nb] = mu0;
+                    else
+                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                
                 }
                 else
-                    U_nb[nb] = getStateVel[l](intfc_state);
-
-                if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
-                    mu[nb] = mu0;
-                else
-                    mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
-		    
-            }
-            else
-		    {
-                U_nb[nb] = vel[l][index_nb[nb]];
-    			mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
-		    }
-        }
-
-                //TODO: The tangential shear stress opposing the fluid flow,
-                //      is stored in the interface STATE::tan_stress variable.
-                //
-                //      Create slip boundary ghost point, modify its
-                //      (tangential) velocity to account for the shear stress
-                //      acting in opposition to it.
-            	
-                coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
-            	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
-            	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
-            	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
-            	coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
-            	coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
-
-            	getRectangleCenter(index, coords);
-            	computeSourceTerm(coords, source);
-
-		aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
-		rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
-
-		for(nb = 0; nb < 6; nb++)
-		{
-            //TODO: Neumann boundary at solid walls does not appear to be implemented.
-            if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
-			        &intfc_state,&hs,crx_coords))
-		    {
-                solver.Set_A(I,I_nb[nb],-coeff[nb]);
-                rhs += coeff[nb]*U_nb[nb];
-		    }
-		    else
-		    {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                                boundary_state_function(hs) &&
-                                strcmp(boundary_state_function_name(hs),
-                                "flowThroughBoundaryState") == 0)
                 {
-                    aII -= coeff[nb];
+                    U_nb[nb] = vel[l][index_nb[nb]];
+                    mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                }
+                        
+                //mu[nb] = mu0;
+            }
+
+            //TODO: The tangential shear stress opposing the fluid flow,
+            //      is stored in the interface STATE::tan_stress variable.
+            //
+            //      Create slip boundary ghost point, modify its
+            //      (tangential) velocity to account for the shear stress
+            //      acting in opposition to it.
+            
+            coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+            coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
+            coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
+            coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
+            coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
+            coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
+
+            getRectangleCenter(index, coords);
+            computeSourceTerm(coords, source);
+
+            aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3]+coeff[4]+coeff[5];
+            rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3]-coeff[4]-coeff[5])*(vel[l][index]);
+
+            for(nb = 0; nb < 6; nb++)
+            {
+                //TODO: Neumann boundary at solid walls does not appear to be implemented.
+                if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                        &intfc_state,&hs,crx_coords))
+                {
+                    solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
                 else
-                    rhs += 2.0*coeff[nb]*U_nb[nb];
-		    }
-		}
-		rhs += m_dt*source[l];
-		rhs += m_dt*f_surf[l][index];
-		    //rhs -= m_dt*grad_q[l][index]/rho;
-        solver.Set_A(I,I,aII);
-		solver.Set_b(I, rhs);
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        if (boundary_state_function(hs) &&
+                            strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                        {
+                            //OUTLET
+                            aII -= coeff[nb];
+                            rhs += coeff[nb]*U_nb[nb];
+                        }
+                        else
+                        {
+                            //INLET
+                            rhs += 2.0*coeff[nb]*U_nb[nb];
+                        }
+                    }
+                }
             }
 
-            //TODO:
-            solver.SetMaxIter(40000);
-            solver.SetTol(1e-10);
-                //solver.SetTol(1e-14);
+            rhs += m_dt*source[l];
+            rhs += m_dt*f_surf[l][index];
+                //rhs -= m_dt*grad_q[l][index]/rho;
+            
+            solver.Set_A(I,I,aII);
+            solver.Set_b(I, rhs);
+        }
+
+        solver.SetMaxIter(40000);
+        solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
-            solver.Solve();
-            solver.GetNumIterations(&num_iter);
-            solver.GetFinalRelativeResidualNorm(&rel_residual);
+        solver.Solve();
+        solver.GetNumIterations(&num_iter);
+        solver.GetResidualNorm(&residual);
 
 	    stop_clock("After Petsc solve");
 
-            // get back the solution
-            solver.Get_x(x);
+        // get back the solution
+        solver.Get_x(x);
 
-            if (debugging("PETSc"))
-                (void) printf("L_CARTESIAN::"
-			"computeDiffusionCN: "
-                        "num_iter = %d, rel_residual = %g. \n",
-                        num_iter,rel_residual);
+        if (debugging("PETSc"))
+        {
+            (void) printf("L_CARTESIAN::"
+                    "computeDiffusionCN: "
+                    "num_iter = %d, residual = %g. \n",
+                    num_iter,residual);
+        }
 
 	    for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                I = ijk_to_I[i][j][k];
-                index = d_index3d(i,j,k,top_gmax);
-                if (I >= 0)
-                    vel[l][index] = x[I-ilower];
-                else
-                    vel[l][index] = 0.0;
-            }
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            I = ijk_to_I[i][j][k];
+            index = d_index3d(i,j,k,top_gmax);
+            if (I >= 0)
+                vel[l][index] = x[I-ilower];
+            else
+                vel[l][index] = 0.0;
         }
-	FT_ParallelExchGridVectorArrayBuffer(vel,front);
 
-        FT_FreeThese(1,x);
+    }
+
+	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+    FT_FreeThese(1,x);
 
 	if (debugging("trace"))
 	    (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"

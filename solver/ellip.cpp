@@ -279,7 +279,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	boolean refl_side[4];
 	boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
-	double rel_residual = 0.0;
+	double residual = 0.0;
 	HYPER_SURF *hs;
 	double crx_coords[MAXD];
         int status;
@@ -430,15 +430,15 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    }
 	    solver.Solve_withPureNeumann();
 	    solver.GetNumIterations(&num_iter);
-	    solver.GetFinalRelativeResidualNorm(&rel_residual);
-	    if(rel_residual > 1)
+	    solver.GetResidualNorm(&residual);
+	    if(residual > 1)
 	    {
 		(void) printf("\n The solution diverges! The residual "
-		       "is %g. Solve again using GMRES!\n",rel_residual);
+		       "is %g. Solve again using GMRES!\n",residual);
 		solver.Reset_x();
 		solver.Solve_withPureNeumann_GMRES();
 		solver.GetNumIterations(&num_iter);
-		solver.GetFinalRelativeResidualNorm(&rel_residual);
+		solver.GetResidualNorm(&residual);
 	    }
 
 	}
@@ -448,16 +448,16 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	        (void) printf("\nUsing non-Neumann Solver!\n");
 	    solver.Solve();
 	    solver.GetNumIterations(&num_iter);
-	    solver.GetFinalRelativeResidualNorm(&rel_residual);
+	    solver.GetResidualNorm(&residual);
 
-	    if(rel_residual > 1)
+	    if(residual > 1)
 	    {
 		(void) printf("\n The solution diverges! The residual "
-		       "is %g. Solve again using GMRES!\n",rel_residual);
+		       "is %g. Solve again using GMRES!\n",residual);
 		solver.Reset_x();
 		solver.Solve_GMRES();
 		solver.GetNumIterations(&num_iter);
-		solver.GetFinalRelativeResidualNorm(&rel_residual);
+		solver.GetResidualNorm(&residual);
 	    }
 
 	}
@@ -469,8 +469,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
-	       		"num_iter = %d, rel_residual = %g \n", 
-			num_iter, rel_residual);
+	       		"num_iter = %d, residual = %g \n", 
+			num_iter, residual);
 	
 	for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
@@ -885,7 +885,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	boolean use_neumann_solver = YES;
 	PetscInt num_iter = 0;
-	double rel_residual = 0.0;
+	double residual = 0.0;
 	HYPER_SURF *hs;
 	double crx_coords[MAXD];
 	int status;
@@ -1010,11 +1010,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    printf("\nELLIPTIC_SOLVER: Using Neumann Solver!\n");
 	    solver.Solve_withPureNeumann();
 	    solver.GetNumIterations(&num_iter);
-	    solver.GetFinalRelativeResidualNorm(&rel_residual);
-	    if(rel_residual > 1)
+	    solver.GetResidualNorm(&residual);
+	    if(residual > 1)
 	    {
 		    printf("\n The solution diverges! The residual "
-                    "is %g. Solve again using GMRES!\n",rel_residual);
+                    "is %g. Solve again using GMRES!\n",residual);
             //clean_up(ERROR);
             //TODO: go on to gmres??
             Try_GMRES = true;
@@ -1026,17 +1026,17 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    printf("\nELLIPTIC_SOLVER: Using non-Neumann Solver!\n");
 	    solver.Solve();
 	    solver.GetNumIterations(&num_iter);
-	    solver.GetFinalRelativeResidualNorm(&rel_residual);
+	    solver.GetResidualNorm(&residual);
 
-	    if(rel_residual > 1)
+	    if(residual > 1)
 	    {
             printf("\n The solution diverges! The residual "
-                    "is %g. Solve again using GMRES!\n",rel_residual);
+                    "is %g. Solve again using GMRES!\n",residual);
             ///
             //solver.Reset_x();
             //solver.Solve_GMRES();
             //solver.GetNumIterations(&num_iter);
-            //solver.GetFinalRelativeResidualNorm(&rel_residual);
+            //solver.GetResidualNorm(&residual);
             ///
             Try_GMRES = true;
 	    }
@@ -1047,12 +1047,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         solver.Reset_x();
         solver.Solve_GMRES();
         solver.GetNumIterations(&num_iter);
-        solver.GetFinalRelativeResidualNorm(&rel_residual);
+        solver.GetResidualNorm(&residual);
 	    
-        if(rel_residual > 1)
+        if(residual > 1)
 	    {
             printf("\n The solution diverges using GMRES. \
-                    The residual is %g. Exiting ...\n",rel_residual);
+                    The residual is %g. Exiting ...\n",residual);
             clean_up(EXIT_FAILURE);
         }
     }
@@ -1065,8 +1065,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	if (debugging("PETSc"))
 	    (void) printf("In poisson_solver(): "
-	       		"num_iter = %d, rel_residual = %g \n", 
-			num_iter, rel_residual);
+	       		"num_iter = %d, residual = %g \n", 
+			num_iter, residual);
 	
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)

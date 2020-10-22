@@ -48,6 +48,7 @@ public:
 	virtual void Add_b(PetscInt i, double val){};	// b[i]=b[i]+val;
 
 	virtual void SetMaxIter(int val){};	
+	virtual void GetResidualNorm(double *rel_resid_norm){};
 	virtual void GetFinalRelativeResidualNorm(double *rel_resid_norm){};
 	virtual void GetNumIterations(int *num_iterations){};
 
@@ -108,10 +109,12 @@ public:
 	
 	void SetMaxIter(int val); 	// Set maximum number of iterations 
 	void SetTol(double val);	// Set the convergence tolerance 
-	void SetKDim(int k_dim);	
+	
+    void SetKDim(int k_dim);	
 			// Set the maximum size of the Krylov space 
-	void GetNumIterations(PetscInt *num_iterations);	
-			// Return the number of iterations taken 
+	
+    void GetNumIterations(PetscInt *num_iterations);	
+	void GetResidualNorm(double *rel_resid_norm);
 	void GetFinalRelativeResidualNorm(double *rel_resid_norm);
 	
     void Solve_PetscDecide();

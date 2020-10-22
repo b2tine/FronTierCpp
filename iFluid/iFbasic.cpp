@@ -900,7 +900,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
 				"visc",0,field->mu,getStateMu,
 				var_max,var_min);
-		    FT_AddVtkScalarMovieVariable(front,"VISC",field->mu);
+		            //FT_AddVtkScalarMovieVariable(front,"VISC",field->mu);
 	    	}
 	    }
 	    break;
