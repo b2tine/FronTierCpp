@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: 0 2.2
-Domain limit in 1-th dimension: 0 0.44
-Domain limit in 2-th dimension: 0 0.44
-Computational grid: 250 50 50 
+Domain limit in 1-th dimension: 0 0.984
+Domain limit in 2-th dimension: 0 0.984
+Computational grid: 67 30 30
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -9,12 +9,12 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 
-Max time: 1.0
-Max step: 5000
-Print interval: 0.01
-Movie frame interval: 0.005
+Max time: 10.0
+Max step: 10000
+Print interval: 0.5
+Movie frame interval: 0.05
 CFL factor: 0.75
-Redistribution interval: 5
+Redistribution interval: 1000000
 
 Problem type can be
 	TWO_FLUID_BUBBLE
@@ -32,8 +32,8 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter the center of the rectangle: 0.275 0.22 0.22
-Enter lengths of the rectangle: 0.15 0.075 0.075
+Enter the center of the rectangle: 0.275 0.492 0.492
+Enter lengths of the rectangle: 0.15 0.08 0.08
 Enter density and viscosity of the fluid: 1.0 0.0001
 Enter yes if the object is fixed: yes
 Enter gravity: 0 0 0
@@ -55,16 +55,19 @@ Enter Cmu: 0.0845
 Enter C1: 1.42
 Enter C2: 1.68
 Enter Cbc: 0.01
-Enter l0: 0.025
+Enter I: 0.01
+Enter ViscRatio: 100
+Enter l0: 0.5
+Enter U0: 5.0
 Enter mu0: 0.0001
-Enter y+: 30.0
+Enter y+: 50.0
 Enter time to active turbulence model: 0.075
 *******************************************************
 
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 12 0 0 
+Enter velocity: 5 0 0 
 Enter pressure: 0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

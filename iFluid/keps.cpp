@@ -43,6 +43,10 @@ KE_CARTESIAN::KE_CARTESIAN(Front &front)
 KE_CARTESIAN::~KE_CARTESIAN()
 {}
 
+bool KE_CARTESIAN::activated = false;
+void KE_CARTESIAN::activateKE() {activated = true;}
+void KE_CARTESIAN::deactivateKE() {activated = false;}
+
 //---------------------------------------------------------------
 //	initMesh
 // include the following parts
@@ -194,35 +198,77 @@ void KE_CARTESIAN::setComponent(void)
 void KE_CARTESIAN::setInitialCondition(void)
 {
 	int i;
-	double coords[MAXD],k0,eps0;
+	double coords[MAXD];
 	INTERFACE *intfc = front->interf;
 	POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
 	STATE *sl,*sr;
 	int c;
 	short unsigned int seed[3] = {2,72,7172};
 
 	FT_MakeGridIntfc(front);
-        setDomain();
+    setDomain();
 
-	// cell_center
-	k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
-	eps0 = eqn_params->Cmu*pow(k0,1.5)/eqn_params->l0;
+    //TODO: find inlet velocity by checking rect boundaries in order
+    //      to set U0 (U_infty) which is used to limit TKE, epsilon, and mu_t.
+
+    double nu = eqn_params->mu/eqn_params->rho;
+
+    double k0 = 1.5*sqr(eqn_params->U0*eqn_params->I);
+    double eps0 = eqn_params->Cmu*sqr(k0)/nu/eqn_params->ViscRatio;
+
+
+	//double k0 = sqr(eqn_params->mu0/eqn_params->l0/eqn_params->rho);
+	//double eps0 = eqn_params->Cmu*pow(k0,1.5)/eqn_params->l0;
+
+    //save the initial conditions for activation time
+    eqn_params->k0 = k0;
+    eqn_params->eps0 = eps0;
 
 	for (i = 0; i < cell_center.size(); i++)
 	{
+	    field->k[i] = 0.0;
+	    field->eps[i] = 0.0;
+        field->mu_t[i] = 0.0;
+        /*
 	    c = top_comp[i];
 	    getRectangleCenter(i,coords);
 	    field->k[i] = k0;
 	    field->eps[i] = eps0;
 	    if (keps_model == REALIZABLE)
-		field->Cmu[i] = eqn_params->Cmu;
+            field->Cmu[i] = eqn_params->Cmu;
 	    field->mu_t[i] = eqn_params->mu0;
+        */
 	}
 	printf("k0 = %e, eps0 = %e\n",k0,eps0);
 	printf("mu0 = %e\n",eqn_params->mu0);
 }	/* end setInitialCondition */
+
+void KE_CARTESIAN::applyInitialConditions()
+{
+    double k0 = eqn_params->k0;
+    double eps0 = eqn_params->eps0;
+    double mu0 = eqn_params->mu0;
+    double Cmu = eqn_params->Cmu;
+
+    double rho = eqn_params->rho;
+    double nu = eqn_params->mu/rho;
+
+	for (int i = 0; i < cell_center.size(); ++i)
+	{
+        field->k[i] = k0;
+	    field->eps[i] = eps0;
+	    
+        //double nu_t = std::max(Cmu*sqr(k0)/eps0,0.0001*nu);
+        //field->mu_t[i] = nu_t*rho;
+	        //field->mu_t[i] = mu0;
+        field->mu_t[i] = 0.0;
+        
+        if (keps_model == REALIZABLE)
+            field->Cmu[i] = Cmu;
+	}
+}
 
 /*compute lift force*/
 //TODO: verify computation
@@ -449,7 +495,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     PETSc solver;
     double *x;
     int num_iter = 0;
-    double rel_residual = 0;
+    double residual = 0.0;
     
     boolean fr_crx_grid_seg;
     const GRID_DIRECTION dir[3][2] =
@@ -514,10 +560,18 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             Cmu = eqn_params->Cmu;
             rhs = K0+m_dt*Pk[ic];
 
-            if (keps_model == REALIZABLE)
-              coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
+            if (fabs(mu_t[ic]) > MACH_EPS)
+                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
             else
-              coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+                coeff = 1.0;
+
+            //TODO: REALIZABLE AND STD disabled
+            /*
+            if (keps_model == REALIZABLE)
+                coeff = 1.0 + m_dt*std::max(field->eps[ic],0.0);
+            else
+                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            */
 
             if (isinf(coeff) || isnan(coeff) || isinf(rhs) || isnan(rhs))
             {
@@ -618,7 +672,11 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             Cmu = eqn_params->Cmu;
             rhs = K0 + m_dt*Pk[ic];
 
-            coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            //std and rng, not realizable
+            if (fabs(mu_t[ic]) > MACH_EPS)
+                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            else
+                coeff = 1.0;
 
             if (isinf(coeff) || isnan(coeff))
             {
@@ -728,13 +786,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     stop_clock("petsc_solve");
 
 	solver.GetNumIterations(&num_iter);
-    solver.GetFinalRelativeResidualNorm(&rel_residual);
+    solver.GetResidualNorm(&residual);
 
     if (debugging("PETSc"))
     {
         (void) printf("KE_CARTESIAN::computeAdvectionK: "
-                    "num_iter = %d, rel_residual = %g \n",
-                    num_iter, rel_residual);
+                    "num_iter = %d, residual = %g \n",
+                    num_iter, residual);
     }
 
     //TODO: not parallelized? size = iupper - ilower ??
@@ -889,7 +947,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
     PETSc solver;
     double *x;
     int num_iter = 0;
-    double rel_residual = 0;
+    double residual = 0.0;
     
     boolean fr_crx_grid_seg;
     const GRID_DIRECTION dir[3][2] =
@@ -1259,18 +1317,18 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
     stop_clock("petsc_solve");
 	
     solver.GetNumIterations(&num_iter);
-    solver.GetFinalRelativeResidualNorm(&rel_residual);
+    solver.GetResidualNorm(&residual);
     
     if (debugging("PETSc"))
     {
         (void) printf("KE_CARTESIAN::computeAdvectionE: "
-                    "num_iter = %d, rel_residual = %g \n",
-                    num_iter, rel_residual);
+                    "num_iter = %d, residual = %g \n",
+                    num_iter, residual);
         printf("max rhs = %f\n", dbg_max_rhs);
         printf("max aii = %f\n", dbg_max_aii);
     }
 
-	if (rel_residual > 1)
+	if (residual > 1)
 	{
 	    (void) printf("Solution diverges!\n");
 	    clean_up(ERROR);
@@ -1372,8 +1430,15 @@ void KE_CARTESIAN::solve(double dt)
 	m_dt = dt;
 	start_clock("solve");
 
-	if (front->time <= eqn_params->t0)
-	    return;
+    if (!activated)
+    {
+	    if (front->time <= eqn_params->t0) return;
+
+        applyInitialConditions();
+        activateKE();
+
+        printf("\n\nTurbulence Model Activated\n\n");
+    }
 
     setDomain();
     if (debugging("trace")) printf("Passing setDomain()\n");
@@ -1442,13 +1507,17 @@ static void printField3d(double *var,
 	fclose(outfile);	
 }
 
+//S = sqrt(2*Sij*Sij)
+//Pk*rho/mu_t = 0.5*(Uij + Uji)^2 = 2*Sij*Sij
+//Sij = 0.5*(Uij + Uji) and Uij = dUi/dxj
 double KE_CARTESIAN::computePointFieldStrain(int* icoords)
 {
-	//S = sqrt(2*Sij*Sij)
-	//Pk*rho/mu_t = 0.5*(Uij + Uji)^2 = 2*Sij*Sij
-	//Sij = 0.5*(Uij + Uji) and Uij = dUi/dxj
-	int index = d_index(icoords, top_gmax, dim);
-	return sqrt(field->Pk[index]*eqn_params->rho/field->mu_t[index]);
+	int index = d_index(icoords,top_gmax,dim);
+
+    if (fabs(field->mu_t[index]) > MACH_EPS)
+        return sqrt(field->Pk[index]*eqn_params->rho/field->mu_t[index]);
+    else
+        return 0.0;
 }
 
 double KE_CARTESIAN::computePointFieldCmu(int* icoords)
@@ -2654,20 +2723,24 @@ void KE_CARTESIAN::read_params(
 	char string[100];
 	FILE* infile;
 	infile = fopen(inname,"r");
-	int i;
 
-	/*default parameter*/
-	eqn_params->delta_k = 1.0;
-	eqn_params->delta_eps = 1.3;
-	eqn_params->Cmu = 0.09;
-	eqn_params->C1 = 1.44;
-	eqn_params->C2 = 1.92;
+	/*default parameters*/
+	keps_model = RNG;
+	eqn_params->delta_k = 0.7194;
+	eqn_params->delta_eps = 0.7194;
+	eqn_params->Cmu = 0.0845;
+	eqn_params->C1 = 1.42;
+	eqn_params->C2 = 1.68;
 	eqn_params->Cbc = 0.01; /*typicaly 0.003 ~ 0.01*/
-	eqn_params->rho = 1.0;
 	eqn_params->B = 5.2; /*5.2 for smooth wall*/
-	eqn_params->y_p = 11.067;
+	eqn_params->y_p = 30.0;
 	eqn_params->t0 = 0.0;
-	keps_model = STANDARD;
+
+	eqn_params->I = 0.01;
+	eqn_params->ViscRatio = 0.1;
+    
+	eqn_params->U0 = 1.0;
+	eqn_params->rho = 1.0;
 
 	/*end default parameter*/
 	CursorAfterStringOpt(infile,"Enter type of k-eps model:");
@@ -2706,10 +2779,22 @@ void KE_CARTESIAN::read_params(
 	CursorAfterStringOpt(infile,"Enter Cbc:");
 	fscanf(infile,"%lf",&eqn_params->Cbc);
 	(void) printf("%f\n",eqn_params->Cbc);
+	
+    CursorAfterString(infile,"Enter I:");
+	fscanf(infile,"%lf",&eqn_params->I);
+	(void) printf("%f\n",eqn_params->I);
+
+    CursorAfterString(infile,"Enter ViscRatio:");
+	fscanf(infile,"%lf",&eqn_params->ViscRatio);
+	(void) printf("%f\n",eqn_params->ViscRatio);
 
 	CursorAfterString(infile,"Enter l0:");
 	fscanf(infile,"%lf",&eqn_params->l0);
 	(void) printf("%f\n",eqn_params->l0);
+
+	CursorAfterString(infile,"Enter U0:");
+	fscanf(infile,"%lf",&eqn_params->U0);
+	(void) printf("%f\n",eqn_params->U0);
 
 	CursorAfterStringOpt(infile,"Enter mu0:");
 	fscanf(infile,"%lf",&eqn_params->mu0);
