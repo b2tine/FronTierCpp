@@ -268,6 +268,51 @@ private:
         double dcheckSolverExtended(int*,boolean);
 };
 
+class DUAL_ELLIPTIC_SOLVER{
+        Front *front;
+public:
+        DUAL_ELLIPTIC_SOLVER(Front &front);
+
+        // On topological grid
+	int *i_to_I;
+	int **ij_to_I;
+	int ***ijk_to_I;
+	int ilower;
+	int iupper;
+
+	double obst_comp;
+	double *soln;		/* field variable of new step */
+	double *source;		/* source field */
+	double *D;		/* div(D*grad)phi = source */
+	void set_solver_domain(void);
+	void solve(double *soln);
+	double (*getStateVar)(POINTER);
+	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+                                POINTER*,HYPER_SURF**,double*);
+	double checkSolver(int *icoords, boolean print_details);
+private:
+        // Dimension
+        int dim;
+        COMPONENT *top_comp,*ctop_comp;
+	int *top_gmax;
+	double *top_h;
+	double *ctop_L;
+        int *ctop_gmax;
+	int cimin,cjmin,ckmin;
+	int cimax,cjmax,ckmax;
+	int offset[MAXD];
+        double *array;          // for scatter states;
+	int array_size;
+	double max_soln;
+	double min_soln;
+	void solve1d(double *soln);
+	void solve2d(double *soln);
+	void solve3d(double *soln);
+	void get_dual_D(int*,double*);
+	double dual_average_D_2d(int dir, int nb, int**,COMPONENT**);
+	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
+};
+
 class ELLIPTIC_SOLVER{
         Front *front;
 public:
