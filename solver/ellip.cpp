@@ -286,12 +286,26 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-	PETSc solver;
+    static PETSc solver;
+	static bool first = true;
 
-	if (debugging("check_div"))
+    if (first)
+    {
+	    solver.Create(ilower, iupper-1, 5, 5);
+        first = false;
+    }
+    else
+    {
+        solver.SetPrevSolnInitialGuess();
+    }
+	
+        //PETSc solver;
+        //solver.Create(ilower, iupper-1, 5, 5);
+	
+    if (debugging("check_div"))
             printf("Enterng solve2d()\n");
-	solver.Create(ilower, iupper-1, 5, 5);
-	solver.Reset_A();
+	
+    solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
 	size = iupper - ilower;

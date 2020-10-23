@@ -11,7 +11,7 @@
 #include <solver.h>
 #include "ifluid_state.h"
 #include "rigidbody.h"
-#include "iFinjection.h"
+//#include "iFinjection.h"
 
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2
@@ -99,11 +99,11 @@ enum _ADVEC_METHOD {
 };
 typedef enum _ADVEC_METHOD ADVEC_METHOD;
 
-//TODO: DUAL_ELLIP
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
+    DUAL_ELLIP
 };
 
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
