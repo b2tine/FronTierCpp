@@ -236,11 +236,14 @@ void PETSc::SetTol(double val)
 	
 	KSPGetTolerances(ksp, &rtol, &atol, &dtol, &maxits);
 
-    //TODO: this only sets rtol
-	    //ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+    //TODO: this only sets rtol. Incorrect use in code???
+    //      elliptic solver diverges during projection method
+    //      if we use actual abs tolerance like below.
+	ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
 	
-    //absolute tol is the intended tolerance
-    ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
+    //TODO: Crashes projection method elliptic solver for poisson eqn.
+    //
+    //ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)
@@ -253,9 +256,9 @@ void PETSc::GetNumIterations(PetscInt *num_iterations)
 	KSPGetIterationNumber(ksp,num_iterations);        
 }	/* end GetNumIterations */
 
-void PETSc::GetResidualNorm(double *rel_resid_norm)
+void PETSc::GetResidualNorm(double *resid_norm)
 {
-	KSPGetResidualNorm(ksp,rel_resid_norm);
+	KSPGetResidualNorm(ksp,resid_norm);
 }	/* end GetResidualNorm */
 
 //TODO: No reason this needs to be "Final" and this is also not the
@@ -297,6 +300,9 @@ void PETSc::Solve_GMRES(void)
 
     KSPSetFromOptions(ksp);
     KSPSetUp(ksp);
+
+	SetMaxIter(40000);
+	SetTol(1.0e-08);
 
 	start_clock("KSPSolve");
         KSPSolve(ksp,b,x);

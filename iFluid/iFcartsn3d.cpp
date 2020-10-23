@@ -1073,7 +1073,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1e-14);
+        solver.SetTol(1.0e-12);
+        //solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
         solver.Solve();

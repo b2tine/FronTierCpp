@@ -988,7 +988,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 
 	solver.SetMaxIter(40000);
-	solver.SetTol(1e-10);
+	solver.SetTol(1.0e-08);
+	//solver.SetTol(1e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;
@@ -1067,10 +1068,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	solver.Get_x(x);
 
 	if (debugging("PETSc"))
+    {
 	    (void) printf("In poisson_solver(): "
 	       		"num_iter = %d, residual = %g \n", 
 			num_iter, residual);
-	
+    }
+
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
