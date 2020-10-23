@@ -55,9 +55,10 @@ Enter Cmu: 0.0845
 Enter C1: 1.42
 Enter C2: 1.68
 Enter Cbc: 0.01
-Enter I: 0.01
-Enter ViscRatio: 100
-Enter l0: 0.5
+Enter I: 0.001
+Enter ViscRatioFar: 1
+Enter ViscRatioNear: 100
+Enter l0: 0.15
 Enter U0: 5.0
 Enter mu0: 0.0001
 Enter y+: 50.0

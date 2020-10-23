@@ -39,6 +39,8 @@ struct KE_PARAMS {
 	double t0;
     double k0;
     double eps0;
+    double k_inlet;
+    double eps_inlet;
 	KE_FIELD* field;
 };
 

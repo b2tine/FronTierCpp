@@ -1014,7 +1014,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    if(residual > 1)
 	    {
 		    printf("\n The solution diverges! The residual "
-                    "is %g. Solve again using GMRES!\n",residual);
+                    "is %g after %d iterations. Solve again using GMRES!\n",
+                    residual,num_iter);
             //clean_up(ERROR);
             //TODO: go on to gmres??
             Try_GMRES = true;
@@ -1030,8 +1031,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	    if(residual > 1)
 	    {
-            printf("\n The solution diverges! The residual "
-                    "is %g. Solve again using GMRES!\n",residual);
+		    printf("\n The solution diverges! The residual "
+                    "is %g after %d iterations. Solve again using GMRES!\n",
+                    residual,num_iter);
             ///
             //solver.Reset_x();
             //solver.Solve_GMRES();
@@ -1052,7 +1054,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         if(residual > 1)
 	    {
             printf("\n The solution diverges using GMRES. \
-                    The residual is %g. Exiting ...\n",residual);
+                    The residual is %g after %d iterations. Exiting ...\n",
+                    residual,num_iter);
             clean_up(EXIT_FAILURE);
         }
     }
