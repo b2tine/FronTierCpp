@@ -144,7 +144,6 @@ void PETSc::Reset_x()
     VecZeroEntries(x);
 }
 
-
 /*
 void PETSc::Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals)
 {
@@ -220,6 +219,11 @@ void PETSc::Get_x(double *p,
 {
 }
 
+void PETSc::SetPrevSolnInitialGuess()
+{
+    KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
+}
+
 void PETSc::SetMaxIter(int val)
 {
 	PetscInt maxits;
@@ -239,11 +243,12 @@ void PETSc::SetTol(double val)
     //TODO: this only sets rtol. Incorrect use in code???
     //      elliptic solver diverges during projection method
     //      if we use actual abs tolerance like below.
-	ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+	
+        //ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
 	
     //TODO: Crashes projection method elliptic solver for poisson eqn.
     //
-    //ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
+    ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)
@@ -300,9 +305,6 @@ void PETSc::Solve_GMRES(void)
 
     KSPSetFromOptions(ksp);
     KSPSetUp(ksp);
-
-	SetMaxIter(40000);
-	SetTol(1.0e-08);
 
 	start_clock("KSPSolve");
         KSPSolve(ksp,b,x);

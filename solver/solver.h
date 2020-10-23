@@ -107,11 +107,11 @@ public:
 	void Get_b(double *p);		// get the b from ij_x to p.
 	void Get_x(double *p, int n, int *global_index);
 	
+    void SetPrevSolnInitialGuess();
 	void SetMaxIter(int val); 	// Set maximum number of iterations 
 	void SetTol(double val);	// Set the convergence tolerance 
 	
-    void SetKDim(int k_dim);	
-			// Set the maximum size of the Krylov space 
+    void SetKDim(int k_dim);	// Set the maximum size of the Krylov space 
 	
     void GetNumIterations(PetscInt *num_iterations);	
 	void GetResidualNorm(double *rel_resid_norm);
