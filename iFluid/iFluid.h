@@ -325,6 +325,7 @@ public:
 				POINTER*,HYPER_SURF**,double*);
 	int (*findStateAtCGCrossing)(Front*,int*,GRID_DIRECTION,int,
 				POINTER*,HYPER_SURF**,double*);
+
 	void applicationSetComponent();
 	void applicationSetStates();
 	double computeFieldPointPressureJump(int*,double,double);
@@ -423,10 +424,13 @@ protected:
 
 	// parallelization related functions
 	void scatMeshArray(void);
-	void setGlobalIndex(void);
+	
+    void setGlobalIndex(void);
 	void setDoubleGlobalIndex(void);
-	void setIndexMap(void);
+	
+    void setIndexMap(void);
 	void setDoubleIndexMap(void);
+
 	void paintAllGridPoint(int status);
 	void paintSolvedGridPoint();
 	void setReferencePressure();
@@ -453,20 +457,30 @@ protected:
 	int    getComponent(int *icoords);	
 	int    getComponent(double *coords);	
 	void   save(char *filename);
-	double computeFieldPointDiv(int*, double**);
+	
+    double computeFieldPointDiv(int*, double**);
 	double computeFieldPointDivSimple(int*, double**);
 	double computeFieldPointDivDouble(int*, double**);
-	double computeMuOfBaldwinLomax(int*, double, boolean);
+	
+    double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	
     void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
-    /*void computeFieldPointGrad(int* icoords,double* field,
-            double* grad_field, bool is_phi_field = true);*/
 
 	void checkVelocityDiv(const char*);
-/************* TMP Functions which are not implemented or used ***********/
+
+    //Dual (staggered) grid projection
+	void setDualDomain();
+	void setDualGlobalIndex(void);
+    void setDualIndexMap(void);
+
+    void computeDualFieldPointGrad(int* icoords, double* field, double* grad_field);
+	double computeDualFieldPointDiv(int*, double**);
+	double computeDualMu(int*);
+
+    /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
 	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,
@@ -526,30 +540,43 @@ public:
 	void setParallelVelocity(void);
 	void solve(double dt);
         void vtk_plot_scalar(char*, const char*);
+
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	    //void computeProjectionDual(void);
-	void computePressure(void);
+    void computeProjectionDual(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
-	void computeNewVelocity(void);
-	void extractFlowThroughVelocity(void);
-	void computeSourceTerm(double *coords, double *source);
+	
+    void computeNewVelocity(void);
+    void computeNewVelocityDual(void);
+	
+    void updateComponentDual(void);
+
+    void extractFlowThroughVelocity(void);
+	
+    void computeSourceTerm(double *coords, double *source);
 	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
 				double*, double);
-	void computeVarIncrement(double*,double*,boolean);
+	
+    void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 
 	/***************   Low level computation functions  *************/
@@ -570,30 +597,42 @@ public:
         void vtk_plot_scalar(char*, const char*);
 
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
+
 	void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computePressure(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
 	//void computeGradientPhi();
-	void computeNewVelocity(void);
-	void updateComponent(void);
-	void extractFlowThroughVelocity(void);
-	void computeSourceTerm(double *coords, double *source);
-	void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
+	
+    void computeNewVelocity(void);
+    void computeNewVelocityDual(void);
+	
+    void updateComponentDual(void);
+	
+    void extractFlowThroughVelocity(void);
+	
+    void computeSourceTerm(double *coords, double *source);
+	
+    void surfaceTension(double*, HYPER_SURF_ELEMENT*, HYPER_SURF*, 
 				double*, double);
-	void computeVarIncrement(double*,double*,boolean);
+	
+    void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 	void appendOpenEndStates();
 
@@ -621,12 +660,14 @@ extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);
+
 extern int ifluid_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
 extern int ifluid_find_state_at_cg_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
-extern int ifluid_find_state_at_dual_crossing(Front*,int*,GRID_DIRECTION,
-			int,POINTER*,HYPER_SURF**,double*);
+//extern int ifluid_find_state_at_dual_crossing(Front*,int*,GRID_DIRECTION,
+//			int,POINTER*,HYPER_SURF**,double*);
+
 extern double p_jump(POINTER,int,double*);
 extern double grad_p_jump_n(POINTER,int,double*,double*);
 extern double grad_p_jump_t(POINTER,int,int,double*,double*);

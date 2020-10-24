@@ -513,6 +513,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	setDomain();
 
 	setComponent();
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        updateComponentDual();
+    }
+
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 

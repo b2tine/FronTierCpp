@@ -88,7 +88,12 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
     iFparams = (IF_PARAMS*)front->extra1;
     
     FT_MakeGridIntfc(front);
-	setDomain();
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        FT_MakeCompGridIntfc(front);
+    }
+	
+    setDomain();
 
 	num_cells = 1;
 	for (i = 0; i < dim; ++i)
@@ -129,9 +134,16 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	    	cell_center[index].icoords[2] = k;
 	    }
 	}
+
 	setComponent();
-	FT_FreeGridIntfc(front);
-	if (debugging("trace"))
+	
+    FT_FreeGridIntfc(front);
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        FT_FreeCompGridIntfc(front);
+    }
+	
+    if (debugging("trace"))
             (void) printf("Leaving initMesh()\n");
 }
 
@@ -581,7 +593,11 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    break;
 	}
     
-    if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+    if (iFparams->num_scheme.ellip_method == DUAL_ELLIP)
+    {
+        setDualDomain();
+    }
+    else if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
     {
         setDoubleDomain();
     }
@@ -3459,40 +3475,6 @@ extern int ifluid_find_state_at_crossing(
 	    else if (boundary_state_function(*hs) &&
 		strcmp(boundary_state_function_name(*hs),
 		"iF_splitBoundaryState") == 0)
-	    	return CONST_V_PDE_BOUNDARY;
-	    else
-	    	return CONST_P_PDE_BOUNDARY;
-	}
-}	/* ifluid_find_state_at_crossing */
-
-extern int ifluid_find_state_at_cg_crossing(
-	Front *front,
-	int *icoords,
-	GRID_DIRECTION dir,
-	int comp,
-	POINTER *state,
-	HYPER_SURF **hs,
-	double *crx_coords)
-{
-	boolean status;
-	INTERFACE *grid_intfc = front->comp_grid_intfc;
-	status = FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir,
-				comp,state,hs,crx_coords);
-	if (status == NO) 
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE) 
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == NEUMANN_BOUNDARY) 
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == GROWING_BODY_BOUNDARY) 
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY) 
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == ICE_PARTICLE_BOUNDARY) 
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == DIRICHLET_BOUNDARY) 
-	{
-	    if (boundary_state(*hs))
 	    	return CONST_V_PDE_BOUNDARY;
 	    else
 	    	return CONST_P_PDE_BOUNDARY;

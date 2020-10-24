@@ -592,6 +592,7 @@ EXPORT	void FT_MakeCompGridIntfc(
 {
 	front->comp_grid_intfc = make_grid_intfc(front->interf,
 			EXPANDED_COMP_GRID,NULL);
+    //TODO: parallel exchange? see FT_MakeGridIntfc()
 }	/* end FT_MakeGridIntfc */
 
 EXPORT	void FT_FreeGridIntfc(
