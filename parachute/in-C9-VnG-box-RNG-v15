@@ -36,10 +36,14 @@ For rigid body 1
 Enter type of rigid body: Box
 Enter center of the box: 6 6 0.951
 Enter edges of the box: 0.5 0.5 0.5
+
+Type yes if the rigid body is fixed: no
+Type yes to use CGAL for rigid body: no
+
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 100
+Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 0.951
 Enter the initial center of mass velocity: 0 0 0
 
@@ -100,10 +104,15 @@ Enter C1: 1.42
 Enter C2: 1.68
 Enter Cmu: 0.0845
 Enter Cbc: 0.01
-Enter l0: 0.01
-Enter mu0: 0.001
-Enter y+: 30.0
-Enter time to active turbulence model: 0.25
+Enter I: 0.005
+Enter ViscRatioFar: 1
+Enter ViscRatioNear: 100
+Enter l0: 1.0
+Enter U0: 15.0
+Enter mu0: 0.00001813
+Enter y+: 50.0
+
+Enter time to active turbulence model: 0.075
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
@@ -120,16 +129,20 @@ Type y to make xy cross section movie: n
 
 Type y to make viscosity field movie: y
 Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
+Type y to make vector vorticity field movie: n
 
 Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: max_speed
+Enter the debugging string: PETSc
+
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
 Enter the debugging string: Xstep_size
-Enter the debugging string: XPETSc
 Enter the debugging string: Xcoat_comp
 Enter the debugging string: Xdirichlet_bdry
 Enter the debugging string: Xflow_through

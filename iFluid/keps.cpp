@@ -642,11 +642,22 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                                   Mag2d(intfc_state->vel)/eqn_params->y_p);
 
                         //TODO: Note that intfc_state->vel is not
-                        //      vel tangential to the wall
+                        //      vel tangential to the wall.
+                        //      project out the normal component,
+                        //      required by the free-slip condition u dot n = 0.
                         
                         K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
                         rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb);
                             //rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
+
+                        //TODO: compute wall tangential stress (force/area)
+                        //
+                        //tau_wall[0] = -u_t/eqn_params->y_p*u_tangential[0];
+                        //tau_wall[1] = -u_t/eqn_params->y_p*u_tangential[1];
+
+                        //TODO: store tau_wall and apply in momentum eqns with f_surf[][] array??
+                        //      would need to find area of nearest wall triangle, or bond length
+                        //      in 2d case.
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -1279,14 +1290,12 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             else
             {
                 rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
-                    //rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*E0/K0,0.0); 
             }
 
             if (keps_model == RNG)
             {
                 C2 = computePointFieldC2_RNG(icoords);
                 coeff = 1.0 + std::max(C2*Gamma,0.0)*m_dt;
-                    //coeff = 1.0 + std::max(C2*E0/K0,0.0)*m_dt;
             }
             else if (keps_model == REALIZABLE)
             {
@@ -1297,7 +1306,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             { 
                 C2 = eqn_params->C2;
                 coeff = 1.0 + std::max(C2*Gamma,0.0)*m_dt;
-                    //coeff = 1.0 + std::max(C2*E0/K0,0.0)*m_dt;
             }
             
             
@@ -1331,9 +1339,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                             grid_intfc,icoords,dir[l][m],comp,
                             (POINTER*)&intfc_state,&hs,crx_coords);
             
-                    //TODO: can use above += eta_p - eta_m instead
-                    //coeff += ((m == 0) ? eta_p : -eta_m); //upwind
-           
                     if (!fr_crx_grid_seg) 
                     {
                         coeff_nb = -lambda;

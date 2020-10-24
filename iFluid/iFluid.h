@@ -11,7 +11,6 @@
 #include <solver.h>
 #include "ifluid_state.h"
 #include "rigidbody.h"
-//#include "iFinjection.h"
 
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2

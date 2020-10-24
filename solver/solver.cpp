@@ -244,11 +244,11 @@ void PETSc::SetTol(double val)
     //      elliptic solver diverges during projection method
     //      if we use actual abs tolerance like below.
 	
-        //ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+        ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
 	
     //TODO: Crashes projection method elliptic solver for poisson eqn.
     //
-    ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
+    //ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)

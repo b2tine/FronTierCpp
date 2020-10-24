@@ -823,8 +823,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                     }
 		}
-            	rhs += m_dt*source[l];
-		rhs += m_dt*f_surf[l][index];
+            	
+        rhs += m_dt*source[l];
+		//TODO: Can we apply wall tangenetial stress here?
+        //      Would need to find area of nearest interface tri/bond area
+        rhs += m_dt*f_surf[l][index];
+
 	    	//rhs -= m_dt*grad_q[l][index]/rho;
 
 		solver.Set_A(I,I,aII);

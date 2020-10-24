@@ -1065,7 +1065,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
 
             rhs += m_dt*source[l];
+            
+            //TODO: Can we apply wall tangenetial stress here?
+            //      Would need to find area of nearest interface tri area
             rhs += m_dt*f_surf[l][index];
+
                 //rhs -= m_dt*grad_q[l][index]/rho;
             
             solver.Set_A(I,I,aII);
