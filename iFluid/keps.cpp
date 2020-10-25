@@ -492,7 +492,7 @@ void KE_CARTESIAN::findBdryPoint()
 
 void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 {
-    int i,j,k,l,m,ll,ic,icn,I,I_nb,icoords[MAXD];
+    int i,j,k,l,m,ic,icn,I,I_nb,icoords[MAXD];
     int gmin[MAXD],ipn[MAXD];
     double crx_coords[MAXD];
 	double nor[MAXD];
@@ -514,12 +514,14 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K_prev = field->k_prev;
 	double *gamma = field->gamma;
 
+    double **f_surf = field->f_surf;
+
 	double Cmu = eqn_params->Cmu;
 	double delta_k = eqn_params->delta_k;
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
+	double y_p = eqn_params->y_p;
 	
-    double y_pp,dist,center[MAXD];
     double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
     double eta;
 	double Ut,Ut_old;
@@ -630,9 +632,15 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     icn = d_index2d(ipn[0],ipn[1],top_gmax);
                     I_nb = ij_to_I[ipn[0]][ipn[1]];
             
-                    fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                    //This version returns provides the hypersurf element hse
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,
+                            icoords,dir[l][m],comp,(POINTER*)&intfc_state,
+                            &hs,&hse,crx_coords);
+                    
+                    /*fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                             grid_intfc,icoords,dir[l][m],comp,
-                            (POINTER*)&intfc_state,&hs,crx_coords);
+                            (POINTER*)&intfc_state,&hs,crx_coords);*/
+
 
                     if (!fr_crx_grid_seg) 
                     {
@@ -648,30 +656,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         //NOTE: Would this require resolution of the viscous sublayer?
                             //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
 
-                        //TODO: the below code made the run hang somehow -- find out why
-                        /*
-                        //Compute tangential velocity
-                        FT_NormalAtGridCrossing(front,icoords,dir[l][m],
-                                comp,nor,&hs,crx_coords);
-
-                        double vn = 0.0;
-                        for (int ii = 0; ii < dim; ++i)
-                            vn += intfc_state->vel[ii]*nor[ii];
-                        
-                        double v_slip[MAXD] = {0.0};
-                        for (int ii = 0; ii < dim; ++i)
-                            v_slip[ii] = intfc_state->vel[ii] - vn*nor[ii];
-                        //TODO: call setSlipBoundary() instead.
-                        //      the intfc_state->vel is not what we want.
-                        */
-                        
                         double v_slip[MAXD] = {0.0};
                         setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
 
                         //use wall function
                         double u_t =
                             std::max(pow(Cmu,0.25)*sqrt(std::max(K[ic],0.0)),
-                                    Mag2d(v_slip)/eqn_params->y_p);
+                                    Mag2d(v_slip)/y_p);
 
                         /*
                         //use wall function
@@ -690,14 +681,46 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb);
                             //rhs += lambda*K_nb - (pow(-1,m+1)*eta)*K_nb;
 
-                        //TODO: compute wall tangential stress (force/area)
-                        //
-                        //tau_wall[0] = -u_t/eqn_params->y_p*u_tangential[0];
-                        //tau_wall[1] = -u_t/eqn_params->y_p*u_tangential[1];
+                        //Compute wall tangential shear stress (force/length for 2d)
+                        double tau_wall[MAXD] = {0.0};
+                        tau_wall[0] = u_t/y_p*v_slip[0];
+                        tau_wall[1] = u_t/y_p*v_slip[1];
+                            //tau_wall[0] = -1.0*u_t/y_p*v_slip[0];
+                            //tau_wall[1] = -1.0*u_t/y_p*v_slip[1];
+                        
+                        //TODO: Need more than one interface element?
+                        //      see BondAndNeighbors() usage in surfaceTension()
+                        
+                            //BOND* nearest_bond = Bond_of_hse(hse);
+                            //double len = bond_length(nearest_bond);
+                        
+                        int nb_bonds;
+                        BOND* bonds[10];
+                        BondAndNeighbors(hse,hs,&nb_bonds,bonds,1);//1 bond on each side for total of 3 bonds
+                        //Try other orders 2, 3
 
-                        //TODO: store tau_wall and apply in momentum eqns with f_surf[][] array??
-                        //      would need to find area of nearest wall triangle, or bond length
-                        //      in 2d case.
+                        double fwall[MAXD] = {0.0};
+                        for (int ib = 0; ib < nb_bonds; ++ib)
+                        {
+                            double len = bond_length(bonds[ib]);
+                            for (int kk = 0; kk < dim; ++kk)
+                                fwall[kk] += tau_wall[kk]*len;
+                        }
+                        
+                        double* force_wall = intfc_state->shear_force;
+                        //force_wall[0] = tau_wall[0]*len;
+                        //force_wall[1] = tau_wall[1]*len;
+                        //f_surf[0][ic] = -1.0*force_wall[0]/rho;
+                        //f_surf[1][ic] = -1.0*force_wall[1]/rho;
+
+                        for (int kk = 0; kk < dim; ++kk)
+                        {
+                            force_wall[kk] = fwall[kk];
+                            f_surf[kk][ic] = -1.0*force_wall[kk]/rho;
+                        }
+
+                        //TODO: For elastic boundaries force_wall should be coupled
+                        //      to the interface/canopy somehow... compute acceleration with it?
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -747,10 +770,15 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             icoords[0] = i;
             icoords[1] = j;
             icoords[2] = k;
-            ic = d_index3d(i,j,k,top_gmax);
-            comp = top_comp[ic];
             I = ijk_to_I[i][j][k];
+            ic = d_index3d(i,j,k,top_gmax);
 
+            //Save K for use in wall functions for epsilon
+            K_prev[ic] = K[ic];
+            //TODO: function for copying K and computing gamma?
+            //      Or could put in computeMuTurb()??
+
+            comp = top_comp[ic];
             if (comp != sub_comp) continue;
 
             K0 = K[ic];
@@ -761,15 +789,15 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             if (fabs(mu_t[ic]) > MACH_EPS)
             {
                 gamma[ic] = std::max(Cmu*K0*rho/mu_t[ic],0.0);
-                coeff = 1.0 + m_dt*gamma[ic];
-                    //coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
             }
             else
             {
                 gamma[ic] = 0.0;
-                coeff = 1.0;
             }
+                
+            coeff = 1.0 + m_dt*gamma[ic];
 
+            
             if (isinf(coeff) || isnan(coeff))
             {
                 printf("In computeAdvectionK(): ");
@@ -808,9 +836,6 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                             grid_intfc,icoords,dir[l][m],comp,
                             (POINTER*)&intfc_state,&hs,crx_coords);
             
-                    //TODO: can use above += eta_p - eta_m instead
-                    //coeff += ((m == 0) ? eta_p : -eta_m); //upwind
-
                     if (!fr_crx_grid_seg) 
                     {
                         coeff_nb = -lambda;
@@ -823,17 +848,38 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     {
                         //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
 
+                        double v_slip[MAXD] = {0.0};
+                        setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
+
+                        //use wall function
+                        double u_t =
+                            std::max(pow(Cmu,0.25)*sqrt(std::max(K[ic],0.0)),
+                                    Mag3d(v_slip)/y_p);
+
+                        /*
                         //use wall function
                         double u_t = std::max(
                                 pow(eqn_params->Cmu, 0.25)*sqrt(
                                     std::max(field->k[ic], 0.0)),
                                 Mag3d(intfc_state->vel)/eqn_params->y_p);
-
+                        */
                         //TODO: Note that intfc_state->vel is not
                         //      vel tangential to the wall
                         
                         K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
                         rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
+
+                        //TODO: compute wall tangential stress (force/area)
+                        /*
+                        double* tau_wall = intfc_state->tan_stress;
+                        tau_wall[0] = -u_t/y_p*v_slip[0];
+                        tau_wall[1] = -u_t/y_p*v_slip[1];
+                        tau_wall[2] = -u_t/y_p*v_slip[2];
+                        */
+
+                        //TODO: store tau_wall and apply in momentum eqns with f_surf[][] array??
+                        //      would need to find area of nearest wall triangle, or bond length
+                        //      in 2d case.
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -1121,17 +1167,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             if (comp != sub_comp) continue;
             
             E0 = E[ic];
-            K0 = field->k[ic];
+            K0 = K_prev[ic]; //K0 = field->k[ic];
 
+            //computed in computeAdvectionK()
             double Gamma = gamma[ic];
-            /*
-            //TODO: Gamma = E0/K0 ? Or should be same as in computeAdvectionK()?
-            double Gamma = 0.0;
-            if (fabs(K0) > MACH_EPS)
-            {
-                Gamma = E0/K0;
-            }
-            */
 
             if (keps_model == REALIZABLE)
             {
@@ -1141,7 +1180,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             else
             {
                 rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
-                    //rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*E0/K0,0.0); 
             }
 
 
@@ -1149,7 +1187,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             {
                 C2 = computePointFieldC2_RNG(icoords);
                 coeff = 1.0 + std::max(C2*Gamma,0.0)*m_dt;
-                    //coeff = 1.0 + std::max(C2*E0/K0,0.0)*m_dt;
             }
             else if (keps_model == REALIZABLE)
             {
@@ -1160,7 +1197,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             { 
                 C2 = eqn_params->C2;
                 coeff = 1.0 + std::max(C2*Gamma,0.0)*m_dt;
-                    //coeff = 1.0 + std::max(C2*E0/K0,0.0)*m_dt;
             }
 
             
@@ -1230,7 +1266,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                     eta = v[l]*m_dt/(top_h[l]); //upwind difference
                     double eta_p = std::max(eta, 0.0);
                     double eta_m = std::min(eta, 0.0);
-                        //eta = v[l]*m_dt/(2*top_h[l]);
                     
                     coeff += eta_p - eta_m;
                     coeff += 2.0*lambda;
@@ -1256,7 +1291,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                                  wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
                                  wave_type(hs) == ELASTIC_BOUNDARY)
                         {
-                        
                             double v_slip[MAXD] = {0.0};
                             setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
 
@@ -1268,13 +1302,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                             //With K_prev so that friction velocity computation
                             //matches computeAdvectionK() friction velocity.
                             
-                            /*
-                            //use wall function
-                            double u_t = std::max(pow(eqn_params->Cmu, 0.25)
-                                *sqrt(std::max(field->k[ic], 0.0)), 
-                                Mag2d(v_slip)/eqn_params->y_p);
-                            */
-
                             /*
                             //use wall function
                             double u_t = std::max(pow(eqn_params->Cmu, 0.25)
@@ -1364,17 +1391,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             if (comp != sub_comp) continue;
 
             E0 = E[ic];
-            K0 = field->k[ic];
+            K0 = K_prev[ic]; //K0 = field->k[ic];
     
+            //computed in computeAdvectionK()
             double Gamma = gamma[ic];
-            /*
-            //TODO: Gamma = E0/K0 ? Or should be same as in computeAdvectionK()?
-            double Gamma = 0.0;
-            if (fabs(K0) > MACH_EPS)
-            {
-                Gamma = E0/K0;
-            }
-            */
 
             if (keps_model == REALIZABLE)
             {
@@ -1443,13 +1463,17 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
                              wave_type(hs) == ELASTIC_BOUNDARY)
                     {
-                        //use wall function
+                        double v_slip[MAXD] = {0.0};
+                        setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
+
+                        //use wall function 
                         double u_t =
                             std::max(pow(Cmu,0.25)*sqrt(std::max(K_prev[ic],0.0)),
-                                    Mag3d(intfc_state->vel)/eqn_params->y_p);
+                                    Mag3d(v_slip)/eqn_params->y_p);
+                        
                         //With K_prev so that friction velocity computation
                         //matches computeAdvectionK() friction velocity.
-                        
+
                         /*
                         double u_t = std::max(pow(eqn_params->Cmu, 0.25)
                             *sqrt(std::max(field->k[ic], 0.0)), 

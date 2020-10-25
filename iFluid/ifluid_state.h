@@ -13,8 +13,8 @@ struct STATE
 
 	double temperature;         /* For melting with flow problem */
 	double mu;			        /* For eddy viscosity */
-    double tan_stress[MAXD];    /* tangential stress on fluid computed from
-                                        turb model + wall functions */
+    double shear_force[MAXD];    /* force resulting from tangential stress of fluid on wall computed from
+                                        turb model + wall functions (IS ACTUALLY FORCE)*/
         //double drag_force[MAXD];    /* temporary for line drag model prototyping*/
 	double fluid_accel[MAXD];   /* acceleration from fluid force */
     double other_accel[MAXD];   /* acceleration for special nodes */

@@ -2870,12 +2870,19 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     if (i < 0 || j < 0 || k < 0) continue;
                     if (i > top_gmax[0] || j > top_gmax[1] || 
                         k > top_gmax[2]) continue;
+
                     coords[0] = top_L[0] + i*top_h[0];
                     coords[1] = top_L[1] + j*top_h[1];
                     coords[2] = top_L[2] + k*top_h[2];
                     ic = d_index3d(i,j,k,top_gmax);
+
+                    //TODO: use smoothing function, see usage example
+                    //      in setSmoothedProperties() in surface tension
+                    //      section
+
                     dist = distance_between_positions(Coords(p),coords,3);
                     if (dist > top_h[0]*4.0) continue;
+
                     alpha = top_h[0]*4.0 - dist;
                     ic = d_index3d(i,j,k,top_gmax);
                     f_surf[0][ic] += alpha*force[0];

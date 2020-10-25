@@ -13,6 +13,7 @@ struct KE_FIELD {
 	double *mu_t;
 	double *Cmu;
 	double **vel;
+	double **f_surf;
 };
 
 struct KE_PARAMS {

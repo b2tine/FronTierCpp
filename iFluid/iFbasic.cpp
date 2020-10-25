@@ -1593,8 +1593,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] = mu_t[index];
-                phi[index] += 2.0/3.0*tke[index];
-                //pres[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
+                    //phi[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -1643,8 +1643,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                     surfaceTension(center,hse,hs,force,m_sigma);
                     for (l = 0; l < dim; ++l)
                     {
-                    force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
+                        force[l] /= -rho[index];
+                        f_surf[l][index] = force[l];
                     }
                 }
             }
@@ -1667,8 +1667,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
-        //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+        //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2408,8 +2408,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] = mu_t[index];
-                phi[index] += 2.0/3.0*tke[index];
-                    //pres[index] += 2.0/3.0*tke[index];
+                pres[index] += 2.0/3.0*tke[index];
+                    //phi[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
@@ -2480,8 +2480,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
-	    //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+	    //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
@@ -4039,6 +4039,7 @@ KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
         keps_solver->field = NULL;
         keps_solver->initMesh();
         keps_solver->field->vel = iFparams->field->vel;
+        keps_solver->field->f_surf = iFparams->field->f_surf;
         keps_solver->eqn_params->mu = iFparams->mu2;
         keps_solver->eqn_params->rho = iFparams->rho2;
         keps_solver->setInitialCondition();
