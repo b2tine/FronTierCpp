@@ -519,7 +519,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 	double y_pp,dist,center[MAXD];
     double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
     double eta;
-	double Ut,Ut_old,vn;
+	double Ut,Ut_old;
 	int    niter;
 
 	/*For boundary state*/
@@ -633,7 +633,28 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
                              wave_type(hs) == ELASTIC_BOUNDARY)
                     {
-                        //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
+                            //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
+
+                        //TODO: the below code made the run hang somehow -- find out why
+                        /*
+                        //Compute tangential velocity
+                        FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                                comp,nor,&hs,crx_coords);
+
+                        double vn = 0.0;
+                        for (int ii = 0; ii < dim; ++i)
+                            vn += intfc_state->vel[ii]*nor[ii];
+                        
+                        double v_slip[MAXD] = {0.0};
+                        for (int ii = 0; ii < dim; ++i)
+                            v_slip[ii] = intfc_state->vel[ii] - vn*nor[ii];
+
+                        //use wall function
+                        double u_t = std::max(
+                                  pow(eqn_params->Cmu, 0.25)*sqrt(
+                                      std::max(field->k[ic], 0.0)),
+                                  Mag2d(v_slip)/eqn_params->y_p);
+                        */
 
                         //use wall function
                         double u_t = std::max(
@@ -845,6 +866,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     num_iter, residual);
     }
 
+	if (residual > 1)
+	{
+	    printf("KE_CARTESIAN::computeAdvectionK(): \
+                Solution diverges!\n");
+	    LOC(); clean_up(ERROR);
+	}
+
     //TODO: not parallelized? size = iupper - ilower ??
     FT_VectorMemoryAlloc((POINTER*)&x,cell_center.size(),sizeof(double));
     solver.Get_x(x);
@@ -1017,7 +1045,6 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 	double y;
 	double center[MAXD], t[MAXD], point[MAXD],crds_wall[MAXD];
 	double dist;
-	double vn;
 	
     /*For boundary state*/
 	HYPER_SURF *hs;
@@ -1025,6 +1052,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 	STATE *intfc_state;
 	INTERFACE* grid_intfc = front->grid_intfc;
 	double coords[MAXD];
+	double nor[MAXD];
 	boolean if_adj_pt = NO;
 
     start_clock("computeAdvectionE");
@@ -1195,16 +1223,46 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                                  wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
                                  wave_type(hs) == ELASTIC_BOUNDARY)
                         {
+                        
+                            //TODO: the below code made the run hang somehow -- find out why
+                            /*
+                            //Compute tangential velocity
+                            FT_NormalAtGridCrossing(front,icoords,dir[l][m],
+                                    comp,nor,&hs,crx_coords);
+
+                            double vn = 0.0;
+                            for (int ii = 0; ii < dim; ++i)
+                                vn += intfc_state->vel[ii]*nor[ii];
+                            
+                            double v_slip[MAXD] = {0.0};
+                            for (int ii = 0; ii < dim; ++i)
+                                v_slip[ii] = intfc_state->vel[ii] - vn*nor[ii];
+
+                            //use wall function
+                            double u_t = std::max(pow(eqn_params->Cmu, 0.25)
+                                *sqrt(std::max(field->k[ic], 0.0)), 
+                                Mag2d(v_slip)/eqn_params->y_p);
+                            */
+                            
                             //use wall function
                             double u_t = std::max(pow(eqn_params->Cmu, 0.25)
                                 *sqrt(std::max(field->k[ic], 0.0)), 
                                 Mag2d(intfc_state->vel)/eqn_params->y_p);
-                            
+
                             //TODO: Note that intfc_state->vel is not
                             //      vel tangential to the wall
                             
                             E_nb = pow(u_t, 4.0)/(0.41*eqn_params->y_p*nu);
                             rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
+                        
+                            //TODO: compute wall tangential stress (force/area)
+                            //
+                            //tau_wall[0] = -u_t/eqn_params->y_p*u_tangential[0];
+                            //tau_wall[1] = -u_t/eqn_params->y_p*u_tangential[1];
+
+                            //TODO: store tau_wall and apply in momentum eqns with f_surf[][] array??
+                            //      would need to find area of nearest wall triangle, or bond length
+                            //      in 2d case.
                         }
                         else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                         {
@@ -1426,8 +1484,9 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 
 	if (residual > 1)
 	{
-	    (void) printf("Solution diverges!\n");
-	    clean_up(ERROR);
+	    printf("KE_CARTESIAN::computeAdvectionE(): \
+                Solution diverges!\n");
+	    LOC(); clean_up(ERROR);
 	}
 
     //TODO: not parallelized? size = iupper - ilower ??
