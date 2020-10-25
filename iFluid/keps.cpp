@@ -121,78 +121,76 @@ void KE_CARTESIAN::initMesh(void)
 
 void KE_CARTESIAN::setComponent(void)
 {
-	int i;
+    static STATE *state = NULL;
+    double *coords;
+    int *icoords;
+    int size = (int)cell_center.size();
+    HYPER_SURF_ELEMENT *hse;
+    HYPER_SURF *hs;
+    double t[MAXD],point[MAXD];
+    int n;
 
-        static STATE *state = NULL;
-        double *coords;
-        int *icoords;
-        int size = (int)cell_center.size();
-        HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF *hs;
-        double t[MAXD],point[MAXD];
-        int n;
+    if (state == NULL)
+        FT_ScalarMemoryAlloc((POINTER*)&state, sizeof(STATE));
 
-        if (state == NULL)
-            FT_ScalarMemoryAlloc((POINTER*)&state, sizeof(STATE));
-
-        for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
+    {
+        coords = cell_center[i].coords;
+        if (cell_center[i].comp != -1 &&
+            cell_center[i].comp != top_comp[i])
         {
-            coords = cell_center[i].coords;
-            if (cell_center[i].comp != -1 &&
-                cell_center[i].comp != top_comp[i])
+            if (FT_FindNearestIntfcPointInRange(front,top_comp[i],coords,
+                            INCLUDE_BOUNDARIES,point,t,&hse,&hs,2))
             {
-                if (FT_FindNearestIntfcPointInRange(front,top_comp[i],coords,
-                                INCLUDE_BOUNDARIES,point,t,&hse,&hs,2))
+                if (!FrontNearestIntfcState(front,coords,top_comp[i],
+                            (POINTER)state))
                 {
-                    if (!FrontNearestIntfcState(front,coords,top_comp[i],
-                                (POINTER)state))
-                    {
-                        (void) printf("In setComponent()\n");
-                        (void) printf("FrontNearestIntfcState() failed\n");
-                        (void) printf("old_comp = %d new_comp = %d\n",
-                                        cell_center[i].comp,top_comp[i]);
-                        clean_up(ERROR);
-                    }
+                    (void) printf("In setComponent()\n");
+                    (void) printf("FrontNearestIntfcState() failed\n");
+                    (void) printf("old_comp = %d new_comp = %d\n",
+                                    cell_center[i].comp,top_comp[i]);
+                    clean_up(ERROR);
                 }
-                else
-                {
-                    double temp_nb = 0.0;
-                    int ic[MAXD],index;
-                    icoords = cell_center[i].icoords;
-                    n = 0;
-
-                    for (int ii = 0; ii < dim; ++ii)
-                    {
-                        for (int jj = 0; jj < dim; ++jj)
-                            ic[jj] = icoords[jj];
-
-                        ic[ii] = (icoords[ii] == 0) ? 0 : icoords[ii] - 1;
-                        index = d_index(ic,top_gmax,dim);
-                        
-                        if (cell_center[index].comp != -1 &&
-                            cell_center[index].comp == top_comp[index])
-                        {
-                            n++;
-                        }
-                        
-                        ic[ii] = (icoords[ii] == top_gmax[ii]) ? top_gmax[ii]
-                                        : icoords[ii] + 1;
-                        
-                        index = d_index(ic,top_gmax,dim);
-                        
-                        if (cell_center[index].comp != -1 &&
-                            cell_center[index].comp == top_comp[index])
-                        {
-                            //temp_nb += field->temperature[index];
-                            n++;
-                        }
-                    }
-                    //field->temperature[i] = temp_nb/n;
-                }
-	    
             }
-            cell_center[i].comp = top_comp[i];
+            else
+            {
+                double temp_nb = 0.0;
+                int ic[MAXD],index;
+                icoords = cell_center[i].icoords;
+                n = 0;
+
+                for (int ii = 0; ii < dim; ++ii)
+                {
+                    for (int jj = 0; jj < dim; ++jj)
+                        ic[jj] = icoords[jj];
+
+                    ic[ii] = (icoords[ii] == 0) ? 0 : icoords[ii] - 1;
+                    index = d_index(ic,top_gmax,dim);
+                    
+                    if (cell_center[index].comp != -1 &&
+                        cell_center[index].comp == top_comp[index])
+                    {
+                        n++;
+                    }
+                    
+                    ic[ii] = (icoords[ii] == top_gmax[ii]) ? top_gmax[ii]
+                                    : icoords[ii] + 1;
+                    
+                    index = d_index(ic,top_gmax,dim);
+                    
+                    if (cell_center[index].comp != -1 &&
+                        cell_center[index].comp == top_comp[index])
+                    {
+                        //temp_nb += field->temperature[index];
+                        n++;
+                    }
+                }
+                //field->temperature[i] = temp_nb/n;
+            }
+    
         }
+        cell_center[i].comp = top_comp[i];
+    }
 }	/* end setComponent */
 
 void KE_CARTESIAN::setInitialCondition(void)
@@ -513,12 +511,15 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K = field->k;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
+    double *K_prev = field->k_prev;
 	double *gamma = field->gamma;
 
+	double Cmu = eqn_params->Cmu;
 	double delta_k = eqn_params->delta_k;
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
-	double y_pp,dist,center[MAXD];
+	
+    double y_pp,dist,center[MAXD];
     double v[MAXD],v_wall[MAXD],crds_wall[MAXD],k_wall;
     double eta;
 	double Ut,Ut_old;
@@ -532,7 +533,6 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 	double coords[MAXD];
 	boolean if_adj_pt;
 	double point[MAXD],t[MAXD];
-	double Cmu;
 
     start_clock("computeAdvectionK");
     if (debugging("trace")) printf("Entering computeAdvectionK()\n");
@@ -564,25 +564,28 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             ic = d_index2d(i,j,top_gmax);
             I = ij_to_I[i][j];
             
+            //Save K for use in wall functions for epsilon
+            K_prev[ic] = K[ic];
+            //TODO: function for copying K and computing gamma?
+            //      Or could put in computeMuTurb()??
+
             comp = top_comp[ic];
             if (comp != sub_comp) continue;
 
             K0 = K[ic];
-            Cmu = eqn_params->Cmu;
-            rhs = K0+m_dt*Pk[ic];
+            rhs = K0 + m_dt*Pk[ic];
 
             //Update the linearization parameter gamma
             if (fabs(mu_t[ic]) > MACH_EPS)
             {
                 gamma[ic] = std::max(Cmu*K0*rho/mu_t[ic],0.0);
-                coeff = 1.0 + m_dt*gamma[ic];
-                    //coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
             }
             else
             {
                 gamma[ic] = 0.0;
-                coeff = 1.0;
             }
+                
+            coeff = 1.0 + m_dt*gamma[ic];
 
             //TODO: REALIZABLE AND STD disabled
             /*
@@ -617,7 +620,6 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                 eta = v[l]*m_dt/(top_h[l]); //upwind difference
                 double eta_p = std::max(eta, 0.0);
                 double eta_m = std::min(eta, 0.0);
-                    //eta = v[l]*m_dt/(2.0*top_h[l]);
                 
                 coeff += eta_p - eta_m;
                 coeff += 2.0*lambda;
@@ -643,6 +645,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                              wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
                              wave_type(hs) == ELASTIC_BOUNDARY)
                     {
+                        //NOTE: Would this require resolution of the viscous sublayer?
                             //setTKEatWall(icoords,l,m,comp,hs,intfc_state,K,&K_nb);
 
                         //TODO: the below code made the run hang somehow -- find out why
@@ -658,19 +661,25 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         double v_slip[MAXD] = {0.0};
                         for (int ii = 0; ii < dim; ++i)
                             v_slip[ii] = intfc_state->vel[ii] - vn*nor[ii];
+                        //TODO: call setSlipBoundary() instead.
+                        //      the intfc_state->vel is not what we want.
+                        */
+                        
+                        double v_slip[MAXD] = {0.0};
+                        setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
 
                         //use wall function
-                        double u_t = std::max(
-                                  pow(eqn_params->Cmu, 0.25)*sqrt(
-                                      std::max(field->k[ic], 0.0)),
-                                  Mag2d(v_slip)/eqn_params->y_p);
-                        */
+                        double u_t =
+                            std::max(pow(Cmu,0.25)*sqrt(std::max(K[ic],0.0)),
+                                    Mag2d(v_slip)/eqn_params->y_p);
 
+                        /*
                         //use wall function
                         double u_t = std::max(
                                   pow(eqn_params->Cmu, 0.25)*sqrt(
                                       std::max(field->k[ic], 0.0)),
                                   Mag2d(intfc_state->vel)/eqn_params->y_p);
+                        */
 
                         //TODO: Note that intfc_state->vel is not
                         //      vel tangential to the wall.
@@ -1051,8 +1060,10 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
     double *E = field->eps;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
+    double *K_prev = field->k_prev;
 	double *gamma = field->gamma;
 
+    double Cmu = eqn_params->Cmu;
 	double delta_eps = eqn_params->delta_eps;
 	double rho = eqn_params->rho;
     double v[MAXD],v_wall[MAXD];
@@ -1246,30 +1257,30 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                                  wave_type(hs) == ELASTIC_BOUNDARY)
                         {
                         
-                            //TODO: the below code made the run hang somehow -- find out why
-                            /*
-                            //Compute tangential velocity
-                            FT_NormalAtGridCrossing(front,icoords,dir[l][m],
-                                    comp,nor,&hs,crx_coords);
-
-                            double vn = 0.0;
-                            for (int ii = 0; ii < dim; ++i)
-                                vn += intfc_state->vel[ii]*nor[ii];
-                            
                             double v_slip[MAXD] = {0.0};
-                            for (int ii = 0; ii < dim; ++i)
-                                v_slip[ii] = intfc_state->vel[ii] - vn*nor[ii];
+                            setSlipBoundary(icoords,l,m,comp,hs,intfc_state,field->vel,v_slip);
 
+                            //use wall function 
+                            double u_t =
+                                std::max(pow(Cmu,0.25)*sqrt(std::max(K_prev[ic],0.0)),
+                                        Mag2d(v_slip)/eqn_params->y_p);
+
+                            //With K_prev so that friction velocity computation
+                            //matches computeAdvectionK() friction velocity.
+                            
+                            /*
                             //use wall function
                             double u_t = std::max(pow(eqn_params->Cmu, 0.25)
                                 *sqrt(std::max(field->k[ic], 0.0)), 
                                 Mag2d(v_slip)/eqn_params->y_p);
                             */
-                            
+
+                            /*
                             //use wall function
                             double u_t = std::max(pow(eqn_params->Cmu, 0.25)
                                 *sqrt(std::max(field->k[ic], 0.0)), 
                                 Mag2d(intfc_state->vel)/eqn_params->y_p);
+                            */
 
                             //TODO: Note that intfc_state->vel is not
                             //      vel tangential to the wall
@@ -1433,9 +1444,17 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                              wave_type(hs) == ELASTIC_BOUNDARY)
                     {
                         //use wall function
+                        double u_t =
+                            std::max(pow(Cmu,0.25)*sqrt(std::max(K_prev[ic],0.0)),
+                                    Mag3d(intfc_state->vel)/eqn_params->y_p);
+                        //With K_prev so that friction velocity computation
+                        //matches computeAdvectionK() friction velocity.
+                        
+                        /*
                         double u_t = std::max(pow(eqn_params->Cmu, 0.25)
                             *sqrt(std::max(field->k[ic], 0.0)), 
                             Mag3d(intfc_state->vel)/eqn_params->y_p);
+                        */
 
                         //TODO: Note that intfc_state->vel is not
                         //      vel tangential to the wall
@@ -2419,7 +2438,7 @@ void KE_CARTESIAN::setDomain()
                 FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
-	    	FT_VectorMemoryAlloc((POINTER*)&field->temp,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->k_prev,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 		if (keps_model == REALIZABLE)
@@ -2440,6 +2459,7 @@ void KE_CARTESIAN::setDomain()
                 FT_VectorMemoryAlloc((POINTER*)&field->Pk,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->k_prev,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 		if (keps_model == REALIZABLE)
@@ -2666,8 +2686,11 @@ void KE_CARTESIAN::setSlipBoundary(
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
                 getStateVel[j],&v_tmp[j],&vel[j][index]);
 
-    //TODO: use normal vector instead??
-	/*normal component equal to zero while tangential component is permitted*/
+    //TODO: Use normal vector instead??
+    //      It may actually  be equivalent to the vector v
+    //      being computed.
+	
+    /*normal component equal to zero while tangential component is permitted*/
     for (j = 0; j < dim; ++j)
         v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]);
 

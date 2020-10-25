@@ -5,13 +5,13 @@
 /*Following is for turbulence model RNG k-eps model*/
     
 struct KE_FIELD {
-    double *gamma;
 	double *k;
 	double *eps;
+	double *k_prev; //save k from prev time step for use in wall functions
+    double *gamma;
 	double *Pk;
 	double *mu_t;
 	double *Cmu;
-	double *temp; /*temporary field for debugging, not temperature*/
 	double **vel;
 };
 
