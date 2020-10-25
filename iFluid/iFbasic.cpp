@@ -4695,3 +4695,93 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 	}
 }	/* end setDoubleIndexMap */
 
+//TODO: This should be given a global scope, and does not
+//      need to be a member of this class and the KE_SOLVER class.
+//      Making sure it works first, then will declare it as a
+//      regular function.
+void Incompress_Solver_Smooth_Basis::setSlipBoundary(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_tmp)
+{
+	int             i,j,index;
+    int             ic[MAXD];
+    double          coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
+    double          nor[MAXD],vn,v[MAXD];
+    
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    GRID_DIRECTION  dir;
+    double  vel_ref[MAXD];
+
+	index = d_index(icoords,top_gmax,dim);
+	
+    for (i = 0; i < dim; ++i)
+    {
+        vel_ref[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ic[i] = icoords[i];
+    }
+	
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+
+    FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+	
+    ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+
+    //ghost coords
+    for (j = 0; j < dim; ++j)
+        coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+        
+    /* Reflect ghost point through intfc-mirror at crossing */
+    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+    vn = 0.0;
+    for (j = 0; j < dim; ++j)
+    {
+        v[j] = coords_ref[j] - crx_coords[j];
+        vn += v[j]*nor[j];
+    }
+
+    for (j = 0; j < dim; ++j)
+        v[j] = 2.0*vn*nor[j] - v[j];
+
+    for (j = 0; j < dim; ++j)
+        coords_ref[j] = crx_coords[j] + v[j];
+
+    /* Interpolate the state at the reflected point */
+    for (j = 0; j < dim; ++j)
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
+                getStateVel[j],&v_tmp[j],&vel[j][index]);
+
+    //TODO: Should be using the relative velocity, this will not
+    //      work for moving rigid bodies, in current state.
+    //
+    //      vel_rel[j] = vel_reflect[j] - vel_intfc[j];  (v_tmp is vel_reflect in this case)
+    //      then vn = vel_rel dot nor
+
+    /*normal component equal to zero while tangential component is permitted*/
+    
+    //TODO: Use normal vector instead??
+    //      May actually  be equivalent to the vector v
+    //      being computed.
+	
+    for (j = 0; j < dim; ++j)
+        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]);
+
+    for (j = 0; j < dim; ++j)
+        v[j] /= mag_vector(v,dim);
+
+    vn = 0.0;
+    for (j = 0; j < dim; ++j)
+        vn += v[j] * v_tmp[j]; 	
+
+    for (j = 0; j < dim; ++j)
+	    v_tmp[j] -= vn*v[j];    
+}
+
+

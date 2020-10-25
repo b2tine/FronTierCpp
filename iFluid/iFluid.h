@@ -326,8 +326,13 @@ public:
 				POINTER*,HYPER_SURF**,double*);
 	void applicationSetComponent();
 	void applicationSetStates();
-	double computeFieldPointPressureJump(int*,double,double);
+	
+    double computeFieldPointPressureJump(int*,double,double);
         void computeFieldPointGradJump(int*,double*,double*);
+
+    //TODO: make this a global function
+    void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* vtmp);
 
 	//For debugging test
 	void compareWithBaseSoln(void);

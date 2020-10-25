@@ -694,7 +694,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     int I,I_nb[4];
     int i,j,k,l,nb,icoords[MAXD];
     double coords[MAXD], crx_coords[MAXD];
-    double coeff[4],mu[4],mu0,rho,rhs,U_nb[4];
+    double coeff[4],mu[4],mu0,rho,rhs;
+    
+    double U_nb[4];
+    //double U_nb_prev[4];
+    //double mu_nb_prev[4];
+    
     double *x;
     GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
     POINTER intfc_state;
@@ -741,7 +746,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
         for (i = imin; i <= imax; i++)
         {
             I  = ij_to_I[i][j];
-            if (I == -1) continue;
+            if (I == -1)
+            {
+                vel[l][index] = 0.0;
+                continue;
+            }
 
             index  = d_index2d(i,j,top_gmax);
             index_nb[0] = d_index2d(i-1,j,top_gmax);
@@ -752,6 +761,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             icoords[0] = i;
             icoords[1] = j;
             comp = top_comp[index];
+                    
 
             I_nb[0] = ij_to_I[i-1][j]; // left or west
             I_nb[1] = ij_to_I[i+1][j]; // right or east
@@ -764,22 +774,43 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 
             for (nb = 0; nb < 4; nb++)
             {
+                //U_nb_prev[nb] = 0.0;
+                //mu_nb_prev[nb] = 0.0;
+
                 if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
                 &intfc_state,&hs,crx_coords) &&
                             wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
                 {
-                    if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                        boundary_state_function(hs) &&
-                        strcmp(boundary_state_function_name(hs),
-                        "flowThroughBoundaryState") == 0)
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
-                        U_nb[nb] = vel[l][index];
+                        if (boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
+                        {
+                            //For ifluid_find_state_at_crossing()
+                            //registers as a CONST_P_PDE_BOUNDARY
+                            U_nb[nb] = vel[l][index];
+                        }
+                        else
+                        {
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
                     }
-                    else
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        U_nb[nb] = getStateVel[l](intfc_state);
+                        //Apply slip boundary condition
+                        //nb = 0; //idir = 0, nbr = 0;
+                        //nb = 1; //idir = 0, nbr = 1;
+                        //nb = 2; //idir = 1, nbr = 0;
+                        //nb = 3; //idir = 1, nbr = 1;
+                        double v_slip[MAXD] = {0.0};
+                        int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                        setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                        U_nb[nb] = v_slip[l];                //n+1 vel
+                            //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
+                            //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
                     }
-            
+                
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
                     else
@@ -792,7 +823,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 }
             }
 
-            //TODO: still haven't applied slip boundary condition here
 
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
@@ -818,13 +848,35 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 }
                 else
                 {
-                    if (status == CONST_P_PDE_BOUNDARY)
-                    {
-                        aII -= coeff[nb];
-                        rhs += coeff[nb]*U_nb[nb];
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {    
+                        if (status == CONST_P_PDE_BOUNDARY)
+                        {
+                            //OUTLET
+                            aII -= coeff[nb];
+                            rhs += coeff[nb]*U_nb[nb];
+                        }
+                        else
+                        {
+                            //INLET
+                            rhs += 2.0*coeff[nb]*U_nb[nb];
+                        }
                     }
                     else
+                    {
+                        //TODO: This is may be incorrect if a point from
+                        //      the previous time step switches component domains
+                        //      when the interface was propagated. The coeff and
+                        //      the velocity could both potentially be wrong.
+                        //
+                        //      E.g. When a point goes from fluid comp to solid comp,
+                        //      as it is covered by a moving rigid body.
+                        //      May need to retain old top_comp array, or find a way
+                        //      to access it if that functionality already exists
+                        
+                        //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
                 }
             }
           
@@ -836,36 +888,37 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             solver.Set_b(I,rhs);
         }
 
-            solver.SetMaxIter(40000);
-            solver.SetTol(1e-14);
+        solver.SetMaxIter(40000);
+        solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
-            solver.Solve();
-            solver.GetNumIterations(&num_iter);
-            solver.GetResidualNorm(&residual);
+        solver.Solve();
+        solver.GetNumIterations(&num_iter);
+        solver.GetResidualNorm(&residual);
 
 	    stop_clock("After Petsc solve");
 
-            // get back the solution
-            solver.Get_x(x);
+        // get back the solution
+        solver.Get_x(x);
 
-            if (debugging("PETSc"))
-                (void) printf("Incompress_Solver_Smooth_2D_Cartesian::"
-			"computeDiffusion: "
-       			"num_iter = %d, residual = %g. \n", 
-                        num_iter,residual);
+        if (debugging("PETSc"))
+        {
+            printf("Incompress_Solver_Smooth_2D_Cartesian::"
+                    "computeDiffusion: num_iter = %d, residual = %g\n",
+                    num_iter,residual);
+        }
 
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                I = ij_to_I[i][j];
-                index = d_index2d(i,j,top_gmax);
-                if (I >= 0)
-                    vel[l][index] = x[I-ilower];
-                else
-                    vel[l][index] = 0.0;
-            }
-        
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            I = ij_to_I[i][j];
+            index = d_index2d(i,j,top_gmax);
+            if (I >= 0)
+                vel[l][index] = x[I-ilower];
+            else
+                vel[l][index] = 0.0;
+        }
+    
     }
 	
     FT_ParallelExchGridVectorArrayBuffer(vel,front);

@@ -2,7 +2,8 @@
  * 	keps.cpp	
  *******************************************************************/
 /*
- //TODO: ??????????????????
+ //TODO: ??? I assume this is related to incomplete parallelization?
+ //
       To-Do: Line 392, the values of ilower and iupper 
       
 */
@@ -20,7 +21,6 @@ static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 //		KE_RECTANGLE
 //----------------------------------------------------------------
 
-//KE_RECTANGLE::KE_RECTANGLE()
 KE_RECTANGLE::KE_RECTANGLE()
     : index(-1), comp(-1)
 {}
@@ -729,6 +729,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: convective outlet boundary similar
+                        //      to iF_flowThroughBoundaryState() needed?
                         if (boundary_state_function(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
@@ -906,6 +908,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: convective outlet boundary similar
+                        //      to iF_flowThroughBoundaryState() needed?
                         if (boundary_state_function(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
@@ -1349,6 +1353,8 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                         }
                         else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                         {
+                            //TODO: convective outlet boundary similar
+                            //      to iF_flowThroughBoundaryState() needed?
                             if (boundary_state_function_name(hs) &&
                                     strcmp(boundary_state_function_name(hs),
                                         "flowThroughBoundaryState") == 0)
@@ -1511,11 +1517,13 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
-                        //OUTLET
+                        //TODO: convective outlet boundary similar
+                        //      to iF_flowThroughBoundaryState() needed?
                         if (boundary_state_function_name(hs) &&
                         strcmp(boundary_state_function_name(hs),
                                         "flowThroughBoundaryState") == 0)
                         {
+                            //OUTLET
                             E_nb = E0;
                             rhs += lambda * E_nb + ((m == 0) ? eta_p*E_nb : -eta_m*E_nb); 
                         }
@@ -2733,11 +2741,13 @@ void KE_CARTESIAN::setSlipBoundary(
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
                 getStateVel[j],&v_tmp[j],&vel[j][index]);
 
+    //TODO: NEED TO USE RELATIVE VELOCITY WITH RESPECT TO THE INTERFACE!!!!!
+
+    /*normal component equal to zero while tangential component is permitted*/
     //TODO: Use normal vector instead??
-    //      It may actually  be equivalent to the vector v
+    //      May actually  be equivalent to the vector v
     //      being computed.
 	
-    /*normal component equal to zero while tangential component is permitted*/
     for (j = 0; j < dim; ++j)
         v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]);
 
@@ -2816,6 +2826,7 @@ void KE_CARTESIAN::computeSource()
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: can't we use vel computed from iF_flowThroughBoundaryState()?
                         if (boundary_state_function_name(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
@@ -2859,6 +2870,7 @@ void KE_CARTESIAN::computeSource()
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: can't we use vel computed from iF_flowThroughBoundaryState()?
                         if (boundary_state_function_name(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
@@ -2927,6 +2939,7 @@ void KE_CARTESIAN::computeSource()
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: can't we use vel computed from iF_flowThroughBoundaryState()?
                         if (boundary_state_function_name(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
@@ -2969,12 +2982,14 @@ void KE_CARTESIAN::computeSource()
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //TODO: can't we use vel computed from iF_flowThroughBoundaryState()?
                         if (boundary_state_function_name(hs) &&
                                 strcmp(boundary_state_function_name(hs),
                                     "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
                             vel_nb[nb] = vel[m][index];
+
                         }
                         else
                         {

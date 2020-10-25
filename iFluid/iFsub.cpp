@@ -1772,7 +1772,7 @@ extern double grad_p_jump_t(
 	return 0.0;
 }	/* end grad_p_jump_t */
 
-//TODO: should be called getQFromPres()
+//TODO: Did they really mean getQfromPres()?
 extern double getPhiFromPres(
         Front *front,
         double pres)
@@ -1810,6 +1810,18 @@ extern double getPressure(
         
         return 0.0;
         //TODO: Does below work???
+        //
+        //      It appears this early return of 0.0 may have been
+        //      hardcoded when the initialization in parachute.cpp
+        //      was being worked on and never set back to a general
+        //      mode of operation -- they set the l_cartesian->getInitialState
+        //      function pointer to zero_state() which zeros the
+        //      pressure just like it is here.
+        //
+        //      Should attempt to restore this functionality and
+        //      experiment with some other initial condtions, which
+        //      would include the initial boundary conditions at
+        //      the inlet/outlet at appears.
 
         pres0 = 1.0;
         if (dim == 2)

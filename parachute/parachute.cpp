@@ -133,7 +133,12 @@ int main(int argc, char **argv)
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
-	l_cartesian->getInitialState = zero_state;
+	
+    //TODO: Why not use iFluid ambient_state()?
+    //      Can specify an ambient velocity with input file option.
+    //      "Enter fluid ambient velocity: "
+    l_cartesian->getInitialState = zero_state;
+    
     l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 

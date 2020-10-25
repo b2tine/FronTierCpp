@@ -1026,10 +1026,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
 
             //TODO: stil havent applied the slip condition here...
-            //
-            //      Create slip boundary ghost point, modify its
-            //      (tangential) velocity to account for the shear stress
-            //      acting in opposition to it.
             
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
@@ -1738,6 +1734,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    comp = top_comp[i];
 	    if (getInitialState != NULL)
 	    {
+            //TODO: see comments in getPressure() function
 	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
 		    pres[i] = getPressure(front,coords,NULL);
             phi[i] = getPhiFromPres(front,pres[i]);
