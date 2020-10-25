@@ -3425,7 +3425,7 @@ void Incompress_Solver_Smooth_Basis::setReferencePressure()
 	    }
 	    break;
 	}
-}	/* end computeFieldPointGrad */
+}	/* end setReferencePressure */
 
 extern int ifluid_find_state_at_crossing(
 	Front *front,
@@ -4213,7 +4213,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         computeFieldPointGrad(icoords,var,grad_var);
 
-        //if (!iFparams->with_porosity) return;
+        if (!iFparams->with_porosity) return;
 
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)

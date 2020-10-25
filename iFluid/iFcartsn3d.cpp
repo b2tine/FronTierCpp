@@ -173,14 +173,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 
 	    mag_grad_phi = Mag3d(grad_phi);
 	    ave_grad_phi += mag_grad_phi;
-	    if (mag_grad_phi > max_grad_phi)
+
+        if (mag_grad_phi > max_grad_phi)
 	    {
-		max_grad_phi = mag_grad_phi;	
-		icrds_max[0] = i;
-		icrds_max[1] = j;
-		icrds_max[2] = k;
+            max_grad_phi = mag_grad_phi;	
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
 	    }
-	    if (speed > iFparams->ub_speed)
+
+        if (speed > iFparams->ub_speed)
 	    {
 	    	for (l = 0; l < 3; ++l)
                 vel[l][index] *= iFparams->ub_speed/speed;
@@ -518,13 +520,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 		printf("min_pressure = %f  max_pressure = %f\n",
 			min_pressure,max_pressure);
 
-	    start_clock("computeNewVelocity");
         //TODO: appendOpenEndStates() appears to be deprecated,
         //      and the OPEN_BOUNDARY condition replaced by the
         //      FLOW_THROUGH_BOUNDARY condition.
         
-        //Is this getting taken care of??
+        //TODO: Is this getting taken care of??
+        //      If not, need a new function to update the values
+        //      of pressure and phi at the boundary.
         appendOpenEndStates(); //necessary since phi is updated
+	    
+        start_clock("computeNewVelocity");
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
 
@@ -1011,7 +1016,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
                         
-                //mu[nb] = mu0;
             }
 
             //TODO: The tangential shear stress opposing the fluid flow,
@@ -1036,7 +1040,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             for(nb = 0; nb < 6; nb++)
             {
-                //TODO: Neumann boundary at solid walls does not appear to be implemented.
                 if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
                         &intfc_state,&hs,crx_coords))
                 {
@@ -1077,8 +1080,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1.0e-12);
-        //solver.SetTol(1e-14);
+        solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
         solver.Solve();
@@ -1445,8 +1447,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
     for (int i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-            //pres[index] += phi[index];
-        pres[index] = phi[index];
+        pres[index] += phi[index];
 	    q[index] = pres[index];
 	    
         if (i < imin || i > imax ||
@@ -1468,6 +1469,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
             icrds_max[2] = k;
 	    }
 	}
+    
+    //TODO: need to scatter pres and q?
 
 	if (debugging("step_size"))
 	{
@@ -1477,7 +1480,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 			min_pressure,icrds_min[0],icrds_min[1],icrds_min[2]);
 	    (void) printf("Diff pressure = %f\n",max_pressure-min_pressure);
 	}
-	if (debugging("trace"))
+
+    if (debugging("trace"))
 	    (void) printf("Leaving computePressurePmI()\n");
 }        /* end computePressurePmI3d */
 
@@ -1488,10 +1492,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	double *phi = field->phi;
 	double *q = field->q;
 	double *div_U = field->div_U;
-
-    //TODO: verify if mu or nu
     double mu0;
-        //double nu0;
 	
     if (debugging("trace"))
 	    (void) printf("Entering computePressurePmII()\n");
@@ -1501,10 +1502,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	{
         index = d_index3d(i,j,k,top_gmax);
         mu0 = 0.5*field->mu[index];
-        pres[index] += phi[index] - accum_dt*mu0*div_U[index];
-            //nu0 = 0.5*field->mu[index]/field->rho[index];
-            //pres[index] = phi[index] - accum_dt*nu0*div_U[index];
-
+        pres[index] = q[index] + phi[index] - accum_dt*mu0*div_U[index];
         q[index] = pres[index];
 
 	    if (min_pressure > pres[index])
@@ -1512,6 +1510,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	    if (max_pressure < pres[index])
 		max_pressure = pres[index];
 	}
+
+    //TODO: need to scatter pres and q?
+
 	if (debugging("trace"))
 	    (void) printf("Leaving computePressurePmII()\n");
 }        /* end computePressurePmII3d */
@@ -1534,32 +1535,36 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
         index = d_index3d(i,j,k,top_gmax);
         mu0 = 0.5*field->mu[index];
         pres[index] = phi[index] - accum_dt*mu0*div_U[index];
-	    q[index] = pres[index];
+	    q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
 		min_pressure = pres[index];
 	    if (max_pressure < pres[index])
 		max_pressure = pres[index];
 	}
+
+    //TODO: need to scatter pres?
+
 	if (debugging("trace"))
 	    (void) printf("Leaving computePressurePmIII()\n");
 }        /* end computePressurePmIII3d */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 {
-        int i,j,k,index;
+    int i,j,k,index;
 	double *pres = field->pres;
 	min_pressure =  HUGE;
 	max_pressure = -HUGE;
-        for (k = 0; k <= top_gmax[2]; k++)
+
+    for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index3d(i,j,k,top_gmax);
+        index = d_index3d(i,j,k,top_gmax);
 	    if (min_pressure > pres[index])
-		min_pressure = pres[index];
+            min_pressure = pres[index];
 	    if (max_pressure < pres[index])
-		max_pressure = pres[index];
+            max_pressure = pres[index];
 	}
 	min_pressure =  HUGE;
 	max_pressure = -HUGE;
@@ -1573,8 +1578,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    break;
 	case SIMPLE:
 	case PEROT_BOTELLA:
-	    computePressurePmI();
-	    //computePressurePmIII();
+	    computePressurePmIII();
 	    break;
 	case ERROR_PROJC_SCHEME:
 	default:
@@ -1765,129 +1769,138 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDouble(void)
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 {
 	static ELLIPTIC_SOLVER elliptic_solver(*front);
-        int index;
-        int i,j,k,l,icoords[MAXD];
-        double **vel = field->vel;
-        double *phi = field->phi;
-        double *div_U = field->div_U;
-        double sum_div,L1_div;
-        double value;
-	double min_phi,max_phi;
+    int index;
+    int i,j,k,l,icoords[MAXD];
+    double **vel = field->vel;
+    double *phi = field->phi;
+    double *div_U = field->div_U;
+    double sum_div,L1_div;
+    double value;
+    double min_phi,max_phi;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
 	if (debugging("trace"))
 	    (void) printf("Entering computeProjectionSimple()\n");
 
 	for (l = 0; l < dim; ++l)
-        {
-            vmin[l] = HUGE;
-            vmax[l] = -HUGE;
-        }
+    {
+        vmin[l] = HUGE;
+        vmax[l] = -HUGE;
+    }
 
-        /* Compute velocity divergence */
+    /* Compute velocity divergence */
+    for (k = kmin; k <= kmax; k++)
+    for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+    {
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
+        index  = d_index(icoords,top_gmax,dim);
+        source[index] = computeFieldPointDiv(icoords,vel);
+        diff_coeff[index] = 1.0/field->rho[index];
+        div_U[index] = source[index];
+        source[index] /= accum_dt;
+
+        /*Compute pressure jump due to porosity*/
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        
+        array[index] = phi[index];
+
+        if (debugging("check_div"))
+        {
+            for (l = 0; l < dim; ++l)
+            {
+                if (vmin[l] > field->vel[l][index])
+                    vmin[l] = field->vel[l][index];
+                if (vmax[l] < field->vel[l][index])
+                    vmax[l] = field->vel[l][index];
+            }
+        }
+    }
+
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+    FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+
+    /*
+    for (k = 0; k <= top_gmax[2]; k++)
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+    {
+        index  = d_index3d(i,j,k,top_gmax);
+        div_U[index] = source[index];
+        source[index] /= accum_dt;
+        icoords[0] = i; 
+    icoords[1] = j;
+    icoords[2] = k;
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        array[index] = phi[index];
+    }
+    */
+
+    if(debugging("step_size"))
+    {
+        sum_div = 0.0;
+        min_value =  HUGE;
+        max_value = -HUGE;
+        min_phi =  HUGE;
+        max_phi = -HUGE;
+
         for (k = kmin; k <= kmax; k++)
         for (j = jmin; j <= jmax; j++)
         for (i = imin; i <= imax; i++)
         {
-            icoords[0] = i;
-            icoords[1] = j;
-            icoords[2] = k;
-            index  = d_index(icoords,top_gmax,dim);
-            source[index] = computeFieldPointDiv(icoords,vel);
-            diff_coeff[index] = 1.0/field->rho[index];
-            div_U[index] = source[index];
-            source[index] /= accum_dt;
-
-            /*Compute pressure jump due to porosity*/
-            source[index] += computeFieldPointPressureJump(icoords,
-                             iFparams->porous_coeff[0],
-                             iFparams->porous_coeff[1]);
-            array[index] = phi[index];
-
-	    if (debugging("check_div"))
-            {
-                for (l = 0; l < dim; ++l)
-                {
-                    if (vmin[l] > field->vel[l][index])
-                        vmin[l] = field->vel[l][index];
-                    if (vmax[l] < field->vel[l][index])
-                        vmax[l] = field->vel[l][index];
-                }
-            }
-        }
-
-        FT_ParallelExchGridArrayBuffer(source,front,NULL);
-        FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-    
-        /*
-        for (k = 0; k <= top_gmax[2]; k++)
-        for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
-        {
-            index  = d_index3d(i,j,k,top_gmax);
-            div_U[index] = source[index];
-            source[index] /= accum_dt;
-            icoords[0] = i; 
-	    icoords[1] = j;
-	    icoords[2] = k;
-            source[index] += computeFieldPointPressureJump(icoords,
-                             iFparams->porous_coeff[0],
-                             iFparams->porous_coeff[1]);
-            array[index] = phi[index];
-        }
-        */
-
-        if(debugging("step_size"))
-        {
-            sum_div = 0.0;
-            min_value =  HUGE;
-            max_value = -HUGE;
-	    min_phi =  HUGE;
-	    max_phi = -HUGE;
-            for (k = kmin; k <= kmax; k++)
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                index = d_index3d(i,j,k,top_gmax);
-                value = fabs(div_U[index]);
-                sum_div = sum_div + fabs(div_U[index]);
-	    	if (min_value > div_U[index]) 
-		{
-		    min_value = div_U[index];
-		    icrds_min[0] = i;
-		    icrds_min[1] = j;
-		    icrds_min[2] = k;
-		}
-	    	if (max_value < div_U[index]) 
-		{
-		    max_value = div_U[index];
-		    icrds_max[0] = i;
-		    icrds_max[1] = j;
-		    icrds_max[2] = k;
-		}
-            }
-            pp_global_min(&min_value,1);
-            pp_global_max(&max_value,1);
-	    L1_div = sum_div/(imax-imin+1)/(jmax-jmin+1)/(kmax-kmin+1);
-	    (void) printf("Before computeProjection:\n");
-            (void) printf("Sum div(U) = %f\n",sum_div);
-            (void) printf("Min div(U) = %f  ",min_value);
-	    (void) printf("occuring at: %d %d %d\n",icrds_min[0],icrds_min[1],
-					icrds_min[2]);
-            (void) printf("Max div(U) = %f  ",max_value);
-	    (void) printf("occuring at: %d %d %d\n",icrds_max[0],icrds_max[1],
-					icrds_max[2]);
-            (void) printf("L1  div(U) = %f\n",L1_div);
-        }
-	if (debugging("check_div"))
-        {
-            checkVelocityDiv("Before computeProjection()");
-        }
+            index = d_index3d(i,j,k,top_gmax);
+            value = fabs(div_U[index]);
+            sum_div = sum_div + fabs(div_U[index]);
         
+            if (min_value > div_U[index]) 
+            {
+                min_value = div_U[index];
+                icrds_min[0] = i;
+                icrds_min[1] = j;
+                icrds_min[2] = k;
+            }
+
+            if (max_value < div_U[index]) 
+            {
+                max_value = div_U[index];
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+                icrds_max[2] = k;
+            }
+        }
+
+        pp_global_min(&min_value,1);
+        pp_global_max(&max_value,1);
+        L1_div = sum_div/(imax-imin+1)/(jmax-jmin+1)/(kmax-kmin+1);
+
+        (void) printf("Before computeProjection:\n");
+        (void) printf("Sum div(U) = %f\n",sum_div);
+        (void) printf("Min div(U) = %f  ",min_value);
+        (void) printf("occuring at: %d %d %d\n",icrds_min[0],icrds_min[1],
+                icrds_min[2]);
+        (void) printf("Max div(U) = %f  ",max_value);
+        (void) printf("occuring at: %d %d %d\n",icrds_max[0],icrds_max[1],
+                icrds_max[2]);
+        (void) printf("L1  div(U) = %f\n",L1_div);
+    }
+
+    if (debugging("check_div"))
+    {
+        checkVelocityDiv("Before computeProjection()");
+    }
+    
     elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();
+    //TODO: Need getStatePres() for interpolation when
+    //      applying boundary conditions at solid walls?
     elliptic_solver.getStateVar = getStatePhi;
     elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
@@ -1902,73 +1915,76 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.skip_neumann_solver = skip_neumann_solver;
     elliptic_solver.solve(array);
 
+	FT_ParallelExchGridArrayBuffer(array,front,NULL);
+
     /*
 	if (iFparams->with_porosity)
 	{
 	    paintAllGridPoint(TO_SOLVE);
 	    setGlobalIndex();
 	    setIndexMap();
-            elliptic_solver.ijk_to_I = ijk_to_I;
-            elliptic_solver.ilower = ilower;
-            elliptic_solver.iupper = iupper;
-            elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-            elliptic_solver.solve(array);
+        elliptic_solver.ijk_to_I = ijk_to_I;
+        elliptic_solver.ilower = ilower;
+        elliptic_solver.iupper = iupper;
+        elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+        elliptic_solver.solve(array);
 	}
     else
 	{	
 	    int num_colors = drawColorMap();
-            std::vector<int> ncell;
-            ncell.resize(num_colors);
-            paintAllGridPoint(NOT_SOLVED);
-            for (i = 1; i < num_colors; ++i)
-            {
-                paintToSolveGridPoint2(i);
-                setGlobalIndex();
-                setIndexMap();
-                elliptic_solver.ijk_to_I = ijk_to_I;
-                elliptic_solver.ilower = ilower;
-                elliptic_solver.iupper = iupper;
+        std::vector<int> ncell;
+        ncell.resize(num_colors);
+        paintAllGridPoint(NOT_SOLVED);
+        for (i = 1; i < num_colors; ++i)
+        {
+            paintToSolveGridPoint2(i);
+            setGlobalIndex();
+            setIndexMap();
+            elliptic_solver.ijk_to_I = ijk_to_I;
+            elliptic_solver.ilower = ilower;
+            elliptic_solver.iupper = iupper;
 
-                ncell[i] = iupper - ilower;
-                printf("ilower = %d  iupper = %d\n",ilower,iupper);
-                
-                elliptic_solver.solve(array);
-                paintSolvedGridPoint();
-            }
-            //for (i = 1; i < num_colors; ++i)
-            //{
-            //    if (ncell[i] > 10) continue;
-            //    setIsolatedSoln(i,array);
-            //}
+            ncell[i] = iupper - ilower;
+            printf("ilower = %d  iupper = %d\n",ilower,iupper);
+            
+            elliptic_solver.solve(array);
+            paintSolvedGridPoint();
+        }
+        //for (i = 1; i < num_colors; ++i)
+        //{
+        //    if (ncell[i] > 10) continue;
+        //    setIsolatedSoln(i,array);
+        //}
 
 	}
-    */
-
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
+    */
 
 	min_phi =  HUGE;
 	max_phi = -HUGE;
-        for (k = 0; k <= top_gmax[2]; k++)
-        for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (k = 0; k <= top_gmax[2]; k++)
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+    {
+        index  = d_index3d(i,j,k,top_gmax);
+        phi[index] = array[index];
+
+        if (min_phi > phi[index])
         {
-            index  = d_index3d(i,j,k,top_gmax);
-            phi[index] = array[index];
-            if (min_phi > phi[index])
-	    {
-		min_phi = phi[index];
-		icrds_min[0] = i;
-		icrds_min[1] = j;
-		icrds_min[2] = k;
-	    }
-            if (max_phi < phi[index])
-	    {
-		max_phi = phi[index];
-		icrds_max[0] = i;
-		icrds_max[1] = j;
-		icrds_max[2] = k;
-	    }
+            min_phi = phi[index];
+            icrds_min[0] = i;
+            icrds_min[1] = j;
+            icrds_min[2] = k;
         }
+        
+        if (max_phi < phi[index])
+        {
+            max_phi = phi[index];
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
+        }
+    }
         
     if(debugging("projection"))
 	{
@@ -1990,16 +2006,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::solveTest(const char *msg)
 	int icoords[MAXD];
 	double **vel = field->vel;
 	(void) printf("%s\n",msg);
-        for (k = kmin; k <= kmax; k++)
-        {
-            icoords[0] = 30;
-            icoords[1] = 30;
-            icoords[2] = k;
-            index  = d_index(icoords,top_gmax,dim);
-            source[index] = computeFieldPointDiv(icoords,vel);
-            source[index] /= m_dt;
-	    printf("div[%d]/dt = %14.8f\n",k,source[index]);
-        }
+
+    for (k = kmin; k <= kmax; k++)
+    {
+        icoords[0] = 30;
+        icoords[1] = 30;
+        icoords[2] = k;
+        index  = d_index(icoords,top_gmax,dim);
+        source[index] = computeFieldPointDiv(icoords,vel);
+        source[index] /= m_dt;
+        printf("div[%d]/dt = %14.8f\n",k,source[index]);
+    }
 }	/* end solveTest */
 
 static int parab_find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
@@ -2073,6 +2090,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 			"computeDiffusionParab()\n");
 }       /* end computeDiffusionParab */
 
+//TODO: get this working
 void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         char *outname, const char* varname)
 {
@@ -2546,6 +2564,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::appendOpenEndStates()
             if (rect_boundary_type(intfc,idir,side) == OPEN_BOUNDARY &&
                 front->open_end_func != NULL)
             {
+                //TODO: Debug statement, to see if this is actually called.
+                //      If not, need to make changes so that the boundary
+                //      states at the outlet get updated.
+                //      This is potentially being taken care of by the
+                //      IF_flowThroughBoundary function, and is just dead code.
+                printf("appendOpenEndStates(): OPEN_BOUNDARY\n");
                 int count = 0;
                 for (i = 0; i < top_gmax[0]; ++i)
                 for (j = 0; j < top_gmax[1]; ++j)

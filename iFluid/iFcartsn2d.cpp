@@ -305,24 +305,26 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	}
 	/* Compute velocity divergence */
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    index  = d_index(icoords,top_gmax,dim);
-	    if (!ifluid_comp(top_comp[index]))
-		continue;
-	    source[index] = computeFieldPointDiv(icoords,vel);
+	    
+        if (!ifluid_comp(top_comp[index])) continue;
+	    
+        source[index] = computeFieldPointDiv(icoords,vel);
 	    diff_coeff[index] = 1.0/field->rho[index];
-	    if (debugging("check_div"))
+	    
+        if (debugging("check_div"))
 	    {
-		for (l = 0; l < dim; ++l)
-		{
-		    if (vmin[l] > field->vel[l][index])
-			vmin[l] = field->vel[l][index];
-		    if (vmax[l] < field->vel[l][index])
-			vmax[l] = field->vel[l][index];
-		}
+		    for (l = 0; l < dim; ++l)
+            {
+                if (vmin[l] > field->vel[l][index])
+                    vmin[l] = field->vel[l][index];
+                if (vmax[l] < field->vel[l][index])
+                    vmax[l] = field->vel[l][index];
+            }
 	    }
 	}
 	if (debugging("field_var"))
@@ -337,15 +339,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
-	    if (!ifluid_comp(top_comp[index]))
-		continue;
+	    if (!ifluid_comp(top_comp[index])) continue;
+
 	    source[index] = (source[index])/accum_dt;
-            /*Compute pressure jump due to porosity*/
-            icoords[0] = i; icoords[1] = j;
-            source[index] += computeFieldPointPressureJump(icoords,
-                             iFparams->porous_coeff[0],
-                             iFparams->porous_coeff[1]);
-            /*end of computing pressure jump*/
+        /*Compute pressure jump due to porosity*/
+        icoords[0] = i; icoords[1] = j;
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        /*end of computing pressure jump*/
 	    array[index] = phi[index];
 	}
 
@@ -885,18 +887,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
 {
-        int i,j,index;
+    int i,j,index;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
 
 	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            pres[index] += phi[index];
+        index = d_index2d(i,j,top_gmax);
+        pres[index] += phi[index];
 	    q[index] = pres[index];
 	}
+    
+    //TODO: need to scatter pres and q?
+
 }        /* end computePressurePmI2d */
 
 
@@ -912,17 +917,20 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 	for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            mu0 = 0.5*field->mu[index];
-	    pres[index] += phi[index] - accum_dt*mu0*div_U[index];
+        index = d_index2d(i,j,top_gmax);
+        mu0 = 0.5*field->mu[index];
+	    pres[index] = q[index] + phi[index] - accum_dt*mu0*div_U[index];
 	    q[index] = pres[index];
 	}
+    
+    //TODO: need to scatter pres and q?
+
 }        /* end computePressurePmII2d */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 {
-        int i,j,index;
-        double mu0;
+    int i,j,index;
+    double mu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -931,21 +939,24 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 	if (debugging("field_var"))
 	{
 	    for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	    {
-            	index = d_index2d(i,j,top_gmax);
-		field->old_var[0][index] = pres[index];
+            index = d_index2d(i,j,top_gmax);
+            field->old_var[0][index] = pres[index];
 	    }
 	}
-	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+	
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            mu0 = 0.5*field->mu[index];
-            pres[index] = phi[index] -
-                        	accum_dt*mu0*div_U[index];
-	    q[index] = 0.0;
+        index = d_index2d(i,j,top_gmax);
+        mu0 = 0.5*field->mu[index];
+        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+        q[index] = 0.0;
 	}
+
+    //TODO: need to scatter pres?
+
 	if (debugging("field_var"))
 	{
 	    (void) printf("\nCheck one step increment of Pressure:\n");

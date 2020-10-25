@@ -55,7 +55,7 @@ Enter Cmu: 0.0845
 Enter C1: 1.42
 Enter C2: 1.68
 Enter Cbc: 0.01
-Enter I: 0.001
+Enter I: 0.0001
 Enter ViscRatioFar: 1
 Enter ViscRatioNear: 100
 Enter l0: 0.15
@@ -82,6 +82,8 @@ Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 
 Type y to make viscosity field movie: y
+Type y to make scalar pressure field movie: y
+
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: y
 

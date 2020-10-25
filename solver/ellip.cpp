@@ -384,9 +384,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 aII += -coeff[l];
                 use_neumann_solver = NO;
             }
-            else if (status == CONST_V_PDE_BOUNDARY
-                    && wave_type(hs) == NEUMANN_BOUNDARY)//TODO: || MOVABLE_BODY_BOUNDARY
+            else if (status == CONST_V_PDE_BOUNDARY &&
+                      (wave_type(hs) == NEUMANN_BOUNDARY ||
+                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
+                //dp/dn = 0 (reflecting boundary for pressure)
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
@@ -413,7 +415,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     v[m] = 2.0*vn*nor[m] - v[m];
 
                 //The desired reflected point
-                for (int m = 0; m < 3; ++m)
+                for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
 
                 //Interpolate the pressure at the reflected point,
@@ -1056,15 +1058,68 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
             else if (status == CONST_P_PDE_BOUNDARY)
             {
+                //TODO: should this include the inlet as well?
+                //      inlet has constant pressure, but
+                //      ifluid_find_state_at_crossing() returns
+                //      CONST_V_PDE_BOUNDARY for it.
+                
+                //TODO: getStateVar() will return phi, not pressure.
+                //      The pressure is updated at the flow through boundary,
+                //      but phi is not.
+                
                 aII += -coeff[l];
                 rhs += -coeff[l]*getStateVar(intfc_state);
                 use_neumann_solver = NO;
             }
+            else if (status == CONST_V_PDE_BOUNDARY &&
+                      (wave_type(hs) == NEUMANN_BOUNDARY ||
+                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            {
+                //dp/dn = 0 (reflecting boundary for pressure)
+                double nor[MAXD];
+                FT_NormalAtGridCrossing(front,icoords,
+                        dir[l],comp,nor,&hs,crx_coords);
+                        
+                //Reflect the ghost point through intfc-mirror at crossing.
+                //first reflect across the grid line containing intfc crossing,
+                //which is just the coords at the current index.
+                double coords_reflect[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = top_L[m] + top_h[m]*icoords[m];
 
-            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-            //      dp/dn = 0 (reflecting boundary for pressure)
-	    
+                //Reflect the displacement vector across the line
+                //containing the intfc normal vector
+                double v[MAXD];
+                double vn = 0.0;
+
+                for (int m = 0; m < dim; ++m)
+                {
+                    v[m] =  coords_reflect[m] - crx_coords[m];
+                    vn += v[m]*nor[m];
+                }
+
+                for (int m = 0; m < dim; ++m)
+                    v[m] = 2.0*vn*nor[m] - v[m];
+
+                //The desired reflected point
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = crx_coords[m] + v[m];
+
+                //Interpolate the pressure at the reflected point,
+                //which will serve as the ghost point pressure.
+                double pres_reflect;
+                FT_IntrpStateVarAtCoords(front,comp,
+                        coords_reflect,soln,getStateVar,
+                        &pres_reflect,&soln[index]);
+                //TODO: getStateVar() returns phi which is what we are solving for.
+                //      More correct method would place the weights of the points
+                //      used to interpolate at the reflected point into the matrix.
+
+                aII += -coeff[l];
+                rhs -= coeff[l]*pres_reflect; 
+            }
         }
+
 	    ///
 	    //  This change reflects the need to treat point with only one
 	    //  interior neighbor (a convex point). Not sure why PETSc cannot
