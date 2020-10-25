@@ -5,7 +5,7 @@
 /*Following is for turbulence model RNG k-eps model*/
     
 struct KE_FIELD {
-    double *gamma;//TODO: can probably remove since not the same for k and eps anymore
+    double *gamma;
 	double *k;
 	double *eps;
 	double *Pk;

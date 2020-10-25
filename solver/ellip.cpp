@@ -339,67 +339,75 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    num_nb = 0;
 	    for (l = 0; l < 4; ++l)
 	    {
-		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
-                                &intfc_state,&hs,crx_coords);
-		if (status != CONST_V_PDE_BOUNDARY)
-		    num_nb++;
-                if (status == CONST_V_PDE_BOUNDARY ||
-		    status == CONST_P_PDE_BOUNDARY)
-		    index_nb[l] = index;
-		k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-	    	coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+                                    &intfc_state,&hs,crx_coords);
+
+            if (status != CONST_V_PDE_BOUNDARY)
+                num_nb++;
+                    
+            if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
+                index_nb[l] = index;
+
+            k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    rhs = source[index];
 
 	    aII = 0.0;
 	    for (l = 0; l < 4; ++l)
-	    {
-		refl_side[l] = NO;
-		if (num_nb == 0) break;
-		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
-                                &intfc_state,&hs,crx_coords);
-		
-        if (status == NO_PDE_BOUNDARY)
+        {
+            refl_side[l] = NO;
+            if (num_nb == 0) break;
+
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+                                    &intfc_state,&hs,crx_coords);
+            
+            if (status == NO_PDE_BOUNDARY)
+            {
+                solver.Set_A(I,I_nb[l],coeff[l]);
+                aII += -coeff[l];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                //TODO: getStateVar() will return phi, not pressure.
+                //      The pressure is updated at the flow through boundary,
+                //      but phi is not.
+                rhs += -coeff[l]*getStateVar(intfc_state);
+                aII += -coeff[l];
+                use_neumann_solver = NO;
+            }
+            else if (status == CONST_V_PDE_BOUNDARY
+                    && wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+                //      dp/dn = 0 (reflecting boundary for pressure)
+            
+                if (porosity != 0.0)
                 {
-                    solver.Set_A(I,I_nb[l],coeff[l]);
-                    aII += -coeff[l];
+                            solver.Set_A(I,I_nb[l],porosity*coeff[l]);
+                            aII += -porosity*coeff[l];
                 }
-                else if (status == CONST_P_PDE_BOUNDARY)
+                else
                 {
-		    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
-		    use_neumann_solver = NO;
+                    refl_side[l] = YES;
                 }
-		else if (status == CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == NEUMANN_BOUNDARY)
-                {
-            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-            //      dp/dn = 0 (reflecting boundary for pressure)
-	    
-		    if (porosity != 0.0)
-		    {
-                    	solver.Set_A(I,I_nb[l],porosity*coeff[l]);
-                    	aII += -porosity*coeff[l];
-		    }
-		    else
-		    {
-			refl_side[l] = YES;
-		    }
-                }
-	    }
+            }
+
+        }
+
 	    for (l = 0; l < 4; ++l)
 	    {
-		break;
-		if (refl_side[l] == YES)
-		{
-            //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-            //      dp/dn = 0 (reflecting boundary for pressure)
-	    
-		    double alpha = 1.0;
-                    solver.Set_A(I,I_oppnb[l],(1.0-alpha)*coeff[l]);
-                    aII -= -alpha*coeff[l];
-		}
+            break;
+            if (refl_side[l] == YES)
+            {
+                //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
+                //      dp/dn = 0 (reflecting boundary for pressure)
+            
+                double alpha = 1.0;
+                        solver.Set_A(I,I_oppnb[l],(1.0-alpha)*coeff[l]);
+                        aII -= -alpha*coeff[l];
+            }
 	    }
 	    /*
 	     * This change reflects the need to treat point with only one
@@ -411,16 +419,19 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    {
                 solver.Set_A(I,I,aII);
 	    }
-            else
-            {
-	    	if (debugging("linear_solver"))
-		    (void) printf("WARNING: isolated value!\n");
-                solver.Set_A(I,I,1.0);
-		rhs = soln[index];
-            }
-            solver.Set_b(I,rhs);
+        else
+        {
+            if (debugging("linear_solver"))
+                (void) printf("WARNING: isolated value!\n");
+
+            solver.Set_A(I,I,1.0);
+            rhs = soln[index];//TODO: or use pressure (instead of phi)?
+        }
+
+        solver.Set_b(I,rhs);
 	}
-	use_neumann_solver = pp_min_status(use_neumann_solver);
+
+    use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
 	solver.SetTol(1e-10);
@@ -958,14 +969,19 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    num_nb = 0;
 	    for (l = 0; l < 6; ++l)
 	    {
-		status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
-                                &intfc_state,&hs,crx_coords);
-		if (status != CONST_V_PDE_BOUNDARY)
-		    num_nb++;
-                if (status == CONST_V_PDE_BOUNDARY ||
-		    status == CONST_P_PDE_BOUNDARY)
-		    index_nb[l] = index;
-		k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+                    &intfc_state,&hs,crx_coords);
+    
+            if (status != CONST_V_PDE_BOUNDARY)
+                num_nb++;
+
+            if (status == CONST_V_PDE_BOUNDARY ||
+                    status == CONST_P_PDE_BOUNDARY)
+            {
+                index_nb[l] = index;
+            }
+    
+            k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
 	    	coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
@@ -982,11 +998,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             if (status == NO_PDE_BOUNDARY)
             {
                 solver.Set_A(I,I_nb[l],coeff[l]);
-                        aII += -coeff[l];
+                aII += -coeff[l];
             }
             else if (status == CONST_P_PDE_BOUNDARY)
             {
-                        aII += -coeff[l];
+                aII += -coeff[l];
                 rhs += -coeff[l]*getStateVar(intfc_state);
                 use_neumann_solver = NO;
             }
@@ -1003,20 +1019,20 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    // /
 	    if(num_nb > 0)
 	    {
-                solver.Set_A(I,I,aII);
+            solver.Set_A(I,I,aII);
 	    }
-            else
-            {
-		(void) printf("WARNING: isolated value!\n");
-                solver.Set_A(I,I,1.0);
-		rhs = soln[index];
-            }
-            solver.Set_b(I,rhs);
+        else
+        {
+            (void) printf("WARNING: isolated value!\n");
+            solver.Set_A(I,I,1.0);
+            rhs = soln[index];
+        }
+
+        solver.Set_b(I,rhs);
 	}
 
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-08);
-	//solver.SetTol(1e-10);
+	solver.SetTol(1.0e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;
@@ -1027,13 +1043,13 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    if (skip_neumann_solver)
 	    {
 	        if (debugging("PETSc"))
-                {
-	    	    (void) printf("Skip isolated small region for solve3d()\n");
-                    printIsolatedCells();
-                }
-		stop_clock("Petsc Solver");
-		return;
-        //TODO: go on to gmres??
+            {
+            (void) printf("Skip isolated small region for solve3d()\n");
+                printIsolatedCells();
+            }
+            stop_clock("Petsc Solver");
+            return;
+            //TODO: go on to gmres??
 	    }
 	    printf("\nELLIPTIC_SOLVER: Using Neumann Solver!\n");
 	    solver.Solve_withPureNeumann();
@@ -1103,7 +1119,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    I = ijk_to_I[i][j][k];

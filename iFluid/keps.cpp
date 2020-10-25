@@ -513,6 +513,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K = field->k;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
+	double *gamma = field->gamma;
+
 	double delta_k = eqn_params->delta_k;
 	double rho = eqn_params->rho;
 	double nu = eqn_params->mu/eqn_params->rho;
@@ -569,10 +571,18 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
             Cmu = eqn_params->Cmu;
             rhs = K0+m_dt*Pk[ic];
 
+            //Update the linearization parameter gamma
             if (fabs(mu_t[ic]) > MACH_EPS)
-                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            {
+                gamma[ic] = std::max(Cmu*K0*rho/mu_t[ic],0.0);
+                coeff = 1.0 + m_dt*gamma[ic];
+                    //coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            }
             else
+            {
+                gamma[ic] = 0.0;
                 coeff = 1.0;
+            }
 
             //TODO: REALIZABLE AND STD disabled
             /*
@@ -740,9 +750,16 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 
             //std and rng, not realizable
             if (fabs(mu_t[ic]) > MACH_EPS)
-                coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            {
+                gamma[ic] = std::max(Cmu*K0*rho/mu_t[ic],0.0);
+                coeff = 1.0 + m_dt*gamma[ic];
+                    //coeff = 1.0 + m_dt*std::max(Cmu*K0*rho/mu_t[ic],0.0);
+            }
             else
+            {
+                gamma[ic] = 0.0;
                 coeff = 1.0;
+            }
 
             if (isinf(coeff) || isnan(coeff))
             {
@@ -1034,6 +1051,8 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
     double *E = field->eps;
 	double *Pk = field->Pk;
 	double *mu_t = field->mu_t;
+	double *gamma = field->gamma;
+
 	double delta_eps = eqn_params->delta_eps;
 	double rho = eqn_params->rho;
     double v[MAXD],v_wall[MAXD];
@@ -1093,12 +1112,15 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             E0 = E[ic];
             K0 = field->k[ic];
 
+            double Gamma = gamma[ic];
+            /*
             //TODO: Gamma = E0/K0 ? Or should be same as in computeAdvectionK()?
             double Gamma = 0.0;
             if (fabs(K0) > MACH_EPS)
             {
                 Gamma = E0/K0;
             }
+            */
 
             if (keps_model == REALIZABLE)
             {
@@ -1333,12 +1355,15 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             E0 = E[ic];
             K0 = field->k[ic];
     
+            double Gamma = gamma[ic];
+            /*
             //TODO: Gamma = E0/K0 ? Or should be same as in computeAdvectionK()?
             double Gamma = 0.0;
             if (fabs(K0) > MACH_EPS)
             {
                 Gamma = E0/K0;
             }
+            */
 
             if (keps_model == REALIZABLE)
             {
@@ -2396,6 +2421,7 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->temp,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 		if (keps_model == REALIZABLE)
 		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
 	    	first = NO;
@@ -2415,6 +2441,7 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->eps,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
 		if (keps_model == REALIZABLE)
 		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
 	    	first = NO;
