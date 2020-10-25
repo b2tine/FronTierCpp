@@ -792,6 +792,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 }
             }
 
+            //TODO: still haven't applied slip boundary condition here
+
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);

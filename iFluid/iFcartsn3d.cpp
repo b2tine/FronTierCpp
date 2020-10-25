@@ -420,19 +420,26 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
+    for (int i = 0; i < dim; ++i)
+        source[i] = iFparams->gravity[i];
+
     if(iFparams->if_buoyancy)
     {
         int ic[MAXD],index;
         rect_in_which(coords,ic,top_grid);
         index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
-            source[i] = field->ext_accel[i][index];
+        {
+            source[i] += field->ext_accel[i][index];
+                //source[i] = field->ext_accel[i][index];
+        }
     }
-    else
+    
+    /*else
     {
         for (int i = 0; i < dim; ++i)
             source[i] = iFparams->gravity[i];
-    }
+    }*/
 } 	/* computeSourceTerm */
 
 #include<fstream>
@@ -917,13 +924,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
-        COMPONENT comp;
-        int index,index_nb[6],size;
-        int I,I_nb[6];
+    COMPONENT comp;
+    int index,index_nb[6],size;
+    int I,I_nb[6];
 	int i,j,k,l,nb,icoords[MAXD];
 	double coords[MAXD], crx_coords[MAXD];
 	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
-        double *x;
+    double *x;
 	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	POINTER intfc_state;
 	HYPER_SURF *hs;
@@ -1018,8 +1025,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         
             }
 
-            //TODO: The tangential shear stress opposing the fluid flow,
-            //      is stored in the interface STATE::tan_stress variable.
+            //TODO: stil havent applied the slip condition here...
             //
             //      Create slip boundary ghost point, modify its
             //      (tangential) velocity to account for the shear stress
@@ -1068,9 +1074,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             }
 
             rhs += m_dt*source[l];
-            
-            //TODO: Can we apply wall tangenetial stress here?
-            //      Would need to find area of nearest interface tri area
             rhs += m_dt*f_surf[l][index];
 
                 //rhs -= m_dt*grad_q[l][index]/rho;

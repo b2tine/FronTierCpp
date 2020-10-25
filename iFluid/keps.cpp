@@ -683,10 +683,15 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
 
                         //Compute wall tangential shear stress (force/length for 2d)
                         double tau_wall[MAXD] = {0.0};
-                        tau_wall[0] = u_t/y_p*v_slip[0];
-                        tau_wall[1] = u_t/y_p*v_slip[1];
-                            //tau_wall[0] = -1.0*u_t/y_p*v_slip[0];
-                            //tau_wall[1] = -1.0*u_t/y_p*v_slip[1];
+                        for (int kk = 0; kk < dim; ++kk)
+                        {
+                            tau_wall[kk] = u_t/y_p*v_slip[kk];
+                        }
+                        
+                            //tau_wall[0] = u_t/y_p*v_slip[0];
+                            //tau_wall[1] = u_t/y_p*v_slip[1];
+                                //tau_wall[0] = -1.0*u_t/y_p*v_slip[0];
+                                //tau_wall[1] = -1.0*u_t/y_p*v_slip[1];
                         
                         //TODO: Need more than one interface element?
                         //      see BondAndNeighbors() usage in surfaceTension()
@@ -694,13 +699,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                             //BOND* nearest_bond = Bond_of_hse(hse);
                             //double len = bond_length(nearest_bond);
                         
-                        int nb_bonds;
+                        int num_bonds;
                         BOND* bonds[10];
-                        BondAndNeighbors(hse,hs,&nb_bonds,bonds,1);//1 bond on each side for total of 3 bonds
+                        BondAndNeighbors(hse,hs,&num_bonds,bonds,1);//1 bond on each side for total of 3 bonds
                         //Try other orders 2, 3
 
                         double fwall[MAXD] = {0.0};
-                        for (int ib = 0; ib < nb_bonds; ++ib)
+                        for (int ib = 0; ib < num_bonds; ++ib)
                         {
                             double len = bond_length(bonds[ib]);
                             for (int kk = 0; kk < dim; ++kk)
@@ -869,17 +874,35 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         K_nb = u_t*u_t/sqrt(eqn_params->Cmu);
                         rhs += lambda * K_nb + ((m == 0) ? eta_p*K_nb : -eta_m*K_nb); 
 
-                        //TODO: compute wall tangential stress (force/area)
-                        /*
-                        double* tau_wall = intfc_state->tan_stress;
-                        tau_wall[0] = -u_t/y_p*v_slip[0];
-                        tau_wall[1] = -u_t/y_p*v_slip[1];
-                        tau_wall[2] = -u_t/y_p*v_slip[2];
-                        */
+                        //Compute wall tangential shear stress (force/area)
+                        double tau_wall[MAXD] = {0.0};
+                        for (int kk = 0; kk < dim; ++kk)
+                        {
+                            tau_wall[kk] = u_t/y_p*v_slip[kk];
+                        }
 
-                        //TODO: store tau_wall and apply in momentum eqns with f_surf[][] array??
-                        //      would need to find area of nearest wall triangle, or bond length
-                        //      in 2d case.
+                        int num_tris;
+                        TRI* tris[30];//TODO: is 30 enough tris?
+                        TriAndFirstRing(hse,hs,&num_tris,tris);
+
+                        double fwall[MAXD] = {0.0};
+                        for (int it = 0; it < num_tris; ++it)
+                        {
+                            double area = tri_area(tris[it]);
+                            for (int kk = 0; kk < dim; ++kk)
+                                fwall[kk] += tau_wall[kk]*area;
+                        }
+                        
+                        double* force_wall = intfc_state->shear_force;
+
+                        for (int kk = 0; kk < dim; ++kk)
+                        {
+                            force_wall[kk] = fwall[kk];
+                            f_surf[kk][ic] = -1.0*force_wall[kk]/rho;
+                        }
+
+                        //TODO: For elastic boundaries force_wall should be coupled
+                        //      to the interface/canopy somehow... compute acceleration with it?
                     }
                     else if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
