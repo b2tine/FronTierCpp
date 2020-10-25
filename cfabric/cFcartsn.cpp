@@ -6360,6 +6360,9 @@ void G_CARTESIAN::setElasticStatesRFB_normal(
             v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
             */
 
+            //TODO: WRONG!? This zeros the normal velocity
+            //          GIVING the tangential velocity
+            
             //zero relative tangential velocity
             v_ghost[j] = vel_intfc[j] - vn*nor[j];
         }

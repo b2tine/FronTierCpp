@@ -488,12 +488,12 @@ EXPORT	void	fprint_Tan_stencil(
 	int		nrad = sten->npts/2;
 	char		s[80];
 
-	(void) printf("In fprint_Tan_stencil please check it!\n");
-/*
+	    //(void) printf("In fprint_Tan_stencil please check it!\n");
 	(void) fprintf(file,"Data for Tan_stencil %p\n",sten);
 	(void) sprintf(s,"Tangent direction: ");
 	fprint_general_vector(file,s,sten->dir,dim,"\n");
 	(void) fprintf(file,"npts = %d\n",sten->npts);
+
 	for (i = -nrad; i <= nrad; ++i)
 	{
 	    (void) sprintf(s,"Coords(sten->p[%2d]) = ",i);
@@ -503,6 +503,9 @@ EXPORT	void	fprint_Tan_stencil(
 	{
 	    (void) fprintf(file,"sten->t[%2d] = %g\n",i,sten->t[i]);
 	}
+
+    //TODO: output of fprint_state_data is not printer friendly
+    /*
 	(void) fprintf(file,"Left states:\n");
 	for (i = -nrad; i <= nrad; ++i)
 	{
@@ -513,8 +516,8 @@ EXPORT	void	fprint_Tan_stencil(
 	{
 	    fprint_state_data(file,sten->rightst[i],front->interf);
 	}
+    */
 	(void) fprintf(file,"End of stencil\n\n");
-*/
 }		/*end fprint_Tan_stencil*/
 
 EXPORT	void	fprint_Nor_stencil(
@@ -527,21 +530,20 @@ EXPORT	void	fprint_Nor_stencil(
 	int		nrad = sten->npts/2;
 	char		s[80];
 
-	(void) printf("In fprint_Nor_stencil please check it!\n");
-/*
+	    //(void) printf("In fprint_Nor_stencil please check it!\n");
 	(void) fprintf(file,"Data for Nor_stencil %p\n",sten);
 	(void) sprintf(s,"Nor direction: ");
 	fprint_general_vector(file,s,sten->nor,dim,"\n");
 	(void) fprintf(file,"component = %d  curvature = %f\n",sten->comp,
 				sten->curvature);
 	(void) fprintf(file,"npts = %d\n",sten->npts);
+
 	for (i = 0; i <= nrad; ++i)
 	{
 	    (void) sprintf(s,"sten->pts[%d] = ",i);
 	    fprint_general_vector(file,s,sten->pts[i],dim,"\n");
 	}
 	(void) fprintf(file,"End of stencil\n\n");
-*/
 }		/*end fprint_Nor_stencil*/
 
 EXPORT	void	print_Tan_stencil(

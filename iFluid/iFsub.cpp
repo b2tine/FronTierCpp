@@ -528,8 +528,12 @@ static void iF_flowThroughBoundaryState2d(
 
 	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
 	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+	
+    for (i = 0; i < dim; ++i)
+	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(nsten->nor,front);
-	if (debugging("flow_through"))
+	
+    if (debugging("flow_through"))
 	{
 	    (void) printf("Normal grid size = %f\n",dn);
 	    (void) print_Nor_stencil(front,nsten);
@@ -546,12 +550,14 @@ static void iF_flowThroughBoundaryState2d(
 	    vort[j] = oldst->vort;
 	    pres[j] = oldst->pres;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
 	    double vtmp;
-	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
-			field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
-	    u[1] += vtmp*dir[i];
+        FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+                field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
+        
+        u[1] += vtmp*dir[i];
 	    newst->vel[i] = vtmp;
 	}
 
@@ -565,7 +571,7 @@ static void iF_flowThroughBoundaryState2d(
 
 	newst->vort = oldst->vort - dt/dn*f_vort;
 	newst->pres = oldst->pres - dt/dn*f_pres;
-	
+
 	tsten = FrontGetTanStencils(front,oldp,nrad);
 
 	if (debugging("flow_through"))
@@ -611,6 +617,11 @@ static void iF_flowThroughBoundaryState2d(
 	newst->vort += - dt/dn*f_vort;
 	newst->pres += - dt/dn*f_pres;
 	
+    if (newst->pres < 0.0)
+    {
+        newst->pres = oldst->pres;
+    }
+
 	if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
