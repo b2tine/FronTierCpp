@@ -701,7 +701,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         
                         int num_bonds;
                         BOND* bonds[10];
-                        BondAndNeighbors(hse,hs,&num_bonds,bonds,1);//1 bond on each side for total of 3 bonds
+                        BondAndNeighbors(hse,hs,&num_bonds,bonds,3);//1 bond on each side for total of 3 bonds
                         //Try other orders 2, 3
 
                         double fwall[MAXD] = {0.0};
@@ -839,10 +839,16 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                     icn = d_index3d(ipn[0],ipn[1],ipn[2],top_gmax);
                     I_nb = ijk_to_I[ipn[0]][ipn[1]][ipn[2]];
             
+                    fr_crx_grid_seg = FT_StateStructAtGridCrossing2(front,
+                            icoords,dir[l][m],comp,(POINTER*)&intfc_state,
+                            &hs,&hse,crx_coords);
+                    
+                    /*
                     fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                             grid_intfc,icoords,dir[l][m],comp,
                             (POINTER*)&intfc_state,&hs,crx_coords);
-            
+                    */
+                    
                     if (!fr_crx_grid_seg) 
                     {
                         coeff_nb = -lambda;
@@ -1206,7 +1212,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             }
             else
             {
-                rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
+                rhs = E0 + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
             }
 
 
@@ -1399,6 +1405,9 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
 
             solver.Add_A(I,I,coeff);
             solver.Add_b(I,rhs);
+    
+            dbg_max_aii = std::max(coeff, dbg_max_aii);
+            dbg_max_rhs = std::max(rhs, dbg_max_rhs);
         }
         break;
 
@@ -1432,7 +1441,7 @@ void KE_CARTESIAN::computeAdvectionE_STD(COMPONENT sub_comp)
             }
             else
             {
-                rhs = E0  + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
+                rhs = E0 + m_dt*std::max(Pk[ic]*eqn_params->C1*Gamma,0.0); 
             }
 
             if (keps_model == RNG)
@@ -2699,13 +2708,13 @@ void KE_CARTESIAN::setSlipBoundary(
     GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
     GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
     GRID_DIRECTION  dir;
-    double  vel_ref[MAXD];
+    double  vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	
     for (i = 0; i < dim; ++i)
     {
-        vel_ref[i] = (*getStateVel[i])(state);
+        vel_intfc[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ic[i] = icoords[i];
     }
@@ -2741,9 +2750,30 @@ void KE_CARTESIAN::setSlipBoundary(
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
                 getStateVel[j],&v_tmp[j],&vel[j][index]);
 
-    //TODO: NEED TO USE RELATIVE VELOCITY WITH RESPECT TO THE INTERFACE!!!!!
+    double vel_rel[MAXD] = {0.0};
+    vn = 0.0;
+
+    for (j = 0; j < dim; ++j)
+    {
+        //Relative velocity of reflected point to boundary
+        vel_rel[j] = v_tmp[j] - vel_intfc[j];
+                //vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        //Normal component of the relative velocity
+            //vn += vel_rel[j]*nor[j];
+    }
 
     /*normal component equal to zero while tangential component is permitted*/
+
+    /*
+    //double v_slip[MAXD] = {0.0};
+    for (j = 0; j < dim; ++j)
+	    v_tmp[j] -= vn*nor[j];
+	    //v_slip[j] = v_tmp[j] - vn*nor[j];
+
+    fprint_general_vector(stdout,"nor",nor,dim,"\n");
+    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    */
+
     //TODO: Use normal vector instead??
     //      May actually  be equivalent to the vector v
     //      being computed.
@@ -2760,6 +2790,11 @@ void KE_CARTESIAN::setSlipBoundary(
 
     for (j = 0; j < dim; ++j)
 	    v_tmp[j] -= vn*v[j];    
+
+    /*
+    fprint_general_vector(stdout,"v",v,dim,"\n");
+    fprint_general_vector(stdout,"v_tmp",v_tmp,dim,"\n");
+    */
 }
 
 void KE_CARTESIAN::computeSource()
@@ -2796,6 +2831,8 @@ void KE_CARTESIAN::computeSource()
 		    comp = cell_center[index].comp;
 
 		    if (!ifluid_comp(comp)) continue;
+
+            //TODO: Missing a boundary condition for Pk??
 
 		    J = 0.0;
 		    /*compute module of the strain rate tensor*/

@@ -4695,10 +4695,9 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 	}
 }	/* end setDoubleIndexMap */
 
-//TODO: This should be given a global scope, and does not
-//      need to be a member of this class and the KE_SOLVER class.
-//      Making sure it works first, then will declare it as a
-//      regular function.
+//NOTE: This function differs from keps.cpp version
+//      by not zeroing the normal velocity
+//TODO: could rename to setReflectBoundary()
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4717,13 +4716,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
     GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
     GRID_DIRECTION  dir;
-    double  vel_ref[MAXD];
+    double  vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	
     for (i = 0; i < dim; ++i)
     {
-        vel_ref[i] = (*getStateVel[i])(state);
+        vel_intfc[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ic[i] = icoords[i];
     }
@@ -4755,18 +4754,36 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     /* Interpolate the state at the reflected point */
     for (j = 0; j < dim; ++j)
+    {
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
                 getStateVel[j],&v_tmp[j],&vel[j][index]);
+    }
 
-    //TODO: Should be using the relative velocity, this will not
-    //      work for moving rigid bodies, in current state.
-    //
-    //      vel_rel[j] = vel_reflect[j] - vel_intfc[j];  (v_tmp is vel_reflect in this case)
-    //      then vn = vel_rel dot nor
+    double vel_rel[MAXD] = {0.0};
+    vn = 0.0;
+
+    for (j = 0; j < dim; ++j)
+    {
+        //Relative velocity of reflected point to boundary
+        vel_rel[j] = v_tmp[j] - vel_intfc[j];
+                //vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        //Normal component of the relative velocity
+            //vn += vel_rel[j]*nor[j];
+    }
 
     /*normal component equal to zero while tangential component is permitted*/
     
-    //TODO: Use normal vector instead??
+    /*
+    double v_slip[MAXD] = {0.0};
+    for (j = 0; j < dim; ++j)
+	    v_tmp[j] -= 2.0*vn*nor[j];//TODO: still need normal opp????
+	    //v_slip[j] = v_tmp[j] - vn*nor[j];
+
+    fprint_general_vector(stdout,"nor",nor,dim,"\n");
+    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    */
+    
+    //TODO: Use normal vector instead of what is being computed here??
     //      May actually  be equivalent to the vector v
     //      being computed.
 	
@@ -4781,7 +4798,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += v[j] * v_tmp[j]; 	
 
     for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= vn*v[j];    
-}
+	    v_tmp[j] -= 2.0*vn*v[j];
+	    //v_tmp[j] -= vn*v[j];
+
+    /*
+    fprint_general_vector(stdout,"v",v,dim,"\n");
+    fprint_general_vector(stdout,"v_tmp",v_tmp,dim,"\n");
+    */
+}   /* end setSlipBoundary */
 
 

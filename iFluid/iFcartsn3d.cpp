@@ -941,6 +941,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double **vel = field->vel;
 	double **f_surf = field->f_surf;
 	INTERFACE *grid_intfc = front->grid_intfc;
+    int status;
 
 	if (debugging("trace"))
 	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
@@ -1010,6 +1011,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
                     }
+                    else if (neumann_type_bdry(wave_type(hs)))
+                    {
+                        //TODO: shouldn't use slip boundary until turb model is activated
+                        double v_slip[MAXD] = {0.0};
+                        int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                        setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                        U_nb[nb] = v_slip[l];
+                    }
 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
@@ -1042,8 +1051,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             for(nb = 0; nb < 6; nb++)
             {
-                if (!(*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                        &intfc_state,&hs,crx_coords))
+                status = (*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                        &intfc_state,&hs,crx_coords);
+                
+                if (status == NO_PDE_BOUNDARY)
                 {
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
@@ -1066,6 +1077,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                         }
                     }
+                    else
+                    {
+                        //NEUMANN
+                        rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
                 }
             }
 
@@ -1075,7 +1091,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 //rhs -= m_dt*grad_q[l][index]/rho;
             
             solver.Set_A(I,I,aII);
-            solver.Set_b(I, rhs);
+            solver.Set_b(I,rhs);
         }
 
         solver.SetMaxIter(40000);

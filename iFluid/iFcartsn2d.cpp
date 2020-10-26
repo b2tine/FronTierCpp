@@ -798,6 +798,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
+                        //TODO: shouldn't use slip boundary until turb model is activated
                         //Apply slip boundary condition
                         //nb = 0; //idir = 0, nbr = 0;
                         //nb = 1; //idir = 0, nbr = 1;

@@ -330,9 +330,8 @@ public:
     double computeFieldPointPressureJump(int*,double,double);
         void computeFieldPointGradJump(int*,double*,double*);
 
-    //TODO: make this a global function
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
-            HYPER_SURF* hs, POINTER state, double** vel, double* vtmp);
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_tmp);
 
 	//For debugging test
 	void compareWithBaseSoln(void);
@@ -619,35 +618,48 @@ extern double getStateMu(POINTER);
 extern double getStateTemp(POINTER);
 extern double getPressure(Front*,double*,double*);
 extern double getPhiFromPres(Front*,double);
+
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
+
 extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
+
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);
+
 extern int ifluid_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
 extern int ifluid_find_state_at_cg_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
 extern int ifluid_find_state_at_dual_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
+
 extern double p_jump(POINTER,int,double*);
 extern double grad_p_jump_n(POINTER,int,double*,double*);
 extern double grad_p_jump_t(POINTER,int,int,double*,double*);
+
 extern boolean neumann_type_bdry(int);
+
+/*extern void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+        HYPER_SURF* hs, POINTER state, double** vel, double* vtmp);*/
 
 extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
                         double*);
+
 extern void initInnerBoundary(Front*,LEVEL_FUNC_PACK*);
 extern void restart_set_dirichlet_bdry_function(Front*);
+
 extern void iF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
 extern void iF_timeDependBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
+
 extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void ifluid_compute_force_and_torque(Front*,CURVE*,double,double*,
                         double*);
+
 extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
 extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
 extern void read_iFparams(char*,IF_PARAMS*);
