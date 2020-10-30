@@ -13,11 +13,10 @@ Enter pressure: 0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
-Max time: 10.0
+Max time: 25.0
 Max step: 10000
 Print interval: 0.5
-Movie frame interval: 0.05
-Movie frame intervalX: 0.0025
+Movie frame interval: 0.0025
 CFL factor: 0.75
 Redistribution interval: 100000000
 
