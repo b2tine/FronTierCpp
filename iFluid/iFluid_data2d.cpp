@@ -186,7 +186,6 @@ int main(int argc, char **argv)
 
 	ifluid_driver(&front, l_cartesian);
 
-	PetscFinalize();
 	clean_up(0);
 }
 
