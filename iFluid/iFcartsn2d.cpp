@@ -811,6 +811,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
                             //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
                     }
+                    else
+                    {
+                        U_nb[nb] = getStateVel[l](intfc_state);
+                    }
                 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
@@ -863,7 +867,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                         }
                     }
-                    else
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //TODO: This is may be incorrect if a point from
                         //      the previous time step switches component domains
@@ -876,6 +880,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         //      to access it if that functionality already exists
                         
                         //NEUMANN
+                        rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else
+                    {
                         rhs += 2.0*coeff[nb]*U_nb[nb];
                     }
                 }

@@ -21,6 +21,21 @@ struct VDATA2d
     std::vector<VENTRY2d> data;
 };
 
+struct IENTRY2d
+{
+    double coords[2];
+    double vel[2];
+    double vort;
+};
+
+struct IDATA2d
+{
+    int tstep;
+    double dt;
+    double time;
+    std::vector<IENTRY2d> data;
+};
+
 //3d
 struct VENTRY3d
 {

@@ -315,7 +315,10 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
+
     void printEnstrophy();
+    void printEnstrophy2d();
+    void printEnstrophy3d();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -487,6 +490,7 @@ public:
     
     void writeMeshFile2d();
     VDATA2d getVelData2d();
+    IDATA2d getIntfcData2d();
     std::vector<int> getMaxIJ();
     std::vector<int> getTopGMax();
 
@@ -494,6 +498,9 @@ public:
     VDATA3d getVelData3d();
     std::vector<int> getMaxIJK();
     std::vector<int> getTopGMax3d();
+
+    //double getIntfcVort2d(POINT* p);
+    
     /////////////////////////////////////////////////////
 };
 

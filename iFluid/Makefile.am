@@ -25,6 +25,7 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 noinst_PROGRAMS = iFluid \
 				  iFluid_data2d \
+				  iFluid_data2d_intfc \
 				  iFluid_data3d
 
 
@@ -34,6 +35,10 @@ iFluid_LDADD = $(builddir)/objs/libiFluid.la
 
 iFluid_data2d_SOURCES = iFluid_data2d.cpp
 iFluid_data2d_LDADD = $(builddir)/objs/libiFluid.la
+
+
+iFluid_data2d_intfc_SOURCES = iFluid_data2d_intfc.cpp
+iFluid_data2d_intfc_LDADD = $(builddir)/objs/libiFluid.la
 
 
 iFluid_data3d_SOURCES = iFluid_data3d.cpp
