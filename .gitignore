@@ -62,6 +62,8 @@ timeSeries/timeSeries
 weno/test
 weno/matdata
 iFluid/iFluid
+iFluid/iFluid_data2d
+iFluid/iFluid_data3d
 melting/melting
 crystal/crystal
 subsurf/subsurf

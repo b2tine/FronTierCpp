@@ -21,10 +21,12 @@ libiFluid_la_SOURCES = \
 ../iFcartsn3d.cpp \
 ../iFinit.cpp \
 ../iFsub.cpp \
+../rigidbody.h \
+../rigidbody.cpp \
 ../keps.h \
 ../keps.cpp \
-../rigidbody.h \
-../rigidbody.cpp
+../iFdata.h \
+../iFdata.cpp
 								
 
 libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la

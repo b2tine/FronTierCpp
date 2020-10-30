@@ -1,0 +1,14 @@
+#!/bin/bash
+#$ -q nodes.q
+#$ -pe mpi 3
+#$ -cwd
+
+source /etc/profile.d/modules.sh
+source /act/etc/profile.d/actbin.sh
+
+module load mvapich2-2.1/gcc-4.9.2
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/szip/lib:/opt/armadillo-9/lib64:/opt/OpenBLAS/lib:/opt/CGAL-4.14/lib64:/opt/boost-1.65.1/lib:/opt/petsc-3.11.0-mpich/lib:/opt/cuda/lib64:/opt/hdf/lib:/opt/gd/lib:/usr/lib64
+
+
+mpirun -np 3 ./iFluid_data3d -d 3 -p 1 3 1 -i in-sphere3d-RNG -o out-sphere3d-RNG-131

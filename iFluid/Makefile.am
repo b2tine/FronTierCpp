@@ -23,14 +23,21 @@ AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
-noinst_PROGRAMS = iFluid
+noinst_PROGRAMS = iFluid \
+				  iFluid_data2d \
+				  iFluid_data3d
 
 
 iFluid_SOURCES = iFluid.cpp
-
-
 iFluid_LDADD = $(builddir)/objs/libiFluid.la
 
+
+iFluid_data2d_SOURCES = iFluid_data2d.cpp
+iFluid_data2d_LDADD = $(builddir)/objs/libiFluid.la
+
+
+iFluid_data3d_SOURCES = iFluid_data3d.cpp
+iFluid_data3d_LDADD = $(builddir)/objs/libiFluid.la
 
 
 

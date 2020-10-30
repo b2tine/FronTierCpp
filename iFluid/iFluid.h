@@ -12,6 +12,8 @@
 #include "ifluid_state.h"
 #include "rigidbody.h"
 
+#include "iFdata.h"
+
 #define         SOLID_COMP		0
 #define         LIQUID_COMP1		2
 #define         LIQUID_COMP2		3
@@ -274,6 +276,7 @@ public:
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
+    std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -474,6 +477,24 @@ protected:
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
 	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,
 					double*); 
+
+public:
+    //TODO: Move into own subclass 
+    /////////////////////////////////////////////////////
+    //For generating PINN training data
+        
+    //void writeTimeFile();
+    
+    void writeMeshFile2d();
+    VDATA2d getVelData2d();
+    std::vector<int> getMaxIJ();
+    std::vector<int> getTopGMax();
+
+    void writeMeshFile3d();
+    VDATA3d getVelData3d();
+    std::vector<int> getMaxIJK();
+    std::vector<int> getTopGMax3d();
+    /////////////////////////////////////////////////////
 };
 
 ///////////////Interface for Embedded Boundary Method////////////////////

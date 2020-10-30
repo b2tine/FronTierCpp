@@ -41,9 +41,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 
-L_RECTANGLE::L_RECTANGLE(): comp(-1)
-{
-}
+L_RECTANGLE::L_RECTANGLE()
+    : comp(-1)
+{}
 
 void L_RECTANGLE::setCoords(
 	double *coords,
@@ -53,6 +53,13 @@ void L_RECTANGLE::setCoords(
 	for (i = 0; i < dim; ++i)
 	    m_coords[i] = coords[i];
 }
+
+std::vector<double> L_RECTANGLE::getCoords()
+{
+    std::vector<double> coords(m_coords,m_coords+3);
+    return coords;
+}
+
 //--------------------------------------------------------------------------
 //               Incompress_Solver_Basis
 //               Pure virtual class	
@@ -63,7 +70,8 @@ void L_RECTANGLE::setCoords(
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_Basis
 //------------------------------------------------------------------------------
-Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front):front(&front)
+Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front)
+    :front(&front)
 {
 	skip_neumann_solver = 0;
 }
