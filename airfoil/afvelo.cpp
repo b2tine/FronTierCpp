@@ -1233,57 +1233,61 @@ extern void resetFrontVelocity(Front *front)
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    for (i = 0; i < dim; ++i)
 	    {
-		p->vel[i] = 0.0;
-        p->force[i] = 0.0;
-		sl->vel[i] = sr->vel[i] = 0.0;
-		sl->impulse[i] = sr->impulse[i] = 0.0;
-		sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-		sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            p->vel[i] = 0.0;
+            p->force[i] = 0.0;
+            sl->vel[i] = sr->vel[i] = 0.0;
+            sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            sl->shear_force[i] = sr->shear_force[i] = 0.0;
 	    }
 	}
+
 	if (dim == 3)
 	{
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		p = (*c)->start->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
+            p = (*c)->start->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
 	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    p->force[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-            sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		}
-		for (b = (*c)->first; b != (*c)->last; b = b->next)
-		{
-		    p = b->end;
-		    sl = (STATE*)left_state(p);
-		    sr = (STATE*)right_state(p);
-	            for (i = 0; i < dim; ++i)
-		    {
-		    	p->vel[i] = 0.0;
-		        p->force[i] = 0.0;
-		    	sl->vel[i] = sr->vel[i] = 0.0;
-		    	sl->impulse[i] = sr->impulse[i] = 0.0;
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		    }
-		}
-		p = (*c)->end->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
+            }
+    
+            for (b = (*c)->first; b != (*c)->last; b = b->next)
+            {
+                p = b->end;
+                sl = (STATE*)left_state(p);
+                sr = (STATE*)right_state(p);
+                    for (i = 0; i < dim; ++i)
+                {
+                    p->vel[i] = 0.0;
+                    p->force[i] = 0.0;
+                    sl->vel[i] = sr->vel[i] = 0.0;
+                    sl->impulse[i] = sr->impulse[i] = 0.0;
+                    sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                    sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                }
+            }
+    
+            p = (*c)->end->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
 	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    p->force[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-            sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		}
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
+                sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            }
 	    }
 	}
 }	/* end resetFrontVelocity */

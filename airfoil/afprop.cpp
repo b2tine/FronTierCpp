@@ -212,8 +212,8 @@ extern void airfoil_point_propagate(
 extern void airfoil_curve_propagate(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+        CURVE *oldc,
+        CURVE *newc,
         double dt)
 {
 	int dim = front->rect_grid->dim;
@@ -275,6 +275,10 @@ static void string_curve_propagation(
         ft_assign(left_state(newp),left_state(oldp),front->sizest);
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
+	
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    if (af_params->no_fluid) return;
 
     //string-fluid interaction
     //    
@@ -283,31 +287,30 @@ static void string_curve_propagation(
     //      and A_ref is the cylinder enclosing the bond's surface area
     
     FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
-    if (params != NULL)
-    {
-        STATE *state_intfc;
-            //STATE *sl,*sr;
-        STATE *newsl,*newsr;
-        COMPONENT base_comp = front->interf->default_comp;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-        IF_FIELD *field = iFparams->field;
-        double rhoF = iFparams->rho2;
-        double **vel = field->vel;
-
-        double c_drag = params->c_drag;
-        double radius = params->radius;
-        double rhoS = params->dens;
+    if (params == nullptr) return;
         
-            //int count = 0;
+    STATE *state_intfc;
+        //STATE *sl,*sr;
+    STATE *newsl,*newsr;
+    COMPONENT base_comp = front->interf->default_comp;
+
+    IF_FIELD *field = iFparams->field;
+    double rhoF = iFparams->rho2;
+    double **vel = field->vel;
+
+    double c_drag = params->c_drag;
+    double radius = params->radius;
+    double rhoS = params->dens;
+    
+        //int count = 0;
 
     for (oldb = oldc->first, newb = newc->first;
-            oldb != oldc->last; oldb = oldb->next, newb = newb->next)
+         oldb != oldc->last; oldb = oldb->next, newb = newb->next)
     {
         oldp = oldb->end;
         newp = newb->end;
 
-        //TODO: vel_string = sl->vel; ?
+            //TODO: vel_string = sl->vel; ?
             state_intfc = (STATE*)left_state(oldp);
             double* vel_intfc = state_intfc->vel;
             //sl = (STATE*)left_state(oldp);
@@ -335,12 +338,16 @@ static void string_curve_propagation(
             double vfluid[3], vrel[3];
             for (int i = 0; i < 3; ++i)
             {
-                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
-                vrel[i] = vfluid[i] - vel_intfc[i];
-                vt += vrel[i]*ldir[i];
+                /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
                 /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                         vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
+                
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+
+                vrel[i] = vfluid[i] - vel_intfc[i];
+                vt += vrel[i]*ldir[i];
             }
 
             double speed = 0.0;
@@ -358,34 +365,46 @@ static void string_curve_propagation(
                 //double Vol = PI*radius*radius*length;
             double A_ref = 2.0*PI*radius*(0.25*length);
             double Vol = PI*radius*radius*(0.25*length);
-            double mass = rhoS*Vol;
+            double massCyl = rhoS*Vol;
 
             double dragForce[MAXD] = {0.0};
+            if (front->step > af_params->fsi_startstep)
+            {
+                for (int i = 0; i < 3; ++i)
+                    dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+            }
+
             for (int i = 0; i < 3; ++i)
             {
-                    //double dragForce = 0.0;
-                if (front->step > af_params->fsi_startstep)
-                    dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
-                    //dragForce = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
-                        //dragForce = 0.5*rhoF*c_drag*A_ref*speed*newsl->vel[i];
-
                 //Save to dragForce to newp's left state, newsl, for use in
                 //addImmersedForce() in the application of equal but opposite
                 //reaction force on the fluid.
-                    //newsl->drag_force[i] = dragForce[i];
-                    //newsr->drag_force[i] = dragForce[i];
-
-                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/mass;
-                    //newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce/mass;
+                //
+                //newsl->linedrag_force[i] = dragForce[i];//NO!
+                
+                //Compute acceleration
+                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	            //newsr->vel[i] = newsl->vel[i] = sl->vel[i];
 	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
             }
 
-                //printf("newsl->drag_force = %g %g %g\n",
-                    //  newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
+            /*
+            //TODO: inside debug string
+            printf("pt = %f %f %f \n",Coords(oldp)[0],Coords(oldp)[1],Coords(oldp)[2]);
+            printf("\tdragForce = %g %g %g\n",
+                      dragForce[0],dragForce[1],dragForce[2]);
+            printf("\tc_drag = %f  |  A_ref = %f \n",c_drag,A_ref);
+            printf("\tspeed = %f\n",speed);
+            printf("\tmassCyl = %g\n",massCyl);
+            */
+            
+            //printf("drag_force/mass = %g %g %g\n",
+             //         dragForce[0]/massCyl,dragForce[1]/massCyl,dragForce[2]/massCyl);
+
+            //printf("newsl->drag_force = %g %g %g\n",
+              //        newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
+            
             /*
             if (count == 5)
                 printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
@@ -394,7 +413,6 @@ static void string_curve_propagation(
                         newsl->fluid_accel[2]);
             */
         }
-    }
 }	/* end string_curve_propagation */
 
 static void gore_curve_propagation(
@@ -1233,8 +1251,7 @@ static void rg_string_node_propagate(
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 
-					accel[i] - f[i]/mass;
+	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}

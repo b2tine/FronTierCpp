@@ -130,9 +130,10 @@ struct _NS_SCHEME {
 typedef struct _NS_SCHEME NS_SCHEME;
 
 struct FINITE_STRING {         // For fluid drag on string chord
-        double radius;
-        double dens;
-        double c_drag;
+    double radius;
+    double dens;
+    double c_drag;
+    double ampFluidFactor;
 };
 
 struct VPARAMS {

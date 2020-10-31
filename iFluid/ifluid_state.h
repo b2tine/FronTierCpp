@@ -8,14 +8,18 @@ struct STATE
     double pres;                /* Pressure */
     double phi;                 /* Potential */
     double vel[MAXD];           /* Velocity */
+    //TODO: 3d vorticity
     double vort;                /* Magnitude of Vorticity in 2D */
 	double solute;			    /* For subsurface problem */
 
 	double temperature;         /* For melting with flow problem */
 	double mu;			        /* For eddy viscosity */
+    
     double shear_force[MAXD];    /* force resulting from tangential stress of fluid on wall computed from
                                         turb model + wall functions (IS ACTUALLY FORCE)*/
-        //double drag_force[MAXD];    /* temporary for line drag model prototyping*/
+    //double linedrag_force[MAXD];    /* temporary for line drag model prototyping*/
+    //double linedrag_accel[MAXD];    /* temporary for line drag model prototyping*/
+
 	double fluid_accel[MAXD];   /* acceleration from fluid force */
     double other_accel[MAXD];   /* acceleration for special nodes */
 

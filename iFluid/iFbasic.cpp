@@ -145,41 +145,41 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
 {
 	int i;
 	static POINTER state;
-        double coords[MAXD];
+    double coords[MAXD];
 	int size = (int)cell_center.size();
 	double **vel = field->vel;
 	double *pres = field->pres;
 	
 	for (i = 0; i < size; i++)
 	{
-            cell_center[i].comp =
-                        getComponent(cell_center[i].icoords);
-        }
-	if(state == NULL)
-            FT_ScalarMemoryAlloc((POINTER*)&state,front->sizest);
+        cell_center[i].comp = getComponent(cell_center[i].icoords);
+    }
+
+    if(state == NULL)
+        FT_ScalarMemoryAlloc((POINTER*)&state,front->sizest);
 
 	for (i = 0; i < size; i++)
 	{
-            if (cell_center[i].comp != -1 &&
-                cell_center[i].comp != top_comp[i])
+        if (cell_center[i].comp != -1 &&
+            cell_center[i].comp != top_comp[i])
+        {
+            getRectangleCenter(i, coords);
+            if (!FrontNearestIntfcState(front,coords,top_comp[i],(POINTER)state))
             {
-		getRectangleCenter(i, coords);
-                if (!FrontNearestIntfcState(front,coords,top_comp[i],
-                                (POINTER)state))
-                {
-                    (void) printf("In setComponent()\n");
-                    (void) printf("FrontNearestIntfcState() failed\n");
-                    (void) printf("old_comp = %d new_comp = %d\n",
-                                        cell_center[i].comp,top_comp[i]);
-                    clean_up(ERROR);
-                }
-		vel[0][i] = getStateXvel(state);
-		vel[1][i] = getStateYvel(state);
-		if (dim == 3)
-		    vel[3][i] = getStateZvel(state);
-		pres[i] = getStatePres(state);
+                (void) printf("In setComponent()\n");
+                (void) printf("FrontNearestIntfcState() failed\n");
+                (void) printf("old_comp = %d new_comp = %d\n",
+                        cell_center[i].comp,top_comp[i]);
+                clean_up(ERROR);
             }
-            cell_center[i].comp = top_comp[i];
+    
+            vel[0][i] = getStateXvel(state);
+            vel[1][i] = getStateYvel(state);
+            if (dim == 3)
+                vel[3][i] = getStateZvel(state);
+            pres[i] = getStatePres(state);
+        }
+        cell_center[i].comp = top_comp[i];
 	}
 }
 
@@ -1540,6 +1540,17 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
+
+    //zero f_surf array
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+        for (l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+    
+
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == BALDWIN_LOMAX)
     {
@@ -1561,7 +1572,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
-	    index  = d_index2d(i,j,top_gmax);			
+	    index  = d_index2d(i,j,top_gmax);
         mu[index] = 0.0;
 
 	    comp  = cell_center[index].comp;
@@ -1595,7 +1606,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 for (l = 0; l < dim; ++l)
                 {
                     force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
+                    f_surf[l][index] += force[l];
                 }
             }
         }
@@ -2346,6 +2357,17 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
+    
+    //zero f_surf array
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+        for (l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+    
+
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == BALDWIN_LOMAX)
     {
@@ -2402,7 +2424,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 for (l = 0; l < dim; ++l)
                 {
                     force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
+                    f_surf[l][index] += force[l];
                 }
             }
         }

@@ -49,6 +49,7 @@ static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);
 static void print_max_fabric_speed(Front* fr);
+static void print_max_string_speed(Front* fr);
 
 #define 	MAX_NUM_RING1		30
 
@@ -2078,6 +2079,7 @@ void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
     if (debugging("max_speed"))
     {
         print_max_fabric_speed(fr);
+        print_max_string_speed(fr);
     }
 
 	if (debugging("trace"))
@@ -2092,8 +2094,10 @@ static void print_max_fabric_speed(Front* fr)
     STATE *state;
     
     double speed;
-    double max_speed = 0.0;
+    double max_speed = -HUGE;
     POINT* max_pt = nullptr;
+
+    if (!FT_FrontContainWaveType(fr,ELASTIC_BOUNDARY)) return;
 
     intfc_surface_loop(fr->interf,s)
     {
@@ -2115,15 +2119,63 @@ static void print_max_fabric_speed(Front* fr)
         }
     }
     
-    printf("max speed of fabric/canopy: %f\n",max_speed);
     if (max_pt != nullptr)
     {
+        printf("max speed of fabric/canopy: %g\n",max_speed);
         printf("Point Gindex: %d  coords = %f %f %f\n",
                 Gindex(max_pt),Coords(max_pt)[0],
                 Coords(max_pt)[1],Coords(max_pt)[2]);
 
         state = (STATE*)left_state(max_pt);
-        printf("Velocity: %f %f %f\n",
+        printf("Velocity: %g %g %g\n",
+                state->vel[0],state->vel[1],state->vel[2]);
+    }
+}
+
+static void print_max_string_speed(Front* fr)
+{
+    CURVE **c;
+    CURVE *curve;
+    BOND *b;
+    POINT *pt;
+    STATE *state;
+    
+    double speed;
+    double max_speed = -HUGE;
+    POINT* max_pt = nullptr;
+
+    if (!FT_FrontContainHsbdryType(fr,STRING_HSBDRY)) return;
+
+    intfc_curve_loop(fr->interf,c)
+    {
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        //TODO: Add nodes etc. below is just skeleton.
+        //      Not traversing every point of the curve
+        curve = *c;
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            pt = b->end;
+            state = (STATE*)left_state(pt);
+            speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
+                        + sqr(state->vel[2]));
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                max_pt = pt;
+            }
+        }
+    }
+    
+    if (max_pt != nullptr)
+    {
+        printf("max speed of elastic strings: %g\n",max_speed);
+        printf("Point Gindex: %d  coords = %f %f %f\n",
+                Gindex(max_pt),Coords(max_pt)[0],
+                Coords(max_pt)[1],Coords(max_pt)[2]);
+
+        state = (STATE*)left_state(max_pt);
+        printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
     }
 }
@@ -2193,25 +2245,46 @@ static void setCurveVelocity(
 	long gindex;
 	int dim = FT_Dimension();
 
-	for (b = curve->first; b != curve->last; b = b->next)
+    //TODO: need to test this new string_hsbdry block
+    if (hsbdry_type(curve) == STRING_HSBDRY)
     {
-        p = b->end;
-	    for (btris = Btris(b); btris && *btris; ++btris)
+        for (b = curve->first; b != curve->last; b = b->next)
         {
-            p->hse = hse = Hyper_surf_element((*btris)->tri);
-            p->hs = hs = Hyper_surf((*btris)->surface);
-    		gindex = Gindex(p);
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            FT_NormalAtPoint(p,front,nor,NO_COMP);
+            p = b->end;
+            gindex = Gindex(p);
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
             vel = point_set[gindex]->v;
-            nor_speed = scalar_product(vel,nor,3);
             
             for (j = 0; j < 3; ++j)
             {
-                //sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+            }
+        }
+    }
+    else
+    {
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            p = b->end;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                p->hse = hse = Hyper_surf_element((*btris)->tri);
+                p->hs = hs = Hyper_surf((*btris)->surface);
+                gindex = Gindex(p);
+                FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+                FT_NormalAtPoint(p,front,nor,NO_COMP);
+                vel = point_set[gindex]->v;
+                nor_speed = scalar_product(vel,nor,3);
+                
+                for (j = 0; j < 3; ++j)
+                {
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
+                }
             }
         }
     }

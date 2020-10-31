@@ -715,13 +715,13 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         double* force_wall = intfc_state->shear_force;
                         //force_wall[0] = tau_wall[0]*len;
                         //force_wall[1] = tau_wall[1]*len;
-                        //f_surf[0][ic] = -1.0*force_wall[0]/rho;
-                        //f_surf[1][ic] = -1.0*force_wall[1]/rho;
+                        //f_surf[0][ic] += -1.0*force_wall[0]/rho;
+                        //f_surf[1][ic] += -1.0*force_wall[1]/rho;
 
                         for (int kk = 0; kk < dim; ++kk)
                         {
                             force_wall[kk] = fwall[kk];
-                            f_surf[kk][ic] = -1.0*force_wall[kk]/rho;
+                            f_surf[kk][ic] += -1.0*force_wall[kk]/rho;
                         }
 
                         //TODO: For elastic boundaries force_wall should be coupled
@@ -906,7 +906,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         for (int kk = 0; kk < dim; ++kk)
                         {
                             force_wall[kk] = fwall[kk];
-                            f_surf[kk][ic] = -1.0*force_wall[kk]/rho;
+                            f_surf[kk][ic] += -1.0*force_wall[kk]/rho;
                         }
 
                         //TODO: For elastic boundaries force_wall should be coupled
@@ -1064,8 +1064,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     stop_clock("scatter_data");
     FT_FreeThese(1,x);
 
-    //TODO: Need this?
-        //FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+    FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 
     if (debugging("trace")) printf("Leaving computeAdvectionK()\n");
     stop_clock("computeAdvectionK");
