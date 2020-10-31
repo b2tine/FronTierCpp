@@ -155,6 +155,7 @@ int main(int argc, char **argv)
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	l_cartesian->initMesh();
+    l_cartesian->writeMeshFileVTK();
 	l_cartesian->initMovieVariables();
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
 	
