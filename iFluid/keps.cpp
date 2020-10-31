@@ -1064,6 +1064,9 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     stop_clock("scatter_data");
     FT_FreeThese(1,x);
 
+    //TODO: Need this?
+        //FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+
     if (debugging("trace")) printf("Leaving computeAdvectionK()\n");
     stop_clock("computeAdvectionK");
 }       /* end computeAdvectionK */
