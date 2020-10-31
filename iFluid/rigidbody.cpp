@@ -33,7 +33,7 @@ extern void initRigidBody(
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] != 'y' && string[0] != 'Y')
-		return;
+            return;
 	}
 	else
 	    return;
@@ -44,6 +44,8 @@ extern void initRigidBody(
 	    fscanf(infile,"%d",&num_rgb);
 	    (void) printf("%d\n",num_rgb);
 	}
+
+    if (num_rgb <= 0) return;
 
 	if (num_rgb == 1)
 	    initSingleRigidBody(infile,front);

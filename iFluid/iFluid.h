@@ -157,9 +157,8 @@ struct IF_PARAMS
 	double gravity[MAXD];
 	double U_ambient[MAXD];
 
-    bool with_surface_tension {false};
 	double surf_tension;
-	double smoothing_radius;
+	double smoothing_radius {1.0};
 	
     double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */

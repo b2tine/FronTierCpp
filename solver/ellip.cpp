@@ -430,6 +430,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*pres_reflect; 
+                use_neumann_solver = NO;
 
                 //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
                 //      dp/dn = 0 (reflecting boundary for pressure) ????
@@ -1117,6 +1118,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*pres_reflect; 
+                use_neumann_solver = NO;
             }
         }
 

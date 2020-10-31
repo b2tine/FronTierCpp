@@ -472,9 +472,6 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
-    for (int i = 0; i < dim; ++i)
-        source[i] = iFparams->gravity[i];
-
     if(iFparams->if_buoyancy)
     {
         int ic[MAXD],index;
@@ -482,16 +479,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
         {
-            source[i] += field->ext_accel[i][index];
-                //source[i] = field->ext_accel[i][index];
+            source[i] = field->ext_accel[i][index];
         }
     }
-    
-    /*else
+    else
     {
         for (int i = 0; i < dim; ++i)
             source[i] = iFparams->gravity[i];
-    }*/
+    }
 } 	/* computeSourceTerm */
 
 #include<fstream>
@@ -1065,11 +1060,23 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        //TODO: shouldn't use slip boundary until turb model is activated
-                        double v_slip[MAXD] = {0.0};
-                        int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
-                        setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                        U_nb[nb] = v_slip[l];
+                        if (!is_bdry_hs(hs))
+                        {
+                            //TODO: shouldn't use slip boundary until turb model is activated
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];
+                        }
+                        else
+                        {
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
@@ -1086,8 +1093,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         
             }
 
-            //TODO: stil havent applied the slip condition here...
-            
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
             coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
@@ -1129,10 +1134,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                         }
                     }
-                    else
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
                 }
             }
