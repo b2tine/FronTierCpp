@@ -237,7 +237,21 @@ public:
 	int  getComponent(double *coords);	
 	void save(char *filename);
 	void read_params(char*,KE_PARAMS*);
-	void computeLiftDrag(Front*);
+	
+        void computeLiftDrag(Front*);
+
+public:
+    double computeEddyViscosityMean();
+    double computeEddyViscosityVariance();
+    double computeEddyViscosityStdDeviation();
+
+protected:
+    double computeEddyViscosityMean2d();
+    double computeEddyViscosityMean3d();
+    double computeEddyViscosityVariance2d();
+    double computeEddyViscosityVariance3d();
+    double computeEddyViscosityStdDeviation2d();
+    double computeEddyViscosityStdDeviation3d();
 };
 
 
