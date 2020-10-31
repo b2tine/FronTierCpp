@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: 0 1.5
-Computational grid: 50 50 75
+Domain limit in 2-th dimension: 0 2
+Computational grid: 50 50 100
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -48,10 +48,10 @@ Entering yes to turn off fluid solver: n
 
 Enter yes to add isolated curves: yes
 Enter yes for string-fluid interaction: y
-Enter string radius: 0.035
+Enter string radius: 0.03
 Enter string mass density: 5.0
 Enter drag coefficient: 1.3
-Enter fluid force scaling factor: 100
+Enter fluid force scaling factor: 10
 
 Enter the number of curves: 1
 Enter the start of curve 0: 0.5 0.2 0.45
@@ -71,7 +71,7 @@ Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 750000
+Enter string spring constant: 75000
 Enter string damping constant: 0.1
 Enter string friction constant: 0.05
 Enter string point mass: 0.0015

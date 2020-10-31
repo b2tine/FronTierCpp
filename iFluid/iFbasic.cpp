@@ -86,7 +86,7 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	int num_cells;
 
 	// init cell_center
-	L_RECTANGLE       rectangle;
+	L_RECTANGLE rectangle;
 
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");

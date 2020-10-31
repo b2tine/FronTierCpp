@@ -2917,7 +2917,9 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 
                     //TODO: use smoothing function, see usage example
                     //      in setSmoothedProperties() in surface tension
-                    //      section
+                    //      section.
+                    //
+                    //TODO: radius should be factored into the smoothing operation
 
                     dist = distance_between_positions(Coords(p),coords,3);
                     if (dist >= top_h[0]*4.0) continue;

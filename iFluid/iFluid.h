@@ -284,7 +284,8 @@ public:
 
 };
 
-class Incompress_Solver_Smooth_Basis:public Incompress_Solver_Basis{
+class Incompress_Solver_Smooth_Basis : public Incompress_Solver_Basis
+{
 public:
         //constructor
 	Incompress_Solver_Smooth_Basis(Front &front);
@@ -351,6 +352,7 @@ public:
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
 
+    void writeMeshFileVTK();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
