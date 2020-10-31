@@ -253,34 +253,45 @@ void setMotionParams(Front* front)
                 (void) printf("%f\n",iFparams->smoothing_radius);
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
+        {
+            // default: no porosity
+            iFparams->with_porosity = af_params->with_porosity = NO;
+            if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
-		        // default: no porosity
-                iFparams->with_porosity = af_params->with_porosity = NO;
-                if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
-		{
-                    fscanf(infile,"%s",string);
-                    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-                	iFparams->with_porosity=af_params->with_porosity=YES;
-		}
-                if (iFparams->with_porosity == YES)
-                {
-                    CursorAfterString(infile,"Enter viscous parameter:");
-                    fscanf(infile,"%lf",&af_params->porous_coeff[0]);
-                    (void) printf("%f\n",af_params->porous_coeff[0]);
-                    CursorAfterString(infile,"Enter inertial parameter:");
-                    fscanf(infile,"%lf",&af_params->porous_coeff[1]);
-                    (void) printf("%f\n",af_params->porous_coeff[1]);
-                    iFparams->porous_coeff[0] = af_params->porous_coeff[0];
-                    iFparams->porous_coeff[1] = af_params->porous_coeff[1];
-                }
-                CursorAfterString(infile,"Enter area density of canopy:");
-                fscanf(infile,"%lf",&af_params->area_dens);
-                (void) printf("%f\n",af_params->area_dens);
-
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                iFparams->with_porosity=af_params->with_porosity=YES;
             }
-            for (i = 0; i < dim; ++i)
-                af_params->gravity[i] = iFparams->gravity[i];
+
+            if (iFparams->with_porosity == YES)
+            {
+                CursorAfterString(infile,"Enter viscous parameter:");
+                fscanf(infile,"%lf",&af_params->porous_coeff[0]);
+                (void) printf("%f\n",af_params->porous_coeff[0]);
+                CursorAfterString(infile,"Enter inertial parameter:");
+                fscanf(infile,"%lf",&af_params->porous_coeff[1]);
+                (void) printf("%f\n",af_params->porous_coeff[1]);
+                iFparams->porous_coeff[0] = af_params->porous_coeff[0];
+                iFparams->porous_coeff[1] = af_params->porous_coeff[1];
+            }
+            
+            CursorAfterString(infile,"Enter area density of canopy:");
+            fscanf(infile,"%lf",&af_params->area_dens);
+            (void) printf("%f\n",af_params->area_dens);
+
+        }
+
+        af_params->fsi_startstep = 5;
+        if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
+        {
+            fscanf(infile,"%d",&af_params->fsi_startstep);
+        }
+        iFparams->fsi_startstep = af_params->fsi_startstep;
+
+
+        for (i = 0; i < dim; ++i)
+            af_params->gravity[i] = iFparams->gravity[i];
 	}
 
     //For pointmass runs

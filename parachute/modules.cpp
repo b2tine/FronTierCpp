@@ -162,13 +162,6 @@ extern void initParachuteDefault(
         (void) printf("%d\n",af_params->num_opt_round);
     }
 
-    af_params->fsi_startstep = 5;
-    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
-    {
-        fscanf(infile,"%d",&af_params->fsi_startstep);
-    }
-    iF_params->fsi_startstep = af_params->fsi_startstep;
-
     fclose(infile);
 }	/* end initParachuteDefault */
 
