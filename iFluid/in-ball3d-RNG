@@ -32,7 +32,8 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter the center of the circle: 0.275 0.492 0.492
+Enter the center of the circleXXX: 0.275 0.492 0.492
+Enter the center of the circle: 0.275 0.496 0.496
 Enter radius of the circle: 0.075
 Enter density and viscosity of the fluid: 1.0 0.0001
 Enter yes if the object is fixed: yes

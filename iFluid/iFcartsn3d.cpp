@@ -205,10 +205,62 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 }	/* end computeNewVelocity3d */
 
+//TODO: move these to iFbasic.cpp
 void Incompress_Solver_Smooth_Basis::printEnstrophy()
 {
-	if (FT_Dimension() != 3) return;
+    switch (dim)
+    {
+        case 2:
+            printEnstrophy2d();
+            break;
+        case 3:
+            printEnstrophy3d();
+            break;
+        default:
+            printf("ERROR: Dimension must be 2 or 3\n");
+            LOC(); clean_up(EXIT_FAILURE);
+    }
+}
 
+void Incompress_Solver_Smooth_Basis::printEnstrophy2d()
+{
+    static bool first = true;
+    static FILE* efile;
+	static char fname[512];
+
+    if (first)
+    {
+	    sprintf(fname,"%s/enstrophy.xg",OutName(front));
+        efile = fopen(fname,"w");
+        first = false;
+    }
+    else
+    {
+        efile = fopen(fname,"a");
+    }
+
+    int index;
+    double enstrophy = 0.0;
+    double* vorticity = field->vort;
+    
+    for (int i = imin; i < imax; ++i)
+    for (int j = jmin; j < jmax; ++j)
+    {
+        index = d_index2d(i,j,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+        
+        enstrophy += sqr(vorticity[index]);
+    }
+    
+    double vol_elem = top_h[0]*top_h[1];
+    enstrophy *= vol_elem;
+
+    fprintf(efile,"%g %g\n",front->time,enstrophy);
+    fclose(efile);
+}
+
+void Incompress_Solver_Smooth_Basis::printEnstrophy3d()
+{
     static bool first = true;
     static FILE* efile;
 	static char fname[512];
@@ -236,7 +288,7 @@ void Incompress_Solver_Smooth_Basis::printEnstrophy()
         if (!ifluid_comp(top_comp[index])) continue;
         
         double sqrmag_vort = 0.0;
-        for (int l = 0; l < 3; ++l)
+        for (int l = 0; l < dim; ++l)
             sqrmag_vort += sqr(vorticity[l][index]);
 
         enstrophy += sqrmag_vort;
@@ -420,9 +472,6 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
-    for (int i = 0; i < dim; ++i)
-        source[i] = iFparams->gravity[i];
-
     if(iFparams->if_buoyancy)
     {
         int ic[MAXD],index;
@@ -430,16 +479,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
         {
-            source[i] += field->ext_accel[i][index];
-                //source[i] = field->ext_accel[i][index];
+            source[i] = field->ext_accel[i][index];
         }
     }
-    
-    /*else
+    else
     {
         for (int i = 0; i < dim; ++i)
             source[i] = iFparams->gravity[i];
-    }*/
+    }
 } 	/* computeSourceTerm */
 
 #include<fstream>
@@ -1013,11 +1060,25 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        //TODO: shouldn't use slip boundary until turb model is activated
-                        double v_slip[MAXD] = {0.0};
-                        int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
-                        setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                        U_nb[nb] = v_slip[l];
+                        if (!is_bdry_hs(hs))
+                        {
+                            //TODO: shouldn't use slip boundary until turb model is activated
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];
+                        }
+                        else
+                        {
+                            //TODO: Without this rayleigh-taylor with NEUMANN boundaries
+                            //      crashes for some reasone
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
@@ -1033,8 +1094,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 }
                         
             }
-
-            //TODO: stil havent applied the slip condition here...
             
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
@@ -1077,10 +1136,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                         }
                     }
-                    else
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
                 }
             }

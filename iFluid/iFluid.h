@@ -155,9 +155,8 @@ struct IF_PARAMS
 	double gravity[MAXD];
 	double U_ambient[MAXD];
 
-    bool with_surface_tension {false};
 	double surf_tension;
-	double smoothing_radius;
+	double smoothing_radius {1.0};
 	
     double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */
@@ -274,6 +273,7 @@ public:
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
+    std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -312,7 +312,10 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
+    
     void printEnstrophy();
+    void printEnstrophy2d();
+    void printEnstrophy3d();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,

@@ -483,18 +483,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	UNIFORM_PARAMS uniform_params;
 	short unsigned int xsubi[3]; 
 
-    for (i = 0; i < dim; ++i)
-        source[i] = iFparams->gravity[i];
-
 	if(iFparams->if_buoyancy)
 	{
 	    int ic[MAXD],index;
         rect_in_which(coords,ic,top_grid);
         index = d_index(ic,top_gmax,dim);
         for (i = 0; i < dim; ++i)
-            source[i] += field->ext_accel[i][index];
-            //source[i] = field->ext_accel[i][index];
+            source[i] = field->ext_accel[i][index];
 	}
+    else
+    {
+        for (i = 0; i < dim; ++i)
+            source[i] = iFparams->gravity[i];
+    }
 }	/* end computeSourceTerm */
 
 void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
@@ -778,8 +779,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 //mu_nb_prev[nb] = 0.0;
 
                 if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                &intfc_state,&hs,crx_coords) &&
-                            wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+                            &intfc_state,&hs,crx_coords) &&
+                        wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
                 {
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -790,6 +791,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //For ifluid_find_state_at_crossing()
                             //registers as a CONST_P_PDE_BOUNDARY
                             U_nb[nb] = vel[l][index];
+                            //TODO: should use getStateVel[l](intfc_state)
+                            //      computed by the flowthrough func?
+                                //U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         else
                         {
@@ -798,29 +802,43 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        //TODO: shouldn't use slip boundary until turb model is activated
-                        //Apply slip boundary condition
-                        //nb = 0; //idir = 0, nbr = 0;
-                        //nb = 1; //idir = 0, nbr = 1;
-                        //nb = 2; //idir = 1, nbr = 0;
-                        //nb = 3; //idir = 1, nbr = 1;
-                        double v_slip[MAXD] = {0.0};
-                        int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
-                        setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                        U_nb[nb] = v_slip[l];                //n+1 vel
-                            //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
-                            //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
+                        if (!is_bdry_hs(hs))
+                        {
+                            //TODO: shouldn't use slip boundary until turb model is activated
+                            //Apply slip boundary condition
+                            //nb = 0; //idir = 0, nbr = 0;
+                            //nb = 1; //idir = 0, nbr = 1;
+                            //nb = 2; //idir = 1, nbr = 0;
+                            //nb = 3; //idir = 1, nbr = 1;
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];                //n+1 vel
+                                //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
+                                //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
+                        }
+                        else
+                        {
+                            //TODO: Without this rayleigh-taylor with NEUMANN boundaries
+                            //      crashes for some reason.
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
                 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
                     else
-                        mu[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
+                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
                 else
                 {
                     U_nb[nb] = vel[l][index_nb[nb]];
-                    mu[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
+                    mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
             }
 
@@ -834,8 +852,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             computeSourceTerm(coords, source);
 
             //first equation  decoupled, some terms may be lost
-            aII = 1+coeff[0]+coeff[1]+coeff[2]+coeff[3];
-            rhs = (1-coeff[0]-coeff[1]-coeff[2]-coeff[3])*vel[l][index];
+            aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3];
+            rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3])*vel[l][index];
 
             for (nb = 0; nb < 4; nb++)
             {
@@ -863,7 +881,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                         }
                     }
-                    else
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //TODO: This is may be incorrect if a point from
                         //      the previous time step switches component domains
@@ -877,6 +895,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
                     }
                 }
             }

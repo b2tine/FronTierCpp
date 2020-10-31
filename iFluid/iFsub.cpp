@@ -1255,96 +1255,90 @@ extern void read_iFparams(
 	}
 
 	iFparams->use_eddy_visc = NO;
-        if (CursorAfterStringOpt(infile,
-		"Enter yes to use eddy viscosity:"))
-        {
+    if (CursorAfterStringOpt(infile,
+                "Enter yes to use eddy viscosity:"))
+    {
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    {
 	    	iFparams->use_eddy_visc = YES;
 
-		(void) printf("Available turbulence models are:\n");
-		(void) printf("\tBaldwin-Lomax (B)\n");
-		(void) printf("\tMoin (M)\n");
-		(void) printf("\tKEPSILON (K)\n");
-        	CursorAfterString(infile,"Enter turbulence model:");
+            printf("Available turbulence models are:\n");
+            printf("\tBaldwin-Lomax (B)\n");
+            printf("\tMoin (M)\n");
+            printf("\tKEPSILON (K)\n");
+        	
+            CursorAfterString(infile,"Enter turbulence model:");
 	    	fscanf(infile,"%s",string);
-	    	(void) printf("%s\n",string);
-		switch (string[0])
-		{
-		case 'b':
-		case 'B':
-		    iFparams->eddy_visc_model = BALDWIN_LOMAX;
-        	    CursorAfterString(infile,
-			"Enter maximum distance for eddy viscosity:");
-            	    fscanf(infile,"%lf",&iFparams->ymax);
-            	    (void) printf("%f\n",iFparams->ymax);
-		    break;
-		case 'm':
-		case 'M':
-		    iFparams->eddy_visc_model = MOIN;
-		    break;
-		case 'S':
-		case 's':
-		    iFparams->eddy_visc_model = SMAGORINSKY;
-            break;
-		case 'K':
-		case 'k':
-		    iFparams->eddy_visc_model = KEPSILON;
-            break;
-		default:
-		    (void) printf("Unknown eddy viscosity model!\n");
-		    clean_up(ERROR);
-		}
+	    	printf("%s\n",string);
+		
+            switch (string[0])
+            {
+                case 'b':
+                case 'B':
+                    iFparams->eddy_visc_model = BALDWIN_LOMAX;
+                        CursorAfterString(infile,
+                    "Enter maximum distance for eddy viscosity:");
+                            fscanf(infile,"%lf",&iFparams->ymax);
+                            (void) printf("%f\n",iFparams->ymax);
+                    break;
+                case 'm':
+                case 'M':
+                    iFparams->eddy_visc_model = MOIN;
+                    break;
+                case 'S':
+                case 's':
+                    iFparams->eddy_visc_model = SMAGORINSKY;
+                    break;
+                case 'K':
+                case 'k':
+                    iFparams->eddy_visc_model = KEPSILON;
+                    break;
+                default:
+                    (void) printf("Unknown eddy viscosity model!\n");
+                    clean_up(ERROR);
+            }
 	    }
 	}
    
-    if (CursorAfterStringOpt(infile,"Enter yes for surface tension:"))
+    
+    //TODO: Need these here, or gets handled in iFinit.cpp for 2 phase flow problems?
+    CursorAfterStringOpt(infile,"Enter surface tension:");
+    fscanf(infile,"%lf",&iFparams->surf_tension);
+    printf("%f\n",iFparams->surf_tension);
+    CursorAfterStringOpt(infile,"Enter factor of smoothing radius:");
+    fscanf(infile,"%lf",&iFparams->smoothing_radius);
+    printf("%f\n",iFparams->smoothing_radius);
+
+    for (i = 0; i < dim; ++i) iFparams->gravity[i] = 0.0;
+    if (CursorAfterStringOpt(infile,"Enter gravity:"))
+    {
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf ",&iFparams->gravity[i]);
+            (void) printf("%f ",iFparams->gravity[i]);
+        }
+        (void) printf("\n");
+    }
+
+    iFparams->scalar_field = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to consider scalar field:"))
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] == 'y' || string[0] == 'Y')
-        {
-            iFparams->with_surface_tension = true;
-            CursorAfterString(infile,"Enter surface tension:");
-            fscanf(infile,"%lf",&iFparams->surf_tension);
-            printf("%f\n",iFparams->surf_tension);
-            CursorAfterString(infile,"Enter factor of smoothing radius:");
-            fscanf(infile,"%lf",&iFparams->smoothing_radius);
-            printf("%f\n",iFparams->smoothing_radius);
-        }
+            iFparams->scalar_field = YES;
     }
 
-        for (i = 0; i < dim; ++i)
-            iFparams->gravity[i] = 0.0;
-        if (CursorAfterStringOpt(infile,"Enter gravity:"))
-        {
-            for (i = 0; i < dim; ++i)
-            {
-                fscanf(infile,"%lf ",&iFparams->gravity[i]);
-                (void) printf("%f ",iFparams->gravity[i]);
-            }
-            (void) printf("\n");
-        }
-	
-        iFparams->scalar_field = NO;
-        if (CursorAfterStringOpt(infile,"Enter yes to consider scalar field:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                iFparams->scalar_field = YES;
-        }
-	
-        iFparams->min_speed = 0.0;
-        if (CursorAfterStringOpt(infile,
-			"Enter minimum speed to limit time step:"))
-        {
-            fscanf(infile,"%lf ",&iFparams->min_speed);
-            (void) printf("%f ",iFparams->min_speed);
-            (void) printf("\n");
-        }
+    iFparams->min_speed = 0.0;
+    if (CursorAfterStringOpt(infile,
+        "Enter minimum speed to limit time step:"))
+    {
+        fscanf(infile,"%lf ",&iFparams->min_speed);
+        (void) printf("%f ",iFparams->min_speed);
+        (void) printf("\n");
+    }
 	fclose(infile);
 }	/* end read_iFparams */
 

@@ -25,7 +25,8 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter the center of the circleX: 0.275 0.492 0.492
+Enter the center of the circleXXX: 0.275 0.492 0.492
+Enter the center of the circle: 0.275 0.496 0.496
 Enter radius of the circleX: 0.075
 
 Enter density and viscosity of the fluid: 1.0 0.0001
@@ -41,7 +42,8 @@ Enter the number of rigid bodies: 1
 
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphere: 0.275 0.492 0.492
+Enter center of the sphereXXX: 0.275 0.492 0.492
+Enter center of the sphere: 0.275 0.496 0.496
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
