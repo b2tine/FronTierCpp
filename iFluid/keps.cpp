@@ -3258,7 +3258,7 @@ double KE_CARTESIAN::computeEddyViscosityVariance2d()
     double* mu_t = field->mu_t;
 
     int count = 0;
-    //double mut_avg = 0.0;
+    double mut_var = 0.0;
 
     for (int i = imin; i <= imax; ++i)
     for (int j = jmin; j <= jmax; ++j)
@@ -3267,14 +3267,16 @@ double KE_CARTESIAN::computeEddyViscosityVariance2d()
         comp = cell_center[index].comp;
         if (!ifluid_comp(comp)) continue;
 
-        //mut_avg += mu_t[index];
+        mut_var += sqr(mu_t[index]);
         count++;
     }
 
-    //mut_avg /= (double)count;
-    //return mut_avg;
-    printf("RETURNING DUMMY VAL\n"); LOC();
-    return 0.0;
+    mut_var /= (double)count;
+
+    double mut_avg = computeEddyViscosityMean2d();
+    mut_var -= sqr(mut_avg);
+    
+    return mut_var;
 }
 
 double KE_CARTESIAN::computeEddyViscosityVariance3d()
@@ -3284,7 +3286,7 @@ double KE_CARTESIAN::computeEddyViscosityVariance3d()
     double* mu_t = field->mu_t;
 
     int count = 0;
-    //double mut_avg = 0.0;
+    double mut_var = 0.0;
 
     for (int i = imin; i <= imax; ++i)
     for (int j = jmin; j <= jmax; ++j)
@@ -3294,83 +3296,22 @@ double KE_CARTESIAN::computeEddyViscosityVariance3d()
         comp = cell_center[index].comp;
         if (!ifluid_comp(comp)) continue;
 
-        //mut_avg += mu_t[index];
+        mut_var += sqr(mu_t[index]);
         count++;
     }
     
-    //mut_avg /= (double)count;
-    //return mut_avg;
-    printf("RETURNING DUMMY VAL\n"); LOC();
-    return 0.0;
+    mut_var /= (double)count;
+    
+    double mut_avg = computeEddyViscosityMean3d();
+    mut_var -= sqr(mut_avg);
+    
+    return mut_var;
 }
 
 double KE_CARTESIAN::computeEddyViscosityStdDeviation()
 {
-    switch (dim)
-    {
-        case 2:
-            return computeEddyViscosityStdDeviation2d();
-            break;
-        case 3:
-            return computeEddyViscosityStdDeviation3d();
-            break;
-        default:
-            printf("ERROR: Invalid Dimension!\n");
-            LOC(); clean_up(EXIT_FAILURE);
-    }
-}
-
-double KE_CARTESIAN::computeEddyViscosityStdDeviation2d()
-{
-    int index;
-    COMPONENT comp;
-    double* mu_t = field->mu_t;
-
-    int count = 0;
-    //double mut_avg = 0.0;
-
-    for (int i = imin; i <= imax; ++i)
-    for (int j = jmin; j <= jmax; ++j)
-    {
-        index = d_index2d(i,j,top_gmax);
-        comp = cell_center[index].comp;
-        if (!ifluid_comp(comp)) continue;
-
-        //mut_avg += mu_t[index];
-        count++;
-    }
-
-    //mut_avg /= (double)count;
-    //return mut_avg;
-    printf("RETURNING DUMMY VAL\n"); LOC();
-    return 0.0;
-}
-
-double KE_CARTESIAN::computeEddyViscosityStdDeviation3d()
-{
-    int index;
-    COMPONENT comp;
-    double* mu_t = field->mu_t;
-
-    int count = 0;
-    //double mut_avg = 0.0;
-
-    for (int i = imin; i <= imax; ++i)
-    for (int j = jmin; j <= jmax; ++j)
-    for (int k = kmin; k <= kmax; ++k)
-    {
-        index = d_index3d(i,j,k,top_gmax);
-        comp = cell_center[index].comp;
-        if (!ifluid_comp(comp)) continue;
-
-        //mut_avg += mu_t[index];
-        count++;
-    }
-    
-    //mut_avg /= (double)count;
-    //return mut_avg;
-    printf("RETURNING DUMMY VAL\n"); LOC();
-    return 0.0;
+    double mut_var = computeEddyViscosityVariance();
+    return sqrt(mut_var);
 }
 
 

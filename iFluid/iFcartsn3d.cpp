@@ -2807,7 +2807,7 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
         {
             curve = *c;
             FINITE_STRING *params = (FINITE_STRING*)curve->extra;
-            if (params == NULL) continue;
+            if (params == nullptr) continue;
             
             double c_drag = params->c_drag;
             double radius = params->radius;

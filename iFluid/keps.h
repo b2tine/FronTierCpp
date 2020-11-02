@@ -250,8 +250,6 @@ protected:
     double computeEddyViscosityMean3d();
     double computeEddyViscosityVariance2d();
     double computeEddyViscosityVariance3d();
-    double computeEddyViscosityStdDeviation2d();
-    double computeEddyViscosityStdDeviation3d();
 };
 
 

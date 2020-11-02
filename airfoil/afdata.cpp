@@ -196,6 +196,7 @@ void printAfExtraData(
         */
     }
 
+    //TODO: need FINITE_STRING also ... do we still even us these below? or is this all in node extra?
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
@@ -210,6 +211,7 @@ void printAfExtraData(
                 fprintf(outfile,"load_type = %d\n",c_params->load_type);
                 fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
+        
 	}
 	
     fprintf(outfile,"\nNode extra data:\n");
@@ -461,6 +463,7 @@ void readAfExtraData(
         */
     }
     
+    //TODO: need FINITE_STRING also
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
