@@ -250,30 +250,26 @@ static void ifluid_driver(Front *front,
 
     char tv_name[100];
     sprintf(tv_name,"%s/time.txt",out_name);
-        //FILE* tv_file = fopen(tv_name,"w");
 
     char velm_name[100];
     auto imax = l_cartesian->getMaxIJ();
     sprintf(velm_name,"%s/velmat-%d-%d.txt",
                 out_name,imax[0],imax[1]);
-        //FILE* velm_file = fopen(velm_name,"w");
     
     char vortm_name[100];
     sprintf(vortm_name,"%s/vortmat-%d-%d.txt",
                 out_name,imax[0],imax[1]);
-        //FILE* vortm_file = fopen(vortm_name,"w");
 
     char intfc_name[100];
-    sprintf(intfc_name,"%s/posintfc-%d-%d.txt",
-                out_name,imax[0],imax[1]);
+    sprintf(intfc_name,"%s/posintfc.txt",out_name);
 
     char veli_name[100];
-    sprintf(veli_name,"%s/velintfc-%d-%d.txt",
-                out_name,imax[0],imax[1]);
+    sprintf(veli_name,"%s/velintfc.txt",out_name);
     
     char vorti_name[100];
-    sprintf(vorti_name,"%s/vortintfc-%d-%d.txt",
-                out_name,imax[0],imax[1]);
+    sprintf(vorti_name,"%s/vortintfc.txt",out_name);
+
+    int intfc_data_size;
 
     int tslice = 0;
     for (;;)
@@ -311,13 +307,19 @@ static void ifluid_driver(Front *front,
             FILE* vorti_file = fopen(vorti_name,"a");
 
             auto idata = l_cartesian->getIntfcData2d();
+            if (tslice == 0)
+            {
+                //TODO: This will change for fluid interfaces.
+                //      Will probably need to keep a vector containing
+                //      the interface size for each timestep.
+                intfc_data_size = idata.data.size();
+            }
 
             for (auto it : idata.data)
             {
                 auto ic = it.coords;
-                fprintf(intfc_file,"%f %f\n",ic[0],ic[1]);
-                printf("coords = %f %f\n",ic[0],ic[1]);
-                //fprintf(intfc_file,"%20.14f %20.14f\n",ic[0],ic[1]);
+                fprintf(intfc_file,"%20.14f %20.14f\n",ic[0],ic[1]);
+                //printf("coords = %g %g\n",ic[0],ic[1]);
                 
                 auto iv = it.vel;
                 fprintf(veli_file,"%20.14f %20.14f\n",iv[0],iv[1]);
@@ -441,18 +443,18 @@ static void ifluid_driver(Front *front,
     std::rename(vortm_name,new_vortm_name);
 
     char new_intfc_name[100];
-    sprintf(new_intfc_name,"%s/posintfc-%d-%d-%d.txt",
-                out_name,imax[0],imax[1],tslice);
+    sprintf(new_intfc_name,"%s/posintfc-%d.txt",
+                out_name,intfc_data_size,tslice);
     std::rename(intfc_name,new_intfc_name);
     
     char new_veli_name[100];
-    sprintf(new_veli_name,"%s/velintfc-%d-%d-%d.txt",
-                out_name,imax[0],imax[1],tslice);
+    sprintf(new_veli_name,"%s/velintfc-%d.txt",
+                out_name,intfc_data_size,tslice);
     std::rename(veli_name,new_veli_name);
     
     char new_vorti_name[100];
-    sprintf(new_vorti_name,"%s/vortintfc-%d-%d-%d.txt",
-                out_name,imax[0],imax[1],tslice);
+    sprintf(new_vorti_name,"%s/vortintfc-%d.txt",
+                out_name,intfc_data_size,tslice);
     std::rename(vorti_name,new_vorti_name);
     
 }       /* end ifluid_driver */

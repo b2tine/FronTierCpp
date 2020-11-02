@@ -61,6 +61,7 @@ cFluid/init_intfc-*
 timeSeries/timeSeries
 weno/test
 weno/matdata
+weno/convection_diffusion
 iFluid/iFluid
 iFluid/iFluid_data2d
 iFluid/iFluid_data2d_intfc
