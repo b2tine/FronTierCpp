@@ -60,9 +60,9 @@ void printAfExtraData(
     //TODO: don't think we need this anymore since calling FT_WriteFrontState() at end.
     //      May still need p->vel[i] though...
     
-    /*    
     fprintf(outfile,"\nAirfoil extra front state data:\n");
 
+    /*    
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
@@ -79,6 +79,8 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",p->vel[i]);
 	    fprintf(outfile,"\n");
         }
+    */
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -145,7 +147,6 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
-    */
 
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
@@ -323,10 +324,10 @@ void readAfExtraData(
 
     //TODO: may still need p->vel[i]
     
-    /*
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
+    /*
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
         {
@@ -342,6 +343,7 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&p->vel[i]);
 	    fscanf(infile,"\n");
         }
+    */
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -408,7 +410,6 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
 	}
-    */
 	
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
@@ -503,6 +504,7 @@ void readAfExtraData(
 	    clean_up(ERROR);
 	}
 	
+    //TODO: why are these extra traversals needed for global point index?
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
 	{
@@ -511,7 +513,6 @@ void readAfExtraData(
             max_point_gindex = Gindex(p);
 	}
 
-    //TODO: why are these extra traversals needed for global point index?
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -574,6 +575,7 @@ void readAfExtraData(
 	for (s = intfc->surfaces; s && *s; ++s)
             fscanf(infile,"%d",&Gindex(*s));
 	
+
     if (fgetstring(infile,"Point periodic shift") == FUNCTION_FAILED)
 	{
 	    (void) printf("String \"Point periodic shift\" not found\n");
