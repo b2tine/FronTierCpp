@@ -37,3 +37,33 @@ end
 save('FluidData.mat','timeVec','mdata','velMat','vortMat');
 
 
+%Interface Data
+
+intfcposfile = dir('posintfc*.txt');
+intfcvelfile = dir('velintfc*.txt');
+intfcvortfile = dir('vortintfc*.txt');
+
+iposdata = load(intfcposfile.name);
+iveldata = load(intfcvelfile.name);
+ivortdata = load(intfcvortfile.name);
+
+string = split(intfcposfile.name,'.');
+string = split(string(1),'-');
+size = cellfun(@str2num,string(2:3));
+
+stride = size(1);
+tsteps = size(2);
+
+%TODO: this won't work when stride is not a constant
+iposMat = zeros(stride,2,tsteps);
+ivelMat = zeros(stride,2,tsteps);
+ivortMat = zeros(stride,tsteps);
+
+for t = 1:tsteps
+    iposMat(:,:,t) = iposdata((t-1)*stride+1:t*stride,:);
+    ivelMat(:,:,t) = iveldata((t-1)*stride+1:t*stride,:);
+    ivortMat(:,t) = ivortdata((t-1)*stride+1:t*stride);
+end
+
+save('IntfcData.mat','iposMat','ivelMat','ivortMat');
+

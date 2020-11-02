@@ -443,17 +443,17 @@ static void ifluid_driver(Front *front,
     std::rename(vortm_name,new_vortm_name);
 
     char new_intfc_name[100];
-    sprintf(new_intfc_name,"%s/posintfc-%d.txt",
+    sprintf(new_intfc_name,"%s/posintfc-%d-%d.txt",
                 out_name,intfc_data_size,tslice);
     std::rename(intfc_name,new_intfc_name);
     
     char new_veli_name[100];
-    sprintf(new_veli_name,"%s/velintfc-%d.txt",
+    sprintf(new_veli_name,"%s/velintfc-%d-%d.txt",
                 out_name,intfc_data_size,tslice);
     std::rename(veli_name,new_veli_name);
     
     char new_vorti_name[100];
-    sprintf(new_vorti_name,"%s/vortintfc-%d.txt",
+    sprintf(new_vorti_name,"%s/vortintfc-%d-%d.txt",
                 out_name,intfc_data_size,tslice);
     std::rename(vorti_name,new_vorti_name);
     
