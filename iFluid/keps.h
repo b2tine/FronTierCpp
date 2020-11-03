@@ -9,6 +9,8 @@ struct KE_FIELD {
 	double *eps;
 	double *k_prev; //save k from prev time step for use in wall functions
     double *gamma;
+    double *dist;
+    double **nor;
 	double *Pk;
 	double *mu_t;
 	double *Cmu;
@@ -228,16 +230,12 @@ public:
 	void getRectangleCenter(int index0, int index1, double *coords);
 	int getRectangleComponent(int index);	// the center component
 	
-	double getDistance(double *coords0, double *coords1);
-	
-			// incompletely implemented
-	void getNearestInterfacePoint(double *q,double *p); 
-		
 	int  getComponent(int *icoords);	
 	int  getComponent(double *coords);	
 	void save(char *filename);
 	void read_params(char*,KE_PARAMS*);
-	
+
+    //incomplete implementation    
         void computeLiftDrag(Front*);
 
 public:
@@ -246,6 +244,11 @@ public:
     double computeEddyViscosityStdDeviation();
 
 protected:
+
+    void computeDistances();
+	bool getNearestInterfacePoint(COMPONENT comp, double* q,double* p,
+            double* nor);//, double* kappa);
+		
     double computeEddyViscosityMean2d();
     double computeEddyViscosityMean3d();
     double computeEddyViscosityVariance2d();

@@ -330,8 +330,8 @@ double Incompress_Solver_Smooth_Basis::getDistance(double *c0, double *c1)
 
 void Incompress_Solver_Smooth_Basis::getNearestInterfacePoint(
 	COMPONENT comp,
-	double *p, 
-	double *q,
+	double *p,          // mesh point
+	double *q,          // intfc point
 	double *nor,		// Normal vector
 	double *kappa)		// curvature
 {
@@ -350,45 +350,51 @@ void Incompress_Solver_Smooth_Basis::getNearestInterfacePoint(
 	    FT_VectorMemoryAlloc((POINTER*)&pts_kappa,MAXD,FLOAT);
 	    FT_MatrixMemoryAlloc((POINTER*)&pts_nor,MAXD,MAXD,FLOAT);
 	}
+
 	nearest_interface_point(p,comp,intfc,NO_BOUNDARIES,NULL,q,t,&hse,&hs);
-	if (hse != NULL)
+	
+    if (hse != NULL)
 	{
 	    switch (dim)
-	    {
-	    case 2:
-		bond = Bond_of_hse(hse);
-		pts[0] = bond->start;
-		pts[1] = bond->end;
-		for (i = 0; i < dim; ++i)
-		{
-		    GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
-		    GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
-		}
-		*kappa = (1.0 - t[0])*pts_kappa[0] + t[0]*pts_kappa[1];
-		for (i = 0; i < dim; ++i)
-		    nor[i] = (1.0 - t[0])*pts_nor[0][i] + t[0]*pts_nor[1][i];
-		mag_nor = mag_vector(nor,dim);
-		for (i = 0; i < dim; ++i)
-		    nor[i] /= mag_nor;
-		break;
-	    case 3:
-		tri = Tri_of_hse(hse);	
-		for (i = 0; i < dim; ++i)
-		{
-		    pts[i] = Point_of_tri(tri)[i];
-		    GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
-		    GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
-		}
-		for (i = 0; i < dim; ++i)
-		{
-		    *kappa = t[i]*pts_kappa[i];
-		    for (j = 0; j < dim; ++j)
-			nor[j] = t[i]*pts_nor[i][j];
-		}
-		mag_nor = mag_vector(nor,dim);
-		for (i = 0; i < dim; ++i)
-		    nor[i] /= mag_nor;
-	    }
+        {
+            case 2:
+
+            bond = Bond_of_hse(hse);
+            pts[0] = bond->start;
+            pts[1] = bond->end;
+            for (i = 0; i < dim; ++i)
+            {
+                GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            *kappa = (1.0 - t[0])*pts_kappa[0] + t[0]*pts_kappa[1];
+            for (i = 0; i < dim; ++i)
+                nor[i] = (1.0 - t[0])*pts_nor[0][i] + t[0]*pts_nor[1][i];
+            mag_nor = mag_vector(nor,dim);
+            for (i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+            break;
+
+            
+            case 3:
+
+            tri = Tri_of_hse(hse);	
+            for (i = 0; i < dim; ++i)
+            {
+                pts[i] = Point_of_tri(tri)[i];
+                GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            for (i = 0; i < dim; ++i)
+            {
+                *kappa = t[i]*pts_kappa[i];
+                for (j = 0; j < dim; ++j)
+                nor[j] = t[i]*pts_nor[i][j];
+            }
+            mag_nor = mag_vector(nor,dim);
+            for (i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+        }
 	}
 	else
 	{
@@ -4708,7 +4714,7 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 
 //NOTE: This function differs from keps.cpp version
 //      by not zeroing the normal velocity
-//TODO: could rename to setReflectBoundary()
+//TODO: should rename to setReflectBoundary() or similar
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4806,7 +4812,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     vn = 0.0;
     for (j = 0; j < dim; ++j)
-        vn += v[j] * v_tmp[j]; 	
+        vn += v[j] * vel_rel[j];//accounts for moving interface 	
+        //vn += v[j] * v_tmp[j]; 	
 
     for (j = 0; j < dim; ++j)
 	    v_tmp[j] -= 2.0*vn*v[j];

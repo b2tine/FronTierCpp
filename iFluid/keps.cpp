@@ -514,6 +514,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K_prev = field->k_prev;
 	double *gamma = field->gamma;
 
+	double *dist = field->dist;
+    double **nor = field->nor;
     double **f_surf = field->f_surf;
 
 	double Cmu = eqn_params->Cmu;
@@ -892,6 +894,7 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
                         int num_tris;
                         TRI* tris[30];//TODO: is 30 enough tris?
                         TriAndFirstRing(hse,hs,&num_tris,tris);
+                        //TODO: Or use PointAndFirstRingTris();
 
                         double fwall[MAXD] = {0.0};
                         for (int it = 0; it < num_tris; ++it)
@@ -1703,6 +1706,9 @@ void KE_CARTESIAN::solve(double dt)
         activateKE();
 
         printf("\n\nTurbulence Model Activated\n\n");
+
+        //TODO: needs to be called every time when interface is allowed to move
+        computeDistances();
     }
 
     setDomain();
@@ -2118,6 +2124,194 @@ void KE_CARTESIAN::computeMuTurb()
 	}
 
 }
+
+void KE_CARTESIAN::computeDistances()
+{
+    double* dist_array = field->dist;
+    double** nor_array = field->nor;
+
+    int index;
+    COMPONENT comp;
+    double coords[MAXD];
+    double intfc_coords[MAXD];
+    double nor[MAXD];
+    bool status;
+
+    std::string fname = OutName(front);
+    fname +=  "/dist-nor.txt";
+    FILE* file = fopen(fname.c_str(),"w");
+
+	switch (dim)
+	{
+	    case 2:
+		
+            for (int i = imin; i <= imax; ++i)
+            for (int j = jmin; j <= jmax; ++j)
+            {
+                index = d_index2d(i,j,top_gmax);
+                comp = cell_center[index].comp;
+
+                if (!ifluid_comp(comp))
+                {
+                    dist_array[index] = -1;
+                    for (int l = 0; l < dim; ++l)
+                        nor_array[l][index] = 0;
+                    fprintf(file,"index = %d coords = %f %f \n\t \
+                            dist = %g    nor = %f %f \n", index,coords[0],coords[1],
+                            dist_array[index],nor_array[0][index],nor_array[1][index]);
+                    continue;
+                }
+
+                getRectangleCenter(index,coords);
+                status = getNearestInterfacePoint(comp,coords,intfc_coords,nor);
+                
+                if (status)
+                    dist_array[index] = distance_between_positions(coords,intfc_coords,dim);
+                else
+                    dist_array[index] = -2;
+                
+                for (int l = 0; l < dim; ++l)
+                    nor_array[l][index] = nor[l];
+
+                fprintf(file,"index = %d coords = %f %f \n\t \
+                        dist = %g    nor = %f %f \n", index,coords[0],coords[1],
+                        dist_array[index],nor_array[0][index],nor_array[1][index]);
+            }
+
+	    case 3:
+		
+            for (int i = imin; i <= imax; ++i)
+            for (int j = jmin; j <= jmax; ++j)
+            for (int k = kmin; k <= kmax; ++k)
+            {
+                index = d_index3d(i,j,k,top_gmax);
+                
+                comp = cell_center[index].comp;
+                if (!ifluid_comp(comp))
+                {
+                    dist_array[index] = -1;
+                    for (int l = 0; l < dim; ++l)
+                        nor_array[l][index] = 0;
+                    fprintf(file,"index = %d coords = %f %f %f \n\t \
+                            dist = %g    nor = %f %f %f\n", index,coords[0],coords[1],coords[2],
+                            dist_array[index],nor_array[0][index],nor_array[1][index],nor_array[2][index]);
+                    continue;
+                }
+
+                getRectangleCenter(index,coords);
+                status = getNearestInterfacePoint(comp,coords,intfc_coords,nor);
+
+                if (status)
+                    dist_array[index] = distance_between_positions(coords,intfc_coords,dim);
+                else
+                    dist_array[index] = -2;
+
+                for (int l = 0; l < dim; ++l)
+                    nor_array[l][index] = nor[l];
+
+                fprintf(file,"index = %d coords = %f %f %f \n\t \
+                        dist = %g    nor = %f %f %f\n", index,coords[0],coords[1],coords[2],
+                        dist_array[index],nor_array[0][index],nor_array[1][index],nor_array[2][index]);
+            }
+
+    }
+    fclose(file);
+
+    FT_ParallelExchGridArrayBuffer(dist_array,front,NULL);
+    FT_ParallelExchGridVectorArrayBuffer(nor_array,front);
+}
+
+bool KE_CARTESIAN::getNearestInterfacePoint(
+        COMPONENT comp,     // mesh point component
+        double *p,          // mesh point coords
+	    double *q,          // intfc point coords
+        double* nor)        // intfc normal at point
+        //double* kappa)      // intfc curvature at point
+{
+	INTERFACE *intfc = front->interf;
+	int dim = front->rect_grid->dim;
+	double t[MAXD],mag_nor;
+	HYPER_SURF_ELEMENT *hse;
+	HYPER_SURF *hs;
+	POINT *pts[MAXD];
+	BOND *bond;
+	TRI *tri;
+	
+
+    static double **pts_nor, *pts_kappa;
+ 
+    if (pts_kappa == NULL)
+    {
+        FT_VectorMemoryAlloc((POINTER*)&pts_kappa,MAXD,FLOAT);
+        FT_MatrixMemoryAlloc((POINTER*)&pts_nor,MAXD,MAXD,FLOAT);
+    }
+
+    //TODO: use nearest_similar_interface_point3d() instead?
+	
+
+    boolean status;
+
+    status = nearest_interface_point(p,comp,intfc,NO_BOUNDARIES,NULL,q,t,&hse,&hs);
+        
+        //int range = 10;
+        //status = FT_FindNearestIntfcPointInRange(front,comp,p,NO_BOUNDARIES,q,t,&hse,&hs,range);
+    
+    if (hse != NULL)
+	{
+	    switch (dim)
+        {
+            case 2:
+
+            bond = Bond_of_hse(hse);
+            pts[0] = bond->start;
+            pts[1] = bond->end;
+            for (int i = 0; i < dim; ++i)
+            {
+                //GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            //*kappa = (1.0 - t[0])*pts_kappa[0] + t[0]*pts_kappa[1];
+            for (int i = 0; i < dim; ++i)
+                nor[i] = (1.0 - t[0])*pts_nor[0][i] + t[0]*pts_nor[1][i];
+            mag_nor = mag_vector(nor,dim);
+            for (int i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+            break;
+
+            
+            case 3:
+
+            tri = Tri_of_hse(hse);	
+            for (int i = 0; i < dim; ++i)
+            {
+                pts[i] = Point_of_tri(tri)[i];
+                //GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            for (int i = 0; i < dim; ++i)
+            {
+                //*kappa = t[i]*pts_kappa[i];
+                for (int j = 0; j < dim; ++j)
+                nor[j] = t[i]*pts_nor[i][j];
+            }
+            mag_nor = mag_vector(nor,dim);
+            for (int i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+        }
+	}
+	else
+	{
+	    //*kappa = 0.0;
+	    for (int i = 0; i < dim; ++i)
+            nor[i] = 0.0;
+	}
+
+
+    if (status) return true;
+    return false;
+}	/* end getNearestInterfacePoint */
+
+
 	
 void KE_CARTESIAN::setAdvectionDt()
 {
@@ -2507,6 +2701,8 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k_prev,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->dist,comp_size,FLOAT);
+            FT_MatrixMemoryAlloc((POINTER*)&field->nor,2,comp_size,sizeof(double));
 		if (keps_model == REALIZABLE)
 		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
 	    	first = NO;
@@ -2528,6 +2724,8 @@ void KE_CARTESIAN::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->k_prev,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->mu_t,comp_size,FLOAT);
 	    	FT_VectorMemoryAlloc((POINTER*)&field->gamma,comp_size,FLOAT);
+	    	FT_VectorMemoryAlloc((POINTER*)&field->dist,comp_size,FLOAT);
+            FT_MatrixMemoryAlloc((POINTER*)&field->nor,3,comp_size,sizeof(double));
 		if (keps_model == REALIZABLE)
 		    FT_VectorMemoryAlloc((POINTER*)&field->Cmu,comp_size,FLOAT);
 	    	first = NO;
@@ -2788,10 +2986,11 @@ void KE_CARTESIAN::setSlipBoundary(
 
     vn = 0.0;
     for (j = 0; j < dim; ++j)
-        vn += v[j] * v_tmp[j]; 	
+        vn += v[j] * vel_rel[j];//accounts for moving interface	
+        //vn += v[j] * v_tmp[j]; 	
 
     for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= vn*v[j];    
+	    v_tmp[j] -= vn*v[j]; 
 
     /*
     fprint_general_vector(stdout,"v",v,dim,"\n");
@@ -3060,6 +3259,134 @@ void KE_CARTESIAN::computeSource()
     return;
 }
                                     
+/*
+double KE_CARTESIAN::computeTangentialStess(int* icoords)
+{
+	char fname[200];
+	INTERFACE *grid_intfc = front->grid_intfc;
+	
+	boolean fr_crx_grid_seg;
+    GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+
+    STATE* intfc_state;
+	COMPONENT comp;
+	HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
+
+	double center[MAXD], t[MAXD], point[MAXD],nor[MAXD];
+	double rho = eqn_params->rho;
+	double nu = eqn_params->mu/rho;
+	double S[MAXD][MAXD];
+
+	double **vel = field->vel;
+	double d_h[2],vel_nb[2],v_tmp[MAXD];
+	int index_nb,nb;
+
+	index = d_index(icoords,top_gmax,dim);
+  	comp = top_comp[index];
+	getRectangleCenter(index,center);
+
+ 	if (!ifluid_comp(comp)) return 0.0;
+	
+	for (l = 0; l < dim; l++)
+	for (m = 0; m < dim; m++)
+	{
+        //l derivatives in m direction
+	    for (nb = 0; nb < 2; nb++)
+	    {
+            fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                    grid_intfc,icoords,dir[m][nb],comp,
+                    (POINTER*)&intfc_state,&hs,crx_coords);
+            
+            d_h[nb] = top_h[m]; 
+		
+            if (!fr_crx_grid_seg)
+            {
+                index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                vel_nb[nb] = vel[l][index_nb];
+            }
+            else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                     wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                     wave_type(hs) == ELASTIC_BOUNDARY)
+            {
+                setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_tmp);
+                vel_nb[nb] = v_tmp[l];
+            }
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+            {
+                if (boundary_state_function_name(hs) &&
+                        strcmp(boundary_state_function_name(hs),
+                            "flowThroughBoundaryState") == 0)
+                {
+                    //OUTLET
+                    vel_nb[nb] = vel[l][index];
+                }
+                else
+                {
+                    //INLET
+                    vel_nb[nb] = intfc_state->vel[l];
+                }
+            }
+        }
+
+        S[l][m] = 0.5*(vel_nb[1]- vel_nb[0])/(d_h[1]+d_h[0]);
+
+        //m derivatives in l direction
+	    for (nb = 0; nb < 2; nb++)
+        {
+            fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                    grid_intfc,icoords,dir[l][nb],comp,
+                    (POINTER*)&intfc_state,&hs,crx_coords);
+            
+            d_h[nb] = top_h[l];
+		
+            if (!fr_crx_grid_seg)
+            {
+                index_nb = next_index_in_dir(icoords,dir[l][nb],dim,top_gmax);
+                vel_nb[nb] = vel[m][index_nb];
+            }
+            else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                     wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                     wave_type(hs) == ELASTIC_BOUNDARY)
+            {
+                setSlipBoundary(icoords,l,nb,comp,hs,intfc_state,field->vel,v_tmp);
+                vel_nb[nb] = v_tmp[m];
+            }
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+            {
+                if (boundary_state_function_name(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                "flowThroughBoundaryState") == 0)
+                {
+                    //OUTLET
+                    vel_nb[nb] = vel[m][index];
+                }
+                else
+                {
+                    //INLET
+                    vel_nb[nb] = intfc_state->vel[m];
+                }
+            }
+	    }
+
+        S[l][m] += 0.5*(vel_nb[1] - vel_nb[0])/(d_h[1]+d_h[0]);
+
+	    if (isnan(S[l][m]))
+        {
+            printf("wave_type = %d, vel_nb = [%f %f], d_h = [%f %f]\n",
+                    wave_type(hs),vel_nb[0],vel_nb[1],d_h[0],d_h[1]);
+        }
+	}
+
+    ///
+	//for (l = 0; l < dim; l++)
+	//for (m = 0; m < dim; m++)
+	//{
+	//    S[l][l] -= 1.0/(double)dim*S[m][m];   
+	//}
+    //
+}*/
+
 /*read k-epsilon parameters*/
 void KE_CARTESIAN::read_params(
 	char *inname,
