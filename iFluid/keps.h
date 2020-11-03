@@ -162,12 +162,18 @@ public:
     */
 
 	//void computeKE();
-	void computeAdvection();
-	void computeAdvectionK(COMPONENT);
+	
+	void chienComputeK(COMPONENT);
+	void chienComputeE(COMPONENT);
+	void chienComputeMuTurb(COMPONENT);
+    
+    void computeAdvection();
+    void computeAdvectionK(COMPONENT);
 	void computeAdvectionE_STD(COMPONENT);
 	void computeAdvectionE_RNG(COMPONENT);
 	void computeAdvectionE_REAL(COMPONENT);
-	void computeMuTurb();
+	
+    void computeMuTurb();
 	double computePointFieldCmu(int*);
 	double computePointFieldStrain(int*);
 	double computePointFieldC2_RNG(int*);
@@ -246,8 +252,8 @@ public:
 protected:
 
     void computeDistances();
-	bool getNearestInterfacePoint(COMPONENT comp, double* q,double* p,
-            double* nor);//, double* kappa);
+	bool getNearestInterfacePoint(COMPONENT comp, double* q,double* p, double* nor);//, double* kappa);
+    void computeTangentialStress(int* icoords, double* tau_wall);
 		
     double computeEddyViscosityMean2d();
     double computeEddyViscosityMean3d();
