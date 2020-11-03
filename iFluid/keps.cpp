@@ -514,8 +514,8 @@ void KE_CARTESIAN::computeAdvectionK(COMPONENT sub_comp)
     double *K_prev = field->k_prev;
 	double *gamma = field->gamma;
 
-	double *dist = field->dist;
-    double **nor = field->nor;
+	double *dist_array = field->dist;
+    double **nor_array = field->nor;
     double **f_surf = field->f_surf;
 
 	double Cmu = eqn_params->Cmu;
