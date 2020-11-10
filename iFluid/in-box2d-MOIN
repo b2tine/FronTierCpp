@@ -50,9 +50,8 @@ Available turbulence models are:
         Moin (M)
         Smagorinski (S)
         KEPSILON  (K)
-Enter turbulence model: B
 
-Enter maximum distance for eddy viscosity: 0.1
+Enter turbulence model: Moin
 
 *******************************************************
 

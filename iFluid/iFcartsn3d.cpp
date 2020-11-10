@@ -520,10 +520,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
     RECT_GRID *rgr = computational_grid(front->interf);
     print_RECT_GRID_structure(rgr);
     auto coords0 = cell_center[0].getCoords();
-    printf("\ncell_center[0].m_coords = %f %f %f\n",
+    printf("\ncell_center[0].coords = %f %f %f\n",
             coords0[0],coords0[1],coords0[2]);
     auto coords1 = cell_center[1].getCoords();
-    printf("\ncell_center[1].m_coords = %f %f %f\n",
+    printf("\ncell_center[1].coords = %f %f %f\n",
             coords1[0],coords1[1],coords1[2]);
     clean_up(0);
     ///////////////////////////////////////
@@ -2247,9 +2247,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         for (i = 0; i <= top_gmax[0]; i++)
         {
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] - top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] - top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] - top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] - top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] - top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] - top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
         for (i = 0; i <= top_gmax[0]; i++)
@@ -2257,9 +2257,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         {
             k = top_gmax[2];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] - top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] - top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] + top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] - top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] - top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] + top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
 
@@ -2268,9 +2268,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         {
             j = top_gmax[1];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] - top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] + top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] - top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] - top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] + top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] - top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
 
@@ -2279,9 +2279,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         {
             i = top_gmax[0];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] + top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] - top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] - top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] + top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] - top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] - top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
 
@@ -2290,9 +2290,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
             j = top_gmax[1];
             k = top_gmax[2];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] - top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] + top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] + top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] - top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] + top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] + top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
 
@@ -2301,9 +2301,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
             i = top_gmax[0];
             k = top_gmax[2];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] + top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] - top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] + top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] + top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] - top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] + top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
         for (k = 0; k <= top_gmax[2]; k++)
@@ -2311,9 +2311,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
             i = top_gmax[0];
             j = top_gmax[1];
             index = d_index3d(i,j,k,top_gmax);
-            coord_x = cell_center[index].m_coords[0] + top_h[0]/2.0;
-            coord_y = cell_center[index].m_coords[1] + top_h[1]/2.0;
-            coord_z = cell_center[index].m_coords[2] - top_h[2]/2.0;
+            coord_x = cell_center[index].coords[0] + top_h[0]/2.0;
+            coord_y = cell_center[index].coords[1] + top_h[1]/2.0;
+            coord_z = cell_center[index].coords[2] - top_h[2]/2.0;
             fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
         }
 
@@ -2321,9 +2321,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::vtk_plot_scalar(
         j = top_gmax[1];
         k = top_gmax[2];
         index = d_index3d(i,j,k,top_gmax);
-        coord_x = cell_center[index].m_coords[0] + top_h[0]/2.0;
-        coord_y = cell_center[index].m_coords[1] + top_h[1]/2.0;
-        coord_z = cell_center[index].m_coords[2] + top_h[2]/2.0;
+        coord_x = cell_center[index].coords[0] + top_h[0]/2.0;
+        coord_y = cell_center[index].coords[1] + top_h[1]/2.0;
+        coord_z = cell_center[index].coords[2] + top_h[2]/2.0;
         fprintf(outfile,"%f %f %f\n",coord_x,coord_y,coord_z);
 
 

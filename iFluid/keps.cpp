@@ -17,21 +17,7 @@ static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 
-//----------------------------------------------------------------
-//		KE_RECTANGLE
-//----------------------------------------------------------------
 
-KE_RECTANGLE::KE_RECTANGLE()
-    : index(-1), comp(-1)
-{}
-
-void KE_RECTANGLE::setCoords(
-	double *crds,
-	int dim)
-{
-	for (int i = 0; i < dim; ++i)
-        coords[i] = crds[i];
-}
 //--------------------------------------------------------------------------
 // 		KE_CARTESIAN
 //--------------------------------------------------------------------------
@@ -60,7 +46,7 @@ void KE_CARTESIAN::initMesh(void)
 	int icoords[MAXD];
 	int num_cells;
 	int cell_index;
-	KE_RECTANGLE       rectangle;
+	IF_RECTANGLE       rectangle;
 
 	// init vertices,edges & cell_center
 	if (debugging("trace")) printf("Entering initMesh()\n");

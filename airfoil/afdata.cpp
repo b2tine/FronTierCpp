@@ -30,6 +30,7 @@ static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
+//TODO: STRING-FLUID INTERACTION BAD RESTART
 void printAfExtraData(
 	Front *front,
 	char *out_name)
@@ -79,7 +80,6 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",p->vel[i]);
 	    fprintf(outfile,"\n");
         }
-    */
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
@@ -147,6 +147,7 @@ void printAfExtraData(
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
 	}
+    */
 
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
@@ -298,6 +299,7 @@ void printAfExtraData(
 	fclose(outfile);
 }	/* end printAfExtraData */
 
+//TODO: STRING-FLUID INTERACTION BAD RESTART
 void readAfExtraData(
 	Front *front,
 	char *restart_name)
@@ -345,7 +347,6 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&p->vel[i]);
 	    fscanf(infile,"\n");
         }
-    */
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -412,6 +413,7 @@ void readAfExtraData(
                 fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
 	}
+    */
 	
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)

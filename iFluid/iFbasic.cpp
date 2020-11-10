@@ -35,28 +35,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <set>
 
 //----------------------------------------------------------------
-//		L_RECTANGLE
+//		IF_RECTANGLE
 //----------------------------------------------------------------
 
-static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
-L_RECTANGLE::L_RECTANGLE()
+IF_RECTANGLE::IF_RECTANGLE()
     : comp(-1)
 {}
 
-void L_RECTANGLE::setCoords(
-	double *coords,
+void IF_RECTANGLE::setCoords(
+	double* m_coords,
 	int dim)
 {
 	for (int i = 0; i < dim; ++i)
-        m_coords[i] = coords[i];
+        coords[i] = m_coords[i];
 }
 
-std::vector<double> L_RECTANGLE::getCoords()
+std::vector<double> IF_RECTANGLE::getCoords()
 {
-    std::vector<double> coords(m_coords,m_coords+3);
-    return coords;
+    std::vector<double> m_coords(coords,coords+3);
+    return m_coords;
 }
 //--------------------------------------------------------------------------
 //               Incompress_Solver_Basis
@@ -86,7 +85,7 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	int num_cells;
 
 	// init cell_center
-	L_RECTANGLE rectangle;
+	IF_RECTANGLE rectangle;
 
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");
@@ -310,7 +309,7 @@ void Incompress_Solver_Smooth_Basis::getRectangleCenter(
 	double *coords)
 {
 	for (int i = 0; i < dim; ++i)
-	    coords[i] = cell_center[index].m_coords[i];
+	    coords[i] = cell_center[index].coords[i];
 }
 
 double Incompress_Solver_Smooth_Basis::getDistance(double *c0, double *c1)
@@ -1644,6 +1643,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
+                //TODO: effective pressure
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -1694,17 +1694,17 @@ double Incompress_Solver_Smooth_3D_Basis::getSmoothingFunction(double phi)
 {
 	// Heaviside function [1]
 	if (phi < -m_smoothing_radius)	
-	    return 0;
+	    return 0.0;
 	else if (phi > m_smoothing_radius)
-	    return 1;
+	    return 1.0;
 	else
-	    return 1.0/2 + phi/(2*m_smoothing_radius) + 
-		   1/(2*PI)*sin(PI*phi/m_smoothing_radius);
+	    return 1.0/2.0 + phi/(2.0*m_smoothing_radius) + 
+		   1.0/(2.0*PI)*sin(PI*phi/m_smoothing_radius);
 }
 
 double Incompress_Solver_Smooth_3D_Basis::getSmoothingFunctionD(double *center, double *point)
 {
-        if (fabs(center[0]-point[0]) < 2*top_h[0] && 
+        if (fabs(center[0]-point[0]) < 2.0*top_h[0] && 
 		fabs(center[1]-point[1]) < 2*top_h[1] && 
 		fabs(center[2]-point[2]) < 2*top_h[2])
 	    return ((1.0 + cos((PI*(center[0]-point[0]))/(2.0*top_h[0]))) 
@@ -2462,6 +2462,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords);
+                //TODO: effective pressure
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -3906,14 +3907,25 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 	    vort = wmax;
 	    Fmax = ymax*abs(vort);
 	}
+
 	index = d_index(icoords,top_gmax,dim);
-	vort = field->vort[index];
+
+    if (dim == 2)
+    {
+        vort = field->vort[index];
+    }
+    else
+    {
+        printf("ERROR computeMuOfBaldwinLomax(): 3d case not implemented!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+        //TODO: need to compute modulus of strain rate tensor
+    }
 
 	l = 0.41*dist;
 	mu_in = rho * l * l * abs(vort); 
 
 	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
-	Fkleb = 1.0/(1+5.5*pow((dist*0.3/ymax),6));
+	Fkleb = 1.0/(1.0 + 5.5*pow((dist*0.3/ymax),6));
 	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
 
     //TODO: this can use the wrong viscosity, use crossover formula
@@ -4035,7 +4047,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         for (int i = 0; i < dim; ++i)
         for (int j = 0; j < dim; ++j)
         {
-            alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2*top_h[i]);
+            alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
         }
 
         for (int i = 0; i < dim; ++i)

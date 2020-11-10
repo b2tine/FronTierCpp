@@ -53,18 +53,6 @@ enum KEPS_MODEL {
     REALIZABLE
 };
 
-class KE_RECTANGLE {
-public:
-        int index;                      // rectangle index
-        int comp;
-        double area;
-        double coords[MAXD];
-        int icoords[MAXD];
-
-        KE_RECTANGLE();
-
-        void setCoords(double*,int);
-};
 
 class KE_CARTESIAN{
 
@@ -117,7 +105,7 @@ public:
 	BC_TYPE m_bc[4];								// down, right, up, left 		
 
 	// member data: mesh storage
-	std::vector<KE_RECTANGLE> cell_center;
+	std::vector<IF_RECTANGLE> cell_center;
 
 	double m_t;                     // time
 	double m_dt;			// time increment

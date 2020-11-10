@@ -265,16 +265,20 @@ class Incompress_Solver_Basis;
 
 class KE_PARAMS;
 
-class L_RECTANGLE {
-public:
-	int comp;			 
-	double m_coords[MAXD]; // x,y,z data of mesh block's center
-	int icoords[MAXD];     // i,j,k indices of mesh block
+class IF_RECTANGLE
+{
+    public:
+	
+        int comp;			 
+        int index;
+        double area;
+        double coords[MAXD]; // x,y,z data of mesh block's center
+        int icoords[MAXD];     // i,j,k indices of mesh block
 
-	L_RECTANGLE();
+        IF_RECTANGLE();
 
-	void setCoords(double*,int);
-    std::vector<double> getCoords();
+        void setCoords(double*,int);
+        std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -402,7 +406,7 @@ protected:
 
     //TODO: should rename this to avoid confusion/collision with the macro in geom.h
 	//member data: mesh storage
-	std::vector<L_RECTANGLE>   cell_center;
+	std::vector<IF_RECTANGLE>   cell_center;
 
 	//member data:
 	int    m_comp[2];
