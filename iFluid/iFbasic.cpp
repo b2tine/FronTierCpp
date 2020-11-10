@@ -3993,15 +3993,21 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
-        double mu, delta, sum_S = 0, C_s = 0.15;
+        double mu;
+        double delta;
+        double sum_S = 0;
+        double C_s = 0.15;
+        
         double S[MAXD][MAXD] = {{0,0,0}, {0,0,0}, {0,0,0}};
         double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-        int i, j, index0, index[6];
+        int index0, index[6];
+
         double **vel = field->vel;
+        
         switch (dim)
-	{
+	    {
             case 2:
-            	delta = sqrt( top_h[0]*top_h[1] );
+            	delta = sqrt(top_h[0]*top_h[1]);
                 index0 = d_index2d(icoords[0], icoords[1], top_gmax);
                 index[0] = d_index2d(icoords[0]-1, icoords[1], top_gmax);
                 index[1] = d_index2d(icoords[0]+1, icoords[1], top_gmax);
@@ -4009,7 +4015,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 index[3] = d_index2d(icoords[0], icoords[1]+1, top_gmax);
                 break;
             case 3:
-                delta = pow(top_h[0]*top_h[1]*top_h[2], 1.0/3);
+                delta = pow(top_h[0]*top_h[1]*top_h[2], 1.0/3.0);
                 index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax);
                 index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
 						top_gmax);
@@ -4025,20 +4031,23 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 						top_gmax);
                 break;
         }
-        for (i = 0; i < dim; ++i)
-        for (j = 0; j < dim; ++j)
+
+        for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
         {
-                alpha[i][j] = (vel[j][index[2*i+1]] - 
-				vel[j][index[2*i]])/(2*top_h[i]);
+            alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2*top_h[i]);
         }
-        for (i = 0; i < dim; ++i)
-        for (j = 0; j < dim; ++j)
+
+        for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
         {
-                S[i][j] = 1.0/2*(alpha[i][j] + alpha[j][i]);
-                sum_S += S[i][j]*S[i][j];
+            S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
+            sum_S += S[i][j]*S[i][j];
         }
+
         sum_S = sqrt(2*sum_S);
         mu = field->rho[index0]*sqr(C_s*delta)*sum_S;
+        
         return mu;
 }       /* end of computeMuofSmagorinskyModel */
 

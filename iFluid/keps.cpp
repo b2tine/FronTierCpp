@@ -2207,7 +2207,7 @@ void KE_CARTESIAN::solve(double dt)
         printf("\n\nTurbulence Model Activated\n\n");
 
         //TODO: needs to be called every time when interface is allowed to move
-        computeDistances();
+            //computeDistances();
     }
 
     setDomain();
