@@ -1528,6 +1528,7 @@ void Incompress_Solver_Smooth_2D_Basis::sampleVelocity()
 	count++;
 }	/* end sampleVelocity2d */
 
+//TODO: factor into separate components -- surf tension, turbulence etc.
 void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
@@ -2344,8 +2345,7 @@ void Incompress_Solver_Smooth_Basis::initSampleVelocity(char *in_name)
         fclose(infile);
 }	/* end initSampleVelocity */
 
-//Compute force due to surface tension and eddy viscosity of
-//selected turbulence model.
+//TODO: factor into separate components -- surf tension, turbulence etc.
 void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
@@ -3850,156 +3850,189 @@ void Incompress_Solver_Smooth_Basis::readBaseStates(
 }       /* end readBaseStates */
 
 double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
-        int *icoords,
+    int *icoords,
 	double dist,
 	boolean first)
 {
-	int i,j,k,index;
+	int index;
 	COMPONENT comp;
 	static double udif;
 	static double Fmax;
 	double speed, umax = -HUGE, umin = HUGE;
-	double vort, wmax = -HUGE;
-	double mu_t, mu_in, mu_out,l;
+	double mag_vort, wmax = -HUGE;
+	double mu_t, mu_out;
 	double rho = iFparams->rho2;
 	double nu = iFparams->mu2/rho;
 	double Fkleb, Fwake;
+
+    //TODO: ymax and Fmax are supposed to be solved for by maximizing the function
+    //      F(y) = y*|vorticity|*(1 - exp(-y_plus/A_plus))
 	double ymax = iFparams->ymax;
-	vort = 50.0;
 
 	if (first == YES)
 	{
 	    first = NO;
-	    switch(dim)
+	    switch (dim)
 	    {
-	    case 2:
-	    	for (j = jmin; j < jmax; j++)
-	    	for (i = imin; i < imax; i++)
+            case 2:
+	
+            for (int j = jmin; j < jmax; ++j)
+	    	for (int i = imin; i < imax; ++i)
 	    	{
-		    index = d_index2d(i,j,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-		    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index]));
-		    vort = abs(field->vort[index]);
-		    umax = std::max(umax,speed);
-		    umin = std::min(umin,speed);
-		    wmax = std::max(wmax,vort);
+                index = d_index2d(i,j,top_gmax);
+                comp  = cell_center[index].comp;
+                if (!ifluid_comp(comp)) continue;
+
+                speed = sqrt(sqr(field->vel[0][index])
+                            + sqr(field->vel[1][index]));
+
+                mag_vort = fabs(field->vort[index]);
+
+                umax = std::max(umax,speed);
+                umin = std::min(umin,speed);
+                wmax = std::max(wmax,mag_vort);
 	    	}
-		break;
-	    case 3:	
-		for (k = kmin; k < kmax; k++)
-		for (j = jmin; j < jmax; j++)
-                for (i = imin; i < imax; i++)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-                    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index])+
-				sqr(field->vel[2][index]));
-                    umax = std::max(umax,speed);
-                    umin = std::min(umin,speed);
-                }
-                break;
-	    }
+            break;
+
+	        case 3:	
+        
+            for (int k = kmin; k < kmax; ++k)
+            for (int j = jmin; j < jmax; ++j)
+            for (int i = imin; i < imax; ++i)
+            {
+                index = d_index3d(i,j,k,top_gmax);
+                comp  = cell_center[index].comp;
+                if (!ifluid_comp(comp)) continue;
+                
+                speed = sqrt(sqr(field->vel[0][index])
+                            + sqr(field->vel[1][index])
+                            + sqr(field->vel[2][index]));
+
+                mag_vort = sqrt(sqr(field->vorticity[0][index])
+                            + sqr(field->vorticity[1][index])
+                            + sqr(field->vorticity[2][index]));
+
+                umax = std::max(umax,speed);
+                umin = std::min(umin,speed);
+                wmax = std::max(wmax,mag_vort);
+            }
+            
+            break;
+        }
+
 	    udif = umax - umin;
-	    vort = wmax;
-	    Fmax = ymax*abs(vort);
+	    mag_vort = wmax;
+	    Fmax = ymax*mag_vort;
+        //TODO: ymax and Fmax are supposed to be solved for by maximizing the function
+        //          F(y) = y*|vorticity|*(1 - exp(-y_plus/A_plus))
+        //      Above Fmax is not using the damping factor of F(y), 1-exp(..).
 	}
 
 	index = d_index(icoords,top_gmax,dim);
 
-    if (dim == 2)
+    switch (dim)
     {
-        vort = field->vort[index];
-    }
-    else
-    {
-        printf("ERROR computeMuOfBaldwinLomax(): 3d case not implemented!\n");
-        LOC(); clean_up(EXIT_FAILURE);
-        //TODO: need to compute modulus of strain rate tensor
+        case 2:
+            mag_vort = fabs(field->vort[index]);
+            break;
+        case 3:
+            mag_vort = sqrt(sqr(field->vorticity[0][index])
+                        + sqr(field->vorticity[1][index])
+                        + sqr(field->vorticity[2][index]));
+            break;
     }
 
-	l = 0.41*dist;
-	mu_in = rho * l * l * abs(vort); 
+	double l = 0.41*dist;
+	double mu_in = rho*l*l*mag_vort; 
 
 	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
 	Fkleb = 1.0/(1.0 + 5.5*pow((dist*0.3/ymax),6));
 	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
 
-    //TODO: this can use the wrong viscosity, use crossover formula
+    //TODO: This method may select the wrong viscosity.Need to solve for the
+    //      crossover distance, y_crx, which is the smallest distance
+    //      from the nearest wall in which mu_inner == mu_outer (root finding problem)
+    //      and then select mu_t based on whether the distance from the point to the
+    //      wall is less/greater than y_crx.
 	if (mu_in < mu_out)
 	    mu_t = mu_in;
 	else
 	    mu_t = mu_out;
+
 	return mu_t;
 }	/* end computeMuOfBaldwinLomax */
 
 double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)
 {
-	double nu_t, C_v = 0.07;
-    	int i, j, k;
-    	int index[6], index0;
-    	double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-    	double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-    	double sigma, B_beta, sum_alpha;
-    	double **vel = field->vel;
-    	double delta[MAXD];
-    	for (i = 0; i < dim; i++)
-	    delta[i] = top_h[i];
-    	switch( dim )
-    	{
-	    case 2:
-		index0   = d_index2d(icoords[0],icoords[1],top_gmax);
-	        index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
-	        index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
-	        index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
-	        index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
-	        break;
-	    case 3:
-	        index0   = d_index3d(icoords[0],icoords[1],icoords[2],
-					top_gmax); 
-	        index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
-					top_gmax); 
-	        index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
-					top_gmax);
-	        index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
-					top_gmax);
-	        index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
-					top_gmax);
-	        index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
-					top_gmax);
-	        index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
-					top_gmax);
-	        break;
-    	}
-   	sum_alpha = 0;
-    	for (i = 0; i < dim; i++)
-	for (j = 0; j < dim; j++)
+    double C_v = 0.07;
+    int index[6], index0;
+    double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+    double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+    double **vel = field->vel;
+    
+    //REMOVE delta -- not used anywhere?
+    double delta[MAXD];
+    for (int i = 0; i < dim; ++i)
+        delta[i] = top_h[i];
+    
+    switch (dim)
+    {
+        case 2:
+            index0 = d_index2d(icoords[0],icoords[1],top_gmax);
+            index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
+            index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
+            index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
+            index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
+            break;
+        
+        case 3:
+            index0 = d_index3d(icoords[0],icoords[1],icoords[2],
+                    top_gmax); 
+            index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
+                    top_gmax); 
+            index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
+                    top_gmax);
+            index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
+                    top_gmax);
+            index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
+                    top_gmax);
+            index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
+                    top_gmax);
+            index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
+                    top_gmax);
+            break;
+    }
+
+   	double sum_alpha = 0;
+    for (int i = 0; i < dim; ++i)
+	for (int j = 0; j < dim; ++j)
 	{
-	    alpha[i][j] =(vel[j][index[2*i+1]] - vel[j][index[2*i]])/
-				(2.0*top_h[i]);
-	    sum_alpha += alpha[i][j]*alpha[i][j];
+	    alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
+	    sum_alpha += alpha[i][j]*alpha[i][j]; //squared frobenius norm
 	}
-    	for (i = 0; i < dim; i++)
-	for (j = 0; j < dim; j++)
+
+    for (int i = 0; i < dim; ++i)
+	for (int j = 0; j < dim; ++j)
 	{
 	    beta[i][j] = 0.0;
-	    for( k = 0; k < dim; k++)
-		beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
+	    for (int k = 0; k < dim; ++k)
+            beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
 	    
 	}
-    	B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1] + 
-		 beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2] + 
-		 beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
-    	if (sum_alpha == 0.0)
-	    sigma = 0.0;
-    	else
-	    sigma = sqrt( B_beta/sum_alpha );
-    	nu_t = C_v*sigma;
-     	return nu_t * field->rho[index0];
+
+    double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
+                  + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
+                  + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
+
+    double sigma = 0.0;
+    if (sum_alpha == 0.0)
+        sigma = 0.0;
+    else
+        sigma = sqrt(B_beta/sum_alpha);
+
+    double nu_t = C_v*sigma;
+    return nu_t*field->rho[index0];// mu_t
 }	/* end computeMuOfMoinModel*/
 
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
@@ -4057,7 +4090,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
             sum_S += S[i][j]*S[i][j];
         }
 
-        sum_S = sqrt(2*sum_S);
+        sum_S = sqrt(2.0*sum_S);
         mu = field->rho[index0]*sqr(C_s*delta)*sum_S;
         
         return mu;

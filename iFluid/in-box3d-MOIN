@@ -48,9 +48,7 @@ Available tuebulence models are:
         Smagorinski (S)
         KEPSILON  (K)
 
-Enter turbulence model: Baldwin-Lomax
-Enter maximum distance for eddy viscosity: 0.075
-
+Enter turbulence model: Moin
 *******************************************************
 
 
@@ -65,7 +63,6 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-
 Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
