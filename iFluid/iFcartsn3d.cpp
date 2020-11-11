@@ -1097,7 +1097,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else
                     {
-                        printf("Unkown Boundary Type!\n");
+                        printf("Unknown Boundary Type!\n");
                         LOC(); clean_up(EXIT_FAILURE);
                     }
 
