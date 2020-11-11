@@ -14,7 +14,7 @@ For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 20.0
-Max step: 25000
+Max step: 50000
 Print interval: 0.5
 Movie frame interval: 0.025
 CFL factor: 0.75
@@ -48,23 +48,7 @@ Available tuebulence models are:
         Moin (M)
         Smagorinski (S)
         KEPSILON  (K)
-Enter turbulence model: K
-Enter type of k-eps model: RNG
-Enter turbulent Prandtl number for k: 0.7194
-Enter turbulent Prandtl number for epsilon: 0.7194
-Enter C1: 1.42
-Enter C2: 1.68
-Enter Cmu: 0.0845
-Enter Cbc: 0.01
-Enter I: 0.0001
-Enter ViscRatioFar: 1
-Enter ViscRatioNear: 100
-Enter l0: 1.0
-Enter U0: 5.0
-Enter mu0: 0.001
-Enter y+: 11.067
 
-Enter time to active turbulence model: 0.075
 *******************************************************
 
 Type y to make movie of pressure: y
