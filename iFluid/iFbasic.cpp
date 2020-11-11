@@ -1040,6 +1040,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 }	/* end initMovieVariables */
 
 
+//Subgrid stress model? (2d only)
 void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -1266,6 +1267,7 @@ void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
             index3 = d_index2d(i,j-1,top_gmax);
             index4 = d_index2d(i,j+1,top_gmax);
 
+            //subgrid shear stress being applied to the velocity?
             vel[0][index0] += -m_dt*(
                               ((tau00[index2]-tau00[index1])/(2.0*top_h[0])) + 
                                 ((tau01[index4]-tau01[index3])/(2.0*top_h[1])));
@@ -1529,6 +1531,8 @@ void Incompress_Solver_Smooth_2D_Basis::sampleVelocity()
 }	/* end sampleVelocity2d */
 
 //TODO: factor into separate components -- surf tension, turbulence etc.
+//
+//TODO: put clock() calls on LES turb models
 void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
@@ -2346,6 +2350,8 @@ void Incompress_Solver_Smooth_Basis::initSampleVelocity(char *in_name)
 }	/* end initSampleVelocity */
 
 //TODO: factor into separate components -- surf tension, turbulence etc.
+//
+//TODO: put clock() calls on LES turb models
 void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
