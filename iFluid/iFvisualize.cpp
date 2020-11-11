@@ -5,7 +5,7 @@
 void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()
 {
     char mesh_name[250];
-    sprintf(mesh_name,"%s/top_grid.vtk",OutName(front));
+    sprintf(mesh_name,"%s/vtk/top_grid.vtk",OutName(front));
 
     FILE* file = fopen(mesh_name,"w");
 

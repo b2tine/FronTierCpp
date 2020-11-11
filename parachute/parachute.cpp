@@ -256,6 +256,8 @@ void airfoil_driver(Front *front,
 	    
         if (ReSetTime)
             setSpecialNodeForce(front,af_params->kl);
+        else
+            l_cartesian->writeMeshFileVTK();
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
