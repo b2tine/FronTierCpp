@@ -680,7 +680,7 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        //TODO: FREE_MOTION requires inpute val moment_of_inertial?
+        //TODO: FREE_MOTION requires input val moment_of_inertial?
         if (rgb_params->motion_type == FREE_MOTION ||
             rgb_params->motion_type == ROTATION)
         {
