@@ -1648,7 +1648,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
-                //TODO: effective pressure
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -4010,14 +4009,17 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
             break;
     }
 
+    //alpha is the transpose of velocity gradient tensor, grad(u)^T.
+    //sum_alpha is the squared frobenius norm of the (transposed) velocity gradient.
    	double sum_alpha = 0;
     for (int i = 0; i < dim; ++i)
 	for (int j = 0; j < dim; ++j)
 	{
 	    alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
-	    sum_alpha += alpha[i][j]*alpha[i][j]; //squared frobenius norm
+	    sum_alpha += alpha[i][j]*alpha[i][j];
 	}
 
+    //beta is almost (alpha^T)(alpha)
     for (int i = 0; i < dim; ++i)
 	for (int j = 0; j < dim; ++j)
 	{
@@ -4027,6 +4029,9 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	    
 	}
 
+    //This is almost the determinant of beta, but is missing the coefficients
+    //on the submatrix determinants, and missing the negative sign on the second one ....
+    //Not sure if incorrect computation or is something else computed correctly.
     double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
@@ -4044,10 +4049,8 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
-        double mu;
         double delta;
-        double sum_S = 0;
-        double C_s = 0.15;
+        double C_s = 0.1;//TODO: input file option for tuning
         
         double S[MAXD][MAXD] = {{0,0,0}, {0,0,0}, {0,0,0}};
         double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -4055,31 +4058,31 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 
         double **vel = field->vel;
         
+        //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
         switch (dim)
 	    {
             case 2:
-            	delta = sqrt(top_h[0]*top_h[1]);
-                index0 = d_index2d(icoords[0], icoords[1], top_gmax);
-                index[0] = d_index2d(icoords[0]-1, icoords[1], top_gmax);
-                index[1] = d_index2d(icoords[0]+1, icoords[1], top_gmax);
-                index[2] = d_index2d(icoords[0], icoords[1]-1, top_gmax);
-                index[3] = d_index2d(icoords[0], icoords[1]+1, top_gmax);
+            	
+                delta = sqrt(top_h[0]*top_h[1]);
+                
+                index0 = d_index2d(icoords[0],icoords[1],top_gmax);
+                index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
+                index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
+                index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
+                index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
                 break;
+
             case 3:
+                
                 delta = pow(top_h[0]*top_h[1]*top_h[2], 1.0/3.0);
+                
                 index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax);
-                index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
-						top_gmax);
-                index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
-						top_gmax);
-                index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
-						top_gmax);
-                index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
-						top_gmax);
-                index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
-						top_gmax);
-                index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
-						top_gmax);
+                index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],top_gmax);
+                index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],top_gmax);
+                index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],top_gmax);
+                index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],top_gmax);
+                index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,top_gmax);
+                index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,top_gmax);
                 break;
         }
 
@@ -4089,6 +4092,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
             alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
         }
 
+        double sum_S = 0.0;
         for (int i = 0; i < dim; ++i)
         for (int j = 0; j < dim; ++j)
         {
@@ -4096,10 +4100,10 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
             sum_S += S[i][j]*S[i][j];
         }
 
-        sum_S = sqrt(2.0*sum_S);
-        mu = field->rho[index0]*sqr(C_s*delta)*sum_S;
+        double mod_S = sqrt(2.0*sum_S);
+        double mu_t = field->rho[index0]*sqr(C_s*delta)*mod_S;
         
-        return mu;
+        return mu_t;
 }       /* end of computeMuofSmagorinskyModel */
 
 KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()

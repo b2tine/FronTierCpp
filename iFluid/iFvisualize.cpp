@@ -1,5 +1,7 @@
 #include "iFluid.h"
 
+//TODO: probably better to take the grid as input so there is no
+//      confusion as to what grid we are plotting...
 
 //TODO: binary format
 void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()

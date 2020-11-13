@@ -623,6 +623,9 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
         icoords[0] = i;
         icoords[1] = j;
 
+        dx = top_h[0];
+        dy = top_h[1];
+
         index = d_index(icoords,top_gmax,dim);
         comp = top_comp[index];
 
@@ -631,12 +634,12 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
             u0 = vel[(idir+1)%dim][index];
             for (k = 0; k < dim; ++k)
                 icnb[k] = icoords[k];
+            
             for (nb = 0; nb < 2; nb++)
             {
-                dx = top_h[0];
-                dy = top_h[1];
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 index_nb = d_index(icnb,top_gmax,dim);
+        
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
                 if (status == NO_PDE_BOUNDARY)
@@ -650,9 +653,9 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
                     u_edge[idir][nb] = u0;
             }
         }
-
-        vorticity = (u_edge[0][1]-u_edge[0][0])/2/dx -
-                        (u_edge[1][1]-u_edge[1][0])/2/dy;
+                    
+        vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/dx -
+                        0.5*(u_edge[1][1] - u_edge[1][0])/dy;
 
 	return vorticity;
 }	/* end getVorticity */
