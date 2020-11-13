@@ -1,6 +1,6 @@
 Domain limit in 0-th dimension: 0 9
-Domain limit in 1-th dimension: -2 2
-Computational grid: 500 200
+Domain limit in 1-th dimension: -3 3
+Computational grid: 90 60
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -16,8 +16,9 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Max time: 20.0
 Max step: 50000
 Print interval: 0.5
-Movie frame interval: 0.025
-CFL factor: 0.75
+Movie frame interval: 0.05
+Movie frame intervalX: 0.025
+CFL factor: 0.5
 Redistribution interval: 100000000
 
 Problem type can be
