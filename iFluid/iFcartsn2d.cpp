@@ -26,10 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *******************************************************************/
 
 #include "iFluid.h"
-//#include <solver.h>
 
-static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)

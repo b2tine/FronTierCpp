@@ -52,7 +52,7 @@ Available turbulence models are:
         KEPSILON  (K)
 
 Enter turbulence model: Moin
-
+Enter model constant: 0.025
 *******************************************************
 
 Type y to make movie of pressure: y

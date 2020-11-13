@@ -65,6 +65,7 @@ Available tuebulence models are:
         KEPSILON  (K)
 
 Enter turbulence model: Moin
+Enter model constant: 0.025
 *******************************************************
 
 

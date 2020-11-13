@@ -43,7 +43,7 @@ Available tuebulence models are:
         KEPSILON  (K)
 
 Enter turbulence model: Smagorinksi
-
+Enter model constant: 0.1
 *******************************************************
 
 For lower boundary in 0-th dimension

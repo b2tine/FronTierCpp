@@ -3851,12 +3851,12 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 	return mu_t;
 }	/* end computeMuOfBaldwinLomax */
 
+//Vreman 2004 paper
 double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)
 {
     //relation to smagorinsky constant: C_v ~ 2.5*C_s^2
-        double C_v = 0.07;
-    //double C_v = 0.025; //TODO: input file option for tuning
+    double C_v = iFparams->C_v;
     
     int index[6], index0;
     double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -3885,17 +3885,14 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
             break;
     }
 
-    //alpha is the transpose of velocity gradient tensor, grad(u)^T.
-    //sum_alpha is the squared frobenius norm of the (transposed) velocity gradient.
    	double sum_alpha = 0;
     for (int i = 0; i < dim; ++i)
 	for (int j = 0; j < dim; ++j)
 	{
-	    alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
+	    alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
 	    sum_alpha += alpha[i][j]*alpha[i][j];
 	}
 
-    //filter width = top_h[k]?? or is there another definition??
     for (int i = 0; i < dim; ++i)
 	for (int j = 0; j < dim; ++j)
 	{
@@ -3909,8 +3906,11 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
 
-    double nu_t = 0.0;;
-    if (sum_alpha >= MACH_EPS)
+    double nu_t;
+        //if (sum_alpha >= MACH_EPS)
+    if (B_beta < MACH_EPS) //See Vreman's implementation (he actually uses 1.0e-12)
+        nu_t = 0.0;
+    else
         nu_t = C_v*sqrt(B_beta/sum_alpha);
     
     double mu_t = nu_t*field->rho[index0];
@@ -3931,7 +3931,8 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
         double delta;
-        double C_s = 0.1;//TODO: input file option for tuning
+        
+        double C_s = iFparams->C_s;
         
         double S[MAXD][MAXD] = {{0,0,0}, {0,0,0}, {0,0,0}};
         double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -4772,8 +4773,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     //TODO: The difference between nopenetration and reflection appears to be significant
     for (int j = 0; j < dim; ++j)
-	    v_slip[j] -= 2.0*vn*vec[j];
-	    //v_slip[j] -= vn*vec[j];
+	    v_slip[j] -= vn*vec[j];
+	    //v_slip[j] -= 2.0*vn*vec[j]; //Remove when verified slip is correct
     
     /*
     fprint_general_vector(stdout,"vec",v,dim,"\n");

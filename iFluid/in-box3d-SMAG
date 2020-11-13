@@ -49,6 +49,7 @@ Available tuebulence models are:
         KEPSILON  (K)
 
 Enter turbulence model: Smagorinski
+Enter model constant: 0.1
 *******************************************************
 
 

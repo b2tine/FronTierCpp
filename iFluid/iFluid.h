@@ -172,12 +172,8 @@ struct IF_PARAMS
 	boolean if_buoyancy;
 	double  ref_temp;
 	boolean if_ref_pres;
-	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
 	double  ref_pres;
-	EDDY_VISC eddy_visc_model;
-	POINTER eddy_params;
 	double  Amplitute; 	/*Amplitute of velocity*/
-	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
 	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
         
     double  porous_coeff[2];   /*dp = a*v + b*v^2*/
@@ -187,6 +183,14 @@ struct IF_PARAMS
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
     int fsi_startstep;
+
+    //TODO: factor out turbulence params into separate data structure, eddy_params
+	POINTER eddy_params;
+	EDDY_VISC eddy_visc_model;
+	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
+	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
+    double C_s;     //Smagorinsky model constant
+    double C_v;     //Vreman (MOIN) model constant
 };
 
 struct _FLOW_THROUGH_PARAMS {

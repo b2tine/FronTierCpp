@@ -1278,18 +1278,23 @@ extern void read_iFparams(
                 case 'b':
                 case 'B':
                     iFparams->eddy_visc_model = BALDWIN_LOMAX;
-                        CursorAfterString(infile,
-                    "Enter maximum distance for eddy viscosity:");
-                            fscanf(infile,"%lf",&iFparams->ymax);
-                            (void) printf("%f\n",iFparams->ymax);
+                    CursorAfterString(infile,"Enter maximum distance for eddy viscosity:");
+                    fscanf(infile,"%lf",&iFparams->ymax);
+                    printf("%f\n",iFparams->ymax);
                     break;
                 case 'm':
                 case 'M':
                     iFparams->eddy_visc_model = MOIN;
+                    CursorAfterString(infile,"Enter model constant:");
+                    fscanf(infile,"%lf",&iFparams->C_v);
+                    printf("%f\n",iFparams->C_v);
                     break;
                 case 'S':
                 case 's':
                     iFparams->eddy_visc_model = SMAGORINSKY;
+                    CursorAfterString(infile,"Enter model constant:");
+                    fscanf(infile,"%lf",&iFparams->C_s);
+                    printf("%f\n",iFparams->C_s);
                     break;
                 case 'K':
                 case 'k':
