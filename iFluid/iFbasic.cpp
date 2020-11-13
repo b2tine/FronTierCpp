@@ -3855,8 +3855,8 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)
 {
     //relation to smagorinsky constant: C_v ~ 2.5*C_s^2
-    double C_v = 0.025; //TODO: input file option for tuning
-        //double C_v = 0.07;
+        double C_v = 0.07;
+    //double C_v = 0.025; //TODO: input file option for tuning
     
     int index[6], index0;
     double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -3911,7 +3911,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 
     double nu_t = 0.0;;
     if (sum_alpha >= MACH_EPS)
-        nu_t = sqrt(B_beta/sum_alpha);
+        nu_t = C_v*sqrt(B_beta/sum_alpha);
     
     double mu_t = nu_t*field->rho[index0];
     return mu_t;
@@ -4768,14 +4768,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     vn = 0.0;
     for (int j = 0; j < dim; ++j)
-        vn += vec[j]*vel_rel[j];//accounts for moving interface 	
-            //vn += vec[j]*v_tmp[j]; 	
+        vn += vec[j]*vel_rel[j];
 
+    //TODO: The difference between nopenetration and reflection appears to be significant
     for (int j = 0; j < dim; ++j)
-	    v_slip[j] -= vn*vec[j];
-	    //v_slip[j] -= 2.0*vn*vec[j];
-	        //v_tmp[j] -= 2.0*vn*vec[j];
-	            //v_tmp[j] -= vn*vec[j];
+	    v_slip[j] -= 2.0*vn*vec[j];
+	    //v_slip[j] -= vn*vec[j];
     
     /*
     fprint_general_vector(stdout,"vec",v,dim,"\n");

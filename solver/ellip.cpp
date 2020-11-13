@@ -347,6 +347,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     
             if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
             {
+                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
 
@@ -380,6 +381,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //TODO: getStateVar() will return phi, not pressure.
                 //      The pressure is updated at the flow through boundary,
                 //      but phi is not.
+                //
+                //TODO: for OUTLET use regular index_nb[l] from above??
                 rhs += -coeff[l]*getStateVar(intfc_state);
                 aII += -coeff[l];
                 use_neumann_solver = NO;
@@ -1030,6 +1033,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             if (status == CONST_V_PDE_BOUNDARY ||
                     status == CONST_P_PDE_BOUNDARY)
             {
+                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
     
@@ -1063,6 +1067,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //      The pressure is updated at the flow through boundary,
                 //      but phi is not.
                 
+                //TODO: for OUTLET use regular index_nb[l] from above??
                 aII += -coeff[l];
                 rhs += -coeff[l]*getStateVar(intfc_state);
                 use_neumann_solver = NO;
