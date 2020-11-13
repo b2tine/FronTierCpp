@@ -673,11 +673,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	for (i = imin; i <= imax; ++i)
 	for (j = jmin; j <= jmax; ++j)
 	{
-	    index  = d_index2d(i,j,top_gmax);
+	    index = d_index2d(i,j,top_gmax);
 	    if (ifluid_comp(top_comp[index]))
-		vort[index] = getVorticity(i,j);
+            vort[index] = getVorticity(i,j);
 	    else
-		vort[index] = 0.0;
+            vort[index] = 0.0;
 	}
     //TODO: compare to cFluid G_CARTESIAN::copyMeshStates()
 	symmetry[0] = symmetry[1] = ODD;
@@ -700,32 +700,36 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     double coords[MAXD], crx_coords[MAXD];
     double coeff[4],mu[4],mu0,rho,rhs;
     
+    double source[MAXD];
     double U_nb[4];
     //double U_nb_prev[4];
     //double mu_nb_prev[4];
     
-    double *x;
     GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
     POINTER intfc_state;
     HYPER_SURF *hs;
+    INTERFACE *grid_intfc = front->grid_intfc;
+	int status;
+    
     PetscInt num_iter;
     double residual;
     double aII;
-    double source[MAXD];
+    double *x;
+    
     double **vel = field->vel;
     double **f_surf = field->f_surf;
-    INTERFACE *grid_intfc = front->grid_intfc;
-	int status;
+    double **grad_q = field->grad_q;
 
-        if (debugging("trace"))
-            (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
-                        "computeDiffusionCN()\n");
-	start_clock("computeDiffusionCN");
+    if (debugging("trace"))
+        (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
+                    "computeDiffusionCN()\n");
+	
+    start_clock("computeDiffusionCN");
 
-        setIndexMap();
+    setIndexMap();
 
-        size = iupper - ilower;
-        FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
 	if (debugging("field_var"))
 	{
@@ -793,10 +797,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         {
                             //For ifluid_find_state_at_crossing()
                             //registers as a CONST_P_PDE_BOUNDARY
-                            U_nb[nb] = vel[l][index];
-                            //TODO: should use getStateVel[l](intfc_state)
-                            //      computed by the flowthrough func?
-                                //U_nb[nb] = getStateVel[l](intfc_state);
+                            U_nb[nb] = vel[l][index_nb[nb]];//This should be the flow through vel
+                                //U_nb[nb] = vel[l][index];
                         }
                         else
                         {
@@ -805,9 +807,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (!is_bdry_hs(hs))
+                        if (!is_bdry_hs(hs))//TODO: handle another way -- we want to include these (see below)
                         {
-                            //TODO: shouldn't use slip boundary until turb model is activated
                             //Apply slip boundary condition
                             //nb = 0; //idir = 0, nbr = 0;
                             //nb = 1; //idir = 0, nbr = 1;
@@ -909,7 +910,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
           
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-                //rhs -= m_dt*grad_q[l][index]/rho;
+            rhs -= m_dt*grad_q[l][index]/rho;//grad_q is actually grad phi
 
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -999,8 +1000,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index2d(i,j,top_gmax);
-        mu0 = 0.5*field->mu[index];
-	    pres[index] = q[index] + phi[index] - accum_dt*mu0*div_U[index];
+        mu0 = field->mu[index];
+	    pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = pres[index];
 	}
     
@@ -1031,8 +1032,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index2d(i,j,top_gmax);
-        mu0 = 0.5*field->mu[index];
-        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+        mu0 = field->mu[index];
+        pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
         q[index] = 0.0;
 	}
 
@@ -1166,7 +1167,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
-	int i;
+    int i;
 	COMPONENT comp;
 	double coords[MAXD];
 	int size = (int)cell_center.size();
@@ -1183,6 +1184,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	m_smoothing_radius = iFparams->smoothing_radius;
 	m_sigma = iFparams->surf_tension;
 	mu_min = rho_min = HUGE;
+
 	for (i = 0; i < 2; ++i)
 	{
 	    if (ifluid_comp(m_comp[i]))
@@ -1192,17 +1194,27 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	    }
 	}
 
+    double *pres = field->pres;
+    double *phi = field->phi;
+
 	// Initialize state at cell_center
-        for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
+    {
+        getRectangleCenter(i, coords);
+            //cell_center[i].m_state.setZero();
+        comp = top_comp[i];
+        if (getInitialState != NULL)
         {
-            getRectangleCenter(i, coords);
-	    //cell_center[i].m_state.setZero();
-	    comp = top_comp[i];
-	    if (getInitialState != NULL)
-	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
+            (*getInitialState)(comp,coords,field,i,dim,iFparams);
         }
+
+        //TODO: see comments in getPressure() function
+        pres[i] = getPressure(front,coords,NULL);
+        phi[i] = getPhiFromPres(front,pres[i]);
+    }
+
 	computeGradientQ();
-        copyMeshStates();
+    copyMeshStates();
 	setAdvectionDt();
 }       /* end setInitialCondition */
 

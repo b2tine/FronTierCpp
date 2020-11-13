@@ -340,7 +340,7 @@ public:
         void computeFieldPointGradJump(int*,double*,double*);
 
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
-            HYPER_SURF* hs, POINTER state, double** vel, double* v_tmp);
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
 	//For debugging test
 	void compareWithBaseSoln(void);

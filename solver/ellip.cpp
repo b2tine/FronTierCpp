@@ -432,8 +432,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 rhs -= coeff[l]*pres_reflect; 
                 use_neumann_solver = NO;
 
-                //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-                //      dp/dn = 0 (reflecting boundary for pressure) ????
           
                 /*  
                 if (porosity != 0.0)
@@ -456,9 +454,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             break;
             if (refl_side[l] == YES)
             {
-                //TODO: NEUMANN_BOUNDARY || MOVABLE_BODY_BOUNDARY
-                //      dp/dn = 0 (reflecting boundary for pressure) ????
-            
                 double alpha = 1.0;
                         solver.Set_A(I,I_oppnb[l],(1.0-alpha)*coeff[l]);
                         aII -= -alpha*coeff[l];

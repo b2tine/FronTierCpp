@@ -998,27 +998,31 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	int i,j,k,l,nb,icoords[MAXD];
 	double coords[MAXD], crx_coords[MAXD];
 	double coeff[6],mu[6],mu0,rho,rhs,U_nb[6];
-    double *x;
-	GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+	double source[MAXD];
+	
+    GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
 	POINTER intfc_state;
 	HYPER_SURF *hs;
-	PetscInt num_iter;
+    INTERFACE *grid_intfc = front->grid_intfc;
+    int status;
+	
+    PetscInt num_iter;
 	double residual;
 	double aII;
-	double source[MAXD];
+    double *x;
+
 	double **vel = field->vel;
 	double **f_surf = field->f_surf;
-	INTERFACE *grid_intfc = front->grid_intfc;
-    int status;
-
+    double **grad_q = field->grad_q;
+	
 	if (debugging("trace"))
 	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionCN()\n");
 
-        setIndexMap();
+    setIndexMap();
 
-        size = iupper - ilower;
-        FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
 	for (l = 0; l < dim; ++l)
 	{
@@ -1071,7 +1075,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                                 "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
-                            U_nb[nb] = vel[l][index];
+                            U_nb[nb] = vel[l][index_nb[nb]];//This should be the flow through vel
+                                //U_nb[nb] = vel[l][index];
                         }
                         else
                         {
@@ -1081,9 +1086,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (!is_bdry_hs(hs))
+                        if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
                         {
-                            //TODO: shouldn't use slip boundary until turb model is activated
                             double v_slip[MAXD] = {0.0};
                             int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
                             setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
@@ -1172,8 +1176,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-
-                //rhs -= m_dt*grad_q[l][index]/rho;
+            rhs -= m_dt*grad_q[l][index]/rho;
             
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1601,8 +1604,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        mu0 = 0.5*field->mu[index];
-        pres[index] = q[index] + phi[index] - accum_dt*mu0*div_U[index];
+        mu0 = field->mu[index];
+        //TODO: q should equal zero??? -- see Brown's paper Kim and Moin section.
+        pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
         q[index] = pres[index];
 
 	    if (min_pressure > pres[index])
@@ -1633,8 +1637,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        mu0 = 0.5*field->mu[index];
-        pres[index] = phi[index] - accum_dt*mu0*div_U[index];
+        mu0 = field->mu[index];
+        pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
@@ -1831,15 +1835,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
         for (i = 0; i < size; i++)
         {
             getRectangleCenter(i, coords);
-	    //cell_center[i].m_state.setZero();
-	    comp = top_comp[i];
-	    if (getInitialState != NULL)
-	    {
+                //cell_center[i].m_state.setZero();
+            comp = top_comp[i];
+            if (getInitialState != NULL)
+            {
+                (*getInitialState)(comp,coords,field,i,dim,iFparams);
+            }
+                
             //TODO: see comments in getPressure() function
-	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
-		    pres[i] = getPressure(front,coords,NULL);
+            pres[i] = getPressure(front,coords,NULL);
             phi[i] = getPhiFromPres(front,pres[i]);
-	    }
         }
 
     computeGradientQ();

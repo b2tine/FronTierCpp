@@ -2338,16 +2338,18 @@ static void promptForDirichletBdryState(
 	    CursorAfterString(infile,"Enter velocity:");
 	    for (k = 0; k < dim; ++k)
 	    {
-		fscanf(infile,"%lf",&state->vel[k]);
-		(void) printf("%f ",state->vel[k]);
+		    fscanf(infile,"%lf",&state->vel[k]);
+		    (void) printf("%f ",state->vel[k]);
 	    }
 	    (void) printf("\n");
 	    CursorAfterString(infile,"Enter pressure:");
 	    fscanf(infile,"%lf",&state->pres);
 	    (void) printf("%f\n",state->pres);
-	    state->phi = getPhiFromPres(front,state->pres);
 	    FT_InsertDirichletBoundary(front,NULL,NULL,
 			NULL,(POINTER)state,*hs,i_hs);
+	    
+        //TODO: this should be called in setInitialCondition() instead of here
+        state->phi = getPhiFromPres(front,state->pres);
 	    break;
 	case 'f':			// Flow through state
 	case 'F':

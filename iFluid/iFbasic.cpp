@@ -1023,6 +1023,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                 FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
         }
 
+        //TODO: get vorticity plot for 2d vtk
         if (dim == 3)
         {
             if (CursorAfterStringOpt(infile,
@@ -3221,195 +3222,78 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         return div;
 }       /* end computeFieldPointDivDouble */
 
-/*
-//Default Value: is_phi_field = true
+//TODO: function has diverged from the original purpose and now is concerned
+//      with computing the gradient of phi -- rename, or make separate funcs
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
-        double *field,
-        double *grad_field,
-        bool is_phi_field)
-{
-    GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-
-    POINTER intfc_state;
-    HYPER_SURF *hs;
-    
-	int crx_status;
-    boolean status;
-    
-    int icnb[MAXD];
-    double crx_coords[MAXD];
-    double nor[MAXD];
-
-    int index_nb;
-	int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-
-    for (int i = 0; i < dim; ++i)
-        grad_field[i] = 0.0;
-    if (!ifluid_comp(comp)) return;
-
-
-	for (int idir = 0; idir < dim; idir++)
-	{
-	    for (int j = 0; j < dim; ++j)
-            icnb[j] = icoords[j];
-
-        double lambda = 0.5/top_h[idir];
-
-        for (int nb = 0; nb < 2; ++nb)
-	    {
-	    	icnb[idir] = (nb == 0) ?
-                icoords[idir] - 1 : icoords[idir] + 1;
-	    	
-            index_nb = d_index(icnb,top_gmax,dim);
-
-            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
-
-            crx_status = (*findStateAtCrossing)(front,icoords,
-                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
-      
-            if (crx_status)
-            {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY)
-                {
-                    grad_field[idir] += coeff_nb*getStatePhi(intfc_state);
-                }
-                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
-                {
-                    //REFLECTING_BOUNDARY
-                    status = FT_NormalAtGridCrossing(front,icoords,
-                            dir[idir][nb],comp,nor,&hs,crx_coords);
-
-//                    //
-//                    double coords_ghost[MAXD];
-//                    getRectangleCenter(index_nb,coords_ghost);
-//
-//                    //Reflect the ghost point through intfc-mirror at crossing.
-//                    //first reflect across the grid line containing intfc crossing.
-//                    double coords_reflect[MAXD];
-//                    for (int m = 0; m < dim; ++m)
-//                        coords_reflect[m] = coords_ghost[m];
-//                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-//                    //(^should just be the coords at current index)
-//                    //
-
-
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //
-                    //first reflect across the grid line containing intfc crossing.
-                    //Should be the coords of the current index.
-                    double coords_reflect[MAXD];
-                    getRectangleCenter(index,coords_reflect);
-
-                    //Reflect the displacement vector across the line
-                    //containing the intfc normal vector
-                    double v[MAXD];
-                    double vn = 0.0;
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        v[m] =  coords_reflect[m] - crx_coords[m];
-                        vn += v[m]*nor[m];
-                    }
-
-                    for (int m = 0; m < dim; ++m)
-                        v[m] = 2.0*vn*nor[m] - v[m];
-
-                    //The desired reflected point
-                    for (int m = 0; m < dim; ++m)
-                        coords_reflect[m] = crx_coords[m] + v[m];
-
-                    //Interpolate the pressure at the reflected point,
-                    //which will serve as the ghost point pressure.
-                    double pres_reflect;
-                    if (is_phi_field)
-                    {
-                        FT_IntrpStateVarAtCoords(front,comp,
-                                coords_reflect,field,getStatePhi,
-                                &pres_reflect,&field[index]);
-                    }
-                    else
-                    {
-                        FT_IntrpStateVarAtCoords(front,comp,
-                                coords_reflect,field,getStatePres,
-                                &pres_reflect,&field[index]);
-                    }
-
-                    grad_field[idir] += coeff_nb*pres_reflect;
-                }
-                else
-                {
-                    //NO_PDE_BOUNDARY
-                    grad_field[idir] += coeff_nb*field[index_nb];
-                }
-            }
-        }
-    }
-
-}*/     /* end computeFieldPointGrad */
-
-void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
-        int *icoords,
-        double *field,
+        double *field,//TODO: should rename to avoid collision with the IF_FIELD struct member
         double *grad_field)
 {
-        int index,index_nb,icnb[MAXD];
-        COMPONENT comp;
-        int i,j,idir,nb;
+    int index,index_nb,icnb[MAXD];
+    COMPONENT comp;
+    int i,j,idir,nb;
 	double p_edge[3][2],p0;
-        double crx_coords[MAXD];
-        POINTER intfc_state;
-        HYPER_SURF *hs;
-        GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+    double crx_coords[MAXD];
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+    GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
 	int status;
 	boolean refl_side[2];
 
 	index = d_index(icoords,top_gmax,dim);
-        comp = top_comp[index];
-	p0 = field[index];
+    comp = top_comp[index];
+
+    if (!ifluid_comp(comp))
+    {
+        for (i = 0; i < dim; ++i)
+            grad_field[i] = 0.0;
+        return;
+    }
+	
+    p0 = field[index];
 
 	for (idir = 0; idir < dim; idir++)
 	{
 	    for (j = 0; j < dim; ++j)
 	    	icnb[j] = icoords[j];
+
 	    for (nb = 0; nb < 2; nb++)
 	    {
-		refl_side[nb] = NO;
+            refl_side[nb] = NO;
 	    	icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 	    	index_nb = d_index(icnb,top_gmax,dim);
-	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
-				comp,&intfc_state,&hs,crx_coords);
+	
+            status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                    comp,&intfc_state,&hs,crx_coords);
+
 	    	if (status == NO_PDE_BOUNDARY)
-                {
-		    p_edge[idir][nb] = field[index_nb];
-                }
+            {
+		        p_edge[idir][nb] = field[index_nb];
+            }
 	    	else if (status ==CONST_P_PDE_BOUNDARY)
+            {
+                if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+	    	        p_edge[idir][nb] = field[index_nb];
+                else
+	    	        p_edge[idir][nb] = getStatePhi(intfc_state);
+            }
+	    	else if (status == CONST_V_PDE_BOUNDARY)
+            {
+                if(wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-		        p_edge[idir][nb] = field[index_nb];
+    		            p_edge[idir][nb] = field[index_nb];
                     else
-		        p_edge[idir][nb] = getStatePhi(intfc_state);
+                        p_edge[idir][nb] = p0;
                 }
-	    	else if (status == CONST_V_PDE_BOUNDARY)
+                else
                 {
-                    if(wave_type(hs) == DIRICHLET_BOUNDARY)
-                    {
-                        if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-		            p_edge[idir][nb] = field[index_nb];
-                        else
-                            p_edge[idir][nb] = p0;
-                    }
-                    else
-                    {
-		        p_edge[idir][nb] = p0;
-                    }
+                    p_edge[idir][nb] = p0;
                 }
+            }
 	    }
 	}
+
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
 }      /* end computeFieldPointGrad */
@@ -3483,7 +3367,7 @@ extern int ifluid_find_state_at_crossing(
 		strcmp(boundary_state_function_name(*hs),
 		"iF_splitBoundaryState") == 0)
 	    	return CONST_V_PDE_BOUNDARY;
-	    else
+	    else //flow through bdry
 	    	return CONST_P_PDE_BOUNDARY;
 	}
 }	/* ifluid_find_state_at_crossing */
@@ -3970,17 +3854,16 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)
 {
-    double C_v = 0.07;
+    //relation to smagorinsky constant: C_v ~ 2.5*C_s^2
+    double C_v = 0.025; //TODO: input file option for tuning
+        //double C_v = 0.07;
+    
     int index[6], index0;
     double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
     double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
     double **vel = field->vel;
     
-    //REMOVE delta -- not used anywhere?
-    double delta[MAXD];
-    for (int i = 0; i < dim; ++i)
-        delta[i] = top_h[i];
-    
+    //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
     switch (dim)
     {
         case 2:
@@ -3992,20 +3875,13 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
             break;
         
         case 3:
-            index0 = d_index3d(icoords[0],icoords[1],icoords[2],
-                    top_gmax); 
-            index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
-                    top_gmax); 
-            index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
-                    top_gmax);
-            index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
-                    top_gmax);
-            index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
-                    top_gmax);
-            index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
-                    top_gmax);
-            index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
-                    top_gmax);
+            index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax); 
+            index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],top_gmax); 
+            index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],top_gmax);
+            index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],top_gmax);
+            index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],top_gmax);
+            index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,top_gmax);
+            index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,top_gmax);
             break;
     }
 
@@ -4019,7 +3895,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	    sum_alpha += alpha[i][j]*alpha[i][j];
 	}
 
-    //beta is almost (alpha^T)(alpha)
+    //filter width = top_h[k]?? or is there another definition??
     for (int i = 0; i < dim; ++i)
 	for (int j = 0; j < dim; ++j)
 	{
@@ -4029,21 +3905,26 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	    
 	}
 
-    //This is almost the determinant of beta, but is missing the coefficients
-    //on the submatrix determinants, and missing the negative sign on the second one ....
-    //Not sure if incorrect computation or is something else computed correctly.
     double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
 
-    double sigma = 0.0;
+    double nu_t = 0.0;;
+    if (sum_alpha >= MACH_EPS)
+        nu_t = sqrt(B_beta/sum_alpha);
+    
+    double mu_t = nu_t*field->rho[index0];
+    return mu_t;
+
+
+    /*double sigma = 0.0;
     if (sum_alpha == 0.0)
         sigma = 0.0;
     else
         sigma = sqrt(B_beta/sum_alpha);
-
     double nu_t = C_v*sigma;
     return nu_t*field->rho[index0];// mu_t
+    */
 }	/* end computeMuOfMoinModel*/
 
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
@@ -4776,9 +4657,17 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 	}
 }	/* end setDoubleIndexMap */
 
-//NOTE: This function differs from keps.cpp version
-//      by not zeroing the normal velocity
-//TODO: should rename to setReflectBoundary() or similar
+//Slip boundary treats the tangential velocity as a neumann condition
+//and the normal velocity as a dirichlet boundary.
+//
+//let c be the slip velocity (prescribed), then the boundary condition is
+//  
+//  u dot n = u dot c
+//
+//when c is set to the zero vector the ghost velocity is identical to
+//the reflected point's tangential velocity
+//
+//TODO: add arg for prescribed velocity vector c
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4787,12 +4676,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	HYPER_SURF *hs,
 	POINTER state,
 	double** vel,
-	double* v_tmp)
+	double* v_slip)
 {
-	int             i,j,index;
-    int             ic[MAXD];
-    double          coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
-    double          nor[MAXD],vn,v[MAXD];
+	int index;
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
     
     GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
     GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
@@ -4801,91 +4691,95 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
 	index = d_index(icoords,top_gmax,dim);
 	
-    for (i = 0; i < dim; ++i)
+    for (int i = 0; i < dim; ++i)
     {
         vel_intfc[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
-        ic[i] = icoords[i];
+        ghost_ic[i] = icoords[i];
     }
 	
     dir = (nb == 0) ? ldir[idir] : rdir[idir];
 
     FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
 	
-    ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 
-    //ghost coords
-    for (j = 0; j < dim; ++j)
-        coords_ref[j] = top_L[j] + ic[j]*top_h[j];
+    for (int j = 0; j < dim; ++j)
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
         
     /* Reflect ghost point through intfc-mirror at crossing */
-    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
-    vn = 0.0;
-    for (j = 0; j < dim; ++j)
+    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+    
+    double vn = 0.0;
+    double vec[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
     {
-        v[j] = coords_ref[j] - crx_coords[j];
-        vn += v[j]*nor[j];
+        vec[j] = coords_reflect[j] - crx_coords[j];
+        vn += vec[j]*nor[j];
     }
 
-    for (j = 0; j < dim; ++j)
-        v[j] = 2.0*vn*nor[j] - v[j];
+    for (int j = 0; j < dim; ++j)
+        vec[j] = 2.0*vn*nor[j] - vec[j];
 
-    for (j = 0; j < dim; ++j)
-        coords_ref[j] = crx_coords[j] + v[j];
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + vec[j];
 
     /* Interpolate the state at the reflected point */
-    for (j = 0; j < dim; ++j)
+    double vel_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
     {
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,vel[j],
-                getStateVel[j],&v_tmp[j],&vel[j][index]);
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
     }
 
-    double vel_rel[MAXD] = {0.0};
     vn = 0.0;
+    double vel_rel[MAXD] = {0.0};
 
-    for (j = 0; j < dim; ++j)
+    for (int j = 0; j < dim; ++j)
     {
-        //Relative velocity of reflected point to boundary
-        vel_rel[j] = v_tmp[j] - vel_intfc[j];
-                //vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-        //Normal component of the relative velocity
-            //vn += vel_rel[j]*nor[j];
+        //Relative velocity of reflected point with respect to the interface
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+            //vn += vel_rel[j]*nor[j]; //See next TODO below
     }
 
-    /*normal component equal to zero while tangential component is permitted*/
-    
+    //double v_slip[MAXD] = {0.0};
+    //TODO: For some reason using the interface normal vector to project out
+    //      the normal velocity completely destroys the effects of the turbulence model
     /*
-    double v_slip[MAXD] = {0.0};
-    for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= 2.0*vn*nor[j];
-	    //v_slip[j] = v_tmp[j] - vn*nor[j];
+    for (int j = 0; j < dim; ++j)
+	    v_slip[j] = vel_reflect[j] - vn*nor[j];
+	        //v_tmp[j] -= 2.0*vn*nor[j]; //This is for a reflecting bdry
 
+    */
+    /*
     fprint_general_vector(stdout,"nor",nor,dim,"\n");
     fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
     */
     
-    //TODO: Use normal vector instead of what is being computed here??
-    //      May actually  be equivalent to the vector v
-    //      being computed.
+    //TODO: Why does this work and the interface normal does not??? 
 	
-    for (j = 0; j < dim; ++j)
-        v[j] = coords_ref[j] - (top_L[j] + ic[j]*top_h[j]);
+    for (int j = 0; j < dim; ++j)
+        vec[j] = coords_reflect[j] - (top_L[j] + ghost_ic[j]*top_h[j]);
 
-    for (j = 0; j < dim; ++j)
-        v[j] /= mag_vector(v,dim);
+    double mag_vec = mag_vector(vec,dim);
+    for (int j = 0; j < dim; ++j)
+        vec[j] /= mag_vec;
 
     vn = 0.0;
-    for (j = 0; j < dim; ++j)
-        vn += v[j] * vel_rel[j];//accounts for moving interface 	
-        //vn += v[j] * v_tmp[j]; 	
+    for (int j = 0; j < dim; ++j)
+        vn += vec[j]*vel_rel[j];//accounts for moving interface 	
+            //vn += vec[j]*v_tmp[j]; 	
 
-    for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= 2.0*vn*v[j];
-	    //v_tmp[j] -= vn*v[j];
-
+    for (int j = 0; j < dim; ++j)
+	    v_slip[j] -= vn*vec[j];
+	    //v_slip[j] -= 2.0*vn*vec[j];
+	        //v_tmp[j] -= 2.0*vn*vec[j];
+	            //v_tmp[j] -= vn*vec[j];
+    
     /*
-    fprint_general_vector(stdout,"v",v,dim,"\n");
-    fprint_general_vector(stdout,"v_tmp",v_tmp,dim,"\n");
+    fprint_general_vector(stdout,"vec",v,dim,"\n");
+    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
     */
 }   /* end setSlipBoundary */
 
