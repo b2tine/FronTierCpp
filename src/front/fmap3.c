@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 /*
-*				fmap2.c:
+*				fmap3.c:
 *
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */

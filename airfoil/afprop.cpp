@@ -82,6 +82,7 @@ extern void elastic_point_propagate(
 	newsl = (STATE*)left_state(newp);
 	newsr = (STATE*)right_state(newp);
 
+    //TODO: use these points to compute tangential shear stress?
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
 	h = FT_GridSizeInDir(nor,front);
 	for (i = 0; i < dim; ++i)

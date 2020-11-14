@@ -1859,8 +1859,6 @@ EXPORT	boolean FrontCpuAdaptSubdomain(
 	return cpu_adapt_front(front,cpu_time,lexpand,uexpand);
 }	/* end FrontCpuAdaptSubdomain */
 
-//TODO: This can be just take F_BASIC_DATA* as an argument
-//      and require that FT_Init() be called beforehand.
 EXPORT void FT_ReadSpaceDomain(
         char *in_name,
         F_BASIC_DATA *f_basic)

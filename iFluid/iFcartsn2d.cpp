@@ -894,6 +894,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         //      as it is covered by a moving rigid body.
                         //      May need to retain old top_comp array, or find a way
                         //      to access it if that functionality already exists
+                        //
+                        //      see find_state_crossing_info() in crystal code for soln
                         
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];

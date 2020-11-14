@@ -1064,6 +1064,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             mu0 = field->mu[index];
             rho = field->rho[index];
 
+            //TODO: Can we really just ignore the ELASTIC_BOUNDARY entirely??
             for (nb = 0; nb < 6; nb++)
             {
                 if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
