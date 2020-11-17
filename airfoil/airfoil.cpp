@@ -118,8 +118,7 @@ int main(int argc, char **argv)
             initIsolated3dCurves(&front);
 	    
         initRigidBody(&front);
-            //initRigidBody_OLD(&front);
-	    rgb_init(&front,&rgb_params);
+	    setRigidBodyMotionParams(&front,&rgb_params);
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {

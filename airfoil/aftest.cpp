@@ -505,6 +505,8 @@ static void set_equilibrium_mesh2d(
 	}
 }	/* end set_equilibrium_mesh2d */
 
+//TODO: Compare to set{Curve,Surf}ZeroMesh() functions in cgal.cpp
+//      Consolidate functionality if possible.
 static void set_equilibrium_mesh3d(
 	Front *front)
 {
@@ -704,13 +706,17 @@ extern void print_airfoil_stat(
 {
 	if (FT_Dimension() == 2 && pp_numnodes() > 1)
 	    return;
+    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY)
+        && !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) {
+        return;
+    }
+
 	start_clock("print_airfoil_stat");
 
 	INTERFACE* elas_intfc = NULL;
 	INTERFACE* save_intfc = front->interf; 
 	if (pp_numnodes() > 1)
 	{
-	    //parallel
 	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	    int owner[MAXD] = {0};
 	    int owner_id = af_params->node_id[0];
@@ -726,15 +732,18 @@ extern void print_airfoil_stat(
 	    {
 	        case 2:
 	            print_airfoil_stat2d(front,out_name);
-		    break;
+                break;
 	    	case 3:
 	            print_airfoil_stat3d(front,out_name);
 	    	    break;
-	    }
+            default:
+                break;
+        }
 	}
+
 	front->interf = save_intfc;
 	if (elas_intfc)
-	    delete_interface(elas_intfc);
+        delete_interface(elas_intfc);
 	stop_clock("print_airfoil_stat");
 }	/* end print_airfoil_stat */
 

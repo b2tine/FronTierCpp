@@ -42,12 +42,18 @@ extern void CGAL_MakeEllipsoidalSurf(
         Sphere_3 bounding_sphere(bounding_sphere_center,
                                  bounding_sphere_squared_radius);
 
+        double error_bound = 1.0e-06;//from the level surface
         CGAL::Implicit_surface_3<GT,ellipsoid_function>
-            cgal_surface(func,bounding_sphere,1.0e-06);
+            cgal_surface(func,bounding_sphere,error_bound);
         
-        //TODO: provide justification for this value of epsilon.
-        double epsilon = 0.0425;
+        //TODO: Follow this pattern for notion of refinement_level
+        //      in remain cgal meshing functions.
+        double epsilon = 0.16;
         double max_lfs = max_radius;
+
+        epsilon /= (double)refinement_level;
+        max_lfs *= (double)refinement_level;
+
         CGAL::Surface_mesh_default_criteria_3<Tr>
             cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
 
@@ -226,8 +232,7 @@ CGAL_GenerateMeshCriteria(double epsilon, double max_lfs)
         //facets and centers of the Delauney Balls circumscribing them.
         double ub_dist = 4.5*sqr(epsilon)*max_lfs;
 
-        CGAL::Surface_mesh_default_criteria_3<Tr> criteria(lb_ang,ub_rad,
-                                    ub_dist);
+        CGAL::Surface_mesh_default_criteria_3<Tr> criteria(lb_ang,ub_rad,ub_dist);
         return criteria;
 }       /* end CGAL_GenerateMeshCriteria */
 

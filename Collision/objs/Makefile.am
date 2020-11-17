@@ -22,7 +22,9 @@ libCollision_la_SOURCES = \
 ../AABB.h \
 ../AABB.cpp \
 ../CD_HSE.h \
-../CD_HSE.cpp
+../CD_HSE.cpp \
+../vtk.h \
+../vtk.cpp
 
 
 libCollision_la_LIBADD = $(top_builddir)/iFluid/objs/libiFluid.la

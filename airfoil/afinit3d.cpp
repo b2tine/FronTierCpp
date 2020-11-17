@@ -2897,48 +2897,49 @@ static CURVE *init3dCurves(
 
 extern void initIsolated3dCurves(Front* front)
 {
-        double pt_s[3];
-        double pt_e[3];
-        int hsb_type = STRING_HSBDRY; //default
-        AF_NODE_TYPE nd_type = STRING_NODE; //default
-        FILE *infile = fopen(InName(front),"r");
-        char string[200];
-        CURVE *curve;
+    double pt_s[3];
+    double pt_e[3];
+    int hsb_type = STRING_HSBDRY; //default
+    AF_NODE_TYPE nd_type = STRING_NODE; //default
+    FILE *infile = fopen(InName(front),"r");
+    char string[200];
+    CURVE *curve;
 
-        if (CursorAfterStringOpt(infile,"Enter yes to add isolated curves:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] != 'y' && string[0] != 'Y')
-                return;
-        }
-        else
+    if (CursorAfterStringOpt(infile,"Enter yes to add isolated curves:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' && string[0] != 'Y')
             return;
-        
-        FINITE_STRING *finite_string = NULL;
-        if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    }
+    else
+        return;
+    
+    FINITE_STRING *finite_string = NULL;
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' || string[0] != 'Y')
         {
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0] != 'y' || string[0] != 'Y')
-            {
-                FT_ScalarMemoryAlloc((POINTER*)&finite_string,
-                                sizeof(FINITE_STRING));
-                CursorAfterString(infile,"Enter string radius: ");
-                fscanf(infile,"%lf",&finite_string->radius); 
-                printf("%f\n",finite_string->radius);
-                CursorAfterString(infile,"Enter string mass density: ");
-                fscanf(infile,"%lf",&finite_string->dens); 
-                printf("%f\n",finite_string->dens);
-                if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
-                {
-                    fscanf(infile,"%lf",&finite_string->c_drag); 
-                    printf("%f\n",finite_string->c_drag);
-                }
-            }
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,
+                            sizeof(FINITE_STRING));
+            CursorAfterString(infile,"Enter string radius: ");
+            fscanf(infile,"%lf",&finite_string->radius);
+            printf("%f\n",finite_string->radius);
+            CursorAfterString(infile,"Enter string mass density: ");
+            fscanf(infile,"%lf",&finite_string->dens);
+            printf("%f\n",finite_string->dens);
+            CursorAfterString(infile,"Enter drag coefficient: ");
+            fscanf(infile,"%lf",&finite_string->c_drag);
+            printf("%f\n",finite_string->c_drag);
+            CursorAfterString(infile,"Enter fluid force scaling factor: ");
+            fscanf(infile,"%lf",&finite_string->ampFluidFactor);
+            printf("%f\n",finite_string->ampFluidFactor);
         }
+    }
 
-        int num_curves = 0;
+    int num_curves = 0;
 	CursorAfterString(infile,"Enter the number of curves:");
 	fscanf(infile,"%d",&num_curves);
 	(void) printf("%d\n",num_curves);
@@ -2983,7 +2984,7 @@ extern void initIsolated3dCurves(Front* front)
 		    continue;
 	    }
 	    else
-                continue;
+            continue;
 
 	    double pt_new_s[3];
             double pt_new_e[3];
@@ -2991,48 +2992,48 @@ extern void initIsolated3dCurves(Front* front)
             int shift_dir[3] = {0,0,0}; //default
             double shift = 0.0; //default
 
-            if (CursorAfterStringOpt(infile,
-                        "Enter the number of curves in each side:"))
-            {
-                fscanf(infile,"%d",&local_num);
-                (void) printf("%d\n",local_num);
-            }
-        
-            if (CursorAfterStringOpt(infile,"Enter the shift direction:"))
+        if (CursorAfterStringOpt(infile,
+                    "Enter the number of curves in each side:"))
+        {
+            fscanf(infile,"%d",&local_num);
+            (void) printf("%d\n",local_num);
+        }
+    
+        if (CursorAfterStringOpt(infile,"Enter the shift direction:"))
 	    {
-                for (int j = 0; j < 3; ++j)
-                {
-                    fscanf(infile,"%d",&shift_dir[j]);
-                    (void) printf("%d ",shift_dir[j]);
-                }
+            for (int j = 0; j < 3; ++j)
+            {
+                fscanf(infile,"%d",&shift_dir[j]);
+                (void) printf("%d ",shift_dir[j]);
+            }
 	    }
-            (void) printf("\n");
-        
-            if (CursorAfterStringOpt(infile,"Enter unit shifted displacement:"))
+        (void) printf("\n");
+    
+        if (CursorAfterStringOpt(infile,"Enter unit shifted displacement:"))
+        {
+            fscanf(infile,"%lf",&shift);
+            (void) printf("%f\n",shift);
+        }
+    
+        for (int i = 0; i < local_num; ++i)
+        {
+            memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
+            memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
+            for (int j = 0; j < 3; ++j)
             {
-                fscanf(infile,"%lf",&shift);
-                (void) printf("%f\n",shift);
+                pt_new_s[j] += shift*(i+1)*shift_dir[j];
+                pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
-        
-            for (int i = 0; i < local_num; ++i)
+            init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
+            memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
+            for (int j = 0; j < 3; ++j)
             {
-                memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
-                memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
-                for (int j = 0; j < 3; ++j)
-                {
-                    pt_new_s[j] += shift*(i+1)*shift_dir[j];
-                    pt_new_e[j] += shift*(i+1)*shift_dir[j];
-                }
-                init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
-                memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
-                memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
-                for (int j = 0; j < 3; ++j)
-                {
-                    pt_new_s[j] -= shift*(i+1)*shift_dir[j];
-                    pt_new_e[j] -= shift*(i+1)*shift_dir[j];
-                }
-                curve = init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
-                curve->extra = (POINTER)finite_string;
+                pt_new_s[j] -= shift*(i+1)*shift_dir[j];
+                pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
+            curve = init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            curve->extra = (POINTER)finite_string;
+        }
 	}
 }	/* initIsolated3dCurves() */

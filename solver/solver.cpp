@@ -144,7 +144,6 @@ void PETSc::Reset_x()
     VecZeroEntries(x);
 }
 
-
 /*
 void PETSc::Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals)
 {
@@ -220,6 +219,11 @@ void PETSc::Get_x(double *p,
 {
 }
 
+void PETSc::SetPrevSolnInitialGuess()
+{
+    KSPSetInitialGuessNonzero(ksp,PETSC_TRUE);
+}
+
 void PETSc::SetMaxIter(int val)
 {
 	PetscInt maxits;
@@ -235,7 +239,16 @@ void PETSc::SetTol(double val)
 	double rtol, atol, dtol;
 	
 	KSPGetTolerances(ksp, &rtol, &atol, &dtol, &maxits);
-	ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+
+    //TODO: this only sets rtol. Incorrect use in code???
+    //      elliptic solver diverges during projection method
+    //      if we use actual abs tolerance like below.
+	
+        ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+	
+    //TODO: Crashes projection method elliptic solver for poisson eqn.
+    //
+    //ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)
@@ -248,6 +261,13 @@ void PETSc::GetNumIterations(PetscInt *num_iterations)
 	KSPGetIterationNumber(ksp,num_iterations);        
 }	/* end GetNumIterations */
 
+void PETSc::GetResidualNorm(double *resid_norm)
+{
+	KSPGetResidualNorm(ksp,resid_norm);
+}	/* end GetResidualNorm */
+
+//TODO: No reason this needs to be "Final" and this is also not the
+//      relative residual norm, which is defined as ||Ax-b||/||b||
 void PETSc::GetFinalRelativeResidualNorm(double *rel_resid_norm)
 {
 	KSPGetResidualNorm(ksp,rel_resid_norm);
@@ -361,12 +381,11 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 
 void PETSc::Solve_withPureNeumann(void)
 {
-    //TODO: #ifdef HAVE_HYPRE ...
-    //      but need to make sure the commented out
-    //      BCGSL function works first.
-    
+#ifdef HAVE_HYPRE
 	Solve_withPureNeumann_HYPRE();
-	//Solve_withPureNeumann_BCGSL();
+#else
+	Solve_withPureNeumann_BCGSL();
+#endif
 }
 
 void PETSc::Solve_withPureNeumann_HYPRE(void)
@@ -419,7 +438,7 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
 	
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
     MatSetNullSpace(A,nullsp);
-    //TODO: Need to call MatNullSpaceRemove() ?
+    MatNullSpaceRemove(nullsp,b);
 	
     KSPSetOperators(ksp,A,A);
         

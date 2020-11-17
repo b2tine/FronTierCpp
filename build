@@ -101,7 +101,7 @@ function config_iota {
 }
 
 function config_defiant {
-    PETSC_DIR="/opt/petsc-3.11.0-${ARCH}"
+    PETSC_DIR="/opt/petsc-3.13.4-${ARCH}"
     export CC=${PETSC_DIR}/bin/mpicc
     export CXX=${PETSC_DIR}/bin/mpicxx
     CGAL_DIR="/opt/CGAL-4.14-${ARCH}"
@@ -115,7 +115,7 @@ function config_defiant {
 
 
 ARCH="opt"
-OPT_FLAGS="-O2"
+OPT_FLAGS="-O2 -ffloat-store"
 
 DEBUG_FLAGS="-rdynamic"
 WARNING="-w"

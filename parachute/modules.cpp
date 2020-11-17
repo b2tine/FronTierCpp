@@ -96,6 +96,44 @@ start_loop:
 	}
 }	/* end divideAtGoreBdry */
 
+extern void initParachuteModules(Front *front)
+{
+	int i,num_canopy;
+	FILE *infile = fopen(InName(front),"r");
+	SURFACE *surf;
+    RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
+
+	if (debugging("trace"))
+        printf("Entering initParachuteModules()\n");
+
+	initRigidBody(front);
+	setRigidBodyMotionParams(front,rgb_params);
+    printRigidBodyMeshQuality(front);
+
+	CursorAfterString(infile,"Enter number of canopy surfaces:");
+    fscanf(infile,"%d",&num_canopy); printf("%d\n",num_canopy);
+    fclose(infile);
+
+    if (num_canopy >= 1)
+    {
+        if (num_canopy == 1)
+            initSingleModule(front);
+        else
+            initMultiModule(front,num_canopy);
+	
+        divideAtGoreBdry(front->interf);
+	    setCanopyBodyIndex(front);
+    }
+
+	if (debugging("trace"))
+	{
+        std::string gvdir = OutName(front);
+        gvdir += "/ginit";
+	    gview_plot_interface(gvdir.c_str(),front->interf);
+	    printf("Leaving initParachuteModules()\n");
+	}
+}	/* end initParachuteModules */
+
 extern void initParachuteDefault(
 	Front *front)
 {
@@ -116,7 +154,7 @@ extern void initParachuteDefault(
             af_params->attach_gores = YES;
     }
     
-	af_params->num_opt_round = 20;
+	af_params->num_opt_round = 0;
     if (CursorAfterStringOpt(infile,
                 "Enter number of canopy optimization rounds:"))
     {
@@ -124,64 +162,8 @@ extern void initParachuteDefault(
         (void) printf("%d\n",af_params->num_opt_round);
     }
 
-    af_params->fsi_startstep = 5;
-    if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
-    {
-        fscanf(infile,"%d",&af_params->fsi_startstep);
-    }
-    iF_params->fsi_startstep = af_params->fsi_startstep;
-
     fclose(infile);
 }	/* end initParachuteDefault */
-
-extern void initParachuteModules(Front *front)
-{
-	int i,num_canopy;
-	FILE *infile = fopen(InName(front),"r");
-	SURFACE *surf;
-    RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
-        boolean complex_set = NO;
-
-	if (debugging("trace"))
-	    (void) printf("Entering initParachuteModules()\n");
-
-	if (debugging("set_module"))
-	    gview_plot_interface("module-step-1",front->interf);
-
-	initRigidBody(front);
-	rgb_init(front,rgb_params);
-
-	CursorAfterString(infile,"Enter number of canopy surfaces:");
-        fscanf(infile,"%d",&num_canopy);
-        (void) printf("%d\n",num_canopy);
-        if (num_canopy == 1)
-        {
-            char string[100];
-            //TODO: when is this used?
-	    CursorAfterStringOpt(infile,"Enter yes for complex connection:");
-            fscanf(infile,"%s",string);
-            printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                complex_set = YES;
-        }
-	fclose(infile);
-
-	if (num_canopy == 1 && !complex_set)
-	    initSingleModule(front);
-	else
-	    initMultiModule(front,num_canopy);
-
-	divideAtGoreBdry(front->interf);
-	setCanopyBodyIndex(front);
-
-	if (debugging("trace"))
-	{
-        std::string gvdir = OutName(front);
-        gvdir += "/ginit";
-	    gview_plot_interface(gvdir.c_str(),front->interf);
-	    (void) printf("Leaving initParachuteModules()\n");
-	}
-}	/* end initParachuteModules */
 
 static void initSingleModule(
         Front *front)

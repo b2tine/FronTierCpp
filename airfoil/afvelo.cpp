@@ -248,40 +248,50 @@ void setMotionParams(Front* front)
             	CursorAfterString(infile,"Enter surface tension:");
             	fscanf(infile,"%lf",&iFparams->surf_tension);
             	(void) printf("%f\n",iFparams->surf_tension);
+                CursorAfterString(infile,"Enter factor of smoothing radius:");
+                fscanf(infile,"%lf",&iFparams->smoothing_radius);
+                (void) printf("%f\n",iFparams->smoothing_radius);
 	    }
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
+        {
+            // default: no porosity
+            iFparams->with_porosity = af_params->with_porosity = NO;
+            if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
-		        // default: no porosity
-                iFparams->with_porosity = af_params->with_porosity = NO;
-                if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
-		{
-                    fscanf(infile,"%s",string);
-                    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-                	iFparams->with_porosity=af_params->with_porosity=YES;
-		}
-                if (iFparams->with_porosity == YES)
-                {
-                    CursorAfterString(infile,"Enter viscous parameter:");
-                    fscanf(infile,"%lf",&af_params->porous_coeff[0]);
-                    (void) printf("%f\n",af_params->porous_coeff[0]);
-                    CursorAfterString(infile,"Enter inertial parameter:");
-                    fscanf(infile,"%lf",&af_params->porous_coeff[1]);
-                    (void) printf("%f\n",af_params->porous_coeff[1]);
-                    iFparams->porous_coeff[0] = af_params->porous_coeff[0];
-                    iFparams->porous_coeff[1] = af_params->porous_coeff[1];
-                }
-                CursorAfterString(infile,"Enter area density of canopy:");
-                fscanf(infile,"%lf",&af_params->area_dens);
-                (void) printf("%f\n",af_params->area_dens);
-
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                iFparams->with_porosity=af_params->with_porosity=YES;
             }
-            CursorAfterString(infile,"Enter factor of smoothing radius:");
-            fscanf(infile,"%lf",&iFparams->smoothing_radius);
-            (void) printf("%f\n",iFparams->smoothing_radius);
-    
-            for (i = 0; i < dim; ++i)
-                af_params->gravity[i] = iFparams->gravity[i];
+
+            if (iFparams->with_porosity == YES)
+            {
+                CursorAfterString(infile,"Enter viscous parameter:");
+                fscanf(infile,"%lf",&af_params->porous_coeff[0]);
+                (void) printf("%f\n",af_params->porous_coeff[0]);
+                CursorAfterString(infile,"Enter inertial parameter:");
+                fscanf(infile,"%lf",&af_params->porous_coeff[1]);
+                (void) printf("%f\n",af_params->porous_coeff[1]);
+                iFparams->porous_coeff[0] = af_params->porous_coeff[0];
+                iFparams->porous_coeff[1] = af_params->porous_coeff[1];
+            }
+            
+            CursorAfterString(infile,"Enter area density of canopy:");
+            fscanf(infile,"%lf",&af_params->area_dens);
+            (void) printf("%f\n",af_params->area_dens);
+
+        }
+
+        af_params->fsi_startstep = 5;
+        if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
+        {
+            fscanf(infile,"%d",&af_params->fsi_startstep);
+        }
+        iFparams->fsi_startstep = af_params->fsi_startstep;
+
+
+        for (i = 0; i < dim; ++i)
+            af_params->gravity[i] = iFparams->gravity[i];
 	}
 
     //For pointmass runs
@@ -293,7 +303,7 @@ void setMotionParams(Front* front)
         (void) printf("%f\n",af_params->payload);
     }
 	
-	af_params->n_sub = 10;
+	af_params->n_sub = 10;//TODO: move to parachute_defaults()?
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
 	(void) printf("%d\n",af_params->n_sub);
@@ -1223,57 +1233,61 @@ extern void resetFrontVelocity(Front *front)
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    for (i = 0; i < dim; ++i)
 	    {
-		p->vel[i] = 0.0;
-        p->force[i] = 0.0;
-		sl->vel[i] = sr->vel[i] = 0.0;
-		sl->impulse[i] = sr->impulse[i] = 0.0;
-		sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-		sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            p->vel[i] = 0.0;
+            p->force[i] = 0.0;
+            sl->vel[i] = sr->vel[i] = 0.0;
+            sl->impulse[i] = sr->impulse[i] = 0.0;
+            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+            sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            sl->shear_force[i] = sr->shear_force[i] = 0.0;
 	    }
 	}
+
 	if (dim == 3)
 	{
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		p = (*c)->start->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
+            p = (*c)->start->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
 	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    p->force[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-            sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		}
-		for (b = (*c)->first; b != (*c)->last; b = b->next)
-		{
-		    p = b->end;
-		    sl = (STATE*)left_state(p);
-		    sr = (STATE*)right_state(p);
-	            for (i = 0; i < dim; ++i)
-		    {
-		    	p->vel[i] = 0.0;
-		        p->force[i] = 0.0;
-		    	sl->vel[i] = sr->vel[i] = 0.0;
-		    	sl->impulse[i] = sr->impulse[i] = 0.0;
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		    }
-		}
-		p = (*c)->end->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
+            }
+    
+            for (b = (*c)->first; b != (*c)->last; b = b->next)
+            {
+                p = b->end;
+                sl = (STATE*)left_state(p);
+                sr = (STATE*)right_state(p);
+                    for (i = 0; i < dim; ++i)
+                {
+                    p->vel[i] = 0.0;
+                    p->force[i] = 0.0;
+                    sl->vel[i] = sr->vel[i] = 0.0;
+                    sl->impulse[i] = sr->impulse[i] = 0.0;
+                    sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                    sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                }
+            }
+    
+            p = (*c)->end->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
 	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    p->force[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-            sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
-            sl->other_accel[i] = sr->other_accel[i] = 0.0;
-		}
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
+                sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
+                sl->other_accel[i] = sr->other_accel[i] = 0.0;
+            }
 	    }
 	}
 }	/* end resetFrontVelocity */

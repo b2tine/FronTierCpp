@@ -22,7 +22,7 @@ public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
-	std::map< int, std::vector<double> > mrg_com;
+	std::map<int,std::vector<double>> mrg_com;
 	
     int build_count_pre = 1;
     int build_count_col = 1;
@@ -63,42 +63,19 @@ public:
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
 
-    
-    static void clearCollisionTimes()
-    {
-        CollisionTimes.clear();
-    }
-
-    static void setSizeCollisionTimes(unsigned int size)
-    {
-        CollisionTimes.reserve(size);
-    }
-
-    static void addCollisionTime(double collsn_dt)
-    {
-        CollisionTimes.push_back(collsn_dt);
-    }
-
-    static double getAverageCollisionTime()
-    {
-        double avg_dt =
-            std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
-        avg_dt /= CollisionTimes.size();
-        return avg_dt;
-    }
-
 	
     void setStrainLimit(double);
 	//double getStrainLimit();
 	void setStrainRateLimit(double);
 	//double getStrainRateLimit();
-
-
     double setVolumeDiff(double);
 
 	void clearHseList();
-	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
+    const std::vector<CD_HSE*>& getHseList() const;
+    
+    void initializeSystem(Front* front);
+	void assembleFromInterface(INTERFACE*);
+	void createImpZoneForRG(INTERFACE*);
 	
     void resolveCollision();
 	void recordOriginalPosition();	
@@ -121,7 +98,23 @@ public:
     TRI *res_tris[100];
     int num_res_tris;
 
+    static void clearCollisionTimes();
+    static void setSizeCollisionTimes(unsigned int size);
+    static void addCollisionTime(double collsn_dt);
+    static double getAverageCollisionTime();
+
+    static int tstep;
+    static int getStep() {return tstep;}
+    static void setStep(int step) {tstep = step;}
+
+    static std::string outdir;
+    static std::string getOutputDirectory() {return outdir;}
+    static void setOutputDirectory(std::string dir) {outdir = dir;}
+
 private:
+
+    Front* ft;
+
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
@@ -171,10 +164,12 @@ private:
     void resetPositionCoordinates();
 	void updateFinalPosition();
 	void updateFinalVelocity();
+    void updateFinalStates();
 	void updateAverageVelocity();
 	void updateExternalImpulse();
 	void computeImpactZone();
 	void infoImpactZones();
+	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();

@@ -26,10 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *******************************************************************/
 
 #include "iFluid.h"
-//#include <solver.h>
 
-static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
@@ -305,24 +303,26 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	}
 	/* Compute velocity divergence */
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    index  = d_index(icoords,top_gmax,dim);
-	    if (!ifluid_comp(top_comp[index]))
-		continue;
-	    source[index] = computeFieldPointDiv(icoords,vel);
+	    
+        if (!ifluid_comp(top_comp[index])) continue;
+	    
+        source[index] = computeFieldPointDiv(icoords,vel);
 	    diff_coeff[index] = 1.0/field->rho[index];
-	    if (debugging("check_div"))
+	    
+        if (debugging("check_div"))
 	    {
-		for (l = 0; l < dim; ++l)
-		{
-		    if (vmin[l] > field->vel[l][index])
-			vmin[l] = field->vel[l][index];
-		    if (vmax[l] < field->vel[l][index])
-			vmax[l] = field->vel[l][index];
-		}
+		    for (l = 0; l < dim; ++l)
+            {
+                if (vmin[l] > field->vel[l][index])
+                    vmin[l] = field->vel[l][index];
+                if (vmax[l] < field->vel[l][index])
+                    vmax[l] = field->vel[l][index];
+            }
 	    }
 	}
 	if (debugging("field_var"))
@@ -337,15 +337,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
-	    if (!ifluid_comp(top_comp[index]))
-		continue;
+	    if (!ifluid_comp(top_comp[index])) continue;
+
 	    source[index] = (source[index])/accum_dt;
-            /*Compute pressure jump due to porosity*/
-            icoords[0] = i; icoords[1] = j;
-            source[index] += computeFieldPointPressureJump(icoords,
-                             iFparams->porous_coeff[0],
-                             iFparams->porous_coeff[1]);
-            /*end of computing pressure jump*/
+        /*Compute pressure jump due to porosity*/
+        icoords[0] = i; icoords[1] = j;
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        /*end of computing pressure jump*/
 	    array[index] = phi[index];
 	}
 
@@ -456,6 +456,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
         vel[0][index] -= accum_dt/rho*grad_phi[0];
 	    vel[1][index] -= accum_dt/rho*grad_phi[1];
 	}
+
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
 	
     //extractFlowThroughVelocity();
@@ -471,7 +472,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
 {
-        int i,j,k,l;
+    int i,j,k,l;
 	double x,y,a,f,Force;
 	double t = front->time;
 	double phi[MAXD+1];
@@ -483,16 +484,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	if(iFparams->if_buoyancy)
 	{
 	    int ic[MAXD],index;
-            rect_in_which(coords,ic,top_grid);
-            index = d_index(ic,top_gmax,dim);
-            for (i = 0; i < dim; ++i)
-                source[i] = field->ext_accel[i][index];
+        rect_in_which(coords,ic,top_grid);
+        index = d_index(ic,top_gmax,dim);
+        for (i = 0; i < dim; ++i)
+            source[i] = field->ext_accel[i][index];
 	}
-	else
-	{
-            for (i = 0; i < dim; ++i)
-                source[i] = iFparams->gravity[i];
-	}
+    else
+    {
+        for (i = 0; i < dim; ++i)
+            source[i] = iFparams->gravity[i];
+    }
 }	/* end computeSourceTerm */
 
 void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
@@ -620,6 +621,9 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
         icoords[0] = i;
         icoords[1] = j;
 
+        dx = top_h[0];
+        dy = top_h[1];
+
         index = d_index(icoords,top_gmax,dim);
         comp = top_comp[index];
 
@@ -628,12 +632,12 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
             u0 = vel[(idir+1)%dim][index];
             for (k = 0; k < dim; ++k)
                 icnb[k] = icoords[k];
+            
             for (nb = 0; nb < 2; nb++)
             {
-                dx = top_h[0];
-                dy = top_h[1];
                 icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 index_nb = d_index(icnb,top_gmax,dim);
+        
                 status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                                 comp,&intfc_state,&hs,crx_coords);
                 if (status == NO_PDE_BOUNDARY)
@@ -647,9 +651,9 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
                     u_edge[idir][nb] = u0;
             }
         }
-
-        vorticity = (u_edge[0][1]-u_edge[0][0])/2/dx -
-                        (u_edge[1][1]-u_edge[1][0])/2/dy;
+                    
+        vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/dx -
+                        0.5*(u_edge[1][1] - u_edge[1][0])/dy;
 
 	return vorticity;
 }	/* end getVorticity */
@@ -667,11 +671,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	for (i = imin; i <= imax; ++i)
 	for (j = jmin; j <= jmax; ++j)
 	{
-	    index  = d_index2d(i,j,top_gmax);
+	    index = d_index2d(i,j,top_gmax);
 	    if (ifluid_comp(top_comp[index]))
-		vort[index] = getVorticity(i,j);
+            vort[index] = getVorticity(i,j);
 	    else
-		vort[index] = 0.0;
+            vort[index] = 0.0;
 	}
     //TODO: compare to cFluid G_CARTESIAN::copyMeshStates()
 	symmetry[0] = symmetry[1] = ODD;
@@ -687,34 +691,43 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 void Incompress_Solver_Smooth_2D_Cartesian::
 	computeDiffusionCN(void)
 {
-        COMPONENT comp;
-        int index,index_nb[4],size;
-        int I,I_nb[4];
-        int i,j,k,l,nb,icoords[MAXD];
-        double coords[MAXD], crx_coords[MAXD];
-        double coeff[4],mu[4],mu0,rho,rhs,U_nb[4];
-        double *x;
-        GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
-        POINTER intfc_state;
-        HYPER_SURF *hs;
-        PetscInt num_iter;
-        double rel_residual;
-        double aII;
-        double source[MAXD];
-        double **vel = field->vel;
-        double **f_surf = field->f_surf;
-        INTERFACE *grid_intfc = front->grid_intfc;
+    COMPONENT comp;
+    int index,index_nb[4],size;
+    int I,I_nb[4];
+    int i,j,k,l,nb,icoords[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coeff[4],mu[4],mu0,rho,rhs;
+    
+    double source[MAXD];
+    double U_nb[4];
+    //double U_nb_prev[4];
+    //double mu_nb_prev[4];
+    
+    GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+    INTERFACE *grid_intfc = front->grid_intfc;
 	int status;
+    
+    PetscInt num_iter;
+    double residual;
+    double aII;
+    double *x;
+    
+    double **vel = field->vel;
+    double **f_surf = field->f_surf;
+    double **grad_q = field->grad_q;
 
-        if (debugging("trace"))
-            (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
-                        "computeDiffusionCN()\n");
-	start_clock("computeDiffusionCN");
+    if (debugging("trace"))
+        (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
+                    "computeDiffusionCN()\n");
+	
+    start_clock("computeDiffusionCN");
 
-        setIndexMap();
+    setIndexMap();
 
-        size = iupper - ilower;
-        FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
 	if (debugging("field_var"))
 	{
@@ -722,145 +735,222 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 	    for (i = imin; i <= imax; i++)
 	    {
 	    	index = d_index2d(i,j,top_gmax);
-		field->old_var[0][index] = vel[0][index];
-		field->old_var[1][index] = vel[1][index];
+		    field->old_var[0][index] = vel[0][index];
+		    field->old_var[1][index] = vel[1][index];
 	    }
 	}
-	for (l = 0; l < dim; ++l)
+	
+    for (l = 0; l < dim; ++l)
 	{
-            PETSc solver;
-            solver.Create(ilower, iupper-1, 5, 5);
+        PETSc solver;
+        solver.Create(ilower, iupper-1, 5, 5);
 	    solver.Reset_A();
 	    solver.Reset_b();
 	    solver.Reset_x();
 
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            I  = ij_to_I[i][j];
+            if (I == -1)
             {
-            	I  = ij_to_I[i][j];
-            	if (I == -1) continue;
+                vel[l][index] = 0.0;
+                continue;
+            }
 
-            	index  = d_index2d(i,j,top_gmax);
-            	index_nb[0] = d_index2d(i-1,j,top_gmax);
-            	index_nb[1] = d_index2d(i+1,j,top_gmax);
-            	index_nb[2] = d_index2d(i,j-1,top_gmax);
-            	index_nb[3] = d_index2d(i,j+1,top_gmax);
-		icoords[0] = i;
-		icoords[1] = j;
-		comp = top_comp[index];
+            index  = d_index2d(i,j,top_gmax);
+            index_nb[0] = d_index2d(i-1,j,top_gmax);
+            index_nb[1] = d_index2d(i+1,j,top_gmax);
+            index_nb[2] = d_index2d(i,j-1,top_gmax);
+            index_nb[3] = d_index2d(i,j+1,top_gmax);
+            
+            icoords[0] = i;
+            icoords[1] = j;
+            comp = top_comp[index];
+                    
 
-            	I_nb[0] = ij_to_I[i-1][j]; // left or west
-            	I_nb[1] = ij_to_I[i+1][j]; // right or east
-            	I_nb[2] = ij_to_I[i][j-1]; // down or south
-            	I_nb[3] = ij_to_I[i][j+1]; // up or north
+            I_nb[0] = ij_to_I[i-1][j]; // left or west
+            I_nb[1] = ij_to_I[i+1][j]; // right or east
+            I_nb[2] = ij_to_I[i][j-1]; // down or south
+            I_nb[3] = ij_to_I[i][j+1]; // up or north
 
 
-		mu0 = field->mu[index];
-		rho = field->rho[index];
+            mu0 = field->mu[index];
+            rho = field->rho[index];
 
-            	for (nb = 0; nb < 4; nb++)
-            	{
-                    if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
-					&intfc_state,&hs,crx_coords) &&
-                                wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+            for (nb = 0; nb < 4; nb++)
+            {
+                //U_nb_prev[nb] = 0.0;
+                //mu_nb_prev[nb] = 0.0;
+
+                if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                            &intfc_state,&hs,crx_coords) &&
+                        wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
-			if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                            boundary_state_function(hs) &&
-                            strcmp(boundary_state_function_name(hs),
-                            "flowThroughBoundaryState") == 0)
+                        if (boundary_state_function(hs) &&
+                                strcmp(boundary_state_function_name(hs),
+                                    "flowThroughBoundaryState") == 0)
                         {
-                            U_nb[nb] = vel[l][index];
+                            //For ifluid_find_state_at_crossing()
+                            //registers as a CONST_P_PDE_BOUNDARY
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                                //U_nb[nb] = vel[l][index_nb[nb]];
+                                //U_nb[nb] = vel[l][index];
                         }
                         else
-			{
-			    U_nb[nb] = getStateVel[l](intfc_state);
-			}
-			
-			if (wave_type(hs) == DIRICHLET_BOUNDARY ||
-			    neumann_type_bdry(wave_type(hs)))
-                            mu[nb] = mu0;
-			else
-			    mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
+                        {
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                    }
+                    else if (neumann_type_bdry(wave_type(hs)))
+                    {
+                        if (!is_bdry_hs(hs))//TODO: handle another way -- we want to include these (see below)
+                        {
+                            //Apply slip boundary condition
+                            //nb = 0; //idir = 0, nbr = 0;
+                            //nb = 1; //idir = 0, nbr = 1;
+                            //nb = 2; //idir = 1, nbr = 0;
+                            //nb = 3; //idir = 1, nbr = 1;
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];                //n+1 vel
+                                //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
+                                //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
+                        }
+                        else
+                        {
+                            //TODO: Without this rayleigh-taylor with NEUMANN boundaries
+                            //      crashes for some reason.
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
                     }
                     else
-		    {
-                        U_nb[nb] = vel[l][index_nb[nb]];
-			mu[nb] = 1.0/2*(mu0 + field->mu[index_nb[nb]]);
-		    }
-            	}
+                    {
+                        printf("Unknown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+                
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                        mu[nb] = mu0;
+                    else
+                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                }
+                else
+                {
+                    U_nb[nb] = vel[l][index_nb[nb]];
+                    mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                }
+            }
 
-            	coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
-            	coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
-            	coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
-            	coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
 
-            	getRectangleCenter(index, coords);
-            	computeSourceTerm(coords, source);
+            coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
+            coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
+            coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
+            coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
 
-        	//first equation  decoupled, some terms may be lost
-		aII = 1+coeff[0]+coeff[1]+coeff[2]+coeff[3];
-            	rhs = (1-coeff[0]-coeff[1]-coeff[2]-coeff[3])
-				*vel[l][index];
+            getRectangleCenter(index, coords);
+            computeSourceTerm(coords, source);
 
-            	for (nb = 0; nb < 4; nb++)
-            	{
-		    status = (*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                                &intfc_state,&hs,crx_coords);
-	    	    if (status == NO_PDE_BOUNDARY)
-		    {
-            	    	solver.Set_A(I,I_nb[nb],-coeff[nb]);
-            	    	rhs += coeff[nb]*U_nb[nb];
-		    }
-		    else
-		    {
+            //first equation  decoupled, some terms may be lost
+            aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3];
+            rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3])*vel[l][index];
+
+            for (nb = 0; nb < 4; nb++)
+            {
+                status = (*findStateAtCrossing)(front,icoords,dir[nb],comp,
+                            &intfc_state,&hs,crx_coords);
+       
+                if (status == NO_PDE_BOUNDARY)
+                {
+                    solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                    rhs += coeff[nb]*U_nb[nb];
+                }
+                else
+                {
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {    
                         if (status == CONST_P_PDE_BOUNDARY)
                         {
+                            //OUTLET
                             aII -= coeff[nb];
                             rhs += coeff[nb]*U_nb[nb];
                         }
                         else
+                        {
+                            //INLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
+                        }
                     }
-		}
-            	rhs += m_dt*source[l];
-		rhs += m_dt*f_surf[l][index];
-	    	//rhs -= m_dt*grad_q[l][index]/rho;
-
-		solver.Set_A(I,I,aII);
-            	solver.Set_b(I, rhs);
+                    else if (neumann_type_bdry(wave_type(hs)))
+                    {
+                        //TODO: This is may be incorrect if a point from
+                        //      the previous time step switches component domains
+                        //      when the interface was propagated. The coeff and
+                        //      the velocity could both potentially be wrong.
+                        //
+                        //      E.g. When a point goes from fluid comp to solid comp,
+                        //      as it is covered by a moving rigid body.
+                        //      May need to retain old top_comp array, or find a way
+                        //      to access it if that functionality already exists
+                        //
+                        //      see find_state_crossing_info() in crystal code for soln
+                        
+                        //NEUMANN
+                        rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else
+                    {
+                        printf("Unkown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+                }
             }
+          
+            rhs += m_dt*source[l];
+            rhs += m_dt*f_surf[l][index];
+            rhs -= m_dt*grad_q[l][index]/rho;//grad_q is actually grad phi
 
-            solver.SetMaxIter(40000);
-            solver.SetTol(1e-14);
+            solver.Set_A(I,I,aII);
+            solver.Set_b(I,rhs);
+        }
+
+        solver.SetMaxIter(40000);
+        solver.SetTol(1e-14);
 
 	    start_clock("Befor Petsc solve");
-            solver.Solve();
-            solver.GetNumIterations(&num_iter);
-            solver.GetFinalRelativeResidualNorm(&rel_residual);
+        solver.Solve();
+        solver.GetNumIterations(&num_iter);
+        solver.GetResidualNorm(&residual);
 
 	    stop_clock("After Petsc solve");
 
-            // get back the solution
-            solver.Get_x(x);
+        // get back the solution
+        solver.Get_x(x);
 
-            if (debugging("PETSc"))
-                (void) printf("Incompress_Solver_Smooth_2D_Cartesian::"
-			"computeDiffusion: "
-       			"num_iter = %d, rel_residual = %g. \n", 
-                        num_iter,rel_residual);
-
-            for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
-            {
-                I = ij_to_I[i][j];
-                index = d_index2d(i,j,top_gmax);
-                if (I >= 0)
-                    vel[l][index] = x[I-ilower];
-                else
-                    vel[l][index] = 0.0;
-            }
+        if (debugging("PETSc"))
+        {
+            printf("Incompress_Solver_Smooth_2D_Cartesian::"
+                    "computeDiffusion: num_iter = %d, residual = %g\n",
+                    num_iter,residual);
         }
-	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            I = ij_to_I[i][j];
+            index = d_index2d(i,j,top_gmax);
+            if (I >= 0)
+                vel[l][index] = x[I-ilower];
+            else
+                vel[l][index] = 0.0;
+        }
+    
+    }
+	
+    FT_ParallelExchGridVectorArrayBuffer(vel,front);
 	stop_clock("computeDiffusionCN");
 	if (debugging("field_var"))
 	{
@@ -880,18 +970,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
 {
-        int i,j,index;
+    int i,j,index;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
 
 	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            pres[index] += phi[index];
+        index = d_index2d(i,j,top_gmax);
+        pres[index] += phi[index];
 	    q[index] = pres[index];
 	}
+    
+    //TODO: need to scatter pres and q?
+
 }        /* end computePressurePmI2d */
 
 
@@ -907,17 +1000,20 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 	for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            mu0 = 0.5*field->mu[index];
-	    pres[index] += phi[index] - accum_dt*mu0*div_U[index];
+        index = d_index2d(i,j,top_gmax);
+        mu0 = field->mu[index];
+	    pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = pres[index];
 	}
+    
+    //TODO: need to scatter pres and q?
+
 }        /* end computePressurePmII2d */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 {
-        int i,j,index;
-        double mu0;
+    int i,j,index;
+    double mu0;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -926,21 +1022,24 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 	if (debugging("field_var"))
 	{
 	    for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	    {
-            	index = d_index2d(i,j,top_gmax);
-		field->old_var[0][index] = pres[index];
+            index = d_index2d(i,j,top_gmax);
+            field->old_var[0][index] = pres[index];
 	    }
 	}
-	for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
+	
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
 	{
-            index = d_index2d(i,j,top_gmax);
-            mu0 = 0.5*field->mu[index];
-            pres[index] = phi[index] -
-                        	accum_dt*mu0*div_U[index];
-	    q[index] = 0.0;
+        index = d_index2d(i,j,top_gmax);
+        mu0 = field->mu[index];
+        pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        q[index] = 0.0;
 	}
+
+    //TODO: need to scatter pres?
+
 	if (debugging("field_var"))
 	{
 	    (void) printf("\nCheck one step increment of Pressure:\n");
@@ -1069,7 +1168,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 
 void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 {
-	int i;
+    int i;
 	COMPONENT comp;
 	double coords[MAXD];
 	int size = (int)cell_center.size();
@@ -1077,15 +1176,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	FT_MakeGridIntfc(front);
 	setDomain();
 
-        m_rho[0] = iFparams->rho1;
-        m_rho[1] = iFparams->rho2;
-        m_mu[0] = iFparams->mu1;
-        m_mu[1] = iFparams->mu2;
+    m_rho[0] = iFparams->rho1;
+    m_rho[1] = iFparams->rho2;
+    m_mu[0] = iFparams->mu1;
+    m_mu[1] = iFparams->mu2;
 	m_comp[0] = iFparams->m_comp1;
 	m_comp[1] = iFparams->m_comp2;
 	m_smoothing_radius = iFparams->smoothing_radius;
 	m_sigma = iFparams->surf_tension;
 	mu_min = rho_min = HUGE;
+
 	for (i = 0; i < 2; ++i)
 	{
 	    if (ifluid_comp(m_comp[i]))
@@ -1095,17 +1195,27 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	    }
 	}
 
+    double *pres = field->pres;
+    double *phi = field->phi;
+
 	// Initialize state at cell_center
-        for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
+    {
+        getRectangleCenter(i, coords);
+            //cell_center[i].m_state.setZero();
+        comp = top_comp[i];
+        if (getInitialState != NULL)
         {
-            getRectangleCenter(i, coords);
-	    //cell_center[i].m_state.setZero();
-	    comp = top_comp[i];
-	    if (getInitialState != NULL)
-	    	(*getInitialState)(comp,coords,field,i,dim,iFparams);
+            (*getInitialState)(comp,coords,field,i,dim,iFparams);
         }
+
+        //TODO: see comments in getPressure() function
+        pres[i] = getPressure(front,coords,NULL);
+        phi[i] = getPhiFromPres(front,pres[i]);
+    }
+
 	computeGradientQ();
-        copyMeshStates();
+    copyMeshStates();
 	setAdvectionDt();
 }       /* end setInitialCondition */
 

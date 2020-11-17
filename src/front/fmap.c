@@ -279,8 +279,7 @@ EXPORT boolean FT_OptimizeSurfMesh(
 	SURFACE *surf,
 	SCALED_REDIST_PARAMS params)
 {
-        INTERFACE *intfc = fr->interf;
-        int dim = intfc->dim;
+    INTERFACE *intfc = fr->interf;
 	RECT_GRID *gr = fr->rect_grid;
 	boolean nothing_done;
 	boolean sav_intrp_state = interpolate_intfc_states(intfc);
@@ -296,16 +295,15 @@ EXPORT boolean FT_OptimizeCurveMesh(
 	CURVE *curve,
 	SCALED_REDIST_PARAMS params)
 {
-        INTERFACE *intfc = fr->interf;
-        int dim = intfc->dim;
-	RECT_GRID *gr = fr->rect_grid;
+    INTERFACE *intfc = fr->interf;
+    RECT_GRID *gr = fr->rect_grid;
 	boolean nothing_done;
 	boolean sav_intrp_state = interpolate_intfc_states(intfc);
 
 	interpolate_intfc_states(intfc) = YES;
 	nothing_done = redistribute_curve(curve,gr,params);
 	interpolate_intfc_states(intfc) = sav_intrp_state;
-	return nothing_done;
+    return nothing_done;
 }	/* end FT_OptimizeCurveMesh */
 
 static boolean	equi_bond_curve_redist(Front*,CURVE*);
@@ -1861,8 +1859,6 @@ EXPORT	boolean FrontCpuAdaptSubdomain(
 	return cpu_adapt_front(front,cpu_time,lexpand,uexpand);
 }	/* end FrontCpuAdaptSubdomain */
 
-//TODO: This can be just take F_BASIC_DATA* as an argument
-//      and require that FT_Init() be called beforehand.
 EXPORT void FT_ReadSpaceDomain(
         char *in_name,
         F_BASIC_DATA *f_basic)
@@ -2845,7 +2841,7 @@ LOCAL void FrontPreAdvance3d(
 	double old_vel[3];
 
 	if (debugging("rigid_body"))
-	    (void) printf("Entering FrontPreAdvance()\n");
+	    (void) printf("Entering FrontPreAdvance3d()\n");
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -2936,14 +2932,24 @@ LOCAL void FrontPreAdvance3d(
 		    }
 		}
 		else if (motion_type(*s) == TRANSLATION)
-                {
-                    for (i = 0; i < dim; ++i)
-                    {
-                        center_of_mass_velo(*s)[i] +=
-				dt*translation_dir(*s)[i]*force[index][i]/
-                                total_mass(*s);
-                    }
-                }
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass_velo(*s)[i] +=
+                    dt*translation_dir(*s)[i]*force[index][i]/total_mass(*s);
+            }
+        
+            if (debugging("rigid_body"))
+            {
+		    	printf("Body index: %d\n",index);
+		    	printf("Traslation\n");
+		    	printf("angular_velo = %f\n",angular_velo(*s));
+		    	printf("center_of_mass_velo = %f  %f  %f\n",
+					center_of_mass_velo(*s)[0],
+					center_of_mass_velo(*s)[1],
+					center_of_mass_velo(*s)[2]);
+		    }
+        }
 		else if (motion_type(*s) == COM_MOTION)
 		{
 		    for (i = 0; i < dim; ++i)
@@ -2967,6 +2973,16 @@ LOCAL void FrontPreAdvance3d(
 		    for (i = 1; i < 4; ++i)
 			euler_params(*s)[i] = rotation_direction(*s)[i-1] * 
 				sin(0.5*angular_velo(*s)*(front->time+dt));
+		    if (debugging("rigid_body"))
+		    {
+		    	printf("Body index: %d\n",index);
+		    	printf("Preset rotation\n");
+		    	printf("angular_velo = %f\n",angular_velo(*s));
+		    	printf("center_of_mass_velo = %f  %f  %f\n",
+					center_of_mass_velo(*s)[0],
+					center_of_mass_velo(*s)[1],
+					center_of_mass_velo(*s)[2]);
+		    }
 		}
 		else /* Free Motion, Rotation Motion*/ 
 		{
@@ -3270,15 +3286,18 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	Front *front,
 	COMPONENT comp,
 	double *coords,
-	USE_BOUNDARIES brdy,
+	USE_BOUNDARIES bdry,
 	double *p,
 	double *t,
 	HYPER_SURF_ELEMENT **phse,
 	HYPER_SURF         **phs,
 	int range)
 {
+    //TODO: Is this a problem? Several functions pass INCLUDE_BOUNDARIES
+	/*return nearest_interface_point_within_range(coords,comp,front->interf,
+            bdry,NULL,p,t,phse,phs,range);*/
 	return nearest_interface_point_within_range(coords,comp,front->interf,
-				NO_BOUNDARIES,NULL,p,t,phse,phs,range);
+            NO_BOUNDARIES,NULL,p,t,phse,phs,range);
 }	/* FrontGetNearestPoint */
 
 EXPORT void FT_ResetTime(Front *front)

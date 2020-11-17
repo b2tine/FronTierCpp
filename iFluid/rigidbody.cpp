@@ -21,7 +21,6 @@ static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
 
 
-//TODO: rgb_init() should be tail call of this function
 extern void initRigidBody(
 	Front *front)
 {
@@ -34,7 +33,7 @@ extern void initRigidBody(
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] != 'y' && string[0] != 'Y')
-		return;
+            return;
 	}
 	else
 	    return;
@@ -45,6 +44,8 @@ extern void initRigidBody(
 	    fscanf(infile,"%d",&num_rgb);
 	    (void) printf("%d\n",num_rgb);
 	}
+
+    if (num_rgb <= 0) return;
 
 	if (num_rgb == 1)
 	    initSingleRigidBody(infile,front);
@@ -141,6 +142,7 @@ static void init_rigid_sphere(
             if (string[0] == 'y' || string[0] == 'Y')
                 w_type = NEUMANN_BOUNDARY;
         }
+
         bool cgal_mesh = false;
         if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
         {
@@ -152,8 +154,12 @@ static void init_rigid_sphere(
 
         if (cgal_mesh)
         {
-            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,w_type,
-                                        1,&surf);
+            int refinement_level = 1;
+            CursorAfterStringOpt(infile,"Enter refinement level:");
+            fscanf(infile,"%ld",&refinement_level);
+            printf("%d\n",refinement_level);
+            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,
+                    w_type,refinement_level,&surf);
         }
         else
         {
@@ -386,40 +392,41 @@ static void surf_enlargement(
         }
 }
 
-//TODO: should be combined with InitRigidBody()
-extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
+void setRigidBodyMotionParams(
+        Front* front,
+        RG_PARAMS* rgb_params)
 {
-        int dim = FT_Dimension();
-        if (dim == 1) return;
+    int dim = FT_Dimension();
+    if (dim == 1) return;
 
-        CURVE **c;
-        SURFACE **s;
-        char* inname = InName(front);
+    CURVE **c;
+    SURFACE **s;
+    char* inname = InName(front);
 
-        if (dim == 2)
+    if (dim == 2)
+    {
+        for (c = front->interf->curves; c && *c; ++c)
         {
-            for (c = front->interf->curves; c && *c; ++c)
+            if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*c));
-                }
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*c));
             }
         }
-        else
+    }
+    else
+    {
+        for (s = front->interf->surfaces; s && *s; ++s)
         {
-            for (s = front->interf->surfaces; s && *s; ++s)
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-                {
-                    prompt_for_rigid_body_params(dim,inname,rgb_params);
-                    set_rgbody_params(rgb_params,Hyper_surf(*s));
-                }
+                prompt_for_rigid_body_params(dim,inname,rgb_params);
+                set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
         }
+    }
 
-}       /* end rgb_init */
+}       /* end setRigidBodyMotionParams */
 
 static void prompt_for_rigid_body_params(
         int dim,
@@ -673,6 +680,7 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
+        //TODO: FREE_MOTION requires inpute val moment_of_inertial?
         if (rgb_params->motion_type == FREE_MOTION ||
             rgb_params->motion_type == ROTATION)
         {
@@ -814,6 +822,54 @@ extern void resetRigidBodyVelocity(Front *front)
             {
                 center_of_mass_velo(hs)[i] = 0.0;
             }
+        }
+    }
+}
+
+extern void printRigidBodyMeshQuality(Front* front)
+{
+    SURFACE** s;
+    TRI* t;
+
+    for (s = front->interf->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(*s) == NEUMANN_BOUNDARY)
+        {
+            HYPER_SURF* hs = Hyper_surf(*s);
+            int rgb_index = body_index(hs);
+            int n_tri = I_NumOfSurfTris(*s);
+            int n_pts = I_NumOfSurfPoints(*s);
+
+            printf("For rigid body index %d:\n",rgb_index);
+            printf("ntri = %d  npts = %d\n",n_tri,n_pts);
+
+            double ave_len = 0.0;
+            double min_len = HUGE;
+            double max_len = -HUGE;
+
+            int count = 0;
+            surf_tri_loop(*s,t)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    t->side_length0[i] = separation(Point_of_tri(t)[i],
+                            Point_of_tri(t)[(i+1)%3],3);
+
+                    if (t->side_length0[i] > max_len )
+                        max_len = t->side_length0[i];
+                    if (t->side_length0[i] < min_len )
+                        min_len = t->side_length0[i];
+                    
+                    ave_len += t->side_length0[i];
+                    count++;
+                }
+            }
+            ave_len /= (double)count;
+            
+            printf("min_len = %g\n",min_len);
+            printf("max_len = %g\n",max_len);
+            printf("ave_len = %g\n\n",ave_len);
         }
     }
 }

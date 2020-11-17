@@ -25,9 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		         iFbasic.cpp
  *******************************************************************/
 #include "iFluid.h"
-//#include <solver.h>
+#include "keps.h"
 
-//C++ STL
 #include <iostream>
 #include <fstream>
 #include <numeric>
@@ -36,23 +35,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <set>
 
 //----------------------------------------------------------------
-//		L_RECTANGLE
+//		IF_RECTANGLE
 //----------------------------------------------------------------
 
-static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
-L_RECTANGLE::L_RECTANGLE(): comp(-1)
-{
-}
+IF_RECTANGLE::IF_RECTANGLE()
+    : comp(-1)
+{}
 
-void L_RECTANGLE::setCoords(
-	double *coords,
+void IF_RECTANGLE::setCoords(
+	double* m_coords,
 	int dim)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
-	    m_coords[i] = coords[i];
+	for (int i = 0; i < dim; ++i)
+        coords[i] = m_coords[i];
+}
+
+std::vector<double> IF_RECTANGLE::getCoords()
+{
+    std::vector<double> m_coords(coords,coords+3);
+    return m_coords;
 }
 //--------------------------------------------------------------------------
 //               Incompress_Solver_Basis
@@ -64,7 +67,8 @@ void L_RECTANGLE::setCoords(
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_Basis
 //------------------------------------------------------------------------------
-Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front):front(&front)
+Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front)
+    :front(&front)
 {
 	skip_neumann_solver = 0;
 }
@@ -81,12 +85,14 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	int num_cells;
 
 	// init cell_center
-	L_RECTANGLE       rectangle;
+	IF_RECTANGLE rectangle;
 
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");
-	iFparams = (IF_PARAMS*)front->extra1;
-	FT_MakeGridIntfc(front);
+	
+    iFparams = (IF_PARAMS*)front->extra1;
+    
+    FT_MakeGridIntfc(front);
 	setDomain();
 
 	num_cells = 1;
@@ -138,41 +144,41 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
 {
 	int i;
 	static POINTER state;
-        double coords[MAXD];
+    double coords[MAXD];
 	int size = (int)cell_center.size();
 	double **vel = field->vel;
 	double *pres = field->pres;
 	
 	for (i = 0; i < size; i++)
 	{
-            cell_center[i].comp =
-                        getComponent(cell_center[i].icoords);
-        }
-	if(state == NULL)
-            FT_ScalarMemoryAlloc((POINTER*)&state,front->sizest);
+        cell_center[i].comp = getComponent(cell_center[i].icoords);
+    }
+
+    if(state == NULL)
+        FT_ScalarMemoryAlloc((POINTER*)&state,front->sizest);
 
 	for (i = 0; i < size; i++)
 	{
-            if (cell_center[i].comp != -1 &&
-                cell_center[i].comp != top_comp[i])
+        if (cell_center[i].comp != -1 &&
+            cell_center[i].comp != top_comp[i])
+        {
+            getRectangleCenter(i, coords);
+            if (!FrontNearestIntfcState(front,coords,top_comp[i],(POINTER)state))
             {
-		getRectangleCenter(i, coords);
-                if (!FrontNearestIntfcState(front,coords,top_comp[i],
-                                (POINTER)state))
-                {
-                    (void) printf("In setComponent()\n");
-                    (void) printf("FrontNearestIntfcState() failed\n");
-                    (void) printf("old_comp = %d new_comp = %d\n",
-                                        cell_center[i].comp,top_comp[i]);
-                    clean_up(ERROR);
-                }
-		vel[0][i] = getStateXvel(state);
-		vel[1][i] = getStateYvel(state);
-		if (dim == 3)
-		    vel[3][i] = getStateZvel(state);
-		pres[i] = getStatePres(state);
+                (void) printf("In setComponent()\n");
+                (void) printf("FrontNearestIntfcState() failed\n");
+                (void) printf("old_comp = %d new_comp = %d\n",
+                        cell_center[i].comp,top_comp[i]);
+                clean_up(ERROR);
             }
-            cell_center[i].comp = top_comp[i];
+    
+            vel[0][i] = getStateXvel(state);
+            vel[1][i] = getStateYvel(state);
+            if (dim == 3)
+                vel[3][i] = getStateZvel(state);
+            pres[i] = getStatePres(state);
+        }
+        cell_center[i].comp = top_comp[i];
 	}
 }
 
@@ -302,9 +308,8 @@ void Incompress_Solver_Smooth_Basis::getRectangleCenter(
 	int index, 
 	double *coords)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
-	    coords[i] = cell_center[index].m_coords[i];
+	for (int i = 0; i < dim; ++i)
+	    coords[i] = cell_center[index].coords[i];
 }
 
 double Incompress_Solver_Smooth_Basis::getDistance(double *c0, double *c1)
@@ -324,8 +329,8 @@ double Incompress_Solver_Smooth_Basis::getDistance(double *c0, double *c1)
 
 void Incompress_Solver_Smooth_Basis::getNearestInterfacePoint(
 	COMPONENT comp,
-	double *p, 
-	double *q,
+	double *p,          // mesh point
+	double *q,          // intfc point
 	double *nor,		// Normal vector
 	double *kappa)		// curvature
 {
@@ -344,45 +349,51 @@ void Incompress_Solver_Smooth_Basis::getNearestInterfacePoint(
 	    FT_VectorMemoryAlloc((POINTER*)&pts_kappa,MAXD,FLOAT);
 	    FT_MatrixMemoryAlloc((POINTER*)&pts_nor,MAXD,MAXD,FLOAT);
 	}
+
 	nearest_interface_point(p,comp,intfc,NO_BOUNDARIES,NULL,q,t,&hse,&hs);
-	if (hse != NULL)
+	
+    if (hse != NULL)
 	{
 	    switch (dim)
-	    {
-	    case 2:
-		bond = Bond_of_hse(hse);
-		pts[0] = bond->start;
-		pts[1] = bond->end;
-		for (i = 0; i < dim; ++i)
-		{
-		    GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
-		    GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
-		}
-		*kappa = (1.0 - t[0])*pts_kappa[0] + t[0]*pts_kappa[1];
-		for (i = 0; i < dim; ++i)
-		    nor[i] = (1.0 - t[0])*pts_nor[0][i] + t[0]*pts_nor[1][i];
-		mag_nor = mag_vector(nor,dim);
-		for (i = 0; i < dim; ++i)
-		    nor[i] /= mag_nor;
-		break;
-	    case 3:
-		tri = Tri_of_hse(hse);	
-		for (i = 0; i < dim; ++i)
-		{
-		    pts[i] = Point_of_tri(tri)[i];
-		    GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
-		    GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
-		}
-		for (i = 0; i < dim; ++i)
-		{
-		    *kappa = t[i]*pts_kappa[i];
-		    for (j = 0; j < dim; ++j)
-			nor[j] = t[i]*pts_nor[i][j];
-		}
-		mag_nor = mag_vector(nor,dim);
-		for (i = 0; i < dim; ++i)
-		    nor[i] /= mag_nor;
-	    }
+        {
+            case 2:
+
+            bond = Bond_of_hse(hse);
+            pts[0] = bond->start;
+            pts[1] = bond->end;
+            for (i = 0; i < dim; ++i)
+            {
+                GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            *kappa = (1.0 - t[0])*pts_kappa[0] + t[0]*pts_kappa[1];
+            for (i = 0; i < dim; ++i)
+                nor[i] = (1.0 - t[0])*pts_nor[0][i] + t[0]*pts_nor[1][i];
+            mag_nor = mag_vector(nor,dim);
+            for (i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+            break;
+
+            
+            case 3:
+
+            tri = Tri_of_hse(hse);	
+            for (i = 0; i < dim; ++i)
+            {
+                pts[i] = Point_of_tri(tri)[i];
+                GetFrontCurvature(pts[i],hse,hs,&pts_kappa[i],front);
+                GetFrontNormal(pts[i],hse,hs,pts_nor[i],front);
+            }
+            for (i = 0; i < dim; ++i)
+            {
+                *kappa = t[i]*pts_kappa[i];
+                for (j = 0; j < dim; ++j)
+                nor[j] = t[i]*pts_nor[i][j];
+            }
+            mag_nor = mag_vector(nor,dim);
+            for (i = 0; i < dim; ++i)
+                nor[i] /= mag_nor;
+        }
 	}
 	else
 	{
@@ -469,7 +480,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	dim = grid_intfc->dim;
 	T = table_of_interface(grid_intfc);
 	top_comp = T->components;
-	field = iFparams->field;
+    field = iFparams->field;
 
 	hmin = top_h[0];
 	size = top_gmax[0]+1;
@@ -486,9 +497,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(14,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vort,field->vel,
+		    FT_FreeThese(15,array,source,diff_coeff,field->mu,
+				field->rho,field->pres,field->phi,field->grad_phi,
+                field->q,field->div_U,field->vort,field->vel,
 				field->grad_q,field->f_surf,domain_status);
 		    if (debugging("field_var"))
 		    	FT_FreeThese(1,field->old_var);
@@ -498,6 +509,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 		iFparams->field = field;
 	    	FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,
+					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
@@ -535,9 +548,9 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    {
 		if (field != NULL)
 		{
-		    FT_FreeThese(15,field,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->q,
-				field->div_U,field->vel,field->vorticity,
+		    FT_FreeThese(16,field,array,source,diff_coeff,field->mu,
+				field->rho,field->pres,field->phi,field->grad_phi,
+                field->q,field->div_U,field->vel,field->vorticity,
 				field->grad_q,field->f_surf,domain_status);
 		}
 		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
@@ -552,6 +565,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    	FT_VectorMemoryAlloc((POINTER*)&field->pres,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,
+					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,3,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,
 					sizeof(double));
@@ -896,7 +911,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
 				"visc",0,field->mu,getStateMu,
 				var_max,var_min);
-		    FT_AddVtkScalarMovieVariable(front,"VISC",field->mu);
+		            //FT_AddVtkScalarMovieVariable(front,"VISC",field->mu);
 	    	}
 	    }
 	    break;
@@ -991,6 +1006,14 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
             if (string[0] == 'Y' || string[0] == 'y')
                 FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
         }
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make viscosity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"VISC",field->mu);
+        }
 	    if (CursorAfterStringOpt(infile,
                     "Type y to make vector velocity field movie:"))
         {
@@ -1000,10 +1023,11 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                 FT_AddVtkVectorMovieVariable(front,"VELOCITY",field->vel);
         }
 
+        //TODO: get vorticity plot for 2d vtk
         if (dim == 3)
         {
             if (CursorAfterStringOpt(infile,
-                        "Type y to make vector velocity field movie:"))
+                        "Type y to make vector vorticity field movie:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
@@ -1017,6 +1041,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 }	/* end initMovieVariables */
 
 
+//Subgrid stress model? (2d only)
 void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -1243,6 +1268,7 @@ void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
             index3 = d_index2d(i,j-1,top_gmax);
             index4 = d_index2d(i,j+1,top_gmax);
 
+            //subgrid shear stress being applied to the velocity?
             vel[0][index0] += -m_dt*(
                               ((tau00[index2]-tau00[index1])/(2.0*top_h[0])) + 
                                 ((tau01[index4]-tau01[index3])/(2.0*top_h[1])));
@@ -1505,6 +1531,9 @@ void Incompress_Solver_Smooth_2D_Basis::sampleVelocity()
 	count++;
 }	/* end sampleVelocity2d */
 
+//TODO: factor into separate components -- surf tension, turbulence etc.
+//
+//TODO: put clock() calls on LES turb models
 void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
@@ -1516,58 +1545,110 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
+    double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-	if (iFparams->use_eddy_visc)
-	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
 
+    //zero f_surf array
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+        for (l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+    
+
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == BALDWIN_LOMAX)
+    {
+	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
+    }
+
+    KE_PARAMS* ke_params;
     double* mu_t;
+    double* tke;
+
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
     {
-        mu_t = computeMuOfKepsModel();
+        ke_params = computeMuOfKepsModel();
+        mu_t = ke_params->field->mu_t;
+        tke = ke_params->field->k;
     }
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
-	    index  = d_index2d(i,j,top_gmax);			
+	    index  = d_index2d(i,j,top_gmax);
+        mu[index] = 0.0;
+
 	    comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
+ 
+        getRectangleCenter(index, center);
+	    
+        int icoords[MAXD];
+        icoords[0] = i;
+        icoords[1] = j;
 
-	    getRectangleCenter(index, center);
-	    status = FT_FindNearestIntfcPointInRange(front,comp,center,
-				NO_BOUNDARIES,point,t,&hse,&hs,range);
+        status = FT_FindNearestIntfcPointInRange(front,
+                comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
 
-	    if (iFparams->use_eddy_visc == YES)
+        if (status == YES && 
+                ifluid_comp(positive_component(hs)) &&
+                ifluid_comp(negative_component(hs)) &&
+                positive_component(hs) != negative_component(hs))
+        {
+            sign = (comp == m_comp[0]) ? -1 : 1;
+            D = smoothedDeltaFunction(center,point);
+            H = smoothedStepFunction(center,point,sign);
+            mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
+            rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
+        
+            if (m_sigma != 0.0 && D != 0.0)
+            {
+                for (l = 0; l < dim; ++l) force[l] = 0.0;
+
+                surfaceTension(center,hse,hs,force,m_sigma);
+                for (l = 0; l < dim; ++l)
+                {
+                    force[l] /= -rho[index];
+                    f_surf[l][index] += force[l];
+                }
+            }
+        }
+        else if (iFparams->use_eddy_visc == YES)
 	    {
-            int icoords[MAXD];
-            icoords[0] = i;
-            icoords[1] = j;
-            mu[index] = 0.0;
             switch (iFparams->eddy_visc_model)
             {
             case BALDWIN_LOMAX:
+                
+                /*status = FT_FindNearestIntfcPointInRange(front,
+                        comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);*/
+
                 if (status == YES &&
-                (wave_type(hs) == NEUMANN_BOUNDARY ||
-                 wave_type(hs) == ELASTIC_BOUNDARY))
+                        (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                         wave_type(hs) == ELASTIC_BOUNDARY))
                 {
-                dist = distance_between_positions(center,point,dim);
+                    dist = distance_between_positions(center,point,dim);
                     mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
+                break;
+            case KEPSILON:
+                mu[index] += mu_t[index];
+                pres[index] += 2.0/3.0*tke[index];
                 break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
-                break;
-            case KEPSILON:
-                mu[index] = mu_t[index];
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
@@ -1576,41 +1657,18 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 
             switch (comp)
             {
-            case LIQUID_COMP1:
-                mu[index] += m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] += m_mu[1];
-                rho[index] = m_rho[1];
-                break;
+                case LIQUID_COMP1:
+                    mu[index] += m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    mu[index] += m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
             }
 	    
         }
-        else if (status == YES && 
-            ifluid_comp(positive_component(hs)) &&
-            ifluid_comp(negative_component(hs)) &&
-            positive_component(hs) != negative_component(hs))
-	    {
-		sign = (comp == m_comp[0]) ? -1 : 1;
-		D = smoothedDeltaFunction(center,point);
-		H = smoothedStepFunction(center,point,sign);
-		mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
-		rho[index] = m_rho[0] + (m_rho[1]-m_rho[0])*H; 
-		
-            if (m_sigma != 0.0 && D != 0.0)
-            {
-	            for (l = 0; l < dim; ++l) force[l] = 0.0;
-
-                surfaceTension(center,hse,hs,force,m_sigma);
-                for (l = 0; l < dim; ++l)
-                {
-                force[l] /= -rho[index];
-                f_surf[l][index] = force[l];
-                }
-            }
-	    }
-	    else
+        else
 	    {
             switch (comp)
             {
@@ -1624,8 +1682,11 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             }
 	    }
+
 	}
+
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -1638,17 +1699,17 @@ double Incompress_Solver_Smooth_3D_Basis::getSmoothingFunction(double phi)
 {
 	// Heaviside function [1]
 	if (phi < -m_smoothing_radius)	
-	    return 0;
+	    return 0.0;
 	else if (phi > m_smoothing_radius)
-	    return 1;
+	    return 1.0;
 	else
-	    return 1.0/2 + phi/(2*m_smoothing_radius) + 
-		   1/(2*PI)*sin(PI*phi/m_smoothing_radius);
+	    return 1.0/2.0 + phi/(2.0*m_smoothing_radius) + 
+		   1.0/(2.0*PI)*sin(PI*phi/m_smoothing_radius);
 }
 
 double Incompress_Solver_Smooth_3D_Basis::getSmoothingFunctionD(double *center, double *point)
 {
-        if (fabs(center[0]-point[0]) < 2*top_h[0] && 
+        if (fabs(center[0]-point[0]) < 2.0*top_h[0] && 
 		fabs(center[1]-point[1]) < 2*top_h[1] && 
 		fabs(center[2]-point[2]) < 2*top_h[2])
 	    return ((1.0 + cos((PI*(center[0]-point[0]))/(2.0*top_h[0]))) 
@@ -2288,51 +2349,81 @@ void Incompress_Solver_Smooth_Basis::initSampleVelocity(char *in_name)
         fclose(infile);
 }	/* end initSampleVelocity */
 
-//Compute force due to surface tension and eddy viscosity of
-//selected turbulence model.
+//TODO: factor into separate components -- surf tension, turbulence etc.
+//
+//TODO: put clock() calls on LES turb models
 void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 {
 	boolean status;
 	int i,j,k,l,index,sign; 
 	COMPONENT comp;
-        double t[MAXD],force[MAXD];
+    double t[MAXD],force[MAXD];
 	double center[MAXD],point[MAXD],H,D;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF *hs;
+    HYPER_SURF *hs;
 	double **f_surf = field->f_surf;
 	double *mu = field->mu;
+    double *pres = field->pres;
 	double *rho = field->rho;
 	double dist;
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-    if (iFparams->use_eddy_visc)
-	    range = FT_Max(range,(int)5*iFparams->ymax/top_h[0]);
+    
+    //zero f_surf array
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+        for (l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+    
 
+    if (iFparams->use_eddy_visc == YES &&
+        iFparams->eddy_visc_model == BALDWIN_LOMAX)
+    {
+	    range = FT_Max(range,(int)(5*iFparams->ymax/top_h[0]));
+    }
+
+    KE_PARAMS* ke_params;
     double* mu_t;
+    double* tke;
+    
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == KEPSILON)
-        mu_t = computeMuOfKepsModel();
+    {
+        ke_params = computeMuOfKepsModel();
+        mu_t = ke_params->field->mu_t;
+        tke = ke_params->field->k;
+    }
 
-	for (k = kmin; k <= kmax; k++)
+    for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index3d(i,j,k,top_gmax);			
-	    comp  = cell_center[index].comp;
+        mu[index] = 0.0;
+	    
+        comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
 
-	    getRectangleCenter(index, center);
-            status = FT_FindNearestIntfcPointInRange(front,comp,center,
-				INCLUDE_BOUNDARIES,point,t,&hse,&hs,range);
-            for (l = 0; l < dim; ++l) force[l] = 0.0;
+	    getRectangleCenter(index,center);
+        
+        int icoords[MAXD];
+        icoords[0] = i;
+        icoords[1] = j;
+        icoords[2] = k;
 
-	    if (status  == YES && 
-		    ifluid_comp(positive_component(hs)) &&
-            ifluid_comp(negative_component(hs)) && 
-		    positive_component(hs) != negative_component(hs))
+        status = FT_FindNearestIntfcPointInRange(front,
+                comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
+
+        if (status == YES &&
+                ifluid_comp(positive_component(hs)) &&
+                ifluid_comp(negative_component(hs)) && 
+                positive_component(hs) != negative_component(hs))
         {
-		    sign = (comp == m_comp[0]) ? -1 : 1;
+            sign = (comp == m_comp[0]) ? -1 : 1;
             D = smoothedDeltaFunction(center,point);
             H = smoothedStepFunction(center,point,sign);
             mu[index] = m_mu[0] + (m_mu[1]-m_mu[0])*H;
@@ -2340,84 +2431,86 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 
             if (m_sigma != 0.0 && D != 0.0)
             {
+                for (l = 0; l < dim; ++l) force[l] = 0.0;
                 surfaceTension(center,hse,hs,force,m_sigma);
                 for (l = 0; l < dim; ++l)
                 {
                     force[l] /= -rho[index];
-                    f_surf[l][index] = force[l];
+                    f_surf[l][index] += force[l];
                 }
             }
-	    }
-	    else if (iFparams->use_eddy_visc == YES)
+        }
+        else if (iFparams->use_eddy_visc == YES)
         {
-            int icoords[MAXD];
-            icoords[0] = i;
-            icoords[1] = j;
-            icoords[2] = k;
-            mu[index] = 0.0;
-
             switch (iFparams->eddy_visc_model)
             {
             case BALDWIN_LOMAX:
+        
+                /*status = FT_FindNearestIntfcPointInRange(front,
+                        comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);*/
+
                 if (status == YES &&
-                    (wave_type(hs) == NEUMANN_BOUNDARY ||
-                     wave_type(hs) == ELASTIC_BOUNDARY))
+                        (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
+                         wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
                     mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
+            case KEPSILON:
+                mu[index] += mu_t[index];
+                pres[index] += 2.0/3.0*tke[index];
+                break;
             case MOIN:
                 mu[index] = computeMuOfMoinModel(icoords);
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords);
-                break;
-            case KEPSILON:
-                mu[index] = mu_t[index];
+                //TODO: effective pressure
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
             }
     
-            //add regular visc to the eddy visc to obtain an effective visc
             switch (comp)
             {
-            case LIQUID_COMP1:
-                mu[index] += m_mu[0];
-                rho[index] = m_rho[0];
-                break;
-            case LIQUID_COMP2:
-                mu[index] += m_mu[1];
-                rho[index] = m_rho[1];
-                break;
+                case LIQUID_COMP1:
+                    mu[index] += m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    mu[index] += m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
             }
         }
 	    else
 	    {
-		switch (comp)
-		{
-		case LIQUID_COMP1:
-		    mu[index] = m_mu[0];
-		    rho[index] = m_rho[0];
-		    break;
-		case LIQUID_COMP2:
-		    mu[index] = m_mu[1];
-		    rho[index] = m_rho[1];
-		    break;
-		}
+            switch (comp)
+            {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+            }
 	    }
+
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties in 3D */
 
 // Flux of Riemann solution of Burgers equation u_t + uu_x = 0
-
 double burger_flux(	
 	double ul,
 	double um,
@@ -2842,6 +2935,153 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         }
 }       /* end computeFieldPointDiv */
 
+/*
+double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
+        int *icoords,
+        double **var)
+{
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+    
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+	
+	int crx_status;
+    boolean status;
+	
+    int icnb[MAXD];
+    double crx_coords[MAXD];
+    double nor[MAXD];
+
+    int index_nb;
+	int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    double** grad_phi = field->grad_phi;
+    double div = 0.0;
+
+    if (!ifluid_comp(comp)) return div;
+
+
+    for (int idir = 0; idir < dim; idir++)
+    {
+        for (int j = 0; j < dim; ++j)
+            icnb[j] = icoords[j];
+
+        double lambda = 0.5/top_h[idir];
+
+        for (int nb = 0; nb < 2; nb++)
+        {
+            icnb[idir] = (nb == 0) ?
+                icoords[idir] - 1 : icoords[idir] + 1;
+
+            index_nb = d_index(icnb,top_gmax,dim);
+            
+            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
+
+            crx_status = (*findStateAtCrossing)(front,icoords,
+                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
+
+            if (crx_status)
+            {
+                if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                {
+                    double bval = getStateVel[idir](intfc_state);
+                    bval += m_dt*grad_phi[idir][index_nb];
+                    div += coeff_nb*bval;
+
+                    //if (iFparams->num_scheme.projc_method == SIMPLE ||
+                    //   iFparams->num_scheme.projc_method == KIM_MOIN)
+                    //{
+                    //    bval += m_dt*grad_phi[idir][index_nb];
+                    //}//
+                    //div += coeff_nb*getStateVel[idir](intfc_state);
+                }
+                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                {
+                    //REFLECTING BOUNDARY
+                    status = FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+                    
+//                    //
+//                    double coords_ghost[MAXD];
+//                    getRectangleCenter(index_nb,coords_ghost);
+//
+//                    //Reflect the ghost point through intfc-mirror at crossing.
+//                    //first reflect across the grid line containing intfc crossing.
+//                    double coords_reflect[MAXD];
+//                    for (int m = 0; m < dim; ++m)
+//                        coords_reflect[m] = coords_ghost[m];
+//                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+//                    //(^should just be the coords at current index)
+//                    //
+//
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //
+                    //first reflect across the grid line containing intfc crossing.
+                    //Should be the coords of the current index.
+                    double coords_reflect[MAXD];
+                    getRectangleCenter(index,coords_reflect);
+
+                    //Reflect the displacement vector across the line
+                    //containing the intfc normal vector
+                    double v[MAXD];
+                    double vn = 0.0;
+
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        v[m] =  coords_reflect[m] - crx_coords[m];
+                        vn += v[m]*nor[m];
+                    }
+
+                    for (int m = 0; m < dim; ++m)
+                        v[m] = 2.0*vn*nor[m] - v[m];
+
+                    //The desired reflected point
+                    for (int m = 0; m < dim; ++m)
+                        coords_reflect[m] = crx_coords[m] + v[m];
+
+                    //Interpolate the velocity at the reflected point
+                    double vel_reflect[MAXD];
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        FT_IntrpStateVarAtCoords(front,comp,
+                                coords_reflect,var[m],getStateVel[m],
+                                &vel_reflect[m],&var[m][index]);
+                    }
+
+                    //Ghost vel has relative normal velocity component equal
+                    //in magnitude to reflected point's relative normal velocity
+                    //and opposite in direction.
+                    vn = 0.0;
+                    double vel_rel[MAXD];
+                    double* vel_intfc = ((STATE*)intfc_state)->vel;
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        vel_rel[m] = vel_reflect[m] - vel_intfc[m];
+                        vn += vel_rel[m]*nor[m];
+                    }
+
+                    double vel_ghost[MAXD];
+                    for (int m = 0; m < dim; ++m)
+                        vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
+                
+                    div += coeff_nb*vel_ghost[idir];
+                }
+                else
+                {
+                    //NO_PDE_BOUNDARY
+                    div += coeff_nb*var[idir][index_nb];
+                }
+            }
+        }
+    } 
+
+    return div;
+}*/      /* end computeFieldPointDivSimple */
+
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
         double **field)
@@ -2982,67 +3222,81 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         return div;
 }       /* end computeFieldPointDivDouble */
 
+//TODO: function has diverged from the original purpose and now is concerned
+//      with computing the gradient of phi -- rename, or make separate funcs
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
-        double *field,
+        double *field,//TODO: should rename to avoid collision with the IF_FIELD struct member
         double *grad_field)
 {
-        int index,index_nb,icnb[MAXD];
-        COMPONENT comp;
-        int i,j,idir,nb;
+    int index,index_nb,icnb[MAXD];
+    COMPONENT comp;
+    int i,j,idir,nb;
 	double p_edge[3][2],p0;
-        double crx_coords[MAXD];
-        POINTER intfc_state;
-        HYPER_SURF *hs;
-        GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
+    double crx_coords[MAXD];
+    POINTER intfc_state;
+    HYPER_SURF *hs;
+    GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
 	int status;
 	boolean refl_side[2];
 
 	index = d_index(icoords,top_gmax,dim);
-        comp = top_comp[index];
-	p0 = field[index];
+    comp = top_comp[index];
+
+    if (!ifluid_comp(comp))
+    {
+        for (i = 0; i < dim; ++i)
+            grad_field[i] = 0.0;
+        return;
+    }
+	
+    p0 = field[index];
 
 	for (idir = 0; idir < dim; idir++)
 	{
 	    for (j = 0; j < dim; ++j)
 	    	icnb[j] = icoords[j];
+
 	    for (nb = 0; nb < 2; nb++)
 	    {
-		refl_side[nb] = NO;
+            refl_side[nb] = NO;
 	    	icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 	    	index_nb = d_index(icnb,top_gmax,dim);
-	    	status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
-				comp,&intfc_state,&hs,crx_coords);
+	
+            status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
+                    comp,&intfc_state,&hs,crx_coords);
+
 	    	if (status == NO_PDE_BOUNDARY)
-                {
-		    p_edge[idir][nb] = field[index_nb];
-                }
+            {
+		        p_edge[idir][nb] = field[index_nb];
+            }
 	    	else if (status ==CONST_P_PDE_BOUNDARY)
+            {
+                if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
+	    	        p_edge[idir][nb] = field[index_nb];
+                else
+	    	        p_edge[idir][nb] = getStatePhi(intfc_state);
+            }
+	    	else if (status == CONST_V_PDE_BOUNDARY)
+            {
+                if(wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-		        p_edge[idir][nb] = field[index_nb];
+    		            p_edge[idir][nb] = field[index_nb];
                     else
-		        p_edge[idir][nb] = getStatePhi(intfc_state);
+                        p_edge[idir][nb] = p0;
                 }
-	    	else if (status == CONST_V_PDE_BOUNDARY)
+                else
                 {
-                    if(wave_type(hs) == DIRICHLET_BOUNDARY)
-                    {
-                        if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-		            p_edge[idir][nb] = field[index_nb];
-                        else
-                            p_edge[idir][nb] = p0;
-                    }
-                    else
-                    {
-		        p_edge[idir][nb] = p0;
-                    }
+                    p_edge[idir][nb] = p0;
                 }
+            }
 	    }
 	}
+
 	for (i = 0; i < dim; ++i)
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
-}       /* end computeFieldPointGrad */
+}      /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {
@@ -3078,7 +3332,7 @@ void Incompress_Solver_Smooth_Basis::setReferencePressure()
 	    }
 	    break;
 	}
-}	/* end computeFieldPointGrad */
+}	/* end setReferencePressure */
 
 extern int ifluid_find_state_at_crossing(
 	Front *front,
@@ -3113,7 +3367,7 @@ extern int ifluid_find_state_at_crossing(
 		strcmp(boundary_state_function_name(*hs),
 		"iF_splitBoundaryState") == 0)
 	    	return CONST_V_PDE_BOUNDARY;
-	    else
+	    else //flow through bdry
 	    	return CONST_P_PDE_BOUNDARY;
 	}
 }	/* ifluid_find_state_at_crossing */
@@ -3200,7 +3454,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 {
 	double coords[MAXD];
 	int *icoords;
-	int i,j,size = (int)cell_center.size();
+	int j;
 	int id;
 	STATE state;
 	int ave_comp;
@@ -3213,13 +3467,15 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 	double *phi = field->phi;
 	
 	setDomain();
-	for (i = 0; i < size; i++)
-        {
+
+    int size = (int)cell_center.size();
+	for (int i = 0; i < size; i++)
+    {
             icoords = cell_center[i].icoords;
             if (cell_center[i].comp != -1 &&
                 cell_center[i].comp != top_comp[i])
             {
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    coords[j] = top_L[j] + icoords[j]*top_h[j];
 		id = d_index(icoords,top_gmax,dim);
 		if (fabs(cell_center[i].comp - top_comp[i]) != 2)
@@ -3244,7 +3500,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		    continue;
 
 		dist = 0.0;
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    dist += sqr(coords[j] - p_intfc[j]);
 		dist = sqrt(dist);
 		if (debugging("set_crossed_state"))
@@ -3274,89 +3530,15 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 		    printf("Intfc pressure = %f  Intfc phi = %f\n",
 				state.pres,state.phi);
 		}
-		for (j = 0; j < dim; ++j)
+		for (int j = 0; j < dim; ++j)
 		    vel[j][id] = state.vel[j];
         //double speed = sqrt(sqr(vel[0][id]) + sqr(vel[1][id]) + sqr(vel[2][id]));
 	    }
-        }
+    }
+
 	FT_FreeGridIntfc(front);
 	FT_MakeGridIntfc(front);
 }	/* end applicationSetStates */
-
-double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
-        int *icoords,
-	double dist,
-	boolean first)
-{
-	int i,j,k,index;
-	COMPONENT comp;
-	static double udif;
-	static double Fmax;
-	double speed, umax = -HUGE, umin = HUGE;
-	double vort, wmax = -HUGE;
-	double mu_t, mu_in, mu_out,l;
-	double rho = iFparams->rho2;
-	double nu = iFparams->mu2/rho;
-	double Fkleb, Fwake;
-	double ymax = iFparams->ymax;
-	vort = 50.0;
-
-	if (first == YES)
-	{
-	    first = NO;
-	    switch(dim)
-	    {
-	    case 2:
-	    	for (j = jmin; j < jmax; j++)
-	    	for (i = imin; i < imax; i++)
-	    	{
-		    index = d_index2d(i,j,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-		    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index]));
-		    vort = abs(field->vort[index]);
-		    umax = std::max(umax,speed);
-		    umin = std::min(umin,speed);
-		    wmax = std::max(wmax,vort);
-	    	}
-		break;
-	    case 3:	
-		for (k = kmin; k < kmax; k++)
-		for (j = jmin; j < jmax; j++)
-                for (i = imin; i < imax; i++)
-                {
-                    index = d_index3d(i,j,k,top_gmax);
-		    comp  = cell_center[index].comp;
-            	    if (!ifluid_comp(comp)) continue;
-                    speed = sqrt(sqr(field->vel[0][index])+
-				sqr(field->vel[1][index])+
-				sqr(field->vel[2][index]));
-                    umax = std::max(umax,speed);
-                    umin = std::min(umin,speed);
-                }
-                break;
-	    }
-	    udif = umax - umin;
-	    vort = wmax;
-	    Fmax = ymax*abs(vort);
-	}
-	index = d_index(icoords,top_gmax,dim);
-	vort = field->vort[index];
-
-	l = 0.41*dist;
-	mu_in = rho * l * l * abs(vort); 
-
-	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
-	Fkleb = 1.0/(1+5.5*pow((dist*0.3/ymax),6));
-	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
-
-	if (mu_in < mu_out)
-	    mu_t = mu_in;
-	else
-	    mu_t = mu_out;
-	return mu_t;
-}	/* end computeMuOfBaldwinLomax */
 
 static void initTestParams(Front *front)
 {
@@ -3556,147 +3738,279 @@ void Incompress_Solver_Smooth_Basis::readBaseStates(
         fclose(infile);
 }       /* end readBaseStates */
 
+double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
+    int *icoords,
+	double dist,
+	boolean first)
+{
+	int index;
+	COMPONENT comp;
+	static double udif;
+	static double Fmax;
+	double speed, umax = -HUGE, umin = HUGE;
+	double mag_vort, wmax = -HUGE;
+	double mu_t, mu_out;
+	double rho = iFparams->rho2;
+	double nu = iFparams->mu2/rho;
+	double Fkleb, Fwake;
+
+    //TODO: ymax and Fmax are supposed to be solved for by maximizing the function
+    //      F(y) = y*|vorticity|*(1 - exp(-y_plus/A_plus))
+	double ymax = iFparams->ymax;
+
+	if (first == YES)
+	{
+	    first = NO;
+	    switch (dim)
+	    {
+            case 2:
+	
+            for (int j = jmin; j < jmax; ++j)
+	    	for (int i = imin; i < imax; ++i)
+	    	{
+                index = d_index2d(i,j,top_gmax);
+                comp  = cell_center[index].comp;
+                if (!ifluid_comp(comp)) continue;
+
+                speed = sqrt(sqr(field->vel[0][index])
+                            + sqr(field->vel[1][index]));
+
+                mag_vort = fabs(field->vort[index]);
+
+                umax = std::max(umax,speed);
+                umin = std::min(umin,speed);
+                wmax = std::max(wmax,mag_vort);
+	    	}
+            break;
+
+	        case 3:	
+        
+            for (int k = kmin; k < kmax; ++k)
+            for (int j = jmin; j < jmax; ++j)
+            for (int i = imin; i < imax; ++i)
+            {
+                index = d_index3d(i,j,k,top_gmax);
+                comp  = cell_center[index].comp;
+                if (!ifluid_comp(comp)) continue;
+                
+                speed = sqrt(sqr(field->vel[0][index])
+                            + sqr(field->vel[1][index])
+                            + sqr(field->vel[2][index]));
+
+                mag_vort = sqrt(sqr(field->vorticity[0][index])
+                            + sqr(field->vorticity[1][index])
+                            + sqr(field->vorticity[2][index]));
+
+                umax = std::max(umax,speed);
+                umin = std::min(umin,speed);
+                wmax = std::max(wmax,mag_vort);
+            }
+            
+            break;
+        }
+
+	    udif = umax - umin;
+	    mag_vort = wmax;
+	    Fmax = ymax*mag_vort;
+        //TODO: ymax and Fmax are supposed to be solved for by maximizing the function
+        //          F(y) = y*|vorticity|*(1 - exp(-y_plus/A_plus))
+        //      Above Fmax is not using the damping factor of F(y), 1-exp(..).
+	}
+
+	index = d_index(icoords,top_gmax,dim);
+
+    switch (dim)
+    {
+        case 2:
+            mag_vort = fabs(field->vort[index]);
+            break;
+        case 3:
+            mag_vort = sqrt(sqr(field->vorticity[0][index])
+                        + sqr(field->vorticity[1][index])
+                        + sqr(field->vorticity[2][index]));
+            break;
+    }
+
+	double l = 0.41*dist;
+	double mu_in = rho*l*l*mag_vort; 
+
+	Fwake = std::min(ymax*Fmax,0.25*ymax*sqr(udif)/Fmax);
+	Fkleb = 1.0/(1.0 + 5.5*pow((dist*0.3/ymax),6));
+	mu_out = rho*0.0168*1.6*Fwake*Fkleb;
+
+    //TODO: This method may select the wrong viscosity.Need to solve for the
+    //      crossover distance, y_crx, which is the smallest distance
+    //      from the nearest wall in which mu_inner == mu_outer (root finding problem)
+    //      and then select mu_t based on whether the distance from the point to the
+    //      wall is less/greater than y_crx.
+	if (mu_in < mu_out)
+	    mu_t = mu_in;
+	else
+	    mu_t = mu_out;
+
+	return mu_t;
+}	/* end computeMuOfBaldwinLomax */
+
+//Vreman 2004 paper
 double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
 	int *icoords)
 {
-	double nu_t, C_v = 0.07;
-    	int i, j, k;
-    	int index[6], index0;
-    	double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-    	double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-    	double sigma, B_beta, sum_alpha;
-    	double **vel = field->vel;
-    	double delta[MAXD];
-    	for (i = 0; i < dim; i++)
-	    delta[i] = top_h[i];
-    	switch( dim )
-    	{
-	    case 2:
-		index0   = d_index2d(icoords[0],icoords[1],top_gmax);
-	        index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
-	        index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
-	        index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
-	        index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
-	        break;
-	    case 3:
-	        index0   = d_index3d(icoords[0],icoords[1],icoords[2],
-					top_gmax); 
-	        index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
-					top_gmax); 
-	        index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
-					top_gmax);
-	        index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
-					top_gmax);
-	        index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
-					top_gmax);
-	        index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
-					top_gmax);
-	        index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
-					top_gmax);
-	        break;
-    	}
-   	sum_alpha = 0;
-    	for (i = 0; i < dim; i++)
-	for (j = 0; j < dim; j++)
+    //relation to smagorinsky constant: C_v ~ 2.5*C_s^2
+    double C_v = iFparams->C_v;
+    
+    int index[6], index0;
+    double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+    double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+    double **vel = field->vel;
+    
+    //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
+    switch (dim)
+    {
+        case 2:
+            index0 = d_index2d(icoords[0],icoords[1],top_gmax);
+            index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
+            index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
+            index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
+            index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
+            break;
+        
+        case 3:
+            index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax); 
+            index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],top_gmax); 
+            index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],top_gmax);
+            index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],top_gmax);
+            index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],top_gmax);
+            index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,top_gmax);
+            index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,top_gmax);
+            break;
+    }
+
+   	double sum_alpha = 0;
+    for (int i = 0; i < dim; ++i)
+	for (int j = 0; j < dim; ++j)
 	{
-	    alpha[i][j] =(vel[j][index[2*i+1]] - vel[j][index[2*i]])/
-				(2.0*top_h[i]);
+	    alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
 	    sum_alpha += alpha[i][j]*alpha[i][j];
 	}
-    	for (i = 0; i < dim; i++)
-	for (j = 0; j < dim; j++)
+
+    for (int i = 0; i < dim; ++i)
+	for (int j = 0; j < dim; ++j)
 	{
 	    beta[i][j] = 0.0;
-	    for( k = 0; k < dim; k++)
-		beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
+	    for (int k = 0; k < dim; ++k)
+            beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
 	    
 	}
-    	B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1] + 
-		 beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2] + 
-		 beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
-    	if (sum_alpha == 0.0)
-	    sigma = 0.0;
-    	else
-	    sigma = sqrt( B_beta/sum_alpha );
-    	nu_t = C_v*sigma;
-     	return nu_t * field->rho[index0];
+
+    double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
+                  + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
+                  + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
+
+    double nu_t;
+        //if (sum_alpha >= MACH_EPS)
+    if (B_beta < MACH_EPS) //See Vreman's implementation (he actually uses 1.0e-12)
+        nu_t = 0.0;
+    else
+        nu_t = C_v*sqrt(B_beta/sum_alpha);
+    
+    double mu_t = nu_t*field->rho[index0];
+    return mu_t;
+
+
+    /*double sigma = 0.0;
+    if (sum_alpha == 0.0)
+        sigma = 0.0;
+    else
+        sigma = sqrt(B_beta/sum_alpha);
+    double nu_t = C_v*sigma;
+    return nu_t*field->rho[index0];// mu_t
+    */
 }	/* end computeMuOfMoinModel*/
 
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
-        double mu, delta, sum_S = 0, C_s = 0.15;
+        double delta;
+        
+        double C_s = iFparams->C_s;
+        
         double S[MAXD][MAXD] = {{0,0,0}, {0,0,0}, {0,0,0}};
         double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-        int i, j, index0, index[6];
+        int index0, index[6];
+
         double **vel = field->vel;
+        
+        //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
         switch (dim)
-	{
+	    {
             case 2:
-            	delta = sqrt( top_h[0]*top_h[1] );
-                index0 = d_index2d(icoords[0], icoords[1], top_gmax);
-                index[0] = d_index2d(icoords[0]-1, icoords[1], top_gmax);
-                index[1] = d_index2d(icoords[0]+1, icoords[1], top_gmax);
-                index[2] = d_index2d(icoords[0], icoords[1]-1, top_gmax);
-                index[3] = d_index2d(icoords[0], icoords[1]+1, top_gmax);
+            	
+                delta = sqrt(top_h[0]*top_h[1]);
+                
+                index0 = d_index2d(icoords[0],icoords[1],top_gmax);
+                index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
+                index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
+                index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
+                index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
                 break;
+
             case 3:
-                delta = pow(top_h[0]*top_h[1]*top_h[2], 1.0/3);
+                
+                delta = pow(top_h[0]*top_h[1]*top_h[2], 1.0/3.0);
+                
                 index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax);
-                index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],
-						top_gmax);
-                index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],
-						top_gmax);
-                index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],
-						top_gmax);
-                index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],
-						top_gmax);
-                index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,
-						top_gmax);
-                index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,
-						top_gmax);
+                index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],top_gmax);
+                index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],top_gmax);
+                index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],top_gmax);
+                index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],top_gmax);
+                index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,top_gmax);
+                index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,top_gmax);
                 break;
         }
-        for (i = 0; i < dim; ++i)
-        for (j = 0; j < dim; ++j)
+
+        for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
         {
-                alpha[i][j] = (vel[j][index[2*i+1]] - 
-				vel[j][index[2*i]])/(2*top_h[i]);
+            alpha[i][j] = (vel[j][index[2*i+1]] - vel[j][index[2*i]])/(2.0*top_h[i]);
         }
-        for (i = 0; i < dim; ++i)
-        for (j = 0; j < dim; ++j)
+
+        double sum_S = 0.0;
+        for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
         {
-                S[i][j] = 1.0/2*(alpha[i][j] + alpha[j][i]);
-                sum_S += S[i][j]*S[i][j];
+            S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
+            sum_S += S[i][j]*S[i][j];
         }
-        sum_S = sqrt(2*sum_S);
-        mu = field->rho[index0]*sqr(C_s*delta)*sum_S;
-        return mu;
+
+        double mod_S = sqrt(2.0*sum_S);
+        double mu_t = field->rho[index0]*sqr(C_s*delta)*mod_S;
+        
+        return mu_t;
 }       /* end of computeMuofSmagorinskyModel */
 
-#include "keps.h"
-double* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
+KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
 {
-    static boolean first = YES;
     static KE_PARAMS params;
-    static KE_CARTESIAN *keps_solver = new KE_CARTESIAN(*front);
+    static KE_CARTESIAN *keps_solver;
+    static bool first = true;
 
     if (first)
     {
-        first = NO;
+        keps_solver = new KE_CARTESIAN(*front);
         keps_solver->read_params(InName(front),&params);
         keps_solver->eqn_params = &params;
         keps_solver->field = NULL;
         keps_solver->initMesh();
         keps_solver->field->vel = iFparams->field->vel;
+        keps_solver->field->f_surf = iFparams->field->f_surf;
         keps_solver->eqn_params->mu = iFparams->mu2;
         keps_solver->eqn_params->rho = iFparams->rho2;
         keps_solver->setInitialCondition();
+        first = false;
     }
 
     keps_solver->solve(front->dt);
-
-    return keps_solver->field->mu_t;
+    return &params;
 }
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
@@ -3863,9 +4177,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
         computeFieldPointGrad(icoords,var,grad_var);
 
-	/*if (iFparams->porous_coeff[0] == 0.0 &&
-	    iFparams->porous_coeff[1] == 0.0)
-	    return;*/
+        if (!iFparams->with_porosity) return;
 
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)
@@ -4345,4 +4657,129 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 	    break;
 	}
 }	/* end setDoubleIndexMap */
+
+//Slip boundary treats the tangential velocity as a neumann condition
+//and the normal velocity as a dirichlet boundary.
+//
+//let c be the slip velocity (prescribed), then the boundary condition is
+//  
+//  u dot n = u dot c
+//
+//when c is set to the zero vector the ghost velocity is identical to
+//the reflected point's tangential velocity
+//
+//TODO: add arg for prescribed velocity vector c
+void Incompress_Solver_Smooth_Basis::setSlipBoundary(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_slip)
+{
+	int index;
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
+    
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    GRID_DIRECTION  dir;
+    double  vel_intfc[MAXD];
+
+	index = d_index(icoords,top_gmax,dim);
+	
+    for (int i = 0; i < dim; ++i)
+    {
+        vel_intfc[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ghost_ic[i] = icoords[i];
+    }
+	
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+
+    FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+	
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+
+    for (int j = 0; j < dim; ++j)
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+        
+    /* Reflect ghost point through intfc-mirror at crossing */
+    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+    
+    double vn = 0.0;
+    double vec[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        vec[j] = coords_reflect[j] - crx_coords[j];
+        vn += vec[j]*nor[j];
+    }
+
+    for (int j = 0; j < dim; ++j)
+        vec[j] = 2.0*vn*nor[j] - vec[j];
+
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + vec[j];
+
+    /* Interpolate the state at the reflected point */
+    double vel_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+
+    vn = 0.0;
+    double vel_rel[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        //Relative velocity of reflected point with respect to the interface
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+            //vn += vel_rel[j]*nor[j]; //See next TODO below
+    }
+
+    //double v_slip[MAXD] = {0.0};
+    //TODO: For some reason using the interface normal vector to project out
+    //      the normal velocity completely destroys the effects of the turbulence model
+    /*
+    for (int j = 0; j < dim; ++j)
+	    v_slip[j] = vel_reflect[j] - vn*nor[j];
+	        //v_tmp[j] -= 2.0*vn*nor[j]; //This is for a reflecting bdry
+
+    */
+    /*
+    fprint_general_vector(stdout,"nor",nor,dim,"\n");
+    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    */
+    
+    //TODO: Why does this work and the interface normal does not??? 
+	
+    for (int j = 0; j < dim; ++j)
+        vec[j] = coords_reflect[j] - (top_L[j] + ghost_ic[j]*top_h[j]);
+
+    double mag_vec = mag_vector(vec,dim);
+    for (int j = 0; j < dim; ++j)
+        vec[j] /= mag_vec;
+
+    vn = 0.0;
+    for (int j = 0; j < dim; ++j)
+        vn += vec[j]*vel_rel[j];
+
+    //TODO: The difference between nopenetration and reflection appears to be significant
+    for (int j = 0; j < dim; ++j)
+	    v_slip[j] -= vn*vec[j];
+	    //v_slip[j] -= 2.0*vn*vec[j]; //Remove when verified slip is correct
+    
+    /*
+    fprint_general_vector(stdout,"vec",v,dim,"\n");
+    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    */
+}   /* end setSlipBoundary */
+
 

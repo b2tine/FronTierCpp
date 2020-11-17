@@ -118,12 +118,12 @@ EXPORT void start_clock(
 
 	if (cputime == NULL)
 	{
-	    MAX_TIMES = 40;
+	    MAX_TIMES = 50;
 	    cputime = (double*)malloc(MAX_TIMES*sizeof(double));
 	    zero_scalar(cputime,MAX_TIMES*sizeof(double));
 	}
 
-	if (top >= MAX_TIMES)
+	if (top > MAX_TIMES - 1)
 	{
         top++;
 	    (void) printf("ERROR: start_clock(%s): CLOCK STACK FULL\n",s);
@@ -146,13 +146,14 @@ EXPORT void stop_clock(
 	    return;
 	if (cputime == NULL)
 	    return;
+
 	top--;
 	if (top < 0)
 	{
 	    (void) printf("ERROR: stop_clock(%s): CLOCK STACK EMPTY\n",s);
 	    top = 0;
 	}
-	else if (top >= MAX_TIMES) 
+	else if (top > MAX_TIMES - 1) 
 	    (void) printf("ERROR: stop_clock(%s): CLOCK STACK FULL\n",s);
 	else
 	{
@@ -270,7 +271,7 @@ EXPORT char *date_string(void)
 }		/*end date_string*/
 
 /*  #bjet2 */
-#define    ADD_MAX_LEN   500
+#define    ADD_MAX_LEN   75
 LOCAL int  add_top = 0;
 LOCAL double add_time[ADD_MAX_LEN], add_time_st[ADD_MAX_LEN];
 

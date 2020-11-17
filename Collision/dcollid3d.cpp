@@ -24,7 +24,7 @@ static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double
 static bool isCoplanar(POINT**,double,double*);
 
 // test function for creating impact zone for each movable RG
-void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
+void CollisionSolver3d::createImpZoneForRG(INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
@@ -347,7 +347,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
-        if(MovingPointToTriGS(pts))
+        if (MovingPointToTriGS(pts))
             status = true;
 
         //if (status && is_detImpZone)
@@ -364,7 +364,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-            if(MovingEdgeToEdgeGS(pts))
+            if (MovingEdgeToEdgeGS(pts))
                 status = true;
                 
             //if (status && is_detImpZone)
@@ -1009,6 +1009,24 @@ static bool EdgeToEdge(
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[i]);
+            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
+
+        //For debugging, comment out clean_up() below to print all
+        //violating edge points.
+        static int ecount = 0;
+        std::string fname = CollisionSolver3d::getOutputDirectory();
+        fname += "/EdgeToEdge_error-" + std::to_string(ecount);
+        ecount++;
+
+        std::vector<POINT*> edge_pts(pts,pts+4);
+        vtk_write_pointset(edge_pts,fname,ERROR);
+
         clean_up(ERROR);
     }
 

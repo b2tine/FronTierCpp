@@ -48,6 +48,7 @@ public:
 	virtual void Add_b(PetscInt i, double val){};	// b[i]=b[i]+val;
 
 	virtual void SetMaxIter(int val){};	
+	virtual void GetResidualNorm(double *rel_resid_norm){};
 	virtual void GetFinalRelativeResidualNorm(double *rel_resid_norm){};
 	virtual void GetNumIterations(int *num_iterations){};
 
@@ -106,12 +107,14 @@ public:
 	void Get_b(double *p);		// get the b from ij_x to p.
 	void Get_x(double *p, int n, int *global_index);
 	
+    void SetPrevSolnInitialGuess();
 	void SetMaxIter(int val); 	// Set maximum number of iterations 
 	void SetTol(double val);	// Set the convergence tolerance 
-	void SetKDim(int k_dim);	
-			// Set the maximum size of the Krylov space 
-	void GetNumIterations(PetscInt *num_iterations);	
-			// Return the number of iterations taken 
+	
+    void SetKDim(int k_dim);	// Set the maximum size of the Krylov space 
+	
+    void GetNumIterations(PetscInt *num_iterations);	
+	void GetResidualNorm(double *rel_resid_norm);
 	void GetFinalRelativeResidualNorm(double *rel_resid_norm);
 	
     void Solve_PetscDecide();
@@ -268,6 +271,51 @@ private:
         double dcheckSolverExtended(int*,boolean);
 };
 
+class DUAL_ELLIPTIC_SOLVER{
+        Front *front;
+public:
+        DUAL_ELLIPTIC_SOLVER(Front &front);
+
+        // On topological grid
+	int *i_to_I;
+	int **ij_to_I;
+	int ***ijk_to_I;
+	int ilower;
+	int iupper;
+
+	double obst_comp;
+	double *soln;		/* field variable of new step */
+	double *source;		/* source field */
+	double *D;		/* div(D*grad)phi = source */
+	void set_solver_domain(void);
+	void solve(double *soln);
+	double (*getStateVar)(POINTER);
+	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+                                POINTER*,HYPER_SURF**,double*);
+	double checkSolver(int *icoords, boolean print_details);
+private:
+        // Dimension
+        int dim;
+        COMPONENT *top_comp,*ctop_comp;
+	int *top_gmax;
+	double *top_h;
+	double *ctop_L;
+        int *ctop_gmax;
+	int cimin,cjmin,ckmin;
+	int cimax,cjmax,ckmax;
+	int offset[MAXD];
+        double *array;          // for scatter states;
+	int array_size;
+	double max_soln;
+	double min_soln;
+	void solve1d(double *soln);
+	void solve2d(double *soln);
+	void solve3d(double *soln);
+	void get_dual_D(int*,double*);
+	double dual_average_D_2d(int dir, int nb, int**,COMPONENT**);
+	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
+};
+
 class ELLIPTIC_SOLVER{
         Front *front;
 public:
@@ -284,20 +332,22 @@ public:
 	double porosity;
 	double *soln;		/* field variable of new step */
 	double *source;		/* source field */
-        double **vel;       /* velocity field */
-        double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+    double **vel;       /* velocity field */
+    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+    
+    //double* rho;
 
 	void set_solver_domain(void);
 	void solve(double *soln);
 	void dsolve(double *soln);
 	
-        double (*getStateVar)(POINTER);
-        double (*getStateVel[3])(POINTER);
+    double (*getStateVar)(POINTER);
+    double (*getStateVel[3])(POINTER);
 
 	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double checkSolver(int *icoords,boolean print_details);
-        void printIsolatedCells();
+    void printIsolatedCells();
 	int skip_neumann_solver;
 private:
         // Dimension

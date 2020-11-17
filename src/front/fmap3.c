@@ -23,13 +23,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 /*
-*				fmap2.c:
+*				fmap3.c:
 *
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
 #include <front/fdecs.h>		/* includes int.h, table.h */
 
+
+//TODO: Not getting every point with just next_point().
+//      Need to do curve and node loops? See print/readAfExtraData()
 EXPORT void FT_WriteFrontState(
         FILE *outfile,
         Front *front)

@@ -5144,6 +5144,7 @@ void G_CARTESIAN::setNeumannStates(
                relative tangent velocity is zero */
             for (j = 0; j < dim; j++)
 	    {
+            //NOTE: vel_ref is the intfc velocity
                 v[j] = vel_ref[j] - 1.0*vn*nor[j];
 		st_tmp.momn[j] = v[j]*st_tmp.dens;
 	    }

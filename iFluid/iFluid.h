@@ -66,6 +66,7 @@ struct IF_FIELD {
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
+	double **grad_phi;
 	double *q;
 	double *pres;			/* Pressure */
 	double *vort;			/* Magnitude of Vorticity in 2D */
@@ -97,11 +98,11 @@ enum _ADVEC_METHOD {
 };
 typedef enum _ADVEC_METHOD ADVEC_METHOD;
 
-//TODO: DUAL_ELLIP
 enum _ELLIP_METHOD {
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
+    DUAL_ELLIP
 };
 
 typedef enum _ELLIP_METHOD ELLIP_METHOD;
@@ -129,9 +130,16 @@ struct _NS_SCHEME {
 typedef struct _NS_SCHEME NS_SCHEME;
 
 struct FINITE_STRING {         // For fluid drag on string chord
-        double radius;
-        double dens;
-        double c_drag;
+    double radius;
+    double dens;
+    double c_drag;
+    double ampFluidFactor;
+};
+
+struct VPARAMS {
+    double center[MAXD];            // center of vortex
+    double D;                       // size of vortex
+    double A;                       // intensity of vortex
 };
 
 struct IF_PARAMS
@@ -147,25 +155,25 @@ struct IF_PARAMS
 	double U2[MAXD];
 	double gravity[MAXD];
 	double U_ambient[MAXD];
+
 	double surf_tension;
-	double smoothing_radius;
-	double ub_speed;
+	double smoothing_radius {1.0};
+	
+    double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */
 	COMPONENT m_comp1;
 	COMPONENT m_comp2;
-	IF_FIELD *field;
+	
+    IF_FIELD *field;
+
 	int adv_order;
 	boolean total_div_cancellation;
 	boolean buoyancy_flow;
 	boolean if_buoyancy;
 	double  ref_temp;
 	boolean if_ref_pres;
-	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
 	double  ref_pres;
-	EDDY_VISC eddy_visc_model;
-	POINTER eddy_params;
 	double  Amplitute; 	/*Amplitute of velocity*/
-	double	ymax;	   	/* Maximum distance in Baldwin-Lomax model */
 	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
         
     double  porous_coeff[2];   /*dp = a*v + b*v^2*/
@@ -175,6 +183,14 @@ struct IF_PARAMS
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
     int fsi_startstep;
+
+    //TODO: factor out turbulence params into separate data structure, eddy_params
+	POINTER eddy_params;
+	EDDY_VISC eddy_visc_model;
+	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
+	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
+    double C_s;     //Smagorinsky model constant
+    double C_v;     //Vreman (MOIN) model constant
 };
 
 struct _FLOW_THROUGH_PARAMS {
@@ -236,35 +252,6 @@ struct _OPEN_PIPE_PARAMS
         STATE state[2];
 };
 typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
-/*
-struct _RG_PARAMS {
-        int dim;
-	boolean no_fluid;		// For benchmark tests //
-	int 	body_index;		// Body index //
-        double  total_mass;             // Total mass //
-        double  moment_of_inertial;     // Moment of inertial about the axis //
-        double  center_of_mass[MAXD];   // Center of mass //
-        double  rotation_dir[MAXD];     // Direction of rotation //
-	double	translation_dir[MAXD];	// Restricted direction of motion //
-        double  rotation_cen[MAXD];     // Center of rotation //
-        double  cen_of_mass_velo[MAXD]; // Center of mass velocity //
-        double  angular_velo;           // Angular velocity of rotation //
-	double  p_moment_of_inertial[MAXD];
-	double  p_angular_velo[MAXD];
-	double  euler_params[4];
-        double  old_euler_params[4];
-	void	(*vel_func)(Front*,POINTER,double*,double*);
-	POINTER vparams;
-        MOTION_TYPE motion_type;
-};
-typedef struct _RG_PARAMS RG_PARAMS;
-*/
-
-struct VPARAMS {
-        double center[MAXD];            // center of vortex
-        double D;                       // size of vortex
-        double A;                       // intensity of vortex
-};
 
 /******************************************************************************
  * 		lcartsn.h
@@ -280,15 +267,22 @@ struct VPARAMS {
 class SOLVER;
 class Incompress_Solver_Basis;
 
-class L_RECTANGLE {
-public:
-	int comp;			 
-	double m_coords[MAXD]; // x,y,z data of mesh block's center
-	int icoords[MAXD];     // i,j,k indices of mesh block
+class KE_PARAMS;
 
-	L_RECTANGLE();
+class IF_RECTANGLE
+{
+    public:
+	
+        int comp;			 
+        int index;
+        double area;
+        double coords[MAXD]; // x,y,z data of mesh block's center
+        int icoords[MAXD];     // i,j,k indices of mesh block
 
-	void setCoords(double*,int);
+        IF_RECTANGLE();
+
+        void setCoords(double*,int);
+        std::vector<double> getCoords();
 };
 
 class Incompress_Solver_Basis{
@@ -298,7 +292,8 @@ public:
 
 };
 
-class Incompress_Solver_Smooth_Basis:public Incompress_Solver_Basis{
+class Incompress_Solver_Smooth_Basis : public Incompress_Solver_Basis
+{
 public:
         //constructor
 	Incompress_Solver_Smooth_Basis(Front &front);
@@ -327,7 +322,10 @@ public:
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
+    
     void printEnstrophy();
+    void printEnstrophy2d();
+    void printEnstrophy3d();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -341,23 +339,33 @@ public:
 				POINTER*,HYPER_SURF**,double*);
 	void applicationSetComponent();
 	void applicationSetStates();
-	double computeFieldPointPressureJump(int*,double,double);
+	
+    double computeFieldPointPressureJump(int*,double,double);
         void computeFieldPointGradJump(int*,double*,double*);
+
+    void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
 	//For debugging test
 	void compareWithBaseSoln(void);
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
 	void solveTest(const char *msg);
-        void addVortexDisturbance(VPARAMS);
+        void addVortexDisturbance(const VPARAMS&);
 
 	//User interface
+	int skip_neumann_solver;
 	virtual void setInitialCondition(void) = 0;
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
 
-	int skip_neumann_solver;
+    void writeMeshFileVTK();
+
+    //std::priority_queue<IF_Injection*> InjectionEvents;
+    //void scheduleInjectionEvent(IF_Injection*);
+    //void consumeInjectionEvent(IF_Injection*);
+
 
 protected:
 	Front *front;
@@ -400,8 +408,9 @@ protected:
 	// Index shift between dual and comp grids 
 	int ishift[MAXD];
 
+    //TODO: should rename this to avoid confusion/collision with the macro in geom.h
 	//member data: mesh storage
-	std::vector<L_RECTANGLE>   cell_center;
+	std::vector<IF_RECTANGLE>   cell_center;
 
 	//member data:
 	int    m_comp[2];
@@ -467,9 +476,13 @@ protected:
 	double computeMuOfBaldwinLomax(int*, double, boolean);
 	double computeMuOfMoinModel(int*);
 	double computeMuofSmagorinskyModel(int*);
-	double* computeMuOfKepsModel();
-	void   computeFieldPointGrad(int*, double*, double*);
-	void   checkVelocityDiv(const char*);
+	KE_PARAMS* computeMuOfKepsModel();
+	
+    void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
+    /*void computeFieldPointGrad(int* icoords,double* field,
+            double* grad_field, bool is_phi_field = true);*/
+
+	void checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
@@ -590,6 +603,7 @@ protected:
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computeGradientQ(void);
+	//void computeGradientPhi();
 	void computeNewVelocity(void);
 	void updateComponent(void);
 	void extractFlowThroughVelocity(void);
@@ -618,46 +632,53 @@ extern double getStateMu(POINTER);
 extern double getStateTemp(POINTER);
 extern double getPressure(Front*,double*,double*);
 extern double getPhiFromPres(Front*,double);
+
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
+
 extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
+
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);
+
 extern int ifluid_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
 extern int ifluid_find_state_at_cg_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
 extern int ifluid_find_state_at_dual_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
+
 extern double p_jump(POINTER,int,double*);
 extern double grad_p_jump_n(POINTER,int,double*,double*);
 extern double grad_p_jump_t(POINTER,int,int,double*,double*);
+
 extern boolean neumann_type_bdry(int);
+
+/*extern void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+        HYPER_SURF* hs, POINTER state, double** vel, double* vtmp);*/
 
 extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
                         double*);
+
 extern void initInnerBoundary(Front*,LEVEL_FUNC_PACK*);
 extern void restart_set_dirichlet_bdry_function(Front*);
+
 extern void iF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
 extern void iF_timeDependBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
+
 extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void ifluid_compute_force_and_torque(Front*,CURVE*,double,double*,
                         double*);
+
 extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
 extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
 extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
 extern void recordBdryEnergyFlux(Front*,char*);
-
-//extern void resetRigidBodyVelocity(Front *front);
-//extern void rgb_modification(Front*,RG_PARAMS*);
-//extern void rgb_init(Front*,RG_PARAMS*);
-//extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-//extern void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
 
 extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);

@@ -6122,7 +6122,7 @@ void G_CARTESIAN::setElasticStatesRFB(
         {
             //allow relative tangential velocity
             v_ghost[j] = v_reflect[j] - 2.0*vn*nor[j];
-
+            
             /*
             //zero relative tangential velocity
             v_ghost[j] = vel_intfc[j] - vn*nor[j];

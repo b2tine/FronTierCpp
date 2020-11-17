@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <iFluid.h>
 #include <airfoil.h>
 
@@ -1668,6 +1669,9 @@ static void installString(
     FT_VectorMemoryAlloc((POINTER*)&string_curves,
             num_strings,sizeof(CURVE*));
 	
+    double hmin = std::min(h[0],h[1]);
+    hmin = std::min(hmin,h[2]);
+
     for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
@@ -1678,8 +1682,7 @@ static void installString(
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 			Coords(string_nodes[i]->posn)[j])/spacing;
-	    nb = rint(spacing/(0.40*h[2])) + 1;
-	        //nb = rint(spacing/(0.40*h[0])) + 1;
+	    nb = rint(spacing/(0.40*hmin)) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
@@ -1844,6 +1847,7 @@ static void setSurfZeroMesh(
 	}
 }	/* end setSurfZeroMesh */
 
+//Compare to set_equilibrium_mesh3d()
 static void setCurveZeroLength(
 	CURVE *curve,
 	double len_fac)
@@ -2114,6 +2118,9 @@ static void connectStringtoRGB(
             end = rg_string_nodes[k];
 	    }
 	    
+        double hmin = std::min(h[0],h[1]);
+        hmin = std::min(hmin,h[2]);
+
         for (int l = 0; l < string_curve_onenode; ++l)
 	    {
 		string_curves[k] = make_curve(0,0,start,end);
@@ -2124,8 +2131,7 @@ static void connectStringtoRGB(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])
 							/ spacing;
-		nb = rint(spacing/(0.40 * h[2])) + 1;
-		    //nb = rint(spacing/(0.40 * h[0])) + 1;
+		nb = rint(spacing/(0.40*hmin)) + 1;
 		spacing /= (double)nb;
 		b = string_curves[k]->first;
 		for (i = 1; i < nb; ++i)
@@ -2451,6 +2457,9 @@ extern void InstallNewLoadNode(
         //Relabels the original load node
 	    extra->af_node_type = THR_LOAD_NODE;
 
+        double hmin = std::min(h[0],h[1]);
+        hmin = std::min(hmin,h[2]);
+
         //TODO: string_curve_onenode should always be 1.
         //      Otherwise creating multiple distinct copies
         //      of the same curve -- crashes the CollisionSolver 
@@ -2462,7 +2471,7 @@ extern void InstallNewLoadNode(
 		for (j = 0; j < 3; ++j)
 		    dir[j] = (Coords(sec_nload->posn)[j] - 
 					Coords((*n)->posn)[j])/spacing;
-		nb = rint(spacing/(0.40*h[2])) + 1;
+		nb = rint(spacing/(0.40*hmin)) + 1;
 		spacing /= (double)nb;
 		bond = string_curves[i]->first;
 		for (j = 1; j < nb; ++j)
@@ -2548,6 +2557,9 @@ extern void InstallNewLoadNode(
     
     //For pointmass run
     
+    double hmin = std::min(h[0],h[1]);
+    hmin = std::min(hmin,h[2]);
+
     //TODO: string_curve_onenode should always be 1.
     //      Otherwise creating multiple distinct copies
     //      of the same curve -- crashes the CollisionSolver 
@@ -2559,8 +2571,7 @@ extern void InstallNewLoadNode(
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 				Coords(sec_nload->posn)[j])/spacing;
-	    nb = rint(spacing/(0.40*h[2])) + 1;
-	        //nb = rint(spacing/(0.40*h[0])) + 1;
+	    nb = rint(spacing/(0.40*hmin)) + 1;
 	    spacing /= (double)nb;
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
@@ -3001,9 +3012,13 @@ static void connectTwoStringNodes(
 	string_curve = make_curve(0,0,start,end);
 	hsbdry_type(string_curve) = STRING_HSBDRY;
 	spacing = separation(start->posn,end->posn,3);
+
+    double hmin = std::min(h[0],h[1]);
+    hmin = std::min(hmin,h[2]);
+
 	for (j = 0; j < 3; ++j)
 	    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
-	nb = rint(spacing/(0.40*h[0])) + 1;
+	nb = rint(spacing/(0.40*hmin)) + 1;
 	spacing /= (double)nb;
 	b = string_curve->first;
 	for (i = 1; i < nb; ++i)

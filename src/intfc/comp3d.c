@@ -2135,12 +2135,10 @@ LOCAL  boolean is_point_inside_box(
 	const double    *VL,
 	const double    *VU)
 {
-int	i;
-
-	for(i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 	{
-	    if(coords[i] <= VL[i] || coords[i] >= VU[i])
-	        return  NO;
+        if(coords[i] <= VL[i] || coords[i] >= VU[i])
+            return  NO;
 	}
 	return YES;
 }
@@ -2500,7 +2498,7 @@ LIB_LOCAL boolean make_tri_lists(
 	        double *crds1 = Coords(Point_of_tri(t)[1]);
 	        double *crds2 = Coords(Point_of_tri(t)[2]);
 
-	        if(is_tri_outside(intfc, t, top_grid))
+	        if (is_tri_outside(intfc, t, top_grid))
 		{
 		    max_size += 2;
 		    out_cnt += 2;
@@ -2939,14 +2937,14 @@ LOCAL void blocks_on_tri(
 	   it belongs to both blocks. */
 	
 	p = Point_of_tri(t);
-	for(i=0; i<3; i++)
+	for (i=0; i<3; i++)
 	{
-	    for(j=0; j<3; j++)
-		ptmp[j] = Coords(p[i])[j] + hmintol;
+	    for (j=0; j<3; j++)
+		    ptmp[j] = Coords(p[i])[j] + hmintol;
 	    rect_in_which(ptmp, ima[i], grid);
  
-	    for(j=0; j<3; j++)
-		ptmp[j] = Coords(p[i])[j] - hmintol;
+	    for (j=0; j<3; j++)
+		    ptmp[j] = Coords(p[i])[j] - hmintol;
 	    rect_in_which(ptmp, imi[i], grid);
 	}
 
@@ -2968,9 +2966,9 @@ LOCAL void blocks_on_tri(
 	    i_diff[i] = imax[i] - imin[i] + 1;
 	}
 	
-	if(is_tri_outside(intfc, t, grid))
-	    for(i=0; i<3; ++i)
-		i_diff[i] = 0;
+	if (is_tri_outside(intfc, t, grid))
+        for (i=0; i<3; ++i)
+            i_diff[i] = 0;
 
     //TODO: why just check first element of i_diff?
     //TODO: can this be bypassed in some circumstances, e.g fabric surface stretching?
@@ -3770,18 +3768,22 @@ LOCAL void show_TRI_list(
 
 LOCAL	void set_tri_list_tolerance(RECT_GRID *rgr)
 {
-	double hmin;
-	int i;
+	/*
+    double hmin = HUGE_VAL;
+	for (int i = 0; i < 3; ++i)
+    {
+        if (hmin > rgr->h[i])
+            hmin = rgr->h[i];
+    }
+    */
 
-	hmin = HUGE_VAL;
-	for (i = 0; i < 3; ++i)
-            if (hmin > rgr->h[i])
-	        hmin = rgr->h[i];
+    double* h = rgr->h;
+	double hmin = min3(h[0],h[1],h[2]);
 
-	/*crx_tol = hmin*1.0e-6;*/ 
+	//crx_tol = hmin*1.0e-6;
 	crx_tol = hmin*1.0e-10;/*TOLERANCE*/
 	crx_tolv = sqr(crx_tol);
-        /*crx_toll = 1.0e3*sqr(crx_tol); */
+    //crx_toll = 1.0e3*sqr(crx_tol);
 	crx_toll = 0.1*sqr(crx_tol);
 	ctol = hmin*1.0e-5;
 }		/*end set_tri_list_tolerance*/

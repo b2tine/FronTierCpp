@@ -6,6 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
+AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
 noinst_LTLIBRARIES = libiFluid.la
@@ -23,16 +24,15 @@ libiFluid_la_SOURCES = \
 ../keps.h \
 ../keps.cpp \
 ../rigidbody.h \
-../rigidbody.cpp
+../rigidbody.cpp \
+../iFvisualize.cpp
 								
 
-libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la \
-					  $(top_builddir)/CGAL_Interface/objs/libCgalIntfc.la
+libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la
 
 
 $(libiFluid_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/solver/objs libsolver.la
-	@$(MAKE) -C $(top_builddir)/CGAL_Interface/objs libCgalIntfc.la
 
 FORCE:
 

@@ -6637,8 +6637,7 @@ EXPORT void unsort_surf_point(SURFACE *surf)
 	TRI *tri;
 	POINT *p;
 
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
+    surf_tri_loop(surf,tri)
 	{
 	    for (int i = 0; i < 3; ++i)
 	    {
@@ -6648,3 +6647,12 @@ EXPORT void unsort_surf_point(SURFACE *surf)
 	}
 }	/* end unsort_surf_point */
 
+EXPORT void unsort_curve_point(CURVE *curve)
+{
+    BOND* b;
+    curve_bond_loop(curve,b)
+	{
+        sorted(b->start) = NO;
+        sorted(b->end) = NO;
+    }
+}

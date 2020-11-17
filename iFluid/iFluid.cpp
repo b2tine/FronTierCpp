@@ -107,7 +107,8 @@ int main(int argc, char **argv)
             level_func_pack.set_3d_bdry = YES;
 	    
         FT_InitIntfc(&front,&level_func_pack);
-        rgb_init(&front,&rgb_params);
+        initRigidBody(&front);
+        setRigidBodyMotionParams(&front,&rgb_params);
 	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 
 	    if (debugging("trace"))
@@ -179,7 +180,6 @@ int main(int argc, char **argv)
 
 	ifluid_driver(&front, l_cartesian);
 
-	PetscFinalize();
 	clean_up(0);
 }
 
@@ -219,6 +219,8 @@ static void ifluid_driver(Front *front,
         FT_Draw(front);
         FT_Save(front);
         l_cartesian->printFrontInteriorStates(out_name);
+        
+        l_cartesian->writeMeshFileVTK();
         
         FT_SetOutputCounter(front);
     }
@@ -319,6 +321,7 @@ static void ifluid_driver(Front *front,
         
         FT_TimeControlFilter(front);
         FT_PrintTimeStamp(front);
+        fflush(stdout);
         
         if (debugging("step_size"))
             (void) printf("Time step from FT_TimeControlFilter(): %f\n",

@@ -536,8 +536,8 @@ EXPORT	void FT_SetGlobalIndex(
 EXPORT	void FT_RelinkGlobalIndex(
 	Front *front)
 {
-        set_gindex_to_point(front);
-        set_gindex_to_tri(front);
+    set_gindex_to_point(front);
+    set_gindex_to_tri(front);
 }       /* end FT_RelinkGlobalIndex */
 
 EXPORT  void FT_SetTriGlobalIndex(
