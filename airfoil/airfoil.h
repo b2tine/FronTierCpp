@@ -284,7 +284,11 @@ extern void elastic_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
+
 extern void fourth_order_elastic_set_propagate(Front*,double);
+extern void fourth_order_elastic_set_propagate_parallel(Front*,double);
+extern void fourth_order_elastic_set_propagate_serial(Front*,double);
+
 extern void airfoil_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
 extern int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG,POINTER);
