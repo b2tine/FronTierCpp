@@ -131,6 +131,8 @@ extern void initParachuteModules(Front *front)
 
 	fclose(infile);
 
+    initParachuteDefault(front);
+
 	if (num_canopy == 1 && !complex_set)
 	    initSingleModule(front);
 	else if (num_canopy > 1)
@@ -158,9 +160,19 @@ extern void initParachuteDefault(
 	FILE *infile = fopen(InName(front),"r");
         char string[100];
 	af_params->is_parachute_system = YES;
-	af_params->num_opt_round = 20;
+	af_params->num_opt_round = 0;
         af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
+
+    af_params->is_parachute_system = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes for parachute system:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->is_parachute_system = YES;
+    }
+    
         af_params->attach_gores = NO;
 	if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))
