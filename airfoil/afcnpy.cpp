@@ -1808,7 +1808,7 @@ static void print_elastic_params(
 
 void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
-    if (pp_numnodes() > 1)
+    if (pp_numnodes() > 1 && !debugging("collision_off"))
     {
         fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
     }
