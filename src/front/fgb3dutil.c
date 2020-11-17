@@ -1215,8 +1215,8 @@ EXPORT 	boolean track_comp_through_crxings3d(
 	static int **ips = NULL;
 	int idir,num_ip;
 
-        if (I_NumOfIntfcSurfaces(intfc) == 0)
-            return fill_default_component(smin,smax,gmax,intfc);
+    if (I_NumOfIntfcSurfaces(intfc) == 0)
+        return fill_default_component(smin,smax,gmax,intfc);
 
 	DEBUG_ENTER(track_comp_through_crxings3d)
 

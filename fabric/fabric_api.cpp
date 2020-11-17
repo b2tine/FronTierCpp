@@ -240,6 +240,8 @@ extern void SMM_InitModules()
         Front *front = SMM_GetFront();
         F_BASIC_DATA *fbasic = SMM_GetBasicData();
 
+        set_is_fabric_run(YES);
+
         if (!fbasic->RestartRun)
         {
             FILE *infile = fopen(InName(front),"r");

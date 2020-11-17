@@ -796,9 +796,9 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
-                //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            //int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+	        //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+                elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else

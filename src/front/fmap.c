@@ -4090,6 +4090,7 @@ LOCAL void sort_blk_cell(
 	}
 }
 
+//TODO: can break out of these loops early as soon as status set to YES
 EXPORT	boolean FT_FrontContainWaveType(
 	Front *front,
 	int w_type)

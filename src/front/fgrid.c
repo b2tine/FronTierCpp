@@ -47,6 +47,19 @@ LOCAL	void show_grid_components2d(int*,int*,int,INTERFACE*);
 LOCAL	void show_grid_components3d(int*,int*,int,INTERFACE*);
 LOCAL	void print_side_crx_list(INTERFACE*,char,int,int*);
 
+LOCAL boolean fabric_run = NO;
+
+EXPORT void set_is_fabric_run(
+	boolean		y_or_n)
+{
+	fabric_run = y_or_n;
+}
+
+EXPORT boolean is_fabric_run(void)
+{
+	return fabric_run;
+}
+
 EXPORT	int set_grid_intfc_components(
 	INTERFACE	*grid_intfc,
 	INTERFACE	*intfc)
@@ -643,6 +656,13 @@ LOCAL	int set_grid_intfc_components3d(
 	    smin[i] = 0;
 	    smax[i] = gmax[i];
 	}
+    
+    if (is_fabric_run())
+    {
+        //THIS ALLOWS PARALLEL FABRIC RUN
+	    return GOOD_STEP;
+    }
+
 	status = track_comp_through_crxings3d(smin,smax,gmax,
 			grid_intfc,MULTIPLE);
 	
