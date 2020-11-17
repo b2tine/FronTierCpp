@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
-Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
 
 Start parameters for modules
 
