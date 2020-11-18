@@ -425,6 +425,7 @@ int Incompress_Solver_Smooth_Basis::getComponent(
 	return NO_COMP;
 }
 
+//TODO: should be SaveAsTecplot_rect_grid_and_interface()
 void Incompress_Solver_Smooth_Basis::save(char *filename)
 {
 	
@@ -435,7 +436,7 @@ void Incompress_Solver_Smooth_Basis::save(char *filename)
 	{
 		printf("\n can't open %s in "
 		       "SaveAsTecplot_rect_grid_and_interface().", filename);
-		exit(0);
+		clean_up(EXIT_FAILURE);
 	}
 	
 	// secondly print out the interface
