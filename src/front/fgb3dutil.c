@@ -1217,6 +1217,8 @@ EXPORT 	boolean track_comp_through_crxings3d(
     
     if (is_fabric_run())
     {
+        //TODO: Complete ramifications of this not fully understood
+        //
         //THIS ALLOWS PARALLEL FABRIC RUN
         return fill_default_component(smin,smax,gmax,intfc);
     }

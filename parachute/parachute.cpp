@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     //      "Enter fluid ambient velocity: "
     l_cartesian->getInitialState = zero_state;
 
-    //TODO: will this work?
+    //TODO: For parallelization of collision solver -- not fully understood yet
         //set_is_fabric_run(YES);
     
     l_cartesian->initMesh();
