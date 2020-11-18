@@ -138,6 +138,9 @@ int main(int argc, char **argv)
     //      Can specify an ambient velocity with input file option.
     //      "Enter fluid ambient velocity: "
     l_cartesian->getInitialState = zero_state;
+
+    //TODO: will this work?
+        set_is_fabric_run(YES);
     
     l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
