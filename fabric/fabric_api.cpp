@@ -562,7 +562,7 @@ extern void SMM_TestDriver()
         reset_clock();
         start_clock("timeStep");
 
-        coating_mono_hyper_surf(front);
+        //coating_mono_hyper_surf(front);
 
         FrontPreAdvance(front);
         FT_Propagate(front);
