@@ -795,9 +795,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         {
                             //For ifluid_find_state_at_crossing()
                             //registers as a CONST_P_PDE_BOUNDARY
-                            U_nb[nb] = getStateVel[l](intfc_state);
+                            
+                            //TODO: figure out correct val
+                            U_nb[nb] = vel[l][index];
                                 //U_nb[nb] = vel[l][index_nb[nb]];
-                                //U_nb[nb] = vel[l][index];
+                                //U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         else
                         {

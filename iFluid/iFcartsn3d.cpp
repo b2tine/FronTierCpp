@@ -1077,9 +1077,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                                 "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
-                            U_nb[nb] = getStateVel[l](intfc_state);
-                                //U_nb[nb] = vel[l][index];
+
+                            //TODO: figure out correct val
+                            U_nb[nb] = vel[l][index];
                                 //U_nb[nb] = vel[l][index_nb[nb]];
+                                //U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         else
                         {
