@@ -21,6 +21,7 @@ libiFluid_la_SOURCES = \
 ../iFcartsn3d.cpp \
 ../iFinit.cpp \
 ../iFsub.cpp \
+../iFturb.cpp \
 ../keps.h \
 ../keps.cpp \
 ../rigidbody.h \

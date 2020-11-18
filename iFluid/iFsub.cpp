@@ -73,6 +73,41 @@ static int modify_contact_node(NODE*,NODE*,O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,
                               double,double,RPROBLEM**,Front*,POINTER,
                               double,double*,NODE_FLAG);
 
+extern int next_index_in_dir(
+        int* icoords,
+        GRID_DIRECTION dir,
+        int dim,
+        int* top_gmax)
+{
+	int icrds[MAXD];
+	for (int i = 0; i < dim; ++i)
+	    icrds[i] = icoords[i];
+
+    switch (dir)
+    {
+        case WEST:
+            icrds[0] -= 1;
+            break;
+        case EAST:
+            icrds[0] += 1;
+            break;
+        case SOUTH:
+            icrds[1] -= 1;
+            break;
+        case NORTH:
+            icrds[1] += 1;
+            break;
+        case LOWER:
+            icrds[2] -= 1;
+            break;
+        case UPPER:
+            icrds[2] += 1;
+    }
+
+    int index = d_index(icrds,top_gmax,dim);
+	return index;
+}
+
 extern double getStatePres(POINTER state)
 {
 	STATE *fstate = (STATE*)state;

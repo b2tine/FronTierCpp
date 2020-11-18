@@ -136,6 +136,7 @@ struct FINITE_STRING {         // For fluid drag on string chord
     double ampFluidFactor;
 };
 
+//vortex params
 struct VPARAMS {
     double center[MAXD];            // center of vortex
     double D;                       // size of vortex
@@ -185,8 +186,9 @@ struct IF_PARAMS
     int fsi_startstep;
 
     //TODO: factor out turbulence params into separate data structure, eddy_params
-	POINTER eddy_params;
-	EDDY_VISC eddy_visc_model;
+	//POINTER eddy_params;
+	
+    EDDY_VISC eddy_visc_model;
 	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
@@ -478,6 +480,8 @@ protected:
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	
+    std::vector<std::vector<double>> computeVelocityGradient(int* icoords);
+
     void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
     /*void computeFieldPointGrad(int* icoords,double* field,
             double* grad_field, bool is_phi_field = true);*/
@@ -617,6 +621,8 @@ protected:
     void computeVorticity();
     std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
+
+int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
 
 extern double getStatePres(POINTER);
 extern double getStatePhi(POINTER);

@@ -15,7 +15,7 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
+//static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 
 
 //--------------------------------------------------------------------------
@@ -3282,6 +3282,8 @@ static int find_state_at_crossing(
     }
 }       /* find_state_at_crossing */
 
+/*
+//NOTE: Now a global function defined in iFsub.cpp
 static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gmax)
 {
 	int index,i;
@@ -3311,7 +3313,7 @@ static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gm
 	index = d_index(icrds,top_gmax,dim);
 	return index;
 }
-
+*/
 //TODO: incomplete
 //NOTE: only used for 2d
 void KE_CARTESIAN::setTKEatWall(

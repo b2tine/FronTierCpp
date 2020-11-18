@@ -299,9 +299,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         solver.SetPrevSolnInitialGuess();
     }
 	
-        //PETSc solver;
-        //solver.Create(ilower, iupper-1, 5, 5);
-	
     if (debugging("check_div"))
             printf("Enterng solve2d()\n");
 	
@@ -313,7 +310,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	min_soln = HUGE;
 
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    comp = top_comp[index];
@@ -391,6 +388,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
+                //TODO: Try using FT_ReflectPointThroughBdry()
+                
                 //dp/dn = 0 (reflecting boundary for pressure)
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
@@ -430,6 +429,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.
+                //
+                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*pres_reflect; 
@@ -984,9 +985,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         solver.SetPrevSolnInitialGuess();
     }
 	
-	    //PETSc solver;
-	    //solver.Create(ilower, iupper-1, 7, 7);
-    
     solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -997,7 +995,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index3d(i,j,k,top_gmax);
 	    comp = top_comp[index];
@@ -1076,6 +1074,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
+                //TODO: Try using FT_ReflectPointThroughBdry()
+                
                 //dp/dn = 0 (reflecting boundary for pressure)
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
@@ -1115,6 +1115,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.
+                //
+                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*pres_reflect; 
