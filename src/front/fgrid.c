@@ -657,11 +657,13 @@ LOCAL	int set_grid_intfc_components3d(
 	    smax[i] = gmax[i];
 	}
     
+    /*
     if (is_fabric_run())
     {
         //THIS ALLOWS PARALLEL FABRIC RUN
-	    return GOOD_STEP;
+        return GOOD_STEP;
     }
+    */
 
 	status = track_comp_through_crxings3d(smin,smax,gmax,
 			grid_intfc,MULTIPLE);

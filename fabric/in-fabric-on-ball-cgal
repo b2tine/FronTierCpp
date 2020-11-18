@@ -77,9 +77,9 @@ Enter gravity: 0 0 -9.8
 
 Start test time control parameters
 Max time: 3.0
-Max step: 2500
+Max step: 100
 Print interval: 0.025
 Movie frame interval: 0.025
-CFL factor: 0.5
+CFL factor: 1.0
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes

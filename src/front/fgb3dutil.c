@@ -1214,6 +1214,12 @@ EXPORT 	boolean track_comp_through_crxings3d(
 	int count = 0;
 	static int **ips = NULL;
 	int idir,num_ip;
+    
+    if (is_fabric_run())
+    {
+        //THIS ALLOWS PARALLEL FABRIC RUN
+        return fill_default_component(smin,smax,gmax,intfc);
+    }
 
     if (I_NumOfIntfcSurfaces(intfc) == 0)
         return fill_default_component(smin,smax,gmax,intfc);
