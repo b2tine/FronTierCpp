@@ -4501,7 +4501,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     //TODO: The difference between nopenetration and reflection appears to be significant
     for (int j = 0; j < dim; ++j)
-	    v_slip[j] -= vn*vec[j];
+	    v_slip[j] = vel_reflect[j] - vn*vec[j];
     
     /*
     fprint_general_vector(stdout,"vec",v,dim,"\n");
