@@ -116,7 +116,7 @@ typedef enum _DOMAIN_METHOD DOMAIN_METHOD;
 
 enum _EDDY_VISC {
 	BALDWIN_LOMAX		= 1,
-	MOIN,
+	VREMAN,
 	SMAGORINSKY,
     KEPSILON
 };
@@ -190,7 +190,7 @@ struct IF_PARAMS
 	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
-    double C_v;     //Vreman (MOIN) model constant
+    double C_v;     //Vreman model constant
 };
 
 struct _FLOW_THROUGH_PARAMS {
@@ -474,7 +474,7 @@ protected:
 	double computeFieldPointDivSimple(int*, double**);
 	double computeFieldPointDivDouble(int*, double**);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
-	double computeMuOfMoinModel(int*);
+	double computeMuOfVremanModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	

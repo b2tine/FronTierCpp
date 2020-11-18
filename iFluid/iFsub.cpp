@@ -1266,7 +1266,7 @@ extern void read_iFparams(
 
             printf("Available turbulence models are:\n");
             printf("\tBaldwin-Lomax (B)\n");
-            printf("\tMoin (M)\n");
+            printf("\tVreman (V)\n");
             printf("\tKEPSILON (K)\n");
         	
             CursorAfterString(infile,"Enter turbulence model:");
@@ -1282,9 +1282,11 @@ extern void read_iFparams(
                     fscanf(infile,"%lf",&iFparams->ymax);
                     printf("%f\n",iFparams->ymax);
                     break;
-                case 'm':
-                case 'M':
-                    iFparams->eddy_visc_model = MOIN;
+                case 'm'://keeping for backwards compatibility with old input files
+                case 'M'://keeping for backwards compatibility with old input files
+                case 'v':
+                case 'V':
+                    iFparams->eddy_visc_model = VREMAN;
                     CursorAfterString(infile,"Enter model constant:");
                     fscanf(infile,"%lf",&iFparams->C_v);
                     printf("%f\n",iFparams->C_v);

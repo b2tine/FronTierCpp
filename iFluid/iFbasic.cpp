@@ -1644,8 +1644,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 mu[index] += mu_t[index];
                 pres[index] += 2.0/3.0*tke[index];
                 break;
-            case MOIN:
-                mu[index] = computeMuOfMoinModel(icoords);
+            case VREMAN:
+                mu[index] = computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords); 
@@ -2463,8 +2463,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 mu[index] += mu_t[index];
                 pres[index] += 2.0/3.0*tke[index];
                 break;
-            case MOIN:
-                mu[index] = computeMuOfMoinModel(icoords);
+            case VREMAN:
+                mu[index] = computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
                 mu[index] = computeMuofSmagorinskyModel(icoords);
@@ -3852,7 +3852,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 }	/* end computeMuOfBaldwinLomax */
 
 //Vreman 2004 paper
-double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
+double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
 	int *icoords)
 {
     //relation to smagorinsky constant: C_v ~ 2.5*C_s^2
@@ -3925,7 +3925,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfMoinModel(
     double nu_t = C_v*sigma;
     return nu_t*field->rho[index0];// mu_t
     */
-}	/* end computeMuOfMoinModel*/
+}	/* end computeMuOfVremanModel*/
 
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)

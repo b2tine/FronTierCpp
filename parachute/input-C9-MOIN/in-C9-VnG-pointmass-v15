@@ -93,11 +93,11 @@ Enter string rounding tolerance: 0.000004
 Enter yes to use eddy viscosity: no
 Available tuebulence models are:
         Baldwin-Lomax (B)
-        Moin (M)
+        Vreman (V)
         Smagorinski (S)
         KEPSILON  (K)
 
-Enter turbulence model: Moin
+Enter turbulence model: Vreman
 Enter model constant: 0.025
 
 ****************Movie options*****************
