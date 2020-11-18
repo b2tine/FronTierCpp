@@ -4395,6 +4395,7 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 //the reflected point's tangential velocity
 //
 //TODO: add arg for prescribed velocity vector c
+/*
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4436,7 +4437,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         
     //TODO: Try using FT_ReflectPointThroughBdry()
     
-    /* Reflect ghost point through intfc-mirror at crossing */
+    // Reflect ghost point through intfc-mirror at crossing
     coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
     
     double vn = 0.0;
@@ -4454,7 +4455,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     for (int j = 0; j < dim; ++j)
         coords_reflect[j] = crx_coords[j] + vec[j];
 
-    /* Interpolate the state at the reflected point */
+    // Interpolate the state at the reflected point
     double vel_reflect[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
@@ -4469,44 +4470,100 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     {
         //Relative velocity of reflected point with respect to the interface
         vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-            //vn += vel_rel[j]*nor[j]; //See next TODO below
+        vn += vel_rel[j]*nor[j]; //See next TODO below
     }
 
     //double v_slip[MAXD] = {0.0};
     //TODO: For some reason using the interface normal vector to project out
     //      the normal velocity completely destroys the effects of the turbulence model
-    /*
     for (int j = 0; j < dim; ++j)
 	    v_slip[j] = vel_reflect[j] - vn*nor[j];
 	        //v_tmp[j] -= 2.0*vn*nor[j]; //This is for a reflecting bdry
 
-    */
-    /*
-    fprint_general_vector(stdout,"nor",nor,dim,"\n");
-    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
-    */
+    //
+    //fprint_general_vector(stdout,"nor",nor,dim,"\n");
+    //fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    //
     
     //TODO: Why does this work and the interface normal does not??? 
 	
-    for (int j = 0; j < dim; ++j)
-        vec[j] = coords_reflect[j] - (top_L[j] + ghost_ic[j]*top_h[j]);
+    //
+    //for (int j = 0; j < dim; ++j)
+    //    vec[j] = coords_reflect[j] - (top_L[j] + ghost_ic[j]*top_h[j]);
 
-    double mag_vec = mag_vector(vec,dim);
-    for (int j = 0; j < dim; ++j)
-        vec[j] /= mag_vec;
+    //double mag_vec = mag_vector(vec,dim);
+    //for (int j = 0; j < dim; ++j)
+    //    vec[j] /= mag_vec;
 
-    vn = 0.0;
-    for (int j = 0; j < dim; ++j)
-        vn += vec[j]*vel_rel[j];
+    //vn = 0.0;
+    //for (int j = 0; j < dim; ++j)
+    //    vn += vec[j]*vel_rel[j];
 
-    //TODO: The difference between nopenetration and reflection appears to be significant
-    for (int j = 0; j < dim; ++j)
-	    v_slip[j] = vel_reflect[j] - vn*vec[j];
+    ////TODO: The difference between nopenetration and reflection appears to be significant
+    //for (int j = 0; j < dim; ++j)
+	//    v_slip[j] = vel_reflect[j] - vn*vec[j];
+    //
     
-    /*
-    fprint_general_vector(stdout,"vec",v,dim,"\n");
-    fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
-    */
-}   /* end setSlipBoundary */
+    //
+    //fprint_general_vector(stdout,"vec",v,dim,"\n");
+    //fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    //
+}*/   /* end setSlipBoundary */
 
+void Incompress_Solver_Smooth_Basis::setSlipBoundary(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_slip)
+{
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
+    
+    int index = d_index(icoords,top_gmax,dim);
+	
+    double  vel_intfc[MAXD];
+    for (int i = 0; i < dim; ++i)
+    {
+        vel_intfc[i] = (*getStateVel[i])(state);
+            //coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ghost_ic[i] = icoords[i];
+    }
+	
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 
+    for (int j = 0; j < dim; ++j)
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+        
+    FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+            comp,crx_coords,coords_reflect,nor);
+
+    /* Interpolate the state at the reflected point */
+    double vel_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+
+    double vn = 0.0;
+    double vel_rel[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        //Relative velocity of reflected point with respect to the interface
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    double delta_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    double delta_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
+
+    for (int j = 0; j < dim; ++j)
+	    v_slip[j] = vel_reflect[j] - (delta_ghost/delta_reflect)*vn*nor[j];
+}
