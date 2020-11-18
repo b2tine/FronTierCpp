@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     l_cartesian->getInitialState = zero_state;
 
     //TODO: will this work?
-        set_is_fabric_run(YES);
+        //set_is_fabric_run(YES);
     
     l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
