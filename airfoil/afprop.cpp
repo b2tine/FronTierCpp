@@ -73,8 +73,8 @@ extern void elastic_point_propagate(
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
         
-    int ic_m[MAXD];
-    int ic_p[MAXD];
+    //int ic_m[MAXD];
+    //int ic_p[MAXD];
 
 	if (af_params->no_fluid)
 	{
@@ -98,10 +98,12 @@ extern void elastic_point_propagate(
 	    pp[i] = Coords(oldp)[i] + h*nor[i];
 	}
 
+    /*
     double vel_m[MAXD] = {0.0};
     double vel_p[MAXD] = {0.0};
     double mu_m;
     double mu_p;
+    */
 
 	if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
 	{
@@ -117,6 +119,7 @@ extern void elastic_point_propagate(
                 getStatePres,&newsl->pres,&sl->pres);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
                 getStatePres,&newsr->pres,&sr->pres);
+        /*
         //Tangential stress (shear stress)
 	    for (int l = 0; l < dim; ++l)
         {
@@ -133,8 +136,10 @@ extern void elastic_point_propagate(
         int index_p = d_index(ic_p,top_gmax,dim);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
                 getStateMu,&mu_p,&mu[index_p]);
+        */
 	}
 
+    /*
     double* intfc_vel = sl->vel;
     double rel_vel_m[MAXD] = {0.0};
     double rel_vel_p[MAXD] = {0.0};
@@ -157,6 +162,7 @@ extern void elastic_point_propagate(
         vel_tan_m[l] = rel_vel_m[l] - vn_m*nor[l];
         vel_tan_p[l] = rel_vel_p[l] - vn_p*nor[l];
     }
+    */
 
 	/* Impulse is incremented by the fluid pressure force */
 	for (int i = 0; i < dim; ++i)
@@ -168,7 +174,7 @@ extern void elastic_point_propagate(
 	    else if (front->step > af_params->fsi_startstep)
         {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-            dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
+                //dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];

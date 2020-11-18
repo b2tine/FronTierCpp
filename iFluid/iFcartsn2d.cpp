@@ -797,9 +797,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //registers as a CONST_P_PDE_BOUNDARY
                             
                             //TODO: figure out correct val
-                            U_nb[nb] = vel[l][index];
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                                //U_nb[nb] = vel[l][index];
                                 //U_nb[nb] = vel[l][index_nb[nb]];
-                                //U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         else
                         {
@@ -877,8 +877,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         if (status == CONST_P_PDE_BOUNDARY)
                         {
                             //OUTLET
-                            aII -= coeff[nb];
-                            rhs += coeff[nb]*U_nb[nb];
+                            rhs += 2.0*coeff[nb]*U_nb[nb];
+                                    //solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                                //aII -= coeff[nb];
+                                //rhs += coeff[nb]*U_nb[nb];
                         }
                         else
                         {

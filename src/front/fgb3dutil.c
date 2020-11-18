@@ -6436,7 +6436,7 @@ loops_out:
             patch[npatch].pixel = pixel;
             status = paint_the_patch(smin,smax,gmax,intfc,ip,patch+npatch,
                                 comp,ip_store);
-            /* Record potentially demaged patch */
+            /* Record potentially damaged patch */
             if (status == YES)
             {
                 if (npatch >= max_num_patch - 1)
