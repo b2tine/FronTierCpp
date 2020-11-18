@@ -20,8 +20,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 ***********************************************
 Max time: 15.0
 Max step: 10000
-Print interval: 0.5
-Movie frame interval: 0.05
+Print interval: 0.25
+Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -42,13 +42,15 @@ Enter gravity: 0 0 -9.8
 Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
-Enter type of rigid body: Sphere
-Enter center of the sphere: 6.0 6.0 0.951
-Enter radius of the sphere: 0.5 0.5 0.5
+
+Enter type of rigid body: Human
+Enter the vtk file name for human body: input-vtk/human_body.vtk
+Enter center of the human body: 6.0 6.0 0.951
+Enter enlargement coefficient: 1.5
+Enter yes to skip rg_nodes in y direction for 1: yes
 
 Type yes if the rigid body is fixed: no
-Type yes to use CGAL for rigid body: yes
-Enter refinement level: 1
+Type yes to use CGAL for rigid body: no
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
