@@ -24,8 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <iFluid.h>
 #include <airfoil.h>
 
-static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
+
 static SURFACE *canopy_of_string_node(NODE*);
 static void string_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
 static void mono_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
@@ -58,15 +58,23 @@ extern void elastic_point_propagate(
 	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-	int i, dim = front->rect_grid->dim;
+	int dim = front->rect_grid->dim;
+    INTERFACE *grid_intfc = front->grid_intfc;
+    RECT_GRID *top_grid = &topological_grid(grid_intfc);
+    int* top_gmax = top_grid->gmax;
+
 	double *vort = field->vort;
 	double **vel = field->vel;
 	double *pres = field->pres;
+	double *mu = field->mu;
 	COMPONENT base_comp = positive_component(oldhs);
 	double pp[MAXD],pm[MAXD],nor[MAXD],h;
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
+        
+    int ic_m[MAXD];
+    int ic_p[MAXD];
 
 	if (af_params->no_fluid)
 	{
@@ -82,41 +90,87 @@ extern void elastic_point_propagate(
 	newsl = (STATE*)left_state(newp);
 	newsr = (STATE*)right_state(newp);
 
-    //TODO: use these points to compute tangential shear stress?
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
 	h = FT_GridSizeInDir(nor,front);
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    pm[i] = Coords(oldp)[i] - h*nor[i];
 	    pp[i] = Coords(oldp)[i] + h*nor[i];
 	}
 
+    double vel_m[MAXD] = {0.0};
+    double vel_p[MAXD] = {0.0};
+    double mu_m;
+    double mu_p;
+
 	if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
 	{
-            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-			getStatePres,&newsl->pres,&sl->pres);
-            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-			getStatePres,&newsr->pres,&sr->pres);
+        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
+                getStatePres,&newsl->pres,&sl->pres);
+        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
+                getStatePres,&newsr->pres,&sr->pres);
 	}
 	else
 	{
-            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
-			getStatePres,&newsl->pres,&sl->pres);
-            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
-			getStatePres,&newsr->pres,&sr->pres);
+        //Normal stress (pressure)
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
+                getStatePres,&newsl->pres,&sl->pres);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
+                getStatePres,&newsr->pres,&sr->pres);
+        //Tangential stress (shear stress)
+	    for (int l = 0; l < dim; ++l)
+        {
+            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[l],
+                    getStateVel[l],&vel_m[l],&sl->vel[l]);
+            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[l],
+                    getStateVel[l],&vel_p[l],&sr->vel[l]);
+        }
+        rect_in_which(pm,ic_m,top_grid);
+        int index_m = d_index(ic_m,top_gmax,dim);
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu,
+                getStateMu,&mu_m,&mu[index_m]);
+        rect_in_which(pp,ic_p,top_grid);
+        int index_p = d_index(ic_p,top_gmax,dim);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
+                getStateMu,&mu_p,&mu[index_p]);
 	}
+
+    double* intfc_vel = sl->vel;
+    double rel_vel_m[MAXD] = {0.0};
+    double rel_vel_p[MAXD] = {0.0};
+    double vn_m = 0.0;
+    double vn_p = 0.0;
+
+    for (int l = 0; l < dim; ++l)
+    {
+        rel_vel_m[l] = vel_m[l] - intfc_vel[l];
+        vn_m += rel_vel_m[l]*nor[l];
+        rel_vel_p[l] = vel_p[l] - intfc_vel[l];
+        vn_p += rel_vel_p[l]*nor[l];
+    }
+
+    double vel_tan_m[MAXD] = {0.0};
+    double vel_tan_p[MAXD] = {0.0};
+
+    for (int l = 0; l < dim; ++l)
+    {
+        vel_tan_m[l] = rel_vel_m[l] - vn_m*nor[l];
+        vel_tan_p[l] = rel_vel_p[l] - vn_p*nor[l];
+    }
+
 	/* Impulse is incremented by the fluid pressure force */
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
             dv[i] = 0.0;
 	    else if (front->step > af_params->fsi_startstep)
+        {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    //else if (front->step > 5)
-          //  dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-	
+            dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
+        }
+
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
@@ -130,24 +184,24 @@ extern void elastic_point_propagate(
 	    {
 	        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
                         getStateVort,&newsl->vort,&sl->vort);
-                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                        getStateVort,&newsr->vort,&sr->vort);
-	        for (i = 0; i < dim; ++i)
+            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
+                    getStateVort,&newsr->vort,&sr->vort);
+	        for (int i = 0; i < dim; ++i)
 	        {
 	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-		    FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-			vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
-		    FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-			vel[i],getStateVel[i],&newsr->vel[i],&sr->vel[i]);
+                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
+                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                vel[i],getStateVel[i],&newsr->vel[i],&sr->vel[i]);
 	        }
 	    }
 	    else
-            {
-                FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vort,
-				getStateVort,&newsl->vort,&sl->vort);
-                FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vort,
-				getStateVort,&newsr->vort,&sr->vort);
-            }
+        {
+            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vort,
+            getStateVort,&newsl->vort,&sl->vort);
+            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vort,
+            getStateVort,&newsr->vort,&sr->vort);
+        }
 	}
 }       /* elastic_point_propagate */
 
