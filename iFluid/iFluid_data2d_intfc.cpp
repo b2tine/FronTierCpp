@@ -314,12 +314,19 @@ static void ifluid_driver(Front *front,
                 //      the interface size for each timestep.
                 intfc_data_size = idata.data.size();
             }
+                
+            if (idata.data.size() != intfc_data_size)
+            {
+                printf("ERROR: num interface points has changed\n");
+                printf("initial num intfc points: %d\n",intfc_data_size); 
+                printf("current num intfc points: %d\n",idata.data.size()); 
+                LOC(); clean_up(EXIT_FAILURE);
+            }
 
             for (auto it : idata.data)
             {
                 auto ic = it.coords;
                 fprintf(intfc_file,"%20.14f %20.14f\n",ic[0],ic[1]);
-                //printf("coords = %g %g\n",ic[0],ic[1]);
                 
                 auto iv = it.vel;
                 fprintf(veli_file,"%20.14f %20.14f\n",iv[0],iv[1]);
