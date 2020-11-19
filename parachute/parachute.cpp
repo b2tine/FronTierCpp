@@ -117,7 +117,8 @@ int main(int argc, char **argv)
 	FT_ReadTimeControl(in_name,&front);
 
     //FT_SetGlobalIndex() Must be called before setMotionParams()
-    //in order to allow advanced restart scenarios
+    //in order to allow advanced restart scenarios involving the
+    //setting/unsetting of registered points.
 	if (!RestartRun)
     {
         optimizeElasticMesh(&front);
@@ -139,8 +140,11 @@ int main(int argc, char **argv)
     //      "Enter fluid ambient velocity: "
     l_cartesian->getInitialState = zero_state;
 
-    //TODO: For parallelization of collision solver -- not fully understood yet
-        //set_is_fabric_run(YES);
+
+    //TODO: For parallelization of collision solver -- not working with fluid
+    //      and not fully understood yet
+        
+    //set_is_fabric_run(YES);
     
     l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
@@ -205,7 +209,7 @@ void airfoil_driver(Front *front,
 
     
     //TODO: Put vortex initialization and injection
-    //      code into functions and link into libiFluid.la
+    //      code into functions (iFinjection.cpp) and link into libiFluid.la
     VPARAMS vort_params;
     bool inject_vortex = false;
     double start_time = HUGE;

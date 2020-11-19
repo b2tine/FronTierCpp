@@ -1035,7 +1035,6 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	put_point_set_to(&geom_set,point_set);
 
 	// Calculate the real force on load_node and rg_string_node
-    //TODO: make sure fr is the current interface
     setSpecialNodeForce(fr,elastic_intfc,geom_set.kl);
 	    //setSpecialNodeForce(fr,geom_set.kl);
 
