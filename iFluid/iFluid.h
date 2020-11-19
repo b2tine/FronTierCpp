@@ -187,7 +187,7 @@ struct IF_PARAMS
     int base_step;
 	boolean scalar_field; /*include scalar field or not*/
 	boolean skip_neumann_solver;
-    int fsi_startstep;
+    int fsi_startstep {5};
 };
 
 struct _FLOW_THROUGH_PARAMS {

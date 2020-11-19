@@ -34,7 +34,7 @@ For rigid body 1
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 1 0
-Enter the total mass for rigid body: 10
+Enter the total mass for rigid body: 1
 Enter the initial center of mass for rigid body: 1.5 0.0
 Enter the initial center of mass velocity: 0.0 0.0
 
@@ -53,28 +53,7 @@ Enter factor of smoothing radius: 1
 
 ******************Turbulence Parameters****************
 Enter yes to use eddy viscosity: no
-Available tuebulence models are:
-        Baldwin-Lomax (B)
-        Moin (M)
-        Smagorinski (S)
-        KEPSILON  (K)
-Enter turbulence model: K
-Enter type of k-eps model: RNG
-Enter turbulent Prandtl number for k: 0.7194
-Enter turbulent Prandtl number for epsilon: 0.7194
-Enter C1: 1.42
-Enter C2: 1.68
-Enter Cmu: 0.0845
-Enter Cbc: 0.01
-Enter I: 0.0001
-Enter ViscRatioFar: 1
-Enter ViscRatioNear: 100
-Enter l0: 1.0
-Enter U0: 5.0
-Enter mu0: 0.001
-Enter y+: 11.067
 
-Enter time to active turbulence model: 0.075
 *******************************************************
 
 Type y to make movie of pressure: y
