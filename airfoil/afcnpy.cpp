@@ -2579,10 +2579,10 @@ static void setSurfVelocity(
 		nor_speed = scalar_product(vel,nor,3);
 		for (j = 0; j < 3; ++j)
 		{
-		    sl->vel[j] = vel[j];
-		    sr->vel[j] = vel[j];
-		    //sl->vel[j] = nor_speed*nor[j];
-		    //sr->vel[j] = nor_speed*nor[j];
+		    //sl->vel[j] = vel[j];
+		    //sr->vel[j] = vel[j];
+		    sl->vel[j] = nor_speed*nor[j];
+		    sr->vel[j] = nor_speed*nor[j];
 		}
 		sorted(p) = YES;
 	    }
@@ -2610,7 +2610,7 @@ static void setCurveVelocity(
 	long gindex;
 	int dim = FT_Dimension();
 
-    //TODO: need to test this new string_hsbdry block
+    //TODO: appears to be working correctly (string_hsbdry block)
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         for (b = curve->first; b != curve->last; b = b->next)
@@ -2645,10 +2645,10 @@ static void setCurveVelocity(
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = vel[j];
-                    sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
                 }
             }
         }
@@ -2761,10 +2761,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-		    	sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-		    	//sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+		    	//sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+		    	sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
 		}
         
@@ -2809,10 +2809,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                //sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
