@@ -18,7 +18,7 @@ Max step: 50000
 Print interval: 0.5
 Movie frame interval: 0.05
 Movie frame intervalX: 0.025
-CFL factor: 0.5
+CFL factor: 0.75
 Redistribution interval: 100000000
 
 Problem type can be
@@ -44,11 +44,6 @@ Enter factor of smoothing radius: 1
 
 ******************Turbulence Parameters****************
 Enter yes to use eddy viscosity: no
-Available tuebulence models are:
-        Baldwin-Lomax (B)
-        Moin (M)
-        Smagorinski (S)
-        KEPSILON  (K)
 
 *******************************************************
 
