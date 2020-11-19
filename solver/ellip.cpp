@@ -266,7 +266,7 @@ void ELLIPTIC_SOLVER::solve1d(double *soln)
 
 void ELLIPTIC_SOLVER::solve2d(double *soln)
 {
-	int index,index_nb[4],size;
+	int index,index_nb[4];
 	double k0,k_nb[4];
 	double rhs,coeff[4];
 	int I,I_nb[4],I_oppnb[4];
@@ -287,11 +287,15 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	int icrds_max[MAXD],icrds_min[MAXD];
 
     static PETSc solver;
+	static double *x;
 	static bool first = true;
+
+	int size = iupper - ilower;
 
     if (first)
     {
 	    solver.Create(ilower, iupper-1, 5, 5);
+	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
         first = false;
     }
     else
@@ -308,7 +312,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
-	size = iupper - ilower;
 	max_soln = -HUGE;
 	min_soln = HUGE;
 
@@ -545,8 +548,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	}
 	stop_clock("Petsc Solver");
 
-	double *x;
-	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 	solver.Get_x(x);
 
 	if (debugging("PETSc"))
@@ -611,7 +612,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	if (debugging("check_div"))
             printf("Leaving solve2d()\n");
 
-	FT_FreeThese(1,x);
+	//FT_FreeThese(1,x);
 }	/* end solve2d */
 
 void ELLIPTIC_SOLVER::printIsolatedCells()
@@ -956,7 +957,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 void ELLIPTIC_SOLVER::solve3d(double *soln)
 {
-	int index,index_nb[6],size;
+	int index,index_nb[6];
 	double k0,k_nb[6];
 	double rhs,coeff[6];
 	int I,I_nb[6];
@@ -974,11 +975,15 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	POINTER intfc_state;
 
     static PETSc solver;
+	static double *x;
 	static bool first = true;
+
+	int size = iupper - ilower;
 
     if (first)
     {
 	    solver.Create(ilower, iupper-1, 7, 7);
+	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
         first = false;
     }
     else
@@ -993,7 +998,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	solver.Reset_b();
 	solver.Reset_x();
 
-	size = iupper - ilower;
 	max_soln = -HUGE;
 	min_soln = HUGE;
 
@@ -1217,8 +1221,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	stop_clock("Petsc Solver");
 
-	double *x;
-	FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 	solver.Get_x(x);
 
 	if (debugging("PETSc"))
@@ -1290,7 +1292,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             error = checkSolver(icrds_max,YES);
         }
 
-	FT_FreeThese(1,x);
+	//FT_FreeThese(1,x);
 }   /* end solve3d */
 
 double ELLIPTIC_SOLVER::checkSolver(

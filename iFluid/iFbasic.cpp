@@ -4781,11 +4781,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     vn = 0.0;
     for (j = 0; j < dim; ++j)
-        vn += v[j] * v_tmp[j]; 	
+        vn += v[j]*vel_rel[j]; 	
 
     for (j = 0; j < dim; ++j)
-	    v_tmp[j] -= 2.0*vn*v[j];
-	    //v_tmp[j] -= vn*v[j];
+	    v_tmp[j] -= vn*v[j];
+	    //v_tmp[j] -= 2.0*vn*v[j];
 
     /*
     fprint_general_vector(stdout,"v",v,dim,"\n");
