@@ -18,7 +18,7 @@ struct SpaldingWallLaw
     {
         double Kup = 0.41*u/u_star;
         return exp(0.41*B)*(y/nu*u_star - u/u_star)
-            + 1.0 + Kup + 0.5*Kup*kup + Kup*Kup*Kup/6.0 - exp(Kup);
+            + 1.0 + Kup + 0.5*Kup*Kup + Kup*Kup*Kup/6.0 - exp(Kup);
     }
 };
 
