@@ -4556,7 +4556,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     for (int j = 0; j < dim; ++j)
     {
-        //Relative velocity of reflected point with respect to the interface
         vel_rel[j] = vel_reflect[j] - vel_intfc[j];
         vn += vel_rel[j]*nor[j];
     }
@@ -4567,3 +4566,5 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     for (int j = 0; j < dim; ++j)
 	    v_slip[j] = vel_reflect[j] - (delta_ghost/delta_reflect)*vn*nor[j];
 }
+
+

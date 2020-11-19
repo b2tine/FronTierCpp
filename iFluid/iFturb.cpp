@@ -27,6 +27,7 @@ KE_PARAMS* Incompress_Solver_Smooth_Basis::computeMuOfKepsModel()
     return &params;
 }
 
+//TODO: Implementation not correct
 double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
     int *icoords,
 	double dist,
@@ -140,6 +141,8 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 	return mu_t;
 }	/* end computeMuOfBaldwinLomax */
 
+//TODO: 3d runs produce unphysical horizontal bands of eddy viscosity
+//      normal to rigid body center of mass motion.
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
@@ -212,7 +215,6 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
     double C_v = iFparams->C_v;
 
     /*
-    //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
     switch (dim)
     {
         case 2:
@@ -243,6 +245,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
 	}
     */
 
+    //Boundary aware computation appears to be working correctly
     auto alpha = computeVelocityGradient(icoords);
    	
     double sum_alpha = 0.0;
