@@ -188,9 +188,7 @@ void PETSc::Set_b(PetscInt i, double val)	// x[i]=val;
 	ierr = VecSetValues(b,1,&i,&val,INSERT_VALUES);
 }
 
-void PETSc::Add_b(
-	PetscInt i, 
-	double val)	// x[i]+=val;
+void PETSc::Add_b(PetscInt i, double val)	// x[i]+=val;
 {
 	ierr = VecSetValues(b,1,&i,&val,ADD_VALUES);
 }
@@ -201,7 +199,7 @@ void PETSc::Get_x(double *p)
 	VecGetArray(x,&values);
 	for(int i = 0; i < iUpper-iLower+1; i++)
 		p[i] = values[i];	
-        VecRestoreArray(x,&values); 
+    VecRestoreArray(x,&values); 
 }
 
 void PETSc::Get_b(double *p)
@@ -210,13 +208,14 @@ void PETSc::Get_b(double *p)
 	VecGetArray(b,&values);
 	for(int i = 0; i < iUpper-iLower+1; i++)
 		p[i] = values[i];	
-        VecRestoreArray(b,&values); 
+    VecRestoreArray(b,&values); 
 }
 
 void PETSc::Get_x(double *p, 
 	int n, 
 	int *global_index)
 {
+    //
 }
 
 void PETSc::SetPrevSolnInitialGuess()
