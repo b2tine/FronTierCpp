@@ -1960,7 +1960,8 @@ static  void ifluid_compute_force_and_torque2d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t,pres;
-        double area[MAXD],posn[MAXD];
+        double posn[MAXD],bnor[MAXD];
+        double area;
         BOND *b;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -1988,11 +1989,13 @@ static  void ifluid_compute_force_and_torque2d(
             for (b = curve->first; b != NULL; b = b->next)
             {
                 if (force_on_hse(Hyper_surf_element(b),Hyper_surf(curve),gr,
-                        &pres,area,posn,pos_side))
+                        &pres,bnor,posn,pos_side))
                 {
+                    area = bond_length(b);
+                    double mag_bnor = Mag2d(bnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area[i];
+                        f[i] = pres*area*bnor[i]/mag_bnor;
                         rr[i] = posn[i] - rotation_center(curve)[i];
                         //rr[i] = 0.5*(Coords(b->start)[i] + Coords(b->end)[i])
                                 //- rotation_center(curve)[i];
@@ -2028,7 +2031,8 @@ static  void ifluid_compute_force_and_torque3d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t[MAXD],tdir,pres;
-        double area,posn[MAXD],tnor[MAXD];
+        double posn[MAXD],tnor[MAXD];
+        double area;
         TRI *tri;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -2177,7 +2181,7 @@ static boolean force_on_hse(
         HYPER_SURF *hs,                 /* Curve (2D) or surface (3D) */
         RECT_GRID *gr,                  /* Rectangular grid */
         double *pres,           /* Average pressure */
-        double *area,           /* Area as a vector, pointing onto body */
+        double *nor,           /* normal vector pointing into body */
         double *posn,           /* Position of the pressure */
         boolean pos_side)       /* Is the body on the positive side of hs? */
 {
@@ -2185,9 +2189,9 @@ static boolean force_on_hse(
         switch (dim)
         {
         case 2:
-            return force_on_hse2d(hse,hs,gr,pres,area,posn,pos_side);
+            return force_on_hse2d(hse,hs,gr,pres,nor,posn,pos_side);
         case 3:
-            return force_on_hse3d(hse,hs,gr,pres,area,posn,pos_side);
+            return force_on_hse3d(hse,hs,gr,pres,nor,posn,pos_side);
         default:
             return NO;
         }
@@ -2199,7 +2203,7 @@ static boolean force_on_hse2d(
         HYPER_SURF *hs,
         RECT_GRID *gr,
         double *pres,
-        double *area,
+        double *nor,
         double *posn,
         boolean pos_side)
 {
@@ -2280,11 +2284,15 @@ static boolean force_on_hse2d(
                 }
             }
         }
-        area[0] = pos_side ? crds1[1] - crds2[1] : crds2[1] - crds1[1];
-        area[1] = pos_side ? crds2[0] - crds1[0] : crds1[0] - crds2[0];
+        
+        nor[0] = pos_side ? crds1[1] - crds2[1] : crds2[1] - crds1[1];
+        nor[1] = pos_side ? crds2[0] - crds1[0] : crds1[0] - crds2[0];
+        
         *pres = 0.5*(p1 + p2);
+        
         posn[0] = 0.5*(crds1[0] + crds2[0]);
         posn[1] = 0.5*(crds1[1] + crds2[1]);
+        
         return YES;
 }       /* end force_on_hse2d */
 
