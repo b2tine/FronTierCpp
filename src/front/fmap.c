@@ -3933,7 +3933,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	HYPER_SURF_ELEMENT *hsebdry;
 	double		   ns[MAXD], ne[MAXD];
 	double		   t[MAXD];
-	double		   v[MAXD],vn;
+	double		   v[MAXD];
 	int		   i, dim = front->rect_grid->dim;
 
 	if (wave_type(hs) != NEUMANN_BOUNDARY &&
@@ -3981,7 +3981,8 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    for (i = 0; i < dim; ++i)
 		nor[i] *= -1.0;
 	}
-	vn = 0.0;
+
+	double vn = 0.0;
 	for (i = 0; i < dim; ++i)
 	{
 	    v[i] = coords[i] - coordsbdry[i];
@@ -3989,11 +3990,12 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	}
 	for (i = 0; i < dim; ++i)
 	{
-	    v[i] = 2.0*vn*nor[i] - v[i];
+	    v[i] = v[i] - 2.0*vn*nor[i];
 	}
 
 	for (i = 0; i < dim; ++i)
 	    coordsref[i] = v[i] + coordsbdry[i];
+
 	return YES;
 }		/*end FT_ReflectPointThroughBdry*/
 

@@ -316,55 +316,62 @@ private:
 	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
 };
 
-class ELLIPTIC_SOLVER{
-        Front *front;
-public:
-        ELLIPTIC_SOLVER(Front &front);
+class ELLIPTIC_SOLVER
+{
+    Front* front;
 
-        // On topological grid
-	int *i_to_I;
-	int **ij_to_I;
-	int ***ijk_to_I;
-	int ilower;
-	int iupper;
+    public:
+        
+        ELLIPTIC_SOLVER(Front* front);
 
-        double dt;          //time step
-	double porosity;
-	double *soln;		/* field variable of new step */
-	double *source;		/* source field */
-    double **vel;       /* velocity field */
-    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+            // On topological grid
+        int *i_to_I;
+        int **ij_to_I;
+        int ***ijk_to_I;
+        int ilower;
+        int iupper;
+
+            double dt;          //time step
+        double porosity;
+        double *soln;		/* field variable of new step */
+        double *source;		/* source field */
+        double **vel;       /* velocity field */
+        double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+        
+        //double* rho;
+
+        void set_solver_domain(void);
+        void solve(double *soln);
+        void dsolve(double *soln);
+        
+        double (*getStateVar)(POINTER);
+        double (*getStateVel[3])(POINTER);
+
+        int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+                                    POINTER*,HYPER_SURF**,double*);
+        double checkSolver(int *icoords,boolean print_details);
+        void printIsolatedCells();
+        int skip_neumann_solver;
     
-    //double* rho;
-
-	void set_solver_domain(void);
-	void solve(double *soln);
-	void dsolve(double *soln);
-	
-    double (*getStateVar)(POINTER);
-    double (*getStateVel[3])(POINTER);
-
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
-                                POINTER*,HYPER_SURF**,double*);
-	double checkSolver(int *icoords,boolean print_details);
-    void printIsolatedCells();
-	int skip_neumann_solver;
-private:
-        // Dimension
+    private:
+   
         int dim;
-        COMPONENT *top_comp;
-	double *top_h;
-	double *top_L;
+        double *top_h;
+        double *top_L;
         int *top_gmax;
-	int imin,jmin,kmin;
-	int imax,jmax,kmax;
+        COMPONENT *top_comp;
+        
+        int imin,jmin,kmin;
+        int imax,jmax,kmax;
+        
         double *array;          // for scatter states;
-	int array_size;
-	double max_soln;
-	double min_soln;
-	void solve1d(double *soln);
-	void solve2d(double *soln);
-	void solve3d(double *soln);
+        int array_size;
+        double max_soln;
+        double min_soln;
+
+        void solve1d(double *soln);
+        void solve2d(double *soln);
+        void solve3d(double *soln);
 };
 
 struct _SWEEP {

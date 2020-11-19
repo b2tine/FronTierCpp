@@ -3378,6 +3378,8 @@ void KE_CARTESIAN::setTKEatWall(
 	*K_nb = K[index];
 }
 
+//TODO: see iFbasic.cpp implemtation -- should be changed, but saving for now,
+//      since kepsilon solver development is on hold for the moment.
 void KE_CARTESIAN::setSlipBoundary(
 	int *icoords,
 	int idir,

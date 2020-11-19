@@ -68,8 +68,8 @@ Type y to make vector vorticity field movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: PETSc
-Enter the debugging string: set_pp_grid
 
-Enter the debugging string: Xtrace
-Enter the debugging string: Xstep_size
+Enter the debugging stringX: slip_boundary
+Enter the debugging stringX: trace
+Enter the debugging stringX: step_size
 

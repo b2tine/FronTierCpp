@@ -4505,7 +4505,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     //
     
     //
-    //fprint_general_vector(stdout,"vec",v,dim,"\n");
+    //fprint_general_vector(stdout,"vec",vec,dim,"\n");
     //fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
     //
 }*/   /* end setSlipBoundary */
@@ -4531,7 +4531,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     for (int i = 0; i < dim; ++i)
     {
         vel_intfc[i] = (*getStateVel[i])(state);
-            //coords[i] = top_L[i] + icoords[i]*top_h[i];
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
         ghost_ic[i] = icoords[i];
     }
 	
@@ -4549,6 +4549,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     {
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
                 getStateVel[j],&vel_reflect[j],&vel[j][index]);
+        //TODO: vel[j][index] the best default value upon failure??
     }
 
     double vn = 0.0;
@@ -4565,6 +4566,17 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 
     for (int j = 0; j < dim; ++j)
 	    v_slip[j] = vel_reflect[j] - (delta_ghost/delta_reflect)*vn*nor[j];
+
+    if (debugging("slip_boundary"))
+    {
+        printf("setSlipBoundary() DEBUGGING\n");
+        fprint_general_vector(stdout,"coords",coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        //TODO: additional debugging info
+        printf("\n");
+    }
 }
 
 

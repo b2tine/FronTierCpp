@@ -23,9 +23,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "solver.h"
 
-ELLIPTIC_SOLVER::ELLIPTIC_SOLVER(Front &front):front(&front)
+ELLIPTIC_SOLVER::ELLIPTIC_SOLVER(Front* fr)
+    : front(fr)
 {
-	porosity = 0.0;
+    //TODO: remove after modifying solve2d()
+    porosity = 0.0;
 }
 
 void ELLIPTIC_SOLVER::set_solver_domain(void)
@@ -33,17 +35,18 @@ void ELLIPTIC_SOLVER::set_solver_domain(void)
 
 	static boolean first = YES;
 	RECT_GRID *rgr = &topological_grid(front->grid_intfc);
-        struct Table *T = table_of_interface(front->grid_intfc);
-        int *lbuf = front->rect_grid->lbuf;
-        int *ubuf = front->rect_grid->ubuf;
+    struct Table *T = table_of_interface(front->grid_intfc);
+    int *lbuf = front->rect_grid->lbuf;
+    int *ubuf = front->rect_grid->ubuf;
 	int i;
 
 	dim = Dimension(front->interf);
-        top_comp = T->components;
-        top_gmax = rgr->gmax;
+    top_comp = T->components;
+    top_gmax = rgr->gmax;
 	top_h = rgr->h;
 	top_L = rgr->L;
-	if (first)
+	
+    if (first)
 	{
 	    first = NO;
 	    switch(dim)
@@ -391,9 +394,33 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
-                //TODO: Try using FT_ReflectPointThroughBdry()
-                
                 //dp/dn = 0 (reflecting boundary for pressure)
+                int icoords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    icoords_ghost[m] = icoords[m];
+                
+                int idir = l/2; int nb = l%2;
+                icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                
+                double coords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+
+
+                //TODO: solve() (this function) should be a method of the incompressible fluid solver
+                //      so we can use functions such as the one below, and avoid hard coding
+                //      variable types into the solver library.
+                    //getRectangleCenter(index_nb[l],coords_ghost);
+                    
+                double intfc_crx_coords[MAXD];
+                double coords_reflect[MAXD];
+                double nor[MAXD];
+                
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
+
+                /*
+                 
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
@@ -422,6 +449,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
+
+                */
 
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.
@@ -1078,9 +1107,33 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
-                //TODO: Try using FT_ReflectPointThroughBdry()
-                
                 //dp/dn = 0 (reflecting boundary for pressure)
+                int icoords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    icoords_ghost[m] = icoords[m];
+                
+                int idir = l/2; int nb = l%2;
+                icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                
+                double coords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+
+
+                //TODO: solve() (this function) should be a method of the incompressible fluid solver
+                //      so we can use functions such as the one below, and avoid hard coding
+                //      variable types into the solver library.
+                    //getRectangleCenter(index_nb[l],coords_ghost);
+                    
+                double intfc_crx_coords[MAXD];
+                double coords_reflect[MAXD];
+                double nor[MAXD];
+                
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
+
+                /*
+                
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
@@ -1109,13 +1162,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
+                
+                */
 
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.
                 double pres_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,
-                        coords_reflect,soln,getStateVar,
-                        &pres_reflect,&soln[index]);
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&pres_reflect,&soln[index]);
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.

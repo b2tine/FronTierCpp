@@ -274,7 +274,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 {
-	static ELLIPTIC_SOLVER elliptic_solver(*front);
+	static ELLIPTIC_SOLVER elliptic_solver(front);
 	int index;
 	int i,j,l,icoords[MAXD];
 	double **vel = field->vel;
