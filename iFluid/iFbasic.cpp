@@ -4561,11 +4561,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += vel_rel[j]*nor[j];
     }
 
-    double delta_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-    double delta_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    double dist_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
 
     for (int j = 0; j < dim; ++j)
-	    v_slip[j] = vel_reflect[j] - (delta_ghost/delta_reflect)*vn*nor[j];
+	    v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
 
     if (debugging("slip_boundary"))
     {
@@ -4574,7 +4574,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
         fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        //TODO: additional debugging info
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
+                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
         printf("\n");
     }
 }

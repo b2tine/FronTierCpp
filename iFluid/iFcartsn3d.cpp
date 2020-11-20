@@ -416,6 +416,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
 }
 
 //TODO: Turn into global curl function
+//
+//TODO: make boundary aware -- see setSlipBoundary()
 std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     computePointVorticity(int* icoords, double** vel)
 {
