@@ -780,7 +780,7 @@ extern "C" {
      satisfied.
     \param front @b in	Pointer to Front.
     \param hs @b in  Pointer to the hypersurface (curve in 2D, surface in 3D).
-    \param comp @b in  Component of the ambient.
+    \param comp @b in  Component of coords.
     \param coords @b in	Coordinates to be reflected.
     \param coords_bdry @b out boundary point of reflection.
     \param coords_ref @b out Coordinates after reflection.

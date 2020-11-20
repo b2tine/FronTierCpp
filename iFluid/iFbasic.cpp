@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		         iFbasic.cpp
  *******************************************************************/
 #include "iFluid.h"
+#include "iFturb.h"
 #include "keps.h"
 
 #include <iostream>
@@ -4525,8 +4526,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     double coords_reflect[MAXD], coords_ghost[MAXD];
     double nor[MAXD];
     
-    int index = d_index(icoords,top_gmax,dim);
-	
     double  vel_intfc[MAXD];
     for (int i = 0; i < dim; ++i)
     {
@@ -4536,21 +4535,30 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     }
 	
     ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-
+    
     for (int j = 0; j < dim; ++j)
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
         
+    int ghost_index = d_index(ghost_ic,top_gmax,dim);
+    COMPONENT comp_ghost = top_comp[ghost_index];
+    
     FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-            comp,crx_coords,coords_reflect,nor);
+            comp_ghost,crx_coords,coords_reflect,nor);
+
+    double vel_reflect[MAXD] = {0.0};
+    double mu_reflect;
+    
+    int index = d_index(icoords,top_gmax,dim);
 
     /* Interpolate the state at the reflected point */
-    double vel_reflect[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
                 getStateVel[j],&vel_reflect[j],&vel[j][index]);
         //TODO: vel[j][index] the best default value upon failure??
     }
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
+                getStateMu,&mu_reflect,&field->mu[index]);
 
     double vn = 0.0;
     double vel_rel[MAXD] = {0.0};
@@ -4561,12 +4569,54 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += vel_rel[j]*nor[j];
     }
 
+    //TODO: Currently dist_ghost == dist_reflect.
+    //      Would need to treat interface cut cells as regular
+    //      flow cells (called boundary cells) and leaving only
+    //      the noncut cells of different component as ghost cells.
+    
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     double dist_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
 
-    for (int j = 0; j < dim; ++j)
-	    v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
 
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_ghost_nor[j] = -(dist_ghost/dist_reflect)*vn*nor[j];
+	        //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
+    }
+    double mag_vtan = Magd(vel_rel_tan,dim);
+
+    //TODO: Need to modify tangential velocity also.
+    //      First need to solve spalding's wall law for the
+    //      friction velocity, u_tau, then compute the wall
+    //      shear stress, tau_wall. Then must modify the ghost's
+    //      relative tangential slip velocity according to
+    //
+    //      v_tan_ghost = v_tan_reflect
+    //            - (dist_reflect + dist_ghost)/(mu_reflect + mu_t_reflect)*tau_wall
+    //
+    //      where v_tan_ghost and v_tan_reflect are relative velocities
+    //      with respect to the interface.
+    
+    double mul;
+    double rhol;
+    switch (comp)
+    {
+        case LIQUID_COMP1:
+            mul = m_mu[0];
+            rhol = m_rho[0];
+            break;
+        case LIQUID_COMP2:
+            mul = m_mu[1];
+            rhol = m_rho[1];
+            break;
+        default:
+            printf("Unknown fluid COMPONENT: %d\n",comp);
+            LOC(); clean_up(EXIT_FAILURE);
+    }
+    
     if (debugging("slip_boundary"))
     {
         printf("setSlipBoundary() DEBUGGING\n");
@@ -4574,9 +4624,25 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
         fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
                 dist_ghost, dist_reflect, dist_ghost/dist_reflect);
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+    }
+
+    double tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mul,rhol);
+
+    double vel_ghost_tan[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
+        v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+    }
+
+    if (debugging("slip_boundary"))
+    {
+        //TODO: more info as needed
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
 }

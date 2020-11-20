@@ -1,19 +1,22 @@
 #ifndef IF_TURB_H
 #define IF_TURB_H
 
-#include "iFluid.h"
-
 struct SpaldingWallLaw
 {
-    double u;       //tangential fluid velocity
-    double y;       //distance to wall
-    double nu;      //kinematic viscosity (laminar)
-    double B;       //model constant ~ 5.2 for smooth walls
+    double u;           //tangential fluid velocity magnitude
+    double y;           //distance to wall
+    double nu;          //kinematic viscosity (laminar)
+    double B {5.2};     //model constant ~ 5.2 for smooth walls
 
-    SpaldingWallLaw(double v_tan, double dist, double nu_lam, double b)
-        : u(v_tan), y(dist), nu(nu_lam), B(b)
+    SpaldingWallLaw(double u_tan, double dist, double nu_lam)
+        : u(u_tan), y(dist), nu(nu_lam)
     {}
 
+    SpaldingWallLaw(double u_tan, double dist, double nu_lam, double b)
+        : u(u_tan), y(dist), nu(nu_lam), B(b)
+    {}
+
+    //u_star is the friction velocity
     double operator() (double u_star) const
     {
         double Kup = 0.41*u/u_star;
@@ -26,7 +29,7 @@ struct SpaldingWallLaw
 template<typename F>
 double secantMethod(const F& f, double xa, double xb)
 {
-    const int MAXITER = 2000;
+    const int MAXITER = 5000;
     const double TOL = 1.0e-08;
 
     double x0 = xa;
@@ -49,5 +52,10 @@ double secantMethod(const F& f, double xa, double xb)
     printf("ERROR: secantMethod() could not find root\n");
     LOC(); clean_up(EXIT_FAILURE);
 }
+
+
+double computeWallShearStress(double u_tan, double walldist, double mu, double rho);
+double computeFrictionVelocity(double u_tan, double walldist, double mu, double rho);
+
 
 #endif

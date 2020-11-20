@@ -303,6 +303,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     else
     {
         solver.SetPrevSolnInitialGuess();
+        for (int ii = 0; ii < dim; ++ii) x[ii] = 0.0;
     }
 	
     if (debugging("check_div"))
@@ -522,7 +523,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-	solver.SetTol(1e-10);
+	solver.SetTol(1.0e-14);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -835,7 +836,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	   
         
 	solver.SetMaxIter(40000);
-	solver.SetTol(1e-10);
+	solver.SetTol(1.0e-14);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;
@@ -1017,6 +1018,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     else
     {
         solver.SetPrevSolnInitialGuess();
+        for (int ii = 0; ii < dim; ++ii) x[ii] = 0.0;
     }
 	
     solver.Reset_A();
@@ -1203,7 +1205,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-10);
+	solver.SetTol(1.0e-14);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;

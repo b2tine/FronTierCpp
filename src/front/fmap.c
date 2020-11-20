@@ -3988,6 +3988,8 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    v[i] = coords[i] - coordsbdry[i];
 	    vn += nor[i]*v[i];
 	}
+
+    /*
 	for (i = 0; i < dim; ++i)
 	{
 	    v[i] = v[i] - 2.0*vn*nor[i];
@@ -3995,6 +3997,10 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 
 	for (i = 0; i < dim; ++i)
 	    coordsref[i] = v[i] + coordsbdry[i];
+    */
+
+	for (i = 0; i < dim; ++i)
+	    coordsref[i] = coords[i] - 2.0*vn*nor[i];
 
 	return YES;
 }		/*end FT_ReflectPointThroughBdry*/

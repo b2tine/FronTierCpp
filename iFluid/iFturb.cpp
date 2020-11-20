@@ -1,3 +1,4 @@
+#include "iFluid.h"
 #include "iFturb.h"
 #include "keps.h"
 
@@ -320,9 +321,12 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                    wave_type(hs) == MOVABLE_BODY_BOUNDARY ||
-                    wave_type(hs) == ELASTIC_BOUNDARY)
+                    wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
+                //NOTE: zeroing the relative fluid velocity normal to canopy
+                //      via the slip boundary condition will cause the pressure
+                //      jump imposed by the ghost fluid method porosity model
+                //      to vanish -- destroying the porosity of the canopy
                 double v_slip[MAXD] = {0.0};
                 setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
                 vel_nb[nb] = v_slip[l];
@@ -346,8 +350,9 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             }
             else
             {
-                printf("ERROR: Unkown Boundary Type\n");
-                LOC(); clean_up(EXIT_FAILURE);
+                //wave_type(hs) == ELASTIC_BOUNDARY
+                //printf("ERROR: Unknown Boundary Type\n");
+                //LOC(); clean_up(EXIT_FAILURE);
             }
         }
 
@@ -355,5 +360,30 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
     }
 
     return J;
+}
+
+double computeWallShearStress(
+        double u_tan,
+        double walldist,
+        double mu,
+        double rho)
+{
+    double u_friction = computeFrictionVelocity(u_tan,walldist,mu,rho);
+    double tau_wall = sqrt(u_friction)*rho;
+    return tau_wall;
+}
+
+double computeFrictionVelocity(
+        double u_tan,
+        double walldist,
+        double mu,
+        double rho)
+{
+    SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
+
+    double u0 = 0.0;
+    double u1 = 15.0; //temp val initial guess for prototyping
+    double u_friction = secantMethod(wallfunc,u0,u1);
+    return u_friction;
 }
 
