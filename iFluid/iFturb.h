@@ -1,6 +1,7 @@
 #ifndef IF_TURB_H
 #define IF_TURB_H
 
+//TODO: Not finding this 
 struct SpaldingWallLaw
 {
     double u;           //tangential fluid velocity magnitude
@@ -19,6 +20,8 @@ struct SpaldingWallLaw
     //u_star is the friction velocity
     double operator() (double u_star) const
     {
+        //TODO: dividing by zero whe u_star = 0 is an initial guess,
+        //      need a better formulation of the root finding problem.
         double Kup = 0.41*u/u_star;
         return exp(0.41*B)*(y/nu*u_star - u/u_star)
             + 1.0 + Kup + 0.5*Kup*Kup + Kup*Kup*Kup/6.0 - exp(Kup);
@@ -39,13 +42,13 @@ double secantMethod(const F& f, double xa, double xb)
     double xn = x0;
     for (int i = 0; i < MAXITER; ++i)
     {
-        xn = x1 - f(x1)*(x1-x0)/(f(x1)-f(x0));
-        x0 = x1;
-        x1 = xn;
-
         double fval = f(xn);
         if (fabs(fval) < TOL)
             return xn;
+
+        xn = x1 - f(x1)*(x1-x0)/(f(x1)-f(x0));
+        x0 = x1;
+        x1 = xn;
     }
 
     //TODO: better debugging output

@@ -382,7 +382,7 @@ double computeFrictionVelocity(
     SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
 
     double u0 = 0.0;
-    double u1 = 15.0; //temp val initial guess for prototyping
+    double u1 = 5.0; //temp val initial guess for prototyping
     double u_friction = secantMethod(wallfunc,u0,u1);
     return u_friction;
 }

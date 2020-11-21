@@ -4542,8 +4542,17 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     int ghost_index = d_index(ghost_ic,top_gmax,dim);
     COMPONENT comp_ghost = top_comp[ghost_index];
     
+    ////////////////////////////////////////////////////////////////////////
+    //TODO: rewrite for clarity
     FT_ReflectPointThroughBdry(front,hs,coords_ghost,
             comp_ghost,crx_coords,coords_reflect,nor);
+    
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    double dist_reflect = FT_GridSizeInDir(nor,front);
+        //double dist_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] - dist_reflect*nor[j];
+    ////////////////////////////////////////////////////////////////////////
 
     double vel_reflect[MAXD] = {0.0};
     double mu_reflect;
@@ -4569,21 +4578,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += vel_rel[j]*nor[j];
     }
 
-    //TODO: Currently dist_ghost == dist_reflect.
-    //      Would need to treat interface cut cells as regular
-    //      flow cells (called boundary cells) and leaving only
-    //      the noncut cells of different component as ghost cells.
-    
-    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-    double dist_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
-
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
 
     for (int j = 0; j < dim; ++j)
     {
 	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
-	    vel_ghost_nor[j] = -(dist_ghost/dist_reflect)*vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
 	        //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
@@ -4623,9 +4624,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         fprint_general_vector(stdout,"coords",coords,dim,"\n");
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
         fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
         printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
                 dist_ghost, dist_reflect, dist_ghost/dist_reflect);
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
     }
 
@@ -4634,14 +4638,15 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     double vel_ghost_tan[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
-        vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
+        vel_ghost_tan[j] =
+            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
+
         v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
     }
 
     if (debugging("slip_boundary"))
     {
-        //TODO: more info as needed
+        printf("tau_wall = %f\n",tau_wall);
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
