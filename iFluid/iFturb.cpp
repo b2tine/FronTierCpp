@@ -268,7 +268,8 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
  
-    //see Vreman's implementation (he actually uses 1.0e-12 about 10x larger than MACH_EPS)
+    //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
+    //  (about 10x larger than MACH_EPS)
     double nu_t;
     if (B_beta < MACH_EPS) //if (sum_alpha >= MACH_EPS)
         nu_t = 0.0;

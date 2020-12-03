@@ -1899,9 +1899,14 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
+            //TODO: Including NEUMANN_BOUNDARY in the w_type array can
+            //      cause problems with rectangular domain numann boundarys.
+            //      Need to put a continue statement inside a domain boundary
+            //      check of the hypersurface in collect_hyper_surfaces()
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
 	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
                 //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1943,13 +1948,14 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
                     sizeof(SPRING_VERTEX));
             
             //allocate mem for point_set via point_set_store, and store
-            //gindex values of elastic_intfc points in array positions
+            //elastic_intfc points in the point_set array mapped to their
+            //respective gindex values.
             link_point_set(&geom_set,point_set,point_set_store);
 
             count_vertex_neighbors(&geom_set,sv);
             set_spring_vertex_memory(sv,owner_size);
 
-            //links sv to point_set
+            //links sv to the point_set
             set_vertex_neighbors(&geom_set,sv,point_set);
 
             if (elastic_intfc != fr->interf)
@@ -1985,16 +1991,17 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
             point_set[i] = NULL;
         
         //allocate mem for point_set via point_set_store, and store
-        //gindex values of elastic_intfc points in array positions
+        //elastic_intfc points in the point_set array mapped to their
+        //respective gindex values.
 	    link_point_set(&geom_set,point_set,point_set_store);
 	    
         count_vertex_neighbors(&geom_set,sv);
 	    set_spring_vertex_memory(sv,client_size);
 	    
-        //links sv to point_set
+        //links sv to the point_set
         set_vertex_neighbors(&geom_set,sv,point_set);
 
-        //Write from owner geom_set to owner point_set
+        //Write from client's geom_set to client's point_set
         //(which sv has pointers to)
 	    get_point_set_from(&geom_set,point_set);
 
@@ -2010,20 +2017,28 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     }
 
 
-    CollisionSolver3d* collision_solver;
+    CollisionSolver3d* collision_solver = nullptr;
 
 
+    //Collect all point_set data at owner node then
+    //run fabric solver and collision solver. Then return to clients
 	if (myid == owner_id)
 	{
-	
         if (!debugging("collision_off") && FT_Dimension() == 3) 
         {
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
 
+            //NOTE: These two functions need to be called before the spring
+            //      solver runs.
             setCollisionFreePoints3d(fr->interf);
             collision_solver->initializeSystem(fr);
 
+            //These two also must be set before??
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
+
+            //TODO: consolidate the following into a setDefaultCollisionParams() function
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);
 
@@ -2041,14 +2056,12 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
             //collision_solver->setStrainLimit(af_params->strain_limit);
             //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
-
-            collision_solver->gpoints = fr->gpoints;
-            collision_solver->gtris = fr->gtris;
         }
         else
         {
             printf("COLLISION DETECTION OFF\n");
         }
+
 
         //Write from owner geom_set to owner point_set
 	    get_point_set_from(&geom_set,point_set);
@@ -2056,7 +2069,9 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
         //Write from client point_sets to owner point_set
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
+            //if (i == owner_id) continue;
             if (i == myid) continue;
+            
             pp_recv(5,i,client_L,MAXD*sizeof(double));
             pp_recv(6,i,client_U,MAXD*sizeof(double));
             pp_recv(1,i,client_size_new+i,sizeof(int));
@@ -2071,10 +2086,12 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
                 FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
                         client_size_new[i], sizeof(GLOBAL_POINT));
             }
+
+            //receive point_set_stores from clients
             pp_recv(2,i,client_point_set_store[i],
                     client_size_new[i]*sizeof(GLOBAL_POINT));
 
-            //performs the actual write
+            //performs the actual write to owner point_set
             copy_from_client_point_set(point_set,client_point_set_store[i],
                     client_size_new[i],client_L,client_U);
 	    } 
@@ -2096,6 +2113,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	    stop_clock("spring_model");
 
         //Write back to owner geomset from owner point set
+        //(which was updated through sv in the spring solver)
         put_point_set_to(&geom_set,point_set);
         set_vertex_impulse(&geom_set,point_set);
 	    set_geomset_velocity(&geom_set,point_set);
@@ -2122,7 +2140,8 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
             pp_send(3,client_point_set_store[i],
                             client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
-	}//end myid == owner_id
+	
+    }//end myid == owner_id
 
 
     //Clients recevie their point sets back from owner
@@ -2144,6 +2163,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	compute_center_of_mass_velo(&geom_set);
 
     /*
+     * REMOVE
 	if(!debugging("collision_off"))
     {
         if (myid == owner_id)

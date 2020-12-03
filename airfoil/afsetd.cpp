@@ -1535,30 +1535,32 @@ extern void copy_from_client_point_set(
 	double *client_L,
 	double *client_U)
 {
-	int j,k;
-	long gindex;
-	for (j = 0; j < client_size; j++)
+	for (int j = 0; j < client_size; ++j)
+    {
+        GLOBAL_POINT cpoint = client_point_set[j];
+
+        bool skip_copy = false;
+        for (int k = 0; k < 3; ++k)
         {
-            gindex = client_point_set[j].gindex;
-            for (k = 0; k < 3; k++)
-	    {
-	    	if (client_point_set[j].x[k] < client_L[k] ||
-		    client_point_set[j].x[k] >= client_U[k])
-		    break;
-	    }
-	    if (k < 3) continue;
-            for (k = 0; k < 3; k++)
+            if (cpoint.x[k] < client_L[k] || cpoint.x[k] >= client_U[k])
             {
-                point_set[gindex]->x[k] = client_point_set[j].x[k];
-                point_set[gindex]->v[k] = client_point_set[j].v[k];
-                point_set[gindex]->f[k] = client_point_set[j].f[k];
-                point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
-                point_set[gindex]->fluid_accel[k] = 
-					client_point_set[j].fluid_accel[k];
-                point_set[gindex]->other_accel[k] = 
-					client_point_set[j].other_accel[k];
+                skip_copy = true;
+                break;
             }
+        }    
+        if (skip_copy) continue;
+
+        long gindex = cpoint.gindex;
+        for (int k = 0; k < 3; ++k)
+        {
+            point_set[gindex]->x[k] = cpoint.x[k];
+            point_set[gindex]->v[k] = cpoint.v[k];
+            point_set[gindex]->f[k] = cpoint.f[k];
+            point_set[gindex]->impuls[k] = cpoint.impuls[k];
+            point_set[gindex]->fluid_accel[k] = cpoint.fluid_accel[k];
+            point_set[gindex]->other_accel[k] = cpoint.other_accel[k];
         }
+    }
 }	/* end copy_from_client_point_set */
 
 extern void copy_to_client_point_set(

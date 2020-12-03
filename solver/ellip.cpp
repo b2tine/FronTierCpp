@@ -413,14 +413,14 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //      variable types into the solver library.
                     //getRectangleCenter(index_nb[l],coords_ghost);
                     
+                /*
                 double intfc_crx_coords[MAXD];
                 double coords_reflect[MAXD];
                 double nor[MAXD];
                 
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor);
-
-                /*
+                */
                  
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
@@ -428,10 +428,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                         
                 //Reflect the ghost point through intfc-mirror at crossing.
                 //first reflect across the grid line containing intfc crossing,
-                //which is just the coords at the current index.
                 double coords_reflect[MAXD];
                 for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = top_L[m] + top_h[m]*icoords[m];
+                    coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
 
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
@@ -451,14 +450,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
 
-                */
-
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.
                 double pres_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,
-                        coords_reflect,soln,getStateVar,
-                        &pres_reflect,&soln[index]);
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&pres_reflect,&soln[index]);
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.
@@ -1055,6 +1051,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	
 	    k0 = D[index];
 	    num_nb = 0;
+
+        //TODO: This loop should be consolidated with the next loop,
+        //      no need to check the intersection twice like we currently are ...
 	    for (l = 0; l < 6; ++l)
 	    {
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
@@ -1124,28 +1123,28 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 //TODO: solve() (this function) should be a method of the incompressible fluid solver
                 //      so we can use functions such as the one below, and avoid hard coding
-                //      variable types into the solver library.
-                    //getRectangleCenter(index_nb[l],coords_ghost);
+                //      variable types into the solver library. And use methods provided such as
+                //
+                //          getRectangleCenter(index_nb[l],coords_ghost);
                     
+                /*
                 double intfc_crx_coords[MAXD];
                 double coords_reflect[MAXD];
                 double nor[MAXD];
                 
+                //TODO: revert back to other method
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor);
+                */
 
-                /*
-                
-                double nor[MAXD];
-                FT_NormalAtGridCrossing(front,icoords,
-                        dir[l],comp,nor,&hs,crx_coords);
-                        
                 //Reflect the ghost point through intfc-mirror at crossing.
-                //first reflect across the grid line containing intfc crossing,
-                //which is just the coords at the current index.
+                double nor[MAXD];
+                FT_NormalAtGridCrossing(front,icoords,dir[l],comp,nor,&hs,crx_coords);
+                        
+                //first reflect across the grid line containing intfc crossing
                 double coords_reflect[MAXD];
                 for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = top_L[m] + top_h[m]*icoords[m];
+                    coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
 
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
@@ -1164,8 +1163,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
-                
-                */
+
+                //TODO: Do we want to push the reflected point a little farther out
+                //      from the interface to better ensure interpolating on the opposite
+                //      side??
 
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.

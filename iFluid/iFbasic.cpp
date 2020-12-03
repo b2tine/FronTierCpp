@@ -4434,12 +4434,17 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
 
     for (int j = 0; j < dim; ++j)
+    {
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
-        
-    //TODO: Try using FT_ReflectPointThroughBdry()
-    
+            //coords_reflect[j] = coords_ghost[j];
+    }
+
     // Reflect ghost point through intfc-mirror at crossing
-    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+    
+    // first reflect across the grid line containing intfc crossing
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = 2.0*crx_coords[j] - coords_ghost[j];
+            //coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
     
     double vn = 0.0;
     double vec[MAXD] = {0.0};
@@ -4521,6 +4526,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	double** vel,
 	double* v_slip)
 {
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+
     int ghost_ic[MAXD];
     double coords[MAXD], crx_coords[MAXD];
     double coords_reflect[MAXD], coords_ghost[MAXD];
@@ -4533,26 +4541,58 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ghost_ic[i] = icoords[i];
     }
-	
+    
     ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
     
     for (int j = 0; j < dim; ++j)
+    {
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
-        
+        //coords_reflect[j] = coords_ghost[j];
+    }
+
+    /*
+    ////////////////////////////////////////////////////////////////////////
+    //TODO: use grid intersection normal based version of reflection
+    //      instead of the nearest intrf point version used in the below call.
+    
     int ghost_index = d_index(ghost_ic,top_gmax,dim);
     COMPONENT comp_ghost = top_comp[ghost_index];
-    
-    ////////////////////////////////////////////////////////////////////////
-    //TODO: rewrite for clarity
+     
     FT_ReflectPointThroughBdry(front,hs,coords_ghost,
             comp_ghost,crx_coords,coords_reflect,nor);
     
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-    double dist_reflect = FT_GridSizeInDir(nor,front);
+    double dist_reflect = 1.25*FT_GridSizeInDir(nor,front);
         //double dist_reflect = distance_between_positions(coords_reflect,crx_coords,dim);
     for (int j = 0; j < dim; ++j)
         coords_reflect[j] = crx_coords[j] - dist_reflect*nor[j];
     ////////////////////////////////////////////////////////////////////////
+    */
+
+    // Reflect ghost point through intfc-mirror at crossing
+    GRID_DIRECTION dir = (nb == 0) ? ldir[idir] : rdir[idir];
+    FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+	
+    // first reflect across the grid line containing intfc crossing
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = 2.0*crx_coords[j] - coords_ghost[j];
+            //coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+    
+    double vn = 0.0;
+    double vec[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        vec[j] = coords_reflect[j] - crx_coords[j];
+        vn += vec[j]*nor[j];
+    }
+
+    for (int j = 0; j < dim; ++j)
+        vec[j] = 2.0*vn*nor[j] - vec[j];
+
+    //The desired reflected point
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + vec[j];
 
     double vel_reflect[MAXD] = {0.0};
     double mu_reflect;
@@ -4569,8 +4609,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
                 getStateMu,&mu_reflect,&field->mu[index]);
 
-    double vn = 0.0;
     double vel_rel[MAXD] = {0.0};
+    vn = 0.0;
 
     for (int j = 0; j < dim; ++j)
     {
@@ -4578,6 +4618,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += vel_rel[j]*nor[j];
     }
 
+    //TODO: compute dist_ghost and dist_reflect;
+    for (int j = 0; j < dim; ++j)
+        v_slip[j] = vel_reflect[j] - vn*nor[j];
+        //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
+
+    //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
+    /*
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
 
@@ -4585,7 +4632,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     {
 	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
 	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
-	        //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
@@ -4600,23 +4646,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     //
     //      where v_tan_ghost and v_tan_reflect are relative velocities
     //      with respect to the interface.
-    
-    double mul;
-    double rhol;
-    switch (comp)
-    {
-        case LIQUID_COMP1:
-            mul = m_mu[0];
-            rhol = m_rho[0];
-            break;
-        case LIQUID_COMP2:
-            mul = m_mu[1];
-            rhol = m_rho[1];
-            break;
-        default:
-            printf("Unknown fluid COMPONENT: %d\n",comp);
-            LOC(); clean_up(EXIT_FAILURE);
-    }
     
     if (debugging("slip_boundary"))
     {
@@ -4633,6 +4662,25 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
     }
 
+    double mul;
+    double rhol;
+
+    switch (comp)
+    {
+        case LIQUID_COMP1:
+            mul = m_mu[0];
+            rhol = m_rho[0];
+            break;
+        case LIQUID_COMP2:
+            mul = m_mu[1];
+            rhol = m_rho[1];
+            break;
+        default:
+            printf("Unknown fluid COMPONENT: %d\n",comp);
+            LOC(); clean_up(EXIT_FAILURE);
+    }
+    
+    //TODO: NEED TO FIX solving spadling formula with secant method -- diverges in current form
     double tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mul,rhol);
 
     double vel_ghost_tan[MAXD] = {0.0};
@@ -4650,6 +4698,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
+
+    //TODO: need to revert back to world frame by adding back vel_intfc
+    
+    */
 }
 
 

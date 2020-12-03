@@ -1432,13 +1432,13 @@ static bool PointToTri(
         //      Disabling fatal error for now.
         //
         //      Determine why this happens, and if ignoring it is an
-        //      acceptable solution. There is a danger of dividing by
-        //      zero when computing the barycentric weights w[0] and w[1],
-        //      however large but noninfinite weights will result in an
-        //      early exit and return false. 
+        //      acceptable solution. There is a danger of dividing by zero
+        //      when computing the barycentric weights w[0] and w[1],
+        //      however large but non-infinite weights will result in an
+        //      early exit and return false at the tolerance check below. 
         printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
-            //clean_up(ERROR);
+            //LOC(); clean_up(ERROR);
 	}
 	else
     {
