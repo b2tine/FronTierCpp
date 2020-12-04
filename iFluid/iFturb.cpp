@@ -321,6 +321,12 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
                 vel_nb[nb] = vel[l][index_nb];
             }
+            else if (wave_type(hs) == ELASTIC_BOUNDARY)
+            {
+                //TODO: Is this the correct approach??
+                int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                vel_nb[nb] = vel[l][index_nb];
+            }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
@@ -351,9 +357,8 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             }
             else
             {
-                //wave_type(hs) == ELASTIC_BOUNDARY
-                //printf("ERROR: Unknown Boundary Type\n");
-                //LOC(); clean_up(EXIT_FAILURE);
+                printf("ERROR: Unknown Boundary Type\n");
+                LOC(); clean_up(EXIT_FAILURE);
             }
         }
 
