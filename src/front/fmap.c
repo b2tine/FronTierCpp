@@ -3277,6 +3277,7 @@ EXPORT	boolean FrontReflectPointViaNeumannBdry(
 	    if (int_comp == negative_component(hsbdry))
 		nor[i] = -nor[i];
 	    dcrds[i] = coordsbdry[i] - coords[i];
+        //TODO: why not using vn = Dotd(dcrds,nor,dim), and vn*nor[i]??
 	    coordsref[i] = coords[i] + 2.0*(dcrds[i] - dcrds[i]*fabs(nor[i]));
 	}
 	return YES;
@@ -3920,11 +3921,14 @@ EXPORT void FT_FreeThese(
 	return;
 }		/*end FT_FreeThese*/
 
+//NOTE: coords should be the position of a ghost fluid point
+//      that we wish to reflect back across the intfc into the
+//      comp labled subdomain (the real fluid side of the intfc)
 EXPORT	boolean FT_ReflectPointThroughBdry(
 	Front		*front,
 	HYPER_SURF	*hs,
 	double		*coords,
-	COMPONENT	int_comp,
+	COMPONENT	comp,
 	double		*coordsbdry,
 	double		*coordsref,
 	double		*nor)
@@ -3936,6 +3940,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	double		   v[MAXD];
 	int		   i, dim = front->rect_grid->dim;
 
+    //TODO: pass specified wave_type as function arg?
 	if (wave_type(hs) != NEUMANN_BOUNDARY &&
 	    wave_type(hs) != MOVABLE_BODY_BOUNDARY &&
 	    wave_type(hs) != GROWING_BODY_BOUNDARY &&
@@ -3947,42 +3952,70 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	if (dim != 1)
 	{
 	    if (!hs || !hs->interface)
-		return NO;
-	    if (!nearest_interface_point(coords,int_comp,hs->interface,
+            return NO;
+
+        //TODO: do we want INCLUDE_BOUNDARIES ???
+        if (!nearest_interface_point(coords,comp,hs->interface,
 			                INCLUDE_BOUNDARIES,hs,coordsbdry,t,
 					&hsebdry,&hsbdry))
-		return NO;
+            return NO;
 	}
 
 	switch (dim)
 	{
-	case 1:
-	    coordsbdry[0] = Coords(Point_of_hs(hs))[0];
-	    nor[0] = (coords[0] <
-			0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
-			1.0 : -1.0;
-	    break;
-	case 2:
-	    normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
-	    normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
-	    for (i = 0; i < dim; ++i)
-	    	nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
-	    break;
-	case 3:
-	{
-	    const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
-	    for (i = 0; i < dim; ++i)
-	    	nor[i] = tnor[i];
+        case 1:
+        {
+            coordsbdry[0] = Coords(Point_of_hs(hs))[0];
+            nor[0] = (coords[0] <
+                0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
+                1.0 : -1.0;
+            break;
+        }
+	
+        case 2:
+        {
+            normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
+            normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
+            for (i = 0; i < dim; ++i)
+                nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
+            break;
+        }
+
+        case 3:
+        {
+            const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
+            for (i = 0; i < dim; ++i)
+                nor[i] = tnor[i];
+            break;
+        }
 	}
-	    break;
-	}
-	if (int_comp == negative_component(hsbdry))
+	
+    if (comp == negative_component(hsbdry))
 	{
 	    for (i = 0; i < dim; ++i)
-		nor[i] *= -1.0;
+            nor[i] *= -1.0;
 	}
 
-	double vn = 0.0;
+    // The natural reflection location is the same distance from the
+    // interface as the ghost point. The arrays, coordsbdy and nor, can
+    // be used to modify the reflection location after returning to the
+    // calling function.
+    double dist_ghost = distance_between_positions(coords,coordsbdry,dim);
+    double dist_reflect = dist_ghost;
+
+    double vn = 0.0;
+	for (i = 0; i < dim; ++i)
+        coordsref[i] = coordsbdry[i] + dist_reflect*nor[i];
+        
+
+    //TODO: It's unclear if it's possible for the normal vector, nor,
+    //      to NOT be parallel to the vector v = coords - coordsbdry,
+    //      or what this would potentially indicate.
+
+
+    //TODO: how valid/important is the below modification??
+    /*
+    double vn = 0.0;
 	for (i = 0; i < dim; ++i)
 	{
 	    v[i] = coords[i] - coordsbdry[i];
@@ -3991,6 +4024,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 
 	for (i = 0; i < dim; ++i)
 	    coordsref[i] = coords[i] - 2.0*vn*nor[i];
+    */
 
 	return YES;
 }		/*end FT_ReflectPointThroughBdry*/

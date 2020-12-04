@@ -27,10 +27,10 @@ struct SpaldingWallLaw
         {
             if (u_star < MACH_EPS)
             {
-                printf("ERRORO: division by zero! (u_star < 0)\n");
+                printf("ERROR: division by zero! (u_star < 0)\n");
                 LOC(); clean_up(EXIT_FAILURE);
             }
-            u_plus = u/ustar;
+            u_plus = u/u_star;
         }
         
         double Kup = 0.41*u_plus;

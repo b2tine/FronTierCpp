@@ -1157,7 +1157,7 @@ LIB_LOCAL boolean nearest_interface_point_within_range3d(
 	{
 	    int j;
 
-	    ans[i] = 0.;
+	    ans[i] = 0.0;
 	    for (j = 0; j < 3; ++j)
 	    	ans[i] += Closest.a[j]*Coords(Point_of_tri(Closest.tri)[j])[i];
 	    a[i] = Closest.a[i];

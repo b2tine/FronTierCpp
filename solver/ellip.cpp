@@ -404,33 +404,35 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 
                 double coords_ghost[MAXD];
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                double coords_reflect[MAXD];
+                
+                /*
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                //////////////////////////////////////////////////////////////////////
 
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                    coords_reflect[m] = coords_ghost[m];
+                }
 
                 //TODO: solve() (this function) should be a method of the incompressible fluid solver
                 //      so we can use functions such as the one below, and avoid hard coding
                 //      variable types into the solver library.
                     //getRectangleCenter(index_nb[l],coords_ghost);
                     
-                /*
-                double intfc_crx_coords[MAXD];
-                double coords_reflect[MAXD];
-                double nor[MAXD];
-                
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);
-                */
-                 
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
                         
                 //Reflect the ghost point through intfc-mirror at crossing.
                 //first reflect across the grid line containing intfc crossing,
-                double coords_reflect[MAXD];
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+                coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                
+                //TODO: verify no conceptual difference between above and below ...
+                    //for (int m = 0; m < dim; ++m)
+                        //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
 
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
@@ -449,6 +451,31 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
+                
+                ///////////////////////////////////////////////////////////////////////
+                */
+
+
+
+                ///////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
+                /////////////////////////////////////////////////////////////////////
+                
+                for (int m = 0; m < dim; ++m)
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+
+                double intfc_crx_coords[MAXD];
+                double nor[MAXD];
+                
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
+
+                double dist_reflect = FT_GridSizeInDir(nor,front);
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
+                
+                ////////////////////////////////////////////////////////////////////
+
 
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.
@@ -1119,6 +1146,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 double coords_reflect[MAXD] = {0.0};
                 double coords_ghost[MAXD] = {0.0};
 
+                /*
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                //////////////////////////////////////////////////////////////////////
+
                 for (int m = 0; m < dim; ++m)
                 {
                     coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
@@ -1131,16 +1163,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //
                 //          getRectangleCenter(index_nb[l],coords_ghost);
                     
-                /*
-                double intfc_crx_coords[MAXD];
-                double coords_reflect[MAXD];
-                double nor[MAXD];
-                
-                //TODO: revert back to other method
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);
-                */
-
                 //Reflect the ghost point through intfc-mirror at crossing.
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,dir[l],comp,nor,&hs,crx_coords);
@@ -1149,10 +1171,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
                 //TODO: verify no conceptual difference between above and below ...
-                /*
-                    for (int m = 0; m < dim; ++m)
-                        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-                */
+                //
+                //    for (int m = 0; m < dim; ++m)
+                //        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+                //
 
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
@@ -1175,6 +1197,30 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //TODO: Do we want to push the reflected point a little farther out
                 //      from the interface to better ensure interpolating on the opposite
                 //      side??
+                
+                ////////////////////////////////////////////////////////////////////
+                */      
+
+
+                ///////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
+                /////////////////////////////////////////////////////////////////////
+                
+                for (int m = 0; m < dim; ++m)
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+
+                double intfc_crx_coords[MAXD];
+                double nor[MAXD];
+                
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
+
+                double dist_reflect = FT_GridSizeInDir(nor,front);
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
+                
+                ////////////////////////////////////////////////////////////////////
+
 
                 //Interpolate the pressure at the reflected point,
                 //which will serve as the ghost point pressure.

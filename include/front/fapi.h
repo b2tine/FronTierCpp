@@ -775,13 +775,13 @@ extern "C" {
 /*! \fn void FT_ReflectPointThroughBdry(Front *front, HYPER_SURF *hs, double *coords, int comp, double *coords_bdry, double *coords_ref, double *nor)
  *  \ingroup GEOMETRY
     \brief Given the coordinates coords, this function find the reflected
-     coordinates coordsrefl through the hypersurface hs, it also provide
+     coordinates coords_ref through the hypersurface hs, it also provide
      the normal vector nor at the reflection. Return NO if conditions not
      satisfied.
     \param front @b in	Pointer to Front.
     \param hs @b in  Pointer to the hypersurface (curve in 2D, surface in 3D).
-    \param comp @b in  Component of coords.
     \param coords @b in	Coordinates to be reflected.
+    \param comp @b in  Component of coords.
     \param coords_bdry @b out boundary point of reflection.
     \param coords_ref @b out Coordinates after reflection.
     \param nor @b out Normal vector at reflection.
@@ -794,7 +794,7 @@ extern "C" {
 				int comp ,
 				double *coords_bdry ,
 				double *coords_ref ,
-   				double *normal );
+   				double *normal);
 
 /*! \fn void FT_SetDirichletBoundary(Front *front, void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER), const char *state_func_name, POINTER state_func_params, POINTER state, HYPER_SURF *hs)
  *  \ingroup BOUNDARY

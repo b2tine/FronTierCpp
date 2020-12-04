@@ -343,10 +343,17 @@ public:
 	void applicationSetStates();
 	
     double computeFieldPointPressureJump(int*,double,double);
+       
         void computeFieldPointGradJump(int*,double*,double*);
 
+    
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+        
+        void setSlipBoundaryGNOR(int* icoords, int idir, int nb, int comp,
+                HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+        void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+                HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
 	//For debugging test
 	void compareWithBaseSoln(void);
