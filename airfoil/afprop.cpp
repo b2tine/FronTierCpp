@@ -92,12 +92,16 @@ extern void elastic_point_propagate(
 	newsr = (STATE*)right_state(newp);
 
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
-
+    
+    /*
+    //TODO: Remove, normal vector is already normalized
+    //
     //TODO: check for division by zero
     double mag_nor = Magd(nor,dim);
     printf("mag_nor = %g\n", mag_nor); //temp debugging (to be removed)
     for (int j = 0; j < dim; ++j)
         nor[j] /= mag_nor;
+    */
 
     // Use length of grid block diagonal instead of FT_GridSizeInDir() for now.
     double dist_reflect = 0.0;
