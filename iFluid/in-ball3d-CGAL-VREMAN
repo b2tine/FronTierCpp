@@ -97,17 +97,17 @@ Type y to make vector vorticity field movie: y
 
 Enter yes for debugging: yes
 Enter the debugging string: PETSc 
-Enter the debugging string: slip_boundary 
+Enter the debugging stringX: slip_boundary 
 
-Enter the debugging string: Xtrace
-Enter the debugging string: XCLOCK
-Enter the debugging string: Xdirichlet_bdry
-Enter the debugging string: Xgrid_line_comp
-Enter the debugging string: Xseg_comp
-Enter the debugging string: Xstep_size
-Enter the debugging string: Xcheck_div
-Enter the debugging string: Xelliptic_error
-Enter the debugging string: Xmake_grid_intfc
+Enter the debugging stringX: trace
+Enter the debugging stringX: CLOCK
+Enter the debugging stringX: dirichlet_bdry
+Enter the debugging stringX: grid_line_comp
+Enter the debugging stringX: seg_comp
+Enter the debugging stringX: step_size
+Enter the debugging stringX: check_div
+Enter the debugging stringX: elliptic_error
+Enter the debugging stringX: make_grid_intfc
 
 Enter the debugging string: Xsample_velocity
 Enter the sample line typeX: X

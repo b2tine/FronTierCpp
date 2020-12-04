@@ -470,7 +470,21 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor);
 
-                double dist_reflect = FT_GridSizeInDir(nor,front);
+                //TODO: check for division by zero
+                double mag_tnor = Magd(nor,dim);
+                for (int j = 0; j < dim; ++j)
+                    nor[j] /= mag_tnor;
+
+                //TODO: FT_GridSizeInDir() is giving very large values on 3d runs.
+                //
+                    //double dist_reflect = FT_GridSizeInDir(nor,front);
+
+                // Compute dist_reflect as the diagonal length of rect grid blocks instead
+                double dist_reflect = 0.0;
+                for (int m = 0; m < dim; ++m)
+                    dist_reflect += sqr(top_h[m]);
+                dist_reflect = sqrt(dist_reflect);
+
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
                 
@@ -1215,7 +1229,22 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor);
 
-                double dist_reflect = FT_GridSizeInDir(nor,front);
+                //TODO: check for division by zero
+                double mag_tnor = Magd(nor,dim);
+                for (int j = 0; j < dim; ++j)
+                    nor[j] /= mag_tnor;
+
+                //TODO: FT_GridSizeInDir(nor,front) returning large values values
+                //      on 3d runs.
+                //
+                    //double dist_reflect = FT_GridSizeInDir(nor,front);
+                
+                // Compute dist_reflect as the diagonal length of rect grid blocks instead
+                double dist_reflect = 0.0;
+                for (int m = 0; m < dim; ++m)
+                    dist_reflect += sqr(top_h[m]);
+                dist_reflect = sqrt(dist_reflect);
+
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
                 

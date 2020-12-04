@@ -4846,6 +4846,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     ////////////////////////////////////////////////////////////////////////
     FT_ReflectPointThroughBdry(front,hs,coords_ghost,
             comp,crx_coords,coords_reflect,nor);
+
+    //TODO: check for division by zero
+    double mag_tnor = Magd(nor,dim);
+    for (int j = 0; j < dim; ++j)
+        nor[j] /= mag_tnor;
         
         // using comp_ghost was unneccesary (TO BE REMOVED)
         /* 
@@ -4856,13 +4861,38 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         */
     
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-    double dist_reflect = FT_GridSizeInDir(nor,front);
-    //TODO: look into details of FT_GridSizeInDir()
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
+    
+    //TODO: look into details of FT_GridSizeInDir(),
+    //      is giving very large values on 3d runs.
+    
+    // Compute dist_reflect as the diagonal length of rect grid blocks
+    double dist_reflect = 0.0;
+    for (int j = 0; j < 3; ++j)
+         dist_reflect += sqr(top_h[j]);
+    dist_reflect = sqrt(dist_reflect);
+
+    //TODO: look for potential ways to adjust dist_reflect based
+    //      on geometry of FT_ReflectPointThroughBdry().
     
     for (int j = 0; j < dim; ++j)
         coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
     ////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////
+    //Temp debugging
+    if (debugging("slip_boundary"))
+    {
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
+                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
+    }
+    ////////////////////////////////////////////////////////////////////////
+   
     double vel_reflect[MAXD] = {0.0};
     double mu_reflect;
     
