@@ -4852,19 +4852,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     for (int j = 0; j < dim; ++j)
         nor[j] /= mag_nor;
         
-        // using comp_ghost was unneccesary (TO BE REMOVED)
-        /* 
-            int ghost_index = d_index(ghost_ic,top_gmax,dim);
-            COMPONENT comp_ghost = top_comp[ghost_index];
-            FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                    comp_ghost,crx_coords,coords_reflect,nor);
-        */
-    
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-        //double dist_reflect = FT_GridSizeInDir(nor,front);
     
     //TODO: look into details of FT_GridSizeInDir(),
     //      is giving very large values on 3d runs.
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
     
     // Compute dist_reflect as the diagonal length of rect grid blocks
     double dist_reflect = 0.0;
