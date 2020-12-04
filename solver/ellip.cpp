@@ -1116,10 +1116,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 int idir = l/2; int nb = l%2;
                 icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
                 
-                double coords_ghost[MAXD];
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                double coords_reflect[MAXD] = {0.0};
+                double coords_ghost[MAXD] = {0.0};
 
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                    coords_reflect[m] = coords_ghost[m];
+                }
 
                 //TODO: solve() (this function) should be a method of the incompressible fluid solver
                 //      so we can use functions such as the one below, and avoid hard coding
@@ -1142,9 +1146,13 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 FT_NormalAtGridCrossing(front,icoords,dir[l],comp,nor,&hs,crx_coords);
                         
                 //first reflect across the grid line containing intfc crossing
-                double coords_reflect[MAXD];
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+                coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                
+                //TODO: verify no conceptual difference between above and below ...
+                /*
+                    for (int m = 0; m < dim; ++m)
+                        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+                */
 
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
