@@ -375,7 +375,7 @@ double computeWallShearStress(
         double rho)
 {
     double u_friction = computeFrictionVelocity(u_tan,walldist,mu,rho);
-    double tau_wall = sqrt(u_friction)*rho;
+    double tau_wall = sqr(u_friction)*rho;
     return tau_wall;
 }
 
@@ -387,7 +387,8 @@ double computeFrictionVelocity(
 {
     SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
 
-    double u0 = 0.0;
+    //TODO: how to pick initial guesses for u_friction???
+    double u0 = 0.001;
     double u1 = 5.0; //temp val initial guess for prototyping
     double u_friction = secantMethod(wallfunc,u0,u1);
     return u_friction;

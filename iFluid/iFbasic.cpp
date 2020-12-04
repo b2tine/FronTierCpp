@@ -4630,12 +4630,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
         vn += vel_rel[j]*nor[j];
     }
 
-    //TODO: compute dist_ghost and dist_reflect ...
-    //
-    //      find nearest interface point to coords_midpoint, and then
-    //      compute the distances from it to coords_reflect and coords_ghost
-    //      to obtain dist_reflect and dist_ghost respectively.
-    
+    // compute dist_ghost and dist_reflect
     double coords_nip[MAXD] = {0.0};
     double barycentric_weights[MAXD] = {0.0};
     HYPER_SURF_ELEMENT* hsurf_elem;

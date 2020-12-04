@@ -22,9 +22,23 @@ struct SpaldingWallLaw
     {
         //TODO: dividing by zero whe u_star = 0 is an initial guess,
         //      need a better formulation of the root finding problem.
-        double Kup = 0.41*u/u_star;
-        return exp(0.41*B)*(y/nu*u_star - u/u_star)
-            + 1.0 + Kup + 0.5*Kup*Kup + Kup*Kup*Kup/6.0 - exp(Kup);
+        double u_plus = 0.0;
+        if (u >= MACH_EPS)
+        {
+            if (u_star < MACH_EPS)
+            {
+                printf("ERRORO: division by zero! (u_star < 0)\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+            u_plus = u/ustar;
+        }
+        
+        double Kup = 0.41*u_plus;
+        
+        double exp_term =
+            exp(-0.41*B)*(exp(Kup) - 1.0 - Kup - 0.5*Kup*Kup - Kup*Kup*Kup/6.0);
+
+        return y/nu*sqr(u_star) - exp_term*u_star - u;
     }
 };
 
