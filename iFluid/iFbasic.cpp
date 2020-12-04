@@ -4848,9 +4848,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             comp,crx_coords,coords_reflect,nor);
 
     //TODO: check for division by zero
-    double mag_tnor = Magd(nor,dim);
+    double mag_nor = Magd(nor,dim);
     for (int j = 0; j < dim; ++j)
-        nor[j] /= mag_tnor;
+        nor[j] /= mag_nor;
         
         // using comp_ghost was unneccesary (TO BE REMOVED)
         /* 

@@ -2546,7 +2546,6 @@ EXPORT 	double	FT_GridSizeInDir(
 {
 	int dim = front->rect_grid->dim;
 	double *h = front->rect_grid->h;
-
 	return grid_size_in_direction(dir,h,dim);
 }	/* end FT_GridSizeInDir */	
 

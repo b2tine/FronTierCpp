@@ -62,13 +62,14 @@ extern void elastic_point_propagate(
     INTERFACE *grid_intfc = front->grid_intfc;
     RECT_GRID *top_grid = &topological_grid(grid_intfc);
     int* top_gmax = top_grid->gmax;
+    double* top_h = top_grid->h;
 
 	double *vort = field->vort;
 	double **vel = field->vel;
 	double *pres = field->pres;
 	double *mu = field->mu;
 	COMPONENT base_comp = positive_component(oldhs);
-	double pp[MAXD],pm[MAXD],nor[MAXD],h;
+	double pp[MAXD],pm[MAXD],nor[MAXD];
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
@@ -91,23 +92,24 @@ extern void elastic_point_propagate(
 	newsr = (STATE*)right_state(newp);
 
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
-	h = FT_GridSizeInDir(nor,front);
 
-    //TODO: Double check FT_GridSizeInDir(nor,front) computation.
-    //      Has given very large values before -- see setSlipBoundary().
-    //
-    //      See below block of code for alt grid size based on
-    //      length of diagonal of blocks.
-    
-    /*
+    //TODO: check for division by zero
+    double mag_nor = Magd(nor,dim);
+    printf("mag_nor = %g\n", mag_nor); //temp debugging (to be removed)
+    for (int j = 0; j < dim; ++j)
+        nor[j] /= mag_nor;
+
+    // Use length of grid block diagonal instead of FT_GridSizeInDir() for now.
     double dist_reflect = 0.0;
     for (int j = 0; j < 3; ++j)
           dist_reflect += sqr(top_h[j]);
     dist_reflect = sqrt(dist_reflect);
-    h = dist_reflect;
-    */
+    double h = dist_reflect;
 
-    //TODO: probably need to normalize nor;
+    //TODO: check FT_GridSizeInDir(nor,front) computation.
+    //      Has given very large values before -- see setSlipBoundary().
+	    //double h = FT_GridSizeInDir(nor,front);
+    
 	for (int i = 0; i < dim; ++i)
 	{
 	    pm[i] = Coords(oldp)[i] - h*nor[i];
