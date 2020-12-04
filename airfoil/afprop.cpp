@@ -92,9 +92,10 @@ extern void elastic_point_propagate(
 
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
 	h = FT_GridSizeInDir(nor,front);
-    //check h val
 
-    //TODO: double check FT_GridSizeInDir(nor,front) computation
+    //TODO: Double check FT_GridSizeInDir(nor,front) computation.
+    //      Has given very large values before -- see setSlipBoundary().
+    //
     //      See below block of code for alt grid size based on
     //      length of diagonal of blocks.
     
@@ -106,6 +107,7 @@ extern void elastic_point_propagate(
     h = dist_reflect;
     */
 
+    //TODO: probably need to normalize nor;
 	for (int i = 0; i < dim; ++i)
 	{
 	    pm[i] = Coords(oldp)[i] - h*nor[i];
