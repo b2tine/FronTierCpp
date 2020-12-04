@@ -4555,10 +4555,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     double coords_reflect[MAXD], coords_ghost[MAXD];
     double nor[MAXD];
     
-    double  vel_intfc[MAXD];
+    double vel_intfc_gcrx[MAXD];
     for (int i = 0; i < dim; ++i)
     {
-        vel_intfc[i] = (*getStateVel[i])(state);
+        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ghost_ic[i] = icoords[i];
     }
@@ -4627,7 +4627,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     //Temp debugging
     if (debugging("slip_boundary"))
     {
-        printf("setSlipBoundaryGNOR() DEBUGGING\n");
+        printf("\nsetSlipBoundaryGNOR() DEBUGGING\n");
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
         fprint_general_vector(stdout,"coords_nip",coords_nip,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
@@ -4642,7 +4642,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     // before computing th the normal component of relative velocity with
     // respect to the intfc.
     
-    //double  vel_intfc_nip[MAXD] = {0.0};
+    double  vel_intfc[MAXD] = {0.0};
     switch (dim)
 	{
         case 2:
@@ -4715,10 +4715,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     for (int j = 0; j < dim; ++j)
     {
         vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+            //vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
         vn += vel_rel[j]*nor[j];
     }
 
-    //This would be omitted if lower code implementation finished
+    //TODO: This would be omitted if lower code implementation finished
     for (int j = 0; j < dim; ++j)
     {
         v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
@@ -4727,6 +4728,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     
 
     //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
+    //
+    //NOTE: setSlipBoundaryNIP() development is ahead
+    //      and should be copied/merged here.
+    
     /*
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
@@ -4755,7 +4760,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         printf("setSlipBoundaryGNOR() DEBUGGING\n");
         fprint_general_vector(stdout,"coords",coords,dim,"\n");
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
-        fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",coords_nip,dim,"\n");
         fprint_general_vector(stdout,"normal",nor,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
         printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
@@ -4792,6 +4797,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         vel_ghost_tan[j] =
             vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
 
+        //TODO: need to revert back to world frame by adding back vel_intfc
         v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
             //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
             //v_slip[j] += vel_intfc[j];
@@ -4803,9 +4809,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
-
-    //TODO: need to revert back to world frame by adding back vel_intfc
-    
     */
 }
 
@@ -4829,10 +4832,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     double coords_reflect[MAXD], coords_ghost[MAXD];
     double nor[MAXD];
     
-    double  vel_intfc[MAXD];
+    double vel_intfc_gcrx[MAXD];
     for (int i = 0; i < dim; ++i)
     {
-        vel_intfc[i] = (*getStateVel[i])(state);
+        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
         coords[i] = top_L[i] + icoords[i]*top_h[i];
         ghost_ic[i] = icoords[i];
     }
@@ -4844,13 +4847,55 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
     
     ////////////////////////////////////////////////////////////////////////
-    FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-            comp,crx_coords,coords_reflect,nor);
+    double intrp_coeffs[MAXD] = {0.0};
+    HYPER_SURF_ELEMENT* hsurf_elem;
+    HYPER_SURF* hsurf;
 
-    //TODO: check for division by zero
+    FT_ReflectPointThroughBdry(front,hs,coords_ghost,comp,
+            crx_coords,coords_reflect,nor,intrp_coeffs,hsurf_elem,hsurf);
+
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+        {
+            STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+            STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+
+            for (int i = 0; i < dim; ++i)
+            {
+                vel_intfc[i] =
+                    (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+            }
+
+            break;
+        }
+
+        case 3:
+        {
+            TRI* nearTri = Tri_of_hse(hsurf_elem);
+            
+            STATE* st[3];
+            for (int j = 0; j < 3; ++j)
+                st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+
+            for (int i = 0; i < dim; ++i)
+            {
+                vel_intfc[i] = 0.0;
+                for (int j = 0; j < 3; ++j)
+                    vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+            }
+
+            break;
+        }
+	}
+    
+    /*
+    //Moved into FT_ReflectPointThroughBdry() -- remove once tested
     double mag_nor = Magd(nor,dim);
     for (int j = 0; j < dim; ++j)
         nor[j] /= mag_nor;
+    */
         
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
@@ -4884,7 +4929,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
                 dist_ghost, dist_reflect, dist_ghost/dist_reflect);
     }
     ////////////////////////////////////////////////////////////////////////
-   
+
     double vel_reflect[MAXD] = {0.0};
     double mu_reflect;
     
@@ -4909,16 +4954,16 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         vn += vel_rel[j]*nor[j];
     }
 
-    //This would be omitted if lower code implementation finished
+    //TODO: This would be omitted if lower code implementation finished
     for (int j = 0; j < dim; ++j)
     {
         v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
             //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
     }
     
-
-    //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
     /*
+    //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
+    
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
 
@@ -4943,10 +4988,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     if (debugging("slip_boundary"))
     {
-        printf("setSlipBoundaryNIP() DEBUGGING\n");
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
         fprint_general_vector(stdout,"coords",coords,dim,"\n");
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
-        fprint_general_vector(stdout,"crx_coords",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
         fprint_general_vector(stdout,"normal",nor,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
         printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
@@ -4954,6 +4999,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
         fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
     double mul;
@@ -4983,6 +5029,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         vel_ghost_tan[j] =
             vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
 
+        //TODO: need to revert back to world frame by adding back vel_intfc
         v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
             //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
             //v_slip[j] += vel_intfc[j];
@@ -4994,9 +5041,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
-
-    //TODO: need to revert back to world frame by adding back vel_intfc
-    
     */
 }
 

@@ -94,9 +94,7 @@ extern void elastic_point_propagate(
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
     
     /*
-    //TODO: Remove, normal vector is already normalized
-    //
-    //TODO: check for division by zero
+    //TODO: normal vector is already normalized --- Remove once tested
     double mag_nor = Magd(nor,dim);
     printf("mag_nor = %g\n", mag_nor); //temp debugging (to be removed)
     for (int j = 0; j < dim; ++j)

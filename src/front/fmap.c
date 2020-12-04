@@ -3930,12 +3930,20 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	COMPONENT	comp,
 	double		*coordsbdry,
 	double		*coordsref,
-	double		*nor)
+	double		*nor,
+	double		*intrp_coeff,
+	HYPER_SURF_ELEMENT *phse,
+	HYPER_SURF         *phs)
 {
-	HYPER_SURF	   *hsbdry;
-	HYPER_SURF_ELEMENT *hsebdry;
-	double		   ns[MAXD], ne[MAXD];
-	double		   t[MAXD];
+	HYPER_SURF_ELEMENT *hsebdry = phse;
+    HYPER_SURF *hsbdry = phs;
+	//HYPER_SURF_ELEMENT *hsebdry;
+    //HYPER_SURF *hsbdry;
+	
+    double *t = intrp_coeff;
+    //double		   t[MAXD];
+    
+    double		   ns[MAXD], ne[MAXD];
 	double		   v[MAXD];
 	int		   i, dim = front->rect_grid->dim;
 
@@ -3955,8 +3963,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 
         //TODO: do we want INCLUDE_BOUNDARIES ???
         if (!nearest_interface_point(coords,comp,hs->interface,
-			                INCLUDE_BOUNDARIES,hs,coordsbdry,t,
-					&hsebdry,&hsbdry))
+                    INCLUDE_BOUNDARIES,hs,coordsbdry,t,&hsebdry,&hsbdry))
             return NO;
 	}
 
@@ -3982,12 +3989,18 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 
         case 3:
         {
+            //NOTE: normal vector obtained from Tri_normal() is not normalized.
             const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
             for (i = 0; i < dim; ++i)
                 nor[i] = tnor[i];
             break;
         }
 	}
+    
+    //TODO: only needed for 3d?
+    double mag_nor = Magd(nor,dim);
+    for (int j = 0; j < dim; ++j)
+        nor[j] /= mag_nor; //TODO: should check for division by zero
 	
     if (comp == negative_component(hsbdry))
 	{

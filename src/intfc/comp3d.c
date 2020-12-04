@@ -1214,7 +1214,7 @@ LIB_LOCAL boolean long_nearest_interface_point3d(
 	eq_comps = equivalent_components_list(comp,&n_eq,intfc);
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    /* new made wall surface has no tris, should be excluded */
+	    /* newly made wall surface has no tris, should be excluded */
 	    if(first_tri(*s) == NULL)
 	        continue;
 	    
