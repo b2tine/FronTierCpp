@@ -798,29 +798,31 @@ static void compute_center_of_mass_velo(
 	    	xcan[j] /= area;
 	    }
 
+        //TODO: If using a rigid body instead of pointmass
+        //      will we enter here? If not, find a work around.
 	    if (NULL != geom_set->load_node)
 	    {
-	  	node = geom_set->load_node;
-	  	state = (STATE*)left_state(node->posn);
-	  	for (j = 0; j < 3; ++j)
-	  	{
-	    	    vload[j] = state->vel[j];
-	    	    xload[j] = Coords(node->posn)[j];
-	  	}
+            node = geom_set->load_node;
+            state = (STATE*)left_state(node->posn);
+            for (j = 0; j < 3; ++j)
+            {
+                    vload[j] = state->vel[j];
+                    xload[j] = Coords(node->posn)[j];
+            }
 
-        //NOTE: payload and rigid body mass are equal when a
-        //      rigid body is attached to the suspension lines.
-        //      See installString() and InstallNewLoadNode().
-	  	payload = af_params->payload;
-	  	xcom = center_of_mass(Hyper_surf(canopy));
-	  	vcom = center_of_mass_velo(Hyper_surf(canopy));
-	  	for (j = 0; j < 3; ++j)
-	  	{
-	    	    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
-				(mass_canopy + payload);
-	    	    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
-				(mass_canopy + payload);
-	  	}
+            //NOTE: payload and rigid body mass are equal when a
+            //      rigid body is attached to the suspension lines.
+            //      See installString() and InstallNewLoadNode().
+            payload = af_params->payload;
+            xcom = center_of_mass(Hyper_surf(canopy));
+            vcom = center_of_mass_velo(Hyper_surf(canopy));
+            for (j = 0; j < 3; ++j)
+            {
+                    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
+                    (mass_canopy + payload);
+                    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
+                    (mass_canopy + payload);
+            }
 	    }
 	    else
 	    {
@@ -2252,15 +2254,19 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 
 	if (first)
 	{
-            owner[0] = 0;
-            owner[1] = 0;
-            owner[2] = 0;
-	    if (point_set != NULL)
-		FT_FreeThese(1, point_set);
-	    FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
+        owner[0] = 0;
+        owner[1] = 0;
+        owner[2] = 0;
+	    
+        if (point_set != NULL)
+            FT_FreeThese(1, point_set);
+	    
+        FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
 					sizeof(GLOBAL_POINT*));
-	    for (i = 0; i < max_point_gindex; ++i)
-		point_set[i] = NULL;
+	    
+        // every processor has a point_set with global indexing
+        for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = NULL;
 
 	    if (pp_numnodes() > 1)
 	    {
@@ -2273,28 +2279,33 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	    
         start_clock("set_data");
 	    if (myid == owner_id)
-            {
-		if (client_size_old != NULL)
-		    FT_FreeThese(3, client_size_old, client_size_new, 
-					client_point_set_store);
-		FT_VectorMemoryAlloc((POINTER*)&client_size_old,pp_numnodes(),
-                                        sizeof(int));
-                FT_VectorMemoryAlloc((POINTER*)&client_size_new,pp_numnodes(),
-                                        sizeof(int));
-                FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
-                                        pp_numnodes(),sizeof(GLOBAL_POINT*));
-                for (i = 0; i < pp_numnodes(); i++)
-                    client_size_old[i] = client_size_new[i] = 0;
+        {
+            if (client_size_old != NULL)
+                FT_FreeThese(3, client_size_old, client_size_new, 
+                        client_point_set_store);
 
-		assembleParachuteSet(elastic_intfc,&geom_set);
-		owner_size = geom_set.num_verts;
-		if (point_set_store != NULL) 
-		    FT_FreeThese(2,point_set_store, sv);
-		FT_VectorMemoryAlloc((POINTER*)&point_set_store,owner_size,
-                                        sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
-                                        sizeof(SPRING_VERTEX));
-		link_point_set(&geom_set,point_set,point_set_store);
+            FT_VectorMemoryAlloc((POINTER*)&client_size_old,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_size_new,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
+                    pp_numnodes(),sizeof(GLOBAL_POINT*));
+
+            for (i = 0; i < pp_numnodes(); i++)
+                client_size_old[i] = client_size_new[i] = 0;
+
+            assembleParachuteSet(elastic_intfc,&geom_set);
+            owner_size = geom_set.num_verts;
+            
+            if (point_set_store != NULL) 
+                FT_FreeThese(2,point_set_store, sv);
+            
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    owner_size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
+                    sizeof(SPRING_VERTEX));
+
+            link_point_set(&geom_set,point_set,point_set_store);
 	    	count_vertex_neighbors(&geom_set,sv);
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
@@ -2303,11 +2314,13 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 delete_interface(elastic_intfc);
 	    }
 	    stop_clock("set_data");
-	    first = NO;
+	    
+        first = NO;
 	}
 
 	elastic_intfc = fr->interf;
 	assembleParachuteSet(elastic_intfc,&geom_set);
+
 	if (myid != owner_id)
 	{
 	    client_size = geom_set.num_verts;
@@ -2315,30 +2328,37 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	    {
 	    	size = client_size;
 	    	if (point_set_store != NULL)
-		{
-		    FT_FreeThese(2,point_set_store,sv);
-		}
-	    	FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
-                                        sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+                FT_FreeThese(2,point_set_store,sv);
+
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,
+                    sizeof(SPRING_VERTEX));
 	    }
+
 	    for (i = 0; i < max_point_gindex; ++i)
-                point_set[i] = NULL;
+            point_set[i] = NULL;
+
 	    link_point_set(&geom_set,point_set,point_set_store);
 	    count_vertex_neighbors(&geom_set,sv);
 	    set_spring_vertex_memory(sv,client_size);
 	    set_vertex_neighbors(&geom_set,sv,point_set);
 	    get_point_set_from(&geom_set,point_set);
-	    pp_send(5,L,MAXD*sizeof(double),owner_id);
+	    
+        pp_send(5,L,MAXD*sizeof(double),owner_id);
 	    pp_send(6,U,MAXD*sizeof(double),owner_id);
 	    pp_send(1,&(client_size),sizeof(int),owner_id);
-            pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
-					owner_id);
+        pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
+                owner_id);
 	}
 	else
+    {
 	    size = owner_size;
+    }
+
 
     CollisionSolver3d* collision_solver;
+    /*
     if (!debugging("collision_off"))
     {
         collision_solver = new CollisionSolver3d();
@@ -2346,13 +2366,16 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
     }
     else
         printf("COLLISION DETECTION OFF\n");
-
+    */
 
 	if (myid == owner_id)
 	{
 	
     if (!debugging("collision_off"))
     {
+        printf("COLLISION DETECTION ON\n");
+        collision_solver = new CollisionSolver3d();
+
 	    if (FT_Dimension() == 3)
         {
             setCollisionFreePoints3d(fr->interf);
@@ -2380,9 +2403,14 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             collision_solver->gtris = fr->gtris;
         }
     }
+    else
+    {
+        printf("COLLISION DETECTION OFF\n");
+    }
 
 	    get_point_set_from(&geom_set,point_set);
-	    for (i = 0; i < pp_numnodes(); i++)
+	    
+        for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
 		pp_recv(5,i,client_L,MAXD*sizeof(double));
@@ -2417,6 +2445,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
+        // owner writes and sends back the updated client point_set_stores
 	    for (i = 0; i < pp_numnodes(); i++)
         {
             if (i == myid) continue;
@@ -2427,22 +2456,37 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
         }
 	}
 
+    // clients receive the updated point_set_stores
     if (myid != owner_id)
     {
         pp_recv(3,owner_id,point_set_store,
             client_size*sizeof(GLOBAL_POINT));
     }
 
-	/* Owner send and patch point_set_store from other processors */	
+    // all processes write from their point_set to their geom_set
 	put_point_set_to(&geom_set,point_set);
-	/* Calculate the real force on load_node and rg_string_node */
-	setSpecialNodeForce(fr, geom_set.kl);
+	
+    //TODO: Does this need to be called before the collision
+    //      solver has completed?
+    //      Also, should be passing in the geom_set instead of
+    //      looping over all nodes of fr->interf.
+    //      ELASTIC_SET likely did not consider rigid bodies
+    //      when it was created -- should make a new struct
+    //      PARACHUTE_SET that does and leave ELASTIC_SET for
+    //      pointmass runs and for debugging.
+	setSpecialNodeForce(fr,geom_set.kl);
 
+    //TODO: I think this function can be eliminated,
+    //      see comments inside put_point_value_to()
+    //      for required modification.
 	set_vertex_impulse(&geom_set,point_set);
+    
     //TODO: why only normal component of velocities retained?
     //      see set_geomset_velocity()
 	set_geomset_velocity(&geom_set,point_set);
-	compute_center_of_mass_velo(&geom_set);
+	
+    //TODO: verify com_velo computation
+    compute_center_of_mass_velo(&geom_set);
 
 	if(!debugging("collision_off"))
     {
@@ -2454,11 +2498,12 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 collision_solver->resolveCollision();
                 stop_clock("resolveCollision");
             }
+            delete collision_solver;
         }
+
+        /* Calculate the real force on load_node and rg_string_node */
         setSpecialNodeForce(fr,geom_set.kl);
 	    compute_center_of_mass_velo(&geom_set);
-
-        delete collision_solver;
     }
 
     if (debugging("max_speed"))
@@ -2630,7 +2675,7 @@ static void setCurveVelocity(
 	long gindex;
 	int dim = FT_Dimension();
 
-    //TODO: appears to be working correctly (string_hsbdry block)
+    //TODO: test this thorougly .. was previosly not used.
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         for (b = curve->first; b != curve->last; b = b->next)
@@ -3086,60 +3131,68 @@ extern void setSpecialNodeForce(
 	intfc_node_loop(intfc, n)
 	{
 	    if ( (!is_load_node(*n)) && (!is_rg_string_node(*n)) )
-		continue;
-            for (k = 0; k < dim; ++k)
-            {
-                if (Coords((*n)->posn)[k] <= L[k] ||
-                    Coords((*n)->posn)[k] > U[k])
-                    break;
-            }
-            if (k != dim) continue;
+            continue;
+
+        for (k = 0; k < dim; ++k)
+        {
+            if (Coords((*n)->posn)[k] <= L[k] ||
+                Coords((*n)->posn)[k] > U[k])
+                break;
+        }
+        if (k != dim) continue;
 
 	    for (i = 0; i < dim; ++i)
-		f[i] = 0.0;
-	    node_out_curve_loop(*n,c)
+            f[i] = 0.0;
+	    
+        node_out_curve_loop(*n,c)
 	    {
-		b = (*c)->first;
-		set_bond_length(b,dim);
+            b = (*c)->first;
+            set_bond_length(b,dim);
 	    }
-	    node_in_curve_loop(*n,c)
+	    
+        node_in_curve_loop(*n,c)
 	    {
-		b = (*c)->last;
-		set_bond_length(b,dim);
+            b = (*c)->last;
+            set_bond_length(b,dim);
 	    }
-	    node_out_curve_loop(*n,c)
+	    
+        node_out_curve_loop(*n,c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->first;
-		for (i = 0; i < dim; ++i)
-		{
-		    vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
-		    vec[i] /= bond_length(b);
-		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-		}
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+            
+            b = (*c)->first;
+            for (i = 0; i < dim; ++i)
+            {
+                vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
+                vec[i] /= bond_length(b);
+                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            }
 	    }
-	    node_in_curve_loop(*n,c)
+	    
+        node_in_curve_loop(*n,c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->last;
-		for (i = 0; i < dim; ++i)
-		{
-		    vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
-		    vec[i] /= bond_length(b);
-		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-		}
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+            
+            b = (*c)->last;
+            for (i = 0; i < dim; ++i)
+            {
+                vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
+                vec[i] /= bond_length(b);
+                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            }
 	    }
-	    for (i = 0; i < dim; ++i)
-		(*n)->posn->force[i] = f[i];
+	    
+        for (i = 0; i < dim; ++i)
+            (*n)->posn->force[i] = f[i];
 
 	    if (debugging("rigid_body"))
 	    {
-		printf("special node coords = %f %f %f \n", 
-			Coords((*n)->posn)[0], Coords((*n)->posn)[1], 
-			Coords((*n)->posn)[2]);
-		printf("force on the node = %f %f %f \n", f[0], f[1], f[2]);
-		printf("velo of the node = %f %f %f \n", (*n)->posn->vel[0], 
-				(*n)->posn->vel[1], (*n)->posn->vel[2]);
+            printf("special node coords = %f %f %f \n", 
+                Coords((*n)->posn)[0], Coords((*n)->posn)[1], 
+                Coords((*n)->posn)[2]);
+            printf("force on the node = %f %f %f \n", f[0], f[1], f[2]);
+            printf("velo of the node = %f %f %f \n", (*n)->posn->vel[0], 
+                    (*n)->posn->vel[1], (*n)->posn->vel[2]);
 	    }
 	}
 

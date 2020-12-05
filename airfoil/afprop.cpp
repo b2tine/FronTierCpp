@@ -101,17 +101,19 @@ extern void elastic_point_propagate(
         nor[j] /= mag_nor;
     */
 
-    // Use length of grid block diagonal instead of FT_GridSizeInDir() for now.
+    //TODO: check FT_GridSizeInDir(nor,front) computation.
+    //      Has given very large values before -- see setSlipBoundary().
+    double h = FT_GridSizeInDir(nor,front);
+    
+    /*
+    // Use length of grid block diagonal instead
     double dist_reflect = 0.0;
     for (int j = 0; j < 3; ++j)
           dist_reflect += sqr(top_h[j]);
     dist_reflect = sqrt(dist_reflect);
     double h = dist_reflect;
+    */
 
-    //TODO: check FT_GridSizeInDir(nor,front) computation.
-    //      Has given very large values before -- see setSlipBoundary().
-	    //double h = FT_GridSizeInDir(nor,front);
-    
 	for (int i = 0; i < dim; ++i)
 	{
 	    pm[i] = Coords(oldp)[i] - h*nor[i];

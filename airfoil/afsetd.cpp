@@ -1125,7 +1125,16 @@ static void put_point_value_to(
 {
 	int i;
 	long gindex = Gindex(p);
-	STATE *state = (STATE*)left_state(p);
+    
+    //TODO: Can we set both the left and right states here? 
+    //      If so we can eliminate the call to set_vertex_impulse(),
+    //      since all it does is set the left and right state's impulse.
+	/*
+    STATE *sl = (STATE*)left_state(p);
+	STATE *sr = (STATE*)right_state(p);
+	*/
+
+    STATE *state = (STATE*)left_state(p);
 
 	for (i = 0; i < 3; ++i)
 	{
@@ -1133,6 +1142,10 @@ static void put_point_value_to(
 	    p->vel[i] = point_set[gindex]->v[i];
 	    p->force[i] = point_set[gindex]->f[i];
 	    state->impulse[i] = point_set[gindex]->impuls[i];
+	    /*
+        sl->impulse[i] = point_set[gindex]->impuls[i];
+	    sr->impulse[i] = point_set[gindex]->impuls[i];
+        */
 	}
 }	/* end put_point_value_to */
 	
@@ -1642,6 +1655,9 @@ static void reorder_string_curves(NODE *node)
     set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
+//TODO: it seems that we should be able to perform the
+//      assignments of this function inside put_point_set_to().
+//      put_point_value_to()
 extern void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)
@@ -1732,7 +1748,7 @@ static void set_surf_impulse(
             sorted(p) = YES;
             gindex = Gindex(p);
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-                
+    
             for (k = 0; k < 3; ++k)
             {
                 sl->impulse[k] = point_set[gindex]->impuls[k];
