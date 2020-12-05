@@ -3930,22 +3930,14 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	COMPONENT	comp,
 	double		*coordsbdry,
 	double		*coordsref,
-	double		*nor,
-	double		*intrp_coeff,
-	HYPER_SURF_ELEMENT *phse,
-	HYPER_SURF         *phs)
+	double		*nor)
 {
-	HYPER_SURF_ELEMENT *hsebdry = phse;
-    HYPER_SURF *hsbdry = phs;
-	//HYPER_SURF_ELEMENT *hsebdry;
-    //HYPER_SURF *hsbdry;
-	
-    double *t = intrp_coeff;
-    //double		   t[MAXD];
+	HYPER_SURF_ELEMENT *hsebdry;
+    HYPER_SURF *hsbdry;
+    double t[MAXD];
     
-    double		   ns[MAXD], ne[MAXD];
-	double		   v[MAXD];
-	int		   i, dim = front->rect_grid->dim;
+    //double ns[MAXD], ne[MAXD];
+	int dim = front->rect_grid->dim;
 
     //TODO: pass specified wave_type as function arg?
 	if (wave_type(hs) != NEUMANN_BOUNDARY &&
@@ -3964,47 +3956,52 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
         //TODO: do we want INCLUDE_BOUNDARIES ???
         if (!nearest_interface_point(coords,comp,hs->interface,
                     INCLUDE_BOUNDARIES,hs,coordsbdry,t,&hsebdry,&hsbdry))
+        {
+            printf("WARNING: could not find nearest interface point\n");
+            LOC(); //clean_up(EXIT_FAILURE);
             return NO;
+        }
 	}
 
 	switch (dim)
 	{
         case 1:
-        {
-            coordsbdry[0] = Coords(Point_of_hs(hs))[0];
-            nor[0] = (coords[0] <
-                0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
-                1.0 : -1.0;
+            {
+                coordsbdry[0] = Coords(Point_of_hs(hs))[0];
+                nor[0] = (coords[0] <
+                    0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
+                    1.0 : -1.0;
+            }
             break;
-        }
-	
+        
         case 2:
-        {
-            normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
-            normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
-            for (i = 0; i < dim; ++i)
-                nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
+            {
+                double ns[MAXD], ne[MAXD];
+                normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
+                normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
+            }
             break;
-        }
-
+        
         case 3:
-        {
-            //NOTE: normal vector obtained from Tri_normal() is not normalized.
-            const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
-            for (i = 0; i < dim; ++i)
-                nor[i] = tnor[i];
+            {
+                //NOTE: normal vector obtained from Tri_normal() is not normalized.
+                const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = tnor[i];
+            }
             break;
-        }
 	}
     
     //TODO: only needed for 3d?
     double mag_nor = Magd(nor,dim);
-    for (int j = 0; j < dim; ++j)
-        nor[j] /= mag_nor; //TODO: should check for division by zero
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor; //TODO: should check for division by zero
 	
     if (comp == negative_component(hsbdry))
 	{
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
             nor[i] *= -1.0;
 	}
 
@@ -4016,7 +4013,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
     double dist_reflect = dist_ghost;
 
     double vn = 0.0;
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
         coordsref[i] = coordsbdry[i] + dist_reflect*nor[i];
         
 
@@ -4027,14 +4024,16 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 
     //TODO: how valid/important is the below modification??
     /*
+	double v[MAXD];
     double vn = 0.0;
-	for (i = 0; i < dim; ++i)
+	
+    for (int i = 0; i < dim; ++i)
 	{
 	    v[i] = coords[i] - coordsbdry[i];
 	    vn += nor[i]*v[i];
 	}
 
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	    coordsref[i] = coords[i] - 2.0*vn*nor[i];
     */
 

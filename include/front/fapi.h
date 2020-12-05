@@ -785,9 +785,6 @@ extern "C" {
     \param coords_bdry @b out boundary point of reflection.
     \param coords_ref @b out Coordinates after reflection.
     \param nor @b out Normal vector at reflection.
-    \param intrp_coeff @b out Interpolation factors.
-    \param phse @b out Residing hyper surface element (bond in 2D and tri in 3D).
-    \param phs @b out Residing hyper surface (curve in 2D and surface in 3D).
  */
 
    IMPORT  boolean FT_ReflectPointThroughBdry(
@@ -797,10 +794,7 @@ extern "C" {
 				int comp,
 				double *coords_bdry,
 				double *coords_ref,
-   				double *norl,
-                double *intrp_coeff,
-                HYPER_SURF_ELEMENT *phse,
-                HYPER_SURF *phs);
+   				double *nor);
 
 /*! \fn void FT_SetDirichletBoundary(Front *front, void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER), const char *state_func_name, POINTER state_func_params, POINTER state, HYPER_SURF *hs)
  *  \ingroup BOUNDARY

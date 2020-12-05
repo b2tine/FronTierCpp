@@ -466,13 +466,19 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
                 double intfc_crx_coords[MAXD];
                 double nor[MAXD];
+                
+                /*
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
                 HYPER_SURF* phs;
                 
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor,
-                        intrp_coeffs,phse,phs);
+                        intrp_coeffs,&phse,&phs);
+                */
+                
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
 
                 //TODO: FT_GridSizeInDir() is giving very large values on 3d runs.
                 //
@@ -1224,14 +1230,20 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 double intfc_crx_coords[MAXD];
                 double nor[MAXD];
+                
+                /*
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
                 HYPER_SURF* phs;
                 
                 FT_ReflectPointThroughBdry(front,hs,coords_ghost,
                         comp,intfc_crx_coords,coords_reflect,nor,
-                        intrp_coeffs,phse,phs);
+                        intrp_coeffs,&phse,&phs);
+                */
 
+                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);
+                
                 //TODO: FT_GridSizeInDir(nor,front) returning large values values
                 //      on 3d runs.
                 //
