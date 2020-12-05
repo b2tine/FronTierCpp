@@ -192,7 +192,7 @@ void ELLIPTIC_SOLVER::solve1d(double *soln)
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-	solver.SetTol(1e-10);
+	solver.SetTol(1.0e-10);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -303,7 +303,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     else
     {
         solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < dim; ++ii) x[ii] = 0.0;
+        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
     }
 	
     if (debugging("check_div"))
@@ -478,17 +478,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
                         crx_coords,intrp_coeffs,&phse,&phs,range);
                 
-                //TODO: FT_GridSizeInDir() is giving very large values on 3d runs.
-                //
-                    //double dist_reflect = FT_GridSizeInDir(nor,front);
-
-                
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                double dist_reflect = 0.0;
-                for (int m = 0; m < dim; ++m)
-                    dist_reflect += sqr(top_h[m]);
-                dist_reflect = sqrt(dist_reflect);
-
                 //compute the normal vector at the interface point
                 double ns[MAXD] = {0.0};
                 double ne[MAXD] = {0.0};
@@ -509,6 +498,16 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                         nor[i] *= -1.0;
                 }
         
+                double dist_reflect = FT_GridSizeInDir(nor,front);
+                
+                /*
+                // Compute dist_reflect as the diagonal length of rect grid blocks instead
+                double dist_reflect = 0.0;
+                for (int m = 0; m < dim; ++m)
+                    dist_reflect += sqr(top_h[m]);
+                dist_reflect = sqrt(dist_reflect);
+                */
+
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
@@ -584,7 +583,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-14);
+	solver.SetTol(1.0e-10);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -897,7 +896,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	   
         
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-14);
+	solver.SetTol(1.0e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;
@@ -1079,7 +1078,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     else
     {
         solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < dim; ++ii) x[ii] = 0.0;
+        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
     }
 	
     solver.Reset_A();
@@ -1262,18 +1261,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
                         crx_coords,intrp_coeffs,&phse,&phs,range);
                 
-                //TODO: FT_GridSizeInDir(nor,front) returning large values values
-                //      on 3d runs.
-                //
-                    //double dist_reflect = FT_GridSizeInDir(nor,front);
-                
-                
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                double dist_reflect = 0.0;
-                for (int m = 0; m < dim; ++m)
-                    dist_reflect += sqr(top_h[m]);
-                dist_reflect = sqrt(dist_reflect);
-
                 // compute the normal at the interface point
                 TRI* nearTri = Tri_of_hse(phse);
                 const double* tnor = Tri_normal(nearTri);
@@ -1289,6 +1276,19 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         nor[i] *= -1.0;
                 }
         
+                //TODO: FT_GridSizeInDir(nor,front) returning large values,
+                //      but it may have been due to non normalized normal vec
+                //      which has since been corrected
+                double dist_reflect = FT_GridSizeInDir(nor,front);
+                
+                /*
+                // Compute dist_reflect as the diagonal length of rect grid blocks instead
+                double dist_reflect = 0.0;
+                for (int m = 0; m < dim; ++m)
+                    dist_reflect += sqr(top_h[m]);
+                dist_reflect = sqrt(dist_reflect);
+                */
+
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
@@ -1333,7 +1333,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-14);
+	solver.SetTol(1.0e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
     bool Try_GMRES = false;

@@ -752,11 +752,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
         for (i = imin; i <= imax; i++)
         {
             I  = ij_to_I[i][j];
-            if (I == -1)
-            {
-                vel[l][index] = 0.0;
-                continue;
-            }
+            if (I == -1) continue;
 
             index  = d_index2d(i,j,top_gmax);
             index_nb[0] = d_index2d(i-1,j,top_gmax);
@@ -907,7 +903,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     }
                     else
                     {
-                        printf("Unkown Boundary Type!\n");
+                        printf("Unknown Boundary Type!\n");
                         LOC(); clean_up(EXIT_FAILURE);
                     }
                 }
@@ -922,9 +918,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1e-14);
+        solver.SetTol(1.0e-10);
 
-	    start_clock("Befor Petsc solve");
+	    start_clock("Before Petsc solve");
         solver.Solve();
         solver.GetNumIterations(&num_iter);
         solver.GetResidualNorm(&residual);
@@ -1461,7 +1457,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             }
 
             solver.SetMaxIter(40000);
-            solver.SetTol(1e-14);
+            solver.SetTol(1.e-10);
 
             start_clock("Befor Petsc solve");
             //solver.Solve_GMRES();

@@ -1027,6 +1027,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     size = iupper - ilower;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
+    //TODO: Save previous time velocity, see iFcarts2d.cpp 
+    //  field->old_var[l][index] = vel[l][index] 
+
 	for (l = 0; l < dim; ++l)
 	{
         PETSc solver;
@@ -1124,7 +1127,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
-                        
             }
             
             coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
@@ -1177,7 +1179,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else
                     {
-                        printf("Unkown Boundary Type!\n");
+                        printf("Unknown Boundary Type!\n");
                         LOC(); clean_up(EXIT_FAILURE);
                     }
                 }
@@ -1192,9 +1194,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1e-14);
+        solver.SetTol(1.0e-10);
 
-	    start_clock("Befor Petsc solve");
+	    start_clock("Before Petsc solve");
         solver.Solve();
         solver.GetNumIterations(&num_iter);
         solver.GetResidualNorm(&residual);
@@ -1208,7 +1210,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         {
             (void) printf("L_CARTESIAN::"
                     "computeDiffusionCN: "
-                    "num_iter = %d, residual = %g. \n",
+                    "num_iter = %d, residual = %g\n",
                     num_iter,residual);
         }
 
@@ -1651,9 +1653,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	    q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
-		min_pressure = pres[index];
+            min_pressure = pres[index];
 	    if (max_pressure < pres[index])
-		max_pressure = pres[index];
+            max_pressure = pres[index];
 	}
 
     //TODO: need to scatter pres?
