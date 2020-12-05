@@ -4620,7 +4620,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             coords_nip,intrp_coeffs,&hsurf_elem,&hsurf,range);
 
     double dist_ghost = distance_between_positions(coords_ghost,coords_nip,dim);
-        //double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
+    //double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
     
     //TODO: Should we set dist_reflect to length of grid block diagonal?
     //      how does FT_GridSizeInDir() or the previous method differ? 
@@ -4697,7 +4697,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     double mag_nor = Magd(nor,dim);
     for (int i = 0; i < dim; ++i)
         nor[i] /= mag_nor;
-	
+        
     if (comp == negative_component(hsurf))
 	{
 	    for (int i = 0; i < dim; ++i)
@@ -4944,24 +4944,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     //TODO: look for potential ways to adjust dist_reflect based
     //      on geometry of FT_ReflectPointThroughBdry().
     
-    for (int j = 0; j < dim; ++j)
-        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
-    
-    ////////////////////////////////////////////////////////////////////////
-    //Temp debugging
-    if (debugging("slip_boundary"))
-    {
-        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
-        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
-        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
-        fprint_general_vector(stdout,"normal",nor,dim,"\n");
-        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
-                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
-    }
-    ////////////////////////////////////////////////////////////////////////
-
-    //compute the velocity at the interface point
+    //compute the normal and velocity vectors at the interface point
     double vel_intfc[MAXD] = {0.0};
     switch (dim)
 	{
@@ -4988,7 +4971,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             {
                 TRI* nearTri = Tri_of_hse(hsurf_elem);
                 const double* tnor = Tri_normal(nearTri);
-                //NOTE: Tri_normal() does not return a unit vector
+                double mag_nor = Magd(nor,dim); //NOTE: Tri_normal() does not return a unit vector
                 
                 STATE* st[3];
                 for (int j = 0; j < 3; ++j)
@@ -4996,7 +4979,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
                 for (int i = 0; i < dim; ++i)
                 {
-                    nor[i] = tnor[i];
+                    nor[i] = tnor[i]/mag_nor;
 
                     vel_intfc[i] = 0.0;
                     for (int j = 0; j < 3; ++j)
@@ -5006,15 +4989,30 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             break;
 	}
 
-    double mag_nor = Magd(nor,dim);
-    for (int i = 0; i < dim; ++i)
-        nor[i] /= mag_nor;
-	
     if (comp == negative_component(hsurf))
 	{
 	    for (int i = 0; i < dim; ++i)
             nor[i] *= -1.0;
 	}
+    
+    //The desired reflected point
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    ////////////////////////////////////////////////////////////////////////
+   
+
+    ////////////////////////////////////////////////////////////////////////
+    //Temp debugging
+    if (debugging("slip_boundary"))
+    {
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
+                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
+    }
     ////////////////////////////////////////////////////////////////////////
 
     double vel_reflect[MAXD] = {0.0};

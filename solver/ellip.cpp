@@ -456,7 +456,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 */
 
 
-
                 ///////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
                 /////////////////////////////////////////////////////////////////////
@@ -467,32 +466,52 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 double intfc_crx_coords[MAXD];
                 double nor[MAXD];
                 
-                /*
+                //TODO: Remove when safe to do so.
+                /*FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);*/
+                
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
                 HYPER_SURF* phs;
-                
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor,
-                        intrp_coeffs,&phse,&phs);
-                */
-                
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);
+                double range = 2;
 
+                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+                        crx_coords,intrp_coeffs,&phse,&phs,range);
+                
                 //TODO: FT_GridSizeInDir() is giving very large values on 3d runs.
                 //
                     //double dist_reflect = FT_GridSizeInDir(nor,front);
 
+                
                 // Compute dist_reflect as the diagonal length of rect grid blocks instead
                 double dist_reflect = 0.0;
                 for (int m = 0; m < dim; ++m)
                     dist_reflect += sqr(top_h[m]);
                 dist_reflect = sqrt(dist_reflect);
 
+                //compute the normal vector at the interface point
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(phse)->start,phse,phs,ns,front);
+                normal(Bond_of_hse(phse)->end,phse,phs,ne,front);
+
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+
+                double mag_nor = Magd(nor,dim);
+                for (int i = 0; i < dim; ++i)
+                    nor[i] /= mag_nor;
+
+                if (comp == negative_component(phs))
+                {
+                    for (int i = 0; i < dim; ++i)
+                        nor[i] *= -1.0;
+                }
+        
+                //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                
                 ////////////////////////////////////////////////////////////////////
 
 
@@ -1231,23 +1250,23 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 double intfc_crx_coords[MAXD];
                 double nor[MAXD];
                 
-                /*
+                //TODO: Remove when safe to do so.
+                /*FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                        comp,intfc_crx_coords,coords_reflect,nor);*/
+                
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
                 HYPER_SURF* phs;
-                
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor,
-                        intrp_coeffs,&phse,&phs);
-                */
+                double range = 2;
 
-                FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);
+                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+                        crx_coords,intrp_coeffs,&phse,&phs,range);
                 
                 //TODO: FT_GridSizeInDir(nor,front) returning large values values
                 //      on 3d runs.
                 //
                     //double dist_reflect = FT_GridSizeInDir(nor,front);
+                
                 
                 // Compute dist_reflect as the diagonal length of rect grid blocks instead
                 double dist_reflect = 0.0;
@@ -1255,9 +1274,24 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     dist_reflect += sqr(top_h[m]);
                 dist_reflect = sqrt(dist_reflect);
 
+                // compute the normal at the interface point
+                TRI* nearTri = Tri_of_hse(phse);
+                const double* tnor = Tri_normal(nearTri);
+                
+                //NOTE: Tri_normal() does not return a unit vector
+                double mag_nor = Magd(tnor,dim);
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = tnor[i]/mag_nor;
+
+                if (comp == negative_component(phs))
+                {
+                    for (int i = 0; i < dim; ++i)
+                        nor[i] *= -1.0;
+                }
+        
+                //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                
                 ////////////////////////////////////////////////////////////////////
 
 
