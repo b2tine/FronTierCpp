@@ -4530,9 +4530,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     //      Should also add an input file option to specify type
     
     //setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
+    
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
-
-    //NOTE: make sure ELLIPTIC_SOLVER::solve2d() and solve3d() match
 }
 
 // Based on the normal at the interface grid crossing
@@ -4621,8 +4620,17 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             coords_nip,intrp_coeffs,&hsurf_elem,&hsurf,range);
 
     double dist_ghost = distance_between_positions(coords_ghost,coords_nip,dim);
-    double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
+        //double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
     
+    //TODO: Should we set dist_reflect to length of grid block diagonal?
+    //      how does FT_GridSizeInDir() or the previous method differ? 
+    
+    // Compute dist_reflect as the diagonal length of rect grid blocks
+    double dist_reflect = 0.0;
+    for (int j = 0; j < 3; ++j)
+         dist_reflect += sqr(top_h[j]);
+    dist_reflect = sqrt(dist_reflect);
+
     ////////////////////////////////////////////////////////////////////////
     //Temp debugging
     if (debugging("slip_boundary"))
@@ -4642,7 +4650,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     // before computing th the normal component of relative velocity with
     // respect to the intfc.
     
-    double  vel_intfc[MAXD] = {0.0};
+    double vel_intfc[MAXD] = {0.0};
     switch (dim)
 	{
         case 2:
@@ -4668,6 +4676,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             {
                 TRI* nearTri = Tri_of_hse(hsurf_elem);
                 const double* tnor = Tri_normal(nearTri);
+                //NOTE: Tri_normal() does not normalize the normal vector.
                 
                 STATE* st[3];
                 for (int j = 0; j < 3; ++j)
@@ -4685,7 +4694,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             break;
 	}
 
-	if (comp == negative_component(hsurf))
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+	
+    if (comp == negative_component(hsurf))
 	{
 	    for (int i = 0; i < dim; ++i)
             nor[i] *= -1.0;
@@ -4712,8 +4725,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
 
     for (int j = 0; j < dim; ++j)
     {
+        //vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
         vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-            //vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
         vn += vel_rel[j]*nor[j];
     }
 
@@ -4844,35 +4857,24 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
 
     
-    ////////////////////////////////////////////////////////////////////////
-    
-    //TODO: try implementing with FT_FindNearestIntfcPointInRange() instead
     /*
-    double intrp_coeffs[MAXD] = {0.0};
-    HYPER_SURF_ELEMENT* hsurf_elem;
-    HYPER_SURF* hsurf;
-    double range = 2;
-    
-    FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-
+    ////////////////////////////////////////////////////////////////////////
     FT_ReflectPointThroughBdry(front,hs,
             coords_ghost,comp,crx_coords,coords_reflect,nor);
     
-    /*
-    double intrp_coeffs[MAXD] = {0.0};
-    HYPER_SURF_ELEMENT* hsurf_elem;
-    HYPER_SURF* hsurf;
+    //
+    //double intrp_coeffs[MAXD] = {0.0};
+    //HYPER_SURF_ELEMENT* hsurf_elem;
+    //HYPER_SURF* hsurf;
 
-    FT_ReflectPointThroughBdry(front,hs,coords_ghost,comp,
-            crx_coords,coords_reflect,nor,intrp_coeffs,&hsurf_elem,&hsurf);
-    */
+    //FT_ReflectPointThroughBdry(front,hs,coords_ghost,comp,
+    //        crx_coords,coords_reflect,nor,intrp_coeffs,&hsurf_elem,&hsurf);
+    //
     
     //TODO: Compute vel_intfc at the nearest interface point.
     //      Having problems getting the below to work, memory errors ...
+    //
     
-    /*
     double vel_intfc[MAXD] = {0.0};
     switch (dim)
 	{
@@ -4910,8 +4912,23 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             }
             break;
 	}
+    ////////////////////////////////////////////////////////////////////////
     */
-    
+   
+
+    ////////////////////////////////////////////////////////////////////////
+    //TODO: try implementing FT_ReflectPointThroughBdry() and obtaining the
+    //      interface velocity using FT_FindNearestIntfcPointInRange().
+    //      Essentially a rewrite of FT_ReflectPointThroughBdry()
+
+    double intrp_coeffs[MAXD] = {0.0};
+    HYPER_SURF_ELEMENT* hsurf_elem;
+    HYPER_SURF* hsurf;
+    double range = 2;
+
+    FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
     //TODO: look into details of FT_GridSizeInDir(),
@@ -4929,8 +4946,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     for (int j = 0; j < dim; ++j)
         coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
-    ////////////////////////////////////////////////////////////////////////
-
+    
     ////////////////////////////////////////////////////////////////////////
     //Temp debugging
     if (debugging("slip_boundary"))
@@ -4943,6 +4959,62 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
                 dist_ghost, dist_reflect, dist_ghost/dist_reflect);
     }
+    ////////////////////////////////////////////////////////////////////////
+
+    //compute the velocity at the interface point
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+            {
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                }
+            }
+            break;
+
+        case 3:
+            {
+                TRI* nearTri = Tri_of_hse(hsurf_elem);
+                const double* tnor = Tri_normal(nearTri);
+                //NOTE: Tri_normal() does not return a unit vector
+                
+                STATE* st[3];
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = tnor[i];
+
+                    vel_intfc[i] = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                }
+            }
+            break;
+	}
+
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+	
+    if (comp == negative_component(hsurf))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
     ////////////////////////////////////////////////////////////////////////
 
     double vel_reflect[MAXD] = {0.0};
@@ -4968,8 +5040,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         //TODO: Unable to compute the intfc_velocity at the nearest point.
         //      Using the intfc state at the grid line crossing instead for now.
         //
-        //      vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-        vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
+        //      testing new vel_intfc computation .....
+        //
+            //vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
+    
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
         vn += vel_rel[j]*nor[j];
     }
 

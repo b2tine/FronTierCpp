@@ -2028,8 +2028,8 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	{
         if (!debugging("collision_off") && FT_Dimension() == 3) 
         {
-            collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
+            collision_solver = new CollisionSolver3d();
 
             //NOTE: These two functions need to be called before the spring
             //      solver runs.
@@ -2157,32 +2157,11 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	put_point_set_to(&geom_set,point_set);
 
 	// Calculate the real force on load_node and rg_string_node
-    //TODO: make sure fr is the current interface
 	setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
-
-    /*
-     * REMOVE
-	if(!debugging("collision_off"))
-    {
-        if (myid == owner_id)
-        {
-            if (FT_Dimension() == 3)
-            {
-                start_clock("resolveCollision");
-                collision_solver->resolveCollision();
-                stop_clock("resolveCollision");
-            }
-        }
-        setSpecialNodeForce(fr,geom_set.kl);
-	    compute_center_of_mass_velo(&geom_set);
-
-        delete collision_solver;
-    }
-    */
 
     if (debugging("max_speed"))
     {
@@ -2190,8 +2169,8 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
-}	/* end fourth_order_elastic_set_propagate() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
+}	/* end fourth_order_elastic_set_propagat_parallel() */
 
 void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 {
@@ -2357,7 +2336,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
     }
 
 
-    CollisionSolver3d* collision_solver;
+    CollisionSolver3d* collision_solver = nullptr;
     /*
     if (!debugging("collision_off"))
     {
@@ -2454,7 +2433,8 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             pp_send(3,client_point_set_store[i],
                             client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
-	}
+
+	}//myid == owner_id
 
     // clients receive the updated point_set_stores
     if (myid != owner_id)
