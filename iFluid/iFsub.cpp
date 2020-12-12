@@ -1006,9 +1006,10 @@ static  void rgbody_point_propagate(
                           -p_angular_velo(oldhs)[0] * crds_com[2];
                 vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
                           +p_angular_velo(oldhs)[0] * crds_com[1];
+
 		// propagate by euler parameters
 		if (motion_type(oldhs) == ROTATION ||
-		    motion_type(oldhs) == PRESET_ROTATION)
+		    motion_type(oldhs) == PRESET_ROTATION)//TODO: FREE_MOTION
 		{
                     double A[3][3],AI[3][3];
                     double ep[4];

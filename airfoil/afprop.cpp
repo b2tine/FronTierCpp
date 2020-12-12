@@ -194,27 +194,50 @@ extern void elastic_point_propagate(
             dv[i] = 0.0;
 	    else if (front->step > af_params->fsi_startstep)
         {
-            //TODO: Why not using newsl->pres and newsr->pres
-            //      where the interpolated values are stored???
-            //
-            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
-            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+            //TODO: Verify using newsl->pres and newsr->pres
+            //      where the interpolated values are stored
+            //      is correct. Carefully study this....
+            dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
+                //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
                 
-                //dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
+                //TODO: zgao code has this instead (multiply by dt)
+                //  dv[i] = (sl->pres - sr->pres)*nor[i]*dt/area_dens;
+                //
+                //  This would give a true velocity increment, however
+                //  we assign dv to fluid_accel for which the units
+                //  currently match --  code may be correct as is.
+                
+            //TODO: shear stress dv.
+            //      p - m or m - p for shear??? Keep in mind that pressure
+            //      has negative sign on the normal for the positive side
+            //      in the above vel increment in the normal direction.
+            //      
+            //  dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
+            //  dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
                     
-            //TODO: Should triangle area be involved in this computation???
+            //TODO: Should triangle area be involved in these computations???
+            //      see print_drag3d(). However we are not looping over tris,
+            //      we are just propagating a single point in isolation.
+            //      Would need to use ring of tris around the point?
             //
             //      double area_tri = tri_area(tri);
             //      double mass_tri = area_tri*area_dens;
             //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri;
             //
-            //      If not, then area_dens must be the canopy density per unit area.
+            //      2015 paper claims area_dens is the canopy density per unit area.
+            //      Does that make sense???
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	    newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+	    
+        newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+        //TODO: zgao code has this instead
+        //  newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i] + dv[i];
+        //
+        //  however fluid_accel is not considered, so current code likely correct.
+	    
+        newsr->vel[i] = newsl->vel[i] = sl->vel[i];
 	}
 
 	/* Interpolating vorticity for the hyper surface point */
@@ -375,7 +398,7 @@ static void string_curve_propagation(
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if (af_params->no_fluid) return;
 
-    //string-fluid interaction
+    // string-fluid interaction
     //    
     //      dragForce = 0.5*rho*C_d*A_ref*|u|*u
     //      with drag coefficient C_d = 1.05
@@ -631,6 +654,8 @@ static void gore_point_propagate(
         {
 	    dv = 0.0;
 
+        //TODO: Should be using newsl->pres and newsr->pres?
+        //      See elastic_point_propagate().
 	    if (front->step > af_params->fsi_startstep)
 		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
 	    
@@ -639,6 +664,7 @@ static void gore_point_propagate(
 	    
         if (debugging("rigid_canopy"))
 	    	dv = 0.0;
+
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
@@ -1239,73 +1265,79 @@ static void rg_string_node_propagate(
 	POINTER wave;
 	double V[MAXD];
 
-        if (!is_rg_string_node(oldn)) return;
-	for (i = 0; i < dim; ++i)
+    if (!is_rg_string_node(oldn)) return;
+	
+    for (i = 0; i < dim; ++i)
 	{
 	    if (Coords(oldn->posn)[i] <= gr->L[i] || 
 		Coords(oldn->posn)[i] > gr->U[i])
 		break;
 	}
-	if (i != dim || oldn->extra == NULL) return;
+	
+    if (i != dim || oldn->extra == NULL) return;
 
-        if (debugging("trace"))
+    if (debugging("trace"))
 	{
-            (void)printf("\nEntering rg_string_node_propagate()\n");
+        printf("\nEntering rg_string_node_propagate()\n");
 	}
 
-        oldp = oldn->posn;
-        newp = newn->posn;
-        sl = (STATE*)left_state(oldp);
-        sr = (STATE*)right_state(oldp);
-        newsl = (STATE*)left_state(newp);
-        newsr = (STATE*)right_state(newp);
+    oldp = oldn->posn;
+    newp = newn->posn;
+    sl = (STATE*)left_state(oldp);
+    sr = (STATE*)right_state(oldp);
+    newsl = (STATE*)left_state(newp);
+    newsr = (STATE*)right_state(newp);
 
-        for (i = 0; i < dim; ++i)
-            f[i] = 0.0;
-	/* calculate the force from the string chords */
+    for (i = 0; i < dim; ++i) f[i] = 0.0;
+	
+    /* calculate the force from the string chords */
 	node_out_curve_loop(oldn,c)
+    {
+        if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        b = (*c)->first;
+        for (i = 0; i < dim; ++i)
         {
-            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-            b = (*c)->first;
-            for (i = 0; i < dim; ++i)
-            {
-                vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
-                vec[i] /= bond_length(b);
-                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-            }
+            vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
-        node_in_curve_loop(oldn,c)
+    }
+        
+    node_in_curve_loop(oldn,c)
+    {
+        if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        b = (*c)->last;
+        for (i = 0; i < dim; ++i)
         {
-            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-            b = (*c)->last;
-            for (i = 0; i < dim; ++i)
-            {
-                vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
-                vec[i] /= bond_length(b);
-                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-            }
+            vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
+    }
+
 	/* propagate the nodes along with the rigid body */
 	node_out_curve_loop(oldn,c)
-        {
-            if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+    {
+        if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 	    {
-		b = (*c)->first;
-		hs = Hyper_surf(b->_btris[0]->surface);
-		hse = Hyper_surf_element(b->_btris[0]->tri);
-		break;
+            b = (*c)->first;
+            hs = Hyper_surf(b->_btris[0]->surface);
+            hse = Hyper_surf_element(b->_btris[0]->tri);
+            break;
 	    }
-        }
-        node_in_curve_loop(oldn,c)
-        {
-            if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+    }
+        
+    node_in_curve_loop(oldn,c)
+    {
+        if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 	    {
-		b = (*c)->last;
-		hs = Hyper_surf(b->_btris[0]->surface);
-		hse = Hyper_surf_element(b->_btris[0]->tri);
-		break;
+            b = (*c)->last;
+            hs = Hyper_surf(b->_btris[0]->surface);
+            hse = Hyper_surf_element(b->_btris[0]->tri);
+            break;
 	    }
-        }
+    }
+
 	if (hs == NULL || hse == NULL)
 	{
 	    printf("ERROR in rg_string_node_propagate \n");
@@ -1313,12 +1345,23 @@ static void rg_string_node_propagate(
 	    clean_up(ERROR);
 	}
 	
+    //hs should have wave_type of MOVABLE_BODY_BOUNDARY?
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
-	if (dt > 0.0)
+	
+    if (dt > 0.0)
 	{
 	    for (i = 0; i < dim; ++i)
-		accel[i] = (Coords(newp)[i] - Coords(oldp)[i] - 
-				oldp->vel[i] * dt) * 2.0 / dt / dt;
+        {
+            //TODO: Is this correct???
+            accel[i] = (Coords(newp)[i] - Coords(oldp)[i]
+                    - oldp->vel[i] * dt) * 2.0 / dt / dt;
+            
+            // Why not ...
+            //  
+            //      accel[i] =
+            //        ((Coords(newp)[i] - Coords(oldp)[i])/dt - oldp->vel[i])/dt;
+            
+        }
 	}
 	else
 	{
@@ -1326,7 +1369,7 @@ static void rg_string_node_propagate(
 		accel[i] = 0.0;
 	}
 
-    //TODO: was previously -= g[i]!!!!!!!!!!!!!!!!!!!!!!
+    //TODO: was previously -= g[i], and gravity is already directed...
 	for (i = 0; i < dim; ++i)
 	    accel[i] += g[i];
 	        //accel[i] -= g[i];

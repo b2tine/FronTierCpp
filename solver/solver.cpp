@@ -84,22 +84,28 @@ void PETSc::Create(
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-	 MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
+    /*MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DETERMINE,PETSC_DETERMINE,
+				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);*/
+    MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+       d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
+
+    //TODO: Or detect how many processors and use MatCreateAIJ()
+    //      if a parallel run, and use MatCreateSeqAIJ() if serial?
 	
     PetscObjectSetName((PetscObject) A, "A");
-	MatSetFromOptions(A);
+    MatSetFromOptions(A);
+    //MatSetUp(A);//TODO: Need this???
 	
-    //TODO: Figure out how to use VecCreateMpi()
+    //TODO: use VecCreateMpi()?
 	VecCreate(PETSC_COMM_WORLD, &b);
 	PetscObjectSetName((PetscObject) b, "b");
 	VecSetSizes(b, n, PETSC_DECIDE);
-	VecSetFromOptions(b);
+    VecSetFromOptions(b);
 	
 	VecCreate(PETSC_COMM_WORLD,&x);
 	PetscObjectSetName((PetscObject) x, "X"); 
 	VecSetSizes(x, n, PETSC_DECIDE);
-	VecSetFromOptions(x);
+    VecSetFromOptions(x);
 }
 
 PETSc::~PETSc()
@@ -215,7 +221,8 @@ void PETSc::Get_x(double *p,
 	int n, 
 	int *global_index)
 {
-    //
+    printf("ERROR: not implemented\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }
 
 void PETSc::SetPrevSolnInitialGuess()
@@ -239,20 +246,22 @@ void PETSc::SetTol(double val)
 	
 	KSPGetTolerances(ksp, &rtol, &atol, &dtol, &maxits);
 
-    //TODO: this only sets rtol. Incorrect use in code???
+    //TODO: this only sets rtol (rel tol). Incorrect use in code???
     //      elliptic solver diverges during projection method
     //      if we use actual abs tolerance like below.
 	
-        ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+    ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
 	
     //TODO: Crashes projection method elliptic solver for poisson eqn.
+    //      if the absolute tolerance, atol, is used.
     //
     //ierr = KSPSetTolerances(ksp, rtol, val, dtol, maxits);
 }
 
 void PETSc::SetKDim(int val)
 {
-	
+    printf("ERROR: not implemented\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }
 
 void PETSc::GetNumIterations(PetscInt *num_iterations)
@@ -265,8 +274,8 @@ void PETSc::GetResidualNorm(double *resid_norm)
 	KSPGetResidualNorm(ksp,resid_norm);
 }	/* end GetResidualNorm */
 
-//TODO: No reason this needs to be "Final" and this is also not the
-//      relative residual norm, which is defined as ||Ax-b||/||b||
+//TODO: This is also not the relative residual norm,
+//      which is defined as ||Ax-b||/||b||
 void PETSc::GetFinalRelativeResidualNorm(double *rel_resid_norm)
 {
 	KSPGetResidualNorm(ksp,rel_resid_norm);
@@ -286,8 +295,7 @@ void PETSc::Solve_PetscDecide()
 
 void PETSc::Solve_GMRES(void)
 {
-        
-        start_clock("Assemble matrix and vector");
+    start_clock("Assemble matrix and vector");
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
   	
@@ -298,7 +306,6 @@ void PETSc::Solve_GMRES(void)
   	ierr = VecAssemblyEnd(b);
 	stop_clock("Assembly matrix and vector");
 
-
     KSPSetOperators(ksp,A,A);
 	KSPSetType(ksp,KSPGMRES);
 
@@ -306,7 +313,7 @@ void PETSc::Solve_GMRES(void)
     KSPSetUp(ksp);
 
 	start_clock("KSPSolve");
-        KSPSolve(ksp,b,x);
+    KSPSolve(ksp,b,x);
 	stop_clock("KSPSolve");
 
 }	/* end Solve_GMRES */
@@ -320,10 +327,40 @@ void PETSc::Solve(void)
 #endif // defined HAVE_HYPRE
 }	/* end Solve */
 
+#if defined HAVE_HYPRE
+void PETSc::Solve_HYPRE(void)
+{
+    PC pc;
+    start_clock("Assemble matrix and vector");
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
+
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
+    stop_clock("Assembly matrix and vector");
+
+    //TODO: Can we still use KSPBCGSL with the
+    //      boomeramg preconditioner? 
+	KSPSetType(ksp,KSPBCGS);
+    KSPSetOperators(ksp,A,A);
+    KSPGetPC(ksp,&pc);
+	PCSetType(pc,PCHYPRE);
+    PCHYPRESetType(pc,"boomeramg");
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
+
+    start_clock("KSPSolve");
+    KSPSolve(ksp,b,x);
+    stop_clock("KSPSolve");
+}
+#endif // defined HAVE_HYPRE
+
 void PETSc::Solve_BCGSL(void)
 {
-        
-        start_clock("Assemble matrix and vector");
+    start_clock("Assemble matrix and vector");
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
   	
@@ -334,9 +371,10 @@ void PETSc::Solve_BCGSL(void)
   	ierr = VecAssemblyEnd(b);
 	stop_clock("Assembly matrix and vector");
 
-
     KSPSetOperators(ksp,A,A);
     KSPSetType(ksp,KSPBCGSL);
+    
+    //sets the number of search directions for BiCGStab(L)
 	KSPBCGSLSetEll(ksp,2);
 
     KSPSetFromOptions(ksp);
@@ -347,6 +385,7 @@ void PETSc::Solve_BCGSL(void)
 	stop_clock("KSPSolve");
 }
 
+//TODO: What does "PureNeumann" imply? See below.
 void PETSc::Solve_withPureNeumann_GMRES(void)
 {
 	if (debugging("solver"))
@@ -360,7 +399,8 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
   	ierr = VecAssemblyBegin(b);
   	ierr = VecAssemblyEnd(b);
   	
-	
+    //NOTE: This sets the nullspace to contain the constant vector
+    //      (second argument is PETSC_TRUE)
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
     MatSetNullSpace(A,nullsp);
 	MatNullSpaceRemove(nullsp,b);
@@ -372,12 +412,18 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
     KSPSetUp(ksp);
 
 	start_clock("Petsc Solve in pure neumann solver");
-        KSPSolve(ksp,b,x);
+    KSPSolve(ksp,b,x);
 	stop_clock("Petsc Solve in pure neumann solver");
-	if (debugging("solver"))
+
+    if (debugging("solver"))
 	    printf("Leaving Solve_withPureNeumann_GMRES()\n");
 }	/* end Solve_withPureNeumann_GMRES */
 
+//TODO: What does "PureNeumann" imply?
+//      The only difference between the non-neumann
+//      solve functions appears to be that the constant
+//      vector is removed from the solution space
+//      (is in the nullspace).
 void PETSc::Solve_withPureNeumann(void)
 {
 #ifdef HAVE_HYPRE
@@ -387,45 +433,51 @@ void PETSc::Solve_withPureNeumann(void)
 #endif
 }
 
+#if defined HAVE_HYPRE
 void PETSc::Solve_withPureNeumann_HYPRE(void)
 {
-        PC pc;
-	if (debugging("solver"))
-            printf("Entering Solve_withPureNeumann_HYPRE()\n");
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    if (debugging("solver"))
+        printf("Entering Solve_withPureNeumann_HYPRE()\n");
 
-        ierr = VecAssemblyBegin(x);
-        ierr = VecAssemblyEnd(x);
+    PC pc;
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
+    ierr = VecAssemblyBegin(x);
+    ierr = VecAssemblyEnd(x);
 
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
 
-        MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
-        MatSetNullSpace(A,nullsp);
-        MatNullSpaceRemove(nullsp,b);
+    //NOTE: This sets the nullspace to contain the constant vector
+    //      (second argument is PETSC_TRUE)
+    MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
+    MatSetNullSpace(A,nullsp);
+    MatNullSpaceRemove(nullsp,b);
 
-        KSPSetType(ksp,KSPBCGS);
-        KSPSetOperators(ksp,A,A);
-        KSPGetPC(ksp,&pc);
-        PCSetType(pc,PCHYPRE);
-        PCHYPRESetType(pc,"boomeramg");
-        KSPSetFromOptions(ksp);
-        KSPSetUp(ksp);
-        start_clock("Petsc Solve in pure neumann solver");
-        KSPSolve(ksp,b,x);
-        stop_clock("Petsc Solve in pure neumann solver");
-	if (debugging("solver"))
-	    printf("Leaving Solve_withPureNeumann_HYPRE()\n");
+    KSPSetType(ksp,KSPBCGS);
+    KSPSetOperators(ksp,A,A);
+    KSPGetPC(ksp,&pc);
+    PCSetType(pc,PCHYPRE);
+    PCHYPRESetType(pc,"boomeramg");
+    KSPSetFromOptions(ksp);
+    KSPSetUp(ksp);
+    
+    start_clock("Petsc Solve in pure neumann solver");
+    KSPSolve(ksp,b,x);
+    stop_clock("Petsc Solve in pure neumann solver");
 
+    if (debugging("solver"))
+        printf("Leaving Solve_withPureNeumann_HYPRE()\n");
 }
+#endif // defined HAVE_HYPRE
 
 void PETSc::Solve_withPureNeumann_BCGSL(void)
 {
 	if (debugging("solver"))
 	    printf("Entering Solve_withPureNeumann_BCGSL()\n");
-	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+	
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
   	
   	ierr = VecAssemblyBegin(x);
@@ -433,44 +485,47 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
   	
   	ierr = VecAssemblyBegin(b);
   	ierr = VecAssemblyEnd(b);
-  	
 	
+    //NOTE: This sets the nullspace to be empty...
+    //      (second argument is PETSC_TRUE)
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
     MatSetNullSpace(A,nullsp);
     MatNullSpaceRemove(nullsp,b);
 	
     KSPSetOperators(ksp,A,A);
-        
 	KSPSetType(ksp,KSPBCGSL);
+
+    //sets the number of search directions for BiCGStab(L)
 	KSPBCGSLSetEll(ksp,2);
 
     KSPSetFromOptions(ksp);
     KSPSetUp(ksp);
 
 	start_clock("Petsc Solve in pure neumann solver");
-        KSPSolve(ksp,b,x);
+    KSPSolve(ksp,b,x);
 	stop_clock("Petsc Solve in pure neumann solver");
-	if (debugging("solver"))
+	
+    if (debugging("solver"))
 	    printf("Leaving Solve_withPureNeumann_BCGSL()\n");
 }	/* end Solve_withPureNeumann_BCGSL */
 
 void PETSc::Print_A(const char *filename)
 {
 	PetscViewer viewer;
-        ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-        PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
-        MatView(A, viewer);
-        PetscViewerDestroy(&viewer);
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    MatView(A, viewer);
+    PetscViewerDestroy(&viewer);
 }	/* end Print_A */
 
 void PETSc::Print_b(const char *filename)
 {
-        ierr = VecAssemblyBegin(b);
-        ierr = VecAssemblyEnd(b);
+    ierr = VecAssemblyBegin(b);
+    ierr = VecAssemblyEnd(b);
 	PetscViewerSetFormat(PETSC_VIEWER_STDOUT_WORLD,
-			PETSC_VIEWER_ASCII_MATLAB);
-        VecView(b, PETSC_VIEWER_STDOUT_WORLD);
+            PETSC_VIEWER_ASCII_MATLAB);
+    VecView(b, PETSC_VIEWER_STDOUT_WORLD);
 }	/* end Print_b */
 
 extern void viewTopVariable(
@@ -509,36 +564,6 @@ extern void viewTopVariable(
 	front->hdf_movie_var = hdf_movie_var_save;
 }	/* end viewTopVariable */
 
-#if defined HAVE_HYPRE
-void PETSc::Solve_HYPRE(void)
-{
-    PC pc;
-    start_clock("Assemble matrix and vector");
-    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-
-    ierr = VecAssemblyBegin(x);
-    ierr = VecAssemblyEnd(x);
-
-    ierr = VecAssemblyBegin(b);
-    ierr = VecAssemblyEnd(b);
-    stop_clock("Assembly matrix and vector");
-
-	KSPSetType(ksp,KSPBCGS);
-    KSPSetOperators(ksp,A,A);
-    KSPGetPC(ksp,&pc);
-	PCSetType(pc,PCHYPRE);
-    PCHYPRESetType(pc,"boomeramg");
-    KSPSetFromOptions(ksp);
-    KSPSetUp(ksp);
-
-    start_clock("KSPSolve");
-    KSPSolve(ksp,b,x);
-    stop_clock("KSPSolve");
-
-}
-#endif // defined HAVE_HYPRE
-
 void PETSc::Solve_LU(void)
 {
 	PC pc;
@@ -552,7 +577,6 @@ void PETSc::Solve_LU(void)
     ierr = VecAssemblyBegin(b);
     ierr = VecAssemblyEnd(b);
     stop_clock("Assembly matrix and vector");
-
 
     KSPSetType(ksp,KSPPREONLY);
 	KSPGetPC(ksp,&pc);
