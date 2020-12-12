@@ -74,9 +74,6 @@ extern void elastic_point_propagate(
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
         
-    //int ic_m[MAXD];
-    //int ic_p[MAXD];
-
 	if (af_params->no_fluid)
 	{
 	    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,
@@ -121,6 +118,8 @@ extern void elastic_point_propagate(
 	}
 
     /*
+    int ic_m[MAXD];
+    int ic_p[MAXD];
     double vel_m[MAXD] = {0.0};
     double vel_p[MAXD] = {0.0};
     double mu_m;
@@ -195,8 +194,18 @@ extern void elastic_point_propagate(
             dv[i] = 0.0;
 	    else if (front->step > af_params->fsi_startstep)
         {
+            //TODO: Why not using newsl->pres and newsr->pres
+            //      where the interpolated values are stored???
+            //
+            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-                //dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
+                
+                //dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
+                    
+            //TODO: why isn't triangle area involved in this computation???
+            //
+            //      mass_tri = tri_area*area_dens
+            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
