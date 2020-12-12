@@ -2616,11 +2616,11 @@ static void setSurfVelocity(
 		{
 		    //sl->vel[j] = vel[j];
 		    //sr->vel[j] = vel[j];
-		    sl->vel[j] = nor_speed*nor[j];
-		    sr->vel[j] = nor_speed*nor[j];
+		        //sl->vel[j] = nor_speed*nor[j];
+		        //sr->vel[j] = nor_speed*nor[j];
             //TODO: missing function new_setSurfVelocity() has this in zgao code
-		        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-		        //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+            sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+            sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
 		}
 		sorted(p) = YES;
 	    }
@@ -2665,14 +2665,14 @@ static void setCurveVelocity(
             
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
                 //TODO: missing function new_setSurfVelocity() has this in zgao code
                     //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
                     //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
                 //Maybe this should be....
-                    //sl->vel[j] = sl->impulse[j] + vel[j];
-                    //sr->vel[j] = sr->impulse[j] + vel[j];
+                sl->vel[j] = sl->impulse[j] + vel[j];
+                sr->vel[j] = sr->impulse[j] + vel[j];
             }
         }
     }
@@ -2695,11 +2695,11 @@ static void setCurveVelocity(
                 {
                     //sl->vel[j] = vel[j];
                     //sr->vel[j] = vel[j];
-                    sl->vel[j] = nor_speed*nor[j];
-                    sr->vel[j] = nor_speed*nor[j];
+                        //sl->vel[j] = nor_speed*nor[j];
+                        //sr->vel[j] = nor_speed*nor[j];
                     //TODO: missing function new_setCurveVelocity() has this in zgao code
-                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                        //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+                    sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
@@ -2814,11 +2814,11 @@ static void new_setNodeVelocity3d(
             {
 		    	//sl->vel[j] = vel[j];
                 //sr->vel[j] = vel[j];
-		    	sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+		    	    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
                 //TODO: zgao code has this
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
 		}
         
@@ -2865,11 +2865,11 @@ static void new_setNodeVelocity3d(
             {
                 //sl->vel[j] = vel[j];
                 //sr->vel[j] = vel[j];
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
                 //TODO: zgao code has this
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
         }
     }

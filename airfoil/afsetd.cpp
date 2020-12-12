@@ -347,65 +347,71 @@ void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
-                v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
+            x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
+            v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/6.0;
-	    }
+	        }
 
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*sv[i].v[j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/3.0;
-	    }
+	        }
 	
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
+
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + sv[i].v[j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt; 
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/3.0;
-	    }
+	        }
 
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+            compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/6.0;
-                v_new[i][j] += dt*accel[i][j]/6.0;
+		    x_new[i][j] += dt*sv[i].v[j]/6.0;
+            v_new[i][j] += dt*accel[i][j]/6.0;
 	    }
 
 	    for (i = 0; i < size; ++i)
@@ -414,25 +420,26 @@ void generic_spring_solver(
             sv[i].x[j] = x_new[i][j];
             sv[i].v[j] = v_new[i][j];
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/6.0;
-	    }
+            }
 
 	    if (n != n_loop-1)
 	    {
-		for (i = 0; i < size; ++i)
+            for (i = 0; i < size; ++i)
                 for (j = 0; j < 3; ++j)
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
                 }
 	    	for (i = 0; i < size; ++i)
-		{
-		    compute_spring_accel1(&sv[i],accel[i],dim);
-		}
+            {
+                compute_spring_accel1(&sv[i],accel[i],dim);
+            }
 	    }
 	}
 	if (debugging("trace"))

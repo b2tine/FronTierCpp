@@ -2565,6 +2565,7 @@ static void print_drag3d(
                 {
                     unit_nor_tri[i] = nor_tri[i]/mag_nor;
                     force_tri[i] = pres_drop*unit_nor_tri[i]*area_tri;
+                    //TODO: tangential force
                     force[i] += force_tri[i];
                 }
                 parea += Dot3d(unit_nor_tri,free_vel_dir)*area_tri;//projected to xy plane
