@@ -169,10 +169,10 @@ struct IF_PARAMS
 
 	int adv_order;
 	boolean total_div_cancellation;
-	boolean buoyancy_flow;
-	boolean if_buoyancy;
+	boolean buoyancy_flow {NO};
+	boolean if_buoyancy {NO};
 	double  ref_temp;
-	boolean if_ref_pres;
+	boolean if_ref_pres {NO};
 	double  ref_pres;
 	double  Amplitute; 	/*Amplitute of velocity*/
 	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
