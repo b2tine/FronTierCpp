@@ -207,7 +207,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
 double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
 	int *icoords)
 {
-    int index0 = d_index(icoords,top_gmax,dim);
+    int index = d_index(icoords,top_gmax,dim);
         //int index[6], index0;
         //double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
     double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -276,7 +276,15 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
     else
         nu_t = C_v*sqrt(B_beta/sum_alpha);
     
-    double mu_t = nu_t*field->rho[index0];
+    double mu_t = nu_t*field->rho[index];
+
+    if (std::isinf(mu_t) || std::isnan(mu_t))
+    {
+        printf("ERROR: inf/nan eddy viscosity!\n");
+        printf("nu_t = %g  rho[%d] = %g\n",nu_t,index,field->rho[index]);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
     return mu_t;
 }	/* end computeMuOfVremanModel*/
 
@@ -291,7 +299,6 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
     INTERFACE *grid_intfc = front->grid_intfc;
     STATE* intfc_state;
     HYPER_SURF *hs;
-    //HYPER_SURF_ELEMENT *hse;
     double crx_coords[MAXD];
 
     std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
@@ -299,7 +306,6 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
     if (!ifluid_comp(comp)) return J;
-        //getRectangleCenter(index,center);
 
     double vel_nb[2];
     double d_h[2];
@@ -323,6 +329,11 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             }
             else if (wave_type(hs) == ELASTIC_BOUNDARY)
             {
+                //NOTE: zeroing the relative fluid velocity normal to canopy
+                //      via the slip boundary condition will cause the pressure
+                //      jump imposed by the ghost fluid method porosity model
+                //      to vanish -- destroying the porosity of the canopy
+                
                 //TODO: Is this the correct approach??
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
                 vel_nb[nb] = vel[l][index_nb];
@@ -330,10 +341,6 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
-                //NOTE: zeroing the relative fluid velocity normal to canopy
-                //      via the slip boundary condition will cause the pressure
-                //      jump imposed by the ghost fluid method porosity model
-                //      to vanish -- destroying the porosity of the canopy
                 double v_slip[MAXD] = {0.0};
                 setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
                 vel_nb[nb] = v_slip[l];
@@ -374,8 +381,9 @@ double computeWallShearStress(
         double mu,
         double rho)
 {
+    if (u_tan < MACH_EPS) return 0.0;
     double u_friction = computeFrictionVelocity(u_tan,walldist,mu,rho);
-    double tau_wall = sqr(u_friction)*rho;
+    double tau_wall = u_friction*u_friction*rho;
     return tau_wall;
 }
 
@@ -385,12 +393,22 @@ double computeFrictionVelocity(
         double mu,
         double rho)
 {
-    SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
-
-    //TODO: how to pick initial guesses for u_friction???
-    double u0 = 0.001;
-    double u1 = 5.0; //temp val initial guess for prototyping
-    double u_friction = secantMethod(wallfunc,u0,u1);
+    double u_wall = computeWallVelocity(u_tan,walldist,mu,rho);
+    if (u_wall < MACH_EPS) return 0.0;
+    double u_friction = u_tan/u_wall;
     return u_friction;
+}
+
+//Computes the dimensionless wall velocity u^{+} = u_tan/u_friction
+double computeWallVelocity(
+        double u_tan,
+        double walldist,
+        double mu,
+        double rho)
+{
+    SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
+    double u_wall_initialguess = u_tan;//TODO: method for better initial guess?
+    double u_wall = wallfunc.solve(u_wall_initialguess);
+    return u_wall;
 }
 

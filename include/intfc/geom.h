@@ -709,6 +709,8 @@ IMPORT	void	fprint_angle_direction(FILE*,const char*,ANGLE_DIRECTION,
 				       const char*);
 IMPORT	void	fprint_general_vector(FILE*,const char*,const double*,
 				      int,const char*);
+IMPORT	void	fprint_int_vector(FILE*,const char*,const int*,
+				      int,const char*);
 IMPORT	void	fprint_orientation(FILE*,const char*,ORIENTATION,const char*);
 IMPORT	void	sprint_general_vector(char*,const char*,const double*,
 				      int,const char*);

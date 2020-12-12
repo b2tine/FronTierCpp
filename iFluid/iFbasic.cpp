@@ -1553,7 +1553,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-
     //zero f_surf array
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -1563,7 +1562,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             f_surf[l][index] = 0.0;
     }
     
-
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == BALDWIN_LOMAX)
     {
@@ -1625,6 +1623,18 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         }
         else if (iFparams->use_eddy_visc == YES)
 	    {
+            switch (comp)
+            {
+                case LIQUID_COMP1:
+                    mu[index] = m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    mu[index] = m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
+            }
+
             switch (iFparams->eddy_visc_model)
             {
             case BALDWIN_LOMAX:
@@ -1638,7 +1648,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                          wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
-                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    mu[index] += computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
@@ -1647,28 +1657,15 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 pres[index] += 2.0/3.0*tke[index];
                 break;
             case VREMAN:
-                mu[index] = computeMuOfVremanModel(icoords);
+                mu[index] += computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
-                mu[index] = computeMuofSmagorinskyModel(icoords); 
+                mu[index] += computeMuofSmagorinskyModel(icoords); 
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
-            }
-
-            switch (comp)
-            {
-                case LIQUID_COMP1:
-                    mu[index] += m_mu[0];
-                    rho[index] = m_rho[0];
-                    break;
-                case LIQUID_COMP2:
-                    mu[index] += m_mu[1];
-                    rho[index] = m_rho[1];
-                    break;
-            }
-	    
+            } 
         }
         else
 	    {
@@ -2371,17 +2368,16 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-    
     //zero f_surf array
+    for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
-	    index  = d_index2d(i,j,top_gmax);
+	    index = d_index3d(i,j,k,top_gmax);
         for (l = 0; l < dim; ++l)
             f_surf[l][index] = 0.0;
     }
     
-
     if (iFparams->use_eddy_visc == YES &&
         iFparams->eddy_visc_model == BALDWIN_LOMAX)
     {
@@ -2424,7 +2420,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 ifluid_comp(positive_component(hs)) &&
                 ifluid_comp(negative_component(hs)) && 
                 positive_component(hs) != negative_component(hs))
-        {
+        {//SURFACE TENSION
             sign = (comp == m_comp[0]) ? -1 : 1;
             D = smoothedDeltaFunction(center,point);
             H = smoothedStepFunction(center,point,sign);
@@ -2443,7 +2439,19 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             }
         }
         else if (iFparams->use_eddy_visc == YES)
-        {
+        {//EDDY VISCOSITY
+            switch (comp)
+            {
+                case LIQUID_COMP1:
+                    mu[index] = m_mu[0];
+                    rho[index] = m_rho[0];
+                    break;
+                case LIQUID_COMP2:
+                    mu[index] = m_mu[1];
+                    rho[index] = m_rho[1];
+                    break;
+            }
+
             switch (iFparams->eddy_visc_model)
             {
             case BALDWIN_LOMAX:
@@ -2457,7 +2465,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                          wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
-                    mu[index] = computeMuOfBaldwinLomax(icoords,dist,first);
+                    mu[index] += computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
@@ -2466,28 +2474,15 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 pres[index] += 2.0/3.0*tke[index];
                 break;
             case VREMAN:
-                mu[index] = computeMuOfVremanModel(icoords);
+                mu[index] += computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
-                mu[index] = computeMuofSmagorinskyModel(icoords);
-                //TODO: effective pressure
+                mu[index] += computeMuofSmagorinskyModel(icoords);
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
-            }
-    
-            switch (comp)
-            {
-                case LIQUID_COMP1:
-                    mu[index] += m_mu[0];
-                    rho[index] = m_rho[0];
-                    break;
-                case LIQUID_COMP2:
-                    mu[index] += m_mu[1];
-                    rho[index] = m_rho[1];
-                    break;
-            }
+            } 
         }
 	    else
 	    {
@@ -3300,6 +3295,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
 }      /* end computeFieldPointGrad */
 
+//TODO: See NOTE below
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {
 	int i,j,k,index;
@@ -3310,27 +3306,35 @@ void Incompress_Solver_Smooth_Basis::setReferencePressure()
         {
 	case 2:
 	    index = d_index2d(imin,jmin,top_gmax);
-            diff_pres = pres[index] - iFparams->ref_pres;
+        diff_pres = pres[index] - iFparams->ref_pres;
 	    for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+        for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		if (!ifluid_comp(top_comp[index]))
-		    continue;
-		pres[index] -= diff_pres;
+            index = d_index2d(i,j,top_gmax);
+            if (!ifluid_comp(top_comp[index]))
+                continue;
+            pres[index] -= diff_pres;
+            //NOTE:
+            //pres[index] = pres[index] - diff_pres 
+            //pres[index] = pres[index] - (pres[index] - iFparams-ref_pres)
+            //pres[index] = iFparams->ref_pres
 	    }
 	    break;
 	case 3:
-            index = d_index3d(imin,jmin,kmin,top_gmax);
-            diff_pres = pres[index] - iFparams->ref_pres;
+        index = d_index3d(imin,jmin,kmin,top_gmax);
+        diff_pres = pres[index] - iFparams->ref_pres;
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+        for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		if (!ifluid_comp(top_comp[index]))
-		    continue;
-		pres[index] -= diff_pres;
+            index = d_index3d(i,j,k,top_gmax);
+            if (!ifluid_comp(top_comp[index]))
+                continue;
+            pres[index] -= diff_pres;
+            //NOTE:
+            //pres[index] = pres[index] - diff_pres 
+            //pres[index] = pres[index] - (pres[index] - iFparams-ref_pres)
+            //pres[index] = iFparams->ref_pres
 	    }
 	    break;
 	}
@@ -4924,7 +4928,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //TODO: look into details of FT_GridSizeInDir(),
     //      has given very large values on 3d runs. However
-    //      that may have been due to using non unit normal,
+    //      that may have been due to using non-unit normal,
     //      nor, which has since been corrected.
     double dist_reflect = FT_GridSizeInDir(nor,front);
     
@@ -4947,12 +4951,16 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     if (debugging("slip_boundary"))
     {
         printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        fprint_int_vector(stdout,"icoords",icoords,dim,", ");
+        fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
+        fprint_general_vector(stdout,"coords",coords,dim,"\n");
         fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
         fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
         fprint_general_vector(stdout,"normal",nor,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
-                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
+        printf("dist_ghost = %g , dist_reflect = %g\n",dist_ghost,dist_reflect);
+        printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
+                dist_ghost/dist_reflect, dist_reflect - dist_ghost);
     }
     ////////////////////////////////////////////////////////////////////////
 
@@ -4970,32 +4978,26 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
                 getStateMu,&mu_reflect,&field->mu[index]);
+    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
  
     double vel_rel[MAXD] = {0.0};
     double vn = 0.0;
 
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: Unable to compute the intfc_velocity at the nearest point.
-        //      Using the intfc state at the grid line crossing instead for now.
-        //
-        //      testing new vel_intfc computation .....
-        //
-            //vel_rel[j] = vel_reflect[j] - vel_intfc_gcrx[j];
-    
         vel_rel[j] = vel_reflect[j] - vel_intfc[j];
         vn += vel_rel[j]*nor[j];
     }
 
-    //TODO: This would be omitted if lower code implementation finished
+    /*
+    //TODO: If tangential vel modification omitted, return after computing
+    //      the below v_slip. 
     for (int j = 0; j < dim; ++j)
     {
         v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
             //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
     }
-    
-    /*
-    //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
+    */
     
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
@@ -5007,74 +5009,72 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    //TODO: Need to modify tangential velocity also.
-    //      First need to solve spalding's wall law for the
-    //      friction velocity, u_tau, then compute the wall
-    //      shear stress, tau_wall. Then must modify the ghost's
-    //      relative tangential slip velocity according to
-    //
-    //      v_tan_ghost = v_tan_reflect
-    //            - (dist_reflect + dist_ghost)/(mu_reflect + mu_t_reflect)*tau_wall
-    //
-    //      where v_tan_ghost and v_tan_reflect are relative velocities
-    //      with respect to the interface.
     
     if (debugging("slip_boundary"))
     {
-        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
-        fprint_general_vector(stdout,"coords",coords,dim,"\n");
-        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
-        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
-        fprint_general_vector(stdout,"normal",nor,dim,"\n");
-        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        printf("dist_ghost = %g , dist_reflect = %g , dist_ghost/dist_reflect = %g\n",
-                dist_ghost, dist_reflect, dist_ghost/dist_reflect);
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
         fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
+        printf("mu_reflect = %g  mu_[%d] = %g\n",mu_reflect,index,field->mu[index]);
     }
 
-    double mul;
-    double rhol;
+    double mu_l;
+    double rho_l;
 
     switch (comp)
     {
         case LIQUID_COMP1:
-            mul = m_mu[0];
-            rhol = m_rho[0];
+            mu_l = m_mu[0];
+            rho_l = m_rho[0];
             break;
         case LIQUID_COMP2:
-            mul = m_mu[1];
-            rhol = m_rho[1];
+            mu_l = m_mu[1];
+            rho_l = m_rho[1];
             break;
         default:
             printf("Unknown fluid COMPONENT: %d\n",comp);
             LOC(); clean_up(EXIT_FAILURE);
+            break;
     }
     
-    //TODO: NEED TO FIX solving spadling formula with secant method -- diverges in current form
-    double tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mul,rhol);
+    double tau_wall[MAXD] = {0.0};
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l);
+
+    if (mag_vtan > MACH_EPS)
+    {
+        for (int j = 0; j < dim; ++j)
+            tau_wall[j] = -1.0*mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+    }
+    //TODO: Need to do anything else with tau_well other than adjust
+    //      the ghost fluid's tangential velocity??
+    //      (Aside from using for drag computation)
 
     double vel_ghost_tan[MAXD] = {0.0};
+    //double vel_ghost_rel[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
+        //TODO: SIGN -- add or subtract from vel_rel_tan
         vel_ghost_tan[j] =
-            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall;
+            vel_rel_tan[j] + (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+            //vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+        //TODO: should it be (dist_reflect + dist_ghost) or is the above correct??
 
-        //TODO: need to revert back to world frame by adding back vel_intfc
+        // Revert back to world frame by adding back vel_intfc
         v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
-            //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
-            //v_slip[j] += vel_intfc[j];
+            //vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+            //v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
 
     if (debugging("slip_boundary"))
     {
-        printf("tau_wall = %f\n",tau_wall);
+        printf("mag_tau_wall = %f\n",mag_tau_wall);
+        fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
-    */
 }
 
 

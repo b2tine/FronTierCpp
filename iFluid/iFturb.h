@@ -1,13 +1,10 @@
 #ifndef IF_TURB_H
 #define IF_TURB_H
 
-//TODO: Not finding this 
+//TODO: Need to be able to solve this root
 struct SpaldingWallLaw
 {
-    double u;           //tangential fluid velocity magnitude
-    double y;           //distance to wall
-    double nu;          //kinematic viscosity (laminar)
-    double B {5.2};     //model constant ~ 5.2 for smooth walls
+public:
 
     SpaldingWallLaw(double u_tan, double dist, double nu_lam)
         : u(u_tan), y(dist), nu(nu_lam)
@@ -17,62 +14,72 @@ struct SpaldingWallLaw
         : u(u_tan), y(dist), nu(nu_lam), B(b)
     {}
 
-    //u_star is the friction velocity
-    double operator() (double u_star) const
-    {
-        //TODO: dividing by zero whe u_star = 0 is an initial guess,
-        //      need a better formulation of the root finding problem.
-        double u_plus = 0.0;
-        if (u >= MACH_EPS)
-        {
-            if (u_star < MACH_EPS)
-            {
-                printf("ERROR: division by zero! (u_star < 0)\n");
-                LOC(); clean_up(EXIT_FAILURE);
-            }
-            u_plus = u/u_star;
-        }
-        
-        double Kup = 0.41*u_plus;
-        
-        double exp_term =
-            exp(-0.41*B)*(exp(Kup) - 1.0 - Kup - 0.5*Kup*Kup - Kup*Kup*Kup/6.0);
+    ~SpaldingWallLaw() = default;
 
-        return y/nu*sqr(u_star) - exp_term*u_star - u;
+    SpaldingWallLaw() = delete;
+    SpaldingWallLaw(const SpaldingWallLaw&) = delete;
+    SpaldingWallLaw& operator=(const SpaldingWallLaw&) = delete;
+    SpaldingWallLaw(SpaldingWallLaw&&) = delete;
+    SpaldingWallLaw& operator=(SpaldingWallLaw&&) = delete;
+
+        
+    const int MAXITER = 5000;
+    const double TOL = 1.0e-08;
+        
+    double solve(double u0)
+    {
+            //printf("u = %g  y = %g\n",u,y);//DEBUG
+        if (u < TOL) return 0.0;
+            //assert(u0 > 0.0);
+
+        double un = u0;
+        for (int i = 0; i < MAXITER; ++i)
+        {
+            double fval = f(un);
+                //printf("iter = %d  un = %g  fval = %g\n",i,un,fval);//DEBUG
+            if (fabs(fval) < TOL) return un;
+
+            un = un - f(un)/fprime(un);
+        }
+
+        //TODO: better debugging output
+        printf("ERROR: SpaldingWallLaw::solve() could not find root\n");
+        printf("u = %g  y = %g  nu = %g\n",u,y,nu);
+        printf("un = %g   f(un) = %g\n",un,f(un));
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+private:
+    
+    double u;           //tangential fluid velocity magnitude
+    double y;           //physical distance to wall
+    double nu;          //fluid kinematic viscosity (laminar)
+    double B {5.2};     //model constant ~ 5.2 for smooth walls
+    double K {0.41};    //Karman constant
+
+    double f(double u_plus)
+    {
+        double val = u_plus*u_plus - y/nu*u
+            + exp(-K*B)*((exp(K*u_plus) - 1.0)*u_plus
+                - K*u_plus*u_plus - 0.5*K*K*u_plus*u_plus*u_plus
+                - K*K*K/6.0*u_plus*u_plus*u_plus*u_plus);
+        return val;
+    }
+
+    double fprime(double u_plus)
+    {
+        double val = 2.0*u_plus
+            + exp(-K*B)*(exp(K*u_plus)*(K*u_plus + 1.0) - 1.0
+                    - 2.0*K*u_plus - 1.5*K*K*u_plus*u_plus
+                    - 2.0/3.0*K*K*K*u_plus*u_plus*u_plus);
+        return val;
     }
 };
 
 
-template<typename F>
-double secantMethod(const F& f, double xa, double xb)
-{
-    const int MAXITER = 5000;
-    const double TOL = 1.0e-08;
-
-    double x0 = xa;
-    double x1 = xb;
-    //TODO: handle input edge cases
-
-    double xn = x0;
-    for (int i = 0; i < MAXITER; ++i)
-    {
-        double fval = f(xn);
-        if (fabs(fval) < TOL)
-            return xn;
-
-        xn = x1 - f(x1)*(x1-x0)/(f(x1)-f(x0));
-        x0 = x1;
-        x1 = xn;
-    }
-
-    //TODO: better debugging output
-    printf("ERROR: secantMethod() could not find root\n");
-    LOC(); clean_up(EXIT_FAILURE);
-}
-
-
 double computeWallShearStress(double u_tan, double walldist, double mu, double rho);
 double computeFrictionVelocity(double u_tan, double walldist, double mu, double rho);
+double computeWallVelocity(double u_tan, double walldist, double mu, double rho);
 
 
 #endif
