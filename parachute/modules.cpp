@@ -143,8 +143,11 @@ extern void initParachuteDefault(
     char string[100];
 
     af_params->is_parachute_system = YES;
+    
+    //NOTE: This only appears to have an effect on what print_airfoil_stat3d() gets called
     af_params->spring_model = MODEL1;
-	af_params->gore_len_fac = 1.0;
+	
+    af_params->gore_len_fac = 1.0;
     af_params->attach_gores = NO;
     if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))

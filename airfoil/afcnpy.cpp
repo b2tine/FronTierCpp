@@ -43,11 +43,11 @@ static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void new_setNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
-static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
+static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);//doesn't exist
+static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);//doesn't exist
 static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
-static void linkGlobalIndexToTri(INTERFACE*,TRI***);
+static void linkGlobalIndexToTri(INTERFACE*,TRI***);//nowhere used
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
 
@@ -99,6 +99,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
+//NOTE: nowhere used
 extern void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
@@ -496,8 +497,7 @@ extern void compute_curve_accel1(
 	    x_diff = len - len0; 
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
 		vect[j] = x_diff*dir[j];
 		if (b != curve->first)
 		{
@@ -538,12 +538,10 @@ extern void compute_curve_accel1(
 				length0 = tris[j]->side_length0[side];
 				length = separation(p,p_nb,3);
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/length;
-                            	    f[i][k] += ks*(length - length0)*
-					dir[k]/m_l;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    f[i][k] += ks*(length - length0)*dir[k]/m_l;
+                }
 			    }
 			}
 		    }
@@ -621,8 +619,7 @@ extern void compute_node_accel1(
 	    x_diff = len - len0; 
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
 		vect[j] = x_diff*dir[j];
 		if (dim == 3)
 		{
@@ -850,21 +847,23 @@ static void smooth_vel(
 	
 	PointAndFirstRingTris(p,hse,hs,&nt,tris);
 	np = 0;
-	for (k = 0; k < 3; ++k)
+	
+    for (k = 0; k < 3; ++k)
 	    vel[k] = 0.0;
+
 	for (i = 0; i < nt; ++i)
 	{
 	    for (j = 0; j < 3; ++j)
 	    {
-		pt = Point_of_tri(tris[i])[j];
-		if (pointer_in_list((POINTER)pt,np,(POINTER*)pt_list))
-		    continue;
-		pt_list[np++] = pt;	
-		hse = Hyper_surf_element(tris[i]);
-		FT_GetStatesAtPoint(pt,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		for (k = 0; k < 3; ++k)
-	    	    vel[k] += sl->vel[k];
-		
+            pt = Point_of_tri(tris[i])[j];
+            if (pointer_in_list((POINTER)pt,np,(POINTER*)pt_list))
+                continue;
+
+            pt_list[np++] = pt;	
+            hse = Hyper_surf_element(tris[i]);
+            FT_GetStatesAtPoint(pt,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            for (k = 0; k < 3; ++k)
+                vel[k] += sl->vel[k];
 	    }
 	}
 	for (k = 0; k < 3; ++k)
@@ -926,8 +925,7 @@ extern void compute_node_accel2(
 	    len0 = bond_length0(b);
 	    for (j = 0; j < dim; ++j)
 	    {
-		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
-				len0*b->dir0[j];
+		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] - len0*b->dir0[j];
 		if (dim == 3)
 		{
 		    if (is_load_node(node) == YES)
@@ -1020,12 +1018,11 @@ extern void compute_node_accel2(
 			len = separation(p,p_nb,3);
 			x_diff = len - len0;
 			for (k = 0; k < 3; ++k)
-                       	{
-                       	    dir[k] = tri->side_dir0[side][k]; 
-                       	    vect[k] = (Coords(p_nb)[k] - Coords(p)[k])
-					- len0*dir[k];
-                       	    f[*n][k] += ks*vect[k]/mass;
-                       	}
+            {
+                dir[k] = tri->side_dir0[side][k]; 
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - len0*dir[k];
+                f[*n][k] += ks*vect[k]/mass;
+            }
 		    }
 		}
 	    }
@@ -1094,7 +1091,7 @@ extern void compute_curve_accel2(
 	    {
 	    	x[i][j] = Coords(b->end)[j];
 	    	v[i][j] = b->end->vel[j];
-		f[i][j] = -lambda_l*v[i][j]/m_l;
+		    f[i][j] = -lambda_l*v[i][j]/m_l;
 	    }
 	    i++;
 	}
@@ -1225,19 +1222,18 @@ static void spring_force_at_point2(
 		    length0 = tris[i]->side_length0[j];
 		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
 		    length = separation(p,p_nb,3);
-	    	    for (k = 0; k < 3; ++k)
+            for (k = 0; k < 3; ++k)
 		    {
-			dir[k] = tris[i]->side_dir0[j][k];
-			vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) -
-				//length0*tris[i]->side_dir0[j][k];
-				length0*dir[k];
-			f[k] += ks*vect[k];
+                dir[k] = tris[i]->side_dir0[j][k];
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
+                    //vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*tris[i]->side_dir0[j][k];
+                f[k] += ks*vect[k];
 		    }
 		    if (is_side_bdry(tris[i],(j+2)%3))
 		    {
-			(void) printf("Detect boundary "
-				"in spring_force_at_point2()\n");
-			clean_up(ERROR);
+                (void) printf("Detect boundary "
+                    "in spring_force_at_point2()\n");
+                clean_up(ERROR);
 		    }
 		}
 	    }
@@ -1353,13 +1349,11 @@ extern void compute_node_accel3(
 				len = separation(p,p_nb,3);
 	    			x_diff = len - len0; 
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/len;
-                            	    vect[k] = len0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[*n][k] += ks*vect[k]/m_s;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
 			    }
 			}
 		    }
@@ -1391,13 +1385,11 @@ extern void compute_node_accel3(
 				len = separation(p,p_nb,3);
 				x_diff = len - len0;
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/len;
-                            	    vect[k] = len0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[*n][k] += ks*vect[k]/m_s;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
 			    }
 			}
 		    }
@@ -1460,7 +1452,7 @@ extern void compute_curve_accel3(
 	    {
 	    	x[i][j] = Coords(b->end)[j];
 	    	v[i][j] = b->end->vel[j];
-		f[i][j] = -lambda_l*v[i][j]/m_l;
+            f[i][j] = -lambda_l*v[i][j]/m_l;
 	    }
 	    i++;
 	}
@@ -1471,8 +1463,7 @@ extern void compute_curve_accel3(
 	    len0 = bond_length0(b);
 	    for (j = 0; j < dim; ++j)
 	    {
-		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
-				/bond_length(b) - b->dir0[j]);
+		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])/bond_length(b) - b->dir0[j]);
 		if (b != curve->first)
 		{
 	    	    f[i-1][j]   += kl*vect[j]/m_l;
@@ -1512,13 +1503,11 @@ extern void compute_curve_accel3(
 				length0 = tris[j]->side_length0[side];
 				length = separation(p,p_nb,3);
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/length;
-				    vect[k] = length0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[i][k] += kl*vect[k]/m_l;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    vect[k] = length0*(dir[k] - tris[j]->side_dir0[side][k]);
+                    f[i][k] += kl*vect[k]/m_l;
+                }
 			    }
 			}
 		    }
@@ -1907,6 +1896,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
             //      check of the hypersurface in collect_hyper_surfaces()
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
 	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+            //TODO: Or use this one???
                 //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             
             collectNodeExtra(fr,elastic_intfc,owner_id);
@@ -2628,11 +2618,18 @@ static void setSurfVelocity(
 		    //sr->vel[j] = vel[j];
 		    sl->vel[j] = nor_speed*nor[j];
 		    sr->vel[j] = nor_speed*nor[j];
+            //TODO: missing function new_setSurfVelocity() has this in zgao code
+		        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+		        //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
 		}
 		sorted(p) = YES;
 	    }
 	}
-	//reduce_high_freq_vel(front,surf);
+
+    //TODO: should this be used?
+    //
+    //reduce_high_freq_vel(front,surf);
+
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -2670,6 +2667,12 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
+                //TODO: missing function new_setSurfVelocity() has this in zgao code
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+                //Maybe this should be....
+                    //sl->vel[j] = sl->impulse[j] + vel[j];
+                    //sr->vel[j] = sr->impulse[j] + vel[j];
             }
         }
     }
@@ -2694,6 +2697,9 @@ static void setCurveVelocity(
                     //sr->vel[j] = vel[j];
                     sl->vel[j] = nor_speed*nor[j];
                     sr->vel[j] = nor_speed*nor[j];
+                    //TODO: missing function new_setCurveVelocity() has this in zgao code
+                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                        //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
@@ -2810,6 +2816,9 @@ static void new_setNodeVelocity3d(
                 //sr->vel[j] = vel[j];
 		    	sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
+                //TODO: zgao code has this
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
 		}
         
@@ -2858,11 +2867,15 @@ static void new_setNodeVelocity3d(
                 //sr->vel[j] = vel[j];
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
+                //TODO: zgao code has this
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
         }
     }
 }	/* end setNodeVelocity3d */
 
+//TODO: see comments in the setXXXVelocity() functions
 extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
@@ -3388,6 +3401,7 @@ extern void set_unequal_strings(Front *front)
 	    printf("Leaving set_unequal_strings()\n");
 }	/* end set_unequal_strings */
 
+//NOTE: nowhere used
 static void linkGlobalIndexToTri(
         INTERFACE *intfc,
         TRI ***gtri)

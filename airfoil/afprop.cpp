@@ -202,10 +202,13 @@ extern void elastic_point_propagate(
                 
                 //dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
                     
-            //TODO: why isn't triangle area involved in this computation???
+            //TODO: Should triangle area be involved in this computation???
             //
-            //      mass_tri = tri_area*area_dens
-            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri
+            //      double area_tri = tri_area(tri);
+            //      double mass_tri = area_tri*area_dens;
+            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri;
+            //
+            //      If not, then area_dens must be the canopy density per unit area.
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
@@ -544,6 +547,7 @@ static void gore_curve_propagation(
 	}
 }	/* end gore_curve_propagation */
 
+//TODO: investigate -- currently it does not appear that gore seams are supported
 static void gore_point_propagate(
 	Front *front,
         POINTER wave,
@@ -974,6 +978,7 @@ static void coating_mono_hyper_surf2d(
 	    (void) printf("Leaving coating_mono_hyper_surf2d()\n");
 }	/* end coating_mono_hyper_surf2d */
 
+//TODO: investigate
 static void coating_mono_hyper_surf3d(
 	Front *front)
 {
@@ -1049,7 +1054,8 @@ static void coating_mono_hyper_surf3d(
 		}
 	    }
 	}
-	if (debugging("coat_comp"))
+	
+    if (debugging("coat_comp"))
 	{
 	    icoords[0] = top_gmax[0]/2;
 	    for (icoords[2] = 0; icoords[2] <= top_gmax[2]; ++icoords[2])
@@ -1062,6 +1068,7 @@ static void coating_mono_hyper_surf3d(
 	    	printf("\n");
 	    }
 	}
+
 	if (debugging("immersed_surf") && front->step%1 == 0)
 	{
 	    int icrd_nb[MAXD],index_nb,n;
@@ -1305,7 +1312,8 @@ static void rg_string_node_propagate(
 	    printf("No related hs or hse found");
 	    clean_up(ERROR);
 	}
-	ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
+	
+    ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	if (dt > 0.0)
 	{
 	    for (i = 0; i < dim; ++i)
@@ -1318,11 +1326,13 @@ static void rg_string_node_propagate(
 		accel[i] = 0.0;
 	}
 
+    //TODO: was previously -= g[i]!!!!!!!!!!!!!!!!!!!!!!
 	for (i = 0; i < dim; ++i)
-	    accel[i] -= g[i];
+	    accel[i] += g[i];
+	        //accel[i] -= g[i];
 
-        if (debugging("rigid_body"))
-        {
+    if (debugging("rigid_body"))
+    {
 	    (void)printf("accel = %f %f %f\n", accel[0], accel[1], accel[2]);
 	    (void)printf("old coords = %f %f %f\n", Coords(oldp)[0], 
 				Coords(oldp)[1], Coords(oldp)[2]);

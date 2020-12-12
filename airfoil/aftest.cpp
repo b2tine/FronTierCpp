@@ -885,6 +885,8 @@ static void print_airfoil_stat3d(
 	char *out_name)
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+    //TODO: are these even applicable to current parachute code????
 	switch (af_params->spring_model)
 	{
 	case MODEL1:
@@ -897,12 +899,15 @@ static void print_airfoil_stat3d(
 	default:
 	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
 	}
+
+    //TODO: verify these computations
 	print_drag3d(front,out_name);
 	print_strings(front,out_name);
 	if (pp_numnodes() == 1)
 	    print_rgb3d(front,out_name);
 }	/* end print_airfoil_stat3d */
 
+//TODO: check computations
 static void print_airfoil_stat3d_1(
 	Front *front,
 	char *out_name)
@@ -2430,7 +2435,7 @@ static void print_drag3d(
         double drag[MAXD]={0}, lift[MAXD]={0};
         double fvel_mag = 0.0;
 
-
+        //looks for the constant state dirichlet boundary (INLET)
         for (s = intfc->surfaces; s && *s; ++s)
         {
             HYPER_SURF *hs = Hyper_surf(*s);
