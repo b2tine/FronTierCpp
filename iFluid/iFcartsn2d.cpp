@@ -472,7 +472,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
 {
-    int i,j,k,l;
+    /*
+    int j,k,l;
 	double x,y,a,f,Force;
 	double t = front->time;
 	double phi[MAXD+1];
@@ -480,20 +481,30 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	y = coords[1];
 	UNIFORM_PARAMS uniform_params;
 	short unsigned int xsubi[3]; 
+    */
+
+    //TODO: remove commented out code when certain of changes
+    for (int i = 0; i < dim; ++i)
+        source[i] = iFparams->gravity[i];
 
 	if(iFparams->if_buoyancy)
 	{
 	    int ic[MAXD],index;
         rect_in_which(coords,ic,top_grid);
         index = d_index(ic,top_gmax,dim);
-        for (i = 0; i < dim; ++i)
-            source[i] = field->ext_accel[i][index];
+        for (int i = 0; i < dim; ++i)
+        {
+            source[i] += field->ext_accel[i][index];
+            //source[i] = field->ext_accel[i][index];
+        }
 	}
+    /*
     else
     {
-        for (i = 0; i < dim; ++i)
+        for (int i = 0; i < dim; ++i)
             source[i] = iFparams->gravity[i];
     }
+    */
 }	/* end computeSourceTerm */
 
 void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
@@ -807,12 +818,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         if (!is_bdry_hs(hs))//TODO: handle another way -- we want to include these (see below)
                         {
                             //Apply slip boundary condition
-                            //nb = 0; //idir = 0, nbr = 0;
-                            //nb = 1; //idir = 0, nbr = 1;
-                            //nb = 2; //idir = 1, nbr = 0;
-                            //nb = 3; //idir = 1, nbr = 1;
+                            //nb = 0; idir = 0, nbr = 0;
+                            //nb = 1; idir = 0, nbr = 1;
+                            //nb = 2; idir = 1, nbr = 0;
+                            //nb = 3; idir = 1, nbr = 1;
                             double v_slip[MAXD] = {0.0};
-                            int idir = nb/2; int nbr = nb%2; //quick hack to avoid restructuring loop while prototyping
+                            int idir = nb/2; int nbr = nb%2;
                             setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
                             U_nb[nb] = v_slip[l];                //n+1 vel
                                 //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
@@ -830,7 +841,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         printf("Unknown Boundary Type!\n");
                         LOC(); clean_up(EXIT_FAILURE);
                     }
-                
+
+                    //TODO: Can we also get the ghost viscosity from setSlipBoundary()??
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
                     else
@@ -951,8 +963,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     }
 	
     FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	stop_clock("computeDiffusionCN");
-	if (debugging("field_var"))
+    FT_FreeThese(1,x);
+	
+    stop_clock("computeDiffusionCN");
+	
+    if (debugging("field_var"))
 	{
 	    (void) printf("\nIn computeDiffusionCN(), \n");
 	    (void) printf("one step increment for v[0]:\n");
@@ -962,10 +977,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 	    (void) printf("\n");
 	}
 
-        FT_FreeThese(1,x);
-        if (debugging("trace"))
-            (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"
-                        "computeDiffusionCN()\n");
+    if (debugging("trace"))
+        (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"
+                    "computeDiffusionCN()\n");
 }	/* end computeDiffusionCN */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
