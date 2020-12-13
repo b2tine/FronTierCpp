@@ -945,6 +945,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 */      
 
 
+
+                //TODO: REVERT BACK TO ORIGINAL REFLECTION POINT!!!!!!!!!!!!
+
+
                 ///////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
                 /////////////////////////////////////////////////////////////////////
