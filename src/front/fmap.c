@@ -2908,7 +2908,8 @@ LOCAL void FrontPreAdvance3d(
 	    pp_global_sum(force[i],dim);
 	    pp_global_sum(torque[i],dim);
 	}
-	intfc_surface_loop(intfc,s)
+	
+    intfc_surface_loop(intfc,s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
 	    {
@@ -2988,11 +2989,11 @@ LOCAL void FrontPreAdvance3d(
 		    /* update the center of mass velocity */
 		    if (motion_type(*s) == FREE_MOTION)
 		    {
-			for (i = 0; i < dim; ++i)
-                    	{
-                            center_of_mass_velo(*s)[i] +=
-                                    dt*force[index][i]/total_mass(*s);
-                    	}
+                for (i = 0; i < dim; ++i)
+                {
+                    center_of_mass_velo(*s)[i] +=
+                            dt*force[index][i]/total_mass(*s);
+                }
 		    }
 		    else
 		    {
@@ -3159,7 +3160,8 @@ LOCAL void FrontPreAdvance3d(
 		for (i = 0; i < dim; ++i)
                     center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + 
 							old_vel[i])*0.5;
-		if (debugging("rigid_body"))
+		
+        if (debugging("rigid_body"))
 		{
 		    printf("Body index: %d\n",index);
 		    printf("torque = %f %f %f\n",torque[index][0],
@@ -3181,33 +3183,36 @@ LOCAL void FrontPreAdvance3d(
 					center_of_mass_velo(*s)[1],
 					center_of_mass_velo(*s)[2]);
 		}
-	    }
+	    
+        }
 	    else if (wave_type(*s) == ICE_PARTICLE_BOUNDARY)
 	    {
-		for (i = 0; i < dim; ++i)
-		{
-		    center_of_mass_velo(*s)[i] +=
-                        	dt*force[index][i]/total_mass(*s);
-                    center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
-		    center_of_mass(*s)[i] -= 
-				0.5*(force[index][i]/total_mass(*s)*dt*dt) ;
-		}
-		if (debugging("rigid_body"))
-		{
-		    printf("Body index: %d\n",index);
-		    printf("force = %f %f %f\n",force[index][0],
-					force[index][1],force[index][2]);
-		    printf("center_of_mass = %f  %f  %f\n",
-					center_of_mass(*s)[0],
-					center_of_mass(*s)[1],
-					center_of_mass(*s)[2]);
-		    printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		}
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass_velo(*s)[i] +=
+                                dt*force[index][i]/total_mass(*s);
+                        center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
+                center_of_mass(*s)[i] -= 
+                    0.5*(force[index][i]/total_mass(*s)*dt*dt) ;
+            }
+            
+            if (debugging("rigid_body"))
+            {
+                printf("Body index: %d\n",index);
+                printf("force = %f %f %f\n",force[index][0],
+                        force[index][1],force[index][2]);
+                printf("center_of_mass = %f  %f  %f\n",
+                        center_of_mass(*s)[0],
+                        center_of_mass(*s)[1],
+                        center_of_mass(*s)[2]);
+                printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+            }
 	    }
 	}
+
 	free_these(2,force,torque);
 	if (debugging("rigid_body"))
 	    (void) printf("Leaving FrontPreAdvance()\n");

@@ -396,6 +396,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             
             if (status == NO_PDE_BOUNDARY)
             {
+                //NOTE: Includes ELASTIC_BOUNDARY
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
@@ -853,6 +854,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             
             if (status == NO_PDE_BOUNDARY)
             {
+                //NOTE: Includes ELASTIC_BOUNDARY
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }

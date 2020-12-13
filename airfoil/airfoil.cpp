@@ -119,6 +119,11 @@ int main(int argc, char **argv)
 	    
         initRigidBody(&front);
 	    setRigidBodyMotionParams(&front,&rgb_params);
+        //TODO: CgalCanopySurface(infile,front,&surf);
+        //
+        //      set up fixed rectangular fabric sheet
+        //      in wind tunnel like cfabric for debugging
+        //      turbulence code near the canopy
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {

@@ -50,7 +50,8 @@ tagsfile:
 		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
 		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/iFcartsn3d.cpp \
 		$(top_srcdir)/iFluid/iFinit.cpp $(top_srcdir)/iFluid/iFbasic.cpp \
-		$(top_srcdir)/iFluid/iFsub.cpp $(top_srcdir)/iFluid/keps.cpp \
+		$(top_srcdir)/iFluid/iFsub.cpp $(top_srcdir)/iFluid/rigidbody.cpp \
+		$(top_srcdir)/iFluid/iFturb.cpp \
 		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
 		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

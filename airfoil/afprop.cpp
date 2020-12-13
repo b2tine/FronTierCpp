@@ -194,11 +194,11 @@ extern void elastic_point_propagate(
             dv[i] = 0.0;
 	    else if (front->step > af_params->fsi_startstep)
         {
-            //TODO: Verify using newsl->pres and newsr->pres
-            //      where the interpolated values are stored
-            //      is correct. Carefully study this....
-            dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
-                //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+            //TODO: Use newsl->pres and newsr->pres
+            //      where the interpolated values are stored??
+            //      Carefully study this....
+            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+                //dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
                 
                 //TODO: zgao code has this instead (multiply by dt)
                 //  dv[i] = (sl->pres - sr->pres)*nor[i]*dt/area_dens;
@@ -212,8 +212,8 @@ extern void elastic_point_propagate(
             //      has negative sign on the normal for the positive side
             //      in the above vel increment in the normal direction.
             //      
-            //  dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
             //  dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
+            //      //dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
                     
             //TODO: Should triangle area be involved in these computations???
             //      see print_drag3d(). However we are not looping over tris,
@@ -1345,7 +1345,7 @@ static void rg_string_node_propagate(
 	    clean_up(ERROR);
 	}
 	
-    //hs should have wave_type of MOVABLE_BODY_BOUNDARY?
+    //hs should have wave_type == MOVABLE_BODY_BOUNDARY?
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
@@ -1366,7 +1366,7 @@ static void rg_string_node_propagate(
 	else
 	{
 	    for (i = 0; i < dim; ++i)
-		accel[i] = 0.0;
+            accel[i] = 0.0;
 	}
 
     //TODO: was previously -= g[i], and gravity is already directed...

@@ -774,13 +774,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             icoords[0] = i;
             icoords[1] = j;
             comp = top_comp[index];
-                    
 
             I_nb[0] = ij_to_I[i-1][j]; // left or west
             I_nb[1] = ij_to_I[i+1][j]; // right or east
             I_nb[2] = ij_to_I[i][j-1]; // down or south
             I_nb[3] = ij_to_I[i][j+1]; // up or north
-
 
             mu0 = field->mu[index];
             rho = field->rho[index];
@@ -850,6 +848,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 }
                 else
                 {
+                    //NOTE: Includes ELASTIC_BOUNDARY
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
@@ -875,6 +874,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
        
                 if (status == NO_PDE_BOUNDARY)
                 {
+                    //NOTE: Includes ELASTIC_BOUNDARY
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }

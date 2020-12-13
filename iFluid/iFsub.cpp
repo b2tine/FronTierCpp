@@ -921,7 +921,7 @@ static  void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
-static  void rgbody_point_propagate(
+static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -933,12 +933,13 @@ static  void rgbody_point_propagate(
 {
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	IF_FIELD *field = iFparams->field;
-        double vel[MAXD];
-        int i, dim = front->rect_grid->dim;
+    double vel[MAXD];
+    int i, dim = front->rect_grid->dim;
 	double dn,*h = front->rect_grid->h;
 	double *m_pre = field->pres;
 	double *m_vor = field->vort;
 	double *m_temp = field->temperature;
+	double *m_mu = field->mu;
 	double nor[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
 	STATE *oldst,*newst;
@@ -958,128 +959,153 @@ static  void rgbody_point_propagate(
 	    oldst = (STATE*)sr;
 	    newst = (STATE*)right_state(newp);
 	}
-	setStateViscosity(iFparams,newst,comp);
-	FT_NormalAtPoint(oldp,front,nor,comp);
 
+    //TODO: does eddy viscosity need to be taken into account
+    //      in setStateViscosity()??
+	setStateViscosity(iFparams,newst,comp);
+	
+    FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
+
 	for (i = 0; i < dim; ++i)
 	    p1[i] = p0[i] + nor[i]*dn;
 
-        if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
+    if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
+    {
+        if(!debugging("collision_off"))
         {
-            if(!debugging("collision_off"))
-            {
-                for (i = 0; i < dim; ++i)
-                    newst->x_old[i] = Coords(oldp)[i];
-            }
-            
-            double omega_dt,crds_com[MAXD];
-            omega_dt = angular_velo(oldhs)*dt;
-
-            //TODO: test/verify
             for (i = 0; i < dim; ++i)
-    	    {
-                vel[i] = center_of_mass_velo(oldhs)[i];
-                crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
-				*0.5 - rotation_center(oldhs)[i];
-	        }
-            if (dim == 2)
+                newst->x_old[i] = Coords(oldp)[i];
+        }
+        
+        double omega_dt,crds_com[MAXD];
+        omega_dt = angular_velo(oldhs)*dt;
+
+        //TODO: is center of mass velo being set correctly?
+        for (i = 0; i < dim; ++i)
+        {
+            vel[i] = center_of_mass_velo(oldhs)[i];
+            crds_com[i] = Coords(oldp)[i]
+                + dt*(vel[i] + oldst->vel[i])*0.5 - rotation_center(oldhs)[i];
+        }
+
+        if (dim == 2)
+        {
+            vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
+                angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
+            vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
+                angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
+            
+            for (i = 0; i < dim; ++i)
             {
-		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
-		vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
-                for (i = 0; i < dim; ++i)
-                {
-                    Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + 
-					oldst->vel[i])*0.5;
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-						Coords(newp),front);
-                }
-	    }
+                Coords(newp)[i] =
+                    Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
+                newst->vel[i] = vel[i];
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),
+                        NULL,Coords(newp),front);
+            }
+        }
 	    else if (dim == 3)
 	    {
-		vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
-                          +p_angular_velo(oldhs)[1] * crds_com[2];
-                vel[1] +=  p_angular_velo(oldhs)[2] * crds_com[0]
-                          -p_angular_velo(oldhs)[0] * crds_com[2];
-                vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
-                          +p_angular_velo(oldhs)[0] * crds_com[1];
+            vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
+                        + p_angular_velo(oldhs)[1] * crds_com[2];
+            vel[1] += p_angular_velo(oldhs)[2] * crds_com[0]
+                        - p_angular_velo(oldhs)[0] * crds_com[2];
+            vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
+                        + p_angular_velo(oldhs)[0] * crds_com[1];
 
-		// propagate by euler parameters
-		if (motion_type(oldhs) == ROTATION ||
-		    motion_type(oldhs) == PRESET_ROTATION)//TODO: FREE_MOTION
-		{
-                    double A[3][3],AI[3][3];
-                    double ep[4];
-                    int j,k;
-                    double initial[MAXD];
-                    for (i = 0; i< 4; i++)
-                        ep[i] = old_euler_params(oldhs)[i];
-                    AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                               - ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               + ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        initial[j] = 0.0;
-                        for (k = 0; k < 3; k++)
-                            initial[j] += AI[j][k]*crds_com[k];
-                    }
-                    for (i = 0; i< 4; i++)
-                        ep[i] = euler_params(oldhs)[i];
-                    A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                              - ep[2]*ep[2] - ep[3]*ep[3];
-                    A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              + ep[2]*ep[2] - ep[3]*ep[3];
-                    A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        Coords(newp)[j] = rotation_center(oldhs)[j];
-                        for (k = 0; k < 3; k++)
-                            Coords(newp)[j] += A[j][k]*initial[k];
-                    }
-		}
-		else
-		    for (i = 0; i < dim; ++i)
-                        Coords(newp)[i] = Coords(oldp)[i] + 
-					dt*(vel[i] + oldst->vel[i])*0.5;
-		for (i = 0; i < dim; ++i)
+            // propagate by euler parameters
+            if (motion_type(oldhs) == ROTATION ||
+                motion_type(oldhs) == PRESET_ROTATION)//TODO: FREE_MOTION
+            {
+                double A[3][3],AI[3][3];
+                double ep[4];
+                int j,k;
+                double initial[MAXD];
+
+                for (i = 0; i< 4; i++)
+                    ep[i] = old_euler_params(oldhs)[i];
+
+                AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                           - ep[2]*ep[2] - ep[3]*ep[3];
+                AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                           + ep[2]*ep[2] - ep[3]*ep[3];
+                AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                           - ep[2]*ep[2] + ep[3]*ep[3];
+                
+                for (j = 0; j < 3; j++)
                 {
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                                        Coords(newp),front);
-		}
-	    }
+                    initial[j] = 0.0;
+                    for (k = 0; k < 3; k++)
+                        initial[j] += AI[j][k]*crds_com[k];
+                }
+                
+                for (i = 0; i< 4; i++)
+                    ep[i] = euler_params(oldhs)[i];
+                
+                A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                          - ep[2]*ep[2] - ep[3]*ep[3];
+                A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                          + ep[2]*ep[2] - ep[3]*ep[3];
+                A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                          - ep[2]*ep[2] + ep[3]*ep[3];
+                
+                for (j = 0; j < 3; j++)
+                {
+                    Coords(newp)[j] = rotation_center(oldhs)[j];
+                    for (k = 0; k < 3; k++)
+                        Coords(newp)[j] += A[j][k]*initial[k];
+                }
+            }
+		    else
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    Coords(newp)[i] =
+                        Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
+                }
+            }
+    
+            for (i = 0; i < dim; ++i)
+            {
+                newst->vel[i] = vel[i];
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
+                        Coords(newp),front);
+            }
+	    
         }
-        else
-        {
-            fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
-                                    oldhs,dt,vel);
-        }
-	for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+        
+    }
+    else
+    {
+        fourth_order_point_propagate(front,NULL,oldp,newp,
+                oldhse,oldhs,dt,vel);
+    }
+    
+    for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
-	if (m_temp != NULL)
-            FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-                        getStateTemp,&newst->temperature,&oldst->temperature);
-	if (dim == 2)
+	
+    if (m_temp != NULL)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,getStateTemp,
+                &newst->temperature,&oldst->temperature);
+    }
+
+    if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
@@ -1093,7 +1119,6 @@ static  void rgbody_point_propagate(
         else if (ifluid_comp(positive_component(oldhs)))
             std::copy(newst, newst+1, (STATE*)left_state(newp));
     }
-    return;
 }	/* end rgbody_point_propagate */
 
 extern void fluid_print_front_states(
@@ -2348,6 +2373,7 @@ static double intrp_between(
         return y;
 }
 
+//TODO: Need to include Eddy Viscosity??
 static void setStateViscosity(
 	IF_PARAMS *iFparams,
 	STATE *state,

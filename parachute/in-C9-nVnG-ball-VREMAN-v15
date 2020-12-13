@@ -51,11 +51,14 @@ Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
 Type yes if motion is preset: no
+Enter type of dynamic motionX: FREE_MOTION
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 0.951
 Enter the initial center of mass velocity: 0 0 0
+Enter the moment of inertialX: 0 0 0
+Enter initial angular velocityX: 0 0 0
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -87,7 +90,7 @@ Enter inertial parameter: 0.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
-Enter interior sub step number: 10
+Enter interior sub step number: 50
 Enter area density of canopy: 5.0
 
 Enter fabric spring constant: 5000

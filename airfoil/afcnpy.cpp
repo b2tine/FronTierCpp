@@ -2673,6 +2673,7 @@ static void setCurveVelocity(
                 //Maybe this should be....
                 sl->vel[j] = sl->impulse[j] + vel[j];
                 sr->vel[j] = sr->impulse[j] + vel[j];
+                //Without string-fluid interaction sl->impulse shoudl equal 0.0
             }
         }
     }
@@ -2795,6 +2796,7 @@ static void new_setNodeVelocity3d(
 		    {
                 for (j = 0; j < 3; ++j)
                 {
+                    //TODO: add impulse?
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
                 }
@@ -2846,6 +2848,7 @@ static void new_setNodeVelocity3d(
             {
                 for (j = 0; j < 3; ++j)
                 {
+                    //TODO: add impulse?
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
                 }

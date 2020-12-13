@@ -804,11 +804,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         mu[nb] = mu0;
                     else
                         mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
-                
                 }
                 else
                 {
-                    //Includes ELASTIC_BOUNDARY
+                    //NOTE: Includes ELASTIC_BOUNDARY
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
@@ -834,6 +833,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 
                 if (status == NO_PDE_BOUNDARY)
                 {
+                    //NOTE: Includes ELASTIC_BOUNDARY
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
