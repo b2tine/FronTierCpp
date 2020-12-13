@@ -318,6 +318,11 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
         {
             d_h[nb] = top_h[m];
 
+            //TODO: should we use 
+            //  (*findStateAtCrossing)(front,icoords,dir[nb],comp,
+            //          &intfc_state,&hs,crx_coords);
+            //  instead?
+            
             fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                     grid_intfc,icoords,dir[m][nb],comp,
                     (POINTER*)&intfc_state,&hs,crx_coords);
@@ -329,8 +334,8 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             }
             else if (wave_type(hs) == ELASTIC_BOUNDARY)
             {
-                //NOTE: zeroing the relative fluid velocity normal to canopy
-                //      via the slip boundary condition will cause the pressure
+                //NOTE: zeroing/reducing the relative fluid velocity normal to
+                //      canopy via the slip boundary condition causes the pressure
                 //      jump imposed by the ghost fluid method porosity model
                 //      to vanish -- destroying the porosity of the canopy
                 
