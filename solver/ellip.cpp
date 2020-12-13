@@ -285,7 +285,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	double residual = 0.0;
 	HYPER_SURF *hs;
 	double crx_coords[MAXD];
-        int status;
+    int status;
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
@@ -308,18 +308,29 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         //
         //  solver.Create(ilower, iupper-1, 3, 2);
         //
-        //      Is it possible that buffer domain is shifting
-        //      entries, resulting in some normally diagonal block
-        //      entries to appear in the neighboring off-diagonal block?
+        //      This may however be correct for parallel runs ...
 
-        //For serial runs:
+        //  For serial runs:
         //
-        //solver.Create(ilower, iupper-1, 5, 4);//This works...
-        //solver.Create(ilower, iupper-1, 5, 3);//This also works...
-        //solver.Create(ilower, iupper-1, 5, 2);//This works too ...
-        //solver.Create(ilower, iupper-1, 5, 1);//this too
+        //  solver.Create(ilower, iupper-1, 5, 4);//This works
+        //  solver.Create(ilower, iupper-1, 5, 3);//This also works
+        //  solver.Create(ilower, iupper-1, 5, 2);//This works too
+        //  solver.Create(ilower, iupper-1, 5, 1);//this too
+        //  solver.Create(ilower, iupper-1, 5, 0);//TODO:test this to confirm below
         //
-        //What about multi-processor run?
+        //      It appears (and petsc manual suggests) that for
+        //      serial runs the matrix MatCreateAIJ() actually calls
+        //      MatCreateSeqAIJ() which only takes a single arg for
+        //      the number of nonzero entries per row.
+        //
+        //TODO: In light of the above discussion, we may be able to obtain
+        //      a speed up for parallel runs by using:
+        //
+        //      if (pp_numnodes() > 1)
+        //          solver.Create(ilower, iupper-1, 3, 2);
+        //      else
+        //          solver.Create(ilower, iupper-1, 5, 0);
+        //
 
 	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
         first = false;
@@ -776,7 +787,17 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     
     if (first)
     {
-	    solver.Create(ilower, iupper-1, 7, 7);
+        //TODO: See discussion on petsc matrix initialization.
+        //      The following may offer better performance for
+        //      parallel runs.
+        //
+        //      if (pp_numnodes() > 1)
+        //          solver.Create(ilower, iupper-1, 3, 4);
+        //      else
+        //          solver.Create(ilower, iupper-1, 7, 0);
+        //
+	    
+        solver.Create(ilower, iupper-1, 7, 7);
 	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
         first = false;
     }
