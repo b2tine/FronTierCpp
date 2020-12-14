@@ -536,7 +536,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	stop_clock("setSmoothedProperties");
 	if (debugging("trace"))
 	    printf("Passed setSmoothedProperties()\n");
-	
+
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
 	computeAdvection();
@@ -928,7 +928,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
           
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            rhs -= m_dt*grad_q[l][index]/rho;//grad_q is actually grad phi
+            //TODO: This should only be at the boundary?
+                //rhs -= m_dt*grad_q[l][index]/rho;//grad_q is actually grad phi
 
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1102,25 +1103,28 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ(void)
 	{
 	    int comp;
 	    for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	    {
 	    	index = d_index2d(i,j,top_gmax);
 	    	comp = top_comp[index];
-	    	if (!ifluid_comp(comp))
-		    continue;
+	    	if (!ifluid_comp(comp)) continue;
+
 	    	icoords[0] = i;
 	    	icoords[1] = j;
-		field->old_var[0][index] = field->grad_q[0][index];
-		field->old_var[1][index] = field->grad_q[1][index];
+		
+            field->old_var[0][index] = field->grad_q[0][index];
+		    field->old_var[1][index] = field->grad_q[1][index];
 	    }
 	}
+
 	for (j = 0; j < top_gmax[1]; ++j)
 	for (i = 0; i < top_gmax[0]; ++i)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    array[index] = phi[index];
 	}
-	for (j = jmin; j <= jmax; j++)
+	
+    for (j = jmin; j <= jmax; j++)
 	for (i = imin; i <= imax; i++)
 	{
 	    index = d_index2d(i,j,top_gmax);
@@ -1130,8 +1134,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ(void)
 	    for (l = 0; l < dim; ++l)
 	    	grad_q[l][index] = point_grad_q[l];
 	}
-	FT_ParallelExchGridVectorArrayBuffer(grad_q,front);
-	if (debugging("field_var"))
+	
+    FT_ParallelExchGridVectorArrayBuffer(grad_q,front);
+	
+    if (debugging("field_var"))
 	{
 	    (void) printf("\nIn computeGradientQ(), \n");
 	    (void) printf("one step increment for grad_phi[0]:\n");
@@ -1141,7 +1147,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ(void)
 	    printf("\n");
 	}
 }	/* end computeGradientQ2d */
-
 
 void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	double *coords,

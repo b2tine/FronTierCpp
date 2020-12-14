@@ -1042,8 +1042,7 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 	fclose(infile);
 }	/* end initMovieVariables */
 
-
-//Subgrid stress model? (2d only)
+//TODO: should move into 2d class
 void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -1270,7 +1269,6 @@ void Incompress_Solver_Smooth_Basis::computeSubgridModel(void)
             index3 = d_index2d(i,j-1,top_gmax);
             index4 = d_index2d(i,j+1,top_gmax);
 
-            //subgrid shear stress being applied to the velocity?
             vel[0][index0] += -m_dt*(
                               ((tau00[index2]-tau00[index1])/(2.0*top_h[0])) + 
                                 ((tau01[index4]-tau01[index3])/(2.0*top_h[1])));
@@ -3081,7 +3079,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
-        double **field)
+        double **field_array)
 {
 	int icnb[MAXD];
         int i,j,index,index_nb;
@@ -3102,9 +3100,10 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 
         for (idir = 0; idir < dim; idir++)
         {
-            u0 = field[idir][index];
+            u0 = field_array[idir][index];
             for (j = 0; j < dim; ++j)
                 icnb[j] = icoords[j];
+
             for (nb = 0; nb < 2; nb++)
             {
                 u_edge[idir][nb] = 0.0;
@@ -3114,21 +3113,95 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                                 comp,&intfc_state,&hs,crx_coords);
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    u_edge[idir][nb] = field[idir][index_nb];
+                    //NOTE: Includes ELASTIC_BOUNDARY
+                    u_edge[idir][nb] = field_array[idir][index_nb];
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
-                    u_edge[idir][nb] = u0; 
+                    //OUTLET
+                    u_edge[idir][nb] = getStateVel[idir](intfc_state);
+                        //u_edge[idir][nb] = u0; 
                 }
                 else if (status == CONST_V_PDE_BOUNDARY)
                 {
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
+                        //INLET
                         u_edge[idir][nb] = getStateVel[idir](intfc_state);
                     }
-                    else if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    /*else if (wave_type(hs) == NEUMANN_BOUNDARY)
                     {
                         u_edge[idir][nb] = u0;
+                    }*/
+                    else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                            wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        int icoords_ghost[MAXD];
+                        for (int m = 0; m < dim; ++m)
+                            icoords_ghost[m] = icoords[m];
+                        
+                        icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                        
+                        double coords_reflect[MAXD] = {0.0};
+                        double coords_ghost[MAXD] = {0.0};
+
+                        ////////////////////////////////////////////////////////////////////////
+                        ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                        //////////////////////////////////////////////////////////////////////
+
+                        for (int m = 0; m < dim; ++m)
+                        {
+                            coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                            coords_reflect[m] = coords_ghost[m];
+                        }
+
+                        //Reflect the ghost point through intfc-mirror at crossing.
+                        double nor[MAXD];
+                        FT_NormalAtGridCrossing(front,icoords,
+                                dir[idir][nb],comp,nor,&hs,crx_coords);
+                                
+                        //first reflect across the grid line containing intfc crossing
+                        coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                        
+                        //TODO: verify no conceptual difference between above and below ...
+                        //
+                        //    for (int m = 0; m < dim; ++m)
+                        //        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+                        //
+
+                        //Reflect the displacement vector across the line
+                        //containing the intfc normal vector
+                        double v[MAXD];
+                        double vn = 0.0;
+
+                        for (int m = 0; m < dim; ++m)
+                        {
+                            v[m] = coords_reflect[m] - crx_coords[m];
+                            vn += v[m]*nor[m];
+                        }
+
+                        for (int m = 0; m < dim; ++m)
+                            v[m] = 2.0*vn*nor[m] - v[m];
+
+                        //The desired reflected point
+                        for (int m = 0; m < dim; ++m)
+                            coords_reflect[m] = crx_coords[m] + v[m];
+                        ////////////////////////////////////////////////////////////////////
+
+                        // Interpolate the state at the reflected point
+                        double vel_reflect[MAXD] = {0.0};
+                        for (int j = 0; j < dim; ++j)
+                        {
+                            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,
+                                    field_array[j],getStateVel[j],&vel_reflect[j],
+                                    &field_array[j][index]);
+                        }
+
+                        double vel_ghost[MAXD] = {0.0};
+                        for (int j = 0; j < dim; ++j)
+                            vel_ghost[j] = vel_reflect[j] - vn*nor[j];
+
+                        u_edge[idir][nb] = vel_reflect[idir];
                     }
                     else
                     {
@@ -3141,7 +3214,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
 	div = 0.0;
 	for (i = 0; i < dim; ++i)
 	    div += 0.5*(u_edge[i][1] - u_edge[i][0])/top_h[i];
-        return div;
+    return div;
 }       /* end computeFieldPointDivSimple */
 
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
@@ -3219,11 +3292,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivDouble(
         return div;
 }       /* end computeFieldPointDivDouble */
 
+//TODO: factor out DOUBLE_ELLIP code into computeFieldPointGradDouble()
+//
 //TODO: function has diverged from the original purpose and now is concerned
-//      with computing the gradient of phi -- rename, or make separate funcs
+//      with computing the gradient of phi -- should rename function.      
 void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         int *icoords,
-        double *field,//TODO: should rename to avoid collision with the IF_FIELD struct member
+        double *field_array,
         double *grad_field)
 {
     int index,index_nb,icnb[MAXD];
@@ -3247,7 +3322,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         return;
     }
 	
-    p0 = field[index];
+    p0 = field_array[index];
 
 	for (idir = 0; idir < dim; idir++)
 	{
@@ -3265,12 +3340,13 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 
 	    	if (status == NO_PDE_BOUNDARY)
             {
-		        p_edge[idir][nb] = field[index_nb];
+		        p_edge[idir][nb] = field_array[index_nb];
             }
 	    	else if (status ==CONST_P_PDE_BOUNDARY)
             {
+                //OUTLET
                 if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-	    	        p_edge[idir][nb] = field[index_nb];
+	    	        p_edge[idir][nb] = field_array[index_nb];
                 else
 	    	        p_edge[idir][nb] = getStatePhi(intfc_state);
             }
@@ -3278,10 +3354,78 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
             {
                 if(wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
+                    //INLET
                     if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
-    		            p_edge[idir][nb] = field[index_nb];
+    		            p_edge[idir][nb] = field_array[index_nb];
                     else
+                    {
                         p_edge[idir][nb] = p0;
+	    	            //NOTE: This causes the velocity to blow up.
+                            //p_edge[idir][nb] = getStatePhi(intfc_state);
+                    }
+                }
+                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                        wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                {
+
+                    //dp/dn = 0 (reflecting boundary for pressure)
+                    int icoords_ghost[MAXD];
+                    for (int m = 0; m < dim; ++m)
+                        icoords_ghost[m] = icoords[m];
+                    
+                    icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                    
+                    double coords_ghost[MAXD];
+                    double coords_reflect[MAXD];
+                    
+                    ////////////////////////////////////////////////////////////////////////
+                    ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                    //////////////////////////////////////////////////////////////////////
+
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                        coords_reflect[m] = coords_ghost[m];
+                    }
+
+                    double nor[MAXD];
+                    FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+                            
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //first reflect across the grid line containing intfc crossing,
+                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                    
+                    //TODO: verify no conceptual difference between above and below ...
+                        //for (int m = 0; m < dim; ++m)
+                            //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+
+                    //Reflect the displacement vector across the line
+                    //containing the intfc normal vector
+                    double v[MAXD];
+                    double vn = 0.0;
+
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        v[m] = coords_reflect[m] - crx_coords[m];
+                        vn += v[m]*nor[m];
+                    }
+
+                    for (int m = 0; m < dim; ++m)
+                        v[m] = 2.0*vn*nor[m] - v[m];
+
+                    //The desired reflected point
+                    for (int m = 0; m < dim; ++m)
+                        coords_reflect[m] = crx_coords[m] + v[m];
+                    ///////////////////////////////////////////////////////////////////////
+
+                    //Interpolate phi at the reflected point,
+                    //which will serve as the ghost point phi.
+                    double phi_reflect;
+                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                            getStatePhi,&phi_reflect,&field_array[index]);
+
+                    p_edge[idir][nb] = phi_reflect;
                 }
                 else
                 {
@@ -4990,6 +5134,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
 
     /*
+    /////////////////////////////////////////////////////////////////////////
     //TODO: If tangential vel modification omitted, return after computing
     //      the below v_slip. 
     for (int j = 0; j < dim; ++j)
@@ -4997,8 +5142,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
             //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
     }
+    return;
+    /////////////////////////////////////////////////////////////////////////
     */
-    
+
     double vel_rel_tan[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
 
@@ -5054,6 +5201,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     //double vel_ghost_rel[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
+        //TODO: It seems that division by mu_reflect is causing
+        //      velocity to blow up.
+
         //TODO: SIGN -- add or subtract from vel_rel_tan
         vel_ghost_tan[j] =
             vel_rel_tan[j] + (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];

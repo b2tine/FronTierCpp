@@ -459,10 +459,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: solve() (this function) should be a method of the incompressible fluid solver
-                //      so we can use functions such as the one below, and avoid hard coding
-                //      variable types into the solver library.
-                    //getRectangleCenter(index_nb[l],coords_ghost);
+                //TODO: ELLIPTICAL_SOLVER::solve2d() (this function) should be a method of
+                //      the incompressible fluid solver so we can use methods such as the one
+                //      below, and avoid hard coding variable types into the solver library.
+                //
+                //      getRectangleCenter(index_nb[l],coords_ghost);
                     
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
@@ -483,7 +484,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
                 for (int m = 0; m < dim; ++m)
                 {
-                    v[m] =  coords_reflect[m] - crx_coords[m];
+                    v[m] = coords_reflect[m] - crx_coords[m];
                     vn += v[m]*nor[m];
                 }
 
@@ -935,11 +936,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: solve() (this function) should be a method of the incompressible fluid solver
-                //      so we can use functions such as the one below, and avoid hard coding
-                //      variable types into the solver library. And use methods provided such as
+                //TODO: ELLIPTICAL_SOLVER::solve3d() (this function) should be a method of
+                //      the incompressible fluid solver so we can use methods such as the one
+                //      below, and avoid hard coding variable types into the solver library.
                 //
-                //          getRectangleCenter(index_nb[l],coords_ghost);
+                //      getRectangleCenter(index_nb[l],coords_ghost);
                     
                 //Reflect the ghost point through intfc-mirror at crossing.
                 double nor[MAXD];
@@ -961,7 +962,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 for (int m = 0; m < dim; ++m)
                 {
-                    v[m] =  coords_reflect[m] - crx_coords[m];
+                    v[m] = coords_reflect[m] - crx_coords[m];
                     vn += v[m]*nor[m];
                 }
 

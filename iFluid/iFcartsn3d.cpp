@@ -875,7 +875,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            rhs -= m_dt*grad_q[l][index]/rho;
+            //TODO: This should only be at the boundary?
+                //rhs -= m_dt*grad_q[l][index]/rho;
             
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1745,7 +1746,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientPhi()
 	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 }*/	/* end computeGradientPhi */
 
-//TODO: Q needs own functions to distinguish it from q.
+//TODO: phi needs own functions to distinguish it from q.
 //      They are not the same when the model is implemented correctly.
 //      Currently some shortcuts were used ...
 void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
@@ -1766,7 +1767,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
 	    index = d_index3d(i,j,k,top_gmax);
         //TODO: Need to distinguish q and phi
 	    array[index] = phi[index];
-	    //array[index] = q[index];
+	        //array[index] = q[index];
 	}
 	for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
