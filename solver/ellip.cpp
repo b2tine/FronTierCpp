@@ -424,6 +424,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //      inlet has constant pressure, but
                 //      ifluid_find_state_at_crossing() returns
                 //      CONST_V_PDE_BOUNDARY for it.
+                //
+                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
+                //      which uses phi[index], the current index.
                 
                 //TODO: getStateVar() will return phi, not pressure.
                 //      The pressure is updated at the flow through boundary,
@@ -901,6 +904,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //      inlet has constant pressure, but
                 //      ifluid_find_state_at_crossing() returns
                 //      CONST_V_PDE_BOUNDARY for it.
+                //
+                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
+                //      which uses phi[index], the current index.
                 
                 //TODO: getStateVar() will return phi, not pressure.
                 //      The pressure is updated at the flow through boundary,

@@ -5074,7 +5074,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     //      has given very large values on 3d runs. However
     //      that may have been due to using non-unit normal,
     //      nor, which has since been corrected.
-    double dist_reflect = FT_GridSizeInDir(nor,front);
+    double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
@@ -5147,11 +5148,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     */
 
     double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
 
     for (int j = 0; j < dim; ++j)
     {
 	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_rel_nor[j] = vn*nor[j];
 	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
@@ -5162,6 +5165,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
         fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
         printf("mu_reflect = %g  mu_[%d] = %g\n",mu_reflect,index,field->mu[index]);
     }
@@ -5191,29 +5195,23 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     if (mag_vtan > MACH_EPS)
     {
         for (int j = 0; j < dim; ++j)
-            tau_wall[j] = -1.0*mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+            tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
     //TODO: Need to do anything else with tau_well other than adjust
     //      the ghost fluid's tangential velocity??
     //      (Aside from using for drag computation)
 
     double vel_ghost_tan[MAXD] = {0.0};
-    //double vel_ghost_rel[MAXD] = {0.0};
+    double vel_ghost_rel[MAXD] = {0.0};
+    
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: It seems that division by mu_reflect is causing
-        //      velocity to blow up.
-
-        //TODO: SIGN -- add or subtract from vel_rel_tan
         vel_ghost_tan[j] =
-            vel_rel_tan[j] + (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
-            //vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
-        //TODO: should it be (dist_reflect + dist_ghost) or is the above correct??
+            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
-        // Revert back to world frame by adding back vel_intfc
-        v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
-            //vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
-            //v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+        //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
 
     if (debugging("slip_boundary"))
@@ -5222,6 +5220,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("\n");
     }
