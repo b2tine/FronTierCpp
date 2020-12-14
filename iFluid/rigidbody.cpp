@@ -418,8 +418,14 @@ void setRigidBodyMotionParams(
     {
         for (s = front->interf->surfaces; s && *s; ++s)
         {
-            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+            if (is_bdry(*s)) continue;
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+                wave_type(*s) == NEUMANN_BOUNDARY)
             {
+                if (wave_type(*s) == NEUMANN_BOUNDARY)
+                {
+                    rgb_params->is_fixed = true;
+                }
                 prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
@@ -459,6 +465,8 @@ static void prompt_for_rigid_body_params(
         }
 
         rgb_params->body_index = count++;
+        if (rgb_params->is_fixed) return;
+
         sprintf(s, "For rigid body %d", rgb_params->body_index);
         CursorAfterString(infile, s); printf("\n");
         long idpos = ftell(infile);
