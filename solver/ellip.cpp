@@ -331,6 +331,13 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         //      else
         //          solver.Create(ilower, iupper-1, 5, 0);
         //
+        //
+        //TODO: Further improvements to performance may be obtained by
+        //      modifying the PETSc::Create() method with currently calls
+        //      MatCreateAIJ() -- See petsc manual for optimal spares
+        //      matrix creation and memory allocation procedures.
+        //      According to the manual 50x speed up is possible for some
+        //      systems with the proper preallocation procedure.
 
 	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
         first = false;
@@ -341,7 +348,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
     }
 	
-    if (debugging("check_div"))
+    if (debugging("trace"))
             printf("Enterng solve2d()\n");
 	
     solver.Reset_A();
@@ -442,7 +449,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 double coords_ghost[MAXD];
                 double coords_reflect[MAXD];
                 
-                /*
                 ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
                 //////////////////////////////////////////////////////////////////////
@@ -489,9 +495,18 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     coords_reflect[m] = crx_coords[m] + v[m];
                 
                 ///////////////////////////////////////////////////////////////////////
-                */
 
 
+                /*
+                //NOTE: This method may not be appropriate for pressure wall boundary.
+                //      In particular, specifying the reflection distance, dist_reflect,
+                //      may be placing the reflection point too far away from the wall
+                //      for its interpolated pressure to be used as the ghost point
+                //      pressure (constant extrapolation).
+                //      This is my current suspicion for the presence of the large pressure
+                //      "halo" surrounding rigid bodies and unphysically reducing the
+                //      downstream pressure well past the object.
+                
                 ///////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
                 /////////////////////////////////////////////////////////////////////
@@ -503,8 +518,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 double nor[MAXD];
                 
                 //TODO: Remove when safe to do so.
-                /*FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);*/
+                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                //        comp,intfc_crx_coords,coords_reflect,nor);//
                 
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
@@ -536,18 +551,19 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         
                 double dist_reflect = FT_GridSizeInDir(nor,front);
                 
-                /*
+                //
                 // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                double dist_reflect = 0.0;
-                for (int m = 0; m < dim; ++m)
-                    dist_reflect += sqr(top_h[m]);
-                dist_reflect = sqrt(dist_reflect);
-                */
+                //double dist_reflect = 0.0;
+                //for (int m = 0; m < dim; ++m)
+                //    dist_reflect += sqr(top_h[m]);
+                //dist_reflect = sqrt(dist_reflect);
+                //
 
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
                 ////////////////////////////////////////////////////////////////////
+                */
 
 
                 //Interpolate the pressure at the reflected point,
@@ -598,7 +614,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-10);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+	//solver.SetTol(1.0e-05);//rtol = 1.0e-05 is petsc default value
+	//solver.SetTol(1.0e-10);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -612,7 +630,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         if (debugging("linear_solver"))
 	    	(void) printf("\nUsing Neumann Solver!\n");
 	    
-        //TODO: compare to solve3d()
+        //TODO: What is the purpose of this?
         if (size < 20)
 	    {
 	    	if (debugging("linear_solver"))
@@ -649,9 +667,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	}
 	else
 	{
-	    if (debugging("linear_solver"))
-            printf("\nUsing non-Neumann Solver!\n");
-
 	    solver.Solve();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetResidualNorm(&residual);
@@ -910,7 +925,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 double coords_reflect[MAXD] = {0.0};
                 double coords_ghost[MAXD] = {0.0};
 
-                /*
                 ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
                 //////////////////////////////////////////////////////////////////////
@@ -957,17 +971,18 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
-
-                //TODO: Do we want to push the reflected point a little farther out
-                //      from the interface to better ensure interpolating on the opposite
-                //      side??
-                
                 ////////////////////////////////////////////////////////////////////
-                */      
 
 
-
-                //TODO: REVERT BACK TO ORIGINAL REFLECTION POINT!!!!!!!!!!!!
+                /*
+                //NOTE: This method may not be appropriate for pressure wall boundary.
+                //      In particular, specifying the reflection distance, dist_reflect,
+                //      may be placing the reflection point too far away from the wall
+                //      for its interpolated pressure to be used as the ghost point
+                //      pressure (constant extrapolation).
+                //      This is my current suspicion for the presence of the large pressure
+                //      "halo" surrounding rigid bodies and unphysically reducing the
+                //      downstream pressure well past the object.
 
 
                 ///////////////////////////////////////////////////////////////////////
@@ -981,8 +996,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 double nor[MAXD];
                 
                 //TODO: Remove when safe to do so.
-                /*FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                        comp,intfc_crx_coords,coords_reflect,nor);*/
+                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
+                //        comp,intfc_crx_coords,coords_reflect,nor);//
                 
                 double intrp_coeffs[MAXD] = {0.0};
                 HYPER_SURF_ELEMENT* phse;
@@ -1012,18 +1027,19 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //      which has since been corrected
                 double dist_reflect = FT_GridSizeInDir(nor,front);
                 
-                /*
+                //
                 // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                double dist_reflect = 0.0;
-                for (int m = 0; m < dim; ++m)
-                    dist_reflect += sqr(top_h[m]);
-                dist_reflect = sqrt(dist_reflect);
-                */
+                //double dist_reflect = 0.0;
+                //for (int m = 0; m < dim; ++m)
+                //    dist_reflect += sqr(top_h[m]);
+                //dist_reflect = sqrt(dist_reflect);
+                //
 
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
                 ////////////////////////////////////////////////////////////////////
+                */
 
 
                 //Interpolate the pressure at the reflected point,
@@ -1069,7 +1085,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-10);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+	//solver.SetTol(1.0e-05);//rtol = 1.0e-05 is petsc default value
+	//solver.SetTol(1.0e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 
@@ -1078,7 +1096,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	{
 	    if (skip_neumann_solver)
 	    {
-            //TODO: solve2d() checks size < 20
+            //TODO: solve2d() checks size < 20, which seems to have
+            //      some significance. This check doesn't make sense?
 	        if (debugging("PETSc"))
             {
                 printf("Skip isolated small region for solve3d()\n");
@@ -1118,7 +1137,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 	else
 	{
-	    printf("\nELLIPTIC_SOLVER: Using non-Neumann Solver!\n");
 	    solver.Solve();
 	    solver.GetNumIterations(&num_iter);
 	    solver.GetResidualNorm(&residual);
@@ -1657,6 +1675,10 @@ double ELLIPTIC_SOLVER::checkSolver(
 	return fabs(lhs-rhs)/denom;
 }	/* end checkSolver */
 
+//TODO: What is the intent of this function?
+//      Implementation appears to be incomplete,
+//      since there's no criteria for determining
+//      what an isolated cell exactly is.
 void ELLIPTIC_SOLVER::printIsolatedCells()
 {
     int i,j,k,I,index,num_cells;

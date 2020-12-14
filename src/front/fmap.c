@@ -4027,7 +4027,8 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
     //      or what this would potentially indicate.
 
 
-    //TODO: how valid/important is the below modification??
+    //TODO: How valid/important is the below modification??
+    //      What was the intent?
     /*
 	double v[MAXD];
     double vn = 0.0;

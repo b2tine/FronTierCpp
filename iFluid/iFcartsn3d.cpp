@@ -781,6 +781,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     {
                         if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
                         {
+                            //TODO: Add option to use no-slip boundary instead where
+                            //          vel_nb[nb] = intfc_state->vel[l];
+
                             double v_slip[MAXD] = {0.0};
                             int idir = nb/2; int nbr = nb%2;
                             setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
@@ -879,7 +882,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1.0e-10);
+        solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+        //solver.SetTol(1.0e-10);
 
 	    start_clock("Before Petsc solve");
         solver.Solve();
@@ -893,8 +897,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
         if (debugging("PETSc"))
         {
-            (void) printf("L_CARTESIAN::"
-                    "computeDiffusionCN: "
+            printf("L_CARTESIAN::computeDiffusionCN: "
                     "num_iter = %d, residual = %g\n",
                     num_iter,residual);
         }

@@ -346,6 +346,8 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
+                //TODO: Add option to use no-slip boundary instead where
+                //          vel_nb[nb] = intfc_state->vel[l];
                 double v_slip[MAXD] = {0.0};
                 setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
                 vel_nb[nb] = v_slip[l];

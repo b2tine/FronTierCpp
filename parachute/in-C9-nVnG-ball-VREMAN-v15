@@ -85,8 +85,8 @@ Entering yes to turn off fluid solver: no
 Enter timestep to activate FSI: 5
 
 Enter yes to use porosity: yes
-Enter viscous parameter: 604.333
-Enter inertial parameter: 0.0
+Enter viscous parameter: 64.333
+Enter inertial parameter: 50.0
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
@@ -101,7 +101,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.05
+Enter string damping constant: 0.01
 Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

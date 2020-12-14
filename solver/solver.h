@@ -109,7 +109,8 @@ public:
 	
     void SetPrevSolnInitialGuess();
 	void SetMaxIter(int val); 	// Set maximum number of iterations 
-	void SetTol(double val);	// Set the convergence tolerance 
+	void SetTol(double rel_tol);	// Set the convergence tolerance 
+    void SetTolerances(double rel_tol, double abs_tol, double div_tol);
 	
     void SetKDim(int k_dim);	// Set the maximum size of the Krylov space 
 	

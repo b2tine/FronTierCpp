@@ -61,8 +61,6 @@ void PETSc::Create(int ilower, int iupper, int d_nz, int o_nz)
 	Create(PETSC_COMM_WORLD, ilower, iupper, d_nz, o_nz);	
 }
 
-//TODO: just make MPI_Comm comm = PETSC_COMM_WORLD
-//      the default parameter and git rid of the function above
 void PETSc::Create(
 	MPI_Comm Comm, 
 	int ilower, 
@@ -89,12 +87,21 @@ void PETSc::Create(
     MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
        d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
 
-    //TODO: Or detect how many processors and use MatCreateAIJ()
-    //      if a parallel run, and use MatCreateSeqAIJ() if serial?
+    //TODO: See petsc manual for optimal sparse matrix
+    //      creation and preallocation paradigm, similar
+    //      to the following:
+    //
+    //       MatCreate(...,&A);
+    //       MatSetType();
+    //       MatSetFromOptions();
+    //       MatXXXXSetPreallocation(); one of the below functions
+    //
+    //       MatSeqAIJSetPreallocation(); if serial
+    //       MatMPIAIJSetPreallocation(); if parallel
 	
     PetscObjectSetName((PetscObject) A, "A");
     MatSetFromOptions(A);
-    //MatSetUp(A);//TODO: Need this???
+        //MatSetUp(A);//TODO: Need this???
 	
     //TODO: use VecCreateMpi()?
 	VecCreate(PETSC_COMM_WORLD, &b);
@@ -239,7 +246,15 @@ void PETSc::SetMaxIter(int val)
 	ierr = KSPSetTolerances(ksp, rtol, atol, dtol, val);
 }	/* end SetMaxIter */
 
-void PETSc::SetTol(double val)
+void PETSc::SetTolerances(double rel_tol, double abs_tol, double div_tol)
+{
+	PetscInt maxits;
+	double rtol, atol, dtol;
+	KSPGetTolerances(ksp,&rtol,&atol,&dtol,&maxits);
+    ierr = KSPSetTolerances(ksp,rel_tol,abs_tol,div_tol,maxits);
+}
+	
+void PETSc::SetTol(double rel_tol)
 {
 	PetscInt maxits;
 	double rtol, atol, dtol;
@@ -250,7 +265,7 @@ void PETSc::SetTol(double val)
     //      elliptic solver diverges during projection method
     //      if we use actual abs tolerance like below.
 	
-    ierr = KSPSetTolerances(ksp, val, atol, dtol, maxits);
+    ierr = KSPSetTolerances(ksp, rel_tol, atol, dtol, maxits);
 	
     //TODO: Crashes projection method elliptic solver for poisson eqn.
     //      if the absolute tolerance, atol, is used.
@@ -293,6 +308,7 @@ void PETSc::Solve_PetscDecide()
     KSPSolve(ksp,b,x);
 }
 
+//TODO: Try tuning parameters, restart etc.
 void PETSc::Solve_GMRES(void)
 {
     start_clock("Assemble matrix and vector");
@@ -327,6 +343,15 @@ void PETSc::Solve(void)
 #endif // defined HAVE_HYPRE
 }	/* end Solve */
 
+/*
+From the Hypre user manual:
+
+For three-dimensional diffusion problems, it is recommended
+to choose a lower complexity coarsening like HMIS or PMIS (coarsening 10 or 8) and combine it
+with a distance-two interpolation (interpolation 6 or 7), that is also truncated to 4 or 5 elements
+per row. Additional reduction in complexity and increased scalability can often be achieved using
+one or two levels of aggressive coarsening
+*/
 #if defined HAVE_HYPRE
 void PETSc::Solve_HYPRE(void)
 {
@@ -385,7 +410,6 @@ void PETSc::Solve_BCGSL(void)
 	stop_clock("KSPSolve");
 }
 
-//TODO: What does "PureNeumann" imply? See below.
 void PETSc::Solve_withPureNeumann_GMRES(void)
 {
 	if (debugging("solver"))
@@ -419,11 +443,6 @@ void PETSc::Solve_withPureNeumann_GMRES(void)
 	    printf("Leaving Solve_withPureNeumann_GMRES()\n");
 }	/* end Solve_withPureNeumann_GMRES */
 
-//TODO: What does "PureNeumann" imply?
-//      The only difference between the non-neumann
-//      solve functions appears to be that the constant
-//      vector is removed from the solution space
-//      (is in the nullspace).
 void PETSc::Solve_withPureNeumann(void)
 {
 #ifdef HAVE_HYPRE
@@ -486,7 +505,7 @@ void PETSc::Solve_withPureNeumann_BCGSL(void)
   	ierr = VecAssemblyBegin(b);
   	ierr = VecAssemblyEnd(b);
 	
-    //NOTE: This sets the nullspace to be empty...
+    //NOTE: This sets the nullspace to contain the constant vector
     //      (second argument is PETSC_TRUE)
 	MatNullSpaceCreate(PETSC_COMM_WORLD,PETSC_TRUE,0,PETSC_NULL,&nullsp);
     MatSetNullSpace(A,nullsp);

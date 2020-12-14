@@ -815,6 +815,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     {
                         if (!is_bdry_hs(hs))//TODO: handle another way -- we want to include these (see below)
                         {
+                            //TODO: Add option to use no-slip boundary instead where
+                            //          vel_nb[nb] = intfc_state->vel[l];
+                            
                             //Apply slip boundary condition
                             //nb = 0; idir = 0, nbr = 0;
                             //nb = 1; idir = 0, nbr = 1;
@@ -832,6 +835,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: Without this rayleigh-taylor with NEUMANN boundaries
                             //      crashes for some reason.
                             U_nb[nb] = getStateVel[l](intfc_state);
+
+                            //This is just a no-slip boundary condition?
                         }
                     }
                     else
@@ -930,7 +935,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTol(1.0e-10);
+        solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+        //solver.SetTol(1.0e-10);
 
 	    start_clock("Before Petsc solve");
         solver.Solve();
