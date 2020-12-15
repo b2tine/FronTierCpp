@@ -5013,6 +5013,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
 
+    //TODO: Would limiting dist_ghost somehow give improvement???
+    //      The parabolic and poisson solvers never actually encounter
+    //      a ghost point, the ghost data just gets sent to the rhs so
+    //      it shouldn't create problems????
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
     //compute the normal and velocity vectors at the interface point
@@ -5070,12 +5074,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             nor[i] *= -1.0;
 	}
     
-    //TODO: look into details of FT_GridSizeInDir(),
-    //      has given very large values on 3d runs. However
-    //      that may have been due to using non-unit normal,
-    //      nor, which has since been corrected.
-    double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
-        //double dist_reflect = FT_GridSizeInDir(nor,front);
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+    double dist_reflect = FT_GridSizeInDir(nor,front);
+        //double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
