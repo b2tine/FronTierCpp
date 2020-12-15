@@ -3,9 +3,10 @@
 
 //For generating PINN training data
 
+//TODO: Add constructors, at least for the
+//      VENTRYxd and IENTRYxd objects. 
 
-
-//2d
+//fluid
 struct VENTRY2d
 {
     int icoords[2];
@@ -21,6 +22,7 @@ struct VDATA2d
     std::vector<VENTRY2d> data;
 };
 
+//interface
 struct IENTRY2d
 {
     double coords[2];
@@ -36,7 +38,7 @@ struct IDATA2d
     std::vector<IENTRY2d> data;
 };
 
-//3d
+//fluid
 struct VENTRY3d
 {
     int icoords[3];
@@ -52,6 +54,21 @@ struct VDATA3d
     std::vector<VENTRY3d> data;
 };
 
+//interface
+struct IENTRY3d
+{
+    double coords[3];
+    double vel[3];
+        //double vort[3];
+};
+
+struct IDATA3d
+{
+    int tstep;
+    double dt;
+    double time;
+    std::vector<IENTRY3d> data;
+};
 
 
 #endif

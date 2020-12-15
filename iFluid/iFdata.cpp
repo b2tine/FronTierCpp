@@ -73,6 +73,8 @@ void Incompress_Solver_Smooth_Basis::writeMeshFile3d()
     fclose(mesh_file);
 }
 
+//TODO: Write and use constructors for xENTRYXd objects
+
 VDATA2d Incompress_Solver_Smooth_Basis::getVelData2d()
 {
     double **vel = field->vel;
@@ -136,22 +138,6 @@ IDATA2d Incompress_Solver_Smooth_Basis::getIntfcData2d()
     return idata;
 }
 
-/*
-double Incompress_Solver_Smooth_Basis::getIntfcVort2d(POINT* p)
-{
-    double nor[MAXD] = {0.0};
-    FT_NormalAtPoint(p,front,nor,LIQUID_COMP2);//pos_component for FLUID_SOLID_CIRCLE
-
-    double tan[MAXD] = {0.0};
-    for (int l = 0; l < dim; ++l)
-        tan[l] = nor[l];
-    tan[1] = -nor[1];
-    
-    double dn = FT_GridSizeInDir(nor,front);
-    double dt = FT_GridSizeInDir(tan,front);
-}
-*/
-
 VDATA3d Incompress_Solver_Smooth_Basis::getVelData3d()
 {
     double **vel = field->vel;
@@ -176,6 +162,52 @@ VDATA3d Incompress_Solver_Smooth_Basis::getVelData3d()
     return veldata;
 }
 
+IDATA3d Incompress_Solver_Smooth_Basis::getIntfcData3d()
+{
+    IDATA3d idata;
+    idata.tstep = front->step;
+    idata.dt = front->dt;
+    idata.time = front->time;
+
+    //NOTE: Starting with just strings/curves, add surfaces later
+    INTERFACE* intfc = front->interf;
+    CURVE** c;
+    BOND* b;
+
+    intfc_curve_loop(intfc,c)
+    {
+        //TODO: check if string hsbdry
+        if (is_bdry(*c)) continue;
+
+        curve_bond_loop(*c,b)
+        {
+            POINT* p = b->end;
+            double* coords = Coords(p);
+            double* vel = p->vel;
+            STATE* sl = (STATE*)left_state(p);
+                //double vort = sl->vort;
+            
+            IENTRY3d ientry = {
+                coords[0],coords[1],coords[2],
+                vel[0],vel[1],vel[2]};
+           
+            /* 
+            IENTRY3d ientry;
+            for (int l = 0; l < dim; ++l)
+            {
+                ientry.coords[l] = coords[l];
+                ientry.vel[l] = vel[l];
+                    //ientry.vort[l] = vort[l];
+            }
+            */
+
+            idata.data.push_back(ientry);
+        }
+    }
+
+    return idata;
+}
+
 //2d
 std::vector<int> Incompress_Solver_Smooth_Basis::getMaxIJ()
 {
@@ -198,11 +230,4 @@ std::vector<int> Incompress_Solver_Smooth_Basis::getTopGMax()
             return std::vector<int>(top_gmax,top_gmax+2);
     }
 }
-
-/*
-std::vector<int> Incompress_Solver_Smooth_Basis::getTopGMax()
-{
-    return std::vector<int>(top_gmax,top_gmax+1);
-}
-*/
 

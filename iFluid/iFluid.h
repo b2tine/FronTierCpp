@@ -480,27 +480,28 @@ protected:
 	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,
 					double*); 
 
+
+//TODO: Move into own subclass 
+/////////////////////////////////////////////////////
+//For generating PINN training data
+
 public:
-    //TODO: Move into own subclass 
-    /////////////////////////////////////////////////////
-    //For generating PINN training data
         
     //void writeTimeFile();
     
     void writeMeshFile2d();
     VDATA2d getVelData2d();
     IDATA2d getIntfcData2d();
-    std::vector<int> getMaxIJ();
-    std::vector<int> getTopGMax();
 
     void writeMeshFile3d();
     VDATA3d getVelData3d();
-    std::vector<int> getMaxIJK();
-    std::vector<int> getTopGMax3d();
+    IDATA3d getIntfcData3d();
 
-    //double getIntfcVort2d(POINT* p);
+    std::vector<int> getMaxIJ();
+    std::vector<int> getMaxIJK();
+    std::vector<int> getTopGMax();
     
-    /////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 };
 
 ///////////////Interface for Embedded Boundary Method////////////////////
