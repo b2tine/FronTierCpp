@@ -95,10 +95,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	
     hyperb_solver.soln_comp1 = LIQUID_COMP1;
 	hyperb_solver.soln_comp2 = LIQUID_COMP2;
-	hyperb_solver.rho1 = iFparams->rho1;
+	
+    hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
+
     hyperb_solver.mu1 = iFparams->mu1;
     hyperb_solver.mu2 = iFparams->mu2;
+    hyperb_solver.use_eddy_visc = iFparams->use_eddy_visc;
 
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.getStateVel[0] = getStateXvel;

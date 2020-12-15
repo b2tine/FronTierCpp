@@ -630,7 +630,8 @@ protected:
     std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
 
-int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
+
+extern int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
 
 extern double getStatePres(POINTER);
 extern double getStatePhi(POINTER);

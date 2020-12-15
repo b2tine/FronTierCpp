@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define		soln_comp(comp)					\
 		((comp) == soln_comp1 || (comp) == soln_comp2)
 
+
 HYPERB_SOLVER::HYPERB_SOLVER(Front &front):front(&front)
 {
 	porosity = 0.0;
@@ -563,11 +564,12 @@ void HYPERB_SOLVER::setSolverDomain(void)
 	int i;
 
 	dim = Dimension(front->interf);
-        top_comp = T->components;
-        top_gmax = rgr->gmax;
+    top_comp = T->components;
+    top_gmax = rgr->gmax;
 	top_h = rgr->h;
 	top_L = rgr->L;
-	if (first)
+    
+    if (first)
 	{
 	    first = NO;
 	    size = 1;

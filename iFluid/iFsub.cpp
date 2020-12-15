@@ -73,6 +73,7 @@ static int modify_contact_node(NODE*,NODE*,O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,
                               double,double,RPROBLEM**,Front*,POINTER,
                               double,double*,NODE_FLAG);
 
+
 extern int next_index_in_dir(
         int* icoords,
         GRID_DIRECTION dir,

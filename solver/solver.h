@@ -412,6 +412,7 @@ public:
 	double *mu; //needed for applying slip wall boundary
 	double mu1;
 	double mu2;
+    boolean use_eddy_visc {NO};
 	
     double var_obst;	/* default solution in obst_comp */
 	double max_speed;
@@ -438,7 +439,8 @@ private:
 	SWEEP *st_field,st_tmp;
         FSWEEP *st_flux;
         double **a,*b;
-	void setSolverDomain(void);
+	
+    void setSolverDomain(void);
 	void allocMeshVst(SWEEP*);
 	void allocMeshFlux(FSWEEP*);
 	void allocDirectionalVstFlux(SWEEP*,FSWEEP*);
@@ -446,20 +448,22 @@ private:
 	void copyToMeshVst(SWEEP*);
 	void copyMeshVst(SWEEP,SWEEP*);
 	void computeMeshFlux(SWEEP,FSWEEP*);
+    void addSourceTerm(SWEEP*,FSWEEP*);
 	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
 	void copyFromMeshVst(const SWEEP&);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection1d(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection2d(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection3d(int,SWEEP*,FSWEEP*);
-	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
-	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
+	
+    void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
+	
+    void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
 	void setDirichletStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
-	void addSourceTerm(SWEEP*,FSWEEP*);
 };
 
 
