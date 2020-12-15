@@ -3977,15 +3977,18 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         RECT_GRID *rgr = computational_grid(front->interf);
         POINTER state;
         bool is_intfc = false;
+        
         index = d_index(icoords,top_gmax,dim);
         top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
         for (i = 0; i < dim; i++)
             coords[i] = top_L[i] + icoords[i]*top_h[i];
+        
         /*deal with jump condition in each direction*/
         for (nb = 0; nb < max_nb; nb ++)
         {
             is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
                                   top_comp[index],nor,&hs,crx_coords);
+            
             if (is_intfc && dim == 2 && is_bdry(Curve_of_hs(hs)))
                 continue;
             else if (is_intfc && dim == 3 && is_bdry(Surface_of_hs(hs)))
@@ -3993,6 +3996,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
             else if (is_intfc && dim == 2 &&
                      hsbdry_type(Curve_of_hs(hs)) == STRING_HSBDRY)
                 continue;
+            
             /*Ghost Fluid Method(GFM): p_+ - p_- = alpha*Un*nor + beta*(Un*nor)^2*/
             /*p+ and p- is defined by normal vector*/
             if(is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
@@ -4002,22 +4006,26 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                                 top_comp[index],&state,&hs,crx_coords);
                 for (idir = 0 ; idir < dim; idir++)
                 {
-		    if (state)
+                    if (state)
                         vel_intfc = (*getStateVel[idir])(state);
-		    else
-			vel_intfc = 0.0;
+                    else
+                        vel_intfc = 0.0;
+
                     FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
                                              field->vel[idir],getStateVel[idir],
                                              &vel_rel[idir],NULL);
+
                     vel_rel[idir] -= vel_intfc;
                 }
                 for (i = 0; i < dim; i++)
                 {
                     vec[i] = crx_coords[i]-coords[i];
                 }
+
                 /*project to normal direction*/
                 Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
-		side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+                side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+        
                 if (side <= 0)
                 {
                     ans += Un*(alpha+fabs(Un)*beta)/sqr(top_h[nb/2]);
@@ -4028,10 +4036,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 }
             }
         }
+        
         /*return source term for Poisson equation due to jump condition*/
         rho = (field->rho[index] == 0)? iFparams->rho2 : field->rho[index];
+        
         if (debugging("pressure_drop"))
-                printf("ans = %f, Un = %f\n",ans/rho, Un);
+            printf("ans = %f, Un = %f\n",ans/rho, Un);
+
         return ans/rho;
 }
 
