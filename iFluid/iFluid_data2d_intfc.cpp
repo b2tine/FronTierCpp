@@ -251,8 +251,9 @@ static void ifluid_driver(Front *front,
     char tv_name[100];
     sprintf(tv_name,"%s/time.txt",out_name);
 
-    char velm_name[100];
     auto imax = l_cartesian->getMaxIJ();
+
+    char velm_name[100];
     sprintf(velm_name,"%s/velmat-%d-%d.txt",
                 out_name,imax[0],imax[1]);
     
@@ -278,14 +279,14 @@ static void ifluid_driver(Front *front,
             //if (FT_IsSaveTime(front) || FT_IsDrawTime(front) || tslice == 0)
         if (FT_IsDrawTime(front) || tslice == 0)
         {
-            FILE* tv_file = fopen(tv_name,"a");
-            FILE* velm_file = fopen(velm_name,"a");
-            FILE* vortm_file = fopen(vortm_name,"a");
-
             auto vdata = l_cartesian->getVelData2d();
             
-            fprintf(tv_file,"%20.14f %20.14f\n",
-                    vdata.time,vdata.dt);
+            FILE* tv_file = fopen(tv_name,"a");
+            fprintf(tv_file,"%20.14f %20.14f\n",vdata.time,vdata.dt);
+            fclose(tv_file);
+            
+            FILE* velm_file = fopen(velm_name,"a");
+            FILE* vortm_file = fopen(vortm_name,"a");
             
             for (auto it : vdata.data)
             {
@@ -298,7 +299,6 @@ static void ifluid_driver(Front *front,
                 fprintf(vortm_file,"%20.14f\n",vort);
             }
         
-            fclose(tv_file);
             fclose(velm_file);
             fclose(vortm_file);
 
@@ -434,7 +434,6 @@ static void ifluid_driver(Front *front,
 
 
     //Append final tslice to file names
-
     char new_tv_name[100];
     sprintf(new_tv_name,"%s/time-%d.txt",out_name,tslice);
     std::rename(tv_name,new_tv_name);
@@ -463,7 +462,9 @@ static void ifluid_driver(Front *front,
     sprintf(new_vorti_name,"%s/vortintfc-%d-%d.txt",
                 out_name,intfc_data_size,tslice);
     std::rename(vorti_name,new_vorti_name);
-    
+   
+
+    FT_FreeMainIntfc(front);
 }       /* end ifluid_driver */
 
 static int l_cartesian_vel(

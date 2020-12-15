@@ -269,33 +269,139 @@ void airfoil_driver(Front *front,
     FT_TimeControlFilter(front);
 	    //FT_PrintTimeStamp(front);
 
+    
+    //For generating PINN training data
     ///////////////////////////////////////////////////////
-    // Write mesh file
     l_cartesian->writeMeshFile3d();
 
     char tv_name[100];
     sprintf(tv_name,"%s/time.txt",out_name);
 
-    char velm_name[100], vortm_name[100];
     auto imax = l_cartesian->getMaxIJK();
-    sprintf(velm_name,"%s/velmat-%d-%d-%d",
+
+    char velm_name[100];
+    sprintf(velm_name,"%s/velmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],imax[2]);
-    sprintf(vortm_name,"%s/vortmat-%d-%d-%d",
+    
+    char vortm_name[100];
+    sprintf(vortm_name,"%s/vortmat-%d-%d-%d.txt",
                 out_name,imax[0],imax[1],imax[2]);
-    if (pp_numnodes() > 1)
-	{
-        sprintf(velm_name,"%s-nd%s",velm_name,
-                right_flush(pp_mynode(),4));
-        sprintf(vortm_name,"%s-nd%s",vortm_name,
-                right_flush(pp_mynode(),4));
-	}
-    sprintf(velm_name,"%s.txt",velm_name);
-    sprintf(vortm_name,"%s.txt",vortm_name);
+    
+    char intfc_name[100];
+    sprintf(intfc_name,"%s/posintfc.txt",out_name);
+
+    char intfc_disp_name[100];
+    sprintf(intfc_disp_name,"%s/dispintfc.txt",out_name);
+    
+    char veli_name[100];
+    sprintf(veli_name,"%s/velintfc.txt",out_name);
+    
+    /*
+    char vorti_name[100];
+    sprintf(vorti_name,"%s/vortintfc.txt",out_name);
+    */
+    
+    
+    IDATA3d idata0;
+    int intfc_data_size;
+    
+    int tslice = 0;
     ///////////////////////////////////////////////////////
 
-    
     for (;;)
     {
+        //For generating PINN training data
+        ///////////////////////////////////////////////////////
+        if (FT_IsDrawTime(front) || tslice == 0)
+        {
+            auto vdata = l_cartesian->getVelData3d();
+
+            FILE* tv_file = fopen(tv_name,"a");
+            fprintf(tv_file,"%20.14f %20.14f\n",vdata.time,vdata.dt);
+            fclose(tv_file);
+
+            FILE* velm_file = fopen(velm_name,"a");
+            FILE* vortm_file = fopen(vortm_name,"a");
+            
+            for (auto it : vdata.data)
+            {
+                //auto ic = it.icoords;
+                
+                auto iv = it.vel;
+                fprintf(velm_file,"%20.14f %20.14f %20.14f\n",
+                        iv[0],iv[1],iv[2]);
+
+                /*
+                auto vort = it.vort;
+                fprintf(vortm_file,"%20.14f %20.14f %20.14f\n",
+                        vort[0],vort[1],vort[2]);
+                */
+            }
+        
+            fclose(velm_file);
+            fclose(vortm_file);
+            
+            FILE* intfc_file = fopen(intfc_name,"a");
+            FILE* veli_file = fopen(veli_name,"a");
+            FILE* intfc_disp_file = fopen(intfc_disp_name,"a");
+            //FILE* vorti_file = fopen(vorti_name,"a");
+
+            if (tslice == 0)
+            {
+                idata0 = l_cartesian->getIntfcData3d();
+                intfc_data_size = idata0.data.size();
+            }
+
+            auto idata = l_cartesian->getIntfcData3d();
+
+            //TODO: This is just a sanity check for now.
+            //      Fabric runs should never change number
+            //      of mesh points -- To Be Removed. 
+            if (idata.data.size() != intfc_data_size)
+            {
+                printf("ERROR: num interface points has changed\n");
+                printf("initial num intfc points: %d\n",intfc_data_size); 
+                printf("current num intfc points: %d\n",idata.data.size()); 
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            auto ientries = idata.data;
+            auto ientries0 = idata0.data;
+
+            //for (auto it : idata.data)
+            for (int i = 0; i < intfc_data_size; ++i)
+            {
+                //auto ic = it.coords;
+                auto ic = ientries[i].coords;
+                fprintf(intfc_file,"%20.14f %20.14f %20.14f\n",
+                        ic[0],ic[1],ic[2]);
+            
+                auto ic0 = ientries0[i].coords;
+                fprintf(intfc_disp_file,"%20.14f %20.14f %20.14f\n",
+                        ic[0]-ic0[0], ic[1]-ic0[1], ic[2]-ic0[2]);
+                
+                //auto iv = it.vel;
+                auto iv = ientries[i].vel;
+                fprintf(veli_file,"%20.14f %20.14f %20.14f\n",
+                        iv[0],iv[1],iv[2]);
+                
+                /*
+                //auto vort = it.vort;
+                auto vort = ientries[i].vort;
+                fprintf(vorti_file,"%20.14f %20.14f %20.14f\n",
+                        vort[0],vort[1],vort[2]);
+                */
+            }
+
+            fclose(intfc_file);
+            fclose(intfc_disp_file);
+            fclose(veli_file);
+            //fclose(vorti_file);
+
+            tslice++;
+        }
+        ///////////////////////////////////////////////////////
+        
         /* Propagating interface for time step dt */
 	    if (debugging("CLOCK"))
             reset_clock();
@@ -374,6 +480,7 @@ void airfoil_driver(Front *front,
         if (debugging("trace"))
             (void) printf("After print output()\n");
         
+        //TODO: suppress visualization data when, PINN training data working
         if (FT_IsDrawTime(front))
 	    {
             FT_Draw(front);
@@ -395,8 +502,49 @@ void airfoil_driver(Front *front,
 	    stop_clock("time_step");
     }
 
-    FT_FreeMainIntfc(front);
 
+    //For generating PINN training data
+    ///////////////////////////////////////////////////////
+    
+    //Append final tslice to file names
+    char new_tv_name[100];
+    sprintf(new_tv_name,"%s/time-%d.txt",out_name,tslice);
+    std::rename(tv_name,new_tv_name);
+
+    char new_velm_name[100];
+    sprintf(new_velm_name,"%s/velmat-%d-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],imax[2],tslice);
+    std::rename(velm_name,new_velm_name);
+    
+    char new_vortm_name[100];
+    sprintf(new_vortm_name,"%s/vortmat-%d-%d-%d-%d.txt",
+                out_name,imax[0],imax[1],imax[2],tslice);
+    std::rename(vortm_name,new_vortm_name);
+
+    char new_intfc_name[100];
+    sprintf(new_intfc_name,"%s/posintfc-%d-%d.txt",
+                out_name,intfc_data_size,tslice);
+    std::rename(intfc_name,new_intfc_name);
+    
+    char new_intfc_disp_name[100];
+    sprintf(new_intfc_disp_name,"%s/dispintfc-%d-%d.txt",
+            out_name,intfc_data_size,tslice);
+    std::rename(intfc_disp_name,new_intfc_disp_name);
+    
+    char new_veli_name[100];
+    sprintf(new_veli_name,"%s/velintfc-%d-%d.txt",
+                out_name,intfc_data_size,tslice);
+    std::rename(veli_name,new_veli_name);
+    
+    /*
+    char new_vorti_name[100];
+    sprintf(new_vorti_name,"%s/vortintfc-%d-%d.txt",
+                out_name,intfc_data_size,tslice);
+    std::rename(vorti_name,new_vorti_name);
+    */
+    ///////////////////////////////////////////////////////
+    
+    FT_FreeMainIntfc(front);
 }       /* end airfoil_driver */
 
 

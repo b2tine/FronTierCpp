@@ -35,13 +35,16 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
 
-noinst_PROGRAMS = airfoil
+noinst_PROGRAMS = airfoil \
+				  airfoil_data
 
 				  
 airfoil_SOURCES = airfoil.cpp
-
-
 airfoil_LDADD =	$(builddir)/objs/libairfoil.la
+
+
+airfoil_data_SOURCES = airfoil_data.cpp
+airfoil_data_LDADD = $(builddir)/objs/libairfoil.la
 
 
 
@@ -50,7 +53,7 @@ tagsfile:
 		$(top_srcdir)/Collision/*.h $(top_srcdir)/Collision/*.cpp \
 		$(top_srcdir)/iFluid/*.h $(top_srcdir)/iFluid/iFcartsn3d.cpp \
 		$(top_srcdir)/iFluid/iFinit.cpp $(top_srcdir)/iFluid/iFbasic.cpp \
-		$(top_srcdir)/iFluid/iFsub.cpp $(top_srcdir)/iFluid/keps.cpp \
+		$(top_srcdir)/iFluid/iFsub.cpp $(top_srcdir)/iFluid/iFdata.cpp \
 		$(top_srcdir)/solver/*.h $(top_srcdir)/solver/*.cpp \
 		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c

@@ -176,8 +176,8 @@ IDATA3d Incompress_Solver_Smooth_Basis::getIntfcData3d()
 
     intfc_curve_loop(intfc,c)
     {
-        //TODO: check if string hsbdry
-        if (is_bdry(*c)) continue;
+        //if (is_bdry(*c)) continue;
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 
         curve_bond_loop(*c,b)
         {

@@ -59,7 +59,8 @@ struct IENTRY3d
 {
     double coords[3];
     double vel[3];
-        //double vort[3];
+    //double vort[3];
+    //double pres
 };
 
 struct IDATA3d
