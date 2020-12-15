@@ -30,37 +30,47 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
 
+//TODO: May want to copy the HYPERB_SOLVER class functionality
+//      into methods of Incompress_Solver_Smooth_2D_Cartesian
 void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 {
 	int i,j,index;
 	static HYPERB_SOLVER hyperb_solver(*front);
-	static double *rho;
-	double **vel = field->vel;
         static int count = 0;
+	
+	static double *rho;
+	static double *mu;
+    static bool first = true;
 
-	if (rho == NULL)
+	if (first)//if (rho == NULL)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1);
 	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&mu,size,sizeof(double));
+        first = false;
 	}
+
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    rho[index] = field->rho[index];
+	    mu[index] = field->mu[index];
 	}
-        count++;
+	hyperb_solver.rho = rho;
+	hyperb_solver.mu = mu;
+    
+    count++;
 	if (debugging("field_var"))
 	{
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
 	    	index = d_index2d(i,j,top_gmax);
-		field->old_var[0][index] = vel[0][index];
-		field->old_var[1][index] = vel[1][index];
+            field->old_var[0][index] = field->vel[0][index];
+            field->old_var[1][index] = field->vel[1][index];
 	    }
 	}
-	hyperb_solver.rho = rho;
 
 	hyperb_solver.obst_comp = SOLID_COMP;
 	switch (iFparams->adv_order)
@@ -78,24 +88,33 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 					iFparams->adv_order);
 	    clean_up(ERROR);
 	}
-	hyperb_solver.dt = m_dt;
-	hyperb_solver.var = field->vel;
+	
+    //TODO: Don't overwrite soln this way -- limits our flexibility
+    hyperb_solver.var = field->vel;
 	hyperb_solver.soln = field->vel;
-	hyperb_solver.soln_comp1 = LIQUID_COMP1;
+	
+    hyperb_solver.soln_comp1 = LIQUID_COMP1;
 	hyperb_solver.soln_comp2 = LIQUID_COMP2;
-	hyperb_solver.getStateVel[0] = getStateXvel;
-	hyperb_solver.getStateVel[1] = getStateYvel;
 	hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
+    hyperb_solver.mu1 = iFparams->mu1;
+    hyperb_solver.mu2 = iFparams->mu2;
+
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
-	hyperb_solver.solveRungeKutta();
+	hyperb_solver.getStateVel[0] = getStateXvel;
+	hyperb_solver.getStateVel[1] = getStateYvel;
+    hyperb_solver.getStateMu = getStateMu;
+	
+	hyperb_solver.dt = m_dt;
+    hyperb_solver.solveRungeKutta();
+
 	if (debugging("field_var"))
 	{
 	    (void) printf("\nIn computeAdvection(), \n");
 	    (void) printf("one step increment for v[0]:\n");
-	    computeVarIncrement(field->old_var[0],vel[0],NO);
+	    computeVarIncrement(field->old_var[0],field->vel[0],NO);
 	    (void) printf("one step increment for v[1]:\n");
-	    computeVarIncrement(field->old_var[1],vel[1],NO);
+	    computeVarIncrement(field->old_var[1],field->vel[1],NO);
 	    (void) printf("\n");
 	}
 }

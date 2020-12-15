@@ -4675,6 +4675,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     //
 }*/
 
+//TODO: Can we make these regular functions outside of
+//      the class without too much difficulty? Will allow
+//      for use in the hyperbolic solver.
+//      Would need to make Front* front an argument so we
+//      can use functions like FT_GridIntfcToph(Front*) etc.
+//      Also would need to add double* mu field array.
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4685,10 +4691,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	double** vel,
 	double* v_slip)
 {
-    //TODO: Compare implementations and results.
-    //      Should also add an input file option to specify type
-    
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
+    //TODO: Write GNOR implementation and compare results.
         //setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
 }
 

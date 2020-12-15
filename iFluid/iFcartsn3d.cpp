@@ -35,6 +35,8 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 
 
+//TODO: May want to copy the HYPERB_SOLVER class functionality
+//      into methods of Incompress_Solver_Smooth_3D_Cartesian
 void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 {
 	int i,j,k,l,index;
@@ -42,19 +44,27 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
     double speed;
 
 	static double *rho;
-	if (rho == NULL)
+	static double *mu;
+    
+    static bool first = true;
+    if (first)//if (rho == NULL)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
 	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&mu,size,sizeof(double));
+        first = false;
 	}
+
 	for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    rho[index] = field->rho[index];
+	    mu[index] = field->mu[index];
 	}
 	hyperb_solver.rho = rho;
+	hyperb_solver.mu = mu;
 
 	hyperb_solver.obst_comp = SOLID_COMP;
 	switch (iFparams->adv_order)
@@ -74,18 +84,26 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 	}
     //TODO: probably need to save field->vel before overwriting with soln..
     //      flux soln should be sent to rhs of diffusion computation.... 
-	hyperb_solver.dt = m_dt;
-	hyperb_solver.var = field->vel;
+	
+    //TODO: Don't overwrite soln this way -- limits our flexibility
+    hyperb_solver.var = field->vel;
 	hyperb_solver.soln = field->vel;
-	hyperb_solver.soln_comp1 = LIQUID_COMP1;
+	
+    hyperb_solver.soln_comp1 = LIQUID_COMP1;
 	hyperb_solver.soln_comp2 = LIQUID_COMP2;
 	hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
+	hyperb_solver.mu1 = iFparams->mu1;
+	hyperb_solver.mu2 = iFparams->mu2;
+
+	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.getStateVel[0] = getStateXvel;
 	hyperb_solver.getStateVel[1] = getStateYvel;
 	hyperb_solver.getStateVel[2] = getStateZvel;
-	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
-	hyperb_solver.solveRungeKutta();
+	hyperb_solver.getStateMu = getStateMu;
+	
+    hyperb_solver.dt = m_dt;
+    hyperb_solver.solveRungeKutta();
 
         max_speed = 0.0;
         for (k = 0; k <= top_gmax[2]; k++)

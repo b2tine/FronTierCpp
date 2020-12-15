@@ -846,7 +846,7 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    	setDirichletStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
-		    case ELASTIC_BOUNDARY:
+		    case ELASTIC_BOUNDARY://Never enters with af_findcrossing
 		    	setElasticStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
@@ -980,6 +980,7 @@ void HYPERB_SOLVER::setNeumannStates(
 
 	    for (int j = 0; j < dim; ++j)
             v[j] = 2.0*vn*nor[j] - v[j];
+
 	    for (int j = 0; j < dim; ++j)
             coords_reflect[j] = crx_coords[j] + v[j];
 		
@@ -1005,9 +1006,9 @@ void HYPERB_SOLVER::setNeumannStates(
 	    for (int j = 0; j < dim; ++j)
         {
             //TODO: Need to use slip wall boundary condition here, for wall functions?
-            //      v_ghost[j] = vel_reflect[j] - vn*nor[j]; //slip vel (no rel normal vel)
+            v_ghost[j] = vel_reflect[j] - vn*nor[j];
             
-            v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
+            //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];//reflection 
             //v_ghost[j] = vel_intfc[j] - vn*nor[j]; //no relative tangential vel
         }
 
@@ -1263,6 +1264,11 @@ void HYPERB_SOLVER::setDirichletStates(
 	}
 }
 
+//TODO: Is this correct? Just uses constant extrapolation
+//      of the interface velocity for all the ghost points.
+//
+//      But it appears this never gets called if using
+//      af_findcrossing function.
 void HYPERB_SOLVER::setElasticStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -1281,18 +1287,18 @@ void HYPERB_SOLVER::setElasticStates(
 	{
 	    for (k = istart; k <= nrad; ++k)
 	    {
-		for (j = 0; j < dim; j++)
-		    vst->vel[j][nrad-k] = (*getStateVel[j])(state);
-		vst->rho[nrad-k] = rho_of_comp(comp);
+            for (j = 0; j < dim; j++)
+                vst->vel[j][nrad-k] = (*getStateVel[j])(state);
+            vst->rho[nrad-k] = rho_of_comp(comp);
 	    }
 	}
 	else
 	{
 	    for (k = istart; k <= nrad; ++k)
 	    {
-		for (j = 0; j < dim; j++)
-                    vst->vel[j][n+nrad+k-1] = (*getStateVel[j])(state);
-		vst->rho[n+nrad+k-1] = rho_of_comp(comp);
+            for (j = 0; j < dim; j++)
+                vst->vel[j][n+nrad+k-1] = (*getStateVel[j])(state);
+            vst->rho[n+nrad+k-1] = rho_of_comp(comp);
 	    }
 	}
 }

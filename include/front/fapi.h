@@ -1709,7 +1709,7 @@ IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
     \param front @b in Pointer to front.
  */
 
-   IMPORT  COMPONENT *FT_GridIntfcTopGmax(Front*);
+   IMPORT  int *FT_GridIntfcTopGmax(Front*);
 
 /*! \fn RECT_GRID *FT_GridIntfcTopGrid(Front*)
  *  \ingroup GRIDINTFC

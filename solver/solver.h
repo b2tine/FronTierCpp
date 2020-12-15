@@ -404,16 +404,27 @@ public:
 	double **var;		/* field variable of old step */
 	double **soln;		/* field variable of new step */
 	double **source;	/* source field */
-	double *rho;
+	
+    double *rho;
 	double rho1;
 	double rho2;
-	double var_obst;	/* default solution in obst_comp */
+
+	double *mu; //needed for applying slip wall boundary
+	double mu1;
+	double mu2;
+	
+    double var_obst;	/* default solution in obst_comp */
 	double max_speed;
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+	
+    int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-	void (*numericalFlux)(SWEEP*,FSWEEP*,double,int,int,int);
-	void solveRungeKutta();
 	double (*getStateVel[3])(POINTER);
+    double (*getStateMu)(POINTER);
+
+	void (*numericalFlux)(SWEEP*,FSWEEP*,double,int,int,int);
+
+	void solveRungeKutta();
+
 private:
         // Dimension
         int dim;
