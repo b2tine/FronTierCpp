@@ -2540,6 +2540,7 @@ EXPORT	void	FT_NormalAtPoint(
 	Get the grid step size in the direction given.
 */
 
+//TODO: Normalize input vector
 EXPORT 	double	FT_GridSizeInDir(
 	double	*dir,
 	Front 	*front)

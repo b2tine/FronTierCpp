@@ -418,25 +418,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
-            else if (status == CONST_P_PDE_BOUNDARY)
-            {
-                //TODO: should this include the inlet as well?
-                //      inlet has constant pressure, but
-                //      ifluid_find_state_at_crossing() returns
-                //      CONST_V_PDE_BOUNDARY for it.
-                //
-                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
-                //      which uses phi[index], the current index.
-                
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                //
-                //TODO: for OUTLET use regular index_nb[l] from above??
-                rhs += -coeff[l]*getStateVar(intfc_state);
-                aII += -coeff[l];
-                use_neumann_solver = NO;
-            }
             else if (status == CONST_V_PDE_BOUNDARY &&
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
@@ -589,7 +570,33 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //      
                 // use_neumann_solver = NO;
             }
-
+            else if (status == CONST_V_PDE_BOUNDARY)
+            {
+                //INLET
+                rhs += -coeff[l]*soln[index];
+                aII += -coeff[l];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                //TODO: should this include the inlet as well?
+                //      inlet has constant pressure, but
+                //      ifluid_find_state_at_crossing() returns
+                //      CONST_V_PDE_BOUNDARY for it.
+                //
+                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
+                //      which uses phi[index], the current index.
+                
+                //TODO: getStateVar() will return phi, not pressure.
+                //      The pressure is updated at the flow through boundary,
+                //      but phi is not.
+                //
+                //TODO: for OUTLET use regular index_nb[l] from above??
+                
+                //OUTLET
+                rhs += -coeff[l]*getStateVar(intfc_state);
+                aII += -coeff[l];
+                use_neumann_solver = NO;
+            }
         }
 
         //TODO: investigate this comment and below if (num_nb > 0) block
@@ -898,25 +905,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
-            else if (status == CONST_P_PDE_BOUNDARY)
-            {
-                //TODO: should this include the inlet as well?
-                //      inlet has constant pressure, but
-                //      ifluid_find_state_at_crossing() returns
-                //      CONST_V_PDE_BOUNDARY for it.
-                //
-                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
-                //      which uses phi[index], the current index.
-                
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                
-                //TODO: for OUTLET use regular index_nb[l] from above??
-                aII += -coeff[l];
-                rhs += -coeff[l]*getStateVar(intfc_state);
-                use_neumann_solver = NO;
-            }
             else if (status == CONST_V_PDE_BOUNDARY &&
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
@@ -1067,6 +1055,33 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //      to rectangular domain boundaries?
                 //
                 //use_neumann_solver = NO;
+            }
+            else if (status == CONST_V_PDE_BOUNDARY)
+            {
+                //INLET
+                rhs += -coeff[l]*soln[index];
+                aII += -coeff[l];
+            }
+            else if (status == CONST_P_PDE_BOUNDARY)
+            {
+                //TODO: should this include the inlet as well?
+                //      inlet has constant pressure, but
+                //      ifluid_find_state_at_crossing() returns
+                //      CONST_V_PDE_BOUNDARY for it.
+                //
+                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
+                //      which uses phi[index], the current index.
+                
+                //TODO: getStateVar() will return phi, not pressure.
+                //      The pressure is updated at the flow through boundary,
+                //      but phi is not.
+                
+                //TODO: for OUTLET use regular index_nb[l] from above??
+            
+                //OUTLET
+                aII += -coeff[l];
+                rhs += -coeff[l]*getStateVar(intfc_state);
+                use_neumann_solver = NO;
             }
         }
 
