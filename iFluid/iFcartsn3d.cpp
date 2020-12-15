@@ -875,8 +875,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            //TODO: This should only be at the boundary?
-                //rhs -= m_dt*grad_q[l][index]/rho;
+            //TODO: This should only be applied at domain boundary.
+            //      And it is actually applied in the projection solver
+            //      by approximating phi^{n+1} at the boundary with phi^{n}.
+            //      See Brown accurate projection method paper for details.
+            //
+            //  rhs -= m_dt*grad_q[l][index]/rho;
             
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);

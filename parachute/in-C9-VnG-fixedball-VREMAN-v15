@@ -46,12 +46,11 @@ Enter type of rigid body: Sphere
 Enter center of the sphere: 6.0 6.0 0.951
 Enter radius of the sphere: 0.5 0.5 0.5
 
-Type yes if the rigid body is fixed: no
+Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
-Type yes if motion is preset: no
-Enter type of dynamic motionX: FREE_MOTION
+Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
@@ -68,8 +67,8 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: no
-Enter radius of the ventX: 0.42672
+Enter yes to cut a vent on canopy: yes
+Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
 Enter initial position of load: 6 6 1.451

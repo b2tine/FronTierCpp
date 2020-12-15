@@ -4677,9 +4677,264 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
     //TODO: Compare implementations and results.
     //      Should also add an input file option to specify type
     
-    //setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
-    
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
+        //setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
+}
+
+// Based on finding the nearest interface point to the ghost point
+// computed using FT_FindNearestIntfcPointInRange()
+void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_slip)
+{
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
+    
+    double vel_intfc_gcrx[MAXD];
+    for (int i = 0; i < dim; ++i)
+    {
+        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ghost_ic[i] = icoords[i];
+    }
+    
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    
+    for (int j = 0; j < dim; ++j)
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+
+    ////////////////////////////////////////////////////////////////////////
+    double intrp_coeffs[MAXD] = {0.0};
+    HYPER_SURF_ELEMENT* hsurf_elem;
+    HYPER_SURF* hsurf;
+    double range = 2;
+
+    FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
+    //TODO: Would limiting dist_ghost give improvement???
+    //      The parabolic and poisson solvers never actually encounter
+    //      a ghost point, the ghost data just gets sent to the rhs so
+    //      it shouldn't create a problem????
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    
+    //compute the normal and velocity vectors at the interface point
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+            {
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                }
+            }
+            break;
+
+        case 3:
+            {
+                TRI* nearTri = Tri_of_hse(hsurf_elem);
+                const double* tnor = Tri_normal(nearTri);
+                //NOTE: Tri_normal() does not return a unit vector
+                
+                STATE* st[3];
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = tnor[i];
+
+                    vel_intfc[i] = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                }
+            }
+            break;
+	}
+
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+        
+    if (comp == negative_component(hsurf))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
+    
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+    double dist_reflect = FT_GridSizeInDir(nor,front);
+        //double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
+    
+        /*
+        // Compute dist_reflect as the diagonal length of rect grid blocks
+        double dist_reflect = 0.0;
+        for (int j = 0; j < 3; ++j)
+             dist_reflect += sqr(top_h[j]);
+        dist_reflect = sqrt(dist_reflect);
+        */
+
+    //The desired reflected point
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    ////////////////////////////////////////////////////////////////////////
+   
+
+    ////////////////////////////////////////////////////////////////////////
+    //Temp debugging
+    if (debugging("slip_boundary"))
+    {
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        fprint_int_vector(stdout,"icoords",icoords,dim,", ");
+        fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
+        fprint_general_vector(stdout,"coords",coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g\n",dist_ghost,dist_reflect);
+        printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
+                dist_ghost/dist_reflect, dist_reflect - dist_ghost);
+    }
+    ////////////////////////////////////////////////////////////////////////
+
+    // Interpolate the velocity at the reflected point
+    int index = d_index(icoords,top_gmax,dim);
+    double vel_reflect[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        //TODO: Is vel[j][index] the best default value upon failure??
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+ 
+    double vel_rel[MAXD] = {0.0};
+    double vn = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    if (iFparams->use_eddy_visc == NO)
+    {
+        for (int j = 0; j < dim; ++j)
+        {
+            v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
+                //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
+        }
+
+        return;
+    }
+    /////////////////////////////////////////////////////////////////////////
+
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_rel_nor[j] = vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+    }
+    double mag_vtan = Magd(vel_rel_tan,dim);
+
+    
+    if (debugging("slip_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
+        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
+    }
+
+    double mu_l;
+    double rho_l;
+
+    switch (comp)
+    {
+        case LIQUID_COMP1:
+            mu_l = m_mu[0];
+            rho_l = m_rho[0];
+            break;
+        case LIQUID_COMP2:
+            mu_l = m_mu[1];
+            rho_l = m_rho[1];
+            break;
+        default:
+            printf("Unknown fluid COMPONENT: %d\n",comp);
+            LOC(); clean_up(EXIT_FAILURE);
+            break;
+    }
+    
+    double tau_wall[MAXD] = {0.0};
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l);
+
+    if (mag_vtan > MACH_EPS)
+    {
+        for (int j = 0; j < dim; ++j)
+            tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+    }
+    //TODO: Need to do anything else with tau_well other than adjust
+    //      the ghost fluid's tangential velocity??
+    //      (Aside from using for drag computation)
+
+    // Interpolate the effective viscosity at the reflected point
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
+                getStateMu,&mu_reflect,&field->mu[index]);
+    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
+    
+    double vel_ghost_tan[MAXD] = {0.0};
+    double vel_ghost_rel[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_tan[j] =
+            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+    }
+
+    if (debugging("slip_boundary"))
+    {
+        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field->mu[index]);
+        printf("mag_tau_wall = %g\n",mag_tau_wall);
+        fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    }
 }
 
 // Based on the normal at the interface grid crossing
@@ -4970,261 +5225,4 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
     }
     */
 }
-
-// Based on finding the nearest interface point to the ghost point
-// computed using FT_FindNearestIntfcPointInRange()
-void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
-	int *icoords,
-	int idir,
-	int nb,
-	int comp,
-	HYPER_SURF *hs,
-	POINTER state,
-	double** vel,
-	double* v_slip)
-{
-    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
-
-    int ghost_ic[MAXD];
-    double coords[MAXD], crx_coords[MAXD];
-    double coords_reflect[MAXD], coords_ghost[MAXD];
-    double nor[MAXD];
-    
-    double vel_intfc_gcrx[MAXD];
-    for (int i = 0; i < dim; ++i)
-    {
-        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
-        coords[i] = top_L[i] + icoords[i]*top_h[i];
-        ghost_ic[i] = icoords[i];
-    }
-    
-    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-    
-    for (int j = 0; j < dim; ++j)
-        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
-
-    ////////////////////////////////////////////////////////////////////////
-    double intrp_coeffs[MAXD] = {0.0};
-    HYPER_SURF_ELEMENT* hsurf_elem;
-    HYPER_SURF* hsurf;
-    double range = 2;
-
-    FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-
-    //TODO: Would limiting dist_ghost somehow give improvement???
-    //      The parabolic and poisson solvers never actually encounter
-    //      a ghost point, the ghost data just gets sent to the rhs so
-    //      it shouldn't create problems????
-    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
-    
-    //compute the normal and velocity vectors at the interface point
-    double vel_intfc[MAXD] = {0.0};
-    switch (dim)
-	{
-        case 2:
-            {
-                double ns[MAXD] = {0.0};
-                double ne[MAXD] = {0.0};
-                
-                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
-                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
-
-                STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
-                STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
-
-                for (int i = 0; i < dim; ++i)
-                {
-                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
-                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
-                }
-            }
-            break;
-
-        case 3:
-            {
-                TRI* nearTri = Tri_of_hse(hsurf_elem);
-                const double* tnor = Tri_normal(nearTri);
-                //NOTE: Tri_normal() does not return a unit vector
-                
-                STATE* st[3];
-                for (int j = 0; j < 3; ++j)
-                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
-
-                for (int i = 0; i < dim; ++i)
-                {
-                    nor[i] = tnor[i];
-
-                    vel_intfc[i] = 0.0;
-                    for (int j = 0; j < 3; ++j)
-                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
-                }
-            }
-            break;
-	}
-
-    double mag_nor = Magd(nor,dim);
-    for (int i = 0; i < dim; ++i)
-        nor[i] /= mag_nor;
-        
-    if (comp == negative_component(hsurf))
-	{
-	    for (int i = 0; i < dim; ++i)
-            nor[i] *= -1.0;
-	}
-    
-    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
-    double dist_reflect = FT_GridSizeInDir(nor,front);
-        //double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
-    
-        /*
-        // Compute dist_reflect as the diagonal length of rect grid blocks
-        double dist_reflect = 0.0;
-        for (int j = 0; j < 3; ++j)
-             dist_reflect += sqr(top_h[j]);
-        dist_reflect = sqrt(dist_reflect);
-        */
-
-    //The desired reflected point
-    for (int j = 0; j < dim; ++j)
-        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
-    ////////////////////////////////////////////////////////////////////////
-   
-
-    ////////////////////////////////////////////////////////////////////////
-    //Temp debugging
-    if (debugging("slip_boundary"))
-    {
-        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
-        fprint_int_vector(stdout,"icoords",icoords,dim,", ");
-        fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
-        fprint_general_vector(stdout,"coords",coords,dim,"\n");
-        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
-        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
-        fprint_general_vector(stdout,"normal",nor,dim,"\n");
-        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
-        printf("dist_ghost = %g , dist_reflect = %g\n",dist_ghost,dist_reflect);
-        printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
-                dist_ghost/dist_reflect, dist_reflect - dist_ghost);
-    }
-    ////////////////////////////////////////////////////////////////////////
-
-    double vel_reflect[MAXD] = {0.0};
-    double mu_reflect;
-    
-    int index = d_index(icoords,top_gmax,dim);
-
-    /* Interpolate the state at the reflected point */
-    for (int j = 0; j < dim; ++j)
-    {
-        //TODO: Is vel[j][index] the best default value upon failure??
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
-                getStateVel[j],&vel_reflect[j],&vel[j][index]);
-    }
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,&field->mu[index]);
-    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
- 
-    double vel_rel[MAXD] = {0.0};
-    double vn = 0.0;
-
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-        vn += vel_rel[j]*nor[j];
-    }
-
-    /*
-    /////////////////////////////////////////////////////////////////////////
-    //TODO: If tangential vel modification omitted, return after computing
-    //      the below v_slip. 
-    for (int j = 0; j < dim; ++j)
-    {
-        v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
-            //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
-    }
-    return;
-    /////////////////////////////////////////////////////////////////////////
-    */
-
-    double vel_rel_tan[MAXD] = {0.0};
-    double vel_rel_nor[MAXD] = {0.0};
-    double vel_ghost_nor[MAXD] = {0.0};
-
-    for (int j = 0; j < dim; ++j)
-    {
-	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
-	    vel_rel_nor[j] = vn*nor[j];
-	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
-    }
-    double mag_vtan = Magd(vel_rel_tan,dim);
-
-    
-    if (debugging("slip_boundary"))
-    {
-        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
-        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
-        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
-        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
-        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
-        printf("mu_reflect = %g  mu_[%d] = %g\n",mu_reflect,index,field->mu[index]);
-    }
-
-    double mu_l;
-    double rho_l;
-
-    switch (comp)
-    {
-        case LIQUID_COMP1:
-            mu_l = m_mu[0];
-            rho_l = m_rho[0];
-            break;
-        case LIQUID_COMP2:
-            mu_l = m_mu[1];
-            rho_l = m_rho[1];
-            break;
-        default:
-            printf("Unknown fluid COMPONENT: %d\n",comp);
-            LOC(); clean_up(EXIT_FAILURE);
-            break;
-    }
-    
-    double tau_wall[MAXD] = {0.0};
-    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l);
-
-    if (mag_vtan > MACH_EPS)
-    {
-        for (int j = 0; j < dim; ++j)
-            tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
-    }
-    //TODO: Need to do anything else with tau_well other than adjust
-    //      the ghost fluid's tangential velocity??
-    //      (Aside from using for drag computation)
-
-    double vel_ghost_tan[MAXD] = {0.0};
-    double vel_ghost_rel[MAXD] = {0.0};
-    
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_ghost_tan[j] =
-            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
-
-        //v_slip[j] = vel_ghost_tan[j] + vel_ghost_nor[j] + vel_intfc[j];
-        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
-        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
-    }
-
-    if (debugging("slip_boundary"))
-    {
-        printf("mag_tau_wall = %f\n",mag_tau_wall);
-        fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
-        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
-        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
-        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
-        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
-        printf("\n");
-    }
-}
-
 

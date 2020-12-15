@@ -350,12 +350,13 @@ public:
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
         
+    void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
         void setSlipBoundaryGNOR(int* icoords, int idir, int nb, int comp,
                 HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
-        void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
-                HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
-
-	//For debugging test
+	
+    //For debugging test
 	void compareWithBaseSoln(void);
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
