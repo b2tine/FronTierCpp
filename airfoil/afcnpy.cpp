@@ -2653,6 +2653,7 @@ static void setCurveVelocity(
 	int dim = FT_Dimension();
 
     //TODO: test this thorougly .. was previosly not used.
+    /*
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         for (b = curve->first; b != curve->last; b = b->next)
@@ -2678,7 +2679,7 @@ static void setCurveVelocity(
         }
     }
     else
-    {
+    {*/
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -2704,7 +2705,7 @@ static void setCurveVelocity(
                 }
             }
         }
-    }
+    //}
 
     for (b = curve->first; b != NULL; b = b->next)
     {

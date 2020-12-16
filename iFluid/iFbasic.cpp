@@ -74,6 +74,7 @@ Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front)
 	skip_neumann_solver = 0;
 }
 
+
 //---------------------------------------------------------------
 //	initMesh
 // include the following parts

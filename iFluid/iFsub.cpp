@@ -1214,11 +1214,6 @@ extern void read_iFparams(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = iFparams->dim;
 
-	/* defaults numerical schemes */
-	iFparams->num_scheme.projc_method = SIMPLE;
-	iFparams->num_scheme.advec_method = WENO;
-	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
-
     if (CursorAfterStringOpt(infile,
         "Entering yes to turn off fluid solver: "))
     {
@@ -1231,7 +1226,20 @@ extern void read_iFparams(
         }
     }
 
-	CursorAfterString(infile,"Enter projection type:");
+	/* defaults numerical schemes */
+	iFparams->num_scheme.projc_method = SIMPLE;
+	iFparams->num_scheme.advec_method = WENO;
+	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
+
+    (void) printf("The default advection order is WENO-Runge-Kutta 4\n");
+	iFparams->adv_order = 4;
+	if (CursorAfterStringOpt(infile,"Enter advection order:"))
+	{
+	    fscanf(infile,"%d",&iFparams->adv_order);
+	    (void) printf("%d\n",iFparams->adv_order);
+	}
+
+    CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	switch (string[0])
@@ -1253,14 +1261,7 @@ extern void read_iFparams(
 	    iFparams->num_scheme.projc_method = PEROT_BOTELLA;
 	}
 	assert(iFparams->num_scheme.projc_method != ERROR_PROJC_SCHEME);
-	(void) printf("The default advection order is WENO-Runge-Kutta 4\n");
-	iFparams->adv_order = 4;
-	if (CursorAfterStringOpt(infile,"Enter advection order:"))
-	{
-	    fscanf(infile,"%d",&iFparams->adv_order);
-	    (void) printf("%d\n",iFparams->adv_order);
-	}
-
+	
 	(void) printf("Available elliptic methods are:\n");
 	(void) printf("\tSimple elliptic (S)\n");
 	(void) printf("\tDouble elliptic (DB)\n");

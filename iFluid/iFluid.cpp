@@ -173,6 +173,7 @@ int main(int argc, char **argv)
     if (debugging("trace"))
         printf("Passed state initialization()\n");
 
+
 	if (iFparams.surf_tension != 0.0)
         front._contact_node_propagate = contact_node_propagate;
 

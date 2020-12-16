@@ -12,13 +12,13 @@
 #include "ifluid_state.h"
 #include "rigidbody.h"
 
-#define         SOLID_COMP		0
-#define         LIQUID_COMP1		2
-#define         LIQUID_COMP2		3
-#define		LIQUID_COMP		3
-#define		FILL_COMP		10
+#define SOLID_COMP		0
+#define LIQUID_COMP1	2
+#define LIQUID_COMP2	3
+#define LIQUID_COMP		3
+#define	FILL_COMP		10
 
-#define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
+#define	ifluid_comp(comp) (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
 
 enum _IF_PROB_TYPE {
@@ -317,9 +317,9 @@ public:
 
 	void initMesh(void);
 	void computeMaxSpeed(void);
-	void setAdvectionDt(void); 
-			//using max speed and hmin to determine max_dt, min_dt
-	void readFrontInteriorStates(char *state_name);
+	void setAdvectionDt(void);
+	
+    void readFrontInteriorStates(char *state_name);
 	void printFrontInteriorStates(char *state_name);
 	void initMovieVariables(void);
 	void getVelocity(double *p, double *U);
@@ -335,16 +335,17 @@ public:
 	/*set initial velocity with one function, no loop needed*/
 	void (*setInitialVelocity)(COMPONENT,int*,double*,double*,double*,
                                 RECT_GRID*,IF_PARAMS*);
+
  	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
 				POINTER*,HYPER_SURF**,double*);
 	int (*findStateAtCGCrossing)(Front*,int*,GRID_DIRECTION,int,
 				POINTER*,HYPER_SURF**,double*);
-	void applicationSetComponent();
+	
+    void applicationSetComponent();
 	void applicationSetStates();
 	
-    double computeFieldPointPressureJump(int*,double,double);
-       
-        void computeFieldPointGradJump(int*,double*,double*);
+    double computeFieldPointPressureJump(int*,double,double);     
+    void computeFieldPointGradJump(int*,double*,double*);
 
     
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
@@ -355,7 +356,7 @@ public:
 
         void setSlipBoundaryGNOR(int* icoords, int idir, int nb, int comp,
                 HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
-	
+    
     //For debugging test
 	void compareWithBaseSoln(void);
         void readBaseFront(IF_PARAMS *,int i);
@@ -369,8 +370,7 @@ public:
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
-
-    void writeMeshFileVTK();
+    virtual void writeMeshFileVTK();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
@@ -395,7 +395,8 @@ protected:
 	int **ij_to_I, ***ijk_to_I;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
-	// Sweeping limits
+	
+    // Sweeping limits
 	int imin, jmin, kmin;
 	int imax, jmax, kmax;
 	// for parallel partition
@@ -556,23 +557,29 @@ public:
 	void solve(double dt);
         void vtk_plot_scalar(char*, const char*);
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	    //void computeProjectionDual(void);
-	void computePressure(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
-	void computeGradientQ(void);
+	
+    void computeGradientQ(void);
 	void computeNewVelocity(void);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
