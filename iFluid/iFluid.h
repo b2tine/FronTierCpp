@@ -545,21 +545,23 @@ protected:
     void addImmersedForce();
 };
 
-class Incompress_Solver_Smooth_2D_Cartesian:
-public 	Incompress_Solver_Smooth_2D_Basis{
+class Incompress_Solver_Smooth_2D_Cartesian
+    : public 	Incompress_Solver_Smooth_2D_Basis
+{
 public:
-        Incompress_Solver_Smooth_2D_Cartesian(Front &front):
-	Incompress_Solver_Smooth_2D_Basis(front) {};
-	~Incompress_Solver_Smooth_2D_Cartesian() {};
+        Incompress_Solver_Smooth_2D_Cartesian(Front &front)
+            : Incompress_Solver_Smooth_2D_Basis(front)
+        {}
+	
+        ~Incompress_Solver_Smooth_2D_Cartesian()
+        {}
 
 	void setInitialCondition(void);
 	void setParallelVelocity(void);
 	void solve(double dt);
         void vtk_plot_scalar(char*, const char*);
 protected:
-	
-    void copyMeshStates(void);
-	
+    
     void computeAdvection(void);
 	
     void computeDiffusion(void);
@@ -588,7 +590,9 @@ protected:
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 
-	/***************   Low level computation functions  *************/
+    void copyMeshStates(void);
+	
+    /***************   Low level computation functions  *************/
 	double getVorticity(int i, int j);
 };
 

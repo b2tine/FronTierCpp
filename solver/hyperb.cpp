@@ -933,7 +933,7 @@ void HYPERB_SOLVER::setNeumannStates(
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
 	GRID_DIRECTION  dir;
-	double vel_reflect[MAXD],vel_ref[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
+	double vel_reflect[MAXD],vel_rel[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	for (int i = 0; i < dim; ++i)
@@ -964,8 +964,9 @@ void HYPERB_SOLVER::setNeumannStates(
 	    /* Find ghost point */
 	    ic_ghost[idir] = (nb == 0) ?
             icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
-	        //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
-	    for (int j = 0; j < dim; ++j)
+	            //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
+	    
+        for (int j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
             coords_reflect[j] = coords_ghost[j];
@@ -999,19 +1000,15 @@ void HYPERB_SOLVER::setNeumannStates(
 	    for (int j = 0; j < dim; ++j)
 	    {
             /* Relative velocity of reflected point to boundary */
-            vel_ref[j] = vel_reflect[j] - vel_intfc[j];
+            vel_rel[j] = vel_reflect[j] - vel_intfc[j];
             /* Normal component of the relative velocity */
-            vn += vel_ref[j]*nor[j];
+            vn += vel_rel[j]*nor[j];
 	    }
 
 	    /* reflect normal component of velocity */
 	    for (int j = 0; j < dim; ++j)
         {
-            //TODO: Need to use slip wall boundary condition here, for wall functions?
-            v_ghost[j] = vel_reflect[j] - vn*nor[j];
-            
-            //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];//reflection 
-            //v_ghost[j] = vel_intfc[j] - vn*nor[j]; //no relative tangential vel
+            v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];
         }
 
 	    if (nb == 0)
@@ -1038,6 +1035,7 @@ void HYPERB_SOLVER::setNeumannStates(
 }
 
 /*
+//TODO: I think this was thoroughly abandoned and may now be removed
 void HYPERB_SOLVER::setNeumannStates(
 	SWEEP *vst, 
 	SWEEP *m_vst,
