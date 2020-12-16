@@ -705,8 +705,6 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 2:
             for (l = 0; l < dim; ++l)
             {
-                //for (j = 0; j <= top_gmax[1]; ++j)
-                //for (i = 0; i <= top_gmax[0]; ++i)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)
                 {
@@ -728,9 +726,6 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 3:
             for (l = 0; l < dim; ++l)
             {
-            	//for (k = 0; k <= top_gmax[2]; ++k)
-            	//for (j = 0; j <= top_gmax[1]; ++j)
-            	//for (i = 0; i <= top_gmax[0]; ++i)
             	for (k = kmin; k <= kmax; ++k)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)

@@ -39,15 +39,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
         static int count = 0;
 	
 	static double *rho;
-	static double *mu;
-    static bool first = true;
 
-	if (first)//if (rho == NULL)
+	if (rho == nullptr)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1);
 	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&mu,size,sizeof(double));
-        first = false;
 	}
 
 	for (j = 0; j <= top_gmax[1]; j++)
@@ -55,10 +51,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    rho[index] = field->rho[index];
-	    mu[index] = field->mu[index];
 	}
 	hyperb_solver.rho = rho;
-	hyperb_solver.mu = mu;
     
     count++;
 	if (debugging("field_var"))
@@ -99,14 +93,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
     hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
 
-    hyperb_solver.mu1 = iFparams->mu1;
-    hyperb_solver.mu2 = iFparams->mu2;
-    hyperb_solver.use_eddy_visc = iFparams->use_eddy_visc;
-
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.getStateVel[0] = getStateXvel;
 	hyperb_solver.getStateVel[1] = getStateYvel;
-    hyperb_solver.getStateMu = getStateMu;
 	
 	hyperb_solver.dt = m_dt;
     hyperb_solver.solveRungeKutta();
@@ -201,9 +190,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	    computeVarIncrement(field->div_U,source,NO);
 	    (void) printf("\n");
 	}
-	FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
 	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-	for (j = 0; j <= top_gmax[1]; j++)
+	
+    for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
@@ -320,7 +311,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    for (i = imin; i <= imax; i++)
 	    {
 	    	index  = d_index2d(i,j,top_gmax);
-		field->old_var[0][index] = field->phi[index];
+    		field->old_var[0][index] = field->phi[index];
 	    }
 	}
 	/* Compute velocity divergence */
@@ -353,15 +344,20 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    computeVarIncrement(field->div_U,source,NO);
 	    (void) printf("\n");
 	}
-	FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
 	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-	for (j = 0; j <= top_gmax[1]; j++)
+	
+    for (j = 0; j <= top_gmax[1]; j++)
         for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    if (!ifluid_comp(top_comp[index])) continue;
 
+        //TODO: Solver more stable if dt is multiplied through
+        //      and incorporated into the matrix coefficients?
 	    source[index] = (source[index])/accum_dt;
+
         /*Compute pressure jump due to porosity*/
         icoords[0] = i; icoords[1] = j;
         source[index] += computeFieldPointPressureJump(icoords,
@@ -396,10 +392,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         {
 	    checkVelocityDiv("Before computeProjection()");
         }
-        elliptic_solver.dt = accum_dt;
-        elliptic_solver.D = diff_coeff;
-        elliptic_solver.source = source;
-        elliptic_solver.soln = array;
+        
+    elliptic_solver.dt = accum_dt;
+    elliptic_solver.D = diff_coeff;
+    elliptic_solver.rho = field->rho;
+    elliptic_solver.source = source;
+    elliptic_solver.soln = array;
 	elliptic_solver.set_solver_domain();
 	elliptic_solver.getStateVar = getStatePhi;
 	elliptic_solver.getStateVel[0] = getStateXvel;
@@ -441,12 +439,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 {
-	int i,j,k,l,index;
-	double grad_phi[2],rho;
+	int i,j,k,index;
+    double rho;
 	COMPONENT comp;
 	int icoords[MAXD];
 	double **vel = field->vel;
+	double **grad_phi = field->grad_phi;
 	double *phi = field->phi;
+
+    double point_grad_phi[MAXD];
 
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
@@ -456,38 +457,45 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	}
 
 	for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+    for (i = imin; i <= imax; i++)
 	{
 	    index = d_index2d(i,j,top_gmax);
 	    comp = top_comp[index];
 	    if (!ifluid_comp(comp))
 	    {
-		vel[0][index] = 0.0;
-		vel[1][index] = 0.0;
-		continue;
+            vel[0][index] = 0.0;
+            vel[1][index] = 0.0;
+            continue;
 	    }
-	    rho = field->rho[index];
+	    
 	    icoords[0] = i;
 	    icoords[1] = j;
+        //rho = field->rho[index];
 
         if (iFparams->with_porosity)
-                computeFieldPointGradJump(icoords,phi,grad_phi);
+            computeFieldPointGradJump(icoords,phi,point_grad_phi);
         else
-            computeFieldPointGrad(icoords,phi,grad_phi);
+            computeFieldPointGrad(icoords,phi,point_grad_phi);
 
-        vel[0][index] -= accum_dt/rho*grad_phi[0];
-	    vel[1][index] -= accum_dt/rho*grad_phi[1];
+        vel[0][index] -= accum_dt*point_grad_phi[0];
+	    vel[1][index] -= accum_dt*point_grad_phi[1];
+            //vel[0][index] -= accum_dt/rho*grad_phi[0];
+	        //vel[1][index] -= accum_dt/rho*grad_phi[1];
+
+        for (int l = 0; l < dim; ++l)
+            grad_phi[l][index] = point_grad_phi[l];
 	}
 
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 	
     //extractFlowThroughVelocity();
 	computeVelDivergence();
 
 	if (debugging("check_div"))
-        {
+    {
 	    checkVelocityDiv("After computeNewVelocity()");
-        }
+    }
 }	/* end computeNewVelocity */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
@@ -826,10 +834,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: figure out correct val
                             U_nb[nb] = getStateVel[l](intfc_state);
                                 //U_nb[nb] = vel[l][index];
-                                //U_nb[nb] = vel[l][index_nb[nb]];
                         }
                         else
                         {
+                            //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
                     }
@@ -857,7 +865,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: Without this rayleigh-taylor with NEUMANN boundaries
                             //      crashes for some reason.
                             U_nb[nb] = getStateVel[l](intfc_state);
-
                             //This is just a no-slip boundary condition?
                         }
                     }
@@ -867,7 +874,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         LOC(); clean_up(EXIT_FAILURE);
                     }
 
-                    //TODO: Can we also get the ghost viscosity from setSlipBoundary()??
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
                     else
@@ -911,9 +917,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     {    
                         if (status == CONST_P_PDE_BOUNDARY)
                         {
+                            //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
-                                    //solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                                //rhs += coeff[nb]*U_nb[nb]; //u^n val
+                                 
+                            //solver.Set_A(I,I_nb[nb],-coeff[nb]);
                                 //aII -= coeff[nb];
                                 //rhs += coeff[nb]*U_nb[nb];
                         }
@@ -950,12 +959,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
           
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
+
             //TODO: This should only be applied at domain boundary.
-            //      And it is actually applied in the projection solver
-            //      by approximating phi^{n+1} at the boundary with phi^{n}.
-            //      See Brown accurate projection method paper for details.
+            //      And corresponds to a tangential velocity bdry condition
             //
-            //  rhs -= m_dt*grad_q[l][index]/rho;//grad_q is actually grad phi
+            //  rhs -= m_dt*grad_phi[l][index];
 
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1018,6 +1026,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
 {
     int i,j,index;
+	double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1026,19 +1035,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index2d(i,j,top_gmax);
-        pres[index] += phi[index];
+        pres[index] = (q[index] + phi[index])*rho[index];
+            //pres[index] += phi[index];
 	    q[index] = pres[index];
 	}
     
-    //TODO: need to scatter pres and q?
-
+    //TODO: need to scatter q and pres?
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }        /* end computePressurePmI2d */
 
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 {
-        int i,j,index;
-        double mu0;
+    int i,j,index;
+    double mu0;
+	double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1049,18 +1060,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 	{
         index = d_index2d(i,j,top_gmax);
         mu0 = field->mu[index];
-	    pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        pres[index] = (q[index] + phi[index])*rho[index] - 0.5*mu0*div_U[index];
+	        //pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = pres[index];
 	}
     
-    //TODO: need to scatter pres and q?
-
+	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }        /* end computePressurePmII2d */
 
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 {
     int i,j,index;
     double mu0;
+	double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1081,11 +1093,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 	{
         index = d_index2d(i,j,top_gmax);
         mu0 = field->mu[index];
-        pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        pres[index] = phi[index]*rho[index] - 0.5*mu0*div_U[index];
+            //pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
         q[index] = 0.0;
 	}
 
-    //TODO: need to scatter pres?
+	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 
 	if (debugging("field_var"))
 	{
@@ -1095,6 +1108,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 	}
 }        /* end computePressurePmIII */
 
+//TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
 void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 {
 	switch (iFparams->num_scheme.projc_method)
@@ -1248,6 +1262,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 
     double *pres = field->pres;
     double *phi = field->phi;
+    double *q = field->q;
 
 	// Initialize state at cell_center
     for (i = 0; i < size; i++)
@@ -1262,7 +1277,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 
         //TODO: see comments in getPressure() function
         pres[i] = getPressure(front,coords,NULL);
-        phi[i] = getPhiFromPres(front,pres[i]);
+            //q[i] = getQFromPres(front,pres[i]);
+                //phi[i] = getPhiFromPres(front,pres[i]);
     }
 
 	computeGradientQ();

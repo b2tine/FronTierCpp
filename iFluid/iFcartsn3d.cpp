@@ -44,15 +44,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
     double speed;
 
 	static double *rho;
-	static double *mu;
     
-    static bool first = true;
-    if (first)//if (rho == NULL)
+    if (rho == nullptr)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
 	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&mu,size,sizeof(double));
-        first = false;
 	}
 
 	for (k = 0; k <= top_gmax[2]; k++)
@@ -61,10 +57,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    rho[index] = field->rho[index];
-	    mu[index] = field->mu[index];
 	}
 	hyperb_solver.rho = rho;
-	hyperb_solver.mu = mu;
 
 	hyperb_solver.obst_comp = SOLID_COMP;
 	switch (iFparams->adv_order)
@@ -95,15 +89,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
     hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
 
-	hyperb_solver.mu1 = iFparams->mu1;
-	hyperb_solver.mu2 = iFparams->mu2;
-    hyperb_solver.use_eddy_visc = iFparams->use_eddy_visc;
-
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.getStateVel[0] = getStateXvel;
 	hyperb_solver.getStateVel[1] = getStateYvel;
 	hyperb_solver.getStateVel[2] = getStateZvel;
-	hyperb_solver.getStateMu = getStateMu;
 	
     hyperb_solver.dt = m_dt;
     hyperb_solver.solveRungeKutta();
@@ -788,8 +777,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //OUTLET
 
                             //TODO: figure out correct val
-                            U_nb[nb] = getStateVel[l](intfc_state);
-                                //U_nb[nb] = vel[l][index];
+                            U_nb[nb] = vel[l][index];
+                            //U_nb[nb] = getStateVel[l](intfc_state);
                                 //U_nb[nb] = vel[l][index_nb[nb]];
                         }
                         else
@@ -1899,7 +1888,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
                 
             //TODO: see comments in getPressure() function
             pres[i] = getPressure(front,coords,NULL);
-            phi[i] = getPhiFromPres(front,pres[i]);
+                //q[i] = getQFromPres(front,pres[i]);
+                //phi[i] = getPhiFromPres(front,pres[i]);
         }
 
     computeGradientQ();

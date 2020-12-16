@@ -1836,7 +1836,7 @@ extern double grad_p_jump_t(
 	return 0.0;
 }	/* end grad_p_jump_t */
 
-//TODO: Did they really mean getQfromPres()?
+//TODO: I think they really meant getQFromPres
 extern double getPhiFromPres(
         Front *front,
         double pres)
@@ -1845,12 +1845,11 @@ extern double getPhiFromPres(
     switch (iFparams->num_scheme.projc_method)
     {
         case BELL_COLELLA:
-            return 0.0;
-        case KIM_MOIN:
-            return 0.0;
-        case SIMPLE:
-        case PEROT_BOTELLA:
             return pres;
+        case SIMPLE:
+        case KIM_MOIN:
+        case PEROT_BOTELLA:
+            return 0.0;
         default:
             (void) printf("Unknown projection type\n");
             clean_up(0);
@@ -1872,7 +1871,8 @@ extern double getPressure(
         boolean hyper_surf_found = NO;
 
         
-        return 0.0;
+        //return 0.0;
+        
         //TODO: Does below work???
         //
         //      It appears this early return of 0.0 may have been
@@ -1887,7 +1887,8 @@ extern double getPressure(
         //      would include the initial boundary conditions at
         //      the inlet/outlet at appears.
 
-        pres0 = 1.0;
+        pres0 = 0.0;
+        //pres0 = 1.0;
         if (dim == 2)
         {
             CURVE **c;

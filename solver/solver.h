@@ -338,8 +338,7 @@ class ELLIPTIC_SOLVER
         double *source;		/* source field */
         double **vel;       /* velocity field */
         double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
-        
-        //double* rho;
+        double* rho;
 
         void set_solver_domain(void);
         void solve(double *soln);
@@ -409,11 +408,6 @@ public:
 	double rho1;
 	double rho2;
 
-	double *mu; //needed for applying slip wall boundary
-	double mu1;
-	double mu2;
-    boolean use_eddy_visc {NO};
-	
     double var_obst;	/* default solution in obst_comp */
 	double max_speed;
 	
