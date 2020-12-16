@@ -591,6 +591,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
+                    //TODO: FIX OUTLET -- REFLECTS BACK INTO THE FLOW
                     solver.Set_A(I,I_nb[l],coeff[l]);
                     aII += -coeff[l];
                     /*

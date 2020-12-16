@@ -917,7 +917,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     {    
                         if (status == CONST_P_PDE_BOUNDARY)
                         {
+                            //TODO: FIX OUTLET -- REFLECTS BACK INTO THE FLOW
+
+
                             //TODO: outlet not the same at n and n+1
+                            
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                                 //rhs += coeff[nb]*U_nb[nb]; //u^n val
