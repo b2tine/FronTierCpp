@@ -2988,13 +2988,12 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     {
-                        /*
-                        //TODO: This created a seemingly unphysical early separation
+                        //TODO: Is this correct approach??
                         double v_slip[MAXD] = {0.0};
                         setSlipBoundary(icoords,idir,nb,comp,hs,intfc_state,field->vel,v_slip);
                         u_edge[idir][nb] = v_slip[idir];
-                        */
 
+                        /*
                         int icoords_ghost[MAXD];
                         for (int m = 0; m < dim; ++m)
                             icoords_ghost[m] = icoords[m];
@@ -3063,6 +3062,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                             //vel_ghost[j] = vel_reflect[j] - vn*nor[j];
 
                         u_edge[idir][nb] = vel_reflect[idir];
+                        */
                     }
                 }
             }

@@ -81,8 +81,8 @@ Entering yes to turn off fluid solver: no
 Enter timestep to activate FSI: 5
 
 Enter yes to use porosity: yes
-Enter viscous parameter: 604.333
-Enter inertial parameter: 0.0
+Enter viscous parameter: 0.261498
+Enter inertial parameter: 42.6026
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
