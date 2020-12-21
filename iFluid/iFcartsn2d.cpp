@@ -637,9 +637,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 
 	// 2) projection step
 	accum_dt += m_dt;
-	if (debugging("step_size"))
+	
+    if (debugging("step_size"))
 	    (void) printf("min_dt = %f  accum_dt = %f\n",min_dt,accum_dt);
-	if (accum_dt >= min_dt)
+	
+    if (accum_dt >= min_dt)
 	{
 	    start_clock("computeProjection");
 	    computeProjection();

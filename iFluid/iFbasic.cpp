@@ -4740,19 +4740,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         vn += vel_rel[j]*nor[j];
     }
 
-    /////////////////////////////////////////////////////////////////////////
-    if (iFparams->use_eddy_visc == NO)
-    {
-        for (int j = 0; j < dim; ++j)
-        {
-            v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
-                //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
-        }
-
-        return;
-    }
-    /////////////////////////////////////////////////////////////////////////
-
     double vel_rel_tan[MAXD] = {0.0};
     double vel_rel_nor[MAXD] = {0.0};
     double vel_ghost_nor[MAXD] = {0.0};
@@ -4763,8 +4750,50 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 	    vel_rel_nor[j] = vn*nor[j];
 	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
     }
+    
+    //double unit_tan[MAXD] = {0.0};
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
+    if (mag_vtan > MACH_EPS)
+    {
+        for (int j = 0; j < dim; ++j)
+        {
+            unit_tan[j] = vel_rel_tan/mag_vtan;
+        }
+    }
+    */
+
+    //Needed for projection method tangential boundary condition
+    double** grad_phi = field->grad_phi;
+    double grad_phi_tan[MAXD] = {0.0};
+    double vn_phi = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vn_phi += grad_phi[j][index]*nor[j];
+    }
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        grad_phi_tan[j] = grad_phi[j][index] - vn_phi*nor[j];
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    if (iFparams->use_eddy_visc == NO)
+    {
+        for (int j = 0; j < dim; ++j)
+        {
+            v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+            //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
+            
+            //Projection method tangential boundary condition
+            v_slip[j] += accum_dt*grad_phi_tan[j];
+        }
+
+        return;
+    }
+    /////////////////////////////////////////////////////////////////////////
     
     if (debugging("slip_boundary"))
     {
@@ -4820,6 +4849,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         vel_ghost_tan[j] =
             vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
+        //Projection method tangential boundary condition
+        vel_ghost_tan[j] += accum_dt*grad_phi_tan[j];
+        
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
