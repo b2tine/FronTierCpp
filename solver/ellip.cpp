@@ -398,7 +398,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             }
 
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+            coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+                //coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    rhs = source[index];
@@ -422,7 +423,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
-                //dp/dn = 0 (reflecting boundary for pressure)
+                //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
                 for (int m = 0; m < dim; ++m)
                     icoords_ghost[m] = icoords[m];
@@ -580,10 +581,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //      This would enforce the grad(phi) dot normal = 0 condition??
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
-                    /*
-                    solver.Set_A(I,I_nb[l],coeff[l]);
-                    aII += -coeff[l];
-                    */
                     //INLET
                     rhs += -coeff[l]*getStateVar(intfc_state);
                     aII += -coeff[l];
@@ -591,11 +588,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
-                    /*
-                    //TODO: FIX OUTLET -- REFLECTS BACK INTO THE FLOW
-                    solver.Set_A(I,I_nb[l],coeff[l]);
-                    aII += -coeff[l];
-                    */
                     //OUTLET
                     rhs += -coeff[l]*getStateVar(intfc_state);
                     aII += -coeff[l];
@@ -891,7 +883,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
     
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-	    	coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+	    	coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+	    	    //coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    rhs = source[index];
@@ -914,7 +907,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                       (wave_type(hs) == NEUMANN_BOUNDARY ||
                        wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
-                //dp/dn = 0 (reflecting boundary for pressure)
+                //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
                 for (int m = 0; m < dim; ++m)
                     icoords_ghost[m] = icoords[m];
@@ -1061,32 +1054,28 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //
                 //use_neumann_solver = NO;
             }
-            else if (status == CONST_V_PDE_BOUNDARY)
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //INLET
-                rhs += -coeff[l]*soln[index];
-                aII += -coeff[l];
-            }
-            else if (status == CONST_P_PDE_BOUNDARY)
-            {
-                //TODO: should this include the inlet as well?
-                //      inlet has constant pressure, but
-                //      ifluid_find_state_at_crossing() returns
-                //      CONST_V_PDE_BOUNDARY for it.
-                //
-                //      See Incompress_Solver_Smooth_Basis::computeFieldPointGrad(),
-                //      which uses phi[index], the current index.
-                
                 //TODO: getStateVar() will return phi, not pressure.
                 //      The pressure is updated at the flow through boundary,
                 //      but phi is not.
                 
-                //TODO: for OUTLET use regular index_nb[l] from above??
-            
-                //OUTLET
-                aII += -coeff[l];
-                rhs += -coeff[l]*getStateVar(intfc_state);
-                use_neumann_solver = NO;
+                //TODO: Should INLET/OUTLET just set the neighbor to the index value?
+                //      This would enforce the grad(phi) dot normal = 0 condition??
+                if (status == CONST_V_PDE_BOUNDARY)
+                {
+                    //INLET
+                    rhs += -coeff[l]*getStateVar(intfc_state);
+                    aII += -coeff[l];
+                    use_neumann_solver = NO;
+                }
+                else if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    //OUTLET
+                    rhs += -coeff[l]*getStateVar(intfc_state);
+                    aII += -coeff[l];
+                    use_neumann_solver = NO;
+                }
             }
         }
 

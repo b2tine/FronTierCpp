@@ -3196,9 +3196,11 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                                     &field_array[j][index]);
                         }
 
+                        //TODO: Should we be using slip boundary here??
                         double vel_ghost[MAXD] = {0.0};
                         for (int j = 0; j < dim; ++j)
                             vel_ghost[j] = vel_reflect[j] - vn*nor[j];
+                            //vel_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];
 
                         u_edge[idir][nb] = vel_reflect[idir];
                     }
@@ -3350,7 +3352,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 }
                 else
                 {
-                    //TODO: For grad(phi) dot normal = 0 is this correct?
 	    	        p_edge[idir][nb] = getStatePhi(intfc_state);
                 }
             }
@@ -3363,18 +3364,15 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
     		            p_edge[idir][nb] = field_array[index_nb];
                     else
                     {
-                        p_edge[idir][nb] = p0;
-	    	            //TODO: This caused the velocity to blow up.
-                        //      on some runs, but check again when projection
-                        //      scheme is more theoretically sound.
-                            //p_edge[idir][nb] = getStatePhi(intfc_state);
+                        p_edge[idir][nb] = getStatePhi(intfc_state);
+                            //p_edge[idir][nb] = p0;
                     }
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                 {
 
-                    //dp/dn = 0 (reflecting boundary for pressure)
+                    //grad(phi) dot normal = 0
                     int icoords_ghost[MAXD];
                     for (int m = 0; m < dim; ++m)
                         icoords_ghost[m] = icoords[m];
@@ -4046,9 +4044,9 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         
         /*return source term for Poisson equation due to jump condition*/
         if (debugging("pressure_drop"))
-            printf("ans = %f, Un = %f\n",ans, Un);
+            printf("ans = %f, Un = %f\n",accum_dt*ans, Un);
         
-        return ans;
+        return accum_dt*ans;
         
         //TODO Save for now, attempting to correct the projection method
         //     formulation.

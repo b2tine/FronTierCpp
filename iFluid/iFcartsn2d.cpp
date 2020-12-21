@@ -131,6 +131,195 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjection(void)
 	}
 }	/* end computeProjection */
 
+void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
+{
+	static ELLIPTIC_SOLVER elliptic_solver(front);
+	int index;
+	int i,j,l,icoords[MAXD];
+	double **vel = field->vel;
+	double *phi = field->phi;
+	double *div_U = field->div_U;
+	double sum_div;
+	double value;
+	int num_colors;
+
+	sum_div = 0.0;
+	max_value = 0.0;
+	for (l = 0; l < dim; ++l)
+	{
+	    vmin[l] = HUGE;
+	    vmax[l] = -HUGE;
+	}
+
+	if (debugging("field_var"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+	    	index  = d_index2d(i,j,top_gmax);
+    		field->old_var[0][index] = field->phi[index];
+	    }
+	}
+	/* Compute velocity divergence */
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    index  = d_index(icoords,top_gmax,dim);
+	    
+        if (!ifluid_comp(top_comp[index])) continue;
+	    
+        source[index] = computeFieldPointDiv(icoords,vel);
+        div_U[index] = source[index];
+	    
+        diff_coeff[index] = 1.0;//TODO: temp for testing
+            //diff_coeff[index] = 1.0/field->rho[index];
+	    
+	        //source[index] = (source[index])/accum_dt;
+        
+        // Compute pressure jump due to porosity
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        // end of computing pressure jump
+	    array[index] = phi[index];
+        
+        if (debugging("check_div"))
+	    {
+		    for (l = 0; l < dim; ++l)
+            {
+                if (vmin[l] > field->vel[l][index])
+                    vmin[l] = field->vel[l][index];
+                if (vmax[l] < field->vel[l][index])
+                    vmax[l] = field->vel[l][index];
+            }
+	    }
+	}
+	if (debugging("field_var"))
+	{
+	    (void) printf("\nCheck one step increment of div_U:\n");
+	    computeVarIncrement(field->div_U,source,NO);
+	    (void) printf("\n");
+	}
+	
+    /*
+    //TODO: joined to above loop remove if not a problem
+    //      Notice the i,j bounds -- Could this create a problem
+    //      for parallel runs???
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    if (!ifluid_comp(top_comp[index])) continue;
+
+	    //source[index] = (source[index])/accum_dt;
+        
+        // Compute pressure jump due to porosity
+        icoords[0] = i; icoords[1] = j;
+        source[index] += computeFieldPointPressureJump(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+        // end of computing pressure jump
+	    array[index] = phi[index];
+	}
+    */
+
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+	
+	if(debugging("step_size"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+		    index = d_index2d(i,j,top_gmax);
+	        if (!ifluid_comp(top_comp[index])) continue;
+
+	        value = fabs(div_U[index]);
+            sum_div = sum_div + div_U[index];
+            if (max_value < value)
+                max_value = value;
+	    }
+
+	    pp_global_sum(&sum_div,1);
+	    (void) printf("\nThe summation of divergence of U is %.16g\n",
+					sum_div);
+	    pp_global_max(&max_value,1);
+	    (void) printf("\nThe max value of divergence of U is %.16g\n",
+					max_value);
+	    max_value = 0.0;
+	}
+
+	if (debugging("check_div"))
+    {
+        checkVelocityDiv("Before computeProjection()");
+    }
+        
+    elliptic_solver.dt = accum_dt;
+    elliptic_solver.D = diff_coeff;
+    elliptic_solver.rho = field->rho;
+    elliptic_solver.source = source;
+    elliptic_solver.soln = array;
+	elliptic_solver.set_solver_domain();
+	elliptic_solver.getStateVar = getStatePhi;
+
+    //velocity??
+    /*
+	elliptic_solver.getStateVel[0] = getStateXvel;
+	elliptic_solver.getStateVel[1] = getStateYvel;
+	elliptic_solver.getStateVel[2] = getStateZvel;
+	elliptic_solver.vel = vel;
+    */
+
+	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
+	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+
+    paintAllGridPoint(TO_SOLVE);
+    setGlobalIndex();
+    setIndexMap();
+
+    elliptic_solver.ij_to_I = ij_to_I;
+    elliptic_solver.ilower = ilower;
+    elliptic_solver.iupper = iupper;
+	
+    elliptic_solver.solve(array);
+
+    /*    
+    num_colors = drawColorMap();
+	paintAllGridPoint(NOT_SOLVED);
+	for (i = 1; i < num_colors; ++i)
+	{
+	    paintToSolveGridPoint2(i);
+	    setGlobalIndex();
+            setIndexMap();
+            elliptic_solver.ij_to_I = ij_to_I;
+            elliptic_solver.ilower = ilower;
+            elliptic_solver.iupper = iupper;
+	    	elliptic_solver.solve(array);
+	    paintSolvedGridPoint();
+	}
+    */
+
+	FT_ParallelExchGridArrayBuffer(array,front,NULL);
+
+	for (j = 0; j <= top_gmax[1]; j++)
+	for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    phi[index] = array[index];
+	}
+
+	if (debugging("field_var"))
+	{
+	    printf("\nIn computeProjectionSimple()\n");
+	    printf("Check one step increment of phi:\n");
+	    computeVarIncrement(field->old_var[0],phi,NO);
+	    printf("\n");
+	    
+	}
+}	/* end computeProjectionSimple */
+
 void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 {
 	static DOUBLE_ELLIPTIC_SOLVER elliptic_solver(*front);
@@ -173,6 +362,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	    source[index] = computeFieldPointDiv(icoords,vel);
 
 	    diff_coeff[index] = 1.0/field->rho[index];
+
 	    if (debugging("check_div"))
 	    {
 		for (l = 0; l < dim; ++l)
@@ -285,158 +475,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	return;
 }	/* end computeProjectionDouble */
 
-void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
-{
-	static ELLIPTIC_SOLVER elliptic_solver(front);
-	int index;
-	int i,j,l,icoords[MAXD];
-	double **vel = field->vel;
-	double *phi = field->phi;
-	double *div_U = field->div_U;
-	double sum_div;
-	double value;
-	int num_colors;
-
-	sum_div = 0.0;
-	max_value = 0.0;
-	for (l = 0; l < dim; ++l)
-	{
-	    vmin[l] = HUGE;
-	    vmax[l] = -HUGE;
-	}
-
-	if (debugging("field_var"))
-	{
-	    for (j = jmin; j <= jmax; j++)
-	    for (i = imin; i <= imax; i++)
-	    {
-	    	index  = d_index2d(i,j,top_gmax);
-    		field->old_var[0][index] = field->phi[index];
-	    }
-	}
-	/* Compute velocity divergence */
-	for (j = jmin; j <= jmax; j++)
-    for (i = imin; i <= imax; i++)
-	{
-	    icoords[0] = i;
-	    icoords[1] = j;
-	    index  = d_index(icoords,top_gmax,dim);
-	    
-        if (!ifluid_comp(top_comp[index])) continue;
-	    
-        source[index] = computeFieldPointDiv(icoords,vel);
-	    diff_coeff[index] = 1.0/field->rho[index];
-	    
-        if (debugging("check_div"))
-	    {
-		    for (l = 0; l < dim; ++l)
-            {
-                if (vmin[l] > field->vel[l][index])
-                    vmin[l] = field->vel[l][index];
-                if (vmax[l] < field->vel[l][index])
-                    vmax[l] = field->vel[l][index];
-            }
-	    }
-	}
-	if (debugging("field_var"))
-	{
-	    (void) printf("\nCheck one step increment of div_U:\n");
-	    computeVarIncrement(field->div_U,source,NO);
-	    (void) printf("\n");
-	}
-	
-    FT_ParallelExchGridArrayBuffer(source,front,NULL);
-	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-	
-    for (j = 0; j <= top_gmax[1]; j++)
-        for (i = 0; i <= top_gmax[0]; i++)
-	{
-	    index  = d_index2d(i,j,top_gmax);
-	    if (!ifluid_comp(top_comp[index])) continue;
-
-        //TODO: Solver more stable if dt is multiplied through
-        //      and incorporated into the matrix coefficients?
-	    source[index] = (source[index])/accum_dt;
-
-        /*Compute pressure jump due to porosity*/
-        icoords[0] = i; icoords[1] = j;
-        source[index] += computeFieldPointPressureJump(icoords,
-                         iFparams->porous_coeff[0],
-                         iFparams->porous_coeff[1]);
-        /*end of computing pressure jump*/
-	    array[index] = phi[index];
-	}
-
-	if(debugging("step_size"))
-	{
-	    for (j = jmin; j <= jmax; j++)
-	    for (i = imin; i <= imax; i++)
-	    {
-		index = d_index2d(i,j,top_gmax);
-	        if (!ifluid_comp(top_comp[index]))
-		    continue;
-	        value = fabs(div_U[index]);
-		sum_div = sum_div + div_U[index];
-		if (max_value < value)
-		    max_value = value;
-	    }
-	    pp_global_sum(&sum_div,1);
-	    (void) printf("\nThe summation of divergence of U is %.16g\n",
-					sum_div);
-	    pp_global_max(&max_value,1);
-	    (void) printf("\nThe max value of divergence of U is %.16g\n",
-					max_value);
-	    max_value = 0.0;
-	}
-	if (debugging("check_div"))
-        {
-	    checkVelocityDiv("Before computeProjection()");
-        }
-        
-    elliptic_solver.dt = accum_dt;
-    elliptic_solver.D = diff_coeff;
-    elliptic_solver.rho = field->rho;
-    elliptic_solver.source = source;
-    elliptic_solver.soln = array;
-	elliptic_solver.set_solver_domain();
-	elliptic_solver.getStateVar = getStatePhi;
-	elliptic_solver.getStateVel[0] = getStateXvel;
-	elliptic_solver.getStateVel[1] = getStateYvel;
-	elliptic_solver.getStateVel[2] = getStateZvel;
-	elliptic_solver.vel = vel;
-	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
-	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-	num_colors = drawColorMap();
-	paintAllGridPoint(NOT_SOLVED);
-	for (i = 1; i < num_colors; ++i)
-	{
-	    paintToSolveGridPoint2(i);
-	    setGlobalIndex();
-            setIndexMap();
-            elliptic_solver.ij_to_I = ij_to_I;
-            elliptic_solver.ilower = ilower;
-            elliptic_solver.iupper = iupper;
-	    	elliptic_solver.solve(array);
-	    paintSolvedGridPoint();
-	}
-	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-
-	for (j = 0; j <= top_gmax[1]; j++)
-	for (i = 0; i <= top_gmax[0]; i++)
-	{
-	    index  = d_index2d(i,j,top_gmax);
-	    phi[index] = array[index];
-	}
-	if (debugging("field_var"))
-	{
-	    printf("\nIn computeProjectionSimple()\n");
-	    printf("Check one step increment of phi:\n");
-	    computeVarIncrement(field->old_var[0],phi,NO);
-	    printf("\n");
-	    
-	}
-}	/* end computeProjectionSimple */
-
+//u^{n+1} = u^{*} - dt*grad(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 {
 	int i,j,k,index;
@@ -454,6 +493,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    array[index] = phi[index];
+        //TODO: purpose of this?
 	}
 
 	for (j = jmin; j <= jmax; j++)
@@ -570,8 +610,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
 	computeAdvection();
-	//if (debugging("check_div"))
-            //checkVelocityDiv("After computeAdvection()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -585,8 +623,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	    sampleVelocity();
 	start_clock("computeDiffusion");
 	computeDiffusion();
-	//if (debugging("check_div"))
-            //checkVelocityDiv("After computeDiffusion()");
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -641,6 +677,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 }	/* end solve */
 
 
+//TODO: improve boundary handling
 double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
 {
         int icoords[MAXD],icnb[MAXD];
@@ -865,7 +902,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: Without this rayleigh-taylor with NEUMANN boundaries
                             //      crashes for some reason.
                             U_nb[nb] = getStateVel[l](intfc_state);
-                            //This is just a no-slip boundary condition?
+                            //NOTE: This is just a no-slip boundary condition.
                         }
                     }
                     else
@@ -888,10 +925,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             }
 
 
-            coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
-            coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
-            coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
-            coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
+            coeff[0] = 0.5*m_dt*mu[0]/rho/(top_h[0]*top_h[0]);
+            coeff[1] = 0.5*m_dt*mu[1]/rho/(top_h[0]*top_h[0]);
+            coeff[2] = 0.5*m_dt*mu[2]/rho/(top_h[1]*top_h[1]);
+            coeff[3] = 0.5*m_dt*mu[3]/rho/(top_h[1]*top_h[1]);
 
             getRectangleCenter(index, coords);
             computeSourceTerm(coords, source);
@@ -907,7 +944,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
        
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY
+                    //NOTE: Includes ELASTIC_BOUNDARY when used with af_findcrossing
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
@@ -917,16 +954,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     {    
                         if (status == CONST_P_PDE_BOUNDARY)
                         {
-                            //TODO: FIX OUTLET -- REFLECTS BACK INTO THE FLOW
-
-
                             //TODO: outlet not the same at n and n+1
-                            
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                                 //rhs += coeff[nb]*U_nb[nb]; //u^n val
-                                 
-                            //solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                                //solver.Set_A(I,I_nb[nb],-coeff[nb]);
                                 //aII -= coeff[nb];
                                 //rhs += coeff[nb]*U_nb[nb];
                         }
@@ -964,7 +996,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
 
-            //TODO: This should only be applied at domain boundary.
+            //TODO: This should only be applied at boundaries.
             //      And corresponds to a tangential velocity bdry condition
             //
             //  rhs -= m_dt*grad_phi[l][index];
@@ -975,7 +1007,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 
         solver.SetMaxIter(40000);
         solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-        //solver.SetTol(1.0e-10);
 
 	    start_clock("Before Petsc solve");
         solver.Solve();
@@ -1027,6 +1058,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     "computeDiffusionCN()\n");
 }	/* end computeDiffusionCN */
 
+// q = p^{n-1/2} , L = I
+//  --> p^{n+1/2} = p^{n-1/2} + phi^{n+1}
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
 {
     int i,j,index;
@@ -1044,11 +1077,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmI(void)
 	    q[index] = pres[index];
 	}
     
-    //TODO: need to scatter q and pres?
+    //TODO: need to scatter q?
     FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }        /* end computePressurePmI2d */
 
 
+// q = p^{n-1/2} , L = I - 0.5*nu*dt*grad^2 
+//  --> p^{n+1/2} = p^{n-1/2} + phi^{n+1} - 0.5*nu*dt*grad^2(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 {
     int i,j,index;
@@ -1072,6 +1107,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 }        /* end computePressurePmII2d */
 
+// q = 0 , L = I - 0.5*nu*dt*grad^2 
+//  --> p^{n+1/2} = phi^{n+1} - 0.5*nu*dt*grad^2(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 {
     int i,j,index;
@@ -1132,8 +1169,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 	    (void) printf("Unknown computePressure scheme!\n");
 	    clean_up(ERROR);
 	}
-	computeGradientQ();
-}	/* end computePressure */
+    
+    //TODO: Separate q and phi and rewrite function below
+    //
+    //  computeGradientQ();
+}
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ(void)
 {

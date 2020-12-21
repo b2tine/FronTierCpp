@@ -83,7 +83,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.05
+Enter string damping constant: 0.01
 Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

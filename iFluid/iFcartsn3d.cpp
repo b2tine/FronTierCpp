@@ -137,7 +137,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	double speed;
 	int icrds_max[MAXD];
 
-	double grad_phi[MAXD];
+    double** grad_phi = field->grad_phi;
+	double point_grad_phi[MAXD];
     double rho;
 
 	max_grad_phi = ave_grad_phi = 0.0;
@@ -148,6 +149,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	{
 	    index = d_index3d(i,j,k,top_gmax);
 	    array[index] = phi[index];
+        //TODO: purpose of this?
 	}
 	
     for (k = kmin; k <= kmax; k++)
@@ -171,17 +173,19 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         //Coupling of the velocity impulse due to force of the
         //immersed porous interface accounted for by the addition
         //of GFM pressure jump source terms into grad_phi 
-        computeFieldPointGradJump(icoords,phi,grad_phi);
+        computeFieldPointGradJump(icoords,phi,point_grad_phi);
 
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
-	    	vel[l][index] -= accum_dt/rho*grad_phi[l];
+	    	vel[l][index] -= accum_dt*point_grad_phi[l];
+            grad_phi[l][index] = point_grad_phi[l];
+	    	    //vel[l][index] -= accum_dt/rho*point_grad_phi[l];
 		    speed += sqr(vel[l][index]);
 	    }
         speed = sqrt(speed);
 
-	    mag_grad_phi = Mag3d(grad_phi);
+	    mag_grad_phi = Mag3d(point_grad_phi);
 	    ave_grad_phi += mag_grad_phi;
 
         if (mag_grad_phi > max_grad_phi)
@@ -201,6 +205,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	}
 
 	FT_ParallelExchGridVectorArrayBuffer(vel,front);
+	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 	
     if (debugging("step_size"))
 	{
@@ -610,7 +615,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    start_clock("computePressure");
 	    computePressure();
 	    stop_clock("computePressure");
-	    if (debugging("trace"))
+	    
+        if (debugging("trace"))
 		printf("min_pressure = %f  max_pressure = %f\n",
 			min_pressure,max_pressure);
 
@@ -777,8 +783,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //OUTLET
 
                             //TODO: figure out correct val
-                            U_nb[nb] = vel[l][index];
-                            //U_nb[nb] = getStateVel[l](intfc_state);
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                                //U_nb[nb] = vel[l][index];
                                 //U_nb[nb] = vel[l][index_nb[nb]];
                         }
                         else
@@ -802,8 +808,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         else
                         {
                             //TODO: Without this rayleigh-taylor with NEUMANN boundaries
-                            //      crashes for some reasone
+                            //      crashes for some reason.
                             U_nb[nb] = getStateVel[l](intfc_state);
+                            //NOTE: This is just a no-slip boundary condition.
                         }
                     }
                     else
@@ -826,12 +833,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 }
             }
             
-            coeff[0] = 0.5*m_dt/rho*mu[0]/(top_h[0]*top_h[0]);
-            coeff[1] = 0.5*m_dt/rho*mu[1]/(top_h[0]*top_h[0]);
-            coeff[2] = 0.5*m_dt/rho*mu[2]/(top_h[1]*top_h[1]);
-            coeff[3] = 0.5*m_dt/rho*mu[3]/(top_h[1]*top_h[1]);
-            coeff[4] = 0.5*m_dt/rho*mu[4]/(top_h[2]*top_h[2]);
-            coeff[5] = 0.5*m_dt/rho*mu[5]/(top_h[2]*top_h[2]);
+            coeff[0] = 0.5*m_dt*mu[0]/rho/(top_h[0]*top_h[0]);
+            coeff[1] = 0.5*m_dt*mu[1]/rho/(top_h[0]*top_h[0]);
+            coeff[2] = 0.5*m_dt*mu[2]/rho/(top_h[1]*top_h[1]);
+            coeff[3] = 0.5*m_dt*mu[3]/rho/(top_h[1]*top_h[1]);
+            coeff[4] = 0.5*m_dt*mu[4]/rho/(top_h[2]*top_h[2]);
+            coeff[5] = 0.5*m_dt*mu[5]/rho/(top_h[2]*top_h[2]);
 
             getRectangleCenter(index, coords);
             computeSourceTerm(coords, source);
@@ -846,7 +853,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY
+                    //NOTE: Includes ELASTIC_BOUNDARY when used with af_findcrossing
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
@@ -858,10 +865,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             strcmp(boundary_state_function_name(hs),
                                 "flowThroughBoundaryState") == 0)
                         {
+                            //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
                                 //solver.Set_A(I,I_nb[nb],-coeff[nb]);
-                                    //aII -= coeff[nb];
+                                //aII -= coeff[nb];
                                 //rhs += coeff[nb]*U_nb[nb];
                         }
                         else
@@ -872,6 +880,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
+                        //TODO: see comments in iFcartsn2d.cpp computeDiffusionCN()
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
                     }
@@ -885,10 +894,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            //TODO: This should only be applied at domain boundary.
-            //      And it is actually applied in the projection solver
-            //      by approximating phi^{n+1} at the boundary with phi^{n}.
-            //      See Brown accurate projection method paper for details.
+            
+            //TODO: This should only be applied at boundaries.
+            //      And correspond to a tangential velocity bdry condition
             //
             //  rhs -= m_dt*grad_q[l][index]/rho;
             
@@ -898,7 +906,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
         solver.SetMaxIter(40000);
         solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-        //solver.SetTol(1.0e-10);
 
 	    start_clock("Before Petsc solve");
         solver.Solve();
@@ -1570,9 +1577,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 			"computeDiffusionImplicit()\n");
 }       /* end computeDiffusionImplicit */
 
+// q = p^{n-1/2} , L = I
+//   --> p^{n+1/2} = p^{n-1/2} + phi^{n+1}
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 {
     int index;
+    double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1586,9 +1596,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
     for (int i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        pres[index] += phi[index];
+        pres[index] = (q[index] + phi[index])*rho[index];
+            //pres[index] += phi[index];
 	    q[index] = pres[index];
 	    
+
         if (i < imin || i > imax ||
             j < jmin || j > jmax ||
             k < kmin || k > kmax) continue;
@@ -1600,6 +1612,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
             icrds_min[1] = j;
             icrds_min[2] = k;
 	    }
+
 	    if (max_pressure < pres[index])
 	    {
             max_pressure = pres[index];
@@ -1609,7 +1622,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 	    }
 	}
     
-    //TODO: need to scatter pres and q?
+    //TODO: need to scatter q?
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 
 	if (debugging("step_size"))
 	{
@@ -1624,9 +1638,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
 	    (void) printf("Leaving computePressurePmI()\n");
 }        /* end computePressurePmI3d */
 
+// q = p^{n-1/2} , L = I - 0.5*nu*dt*grad^2
+//  --> p^{n+1/2} = p^{n-1/2} + phi^{n+1} - 0.5*nu*dt*grad^2(phi^{n+1})
+//                = p^{n-1/2} + phi^{n+1} - 0.5*nu*div(u)
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 {
     int i,j,k,index;
+    double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1641,26 +1659,31 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	{
         index = d_index3d(i,j,k,top_gmax);
         mu0 = field->mu[index];
-        //TODO: q should equal zero??? -- see Brown's paper Kim and Moin section.
-        pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        pres[index] = (q[index] + phi[index])*rho[index] - 0.5*mu0*div_U[index];
+            //pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
         q[index] = pres[index];
 
 	    if (min_pressure > pres[index])
-		min_pressure = pres[index];
+            min_pressure = pres[index];
 	    if (max_pressure < pres[index])
-		max_pressure = pres[index];
+            max_pressure = pres[index];
 	}
 
-    //TODO: need to scatter pres and q?
+    //TODO: need to scatter q?
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 
 	if (debugging("trace"))
 	    (void) printf("Leaving computePressurePmII()\n");
 }        /* end computePressurePmII3d */
 
+// q = 0 , L = I - 0.5*nu*dt*grad^2
+//  --> p^{n+1/2} = phi^{n+1} - 0.5*nu*dt*grad^2(phi^{n+1})
+//                = phi^{n+1} - 0.5*nu*div(u)
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 {
     int i,j,k,index;
     double mu0;
+    double *rho = field->rho;
 	double *pres = field->pres;
 	double *phi = field->phi;
 	double *q = field->q;
@@ -1674,7 +1697,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	{
         index = d_index3d(i,j,k,top_gmax);
         mu0 = field->mu[index];
-        pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        pres[index] = phi[index]*rho[index] - 0.5*mu0*div_U[index];
+            //pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
@@ -1683,12 +1707,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
             max_pressure = pres[index];
 	}
 
-    //TODO: need to scatter pres?
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 
 	if (debugging("trace"))
 	    (void) printf("Leaving computePressurePmIII()\n");
 }        /* end computePressurePmIII3d */
 
+//TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
 void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 {
     int i,j,k,index;
@@ -1726,8 +1751,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    clean_up(ERROR);
 	}
 
-    computeGradientQ();
-}	/* end computePressure */
+    //TODO: Separate q and phi and rewrite function below
+    //
+    //  computeGradientQ();
+}
 
 /*
 void Incompress_Solver_Smooth_3D_Cartesian::computeGradientPhi()
@@ -1876,23 +1903,26 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	}
 
 	// Initialize state at cell_center
-        for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
+    {
+        getRectangleCenter(i, coords);
+            //cell_center[i].m_state.setZero();
+        comp = top_comp[i];
+        if (getInitialState != NULL)
         {
-            getRectangleCenter(i, coords);
-                //cell_center[i].m_state.setZero();
-            comp = top_comp[i];
-            if (getInitialState != NULL)
-            {
-                (*getInitialState)(comp,coords,field,i,dim,iFparams);
-            }
-                
-            //TODO: see comments in getPressure() function
-            pres[i] = getPressure(front,coords,NULL);
-                //q[i] = getQFromPres(front,pres[i]);
-                //phi[i] = getPhiFromPres(front,pres[i]);
+            (*getInitialState)(comp,coords,field,i,dim,iFparams);
         }
+            
+        //TODO: see comments in getPressure() function
+        pres[i] = getPressure(front,coords,NULL);
+            //q[i] = getQFromPres(front,pres[i]);
+            //phi[i] = getPhiFromPres(front,pres[i]);
+    }
 
-    computeGradientQ();
+    //TODO: Separate q and phi and rewrite function below
+    //
+    //  computeGradientQ();
+    
     copyMeshStates();
 	setAdvectionDt();
 }       /* end setInitialCondition */
@@ -1904,18 +1934,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjection(void)
         case SIMPLE_ELLIP:
             computeProjectionSimple();
             return;
-        case DOUBLE_ELLIP:
-            computeProjectionDouble();
-            return;
         default:
             printf("Elliptic Method Not Implemented\n");
             clean_up(1);
         }
 }       /* end computeProjection */
-
-void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionDouble(void)
-{
-}	/* end computeProjectionDouble */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
 {
@@ -1948,10 +1971,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         icoords[1] = j;
         icoords[2] = k;
         index  = d_index(icoords,top_gmax,dim);
+        
         source[index] = computeFieldPointDiv(icoords,vel);
-        diff_coeff[index] = 1.0/field->rho[index];
         div_U[index] = source[index];
-        source[index] /= accum_dt;
+            
+            //source[index] /= accum_dt;
+        
+        diff_coeff[index] = 1.0;//TODO: temp for testing new formulation
+            //diff_coeff[index] = 1.0/field->rho[index];
 
         /*Compute pressure jump due to porosity*/
         source[index] += computeFieldPointPressureJump(icoords,
@@ -1972,10 +1999,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
     }
 
-    FT_ParallelExchGridArrayBuffer(source,front,NULL);
-    FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-
     /*
+    //TODO: joined to above loop remove if not a problem
+    //      Notice the i,j bounds -- Could this create a problem
+    //      for parallel runs???
     for (k = 0; k <= top_gmax[2]; k++)
     for (j = 0; j <= top_gmax[1]; j++)
     for (i = 0; i <= top_gmax[0]; i++)
@@ -1992,6 +2019,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         array[index] = phi[index];
     }
     */
+
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+    FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
 
     if(debugging("step_size"))
     {
@@ -2046,12 +2076,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         checkVelocityDiv("Before computeProjection()");
     }
     
+    elliptic_solver.dt = accum_dt;
     elliptic_solver.D = diff_coeff;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
     elliptic_solver.set_solver_domain();
-    //TODO: Need getStatePres() for interpolation when
-    //      applying boundary conditions at solid walls?
     elliptic_solver.getStateVar = getStatePhi;
     elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
