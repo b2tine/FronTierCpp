@@ -2929,153 +2929,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDiv(
         }
 }       /* end computeFieldPointDiv */
 
-/*
-double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
-        int *icoords,
-        double **var)
-{
-    GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-    
-    POINTER intfc_state;
-    HYPER_SURF *hs;
-	
-	int crx_status;
-    boolean status;
-	
-    int icnb[MAXD];
-    double crx_coords[MAXD];
-    double nor[MAXD];
-
-    int index_nb;
-	int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-
-    double** grad_phi = field->grad_phi;
-    double div = 0.0;
-
-    if (!ifluid_comp(comp)) return div;
-
-
-    for (int idir = 0; idir < dim; idir++)
-    {
-        for (int j = 0; j < dim; ++j)
-            icnb[j] = icoords[j];
-
-        double lambda = 0.5/top_h[idir];
-
-        for (int nb = 0; nb < 2; nb++)
-        {
-            icnb[idir] = (nb == 0) ?
-                icoords[idir] - 1 : icoords[idir] + 1;
-
-            index_nb = d_index(icnb,top_gmax,dim);
-            
-            double coeff_nb = -1.0*pow(-1.0,nb)*lambda;
-
-            crx_status = (*findStateAtCrossing)(front,icoords,
-                    dir[idir][nb],comp,&intfc_state,&hs,crx_coords);
-
-            if (crx_status)
-            {
-                if (wave_type(hs) == DIRICHLET_BOUNDARY)
-                {
-                    double bval = getStateVel[idir](intfc_state);
-                    bval += m_dt*grad_phi[idir][index_nb];
-                    div += coeff_nb*bval;
-
-                    //if (iFparams->num_scheme.projc_method == SIMPLE ||
-                    //   iFparams->num_scheme.projc_method == KIM_MOIN)
-                    //{
-                    //    bval += m_dt*grad_phi[idir][index_nb];
-                    //}//
-                    //div += coeff_nb*getStateVel[idir](intfc_state);
-                }
-                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
-                {
-                    //REFLECTING BOUNDARY
-                    status = FT_NormalAtGridCrossing(front,icoords,
-                            dir[idir][nb],comp,nor,&hs,crx_coords);
-                    
-//                    //
-//                    double coords_ghost[MAXD];
-//                    getRectangleCenter(index_nb,coords_ghost);
-//
-//                    //Reflect the ghost point through intfc-mirror at crossing.
-//                    //first reflect across the grid line containing intfc crossing.
-//                    double coords_reflect[MAXD];
-//                    for (int m = 0; m < dim; ++m)
-//                        coords_reflect[m] = coords_ghost[m];
-//                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-//                    //(^should just be the coords at current index)
-//                    //
-//
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //
-                    //first reflect across the grid line containing intfc crossing.
-                    //Should be the coords of the current index.
-                    double coords_reflect[MAXD];
-                    getRectangleCenter(index,coords_reflect);
-
-                    //Reflect the displacement vector across the line
-                    //containing the intfc normal vector
-                    double v[MAXD];
-                    double vn = 0.0;
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        v[m] =  coords_reflect[m] - crx_coords[m];
-                        vn += v[m]*nor[m];
-                    }
-
-                    for (int m = 0; m < dim; ++m)
-                        v[m] = 2.0*vn*nor[m] - v[m];
-
-                    //The desired reflected point
-                    for (int m = 0; m < dim; ++m)
-                        coords_reflect[m] = crx_coords[m] + v[m];
-
-                    //Interpolate the velocity at the reflected point
-                    double vel_reflect[MAXD];
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        FT_IntrpStateVarAtCoords(front,comp,
-                                coords_reflect,var[m],getStateVel[m],
-                                &vel_reflect[m],&var[m][index]);
-                    }
-
-                    //Ghost vel has relative normal velocity component equal
-                    //in magnitude to reflected point's relative normal velocity
-                    //and opposite in direction.
-                    vn = 0.0;
-                    double vel_rel[MAXD];
-                    double* vel_intfc = ((STATE*)intfc_state)->vel;
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        vel_rel[m] = vel_reflect[m] - vel_intfc[m];
-                        vn += vel_rel[m]*nor[m];
-                    }
-
-                    double vel_ghost[MAXD];
-                    for (int m = 0; m < dim; ++m)
-                        vel_ghost[m] = vel_reflect[m] - 2.0*vn*nor[m];
-                
-                    div += coeff_nb*vel_ghost[idir];
-                }
-                else
-                {
-                    //NO_PDE_BOUNDARY
-                    div += coeff_nb*var[idir][index_nb];
-                }
-            }
-        }
-    } 
-
-    return div;
-}*/      /* end computeFieldPointDivSimple */
-
 double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
         int *icoords,
         double **field_array)
@@ -3135,6 +2988,10 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     {
+                        double v_slip[MAXD] = {0.0};
+                        setSlipBoundary(icoords,idir,nb,comp,hs,intfc_state,field->vel,v_slip);
+                        u_edge[idir][nb] = v_slip[idir];
+                        /*
                         int icoords_ghost[MAXD];
                         for (int m = 0; m < dim; ++m)
                             icoords_ghost[m] = icoords[m];
@@ -3203,11 +3060,8 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                             //vel_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];
 
                         u_edge[idir][nb] = vel_reflect[idir];
+                        */
                     }
-                    /*else
-                    {
-                        u_edge[idir][nb] = u0;
-                    }*/
                 }
             }
         }
