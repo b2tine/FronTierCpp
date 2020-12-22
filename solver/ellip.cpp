@@ -192,7 +192,8 @@ void ELLIPTIC_SOLVER::solve1d(double *soln)
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-	solver.SetTol(1.0e-10);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -398,8 +399,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             }
 
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]); 
-                //coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    rhs = source[index];
@@ -623,8 +623,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
-	//solver.SetTol(1.0e-05);//rtol = 1.0e-05 is petsc default value
-	//solver.SetTol(1.0e-10);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -883,8 +881,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
     
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-	    	coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]); 
-	    	    //coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    rhs = source[index];

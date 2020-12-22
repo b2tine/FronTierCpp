@@ -208,6 +208,7 @@ static void CgalRectangular(
 	CDT cdt;
 	CDT::Finite_faces_iterator fit;
         Vertex_handle *v_out;
+    char string[100];
 
         CursorAfterString(infile,"Enter the height of the plane:");
         fscanf(infile,"%lf",&height);
@@ -241,9 +242,23 @@ static void CgalRectangular(
 	    flag[i++] = 1;	
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
-        wave_type(*surf) = ELASTIC_BOUNDARY;
+    wave_type(*surf) = ELASTIC_BOUNDARY;
+    
+    bool fixed_bdry = false;
+    if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            fixed_bdry = true;
+    }
+
+    if (fixed_bdry == true)
+        FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+    else
         FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
-	setSurfZeroMesh(*surf);
+
+    setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
 	if (consistent_interface(front->interf) == NO)
 	    clean_up(ERROR);

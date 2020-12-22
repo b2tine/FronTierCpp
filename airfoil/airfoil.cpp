@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
 static void xgraph_front(Front*,char*);
+static void initFabricModule(Front* front);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -119,11 +120,7 @@ int main(int argc, char **argv)
 	    
         initRigidBody(&front);
 	    setRigidBodyMotionParams(&front,&rgb_params);
-        //TODO: CgalCanopySurface(infile,front,&surf);
-        //
-        //      set up fixed rectangular fabric sheet
-        //      in wind tunnel like cfabric for debugging
-        //      turbulence code near the canopy
+        initFabricModule(&front);
 	    
         if (f_basic.dim == 3 && debugging("trace"))
 	    {
@@ -397,3 +394,16 @@ void xgraph_front(Front *front,	char *outname)
 	xgraph_2d_intfc(fname,front->interf);
 }
 
+void initFabricModule(Front* front)
+{
+    FILE *infile = fopen(InName(front),"r");
+    SURFACE *surf;
+
+    CgalCanopySurface(infile,front,&surf);
+    fclose(infile);
+
+    /*
+    if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
+        InstallNewLoadNode(front,1);
+    */
+}

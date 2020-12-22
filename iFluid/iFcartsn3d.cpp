@@ -165,10 +165,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
     		continue;
 	    }
 	    
-        rho = field->rho[index];
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
+        rho = field->rho[index];
         
         //Coupling of the velocity impulse due to force of the
         //immersed porous interface accounted for by the addition
@@ -178,9 +178,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
-	    	vel[l][index] -= accum_dt*point_grad_phi[l];
+            vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
+	    	    //vel[l][index] -= accum_dt*point_grad_phi[l];
             grad_phi[l][index] = point_grad_phi[l];
-	    	    //vel[l][index] -= accum_dt/rho*point_grad_phi[l];
 		    speed += sqr(vel[l][index]);
 	    }
         speed = sqrt(speed);
@@ -781,11 +781,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                                 "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
-
-                            //TODO: figure out correct val
                             U_nb[nb] = getStateVel[l](intfc_state);
-                                //U_nb[nb] = vel[l][index];
-                                //U_nb[nb] = vel[l][index_nb[nb]];
                         }
                         else
                         {
@@ -833,6 +829,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 }
             }
             
+            //TODO: rho at index?
             coeff[0] = 0.5*m_dt*mu[0]/rho/(top_h[0]*top_h[0]);
             coeff[1] = 0.5*m_dt*mu[1]/rho/(top_h[0]*top_h[0]);
             coeff[2] = 0.5*m_dt*mu[2]/rho/(top_h[1]*top_h[1]);
@@ -895,8 +892,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
             
-            //TODO: This should only be applied at boundaries.
-            //      And correspond to a tangential velocity bdry condition
+            //TODO: Currently not ready for this
             //
             //  rhs -= m_dt*grad_q[l][index]/rho;
             
@@ -905,7 +901,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         }
 
         solver.SetMaxIter(40000);
-        solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+        solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
 
 	    start_clock("Before Petsc solve");
         solver.Solve();
@@ -1596,8 +1593,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmI(void)
     for (int i = 0; i <= top_gmax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        pres[index] = (q[index] + phi[index])*rho[index];
-            //pres[index] += phi[index];
+        pres[index] += phi[index];
+            //pres[index] = (q[index] + phi[index])*rho[index];
 	    q[index] = pres[index];
 	    
 
@@ -1659,8 +1656,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 	{
         index = d_index3d(i,j,k,top_gmax);
         mu0 = field->mu[index];
-        pres[index] = (q[index] + phi[index])*rho[index] - 0.5*mu0*div_U[index];
-            //pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
+        pres[index] = q[index] + phi[index] - 0.5*accum_dt*mu0*div_U[index];
+            //pres[index] = (q[index] + phi[index])*rho[index] - 0.5*mu0*div_U[index];
         q[index] = pres[index];
 
 	    if (min_pressure > pres[index])
@@ -1697,7 +1694,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	{
         index = d_index3d(i,j,k,top_gmax);
         mu0 = field->mu[index];
-        pres[index] = phi[index]*rho[index] - 0.5*mu0*div_U[index];
+        pres[index] = phi[index] - 0.5*mu0*div_U[index];
+        //pres[index] = phi[index]*rho[index] - 0.5*mu0*div_U[index];
             //pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
 	    q[index] = 0.0;
 
@@ -1878,8 +1876,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	COMPONENT comp;
 	double coords[MAXD];
 	int size = (int)cell_center.size();
-	double *pres = field->pres;
-	double *phi = field->phi;
 
 	FT_MakeGridIntfc(front);
 	setDomain();
@@ -1893,7 +1889,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	m_smoothing_radius = iFparams->smoothing_radius;
 	m_sigma = iFparams->surf_tension;
 	mu_min = rho_min = HUGE;
-	for (i = 0; i < 2; ++i)
+	
+    for (i = 0; i < 2; ++i)
 	{
 	    if (ifluid_comp(m_comp[i]))
 	    {
@@ -1901,6 +1898,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
         	rho_min = std::min(rho_min,m_rho[i]);
 	    }
 	}
+
+	double *pres = field->pres;
+	double *phi = field->phi;
+    double *q = field->q;
 
 	// Initialize state at cell_center
     for (i = 0; i < size; i++)
@@ -1914,9 +1915,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
         }
             
         //TODO: see comments in getPressure() function
-        pres[i] = getPressure(front,coords,NULL);
+        //pres[i] = getPressure(front,coords,NULL);
             //q[i] = getQFromPres(front,pres[i]);
             //phi[i] = getPhiFromPres(front,pres[i]);
+        pres[i] = 0.0;
+        phi[i] = 0.0;
     }
 
     //TODO: Separate q and phi and rewrite function below
@@ -1929,15 +1932,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjection(void)
 {
-        switch (iFparams->num_scheme.ellip_method)
-        {
-        case SIMPLE_ELLIP:
-            computeProjectionSimple();
-            return;
-        default:
-            printf("Elliptic Method Not Implemented\n");
-            clean_up(1);
-        }
+    switch (iFparams->num_scheme.ellip_method)
+    {
+    case SIMPLE_ELLIP:
+        computeProjectionSimple();
+        return;
+    default:
+        printf("Elliptic Method Not Implemented\n");
+        clean_up(1);
+    }
 }       /* end computeProjection */
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
@@ -1972,14 +1975,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         icoords[2] = k;
         index  = d_index(icoords,top_gmax,dim);
         
+        //diff_coeff[index] = 1.0;//TODO: temp for testing new formulation
+        diff_coeff[index] = 1.0/field->rho[index];
+
         source[index] = computeFieldPointDiv(icoords,vel);
         div_U[index] = source[index];
-            
-            //source[index] /= accum_dt;
+        source[index] /= accum_dt;
         
-        diff_coeff[index] = 1.0;//TODO: temp for testing new formulation
-            //diff_coeff[index] = 1.0/field->rho[index];
-
         /*Compute pressure jump due to porosity*/
         source[index] += computeFieldPointPressureJump(icoords,
                          iFparams->porous_coeff[0],
@@ -2093,6 +2095,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.ilower = ilower;
     elliptic_solver.iupper = iupper;
     elliptic_solver.skip_neumann_solver = skip_neumann_solver;
+    
     elliptic_solver.solve(array);
 
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
