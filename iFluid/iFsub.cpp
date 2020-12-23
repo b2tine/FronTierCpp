@@ -558,12 +558,11 @@ static void iF_flowThroughBoundaryState3d(
 	}
 
 
-    /*
     //TODO: Is this reasonably correct?
     //      What about the divergence term?
-    newst->q = oldst->pres;
-    newst->phi = oldst->phi;
-    */
+    newst->q = newst->pres;
+    newst->phi = 0.0;
+
 
     if (debugging("flow_through"))
 	{
@@ -698,12 +697,10 @@ static void iF_flowThroughBoundaryState2d(
 	newst->pres += - dt/dn*f_pres;
 
     
-    /*
     //TODO: Is this reasonably correct?
     //      What about the divergence term?
-    newst->q = oldst->pres;
-    newst->phi = oldst->phi;
-	*/
+    newst->q = newst->pres;
+    newst->phi = 0.0;
 
 
     if (debugging("flow_through"))
@@ -791,19 +788,21 @@ static  void neumann_point_propagate(
 
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i];
+        Coords(newp)[i] = Coords(oldp)[i];
 	    newst->vel[i] = 0.0;
-            FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
 	}
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
-	/*
+    
     newst->q = oldst->pres;
+	/*
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	*/
-	if (dim == 2)
-        {
+	
+    if (dim == 2)
+    {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
@@ -844,9 +843,10 @@ static  void dirichlet_point_propagate(
 	    newst = (STATE*)right_state(newp);
 	    comp = positive_component(oldhs);
 	}
-    setStateViscosity(iFparams,newst,comp);
-	
+    
     if (newst == NULL) return;	// node point
+    
+    setStateViscosity(iFparams,newst,comp);
 
     //Constant State
 	if (boundary_state(oldhs) != NULL)
@@ -863,8 +863,8 @@ static  void dirichlet_point_propagate(
         newst->vort = 0.0;
 
         newst->pres = bstate->pres;
-	    newst->phi = bstate->phi;
-	    newst->q = bstate->q;
+	    newst->q = bstate->pres;
+        newst->phi = bstate->pres;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
@@ -1918,16 +1918,14 @@ extern double getPhiFromPres(
                 return pres - q[index] + 0.5*mu[index]*div_U[index];
             else
                 return 0.0;*/
-            //return pres;
-            return 0.0;
+            return pres;
         case SIMPLE:
         case PMIII:
             /*if (!isbdry)
                 return pres + 0.5*mu[index]*div_U[index];
             else
                 return pres;*/
-            //return 0.0;
-            return pres;
+            return 0.0;
         default:
             (void) printf("Unknown projection type\n");
             clean_up(0);
@@ -2541,7 +2539,8 @@ static void promptForDirichletBdryState(
 			NULL,(POINTER)state,*hs,i_hs);
 	    
         //TODO: are these valid values?
-        state->phi = getPhiFromPres(front,state->pres);
+        state->phi = state->pres;
+            //state->phi = getPhiFromPres(front,state->pres);
         state->q = state->pres;
         //state->q = getQFromPres(front,state->pres);
 

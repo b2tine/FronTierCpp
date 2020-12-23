@@ -4063,6 +4063,8 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         double mudiv = 0.5*mu[index]*div_U[index]; 
         double q0 = q[index];
 
+        double rho = (field->rho[index] == 0) ?
+            iFparams->rho2 : field->rho[index];
 
         int max_nb = (dim == 2) ? 4 : 6;
         for (nb = 0; nb < max_nb; nb ++)
@@ -4124,15 +4126,15 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 double jump_mudiv;
                 double jump_q;
 
-                if (side >= 0)
-                {
-                    jump_mudiv = mudiv - mudiv_nb;
-                    jump_q = q0 - q_nb;
-                }
-                else
+                if (side <= 0)
                 {
                     jump_mudiv = mudiv_nb - mudiv;
                     jump_q = q_nb - q0;
+                }
+                else
+                {
+                    jump_mudiv = mudiv - mudiv_nb;
+                    jump_q = q0 - q_nb;
                 }
 
                 //TODO: May have a sign error somewhere ...
@@ -4144,29 +4146,30 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
 
                 if (side <= 0)
                 {
-                    ans -= d_p/sqr(top_h[nb/2]);
-                    //ans += d_p/sqr(top_h[nb/2]);
-                    //ans += Un*(alpha + fabs(Un)*beta)/sqr(top_h[nb/2]);
+                    ans -= d_p/sqr(top_h[nb/2])/rho;
+                    //ans += d_p/sqr(top_h[nb/2])/rho;
+                    //ans += Un*(alpha + fabs(Un)*beta)/sqr(top_h[nb/2])/rho;
                 }
                 else
                 {
-                    ans += d_p/(sqr(top_h[nb/2]));
-                    //ans -= d_p/(sqr(top_h[nb/2]));
-                    //ans -= Un*(alpha + fabs(Un)*beta)/(sqr(top_h[nb/2]));
+                    ans += d_p/(sqr(top_h[nb/2]))/rho;
+                    //ans -= d_p/(sqr(top_h[nb/2]))/rho;
+                    //ans -= Un*(alpha + fabs(Un)*beta)/(sqr(top_h[nb/2]))/rho;
+                }
+            
+                if (debugging("pressure_drop"))
+                {
+                    printf("crds = [%f %f %f], crx = [%f %f %f],"
+                            " side = %f, nb = %d\n",coords[0],coords[1],coords[2],
+                            crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
+                    printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
+                    printf("d_p = %f, Un = %f\n",d_p, Un);
                 }
             }
         }
         
         /*return source term for Poisson equation due to jump condition*/
-        
-        //TODO: should be using the half indices of 1/rho as in ellip.cpp
-        //      for consistency. 
-        double rho;
-        rho = (field->rho[index] == 0)? iFparams->rho2 : field->rho[index];
-        
-        if (debugging("pressure_drop"))
-            printf("ans = %f, Un = %f\n",ans/rho, Un);
-        return ans/rho;
+        return ans;
 }
 
 //TODO: We should be saving gradient of phi in the variable grad_phi
@@ -4264,20 +4267,22 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 double jump_mudiv;
                 double jump_q;
 
-                if (side >= 0)
-                {
-                    jump_mudiv = mudiv - mudiv_nb;
-                    jump_q = q0 - q_nb;
-                }
-                else
+                if (side <= 0)
                 {
                     jump_mudiv = mudiv_nb - mudiv;
                     jump_q = q_nb - q0;
                 }
+                else
+                {
+                    jump_mudiv = mudiv - mudiv_nb;
+                    jump_q = q0 - q_nb;
+                }
 
                 //TODO: May have a sign error somewhere ...
-                
                     //d_p += jump_mudiv - jump_q;
+                
+                //Try this one first 
+                    //d_p += jump_mudiv
                 /////////////////////////////////////////////////////////////////
                 */
                 
@@ -4301,11 +4306,11 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 
                 if (debugging("pressure_drop"))
                 {
-                    printf("d_p = %f, vel_rel = [%f %f %f]",
-                            d_p,vel_rel[0],vel_rel[1],vel_rel[2]);
-                    printf("crds = [%f %f %f], crx = [%f %f %f], side = %f\n",
+                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f",
+                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un);
+                    printf("crds = [%f %f %f], crx = [%f %f %f], side = %f, nb = %d\n",
                             coords[0],coords[1],coords[2],
-                            crx_coords[0],crx_coords[1],crx_coords[2],side);
+                            crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
                 }
 
             }
@@ -5091,10 +5096,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         for (int j = 0; j < dim; ++j)
         {
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-                //v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
             
             //TODO: Projection method tangential boundary condition
                 //v_slip[j] += m_dt*grad_phi_tan[j]/rho_reflect;
+                //v_slip[j] += m_dt*grad_phi_tan[j]/field->rho[index];
         }
 
         return;
@@ -5158,6 +5163,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
         //TODO: Projection method tangential boundary condition
             //vel_ghost_tan[j] += m_dt*grad_phi_tan[j]/rho_reflect;
+            //v_slip[j] += m_dt*grad_phi_tan[j]/field->rho[index];
         
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];

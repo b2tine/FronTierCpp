@@ -167,29 +167,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    index  = d_index(icoords,top_gmax,dim);
-	    
-        if (!ifluid_comp(top_comp[index]))
-        {
-            source[index] = 0.0;
-            diff_coeff[index] = 0.0;
-            continue;
-        }
+        if (!ifluid_comp(top_comp[index])) continue;
 
         source[index] = computeFieldPointDiv(icoords,vel);
         diff_coeff[index] = 1.0/field->rho[index];
         
-        /*
-        div_U[index] = source[index];
-        source[index] = (source[index])/accum_dt;
-        
-        // Compute pressure jump due to porosity
-        source[index] += computeFieldPointPressureJump(icoords,
-                         iFparams->porous_coeff[0],
-                         iFparams->porous_coeff[1]);
-	    
-        array[index] = phi[index];
-        */
-
         if (debugging("check_div"))
 	    {
 		    for (l = 0; l < dim; ++l)
@@ -201,6 +183,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
             }
 	    }
 	}
+    
 	if (debugging("field_var"))
 	{
 	    (void) printf("\nCheck one step increment of div_U:\n");
@@ -208,27 +191,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    (void) printf("\n");
 	}
 	
-    //TODO: joined to above loop remove if not a problem
-    //      Notice the i,j bounds -- Could this create a problem
-    //      for parallel runs???
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+	
     for (j = 0; j <= top_gmax[1]; j++)
     for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
-
+        if (!ifluid_comp(top_comp[index])) continue;
+	    
         div_U[index] = source[index];
-	    source[index] = (source[index])/accum_dt;
-        
-        if (!ifluid_comp(top_comp[index]))
-        {
-            array[index] = 0.0;
-            continue;
-        }
+        source[index] /= accum_dt;
 
         // Compute pressure jump due to porosity
         icoords[0] = i;
         icoords[1] = j;
-        
         source[index] += computeFieldPointPressureJump(icoords,
                          iFparams->porous_coeff[0],
                          iFparams->porous_coeff[1]);
@@ -236,9 +213,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         array[index] = phi[index];
 	}
 
-    FT_ParallelExchGridArrayBuffer(source,front,NULL);
-	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
-	
 	if(debugging("step_size"))
 	{
 	    for (j = jmin; j <= jmax; j++)
@@ -277,6 +251,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 
+    /*
     paintAllGridPoint(TO_SOLVE);
     setGlobalIndex();
     setIndexMap();
@@ -286,21 +261,36 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.iupper = iupper;
 	
     elliptic_solver.solve(array);
+    */
 
-    /*    
-    num_colors = drawColorMap();
 	paintAllGridPoint(NOT_SOLVED);
+    
+    num_colors = drawColorMap();
 	for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);
 	    setGlobalIndex();
-            setIndexMap();
-            elliptic_solver.ij_to_I = ij_to_I;
-            elliptic_solver.ilower = ilower;
-            elliptic_solver.iupper = iupper;
-	    	elliptic_solver.solve(array);
+        setIndexMap();
+        elliptic_solver.ij_to_I = ij_to_I;
+        elliptic_solver.ilower = ilower;
+        elliptic_solver.iupper = iupper;
+
+        elliptic_solver.solve(array);
 	    paintSolvedGridPoint();
 	}
+
+    /*
+    while (paintToSolveGridPoint())
+    {
+        setGlobalIndex();
+        setIndexMap();
+        elliptic_solver.ijk_to_I = ijk_to_I;
+        elliptic_solver.ilower = ilower;
+        elliptic_solver.iupper = iupper;
+        
+        elliptic_solver.solve(array);
+        paintSolvedGridPoint();
+    }
     */
 
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
@@ -1011,7 +1001,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
           
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            rhs -= m_dt*grad_q[l][index]/rho;
+
+            if (iFparams->num_scheme.projc_method != PMIII &&
+                iFparams->num_scheme.projc_method != SIMPLE)
+            {
+                rhs -= m_dt*grad_q[l][index]/rho;
+            }
 
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1183,8 +1178,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 	    clean_up(ERROR);
 	}
 
+    /*
     if (iFparams->num_scheme.projc_method == PMIII ||
         iFparams->num_scheme.projc_method == SIMPLE) return;
+    */
 
     computeGradientQ();
 }

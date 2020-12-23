@@ -660,6 +660,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
             setReferencePressure();
 
 	setAdvectionDt();
+    //front->dt = std::min(max_dt, front->dt);
+    //m_dt = std::min(m_dt, front->dt);
 
 	stop_clock("solve");
 }	/* end solve */
@@ -868,9 +870,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
-                                //solver.Set_A(I,I_nb[nb],-coeff[nb]);
-                                //aII -= coeff[nb];
-                                //rhs += coeff[nb]*U_nb[nb];
                         }
                         else
                         {
@@ -894,7 +893,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
-            rhs -= m_dt*grad_q[l][index]/rho;
+
+            if (iFparams->num_scheme.projc_method != PMIII &&
+                iFparams->num_scheme.projc_method != SIMPLE)
+            {
+                rhs -= m_dt*grad_q[l][index]/rho;
+            }
             
             solver.Set_A(I,I,aII);
             solver.Set_b(I,rhs);
@@ -1386,6 +1390,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	    (void) printf("Leaving computePressurePmIII()\n");
 }        /* end computePressurePmIII3d */
 
+//TODO: Make another pressure update that just sets pres = phi
+
 //TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
 void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 {
@@ -1425,8 +1431,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    clean_up(ERROR);
 	}
 
+    /*
     if (iFparams->num_scheme.projc_method == PMIII ||
         iFparams->num_scheme.projc_method == SIMPLE) return;
+    */
 
     computeGradientQ();
 }
@@ -1616,29 +1624,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         icoords[0] = i;
         icoords[1] = j;
         icoords[2] = k;
- 
         index = d_index(icoords,top_gmax,dim);
-        if (!ifluid_comp(top_comp[index]))
-        {
-            source[index] = 0.0;
-            diff_coeff[index] = 0.0;
-            continue;
-        }
+        if (!ifluid_comp(top_comp[index])) continue;
 
         source[index] = computeFieldPointDiv(icoords,vel);
         diff_coeff[index] = 1.0/field->rho[index];
-
-        /*
-        div_U[index] = source[index];
-        source[index] /= accum_dt;
-        
-        //Compute pressure jump due to porosity
-        source[index] += computeFieldPointPressureJump(icoords,
-                         iFparams->porous_coeff[0],
-                         iFparams->porous_coeff[1]);
-        
-        array[index] = phi[index];
-        */
 
         if (debugging("check_div"))
         {
@@ -1652,37 +1642,28 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         }
     }
 
-    //TODO: joined to above loop remove if not a problem
-    //      Notice the i,j bounds -- Could this create a problem
-    //      for parallel runs???
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+    FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+
     for (k = 0; k <= top_gmax[2]; k++)
     for (j = 0; j <= top_gmax[1]; j++)
     for (i = 0; i <= top_gmax[0]; i++)
     {
         index  = d_index3d(i,j,k,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
 
         div_U[index] = source[index];
         source[index] /= accum_dt;
         
-        if (!ifluid_comp(top_comp[index]))
-        {
-            array[index] = 0.0;
-            continue;
-        }
-        
         icoords[0] = i; 
         icoords[1] = j;
         icoords[2] = k;
-        
         source[index] += computeFieldPointPressureJump(icoords,
                          iFparams->porous_coeff[0],
                          iFparams->porous_coeff[1]);
         
         array[index] = phi[index];
     }
-
-    FT_ParallelExchGridArrayBuffer(source,front,NULL);
-    FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
 
     if(debugging("step_size"))
     {
@@ -1744,22 +1725,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.set_solver_domain();
     elliptic_solver.getStateVar = getStatePhi;
     elliptic_solver.findStateAtCrossing = findStateAtCrossing;
-	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-	
-    paintAllGridPoint(TO_SOLVE);
-    setGlobalIndex();
-    setIndexMap();
-
-    elliptic_solver.ijk_to_I = ijk_to_I;
-    elliptic_solver.ilower = ilower;
-    elliptic_solver.iupper = iupper;
     elliptic_solver.skip_neumann_solver = skip_neumann_solver;
-    
-    elliptic_solver.solve(array);
-
-	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-
-    /*
+	
 	if (iFparams->with_porosity)
 	{
 	    paintAllGridPoint(TO_SOLVE);
@@ -1768,15 +1735,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         elliptic_solver.ijk_to_I = ijk_to_I;
         elliptic_solver.ilower = ilower;
         elliptic_solver.iupper = iupper;
-        elliptic_solver.skip_neumann_solver = skip_neumann_solver;
         elliptic_solver.solve(array);
 	}
     else
 	{	
+        paintAllGridPoint(NOT_SOLVED);
 	    int num_colors = drawColorMap();
         std::vector<int> ncell;
         ncell.resize(num_colors);
-        paintAllGridPoint(NOT_SOLVED);
+        
         for (i = 1; i < num_colors; ++i)
         {
             paintToSolveGridPoint2(i);
@@ -1792,15 +1759,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
             elliptic_solver.solve(array);
             paintSolvedGridPoint();
         }
-        //for (i = 1; i < num_colors; ++i)
-        //{
-        //    if (ncell[i] > 10) continue;
-        //    setIsolatedSoln(i,array);
-        //}
+        
+        for (i = 1; i < num_colors; ++i)
+        {
+            if (ncell[i] > 10) continue;
+            setIsolatedSoln(i,array);
+        }
 
 	}
+
 	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-    */
 
 	min_phi =  HUGE;
 	max_phi = -HUGE;
