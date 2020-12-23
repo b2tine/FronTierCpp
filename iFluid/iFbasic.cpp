@@ -4120,7 +4120,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
 
                 side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
 
-                /*
                 /////////////////////////////////////////////////////////////////
                 //TODO: an experiment
                 double jump_mudiv;
@@ -4141,8 +4140,9 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
 
                     //d_p += jump_mudiv - jump_q;
                 
+                //Try this one first 
+                d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
-                */
 
                 if (side <= 0)
                 {
@@ -4163,7 +4163,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                             " side = %f, nb = %d\n",coords[0],coords[1],coords[2],
                             crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
                     printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
-                    printf("d_p = %f, Un = %f\n",d_p, Un);
+                    printf("d_p = %f, Un = %f, jump_mudiv =%f\n",d_p, Un, jump_mudiv);
                 }
             }
         }
@@ -4261,7 +4261,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 
                 side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
 
-                /*
                 /////////////////////////////////////////////////////////////////
                 //TODO: an experiment
                 double jump_mudiv;
@@ -4282,9 +4281,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                     //d_p += jump_mudiv - jump_q;
                 
                 //Try this one first 
-                    //d_p += jump_mudiv
+                d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
-                */
                 
                 // modify pressure gradient
                 if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
@@ -4306,8 +4304,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 
                 if (debugging("pressure_drop"))
                 {
-                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f",
-                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un);
+                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f, jump_mudiv = %f\n",
+                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un,jump_mudiv);
                     printf("crds = [%f %f %f], crx = [%f %f %f], side = %f, nb = %d\n",
                             coords[0],coords[1],coords[2],
                             crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
