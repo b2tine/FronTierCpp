@@ -87,7 +87,10 @@ enum _PROJC_METHOD {
         SIMPLE			=  1,
         BELL_COLELLA,
         KIM_MOIN,
-        PEROT_BOTELLA
+        PEROT_BOTELLA,
+        PMI,
+        PMII,
+        PMIII
 };
 typedef enum _PROJC_METHOD PROJC_METHOD;
 
@@ -492,8 +495,7 @@ protected:
     std::vector<std::vector<double>> computeVelocityGradient(int* icoords);
 
     void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
-    /*void computeFieldPointGrad(int* icoords,double* field,
-            double* grad_field, bool is_phi_field = true);*/
+    void computeFieldPointGradQ(int* icoords, double* field, double* grad_field);
 
 	void checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
@@ -644,8 +646,6 @@ protected:
 
 extern int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
 
-extern double getStatePres(POINTER);
-extern double getStatePhi(POINTER);
 extern double getStateVort(POINTER);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
@@ -655,9 +655,19 @@ extern double getStateYimp(POINTER);
 extern double getStateZimp(POINTER);
 extern double getStateComp(POINTER);
 extern double getStateMu(POINTER);
+extern double getStateDens(POINTER);
 extern double getStateTemp(POINTER);
+
+extern double getStatePres(POINTER);
+extern double getStatePhi(POINTER);
+extern double getStateQ(POINTER);
+extern double getStateGradPhiX(POINTER);
+extern double getStateGradPhiY(POINTER);
+extern double getStateGradPhiZ(POINTER);
+
 extern double getPressure(Front*,double*,double*);
-extern double getPhiFromPres(Front*,double);
+extern double getPhiFromPres(Front* front, double pres);
+extern double getQFromPres(Front* front, double pres);
 
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);

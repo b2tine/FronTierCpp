@@ -134,6 +134,8 @@ int main(int argc, char **argv)
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+    l_cartesian->initMesh();
+    l_cartesian->writeMeshFileVTK();
 	
     //TODO: Why not use iFluid ambient_state()?
     //      Can specify an ambient velocity with input file option.
@@ -146,7 +148,6 @@ int main(int argc, char **argv)
         
     //set_is_fabric_run(YES);
     
-    l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
@@ -263,8 +264,6 @@ void airfoil_driver(Front *front,
 	    
         if (ReSetTime)
             setSpecialNodeForce(front,af_params->kl);
-        else
-            l_cartesian->writeMeshFileVTK();
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
@@ -356,9 +355,7 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
         {
             front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-            //TODO:necessary?
-            //
-            //front->dt = std::min(front->dt,springCharTimeStep(front));
+            front->dt = std::min(front->dt,springCharTimeStep(front));
         }
 
         if (debugging("step_size"))

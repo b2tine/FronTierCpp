@@ -7,6 +7,8 @@ struct STATE
     double dens;                /* Density */
     double pres;                /* Pressure */
     double phi;                 /* Potential */
+    double grad_phi[MAXD];      /* Gradient of Potential */
+    double q;                   /* approx pres */
     double vel[MAXD];           /* Velocity */
     //TODO: 3d vorticity
     double vort;                /* Magnitude of Vorticity in 2D */

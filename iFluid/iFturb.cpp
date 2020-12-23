@@ -359,9 +359,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                             "flowThroughBoundaryState") == 0)
                 {
                     //OUTLET
-                    //TODO: determine which is correct boundary condition...
                     vel_nb[nb] = intfc_state->vel[l];
-                        //vel_nb[nb] = vel[l][index];
                 }
                 else
                 {

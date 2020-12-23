@@ -47,8 +47,7 @@ Projection type can be
         PMII    (2)
         PMIII   (3)
         SIMPLE  (S)
-Enter projection type: SIMPLE
-Enter projection typeX: 3
+Enter projection type: 2
 
 Available elliptic methods are:
         Simple elliptic (S)
