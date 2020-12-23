@@ -896,8 +896,10 @@ static void print_airfoil_stat3d(
 	    print_airfoil_stat3d_2(front,out_name);
 	    break;
 	case MODEL3:
+	    printf("print_airfoil_stat3d_12() not implemented!\n");
+        break;
 	default:
-	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
+        break;
 	}
 
     //TODO: verify these computations

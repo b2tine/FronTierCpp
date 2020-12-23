@@ -121,6 +121,30 @@ extern double getStatePhi(POINTER state)
 	return fstate->phi;
 }	/* end getStatePhi */
 
+extern double getStateGradPhiX(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[0];
+}	/* end getStateGradPhiX */
+
+extern double getStateGradPhiY(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[1];
+}	/* end getStateGradPhiY */
+
+extern double getStateGradPhiZ(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[2];
+}	/* end getStateGradPhiZ */
+
+extern double getStateQ(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->q;
+}	/* end getStateQ */
+
 extern double getStateVort(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
@@ -169,11 +193,18 @@ extern double getStateMu(POINTER state)
 	return fstate->mu;
 }	/* end getStateMu */
 
+extern double getStateDens(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->dens;
+}	/* end getStateDens */
+
 extern double getStateTemp(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
 	return fstate->temperature;
 }	/* end getStateMTemp */
+
 
 extern void read_iF_dirichlet_bdry_data(
 	char *inname,
@@ -207,9 +238,11 @@ extern void read_iF_dirichlet_bdry_data(
 		    sprintf(msg,"For upper boundary in %d-th dimension",i);
 		CursorAfterString(infile,msg);
 		(void) printf("\n");
-		promptForDirichletBdryState(infile,front,&hs,i_hs);
+		
+        promptForDirichletBdryState(infile,front,&hs,i_hs);
 		i_hs++;
-	    }
+	    
+        }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
             {
 		HYPER_SURF **hss;
@@ -389,6 +422,8 @@ extern void iF_timeDependBoundaryState(
 	}
 }	/* end iF_timeDependBoundaryState */
 
+//TODO: 1. Update q and phi in these functions.
+//      2. Viscous terms in tangential direction
 extern void iF_flowThroughBoundaryState(
         double          *p0,
         HYPER_SURF      *hs,
@@ -517,11 +552,20 @@ static void iF_flowThroughBoundaryState3d(
 
 	    for (i = 0; i < dim; ++i)
 	    {
-	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	    }
 	    newst->pres += - dt/dn*f_pres;
 	}
-	if (debugging("flow_through"))
+
+
+    /*
+    //TODO: Is this reasonably correct?
+    //      What about the divergence term?
+    newst->q = oldst->pres;
+    newst->phi = oldst->phi;
+    */
+
+    if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
@@ -649,16 +693,20 @@ static void iF_flowThroughBoundaryState2d(
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 
 	for (i = 0; i < dim; ++i)
-	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	newst->vort += - dt/dn*f_vort;
 	newst->pres += - dt/dn*f_pres;
-	
-    if (newst->pres < 0.0)
-    {
-        newst->pres = oldst->pres;
-    }
 
-	if (debugging("flow_through"))
+    
+    /*
+    //TODO: Is this reasonably correct?
+    //      What about the divergence term?
+    newst->q = oldst->pres;
+    newst->phi = oldst->phi;
+	*/
+
+
+    if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
@@ -750,11 +798,12 @@ static  void neumann_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
 	/*
+    newst->q = oldst->pres;
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	*/
 	if (dim == 2)
-	{
+        {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
@@ -795,9 +844,11 @@ static  void dirichlet_point_propagate(
 	    newst = (STATE*)right_state(newp);
 	    comp = positive_component(oldhs);
 	}
-	setStateViscosity(iFparams,newst,comp);
-	if (newst == NULL) return;	// node point
+    setStateViscosity(iFparams,newst,comp);
+	
+    if (newst == NULL) return;	// node point
 
+    //Constant State
 	if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
@@ -809,10 +860,11 @@ static  void dirichlet_point_propagate(
 	    }
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
+        newst->vort = 0.0;
 
         newst->pres = bstate->pres;
 	    newst->phi = bstate->phi;
-            newst->vort = 0.0;
+	    newst->q = bstate->q;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
@@ -1239,6 +1291,7 @@ extern void read_iFparams(
 	    (void) printf("%d\n",iFparams->adv_order);
 	}
 
+    //TODO: better input file names and output
     CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
@@ -1250,15 +1303,21 @@ extern void read_iFparams(
 	    break;
 	case 'B':
 	case 'b':
-	    iFparams->num_scheme.projc_method = BELL_COLELLA;
+	case '1':
+	    iFparams->num_scheme.projc_method = PMI;
+	    //iFparams->num_scheme.projc_method = BELL_COLELLA;
 	    break;
 	case 'K':
 	case 'k':
-	    iFparams->num_scheme.projc_method = KIM_MOIN;
+	case '2':
+	    iFparams->num_scheme.projc_method = PMII;
+	    //iFparams->num_scheme.projc_method = KIM_MOIN;
 	    break;
 	case 'P':
 	case 'p':
-	    iFparams->num_scheme.projc_method = PEROT_BOTELLA;
+	case '3':
+	    iFparams->num_scheme.projc_method = PMIII;
+	    //iFparams->num_scheme.projc_method = PEROT_BOTELLA;
 	}
 	assert(iFparams->num_scheme.projc_method != ERROR_PROJC_SCHEME);
 	
@@ -1526,6 +1585,7 @@ static void get_parabolic_state_params(
             fscanf(infile,"%lf",&parab_st_params->state.temperature);
             (void) printf("%f\n",parab_st_params->state.temperature);
         }
+
         parab_st_params->state.phi = getPhiFromPres(front,
                         parab_st_params->state.pres);
 }	/* end get_parabolic_state_params */
@@ -1836,19 +1896,57 @@ extern double grad_p_jump_t(
 	return 0.0;
 }	/* end grad_p_jump_t */
 
-//TODO: I think they really meant getQFromPres
+//TODO: This should be used for updating boundary states only.
+//      Should not be used for initialization.
 extern double getPhiFromPres(
         Front *front,
         double pres)
 {
     IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    /*
+    IF_FIELD* field = iFparams->field;
+    double* div_U = field->div_U;
+    double* mu = field->mu;
+    double* q = field->q;
+    */
+
     switch (iFparams->num_scheme.projc_method)
     {
-        case BELL_COLELLA:
+        case PMI:
+        case PMII:
+            /*if (!isbdry)
+                return pres - q[index] + 0.5*mu[index]*div_U[index];
+            else
+                return 0.0;*/
+            //return pres;
+            return 0.0;
+        case SIMPLE:
+        case PMIII:
+            /*if (!isbdry)
+                return pres + 0.5*mu[index]*div_U[index];
+            else
+                return pres;*/
+            //return 0.0;
+            return pres;
+        default:
+            (void) printf("Unknown projection type\n");
+            clean_up(0);
+    }
+}       /* end getPhiFromPres */
+
+extern double getQFromPres(
+        Front *front,
+        double pres)
+{
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+
+    switch (iFparams->num_scheme.projc_method)
+    {
+        case PMI:
+        case PMII:
             return pres;
         case SIMPLE:
-        case KIM_MOIN:
-        case PEROT_BOTELLA:
+        case PMIII:
             return 0.0;
         default:
             (void) printf("Unknown projection type\n");
@@ -1870,8 +1968,7 @@ extern double getPressure(
         double rho = iFparams->rho2;
         boolean hyper_surf_found = NO;
 
-        
-        //return 0.0;
+        return 0.0;
         
         //TODO: Does below work???
         //
@@ -1889,6 +1986,7 @@ extern double getPressure(
 
         pres0 = 0.0;
         //pres0 = 1.0;
+        
         if (dim == 2)
         {
             CURVE **c;
@@ -1900,6 +1998,7 @@ extern double getPressure(
                     p0 = (*c)->first->start;
                     pres0 = getStatePres(boundary_state(*c));
                     hyper_surf_found = YES;
+                    break;
                 }
             }
         }
@@ -1914,20 +2013,32 @@ extern double getPressure(
                     p0 = Point_of_tri(first_tri(*s))[0];
                     pres0 = getStatePres(boundary_state(*s));
                     hyper_surf_found = YES;
+                    break;
                 }
             }
         }
+        
         pres = pres0;
+        //return pres;
+        
+        //TODO: 
         if (hyper_surf_found)
         {
+            //NOTE: Assume g = {0,0,-9.8} is standard gravity.
+            //      Then if the inlet pressure is prescribed at the
+            //      lower z boundary, points in the domain above
+            //      will have lower pressure.
             for (i = 0; i < dim; ++i)
-                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+                pres += rho*(coords[i] - Coords(p0)[i])*g[i];
+                //pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
         }
         else if (base_coords != NULL)
         {
             for (i = 0; i < dim; ++i)
-                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+                pres += rho*(coords[i] - Coords(p0)[i])*g[i];
+                //pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
         }
+
         return pres;
 }       /* end getPressure */
 
@@ -2395,11 +2506,12 @@ static void setStateViscosity(
 	}
 }
 
+//TODO: Ensure boundary state phi and q are being set
 static void promptForDirichletBdryState(
 	FILE *infile,
 	Front *front,
 	HYPER_SURF **hs,
-        int i_hs)
+    int i_hs)
 {
 	static STATE *state;
 	char s[100];
@@ -2428,8 +2540,11 @@ static void promptForDirichletBdryState(
 	    FT_InsertDirichletBoundary(front,NULL,NULL,
 			NULL,(POINTER)state,*hs,i_hs);
 	    
-        //TODO: this should be called in setInitialCondition() instead of here
+        //TODO: are these valid values?
         state->phi = getPhiFromPres(front,state->pres);
+        state->q = state->pres;
+        //state->q = getQFromPres(front,state->pres);
+
 	    break;
 	case 'f':			// Flow through state
 	case 'F':
