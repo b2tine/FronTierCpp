@@ -197,8 +197,9 @@ extern void elastic_point_propagate(
             //TODO: Use newsl->pres and newsr->pres
             //      where the interpolated values are stored??
             //      Carefully study this....
+            
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-                //dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
+            //dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
                 
                 //TODO: zgao code has this instead (multiply by dt)
                 //  dv[i] = (sl->pres - sr->pres)*nor[i]*dt/area_dens;

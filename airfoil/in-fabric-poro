@@ -13,7 +13,7 @@ Upper boundary in 2-th dimension: DIRICHELT_BOUNDARY
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 10
+Enter velocity: 0 0 65
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -82,7 +82,7 @@ Enter yes to install boundary on each side: no
 Enter yes to attach strings to canopy: n
 
 Enter payload: 0.0
-Enter area density of canopy: 1.0
+Enter area density of canopy: 0.1
 
 Enter fabric spring constant: 1000
 Enter fabric damping constant: 0.01
@@ -119,6 +119,7 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: max_speed
 Enter the debugging string: PETSc
+Enter the debugging stringX: pressure_drop
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK

@@ -4067,7 +4067,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
             iFparams->rho2 : field->rho[index];
 
         int max_nb = (dim == 2) ? 4 : 6;
-        for (nb = 0; nb < max_nb; nb ++)
+        for (nb = 0; nb < max_nb; nb++)
         {
             is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
                                   top_comp[index],nor,&hs,crx_coords);
@@ -4141,7 +4141,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                     //d_p += jump_mudiv - jump_q;
                 
                 //Try this one first 
-                d_p += jump_mudiv;
+                //d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
 
                 if (side <= 0)
@@ -4159,11 +4159,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
             
                 if (debugging("pressure_drop"))
                 {
+                    printf("\ncomputeFieldPointPressureJump()\n");
                     printf("crds = [%f %f %f], crx = [%f %f %f],"
                             " side = %f, nb = %d\n",coords[0],coords[1],coords[2],
                             crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
                     printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
-                    printf("d_p = %f, Un = %f, jump_mudiv =%f\n",d_p, Un, jump_mudiv);
+                    printf("d_p = %f, Un = %f, jump_mudiv = %f, jump_q = %f\n",
+                            d_p, Un, jump_mudiv, jump_q);
                 }
             }
         }
@@ -4281,7 +4283,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                     //d_p += jump_mudiv - jump_q;
                 
                 //Try this one first 
-                d_p += jump_mudiv;
+                //d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
                 
                 // modify pressure gradient
@@ -4304,8 +4306,10 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 
                 if (debugging("pressure_drop"))
                 {
-                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f, jump_mudiv = %f\n",
-                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un,jump_mudiv);
+                    printf("\ncomputeFieldPointGradJump()\n");
+                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f, "
+                            "jump_mudiv = %f, jump_q = %f\n",
+                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un,jump_mudiv,jump_q);
                     printf("crds = [%f %f %f], crx = [%f %f %f], side = %f, nb = %d\n",
                             coords[0],coords[1],coords[2],
                             crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
