@@ -403,7 +403,9 @@ public:
 	double **var;		/* field variable of old step */
 	double **soln;		/* field variable of new step */
 	double **source;	/* source field */
-	
+    
+    double **adv_term;	
+    
     double *rho;
 	double rho1;
 	double rho2;
@@ -414,11 +416,11 @@ public:
     int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
 	double (*getStateVel[3])(POINTER);
-    double (*getStateMu)(POINTER);
 
 	void (*numericalFlux)(SWEEP*,FSWEEP*,double,int,int,int);
 
 	void solveRungeKutta();
+    void computeAdvectionTerm();
 
 private:
         // Dimension

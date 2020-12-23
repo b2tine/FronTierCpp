@@ -1099,8 +1099,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
-	//solver.SetTol(1.0e-05);//rtol = 1.0e-05 is petsc default value
-	//solver.SetTol(1.0e-10);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 

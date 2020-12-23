@@ -35,6 +35,75 @@ HYPERB_SOLVER::HYPERB_SOLVER(Front &front):front(&front)
 	porosity = 0.0;
 }
 
+void HYPERB_SOLVER::computeAdvectionTerm()
+{
+        static boolean first = YES;
+        int i,j,l;
+
+        /* Allocate memory for Runge-Kutta of order */
+        start_clock("solveRungeKutta");
+        setSolverDomain();
+
+        if (first)
+        {
+            first = NO;
+            FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
+
+            FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+            FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+
+            FT_MatrixMemoryAlloc((POINTER*)&st_tmp.vel,dim,size,sizeof(double));
+            for (i = 0; i < order; ++i)
+            {
+                FT_MatrixMemoryAlloc((POINTER*)&st_field[i].vel,dim,size,
+                                sizeof(double));
+                FT_MatrixMemoryAlloc((POINTER*)&st_flux[i].vel_flux,dim,size,
+                                sizeof(double));
+                FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
+                                sizeof(double));
+            }
+            /* Set coefficient a, b, c for different order of RK method */
+            switch (order)
+            {
+            case 1:
+                b[0] = 1.0;
+                nrad = 1;
+                break;
+            case 2:
+                a[0][0] = 1.0;
+                b[0] = 0.5;  b[1] = 0.5;
+                nrad = 2;
+                break;
+            case 4:
+                a[0][0] = 0.5;
+                a[1][0] = 0.0;  a[1][1] = 0.5;
+                a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
+                b[0] = 1.0/6.0;  b[1] = 1.0/3.0;
+                b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+                nrad = 3;
+                break;
+            case 5:
+                nrad = 3;
+                break;
+            default:
+                (void)printf("ERROR: %d-th order RK method not implemented\n",
+                                        order);
+                clean_up(ERROR);
+            }
+        }
+
+        /* Compute flux and advance field */
+        copyToMeshVst(&st_field[0]);
+        computeMeshFlux(st_field[0],&st_flux[0]);
+	for (i = 0; i < size; i++)
+	for (l = 0; l < dim; l++)
+	if (dt != 0)
+	    adv_term[l][i] = st_flux[0].vel_flux[l][i]/dt;
+	else
+	    adv_term[l][i] = 0.0;
+}
+
 void HYPERB_SOLVER::solveRungeKutta()
 {
 	static boolean first = YES;
