@@ -27,7 +27,7 @@ Projection type can be
         PMII    (2)
         PMIII   (3)
         SIMPLE  (S)
-Enter projection type: SIMPLE
+Enter projection type: 3
 
 Enter the center of the circle: 0.275 0.492 
 Enter radius of the circle: 0.075
