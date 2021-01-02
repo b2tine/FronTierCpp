@@ -178,10 +178,11 @@ struct IF_PARAMS
 	boolean if_ref_pres {NO};
 	double  ref_pres;
 	double  Amplitute; 	/*Amplitute of velocity*/
-	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
-        
+	
+    boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
     double  porous_coeff[2];   /*dp = a*v + b*v^2*/
-	double	porosity;
+	double	porosity {0.0};
+
 	char base_dir_name[200];
     int base_step;
 	boolean scalar_field; /*include scalar field or not*/

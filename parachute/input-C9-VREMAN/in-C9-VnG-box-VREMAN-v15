@@ -33,7 +33,8 @@ Projection type can be
         KIM_MOIN
         PEROT_BOTELLA
 
-Enter projection type: SIMPLE
+Enter projection type: 3
+Enter projection typeXXX: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.0001813
 Enter gravity: 0 0 -9.8
@@ -81,8 +82,9 @@ Entering yes to turn off fluid solver: no
 Enter timestep to activate FSI: 5
 
 Enter yes to use porosity: yes
-Enter viscous parameter: 0.261498
-Enter inertial parameter: 42.6026
+Enter porosity: 0.025
+Enter viscous parameter: 0.147734
+Enter inertial parameter: 42.0934
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300

@@ -785,6 +785,8 @@ void CollisionSolver3d::detectCollision()
 	if (is_collision) 
 	    computeImpactZone();
     stop_clock("computeImpactZone");
+
+	std::cout << "End collision handling. " << std::endl;
 }
 
 //Note: num has default value of 4,

@@ -23,6 +23,7 @@ enum
     NEUMANN_PDE_BOUNDARY,
     DIRICHLET_PDE_BOUNDARY,
     MOVING_BOUNDARY,
+    POROUS_BOUNDARY,
     MIXED_PDE_BOUNDARY
 };
 
@@ -399,7 +400,7 @@ public:
 	COMPONENT soln_comp1;
 	COMPONENT soln_comp2;
 	COMPONENT obst_comp;
-	double porosity;
+	double porosity {0.0};
 	double **var;		/* field variable of old step */
 	double **soln;		/* field variable of new step */
 	double **source;	/* source field */

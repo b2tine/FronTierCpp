@@ -225,6 +225,8 @@ int af_find_state_at_crossing(
                 return CONST_P_PDE_BOUNDARY;
             else
                 return CONST_V_PDE_BOUNDARY;
+        /*case ELASTIC_BOUNDARY:
+            return POROUS_BOUNDARY;*/
         }
     }
     //TODO: this should return CONST_V_PDE_BOUNDARY
@@ -289,7 +291,7 @@ static boolean is_pore(
 	SURFACE **s;
 	TRI *tri;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double gamma = af_params->gamma;
+	double gamma = af_params->porosity;
 	static int current_step = -1;
 
 	if (front->rect_grid->dim != 3) return NO;

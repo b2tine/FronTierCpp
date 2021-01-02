@@ -864,9 +864,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 //U_nb_prev[nb] = 0.0;
                 //mu_nb_prev[nb] = 0.0;
 
-                if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                            &intfc_state,&hs,crx_coords) &&
-                        wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
+                int intfc_crx = (*findStateAtCrossing)(front,icoords,
+                        dir[nb],comp,&intfc_state,&hs,crx_coords);
+                
+                if (intfc_crx && wave_type(hs) != FIRST_PHYSICS_WAVE_TYPE)
                 {
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -911,6 +912,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //NOTE: This is just a no-slip boundary condition.
                         }
                     }
+                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        U_nb[nb] = vel[l][index_nb[nb]];
+                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                    }
                     else
                     {
                         printf("Unknown Boundary Type!\n");
@@ -924,7 +930,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 }
                 else
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
@@ -950,7 +955,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
        
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY when used with af_findcrossing
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
@@ -990,6 +994,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                        rhs += coeff[nb]*U_nb[nb];
                     }
                     else
                     {

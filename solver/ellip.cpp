@@ -413,9 +413,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                     &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
             {
-                //NOTE: Includes ELASTIC_BOUNDARY when used with af_findcrossing
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
@@ -894,7 +893,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
             {
                 //NOTE: Includes ELASTIC_BOUNDARY when af_findcrossing used
                 solver.Set_A(I,I_nb[l],coeff[l]);

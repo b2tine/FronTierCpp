@@ -32,9 +32,9 @@ Enter interior propagator: p
 Enter interior sub step number: 10
 
 Enter yes to use porosity: yes
-Enter porosity: 0.03
-Enter viscous parameter: 13.5984
-Enter inertial parameter: 101.404
+Enter porosity: 0.1
+Enter viscous parameter: 0.316077
+Enter inertial parameter: 2.54032
 
 Enter density and viscosity of the fluid: 1.0 0.001
 Enter gravity: 0.0 0.0 0.0

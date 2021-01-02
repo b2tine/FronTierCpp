@@ -412,7 +412,7 @@ double computeWallVelocity(
         double rho)
 {
     SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
-    double u_wall_initialguess = u_tan;//TODO: method for better initial guess?
+    double u_wall_initialguess = 0.5*u_tan;//TODO: method for better initial guess?
     double u_wall = wallfunc.solve(u_wall_initialguess);
     return u_wall;
 }

@@ -88,6 +88,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 	
     hyperb_solver.rho1 = iFparams->rho1;
 	hyperb_solver.rho2 = iFparams->rho2;
+	
+    hyperb_solver.porosity = iFparams->porosity;
 
 	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
 	hyperb_solver.getStateVel[0] = getStateXvel;
@@ -776,8 +778,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             //TODO: Can we really just ignore the ELASTIC_BOUNDARY entirely??
             for (nb = 0; nb < 6; nb++)
             {
-                if ((*findStateAtCrossing)(front,icoords,dir[nb],comp,
-                                    &intfc_state,&hs,crx_coords))
+                int intfc_crx = (*findStateAtCrossing)(front,icoords,
+                        dir[nb],comp,&intfc_state,&hs,crx_coords);
+
+                if (intfc_crx)
                 {
                     if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
@@ -814,6 +818,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //NOTE: This is just a no-slip boundary condition.
                         }
                     }
+                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        U_nb[nb] = vel[l][index_nb[nb]];
+                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                    }
                     else
                     {
                         printf("Unknown Boundary Type!\n");
@@ -828,7 +837,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 }
                 else
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
@@ -855,7 +863,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    //NOTE: Includes ELASTIC_BOUNDARY when used with af_findcrossing
                     solver.Set_A(I,I_nb[nb],-coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
                 }
@@ -882,6 +889,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         //TODO: see comments in iFcartsn2d.cpp computeDiffusionCN()
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
+                    }
+                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
+                    {
+                        solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                        rhs += coeff[nb]*U_nb[nb];
                     }
                     else
                     {
@@ -1375,7 +1387,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
         index = d_index3d(i,j,k,top_gmax);
         mu0 = field->mu[index];
         pres[index] = phi[index] - 0.5*mu0*div_U[index];
-            //pres[index] = phi[index] - 0.5*accum_dt*mu0*div_U[index];
+            //pres[index] = phi[index] - 0.5*mu0*div_U[index];
 	    q[index] = 0.0;
 
 	    if (min_pressure > pres[index])
