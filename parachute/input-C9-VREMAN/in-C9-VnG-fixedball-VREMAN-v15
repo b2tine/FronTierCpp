@@ -84,13 +84,13 @@ Entering yes to turn off fluid solver: no
 Enter timestep to activate FSI: 5
 
 Enter yes to use porosity: yes
-Enter viscous parameter: 64.333
-Enter inertial parameter: 50.0
+Enter viscous parameter: 0.261498
+Enter inertial parameter: 42.6026
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
-Enter interior sub step number: 50
-Enter area density of canopy: 5.0
+Enter interior sub step number: 10
+Enter area density of canopy: 1.0
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01

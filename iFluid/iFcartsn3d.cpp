@@ -1390,6 +1390,39 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	    (void) printf("Leaving computePressurePmIII()\n");
 }        /* end computePressurePmIII3d */
 
+void Incompress_Solver_Smooth_3D_Cartesian::computePressureSimple(void)
+{
+    int i,j,k,index;
+    double mu0;
+    double *rho = field->rho;
+	double *pres = field->pres;
+	double *phi = field->phi;
+	double *q = field->q;
+	double *div_U = field->div_U;
+
+	if (debugging("trace"))
+	    (void) printf("Entering computePressureSimple()\n");
+    for (k = 0; k <= top_gmax[2]; k++)
+	for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+	{
+        index = d_index3d(i,j,k,top_gmax);
+        mu0 = field->mu[index];
+        pres[index] = phi[index];
+	    q[index] = 0.0;
+
+	    if (min_pressure > pres[index])
+            min_pressure = pres[index];
+	    if (max_pressure < pres[index])
+            max_pressure = pres[index];
+	}
+
+    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+
+	if (debugging("trace"))
+	    (void) printf("Leaving computePressureSimple()\n");
+}        /* end computePressureSimple */
+
 //TODO: Make another pressure update that just sets pres = phi
 
 //TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
@@ -1421,9 +1454,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	case PMII:
 	    computePressurePmII();
 	    break;
-	case SIMPLE:
 	case PMIII:
 	    computePressurePmIII();
+	    break;
+	case SIMPLE:
+	    computePressureSimple();
 	    break;
 	case ERROR_PROJC_SCHEME:
 	default:

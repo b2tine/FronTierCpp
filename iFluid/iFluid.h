@@ -582,6 +582,7 @@ protected:
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
+	void computePressureSimple(void);
 	
     void computeGradientQ(void);
 	void computeNewVelocity(void);
@@ -612,23 +613,30 @@ public:
         void vtk_plot_scalar(char*, const char*);
 
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computePressure(void);
-	void computePressurePmI(void);
+	
+    void computePressure(void);
+    void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
+	void computePressureSimple(void);
+
 	void computeGradientQ(void);
-	//void computeGradientPhi();
+	    //void computeGradientPhi();
 	void computeNewVelocity(void);
 	void updateComponent(void);
 	void extractFlowThroughVelocity(void);

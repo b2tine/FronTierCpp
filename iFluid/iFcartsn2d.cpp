@@ -1157,6 +1157,46 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 	}
 }        /* end computePressurePmIII */
 
+void Incompress_Solver_Smooth_2D_Cartesian::computePressureSimple(void)
+{
+    int i,j,index;
+    double mu0;
+	double *rho = field->rho;
+	double *pres = field->pres;
+	double *phi = field->phi;
+	double *q = field->q;
+	double *div_U = field->div_U;
+
+	if (debugging("field_var"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+	    {
+            index = d_index2d(i,j,top_gmax);
+            field->old_var[0][index] = pres[index];
+	    }
+	}
+	
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+	{
+        index = d_index2d(i,j,top_gmax);
+        mu0 = field->mu[index];
+        pres[index] = phi[index];
+        q[index] = 0.0;
+	}
+
+	FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+	FT_ParallelExchGridArrayBuffer(q,front,NULL);
+
+	if (debugging("field_var"))
+	{
+	    (void) printf("\nCheck one step increment of Pressure:\n");
+	    computeVarIncrement(field->old_var[0],pres,NO);
+	    (void) printf("\n");
+	}
+}        /* end computePressureSimple */
+
 //TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
 void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 {
@@ -1168,9 +1208,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 	case PMII:
 	    computePressurePmII();
 	    break;
-    case SIMPLE:
 	case PMIII:
 	    computePressurePmIII();
+	    break;
+    case SIMPLE:
+	    computePressureSimple();
 	    break;
 	case ERROR_PROJC_SCHEME:
 	default:

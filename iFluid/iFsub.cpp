@@ -1919,8 +1919,8 @@ extern double getPhiFromPres(
             else
                 return 0.0;*/
             return pres;
-        case SIMPLE:
         case PMIII:
+        case SIMPLE:
             /*if (!isbdry)
                 return pres + 0.5*mu[index]*div_U[index];
             else
@@ -1943,8 +1943,8 @@ extern double getQFromPres(
         case PMI:
         case PMII:
             return pres;
-        case SIMPLE:
         case PMIII:
+        case SIMPLE:
             return 0.0;
         default:
             (void) printf("Unknown projection type\n");

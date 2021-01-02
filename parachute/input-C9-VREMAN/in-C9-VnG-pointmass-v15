@@ -73,7 +73,7 @@ Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
 Enter interior sub step number: 10
-Enter area density of canopy: 5.0
+Enter area density of canopy: 1.0
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
