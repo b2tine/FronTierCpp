@@ -5269,16 +5269,18 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             coords_nip,intrp_coeffs,&hsurf_elem,&hsurf,range);
 
     double dist_ghost = distance_between_positions(coords_ghost,coords_nip,dim);
-    //double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
+    double dist_reflect = distance_between_positions(coords_reflect,coords_nip,dim);
     
     //TODO: Should we set dist_reflect to length of grid block diagonal?
     //      how does FT_GridSizeInDir() or the previous method differ? 
     
+    /*
     // Compute dist_reflect as the diagonal length of rect grid blocks
     double dist_reflect = 0.0;
     for (int j = 0; j < 3; ++j)
          dist_reflect += sqr(top_h[j]);
     dist_reflect = sqrt(dist_reflect);
+    */
 
     ////////////////////////////////////////////////////////////////////////
     //Temp debugging

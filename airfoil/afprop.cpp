@@ -236,7 +236,7 @@ extern void elastic_point_propagate(
         //TODO: zgao code has this instead
         //  newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i] + dv[i];
         //
-        //  however fluid_accel is not considered, so current code likely correct.
+        //  however fluid_accel was not defined, so current code likely correct.
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
 	}
