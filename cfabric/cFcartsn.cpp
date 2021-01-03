@@ -632,21 +632,25 @@ void G_CARTESIAN::solveRungeKutta(int order)
 
 	copyToMeshVst(&st_field[0]);
 	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
+    
+    //TODO: Add function computeMeshViscFlux(),
+    //      and add to the total mesh flux appropriately.
 	
 	for (i = 0; i < order-1; ++i)
 	{
 	    copyMeshVst(st_field[0],&st_field[i+1]);
 	    for (j = 0; j <= i; ++j)
 	    {
-		if (a[i][j] != 0.0)
-		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+            if (a[i][j] != 0.0)
+                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
 	    }
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1],delta_t);
 	}
+
 	for (i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
-		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+            addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	}
 	copyFromMeshVst(st_field[0]);
 	stop_clock("solveRungeKutta");
