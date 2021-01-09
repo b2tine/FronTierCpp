@@ -977,9 +977,10 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    scalar(&blk_cell,sizeof(INTRP_CELL));
 	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,
-						sizeof(double));
+	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+	    bi_array(&blk_cell->icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
 	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
+	    bi_array(&blk_cell->ip_lin,MAXD+1,MAXD,sizeof(int));
 	    uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
 	    lin_cell_tol = 1.0;
 	    for (i = 0; i < dim; ++i)
@@ -995,7 +996,7 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    	if (debugging("the_pt"))
 		    printf("Using default interpolate\n");
 	    	*ans = *default_ans;
-		return YES;
+		    return YES;
 	    }
 	    else
 	    {
@@ -1026,6 +1027,7 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    if (debugging("the_pt"))
 		printf("Using default interpolate\n");
 	    *ans = *default_ans;
+        return YES;
 	}
 	else
 	{
@@ -1230,6 +1232,7 @@ LOCAL boolean build_linear_element(
 	double *vars = blk_cell->var;
 	double **p = blk_cell->p_lin;
 	double *var = blk_cell->var_lin;
+	int **ip = blk_cell->ip_lin;
 	int i,j,k,l,nv = blk_cell->nv;
 	double dist[MAX_NUM_VERTEX_IN_CELL];
 	double dp[MAX_NUM_VERTEX_IN_CELL][MAXD];
@@ -1272,41 +1275,47 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
+		    {
 	    	    p[1] = blk_cell->coords[j];
+	    	    ip[1] = blk_cell->icoords[j];
 	    	    var[1] = blk_cell->var[j];
-		    if (test_point_in_seg(coords,p) == YES)
-	    		return FUNCTION_SUCCEEDED;
-		}
+		        if (test_point_in_seg(coords,p) == YES)
+                    return FUNCTION_SUCCEEDED;
+		    }
 	    }
 	    break;
 	case 2:
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
-	    	    p[1] = blk_cell->coords[j];
-	    	    var[1] = blk_cell->var[j];
-		    for (k = j+1; k < nv; k++)
-		    {
-	    	    	p[2] = blk_cell->coords[k];
-	    	    	var[2] = blk_cell->var[k];
-			if (test_point_in_tri(coords,p) == YES)
-	    		    return FUNCTION_SUCCEEDED;
-		    }
-		}
+            {
+                p[1] = blk_cell->coords[j];
+                ip[1] = blk_cell->icoords[j];
+                var[1] = blk_cell->var[j];
+                for (k = j+1; k < nv; k++)
+                {
+                    p[2] = blk_cell->coords[k];
+                    ip[2] = blk_cell->icoords[k];
+                    var[2] = blk_cell->var[k];
+                    if (test_point_in_tri(coords,p) == YES)
+                        return FUNCTION_SUCCEEDED;
+                }
+            }
 	    }
 	    if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 3; i++)
-		{
+		    {
 	    	    p[i] = blk_cell->coords[i];
+	    	    ip[i] = blk_cell->icoords[i];
 	    	    var[i] =  blk_cell->var[i];
-		}
+		    }
 	    	return FUNCTION_SUCCEEDED;
 	    }
 	    break;
@@ -1314,28 +1323,45 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] = blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
-	    	    p[1] = blk_cell->coords[j];
-	    	    var[1] = blk_cell->var[j];
-		    for (k = j+1; k < nv; k++)
-		    {
-	    	    	p[2] = blk_cell->coords[k];
-	    	    	var[2] = blk_cell->var[k];
-			for (l = k+1; l < nv; l++)
-			{
-	    	    	    p[3] = blk_cell->coords[l];
-	    	    	    var[3] = blk_cell->var[l];
-			    if (test_point_in_tetra(coords,p) == YES)
-			    {
-	    		        return FUNCTION_SUCCEEDED;
-			    }
-			}
-		    }
-		}
+            {
+                p[1] = blk_cell->coords[j];
+                ip[1] = blk_cell->icoords[j];
+                var[1] = blk_cell->var[j];
+                for (k = j+1; k < nv; k++)
+                {
+                    p[2] = blk_cell->coords[k];
+                    ip[2] = blk_cell->icoords[k];
+                    var[2] = blk_cell->var[k];
+                    for (l = k+1; l < nv; l++)
+                    {
+                        p[3] = blk_cell->coords[l];
+                        ip[3] = blk_cell->icoords[l];
+                        var[3] = blk_cell->var[l];
+                        if (test_point_in_tetra(coords,p) == YES)
+                        {
+                            return FUNCTION_SUCCEEDED;
+                        }
+                    }
+                }
+            }
 	    }
-	}
+        /*
+        //TODO: Is this acceptable? Why only used in 2d currently?
+	    if (extrapolation_permitted == YES)
+	    {
+	    	for (i = 0; i < 4; i++)
+		    {
+	    	    p[i] = blk_cell->coords[i];
+	    	    ip[i] = blk_cell->icoords[i];
+	    	    var[i] =  blk_cell->var[i];
+		    }
+	    	return FUNCTION_SUCCEEDED;
+	    }
+        */
+    }
 	return FUNCTION_FAILED;
 }	/* end build_linear_element */
 
@@ -1380,6 +1406,7 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp1d[i] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 		    blk_cell->var[nv] = grid_array[index];
 		    blk_cell->dist[nv] = distance_between_positions(coords,
@@ -1400,6 +1427,8 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp2d[i][j] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
+	    	    blk_cell->icoords[nv][1] = ic[1];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
 		    blk_cell->var[nv] = grid_array[index];
@@ -1423,6 +1452,9 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp3d[i][j][k] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
+	    	    blk_cell->icoords[nv][1] = ic[1];
+	    	    blk_cell->icoords[nv][2] = ic[2];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
 	    	    blk_cell->coords[nv][2] = L[2] + ic[2]*h[2];
@@ -1457,6 +1489,7 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->dist[nv] = distance_between_positions(
 					coords,blk_cell->coords[nv],dim);
@@ -1482,6 +1515,8 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->dist[nv] = distance_between_positions(
@@ -1503,6 +1538,8 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->dist[nv] = distance_between_positions(
@@ -1537,6 +1574,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -1553,6 +1593,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -1569,6 +1612,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -2148,6 +2194,7 @@ EXPORT	boolean FrontGetRectCellIntrpCoeffs(
 	    coeffs[3] = (p[0]-c1[0])*(p[1]-c1[1])/denominator;
 	    break;
 	case 3:
+        //TODO: implement
 	    break;
 	}
 	return YES;
@@ -4118,24 +4165,36 @@ LOCAL void sort_blk_cell(
 	double var_tmp;
 	double dist_tmp;
 	double coords_tmp[MAXD];
+	int icoords_tmp[MAXD];
 
 	for (i = 0; i < nv-1; ++i)
 	for (j = i; j < nv; ++j)
 	{
 	    if (blk_cell->dist[i] > blk_cell->dist[j])
 	    {
-		var_tmp  = blk_cell->var[i];
-		dist_tmp = blk_cell->dist[i];
-		for (k = 0; k < dim; ++k)
-		    coords_tmp[k] = blk_cell->coords[i][k];
-		blk_cell->var[i]  = blk_cell->var[j];
-		blk_cell->dist[i] = blk_cell->dist[j];
-		for (k = 0; k < dim; ++k)
-		    blk_cell->coords[i][k] = blk_cell->coords[j][k];
-		blk_cell->var[j]  = var_tmp;
-		blk_cell->dist[j] = dist_tmp;
-		for (k = 0; k < dim; ++k)
-		    blk_cell->coords[j][k] = coords_tmp[k];
+            var_tmp  = blk_cell->var[i];
+            dist_tmp = blk_cell->dist[i];
+            for (k = 0; k < dim; ++k)
+            {
+                coords_tmp[k] = blk_cell->coords[i][k];
+                icoords_tmp[k] = blk_cell->icoords[i][k];
+            }
+        
+            blk_cell->var[i]  = blk_cell->var[j];
+            blk_cell->dist[i] = blk_cell->dist[j];
+            for (k = 0; k < dim; ++k)
+            {
+                blk_cell->coords[i][k] = blk_cell->coords[j][k];
+                blk_cell->icoords[i][k] = blk_cell->icoords[j][k];
+            }
+
+            blk_cell->var[j]  = var_tmp;
+            blk_cell->dist[j] = dist_tmp;
+            for (k = 0; k < dim; ++k)
+            {
+                blk_cell->coords[j][k] = coords_tmp[k];
+                blk_cell->icoords[j][k] = icoords_tmp[k];
+            }
 	    }
 	}
 }
