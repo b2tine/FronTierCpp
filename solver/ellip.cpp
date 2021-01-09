@@ -1072,9 +1072,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //which will serve as the ghost point pressure.
                 double pres_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&pres_reflect,&soln[index]);
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
                         getStateVar,&pres_reflect,nullptr);//default_ans is intfc state
-                /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,&soln[index]);*/
+                        // but intfc state may not have a valid phi ...
+                */
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.

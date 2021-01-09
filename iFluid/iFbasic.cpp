@@ -3346,6 +3346,11 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     double phi_reflect;
                     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
                             getStatePhi,&phi_reflect,&field_array[index]);
+                    /*
+                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                            getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
+                            // but intfc state may not have a valid phi ...
+                    */
 
                     p_edge[idir][nb] = phi_reflect;
                 }
