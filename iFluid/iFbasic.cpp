@@ -4146,7 +4146,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                     //d_p += jump_mudiv - jump_q;
                 
                 //Try this one first 
-                //d_p += jump_mudiv;
+                d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
 
                 if (side <= 0)
@@ -4288,7 +4288,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                     //d_p += jump_mudiv - jump_q;
                 
                 //Try this one first 
-                //d_p += jump_mudiv;
+                d_p += jump_mudiv;
                 /////////////////////////////////////////////////////////////////
                 
                 // modify pressure gradient
