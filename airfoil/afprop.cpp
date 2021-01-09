@@ -1370,10 +1370,9 @@ static void rg_string_node_propagate(
             accel[i] = 0.0;
 	}
 
-    //TODO: was previously -= g[i], and gravity is already directed...
 	for (i = 0; i < dim; ++i)
 	    accel[i] += g[i];
-	        //accel[i] -= g[i];
+            //accel[i] -= g[i]; //TODO: Is this correct???
 
     if (debugging("rigid_body"))
     {

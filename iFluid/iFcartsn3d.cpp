@@ -802,8 +802,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     {
                         if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
                         {
-                            //TODO: Add option to use no-slip boundary instead where
-                            //          vel_nb[nb] = intfc_state->vel[l];
+                            //TODO: Check to use no-slip boundary instead where
+                            //
+                            //          if (no_slip(hs))
+                            //          {
+                            //              vel_nb[nb] = intfc_state->vel[l];
+                            //          }
+                            //          else
+                            //          {
+                            //              use slip bdry like below ...
+                            //          }
 
                             double v_slip[MAXD] = {0.0};
                             int idir = nb/2; int nbr = nb%2;
