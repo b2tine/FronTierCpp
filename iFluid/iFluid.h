@@ -197,6 +197,7 @@ struct IF_PARAMS
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
     double C_v;     //Vreman model constant
+    boolean use_no_slip {NO};
 };
 
 struct _FLOW_THROUGH_PARAMS {

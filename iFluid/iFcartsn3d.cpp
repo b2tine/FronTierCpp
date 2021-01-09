@@ -801,7 +801,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
+                        if (iFparams->use_no_slip)//temporary
+                        {
+                            //NO_SLIP
+                            U_nb[nb] = getStateVel[l](intfc_state);
+                        }
+                        else if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
                         {
                             //TODO: Check to use no-slip boundary instead where
                             //
