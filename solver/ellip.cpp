@@ -290,11 +290,27 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-    static PETSc solver;
+    //static PETSc solver;
 	static double *x;
 	static bool first = true;
 
 	int size = iupper - ilower;
+
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+
+    PETSc solver;
+    solver.Create(ilower, iupper-1, 5, 5);
+
+    /*
+    //TODO: below is not efficient for moving objects,
+    //      because the matrix nonzero structure changes
+    //      resulting in petsc needing to allocate new
+    //      memory for new locations of non zero entries.
+    //      Even if there are still just 5 nonzeros per row
+    //      every time step, the location changes and petsc
+    //      allocates for the new position.
+    
     if (first)
     {
         solver.Create(ilower, iupper-1, 5, 5);
@@ -348,6 +364,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         solver.SetPrevSolnInitialGuess();
         for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
     }
+    */
 	
     if (debugging("trace"))
             printf("Enterng solve2d()\n");
@@ -555,12 +572,17 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //which will serve as the ghost point pressure.
                 double pres_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,&soln[index]);
+                        getStateVar,&pres_reflect,nullptr);//default_ans is interface state
+                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                            getStateVar,&pres_reflect,&soln[index]);*/
+                
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.
                 //
                 //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
+                //      (This function would only work for bilinear intrp 
+                //          i.e. no grid crxing)
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*pres_reflect; 
@@ -799,11 +821,25 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
-    static PETSc solver;
+    //static PETSc solver;
 	static double *x;
 	static bool first = true;
 	
     int size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+        
+    PETSc solver;
+    solver.Create(ilower, iupper-1, 7, 7);
+    
+    /*
+    //TODO: below is not efficient for moving objects,
+    //      because the matrix nonzero structure changes
+    //      resulting in petsc needing to allocate new
+    //      memory for new locations of non zero entries.
+    //      Even if there are still just 7 nonzeros per row
+    //      every time step, the location changes and petsc
+    //      allocates for the new position.
     
     if (first)
     {
@@ -826,6 +862,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         solver.SetPrevSolnInitialGuess();
         for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
     }
+    */
 	
     solver.Reset_A();
 	solver.Reset_b();
@@ -1035,7 +1072,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //which will serve as the ghost point pressure.
                 double pres_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,&soln[index]);
+                        getStateVar,&pres_reflect,nullptr);//default_ans is intfc state
+                /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&pres_reflect,&soln[index]);*/
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
                 //      used to interpolate at the reflected point into the matrix.

@@ -695,8 +695,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusion(void)
 {
-	return computeDiffusionCN();
-}	/* end computeDiffusion */
+    return computeDiffusionCN();
+	    //return computeDiffusionImplicit();
+}
 
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
@@ -1511,7 +1512,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
         if (debugging("PETSc"))
         {
-            printf("L_CARTESIAN::computeDiffusionCN: "
+            printf("L_CARTESIAN::computeDiffusionImplicit: "
                     "num_iter = %d, residual = %g\n",
                     num_iter,residual);
         }
@@ -1537,6 +1538,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	    (void) printf("Leaving Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionImplicit()\n");
 }       /* end computeDiffusionImplicit */
+
+//TODO: PmI and PmII use a lagged pressure term (q) and require solving
+//      a poisson problem for the pressure as a startup step.
+//      The poisson problem is obtained by taking the divergence of
+//      the momentum equation.
 
 // q = p^{n-1/2} , L = I
 //   --> p^{n+1/2} = p^{n-1/2} + phi^{n+1}
@@ -1672,6 +1678,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 	    (void) printf("Leaving computePressurePmIII()\n");
 }        /* end computePressurePmIII3d */
 
+/*
 void Incompress_Solver_Smooth_3D_Cartesian::computePressureSimple(void)
 {
     int i,j,k,index;
@@ -1705,7 +1712,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressureSimple(void)
 
 	if (debugging("trace"))
 	    (void) printf("Leaving computePressureSimple()\n");
-}        /* end computePressureSimple */
+}*/        /* end computePressureSimple */
 
 //TODO: Make another pressure update that just sets pres = phi
 
@@ -1739,11 +1746,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    computePressurePmII();
 	    break;
 	case PMIII:
+	case SIMPLE:
 	    computePressurePmIII();
 	    break;
-	case SIMPLE:
+	/*case SIMPLE:
 	    computePressureSimple();
-	    break;
+	    break;*/
 	case ERROR_PROJC_SCHEME:
 	default:
 	    (void) printf("Unknown computePressure() scheme!\n");

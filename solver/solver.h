@@ -341,6 +341,8 @@ class ELLIPTIC_SOLVER
         double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
         double* rho;
 
+	    COMPONENT obst_comp;
+        
         void set_solver_domain(void);
         void solve(double *soln);
         void dsolve(double *soln);
