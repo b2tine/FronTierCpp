@@ -197,7 +197,7 @@ struct IF_PARAMS
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
     double C_v;     //Vreman model constant
-    boolean use_no_slip {NO};
+    boolean use_no_slip {NO};//TODO: default should be YES
 };
 
 struct _FLOW_THROUGH_PARAMS {
@@ -362,6 +362,11 @@ public:
         void setSlipBoundaryGNOR(int* icoords, int idir, int nb, int comp,
                 HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
     
+    std::vector<double> computeGradPhiTangential(int* icoords,
+            GRID_DIRECTION dir, COMPONENT comp, HYPER_SURF *hs,
+            double* crx_coords);
+
+
     //For debugging test
 	void compareWithBaseSoln(void);
         void readBaseFront(IF_PARAMS *,int i);

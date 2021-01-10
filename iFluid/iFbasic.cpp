@@ -3140,6 +3140,10 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                         u_edge[idir][nb] = vel_reflect[idir];
                         */
                     }
+                    else
+                    {
+                        u_edge[idir][nb] = field_array[idir][index_nb];
+                    }
                 }
             }
         }
@@ -3233,7 +3237,9 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         double *field_array,
         double *grad_field)
 {
-    int index,index_nb,icnb[MAXD];
+    int index,index_nb, icnb[MAXD];
+    int icnb_opp1[MAXD], icnb_opp2[MAXD];
+    int index_oppnb1, index_oppnb2;
     COMPONENT comp;
     int i,j,idir,nb;
 	double p_edge[3][2],p0;
@@ -3259,7 +3265,11 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	for (idir = 0; idir < dim; idir++)
 	{
 	    for (j = 0; j < dim; ++j)
+        {
 	    	icnb[j] = icoords[j];
+            icnb_opp1[j] = icoords[j];
+            icnb_opp2[j] = icoords[j];
+        }
 
 	    for (nb = 0; nb < 2; nb++)
 	    {
@@ -3290,6 +3300,28 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                 {
+                    /*
+                    //TODO: Since we only use gradient of phi to update
+                    //      velocity points in the domain interior can we
+                    //      use the one sided (extrapolated) 3pt derivative
+                    //      as we do for the divergence computation?
+                    //
+                    //      Don't think this is appropriate since the gradient
+                    //      of phi is prescribed at the boundary. Results also
+                    //      do not appear to be an improvement.
+                    
+                    //Use one sided 3pt derivative
+                    icnb_opp1[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
+                    index_oppnb1 = d_index(icnb_opp1,top_gmax,dim);
+                    double p_oppnb1 = field_array[index_oppnb1];
+                    
+                    icnb_opp2[idir] = (nb == 0) ? icoords[idir] + 2 : icoords[idir] - 2;
+                    index_oppnb2 = d_index(icnb_opp2,top_gmax,dim);
+                    double p_oppnb2 = field_array[index_oppnb2];
+
+                    p_edge[idir][nb] = 3.0*p0 - 3.0*p_oppnb1 + p_oppnb2;
+                    */
+
                     //grad(phi) dot normal = 0
                     int icoords_ghost[MAXD];
                     for (int m = 0; m < dim; ++m)
@@ -3346,18 +3378,18 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     double phi_reflect;
                     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
                             getStatePhi,&phi_reflect,&field_array[index]);
-                    /*
-                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
-                            getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
-                            // but intfc state may not have a valid phi ...
-                    */
+                    //
+                    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                    //        getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
+                    //        // but intfc state may not have a valid phi ...
+                    //
 
                     p_edge[idir][nb] = phi_reflect;
                 }
-                /*else
+                else
                 {
                     p_edge[idir][nb] = p0;
-                }*/
+                }
             }
 	    }
 	}
@@ -5089,6 +5121,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
             //vn_phi += grad_phi[j][index]*nor[j];
     }
     
+    //TODO: This is now handled in computeDiffusionCN() by calling the
+    //      function computeGradPhiTangential(). Should be removed when
+    //      certain implementation is correct.
+    
     double grad_phi_tan[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
     {
@@ -5477,5 +5513,30 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         printf("\n");
     }
     */
+}
+
+std::vector<double> Incompress_Solver_Smooth_Basis::computeGradPhiTangential(
+        int* icoords,
+        GRID_DIRECTION dir,
+        COMPONENT comp,
+        HYPER_SURF *hs,
+        double* crx_coords)
+{
+    double** grad_phi = field->grad_phi;
+    int index = d_index(icoords,top_gmax,dim);
+    
+    double nor[MAXD] = {0.0};
+    FT_NormalAtGridCrossing(front,icoords,dir,
+            comp,nor,&hs,crx_coords);
+
+    double vn = 0.0;
+    for (int j = 0; j < dim; ++j)
+        vn += grad_phi[j][index]*nor[j];
+
+    std::vector<double> grad_phi_tangent(3,0.0);
+    for (int j = 0; j < dim; ++j) 
+        grad_phi_tangent[j] = grad_phi[j][index] - vn*nor[j];
+
+    return grad_phi_tangent;
 }
 

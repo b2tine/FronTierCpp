@@ -721,9 +721,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	double aII;
     double *x;
 
-	double **vel = field->vel;
-	double **f_surf = field->f_surf;
-    double **grad_q = field->grad_q;
+	double** vel = field->vel;
+	double** f_surf = field->f_surf;
+    double** grad_q = field->grad_q;
+    double** grad_phi = field->grad_phi;
 	
 	if (debugging("trace"))
 	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
@@ -831,6 +832,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                             //NOTE: This is just a no-slip boundary condition.
                         }
+
+                        //TODO: Need to apply tangential boundary condition
+                        //      to intermediate velocity:
+                        //
+                        //      T dot u^{*} = T dot (u^{n+1}_{bdry} + dt*grad_phi/rho)
+
+                        auto grad_phi_tangent = computeGradPhiTangential(
+                                icoords,dir[nb],comp,hs,crx_coords);
+
+                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+
                     }
                     else if (wave_type(hs) == ELASTIC_BOUNDARY)
                     {

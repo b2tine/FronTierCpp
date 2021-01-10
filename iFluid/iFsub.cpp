@@ -1376,7 +1376,6 @@ extern void read_iFparams(
             (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
 	}
 
-    //iFparams->use_no_slip = YES;//TODO: default should be use no-slip for walls/rigid bodies
 	iFparams->use_eddy_visc = NO;
     if (CursorAfterStringOpt(infile,
                 "Enter yes to use eddy viscosity:"))
@@ -1430,6 +1429,9 @@ extern void read_iFparams(
                     clean_up(ERROR);
             }
 
+            //TODO: Should be opposite default setting for general use.
+            //
+            //      "Enter yes to use slip wall boundary condition:"
             iFparams->use_no_slip = NO;
             if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
             {

@@ -802,9 +802,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     double aII;
     double *x;
     
-    double **vel = field->vel;
-    double **f_surf = field->f_surf;
-    double **grad_q = field->grad_q;
+    double** vel = field->vel;
+    double** f_surf = field->f_surf;
+    double** grad_q = field->grad_q;
+    double** grad_phi = field->grad_phi;
 
     if (debugging("trace"))
         (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
@@ -842,7 +843,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             I  = ij_to_I[i][j];
             if (I == -1) continue;
 
-            index  = d_index2d(i,j,top_gmax);
+            index = d_index2d(i,j,top_gmax);
             index_nb[0] = d_index2d(i-1,j,top_gmax);
             index_nb[1] = d_index2d(i+1,j,top_gmax);
             index_nb[2] = d_index2d(i,j-1,top_gmax);
@@ -917,6 +918,34 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                             //NOTE: This is just a no-slip boundary condition.
                         }
+
+                        //TODO: Need to apply tangential boundary condition
+                        //      to intermediate velocity:
+                        //
+                        //      T dot u^{*} = T dot (u^{n+1}_{bdry} + dt*grad_phi/rho) 
+                        
+                        auto grad_phi_tangent = computeGradPhiTangential(
+                                icoords,dir[nb],comp,hs,crx_coords);
+
+                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+
+                            /*
+                            //TODO: Remove when certain computeGradPhiTangential()
+                            //      working correctly. Replaces below.
+                            
+                            double nor[MAXD] = {0.0};
+                            FT_NormalAtGridCrossing(front,icoords,dir[nb],
+                                    comp,nor,&hs,crx_coords);
+
+                            double vn = 0.0;
+                            for (int m = 0; m < dim; ++m)
+                                vn += grad_phi[m][index]*nor[m];
+
+                            double grad_phi_tangent[MAXD] = {0.0};
+                            for (int m = 0; m < dim; ++m)
+                                grad_phi_tangent[m] = grad_phi[m][index] - vn*nor[m];
+                            */
+
                     }
                     else if (wave_type(hs) == ELASTIC_BOUNDARY)
                     {
