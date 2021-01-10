@@ -40,6 +40,8 @@ public:
             if (fabs(fval) < TOL) return un;
 
             un = un - f(un)/fprime(un);
+            
+            //TODO: check if nan, inf, or less than zero
         }
 
         //TODO: better debugging output
