@@ -5027,8 +5027,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 	}
     
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
-    double dist_reflect = FT_GridSizeInDir(nor,front);
-        //double dist_reflect = 0.5*FT_GridSizeInDir(nor,front);
+    double dist_reflect = 1.25*FT_GridSizeInDir(nor,front);
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
