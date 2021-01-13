@@ -915,15 +915,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             U_nb[nb] = v_slip[l];                //n+1 vel
                                 //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
                         }
-                        /*
-                        else
-                        {
-                            //TODO: Without this rayleigh-taylor with NEUMANN boundaries
-                            //      crashes for some reason.
-                            U_nb[nb] = getStateVel[l](intfc_state);
-                            //NOTE: This is just a no-slip boundary condition.
-                        }
-                        */
                     }
                     else
                     {
@@ -931,7 +922,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         LOC(); clean_up(EXIT_FAILURE);
                     }
 
-                    if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+                    }
+
+                    if (neumann_type_bdry(wave_type(hs)))
                     {
                         //TODO: Need to apply tangential boundary condition
                         //      to intermediate velocity:

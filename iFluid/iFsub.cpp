@@ -561,7 +561,8 @@ static void iF_flowThroughBoundaryState3d(
     //TODO: Is this reasonably correct? -- see rationale below
     newst->phi = newst->pres;
     newst->q = 0.0;
-        //newst->q = oldst->pres;
+        //state->q = getQFromPres(front,oldst->pres);
+            //newst->q = oldst->pres;
         //newst->phi -= newst->q;
     
     
@@ -719,7 +720,8 @@ static void iF_flowThroughBoundaryState2d(
     //TODO: Is this reasonably correct? -- see rationale below
     newst->phi = newst->pres;
     newst->q = 0.0;
-        //newst->q = oldst->pres;
+        //state->q = getQFromPres(front,oldst->pres);
+            //newst->q = oldst->pres;
         //newst->phi -= newst->q;
     
     
@@ -832,11 +834,9 @@ static  void neumann_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
-    newst->q = oldst->pres;
-	/*
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
-			getStatePhi,&newst->phi,&oldst->phi);
-	*/
+    newst->phi = oldst->phi;
+    newst->q = 0.0;
+        //newst->q = oldst->pres;
 	
     if (dim == 2)
     {
@@ -900,8 +900,9 @@ static  void dirichlet_point_propagate(
         newst->vort = 0.0;
 
         newst->pres = bstate->pres;
-	    newst->q = bstate->pres;
         newst->phi = bstate->pres;
+	    newst->q = 0.0;
+	        //newst->q = bstate->pres;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
@@ -951,6 +952,7 @@ static  void dirichlet_point_propagate(
         return;
 }	/* end dirichlet_point_propagate */
 
+//TODO: Need to set phi here????
 static  void contact_point_propagate(
         Front *front,
         POINTER wave,
@@ -2592,9 +2594,9 @@ static void promptForDirichletBdryState(
 			NULL,(POINTER)state,*hs,i_hs);
 	    
         //TODO: are these valid values?
-        state->phi = 0.0;
-            //state->phi = getPhiFromPres(front,state->pres);
-        state->q = getQFromPres(front,state->pres);
+        state->phi = state->pres;
+        state->q = 0.0;
+            //state->q = getQFromPres(front,state->pres);
 
 	    break;
 	case 'f':			// Flow through state

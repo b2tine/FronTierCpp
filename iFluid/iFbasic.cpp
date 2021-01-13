@@ -3298,6 +3298,10 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     //INLET
                     p_edge[idir][nb] = getStatePhi(intfc_state);
                 }
+                else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+                {
+                    p_edge[idir][nb] = p0;
+                }
                 else if (!is_bdry_hs(hs) && 
                          (wave_type(hs) == NEUMANN_BOUNDARY ||
                           wave_type(hs) == MOVABLE_BODY_BOUNDARY))
@@ -3387,11 +3391,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                     //
 
                     p_edge[idir][nb] = phi_reflect;
-                }
-                else
-                {
-                    //NEUMANN_BOUNDARY on domain hypersurface
-                    p_edge[idir][nb] = p0;
                 }
             }
 	    }
