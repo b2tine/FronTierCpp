@@ -474,7 +474,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
     double rho;
 	COMPONENT comp;
 	int icoords[MAXD];
-	double **vel = field->vel;
+	
+    double **vel = field->vel;
+	double **prev_vel = field->prev_vel;
 	double **grad_phi = field->grad_phi;
 	double *phi = field->phi;
 
@@ -517,18 +519,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
         //TODO: May need to check for inlet and enforce the constant
         //      inlet velocity at first grid point from boundary.
 
-        vel[0][index] -= accum_dt*point_grad_phi[0]/rho;
-        vel[1][index] -= accum_dt*point_grad_phi[1]/rho;
-
         for (int l = 0; l < dim; ++l)
+        {
             grad_phi[l][index] = point_grad_phi[l];
+            vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
+            prev_vel[l][index] = vel[l][index];
+        }
+
 	}
 
-	FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
-	
     //extractFlowThroughVelocity();
 	//computeVelDivergence();
+	
+    FT_ParallelExchGridVectorArrayBuffer(vel,front);
+	FT_ParallelExchGridVectorArrayBuffer(prev_vel,front);
+	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 
 	if (debugging("check_div"))
     {
@@ -578,7 +583,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 {
 	static boolean first = YES;
-	double **vel = field->vel;
 	if (first)
 	{
 	    accum_dt = 0.0;
@@ -757,6 +761,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
             vort[index] = 0.0;
             pres[index] = 0.0;
             q[index] = 0.0;
+            //phi[index] = 0.0;//?
         }
 	    else
         {
@@ -791,8 +796,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     
     double source[MAXD];
     double U_nb[4];
-    //double U_nb_prev[4];
-    //double mu_nb_prev[4];
+    double U_nb_prev[4];
     
     GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
     POINTER intfc_state;
@@ -806,6 +810,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     double *x;
     
     double** vel = field->vel;
+    double** prev_vel = field->prev_vel;
     double** f_surf = field->f_surf;
     double** grad_q = field->grad_q;
     double** grad_phi = field->grad_phi;
@@ -821,17 +826,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     size = iupper - ilower;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
 
-	if (debugging("field_var"))
-	{
-	    for (j = jmin; j <= jmax; j++)
-	    for (i = imin; i <= imax; i++)
-	    {
-	    	index = d_index2d(i,j,top_gmax);
-		    field->old_var[0][index] = vel[0][index];
-		    field->old_var[1][index] = vel[1][index];
-	    }
-	}
-	
     for (l = 0; l < dim; ++l)
 	{
         PETSc solver;
@@ -866,8 +860,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 
             for (nb = 0; nb < 4; nb++)
             {
-                //U_nb_prev[nb] = 0.0;
-                //mu_nb_prev[nb] = 0.0;
+                U_nb_prev[nb] = 0.0;
 
                 int intfc_crx = (*findStateAtCrossing)(front,icoords,
                         dir[nb],comp,&intfc_state,&hs,crx_coords);
@@ -881,6 +874,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                                     "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
+                            STATE* fstate = (STATE*)intfc_state;
+                            U_nb_prev[nb] = fstate->vel_old[l];
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         else
@@ -888,27 +883,22 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
-
-                        //TODO: for inlet/outlet should the update include the
-                        //      normal component? i.e.
-                        //
-                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
-                        
-                        /*
-                        auto grad_phi_tangent = computeGradPhiTangential(
-                                icoords,dir[nb],comp,hs,crx_coords);
-
-                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-                        */
                     }
-                    else if (neumann_type_bdry(wave_type(hs)))
+                    else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+                    {
+                        //TODO: this should get handled in the same way as interior wall bdrys
+                        U_nb[nb] = getStateVel[l](intfc_state);
+                            //U_nb[nb] = vel[l][index];
+                            //U_nb_prev[nb] = prev_vel[l][index];
+                    }
+                    else if (!is_bdry_hs(hs) && neumann_type_bdry(wave_type(hs)))
                     {
                         if (iFparams->use_no_slip)//temporary
                         {
                             //NO_SLIP
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
-                        else if (!is_bdry_hs(hs))//TODO: handle another way -- we want to include these (see below)
+                        else//TODO: handle another way -- we want to include these (see below)
                         {
                             //TODO: Add option to use no-slip boundary instead where
                             //          vel_nb[nb] = intfc_state->vel[l];
@@ -924,8 +914,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
                             U_nb[nb] = v_slip[l];                //n+1 vel
                                 //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
-                                //mu_nb_prev[nb] = 1.0/2.0*(mu0 + field->mu[index_nb[nb]]);
                         }
+                        /*
                         else
                         {
                             //TODO: Without this rayleigh-taylor with NEUMANN boundaries
@@ -933,7 +923,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                             //NOTE: This is just a no-slip boundary condition.
                         }
+                        */
+                    }
+                    else
+                    {
+                        printf("Unknown Boundary Type!\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
 
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
+                    {
                         //TODO: Need to apply tangential boundary condition
                         //      to intermediate velocity:
                         //
@@ -941,36 +940,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
-
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-
-                            /*
-                            //TODO: Remove when certain computeGradPhiTangential()
-                            //      working correctly. Replaces below.
-                            
-                            double nor[MAXD] = {0.0};
-                            FT_NormalAtGridCrossing(front,icoords,dir[nb],
-                                    comp,nor,&hs,crx_coords);
-
-                            double vn = 0.0;
-                            for (int m = 0; m < dim; ++m)
-                                vn += grad_phi[m][index]*nor[m];
-
-                            double grad_phi_tangent[MAXD] = {0.0};
-                            for (int m = 0; m < dim; ++m)
-                                grad_phi_tangent[m] = grad_phi[m][index] - vn*nor[m];
-                            */
-
-                    }
-                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
-                    {
-                        U_nb[nb] = vel[l][index_nb[nb]];
-                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
-                    }
-                    else
-                    {
-                        printf("Unknown Boundary Type!\n");
-                        LOC(); clean_up(EXIT_FAILURE);
                     }
 
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
@@ -991,12 +961,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::
             coeff[2] = 0.5*m_dt*mu[2]/rho/(top_h[1]*top_h[1]);
             coeff[3] = 0.5*m_dt*mu[3]/rho/(top_h[1]*top_h[1]);
 
-            getRectangleCenter(index, coords);
-            computeSourceTerm(coords, source);
+            getRectangleCenter(index,coords);
+            computeSourceTerm(coords,source);
 
             //first equation  decoupled, some terms may be lost
             aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3];
             rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3])*vel[l][index];
+                //rhs = vel[l][index] - (coeff[0]+coeff[1]+coeff[2]+coeff[3])*prev_vel[l][index];
 
             for (nb = 0; nb < 4; nb++)
             {
@@ -1005,8 +976,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
        
                 if (status == NO_PDE_BOUNDARY)
                 {
-                    solver.Set_A(I,I_nb[nb],-coeff[nb]);
+                    solver.Set_A(I,I_nb[nb],-1.0*coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
+                        //rhs += coeff[nb]*U_nb_prev[nb];
                 }
                 else
                 {
@@ -1017,10 +989,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
+                                    //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                                 //rhs += coeff[nb]*U_nb[nb]; //u^n val
-                                //solver.Set_A(I,I_nb[nb],-coeff[nb]);
                                 //aII -= coeff[nb];
-                                //rhs += coeff[nb]*U_nb[nb];
                         }
                         else
                         {
@@ -1044,11 +1015,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         
                         //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
-                    }
-                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
-                    {
-                        solver.Set_A(I,I_nb[nb],-coeff[nb]);
-                        rhs += coeff[nb]*U_nb[nb];
+                            //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                     }
                     else
                     {

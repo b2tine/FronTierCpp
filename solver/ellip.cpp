@@ -300,70 +300,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     PETSc solver;
     solver.Create(ilower, iupper-1, 5, 5);
 
-    /*
-    //TODO: below is not efficient for moving objects,
-    //      because the matrix nonzero structure changes
-    //      resulting in petsc needing to allocate new
-    //      memory for new locations of non zero entries.
-    //      Even if there are still just 5 nonzeros per row
-    //      every time step, the location changes and petsc
-    //      allocates for the new position.
-    
-    if (first)
-    {
-        solver.Create(ilower, iupper-1, 5, 5);
-
-        //TODO: Above Matrix allocation overkill?
-        //      5 nonzero entries per row in diagonal blocks,
-        //      and 5 nonzero entries per row in off-diagonal blocks.
-        //
-        //      Below failed for serial run; inadequate nonzero entries
-        //      when allocate 3 nonzero entries per row in diagonal blocks,
-        //      and 2 nonzero entries per row in off-diagonal blocks.
-        //
-        //  solver.Create(ilower, iupper-1, 3, 2);
-        //
-        //      This may however be correct for parallel runs ...
-
-        //  For serial runs:
-        //
-        //  solver.Create(ilower, iupper-1, 5, 4);//This works
-        //  solver.Create(ilower, iupper-1, 5, 3);//This also works
-        //  solver.Create(ilower, iupper-1, 5, 2);//This works too
-        //  solver.Create(ilower, iupper-1, 5, 1);//this too
-        //  solver.Create(ilower, iupper-1, 5, 0);//TODO:test this to confirm below
-        //
-        //      It appears (and petsc manual suggests) that for
-        //      serial runs the matrix MatCreateAIJ() actually calls
-        //      MatCreateSeqAIJ() which only takes a single arg for
-        //      the number of nonzero entries per row.
-        //
-        //TODO: In light of the above discussion, we may be able to obtain
-        //      a speed up for parallel runs by using:
-        //
-        //      if (pp_numnodes() > 1)
-        //          solver.Create(ilower, iupper-1, 3, 2);
-        //      else
-        //          solver.Create(ilower, iupper-1, 5, 0);
-        //
-        //
-        //TODO: Further improvements to performance may be obtained by
-        //      modifying the PETSc::Create() method with currently calls
-        //      MatCreateAIJ() -- See petsc manual for optimal spares
-        //      matrix creation and memory allocation procedures.
-        //      According to the manual 50x speed up is possible for some
-        //      systems with the proper preallocation procedure.
-
-	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-        first = false;
-    }
-    else
-    {
-        solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
-    }
-    */
-	
     if (debugging("trace"))
             printf("Enterng solve2d()\n");
 	
@@ -427,15 +363,20 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                     &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY)
             {
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
-            else if (status == CONST_V_PDE_BOUNDARY &&
-                      (wave_type(hs) == NEUMANN_BOUNDARY ||
-                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
+                //NEUMANN_BOUNDARY on domain hypersurface bdry
+                //  do nothing
+            }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            { 
                 //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
                 for (int m = 0; m < dim; ++m)
@@ -565,13 +506,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 */
 
 
-                //Interpolate the pressure at the reflected point,
-                //which will serve as the ghost point pressure.
-                double pres_reflect;
+                //Interpolate phi at the reflected point,
+                double phi_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,nullptr);//default_ans is interface state
-                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&pres_reflect,&soln[index]);*/
+                        getStateVar,&phi_reflect,&soln[index]);
                 
                 //TODO: getStateVar() returns phi which is what we are solving for.
                 //      More correct method would place the weights of the points
@@ -582,12 +520,12 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //          i.e. no grid crxing)
 
                 aII += -coeff[l];
-                rhs -= coeff[l]*pres_reflect; 
+                rhs -= coeff[l]*phi_reflect; 
 
                 //TODO: Does this need to be set here, or does this only refer
                 //      to rectangular domain boundaries?
                 //      
-                // use_neumann_solver = NO;
+                use_neumann_solver = NO;
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -640,7 +578,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
 	solver.SetMaxIter(40000);
-    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+    solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -825,38 +763,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     PETSc solver;
     solver.Create(ilower, iupper-1, 7, 7);
     
-    /*
-    //TODO: below is not efficient for moving objects,
-    //      because the matrix nonzero structure changes
-    //      resulting in petsc needing to allocate new
-    //      memory for new locations of non zero entries.
-    //      Even if there are still just 7 nonzeros per row
-    //      every time step, the location changes and petsc
-    //      allocates for the new position.
-    
-    if (first)
-    {
-        //TODO: See discussion on petsc matrix initialization.
-        //      The following may offer better performance for
-        //      parallel runs.
-        //
-        //      if (pp_numnodes() > 1)
-        //          solver.Create(ilower, iupper-1, 3, 4);
-        //      else
-        //          solver.Create(ilower, iupper-1, 7, 0);
-        //
-	    
-        solver.Create(ilower, iupper-1, 7, 7);
-	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-        first = false;
-    }
-    else
-    {
-        solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
-    }
-    */
-	
     solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -923,7 +829,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY)
             {
                 //NOTE: Includes ELASTIC_BOUNDARY when af_findcrossing used
                 solver.Set_A(I,I_nb[l],coeff[l]);
@@ -1061,14 +967,13 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 */
 
 
-                //Interpolate the pressure at the reflected point,
-                //which will serve as the ghost point pressure.
-                double pres_reflect;
+                //Interpolate phi at the reflected point,
+                double phi_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,&soln[index]);
+                        getStateVar,&phi_reflect,&soln[index]);
                 /*
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,nullptr);//default_ans is intfc state
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
                         // but intfc state may not have a valid phi ...
                 */
                 //TODO: getStateVar() returns phi which is what we are solving for.
@@ -1078,7 +983,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
 
                 aII += -coeff[l];
-                rhs -= coeff[l]*pres_reflect; 
+                rhs -= coeff[l]*phi_reflect; 
                 
                 //TODO: Does this need to be set here, or does this only refer
                 //      to rectangular domain boundaries?
@@ -1132,7 +1037,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	}
 
 	solver.SetMaxIter(40000);
-    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+    solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 
