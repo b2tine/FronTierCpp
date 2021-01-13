@@ -64,8 +64,8 @@ private:
         double kup = K*u_plus;
 
         double val = y*u - nu*u_plus*u_plus
-                    - nu*u_plus*exp(-K*B)*((exp(kup) - 1.0) - kup
-                            - 0.5*kup*kup - 1.0/6.0*kup*kup*kup);
+                    - nu*exp(-K*B)*((exp(kup) - 1.0) - kup
+                            - 0.5*kup*kup - 1.0/6.0*kup*kup*kup)*u_plus;
         
         return val;
     }

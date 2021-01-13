@@ -802,10 +802,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
                         
+                        //TODO: for inlet/outlet should the update include the
+                        //      normal component? i.e.
+                        //
+                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+
+                        /*
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
 
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+                        */
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {

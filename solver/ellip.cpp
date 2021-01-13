@@ -409,7 +409,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     
             if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
             {
-                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
 
