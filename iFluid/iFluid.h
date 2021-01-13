@@ -63,6 +63,7 @@ typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct IF_FIELD {
 	double **vel;			/* Velocities */
+	double **prev_vel;
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
@@ -431,7 +432,7 @@ protected:
 
     //TODO: should rename this to avoid confusion/collision with the macro in geom.h
 	//member data: mesh storage
-	std::vector<IF_RECTANGLE>   cell_center;
+	std::vector<IF_RECTANGLE> cell_center;
 
 	//member data:
 	int    m_comp[2];

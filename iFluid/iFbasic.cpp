@@ -501,7 +501,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 		    FT_FreeThese(15,array,source,diff_coeff,field->mu,
 				field->rho,field->pres,field->phi,field->grad_phi,
                 field->q,field->div_U,field->vort,field->vel,
-				field->grad_q,field->f_surf,domain_status);
+                field->prev_vel,field->grad_q,field->f_surf,domain_status);
 		    if (debugging("field_var"))
 		    	FT_FreeThese(1,field->old_var);
 		    FT_FreeThese(1,field);
@@ -526,6 +526,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,2,size,
+					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,2,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->vort,size,
 					sizeof(double));
@@ -553,8 +555,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 		{
 		    FT_FreeThese(16,field,array,source,diff_coeff,field->mu,
 				field->rho,field->pres,field->phi,field->grad_phi,
-                field->q,field->div_U,field->vel,field->vorticity,
-				field->grad_q,field->f_surf,domain_status);
+                field->q,field->div_U,field->vel,field->prev_vel,
+                field->vorticity,field->grad_q,field->f_surf,domain_status);
 		}
 		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
 		iFparams->field = field;
@@ -577,15 +579,20 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,
 					sizeof(double));
+	    	FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,3,size,
+					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,
 					sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,
 					sizeof(double));
 	    	FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,3,size,
 					sizeof(double));
-            /*FT_MatrixMemoryAlloc((POINTER*)&field->old_var,2,size,
-					sizeof(double));*/
 	    	FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
+		if (debugging("field_var"))
+		{
+	    	    FT_MatrixMemoryAlloc((POINTER*)&field->old_var,3,size,
+					sizeof(double));
+		}
 		current_size = size;
 	    }
 	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
@@ -2982,7 +2989,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                 {
                     //OUTLET
                     u_edge[idir][nb] = getStateVel[idir](intfc_state);
-                        //u_edge[idir][nb] = u0; 
                 }
                 else if (status == CONST_V_PDE_BOUNDARY)
                 {
@@ -3140,10 +3146,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                         u_edge[idir][nb] = vel_reflect[idir];
                         */
                     }
-                    else
-                    {
-                        u_edge[idir][nb] = field_array[idir][index_nb];
-                    }
                 }
             }
         }
@@ -3284,7 +3286,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
             {
 		        p_edge[idir][nb] = field_array[index_nb];
             }
-	    	else if (status ==CONST_P_PDE_BOUNDARY)
+	    	else if (status == CONST_P_PDE_BOUNDARY)
             {
                 //OUTLET
                 p_edge[idir][nb] = getStatePhi(intfc_state);
@@ -3295,10 +3297,10 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 {
                     //INLET
                     p_edge[idir][nb] = getStatePhi(intfc_state);
-                        //p_edge[idir][nb] = p0;
                 }
-                else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                        wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                else if (!is_bdry_hs(hs) && 
+                         (wave_type(hs) == NEUMANN_BOUNDARY ||
+                          wave_type(hs) == MOVABLE_BODY_BOUNDARY))
                 {
                     /*
                     //TODO: Since we only use gradient of phi to update
@@ -3388,6 +3390,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 }
                 else
                 {
+                    //NEUMANN_BOUNDARY on domain hypersurface
                     p_edge[idir][nb] = p0;
                 }
             }

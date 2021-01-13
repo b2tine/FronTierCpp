@@ -495,6 +495,7 @@ static void iF_flowThroughBoundaryState3d(
 			field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
 	    u[1] += vtmp*dir[i];
 	    newst->vel[i] = vtmp;
+        newst->vel_old[i] = oldst->vel[i];
 	}
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
                             getStatePres,&pres[2],&oldst->pres);
@@ -557,18 +558,35 @@ static void iF_flowThroughBoundaryState3d(
 	    newst->pres += - dt/dn*f_pres;
 	}
 
+    //TODO: Is this reasonably correct? -- see rationale below
+    newst->phi = newst->pres;
+    newst->q = 0.0;
+        //newst->q = oldst->pres;
+        //newst->phi -= newst->q;
+    
+    
+    //TODO: add a conditional for incorporating q,
+    //      when lagged pressure scheme used.
 
-    //TODO: Is this reasonably correct?
-    //      What about the divergence term?
-    newst->q = newst->pres;
-    newst->phi = 0.0;
+    
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
 
+    //TODO: check div(u*) = 0 valid for outflow??
+    
 
     if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
 	}
 }	/* end iF_flowThroughBoundaryState3d */
 
@@ -638,6 +656,7 @@ static void iF_flowThroughBoundaryState2d(
         
         u[1] += vtmp*dir[i];
 	    newst->vel[i] = vtmp;
+        newst->vel_old[i] = oldst->vel[i];
 	}
 
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->vort,
@@ -697,11 +716,27 @@ static void iF_flowThroughBoundaryState2d(
 	newst->pres += - dt/dn*f_pres;
 
     
-    //TODO: Is this reasonably correct?
-    //      What about the divergence term?
-    newst->q = newst->pres;
-    newst->phi = 0.0;
+    //TODO: Is this reasonably correct? -- see rationale below
+    newst->phi = newst->pres;
+    newst->q = 0.0;
+        //newst->q = oldst->pres;
+        //newst->phi -= newst->q;
+    
+    
+    //TODO: add a conditional for incorporating q,
+    //      when lagged pressure scheme used.
 
+    
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
+
+    //TODO: check div(u*) = 0 valid for outflow??
+    
 
     if (debugging("flow_through"))
 	{
@@ -709,6 +744,8 @@ static void iF_flowThroughBoundaryState2d(
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    (void) printf("Vorticity: %f\n",newst->vort);
 	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
 	}
 }       /* end iF_flowThroughBoundaryState2d */
 
@@ -2555,10 +2592,9 @@ static void promptForDirichletBdryState(
 			NULL,(POINTER)state,*hs,i_hs);
 	    
         //TODO: are these valid values?
-        state->phi = state->pres;
+        state->phi = 0.0;
             //state->phi = getPhiFromPres(front,state->pres);
-        state->q = state->pres;
-        //state->q = getQFromPres(front,state->pres);
+        state->q = getQFromPres(front,state->pres);
 
 	    break;
 	case 'f':			// Flow through state
