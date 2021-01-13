@@ -290,9 +290,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-    //static PETSc solver;
-	static double *x;
-	static bool first = true;
+	double *x;
 
 	int size = iupper - ilower;
 
@@ -797,9 +795,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	if (debugging("trace"))
             printf("Leaving solve2d()\n");
 
-    //Was causing a double free() somehow?
-    //Temp/quick fix was just make x static and never free it.
-	    //FT_FreeThese(1,x);
+    FT_FreeThese(1,x);
 }	/* end solve2d */
 
 void ELLIPTIC_SOLVER::solve3d(double *soln)
@@ -821,9 +817,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
-    //static PETSc solver;
-	static double *x;
-	static bool first = true;
+	double *x;
 	
     int size = iupper - ilower;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
@@ -1298,11 +1292,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         error = checkSolver(icrds_max,YES);
     }
 
-    //NOTE: Was causing a double free() call somehow.
-    //      Made x static and only allocate on first call
-    //      to circumvent it.
-	
-    //FT_FreeThese(1,x);
+    FT_FreeThese(1,x);
 }   /* end solve3d */
 
 /*
