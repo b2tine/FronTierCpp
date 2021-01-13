@@ -514,6 +514,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
                 //computeFieldPointGrad(icoords,phi,point_grad_phi);
         }
 
+        //TODO: May need to check for inlet and enforce the constant
+        //      inlet velocity at first grid point from boundary.
+
         vel[0][index] -= accum_dt*point_grad_phi[0]/rho;
         vel[1][index] -= accum_dt*point_grad_phi[1]/rho;
 
@@ -885,6 +888,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
+
+                        auto grad_phi_tangent = computeGradPhiTangential(
+                                icoords,dir[nb],comp,hs,crx_coords);
+
+                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {

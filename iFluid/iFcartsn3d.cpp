@@ -177,6 +177,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         computeFieldPointGradJump(icoords,array,point_grad_phi);
             //computeFieldPointGradJump(icoords,phi,point_grad_phi);
 
+        //TODO: May need to check for inlet and enforce the constant
+        //      inlet velocity at first grid point from boundary.
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
@@ -799,6 +801,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
+                        
+                        auto grad_phi_tangent = computeGradPhiTangential(
+                                icoords,dir[nb],comp,hs,crx_coords);
+
+                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
@@ -842,7 +849,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                                 icoords,dir[nb],comp,hs,crx_coords);
 
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-
                     }
                     else if (wave_type(hs) == ELASTIC_BOUNDARY)
                     {

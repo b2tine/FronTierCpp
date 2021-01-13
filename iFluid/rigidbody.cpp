@@ -750,15 +750,21 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        rgb_params->no_slip = NO;
+        //TODO: should be YES by default
+        //      NOTE: currently not being used. Still prototyping
+        //
+        //      "Enter yes to use slip wall boundary condition:"
+        rgb_params->no_slip = YES;
         if (CursorAfterStringOpt(infile,
             "Type yes to use no-slip boundary condition:"))
         {
                 fscanf(infile,"%s",s);
                 (void) printf("%s\n",s);
-                if (s[0] == 'y' || s[0] == 'Y')
+                //if (s[0] == 'y' || s[0] == 'Y')
+                if (s[0] == 'n' || s[0] == 'N')
                 {
-                    rgb_params->no_slip = YES;
+                    rgb_params->no_slip = NO;
+                    //rgb_params->no_slip = YES;
                 }
                 (void) fseek(infile,idpos,SEEK_SET);
         }

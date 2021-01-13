@@ -70,6 +70,9 @@ Available tuebulence models are:
 
 Enter turbulence model: Vreman
 Enter model constant: 0.025
+
+Enter yes to use no-slip boundary condition: no
+
 *******************************************************
 
 Type y to make yz cross section movie: n

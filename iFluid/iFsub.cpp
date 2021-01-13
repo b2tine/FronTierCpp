@@ -1432,14 +1432,16 @@ extern void read_iFparams(
             //TODO: Should be opposite default setting for general use.
             //
             //      "Enter yes to use slip wall boundary condition:"
-            iFparams->use_no_slip = NO;
+            iFparams->use_no_slip = YES;
             if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
             {
                 fscanf(infile,"%s",string);
                 printf("%s\n",string);
-                if (string[0] == 'y' || string[0] == 'Y')
+                //if (string[0] == 'y' || string[0] == 'Y')
+                if (string[0] == 'n' || string[0] == 'N')
                 {
-                    iFparams->use_no_slip = YES;
+                    iFparams->use_no_slip = NO;
+                    //iFparams->use_no_slip = YES;
                 }
             }
 	    }

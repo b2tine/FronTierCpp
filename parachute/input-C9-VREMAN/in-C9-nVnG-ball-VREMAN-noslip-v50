@@ -29,9 +29,6 @@ Type yes to turn off auto-redistribution: y
 **************Fluid parameters***************
 Projection type can be
         SIMPLE
-        BELL_COLELLA
-        KIM_MOIN
-        PEROT_BOTELLA
 
 Enter projection type: 3
 Enter projection typeXXX: SIMPLE
@@ -43,12 +40,13 @@ Enter gravity: 0 0 -9.8
 Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
-Enter type of rigid body: Box
-Enter center of the box: 6.0 6.0 0.951
-Enter edges of the box: 0.5 0.5 0.5
+Enter type of rigid body: Sphere
+Enter center of the sphere: 6.0 6.0 0.951
+Enter radius of the sphere: 0.5 0.5 0.5
 
 Type yes if the rigid body is fixed: no
-Type yes to use CGAL for rigid body: no
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
@@ -65,7 +63,7 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: yes
+Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
@@ -116,7 +114,7 @@ Available tuebulence models are:
 Enter turbulence model: Vreman
 Enter model constant: 0.025
 
-Enter yes to use no-slip boundary condition: no
+Enter yes to use no-slip boundary condition: yes
 
 ****************Movie options*****************
 Type y to make yz cross section movie: n
