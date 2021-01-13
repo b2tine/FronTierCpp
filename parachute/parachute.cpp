@@ -267,11 +267,8 @@ void airfoil_driver(Front *front,
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
-        if (!af_params->no_fluid)
-        {
-	        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-	            //front->dt = std::min(front->dt,springCharTimeStep(front));
-        }
+        
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
 	else
 	{
@@ -352,11 +349,7 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         }
         
-        if (!af_params->no_fluid)
-        {
-            front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-                //front->dt = std::min(front->dt,springCharTimeStep(front));
-        }
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 
         if (debugging("step_size"))
         {
