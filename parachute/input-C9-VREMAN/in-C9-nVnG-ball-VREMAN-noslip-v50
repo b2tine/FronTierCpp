@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: -4 16
 Domain limit in 1-th dimension: -4 16
-Domain limit in 2-th dimension: -18 30
-Computational grid: 100 100 240
+Domain limit in 2-th dimension: -18 12
+Computational grid: 100 100 150
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 15
+Enter velocity: 0 0 50
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

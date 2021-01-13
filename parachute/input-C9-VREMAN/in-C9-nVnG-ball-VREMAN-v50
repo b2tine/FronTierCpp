@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 30
+Enter velocity: 0 0 50
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

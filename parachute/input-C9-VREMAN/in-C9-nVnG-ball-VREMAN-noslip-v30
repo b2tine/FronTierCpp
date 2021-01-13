@@ -29,9 +29,6 @@ Type yes to turn off auto-redistribution: y
 **************Fluid parameters***************
 Projection type can be
         SIMPLE
-        BELL_COLELLA
-        KIM_MOIN
-        PEROT_BOTELLA
 
 Enter projection type: 3
 Enter projection typeXXX: SIMPLE
@@ -117,7 +114,7 @@ Available tuebulence models are:
 Enter turbulence model: Vreman
 Enter model constant: 0.025
 
-Enter yes to use no-slip boundary condition: no
+Enter yes to use no-slip boundary condition: yes
 
 ****************Movie options*****************
 Type y to make yz cross section movie: n
