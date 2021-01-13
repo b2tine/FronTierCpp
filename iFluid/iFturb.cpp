@@ -408,6 +408,13 @@ double computeFrictionVelocity(
     if (u_wall < MACH_EPS) return 0.0;
     double u_friction = u_tan/u_wall;
     return u_friction;
+
+    /*
+    //TODO: put into data/debugging output
+    //
+    double y_plus = walldist*rho/mu*u_friction;
+    std::cout << "y+ = " << y_plus << "\n";
+    */
 }
 
 //Computes the dimensionless wall velocity u^{+} = u_tan/u_friction
@@ -418,7 +425,7 @@ double computeWallVelocity(
         double rho)
 {
     SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
-    double u_wall_initialguess = 0.5*u_tan;//TODO: method for better initial guess?
+    double u_wall_initialguess = 10.0*u_tan;//TODO: method for better initial guess?
     double u_wall = wallfunc.solve(u_wall_initialguess);
     return u_wall;
 }
