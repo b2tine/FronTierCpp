@@ -876,9 +876,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
-
-                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
-
                     }
                     else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
                     {
@@ -914,7 +911,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         LOC(); clean_up(EXIT_FAILURE);
                     }
 
-                    if (neumann_type_bdry(wave_type(hs)))
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    {
+                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+                    }
+                    else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //TODO: Need to apply tangential boundary condition
                         //      to intermediate velocity:

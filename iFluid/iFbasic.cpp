@@ -1020,6 +1020,14 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                 FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
         }
         if (CursorAfterStringOpt(infile,
+                    "Type y to make scalar phi field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"PHI",field->phi);
+        }
+        if (CursorAfterStringOpt(infile,
                     "Type y to make viscosity field movie:"))
         {
             fscanf(infile,"%s",string);
