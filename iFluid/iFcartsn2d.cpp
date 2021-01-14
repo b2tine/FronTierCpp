@@ -482,12 +482,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 
     double point_grad_phi[MAXD];
 
+    /*
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
 	    array[index] = phi[index];
 	}
+    */
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -505,34 +507,24 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	    icoords[1] = j;
         rho = field->rho[index];
 
-        if (iFparams->with_porosity)
-        {
-            computeFieldPointGradJump(icoords,array,point_grad_phi);
-                //computeFieldPointGradJump(icoords,phi,point_grad_phi);
-        }
-        else
-        {
-            computeFieldPointGrad(icoords,array,point_grad_phi);
-                //computeFieldPointGrad(icoords,phi,point_grad_phi);
-        }
-
-        //TODO: May need to check for inlet and enforce the constant
-        //      inlet velocity at first grid point from boundary.
-
+        computeFieldPointGradJump(icoords,phi,point_grad_phi);
+            //computeFieldPointGradJump(icoords,array,point_grad_phi);
+ 
         for (int l = 0; l < dim; ++l)
         {
-            grad_phi[l][index] = point_grad_phi[l];
             vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
-            prev_vel[l][index] = vel[l][index];
+            grad_phi[l][index] = point_grad_phi[l];
         }
 
 	}
+
+        //TODO: May need to explicitly enforce some tangential boundary
+        //      conditions following this velocity update...
 
     //extractFlowThroughVelocity();
 	//computeVelDivergence();
 	
     FT_ParallelExchGridVectorArrayBuffer(vel,front);
-	FT_ParallelExchGridVectorArrayBuffer(prev_vel,front);
 	FT_ParallelExchGridVectorArrayBuffer(grad_phi,front);
 
 	if (debugging("check_div"))
@@ -589,8 +581,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	    first = NO;
 	}
 	m_dt = dt;
-	int j,icoords[MAXD];
-	double div;
 
 	start_clock("solve");
 	setDomain();
@@ -656,8 +646,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	    start_clock("computeNewVelocity");
 	    computeNewVelocity();
 	    stop_clock("computeNewVelocity");
-	    accum_dt = 0.0;
+	    
+        accum_dt = 0.0;
 	}
+
+    recordVelocity();
 	computeMaxSpeed();
 
 	if (debugging("sample_velocity"))
@@ -758,10 +751,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	    index = d_index2d(i,j,top_gmax);
 	    if (!ifluid_comp(top_comp[index]))
         {
-            vort[index] = 0.0;
             pres[index] = 0.0;
+            phi[index] = 0.0;
             q[index] = 0.0;
-            //phi[index] = 0.0;//?
+            vort[index] = 0.0;
         }
 	    else
         {
@@ -770,8 +763,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::copyMeshStates(void)
 	}
 
     FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
     FT_ParallelExchGridArrayBuffer(q,front,NULL);
-        //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 	
     symmetry[0] = symmetry[1] = ODD;
 	FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
@@ -874,15 +867,18 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                                     "flowThroughBoundaryState") == 0)
                         {
                             //OUTLET
-                            STATE* fstate = (STATE*)intfc_state;
-                            U_nb_prev[nb] = fstate->vel_old[l];
                             U_nb[nb] = getStateVel[l](intfc_state);
+                                //STATE* fstate = (STATE*)intfc_state;
+                                //U_nb_prev[nb] = fstate->vel_old[l];
                         }
                         else
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
+
+                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+
                     }
                     else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
                     {
@@ -893,17 +889,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                     }
                     else if (!is_bdry_hs(hs) && neumann_type_bdry(wave_type(hs)))
                     {
-                        if (iFparams->use_no_slip)//temporary
+                        //TODO: Use flag added to hypersurface
+                        //      data structure, no_slip(hs), instead
+                        if (iFparams->use_no_slip)
                         {
-                            //NO_SLIP
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
-                        else//TODO: handle another way -- we want to include these (see below)
+                        else
                         {
-                            //TODO: Add option to use no-slip boundary instead where
-                            //          vel_nb[nb] = intfc_state->vel[l];
-                            //      Need to add a flag to hypersurface data structure
-                            
                             //Apply slip boundary condition
                             //nb = 0; idir = 0, nbr = 0;
                             //nb = 1; idir = 0, nbr = 1;
@@ -912,19 +905,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             double v_slip[MAXD] = {0.0};
                             int idir = nb/2; int nbr = nb%2;
                             setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                            U_nb[nb] = v_slip[l];                //n+1 vel
-                                //U_nb_prev[nb] = vel[l][index_nb[nb]];//n vel (equal 0.0 if just uncovered)
+                            U_nb[nb] = v_slip[l];
                         }
                     }
                     else
                     {
                         printf("Unknown Boundary Type!\n");
                         LOC(); clean_up(EXIT_FAILURE);
-                    }
-
-                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
-                    {
-                        U_nb[nb] += m_dt*grad_phi[l][index]/rho;
                     }
 
                     if (neumann_type_bdry(wave_type(hs)))

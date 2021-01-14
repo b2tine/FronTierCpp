@@ -642,7 +642,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         accum_dt = 0.0;
 	}
 	
-    computeVorticity();
+    computeVorticity();//TODO: fix vorticity computation (bdry awareness)
+    recordVelocity();
     computeMaxSpeed();
 
 	if (debugging("step_size"))
@@ -660,12 +661,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	copyMeshStates();
 	stop_clock("copyMeshStates");
 
+    /* The following is for climate modelling */
         if(iFparams->if_ref_pres == YES)
             setReferencePressure();
 
 	setAdvectionDt();
-    //front->dt = std::min(max_dt, front->dt);
-    //m_dt = std::min(m_dt, front->dt);
+        //front->dt = std::min(max_dt, front->dt);
+        //m_dt = std::min(m_dt, front->dt);
 
 	stop_clock("solve");
 }	/* end solve */
@@ -685,13 +687,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::copyMeshStates()
         if (!ifluid_comp(top_comp[index]))
         {
 	    	pres[index] = 0.0;
+	    	phi[index] = 0.0;
 	    	q[index] = 0.0;
         }
 	}
     
     FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+    FT_ParallelExchGridArrayBuffer(phi,front,NULL);
     FT_ParallelExchGridArrayBuffer(q,front,NULL);
-        //FT_ParallelExchGridArrayBuffer(phi,front,NULL);
 }	/* end copyMeshStates */
 
 void Incompress_Solver_Smooth_3D_Cartesian::

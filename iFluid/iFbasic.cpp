@@ -484,125 +484,122 @@ void Incompress_Solver_Smooth_Basis::setDomain()
     field = iFparams->field;
 
 	hmin = top_h[0];
-	size = top_gmax[0]+1;
-        for (i = 1; i < dim; ++i)
+	size = top_gmax[0] + 1;
+    for (i = 1; i < dim; ++i)
 	{
-            if (hmin > top_h[i]) hmin = top_h[i];
-	    size *= (top_gmax[i]+1);
+        if (hmin > top_h[i]) hmin = top_h[i];
+        size *= (top_gmax[i] + 1);
 	}
 
 	switch (dim)
 	{
-	case 2:
+    case 2:
 	    if (size > current_size)
-	    {
-		if (field != NULL)
-		{
-		    FT_FreeThese(15,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->grad_phi,
-                field->q,field->div_U,field->vort,field->vel,
-                field->prev_vel,field->grad_q,field->f_surf,domain_status);
-		    if (debugging("field_var"))
-		    	FT_FreeThese(1,field->old_var);
-		    FT_FreeThese(1,field);
-		}
-		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
-		iFparams->field = field;
-	    	FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->mu,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->rho,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->pres,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,
-                    sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,2,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,
-                    sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,2,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,2,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->vort,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,2,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
-		if (debugging("field_var"))
-		{
-	    	    FT_MatrixMemoryAlloc((POINTER*)&field->old_var,2,size,
-					sizeof(double));
-		}
-		current_size = size;
-	    }
-	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+        {
+            if (field != NULL)
+            {
+                FT_FreeThese(16,array,source,diff_coeff,field->mu,
+                    field->rho,field->pres,field->phi,field->grad_phi,
+                    field->q,field->div_U,field->vort,field->vel,
+                    field->prev_vel,field->grad_q,field->f_surf,
+                    domain_status);
+                
+                if (debugging("field_var"))
+                    FT_FreeThese(1,field->old_var);
+                
+                FT_FreeThese(1,field);
+            }
+
+            FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
+            iFparams->field = field;
+
+            FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->mu,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->rho,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->pres,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,2,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->vel,2,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,2,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->vort,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,2,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
+
+            if (debugging("field_var"))
+            {
+                FT_MatrixMemoryAlloc((POINTER*)&field->old_var,2,size,sizeof(double));
+            }
+
+            current_size = size;
+        }
+	    
+        imin = (lbuf[0] == 0) ? 1 : lbuf[0];
 	    jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
 	    imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
 	    jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
-	    break;
-	case 3:
+	    
+        break;
+	
+    case 3:
 	    if (size > current_size)
-	    {
-		if (field != NULL)
-		{
-		    FT_FreeThese(16,field,array,source,diff_coeff,field->mu,
-				field->rho,field->pres,field->phi,field->grad_phi,
-                field->q,field->div_U,field->vel,field->prev_vel,
-                field->vorticity,field->grad_q,field->f_surf,domain_status);
-		}
-		FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
-		iFparams->field = field;
-	    	FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
-		    FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->mu,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->rho,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->pres,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->q,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,3,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->phi,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,3,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,3,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,
-					sizeof(double));
-	    	FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,3,size,
-					sizeof(double));
-	    	FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
-		if (debugging("field_var"))
-		{
-	    	    FT_MatrixMemoryAlloc((POINTER*)&field->old_var,3,size,
-					sizeof(double));
-		}
-		current_size = size;
-	    }
-	    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+        {
+            if (field != NULL)
+            {
+                FT_FreeThese(16,array,source,diff_coeff,field->mu,
+                    field->rho,field->pres,field->phi,field->grad_phi,
+                    field->q,field->div_U,field->vel,field->prev_vel,
+                    field->vorticity,field->grad_q,field->f_surf,
+                    domain_status);
+                
+                if (debugging("field_var"))
+                    FT_FreeThese(1,field->old_var);
+                
+                FT_FreeThese(1,field);
+            }
+
+            FT_ScalarMemoryAlloc((POINTER*)&field,sizeof(IF_FIELD));
+            iFparams->field = field;
+
+            FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&source,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&diff_coeff,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->mu,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->rho,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->pres,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,3,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,3,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
+            
+            if (debugging("field_var"))
+            {
+                FT_MatrixMemoryAlloc((POINTER*)&field->old_var,3,size,sizeof(double));
+            }
+        
+            current_size = size;
+        }
+	    
+        imin = (lbuf[0] == 0) ? 1 : lbuf[0];
 	    jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
 	    kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
 	    imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
 	    jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
 	    kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
-	    break;
+	    
+        break;
 	}
+    
     
     if (iFparams->num_scheme.ellip_method == DOUBLE_ELLIP)
     {
@@ -823,11 +820,14 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 	    max_dt = hmin/max_speed;
 	else
 	    max_dt = HUGE;
-	if (iFparams->min_speed != 0.0)
+	
+    if (iFparams->min_speed != 0.0)
 	    max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
 
+    //Is this the viscous time step?
 	min_dt = 0.0000001*sqr(hmin)/mu_min;
-	if (debugging("trace"))
+	
+    if (debugging("trace"))
 	{
 	    if (max_dt == HUGE)
 	    	(void) printf("In setAdvectionDt: \n"
@@ -3269,8 +3269,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    for (j = 0; j < dim; ++j)
         {
 	    	icnb[j] = icoords[j];
-            icnb_opp1[j] = icoords[j];
-            icnb_opp2[j] = icoords[j];
+                //icnb_opp1[j] = icoords[j];
+                //icnb_opp2[j] = icoords[j];
         }
 
 	    for (nb = 0; nb < 2; nb++)
@@ -3286,114 +3286,126 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
             {
 		        p_edge[idir][nb] = field_array[index_nb];
             }
-	    	else if (status == CONST_P_PDE_BOUNDARY)
+            else if(wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //OUTLET
+                //INLET and OUTLET
                 p_edge[idir][nb] = getStatePhi(intfc_state);
-            }
-	    	else if (status == CONST_V_PDE_BOUNDARY)
-            {
-                if(wave_type(hs) == DIRICHLET_BOUNDARY)
+                
+                /*
+                //TODO: save for now, remove when done debugging
+                //
+	    	    if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    //OUTLET
+                    p_edge[idir][nb] = getStatePhi(intfc_state);
+                }
+                else 
                 {
                     //INLET
                     p_edge[idir][nb] = getStatePhi(intfc_state);
                 }
-                else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
-                {
-                    p_edge[idir][nb] = p0;
-                }
-                else if (!is_bdry_hs(hs) && 
-                         (wave_type(hs) == NEUMANN_BOUNDARY ||
-                          wave_type(hs) == MOVABLE_BODY_BOUNDARY))
-                {
-                    /*
-                    //TODO: Since we only use gradient of phi to update
-                    //      velocity points in the domain interior can we
-                    //      use the one sided (extrapolated) 3pt derivative
-                    //      as we do for the divergence computation?
-                    //
-                    //      Don't think this is appropriate since the gradient
-                    //      of phi is prescribed at the boundary. Results also
-                    //      do not appear to be an improvement.
-                    
-                    //Use one sided 3pt derivative
-                    icnb_opp1[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
-                    index_oppnb1 = d_index(icnb_opp1,top_gmax,dim);
-                    double p_oppnb1 = field_array[index_oppnb1];
-                    
-                    icnb_opp2[idir] = (nb == 0) ? icoords[idir] + 2 : icoords[idir] - 2;
-                    index_oppnb2 = d_index(icnb_opp2,top_gmax,dim);
-                    double p_oppnb2 = field_array[index_oppnb2];
-
-                    p_edge[idir][nb] = 3.0*p0 - 3.0*p_oppnb1 + p_oppnb2;
-                    */
-
-                    //grad(phi) dot normal = 0
-                    int icoords_ghost[MAXD];
-                    for (int m = 0; m < dim; ++m)
-                        icoords_ghost[m] = icoords[m];
-                    
-                    icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-                    
-                    double coords_ghost[MAXD];
-                    double coords_reflect[MAXD];
-                    
-                    ////////////////////////////////////////////////////////////////////////
-                    ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
-                    //////////////////////////////////////////////////////////////////////
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
-                        coords_reflect[m] = coords_ghost[m];
-                    }
-
-                    double nor[MAXD];
-                    FT_NormalAtGridCrossing(front,icoords,
-                            dir[idir][nb],comp,nor,&hs,crx_coords);
-                            
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //first reflect across the grid line containing intfc crossing,
-                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                    
-                    //TODO: verify no conceptual difference between above and below ...
-                        //for (int m = 0; m < dim; ++m)
-                            //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-
-                    //Reflect the displacement vector across the line
-                    //containing the intfc normal vector
-                    double v[MAXD];
-                    double vn = 0.0;
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        v[m] = coords_reflect[m] - crx_coords[m];
-                        vn += v[m]*nor[m];
-                    }
-
-                    for (int m = 0; m < dim; ++m)
-                        v[m] = 2.0*vn*nor[m] - v[m];
-
-                    //The desired reflected point
-                    for (int m = 0; m < dim; ++m)
-                        coords_reflect[m] = crx_coords[m] + v[m];
-                    ///////////////////////////////////////////////////////////////////////
-
-                    //Interpolate phi at the reflected point,
-                    //which will serve as the ghost point phi.
-                    double phi_reflect;
-                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
-                            getStatePhi,&phi_reflect,&field_array[index]);
-                    //
-                    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
-                    //        getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
-                    //        // but intfc state may not have a valid phi ...
-                    //
-
-                    p_edge[idir][nb] = phi_reflect;
-                }
+                */
             }
-	    }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            {
+                /*
+                //TODO: Since we only use gradient of phi to update
+                //      velocity points in the domain interior can we
+                //      use the one sided (extrapolated) 3pt derivative
+                //      as we do for the divergence computation?
+                //
+                //      Don't think this is appropriate since the gradient
+                //      of phi is prescribed at the boundary. Results also
+                //      do not appear to be an improvement.
+                
+                //Use one sided 3pt derivative
+                icnb_opp1[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
+                index_oppnb1 = d_index(icnb_opp1,top_gmax,dim);
+                double p_oppnb1 = field_array[index_oppnb1];
+                
+                icnb_opp2[idir] = (nb == 0) ? icoords[idir] + 2 : icoords[idir] - 2;
+                index_oppnb2 = d_index(icnb_opp2,top_gmax,dim);
+                double p_oppnb2 = field_array[index_oppnb2];
+
+                p_edge[idir][nb] = 3.0*p0 - 3.0*p_oppnb1 + p_oppnb2;
+                */
+
+                //grad(phi) dot normal = 0
+                int icoords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    icoords_ghost[m] = icoords[m];
+                
+                icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                
+                double coords_ghost[MAXD];
+                double coords_reflect[MAXD];
+                
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                //////////////////////////////////////////////////////////////////////
+
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                    coords_reflect[m] = coords_ghost[m];
+                }
+
+                double nor[MAXD];
+                FT_NormalAtGridCrossing(front,icoords,
+                        dir[idir][nb],comp,nor,&hs,crx_coords);
+                        
+                //Reflect the ghost point through intfc-mirror at crossing.
+                //first reflect across the grid line containing intfc crossing,
+                coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                
+                //TODO: verify no conceptual difference between above and below ...
+                    //for (int m = 0; m < dim; ++m)
+                        //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
+
+                //Reflect the displacement vector across the line
+                //containing the intfc normal vector
+                double v[MAXD];
+                double vn = 0.0;
+
+                for (int m = 0; m < dim; ++m)
+                {
+                    v[m] = coords_reflect[m] - crx_coords[m];
+                    vn += v[m]*nor[m];
+                }
+
+                for (int m = 0; m < dim; ++m)
+                    v[m] = 2.0*vn*nor[m] - v[m];
+
+                //The desired reflected point
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = crx_coords[m] + v[m];
+                ///////////////////////////////////////////////////////////////////////
+
+                //Interpolate phi at the reflected point,
+                double phi_reflect;
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                        getStatePhi,&phi_reflect,&field_array[index]);
+                
+                //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                //        getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
+                //        but intfc state may not have a valid phi ...
+                //        TODO: See neumann_point_propagate() for updating phi on intfc
+
+                p_edge[idir][nb] = phi_reflect;
+            }
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                p_edge[idir][nb] = p0;
+            }
+            else
+            {
+                printf("ERROR in computeFieldPointGrad() : Unknown Boundary Type!\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+	    
+        }
 	}
 
 	for (i = 0; i < dim; ++i)
@@ -3837,7 +3849,7 @@ void Incompress_Solver_Smooth_Basis::compareWithBaseSoln()
 
         u_max = -HUGE;
         u_min = HUGE;
-        u   = field->vel[0];
+        u = field->vel[0];
 
  	initTestParams(front);	
         readBaseFront(params,0);
@@ -3999,6 +4011,36 @@ void Incompress_Solver_Smooth_Basis::readBaseStates(
         base_front->extra1 = (POINTER)&params;
         fclose(infile);
 }       /* end readBaseStates */
+
+void Incompress_Solver_Smooth_Basis::recordVelocity()
+{
+    double** vel = field->vel;
+    double** prev_vel = field->prev_vel;
+
+	switch (dim)
+	{
+	case 2:
+	    for (int j = 0; j <= top_gmax[1]; ++j)
+	    for (int i = 0; i <= top_gmax[0]; ++i)
+	    {
+		    int index = d_index2d(i,j,top_gmax);
+	        for (int l = 0; l < dim; ++l)
+                prev_vel[l][index] = vel[l][index];
+	    }
+	    break;
+	case 3:
+	    for (int k = 0; k <= top_gmax[2]; ++k)
+	    for (int j = 0; j <= top_gmax[1]; ++j)
+	    for (int i = 0; i <= top_gmax[0]; ++i)
+	    {
+		    int index = d_index3d(i,j,k,top_gmax);
+	        for (int l = 0; l < dim; ++l)
+                prev_vel[l][index] = vel[l][index];
+	    }
+	}
+
+    FT_ParallelExchGridVectorArrayBuffer(prev_vel,front);
+}
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 {
@@ -4213,10 +4255,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
         return ans;
 }
 
-//TODO: We should be saving gradient of phi in the variable grad_phi
-//      so it can be used to apply the correct velocity boundary condition
-//      (tangential to boundaries) to the intermediate velocity at the next
-//      time step.
 void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         int* icoords,
         double* var,
@@ -4276,7 +4314,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 double mudiv_nb = 0.5*mu[index_nb]*div_U[index_nb]; 
                 double q_nb = q[index_nb];
 
-                //compute d_p
                 FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
                                 top_comp[index],&intfc_state,&hs,crx_coords);
                 
@@ -4293,8 +4330,15 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 //project to relative fluid velocity to intfc normal direction
                 Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
                 
-                //compute d_p/d_z = p+ - p- = a * Un + b * |Un|*Un
-                //NOTE: alpha and beta include thickness factor
+                //Compute interface pressure jump
+                //  
+                //  d_p = p^{+} - p^{-}
+                //
+                //given by the Ergun Equation                
+                //
+                //  d_p/d_r = alpha*Un + beta*|Un|*Un
+                
+                //NOTE: alpha and beta include thickness factor d_r
                 d_p = Un*(alpha + fabs(Un)*beta);
 		 
                 for (i = 0; i < dim; i++)
@@ -5097,56 +5141,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /*
-    //Needed for projection method tangential boundary condition
-    double** grad_phi = field->grad_phi;
-    
-    double grad_phi_reflect[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,grad_phi[j],
-                getStateGradPhi[j],&grad_phi_reflect[j],&grad_phi[j][index]);
-    }
-    double rho_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->rho,
-            getStateDens,&rho_reflect,&field->rho[index]);
-    if (rho_reflect < MACH_EPS) rho_reflect = field->rho[index];
- 
-    //TODO: projection method tangential boundary condition
-    //      may need separate function in order to be applied
-    //      to no-slip boundary when turbulence model is deactivated.
-    
-    double vn_phi = 0.0;
-    for (int j = 0; j < dim; ++j)
-    {
-        vn_phi += grad_phi_reflect[j]*nor[j];
-            //vn_phi += grad_phi[j][index]*nor[j];
-    }
-    
-    //TODO: This is now handled in computeDiffusionCN() by calling the
-    //      function computeGradPhiTangential(). Should be removed when
-    //      certain implementation is correct.
-    
-    double grad_phi_tan[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        grad_phi_tan[j] = grad_phi_reflect[j] - vn_phi*nor[j];
-            //grad_phi_tan[j] = grad_phi[j][index] - vn_phi*nor[j];
-    }
-    */
-
     /////////////////////////////////////////////////////////////////////////
     if (iFparams->use_eddy_visc == NO)
     {
         for (int j = 0; j < dim; ++j)
-        {
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-            
-            //TODO: Projection method tangential boundary condition
-                //v_slip[j] += m_dt*grad_phi_tan[j]/rho_reflect;
-                //v_slip[j] += m_dt*grad_phi_tan[j]/field->rho[index];
-        }
-
+        
         return;
     }
     /////////////////////////////////////////////////////////////////////////
@@ -5158,7 +5158,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
         fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
-            //fprint_general_vector(stdout,"grad_phi_tan",grad_phi_tan,dim,"\n");
     }
 
     double mu_l;
@@ -5203,13 +5202,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     for (int j = 0; j < dim; ++j)
     {
-        vel_ghost_tan[j] =
-            vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
-        //TODO: Projection method tangential boundary condition
-            //vel_ghost_tan[j] += m_dt*grad_phi_tan[j]/rho_reflect;
-            //v_slip[j] += m_dt*grad_phi_tan[j]/field->rho[index];
-        
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
@@ -5228,6 +5223,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
 // Based on the normal at the interface grid crossing
 // computed by FT_NormalAtGridCrossing().
+//
+//TODO: Add the missing features that have already been
+//      implemented in setSlipBoundaryNIP().
+//      Compare the implementations when complete. 
 void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
 	int *icoords,
 	int idir,

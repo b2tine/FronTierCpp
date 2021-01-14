@@ -564,7 +564,7 @@ static void iF_flowThroughBoundaryState3d(
         //state->q = getQFromPres(front,oldst->pres);
             //newst->q = oldst->pres;
         //newst->phi -= newst->q;
-    
+
     
     //TODO: add a conditional for incorporating q,
     //      when lagged pressure scheme used.
@@ -581,6 +581,13 @@ static void iF_flowThroughBoundaryState3d(
     //TODO: check div(u*) = 0 valid for outflow??
     
 
+    /*
+    //NOTE: From working version
+    
+    newst->phi = 0.0;
+    newst->q = newst->pres;
+    */
+    
     if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
@@ -724,7 +731,6 @@ static void iF_flowThroughBoundaryState2d(
             //newst->q = oldst->pres;
         //newst->phi -= newst->q;
     
-    
     //TODO: add a conditional for incorporating q,
     //      when lagged pressure scheme used.
 
@@ -739,6 +745,13 @@ static void iF_flowThroughBoundaryState2d(
 
     //TODO: check div(u*) = 0 valid for outflow??
     
+
+    /*
+    //NOTE: From working version
+    
+    newst->phi = 0.0;
+    newst->q = newst->pres;
+    */
 
     if (debugging("flow_through"))
 	{
@@ -834,10 +847,16 @@ static  void neumann_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
-    newst->phi = oldst->phi;
+    //need divergence to update phi?
+    newst->phi = newst->pres;
     newst->q = 0.0;
         //newst->q = oldst->pres;
 	
+    /*
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi
+            getStatePhi,&newst->phi,&oldst->phi)
+    */
+
     if (dim == 2)
     {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,

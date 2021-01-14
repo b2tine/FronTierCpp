@@ -180,8 +180,8 @@ struct IF_PARAMS
 	double  ref_pres;
 	double  Amplitute; 	/*Amplitute of velocity*/
 	
-    boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
-    double  porous_coeff[2];   /*dp = a*v + b*v^2*/
+    boolean with_porosity {NO};
+    double  porous_coeff[2];   /*dp = alpha*v + beta*v^2*/
 	double	porosity {0.0};
 
 	char base_dir_name[200];
@@ -322,15 +322,17 @@ public:
 	int icrds_max[MAXD];
 
 	void initMesh(void);
-	void computeMaxSpeed(void);
-	void setAdvectionDt(void);
-	
     void readFrontInteriorStates(char *state_name);
 	void printFrontInteriorStates(char *state_name);
 	void initMovieVariables(void);
+	
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
     
+    void computeMaxSpeed(void);
+	void setAdvectionDt(void);
+    void recordVelocity();
+	
     void printEnstrophy();
     void printEnstrophy2d();
     void printEnstrophy3d();
@@ -455,7 +457,9 @@ protected:
 	void makeGlobalColorMap(int&);
 	void paintConnectedRegion(int,int);
 	boolean paintToSolveGridPoint2(int);
+
 protected:
+
 	void setComponent(void); //init components;
 	void setDomain();
 	void setDoubleDomain();
@@ -509,8 +513,7 @@ protected:
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
-	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,
-					double*); 
+	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,double*); 
 };
 
 ///////////////Interface for Embedded Boundary Method////////////////////
