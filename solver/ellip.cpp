@@ -538,9 +538,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
-                    use_neumann_solver = NO;
+                    // do nothing
+                        //rhs += -coeff[l]*getStateVar(intfc_state);
+                        //aII += -coeff[l];
+                        //use_neumann_solver = NO;
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {

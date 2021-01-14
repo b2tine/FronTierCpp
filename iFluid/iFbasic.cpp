@@ -1028,6 +1028,14 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                 FT_AddVtkScalarMovieVariable(front,"PHI",field->phi);
         }
         if (CursorAfterStringOpt(infile,
+                    "Type y to make scalar intermediate velocity divergence field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void)printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkScalarMovieVariable(front,"DIV_USTAR",field->div_U);
+        }
+        if (CursorAfterStringOpt(infile,
                     "Type y to make viscosity field movie:"))
         {
             fscanf(infile,"%s",string);
@@ -3296,12 +3304,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
             }
             else if(wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //INLET and OUTLET
-                p_edge[idir][nb] = getStatePhi(intfc_state);
-                
-                /*
-                //TODO: save for now, remove when done debugging
-                //
 	    	    if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
@@ -3310,9 +3312,9 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 else 
                 {
                     //INLET
-                    p_edge[idir][nb] = getStatePhi(intfc_state);
+                    p_edge[idir][nb] = p0;
+                        //p_edge[idir][nb] = getStatePhi(intfc_state);
                 }
-                */
             }
             else if (!is_bdry_hs(hs) && 
                      (wave_type(hs) == NEUMANN_BOUNDARY ||

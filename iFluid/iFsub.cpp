@@ -581,13 +581,6 @@ static void iF_flowThroughBoundaryState3d(
     //TODO: check div(u*) = 0 valid for outflow??
     
 
-    /*
-    //NOTE: From working version
-    
-    newst->phi = 0.0;
-    newst->q = newst->pres;
-    */
-    
     if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
@@ -746,13 +739,6 @@ static void iF_flowThroughBoundaryState2d(
     //TODO: check div(u*) = 0 valid for outflow??
     
 
-    /*
-    //NOTE: From working version
-    
-    newst->phi = 0.0;
-    newst->q = newst->pres;
-    */
-
     if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
@@ -847,7 +833,6 @@ static  void neumann_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
-    //need divergence to update phi?
     newst->phi = newst->pres;
     newst->q = 0.0;
         //newst->q = oldst->pres;
@@ -918,17 +903,19 @@ static  void dirichlet_point_propagate(
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
         newst->vort = 0.0;
 
-        newst->pres = bstate->pres;
-        newst->phi = bstate->pres;
+        newst->pres = 0.0;
+        newst->phi = 0.0;
 	    newst->q = 0.0;
+            //newst->pres = bstate->pres;
+            //newst->phi = bstate->pres;
 	        //newst->q = bstate->pres;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
 		(void) printf("Preset boundary state:\n");
 		(void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
-		(void) printf("Pressure: %f\n",newst->pres);
-		(void) printf("Vorticity: %f\n",newst->vort);
+		//(void) printf("Vorticity: %f\n",newst->vort);
+		//(void) printf("Pressure: %f\n",newst->pres);
 	    }
 	}
 	else if (boundary_state_function(oldhs))
@@ -1032,6 +1019,7 @@ static  void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
+//TODO: Need to set phi here????
 static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
@@ -1561,7 +1549,7 @@ extern boolean isDirichletPresetBdry(
 	    return NO;
 	if (wave_type(hs) != DIRICHLET_BOUNDARY)
 	    return NO;
-	if (boundary_state(hs) != NULL)
+	if (boundary_state(hs) == nullptr)
 	    return NO;
 	return YES;
 }	/* end isDirichletPresetBdry */
@@ -1943,6 +1931,7 @@ static void addToEnergyFlux(
 	}
 }	/* end addToEnergyFlux */
 
+//TODO: To remove if not used anywhere
 extern double p_jump(
 	POINTER params,
 	int D,
@@ -2209,8 +2198,8 @@ static  void ifluid_compute_force_and_torque2d(
                     {
                         f[i] = pres*area*bnor[i]/mag_bnor;
                         rr[i] = posn[i] - rotation_center(curve)[i];
-                        //rr[i] = 0.5*(Coords(b->start)[i] + Coords(b->end)[i])
-                                //- rotation_center(curve)[i];
+                        //NOTE: posn = 0.5*(Coords(b->start)[i] + Coords(b->end)[i])
+                        //      in most cases.
                         force[i] += f[i];
                     }
                     Cross2d(rr,f,t);
@@ -2218,12 +2207,16 @@ static  void ifluid_compute_force_and_torque2d(
                 }
             }
 	}
-         /* Add gravity to the total force */
+
+    //TODO: Need to add rotational motion
+         
+        /* Add gravity to the total force */
         if (motion_type(curve) != ROTATION)
         {
             for (i = 0; i < dim; ++i)
                 force[i] += gravity[i]*total_mass(curve);
         }
+
         if (debugging("rigid_body"))
         {
             (void) printf("Leaving ifluid_compute_force_and_torque2d()\n");
@@ -2369,11 +2362,12 @@ static  void ifluid_compute_force_and_torque3d(
     
         /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&
-	    motion_type(surface) != PRESET_ROTATION)
+	        motion_type(surface) != PRESET_ROTATION)
         {
             for (i = 0; i < dim; ++i)
                 force[i] += gravity[i]*total_mass(surface)/num_clips(surface);
         }
+
         if (debugging("rigid_body"))
         {
             printf("In ifluid_compute_force_and_torque3d()\n");
@@ -2612,9 +2606,10 @@ static void promptForDirichletBdryState(
 	    FT_InsertDirichletBoundary(front,NULL,NULL,
 			NULL,(POINTER)state,*hs,i_hs);
 	    
-        //TODO: are these valid values?
-        state->phi = state->pres;
+        //TODO: Can not prescribe pressure with velocity in current formulation
+        state->phi = 0.0;
         state->q = 0.0;
+            //state->phi = state->pres;
             //state->q = getQFromPres(front,state->pres);
 
 	    break;
