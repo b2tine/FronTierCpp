@@ -538,7 +538,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         printf("max speed entering solve(): %20.14f\n",max_speed);
     }
 
-	start_clock("solve");
+    setFreeStreamVelocity();//Need this for slip boundaries
+	
+    start_clock("solve");
 	setDomain();
 
     //TODO: Put into a debugging string block

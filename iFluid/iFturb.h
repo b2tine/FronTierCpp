@@ -84,9 +84,14 @@ private:
 };
 
 
-double computeWallShearStress(double u_tan, double walldist, double mu, double rho);
-double computeFrictionVelocity(double u_tan, double walldist, double mu, double rho);
-double computeWallVelocity(double u_tan, double walldist, double mu, double rho);
+double computeWallShearStress(double u_tan, double walldist,
+            double mu, double rho, double u_far);
+
+double computeFrictionVelocity(double u_tan, double walldist,
+            double nu, double u_far);
+
+double computeWallVelocity(double u_tan, double walldist,
+            double nu, double u_far);
 
 
 #endif

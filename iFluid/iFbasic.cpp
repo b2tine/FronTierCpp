@@ -140,9 +140,11 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 	    	cell_center[index].icoords[2] = k;
 	    }
 	}
+
 	setComponent();
-	FT_FreeGridIntfc(front);
-	if (debugging("trace"))
+    FT_FreeGridIntfc(front);
+
+    if (debugging("trace"))
             (void) printf("Leaving initMesh()\n");
 }
 
@@ -3013,10 +3015,6 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointDivSimple(
                         //INLET
                         u_edge[idir][nb] = getStateVel[idir](intfc_state);
                     }
-                    /*else if (wave_type(hs) == NEUMANN_BOUNDARY)
-                    {
-                        u_edge[idir][nb] = u0;
-                    }*/
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                             wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     {
@@ -4060,57 +4058,63 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 
 	max_speed = 0.0;
 	for (i = 0; i < dim; ++i)
-        {
-            vmin[i] = HUGE;
-            vmax[i] = -HUGE;
-        }
-	switch (dim)
+    {
+        vmin[i] = HUGE;
+        vmax[i] = -HUGE;
+    }
+	
+    switch (dim)
 	{
 	case 2:
 	    for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	    {
-		speed = 0;
-		index = d_index2d(i,j,top_gmax);
-		for (l = 0; l < dim; ++l)
-		{
-		    speed += sqr(vel[l][index]);
-		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
-                    if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
-		}
-        speed = sqrt(speed);
-		if (max_speed < speed) 
-		{
-		    max_speed = speed;
-		    icrds_max[0] = i;
-		    icrds_max[1] = j;
-		}
+            index = d_index2d(i,j,top_gmax);
+            
+            speed = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                speed += sqr(vel[l][index]);
+                if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
+                if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+            }
+            speed = sqrt(speed);
+		
+            if (max_speed < speed) 
+            {
+                max_speed = speed;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+            }
 	    }
 	    break;
 	case 3:
 	    for (k = kmin; k <= kmax; k++)
 	    for (j = jmin; j <= jmax; j++)
-            for (i = imin; i <= imax; i++)
+        for (i = imin; i <= imax; i++)
 	    {
-		speed = 0;
-		index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		{
-		    speed += sqr(vel[l][index]);
-		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
-                    if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
-		}
-        speed = sqrt(speed);
-		if (max_speed < speed) 
-		{
-		    max_speed = speed;
-		    icrds_max[0] = i;
-		    icrds_max[1] = j;
-		    icrds_max[2] = k;
-		}
+            index = d_index3d(i,j,k,top_gmax);
+            
+            speed = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                speed += sqr(vel[l][index]);
+                if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
+                if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+            }
+            speed = sqrt(speed);
+
+            if (max_speed < speed) 
+            {
+                max_speed = speed;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+                icrds_max[2] = k;
+            }
 	    }
 	    break;
 	}
+
 	pp_global_max(&max_speed,1);
 	pp_global_max(vmax,dim);
 	pp_global_min(vmin,dim);
@@ -5190,7 +5194,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     
     double tau_wall[MAXD] = {0.0};
-    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l);
+    double mag_tau_wall = computeWallShearStress(mag_vtan,
+                    dist_reflect,mu_l,rho_l,U_FreeStream);
 
     if (mag_vtan > MACH_EPS)
     {
@@ -5549,5 +5554,38 @@ std::vector<double> Incompress_Solver_Smooth_Basis::computeGradPhiTangential(
         grad_phi_tangent[j] = grad_phi[j][index] - vn*nor[j];
 
     return grad_phi_tangent;
+}
+
+void Incompress_Solver_Smooth_Basis::setFreeStreamVelocity()
+{
+    U_FreeStream = 0.0;
+
+    HYPER_SURF* hs;
+    for (int idir = 0; idir < dim; ++idir)
+    for (int side = 0; side < 2; ++side)
+    {
+        hs = FT_RectBoundaryHypSurf(front->interf,
+                DIRICHLET_BOUNDARY,idir,side);
+        
+        if (hs == nullptr) continue;
+        if (boundary_state(hs) == nullptr) continue;
+
+        STATE* bstate = (STATE*)boundary_state(hs);
+        double* bdry_vel = bstate->vel;
+
+        double bdry_speed = 0.0;
+        for (int l = 0; l < dim; ++l)
+        {
+            bdry_speed += sqr(bdry_vel[l]);
+        }
+        bdry_speed = sqrt(bdry_speed);
+
+        if (U_FreeStream < bdry_speed) 
+        {
+            U_FreeStream = bdry_speed;
+        }
+    }
+
+	pp_global_max(&U_FreeStream,1);
 }
 

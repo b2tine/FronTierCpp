@@ -582,8 +582,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	}
 	m_dt = dt;
 
-	start_clock("solve");
-	setDomain();
+    setFreeStreamVelocity();//Need this for slip boundaries
+	
+    start_clock("solve");
+    setDomain();
 
 	setComponent();
 	if (debugging("trace"))

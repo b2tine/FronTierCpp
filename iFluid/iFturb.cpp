@@ -390,10 +390,11 @@ double computeWallShearStress(
         double u_tan,
         double walldist,
         double mu,
-        double rho)
+        double rho,
+        double u_far)
 {
     if (u_tan < MACH_EPS) return 0.0;
-    double u_friction = computeFrictionVelocity(u_tan,walldist,mu,rho);
+    double u_friction = computeFrictionVelocity(u_tan,walldist,mu/rho,u_far);
     double tau_wall = u_friction*u_friction*rho;
     return tau_wall;
 }
@@ -401,10 +402,10 @@ double computeWallShearStress(
 double computeFrictionVelocity(
         double u_tan,
         double walldist,
-        double mu,
-        double rho)
+        double nu,
+        double u_far)
 {
-    double u_wall = computeWallVelocity(u_tan,walldist,mu,rho);
+    double u_wall = computeWallVelocity(u_tan,walldist,nu,u_far);
     if (u_wall < MACH_EPS) return 0.0;
     double u_friction = u_tan/u_wall;
     return u_friction;
@@ -421,11 +422,11 @@ double computeFrictionVelocity(
 double computeWallVelocity(
         double u_tan,
         double walldist,
-        double mu,
-        double rho)
+        double nu,
+        double u_far)
 {
-    SpaldingWallLaw wallfunc(u_tan,walldist,mu/rho);
-    double u_wall_initialguess = 10.0*u_tan;//TODO: method for better initial guess?
+    SpaldingWallLaw wallfunc(u_tan,walldist,nu);
+    double u_wall_initialguess = 0.5*u_far;//TODO: method for better initial guess?
     double u_wall = wallfunc.solve(u_wall_initialguess);
     return u_wall;
 }

@@ -309,12 +309,17 @@ public:
 
 	double m_dt;
 	double accum_dt;
-	double max_speed;
+	
+    double max_speed;
 	double min_pressure;
-        double max_pressure;
-        double min_value; //for debugging
+    double max_pressure;
+    
+    double U_FreeStream;   //far field velocity (Inlet/Outlet speed)
+    
+    double min_value; //for debugging
 	double max_value; //for debugging
-	double max_dt;
+	
+    double max_dt;
 	double min_dt;
 	double *top_h;
 	double vmin[MAXD],vmax[MAXD];
@@ -355,6 +360,7 @@ public:
     double computeFieldPointPressureJump(int*,double,double);     
     void computeFieldPointGradJump(int*,double*,double*);
 
+    void setFreeStreamVelocity();
     
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
