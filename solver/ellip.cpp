@@ -579,6 +579,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+    //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -1038,6 +1039,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+    //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 
