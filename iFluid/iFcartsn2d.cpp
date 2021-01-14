@@ -870,14 +870,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             U_nb[nb] = getStateVel[l](intfc_state);
                                 //STATE* fstate = (STATE*)intfc_state;
                                 //U_nb_prev[nb] = fstate->vel_old[l];
-                            
                             U_nb[nb] += m_dt*grad_phi[l][index]/rho;
                         }
                         else
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
-                            
                             auto grad_phi_tangent = computeGradPhiTangential(
                                     icoords,dir[nb],comp,hs,crx_coords);
                             U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
@@ -914,10 +912,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                                 U_nb[nb] = v_slip[l];
                             }
                         }
-                        
-                        //Apply tangential boundary condition:
-                        //
-                        //    T dot u^{*} = T dot (u^{n+1}_{bdry} + dt*grad_phi/rho) 
                         
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
@@ -979,9 +973,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                             //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
-                                    //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
-                                //rhs += coeff[nb]*U_nb[nb]; //u^n val
-                                //aII -= coeff[nb];
+                                //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                         }
                         else
                         {
@@ -1003,7 +995,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         //
                         //      see find_state_crossing_info() in crystal code for soln
                         
-                        //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
                             //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                     }

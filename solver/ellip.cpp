@@ -291,9 +291,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	int icrds_max[MAXD],icrds_min[MAXD];
 
 	double *x;
-
 	int size = iupper - ilower;
-
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
     for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
 
@@ -529,19 +527,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                
-                //TODO: Should INLET/OUTLET just set the neighbor to the index value?
-                //      This would enforce the grad(phi) dot normal = 0 condition??
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
                     // do nothing
-                        //rhs += -coeff[l]*getStateVar(intfc_state);
-                        //aII += -coeff[l];
-                        //use_neumann_solver = NO;
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
@@ -570,7 +559,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 (void) printf("WARNING: isolated value!\n");
 
             solver.Set_A(I,I,1.0);
-            rhs = soln[index];//TODO: or use pressure (instead of phi)?
+            rhs = soln[index];
         }
 
         solver.Set_b(I,rhs);
@@ -580,7 +569,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-    //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
@@ -756,8 +745,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
-	double *x;
-	
+	double *x;	
     int size = iupper - ilower;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
     for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
@@ -810,10 +798,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             if (status != CONST_V_PDE_BOUNDARY)
                 num_nb++;
 
-            if (status == CONST_V_PDE_BOUNDARY ||
-                    status == CONST_P_PDE_BOUNDARY)
+            if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
             {
-                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
     
@@ -837,9 +823,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 solver.Set_A(I,I_nb[l],coeff[l]);
                 aII += -coeff[l];
             }
-            else if (status == CONST_V_PDE_BOUNDARY &&
-                      (wave_type(hs) == NEUMANN_BOUNDARY ||
-                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                //NEUMANN_BOUNDARY on domain hypersurface bdry
+                //  do nothing
+            }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
                 //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
@@ -994,18 +985,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                
-                //TODO: Should INLET/OUTLET just set the neighbor to the index value?
-                //      This would enforce the grad(phi) dot normal = 0 condition??
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
-                    use_neumann_solver = NO;
+                    // do nothing
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
@@ -1040,7 +1023,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-    //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 

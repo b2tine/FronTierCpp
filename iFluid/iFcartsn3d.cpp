@@ -145,6 +145,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 
 	max_grad_phi = ave_grad_phi = 0.0;
 
+    /*
 	for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
 	for (i = 0; i <= top_gmax[0]; i++)
@@ -152,6 +153,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
 	    index = d_index3d(i,j,k,top_gmax);
 	    array[index] = phi[index];
 	}
+    */
 	
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
@@ -174,20 +176,21 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         //Coupling of the velocity impulse due to force of the
         //immersed porous interface accounted for by the addition
         //of GFM pressure jump source terms into grad_phi 
-        computeFieldPointGradJump(icoords,array,point_grad_phi);
-            //computeFieldPointGradJump(icoords,phi,point_grad_phi);
+        
+        computeFieldPointGradJump(icoords,phi,point_grad_phi);
+            //computeFieldPointGradJump(icoords,array,point_grad_phi);
 
-        //TODO: May need to check for inlet and enforce the constant
-        //      inlet velocity at first grid point from boundary.
         speed = 0.0;
 	    for (l = 0; l < 3; ++l)
 	    {
             vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
-	    	    //vel[l][index] -= accum_dt*point_grad_phi[l];
             grad_phi[l][index] = point_grad_phi[l];
 		    speed += sqr(vel[l][index]);
 	    }
         speed = sqrt(speed);
+
+        //TODO: May need to explicitly enforce some tangential boundary
+        //      conditions following this velocity update...
 
 	    mag_grad_phi = Mag3d(point_grad_phi);
 	    ave_grad_phi += mag_grad_phi;
@@ -727,6 +730,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     double *x;
 
 	double** vel = field->vel;
+	double** prev_vel = field->prev_vel;
 	double** f_surf = field->f_surf;
     double** grad_q = field->grad_q;
     double** grad_phi = field->grad_phi;
@@ -739,9 +743,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
     size = iupper - ilower;
     FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-
-    //TODO: Save previous time velocity.
-    //      See iFcarts2d.cpp: field->old_var[l][index] = vel[l][index] 
 
 	for (l = 0; l < dim; ++l)
 	{
@@ -782,7 +783,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             mu0 = field->mu[index];
             rho = field->rho[index];
 
-            //TODO: Can we really just ignore the ELASTIC_BOUNDARY entirely??
             for (nb = 0; nb < 6; nb++)
             {
                 int intfc_crx = (*findStateAtCrossing)(front,icoords,
@@ -798,74 +798,48 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         {
                             //OUTLET
                             U_nb[nb] = getStateVel[l](intfc_state);
+                            U_nb[nb] += m_dt*grad_phi[l][index]/rho;
                         }
                         else
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
+                            auto grad_phi_tangent = computeGradPhiTangential(
+                                    icoords,dir[nb],comp,hs,crx_coords);
+                            U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
                         }
                         
-                        //TODO: for inlet/outlet should the update include the
-                        //      normal component? i.e.
-                        //
-                        //      U_nb[nb] += m_dt*grad_phi[l][index]/rho;
-                        //
-                        //      Outlet may also need the normal component
-                        //      At inlet grad_phi should be zero? so can probably
-                        //      just use the above?
-
-                        auto grad_phi_tangent = computeGradPhiTangential(
-                                icoords,dir[nb],comp,hs,crx_coords);
-
-                        U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (iFparams->use_no_slip)//temporary
+                        if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
                         {
-                            //NO_SLIP
+                            //TODO: this should get handled in the same way as interior wall bdrys
                             U_nb[nb] = getStateVel[l](intfc_state);
-                        }
-                        else if (!is_bdry_hs(hs)) //TODO: handle another way -- we want to include these (see below)
-                        {
-                            //TODO: Check to use no-slip boundary instead where
-                            //
-                            //          if (no_slip(hs))
-                            //          {
-                            //              vel_nb[nb] = intfc_state->vel[l];
-                            //          }
-                            //          else
-                            //          {
-                            //              use slip bdry like below ...
-                            //          }
-
-                            double v_slip[MAXD] = {0.0};
-                            int idir = nb/2; int nbr = nb%2;
-                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                            U_nb[nb] = v_slip[l];
+                                //U_nb[nb] = vel[l][index];
+                                //U_nb_prev[nb] = prev_vel[l][index];
                         }
                         else
                         {
-                            //TODO: Without this rayleigh-taylor with NEUMANN boundaries
-                            //      crashes for some reason.
-                            U_nb[nb] = getStateVel[l](intfc_state);
-                            //NOTE: This is just a no-slip boundary condition.
+                            //TODO: Use flag added to hypersurface
+                            //      data structure, no_slip(hs), instead
+                            if (iFparams->use_no_slip)
+                            {
+                                U_nb[nb] = getStateVel[l](intfc_state);
+                            }
+                            else
+                            {
+                                double v_slip[MAXD] = {0.0};
+                                int idir = nb/2; int nbr = nb%2;
+                                setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                                U_nb[nb] = v_slip[l];
+                            }
                         }
-
-                        //TODO: Need to apply tangential boundary condition
-                        //      to intermediate velocity:
-                        //
-                        //      T dot u^{*} = T dot (u^{n+1}_{bdry} + dt*grad_phi/rho)
 
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
-
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-                    }
-                    else if (wave_type(hs) == ELASTIC_BOUNDARY)
-                    {
-                        U_nb[nb] = vel[l][index_nb[nb]];
-                        mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+
                     }
                     else
                     {
@@ -873,17 +847,19 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         LOC(); clean_up(EXIT_FAILURE);
                     }
 
-                    //TODO: Can we also get the ghost viscosity from setSlipBoundary()??
+                    
                     if (wave_type(hs) == DIRICHLET_BOUNDARY || neumann_type_bdry(wave_type(hs)))
                         mu[nb] = mu0;
                     else
                         mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
+                
                 }
                 else
                 {
                     U_nb[nb] = vel[l][index_nb[nb]];
                     mu[nb] = 0.5*(mu0 + field->mu[index_nb[nb]]);
                 }
+            
             }
             
             coeff[0] = 0.5*m_dt*mu[0]/rho/(top_h[0]*top_h[0]);
@@ -911,13 +887,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 }
                 else
                 {
-                    if (wave_type(hs) == ELASTIC_BOUNDARY)
-                    {
-                        //Same as NO_PDE_BOUNDARY
-                        solver.Set_A(I,I_nb[nb],-1.0*coeff[nb]);
-                        rhs += coeff[nb]*U_nb[nb];
-                    }
-                    else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+                    if (wave_type(hs) == DIRICHLET_BOUNDARY)
                     {
                         if (boundary_state_function(hs) &&
                             strcmp(boundary_state_function_name(hs),
@@ -936,7 +906,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
                         //TODO: see comments in iFcartsn2d.cpp computeDiffusionCN()
-                        //NEUMANN
                         rhs += 2.0*coeff[nb]*U_nb[nb];
                     }
                     else
