@@ -111,8 +111,9 @@ Type y to make xy cross section movie: n
 
 Type y to make viscosity field movie: y
 Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
+Type y to make vector vorticity field movie: n
 Type y to make scalar pressure field movie: y
+Type y to make scalar phi field movie: y
 
 Type y to make turbulent kinetic energy field movie: n
 Type y to make turbulent kinetic energy dissipation field movie: n
