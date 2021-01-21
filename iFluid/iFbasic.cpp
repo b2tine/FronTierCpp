@@ -5556,6 +5556,8 @@ std::vector<double> Incompress_Solver_Smooth_Basis::computeGradPhiTangential(
     return grad_phi_tangent;
 }
 
+//TODO: Currently can only detect CONSTANT state Dirichlet
+//      boundaries corresponding to a fixed INLET boundary.
 void Incompress_Solver_Smooth_Basis::setFreeStreamVelocity()
 {
     U_FreeStream = 0.0;
