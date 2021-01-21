@@ -5194,8 +5194,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     
     double tau_wall[MAXD] = {0.0};
+    /*double mag_tau_wall = computeWallShearStress(mag_vtan,
+                    dist_reflect,mu_l,rho_l,U_FreeStream);*/
     double mag_tau_wall = computeWallShearStress(mag_vtan,
-                    dist_reflect,mu_l,rho_l,U_FreeStream);
+                    dist_reflect,mu_l,rho_l,45.0);
 
     if (mag_vtan > MACH_EPS)
     {
