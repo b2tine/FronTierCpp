@@ -5,14 +5,14 @@
 
 //TODO: Probably don't need these stencil functions
 /*
-void initStencil(Stencil_3d* stencil)
+void initStencil(VStencil_3d* stencil)
 {
     //FT_QuadArrayMemoryAlloc();
 }
 */
 
 /*
-void fillStencil(Stencil_3d* stencil)
+void fillStencil(VStencil_3d* stencil)
 {
 }
 */
@@ -28,6 +28,7 @@ void G_CARTESIAN::addViscousFlux(
     for (int i = imin[0]; i <= imax[0]; i++)
     {   
         int icoords[MAXD] = {i,j,k};
+            //fillStencil(icoords,m_vst);
         computeViscousFlux(icoords,m_vst,m_flux,delta_t);
         //TODO: Could have computeViscousFlux() return a
         //      FSWEEP like structure which we then add the 
@@ -38,7 +39,7 @@ void G_CARTESIAN::addViscousFlux(
     
 }
 
-//TODO: Finish Implementation
+//TODO: This function should become the fillStencil() like function
 void G_CARTESIAN::computeViscousFlux(
         int* icoords,
         SWEEP* m_vst,
@@ -63,18 +64,36 @@ void G_CARTESIAN::computeViscousFlux(
     };
 
     
-    //TODO: create FSWEEP var and alloc data
+    int ic[MAXD];
+    VStencil_3d vsten;
+    VSWEEP vstate = vsten[1][1][1];//center of stencil
+    
+    for (int l = 0; l < dim; ++l)
+    {
+        vstate.icoords[l] = icoords[l];
+        vstate.vel[l] = m_vst->momn[l][index]/m_vst->dens[index];
+    }
 
     //From grid point i,j,k need to check for interface crossings
     //between immediate neighbors. Will then need to move to each
     //immediate neighbor and check for interface crossings between
     //its neighbors involved in computing the mixed derivatives.
     
+    //NOTE: Not possible to precompute every state ahead of time,
+    //      must check crossing and generate ghost states when computing
+    //      a specific derivative -- a single point that is involved
+    //      in the computation of two separate derivatives may have different
+    //      states in the two computations...
+
     for (int l = 0; l < dim; ++l)
     {
-
-        for (int nb = 0; nb < dim; ++nb)
+        for (int nb = 0; nb < 2; ++nb)
         {
+            for (int j = 0; j < dim; ++j)
+                ic[j] = icoords[j];
+            ic[l] = (nb == 0) ? icoords[l] - 1 : icoords[l] + 1;
+            
+            vstate = vsten[ic[0]][ic[1]][ic[2]];
     
             /*
             FT_StateStructAtGridCrossing(front,front->grid_intfc,
@@ -89,7 +108,12 @@ void G_CARTESIAN::computeViscousFlux(
 
     }
 
+            /*
+            //NOTE icoords replaced with ic in this call
+            FT_StateStructAtGridCrossing(front,front->grid_intfc,
+                    ic,dir[l][nb],comp,&intfc_state,&hs,crx_coords);
+            */
 
-    //TODO: Add computed flux to m_flux, or return an FSWEEP like structure.
+
 
 }

@@ -19,4 +19,17 @@ void fillStencil(Stencil_3d* stencil);
 */
 
 
+struct VSWEEP
+{
+    int icoords[MAXD];
+    double vel[MAXD];
+    double mu;
+    double temp;
+};
+
+struct VStencil3d
+{
+    VSWEEP st[MAXD][MAXD][MAXD]; //[1][1][1] is center of stencil (i,j,k)
+};
+
 #endif
