@@ -2615,13 +2615,8 @@ static void setSurfVelocity(
 		nor_speed = scalar_product(vel,nor,3);
 		for (j = 0; j < 3; ++j)
 		{
-		    //sl->vel[j] = vel[j];
-		    //sr->vel[j] = vel[j];
             sl->vel[j] = nor_speed*nor[j];
             sr->vel[j] = nor_speed*nor[j];
-            //TODO: missing function new_setSurfVelocity() has this in zgao code
-                //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
 		}
 		sorted(p) = YES;
 	    }
@@ -2653,7 +2648,6 @@ static void setCurveVelocity(
 	long gindex;
 	int dim = FT_Dimension();
 
-    //TODO: test this thorougly .. was previosly not used.
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         for (b = curve->first; b != curve->last; b = b->next)
@@ -2668,13 +2662,6 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
-                //TODO: missing function new_setSurfVelocity() has this in zgao code
-                //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
-                //Maybe this should be....
-                    //sl->vel[j] = sl->impulse[j] + vel[j];
-                    //sr->vel[j] = sr->impulse[j] + vel[j];
-                //Without string-fluid interaction sl->impulse shoudl equal 0.0
             }
         }
     }
@@ -2695,13 +2682,8 @@ static void setCurveVelocity(
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
                     sl->vel[j] = nor_speed*nor[j];
                     sr->vel[j] = nor_speed*nor[j];
-                    //TODO: missing function new_setCurveVelocity() has this in zgao code
-                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                        //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
@@ -2797,7 +2779,6 @@ static void new_setNodeVelocity3d(
 		    {
                 for (j = 0; j < 3; ++j)
                 {
-                    //TODO: add impulse?
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
                 }
@@ -2815,13 +2796,8 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-		    	//sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
-                //TODO: zgao code has this
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
 		}
         
@@ -2849,7 +2825,6 @@ static void new_setNodeVelocity3d(
             {
                 for (j = 0; j < 3; ++j)
                 {
-                    //TODO: add impulse?
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
                 }
@@ -2867,19 +2842,13 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                //sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
-                //TODO: zgao code has this
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
         }
     }
 }	/* end setNodeVelocity3d */
 
-//TODO: see comments in the setXXXVelocity() functions
 extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
@@ -2895,6 +2864,7 @@ extern void set_geomset_velocity(
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
 	for (i = 0; i < nn; ++i)
 	{
+        //TODO: Verify that this should be bypassed for pointmass runs.
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
