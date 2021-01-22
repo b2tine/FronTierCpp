@@ -631,11 +631,12 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	/* Compute flux and advance field */
 
 	copyToMeshVst(&st_field[0]);
+
+    //TODO: Add function for computing viscous flux
+    //      inside computeMeshFlux().
+
 	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
     
-    //TODO: Add function computeMeshViscFlux(),
-    //      and add to the total mesh flux appropriately.
-	
 	for (i = 0; i < order-1; ++i)
 	{
 	    copyMeshVst(st_field[0],&st_field[i+1]);
@@ -656,6 +657,9 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
+//TODO: Using const ref m_vst will cause some problems with lower level
+//      functions not being able to cast off the const, but can we SAFELY
+//      use a pointer or nonconst reference?
 void G_CARTESIAN::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux,
@@ -678,6 +682,9 @@ void G_CARTESIAN::computeMeshFlux(
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
+
+    //addViscousFlux(&m_vst,m_flux,delta_t);
+
 	addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
 
@@ -917,10 +924,10 @@ void G_CARTESIAN::addSourceTerm(
 		{
 		    for (l = 0; l < dim; ++l)
 		    {
-		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst.dens[index];
-		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst.momn[l][index];
+		    	m_flux->momn_flux[l][index] +=
+                    delta_t*gravity[l]*m_vst.dens[index];
+		    	m_flux->engy_flux[index] +=
+                    delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -944,9 +951,9 @@ void G_CARTESIAN::addSourceTerm(
 		    for (l = 0; l < dim; ++l)
 		    {
 		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst.dens[index];
+                    delta_t*gravity[l]*m_vst.dens[index];
 		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst.momn[l][index];
+                    delta_t*gravity[l]*m_vst.momn[l][index];
 		    }
 		}
 	    }
@@ -964,7 +971,8 @@ void G_CARTESIAN::solve(double dt)
 	start_clock("solve");
 	
     setDomain();
-	appendOpenEndStates(); /* open boundary test */
+    //TODO: is appendOpenEndStates() a non no-op for cFluid?
+	appendOpenEndStates();
 	scatMeshStates();
 
 	adjustGFMStates();
@@ -972,30 +980,18 @@ void G_CARTESIAN::solve(double dt)
 
     ////////////////////////////////////////////////////////////////
     //TODO: part of diffusion implementation
-        //setGlobalIndex();
+        //setGlobalIndex();//see iFbasic.cpp function and adapt to cfluid
     ////////////////////////////////////////////////////////////////
 	
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
-    //TODO: Need to save the current solution, and keep in a seperate array
-    //      the solution of the predictor step for use in step 2.
-	
-    // 1) Explicit Predictor Step
 	start_clock("computeAdvection");
     computeAdvection();
-	    //computeConvectiveFlux();
+        //computeFlux();//TODO: will include both convective and viscous flux
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
 	stop_clock("computeAdvection");
-
-    /////////////////////////////////////////////////////////////// 
-    // 2) Implicit Corrector Step
-    //start_clock("computeDiffusion");
-        //computeDiffusion(); //TODO: diffusion implementation here
-    //stop_clock("computeDiffusion");
-
-    ///////////////////////////////////////////////////////////////
 
     /*if (debugging("sample_velocity"))
 	{
@@ -1008,8 +1004,10 @@ void G_CARTESIAN::solve(double dt)
 	copyMeshStates();
 	stop_clock("copyMeshStates");
 
+    //TODO: will need to check viscous time step once implemented
 	setAdvectionDt();
-	stop_clock("solve");
+	
+    stop_clock("solve");
 	if (debugging("trace"))
 	    printf("Leaving solve()\n");
 }	/* end solve */
@@ -1241,7 +1239,7 @@ void G_CARTESIAN::setDomain()
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
-		eqn_params->Gvel[j][k][i] = 0.0;
+            eqn_params->Gvel[j][k][i] = 0.0;
 	}
 }
 
@@ -1548,6 +1546,7 @@ void G_CARTESIAN::readInteriorStates(char* restart_state_name)
 }
 
 
+//TODO: will need to check viscous time step once implemented
 void G_CARTESIAN::setAdvectionDt()
 {
 	double d = (double)dim;
@@ -7269,7 +7268,6 @@ void G_CARTESIAN::addFluxAlongGridLine(
         //Elastic Boundary and Porosity accounted for in appendGhostBuffer()
 	    icoords[idir] = seg_min;
 	    appendGhostBuffer(&vst,m_vst,0,icoords,idir,0);
-	        //appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    

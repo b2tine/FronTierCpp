@@ -463,6 +463,11 @@ private:
 	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);
 	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
 	
+	/* Viscous flux */
+    void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
+    void computeViscousFlux(int* icoords, SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
+    
+
     void initFabricStates();
 
     //TODO: move out of class
