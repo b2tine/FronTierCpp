@@ -129,7 +129,8 @@ typedef struct {
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;
+	double *vort;    /* Vorticity-2d */
+    double **vort3d  /* Vorticity-3d */
 	//GFM
 	double **gnor;
 	double **Gdens;
@@ -297,9 +298,8 @@ struct FIELD
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;          /* Vorticity-2d */ 
-    //TODO: add 3d vorticity
-        //double** vort3d  /* Vorticity-3d */
+    double *vort;
+    double **vort3d
 };
 
 struct SWEEP

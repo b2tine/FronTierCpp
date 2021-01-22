@@ -1024,6 +1024,11 @@ void G_CARTESIAN::setDomain()
 	    field.pres = eqn_params->pres;
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
+
+        /*
+	    field.vort = eqn_params->vort;
+	    field.vort3d = eqn_params->vort3d;
+        */
 	}
 
     //GFM
@@ -1033,7 +1038,7 @@ void G_CARTESIAN::setDomain()
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
-		eqn_params->Gvel[j][k][i] = 0.0;
+            eqn_params->Gvel[j][k][i] = 0.0;
 	}
 }
 
@@ -1630,12 +1635,11 @@ void G_CARTESIAN::initMovieVariables()
 
 void G_CARTESIAN::computeVorticity()
 {
-	double *vort = eqn_params->vort;
-
     switch (dim)
     {
     case 2:
         {
+	        double* vort = eqn_params->vort;
             for (int j = imin[1]; j <= imax[1]; ++j)
             for (int i = imin[0]; i <= imax[0]; ++i)
             {
@@ -1645,12 +1649,14 @@ void G_CARTESIAN::computeVorticity()
                     vort[index] = 0.0;
                     continue;
                 }
+                
                 vort[index] = getVorticity(i,j);
             }
             break;
         }
     case 3:
         {
+	        double** vort3d = eqn_params->vort3d;
             for (int k = imin[2]; k <= imax[2]; ++k)
             for (int j = imin[1]; j <= imax[1]; ++j)
             for (int i = imin[0]; i <= imax[0]; ++i)
