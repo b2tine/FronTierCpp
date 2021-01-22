@@ -481,7 +481,7 @@ void G_CARTESIAN::computeMeshFlux(
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
     
-    //addViscousFlux(&m_vst,m_flux,delta_t);
+    addViscousFlux(&m_vst,m_flux,delta_t);
 	
     addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */

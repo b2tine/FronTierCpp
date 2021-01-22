@@ -75,35 +75,58 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
 
     int icx0[MAXD], icx1[MAXD];
     int icy0[MAXD], icy1[MAXD];
+    int icx0y0[MAXD], icx1y0[MAXD];
+    int icx0y1[MAXD], icx1y1[MAXD];
     for (int i = 0; i < dim; ++i)
     {
         icx0[i] = icoords[i];
         icx1[i] = icoords[i];
         icy0[i] = icoords[i];
         icy1[i] = icoords[i];
+        icx0y0[i] = icoords[i];
+        icx1y0[i] = icoords[i];
+        icx0y1[i] = icoords[i];
+        icx1y1[i] = icoords[i];
     }
 
     icx0[0] = icoords[0] - 1;
     icx1[0] = icoords[0] + 1;
     icy0[1] = icoords[1] - 1;
     icy1[1] = icoords[1] + 1;
+    
+    icx0y0[0] = icoords[0] - 1; icx0y0[1] = icoords[1] - 1;
+    icx1y0[0] = icoords[0] + 1; icx1y0[1] = icoords[1] - 1;
+    icx0y1[0] = icoords[0] - 1; icx0y1[1] = icoords[1] + 1;
+    icx1y1[0] = icoords[0] + 1; icx1y1[1] = icoords[1] + 1;
 
     int index_x0 = d_index(icx0,top_gmax,dim);
     int index_x1 = d_index(icx1,top_gmax,dim);
     int index_y0 = d_index(icy0,top_gmax,dim);
     int index_y1 = d_index(icy1,top_gmax,dim);
+    
+    int index_x0y0 = d_index(icx0y0,top_gmax,dim);
+    int index_x1y0 = d_index(icx1y0,top_gmax,dim);
+    int index_x0y1 = d_index(icx0y1,top_gmax,dim);
+    int index_x1y1 = d_index(icx1y1,top_gmax,dim);
 
     COMPONENT comp_x0 = top_comp[index_x0];
     COMPONENT comp_x1 = top_comp[index_x1];
     COMPONENT comp_y0 = top_comp[index_y0];
     COMPONENT comp_y1 = top_comp[index_y1];
     
+    COMPONENT comp_x0y0 = top_comp[index_x0y0];
+    COMPONENT comp_x1y0 = top_comp[index_x1y0];
+    COMPONENT comp_x0y1 = top_comp[index_x0y1];
+    COMPONENT comp_x1y1 = top_comp[index_x1y1];
+    
     printf("\nicoords = (%d,%d,%d) index = %d\n\n",
-            icoords[0],icoords[0],icoords[0],index);
+            icoords[0],icoords[1],icoords[2],index);
 
-    printf("      |  %d  |      \n",comp_y1);
+    printf("  %d  |  %d  |  %d  \n",comp_x0y1,comp_y1,comp_x1y1);
+    printf("--------------------\n");
     printf("  %d  |  %d  |  %d  \n",comp_x0,comp,comp_x1);
-    printf("      |  %d  |      \n",comp_y0);
+    printf("--------------------\n");
+    printf("  %d  |  %d  |  %d  \n",comp_x0y0,comp_y0,comp_x1y0);
 }
 
 /*
