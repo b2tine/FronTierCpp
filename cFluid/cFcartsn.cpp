@@ -1007,10 +1007,19 @@ void G_CARTESIAN::setDomain()
 					sizeof(double));
 
 	    FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-	    if (dim == 2)
+	    
+        if (dim == 2)
+        {
 	    	FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,size,
-					sizeof(double));
-	    field.dens = eqn_params->dens;
+                    sizeof(double));
+        }
+        else if (dim == 3)
+        {
+            FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vort3d,dim,size,
+                        sizeof(double));
+        }
+	    
+        field.dens = eqn_params->dens;
 	    field.engy = eqn_params->engy;
 	    field.pres = eqn_params->pres;
 	    field.momn = eqn_params->mom;
@@ -1602,6 +1611,20 @@ void G_CARTESIAN::initMovieVariables()
             }
 	}
 
+    //TODO: get vorticity plot for 2d vtk
+    if (dim == 3)
+    {
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make vector vorticity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vort3d);
+        }
+    }
+
+
 	fclose(infile);
 }	/* end initMovieVariables */
 
@@ -1628,7 +1651,6 @@ void G_CARTESIAN::computeVorticity()
         }
     case 3:
         {
-            /*
             for (int k = imin[2]; k <= imax[2]; ++k)
             for (int j = imin[1]; j <= imax[1]; ++j)
             for (int i = imin[0]; i <= imax[0]; ++i)
@@ -1642,9 +1664,8 @@ void G_CARTESIAN::computeVorticity()
                 }
                 vort3d[0][index] = getVorticityX(i,j,k);
                 vort3d[1][index] = getVorticityY(i,j,k);
-                vort3d[1][index] = getVorticityZ(i,j,k);
+                vort3d[2][index] = getVorticityZ(i,j,k);
             }
-            */
             break;
         }
     default:
