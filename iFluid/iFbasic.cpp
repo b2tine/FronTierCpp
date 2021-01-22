@@ -5012,6 +5012,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     
     ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    int ghost_index = d_index(ghost_ic,top_gmax,dim);
+    COMPONENT ghost_comp = top_comp[ghost_index];
     
     for (int j = 0; j < dim; ++j)
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
@@ -5022,8 +5024,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     HYPER_SURF* hsurf;
     double range = 2;
 
-    FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+    //TODO: Difference if we use ghost_comp instead of comp in nip?
+    //      This is the correct usage of the api, remove previous version
+    //      when certain no problems occur.
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    /*FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);*/
 
     //TODO: Would limiting dist_ghost give improvement???
     //      The parabolic and poisson solvers never actually encounter

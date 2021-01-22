@@ -458,7 +458,7 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     double vel_i[2];
     double vel_ii[2];
 
-    //TODO: detect interface like 2d version does -- see if there is much of a difference.
+    //TODO: detect interface like 2d version does
     std::vector<double> curl_vel(dim);
     for (int idir = 0; idir < 3; ++idir)
     {

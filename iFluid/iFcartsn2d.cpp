@@ -721,17 +721,22 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
                 if (status == NO_PDE_BOUNDARY)
                     u_edge[idir][nb] = vel[(idir+1)%dim][index_nb];
                 else if (status ==CONST_P_PDE_BOUNDARY)
-                    u_edge[idir][nb] = u0;
+                    u_edge[idir][nb] = u0;//TODO: should this use the intfc_state vel?
                 else if (status ==CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == DIRICHLET_BOUNDARY)
+                        wave_type(hs) == DIRICHLET_BOUNDARY)//TODO: are these flipped?
                     u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
                 else
+                {
+                    //TODO: Use a higher order approximation for the
+                    //      NEUMANN/MOVABLE_BODY_BOUNDARY (3 point one sided).
+                    //      See computeDivSimple().
                     u_edge[idir][nb] = u0;
+                }
             }
         }
                     
-        vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/dx -
-                        0.5*(u_edge[1][1] - u_edge[1][0])/dy;
+        vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/dx
+                    - 0.5*(u_edge[1][1] - u_edge[1][0])/dy;
 
 	return vorticity;
 }	/* end getVorticity */
