@@ -26,15 +26,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *******************************************************************/
 #include "cFluid.h"
 
-class ToFill{
+class ToFill
+{
 public:
-int icoords[3];
+    int icoords[3];
 };
 
-EXPORT  void    tecplot_interface_states(const char*, INTERFACE	*);
+EXPORT void tecplot_interface_states(const char*, INTERFACE	*);
+
+static double (*getStateVel[MAXD])(Locstate) =
+               {getStateXvel,getStateYvel,getStateZvel};
 
 static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
+
 static void printInputStencil(SWEEP,int);
 
 //----------------------------------------------------------------
@@ -788,8 +793,6 @@ void G_CARTESIAN::solve(double dt)
 	{
 	    sampleVelocity();
 	}
-
-    computeVorticity();
 
 	start_clock("copyMeshStates");
 	copyMeshStates();
@@ -1644,12 +1647,6 @@ void G_CARTESIAN::computeVorticity()
             for (int i = imin[0]; i <= imax[0]; ++i)
             {
                 int index = d_index2d(i,j,top_gmax);
-                if (!gas_comp(top_comp[index]))
-                {
-                    vort[index] = 0.0;
-                    continue;
-                }
-                
                 vort[index] = getVorticity(i,j);
             }
             break;
@@ -1668,6 +1665,7 @@ void G_CARTESIAN::computeVorticity()
                         vort3d[l][index] = 0.0;
                     continue;
                 }
+                //TODO: Write boundary aware implementation for 3d
                 vort3d[0][index] = getVorticityX(i,j,k);
                 vort3d[1][index] = getVorticityY(i,j,k);
                 vort3d[2][index] = getVorticityZ(i,j,k);
@@ -1683,6 +1681,75 @@ void G_CARTESIAN::computeVorticity()
     }
 }
 
+double G_CARTESIAN::getVorticity(int i, int j)
+{
+    int icoords[MAXD] = {i,j,0};
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+    
+    if (!gas_comp(comp)) return 0.0;
+
+    const GRID_DIRECTION dir[2][2] = {
+        {WEST,EAST},{SOUTH,NORTH}
+    };
+
+    POINTER intfc_state;
+    HYPER_SURF* hs;
+    HYPER_SURF_ELEMENT* hse;
+    double crx_coords[MAXD];
+    boolean intfc_crx;
+    
+    double **vel = eqn_params->vel;
+    double u_edge[2][2];
+    int icnb[MAXD];
+    int index_nb;
+    
+    for (int idir = 0; idir < dim; ++idir)
+    {
+        for (int l = 0; l < dim; ++l)
+            icnb[l] = icoords[l];
+
+        for (int nb = 0; nb < 2; ++nb)
+        {
+            icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+            index_nb = d_index(icnb,top_gmax,dim);
+
+            intfc_crx = FT_StateStructAtGridCrossing2(front,icoords,
+                    dir[idir][nb],comp,&intfc_state,&hs,&hse,crx_coords);
+
+            if (!intfc_crx)
+            {
+                u_edge[idir][nb] = vel[(idir+1)%dim][index_nb];
+            }
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+            {
+                //TODO: Need to handle the flow through boundary
+                //      differently, or is there an error in the
+                //      flow through boundary function itself?
+                u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
+            }
+            else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+            {
+                //TODO: Use a higher order approximation (3 point one sided)
+                //      See iFluid computeDivSimple().
+                u_edge[idir][nb] = vel[(idir+1)%dim][index];
+            }
+            else
+            {
+                printf("getVorticity() ERROR: Unknown Boundary Type!\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+        }
+    }
+
+    double vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/top_h[0]
+                        - 0.5*(u_edge[1][1] - u_edge[1][0])/top_h[1];
+
+    return vorticity;
+}
+
+/*
 double G_CARTESIAN::getVorticity(int i, int j)
 {
 	int index0,index00,index01,index10,index11;
@@ -1706,7 +1773,7 @@ double G_CARTESIAN::getVorticity(int i, int j)
 
 	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
 	return vorticity;
-}	/* end getVorticity */
+}*/	/* end getVorticity */
 
 double G_CARTESIAN::getVorticityX(int i, int j, int k)
 {
@@ -1792,6 +1859,7 @@ void G_CARTESIAN::copyMeshStates()
 	double *pres = eqn_params->pres;
 	double *engy = eqn_params->engy;
 	double *vort = eqn_params->vort;
+	double **vort3d = eqn_params->vort3d;
 	int symmetry[MAXD];
 
 	switch (dim)
@@ -1814,16 +1882,19 @@ void G_CARTESIAN::copyMeshStates()
 	    for (i = imin[0]; i <= imax[0]; ++i)
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
+            index = d_index2d(i,j,top_gmax);
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
 	    }
-	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
+        computeVorticity();
+	
+        FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
-	    for (l = 0; l < dim; ++l)
+	    
+        for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = EVEN;
 		symmetry[l] = ODD;
@@ -1836,18 +1907,27 @@ void G_CARTESIAN::copyMeshStates()
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
+            index = d_index3d(i,j,k,top_gmax);
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
 	    }
-	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
+        computeVorticity();
+	    
+        FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    for (l = 0; l < dim; ++l)
+	    
+	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
+        for (l = 0; l < dim; ++l)
+	    {
+            FT_ParallelExchGridArrayBuffer(vort3d[l],front,symmetry);
+        }
+
+        for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = symmetry[2] = EVEN;
-		symmetry[l] = ODD;
-	    	FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
+        symmetry[l] = ODD;
+            FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
 	    	FT_ParallelExchGridArrayBuffer(vel[l],front,symmetry);
 	    }
 	    break;

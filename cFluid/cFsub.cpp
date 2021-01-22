@@ -47,8 +47,10 @@ static double intrp_between(double,double,double,double,double);
 
 static double (*getStateVel[MAXD])(Locstate) =
                {getStateXvel,getStateYvel,getStateZvel};
+
 static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
+
 static void set_state_max_speed(Front*,STATE*,double*);
 static void get_variable_bdry_params(int,FILE*,POINTER*);
 static void cF_variableBoundaryState2d(double*,HYPER_SURF*,Front*,
@@ -538,6 +540,7 @@ extern void cFluid_point_propagate(
 	{
 	case NEUMANN_BOUNDARY:
 	case MOVABLE_BODY_BOUNDARY:
+        //TODO: Need rigid_body_point_propagate() -- 2d and 3d versions
 	    return neumann_point_propagate(front,wave,oldp,newp,oldhse,
 					oldhs,dt,V);
 	case DIRICHLET_BOUNDARY:
@@ -603,9 +606,11 @@ static  void neumann_point_propagate(
             for (i = 0; i < dim; ++i)
             {
                 vel[i] = center_of_mass_velo(oldhs)[i];
-                crds_com[i] = Coords(oldp)[i] +dt*vel[i] - 
-			center_of_mass(oldhs)[i];
+                crds_com[i] = Coords(oldp)[i] + dt*vel[i]
+                                - center_of_mass(oldhs)[i];
             }
+        
+            //if (dim == 2) //TODO: This is only for rotations in xy plane
             vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
                      angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
             vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
@@ -613,27 +618,30 @@ static  void neumann_point_propagate(
 	}
 	else
 	{
-            for (i = 0; i < dim; ++i)
-	    	vel[i] = 0.0;
+        for (i = 0; i < dim; ++i) vel[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
+        Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
 	    newst->vel[i] = vel[i];
-            FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
+
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
 			getStatePres,&newst->pres,&oldst->pres);
-        newst->eos = oldst->eos;
-	for (i = 0; i < dim; ++i)
+    
+    newst->eos = oldst->eos;
+    for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
 	    newst->momn[i] = newst->dens*vel[i];
 	}
 	newst->engy = EosEnergy(newst);
-	s = mag_vector(vel,dim);
+	
+    s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
 }	/* end neumann_point_propagate */
