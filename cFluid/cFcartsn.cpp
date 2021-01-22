@@ -1625,7 +1625,7 @@ void G_CARTESIAN::initMovieVariables()
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'Y' || string[0] == 'y')
-                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field->vort3d);
+                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field.vort3d);
         }
     }
 
