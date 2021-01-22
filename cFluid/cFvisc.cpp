@@ -1,0 +1,205 @@
+#include "cFluid.h"
+//#include "cFvisc.h"
+
+
+//TODO: Finish Implementation
+void G_CARTESIAN::addViscousFlux(
+        SWEEP* m_vst,
+        FSWEEP *m_flux,
+        double delta_t)
+{
+    switch (dim)
+    {
+    case 2:
+        {
+            for (int j = imin[1]; j <= imax[1]; j++)
+            for (int i = imin[0]; i <= imax[0]; i++)
+            {   
+                int icoords[MAXD] = {i,j,0};
+                int index = d_index(icoords,top_gmax,dim);
+                if (!gas_comp(top_comp[index])) continue;
+                
+                VStencil2d vsten;
+                fillViscousFluxStencil2d(icoords,m_vst,&vsten);
+                //VFLUX v_flux;
+                //computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
+            }
+            break;
+        }
+    /*case 3:
+        {
+            for (int k = imin[2]; k <= imax[2]; k++)
+            for (int j = imin[1]; j <= imax[1]; j++)
+            for (int i = imin[0]; i <= imax[0]; i++)
+            {   
+                int icoords[MAXD] = {i,j,k};
+                int index = d_index(icoords,top_gmax,dim);
+                if (!gas_comp(top_comp[index])) continue;
+                
+                VStencil3d vsten;
+                fillViscousFluxStencil3d(icoords,m_vst,&vsten);
+                //VFLUX v_flux;
+                //computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
+            }
+            break;
+        }*/
+    default:
+        {
+            printf("addViscousFlux() ERROR: Invalid Dimension\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+    }
+
+    LOC(); clean_up(0);
+}
+
+void G_CARTESIAN::fillViscousFluxStencil2d(
+        int* icoords,
+        SWEEP* m_vst,
+        VStencil2d* vsten)
+{
+    /*
+    POINTER state;
+    HYPER_SURF* hs;
+        //HYPER_SURF_ELEMENT* hse;
+    double crx_coords[MAXD];
+    int crx_status;
+
+    const GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+    */
+
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    int icx0[MAXD], icx1[MAXD];
+    int icy0[MAXD], icy1[MAXD];
+    for (int i = 0; i < dim; ++i)
+    {
+        icx0[i] = icoords[i];
+        icx1[i] = icoords[i];
+        icy0[i] = icoords[i];
+        icy1[i] = icoords[i];
+    }
+
+    icx0[0] = icoords[0] - 1;
+    icx1[0] = icoords[0] + 1;
+    icy0[1] = icoords[1] - 1;
+    icy1[1] = icoords[1] + 1;
+
+    int index_x0 = d_index(icx0,top_gmax,dim);
+    int index_x1 = d_index(icx1,top_gmax,dim);
+    int index_y0 = d_index(icy0,top_gmax,dim);
+    int index_y1 = d_index(icy1,top_gmax,dim);
+
+    COMPONENT comp_x0 = top_comp[index_x0];
+    COMPONENT comp_x1 = top_comp[index_x1];
+    COMPONENT comp_y0 = top_comp[index_y0];
+    COMPONENT comp_y1 = top_comp[index_y1];
+    
+    printf("\nicoords = (%d,%d,%d) index = %d\n\n",
+            icoords[0],icoords[0],icoords[0],index);
+
+    printf("      |  %d  |      \n",comp_y1);
+    printf("  %d  |  %d  |  %d  \n",comp_x0,comp,comp_x1);
+    printf("      |  %d  |      \n",comp_y0);
+}
+
+/*
+void G_CARTESIAN::fillViscousFluxStencil3d(
+        int* icoords,
+        SWEEP* m_vst,
+        VStencil3d* vsten)
+{
+}
+*/
+
+//TODO: This function should become the fillStencil() like function
+void G_CARTESIAN::computeViscousFlux(
+        int* icoords,
+        SWEEP* m_vst,
+        VFLUX* v_flux,
+        double delta_t)
+{
+    LOC(); clean_up(0);
+
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+    if (!gas_comp(comp)) return;
+
+    POINTER state;
+    HYPER_SURF* hs;
+        //HYPER_SURF_ELEMENT* hse;
+    double crx_coords[MAXD];
+    int crx_status;
+
+    const GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+
+    
+    int ic[MAXD];
+    VStencil3d vsten;
+    VSWEEP vstate = vsten.st[1][1][1];//center of stencil
+    
+    for (int l = 0; l < dim; ++l)
+    {
+        vstate.icoords[l] = icoords[l];
+        vstate.vel[l] = m_vst->momn[l][index]/m_vst->dens[index];
+    }
+
+    //From grid point i,j,k need to check for interface crossings
+    //between immediate neighbors. Will then need to move to each
+    //immediate neighbor and check for interface crossings between
+    //its neighbors involved in computing the mixed derivatives.
+    
+    //NOTE: Not possible to precompute every state ahead of time,
+    //      must check crossing and generate ghost states when computing
+    //      a specific derivative -- a single point that is involved
+    //      in the computation of two separate derivatives may have different
+    //      states in the two computations...
+
+    //TODO: The non-mixed second derivatives can be computed with
+    //      a loop like this one, and the mixed ones can be dealt with
+    //      separately.
+    
+    double u_nb[2], v_nb[2], w_nb[2], mu_nb[2];
+
+    for (int l = 0; l < dim; ++l)
+    {
+        for (int nb = 0; nb < 2; ++nb)
+        {
+            for (int j = 0; j < dim; ++j)
+                ic[j] = icoords[j];
+            ic[l] = (nb == 0) ? icoords[l] - 1 : icoords[l] + 1;
+            
+            vstate = vsten.st[ic[0]][ic[1]][ic[2]];
+    
+            /*
+            FT_StateStructAtGridCrossing(front,front->grid_intfc,
+                    icoords,dir[l][nb],comp,&intfc_state,&hs,crx_coords);
+            */
+            
+                /*
+                FT_StateStructAtGridCrossing2(front,icoords,dir[l][nb],
+                        comp,&intfc_state,&hs,&hse,crx_coords);
+                */
+        }
+
+    }
+
+            /*
+            //NOTE icoords replaced with ic in this call
+            FT_StateStructAtGridCrossing(front,front->grid_intfc,
+                    ic,dir[l][nb],comp,&intfc_state,&hs,crx_coords);
+            */
+
+
+//TODO: For mixed partials write functions that accept an icoords array and
+//      a direction. Then can compute individual ghost states per derivative.
+
+
+}
+
+

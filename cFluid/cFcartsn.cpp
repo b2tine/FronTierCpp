@@ -475,7 +475,10 @@ void G_CARTESIAN::computeMeshFlux(
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
-	addSourceTerm(m_vst,m_flux,delta_t);
+    
+    //addViscousFlux(&m_vst,m_flux,delta_t);
+	
+    addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
 
 void G_CARTESIAN::resetFlux(FSWEEP *m_flux)
@@ -785,6 +788,8 @@ void G_CARTESIAN::solve(double dt)
 	{
 	    sampleVelocity();
 	}
+
+    computeVorticity();
 
 	start_clock("copyMeshStates");
 	copyMeshStates();
@@ -1600,6 +1605,82 @@ void G_CARTESIAN::initMovieVariables()
 	fclose(infile);
 }	/* end initMovieVariables */
 
+void G_CARTESIAN::computeVorticity()
+{
+	double *vort = eqn_params->vort;
+
+    switch (dim)
+    {
+    case 2:
+        {
+            for (int j = imin[1]; j <= imax[1]; ++j)
+            for (int i = imin[0]; i <= imax[0]; ++i)
+            {
+                int index = d_index2d(i,j,top_gmax);
+                if (!gas_comp(top_comp[index]))
+                {
+                    vort[index] = 0.0;
+                    continue;
+                }
+                vort[index] = getVorticity(i,j);
+            }
+            break;
+        }
+    case 3:
+        {
+            /*
+            for (int k = imin[2]; k <= imax[2]; ++k)
+            for (int j = imin[1]; j <= imax[1]; ++j)
+            for (int i = imin[0]; i <= imax[0]; ++i)
+            {
+                int index = d_index3d(i,j,k,top_gmax);
+                if (!gas_comp(top_comp[index]))
+                {
+                    for (int l = 0; l < dim; ++l)
+                        vort3d[l][index] = 0.0;
+                    continue;
+                }
+                vort3d[0][index] = getVorticityX(i,j,k);
+                vort3d[1][index] = getVorticityY(i,j,k);
+                vort3d[1][index] = getVorticityZ(i,j,k);
+            }
+            */
+            break;
+        }
+    default:
+        {
+            printf("computeVorticity() ERROR: Invalid Dimension\n");
+            LOC(); clean_up(EXIT_FAILURE);
+
+        }
+    }
+}
+
+double G_CARTESIAN::getVorticity(int i, int j)
+{
+	int index0,index00,index01,index10,index11;
+	double v00,v01,v10,v11;
+	double dx,dy;
+	double vorticity;
+	double *dens = field.dens;
+	double **momn = field.momn;
+
+	dx = top_h[0];
+	dy = top_h[1];
+	index0 = d_index2d(i,j,top_gmax);
+	index00 = d_index2d(i-1,j,top_gmax);
+	index01 = d_index2d(i+1,j,top_gmax);
+	index10 = d_index2d(i,j-1,top_gmax);
+	index11 = d_index2d(i,j+1,top_gmax);
+	v00 = -momn[1][index00]/dens[index00];
+	v01 =  momn[1][index01]/dens[index01];
+	v10 =  momn[0][index10]/dens[index10];
+	v11 = -momn[0][index11]/dens[index11];
+
+	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
+	return vorticity;
+}	/* end getVorticity */
+
 double G_CARTESIAN::getVorticityX(int i, int j, int k)
 {
 	int index0,index00,index01,index10,index11;
@@ -1674,31 +1755,6 @@ double G_CARTESIAN::getVorticityZ(int i, int j, int k)
 	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
 	return vorticity;
 }	/* end getVorticityZ */
-
-double G_CARTESIAN::getVorticity(int i, int j)
-{
-	int index0,index00,index01,index10,index11;
-	double v00,v01,v10,v11;
-	double dx,dy;
-	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
-
-	dx = top_h[0];
-	dy = top_h[1];
-	index0 = d_index2d(i,j,top_gmax);
-	index00 = d_index2d(i-1,j,top_gmax);
-	index01 = d_index2d(i+1,j,top_gmax);
-	index10 = d_index2d(i,j-1,top_gmax);
-	index11 = d_index2d(i,j+1,top_gmax);
-	v00 = -momn[1][index00]/dens[index00];
-	v01 =  momn[1][index01]/dens[index01];
-	v10 =  momn[0][index10]/dens[index10];
-	v11 = -momn[0][index11]/dens[index11];
-
-	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
-	return vorticity;
-}	/* end getVorticity */
 
 void G_CARTESIAN::copyMeshStates()
 {

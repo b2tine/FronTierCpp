@@ -1,8 +1,13 @@
+#ifndef CFLUID_H
+#define CFLUID_H
+
 /**********************************************************************
  * 		cFluid.h
  **********************************************************************/
 
 #include <FronTier.h>
+#include "cFvisc.h"
+
 #include <vector>
 #include <list>
 #include <assert.h>
@@ -55,7 +60,7 @@ struct _STATE {
 	double momn[MAXD];		/* momentum deisnty */
 	double pres;			/* Pressure */
 	double vel[MAXD];		/* Velocities */
-	double vort;			/* Vorticity */
+	double vort;			/* Vorticity-2d */
 	EOS_PARAMS      *eos;
 	int dim;
 };
@@ -285,36 +290,43 @@ public:
 	void setCoords(double*,int);
 };
 
-struct _FIELD
+struct FIELD
 {
 	double **vel;
 	double **momn;
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;
+	double *vort;          /* Vorticity-2d */ 
+    //TODO: add 3d vorticity
+        //double** vort3d  /* Vorticity-3d */
 };
 
-struct _SWEEP
+struct SWEEP
 {
-        double *dens;            /* density vector */
-        double **momn;      /* momentum vector */
-        double *engy;            /* internal energy vector */
-        double *pres;        /* used for EOS */
+    double *dens;           /* density vector */
+    double **momn;          /* momentum vector */
+    double *engy;           /* internal energy vector */
+    double *pres;           /* used for EOS */
 };
 
-struct _FSWEEP
+struct FSWEEP
 {
-        double *dens_flux;       /* density flux */
-        double **momn_flux; /* momentum flux */
-        double *engy_flux;       /* internal energy flux */
+    double *dens_flux;      /* density flux */
+    double **momn_flux;     /* momentum flux */
+    double *engy_flux;      /* internal energy flux */
 };
 
-typedef struct _FIELD FIELD;
 
-typedef struct _FSWEEP FSWEEP;
 
-typedef struct _SWEEP SWEEP;
+/*
+//NOTE: These are defined in cFvisc.h
+
+struct VStencil2d;
+struct VStencil3d;
+struct VFLUX;
+*/
+
 
 class G_CARTESIAN{
 	Front *front;
@@ -437,7 +449,14 @@ private:
 	void appendStencilBuffer2d(SWEEP*,SWEEP*,int,int);
 	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);
 	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
-	// -------------------------------------------------------
+	
+	/* Viscous flux */
+    void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
+    void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
+    void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
+    void computeViscousFlux(int* icoords, SWEEP* m_vst, VFLUX* v_flux, double delta_t);
+    
+    // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
@@ -500,6 +519,7 @@ private:
 	int getInteger(double i);
 	boolean isInteger(double i);
 
+    void computeVorticity();
 	double getVorticity(int i, int j);
         double getVorticityX(int i, int j, int k);
         double getVorticityY(int i, int j, int k);
@@ -620,3 +640,6 @@ extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
 
 // cFinit.cpp
 extern void insert_objects(Front*);
+
+
+#endif

@@ -19,7 +19,9 @@ libcFluid_la_SOURCES = \
 ../cFriem.cpp \
 ../cFsub.cpp \
 ../cFtvd.cpp \
-../cFweno.cpp
+../cFweno.cpp \
+../cFvisc.h \
+../cFvisc.cpp
 								
 
 libcFluid_la_LIBADD = $(LIB_FT)

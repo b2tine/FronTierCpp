@@ -121,5 +121,10 @@ void G_CARTESIAN::computeViscousFlux(
             */
 
 
+//TODO: For mixed partials write functions that accept an icoords array and
+//      a direction. Then can compute individual ghost states per derivative.
+
 
 }
+
+

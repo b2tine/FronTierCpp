@@ -618,10 +618,11 @@ void G_CARTESIAN::initCirclePlaneIntfc(
 	char *inname)
 {
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	PROB_TYPE prob_type = eqn_params->prob_type;
 	FILE *infile = fopen(inname,"r");
 	static CIRCLE_PARAMS *circle_params;
 	int i,dim;
-	PROB_TYPE prob_type = eqn_params->prob_type;
+    char string[100];
 
 	FT_ScalarMemoryAlloc((POINTER*)&circle_params,sizeof(CIRCLE_PARAMS));
         circle_params->dim = dim = front->rect_grid->dim;
@@ -660,7 +661,14 @@ void G_CARTESIAN::initCirclePlaneIntfc(
             level_func_pack->neg_component = SOLID_COMP;
             level_func_pack->pos_component = GAS_COMP1;
             level_func_pack->func = level_circle_func;
-	    level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
             break;
 	default:
 	    (void) printf("ERROR Wrong type in initCirclePlaneIntfc()\n");
@@ -2021,10 +2029,11 @@ void G_CARTESIAN::initRectPlaneIntfc(
         char *inname)
 {
         EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+        PROB_TYPE prob_type = eqn_params->prob_type;
         FILE *infile = fopen(inname,"r");
         static RECT_BOX_PARAMS *rect_params;
         int i,dim;
-        PROB_TYPE prob_type = eqn_params->prob_type;
+        char string[100];
 
         FT_ScalarMemoryAlloc((POINTER*)&rect_params,sizeof(RECT_BOX_PARAMS));
         rect_params->dim = dim = front->rect_grid->dim;
@@ -2052,6 +2061,13 @@ void G_CARTESIAN::initRectPlaneIntfc(
             level_func_pack->pos_component = GAS_COMP1;
             level_func_pack->func = rect_box_func;
             level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
             break;
         default:
             (void) printf("ERROR: entering wrong initialization function\n");
@@ -2065,11 +2081,12 @@ void G_CARTESIAN::initTrianglePlaneIntfc(
         char *inname)
 {
         EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+        PROB_TYPE prob_type = eqn_params->prob_type;
         FILE *infile = fopen(inname,"r");
         static TRIANGLE_PARAMS *tri_params;
         int i,dim;
         char msg[100];
-        PROB_TYPE prob_type = eqn_params->prob_type;
+        char string[100];
 
         FT_ScalarMemoryAlloc((POINTER*)&tri_params,sizeof(TRIANGLE_PARAMS));
 
@@ -2091,8 +2108,14 @@ void G_CARTESIAN::initTrianglePlaneIntfc(
             level_func_pack->neg_component = SOLID_COMP;
             level_func_pack->pos_component = GAS_COMP1;
             level_func_pack->func = triangle_func;
-            //level_func_pack->wave_type = NEUMANN_BOUNDARY;
             level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
             break;
         default:
             (void) printf("ERROR: entering wrong initialization function\n");
@@ -2106,10 +2129,11 @@ void G_CARTESIAN::initCylinderPlaneIntfc(
         char *inname)
 {
         EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+        PROB_TYPE prob_type = eqn_params->prob_type;
         FILE *infile = fopen(inname,"r");
         static CYLINDER_PARAMS *cylinder_params;
         int i;
-        PROB_TYPE prob_type = eqn_params->prob_type;
+        char string[100];
 
         FT_ScalarMemoryAlloc((POINTER*)&cylinder_params,sizeof(CYLINDER_PARAMS));
         CursorAfterString(infile,"Enter the center of the cylinder:");
@@ -2134,8 +2158,14 @@ void G_CARTESIAN::initCylinderPlaneIntfc(
             level_func_pack->neg_component = SOLID_COMP;
             level_func_pack->pos_component = GAS_COMP1;
             level_func_pack->func = cylinder_func;
-            //level_func_pack->wave_type = NEUMANN_BOUNDARY;
             level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
             break;
         default:
             (void) printf("ERROR: entering wrong initialization function\n");
