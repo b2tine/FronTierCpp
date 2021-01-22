@@ -85,6 +85,12 @@ void G_CARTESIAN::computeViscousFlux(
     //      in the computation of two separate derivatives may have different
     //      states in the two computations...
 
+    //TODO: The non-mixed second derivatives can be computed with
+    //      a loop like this one, and the mixed ones can be dealt with
+    //      separately.
+    
+    double u_nb[2], v_nb[2], w_nb[2], mu_nb[2];
+
     for (int l = 0; l < dim; ++l)
     {
         for (int nb = 0; nb < 2; ++nb)
