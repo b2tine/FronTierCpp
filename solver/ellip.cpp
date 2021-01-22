@@ -369,7 +369,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
                 //NEUMANN_BOUNDARY on domain hypersurface bdry
-                //  do nothing
+                //  do-nothing
             }
             else if (!is_bdry_hs(hs) && 
                      (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -530,7 +530,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
-                    // do nothing
+                    // do-nothing
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {

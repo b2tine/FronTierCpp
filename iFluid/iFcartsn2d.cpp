@@ -883,9 +883,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
+
+                            //TODO: may not need to modify inlet with
+                            //      tangential component of phi ...
+                            //      should be zero anyway
+                            
+                            /*
                             auto grad_phi_tangent = computeGradPhiTangential(
                                     icoords,dir[nb],comp,hs,crx_coords);
                             U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+                            */
                         }
                     
                     }

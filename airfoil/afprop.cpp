@@ -610,6 +610,7 @@ static void gore_point_propagate(
 	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
 	    return;
 	}
+
 	sl = (STATE*)left_state(oldp);		
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);	
@@ -636,6 +637,9 @@ static void gore_point_propagate(
                         getStatePres,&newsl->pres,&sl->pres);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
                         getStatePres,&newsr->pres,&sr->pres);
+
+
+        //TODO: What is going on with this velocity modification???
 	for (i = 0; i < 3; ++i)
         {
             FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[i],
@@ -650,16 +654,14 @@ static void gore_point_propagate(
             newsl->vel[i] -= left_nor_speed*nor[i];
             newsr->vel[i] -= right_nor_speed*nor[i];
         }
-	/* Impulse is incremented by the fluid pressure force */
+	
+    /* Impulse is incremented by the fluid pressure force */
         for (i = 0; i < 3; ++i)
         {
 	    dv = 0.0;
 
-        //TODO: Should be using newsl->pres and newsr->pres?
-        //      See elastic_point_propagate().
 	    if (front->step > af_params->fsi_startstep)
 		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    
         //if (front->step > 5)
 		  //  dv = (sl->pres - sr->pres)*nor[i]/area_dens;
 	    
@@ -1234,10 +1236,9 @@ static void load_node_propagate(
 	    set_bond_length(b,dim);
 	}
 	
-	if (debugging("trace"))
+	if (debugging("load_node"))
 	{
-	    (void)printf("accel = %f %f %f\n",accel[0],accel[1],
-				accel[2]);
+	    (void)printf("accel = %f %f %f\n",accel[0],accel[1],accel[2]);
 	    (void)printf("Leaving load_node_propagate()\n\n");
 	}
 }	/* end load_node_propagate */

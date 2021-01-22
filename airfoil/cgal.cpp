@@ -1545,8 +1545,10 @@ static void installString(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: Need these calls below? -- see usage in InstallNewLoadNode()
-	    //cur_intfc = current_interface();
+    //TODO: Need these calls below?
+    //      See usage in InstallNewLoadNode() and GenerateCgalSurf() etc.
+    //
+        //INTERFACE *sav_intfc = current_interface();
 	    //set_current_interface(intfc);
 
     //For point mass only?
@@ -1648,7 +1650,7 @@ static void installString(
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
         //TODO: Need this call below? -- see usage in InstallNewLoadNode()
-		    //set_current_interface(cur_intfc);
+	        //set_current_interface(sav_intfc);
 		return;
 	    }
 	}
@@ -1714,9 +1716,11 @@ static void installString(
 	    af_params->string_curves.push_back(string_curves[i]);
 	}
         
-    //TODO: Need this call below? -- see use in InstallNewLoadNode()
-        //set_current_interface(cur_intfc);
+    //TODO: should these be freed?
 	FT_FreeThese(1,string_curves);
+
+    //TODO: Need this call below? -- see use in InstallNewLoadNode()
+	    //set_current_interface(sav_intfc);
 }	/* end installString */
 
 static void resetStringNodePoints(

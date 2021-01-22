@@ -629,7 +629,7 @@ void CollisionSolver3d::resolveCollision()
 	detectCollision();
     stop_clock("detectCollision");
 
-    //TODO: fix this function
+    //TODO: function needs fixing -- is this even worth correcting/using?
 	//detectDomainBoundaryCollision();
 
     /*
@@ -819,11 +819,11 @@ void CollisionSolver3d::limitStrainRate()
             printf("   %d Strain Rate Edges\n",numStrainRateEdges);
         }
 
-	    bool excess_strain = false;
+	    bool excess_strain_rate = false;
         if (numStrainRateEdges > 0)
-            excess_strain = true;
+            excess_strain_rate = true;
 
-        if (!excess_strain)
+        if (!excess_strain_rate)
             break;
 	}
 }
