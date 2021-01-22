@@ -729,7 +729,7 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
                 {
                     //TODO: Use a higher order approximation for the
                     //      NEUMANN/MOVABLE_BODY_BOUNDARY (3 point one sided).
-                    //      See computeDivSimple().
+                    //      See computeFieldPointDivSimple().
                     u_edge[idir][nb] = u0;
                 }
             }

@@ -1540,8 +1540,8 @@ static void assembleParachuteSet3d(
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
+            geom_set->load_node = nodes[i];
+            reorder_string_curves(nodes[i]);
 	    }
 	}
 	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", ns, nc, nn, 

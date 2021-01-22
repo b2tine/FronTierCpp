@@ -1216,15 +1216,19 @@ static void load_node_propagate(
 		f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
 	    }
 	}
+
+    //TODO: Need to square up load node propagation with the set_geomset_velocity()
+    //      routines and setSpecialNodeForce() -- Appears to be some redundancy, or
+    //      perhaps even some canceling out of forces...
 	for (i = 0; i < dim; ++i)
 	{
 	    accel[i] = f[i]/mass;
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 0.0;
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
-	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + 
-				(accel[i] + g[i]) * dt;
+	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i])*dt;
 	}
+
 	node_out_curve_loop(newn,c)
 	{
 	    b = (*c)->first;
@@ -1372,8 +1376,8 @@ static void rg_string_node_propagate(
 	}
 
 	for (i = 0; i < dim; ++i)
-	    accel[i] += g[i];
-            //accel[i] -= g[i]; //TODO: Is this correct???
+        accel[i] -= g[i]; //TODO: Is this correct???
+	        //accel[i] += g[i];
 
     if (debugging("rigid_body"))
     {
