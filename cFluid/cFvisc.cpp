@@ -60,9 +60,12 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
 {
     /*
     POINTER state;
+    HYPER_SURF_ELEMENT* hse;
     HYPER_SURF* hs;
-        //HYPER_SURF_ELEMENT* hse;
     double crx_coords[MAXD];
+    */
+    
+    /*
     int crx_status;
 
     const GRID_DIRECTION dir[3][2] = {
@@ -73,6 +76,66 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
+    ////////////////////////////////////////////////////////
+    for (int jj = 0; jj < 3; ++jj)
+    for (int ii = 0; ii < 3; ++ii)
+    {
+        VSWEEP* vs = &vsten->st[ii][jj];
+        vs->icoords[0] = icoords[0] + ii - 1;
+        vs->icoords[1] = icoords[1] + jj - 1;
+        int idx_nb = d_index(vs->icoords,top_gmax,dim);
+        
+        vs->comp = top_comp[idx_nb];
+        if (vs->comp != comp)
+        {
+            //TODO: generate a ghost state based on reflection
+            //      through the nearest_interface_point.
+            //
+            //      FT_FindNearestIntfcPointInRange(front,comp,
+            //          coords_ghost,NO_BOUNDARIES,crx_coords,
+            //          intrp_coeffs,&hse,&hs,range);
+            
+            //setViscousGhostState(vs);
+        }
+    }
+
+    //TESTING
+    bool needghost = false;
+    for (int jj = 0; jj < 3; ++jj)
+    {
+        for (int ii = 0; ii < 3; ++ii)
+        {
+            VSWEEP vs = vsten->st[ii][jj];
+            if (vs.comp != comp)
+            {
+                //TODO: generate a ghost state
+                needghost = true;
+            }
+        }
+    }
+
+    if (needghost)
+    {
+        printf("\nicoords = (%d,%d,%d) index = %d\n\n",
+                icoords[0],icoords[1],icoords[2],index);
+        
+        for (int jj = 2; jj >= 0; --jj)
+        {
+            for (int ii = 0; ii < 3; ++ii)
+            {
+                VSWEEP vs = vsten->st[ii][jj];
+                printf("  %d  %s",vs.comp,
+                        ((ii+1) % 3 == 0) ? "" : "|");
+            }
+            printf("\n-----------------\n");
+        }
+    }
+
+    return;
+    ////////////////////////////////////////////////////////
+
+    //OLD DEBUG INFO
+    /*
     int icx0[MAXD], icx1[MAXD];
     int icy0[MAXD], icy1[MAXD];
     int icx0y0[MAXD], icx1y0[MAXD];
@@ -118,15 +181,22 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     COMPONENT comp_x1y0 = top_comp[index_x1y0];
     COMPONENT comp_x0y1 = top_comp[index_x0y1];
     COMPONENT comp_x1y1 = top_comp[index_x1y1];
-    
-    printf("\nicoords = (%d,%d,%d) index = %d\n\n",
-            icoords[0],icoords[1],icoords[2],index);
 
-    printf("  %d  |  %d  |  %d  \n",comp_x0y1,comp_y1,comp_x1y1);
-    printf("--------------------\n");
-    printf("  %d  |  %d  |  %d  \n",comp_x0,comp,comp_x1);
-    printf("--------------------\n");
-    printf("  %d  |  %d  |  %d  \n",comp_x0y0,comp_y0,comp_x1y0);
+    if (comp_x0 != comp || comp_x1 != comp ||
+        comp_y0 != comp || comp_y1 != comp ||
+        comp_x0y0 != comp || comp_x1y0 != comp ||
+        comp_x0y1 != comp || comp_x1y1 != comp)
+    {
+        printf("\nicoords = (%d,%d,%d) index = %d\n\n",
+                icoords[0],icoords[1],icoords[2],index);
+
+        printf("  %d  |  %d  |  %d  \n",comp_x0y1,comp_y1,comp_x1y1);
+        printf("--------------------\n");
+        printf("  %d  |  %d  |  %d  \n",comp_x0,comp,comp_x1);
+        printf("--------------------\n");
+        printf("  %d  |  %d  |  %d  \n",comp_x0y0,comp_y0,comp_x1y0);
+    }
+    */
 }
 
 /*
