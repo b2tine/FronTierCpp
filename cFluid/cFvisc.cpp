@@ -58,12 +58,10 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         SWEEP* m_vst,
         VStencil2d* vsten)
 {
-    /*
-    POINTER state;
+    POINTER intfc_state;
     HYPER_SURF_ELEMENT* hse;
     HYPER_SURF* hs;
     double crx_coords[MAXD];
-    */
     
     /*
     int crx_status;
@@ -90,10 +88,8 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         {
             //TODO: generate a ghost state based on reflection
             //      through the nearest_interface_point.
-            //
-            //      FT_FindNearestIntfcPointInRange(front,comp,
-            //          coords_ghost,NO_BOUNDARIES,crx_coords,
-            //          intrp_coeffs,&hse,&hs,range);
+            FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,
+                    NO_BOUNDARIES,crx_coords,intrp_coeffs,&hse,&hs,range);
             
             //setViscousGhostState(vs);
         }
