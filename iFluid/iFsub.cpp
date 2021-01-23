@@ -817,6 +817,9 @@ static  void neumann_point_propagate(
 	    oldst = (STATE*)sr;
 	    newst = (STATE*)right_state(newp);
 	}
+
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure (below).
 	setStateViscosity(iFparams,newst,comp);
 	FT_NormalAtPoint(oldp,front,nor,comp);
 
@@ -887,6 +890,8 @@ static  void dirichlet_point_propagate(
     
     if (newst == NULL) return;	// node point
     
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure in neumann_point_propagate()???
     setStateViscosity(iFparams,newst,comp);
 
     //Constant State
@@ -1059,8 +1064,8 @@ static void rgbody_point_propagate(
 	    newst = (STATE*)right_state(newp);
 	}
 
-    //TODO: does eddy viscosity need to be taken into account
-    //      in setStateViscosity()??
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure (below)?
 	setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
@@ -1080,7 +1085,8 @@ static void rgbody_point_propagate(
         double omega_dt,crds_com[MAXD];
         omega_dt = angular_velo(oldhs)*dt;
 
-        //TODO: is center of mass velo being set correctly?
+        //TODO: Is center of mass velo being set correctly?
+        //      If so, what is the scheme/justification?   
         for (i = 0; i < dim; ++i)
         {
             vel[i] = center_of_mass_velo(oldhs)[i];
@@ -2553,7 +2559,6 @@ static double intrp_between(
         return y;
 }
 
-//TODO: Need to include Eddy Viscosity??
 static void setStateViscosity(
 	IF_PARAMS *iFparams,
 	STATE *state,
@@ -2572,7 +2577,6 @@ static void setStateViscosity(
 	}
 }
 
-//TODO: Ensure boundary state phi and q are being set
 static void promptForDirichletBdryState(
 	FILE *infile,
 	Front *front,

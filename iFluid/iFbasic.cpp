@@ -4918,8 +4918,32 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
                 normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
                 normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
 
+                /*
                 STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
                 STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                */
+
+                /////////////////////////////////////////////////////////////
+                STATE* ss;
+                STATE* se;
+
+                if (ifluid_comp(negative_component(hsurf)))
+                {
+                    ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else if (ifluid_comp(positive_component(hsurf)))
+                {
+                    ss = (STATE*)right_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)right_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else
+                {
+                    printf("setSlipBoundaryNIP() ERROR: "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+                /////////////////////////////////////////////////////////////
 
                 for (int i = 0; i < dim; ++i)
                 {
@@ -4936,8 +4960,23 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
                 //NOTE: Tri_normal() does not return a unit vector
                 
                 STATE* st[3];
-                for (int j = 0; j < 3; ++j)
-                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+
+                if (ifluid_comp(negative_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                }
+                else if (ifluid_comp(positive_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                }
+                else
+                {
+                    printf("setSlipBoundaryNIP() ERROR: "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
 
                 for (int i = 0; i < dim; ++i)
                 {
