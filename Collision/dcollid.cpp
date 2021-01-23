@@ -601,49 +601,59 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
     stop_clock("computeAverageVelocity");
 
+    /*
+    // Apply impulses to enforce strain and strain rate limiting
+    // distance/positional constraints on adjacent mesh vertices. 
+    
+    if (!debugging("strainlim_off"))
+    {
+        //TODO: Can we limit the strain and strain rate simultaneously,
+        //      without separate traversals?
+        
+        limitStrain();
+        limitStrainRate();
+    }
     //TODO: Fix limitStrain() and limitStrainRate() edge traversal,
     //      and implement the zero relative velocity in direction of edge
     //      constraint (currently only enforces the position constraint).
-    /*
-    if (!debugging("strainlim_off"))
-    {
-        limitStrain();
-        //limitStrainRate();
-    }
     */
 
-    //static proximity handling
+    // Static proximity handling
     start_clock("detectProximity");
 	detectProximity();
     stop_clock("detectProximity");
 
-    /*
-    if (!debugging("strainlim_off"))
-    {
-        limitStrainRate();
-    }
-    */
-
-	//check linear trajectories for collisions
+	// Check linear trajectories for collisions
     start_clock("detectCollision");
 	detectCollision();
     stop_clock("detectCollision");
 
     //TODO: function needs fixing -- is this even worth correcting/using?
-	//detectDomainBoundaryCollision();
+	    //detectDomainBoundaryCollision();
+
 
     /*
 	//update position using final midstep velocity
 	updateFinalPosition();
 
-    //TODO: Verify detectProximity() should not be called here again.
-    //detectProximity();
-	
+    // Zero out the relative velocity between adjacent mesh vertices
+    // in the direction of their connecting edge.
+    
+    if (!debugging("strainlim_off"))
+    {
+        strainLimitVelocityConstraints();//need a better name
+    }
+    //TODO: Implement strain limiting velocity constraint function.
+
 	updateFinalVelocity();
     */
 
+
     //Consolidates updateFinalPosition() and updateFinalVelocity()
-    //in order to avoid a second traversal of the points
+    //in order to avoid a second traversal of the points. However,
+    //when strain limiting is eventually implemented, the separate
+    //traversals may be necessary to adjust the velocities based on
+    //the final positions in order to limit the strain/strain rate.
     start_clock("updateFinalStates");
     updateFinalStates(); 
     stop_clock("updateFinalStates");
@@ -807,110 +817,14 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 	}
 }
 
-void CollisionSolver3d::limitStrainRate()
-{
-	const int MAX_ITER = 5;
-    for (int iter = 0; iter <= MAX_ITER; ++iter)
-    {
-        modifyStrainRate();
-        
-        if (debugging("strain_limiting"))
-        {
-            printf("   %d Strain Rate Edges\n",numStrainRateEdges);
-        }
-
-	    bool excess_strain_rate = false;
-        if (numStrainRateEdges > 0)
-            excess_strain_rate = true;
-
-        if (!excess_strain_rate)
-            break;
-	}
-}
-
-//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
-//gauss-seidel iteration
-void CollisionSolver3d::modifyStrainRate()
-{
-    numStrainRateEdges = 0;
-	double dt = getTimeStepSize();
-    double TOL = strainrate_limit;
-    
-    unsortHseList(hseList);
-
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        if (isRigidBody(*it)) continue;
-	    
-        POINT* p[2];
-        STATE* sl[2];
-
-        int np = (*it)->num_pts();
-        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
-        {
-            p[0] = (*it)->Point_of_hse(i%np);	
-            p[1] = (*it)->Point_of_hse((i+1)%np);
-
-            //TODO: THIS DOES NOT WORK! MISSES EDGES.
-            if (sorted(p[0]) && sorted(p[1])) continue;
-
-            sl[0] = (STATE*)left_state(p[0]);
-            sl[1] = (STATE*)left_state(p[1]);
-
-            double x_cand0[3], x_cand1[3];
-            for (int j = 0; j < 3; ++j)
-            {
-                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
-                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
-            }
-
-		    double lnew = distBetweenCoords(x_cand0,x_cand1);
-		    double lold = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
-
-            if (fabs(lnew - lold) > TOL*lold)
-            {
-                double I = (fabs(lnew - lold) - TOL*lold)/dt;
-                double I0, I1;
-
-                if (lnew > lold) //Tension
-                {
-                    I0 = 0.5*I;
-                    I1 = -0.5*I;
-                }
-                else             //Compression
-                {
-                    I0 = -0.5*I;
-                    I1 = 0.5*I;
-                }
-
-                double e01[3];
-                Pts2Vec(p[0],p[1],e01);
-                scalarMult(1.0/lold,e01,e01);
-
-                for (int j = 0; j < 3; ++j)
-                {
-                    sl[0]->avgVel[j] += I0*e01[j];
-                    sl[1]->avgVel[j] += I1*e01[j];
-                }
-                sl[0]->has_strainlim = true;
-                sl[1]->has_strainlim = true;
-                numStrainRateEdges++;
-            }
-
-            sorted(p[0]) = YES;
-            sorted(p[1]) = YES;
-        }
-    }
-}
-
+//TODO: Can probably limit the strain and rate simultaneously ....
 void CollisionSolver3d::limitStrain()
 {
-	const int MAX_ITER = 2;
+	const int MAX_ITER = 5;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         numStrainEdges = 0;
-
+        
         modifyStrain();
         
         if (debugging("strain_limiting"))
@@ -918,22 +832,23 @@ void CollisionSolver3d::limitStrain()
             printf("   %d Strain Edges\n",numStrainEdges);
         }
 
-	    bool excess_strain = false;
-        if (numStrainEdges > 0)
-            excess_strain = true;
-
-        if (!excess_strain)
-            break;
+        if (numStrainEdges == 0) break;
 	}
 }
 
+//jacobi iteration
+void CollisionSolver3d::modifyStrain()
+{
+}
+
+/*
 //TODO: FIX TRAVERSAL, and enforce relative velocity constraint
 //jacobi iteration
 void CollisionSolver3d::modifyStrain()
 {
     double dt = getTimeStepSize();
     double TOL = strain_limit;
-    double CTOL = 0.01;//TODO: add input parameter for this
+    double CTOL = 0.1;//TODO: add input parameter for this
 
 	unsortHseList(hseList);
     
@@ -1043,6 +958,101 @@ void CollisionSolver3d::modifyStrain()
         }
     }
 }
+
+void CollisionSolver3d::limitStrainRate()
+{
+	const int MAX_ITER = 5;
+    for (int iter = 0; iter <= MAX_ITER; ++iter)
+    {
+        numStrainRateEdges = 0;
+
+        modifyStrainRate();
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("   %d Strain Rate Edges\n",numStrainRateEdges);
+        }
+
+        if (numStrainRateEdges == 0) break;
+	}
+}
+
+//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
+//gauss-seidel iteration
+void CollisionSolver3d::modifyStrainRate()
+{
+    numStrainRateEdges = 0;
+	double dt = getTimeStepSize();
+    double TOL = strainrate_limit;
+    
+    unsortHseList(hseList);
+
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        if (isRigidBody(*it)) continue;
+	    
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = (*it)->num_pts();
+        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
+        {
+            p[0] = (*it)->Point_of_hse(i%np);	
+            p[1] = (*it)->Point_of_hse((i+1)%np);
+
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
+            if (sorted(p[0]) && sorted(p[1])) continue;
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+		    double lnew = distBetweenCoords(x_cand0,x_cand1);
+		    double lold = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
+
+            if (fabs(lnew - lold) > TOL*lold)
+            {
+                double I = (fabs(lnew - lold) - TOL*lold)/dt;
+                double I0, I1;
+
+                if (lnew > lold) //Tension
+                {
+                    I0 = 0.5*I;
+                    I1 = -0.5*I;
+                }
+                else             //Compression
+                {
+                    I0 = -0.5*I;
+                    I1 = 0.5*I;
+                }
+
+                double e01[3];
+                Pts2Vec(p[0],p[1],e01);
+                scalarMult(1.0/lold,e01,e01);
+
+                for (int j = 0; j < 3; ++j)
+                {
+                    sl[0]->avgVel[j] += I0*e01[j];
+                    sl[1]->avgVel[j] += I1*e01[j];
+                }
+                sl[0]->has_strainlim = true;
+                sl[1]->has_strainlim = true;
+                numStrainRateEdges++;
+            }
+
+            sorted(p[0]) = YES;
+            sorted(p[1]) = YES;
+        }
+    }
+}
+*/
 
 void CollisionSolver3d::updateFinalPosition()
 {
