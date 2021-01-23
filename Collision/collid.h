@@ -152,9 +152,6 @@ private:
     static void turnOffImpZone();
 	static void turnOnImpZone();
 
-    int numStrainRateEdges {0};
-    int numStrainEdges {0};
-
     void limitStrain();
     bool modifyStrain();
     void applyStrainImpulses();

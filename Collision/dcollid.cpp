@@ -832,7 +832,7 @@ void CollisionSolver3d::limitStrain()
 //jacobi iteration
 bool CollisionSolver3d::modifyStrain()
 {
-	unsortHseList(hseList);
+    unsortHseList(hseList);
 
     //Just work on the string bonds right now,
     //while working out details of the impulse
@@ -849,15 +849,17 @@ bool CollisionSolver3d::modifyStrain()
 
     bondList.resize(std::distance(bondList.begin(),end_it));
 
-    double mass_sp = CollisionSolver3d::getStringPointMass();
-
     //TODO: Would it be easier to just traverse the interface
     //      as in assembleFromInterface()? In that way we can
     //      implement a more natural graph traversal, such as
     //      breadth first search.
     
+    double TOL = strain_limit;
+    double dt = getTimeStepSize();
+    double mass_sp = CollisionSolver3d::getStringPointMass();
+
     //Traverse bondlist
-    numStrainEdges = 0;
+    int numStrainEdges = 0;
 	for (auto it = bondList.begin(); it < bondList.end(); ++it)
     {
         POINT* p[2];
@@ -930,7 +932,74 @@ bool CollisionSolver3d::modifyStrain()
 
 void CollisionSolver3d::applyStrainImpulses()
 {
-    //TODO: follow pattern of updateAverageVelocity()
+	POINT *p;
+	STATE *sl;
+	double maxSpeed = 0;
+	double* maxVel = nullptr;
+
+    unsortHseList(hseList);
+    
+    //NOTE: currently no TRI points are updated, since
+    //      we have only applied strainImpulses to STRING_BONDs
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        if (isRigidBody(*it)) continue;
+	    
+        int np = (*it)->num_pts(); 
+	    for (int j = 0; j < np; ++j)
+	    {
+            p = (*it)->Point_of_hse(j);
+            
+            if (sorted(p) || isStaticRigidBody(p)) continue;
+
+            sl = (STATE*)left_state(p);
+            
+            if (sl->strain_num > 0)
+            {
+                sl->has_strainlim = true;
+
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->strainImpulse[k]/((double)sl->strain_num);
+                
+                    if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
+                    {
+                        printf("inf/nan vel[%d]: strain_impulse = %f, strain_num = %d\n",
+                                k,sl->strainImpulse[k],sl->strain_num);
+                        clean_up(ERROR);
+                    }
+                
+                    sl->strainImpulse[k] = 0.0;
+                }
+
+                sl->strain_num = 0;
+            }
+
+
+            if (debugging("average_velocity"))
+            {
+                double speed = Mag3d(sl->avgVel);
+                if (speed > maxSpeed)
+                {
+                    maxVel = sl->avgVel;
+                    maxSpeed = speed;
+                }
+            }
+		
+            sorted(p) = YES;
+	    }
+	}
+	
+	if (debugging("average_velocity"))
+    {
+	    if (maxVel != nullptr)
+        {
+	        printf("    max velocity = [%f %f %f]\n",
+                    maxVel[0],maxVel[1],maxVel[2]);
+        }
+    }
 }
 
 /*
