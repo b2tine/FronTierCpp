@@ -312,23 +312,6 @@ static void init_rigid_human(
 	}
 }	/* end init_rigid_human */
 
-/*
-extern void unsort_surf_point(SURFACE *surf)
-{
-	TRI *tri;
-	POINT *p;
-
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (int i = 0; i < 3; ++i)
-	    {
-            p = Point_of_tri(tri)[i];
-            sorted(p) = NO;
-	    }
-	}
-}*/	/* end unsort_surf_point */
-
 static void surf_com_translation(
 	SURFACE *surf,
 	double *cen)
