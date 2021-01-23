@@ -97,7 +97,7 @@ Type y to make vector vorticity field movie: y
 Enter yes for debugging: yes
 Enter the debugging string: PETSc
 Enter the debugging string: max_speed
-Enter the debugging string: strain_limiting
+Enter the debugging string: strainlim_off
 Enter the debugging string: proximity
 Enter the debugging string: collision
 

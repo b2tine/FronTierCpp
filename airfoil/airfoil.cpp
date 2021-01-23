@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+        
         initRigidBody(&front);
 	    setRigidBodyMotionParams(&front,&rgb_params);
         initFabricModule(&front);
@@ -135,6 +135,8 @@ int main(int argc, char **argv)
             sprintf(gvdir,"%s/gv-init",out_name);
             gview_plot_interface(gvdir,front.interf);
 	    }
+
+	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 
 	    if (f_basic.dim < 3)
             FT_ClipIntfcToSubdomain(&front);
@@ -390,13 +392,26 @@ void xgraph_front(Front *front,	char *outname)
 void initFabricModule(Front* front)
 {
     FILE *infile = fopen(InName(front),"r");
-    SURFACE *surf;
-
-    CgalCanopySurface(infile,front,&surf);
+    
+    int num_canopy = 0;
+    if (CursorAfterStringOpt(infile,"Enter number of canopy surfaces:"))
+    {
+        fscanf(infile,"%d",&num_canopy);
+        printf("%d\n",num_canopy);
+    }
     fclose(infile);
 
-    /*
-    if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
-        InstallNewLoadNode(front,1);
-    */
+    SURFACE *surf;
+    if (num_canopy >= 1)
+    {
+        if (num_canopy == 1)
+        {
+            CgalCanopySurface(infile,front,&surf);
+        }
+        else
+        {
+            printf("initFabricModule() ERROR: this feature not ready yet\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+    }
 }

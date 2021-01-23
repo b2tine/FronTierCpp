@@ -2974,8 +2974,14 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     dist = distance_between_positions(Coords(p),coords,3);
                     if (dist >= top_h[0]*4.0) continue;
 
-                    alpha = top_h[0]*4.0 - dist;
-                    alpha /= top_h[0]*4.0;
+                    double vec[MAXD];
+                    for (int l = 0; l < dim; ++l)
+                        vec[l] = (coords[l] - Coords(p)[l])/dist;
+
+                    double dir_h = FT_GridSizeInDir(vec,front);
+
+                    alpha = dir_h*4.0 - dist;
+                    alpha /= dir_h*4.0;
 
                     for (int l = 0; l < dim; ++l)
                     {
