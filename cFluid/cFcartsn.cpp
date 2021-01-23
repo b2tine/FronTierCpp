@@ -54,10 +54,15 @@ void L_RECTANGLE::setCoords(
 	double *coords,
 	int dim)
 {
-	int i;
-	for (i = 0; i < dim; ++i)
-	    m_coords[i] = coords[i];
+	for (int i = 0; i < dim; ++i)
+        m_coords[i] = coords[i];
 }
+
+std::vector<double> L_RECTANGLE::getCoords()
+{
+    return std::vector<double>(m_coords,m_coords+3);
+}
+
 //--------------------------------------------------------------------------
 // 		G_CARTESIAN
 //--------------------------------------------------------------------------
@@ -5416,7 +5421,7 @@ void G_CARTESIAN::setDirichletStates(
               strcmp(boundary_state_function_name(hs),
 	      "cF_flowThroughBoundaryState") == 0)
 	  {
-	    //flow through bdry
+        //TODO: why not using the state value to extrapolate???
 	    for (k = istart; k <= nrad; ++k)
 	    {
 		index = d_index(icoords,top_gmax, dim);
@@ -5469,6 +5474,7 @@ void G_CARTESIAN::setDirichletStates(
               strcmp(boundary_state_function_name(hs),
 	      "cF_flowThroughBoundaryState") == 0)
 	  {
+        //TODO: why not using the state value to extrapolate???
 	    for (k = istart; k <= nrad; ++k)
 	    {
 		index = d_index(icoords,top_gmax, dim);

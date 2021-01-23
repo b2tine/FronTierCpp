@@ -58,12 +58,13 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         SWEEP* m_vst,
         VStencil2d* vsten)
 {
+    /*
     POINTER intfc_state;
+    double nip_coords[MAXD];
+    double intrp_coeffs[MAXD];
     HYPER_SURF_ELEMENT* hse;
     HYPER_SURF* hs;
-    double crx_coords[MAXD];
     
-    /*
     int crx_status;
 
     const GRID_DIRECTION dir[3][2] = {
@@ -86,13 +87,10 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
         {
-            //TODO: generate a ghost state based on reflection
-            //      through the nearest_interface_point.
-            FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,
-                    NO_BOUNDARIES,crx_coords,intrp_coeffs,&hse,&hs,range);
-            
-            //setViscousGhostState(vs);
+            setViscousGhostState(vs,comp,idx,nb);
         }
+
+        //TODO: set state with mesh values
     }
 
     //TESTING
@@ -204,6 +202,93 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
 }
 */
 
+void G_CARTESIAN::setViscousGhostState(
+        VSWEEP* vs,
+        COMPONENT comp,
+        int index)
+{
+    double nip_coords[MAXD];
+    double intrp_coeffs[MAXD];
+    HYPER_SURF* hs;
+    HYPER_SURF_ELEMENT* hse;
+    
+    auto ghost_coords = cell_center[index].getCoords();
+    
+    bool nip_found = nearest_interface_point(ghost_coords,vs->comp,
+                front->interf,NO_SUBDOMAIN,nullptr,nip_coords,
+                intrp_coeffs,&hse,&hs);
+    
+    if (!nip_found)
+    {
+        printf("setViscousGhostState() ERROR: "
+                "can't find nearest interface point\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    switch (wave_type(hs))
+    {
+        case DIRICHLET_BOUNDARY:
+        {
+            setDirichletViscousGhostState(vs,comp,intrp_coeffs,hse,hs);
+            break;
+        }
+        case NEUMANN_BOUNDARY:
+        case MOVABLE_BODY_BOUNDARY:
+        {
+            setNeumannViscousGhostState(vs,comp,intrp_coeffs,hse,hs,state);
+            break;
+        }
+        /*case ELASTIC_BOUNDARY:
+        {
+            //setElasticViscousGhostState(vs,comp,intrp_coeffs,hse,hs,state);
+            break;
+        }*/
+        default:
+        {
+            printf("setViscousGhostState() ERROR: "
+                    "unknown boundary type\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+    }
+
+}
+
+void G_CARTESIAN::setDirichletViscousGhostState(
+        VSWEEP* vs,
+        COMPONENT comp,
+        double* intrp_coeffs,
+        HYPER_SURF_ELEMENT* hse,
+        HYPER_SURF* hs)
+{
+    STATE* state;
+    FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
+
+    if (boundary_state(hs) != nullptr)
+        ft_assign((POINTER)state,boundary_state(hs),front->sizest);
+    else
+        state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)state);
+
+    for (int i = 0; i < dim; ++i)
+        vs->vel[i] = (STATE*)state->vel[i];
+    //vs->mu = (STATE*)state->mu;
+    
+    //TODO: need to add viscosity to STATE
+
+    FT_FreeThese(1,state);
+}
+
+void G_CARTESIAN::setNeumannViscousGhostState(
+        VSWEEP* vs,
+        COMPONENT comp,
+        double* intrp_coeffs,
+        HYPER_SURF_ELEMENT* hse,
+        HYPER_SURF* hs)
+{
+    //TODO: reflect accross hse and interpolate state
+    //      at the reflected point
+}
+
+/*
 //TODO: This function should become the fillStencil() like function
 void G_CARTESIAN::computeViscousFlux(
         int* icoords,
@@ -265,30 +350,15 @@ void G_CARTESIAN::computeViscousFlux(
             
             vstate = vsten.st[ic[0]][ic[1]][ic[2]];
     
-            /*
-            FT_StateStructAtGridCrossing(front,front->grid_intfc,
-                    icoords,dir[l][nb],comp,&intfc_state,&hs,crx_coords);
-            */
-            
-                /*
-                FT_StateStructAtGridCrossing2(front,icoords,dir[l][nb],
-                        comp,&intfc_state,&hs,&hse,crx_coords);
-                */
         }
 
     }
-
-            /*
-            //NOTE icoords replaced with ic in this call
-            FT_StateStructAtGridCrossing(front,front->grid_intfc,
-                    ic,dir[l][nb],comp,&intfc_state,&hs,crx_coords);
-            */
-
 
 //TODO: For mixed partials write functions that accept an icoords array and
 //      a direction. Then can compute individual ghost states per derivative.
 
 
 }
+*/
 
 

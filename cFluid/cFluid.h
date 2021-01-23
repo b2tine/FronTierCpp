@@ -289,6 +289,7 @@ public:
 	L_RECTANGLE();
 
 	void setCoords(double*,int);
+    std::vector<double> getCoords();
 };
 
 struct FIELD
@@ -316,16 +317,6 @@ struct FSWEEP
     double **momn_flux;     /* momentum flux */
     double *engy_flux;      /* internal energy flux */
 };
-
-
-
-/*
-//NOTE: These are defined in cFvisc.h
-
-struct VStencil2d;
-struct VStencil3d;
-struct VFLUX;
-*/
 
 
 class G_CARTESIAN{
@@ -379,7 +370,7 @@ private:
 	int imax[MAXD];
 
 	// member data: mesh storage
-	std::vector<L_RECTANGLE> 	cell_center;
+	std::vector<L_RECTANGLE> cell_center;
 
 	// member data: 
 	int m_comp[2];
@@ -454,7 +445,15 @@ private:
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
     void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
-    void computeViscousFlux(int* icoords, SWEEP* m_vst, VFLUX* v_flux, double delta_t);
+    void setViscousGhostState(VSWEEP* vs, COMPONENT comp, int index);
+    
+    void setDirichletViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+
+    void setNeumannViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+
+        //void computeViscousFlux(int* icoords, SWEEP* m_vst, VFLUX* v_flux, double delta_t);
     
     // -------------------------------------------------------
 	// 		initialization functions
