@@ -34,7 +34,7 @@ double CD_BOND::min_moving_coord(int dim,double dt){
 
 POINT* CD_BOND::Point_of_hse(int i) const{
     if (i >= num_pts())
-	return NULL;
+        return NULL;
     else
         return (i == 0) ? m_bond->start : 
 			  m_bond->end;

@@ -155,10 +155,11 @@ private:
     int numStrainRateEdges {0};
     int numStrainEdges {0};
 
-    void limitStrainRate();
-    void modifyStrainRate();
     void limitStrain();
-    void modifyStrain();
+    bool modifyStrain();
+    void applyStrainImpulses();
+    void limitStrainRate();
+    bool modifyStrainRate();
 
 	void computeAverageVelocity();
     void resetPositionCoordinates();

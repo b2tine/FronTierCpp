@@ -820,25 +820,117 @@ extern void createImpZone(POINT* pts[], int num, bool first)
 //TODO: Can probably limit the strain and rate simultaneously ....
 void CollisionSolver3d::limitStrain()
 {
-	const int MAX_ITER = 5;
+	const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        numStrainEdges = 0;
-        
-        modifyStrain();
-        
-        if (debugging("strain_limiting"))
-        {
-            printf("   %d Strain Edges\n",numStrainEdges);
-        }
-
-        if (numStrainEdges == 0) break;
+        bool excessStrain = modifyStrain();
+        if (!excessStrain) break;
+        applyStrainImpulses();
 	}
 }
 
 //jacobi iteration
-void CollisionSolver3d::modifyStrain()
+bool CollisionSolver3d::modifyStrain()
 {
+	unsortHseList(hseList);
+
+    //Just work on the string bonds right now,
+    //while working out details of the impulse
+    //computation and the iterating the procedure.
+    std::vector<CD_HSE*> bondList(hseList.size());
+    
+    auto is_stringbond_lambda = [](CD_HSE* hse)
+    {
+        return hse->type == CD_HSE_TYPE::STRING_BOND;
+    };
+    
+    auto end_it = std::copy_if(hseList.begin(),hseList.end(),
+            bondList.begin(),is_stringbond_lambda);
+
+    bondList.resize(std::distance(bondList.begin(),end_it));
+
+    double mass_sp = CollisionSolver3d::getStringPointMass();
+
+    //TODO: Would it be easier to just traverse the interface
+    //      as in assembleFromInterface()? In that way we can
+    //      implement a more natural graph traversal, such as
+    //      breadth first search.
+    
+    //Traverse bondlist
+    numStrainEdges = 0;
+	for (auto it = bondList.begin(); it < bondList.end(); ++it)
+    {
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = (*it)->num_pts();
+        int ne = ((np == 2) ? 1 : np);
+
+        for (int i = 0; i < ne; ++i)
+        {
+            p[0] = (*it)->Point_of_hse(i%np);
+            p[1] = (*it)->Point_of_hse((i+1)%np);
+
+            //TODO: THIS DOES NOT WORK! MISSES EDGES.
+                //if (sorted(p[0]) && sorted(p[1])) continue;
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+            double len0;
+            double lnew = distBetweenCoords(x_cand0,x_cand1);
+
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+            {
+                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
+                len0 = cd_bond->m_bond->length0;
+            }
+            /*else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+            {
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                len0 = cd_tri->m_tri->side_length0[i];
+            }*/
+
+            double stretch = lnew - len0;
+
+            if (stretch > TOL*len0)
+            {
+                double excess = stretch - TOL*len0;
+               
+                double v01[MAXD];
+                Pts2Vec(p[0],p[1],v01);
+                
+                for (int j = 0; j < 3; ++j)
+                {
+                    sl[0]->strainImpulse[j] += 0.5*v01[j]*excess/dt;
+                    sl[1]->strainImpulse[j] -= 0.5*v01[j]*excess/dt;
+                }
+                
+                sl[0]->strain_num++;
+                sl[1]->strain_num++;
+                numStrainEdges++;
+            }
+        }
+    }
+    
+    if (debugging("strain_limiting"))
+    {
+        printf("   %d Strain Edges\n",numStrainEdges);
+    }
+
+    return numStrainEdges > 0;
+}
+
+void CollisionSolver3d::applyStrainImpulses()
+{
+    //TODO: follow pattern of updateAverageVelocity()
 }
 
 /*
