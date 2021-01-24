@@ -878,6 +878,40 @@ bool CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
 
         for (int i = 0; i < ne; ++i)
         {
+            double len0;
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+            {
+                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
+                len0 = cd_bond->m_bond->length0;
+            }
+            else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+            {
+                //TODO: Check the three edges of each triangle.
+                //      If there isn't another triangle adjacent
+                //      to the edge, operate on the edge.
+                //      If there is another adjacent triangle,
+                //      operate on the edge only if the current
+                //      triangle has a smaller pointer than its
+                //      neighbor (use global_index instead).
+                //      This way, each edge is considered only once.
+                //
+                //          From triangle.c : writeedges()
+
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                TRI* tri = cd_tri->m_tri;
+                
+                //TODO: unsure about is_side_bdry(tri,i)
+                    //if (!is_side_bdry(tri,i) && Tri_on_side(tri,i) != nullptr)
+                
+                TRI* tri_nb = Tri_on_side(tri,i);
+                if (tri_nb != nullptr)
+                {
+                    if (Gindex(tri_nb) < Gindex(tri)) continue;
+                }
+                
+                len0 = cd_tri->m_tri->side_length0[i];
+            }
+            
             p[0] = (*it)->Point_of_hse(i%np);
             p[1] = (*it)->Point_of_hse((i+1)%np);
 
@@ -892,18 +926,6 @@ bool CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
             }
 
             double lnew = distBetweenCoords(x_cand0,x_cand1);
-            double len0;
-            
-            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-            {
-                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
-                len0 = cd_bond->m_bond->length0;
-            }
-            /*else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
-            {
-                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
-                len0 = cd_tri->m_tri->side_length0[i];
-            }*/
 
             double delta_len0 = lnew - len0;
             
