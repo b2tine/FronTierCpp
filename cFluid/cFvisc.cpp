@@ -87,7 +87,7 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
         {
-            setViscousGhostState(vs,comp,idx,nb);
+            setViscousGhostState(vs,comp,idx_nb);
         }
 
         //TODO: set state with mesh values
@@ -214,9 +214,9 @@ void G_CARTESIAN::setViscousGhostState(
     
     auto ghost_coords = cell_center[index].getCoords();
     
-    bool nip_found = nearest_interface_point(ghost_coords,vs->comp,
-                front->interf,NO_SUBDOMAIN,nullptr,nip_coords,
-                intrp_coeffs,&hse,&hs);
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                vs->comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
     
     if (!nip_found)
     {
@@ -235,7 +235,7 @@ void G_CARTESIAN::setViscousGhostState(
         case NEUMANN_BOUNDARY:
         case MOVABLE_BODY_BOUNDARY:
         {
-            setNeumannViscousGhostState(vs,comp,intrp_coeffs,hse,hs,state);
+            setNeumannViscousGhostState(vs,comp,intrp_coeffs,hse,hs);
             break;
         }
         /*case ELASTIC_BOUNDARY:
@@ -269,7 +269,7 @@ void G_CARTESIAN::setDirichletViscousGhostState(
         state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)state);
 
     for (int i = 0; i < dim; ++i)
-        vs->vel[i] = (STATE*)state->vel[i];
+        vs->vel[i] = state->vel[i];
     //vs->mu = (STATE*)state->mu;
     
     //TODO: need to add viscosity to STATE
