@@ -154,8 +154,9 @@ private:
     static void turnOffImpZone();
 	static void turnOnImpZone();
 
-    std::vector<CD_HSE*> getFabricTriList();
-    std::vector<CD_HSE*> getStringBondList();
+    std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
+        //std::vector<CD_HSE*> getFabricTriList();
+        //std::vector<CD_HSE*> getStringBondList();
     
     void limitStrainPosn();
     bool computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
@@ -187,9 +188,10 @@ private:
     void aabbCollision();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
-	void setHasCollision(bool judge) {has_collision = judge;}
+	void setHasCollision(bool judge) {has_collision = judge;}//TODO: can remove?
 };
 
+void unsortHseList(std::vector<CD_HSE*>&);
 
 bool BondToBond(const BOND*,const BOND*);
 bool TriToBond(const TRI*,const BOND*);
@@ -198,22 +200,15 @@ bool MovingBondToBond(const BOND*,const BOND*);
 bool MovingTriToBond(const TRI*,const BOND*);
 bool MovingTriToTri(const TRI*,const TRI*);
 
+void makeSet(std::vector<CD_HSE*>&);
+void createImpZone(POINT*[],int num = 4,bool first = NO);
+void createImpactZone(POINT*[],int num);
+void createImpactZoneForRigidBody(POINT*[],int num);
 void updateImpactListVelocity(POINT* head);
+void SpreadImpactZoneImpulse(POINT*, double, double*);
+void printPointList(POINT**, const int);
 
-void initSurfaceState(SURFACE*,const double*);
-void initCurveState(CURVE*,const double*);
-void initTestModule(Front&, char*);
-void Pts2Vec(const POINT*, const POINT*, double*); 
-void scalarMult(double a,double* v, double* ans); 
-void addVec(double* v1, double* v2, double* ans); 
-void minusVec(double* v1, double* v2, double* ans); 
-double myDet3d(double[][3]);
-double distBetweenCoords(double* x1, double* x2);
-extern void printPointList(POINT**, const int);
-extern void createImpZone(POINT*[],int num = 4,bool first = NO);
-extern void makeSet(std::vector<CD_HSE*>&);
-void unsortHseList(std::vector<CD_HSE*>&);
-//void unsort_surface_point(SURFACE *surf);
+void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 POINT* findSet(POINT* p);
 POINT*& next_pt(POINT* p);
@@ -227,8 +222,14 @@ bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const CD_HSE*);
 
-extern void SpreadImpactZoneImpulse(POINT*, double, double*);
-
-void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
+void initSurfaceState(SURFACE*,const double*);
+void initCurveState(CURVE*,const double*);
+void initTestModule(Front&, char*);
+void Pts2Vec(const POINT*, const POINT*, double*);
+void scalarMult(double a,double* v, double* ans);
+void addVec(double* v1, double* v2, double* ans);
+void minusVec(double* v1, double* v2, double* ans);
+double myDet3d(double[][3]);
+double distBetweenCoords(double* x1, double* x2);
 
 #endif
