@@ -138,6 +138,7 @@ Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: strain_limiting
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: max_speed

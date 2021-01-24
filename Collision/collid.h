@@ -22,6 +22,8 @@ public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
+        //std::vector<CD_HSE*> fabricTriList;
+        //std::vector<CD_HSE*> stringBondList;
 	std::map<int,std::vector<double>> mrg_com;
 	
     int build_count_pre = 1;
@@ -72,7 +74,7 @@ public:
 
 	void clearHseList();
     const std::vector<CD_HSE*>& getHseList() const;
-    
+
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
 	void createImpZoneForRG(INTERFACE*);
@@ -152,11 +154,18 @@ private:
     static void turnOffImpZone();
 	static void turnOnImpZone();
 
-    void limitStrain();
-    bool modifyStrain();
+    std::vector<CD_HSE*> getFabricTriList();
+    std::vector<CD_HSE*> getStringBondList();
+    
+    void limitStrainPosn();
+    bool computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainRatePosn();
+    bool computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainVel();
+    bool computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     void applyStrainImpulses();
-    void limitStrainRate();
-    bool modifyStrainRate();
+        //void limitStrainRate();
+        //bool modifyStrainRate();
 
 	void computeAverageVelocity();
     void resetPositionCoordinates();
