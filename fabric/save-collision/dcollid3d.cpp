@@ -24,7 +24,7 @@ static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double
 static bool isCoplanar(POINT**,double,double*);
 
 // test function for creating impact zone for each movable RG
-void CollisionSolver3d::createImpZoneForRG(INTERFACE* intfc)
+void CollisionSolver3d::createImpZoneForRG(const INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
@@ -347,7 +347,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[j] = Point_of_tri(tmp_tri1)[j];
         pts[3] = Point_of_tri(tmp_tri2)[i];
 
-        if (MovingPointToTriGS(pts))
+        if(MovingPointToTriGS(pts))
             status = true;
 
         //if (status && is_detImpZone)
@@ -364,7 +364,7 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
             pts[2] = Point_of_tri(b)[j];
             pts[3] = Point_of_tri(b)[(j+1)%3];
 		
-            if (MovingEdgeToEdgeGS(pts))
+            if(MovingEdgeToEdgeGS(pts))
                 status = true;
                 
             //if (status && is_detImpZone)
@@ -1009,24 +1009,6 @@ static bool EdgeToEdge(
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
-        printf("\tPOINTS:\n");
-        for (int i = 0; i < 4; ++i)
-        {
-            double* coords = Coords(pts[i]);
-            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
-                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
-        }
-
-        //For debugging, comment out clean_up() below to print all
-        //violating edge points.
-        static int ecount = 0;
-        std::string fname = CollisionSolver3d::getOutputDirectory();
-        fname += "/EdgeToEdge_error-" + std::to_string(ecount);
-        ecount++;
-
-        std::vector<POINT*> edge_pts(pts,pts+4);
-        vtk_write_pointset(edge_pts,fname,ERROR);
-
         clean_up(ERROR);
     }
 
@@ -1428,17 +1410,10 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
-        //TODO: I've only seen this occur with DGB parachute model.
-        //      Disabling fatal error for now.
-        //
-        //      Determine why this happens, and if ignoring it is an
-        //      acceptable solution. There is a danger of dividing by zero
-        //      when computing the barycentric weights w[0] and w[1],
-        //      however large but non-infinite weights will result in an
-        //      early exit and return false at the tolerance check below. 
-        printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
-                \t\t\t (fabs(det) < MACH_EPS)\n\n");
-            //LOC(); clean_up(ERROR);
+        //TODO: Create cgal interface construction library
+        //      and remove when this case can be safely omitted.
+        printf("\n\tPointToTri() ERROR: fabs(det) < MACH_EPS\n\n");
+        clean_up(ERROR);
 	}
 	else
     {

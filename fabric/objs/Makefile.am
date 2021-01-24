@@ -34,6 +34,8 @@ libfabric_la_SOURCES = \
 ../CD_HSE.cpp \
 ../AABB.h \
 ../AABB.cpp \
+../vtk.h \
+../vtk.cpp \
 ../fluid.h \
 ../fluidinit.cpp \
 ../fluidprop.cpp \

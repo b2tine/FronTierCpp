@@ -34,7 +34,8 @@ static void gore_point_propagate(Front*,POINTER,POINT*,POINT*,BOND*,double);
 static void load_node_propagate(Front*,NODE*,NODE*,double);
 static void rg_string_node_propagate(Front*,NODE*,NODE*,double);
 static void fourth_order_elastic_set_propagate2d(Front*,double);
-static void fourth_order_elastic_set_propagate3d(Front*,double);
+static void fourth_order_elastic_set_propagate3d_parallel(Front*,double);
+static void fourth_order_elastic_set_propagate3d_serial(Front*,double);
 static void setCollisionFreePoints3d(INTERFACE*);
 static void print_max_fabric_speed(Front* fr);
 static void coating_mono_hyper_surf3d(Front*);
@@ -45,9 +46,16 @@ extern void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
         switch (fr->rect_grid->dim)
         {
         case 2:
-            return fourth_order_elastic_set_propagate2d(fr,fr_dt);
+            fourth_order_elastic_set_propagate2d(fr,fr_dt);
         case 3:
-            return fourth_order_elastic_set_propagate3d(fr,fr_dt);
+            if (pp_numnodes() > 1 && !debugging("collision_off"))
+            {
+                fourth_order_elastic_set_propagate3d_parallel(fr,fr_dt);
+            }
+            else
+            {
+                fourth_order_elastic_set_propagate3d_serial(fr,fr_dt);
+            }
         }
 }       /* end fourth_order_elastic_set_propagate */
 
@@ -435,8 +443,7 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
 }*/	/* end fourth_order_elastic_set_propagate() */
 
-/*
-static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
+static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int size = 0,owner_size,client_size;
@@ -591,23 +598,20 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    size = owner_size;
     }
 
-    CollisionSolver3d* collision_solver;
-	if (!debugging("collision_off"))
-    {
-        collision_solver = new CollisionSolver3d();
-        printf("COLLISION DETECTION ON\n");
-    }
-    else
-        printf("COLLISION DETECTION OFF\n");
+    CollisionSolver3d* collision_solver = nullptr;
 
     if (myid == owner_id)
 	{
         if (!debugging("collision_off"))
         {
+            collision_solver = new CollisionSolver3d();
+            printf("COLLISION DETECTION ON\n");
+            
             setCollisionFreePoints3d(fr->interf);
 
-            collision_solver->assembleFromInterface(fr->interf,fr->dt);
-            collision_solver->recordOriginalPosition();
+            collision_solver->initializeSystem(fr);
+            //collision_solver->assembleFromInterface(fr->interf,fr->dt);
+            //collision_solver->recordOriginalPosition();
         
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);
@@ -629,6 +633,10 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
+        }
+        else
+        {
+            printf("COLLISION DETECTION OFF\n");
         }
 
         //write to GLOBAL_POINT** point_set
@@ -690,7 +698,8 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
     put_point_set_to(&geom_set,point_set);
 	
     // Calculate the real force on load_node and rg_string_node
-	setSpecialNodeForce(fr,geom_set.kl);
+    setSpecialNodeForce(fr,elastic_intfc,geom_set.kl);
+	    //setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
@@ -702,20 +711,20 @@ static void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
         {
             if (FT_Dimension() == 3)
                 collision_solver->resolveCollision();
+            delete collision_solver;
         }
         
-        setSpecialNodeForce(fr,geom_set.kl);
-
-        delete collision_solver;
+        setSpecialNodeForce(fr,elastic_intfc,geom_set.kl);
+            //setSpecialNodeForce(fr,geom_set.kl);
+        compute_center_of_mass_velo(&geom_set);
     }
     
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
-}*/	/* end fourth_order_elastic_set_propagate3d() */
+}	/* end fourth_order_elastic_set_propagate3d() */
 
 
-//void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
-void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
+void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int size = 0,owner_size,client_size;
@@ -919,9 +928,10 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             printf("COLLISION DETECTION ON\n");
 
             setCollisionFreePoints3d(fr->interf);
-                //collision_solver->initializeSystem(fr);
-            collision_solver->assembleFromInterface(elastic_intfc,fr->dt);
-            collision_solver->recordOriginalPosition();
+            
+            collision_solver->initializeSystem(fr);
+                //collision_solver->assembleFromInterface(elastic_intfc,fr->dt);
+                //collision_solver->recordOriginalPosition();
 
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);
