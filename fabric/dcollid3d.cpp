@@ -23,12 +23,13 @@ static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double
 
 static bool isCoplanar(POINT**,double,double*);
 
-// test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
 
+    //TODO: May be beneficial to create impact zone for static
+    //      rigid bodies too.
 	intfc_surface_loop(intfc, s)
 	{
 	    if (is_bdry(*s)) continue;
@@ -494,7 +495,14 @@ static bool MovingPointToTriGS(POINT* pts[])
             Coords(pts[j])[k] = sl->x_old[k];
     }
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && (!is_detImpZone || rigid_body_point))
     if (status && !is_detImpZone)
     {
         for (int j = 0; j < 4; ++j)
@@ -637,7 +645,14 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         string_string = true;
     */
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[2]))
+        rigid_body_point = true;
+    */
+
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && (!is_detImpZone || string_string || rigid_body_point))
     if (status && (!is_detImpZone || string_string))
     {
         for (int j = 0; j < 4; ++j)
@@ -1054,7 +1069,14 @@ static bool EdgeToEdge(
         string_string = true;
     */
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[2]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (!is_detImpZone || string_string || rigid_body_point)
     if (!is_detImpZone || string_string)
     {
         double dt = root;
@@ -1502,7 +1524,14 @@ static bool PointToTri(
         }
     }
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (!is_detImpZone || rigid_body_point)
     if (!is_detImpZone)
     {
         double dt = root;

@@ -644,6 +644,7 @@ void CollisionSolver3d::resolveCollision()
     detectDomainBoundaryCollision();
     */
 
+
 	//update position using final midstep velocity
 	updateFinalPosition();
 
@@ -820,6 +821,7 @@ void CollisionSolver3d::detectCollision()
 //and first has default value of false
 extern void createImpZone(POINT* pts[], int num, bool first)
 {
+    //TODO: What is the minimum number of mergePoint() calls?
 	for (int i = 0; i < num; ++i)
 	{
 	    for (int j = 0; j < i; ++j)
@@ -827,13 +829,7 @@ extern void createImpZone(POINT* pts[], int num, bool first)
             //TODO: Should it check isRigidBody() instead?
             //      Otherwise, static rigid bodies can become
             //      part of the impact zone.
-            /*
-	        if (!first && (isMovableRigidBody(pts[i])
-                 || isMovableRigidBody(pts[j])))
-            {
-                continue;
-            }
-            */
+            //      This might be okay though ....
             if (!first)
             {
                 if (isMovableRigidBody(pts[i]) ||
@@ -851,8 +847,8 @@ void createImpactZone(POINT* pts[], int num)
 	{
 	    for (int j = 0; j < i; ++j)
 	    {
-            if (isRigidBody(pts[i]) || isRigidBody(pts[j]))
-                continue;
+            if (isMovableRigidBody(pts[i]) ||
+                isMovableRigidBody(pts[j])) continue;
             
             mergePoint(pts[i],pts[j]); 
 	    }
@@ -889,40 +885,6 @@ std::vector<CD_HSE*> CollisionSolver3d::getHseTypeList(CD_HSE_TYPE type)
     
     return hseTypeList;
 }
-
-/*
-std::vector<CD_HSE*> CollisionSolver3d::getStringBondList()
-{
-    std::vector<CD_HSE*> stringBondList(hseList.size());
-    
-    auto is_stringbond_lambda = [](CD_HSE* hse)
-    {
-        return hse->type == CD_HSE_TYPE::STRING_BOND;
-    };
-    
-    auto end_it = std::copy_if(hseList.begin(),hseList.end(),
-            stringBondList.begin(),is_stringbond_lambda);
-
-    stringBondList.resize(std::distance(stringBondList.begin(),end_it));
-    return stringBondList;
-}
-
-std::vector<CD_HSE*> CollisionSolver3d::getFabricTriList()
-{
-    std::vector<CD_HSE*> fabricTriList(hseList.size());
-    
-    auto is_fabrictri_lambda = [](CD_HSE* hse)
-    {
-        return hse->type == CD_HSE_TYPE::FABRIC_TRI;
-    };
-    
-    auto end_it = std::copy_if(hseList.begin(),hseList.end(),
-            fabricTriList.begin(),is_fabrictri_lambda);
-
-    fabricTriList.resize(std::distance(fabricTriList.begin(),end_it));
-    return fabricTriList;
-}
-*/
 
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosn()
@@ -1020,10 +982,6 @@ bool CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
             //if (delta_len0 > TOL*len0)
             if (delta_len0 > TOL*len0 || delta_len0 < -0.25*TOL*len0)
             {
-                //TODO: may need to check the following instead
-                //      if (delta_len0 - TOL*len0 > MACH_EPS ||
-                //          delta_len0 + 0.25*TOL*len0 < -1.0*MACH_EPS) or some small tolerance
-                
                 double I;
                 if (delta_len0 > TOL*len0) //Tension
                 { 
@@ -1124,12 +1082,8 @@ bool CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list
             double delta_lold = lnew - lold;
 
             //if (delta_lold > TOL*lold)
-                //if (delta_lold > TOL*lold || delta_lold < -1.0*TOL*lold)
             if (fabs(delta_lold) > TOL*lold)
             {
-                //TODO: may need to check the following instead
-                //      if (delta_lold - TOL*lold > MACH_EPS) or some small tolerance
-                
                 double I;
                 if (delta_lold > TOL*lold) //Tension
                 { 
@@ -1297,9 +1251,6 @@ void CollisionSolver3d::applyStrainImpulses()
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->strainImpulse[k]/((double)sl->strain_num);
-                        //sl->avgVel[k] += sl->strainImpulse[k];
-
-                    //TODO: Test dividing by the strain_num effect on convergence
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {

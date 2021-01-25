@@ -12,7 +12,6 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -155,8 +154,6 @@ private:
 	static void turnOnImpZone();
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
-        //std::vector<CD_HSE*> getFabricTriList();
-        //std::vector<CD_HSE*> getStringBondList();
     
     void limitStrainPosn();
     bool computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
@@ -165,8 +162,6 @@ private:
     void limitStrainVel();
     bool computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     void applyStrainImpulses();
-        //void limitStrainRate();
-        //bool modifyStrainRate();
 
 	void computeAverageVelocity();
     void resetPositionCoordinates();

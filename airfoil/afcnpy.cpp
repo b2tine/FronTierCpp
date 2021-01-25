@@ -2162,7 +2162,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
-}	/* end fourth_order_elastic_set_propagat_parallel() */
+}	/* end fourth_order_elastic_set_propagate_parallel() */
 
 void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 {
@@ -2329,15 +2329,6 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 
 
     CollisionSolver3d* collision_solver = nullptr;
-    /*
-    if (!debugging("collision_off"))
-    {
-        collision_solver = new CollisionSolver3d();
-        printf("COLLISION DETECTION ON\n");
-    }
-    else
-        printf("COLLISION DETECTION OFF\n");
-    */
 
 	if (myid == owner_id)
 	{
