@@ -59,11 +59,16 @@ void printAfExtraData(
 
 	fprintf(outfile,"\nAirfoil extra front state data:\n");
 
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_WriteFrontState(outfile,front);
+    
 	next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
     {
+        /*
         if (wave_type(hs) != ELASTIC_BOUNDARY &&
             wave_type(hs) != ELASTIC_STRING) continue;
+        */
 
         for (i = 0; i < dim; ++i)
             fprintf(outfile,"%24.18g ",p->vel[i]);
@@ -305,10 +310,6 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	}
 
-    //TODO: When done debugging can package up the functionality in here.
-    //
-    //  FT_WriteFrontState(outfile,front);
-    
     fclose(outfile);
 }	/* end printAfExtraData */
 
@@ -341,11 +342,16 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_ReadFrontState(infile,front);
+    
 	next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
     {
+        /*
         if (wave_type(hs) != ELASTIC_BOUNDARY &&
             wave_type(hs) != ELASTIC_STRING) continue;
+        */
 
         for (i = 0; i < dim; ++i)
             fscanf(infile,"%lf ",&p->vel[i]);
@@ -634,10 +640,6 @@ void readAfExtraData(
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
 
-    //TODO: When done debugging can package up the functionality in here.
-    //
-    //  FT_ReadFrontState(infile,front);
-    
     fclose(infile);
 }	/* end readAfExtraData */
 
