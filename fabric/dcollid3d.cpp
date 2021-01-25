@@ -235,6 +235,8 @@ void updateImpactListVelocity(POINT* head)
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
 
             /*
+            //TODO: Try reverting to this computation
+            
             x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
