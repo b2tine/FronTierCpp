@@ -156,11 +156,11 @@ private:
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
     void limitStrainPosn();
-    bool computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
+    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
     void limitStrainRatePosn();
-    bool computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
+    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
     void limitStrainVel();
-    bool computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
+    int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     void applyStrainImpulses();
 
 	void computeAverageVelocity();

@@ -42,10 +42,15 @@ void CollisionSolver3d::createImpZoneForRG(INTERFACE* intfc)
 	}
 }
 
-//TODO: Optimize for when impact zone exists and we are
-//      adding points to it. Should be able to  update
-//      x_cm, v_cm, and avg_dt without looping through
-//      every point of the zone.
+//TODO: Currently static rigid body points could be part
+//      of an impact zone, which may explain why the jacobi
+//      iterations for the impact zone procedure did not work
+//      correctly, and why switching to our current gauss-seidel
+//      iterative procedure converges most of the time.
+//
+//      Let's try using impact zones that contain only fabric points,
+//      and see if we can improve performance. Test with both jacobi
+//      and gauss-seidel updating.
 void updateImpactListVelocity(POINT* head)
 {
     POINT* p = nullptr;
@@ -69,6 +74,14 @@ void updateImpactListVelocity(POINT* head)
         if (sl->is_stringpt)
             m = CollisionSolver3d::getStringPointMass();
 
+        //TODO: Center of Motion computations will be incorrect
+        //      if rigid body points are in the impact zone.
+        //      
+        //      Could try using 
+        //
+        //              m = total_mass(p->hs);
+        //
+
         totalmass += m;
         for (int i = 0; i < 3; ++i)
         {
@@ -76,8 +89,9 @@ void updateImpactListVelocity(POINT* head)
 		    v_cm[i] += sl->avgVel[i]*m;
 		}
 
-        //Still need to mark sorted() for updateImpactZoneVelocityForRG()
         sorted(p) = YES;
+        //Still need to mark sorted() for updateImpactZoneVelocityForRG(),
+        //and potentially for jacobi style updating
         
         p = next_pt(p);
 		num_pts++;
@@ -85,12 +99,12 @@ void updateImpactListVelocity(POINT* head)
 	
     //TODO: Is this justified, or just use the full step dt?
     avg_dt += CollisionSolver3d::getTimeStepSize();
-    avg_dt /= (double)num_pts;
+    avg_dt /= num_pts;
+        //double dt = CollisionSolver3d::getTimeStepSize();
     
     //temp debug
         //double dt = getTimeStepSize();
         //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
-
 
 	for (int i = 0; i < 3; ++i)
     {
@@ -190,12 +204,10 @@ void updateImpactListVelocity(POINT* head)
     double mag_w = Mag3d(w);
 	
 	//compute average velocity for each point
-        
-        //double dt = CollisionSolver3d::getTimeStepSize();
-    
 	p = head;
     while(p)
     {
+        //TODO: !!!
         if (isStaticRigidBody(p))
         {
             p = next_pt(p);
@@ -223,7 +235,7 @@ void updateImpactListVelocity(POINT* head)
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
 	        minusVec(dx,xF,xR);
 	        scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
-	        //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+	            //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
 	        Cross3d(tmpV,xR,wxR);
 	    }
 
@@ -234,9 +246,11 @@ void updateImpactListVelocity(POINT* head)
 
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
 
-            /*
-            //TODO: Try reverting to this computation
+            //TODO: Try reverting to this computation that uses
+            //      the full time step dt when rigid body points
+            //      have been removed from impact zones.
             
+            /*
             x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
@@ -304,16 +318,6 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
             status = true;
 	}
 
-    /*
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && !is_detImpZone)
-    {
-        //TODO: perform strain rate limiting with immediate
-        //      velocity update on the edges of the triangle,
-        //      and the bond edge.
-    }
-    */
-    
     return status;
 }
 
@@ -329,15 +333,6 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	bool status = false;
     if(MovingEdgeToEdgeGS(pts))
         status = true;
-    
-    /*
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && !is_detImpZone)
-    {
-        //TODO: perform strain rate limiting with immediate
-        //      velocity update on both bond edges.
-    }
-    */
     
     return status;
 }
@@ -379,15 +374,6 @@ bool MovingTriToTri(const TRI* a, const TRI* b)
                 status = true;
 	    }
     }
-
-    /*
-    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (status && !is_detImpZone)
-    {
-        //TODO: perform strain rate limiting with immediate
-        //      velocity update on the edges of each triangle.
-    }
-    */
 
     return status;
 }
@@ -1036,7 +1022,6 @@ static bool EdgeToEdge(
         scalarMult(1.0/dist,vec,vec);
     else if (dist == 0 && mstate == MotionState::STATIC)
     {
-        //printf("\n\tEdgeToEdge() WARNING: dist < 0\n\n");
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
         printf(",\t dist = %g\n\n",dist);
@@ -1058,7 +1043,7 @@ static bool EdgeToEdge(
         std::vector<POINT*> edge_pts(pts,pts+4);
         vtk_write_pointset(edge_pts,fname,ERROR);
 
-        clean_up(ERROR);
+        LOC(); clean_up(ERROR);
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
@@ -1349,7 +1334,7 @@ static void EdgeToEdgeImpulse(
 		    printf("EdgeToEdge: sl[%d]->collsnImpulse[%d] = nan\n",i,j);
 		    printf("a b = %g %g, nor = [%g %g %g], dist = %g\n",
                     a,b,nor[0],nor[1],nor[2],dist);
-	        clean_up(ERROR);
+	        LOC(); clean_up(ERROR);
 	    }
 	}
 }
@@ -1466,17 +1451,15 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
-        //TODO: I've only seen this occur with DGB parachute model.
-        //      Disabling fatal error for now.
-        //
-        //      Determine why this happens, and if ignoring it is an
-        //      acceptable solution. There is a danger of dividing by zero
-        //      when computing the barycentric weights w[0] and w[1],
-        //      however large but non-infinite weights will result in an
-        //      early exit and return false at the tolerance check below. 
         printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
-            //LOC(); clean_up(ERROR);
+        
+        //TODO: Need to determine if this should be a fatal error or not.
+        //      Seems to happen infrequently, so don't kill the run for now. 
+        //      See EdgeToEdge() for how to print the points out to a vtk file.
+        
+        return false;
+        //LOC(); clean_up(ERROR);
 	}
 	else
     {
@@ -1800,7 +1783,7 @@ static void PointToTriImpulse(
 	for (int j = 0; j < 3; ++j)
     {
         if (std::isnan(sl[kk]->collsnImpulse[j]) ||
-		std::isinf(sl[kk]->collsnImpulse[j]))
+		    std::isinf(sl[kk]->collsnImpulse[j]))
         {
             printf("PointToTri: sl[%d]->collsnImpulse[%d] = nan\n",kk,j);
             for (int i = 0; i < 4; ++i)
@@ -1812,7 +1795,7 @@ static void PointToTriImpulse(
             printf("w = [%g %g %g]\nnor = [%g %g %g]\ndist = %g\n",
             w[0],w[1],w[2],nor[0],nor[1],nor[2],dist);
             printf("v_rel = [%g %g %g]\n",v_rel[0],v_rel[1],v_rel[2]);
-            clean_up(ERROR);
+            LOC(); clean_up(ERROR);
 	    }
 	}
 }

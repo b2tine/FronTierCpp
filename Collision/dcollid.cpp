@@ -488,7 +488,7 @@ void CollisionSolver3d::debugImpactZones()
                     std::to_string(numImpactZone);
                 
                 printf("Impact Zone #%d -- %d points",
-                        numImpactZones,weight(head));
+                        numImpactZone,weight(head));
                 
                 POINT* p = head;
                 while (p)
