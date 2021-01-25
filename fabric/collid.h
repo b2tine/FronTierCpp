@@ -21,9 +21,12 @@ public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
-        //std::vector<CD_HSE*> fabricTriList;
-        //std::vector<CD_HSE*> stringBondList;
-	std::map<int,std::vector<double>> mrg_com;
+    std::vector<CD_HSE*> fabricTriList;
+    std::vector<CD_HSE*> staticRigidTriList;
+    std::vector<CD_HSE*> movableRigidTriList;
+    std::vector<CD_HSE*> stringBondList;
+	
+    std::map<int,std::vector<double>> mrg_com;
 	
     int build_count_pre = 1;
     int build_count_col = 1;
@@ -76,14 +79,17 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
+	void recordOriginalPosition();	
+    void setHseTypeLists();
+    void initializeImpactZones();
 	void createImpZoneForRG(INTERFACE*);
 	
     void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
 
+	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
-	bool hasCollision() {return has_collision;}
+	
+    bool hasCollision() {return has_collision;}
 
     POINT **gpoints;
     TRI **gtris;
