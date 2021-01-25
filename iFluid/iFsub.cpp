@@ -1078,6 +1078,7 @@ static void rgbody_point_propagate(
     {
         if(!debugging("collision_off"))
         {
+            //TODO: don't think there is any harm removing the conditional
             for (i = 0; i < dim; ++i)
                 newst->x_old[i] = Coords(oldp)[i];
         }
@@ -1216,6 +1217,7 @@ static void rgbody_point_propagate(
 			getStateVort,&newst->vort,&oldst->vort);
 	}
     
+    //TODO: don't think there is any harm removing the conditional
     if(!debugging("collision_off"))
     {
         /* copy newst to the other STATE; used in collision solver */

@@ -60,6 +60,8 @@ void printAfExtraData(
 
     //TODO: don't think we need this anymore since calling FT_WriteFrontState() at end.
     //      May still need p->vel[i] though...
+    //
+    //      DEFINITELY NEED p->vel still! ... what about p->force ???
     
     fprintf(outfile,"\nAirfoil extra front state data:\n");
 
@@ -68,20 +70,32 @@ void printAfExtraData(
         while (next_point(intfc,&p,&hse,&hs))
         {
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
+		        wave_type(hs) != ELASTIC_STRING) continue;
+            
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+           
+                //TODO: replace below with this 
+                //
+                //      fwrite(sl,1,front->sizest,outfile);
+                //      fwrite(sr,1,front->sizest,outfile);
+                //
+            
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],
 					sr->impulse[i]);
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
+
             for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
+                fprintf(outfile,"%24.18g ",p->vel[i]);//TODO: keep this though
+	    
+            fprintf(outfile,"\n");
         }
 
-	for (c = intfc->curves; c && *c; ++c)
+        //TODO: Follow the same pattern as above for curves etc.
+        //      using fwrite for states and retaining the p->vel data
+	
+        for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
 	    sl = (STATE*)left_state(p);
@@ -102,7 +116,8 @@ void printAfExtraData(
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
 	    fprintf(outfile,"\n");
-	    for (b = (*c)->first; b != NULL; b = b->next)
+	    
+        for (b = (*c)->first; b != NULL; b = b->next)
 	    {
 		p = b->end;
 	    	sl = (STATE*)left_state(p);
@@ -168,7 +183,11 @@ void printAfExtraData(
             for (i = 0; i < num_pts; ++i)
                 fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
         }
+
         /*
+        //TODO: This all gets handled in one of the user_fprint_surface functions
+        //      and can be removed.
+        //
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);
@@ -327,6 +346,9 @@ void readAfExtraData(
     infile = fopen(filename,"r");
 
     //TODO: may still need p->vel[i]
+    //
+    //      WE DO. SEE NOTES ABOVE IN printAfExtraData()
+    //
     
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
@@ -339,15 +361,26 @@ void readAfExtraData(
 		wave_type(hs) != ELASTIC_STRING) 
 		continue;
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            
+            //TODO: Replace below with this
+            //
+            //      fwrite(sl,1,front->sizest,outfile);
+            //      fwrite(sr,1,front->sizest,outfile);
+            //
+            
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
+
+            //TODO:Keep this though
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf ",&p->vel[i]);
-	    fscanf(infile,"\n");
+                
+            fscanf(infile,"\n");
         }
-	for (c = intfc->curves; c && *c; ++c)
+	
+    for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
 	    sl = (STATE*)left_state(p);
@@ -436,7 +469,11 @@ void readAfExtraData(
                     fscanf(infile,"%d",registered_pts->global_ids+i);
             }
         }
+        
         /*
+        //TODO: This gets handled by (user_)read_print_surface() function somewhere.
+        //      Can be removed.
+
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);

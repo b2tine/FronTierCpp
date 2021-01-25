@@ -5043,7 +5043,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: Is vel[j][index] the best default value upon failure??
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
                 getStateVel[j],&vel_reflect[j],&vel[j][index]);
     }
