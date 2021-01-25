@@ -23,12 +23,13 @@ static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double
 
 static bool isCoplanar(POINT**,double,double*);
 
-// test function for creating impact zone for each movable RG
 void CollisionSolver3d::createImpZoneForRG(INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
 
+    //TODO: May be beneficial to create impact zone for static
+    //      rigid bodies too.
 	intfc_surface_loop(intfc, s)
 	{
 	    if (is_bdry(*s)) continue;
@@ -285,17 +286,11 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
     if (MovingPointToTriGS(pts))
         status = true;
     
-    //if (status && is_detImpZone)
-      //  createImpZone(pts,4);
-	
     /* detect collision of end point of bond to w.r.t. tri */
 	pts[3] = bd->end;
     if (MovingPointToTriGS(pts))
         status = true;
 
-    //if (status && is_detImpZone)
-      //  createImpZone(pts,4);
-	
     /* detect collision of each of tri edge w.r.t to bond */
 	pts[2] = bd->start;
 	pts[3] = bd->end;
@@ -305,11 +300,18 @@ bool MovingTriToBond(const TRI* tri,const BOND* bd)
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
         if (MovingEdgeToEdgeGS(pts))
             status = true;
-
-        //if (status && is_detImpZone)
-          //  createImpZone(pts,4);
 	}
 
+    /*
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && !is_detImpZone)
+    {
+        //TODO: perform strain rate limiting with immediate
+        //      velocity update on the edges of the triangle,
+        //      and the bond edge.
+    }
+    */
+    
     return status;
 }
 
@@ -325,14 +327,24 @@ bool MovingBondToBond(const BOND* b1, const BOND* b2)
 	bool status = false;
     if(MovingEdgeToEdgeGS(pts))
         status = true;
-
-    //if (status && is_detImpZone)
-      //  createImpZone(pts,4);
+    
+    /*
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && !is_detImpZone)
+    {
+        //TODO: perform strain rate limiting with immediate
+        //      velocity update on both bond edges.
+    }
+    */
     
     return status;
 }
 
-bool MovingTriToTri(const TRI* a,const TRI* b)
+//TODO: This use of const does not seem appropriate
+//      since we are modifying the states of the points
+//      of each TRI ... Compiler may not be catching
+//      it because Point_of_tri() is a macro, not a function.
+bool MovingTriToTri(const TRI* a, const TRI* b)
 {
 	POINT* pts[4];
 	bool status = false;
@@ -349,9 +361,6 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 
         if (MovingPointToTriGS(pts))
             status = true;
-
-        //if (status && is_detImpZone)
-          //  createImpZone(pts,4);
 	}
 
 	//detect edge to edge collision
@@ -366,13 +375,19 @@ bool MovingTriToTri(const TRI* a,const TRI* b)
 		
             if (MovingEdgeToEdgeGS(pts))
                 status = true;
-                
-            //if (status && is_detImpZone)
-              //  createImpZone(pts,4);
 	    }
     }
 
-	return status;
+    /*
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    if (status && !is_detImpZone)
+    {
+        //TODO: perform strain rate limiting with immediate
+        //      velocity update on the edges of each triangle.
+    }
+    */
+
+    return status;
 }
 
 //For use with jacobi avgVel update.
@@ -480,7 +495,14 @@ static bool MovingPointToTriGS(POINT* pts[])
             Coords(pts[j])[k] = sl->x_old[k];
     }
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && (!is_detImpZone || rigid_body_point))
     if (status && !is_detImpZone)
     {
         for (int j = 0; j < 4; ++j)
@@ -623,7 +645,14 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         string_string = true;
     */
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[2]))
+        rigid_body_point = true;
+    */
+
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && (!is_detImpZone || string_string || rigid_body_point))
     if (status && (!is_detImpZone || string_string))
     {
         for (int j = 0; j < 4; ++j)
@@ -1040,7 +1069,14 @@ static bool EdgeToEdge(
         string_string = true;
     */
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[2]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (!is_detImpZone || string_string || rigid_body_point)
     if (!is_detImpZone || string_string)
     {
         double dt = root;
@@ -1488,7 +1524,14 @@ static bool PointToTri(
         }
     }
 
+    /*
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    */
+
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (!is_detImpZone || rigid_body_point)
     if (!is_detImpZone)
     {
         double dt = root;

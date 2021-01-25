@@ -11,8 +11,9 @@
 enum class CD_HSE_TYPE
 {
     FABRIC_TRI,
-    STRING_BOND,
-    RIGID_TRI
+    MOVABLE_RIGID_TRI,
+    STATIC_RIGID_TRI,
+    STRING_BOND
 };
 
 
