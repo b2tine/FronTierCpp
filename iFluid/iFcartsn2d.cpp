@@ -537,18 +537,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 	double *coords, 
 	double *source) 
 {
-    /*
-    int j,k,l;
-	double x,y,a,f,Force;
-	double t = front->time;
-	double phi[MAXD+1];
-	x = coords[0];
-	y = coords[1];
-	UNIFORM_PARAMS uniform_params;
-	short unsigned int xsubi[3]; 
-    */
-
-    //TODO: remove commented out code when certain of changes
     for (int i = 0; i < dim; ++i)
         source[i] = iFparams->gravity[i];
 
@@ -560,16 +548,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
         for (int i = 0; i < dim; ++i)
         {
             source[i] += field->ext_accel[i][index];
-            //source[i] = field->ext_accel[i][index];
         }
 	}
-    /*
-    else
-    {
-        for (int i = 0; i < dim; ++i)
-            source[i] = iFparams->gravity[i];
-    }
-    */
 }	/* end computeSourceTerm */
 
 void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
@@ -582,7 +562,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	}
 	m_dt = dt;
 
-    setFreeStreamVelocity();//Need this for slip boundaries
+    setFreeStreamVelocity();
 	
     start_clock("solve");
     setDomain();
@@ -723,12 +703,12 @@ double Incompress_Solver_Smooth_2D_Cartesian::getVorticity(int i, int j)
                 else if (status ==CONST_P_PDE_BOUNDARY)
                     u_edge[idir][nb] = u0;//TODO: should this use the intfc_state vel?
                 else if (status ==CONST_V_PDE_BOUNDARY &&
-                        wave_type(hs) == DIRICHLET_BOUNDARY)//TODO: are these flipped?
+                        wave_type(hs) == DIRICHLET_BOUNDARY)
                     u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
                 else
                 {
                     //TODO: Use a higher order approximation for the
-                    //      NEUMANN/MOVABLE_BODY_BOUNDARY (3 point one sided).
+                    //      NEUMANN/MOVABLE_BODY_BOUNDARY (3 point one sided)??
                     //      See computeFieldPointDivSimple().
                     u_edge[idir][nb] = u0;
                 }
@@ -781,7 +761,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
 	computeDiffusion(void)
 {
     return computeDiffusionCN();
-	    //return computeDiffusionImplicit();
 }
 
 void Incompress_Solver_Smooth_2D_Cartesian::
@@ -883,16 +862,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
-
-                            //TODO: may not need to modify inlet with
-                            //      tangential component of phi ...
-                            //      should be zero anyway
-                            
-                            /*
-                            auto grad_phi_tangent = computeGradPhiTangential(
-                                    icoords,dir[nb],comp,hs,crx_coords);
-                            U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-                            */
                         }
                     
                     }
@@ -1006,8 +975,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                         //      as it is covered by a moving rigid body.
                         //      May need to retain old top_comp array, or find a way
                         //      to access it if that functionality already exists
-                        //
-                        //      see find_state_crossing_info() in crystal code for soln
                         
                         rhs += 2.0*coeff[nb]*U_nb[nb];
                             //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);

@@ -89,28 +89,8 @@ extern void elastic_point_propagate(
 	newsr = (STATE*)right_state(newp);
 
 	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
-    
-    /*
-    //TODO: normal vector is already normalized --- Remove once tested
-    double mag_nor = Magd(nor,dim);
-    printf("mag_nor = %g\n", mag_nor); //temp debugging (to be removed)
-    for (int j = 0; j < dim; ++j)
-        nor[j] /= mag_nor;
-    */
-
-    //TODO: check FT_GridSizeInDir(nor,front) computation.
-    //      Has given very large values before -- see setSlipBoundary().
     double h = FT_GridSizeInDir(nor,front);
     
-    /*
-    // Use length of grid block diagonal instead
-    double dist_reflect = 0.0;
-    for (int j = 0; j < 3; ++j)
-          dist_reflect += sqr(top_h[j]);
-    dist_reflect = sqrt(dist_reflect);
-    double h = dist_reflect;
-    */
-
 	for (int i = 0; i < dim; ++i)
 	{
 	    pm[i] = Coords(oldp)[i] - h*nor[i];
@@ -194,27 +174,7 @@ extern void elastic_point_propagate(
             dv[i] = 0.0;
 	    else if (front->step > af_params->fsi_startstep)
         {
-            //TODO: Use newsl->pres and newsr->pres
-            //      where the interpolated values are stored??
-            //      Carefully study this....
-            
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-            //dv[i] = (newsl->pres - newsr->pres)*nor[i]/area_dens;
-                
-                //TODO: zgao code has this instead (multiply by dt)
-                //  dv[i] = (sl->pres - sr->pres)*nor[i]*dt/area_dens;
-                //
-                //  This would give a true velocity increment, however
-                //  we assign dv to fluid_accel for which the units
-                //  currently match --  code may be correct as is.
-                
-            //TODO: shear stress dv.
-            //      p - m or m - p for shear??? Keep in mind that pressure
-            //      has negative sign on the normal for the positive side
-            //      in the above vel increment in the normal direction.
-            //      
-            //  dv[i] += (mu_m*vel_tan_m[i] - mu_p*vel_tan_p[i])/h/area_dens;
-            //      //dv[i] += (mu_p*vel_tan_p[i] - mu_m*vel_tan_m[i])/h/area_dens;
                     
             //TODO: Should triangle area be involved in these computations???
             //      see print_drag3d(). However we are not looping over tris,
@@ -224,20 +184,12 @@ extern void elastic_point_propagate(
             //      double area_tri = tri_area(tri);
             //      double mass_tri = area_tri*area_dens;
             //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri;
-            //
-            //      2015 paper claims area_dens is the canopy density per unit area.
-            //      Does that make sense???
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-        //TODO: zgao code has this instead
-        //  newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i] + dv[i];
-        //
-        //  however fluid_accel was not defined, so current code likely correct.
-	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
 	}
 
@@ -1007,7 +959,6 @@ static void coating_mono_hyper_surf2d(
 	    (void) printf("Leaving coating_mono_hyper_surf2d()\n");
 }	/* end coating_mono_hyper_surf2d */
 
-//TODO: investigate
 static void coating_mono_hyper_surf3d(
 	Front *front)
 {

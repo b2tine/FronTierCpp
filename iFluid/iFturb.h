@@ -1,7 +1,6 @@
 #ifndef IF_TURB_H
 #define IF_TURB_H
 
-//TODO: Need to be able to solve this root
 struct SpaldingWallLaw
 {
 public:
@@ -28,23 +27,17 @@ public:
         
     double solve(double u0)
     {
-            //printf("u = %g  y = %g\n",u,y);//DEBUG
         if (u < TOL) return 0.0;
-            //assert(u0 > 0.0);
 
         double un = u0;
         for (int i = 0; i < MAXITER; ++i)
         {
             double fval = f(un);
-                //printf("iter = %d  un = %g  fval = %g\n",i,un,fval);//DEBUG
             if (fabs(fval) < TOL) return un;
 
             un = un - f(un)/fprime(un);
-            
-            //TODO: check if nan, inf, or less than zero
         }
 
-        //TODO: better debugging output
         printf("\nERROR: SpaldingWallLaw::solve() could not find root\n");
         printf("u = %g  y = %g  nu = %g\n",u,y,nu);
         printf("un = %g   f(un) = %g\n",un,f(un));

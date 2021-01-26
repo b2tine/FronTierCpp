@@ -2932,8 +2932,6 @@ extern void collectNodeExtra(
 }	/* end collectNodeExtra */
 
 
-//TODO: this should be done during
-//      initialization and stored in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;

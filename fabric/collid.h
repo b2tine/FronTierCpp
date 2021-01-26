@@ -25,6 +25,7 @@ public:
     std::vector<CD_HSE*> staticRigidTriList;
     std::vector<CD_HSE*> movableRigidTriList;
     std::vector<CD_HSE*> stringBondList;
+    std::vector<CD_HSE*> elasticHseList;
 	
     std::map<int,std::vector<double>> mrg_com;
 	
@@ -82,7 +83,7 @@ public:
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
-	void createImpZoneForRG(INTERFACE*);
+	void initRigidBodyImpactZones(INTERFACE*);
 	
     void resolveCollision();
 
@@ -204,7 +205,7 @@ bool MovingTriToTri(const TRI*,const TRI*);
 void makeSet(std::vector<CD_HSE*>&);
 void createImpZone(POINT*[],int num = 4,bool first = NO);
 void createImpactZone(POINT*[],int num);
-void createImpactZoneForRigidBody(POINT*[],int num);
+void createImpactZoneRigidBody(POINT*[],int num);
 void updateImpactListVelocity(POINT* head);
 void SpreadImpactZoneImpulse(POINT*, double, double*);
 void printPointList(POINT**, const int);

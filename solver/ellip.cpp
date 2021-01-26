@@ -396,12 +396,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: ELLIPTICAL_SOLVER::solve2d() (this function) should be a method of
-                //      the incompressible fluid solver so we can use methods such as the one
-                //      below, and avoid hard coding variable types into the solver library.
-                //
-                //      getRectangleCenter(index_nb[l],coords_ghost);
-                    
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
@@ -410,10 +404,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //first reflect across the grid line containing intfc crossing,
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
-                //TODO: verify no conceptual difference between above and below ...
-                    //for (int m = 0; m < dim; ++m)
-                        //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
                 double v[MAXD];
@@ -432,98 +422,21 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
                 
-                ///////////////////////////////////////////////////////////////////////
-
-
-                /*
-                //NOTE: This method may not be appropriate for pressure wall boundary.
-                //      In particular, specifying the reflection distance, dist_reflect,
-                //      may be placing the reflection point too far away from the wall
-                //      for its interpolated pressure to be used as the ghost point
-                //      pressure (constant extrapolation).
-                //      This is my current suspicion for the presence of the large pressure
-                //      "halo" surrounding rigid bodies and unphysically reducing the
-                //      downstream pressure well past the object.
-                
-                ///////////////////////////////////////////////////////////////////////
-                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
-                /////////////////////////////////////////////////////////////////////
-                
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
-
-                double intfc_crx_coords[MAXD];
-                double nor[MAXD];
-                
-                //TODO: Remove when safe to do so.
-                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                //        comp,intfc_crx_coords,coords_reflect,nor);//
-                
-                double intrp_coeffs[MAXD] = {0.0};
-                HYPER_SURF_ELEMENT* phse;
-                HYPER_SURF* phs;
-                double range = 2;
-
-                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-                        crx_coords,intrp_coeffs,&phse,&phs,range);
-                
-                //compute the normal vector at the interface point
-                double ns[MAXD] = {0.0};
-                double ne[MAXD] = {0.0};
-                
-                normal(Bond_of_hse(phse)->start,phse,phs,ns,front);
-                normal(Bond_of_hse(phse)->end,phse,phs,ne,front);
-
-                for (int i = 0; i < dim; ++i)
-                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
-
-                double mag_nor = Magd(nor,dim);
-                for (int i = 0; i < dim; ++i)
-                    nor[i] /= mag_nor;
-
-                if (comp == negative_component(phs))
-                {
-                    for (int i = 0; i < dim; ++i)
-                        nor[i] *= -1.0;
-                }
-        
-                double dist_reflect = FT_GridSizeInDir(nor,front);
-                
-                //
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                //double dist_reflect = 0.0;
-                //for (int m = 0; m < dim; ++m)
-                //    dist_reflect += sqr(top_h[m]);
-                //dist_reflect = sqrt(dist_reflect);
-                //
-
-                //The desired reflected point
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                ////////////////////////////////////////////////////////////////////
-                */
-
-
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
                         getStateVar,&phi_reflect,&soln[index]);
                 
                 //TODO: getStateVar() returns phi which is what we are solving for.
-                //      More correct method would place the weights of the points
-                //      used to interpolate at the reflected point into the matrix.
+                //      More correct method would place the interpolation coefficients
+                //      of the points used in the approximiation into the matrix.
                 //
-                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
+                //      See FrontGetRectCellIntrpCoeffs() for some ideas.
                 //      (This function would only work for bilinear intrp 
                 //          i.e. no grid crxing)
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
-
-                //TODO: Does this need to be set here, or does this only refer
-                //      to rectangular domain boundaries?
-                //      
-                use_neumann_solver = NO;
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -609,7 +522,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -637,7 +549,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -853,12 +764,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: ELLIPTICAL_SOLVER::solve3d() (this function) should be a method of
-                //      the incompressible fluid solver so we can use methods such as the one
-                //      below, and avoid hard coding variable types into the solver library.
-                //
-                //      getRectangleCenter(index_nb[l],coords_ghost);
-                    
                 //Reflect the ghost point through intfc-mirror at crossing.
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,dir[l],comp,nor,&hs,crx_coords);
@@ -866,12 +771,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //first reflect across the grid line containing intfc crossing
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
-                //TODO: verify no conceptual difference between above and below ...
-                //
-                //    for (int m = 0; m < dim; ++m)
-                //        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-                //
-
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
                 double v[MAXD];
@@ -889,76 +788,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
-                ////////////////////////////////////////////////////////////////////
-
-
-                /*
-                //NOTE: This method may not be appropriate for pressure wall boundary.
-                //      In particular, specifying the reflection distance, dist_reflect,
-                //      may be placing the reflection point too far away from the wall
-                //      for its interpolated pressure to be used as the ghost point
-                //      pressure (constant extrapolation).
-                //      This is my current suspicion for the presence of the large pressure
-                //      "halo" surrounding rigid bodies and unphysically reducing the
-                //      downstream pressure well past the object.
-
-
-                ///////////////////////////////////////////////////////////////////////
-                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
-                /////////////////////////////////////////////////////////////////////
-                
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
-
-                double intfc_crx_coords[MAXD];
-                double nor[MAXD];
-                
-                //TODO: Remove when safe to do so.
-                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                //        comp,intfc_crx_coords,coords_reflect,nor);//
-                
-                double intrp_coeffs[MAXD] = {0.0};
-                HYPER_SURF_ELEMENT* phse;
-                HYPER_SURF* phs;
-                double range = 2;
-
-                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-                        crx_coords,intrp_coeffs,&phse,&phs,range);
-                
-                // compute the normal at the interface point
-                TRI* nearTri = Tri_of_hse(phse);
-                const double* tnor = Tri_normal(nearTri);
-                
-                //NOTE: Tri_normal() does not return a unit vector
-                double mag_nor = Magd(tnor,dim);
-                for (int i = 0; i < dim; ++i)
-                    nor[i] = tnor[i]/mag_nor;
-
-                if (comp == negative_component(phs))
-                {
-                    for (int i = 0; i < dim; ++i)
-                        nor[i] *= -1.0;
-                }
-        
-                //TODO: FT_GridSizeInDir(nor,front) returning large values,
-                //      but it may have been due to non normalized normal vec
-                //      which has since been corrected
-                double dist_reflect = FT_GridSizeInDir(nor,front);
-                
-                //
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                //double dist_reflect = 0.0;
-                //for (int m = 0; m < dim; ++m)
-                //    dist_reflect += sqr(top_h[m]);
-                //dist_reflect = sqrt(dist_reflect);
-                //
-
-                //The desired reflected point
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                ////////////////////////////////////////////////////////////////////
-                */
-
 
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
@@ -977,11 +806,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 aII += -coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
-                
-                //TODO: Does this need to be set here, or does this only refer
-                //      to rectangular domain boundaries?
-                //
-                //use_neumann_solver = NO;
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -1062,7 +886,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -1091,7 +914,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);

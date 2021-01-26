@@ -3236,10 +3236,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 //first reflect across the grid line containing intfc crossing,
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
-                //TODO: verify no conceptual difference between above and below ...
-                    //for (int m = 0; m < dim; ++m)
-                        //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
                 double v[MAXD];
@@ -3369,67 +3365,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
                     double q_oppnb2 = field_array[index_oppnb2];
 
                     q_edge[idir][nb] = 3.0*q0 - 3.0*q_oppnb1 + q_oppnb2;
-
-                    /*
-                    //grad(q) dot normal = 0
-                    int icoords_ghost[MAXD];
-                    for (int m = 0; m < dim; ++m)
-                        icoords_ghost[m] = icoords[m];
-                    
-                    icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-                    
-                    double coords_ghost[MAXD];
-                    double coords_reflect[MAXD];
-                    
-                    ////////////////////////////////////////////////////////////////////////
-                    ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
-                    //////////////////////////////////////////////////////////////////////
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
-                        coords_reflect[m] = coords_ghost[m];
-                    }
-
-                    double nor[MAXD];
-                    FT_NormalAtGridCrossing(front,icoords,
-                            dir[idir][nb],comp,nor,&hs,crx_coords);
-                            
-                    //Reflect the ghost point through intfc-mirror at crossing.
-                    //first reflect across the grid line containing intfc crossing,
-                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-                    
-                    //TODO: verify no conceptual difference between above and below ...
-                        //for (int m = 0; m < dim; ++m)
-                            //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-
-                    //Reflect the displacement vector across the line
-                    //containing the intfc normal vector
-                    double v[MAXD];
-                    double vn = 0.0;
-
-                    for (int m = 0; m < dim; ++m)
-                    {
-                        v[m] = coords_reflect[m] - crx_coords[m];
-                        vn += v[m]*nor[m];
-                    }
-
-                    for (int m = 0; m < dim; ++m)
-                        v[m] = 2.0*vn*nor[m] - v[m];
-
-                    //The desired reflected point
-                    for (int m = 0; m < dim; ++m)
-                        coords_reflect[m] = crx_coords[m] + v[m];
-                    ///////////////////////////////////////////////////////////////////////
-
-                    //Interpolate phi at the reflected point,
-                    //which will serve as the ghost point phi.
-                    double q_reflect;
-                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
-                            getStateQ,&q_reflect,&field_array[index]);
-
-                    q_edge[idir][nb] = q_reflect;
-                    */
                 }
             }
 	    }
@@ -4084,7 +4019,8 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
 
                 /////////////////////////////////////////////////////////////////
-                //TODO: an experiment
+                //       d_p += jump_mudiv - jump_q;
+                
                 double jump_mudiv;
                 double jump_q;
 
@@ -4099,25 +4035,16 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                     jump_q = q0 - q_nb;
                 }
 
-                //TODO: May have a sign error somewhere ...
-
-                    //d_p += jump_mudiv - jump_q;
-                
-                //Try this one first 
-                d_p += jump_mudiv;
+                d_p += jump_mudiv; //NOTE: q equal to zero for now.
                 /////////////////////////////////////////////////////////////////
 
                 if (side <= 0)
                 {
                     ans -= d_p/sqr(top_h[nb/2])/rho;
-                    //ans += d_p/sqr(top_h[nb/2])/rho;
-                    //ans += Un*(alpha + fabs(Un)*beta)/sqr(top_h[nb/2])/rho;
                 }
                 else
                 {
                     ans += d_p/(sqr(top_h[nb/2]))/rho;
-                    //ans -= d_p/(sqr(top_h[nb/2]))/rho;
-                    //ans -= Un*(alpha + fabs(Un)*beta)/(sqr(top_h[nb/2]))/rho;
                 }
             
                 if (debugging("pressure_drop"))
@@ -4229,7 +4156,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
 
                 /////////////////////////////////////////////////////////////////
-                //TODO: an experiment
+                //                 d_p += jump_mudiv - jump_q;
                 double jump_mudiv;
                 double jump_q;
 
@@ -4243,32 +4170,20 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                     jump_mudiv = mudiv - mudiv_nb;
                     jump_q = q0 - q_nb;
                 }
-
-                //TODO: May have a sign error somewhere ...
-                    //d_p += jump_mudiv - jump_q;
                 
-                //Try this one first 
-                d_p += jump_mudiv;
+                d_p += jump_mudiv; //NOTE: q equal to zero for now.
                 /////////////////////////////////////////////////////////////////
                 
                 // modify pressure gradient
                 if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
                 {
                     grad_var[nb/2] -= 0.5*d_p/top_h[nb/2];
-                    //grad_var[nb/2] += 0.5*d_p/top_h[nb/2];
                 }
                 else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
                 {
                     grad_var[nb/2] += 0.5*d_p/top_h[nb/2];
-                    //grad_var[nb/2] -= 0.5*d_p/top_h[nb/2];
                 }
 
-                /*
-                //another way to compute d_p, not accurate but robust
-                d_p = (side >= 0)? var[index_nb]-var[index]:
-                                   var[index]-var[index_nb];
-                */
-                
                 if (debugging("pressure_drop"))
                 {
                     printf("\ncomputeFieldPointGradJump()\n");
@@ -4699,143 +4614,6 @@ void Incompress_Solver_Smooth_Basis::setDoubleIndexMap(void)
 	}
 }	/* end setDoubleIndexMap */
 
-//Slip boundary treats the tangential velocity as a neumann condition
-//and the normal velocity as a dirichlet boundary.
-//
-//let c be the slip velocity (prescribed), then the boundary condition is
-//  
-//  u dot n = u dot c
-//
-//when c is set to the zero vector the ghost velocity is identical to
-//the reflected point's tangential velocity
-//
-//TODO: add arg for prescribed velocity vector c
-/*
-void Incompress_Solver_Smooth_Basis::setSlipBoundary(
-	int *icoords,
-	int idir,
-	int nb,
-	int comp,
-	HYPER_SURF *hs,
-	POINTER state,
-	double** vel,
-	double* v_slip)
-{
-	int index;
-    int ghost_ic[MAXD];
-    double coords[MAXD], crx_coords[MAXD];
-    double coords_reflect[MAXD], coords_ghost[MAXD];
-    double nor[MAXD];
-    
-    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
-    GRID_DIRECTION  dir;
-    double  vel_intfc[MAXD];
-
-	index = d_index(icoords,top_gmax,dim);
-	
-    for (int i = 0; i < dim; ++i)
-    {
-        vel_intfc[i] = (*getStateVel[i])(state);
-        coords[i] = top_L[i] + icoords[i]*top_h[i];
-        ghost_ic[i] = icoords[i];
-    }
-	
-    dir = (nb == 0) ? ldir[idir] : rdir[idir];
-
-    FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
-	
-    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-
-    for (int j = 0; j < dim; ++j)
-    {
-        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
-            //coords_reflect[j] = coords_ghost[j];
-    }
-
-    // Reflect ghost point through intfc-mirror at crossing
-    
-    // first reflect across the grid line containing intfc crossing
-    for (int j = 0; j < dim; ++j)
-        coords_reflect[j] = 2.0*crx_coords[j] - coords_ghost[j];
-            //coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-    
-    double vn = 0.0;
-    double vec[MAXD] = {0.0};
-    
-    for (int j = 0; j < dim; ++j)
-    {
-        vec[j] = coords_reflect[j] - crx_coords[j];
-        vn += vec[j]*nor[j];
-    }
-
-    for (int j = 0; j < dim; ++j)
-        vec[j] = 2.0*vn*nor[j] - vec[j];
-
-    for (int j = 0; j < dim; ++j)
-        coords_reflect[j] = crx_coords[j] + vec[j];
-
-    // Interpolate the state at the reflected point
-    double vel_reflect[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
-                getStateVel[j],&vel_reflect[j],&vel[j][index]);
-    }
-
-    vn = 0.0;
-    double vel_rel[MAXD] = {0.0};
-
-    for (int j = 0; j < dim; ++j)
-    {
-        //Relative velocity of reflected point with respect to the interface
-        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-        vn += vel_rel[j]*nor[j]; //See next TODO below
-    }
-
-    //double v_slip[MAXD] = {0.0};
-    //TODO: For some reason using the interface normal vector to project out
-    //      the normal velocity completely destroys the effects of the turbulence model
-    for (int j = 0; j < dim; ++j)
-	    v_slip[j] = vel_reflect[j] - vn*nor[j];
-	        //v_tmp[j] -= 2.0*vn*nor[j]; //This is for a reflecting bdry
-
-    //
-    //fprint_general_vector(stdout,"nor",nor,dim,"\n");
-    //fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
-    //
-    
-    //TODO: Why does this work and the interface normal does not??? 
-	
-    //
-    //for (int j = 0; j < dim; ++j)
-    //    vec[j] = coords_reflect[j] - (top_L[j] + ghost_ic[j]*top_h[j]);
-
-    //double mag_vec = mag_vector(vec,dim);
-    //for (int j = 0; j < dim; ++j)
-    //    vec[j] /= mag_vec;
-
-    //vn = 0.0;
-    //for (int j = 0; j < dim; ++j)
-    //    vn += vec[j]*vel_rel[j];
-
-    ////TODO: The difference between nopenetration and reflection appears to be significant
-    //for (int j = 0; j < dim; ++j)
-	//    v_slip[j] = vel_reflect[j] - vn*vec[j];
-    //
-    
-    //
-    //fprint_general_vector(stdout,"vec",vec,dim,"\n");
-    //fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
-    //
-}*/
-
-//TODO: Can we make these regular functions outside of
-//      the class without too much difficulty? Will allow
-//      for use in the hyperbolic solver.
-//      Would need to make Front* front an argument so we
-//      can use functions like FT_GridIntfcToph(Front*) etc.
-//      Also would need to add double* mu field array.
 void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	int *icoords,
 	int idir,
@@ -4847,8 +4625,10 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundary(
 	double* v_slip)
 {
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
+    
     //TODO: Write GNOR implementation and compare results.
-        //setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
+    //
+    //      setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
 }
 
 // Based on finding the nearest interface point to the ghost point
@@ -4900,10 +4680,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     /*FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);*/
 
-    //TODO: Would limiting dist_ghost give improvement???
-    //      The parabolic and poisson solvers never actually encounter
-    //      a ghost point, the ghost data just gets sent to the rhs so
-    //      it shouldn't create a problem????
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
     //compute the normal and velocity vectors at the interface point
@@ -5002,7 +4778,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
     double dist_reflect = FT_GridSizeInDir(nor,front);
-        //double dist_reflect = 1.25*FT_GridSizeInDir(nor,front);
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
@@ -5019,7 +4794,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
    
 
     ////////////////////////////////////////////////////////////////////////
-    //Temp debugging
     if (debugging("slip_boundary"))
     {
         printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
@@ -5111,15 +4885,15 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
                     dist_reflect,mu_l,rho_l,U_FreeStream);*/
     double mag_tau_wall = computeWallShearStress(mag_vtan,
                     dist_reflect,mu_l,rho_l,45.0);
+    //NOTE: In all numerical experiments, Newton's method converged
+    //      when the initial guess for the dimensionless wall velocity
+    //      was in the range of 40-50.
 
     if (mag_vtan > MACH_EPS)
     {
         for (int j = 0; j < dim; ++j)
             tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
-    //TODO: Need to do anything else with tau_well other than adjust
-    //      the ghost fluid's tangential velocity??
-    //      (Aside from using for drag computation)
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;
@@ -5191,20 +4965,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         coords_reflect[j] = coords_ghost[j];
     }
 
-    //TODO: when finalized factor into reusable functions listed in fapi.h
-
     // Reflect ghost point through intfc-mirror at crossing
     GRID_DIRECTION dir = (nb == 0) ? ldir[idir] : rdir[idir];
     FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
 	
     // first reflect across the grid line containing intfc crossing
     coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
-    
-    //TODO: verify no conceptual difference between above and below ...
-    /*
-        for (int j = 0; j < dim; ++j)
-            coords_reflect[j] = 2.0*crx_coords[j] - coords_ghost[j];
-    */
     
     double vec_reflect[MAXD] = {0.0};
     double vec_midpoint[MAXD] = {0.0};
@@ -5353,12 +5119,14 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
         vn += vel_rel[j]*nor[j];
     }
 
+    //////////////////////////////////////////////////////////////////////////////
     //TODO: This would be omitted if lower code implementation finished
     for (int j = 0; j < dim; ++j)
     {
         v_slip[j] = vel_reflect[j] - (dist_ghost/dist_reflect)*vn*nor[j];
             //v_slip[j] = vel_reflect[j] - vn*nor[j]; //NOTE: is just the tangential velocity
     }
+    //////////////////////////////////////////////////////////////////////////////
     
 
     //TODO: CONTINUE WRITING IMPLEMENTATION BELOW
@@ -5422,7 +5190,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR(
             LOC(); clean_up(EXIT_FAILURE);
     }
     
-    //TODO: NEED TO FIX solving spadling formula with secant method -- diverges in current form
     double tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mul,rhol);
 
     double vel_ghost_tan[MAXD] = {0.0};
@@ -5471,8 +5238,8 @@ std::vector<double> Incompress_Solver_Smooth_Basis::computeGradPhiTangential(
     return grad_phi_tangent;
 }
 
-//TODO: Currently can only detect CONSTANT state Dirichlet
-//      boundaries corresponding to a fixed INLET boundary.
+//TODO: Currently can only looking for CONSTANT state Dirichlet
+//      boundaries corresponding to an INLET boundary.
 void Incompress_Solver_Smooth_Basis::setFreeStreamVelocity()
 {
     U_FreeStream = 0.0;

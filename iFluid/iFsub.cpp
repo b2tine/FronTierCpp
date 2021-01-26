@@ -1085,13 +1085,11 @@ static void rgbody_point_propagate(
         double omega_dt,crds_com[MAXD];
         omega_dt = angular_velo(oldhs)*dt;
 
-        //TODO: Is center of mass velo being set correctly?
-        //      If so, what is the scheme/justification?   
         for (i = 0; i < dim; ++i)
         {
             vel[i] = center_of_mass_velo(oldhs)[i];
             crds_com[i] = Coords(oldp)[i]
-                + dt*(vel[i] + oldst->vel[i])*0.5 - rotation_center(oldhs)[i];
+                + 0.5*(vel[i] + oldst->vel[i])*dt - rotation_center(oldhs)[i];
         }
 
         if (dim == 2)
@@ -1121,7 +1119,7 @@ static void rgbody_point_propagate(
 
             // propagate by euler parameters
             if (motion_type(oldhs) == ROTATION ||
-                motion_type(oldhs) == PRESET_ROTATION)//TODO: FREE_MOTION
+                motion_type(oldhs) == PRESET_ROTATION)
             {
                 double A[3][3],AI[3][3];
                 double ep[4];
@@ -1343,7 +1341,6 @@ extern void read_iFparams(
 	    (void) printf("%d\n",iFparams->adv_order);
 	}
 
-    //TODO: better input file names and output
     CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
@@ -1481,8 +1478,6 @@ extern void read_iFparams(
                     clean_up(ERROR);
             }
 
-            //TODO: Should be opposite default setting for general use.
-            //
             //      "Enter yes to use slip wall boundary condition:"
             iFparams->use_no_slip = YES;
             if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
@@ -1500,7 +1495,7 @@ extern void read_iFparams(
 	}
    
     
-    //TODO: Need these here, or gets handled in iFinit.cpp for 2 phase flow problems?
+    //TODO: Need these here? or gets handled in iFinit.cpp for 2 phase flow problems?
     CursorAfterStringOpt(infile,"Enter surface tension:");
     fscanf(infile,"%lf",&iFparams->surf_tension);
     printf("%f\n",iFparams->surf_tension);
@@ -1832,8 +1827,6 @@ extern void recordBdryEnergyFlux(
 }	/* end recordBdryEnergyFlux */
 
 
-//TODO: Fix this.
-//     partial_x (e+p)u + partial_y (e+p)v + partial_z (e+p)w
 static void addToEnergyFlux(
 	RECT_GRID *rgr,
 	HYPER_SURF *hs,

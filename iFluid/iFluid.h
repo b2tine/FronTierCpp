@@ -428,7 +428,7 @@ protected:
         int ext_l[MAXD],ext_u[MAXD];
         int D_extension;
 	int **dij_to_I,***dijk_to_I;
-	// Sweeping limites
+	// Sweeping limits
 	int ext_imin[MAXD];
 	int ext_imax[MAXD];
 	// for parallel partition

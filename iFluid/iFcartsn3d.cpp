@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "iFluid.h"
 #include <solver.h>
 
+#include<fstream>
 //--------------------------------------------------------------------------
 // 		   Incompress_Solver_Smooth_3D_Cartesian	
 //--------------------------------------------------------------------------
@@ -437,8 +438,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeVorticity()
     FT_ParallelExchGridVectorArrayBuffer(vorticity,front);
 }
 
-//TODO: Turn into global curl function
-//
 //TODO: make boundary aware -- see setSlipBoundary()
 std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
     computePointVorticity(int* icoords, double** vel)
@@ -497,7 +496,6 @@ std::vector<double> Incompress_Solver_Smooth_3D_Cartesian::
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
-    //TODO: remove commented out code when certain of changes
     for (int i = 0; i < dim; ++i)
         source[i] = iFparams->gravity[i];
 
@@ -509,19 +507,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
         for (int i = 0; i < dim; ++i)
         {
             source[i] += field->ext_accel[i][index];
-            //source[i] = field->ext_accel[i][index];
         }
     }
-    /*
-    else
-    {
-        for (int i = 0; i < dim; ++i)
-            source[i] = iFparams->gravity[i];
-    }
-    */
 } 	/* computeSourceTerm */
 
-#include<fstream>
 void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 {
 	static boolean first = YES;
@@ -538,7 +527,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         printf("max speed entering solve(): %20.14f\n",max_speed);
     }
 
-    setFreeStreamVelocity();//Need this for slip boundaries
+    setFreeStreamVelocity();
 	
     start_clock("solve");
 	setDomain();
@@ -638,7 +627,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         //TODO: Is this getting taken care of??
         //      If not, need a new function to update the values
         //      of pressure and phi at the boundary.
-        appendOpenEndStates(); //necessary since phi is updated
+        appendOpenEndStates();
 	    
         start_clock("computeNewVelocity");
 	    computeNewVelocity();
@@ -647,7 +636,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
         accum_dt = 0.0;
 	}
 	
-    computeVorticity();//TODO: fix vorticity computation (bdry awareness)
+    //TODO: fix vorticity computation (bdry awareness)
+    computeVorticity();
     recordVelocity();
     computeMaxSpeed();
 
@@ -706,7 +696,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusion(void)
 {
     return computeDiffusionCN();
-	    //return computeDiffusionImplicit();
 }
 
 void Incompress_Solver_Smooth_3D_Cartesian::
@@ -806,16 +795,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
-                            
-                            //TODO: may not need to modify inlet with
-                            //      tangential component of phi ...
-                            //      should be zero anyway
-                            
-                            /*
-                            auto grad_phi_tangent = computeGradPhiTangential(
-                                    icoords,dir[nb],comp,hs,crx_coords);
-                            U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-                            */
                         }
                         
                     }
@@ -1809,7 +1788,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeGradientQ()
 	    icoords[1] = j;
 	    icoords[2] = k;
         
-        //TODO: poro grad??
+        //TODO: Would this require the poro grad source terms??
         computeFieldPointGradQ(icoords,array,point_grad_q);
 	    
         for (l = 0; l < dim; ++l)

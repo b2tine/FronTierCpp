@@ -142,8 +142,6 @@ double Incompress_Solver_Smooth_Basis::computeMuOfBaldwinLomax(
 	return mu_t;
 }	/* end computeMuOfBaldwinLomax */
 
-//TODO: 3d runs produce unphysical horizontal bands of eddy viscosity
-//      normal to rigid body center of mass motion.
 double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
                 int *icoords)
 {
@@ -271,7 +269,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
     //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
     //  (about 10x larger than MACH_EPS)
     double nu_t;
-    if (B_beta < MACH_EPS) //if (sum_alpha >= MACH_EPS)
+    if (B_beta < MACH_EPS) // || sum_alpha < MACH_EPS)
         nu_t = 0.0;
     else
         nu_t = C_v*sqrt(B_beta/sum_alpha);
@@ -318,11 +316,6 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
         {
             d_h[nb] = top_h[m];
 
-            //TODO: should we use 
-            //  (*findStateAtCrossing)(front,icoords,dir[nb],comp,
-            //          &intfc_state,&hs,crx_coords);
-            //  instead?
-            
             fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
                     grid_intfc,icoords,dir[m][nb],comp,
                     (POINTER*)&intfc_state,&hs,crx_coords);
@@ -348,7 +341,6 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
             {
                 if (iFparams->use_no_slip)
                 {
-                    //NO_SLIP
                     vel_nb[nb] = intfc_state->vel[l];
                 }
                 else
