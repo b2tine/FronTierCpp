@@ -119,7 +119,6 @@ CollisionSolver3d::~CollisionSolver3d()
     clearHseList();
 }
 
-//TODO: make general for bondList, triList etc.
 void CollisionSolver3d::clearHseList()
 {
 	for (unsigned i = 0; i < hseList.size(); ++i)
@@ -134,10 +133,9 @@ const std::vector<CD_HSE*>& CollisionSolver3d::getHseList() const
     return hseList;
 }
 
-void unsortHseList(std::vector<CD_HSE*>& hseList)
+void unsortHseList(std::vector<CD_HSE*>& list)
 {
-    std::vector<CD_HSE*>::iterator it; 
-    for (it = hseList.begin(); it < hseList.end(); ++it)
+    for (auto it = list.begin(); it < list.end(); ++it)
 	{
 	    int np = (*it)->num_pts();
 	    for (int i = 0; i < np; ++i)
@@ -591,14 +589,11 @@ void CollisionSolver3d::updateAverageVelocity()
     std::vector<CD_HSE*>::iterator it;
 	for (it = hseList.begin(); it < hseList.end(); ++it)
     {
-        if (isRigidBody(*it)) continue;
-	    
         int np = (*it)->num_pts(); 
 	    for (int j = 0; j < np; ++j)
 	    {
             p = (*it)->Point_of_hse(j);
-            if (sorted(p)) continue;
-            //if (sorted(p) || isStaticRigidBody(p)) continue;
+            if (sorted(p) || isStaticRigidBody(p)) continue;
 
             sl = (STATE*)left_state(p);
             if (sl->collsn_num > 0)
@@ -625,10 +620,7 @@ void CollisionSolver3d::updateAverageVelocity()
                 sl->collsn_num = 0;
             }
 
-            /*
-            //TODO: This is for movable rigid tris.
-            //      Should update separately in another function,
-            //      when we can handle rigid-rigid collisions.
+            //NOTE: This is for rigid-rigid body collision.
             if (sl->collsn_num_RG > 0)
             {
                 sl->has_collsn = true;
@@ -638,7 +630,6 @@ void CollisionSolver3d::updateAverageVelocity()
                 }
                 sl->collsn_num_RG = 0;
             }
-            */
 
             if (debugging("average_velocity"))
             {
@@ -1587,6 +1578,10 @@ void updateImpactListVelocity(POINT* head)
 	}
 }
 
+void CollisionSolver3d::turnOnGsUpdate() {gs_update = true;}
+void CollisionSolver3d::turnOffGsUpdate() {gs_update = false;}
+bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
+
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosn()
 {
@@ -1716,6 +1711,29 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
     return numStrainEdges;
 }
 
+/*
+//gauss-seidel iteration
+void CollisionSolver3d::limitStrainRatePosnGS()
+{
+    //TODO: turnOnGsUpdate() and use in computeStrainRateImpulsesPosn()
+	
+    const int MAX_ITER = 3;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList);
+        int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Rate Edges\n",numBondStrainRate);
+            printf("%d TRI Strain Rate Edges\n",numTriStrainRate);
+        }
+
+        if (numBondStrainRate == 0 && numTriStrainRate == 0) break;
+	}
+}
+*/
+
 //jacobi iteration
 void CollisionSolver3d::limitStrainRatePosn()
 {
@@ -1811,6 +1829,21 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                 sl[0]->strain_num++;
                 sl[1]->strain_num++;
                 numStrainRateEdges++;
+
+                /*
+                if (gauss_seidel_update)
+                {
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        //TODO: For gauss-seidel update should we omit division
+                        //      by the number of interactions?
+                        sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
+                        sl->strainImpulse[k] = 0.0;
+                    }
+                    strain_num = 0.0;
+                }
+                */
+
             }
         }
     }

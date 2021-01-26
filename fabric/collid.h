@@ -67,13 +67,14 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
-
 	
+    double setVolumeDiff(double);
+    
     void setStrainLimit(double);
 	//double getStrainLimit();
 	void setStrainRateLimit(double);
 	//double getStrainRateLimit();
-    double setVolumeDiff(double);
+	static bool getGsUpdateStatus();	
 
 	void clearHseList();
     const std::vector<CD_HSE*>& getHseList() const;
@@ -149,22 +150,26 @@ private:
 	static double l_k;
 	static double l_mu;
 
+    static bool gs_update;
+	static void turnOnGsUpdate();
+    static void turnOffGsUpdate();
+
     double strain_limit {0.1};
     double strainrate_limit {0.1};
 
     static bool s_detImpZone;
+	static void turnOnImpZone();
+    static void turnOffImpZone();
 
     int numImpactZones {0};
     int numImpactZonePoints {0};
-	
-    static void turnOffImpZone();
-	static void turnOnImpZone();
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
     void limitStrainPosn();
     int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
     void limitStrainRatePosn();
+    void limitStrainRatePosnGS();
     int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
     void limitStrainVel();
     int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
@@ -176,7 +181,7 @@ private:
 	void updateFinalVelocity();
     void updateFinalStates();
 	void updateAverageVelocity();
-	void updateExternalImpulse();
+	    //void updateExternalImpulse();
 	void computeImpactZone();
 	void infoImpactZones();
 	void debugImpactZones();
