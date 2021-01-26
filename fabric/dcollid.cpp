@@ -18,6 +18,7 @@ inline POINT*& tail(POINT*);
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
+bool CollisionSolver3d::gs_update = false;
 
 double CollisionSolver3d::s_eps = EPS;
 double CollisionSolver3d::s_thickness = 0.001;
