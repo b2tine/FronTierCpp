@@ -4006,7 +4006,6 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    if (!hs || !hs->interface)
             return NO;
 
-        //TODO: do we want INCLUDE_BOUNDARIES ???
         if (!nearest_interface_point(coords,comp,hs->interface,
                     INCLUDE_BOUNDARIES,hs,coordsbdry,t,&hsebdry,&hsbdry))
         {

@@ -1,6 +1,12 @@
 #include "cFluid.h"
 //#include "cFvisc.h"
 
+static double (*getStateVel[MAXD])(Locstate) =
+               {getStateXvel,getStateYvel,getStateZvel};
+
+static double (*getStateMom[MAXD])(Locstate) =
+               {getStateXmom,getStateYmom,getStateZmom};
+
 
 //TODO: Finish Implementation
 void G_CARTESIAN::addViscousFlux(
@@ -87,7 +93,7 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
         {
-            setViscousGhostState(vs,comp,idx_nb);
+            setViscousGhostState(icoords,comp,vs);
         }
 
         //TODO: set state with mesh values
@@ -203,16 +209,17 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
 */
 
 void G_CARTESIAN::setViscousGhostState(
-        VSWEEP* vs,
+        int* icoords,
         COMPONENT comp,
-        int index)
+        VSWEEP* vs)
 {
     double nip_coords[MAXD];
     double intrp_coeffs[MAXD];
     HYPER_SURF* hs;
     HYPER_SURF_ELEMENT* hse;
     
-    auto ghost_coords = cell_center[index].getCoords();
+    int ghost_index = d_index(vs->icoords,top_gmax,dim);
+    auto ghost_coords = cell_center[ghost_index].getCoords();
     
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 vs->comp,front->interf,NO_SUBDOMAIN,nullptr,
@@ -235,7 +242,8 @@ void G_CARTESIAN::setViscousGhostState(
         case NEUMANN_BOUNDARY:
         case MOVABLE_BODY_BOUNDARY:
         {
-            setNeumannViscousGhostState(vs,comp,intrp_coeffs,hse,hs);
+            setNeumannViscousGhostState(vs,&ghost_coords[0],
+                        nip_coords,comp,intrp_coeffs,hse,hs);
             break;
         }
         /*case ELASTIC_BOUNDARY:
@@ -279,13 +287,126 @@ void G_CARTESIAN::setDirichletViscousGhostState(
 
 void G_CARTESIAN::setNeumannViscousGhostState(
         VSWEEP* vs,
+        double* ghost_coords,
+        double* crx_coords,
         COMPONENT comp,
         double* intrp_coeffs,
         HYPER_SURF_ELEMENT* hse,
         HYPER_SURF* hs)
 {
-    //TODO: reflect accross hse and interpolate state
-    //      at the reflected point
+    /*
+    //compute the normal and velocity vectors at the interface point
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+            {
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(hse)->start,hse,hs,ns,front);
+                normal(Bond_of_hse(hse)->end,hse,hs,ne,front);
+
+                /////////////////////////////////////////////////////////////
+                STATE* ss;
+                STATE* se;
+
+                if (gas_comp(negative_component(hs)))
+                {
+                    ss = (STATE*)left_state(Bond_of_hse(hse)->start);
+                    se = (STATE*)left_state(Bond_of_hse(hse)->end);
+                }
+                else if (gas_comp(positive_component(hs)))
+                {
+                    ss = (STATE*)right_state(Bond_of_hse(hse)->start);
+                    se = (STATE*)right_state(Bond_of_hse(hse)->end);
+                }
+                else
+                {
+                    printf("setNeumannViscousGhostState() ERROR: "
+                            "no gas component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+                /////////////////////////////////////////////////////////////
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                }
+            }
+            break;
+
+        case 3:
+            {
+                TRI* nearTri = Tri_of_hse(hse);
+                const double* tnor = Tri_normal(nearTri);
+                //NOTE: Tri_normal() does not return a unit vector
+                
+                STATE* st[3];
+
+                if (gas_comp(negative_component(hs)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                }
+                else if (gas_comp(positive_component(hs)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                }
+                else
+                {
+                    printf("setNeumannViscousGhostState() ERROR: "
+                            "no gas component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = tnor[i];
+
+                    vel_intfc[i] = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                }
+            }
+            break;
+	}
+
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+        
+    if (comp == negative_component(hs))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
+    
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+    double dist_reflect = FT_GridSizeInDir(nor,front);
+        //double dist_reflect = dist_ghost;
+    
+    double coords_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    */
+
+
+    double coords_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = 2.0*crx_coords[j] - ghost_coords[j];
+
+    double vel_reflect[MAXD];
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+
+
 }
 
 /*
