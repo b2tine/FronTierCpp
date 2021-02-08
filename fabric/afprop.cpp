@@ -38,6 +38,7 @@ static void fourth_order_elastic_set_propagate3d_parallel(Front*,double);
 static void fourth_order_elastic_set_propagate3d_serial(Front*,double);
 static void setCollisionFreePoints3d(INTERFACE*);
 static void print_max_fabric_speed(Front* fr);
+static void print_max_string_speed(Front* fr);
 static void coating_mono_hyper_surf3d(Front*);
 
 
@@ -946,8 +947,8 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             collision_solver->setStringSpringConstant(af_params->kl); 
             collision_solver->setStringPointMass(af_params->m_l);
 
-            //collision_solver->setStrainLimit(af_params->strain_limit);
-            //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
@@ -1072,6 +1073,7 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
     if (debugging("max_speed"))
     {
         print_max_fabric_speed(fr);
+        print_max_string_speed(fr);
     }
 
 	if (debugging("trace"))
@@ -1119,6 +1121,53 @@ static void print_max_fabric_speed(Front* fr)
 
         state = (STATE*)left_state(max_pt);
         printf("Velocity: %f %f %f\n",
+                state->vel[0],state->vel[1],state->vel[2]);
+    }
+}
+
+static void print_max_string_speed(Front* fr)
+{
+    CURVE **c;
+    CURVE *curve;
+    BOND *b;
+    POINT *pt;
+    STATE *state;
+    
+    double speed;
+    double max_speed = -HUGE;
+    POINT* max_pt = nullptr;
+
+    if (!FT_FrontContainHsbdryType(fr,STRING_HSBDRY)) return;
+
+    intfc_curve_loop(fr->interf,c)
+    {
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        //TODO: Add nodes etc. below is not traversing every point of the curve.
+        curve = *c;
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            pt = b->end;
+            state = (STATE*)left_state(pt);
+            speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
+                        + sqr(state->vel[2]));
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                max_pt = pt;
+            }
+        }
+    }
+    
+    if (max_pt != nullptr)
+    {
+        printf("max speed of elastic strings: %g\n",max_speed);
+        printf("Point Gindex: %d  coords = %f %f %f\n",
+                Gindex(max_pt),Coords(max_pt)[0],
+                Coords(max_pt)[1],Coords(max_pt)[2]);
+
+        state = (STATE*)left_state(max_pt);
+        printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
     }
 }

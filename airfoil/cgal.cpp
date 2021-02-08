@@ -430,7 +430,8 @@ static void CgalCircle(
 	}
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
-	checkReducedTri(*surf);
+	checkReducedTri(*surf);//TODO: How necessary is this check???
+                           //      Prevents use of finer fluid grids.
     wave_type(*surf) = ELASTIC_BOUNDARY;
     FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(*surf);

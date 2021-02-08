@@ -321,11 +321,10 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
     stop_clock("computeAverageVelocity");
 
-    // Apply impulses to enforce strain and strain rate limiting
+    // Apply impulses to enforce strain limiting
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        //limitStrainRatePosn();
         limitStrainPosn();
     }
 
@@ -350,7 +349,7 @@ void CollisionSolver3d::resolveCollision()
 	updateFinalPosition();
 
     // Zero out the relative velocity between adjacent mesh vertices
-    // in the direction of their connecting edge.
+    // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainVel();
@@ -497,6 +496,13 @@ void CollisionSolver3d::detectProximity()
 
     if (abt_proximity->isProximity)
         updateAverageVelocity();
+
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        //gauss-seidel updating
+        limitStrainRatePosnGS();
+            //limitStrainRatePosn();
+    }
 
     //TODO: Not ready for rigid-rigid collisions right now.
     if (getTimeStepSize() > 0.0)
@@ -1504,7 +1510,8 @@ void updateImpactListVelocity(POINT* head)
         {
             //printf("updateImpactListVelocity() ERROR: isStaticRigidBody(p)\n");
             //LOC(); clean_up(EXIT_FAILURE);
-            p = next_pt(p); continue;
+            p = next_pt(p);
+            continue;
 	    }
 
 	    double x_new[3],dx[3];

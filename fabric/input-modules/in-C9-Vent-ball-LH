@@ -10,6 +10,30 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Start parameters for modules
+
+Enter yes to add rigid body: y
+Enter the number of rigid bodies: 1
+Available type of rigid body include:
+        Sphere (S)
+        Box (B)
+        Human (H)
+        Cylinder (C)
+Enter type of rigid body: S
+Enter center of the sphere: 6 6 11.951
+Enter radius of the sphere: 0.6
+Rigid body can be fixed (F) or Movable (M)
+The default is Movable (M)
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+
+For rigid body 1
+Type yes if motion is preset: yes
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 150
+Enter the initial center of mass for rigid body: 6 6 11.951
+Enter the initial center of mass velocity: 0 0 0
+
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n
 Available canopy surface types are:
@@ -32,8 +56,9 @@ Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
 Enter initial position of load: 6 6 12.451
-Enter yes to fix the load node: n
-Enter yes to install the strings to RGB: n
+Enter yes to install the strings to RGB: yes
+Enter the body index of the target RGB: 1
+Enter yes to fix the load node: no
 
 Enter type of plane edge: c
 Enter start angle of chord: 6.263185
