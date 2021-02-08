@@ -237,9 +237,6 @@ static bool MovingPointToTriGS(POINT* pts[])
                 sl->has_collsn = true;
                 for (int k = 0; k < 3; ++k)
                 {
-                    //TODO: For gauss-seidel update should we omit division
-                    //      by the number of interactions?
-                    //  sl->avgVel[k] += sl->collsnImpulse[k];
                     sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                 }

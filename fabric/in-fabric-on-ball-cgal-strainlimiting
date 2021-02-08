@@ -3,8 +3,8 @@ Start test time control parameters
 Max time: 5.0
 Max stepX: 50
 Max stepX: 100
-Max step: 1000
-Max stepX: 2000
+Max stepX: 1000
+Max step: 2000
 Print interval: 0.025
 Movie frame interval: 0.025
 CFL factor: 1.0
@@ -57,8 +57,8 @@ Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter strain limit: 0.1
-Enter strain rate limit: 0.1
+Enter strain limit: 0.025
+Enter strain rate limit: 0.075
 
 
 Type yes to perturb the surface: n

@@ -610,8 +610,6 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
             setCollisionFreePoints3d(fr->interf);
 
             collision_solver->initializeSystem(fr);
-            //collision_solver->assembleFromInterface(fr->interf,fr->dt);
-            //collision_solver->recordOriginalPosition();
         
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);

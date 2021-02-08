@@ -71,9 +71,9 @@ public:
     double setVolumeDiff(double);
     
     void setStrainLimit(double);
-	//double getStrainLimit();
+	double getStrainLimit();
 	void setStrainRateLimit(double);
-	//double getStrainRateLimit();
+	double getStrainRateLimit();
 	static bool getGsUpdateStatus();	
 
 	void clearHseList();

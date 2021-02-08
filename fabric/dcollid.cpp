@@ -86,7 +86,10 @@ void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
 void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
+double CollisionSolver3d::getStrainLimit() {return strain_limit;}
+
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
+double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
 
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
@@ -697,9 +700,9 @@ void CollisionSolver3d::detectCollision()
 
         if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
-            //TODO: Write a gauss-seidel version of
-            //      limitStrainRatePosn() for use here.
-            limitStrainRatePosn();
+            //gauss-seidel updating
+            limitStrainRatePosnGS();
+                //limitStrainRatePosn();
         }
 
         if (niter >= MAX_ITER) break;
@@ -1606,7 +1609,7 @@ void CollisionSolver3d::limitStrainPosn()
 
 int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
 {
-    double TOL = strain_limit;
+    double TOL = getStrainLimit();
     double dt = getTimeStepSize();
 
     int numStrainEdges = 0;
@@ -1680,7 +1683,7 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
             double delta_len0 = lnew - len0;
             
             //if (delta_len0 > TOL*len0)
-            if (delta_len0 > TOL*len0 || delta_len0 < -0.25*TOL*len0)
+            if (delta_len0 > TOL*len0 || delta_len0 < -0.5*TOL*len0)
             {
                 double I;
                 if (delta_len0 > TOL*len0) //Tension
@@ -1689,7 +1692,7 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
                 }
                 else                       //Compression
                 {
-                    I = 0.5*(delta_len0 + 0.25*TOL*len0)/dt;
+                    I = 0.5*(delta_len0 + 0.5*TOL*len0)/dt;
                 }
 
                 double vec01[MAXD];
@@ -1712,11 +1715,10 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
     return numStrainEdges;
 }
 
-/*
 //gauss-seidel iteration
 void CollisionSolver3d::limitStrainRatePosnGS()
 {
-    //TODO: turnOnGsUpdate() and use in computeStrainRateImpulsesPosn()
+    turnOnGsUpdate();
 	
     const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
@@ -1732,8 +1734,9 @@ void CollisionSolver3d::limitStrainRatePosnGS()
 
         if (numBondStrainRate == 0 && numTriStrainRate == 0) break;
 	}
+
+    turnOffGsUpdate();
 }
-*/
 
 //jacobi iteration
 void CollisionSolver3d::limitStrainRatePosn()
@@ -1758,8 +1761,9 @@ void CollisionSolver3d::limitStrainRatePosn()
 
 int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
 {
-    double TOL = strain_limit;
     double dt = getTimeStepSize();
+    double TOL = getStrainRateLimit();
+    bool gauss_seidel = getGsUpdateStatus();
 
     int numStrainRateEdges = 0;
 	for (auto it = list.begin(); it < list.end(); ++it)
@@ -1831,19 +1835,19 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                 sl[1]->strain_num++;
                 numStrainRateEdges++;
 
-                /*
-                if (gauss_seidel_update)
+                if (gauss_seidel)
                 {
-                    for (int k = 0; k < 3; ++k)
+                    for (int k = 0; k < 2; ++k)
                     {
-                        //TODO: For gauss-seidel update should we omit division
-                        //      by the number of interactions?
-                        sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
-                        sl->strainImpulse[k] = 0.0;
+                        sl[k]->has_strainlim = true;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            sl[k]->avgVel[j] += sl[k]->strainImpulse[j]/sl[k]->strain_num;
+                            sl[k]->strainImpulse[j] = 0.0;
+                        }
+                        sl[k]->strain_num = 0;
                     }
-                    strain_num = 0.0;
                 }
-                */
 
             }
         }
