@@ -1475,6 +1475,7 @@ static bool PointToTri(
         printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
             //LOC(); clean_up(ERROR);
+        return false;
 	}
 	else
     {
