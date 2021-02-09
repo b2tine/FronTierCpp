@@ -284,7 +284,10 @@ static void CgalCircle(
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;//TODO: Why these hardcoded values?
 	char gore_bool[10],vent_bool[10], string_bool[10];
 	std::list<Cgal_Point> list_of_seeds;
-	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+	
+    //Maximum length of triangle edges
+    double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry;
@@ -397,6 +400,8 @@ static void CgalCircle(
 	
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
 			list_of_seeds.end(),Criteria(0.3, cri_dx));
+	//CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+	//		list_of_seeds.end(),Criteria(0.125, cri_dx));//TODO: try this for fine grids
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];
