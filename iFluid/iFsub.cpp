@@ -2335,6 +2335,7 @@ static  void ifluid_compute_force_and_torque3d(
                         &pres,tnor,posn,pos_side))
                 {
                     area = tri_area(tri);
+                        //area = 0.5*Mag3d(tnor);
                     double mag_tnor = Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
@@ -2530,8 +2531,10 @@ static boolean force_on_hse3d(
                 *pres += getStatePres(sl);
         }
         *pres /= 3.0;
+        
         for (i = 0; i < dim; ++i)
         {
+            //normal points toward the surface
             tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
             posn[i] /= 3.0;
         }

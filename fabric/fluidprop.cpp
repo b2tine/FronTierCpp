@@ -390,7 +390,6 @@ static void rgbody_point_propagate_in_vacuum(
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
 
-            //TODO: test/verify
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
@@ -555,7 +554,7 @@ static void rgbody_point_propagate_in_fluid(
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
 
-            //TODO: test/verify
+            //center of mass velocity computed by FrontPreAdvance()
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
@@ -635,17 +634,22 @@ static void rgbody_point_propagate_in_fluid(
                     }
 		}
 		else
+        {
 		    for (i = 0; i < dim; ++i)
                         Coords(newp)[i] = Coords(oldp)[i] + 
 					dt*(vel[i] + oldst->vel[i])*0.5;
-		for (i = 0; i < dim; ++i)
-                {
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                                        Coords(newp),front);
-		}
-	    }
         }
+		
+        for (i = 0; i < dim; ++i)
+        {
+            newst->vel[i] = vel[i];
+            FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
+                                Coords(newp),front);
+		}
+	    
+        }//dim == 3
+        
+        }//wave_type(hs) == MOVABLE_BODY_BOUNDARY
         else
         {
             fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
@@ -721,7 +725,8 @@ static void fluid_compute_force_and_torque3d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t[MAXD],tdir,pres;
-        double area[MAXD],posn[MAXD];
+        double tnor[MAXD],posn[MAXD];
+        double area;
         TRI *tri;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -816,11 +821,15 @@ static void fluid_compute_force_and_torque3d(
 		    continue;
 		}
                 if (force_on_hse(Hyper_surf_element(tri),Hyper_surf(surface),gr,
-                        &pres,area,posn,pos_side))
+                        &pres,tnor,posn,pos_side))
                 {
+                    area = tri_area(tri);
+                        //area = 0.5*Mag3d(tnor);
+                    double mag_tnor = Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area[i];
+                        f[i] = pres*area*tnor[i]/mag_tnor;
+                            //f[i] = pres*area[i];
                         force[i] += f[i];
                         rr[i] = posn[i] - rotation_center(surface)[i];
                     }
@@ -860,11 +869,11 @@ static boolean force_on_hse(
         HYPER_SURF *hs,                 /* Curve (2D) or surface (3D) */
         RECT_GRID *gr,                  /* Rectangular grid */
         double *pres,           /* Average pressure */
-        double *area,           /* Area as a vector, pointing onto body */
+        double *tnor,           /* normal vector -- pointing into body */
         double *posn,           /* Position of the pressure */
         boolean pos_side)       /* Is the body on the positive side of hs? */
 {
-    return force_on_hse3d(hse,hs,gr,pres,area,posn,pos_side);
+    return force_on_hse3d(hse,hs,gr,pres,tnor,posn,pos_side);
 }       /* end force_on_hse */
 
 static boolean force_on_hse3d(
@@ -872,7 +881,7 @@ static boolean force_on_hse3d(
         HYPER_SURF *hs,
         RECT_GRID *gr,
         double *pres,
-        double *area,
+        double *tnor,
         double *posn,
         boolean pos_side)
 {
@@ -896,10 +905,13 @@ static boolean force_on_hse3d(
                 *pres += getStatePres(sl);
         }
         *pres /= 3.0;
+
         for (i = 0; i < dim; ++i)
         {
-            area[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
-	    area[i] *= 0.5; /*Tri_normal is the twice of the area vector */
+            tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
+	            //area[i] *= 0.5; /*Tri_normal is the twice of the area vector */
+                //                  NO IT IS NOT! -- the magnitude of the normal vector
+                //                                   is twice the area of the triangle.
             posn[i] /= 3.0;
         }
         /* Need to treat subdomain boundary */

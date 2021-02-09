@@ -99,7 +99,6 @@ extern void initParachuteModules(Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
-	static RG_PARAMS *rgb_params;
         boolean complex_set = NO;
 
 	if (debugging("trace"))
@@ -108,9 +107,12 @@ extern void initParachuteModules(Front *front)
 	if (debugging("set_module"))
 	    gview_plot_interface("module-step-1",front->interf);
 
+    static RG_PARAMS rgb_params;
+    rgb_params.dim = FT_Dimension();
+    front->extra3 = (POINTER)&rgb_params;
+
 	initRigidBody(front);
-        FT_ScalarMemoryAlloc((POINTER*)&rgb_params,sizeof(RG_PARAMS));
-	rgb_init(front,rgb_params);
+	rgb_init(front,&rgb_params);
 
 	int num_canopy = 0;
 	CursorAfterStringOpt(infile,"Enter number of canopy surfaces:");

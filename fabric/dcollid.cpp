@@ -504,9 +504,11 @@ void CollisionSolver3d::detectProximity()
             //limitStrainRatePosn();
     }
 
+    /*
     //TODO: Not ready for rigid-rigid collisions right now.
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
 }
 
 // function to perform AABB tree building, updating structure
@@ -1706,14 +1708,49 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
                 Pts2Vec(p[0],p[1],vec01);
                 scalarMult(1.0/lnew,vec01,vec01);
                 
-                for (int j = 0; j < 3; ++j)
+                //Do not apply impulses to rg_string_nodes
+                if (!sl[0]->is_fixed && !sl[0]->is_movableRG &&
+                    !sl[1]->is_fixed && !sl[1]->is_movableRG)
                 {
-                    sl[0]->strainImpulse[j] += I*vec01[j];
-                    sl[1]->strainImpulse[j] -= I*vec01[j];
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                } 
+                else if (!sl[0]->is_fixed && !sl[0]->is_movableRG &&
+                         (sl[1]->is_fixed || sl[1]->is_movableRG) )
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
+                    sl[0]->strain_num++;
                 }
+                else if (!sl[1]->is_fixed && !sl[1]->is_movableRG &&
+                         (sl[0]->is_fixed || sl[0]->is_movableRG) )
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
+                    sl[1]->strain_num++;
+                }
+                else
+                {
+                    printf("ERROR: rigid body tri has been deformed\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                    /*
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                    */
                 
-                sl[0]->strain_num++;
-                sl[1]->strain_num++;
                 numStrainEdges++;
             }
         }
@@ -1832,14 +1869,49 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                 Pts2Vec(p[0],p[1],vec01);
                 scalarMult(1.0/lnew,vec01,vec01);
                 
-                for (int j = 0; j < 3; ++j)
+                //Do not apply impulses to rg_string_nodes
+                if (!sl[0]->is_fixed && !sl[0]->is_movableRG &&
+                    !sl[1]->is_fixed && !sl[1]->is_movableRG)
                 {
-                    sl[0]->strainImpulse[j] += I*vec01[j];
-                    sl[1]->strainImpulse[j] -= I*vec01[j];
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                } 
+                else if (!sl[0]->is_fixed && !sl[0]->is_movableRG &&
+                         (sl[1]->is_fixed || sl[1]->is_movableRG) )
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
+                    sl[0]->strain_num++;
                 }
+                else if (!sl[1]->is_fixed && !sl[1]->is_movableRG &&
+                         (sl[0]->is_fixed || sl[0]->is_movableRG) )
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
+                    sl[1]->strain_num++;
+                }
+                else
+                {
+                    printf("ERROR: rigid body tri has been deformed\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                    /*
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                    */
                 
-                sl[0]->strain_num++;
-                sl[1]->strain_num++;
                 numStrainRateEdges++;
 
                 if (gauss_seidel)

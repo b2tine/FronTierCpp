@@ -766,7 +766,8 @@ static void compute_center_of_mass_velo(
 	    for (j = 0; j < 3; ++j)
 	    	vcan[j] = 0.0;
 	    area = mass_canopy = 0.0;
-	    surf_tri_loop(canopy,tri)
+	    
+        surf_tri_loop(canopy,tri)
 	    {
 	    	for (j = 0; j < 3; ++j)
 	    	{
@@ -805,8 +806,8 @@ static void compute_center_of_mass_velo(
             state = (STATE*)left_state(node->posn);
             for (j = 0; j < 3; ++j)
             {
-                    vload[j] = state->vel[j];
-                    xload[j] = Coords(node->posn)[j];
+                vload[j] = state->vel[j];
+                xload[j] = Coords(node->posn)[j];
             }
 
             //NOTE: payload and rigid body mass are equal when a
@@ -2633,8 +2634,9 @@ static void setCurveVelocity(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed;
-	double *vel;
-	double crds_max[MAXD];
+	double *vel = nullptr;
+	double *crds_max = nullptr;
+    double max_nor_speed = 0.0;
 	int gindex_max;
 	long gindex;
 	int dim = FT_Dimension();
@@ -2670,6 +2672,14 @@ static void setCurveVelocity(
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
                 nor_speed = scalar_product(vel,nor,3);
+
+                /*
+                if (max_nor_speed < fabs(nor_speed))
+                {
+                    max_nor_speed = nor_speed;
+                    crds_max = Coords(p);
+                }
+                */
                 
                 for (j = 0; j < 3; ++j)
                 {
@@ -2684,6 +2694,11 @@ static void setCurveVelocity(
     {
 	    set_bond_length(b,dim);
     }
+
+    //TODO: Do we need the folllowing???
+    //
+    //  set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2766,6 +2781,7 @@ static void new_setNodeVelocity3d(
 		    gindex = Gindex(p);
 		    vel = point_set[gindex]->v;
 		    
+            //TODO: Should MONO_COMP_HSBDRY be treated the same as PASSIVE_HSBDRY???
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
                 for (j = 0; j < 3; ++j)
@@ -2855,7 +2871,6 @@ extern void set_geomset_velocity(
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
 	for (i = 0; i < nn; ++i)
 	{
-        //TODO: Verify that this should be bypassed for pointmass runs.
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}

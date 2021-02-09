@@ -719,14 +719,14 @@ static boolean find_sewing_segments(
 	pos_status = neg_status = NO;
 	surf_neg_curve_loop(surf,c)
 	{
-	    status = find_seg_start_and_end(*c,POSITIVE_ORIENTATION,						dir,crds_start,crds_end,&bs,&be);
+	    status = find_seg_start_and_end(*c,POSITIVE_ORIENTATION,dir,crds_start,crds_end,&bs,&be);
 	    if (status == YES)
 	    {
 		*bps = bs;
 		*bpe = be;
 		pos_status = YES;
 	    }
-	    status = find_seg_start_and_end(*c,NEGATIVE_ORIENTATION,						dir,crds_start,crds_end,&bs,&be);
+	    status = find_seg_start_and_end(*c,NEGATIVE_ORIENTATION,dir,crds_start,crds_end,&bs,&be);
 	    if (status == YES)
 	    {
 		*bns = bs;
@@ -738,14 +738,14 @@ static boolean find_sewing_segments(
 	    return YES;
 	surf_pos_curve_loop(surf,c)
 	{
-	    status = find_seg_start_and_end(*c,POSITIVE_ORIENTATION,						dir,crds_start,crds_end,&bs,&be);
+	    status = find_seg_start_and_end(*c,POSITIVE_ORIENTATION,dir,crds_start,crds_end,&bs,&be);
 	    if (status == YES)
 	    {
 		*bps = bs;
 		*bpe = be;
 		pos_status = YES;
 	    }
-	    status = find_seg_start_and_end(*c,NEGATIVE_ORIENTATION,						dir,crds_start,crds_end,&bs,&be);
+	    status = find_seg_start_and_end(*c,NEGATIVE_ORIENTATION,dir,crds_start,crds_end,&bs,&be);
 	    if (status == YES)
 	    {
 		*bns = bs;

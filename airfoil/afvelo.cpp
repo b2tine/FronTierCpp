@@ -268,7 +268,7 @@ void setMotionParams(Front* front)
             {
                 if (CursorAfterStringOpt(infile,"Enter porosity:"))
                 {
-                    //for use with hyperbolic solver
+                    //TODO: can probably remove this ...
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }

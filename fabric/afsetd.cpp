@@ -468,8 +468,8 @@ extern void count_vertex_neighbors(
 	n = 0;
 	for (i = 0; i < ns; ++i)
     {
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
+        /*if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;*/
 	    count_surf_neighbors(geom_set->surfs[i],sv,&n);
     }
     for (i = 0; i < nc; ++i)
@@ -733,7 +733,7 @@ extern void set_node_spring_vertex(
 	    if (dim == 3)
 	    {
 		if (is_fixed || is_load_node(node) || is_rg_string_node(node))
-		    sv[*n].k[nn] = 0.0;
+		    sv[*n].k[nn] = 0.0;//TODO: is this correct????
 		else if (hsbdry_type(*c) == STRING_HSBDRY)
 		    sv[*n].k[nn] = kl;
 		else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
@@ -766,7 +766,7 @@ extern void set_node_spring_vertex(
 	    if (dim == 3)
 	    {
 		if (is_fixed || is_load_node(node) || is_rg_string_node(node))
-		    sv[*n].k[nn] = 0.0;
+		    sv[*n].k[nn] = 0.0;//TODO: is this correct????
 		else if (hsbdry_type(*c) == STRING_HSBDRY)
 		    sv[*n].k[nn] = kl;
 		else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
@@ -847,6 +847,7 @@ extern void set_node_spring_vertex(
 	    }
 	    if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
 	    {
+            ///TODO: is this correct????
 		sv[*n].lambda = 0.0;
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
 		    sv[*n].k[i] = 0.0;
@@ -857,6 +858,7 @@ extern void set_node_spring_vertex(
 	    sv[*n].lambda = lambda_l;
 	    if (is_fixed)
             {
+                //TODO: is this correct????
                 sv[*n].lambda = 0.0;
                 for (i = 0; i < sv[*n].num_nb; ++i)
                     sv[*n].k[i] = 0.0;
@@ -1395,11 +1397,11 @@ static void assembleParachuteSet3d(
 	
     intfc_surface_loop(intfc,s)
 	{
-	    //if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    /*if (wave_type(*s) == ELASTIC_BOUNDARY ||
             wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(*s) == NEUMANN_BOUNDARY)
-        {
+            wave_type(*s) == NEUMANN_BOUNDARY)*/
+        //{
             surfs[ns++] = *s;
             surf_pos_curve_loop(*s,c)
             {
@@ -1426,7 +1428,7 @@ static void assembleParachuteSet3d(
                         nodes[nn++] = (*c)->end;
                 }
             }
-        }
+        //}
 	}
 	
     //TODO: Handle both fabric surfaces and isolated 3d curves
@@ -1496,8 +1498,8 @@ static void assembleParachuteSet3d(
 	
     for (int i = 0; i < ns; ++i)
     {
-        if (wave_type(surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(surfs[i]) == NEUMANN_BOUNDARY) continue;
+        /*if (wave_type(surfs[i]) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(surfs[i]) == NEUMANN_BOUNDARY) continue;*/
 	    geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
     }
     for (int i = 0; i < nc; ++i)

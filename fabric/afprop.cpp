@@ -521,7 +521,6 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
 	    {
             elastic_intfc =
                 FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
-            
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -718,6 +717,12 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
         compute_center_of_mass_velo(&geom_set);
     }
     
+    if (debugging("max_speed"))
+    {
+        print_max_fabric_speed(fr);
+        print_max_string_speed(fr);
+    }
+
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
 }	/* end fourth_order_elastic_set_propagate3d() */
@@ -804,9 +809,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
-                //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+                //int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+	            //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1750,7 +1755,9 @@ static void rg_string_node_propagate(
 	    printf("No related hs or hse found");
 	    clean_up(ERROR);
 	}
-	fluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
+	
+    fluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
+
 	if (dt > 0.0)
 	{
 	    for (i = 0; i < dim; ++i)
@@ -1762,8 +1769,11 @@ static void rg_string_node_propagate(
 	    for (i = 0; i < dim; ++i)
 		accel[i] = 0.0;
 	}
+
+    /*
 	for (i = 0; i < dim; ++i)
 	    accel[i] -= g[i];
+    */
 
         if (debugging("rigid_body"))
         {
@@ -1780,16 +1790,20 @@ static void rg_string_node_propagate(
 				newsl->vel[1], newsl->vel[2]);
 	    (void)printf("newsr velo = %f %f %f\n", newsr->vel[0], 
 				newsr->vel[1], newsr->vel[2]);
-	}
+	    }
 
+	
 	/* Do not change coords, but record the force */
 	for (i = 0; i < dim; ++i)
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 
-					accel[i] - f[i]/mass;
-	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
+	    newsl->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
+        newsr->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
+	        //newsl->fluid_accel[i] = accel[i] - f[i]/mass;
+            //newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+	    newsr->other_accel[i] = f[i]/mass;
+        newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
 

@@ -23,14 +23,15 @@ Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.6
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
-Type yes if the rigid body is fixed: yes
+Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
 
 For rigid body 1
-Type yes if motion is preset: yes
+Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 150
+Enter the total mass for rigid body: 100
 Enter the initial center of mass for rigid body: 6 6 11.951
 Enter the initial center of mass velocity: 0 0 0
 
@@ -59,6 +60,8 @@ Enter initial position of load: 6 6 12.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to fix the load node: no
+
+Enter number of canopy optimization rounds: 0
 
 Enter type of plane edge: c
 Enter start angle of chord: 6.263185
@@ -105,9 +108,9 @@ Enter gravity: 0 0 -9.8
 Start test time control parameters
 Max time: 3
 Max step: 1000
-Print interval: 0.1
-Movie frame interval: 0.1
-CFL factor: 0.5
+Print interval: 0.025
+Movie frame interval: 0.025
+CFL factor: 0.75
 
 ////////////////////////////////////////
 
@@ -117,6 +120,7 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 
+Enter the debugging stringX: rigid_body
 Enter the debugging stringX: trace
 
 
