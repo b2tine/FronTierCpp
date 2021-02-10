@@ -307,7 +307,10 @@ static void CgalCircle(
         bool set_gore,set_vent,set_string,fixed_bdry;
         char string[100];
 	std::list<Cgal_Point> list_of_seeds;
-	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+	
+    //Min tri edge length
+    double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry;
@@ -432,7 +435,9 @@ static void CgalCircle(
 	}
 	
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.3, cri_dx));
+			list_of_seeds.end(),Criteria(0.125,cri_dx));
+	/*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+			list_of_seeds.end(),Criteria(0.3,cri_dx));*/
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];

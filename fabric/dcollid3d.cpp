@@ -1191,6 +1191,7 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
+        //TODO: This may not even be a degenerate triangle ... 
         printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
         
@@ -1198,6 +1199,23 @@ static bool PointToTri(
         //      Seems to happen infrequently, so don't kill the run for now. 
         //      See EdgeToEdge() for how to print the points out to a vtk file.
         
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[i]);
+            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
+
+        //For debugging, comment out clean_up() below to print all instances.
+        static int ecount = 0;
+        std::string fname = CollisionSolver3d::getOutputDirectory();
+        fname += "/PointToTri_error-" + std::to_string(ecount);
+        ecount++;
+
+        std::vector<POINT*> pt2tri_pts(pts,pts+4);
+        vtk_write_pointset(pt2tri_pts,fname,ERROR);
+
         return false;
         //LOC(); clean_up(ERROR);
 	}
