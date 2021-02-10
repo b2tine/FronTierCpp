@@ -39,7 +39,7 @@ Enter radius of the sphere: 0.5 0.5 0.5
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 100
+Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 11.951
 Enter the initial center of mass velocity: 0 0 0
 
@@ -59,7 +59,7 @@ Enter initial position of load: 6 6 12.451
 Enter yes to install the strings to RGB: yes
 Enter the body index of the target RGB: 1
 
-Enter number of canopy optimization rounds: 1
+Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
@@ -72,50 +72,44 @@ Enter radii of ellipse: 0.275 0.275
 Enter area velocity: 0 0 10
 Enter gravityX: 0 0 0
 
-Enter yes to use porosity: yes
-Enter viscous parameter: 6.7
-Enter inertial parameter: 3.1
-Enter factor of smoothing radius: 1.0
-Enter timestep to activate FSI: 1
+Enter timestep to activate FSI: 5
 
-Enter interior propagator: p
-Enter payload: 100
+Enter yes to use porosity: yes
+Enter porosity: 0.01
+Enter viscous parameter: 0.00793389
+Enter inertial parameter: 38.559
+Enter factor of smoothing radius: 1.0
+
+Enter payload: 300
 Enter interior sub step number: 10
-Enter area density of canopy: 5.0
+Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.03
-Enter fabric friction constant: 0.0
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
-Enter fabric rounding tolerance: 0.00001
+Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.1
-Enter string friction constant: 0.0
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
-Enter string rounding tolerance: 0.00004
+Enter string rounding tolerance: 0.000004
 
 ******************Turbulence Parameters****************
-Enter yes to use eddy viscosity: no
+Enter yes to use eddy viscosity: yes
 Available tuebulence models are:
         Baldwin-Lomax (B)
-        Moin (M)
+        Vreman (V)
         Smagorinski (S)
         KEPSILON  (K)
-Enter turbulence model: K
-Enter type of k-eps model: RNG
-Enter turbulent Prandtl number for k: 0.7194
-Enter turbulent Prandtl number for epsilon: 0.7194
-Enter C1: 1.42
-Enter C2: 1.68
-Enter Cmu: 0.0845
-Enter Cbc: 0.01
-Enter l0: 0.01
-Enter mu0: 0.001
-Enter y+: 30.0
-Enter time to active turbulence model: 0.0
+
+Enter turbulence model: Vreman
+Enter model constant: 0.025
+
+Enter yes to use no-slip boundary condition: no
 
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
@@ -134,9 +128,10 @@ Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
 
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK
