@@ -468,8 +468,10 @@ extern void count_vertex_neighbors(
 	n = 0;
 	for (i = 0; i < ns; ++i)
     {
-        /*if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;*/
+        /*
+        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
+        */
 	    count_surf_neighbors(geom_set->surfs[i],sv,&n);
     }
     for (i = 0; i < nc; ++i)
@@ -1198,6 +1200,7 @@ extern void get_point_set_from(
 	for (i = 0; i < ns; ++i)
     {
         /*
+        //TODO: REMOVE THIS 
         if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
             wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
         */
@@ -1406,37 +1409,33 @@ static void assembleParachuteSet3d(
     intfc_surface_loop(intfc,s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    /*if (wave_type(*s) == ELASTIC_BOUNDARY ||
-            wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(*s) == NEUMANN_BOUNDARY)*/
-        //{
-            surfs[ns++] = *s;
-            surf_pos_curve_loop(*s,c)
+
+        surfs[ns++] = *s;
+        surf_pos_curve_loop(*s,c)
+        {
+            if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
+            if (!pointer_in_list(*c,nc,(POINTER*)curves))
             {
-                if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
-                if (!pointer_in_list(*c,nc,(POINTER*)curves))
-                {
+            curves[nc++] = *c;
+            if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
+                nodes[nn++] = (*c)->start;
+            if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
+                nodes[nn++] = (*c)->end;
+            }
+        }
+        surf_neg_curve_loop(*s,c)
+        {
+        
+            if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
+            if (!pointer_in_list(*c,nc,(POINTER*)curves))
+            {
                 curves[nc++] = *c;
                 if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
                     nodes[nn++] = (*c)->start;
                 if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
                     nodes[nn++] = (*c)->end;
-                }
             }
-            surf_neg_curve_loop(*s,c)
-            {
-            
-                if (hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
-                if (!pointer_in_list(*c,nc,(POINTER*)curves))
-                {
-                    curves[nc++] = *c;
-                    if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-                        nodes[nn++] = (*c)->start;
-                    if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-                        nodes[nn++] = (*c)->end;
-                }
-            }
-        //}
+        }
 	}
 	
     //TODO: Handle both fabric surfaces and isolated 3d curves
@@ -1506,8 +1505,10 @@ static void assembleParachuteSet3d(
 	
     for (int i = 0; i < ns; ++i)
     {
-        /*if (wave_type(surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(surfs[i]) == NEUMANN_BOUNDARY) continue;*/
+        /*
+        if (wave_type(surfs[i]) == MOVABLE_BODY_BOUNDARY ||
+            wave_type(surfs[i]) == NEUMANN_BOUNDARY) continue;
+        */
 	    geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
     }
     for (int i = 0; i < nc; ++i)

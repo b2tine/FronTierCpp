@@ -309,7 +309,7 @@ void CollisionSolver3d::setHseTypeLists()
 void CollisionSolver3d::initializeImpactZones()
 {
     makeSet(hseList);
-    initRigidBodyImpactZones(ft->interf);
+        //initRigidBodyImpactZones(ft->interf);
 }
 
 void CollisionSolver3d::resolveCollision()
@@ -369,7 +369,8 @@ void CollisionSolver3d::resolveCollision()
     stop_clock("updateFinalStates");
     */
 
-    updateFinalForRG();
+    //TODO: 
+        //updateFinalForRG();
 }
 
 void CollisionSolver3d::computeAverageVelocity()
@@ -1065,8 +1066,12 @@ extern void createImpZone(POINT* pts[], int num, bool first)
             
             if (!first)
             {
+                if (isRigidBody(pts[i]) ||
+                    isRigidBody(pts[j])) continue;
+                /*
                 if (isMovableRigidBody(pts[i]) ||
                     isMovableRigidBody(pts[j])) continue;
+                */
                 //TODO: In this scenario a fabric element collides
                 //      with a movable rigid body element, and only
                 //      the fabric points are merged into an impact
@@ -1105,7 +1110,9 @@ void createImpactZone(POINT* pts[], int num)
 	}
 }
 
-//TODO: could make a regular function
+//TODO: I don't think we want/need this function either.
+//      It may not be possible to simply treat the rigid bodies
+//      as a impact zones along with the fabric ....
 void CollisionSolver3d::initRigidBodyImpactZones(INTERFACE* intfc)
 {
 	SURFACE** s;

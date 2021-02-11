@@ -246,10 +246,18 @@ static bool MovingPointToTriGS(POINT* pts[])
     }
     else if (status && is_detImpZone)
     {
-        //createImpZone(pts,4);
-        createImpactZone(pts,4);
-        POINT* head = findSet(pts[0]);
-        updateImpactListVelocity(head);
+            //createImpactZone(pts,4);
+            //POINT* head = findSet(pts[0]);
+        
+        createImpZone(pts,4);
+        for (int i = 0; i < 4; ++i)
+        {
+            if (!isRigidBody(pts[i]))
+            {
+                updateImpactListVelocity(pts[i]);
+                break;
+            }
+        }
     }
     
     return status;
@@ -394,10 +402,18 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     }
     else if (status && is_detImpZone && !string_string)
     {
-        //createImpZone(pts,4);
-        createImpactZone(pts,4);
-        POINT* head = findSet(pts[0]);
-        updateImpactListVelocity(head);
+            //createImpactZone(pts,4);
+            //POINT* head = findSet(pts[0]);
+       
+        createImpZone(pts,4);
+        for (int i = 0; i < 4; ++i)
+        {
+            if (!isRigidBody(pts[i]))
+            {
+                updateImpactListVelocity(pts[i]);
+                break;
+            }
+        }
     }
 
     return status;
@@ -1177,7 +1193,6 @@ static bool PointToTri(
  * x13*x13*w1 + x13*x23*w2 = x13*x43
  * x13*x23*w1 + x23*x23*w2 = x23*x43
  */
-    double dist;
     double nor[3];
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3], x34[3];
@@ -1188,16 +1203,33 @@ static bool PointToTri(
 	Pts2Vec(pts[3],pts[2],x43);
     scalarMult(-1.0,x43,x34);
 	
+    //unit normal vector of the plane of the triangle
+    Cross3d(x13,x23,tri_nor);
+    double mag_tnor = Mag3d(tri_nor);
+    scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
+
+    //correct the triangle's normal direction to point to same
+    //side as the point (not used right now, but may need at some
+    //for detecting/correcting interpenetration etc.)
+    double side = Dot3d(x34,tri_nor);
+    if (side < 0.0)
+    {
+        scalarMult(-1.0,tri_nor,tri_nor);
+    }
+	
+    double dist = fabs(side);
+    if (dist > tol) return false;
+	
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23)-Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
-        //TODO: This may not even be a degenerate triangle ... 
-        printf("\n\tPointToTri() WARNING: degenerate TRI detected\n \
-                \t\t\t (fabs(det) < MACH_EPS)\n\n");
+        return false;
         
-        //TODO: Need to determine if this should be a fatal error or not.
-        //      Seems to happen infrequently, so don't kill the run for now. 
-        //      See EdgeToEdge() for how to print the points out to a vtk file.
+        /*
+        //TODO: This may not even be a degenerate triangle ...
+        //      IT'S NOT, JUST MEANS THE 4 POINTS AREA COPLANAR.
+        printf("\n\tPointToTri() WARNING: Points Are Coplanar,\n \
+                \t\t\t (fabs(det) < MACH_EPS)\n\n");
         
         printf("\tPOINTS:\n");
         for (int i = 0; i < 4; ++i)
@@ -1215,32 +1247,10 @@ static bool PointToTri(
 
         std::vector<POINT*> pt2tri_pts(pts,pts+4);
         vtk_write_pointset(pt2tri_pts,fname,ERROR);
-
-        return false;
-        //LOC(); clean_up(ERROR);
+        */
 	}
 	else
     {
-        //unit normal vector of the plane of the triangle
-	    Cross3d(x13,x23,tri_nor);
-	    double tri_nor_mag = Mag3d(tri_nor);
-
-        scalarMult(1.0/tri_nor_mag,tri_nor,tri_nor);
-        double tri_area = 0.5*tri_nor_mag;
-
-	    //correct the triangle's normal direction to point to same
-        //side as the point (not used right now, but may need at some
-        //for detecting/correcting interpenetration etc.)
-        dist = Dot3d(x34,tri_nor);
-        if (dist < 0.0)
-        {
-            scalarMult(-1.0,tri_nor,tri_nor);
-        }
-	
-        dist = fabs(dist);
-        if (dist > tol)
-	        return false;
-	
 	    w[0] = (Dot3d(x23,x23)*Dot3d(x13,x43)-Dot3d(x13,x23)*Dot3d(x23,x43))/det;
 	    w[1] = (Dot3d(x13,x13)*Dot3d(x23,x43)-Dot3d(x13,x23)*Dot3d(x13,x43))/det;
 	    w[2] = 1.0 - w[0] - w[1];
@@ -1259,6 +1269,7 @@ static bool PointToTri(
         double eps = tol/c_len;
         */
 
+        double tri_area = 0.5*mag_tnor;
         double eps = tol/sqrt(tri_area);
         for (int i = 0; i < 3; ++i)
         {
