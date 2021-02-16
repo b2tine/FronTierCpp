@@ -1200,7 +1200,6 @@ extern void get_point_set_from(
 	for (i = 0; i < ns; ++i)
     {
         /*
-        //TODO: REMOVE THIS 
         if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
             wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
         */

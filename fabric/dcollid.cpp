@@ -309,7 +309,7 @@ void CollisionSolver3d::setHseTypeLists()
 void CollisionSolver3d::initializeImpactZones()
 {
     makeSet(hseList);
-        //initRigidBodyImpactZones(ft->interf);
+    initRigidBodyImpactZones(ft->interf);
 }
 
 void CollisionSolver3d::resolveCollision()
@@ -1505,8 +1505,8 @@ void updateImpactListVelocity(POINT* head)
 	p = head;
     while(p)
     {
-        //TODO: This should never happen anymore.... or should it???
-        if (isStaticRigidBody(p))
+        //if (isStaticRigidBody(p))
+        if (isRigidBody(p))
         {
             //printf("updateImpactListVelocity() ERROR: isStaticRigidBody(p)\n");
             //LOC(); clean_up(EXIT_FAILURE);
@@ -2235,6 +2235,11 @@ bool isStaticRigidBody(const POINT* p)
     return sl->is_fixed;
 }
 
+bool isStaticRigidBody(const STATE* sl)
+{
+    return sl->is_fixed;
+}
+
 bool isStaticRigidBody(const CD_HSE* hse)
 {
     for (int i = 0; i < hse->num_pts(); ++i)
@@ -2251,6 +2256,11 @@ bool isMovableRigidBody(const POINT* p)
     return sl->is_movableRG;
 }
 
+bool isMovableRigidBody(const STATE* sl)
+{
+    return sl->is_movableRG;
+}
+
 bool isMovableRigidBody(const CD_HSE* hse)
 {
     for (int i = 0; i < hse->num_pts(); ++i)
@@ -2264,6 +2274,11 @@ bool isMovableRigidBody(const CD_HSE* hse)
 bool isRigidBody(const POINT* p)
 {
     return isStaticRigidBody(p) || isMovableRigidBody(p);
+}
+
+bool isRigidBody(const STATE* sl)
+{
+    return sl->is_fixed || sl->is_movableRG;
 }
 
 bool isRigidBody(const CD_HSE* hse)

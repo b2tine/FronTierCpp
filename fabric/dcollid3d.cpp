@@ -246,9 +246,11 @@ static bool MovingPointToTriGS(POINT* pts[])
     }
     else if (status && is_detImpZone)
     {
-            //createImpactZone(pts,4);
-            //POINT* head = findSet(pts[0]);
+        createImpactZone(pts,4);
+        POINT* head = findSet(pts[0]);
+        updateImpactListVelocity(head);
         
+        /*
         createImpZone(pts,4);
         for (int i = 0; i < 4; ++i)
         {
@@ -258,6 +260,7 @@ static bool MovingPointToTriGS(POINT* pts[])
                 break;
             }
         }
+        */
     }
     
     return status;
@@ -402,9 +405,11 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     }
     else if (status && is_detImpZone && !string_string)
     {
-            //createImpactZone(pts,4);
-            //POINT* head = findSet(pts[0]);
-       
+        createImpactZone(pts,4);
+        POINT* head = findSet(pts[0]);
+        updateImpactListVelocity(head);
+ 
+        /*
         createImpZone(pts,4);
         for (int i = 0; i < 4; ++i)
         {
@@ -414,6 +419,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 break;
             }
         }
+        */
     }
 
     return status;

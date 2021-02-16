@@ -223,10 +223,13 @@ void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
 bool isStaticRigidBody(const POINT*);
+bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
 bool isMovableRigidBody(const POINT*);
+bool isMovableRigidBody(const STATE*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
+bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
 
 void initSurfaceState(SURFACE*,const double*);

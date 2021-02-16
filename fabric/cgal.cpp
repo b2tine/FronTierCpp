@@ -304,74 +304,75 @@ static void CgalCircle(
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;
-        bool set_gore,set_vent,set_string,fixed_bdry;
-        char string[100];
+    bool set_gore,set_vent,set_string,fixed_bdry;
+    char string[100];
 	std::list<Cgal_Point> list_of_seeds;
 	
-    //Min tri edge length
-    double cri_dx = 0.6*computational_grid(front->interf)->h[0];
-
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry;
 
-        CursorAfterString(infile,"Enter the height of the plane:");
-        fscanf(infile,"%lf",&height);
-        (void) printf("%f\n",height);
-        CursorAfterString(infile,"Enter circle center:");
-        fscanf(infile,"%lf %lf",&CirCenter[0],&CirCenter[1]);
-        (void) printf("%f %f\n",CirCenter[0],CirCenter[1]);
-        CursorAfterString(infile,"Enter circle radius:");
-        fscanf(infile,"%lf",&CirR[0]);
-        (void) printf("%f\n",CirR[0]);
+    CursorAfterString(infile,"Enter the height of the plane:");
+    fscanf(infile,"%lf",&height);
+    (void) printf("%f\n",height);
+    CursorAfterString(infile,"Enter circle center:");
+    fscanf(infile,"%lf %lf",&CirCenter[0],&CirCenter[1]);
+    (void) printf("%f %f\n",CirCenter[0],CirCenter[1]);
+    CursorAfterString(infile,"Enter circle radius:");
+    fscanf(infile,"%lf",&CirR[0]);
+    (void) printf("%f\n",CirR[0]);
 
 	CirR[1] = 0;
 
-        set_gore = false;
-        set_vent = false;
-        set_string = false;
+    set_gore = false;
+    set_vent = false;
+    set_string = false;
 	af_params->attach_gores = NO;
 
 	if (CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        
+        if (string[0] == 'y' || string[0] == 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-            {
-	        CirR[1] = 0.1 * CirR[0];
-	        af_params->attach_gores = YES;
-                set_gore = true;
-	    }
+            CirR[1] = 0.1 * CirR[0];
+            af_params->attach_gores = YES;
+            set_gore = true;
         }
+    }
+
 	if (CursorAfterStringOpt(infile,"Enter yes to cut a vent on canopy:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+
+        if (string[0]=='y' || string[0]=='Y')
         {
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0]=='y' || string[0]=='Y')
-            {
-                CursorAfterString(infile,"Enter radius of the vent:");
-	        fscanf(infile,"%lf",&CirR[1]);
-	        (void) printf("%f\n",CirR[1]);
-                set_vent = true;
-            }
+            CursorAfterString(infile,"Enter radius of the vent:");
+            fscanf(infile,"%lf",&CirR[1]);
+            (void) printf("%f\n",CirR[1]);
+            set_vent = true;
         }
+    }
 
 	num_strings = 28;   //default
 	if (CursorAfterStringOpt(infile,
                     "Enter yes to attach strings to canopy:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+
+        if (string[0]=='y' || string[0]=='Y')
         {
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0]=='y' || string[0]=='Y')
-	    {
-	        CursorAfterString(infile,"Enter number of chords:");
-	        fscanf(infile,"%d",&num_strings);
-	        (void) printf("%d\n",num_strings);
-                set_string = true;
-	    }
+            CursorAfterString(infile,"Enter number of chords:");
+            fscanf(infile,"%d",&num_strings);
+            (void) printf("%d\n",num_strings);
+            set_string = true;
         }
-	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,
-                                sizeof(POINT*));
+    }
+
+	FT_VectorMemoryAlloc((POINTER*)&string_node_pts,num_strings,sizeof(POINT*));
 
 	double offset = PI/num_strings;
 	num_out_vtx = num_strings * out_vtx_oneside;
@@ -434,10 +435,35 @@ static void CgalCircle(
 	    }
 	}
 	
+    //TODO: Make input options for cgal, should be independent of the fluid mesh.
+    //      Currently the fabric mesh is too fine for the collision solver, when
+    //      we use a fine fluid mesh. When working, this should be moved into a
+    //      higher level function and passed along in a cgal triangulation
+    //      parameters structure CGAL_PARAM_PACK for example.
+
+    //B = r/l when r is the triangle circumradius, and l is the min triangle edge length
+    double B = 0.125;
+    double min_edge_length = 0.6*computational_grid(front->interf)->h[0];
+
+	if (CursorAfterStringOpt(infile,"Enter yes to adjust cgal triangulation criteria:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            CursorAfterString(infile,"Enter B ratio:");
+            fscanf(infile,"%d",&B);
+            printf("%d\n",B);
+            CursorAfterString(infile,"Enter min triangle edge length:");
+            fscanf(infile,"%d",&min_edge_length);
+            printf("%d\n",min_edge_length);
+	    }
+    }
+    
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.125,cri_dx));
-	/*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.3,cri_dx));*/
+			list_of_seeds.end(),Criteria(B,min_edge_length));
+        /*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+                list_of_seeds.end(),Criteria(0.3,min_edge_length));*/
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];
