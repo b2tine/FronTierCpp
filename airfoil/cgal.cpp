@@ -285,9 +285,6 @@ static void CgalCircle(
 	char gore_bool[10],vent_bool[10], string_bool[10];
 	std::list<Cgal_Point> list_of_seeds;
 	
-    //Maximum length of triangle edges
-    double cri_dx = 0.6*computational_grid(front->interf)->h[0];
-
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry;
@@ -398,10 +395,35 @@ static void CgalCircle(
 	    }
 	}
 	
+    //TODO: Make input options for cgal, should be independent of the fluid mesh.
+    //      Currently the fabric mesh is too fine for the collision solver, when
+    //      we use a fine fluid mesh. When working, this should be moved into a
+    //      higher level function and passed along in a cgal triangulation
+    //      parameters structure CGAL_PARAM_PACK for example.
+
+    //B = r/l when r is the triangle circumradius, and l is the min triangle edge length
+    double B = 0.125;
+    double min_edge_length = 0.6*computational_grid(front->interf)->h[0];
+
+	if (CursorAfterStringOpt(infile,"Enter yes to adjust cgal triangulation criteria:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            CursorAfterString(infile,"Enter B ratio:");
+            fscanf(infile,"%d",&B);
+            printf("%d\n",B);
+            CursorAfterString(infile,"Enter min triangle edge length:");
+            fscanf(infile,"%d",&min_edge_length);
+            printf("%d\n",min_edge_length);
+	    }
+    }
+    
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.3, cri_dx));
-	//CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-	//		list_of_seeds.end(),Criteria(0.125, cri_dx));//TODO: try this for fine grids
+			list_of_seeds.end(),Criteria(B,min_edge_length));
+        /*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+                list_of_seeds.end(),Criteria(0.3,min_edge_length));*/
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];
