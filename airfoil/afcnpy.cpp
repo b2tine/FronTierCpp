@@ -2194,7 +2194,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 
 
 	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
+	    (void) printf("Entering fourth_order_elastic_set_propagate_serial()\n");
 	geom_set.front = fr;
 
 	if (first_break_strings && break_strings_num > 0 &&
@@ -2359,8 +2359,8 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             collision_solver->setStringSpringConstant(af_params->kl); 
             collision_solver->setStringPointMass(af_params->m_l);
 
-            //collision_solver->setStrainLimit(af_params->strain_limit);
-            //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
@@ -2477,8 +2477,8 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
-}	/* end fourth_order_elastic_set_propagate() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_serial()\n");
+}	/* end fourth_order_elastic_set_propagate_serial() */
 
 static void print_max_fabric_speed(Front* fr)
 {

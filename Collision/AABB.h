@@ -132,16 +132,23 @@ public:
     void updateAABBTree(const std::vector<CD_HSE*>&);
     MotionState getType() { return type; }
 
+    bool turn_on_GS_update() {gauss_seidel = true;}
+    bool turn_off_GS_update() {gauss_seidel = false;}
+
 private:
+
+    bool gauss_seidel {false};
 
     bool queryProximity(Node* n);
     bool queryCollision(Node* n);
+    bool getCollision(const CD_HSE* a, const CD_HSE* b);
 };
 
 
 //dcollid.cpp
-bool getProximity(const CD_HSE*,const CD_HSE*);
-bool getCollision(const CD_HSE*,const CD_HSE*);
+bool getProximity(const CD_HSE* a, const CD_HSE* b);
+bool getCollisionGS(const CD_HSE* a, const CD_HSE* b);
+bool getCollisionJac(const CD_HSE* a, const CD_HSE* b);
 
 
 #endif
