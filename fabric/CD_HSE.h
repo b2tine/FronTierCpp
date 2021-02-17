@@ -6,6 +6,8 @@
 #include "vtk.h"
 
 #include <string>
+#include <utility>
+#include <numeric>
 
 
 enum class CD_HSE_TYPE

@@ -468,11 +468,7 @@ extern void count_vertex_neighbors(
 	n = 0;
 	for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
-	    count_surf_neighbors(geom_set->surfs[i],sv,&n);
+        count_surf_neighbors(geom_set->surfs[i],sv,&n);
     }
     for (i = 0; i < nc; ++i)
 	    count_curve_neighbors(geom_set->curves[i],sv,&n);
@@ -499,11 +495,7 @@ extern void link_point_set(
 	n = 0;
 	for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
-	    link_surf_point_set(geom_set,geom_set->surfs[i],point_set,
+        link_surf_point_set(geom_set,geom_set->surfs[i],point_set,
 				point_set_store,&n);
     }
     for (i = 0; i < nc; ++i)
@@ -608,10 +600,6 @@ extern void set_vertex_neighbors(
 	n = 0;
 	for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
         set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,point_set);
     }
 	for (i = 0; i < nc; ++i)
@@ -1199,11 +1187,7 @@ extern void get_point_set_from(
 	nn = geom_set->num_nodes;
 	for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
-	    surf_get_point_set_from(geom_set->surfs[i],point_set);
+        surf_get_point_set_from(geom_set->surfs[i],point_set);
     }
     for (i = 0; i < nc; ++i)
 	    curve_get_point_set_from(geom_set->curves[i],point_set);
@@ -1228,11 +1212,7 @@ extern void put_point_set_to(
 	nn = geom_set->num_nodes;
 	for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
-	    surf_put_point_set_to(geom_set->surfs[i],point_set);
+        surf_put_point_set_to(geom_set->surfs[i],point_set);
     }
     for (i = 0; i < nc; ++i)
 	    curve_put_point_set_to(geom_set->curves[i],point_set);
@@ -1407,8 +1387,8 @@ static void assembleParachuteSet3d(
 	
     intfc_surface_loop(intfc,s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-
+        if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+        
         surfs[ns++] = *s;
         surf_pos_curve_loop(*s,c)
         {
@@ -1504,11 +1484,7 @@ static void assembleParachuteSet3d(
 	
     for (int i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
-	    geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
+        geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
     }
     for (int i = 0; i < nc; ++i)
 	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
@@ -1651,10 +1627,6 @@ extern void set_vertex_impulse(
     nn = geom_set->num_nodes;
     for (i = 0; i < ns; ++i)
     {
-        /*
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
-        */
         set_surf_impulse(geom_set,geom_set->surfs[i],point_set);
     }
     for (i = 0; i < nc; ++i)

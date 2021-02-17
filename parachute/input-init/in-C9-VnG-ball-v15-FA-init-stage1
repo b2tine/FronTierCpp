@@ -9,10 +9,10 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-Max time: 12.0
+Max time: 2.0
 Max step: 100000
-Print interval: 0.025
-Movie frame interval: 0.0025
+Print interval: 0.005
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -27,7 +27,7 @@ Projection type can be
 Enter projection type: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
@@ -36,12 +36,18 @@ For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.5 0.5 0.5
+
+Type yes if the rigid body is fixed: no
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
+
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 11.951
 Enter the initial center of mass velocity: 0 0 0
+Enter the initial center of mass velocityX: 0 0 -5
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -63,15 +69,15 @@ Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
-Entering yes to turn off fluid solver: no
+Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity function: Zero
+Enter velocity function: FA
 Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
 Enter radii of ellipse: 0.275 0.275
 Enter area velocity: 0 0 10
-Enter gravityX: 0 0 0
+Enter gravity: 0 0 0
 
 Enter timestep to activate FSI: 5
 
@@ -115,7 +121,7 @@ Enter yes to use no-slip boundary condition: no
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 10
+Enter velocity: 0 0 15
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -124,7 +130,7 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-Type y to make vector velocity field movie: y
+Type y to make vector velocity field movie: n
 Type y to plot surface stress: n
 
 ************Debugging options*****************

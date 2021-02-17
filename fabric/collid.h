@@ -3,8 +3,6 @@
 
 #include "AABB.h"
 
-#include <numeric>
-
 #if defined(isnan)
 #undef isnan
 #endif
@@ -14,6 +12,9 @@
 const double ROUND_EPS = DBL_EPSILON;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
+
+
+using collision_pair = std::pair<CD_HSE*,CD_HSE*>;
 
 
 class CollisionSolver3d {
@@ -26,6 +27,7 @@ public:
     std::vector<CD_HSE*> movableRigidTriList;
     std::vector<CD_HSE*> stringBondList;
     std::vector<CD_HSE*> elasticHseList;
+    std::vector<collision_pair> collisionPairsList;
 	
     std::map<int,std::vector<double>> mrg_com;
 	
@@ -119,10 +121,13 @@ public:
     static std::string outdir;
     static std::string getOutputDirectory() {return outdir;}
     static void setOutputDirectory(std::string dir) {outdir = dir;}
+    static void saveFront() {FT_Save(ft);}
+    static void drawFront() {FT_Draw(ft);}
 
 private:
 
-    Front* ft;
+    //Front* ft;
+    static Front* ft;
 
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
@@ -156,6 +161,7 @@ private:
 
     double strain_limit {0.1};
     double strainrate_limit {0.1};
+    bool skip_strain_velo_constraint {false};
 
     static bool s_detImpZone;
 	static void turnOnImpZone();
@@ -203,9 +209,12 @@ void unsortHseList(std::vector<CD_HSE*>&);
 bool BondToBond(const BOND*,const BOND*);
 bool TriToBond(const TRI*,const BOND*);
 bool TriToTri(const TRI*,const TRI*);
-bool MovingBondToBond(const BOND*,const BOND*);
-bool MovingTriToBond(const TRI*,const BOND*);
-bool MovingTriToTri(const TRI*,const TRI*);
+bool MovingBondToBondGS(const BOND*,const BOND*);
+bool MovingTriToBondGS(const TRI*,const BOND*);
+bool MovingTriToTriGS(const TRI*,const TRI*);
+bool MovingBondToBondJac(const BOND*,const BOND*);
+bool MovingTriToBondJac(const TRI*,const BOND*);
+bool MovingTriToTriJac(const TRI*,const TRI*);
 
 void makeSet(std::vector<CD_HSE*>&);
 void createImpZone(POINT*[],int num = 4,bool first = NO);

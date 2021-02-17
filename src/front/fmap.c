@@ -540,6 +540,7 @@ EXPORT	void	FT_Init(
 EXPORT	void FT_Draw(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
 	
     if (debugging("trace"))
@@ -555,6 +556,7 @@ EXPORT	void FT_Draw(
 EXPORT	void FT_Save(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
         if (debugging("trace"))
             (void) printf("Entering FT_Save()\n");

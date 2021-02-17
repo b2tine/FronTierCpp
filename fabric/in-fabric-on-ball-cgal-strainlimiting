@@ -1,13 +1,12 @@
 
 Start test time control parameters
 Max time: 5.0
-Max stepX: 50
-Max stepX: 100
-Max stepX: 1000
 Max step: 2000
-Print interval: 0.025
-Movie frame interval: 0.025
-CFL factor: 1.0
+Print interval: 0.01
+Movie frame interval: 0.01
+Print intervalX: 0.025
+Movie frame intervalX: 0.025
+CFL factor: 0.5
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes
 
@@ -45,6 +44,11 @@ Enter type of canopy boundary: c
 Enter the height of the plane: 0.8
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
+
+Enter yes to adjust cgal triangulation criteria: no
+Enter B ratioX: 0.125
+Enter min triangle edge lengthX: 0.025
+
 
 Start parameters for spring-mass system
 

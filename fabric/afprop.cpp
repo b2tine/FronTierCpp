@@ -44,20 +44,20 @@ static void coating_mono_hyper_surf3d(Front*);
 
 extern void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
-        switch (fr->rect_grid->dim)
+    switch (fr->rect_grid->dim)
+    {
+    case 2:
+        fourth_order_elastic_set_propagate2d(fr,fr_dt);
+    case 3:
+        if (pp_numnodes() > 1 && !debugging("collision_off"))
         {
-        case 2:
-            fourth_order_elastic_set_propagate2d(fr,fr_dt);
-        case 3:
-            if (pp_numnodes() > 1 && !debugging("collision_off"))
-            {
-                fourth_order_elastic_set_propagate3d_parallel(fr,fr_dt);
-            }
-            else
-            {
-                fourth_order_elastic_set_propagate3d_serial(fr,fr_dt);
-            }
+            fourth_order_elastic_set_propagate3d_parallel(fr,fr_dt);
         }
+        else
+        {
+            fourth_order_elastic_set_propagate3d_serial(fr,fr_dt);
+        }
+    }
 }       /* end fourth_order_elastic_set_propagate */
 
 static void fourth_order_elastic_set_propagate2d(Front* fr, double fr_dt)
@@ -473,7 +473,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
 	static int break_strings_num = af_params->break_strings_num;
         
 	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate3d()\n");
+	    (void) printf("Entering fourth_order_elastic_set_propagate3d_serial()\n");
 
     geom_set.front = fr;
 
@@ -724,8 +724,8 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate3d()\n");
-}	/* end fourth_order_elastic_set_propagate3d() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate3d_serial()\n");
+}	/* end fourth_order_elastic_set_propagate3d_serial() */
 
 
 void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
@@ -1770,11 +1770,6 @@ static void rg_string_node_propagate(
 		accel[i] = 0.0;
 	}
 
-    /*
-	for (i = 0; i < dim; ++i)
-	    accel[i] -= g[i];
-    */
-
         if (debugging("rigid_body"))
         {
 	    (void)printf("accel = %f %f %f\n", accel[0], accel[1], accel[2]);
@@ -1800,8 +1795,6 @@ static void rg_string_node_propagate(
 	    newp->force[i] = f[i];
 	    newsl->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
         newsr->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
-	        //newsl->fluid_accel[i] = accel[i] - f[i]/mass;
-            //newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = f[i]/mass;
         newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];

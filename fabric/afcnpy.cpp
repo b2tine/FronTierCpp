@@ -2031,8 +2031,6 @@ extern void set_geomset_velocity(
 	nn = geom_set->num_nodes;
 	for (i = 0; i < ns; ++i)
     {
-        /*if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;*/
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
     }
 	for (i = 0; i < nc; ++i)
