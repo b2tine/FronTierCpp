@@ -452,11 +452,11 @@ static void CgalCircle(
         if (string[0] == 'y' || string[0] == 'Y')
         {
             CursorAfterString(infile,"Enter B ratio:");
-            fscanf(infile,"%d",&B);
-            printf("%d\n",B);
+            fscanf(infile,"%f",&B);
+            printf("%f\n",B);
             CursorAfterString(infile,"Enter min triangle edge length:");
-            fscanf(infile,"%d",&min_edge_length);
-            printf("%d\n",min_edge_length);
+            fscanf(infile,"%f",&min_edge_length);
+            printf("%f\n",min_edge_length);
 	    }
     }
     
