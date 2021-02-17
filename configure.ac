@@ -257,7 +257,7 @@ with_cgal=no
 AS_IF([test "x${cgal_dir}" != xno],
       [with_cgal=yes
        cgalinc="-I${cgal_dir}/include -frounding-math"
-       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}lib -Wl,-rpath=${cgal_dir}/lib"],
+       cgallib="-L${cgal_dir}/lib ${cgal_libflags} -Wl,-rpath-link=${cgal_dir}/lib -Wl,-rpath=${cgal_dir}/lib"],
        [test "x${cgal_inc}" != xno && test "x${cgal_lib}" != xno],
        [with_cgal=yes
         cgalinc="-I${cgal_inc} -frounding-math"
@@ -341,11 +341,11 @@ with_cvode=no
 AS_IF([test "x${cvode_dir}" != xno],
       [with_cvode=yes
        cvodeinc="-I${cvode_dir}/include"
-       cvodelib="-L${cvode_dir}/lib ${cvode_libflags}"],
+       cvodelib="-L${cvode_dir}/lib ${cvode_libflags} -Wl,-rpath-link=${cvode_dir}/lib -Wl,-rpath=${cvode_dir}/lib "],
        [test "x${cvode_inc}" != xno && test "x${cvode_lib}" != xno],
        [with_cvode=yes
         cvodeinc="-I${cvode_inc}"
-        cvodelib="-L${cvode_lib} ${cvode_libflags}"])
+        cvodelib="-L${cvode_lib} ${cvode_libflags} -Wl,-rpath-link=${cvode_lib} -Wl,-rpath=${cvode_lib}"])
 
 AC_SUBST(CVODE_CFLAGS,${cvodeinc})
 AC_SUBST(CVODE_LIBS,${cvodelib})

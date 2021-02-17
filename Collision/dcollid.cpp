@@ -313,6 +313,12 @@ void CollisionSolver3d::initializeImpactZones()
     initRigidBodyImpactZones(ft->interf);
 }
 
+void CollisionSolver3d::initializeImpactZones(const INTERFACE* intfc)
+{
+    makeSet(hseList);
+    initRigidBodyImpactZones(intfc);
+}
+
 void CollisionSolver3d::resolveCollision()
 {
 	//catch floating point exception: nan/inf
@@ -1159,7 +1165,7 @@ void createImpactZone(POINT* pts[], int num)
 	}
 }
 
-void CollisionSolver3d::initRigidBodyImpactZones(INTERFACE* intfc)
+void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
 {
 	SURFACE** s;
 	TRI* tri;
