@@ -159,13 +159,17 @@ int main(int argc, char **argv)
         if (ReSetTime)
         {
             readAfExtraData(&front,restart_state_name);
-                //clearRegisteredPoints(&front);
-                //resetRigidBodyVelocity(&front);
-            modifyInitialization(&front);
+            clearRegisteredPoints(&front);
+            resetRigidBodyVelocity(&front);
                 //setRigidBodyMotionParams(&front,&rgb_params);
+            
+                //modifyInitialization(&front);
+            
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh(); //TODO: may be able to remove this one
-            l_cartesian->setInitialCondition();
+            
+            if (!af_params.no_fluid)
+                l_cartesian->setInitialCondition();
         
             if (debugging("trace"))
             {
@@ -179,13 +183,15 @@ int main(int argc, char **argv)
             //TODO: Want to be able to load restart state even
             //      when we are reseting the time of the simulation.
             //      For generating turbulent flow initial conditions.
-            l_cartesian->readFrontInteriorStates(restart_state_name);
+            if (!af_params.no_fluid)
+                l_cartesian->readFrontInteriorStates(restart_state_name);
             readAfExtraData(&front,restart_state_name);
         }
     }
     else
     {
-        l_cartesian->setInitialCondition();
+        if (!af_params.no_fluid)
+            l_cartesian->setInitialCondition();
     }
 
     l_cartesian->initMovieVariables();

@@ -136,17 +136,18 @@ static void CgalParabolicSurface(
 	{
 	    for (i = 0; i < 3; i++)
 	    {
-		tri->side_length0[i] = -1.0;
-		p = Point_of_tri(tri)[i];
-		if (sorted(p) == NO)
-		{
-		    Coords(p)[2] = cen[2] - rad[0]*sqr(Coords(p)[0]-cen[0])
-					  - rad[1]*sqr(Coords(p)[1]-cen[1]); 
-		    sorted(p) = YES;
-		}
+		    //tri->side_length0[i] = -1.0;
+            p = Point_of_tri(tri)[i];
+            if (sorted(p) == NO)
+            {
+                Coords(p)[2] = cen[2] - rad[0]*sqr(Coords(p)[0]-cen[0])
+                          - rad[1]*sqr(Coords(p)[1]-cen[1]); 
+                sorted(p) = YES;
+            }
 	    }
 	}
-	setSurfZeroMesh(*surf);
+	
+    setSurfZeroMesh(*surf);
 	resetGoreBdryZerolength(*surf);
 }	/* end CgalParabolicSurface */
 
@@ -282,7 +283,7 @@ static void CgalCircle(
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;//TODO: Why these hardcoded values?
-	char gore_bool[10],vent_bool[10], string_bool[10];
+	char gore_bool[10],vent_bool[10], string_bool[10],string[10];
 	std::list<Cgal_Point> list_of_seeds;
 	
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;

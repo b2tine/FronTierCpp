@@ -1407,60 +1407,74 @@ static void singleCanopyModification(
 	double L[MAXD],U[MAXD];
 	int i,dim,gmax[MAXD];
 
+
 	dim = FT_Dimension();
-	CursorAfterString(infile,
-		"Enter yes for translation of interior interface:");
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to modify interior interface:"))
+    {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-	if (string[0] != 'y' || string[0] != 'Y')
-	{
-	    CursorAfterString(infile,"Enter displacement of translation:");
-            fscanf(infile,"%lf %lf %lf",disp,disp+1,disp+2);
-            (void) printf("%f %f %f\n",disp[0],disp[1],disp[2]);
-	    I_TransInteriorIntfcPoints(intfc,disp);
-	}
-	CursorAfterString(infile,
-		"Enter yes for rotation of interior interface:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-	if (string[0] != 'y' || string[0] != 'Y')
-	{
-	    CursorAfterString(infile,"Enter center of rotation:");
-            fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
-            (void) printf("%f %f %f\n",center[0],center[1],center[2]);
-	    CursorAfterString(infile,"Enter azimuthal and polar angles:");
-            fscanf(infile,"%lf %lf",&phi,&theta);
-            (void) printf("%f %f\n",phi,theta);
-	    theta *= PI/180.0;
-	    phi *= PI/180.0;
-	    I_SphericalRotateInteriorIntfcPoints(intfc,center,phi,theta);
-	}
-	if (CursorAfterStringOpt(infile,
-            "Entering yes to modify computational grid:"))
+        if (string[0] == 'y' || string[0] == 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
+            CursorAfterString(infile,
+                "Enter yes for translation of interior interface:");
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
-	    {
-		for (i = 0; i < dim; ++i)
-        	{
-	            sprintf(input_string,
-				"New domain limit in %d-th dimension:",i);
-	            CursorAfterString(infile,input_string);
-	            fscanf(infile,"%lf %lf",&L[i],&U[i]);
-	            (void) printf("%f %f\n",L[i],U[i]);
-        	}
-		CursorAfterString(infile,"New computational grid:");
-        	for (i = 0; i < dim; ++i)
-        	{
-	            fscanf(infile,"%d",&gmax[i]);
-		    (void) printf("%d ",gmax[i]);
-        	}
-        	(void) printf("\n");
-		FT_ResetDomainAndGrid(front,L,U,gmax);
-	    }
+            {
+                CursorAfterString(infile,"Enter displacement of translation:");
+                    fscanf(infile,"%lf %lf %lf",disp,disp+1,disp+2);
+                    (void) printf("%f %f %f\n",disp[0],disp[1],disp[2]);
+                I_TransInteriorIntfcPoints(intfc,disp);
+            }
+            CursorAfterString(infile,
+                "Enter yes for rotation of interior interface:");
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                CursorAfterString(infile,"Enter center of rotation:");
+                    fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
+                    (void) printf("%f %f %f\n",center[0],center[1],center[2]);
+                CursorAfterString(infile,"Enter azimuthal and polar angles:");
+                    fscanf(infile,"%lf %lf",&phi,&theta);
+                    (void) printf("%f %f\n",phi,theta);
+                theta *= PI/180.0;
+                phi *= PI/180.0;
+                I_SphericalRotateInteriorIntfcPoints(intfc,center,phi,theta);
+            }
         }
-	fclose(infile);
+    }
+	
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to modify computational grid:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                sprintf(input_string,
+                "New domain limit in %d-th dimension:",i);
+                CursorAfterString(infile,input_string);
+                fscanf(infile,"%lf %lf",&L[i],&U[i]);
+                (void) printf("%f %f\n",L[i],U[i]);
+            }
+    
+            CursorAfterString(infile,"New computational grid:");
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%d",&gmax[i]);
+                (void) printf("%d ",gmax[i]);
+            }
+            (void) printf("\n");
+        
+            FT_ResetDomainAndGrid(front,L,U,gmax);
+        }
+    }
+	
+    fclose(infile);
 }	/* end singleCanopyModification */
 
 static void bifurcateCanopyModification(
