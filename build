@@ -108,6 +108,14 @@ function config_defiant {
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf-4.2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
+function config_ds9 {
+    PETSC_DIR="/opt/petsc-3.13.4-${ARCH}"
+    export CC=${PETSC_DIR}/bin/mpicc
+    export CXX=${PETSC_DIR}/bin/mpicxx
+    CGAL_DIR="/opt/CGAL-4.14-${ARCH}"
+    CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
+}
+
 
 ###########################################################
 ##                   Start of Script                     ##
@@ -176,6 +184,9 @@ elif [[ "$HOST" == iota ]]; then
 elif [[ "$HOST" == defiant ]]; then
     echo "Machine recognized as defiant."
     config_defiant
+elif [[ "$HOST" == ds9 ]]; then
+    echo "Machine recognized as ds9."
+    config_ds9
 elif [[ "$HOST" == head ]]; then
     echo "Machine recognized as opportunity."
     if [[ "$SERIAL" == 1 ]]; then

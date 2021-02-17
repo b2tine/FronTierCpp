@@ -1407,14 +1407,16 @@ enum {
 }; 
 
 struct _INTRP_CELL {
-        int dim;
-        boolean is_bilinear;
-        double **coords;
-        double *var;
-        int nv;
-        double **p_lin;
-        double *var_lin;
+    int dim;
+    boolean is_bilinear;
+    double **coords;
+    double *var;
+    int nv;
+    double **p_lin;
+    double *var_lin;
 	double *dist;
+    int **icoords;
+    int **ip_lin;
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 

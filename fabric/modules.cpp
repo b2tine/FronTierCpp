@@ -99,7 +99,6 @@ extern void initParachuteModules(Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
 	SURFACE *surf;
-	static RG_PARAMS *rgb_params;
         boolean complex_set = NO;
 
 	if (debugging("trace"))
@@ -108,9 +107,12 @@ extern void initParachuteModules(Front *front)
 	if (debugging("set_module"))
 	    gview_plot_interface("module-step-1",front->interf);
 
+    static RG_PARAMS rgb_params;
+    rgb_params.dim = FT_Dimension();
+    front->extra3 = (POINTER)&rgb_params;
+
 	initRigidBody(front);
-        FT_ScalarMemoryAlloc((POINTER*)&rgb_params,sizeof(RG_PARAMS));
-	rgb_init(front,rgb_params);
+	rgb_init(front,&rgb_params);
 
 	int num_canopy = 0;
 	CursorAfterStringOpt(infile,"Enter number of canopy surfaces:");
@@ -130,6 +132,8 @@ extern void initParachuteModules(Front *front)
         }
 
 	fclose(infile);
+
+    initParachuteDefault(front);
 
 	if (num_canopy == 1 && !complex_set)
 	    initSingleModule(front);
@@ -158,9 +162,19 @@ extern void initParachuteDefault(
 	FILE *infile = fopen(InName(front),"r");
         char string[100];
 	af_params->is_parachute_system = YES;
-	af_params->num_opt_round = 20;
+	af_params->num_opt_round = 0;
         af_params->spring_model = MODEL1;
 	af_params->gore_len_fac = 1.0;
+
+    af_params->is_parachute_system = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes for parachute system:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->is_parachute_system = YES;
+    }
+    
         af_params->attach_gores = NO;
 	if (CursorAfterStringOpt(infile,
             "Enter yes to attach gores to canopy:"))

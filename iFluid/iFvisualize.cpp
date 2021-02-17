@@ -4,11 +4,24 @@
 //      confusion as to what grid we are plotting...
 
 //TODO: binary format
+
+//Corresponds to the locations of fluid solver cell centers
 void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()
 {
-    char mesh_name[250];
-    sprintf(mesh_name,"%s/vtk/top_grid.vtk",OutName(front));
+    char dirname[250];
+    sprintf(dirname,"%s/vtk",OutName(front));
 
+    if (pp_mynode() == 0)
+    {
+        if (!create_directory(dirname,YES))
+        {
+            screen("Cannot create directory %s\n",dirname);
+            clean_up(ERROR);
+        }
+    }
+
+    char mesh_name[250];
+    sprintf(mesh_name,"%s/top_grid.vtk",dirname);
     FILE* file = fopen(mesh_name,"w");
 
     fprintf(file,"# vtk DataFile Version 3.0\n"

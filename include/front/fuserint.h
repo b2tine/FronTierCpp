@@ -403,12 +403,14 @@ struct _F_HYPER_SURF {
 	POINTER	vparams;
 	void	(*vel_func)(Front*,POINTER,double*,double*);
 	MOTION_TYPE motion_type;
+    boolean _no_slip;
 };
 typedef struct _F_HYPER_SURF F_HYPER_SURF;
 
 	/* F_HYPER_SURF access macros */
 #define	f_hyper_surf(hs)	((F_HYPER_SURF *) Hyper_surf(hs))
 #define wave_type(hs)		(f_hyper_surf(hs)->_wave_type)
+#define no_slip(hs)		(f_hyper_surf(hs)->_no_slip)
 #define Hs_flag(hs)		(f_hyper_surf(hs)->_hs_flag)
 #define correspond_hyper_surf(hs)					\
 				(f_hyper_surf(hs)->_correspond_hyper_surf)

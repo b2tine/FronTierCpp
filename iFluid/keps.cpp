@@ -15,7 +15,7 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
+//static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 
 
 //--------------------------------------------------------------------------
@@ -2905,7 +2905,7 @@ void KE_CARTESIAN::save(char *filename)
 	{
 		printf("\n can't open %s in "
 		       "SaveAsTecplot_rect_grid_and_interface().", filename);
-		exit(0);
+		clean_up(EXIT_FAILURE);
 	}
 	
 	// secondly print out the interface
@@ -3282,6 +3282,8 @@ static int find_state_at_crossing(
     }
 }       /* find_state_at_crossing */
 
+/*
+//NOTE: Now a global function defined in iFsub.cpp
 static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gmax)
 {
 	int index,i;
@@ -3311,7 +3313,7 @@ static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gm
 	index = d_index(icrds,top_gmax,dim);
 	return index;
 }
-
+*/
 //TODO: incomplete
 //NOTE: only used for 2d
 void KE_CARTESIAN::setTKEatWall(
@@ -3376,6 +3378,8 @@ void KE_CARTESIAN::setTKEatWall(
 	*K_nb = K[index];
 }
 
+//TODO: see iFbasic.cpp implemtation -- should be changed, but saving for now,
+//      since kepsilon solver development is on hold for the moment.
 void KE_CARTESIAN::setSlipBoundary(
 	int *icoords,
 	int idir,

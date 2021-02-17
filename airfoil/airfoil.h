@@ -98,10 +98,12 @@ typedef struct {
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
     double total_gore_mass;         /* Total mass of gore */
+
 	boolean with_porosity;          /* with or without porosity*/
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
-	double gamma;			/* canopy porosity */
-	double area_dens;		/* canopy area density */
+	double porosity {0.0};			/* canopy porosity */
+	
+    double area_dens;		/* canopy area density */
 	int    n_sub;			/* number of sub-steps for tan prop */
 	int    num_opt_round;		/* number of mesh optimizations rounds*/
 	int    num_smooth_layers;	/* number of layer to smooth high frequency velocity */

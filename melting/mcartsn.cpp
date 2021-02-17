@@ -894,7 +894,7 @@ void CARTESIAN::save(char *filename)
 	{
 		printf("\n can't open %s in "
 		       "SaveAsTecplot_rect_grid_and_interface().", filename);
-		exit(0);
+		clean_up(EXIT_FAILURE);
 	}
 	
 	// secondly print out the interface

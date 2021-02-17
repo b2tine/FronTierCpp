@@ -136,17 +136,18 @@ static void CgalParabolicSurface(
 	{
 	    for (i = 0; i < 3; i++)
 	    {
-		tri->side_length0[i] = -1.0;
-		p = Point_of_tri(tri)[i];
-		if (sorted(p) == NO)
-		{
-		    Coords(p)[2] = cen[2] - rad[0]*sqr(Coords(p)[0]-cen[0])
-					  - rad[1]*sqr(Coords(p)[1]-cen[1]); 
-		    sorted(p) = YES;
-		}
+		    //tri->side_length0[i] = -1.0;
+            p = Point_of_tri(tri)[i];
+            if (sorted(p) == NO)
+            {
+                Coords(p)[2] = cen[2] - rad[0]*sqr(Coords(p)[0]-cen[0])
+                          - rad[1]*sqr(Coords(p)[1]-cen[1]); 
+                sorted(p) = YES;
+            }
 	    }
 	}
-	setSurfZeroMesh(*surf);
+	
+    setSurfZeroMesh(*surf);
 	resetGoreBdryZerolength(*surf);
 }	/* end CgalParabolicSurface */
 
@@ -208,6 +209,7 @@ static void CgalRectangular(
 	CDT cdt;
 	CDT::Finite_faces_iterator fit;
         Vertex_handle *v_out;
+    char string[100];
 
         CursorAfterString(infile,"Enter the height of the plane:");
         fscanf(infile,"%lf",&height);
@@ -241,9 +243,23 @@ static void CgalRectangular(
 	    flag[i++] = 1;	
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
-        wave_type(*surf) = ELASTIC_BOUNDARY;
+    wave_type(*surf) = ELASTIC_BOUNDARY;
+    
+    bool fixed_bdry = false;
+    if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            fixed_bdry = true;
+    }
+
+    if (fixed_bdry == true)
+        FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+    else
         FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
-	setSurfZeroMesh(*surf);
+
+    setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
 	if (consistent_interface(front->interf) == NO)
 	    clean_up(ERROR);
@@ -267,9 +283,9 @@ static void CgalCircle(
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
 	int out_vtx_oneside = 15, in_vtx_oneside = 2;//TODO: Why these hardcoded values?
-	char gore_bool[10],vent_bool[10], string_bool[10];
+	char gore_bool[10],vent_bool[10], string_bool[10],string[10];
 	std::list<Cgal_Point> list_of_seeds;
-	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
+	
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry;
@@ -380,8 +396,35 @@ static void CgalCircle(
 	    }
 	}
 	
+    //TODO: Make input options for cgal, should be independent of the fluid mesh.
+    //      Currently the fabric mesh is too fine for the collision solver, when
+    //      we use a fine fluid mesh. When working, this should be moved into a
+    //      higher level function and passed along in a cgal triangulation
+    //      parameters structure CGAL_PARAM_PACK for example.
+
+    //B = r/l when r is the triangle circumradius, and l is the min triangle edge length
+    double B = 0.125;
+    double min_edge_length = 0.6*computational_grid(front->interf)->h[0];
+
+	if (CursorAfterStringOpt(infile,"Enter yes to adjust cgal triangulation criteria:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            CursorAfterString(infile,"Enter B ratio:");
+            fscanf(infile,"%lf",&B);
+            printf("%f\n",B);
+            CursorAfterString(infile,"Enter min triangle edge length:");
+            fscanf(infile,"%lf",&min_edge_length);
+            printf("%f\n",min_edge_length);
+	    }
+    }
+    
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.3, cri_dx));
+			list_of_seeds.end(),Criteria(B,min_edge_length));
+        /*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+                list_of_seeds.end(),Criteria(0.3,min_edge_length));*/
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];
@@ -415,7 +458,8 @@ static void CgalCircle(
 	}
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
-	checkReducedTri(*surf);
+	checkReducedTri(*surf);//TODO: How necessary is this check???
+                           //      Prevents use of finer fluid grids.
     wave_type(*surf) = ELASTIC_BOUNDARY;
     FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(*surf);
@@ -1507,6 +1551,7 @@ static void findStringNodePoints(
 	*cbdry = canopy_bdry;
 }	/* end findStringNodePoints */
 
+//TODO: see comments regarding saving and setting the interface below
 static void installString(
 	FILE *infile,
 	Front *front,
@@ -1529,8 +1574,10 @@ static void installString(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: Need these calls below? -- see usage in InstallNewLoadNode()
-	    //cur_intfc = current_interface();
+    //TODO: Need these calls below?
+    //      See usage in InstallNewLoadNode() and GenerateCgalSurf() etc.
+    //
+        //INTERFACE *sav_intfc = current_interface();
 	    //set_current_interface(intfc);
 
     //For point mass only?
@@ -1632,7 +1679,7 @@ static void installString(
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
         //TODO: Need this call below? -- see usage in InstallNewLoadNode()
-		    //set_current_interface(cur_intfc);
+	        //set_current_interface(sav_intfc);
 		return;
 	    }
 	}
@@ -1698,9 +1745,11 @@ static void installString(
 	    af_params->string_curves.push_back(string_curves[i]);
 	}
         
-    //TODO: Need this call below? -- see use in InstallNewLoadNode()
-        //set_current_interface(cur_intfc);
+    //TODO: should these be freed?
 	FT_FreeThese(1,string_curves);
+
+    //TODO: Need this call below? -- see use in InstallNewLoadNode()
+	    //set_current_interface(sav_intfc);
 }	/* end installString */
 
 static void resetStringNodePoints(

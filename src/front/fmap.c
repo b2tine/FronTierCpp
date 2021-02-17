@@ -540,6 +540,7 @@ EXPORT	void	FT_Init(
 EXPORT	void FT_Draw(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
 	
     if (debugging("trace"))
@@ -555,6 +556,7 @@ EXPORT	void FT_Draw(
 EXPORT	void FT_Save(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
         if (debugging("trace"))
             (void) printf("Entering FT_Save()\n");
@@ -977,9 +979,10 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    scalar(&blk_cell,sizeof(INTRP_CELL));
 	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,
-						sizeof(double));
+	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+	    bi_array(&blk_cell->icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
 	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
+	    bi_array(&blk_cell->ip_lin,MAXD+1,MAXD,sizeof(int));
 	    uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
 	    lin_cell_tol = 1.0;
 	    for (i = 0; i < dim; ++i)
@@ -995,7 +998,7 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    	if (debugging("the_pt"))
 		    printf("Using default interpolate\n");
 	    	*ans = *default_ans;
-		return YES;
+		    return YES;
 	    }
 	    else
 	    {
@@ -1026,6 +1029,7 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    if (debugging("the_pt"))
 		printf("Using default interpolate\n");
 	    *ans = *default_ans;
+        return YES;
 	}
 	else
 	{
@@ -1230,6 +1234,7 @@ LOCAL boolean build_linear_element(
 	double *vars = blk_cell->var;
 	double **p = blk_cell->p_lin;
 	double *var = blk_cell->var_lin;
+	int **ip = blk_cell->ip_lin;
 	int i,j,k,l,nv = blk_cell->nv;
 	double dist[MAX_NUM_VERTEX_IN_CELL];
 	double dp[MAX_NUM_VERTEX_IN_CELL][MAXD];
@@ -1272,41 +1277,47 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
+		    {
 	    	    p[1] = blk_cell->coords[j];
+	    	    ip[1] = blk_cell->icoords[j];
 	    	    var[1] = blk_cell->var[j];
-		    if (test_point_in_seg(coords,p) == YES)
-	    		return FUNCTION_SUCCEEDED;
-		}
+		        if (test_point_in_seg(coords,p) == YES)
+                    return FUNCTION_SUCCEEDED;
+		    }
 	    }
 	    break;
 	case 2:
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
-	    	    p[1] = blk_cell->coords[j];
-	    	    var[1] = blk_cell->var[j];
-		    for (k = j+1; k < nv; k++)
-		    {
-	    	    	p[2] = blk_cell->coords[k];
-	    	    	var[2] = blk_cell->var[k];
-			if (test_point_in_tri(coords,p) == YES)
-	    		    return FUNCTION_SUCCEEDED;
-		    }
-		}
+            {
+                p[1] = blk_cell->coords[j];
+                ip[1] = blk_cell->icoords[j];
+                var[1] = blk_cell->var[j];
+                for (k = j+1; k < nv; k++)
+                {
+                    p[2] = blk_cell->coords[k];
+                    ip[2] = blk_cell->icoords[k];
+                    var[2] = blk_cell->var[k];
+                    if (test_point_in_tri(coords,p) == YES)
+                        return FUNCTION_SUCCEEDED;
+                }
+            }
 	    }
 	    if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 3; i++)
-		{
+		    {
 	    	    p[i] = blk_cell->coords[i];
+	    	    ip[i] = blk_cell->icoords[i];
 	    	    var[i] =  blk_cell->var[i];
-		}
+		    }
 	    	return FUNCTION_SUCCEEDED;
 	    }
 	    break;
@@ -1314,28 +1325,45 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
+	    	ip[0] = blk_cell->icoords[i];
 	    	var[0] = blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
-		{
-	    	    p[1] = blk_cell->coords[j];
-	    	    var[1] = blk_cell->var[j];
-		    for (k = j+1; k < nv; k++)
-		    {
-	    	    	p[2] = blk_cell->coords[k];
-	    	    	var[2] = blk_cell->var[k];
-			for (l = k+1; l < nv; l++)
-			{
-	    	    	    p[3] = blk_cell->coords[l];
-	    	    	    var[3] = blk_cell->var[l];
-			    if (test_point_in_tetra(coords,p) == YES)
-			    {
-	    		        return FUNCTION_SUCCEEDED;
-			    }
-			}
-		    }
-		}
+            {
+                p[1] = blk_cell->coords[j];
+                ip[1] = blk_cell->icoords[j];
+                var[1] = blk_cell->var[j];
+                for (k = j+1; k < nv; k++)
+                {
+                    p[2] = blk_cell->coords[k];
+                    ip[2] = blk_cell->icoords[k];
+                    var[2] = blk_cell->var[k];
+                    for (l = k+1; l < nv; l++)
+                    {
+                        p[3] = blk_cell->coords[l];
+                        ip[3] = blk_cell->icoords[l];
+                        var[3] = blk_cell->var[l];
+                        if (test_point_in_tetra(coords,p) == YES)
+                        {
+                            return FUNCTION_SUCCEEDED;
+                        }
+                    }
+                }
+            }
 	    }
-	}
+        /*
+        //TODO: Is this acceptable? Why only used in 2d currently?
+	    if (extrapolation_permitted == YES)
+	    {
+	    	for (i = 0; i < 4; i++)
+		    {
+	    	    p[i] = blk_cell->coords[i];
+	    	    ip[i] = blk_cell->icoords[i];
+	    	    var[i] =  blk_cell->var[i];
+		    }
+	    	return FUNCTION_SUCCEEDED;
+	    }
+        */
+    }
 	return FUNCTION_FAILED;
 }	/* end build_linear_element */
 
@@ -1380,6 +1408,7 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp1d[i] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 		    blk_cell->var[nv] = grid_array[index];
 		    blk_cell->dist[nv] = distance_between_positions(coords,
@@ -1400,6 +1429,8 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp2d[i][j] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
+	    	    blk_cell->icoords[nv][1] = ic[1];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
 		    blk_cell->var[nv] = grid_array[index];
@@ -1423,6 +1454,9 @@ LOCAL void collect_cell_ptst(
 	    	cell_comp3d[i][j][k] = gr_comp[index];
 	    	if (gr_comp[index] == comp || comp == NO_COMP)
 	    	{
+	    	    blk_cell->icoords[nv][0] = ic[0];
+	    	    blk_cell->icoords[nv][1] = ic[1];
+	    	    blk_cell->icoords[nv][2] = ic[2];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
 	    	    blk_cell->coords[nv][2] = L[2] + ic[2]*h[2];
@@ -1457,6 +1491,7 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->dist[nv] = distance_between_positions(
 					coords,blk_cell->coords[nv],dim);
@@ -1482,6 +1517,8 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->dist[nv] = distance_between_positions(
@@ -1503,6 +1540,8 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->dist[nv] = distance_between_positions(
@@ -1537,6 +1576,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -1553,6 +1595,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -1569,6 +1614,9 @@ LOCAL void collect_cell_ptst(
 		    	if (fr_crx_grid_seg)
 		    	{
 		    	    blk_cell->var[nv] = state_at_crx;
+		    	    blk_cell->icoords[nv][0] = -1;
+		    	    blk_cell->icoords[nv][1] = -1;
+		    	    blk_cell->icoords[nv][2] = -1;
 		    	    blk_cell->coords[nv][0] = crx_coords[0];
 		    	    blk_cell->coords[nv][1] = crx_coords[1];
 		    	    blk_cell->coords[nv][2] = crx_coords[2];
@@ -2148,6 +2196,7 @@ EXPORT	boolean FrontGetRectCellIntrpCoeffs(
 	    coeffs[3] = (p[0]-c1[0])*(p[1]-c1[1])/denominator;
 	    break;
 	case 3:
+        //TODO: implement
 	    break;
 	}
 	return YES;
@@ -2540,13 +2589,13 @@ EXPORT	void	FT_NormalAtPoint(
 	Get the grid step size in the direction given.
 */
 
+//TODO: Normalize input vector
 EXPORT 	double	FT_GridSizeInDir(
 	double	*dir,
 	Front 	*front)
 {
 	int dim = front->rect_grid->dim;
 	double *h = front->rect_grid->h;
-
 	return grid_size_in_direction(dir,h,dim);
 }	/* end FT_GridSizeInDir */	
 
@@ -2909,7 +2958,8 @@ LOCAL void FrontPreAdvance3d(
 	    pp_global_sum(force[i],dim);
 	    pp_global_sum(torque[i],dim);
 	}
-	intfc_surface_loop(intfc,s)
+	
+    intfc_surface_loop(intfc,s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
 	    {
@@ -2989,11 +3039,11 @@ LOCAL void FrontPreAdvance3d(
 		    /* update the center of mass velocity */
 		    if (motion_type(*s) == FREE_MOTION)
 		    {
-			for (i = 0; i < dim; ++i)
-                    	{
-                            center_of_mass_velo(*s)[i] +=
-                                    dt*force[index][i]/total_mass(*s);
-                    	}
+                for (i = 0; i < dim; ++i)
+                {
+                    center_of_mass_velo(*s)[i] +=
+                            dt*force[index][i]/total_mass(*s);
+                }
 		    }
 		    else
 		    {
@@ -3160,7 +3210,8 @@ LOCAL void FrontPreAdvance3d(
 		for (i = 0; i < dim; ++i)
                     center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + 
 							old_vel[i])*0.5;
-		if (debugging("rigid_body"))
+		
+        if (debugging("rigid_body"))
 		{
 		    printf("Body index: %d\n",index);
 		    printf("torque = %f %f %f\n",torque[index][0],
@@ -3182,33 +3233,36 @@ LOCAL void FrontPreAdvance3d(
 					center_of_mass_velo(*s)[1],
 					center_of_mass_velo(*s)[2]);
 		}
-	    }
+	    
+        }
 	    else if (wave_type(*s) == ICE_PARTICLE_BOUNDARY)
 	    {
-		for (i = 0; i < dim; ++i)
-		{
-		    center_of_mass_velo(*s)[i] +=
-                        	dt*force[index][i]/total_mass(*s);
-                    center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
-		    center_of_mass(*s)[i] -= 
-				0.5*(force[index][i]/total_mass(*s)*dt*dt) ;
-		}
-		if (debugging("rigid_body"))
-		{
-		    printf("Body index: %d\n",index);
-		    printf("force = %f %f %f\n",force[index][0],
-					force[index][1],force[index][2]);
-		    printf("center_of_mass = %f  %f  %f\n",
-					center_of_mass(*s)[0],
-					center_of_mass(*s)[1],
-					center_of_mass(*s)[2]);
-		    printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		}
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass_velo(*s)[i] +=
+                                dt*force[index][i]/total_mass(*s);
+                        center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
+                center_of_mass(*s)[i] -= 
+                    0.5*(force[index][i]/total_mass(*s)*dt*dt) ;
+            }
+            
+            if (debugging("rigid_body"))
+            {
+                printf("Body index: %d\n",index);
+                printf("force = %f %f %f\n",force[index][0],
+                        force[index][1],force[index][2]);
+                printf("center_of_mass = %f  %f  %f\n",
+                        center_of_mass(*s)[0],
+                        center_of_mass(*s)[1],
+                        center_of_mass(*s)[2]);
+                printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+            }
 	    }
 	}
+
 	free_these(2,force,torque);
 	if (debugging("rigid_body"))
 	    (void) printf("Leaving FrontPreAdvance()\n");
@@ -3277,6 +3331,7 @@ EXPORT	boolean FrontReflectPointViaNeumannBdry(
 	    if (int_comp == negative_component(hsbdry))
 		nor[i] = -nor[i];
 	    dcrds[i] = coordsbdry[i] - coords[i];
+        //TODO: why not using vn = Dotd(dcrds,nor,dim), and vn*nor[i]??
 	    coordsref[i] = coords[i] + 2.0*(dcrds[i] - dcrds[i]*fabs(nor[i]));
 	}
 	return YES;
@@ -3920,22 +3975,26 @@ EXPORT void FT_FreeThese(
 	return;
 }		/*end FT_FreeThese*/
 
+//NOTE: coords should be the position of a ghost fluid point
+//      that we wish to reflect back across the intfc into the
+//      comp labled subdomain (the real fluid side of the intfc)
 EXPORT	boolean FT_ReflectPointThroughBdry(
 	Front		*front,
 	HYPER_SURF	*hs,
 	double		*coords,
-	COMPONENT	int_comp,
+	COMPONENT	comp,
 	double		*coordsbdry,
 	double		*coordsref,
 	double		*nor)
 {
-	HYPER_SURF	   *hsbdry;
 	HYPER_SURF_ELEMENT *hsebdry;
-	double		   ns[MAXD], ne[MAXD];
-	double		   t[MAXD];
-	double		   v[MAXD],vn;
-	int		   i, dim = front->rect_grid->dim;
+    HYPER_SURF *hsbdry;
+    double t[MAXD];
+    
+    //double ns[MAXD], ne[MAXD];
+	int dim = front->rect_grid->dim;
 
+    //TODO: pass specified wave_type as function arg?
 	if (wave_type(hs) != NEUMANN_BOUNDARY &&
 	    wave_type(hs) != MOVABLE_BODY_BOUNDARY &&
 	    wave_type(hs) != GROWING_BODY_BOUNDARY &&
@@ -3947,53 +4006,93 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	if (dim != 1)
 	{
 	    if (!hs || !hs->interface)
-		return NO;
-	    if (!nearest_interface_point(coords,int_comp,hs->interface,
-			                INCLUDE_BOUNDARIES,hs,coordsbdry,t,
-					&hsebdry,&hsbdry))
-		return NO;
+            return NO;
+
+        //TODO: do we want INCLUDE_BOUNDARIES ???
+        if (!nearest_interface_point(coords,comp,hs->interface,
+                    INCLUDE_BOUNDARIES,hs,coordsbdry,t,&hsebdry,&hsbdry))
+        {
+            printf("WARNING: could not find nearest interface point\n");
+            LOC(); //clean_up(EXIT_FAILURE);
+            return NO;
+        }
 	}
 
 	switch (dim)
 	{
-	case 1:
-	    coordsbdry[0] = Coords(Point_of_hs(hs))[0];
-	    nor[0] = (coords[0] <
-			0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
-			1.0 : -1.0;
-	    break;
-	case 2:
-	    normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
-	    normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
-	    for (i = 0; i < dim; ++i)
-	    	nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
-	    break;
-	case 3:
+        case 1:
+            {
+                coordsbdry[0] = Coords(Point_of_hs(hs))[0];
+                nor[0] = (coords[0] <
+                    0.5*(front->rect_grid->L[0]+front->rect_grid->U[0])) ?
+                    1.0 : -1.0;
+            }
+            break;
+        
+        case 2:
+            {
+                double ns[MAXD], ne[MAXD];
+                normal(Bond_of_hse(hsebdry)->start,hsebdry,hsbdry,ns,front);
+                normal(Bond_of_hse(hsebdry)->end,hsebdry,hsbdry,ne,front);
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = (1.0 - t[0])*ns[i] + t[0]*ne[i];
+            }
+            break;
+        
+        case 3:
+            {
+                //NOTE: normal vector obtained from Tri_normal() is not normalized.
+                const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
+                for (int i = 0; i < dim; ++i)
+                    nor[i] = tnor[i];
+            }
+            break;
+	}
+    
+    //TODO: only needed for 3d?
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor; //TODO: should check for division by zero
+	
+    if (comp == negative_component(hsbdry))
 	{
-	    const double *tnor = Tri_normal(Tri_of_hse(hsebdry));
-	    for (i = 0; i < dim; ++i)
-	    	nor[i] = tnor[i];
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
 	}
-	    break;
-	}
-	if (int_comp == negative_component(hsbdry))
-	{
-	    for (i = 0; i < dim; ++i)
-		nor[i] *= -1.0;
-	}
-	vn = 0.0;
-	for (i = 0; i < dim; ++i)
+
+    // The natural reflection location is the same distance from the
+    // interface as the ghost point. The arrays, coordsbdy and nor, can
+    // be used to modify the reflection location after returning to the
+    // calling function.
+    double dist_ghost = distance_between_positions(coords,coordsbdry,dim);
+    double dist_reflect = dist_ghost;
+
+    double vn = 0.0;
+	for (int i = 0; i < dim; ++i)
+        coordsref[i] = coordsbdry[i] + dist_reflect*nor[i];
+        
+
+    //TODO: It's unclear if it's possible for the normal vector, nor,
+    //      to NOT be parallel to the vector v = coords - coordsbdry,
+    //      or what this would potentially indicate.
+
+
+    //TODO: How valid/important is the below modification??
+    //      What was the intent?
+    /*
+	double v[MAXD];
+    double vn = 0.0;
+	
+    for (int i = 0; i < dim; ++i)
 	{
 	    v[i] = coords[i] - coordsbdry[i];
 	    vn += nor[i]*v[i];
 	}
-	for (i = 0; i < dim; ++i)
-	{
-	    v[i] = 2.0*vn*nor[i] - v[i];
-	}
 
-	for (i = 0; i < dim; ++i)
-	    coordsref[i] = v[i] + coordsbdry[i];
+	for (int i = 0; i < dim; ++i)
+	    coordsref[i] = coords[i] - 2.0*vn*nor[i];
+    */
+
 	return YES;
 }		/*end FT_ReflectPointThroughBdry*/
 
@@ -4068,28 +4167,41 @@ LOCAL void sort_blk_cell(
 	double var_tmp;
 	double dist_tmp;
 	double coords_tmp[MAXD];
+	int icoords_tmp[MAXD];
 
 	for (i = 0; i < nv-1; ++i)
 	for (j = i; j < nv; ++j)
 	{
 	    if (blk_cell->dist[i] > blk_cell->dist[j])
 	    {
-		var_tmp  = blk_cell->var[i];
-		dist_tmp = blk_cell->dist[i];
-		for (k = 0; k < dim; ++k)
-		    coords_tmp[k] = blk_cell->coords[i][k];
-		blk_cell->var[i]  = blk_cell->var[j];
-		blk_cell->dist[i] = blk_cell->dist[j];
-		for (k = 0; k < dim; ++k)
-		    blk_cell->coords[i][k] = blk_cell->coords[j][k];
-		blk_cell->var[j]  = var_tmp;
-		blk_cell->dist[j] = dist_tmp;
-		for (k = 0; k < dim; ++k)
-		    blk_cell->coords[j][k] = coords_tmp[k];
+            var_tmp  = blk_cell->var[i];
+            dist_tmp = blk_cell->dist[i];
+            for (k = 0; k < dim; ++k)
+            {
+                coords_tmp[k] = blk_cell->coords[i][k];
+                icoords_tmp[k] = blk_cell->icoords[i][k];
+            }
+        
+            blk_cell->var[i]  = blk_cell->var[j];
+            blk_cell->dist[i] = blk_cell->dist[j];
+            for (k = 0; k < dim; ++k)
+            {
+                blk_cell->coords[i][k] = blk_cell->coords[j][k];
+                blk_cell->icoords[i][k] = blk_cell->icoords[j][k];
+            }
+
+            blk_cell->var[j]  = var_tmp;
+            blk_cell->dist[j] = dist_tmp;
+            for (k = 0; k < dim; ++k)
+            {
+                blk_cell->coords[j][k] = coords_tmp[k];
+                blk_cell->icoords[j][k] = icoords_tmp[k];
+            }
 	    }
 	}
 }
 
+//TODO: can break out of these loops early as soon as status set to YES
 EXPORT	boolean FT_FrontContainWaveType(
 	Front *front,
 	int w_type)

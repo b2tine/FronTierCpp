@@ -51,95 +51,147 @@ void printAfExtraData(
 	sprintf(filename,"%s/state.ts%s",out_name,
                         right_flush(front->step,7));
 #if defined(HAVE_MPI)
-        if (pp_numnodes() > 1)
-            sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
+    if (pp_numnodes() > 1)
+        sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
 #endif /* defined(HAVE_MPI) */
-        sprintf(filename,"%s-afdata",filename);
-        outfile = fopen(filename,"w");
+    sprintf(filename,"%s-afdata",filename);
+    outfile = fopen(filename,"w");
 
 	fprintf(outfile,"\nAirfoil extra front state data:\n");
 
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_WriteFrontState(outfile,front);
+    
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],
-					sr->impulse[i]);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        /*
+        if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_STRING) continue;
+        */
+
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
 	    fprintf(outfile,"\n");
-        }
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
+        fprintf(outfile,"\n");
+        
+        /*
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
+        */
+    }
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
-	    b = (*c)->first;	p = b->start;
+	    b = (*c)->first;
+        p = b->start;
+        
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+        
 	    sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
+	    fprintf(outfile,"\n");
+
+        /*
+        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->impulse[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->impulse[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->vel[i]);
+	    fprintf(outfile,"\n");
+        */
+	    
+        for (b = (*c)->first; b != NULL; b = b->next)
+	    {
+		    p = b->end;
+	    	
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
+            for (i = 0; i < dim; ++i)
+                fprintf(outfile,"%24.18g ",p->force[i]);
+	    	fprintf(outfile,"\n");
+            
+            sl = (STATE*)left_state(p);
+	    	sr = (STATE*)right_state(p);
+            fwrite(sl,1,front->sizest,outfile);
+            fwrite(sr,1,front->sizest,outfile);
+            fprintf(outfile,"\n");
+            
+            /*
             fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    fprintf(outfile,"\n");
-	    for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		p = b->end;
-	    	sl = (STATE*)left_state(p);
-	    	sr = (STATE*)right_state(p);
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",p->vel[i]);
 	    	fprintf(outfile,"\n");
-            	fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    	fprintf(outfile,"\n");
+            */
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+	
+    for (n = intfc->nodes; n && *n; ++n)
 	{
 	    p = (*n)->posn;
-	    sl = (STATE*)left_state(p);
+        
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+	    
+        sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
-            fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->impulse[i]);
+        
+        /*
+        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->impulse[i]);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->impulse[i]);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->vel[i]);
 	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->vel[i]);
+	    fprintf(outfile,"\n");
+        */
 	}
 
 	fprintf(outfile,"\nSurface extra data:\n");
@@ -149,8 +201,8 @@ void printAfExtraData(
         REGISTERED_PTS *registered_pts;
 
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
-            wave_type(*s) != ELASTIC_STRING)
-            continue;
+            wave_type(*s) != ELASTIC_STRING) continue;
+
         if ((*s)->extra == NULL)
             num_pts = 0;
         else
@@ -197,7 +249,6 @@ void printAfExtraData(
     while (next_point(intfc,&p,&hse,&hs))
         fprintf(outfile,"%ld\n",Gindex(p));
     
-    //TODO: why are these extra traversals needed for global point index?
     for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -218,7 +269,6 @@ void printAfExtraData(
 	fprintf(outfile,"\nGlobal index of triangles\n");
     intfc_surface_loop(intfc,s)
     {
-        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
         surf_tri_loop(*s,t)
         {
             fprintf(outfile,"%ld\n",Gindex(t));
@@ -260,7 +310,6 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	}
 
-    FT_WriteFrontState(outfile,front);
     fclose(outfile);
 }	/* end printAfExtraData */
 
@@ -293,94 +342,149 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_ReadFrontState(infile,front);
+    
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-	    fscanf(infile,"\n");
-        }
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        /*
+        if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_STRING) continue;
+        */
+
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+        fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+        fscanf(infile,"\n");
+
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+
+        /*
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
+        */
+    }
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
-	    b = (*c)->first;	p = b->start;
-	    sl = (STATE*)left_state(p);
+	    b = (*c)->first;
+        p = b->start;
+	    
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+        fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+        fscanf(infile,"\n");
+        
+        sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+       
+        /*
+        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->vel[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->vel[i]);
+	    fscanf(infile,"\n");
+        */
+	    
+        for (b = (*c)->first; b != NULL; b = b->next)
+	    {
+		    p = b->end;
+
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf ",&p->vel[i]);
-            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    fscanf(infile,"\n");
+	    	fscanf(infile,"\n");
             for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->vel[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->vel[i]);
-	    fscanf(infile,"\n");
-	    for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		p = b->end;
+                fscanf(infile,"%lf ",&p->force[i]);
+	    	fscanf(infile,"\n");
+
 	    	sl = (STATE*)left_state(p);
 	    	sr = (STATE*)right_state(p);
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&p->vel[i]);
-            	fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+            fread(sl,1,front->sizest,infile);
+            fread(sr,1,front->sizest,infile);
+            fscanf(infile,"\n");
+            
+            /*
+            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
 	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-               	    fscanf(infile,"%lf ",&sl->impulse[i]);
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sl->impulse[i]);
 	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&sr->impulse[i]);
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sr->impulse[i]);
 	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-               	    fscanf(infile,"%lf ",&sl->vel[i]);
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sl->vel[i]);
 	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&sr->vel[i]);
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sr->vel[i]);
 	    	fscanf(infile,"\n");
+            */
 	    }
 	}
+
 	for (n = intfc->nodes; n && *n; ++n)
 	{
 	    p = (*n)->posn;
-	    sl = (STATE*)left_state(p);
+
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+	    fscanf(infile,"\n");
+	    
+        sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+
+        /*
+        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
 	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->impulse[i]);
 	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->impulse[i]);
 	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->vel[i]);
 	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->vel[i]);
 	    fscanf(infile,"\n");
+        */
 	}
+
 	next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
         int num_pts;
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
-            wave_type(*s) != ELASTIC_STRING)
-            continue;
+            wave_type(*s) != ELASTIC_STRING) continue;
     
         fgetstring(infile,"number of registered points = ");
         fscanf(infile,"%d",&num_pts);
@@ -448,7 +552,6 @@ void readAfExtraData(
             max_point_gindex = Gindex(p);
 	}
 
-    //TODO: why are these extra traversals needed for global point index?
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -484,7 +587,6 @@ void readAfExtraData(
     
     intfc_surface_loop(intfc,s)
     {
-        //for (t = first_tri(*s); !at_end_of_tri_list(t,*s); t = t->next)
         surf_tri_loop(*s,t)
         {
             fscanf(infile,"%ld",&Gindex(t));
@@ -538,7 +640,6 @@ void readAfExtraData(
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
 
-    FT_ReadFrontState(infile,front);
     fclose(infile);
 }	/* end readAfExtraData */
 

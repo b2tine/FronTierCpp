@@ -1,4 +1,4 @@
-#include <FronTier.h>
+#include <armadillo>
 #include "collid.h"
 
 #include <vector>
@@ -18,6 +18,7 @@ inline POINT*& tail(POINT*);
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
+bool CollisionSolver3d::gs_update = false;
 
 double CollisionSolver3d::s_eps = EPS;
 double CollisionSolver3d::s_thickness = 0.001;
@@ -40,6 +41,7 @@ int CollisionSolver3d::pt_to_tri = 0;
 
 int CollisionSolver3d::tstep;
 std::string CollisionSolver3d::outdir;
+Front* CollisionSolver3d::ft;
 
 std::vector<double> CollisionSolver3d::CollisionTimes;
 
@@ -85,7 +87,10 @@ void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
 void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
+double CollisionSolver3d::getStrainLimit() {return strain_limit;}
+
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
+double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
 
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 
@@ -112,7 +117,6 @@ double CollisionSolver3d::getAverageCollisionTime()
     return avg_dt;
 }
 
-
 CollisionSolver3d::~CollisionSolver3d()
 {
     abt_proximity.reset();
@@ -134,6 +138,16 @@ const std::vector<CD_HSE*>& CollisionSolver3d::getHseList() const
     return hseList;
 }
 
+void unsortHseList(std::vector<CD_HSE*>& list)
+{
+    for (auto it = list.begin(); it < list.end(); ++it)
+	{
+	    int np = (*it)->num_pts();
+	    for (int i = 0; i < np; ++i)
+            sorted((*it)->Point_of_hse(i)) = NO;
+	}
+}
+
 void CollisionSolver3d::initializeSystem(Front* front)
 {
     ft = front;
@@ -142,6 +156,8 @@ void CollisionSolver3d::initializeSystem(Front* front)
     setOutputDirectory(OutName(front));
     assembleFromInterface(front->interf);
     recordOriginalPosition();
+    setHseTypeLists();
+    initializeImpactZones();
 }
 
 //NOTE: Must be called before calling the spring solver
@@ -155,10 +171,11 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	BOND *b;
 
 	int n_tri = 0;
+	int n_fabric_tri = 0;
+	int n_static_rigid_tri = 0;
+	int n_movable_rigid_tri = 0;
     int n_bond = 0;
 	
-    //TODO: Collect each CD_HSE_TYPE in seperate hseLists?
-    
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
@@ -167,14 +184,27 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
         surf_tri_loop(*s,tri)
 	    {
             CD_HSE_TYPE tag;
-            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY || 
-                wave_type(*s) == NEUMANN_BOUNDARY)
+
+            if (wave_type(*s) == ELASTIC_BOUNDARY)
             {
-                tag = CD_HSE_TYPE::RIGID_TRI;
+                tag = CD_HSE_TYPE::FABRIC_TRI;
+                n_fabric_tri++;
+            }
+            else if (wave_type(*s) == NEUMANN_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
+                n_static_rigid_tri++;
+            }
+            else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
+                n_movable_rigid_tri++;
             }
             else 
             {
-                tag = CD_HSE_TYPE::FABRIC_TRI;
+                printf("assembleFromInterface() ERROR: "
+                        "unknown surface type\n");
+                LOC(); clean_up(EXIT_FAILURE);
             }
             
             hseList.push_back(new CD_TRI(tri,tag));
@@ -184,8 +214,7 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 
 	intfc_curve_loop(intfc,c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY)
-            continue; 
+	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
 
         unsort_curve_point(*c);
 
@@ -198,14 +227,24 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	}
 
     setSizeCollisionTimes(hseList.size());
-
-	makeSet(hseList);
-	createImpZoneForRG(intfc);
-	setDomainBoundary(intfc->table->rect_grid.L, intfc->table->rect_grid.U);
-
-	if (debugging("intfc_assembly")){
+    setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
+	
+	if (debugging("intfc_assembly"))
+    {
 	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
 	    printf("%lu number of elements is assembled\n",hseList.size());
+	    printf("%d num fabric tris\n",n_fabric_tri);
+	    printf("%d num static rigid tris\n",n_static_rigid_tri);
+	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
+	}
+}
+
+void CollisionSolver3d::setDomainBoundary(double* L, double* U)
+{
+	for (int i = 0; i < m_dim; ++i)
+    {
+	    Boundary[i][0] = L[i];
+	    Boundary[i][1] = U[i];
 	}
 }
 
@@ -223,8 +262,9 @@ void CollisionSolver3d::recordOriginalPosition()
             sl->has_strainlim = false;
             sl->collsn_dt = -1.0;
 
-            if (isMovableRigidBody(pt))
-                continue;
+            //NOTE: sl->x_old for movable rigid body points
+            //      is recorded in rgbody_point_propagate()
+            if (isMovableRigidBody(pt)) continue;
 
             for (int j = 0; j < 3; ++j)
             {
@@ -233,19 +273,590 @@ void CollisionSolver3d::recordOriginalPosition()
                 if (std::isnan(sl->x_old[j]))
                 {
                     std::cout << "nan_x_old" << std::endl;
-                    clean_up(ERROR);
+                    LOC(); clean_up(ERROR);
                 }
             }
 	    }
 	}
 }
 
-void CollisionSolver3d::setDomainBoundary(double* L, double* U)
+std::vector<CD_HSE*> CollisionSolver3d::getHseTypeList(CD_HSE_TYPE type)
 {
-	for (int i = 0; i < m_dim; ++i)
+    std::vector<CD_HSE*> hseTypeList(hseList.size());
+    
+    auto is_hsetype = [=](CD_HSE* hse)
     {
-	    Boundary[i][0] = L[i];
-	    Boundary[i][1] = U[i];
+        return hse->type == type;
+    };
+    
+    auto it_last = std::copy_if(hseList.begin(),hseList.end(),
+            hseTypeList.begin(),is_hsetype);
+
+    hseTypeList.resize(std::distance(hseTypeList.begin(),it_last));
+    
+    return hseTypeList;
+}
+
+void CollisionSolver3d::setHseTypeLists()
+{
+    fabricTriList = getHseTypeList(CD_HSE_TYPE::FABRIC_TRI);
+    staticRigidTriList = getHseTypeList(CD_HSE_TYPE::STATIC_RIGID_TRI);
+    movableRigidTriList = getHseTypeList(CD_HSE_TYPE::MOVABLE_RIGID_TRI);
+    stringBondList = getHseTypeList(CD_HSE_TYPE::STRING_BOND);
+    elasticHseList.assign(stringBondList.begin(),stringBondList.end());
+    elasticHseList.insert(elasticHseList.end(),fabricTriList.begin(),fabricTriList.end());
+}
+
+void CollisionSolver3d::initializeImpactZones()
+{
+    makeSet(hseList);
+    initRigidBodyImpactZones(ft->interf);
+}
+
+void CollisionSolver3d::resolveCollision()
+{
+	//catch floating point exception: nan/inf
+        //feenableexcept(FE_INVALID | FE_OVERFLOW);
+
+    start_clock("computeAverageVelocity");
+	computeAverageVelocity();
+    stop_clock("computeAverageVelocity");
+
+    // Apply impulses to enforce strain limiting
+    // distance/positional constraints on adjacent mesh vertices. 
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainPosn();
+    }
+
+    // Static proximity handling
+    start_clock("detectProximity");
+	detectProximity();
+    stop_clock("detectProximity");
+
+	// Check linear trajectories for collisions
+    start_clock("detectCollision");
+	detectCollision();
+    stop_clock("detectCollision");
+
+
+    /*
+    //TODO: function needs fixing -- is this even worth correcting/using?
+    detectDomainBoundaryCollision();
+    */
+
+
+	//update position using final midstep velocity
+	updateFinalPosition();
+
+    // Zero out the relative velocity between adjacent mesh vertices
+    // with excess edge strain directed along their connecting edge.
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainVel();
+        //if (!skip_strain_velo_constraint)
+          //  limitStrainVel();
+        skip_strain_velo_constraint = false;
+    }
+
+	updateFinalVelocity();
+
+    /*
+    //Consolidates updateFinalPosition() and updateFinalVelocity()
+    //in order to avoid a second traversal of the points. However,
+    //when strain limiting is eventually implemented, the separate
+    //traversals may be necessary to adjust the velocities based on
+    //the final positions in order to limit the strain/strain rate.
+    
+    start_clock("updateFinalStates");
+    updateFinalStates(); 
+    stop_clock("updateFinalStates");
+    */
+
+    //TODO: 
+        //updateFinalForRG();
+}
+
+void CollisionSolver3d::computeAverageVelocity()
+{
+    POINT* p;
+    STATE* sl;
+    
+    double max_speed = 0.0;
+    double* max_vel = nullptr;
+    POINT* max_pt = nullptr;
+
+    double dt = getTimeStepSize();
+
+    unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+    for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            p = (*it)->Point_of_hse(i);
+            if (sorted(p) || isStaticRigidBody(p)) continue;
+            
+            sl = (STATE*)left_state(p); 
+            for (int j = 0; j < 3; ++j)
+    	    {
+                if (dt > ROUND_EPS)
+                {
+                    sl->avgVel[j] = (Coords(p)[j] - sl->x_old[j])/dt;
+                    sl->avgVel_old[j] = sl->avgVel[j];
+                }
+                else
+                {
+                    sl->avgVel[j] = 0.0;
+                    sl->avgVel_old[j] = 0.0;
+                }
+                
+                if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
+                {
+                    std::cout << "nan avgVel" << std::endl;
+                    printf("dt = %e, x_old = %f, x_new = %f\n",
+                            dt,sl->x_old[j],Coords(p)[j]);
+                    LOC(); clean_up(ERROR);
+                }
+		
+            }
+
+            if (debugging("average_velocity"))
+            {
+                if (Mag3d(sl->avgVel) >= max_speed)
+                {
+                    max_speed = Mag3d(sl->avgVel);
+                    max_vel = sl->avgVel;
+                    max_pt = p;
+                }
+            }
+
+            sorted(p);
+        
+        }
+        
+    }
+
+    if (debugging("average_velocity"))
+    {
+        if (max_vel)
+        {
+            std::cout << "Maximum average velocity is "
+                << max_vel[0] << " "
+                << max_vel[1] << " "
+                << max_vel[2] << std::endl; 
+        }
+        
+        if (max_pt)
+        {
+            STATE* sl = (STATE*)left_state(max_pt);
+            printf("x_old = [%f %f %f]\n",
+                    sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+	        printf("x_new = [%f %f %f]\n",
+                    Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
+	        printf("dt = %f\n",dt);
+            printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
+        }
+    }
+
+    resetPositionCoordinates();
+}
+
+void CollisionSolver3d::resetPositionCoordinates()
+{
+    POINT* p;
+    STATE* sl;
+
+    unsortHseList(hseList);
+
+    for (auto it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            p = (*it)->Point_of_hse(i);
+            if (sorted(p) || isStaticRigidBody(p)) continue;
+            
+            STATE* sl = (STATE*)left_state(p);
+            for (int j = 0; j < m_dim; ++j)
+                Coords(p)[j] =  sl->x_old[j];
+
+            sorted(p);
+        }
+    }
+}
+
+void CollisionSolver3d::detectProximity()
+{
+    start_clock("dynamic_AABB_proximity");
+    aabbProximity();
+    abt_proximity->query();
+    stop_clock("dynamic_AABB_proximity");
+
+	if (debugging("proximity"))
+    {
+        std::cout << abt_proximity->getCount()
+            << " proximity pairs" << std::endl;
+    }
+
+    if (abt_proximity->isProximity)
+        updateAverageVelocity();
+
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        //gauss-seidel updating
+        limitStrainRatePosnGS();
+            //limitStrainRatePosn();
+    }
+    
+    /*
+    //TODO: Not ready for rigid-rigid collisions right now.
+    if (getTimeStepSize() > 0.0)
+	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
+}
+
+// function to perform AABB tree building, updating structure
+// and query for proximity detection process
+void CollisionSolver3d::aabbProximity()
+{
+    if (!abt_proximity)
+    {
+        abt_proximity =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::STATIC));
+
+        for (auto it = hseList.begin(); it != hseList.end(); ++it)
+        {
+            double tol = CollisionSolver3d::getFabricThickness();
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                tol = CollisionSolver3d::getStringThickness();
+
+            AABB* ab = new AABB(tol,*it);
+            abt_proximity->addAABB(ab);
+        }
+        abt_proximity->updatePointMap(hseList);
+        volume = abt_proximity->getVolume();
+    }
+    else
+    {
+        abt_proximity->isProximity = false;
+        abt_proximity->updateAABBTree(hseList);
+        if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
+        {
+            abt_proximity->updateTreeStructure();
+            volume = abt_proximity->getVolume();
+            build_count_pre++;
+        }
+    }
+}
+
+//This is checking the geometric primitive for intersection
+bool getProximity(const CD_HSE* a, const CD_HSE* b)
+{
+	const CD_BOND *cd_b1, *cd_b2;
+	const CD_TRI  *cd_t1, *cd_t2;
+
+	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
+	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    TRI* t1 = cd_t1->m_tri;
+	    TRI* t2 = cd_t2->m_tri;
+	    if ((t1->surf == t2->surf) && isRigidBody(a))
+            return false;
+	    return TriToTri(t1,t2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
+	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    BOND* b2 = cd_b2->m_bond;
+	    return BondToBond(b1,b2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
+		     (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return TriToBond(t1,b1);
+	}
+	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
+             (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return TriToBond(t1,b1);
+	}
+	else
+	{
+	    std::cout<<"This case has not been implemented"<<std::endl;
+	    LOC(); clean_up(ERROR);
+	}
+}
+
+//For Jacobi velocity update
+void CollisionSolver3d::updateAverageVelocity()
+{
+	POINT *p;
+	STATE *sl;
+	double maxSpeed = 0;
+	double* maxVel = nullptr;
+
+    unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        int np = (*it)->num_pts(); 
+	    for (int j = 0; j < np; ++j)
+	    {
+            p = (*it)->Point_of_hse(j);
+            if (sorted(p) || isStaticRigidBody(p)) continue;
+
+            sl = (STATE*)left_state(p);
+            if (sl->collsn_num > 0)
+            {
+                sl->has_collsn = true;
+
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] +=
+                        (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                
+                    if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
+                    {
+                        printf("inf/nan avgVel[%d]: impulse = %f,"
+                               " friction = %f, collsn_num = %d\n",k,
+                               sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
+                        LOC(); clean_up(ERROR);
+                    }
+                
+                    sl->collsnImpulse[k] = 0.0;
+                    sl->friction[k] = 0.0;
+                }
+
+                sl->collsn_num = 0;
+            }
+
+            /*
+            //NOTE: This is for rigid-rigid body collision.
+            if (sl->collsn_num_RG > 0)
+            {
+                sl->has_collsn = true;
+                for (int k = 0; k < 3; ++k)
+                {
+                    sl->avgVel[k] += sl->collsnImpulse_RG[k]/sl->collsn_num_RG;
+                }
+                sl->collsn_num_RG = 0;
+            }
+            */
+
+            if (debugging("average_velocity"))
+            {
+                double speed = Mag3d(sl->avgVel);
+                if (speed > maxSpeed)
+                {
+                    maxVel = sl->avgVel;
+                    maxSpeed = speed;
+                }
+            }
+		
+            sorted(p) = YES;
+	    }
+	}
+	
+
+	if (debugging("average_velocity"))
+    {
+	    if (maxVel != nullptr)
+        {
+	        printf("    max velocity = [%f %f %f]\n",
+                    maxVel[0],maxVel[1],maxVel[2]);
+        }
+    }
+}
+
+void CollisionSolver3d::detectCollision()
+{
+	std::cout << "Starting collision handling: " << std::endl;
+	
+	const int MAX_ITER = 12;
+	
+    bool is_collision = true; 
+	setHasCollision(false);//TODO: can remove?
+	
+    int niter = 0;
+	int cd_count = 0;
+   
+    while(is_collision)
+    {
+        niter++;
+	    is_collision = false;
+	    
+        start_clock("dynamic_AABB_collision");
+        aabbCollision();
+        abt_collision->turn_on_GS_update();
+        abt_collision->query();
+        stop_clock("dynamic_AABB_collision");
+
+        is_collision = abt_collision->getCollsnState();
+
+	    if (debugging("collision"))
+        {
+            std::cout << "    #" << niter << ": "
+                << abt_collision->getCount() 
+                << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
+        }
+
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainRatePosnGS();
+                //limitStrainRatePosn();
+        }
+
+        if (niter >= MAX_ITER) break;
+	}
+
+    start_clock("computeImpactZone");
+	if (is_collision) 
+    {
+        //collisionPairsList.clear();
+	    computeImpactZone();
+    }
+    stop_clock("computeImpactZone");
+
+	std::cout << "End collision handling. " << std::endl;
+}
+
+// AABB tree for kinetic collision detection process
+void CollisionSolver3d::aabbCollision()
+{
+    clearCollisionTimes();
+
+    if (!abt_collision)
+    {
+        abt_collision =
+            std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
+
+        for (auto it = hseList.begin(); it != hseList.end(); it++)
+        {
+            double tol = CollisionSolver3d::getFabricRoundingTolerance();
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+                tol = CollisionSolver3d::getStringRoundingTolerance();
+
+            AABB* ab = new AABB(tol,*it,s_dt);
+            abt_collision->addAABB(ab);
+        }
+        abt_collision->updatePointMap(hseList);
+        volume = abt_collision->getVolume();
+    }
+    else
+    {
+        abt_collision->isCollsn = false;
+        abt_collision->setTimeStep(s_dt);
+        abt_collision->updateAABBTree(hseList);
+
+        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
+        {
+            build_count_col++;
+            abt_collision->updateTreeStructure();
+            volume = abt_collision->getVolume();
+        }
+    }
+}
+
+//TODO: If impact zone handling is enabled, should all
+//      points of the hypersurface elements be added to
+//      an impact zone all at once, rather than only adding
+//      4 interfering points at a time in the point to tri
+//      and edge to edge tests?
+bool getCollisionGS(const CD_HSE* a, const CD_HSE* b)
+{
+	const CD_BOND *cd_b1, *cd_b2;
+	const CD_TRI  *cd_t1, *cd_t2;
+
+	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
+	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    TRI* t1 = cd_t1->m_tri;
+	    TRI* t2 = cd_t2->m_tri;
+	    if ((t1->surf == t2->surf) && isRigidBody(a))
+            return false;
+	    return MovingTriToTriGS(t1,t2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
+	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    BOND* b2 = cd_b2->m_bond;
+	    return MovingBondToBondGS(b1,b2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
+		     (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return MovingTriToBondGS(t1,b1);
+	}
+	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
+             (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return MovingTriToBondGS(t1,b1);
+	}
+	else
+	{
+	    std::cout<<"This case has not been implemented"<<std::endl;
+	    LOC(); clean_up(ERROR);
+	}
+}
+
+bool getCollisionJac(const CD_HSE* a, const CD_HSE* b)
+{
+	const CD_BOND *cd_b1, *cd_b2;
+	const CD_TRI  *cd_t1, *cd_t2;
+
+	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
+	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    TRI* t1 = cd_t1->m_tri;
+	    TRI* t2 = cd_t2->m_tri;
+	    if ((t1->surf == t2->surf) && isRigidBody(a))
+            return false;
+	    return MovingTriToTriJac(t1,t2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
+	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    BOND* b2 = cd_b2->m_bond;
+	    return MovingBondToBondJac(b1,b2);
+	}
+	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
+		     (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return MovingTriToBondJac(t1,b1);
+	}
+	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
+             (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
+	{
+	    BOND* b1 = cd_b1->m_bond;
+	    TRI* t1  = cd_t1->m_tri;
+	    return MovingTriToBondJac(t1,b1);
+	}
+	else
+	{
+	    std::cout<<"This case has not been implemented"<<std::endl;
+	    LOC(); clean_up(ERROR);
 	}
 }
 
@@ -298,750 +909,6 @@ void CollisionSolver3d::detectDomainBoundaryCollision() {
 	}
 }
 
-void CollisionSolver3d::computeAverageVelocity()
-{
-    double max_speed = 0.0;
-    double* max_vel = nullptr;
-    POINT* max_pt = nullptr;
-
-    double dt = getTimeStepSize();
-
-    std::vector<CD_HSE*>::iterator it;
-    for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            POINT* pt = (*it)->Point_of_hse(i);
-            STATE* sl = (STATE*)left_state(pt); 
-
-            for (int j = 0; j < 3; ++j)
-    	    {
-                if (dt > ROUND_EPS)
-                {
-                    sl->avgVel[j] = (Coords(pt)[j] - sl->x_old[j])/dt;
-                    sl->avgVel_old[j] = sl->avgVel[j];
-                }
-                else
-                {
-                    sl->avgVel[j] = 0.0;
-                    sl->avgVel_old[j] = 0.0;
-                }
-                
-                if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
-                {
-                    std::cout << "nan avgVel" << std::endl;
-                    printf("dt = %e, x_old = %f, x_new = %f\n",
-                    dt,sl->x_old[j],Coords(pt)[j]);
-                    clean_up(ERROR);
-                }
-		
-            }
-
-            if (debugging("average_velocity"))
-            {
-                if (Mag3d(sl->avgVel) >= max_speed)
-                {
-                    max_speed = Mag3d(sl->avgVel);
-                    max_vel = sl->avgVel;
-                    max_pt = pt;
-                }
-            }
-        
-        }
-        
-    }
-
-    if (debugging("average_velocity"))
-    {
-        if (max_vel)
-        {
-            std::cout << "Maximum average velocity is "
-                << max_vel[0] << " "
-                << max_vel[1] << " "
-                << max_vel[2] << std::endl; 
-        }
-        
-        if (max_pt)
-        {
-            STATE* sl = (STATE*)left_state(max_pt);
-            printf("x_old = [%f %f %f]\n",
-                    sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-	        printf("x_new = [%f %f %f]\n",
-                    Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
-	        printf("dt = %f\n",dt);
-            printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
-        }
-    }
-
-    resetPositionCoordinates();
-}
-
-void CollisionSolver3d::resetPositionCoordinates()
-{
-    std::vector<CD_HSE*>::iterator it;
-    for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            POINT* pt = (*it)->Point_of_hse(i);
-            STATE* sl = (STATE*)left_state(pt);
-
-            for (int j = 0; j < m_dim; ++j)
-                Coords(pt)[j] =  sl->x_old[j];
-        }
-    }
-}
-
-void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
-void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
-bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
-
-void CollisionSolver3d::computeImpactZone()
-{
-    std::cout<<"Starting compute Impact Zone: "<<std::endl;
-
-	int niter = 0;
-    const int MAXITER = 100;
-
-	turnOnImpZone();
-    
-	bool is_collision = true;
-    while(is_collision)
-    {
-        is_collision = false;
-
-        start_clock("dynamic_AABB_collision");
-        aabbCollision();
-        abt_collision->query();
-        stop_clock("dynamic_AABB_collision");
-
-        is_collision = abt_collision->getCollsnState();
-
-        if (debugging("collision"))
-        {
-            infoImpactZones();
-
-            std::cout << "    #"<<niter++ << ": "
-                      << abt_collision->getCount() 
-                      << " collision pairs";
-            
-            if (is_collision)
-            {
-                std::cout << ",  avg_collsn_dt = "
-                    << getAverageCollisionTime();
-            }
-            std::cout << std::endl;
-
-            std::cout << "     " << numImpactZones
-                      << " impact zones" << std::endl;
-            std::cout << "     " << numImpactZonePoints
-                      << " total impact zone points" << std::endl;
-        }
-        
-        if (niter == MAXITER)
-        {
-            printf("computeImpactZone(): ERROR\n\t\
-                    maxiters %d without convergence!\n",
-                    MAXITER);
-            
-            debugImpactZones();
-            clean_up(EXIT_FAILURE);
-        }
-    }
-	
-    turnOffImpZone();
-}
-
-void CollisionSolver3d::debugImpactZones()
-{
-    std::string outdir = CollisionSolver3d::getOutputDirectory();
-    
-    unsortHseList(hseList);
-	int numImpactZone = 0;
-
-	for (auto it = hseList.begin(); it < hseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-		    POINT* pt = (*it)->Point_of_hse(i);
-		    POINT* head = findSet(pt);
-            
-            //skip traversed or isolated pts
-            if (sorted(pt) || weight(head) == 1)
-                continue;
-            else
-            {
-                //markImpactZonePoints(head);
-                std::vector<POINT*> impactzone_pts;
-                std::string fname = outdir + "/impzone-" +
-                    std::to_string(numImpactZone);
-                
-                printf("Impact Zone #%d -- %d points",
-                        numImpactZones,weight(head));
-                
-                POINT* p = head;
-                while (p)
-                {
-                    double* coords = Coords(p);
-                    printf("\t\tGindex = %ld coords = %g %g %g\n",
-                            Gindex(p),coords[0],coords[1],coords[2]);
-                    
-                    sorted(p) = YES;
-                    impactzone_pts.push_back(p);
-                    p = next_pt(p);
-                }
-                printf("\n\n");
-                vtk_write_pointset(impactzone_pts,fname,numImpactZone);
-                numImpactZone++;
-            }
-        }
-    }
-    
-    FT_Save(ft);
-    FT_Draw(ft);
-}
-
-void CollisionSolver3d::infoImpactZones()
-{
-	numImpactZones = 0;
-	numImpactZonePoints = 0;
-
-	unsortHseList(hseList);
-    
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-		    POINT* pt = (*it)->Point_of_hse(i);
-		    POINT* head = findSet(pt);
-		
-            //skip traversed or isolated pts
-            if (sorted(pt) || weight(head) == 1)
-                continue;
-            else
-            {
-                markImpactZonePoints(head);
-                numImpactZonePoints += weight(head);
-                numImpactZones++;
-            }
-	    }
-	}
-}
-
-void CollisionSolver3d::markImpactZonePoints(POINT* head)
-{
-    POINT* p = head;
-    while (p)
-    {
-        sorted(p) = YES;
-        p = next_pt(p);
-    }
-}
-
-void CollisionSolver3d::updateImpactZoneVelocityForRG()
-{
-	unsortHseList(hseList);
-
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            POINT* pt = (*it)->Point_of_hse(i);
-            
-            //skip traversed or isolated pts
-            if (sorted(pt) || weight(findSet(pt)) == 1) continue;
-            else if (!isMovableRigidBody(pt))
-            {
-                sorted(pt) = YES;
-                continue;
-            }
-            else
-                updateImpactListVelocity(findSet(pt));
-	    }
-	}
-}
-
-//For jacobi style update of impact zones
-void CollisionSolver3d::updateImpactZoneVelocity()
-{
-	numImpactZones = 0;
-	numImpactZonePoints = 0;
-
-	unsortHseList(hseList);
-    
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-		    POINT* pt = (*it)->Point_of_hse(i);
-		    POINT* head = findSet(pt);
-		
-            //skip traversed or isolated pts
-            if (sorted(pt) || weight(head) == 1)
-                continue;
-            else
-            {
-                updateImpactListVelocity(head);
-                numImpactZonePoints += weight(head);
-                numImpactZones++;
-            }
-	    }
-	}
-}
-
-void CollisionSolver3d::resolveCollision()
-{
-	//catch floating point exception: nan/inf
-        //feenableexcept(FE_INVALID | FE_OVERFLOW);
-
-    start_clock("computeAverageVelocity");
-	computeAverageVelocity();
-    stop_clock("computeAverageVelocity");
-
-    //TODO: Fix limitStrain() and limitStrainRate() edge traversal,
-    //      and implement the zero relative velocity in direction of edge
-    //      constraint (currently only enforces the position constraint).
-    /*
-    if (!debugging("strainlim_off"))
-    {
-        limitStrain();
-        //limitStrainRate();
-    }
-    */
-
-    //static proximity handling
-    start_clock("detectProximity");
-	detectProximity();
-    stop_clock("detectProximity");
-
-    /*
-    if (!debugging("strainlim_off"))
-    {
-        limitStrainRate();
-    }
-    */
-
-	//check linear trajectories for collisions
-    start_clock("detectCollision");
-	detectCollision();
-    stop_clock("detectCollision");
-
-    //TODO: fix this function
-	//detectDomainBoundaryCollision();
-
-    /*
-	//update position using final midstep velocity
-	updateFinalPosition();
-
-    //TODO: Verify detectProximity() should not be called here again.
-    //detectProximity();
-	
-	updateFinalVelocity();
-    */
-
-    //Consolidates updateFinalPosition() and updateFinalVelocity()
-    //in order to avoid a second traversal of the points
-    start_clock("updateFinalStates");
-    updateFinalStates(); 
-    stop_clock("updateFinalStates");
-}
-
-// function to perform AABB tree building, updating structure
-// and query for proximity detection process
-void CollisionSolver3d::aabbProximity()
-{
-    if (!abt_proximity)
-    {
-        abt_proximity =
-            std::unique_ptr<AABBTree>(new AABBTree(MotionState::STATIC));
-
-        for (auto it = hseList.begin(); it != hseList.end(); it++)
-        {
-            double tol = CollisionSolver3d::getFabricThickness();
-            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-                tol = CollisionSolver3d::getStringThickness();
-
-            AABB* ab = new AABB(tol,*it);
-            abt_proximity->addAABB(ab);
-        }
-        abt_proximity->updatePointMap(hseList);
-        volume = abt_proximity->getVolume();
-    }
-    else
-    {
-        abt_proximity->isProximity = false;
-        abt_proximity->updateAABBTree(hseList);
-        if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
-        {
-            abt_proximity->updateTreeStructure();
-            volume = abt_proximity->getVolume();
-            build_count_pre++;
-        }
-    }
-}
-
-void CollisionSolver3d::detectProximity()
-{
-    start_clock("dynamic_AABB_proximity");
-    aabbProximity();
-    abt_proximity->query();
-    stop_clock("dynamic_AABB_proximity");
-
-	if (debugging("proximity"))
-    {
-        std::cout << abt_proximity->getCount()
-            << " proximity pairs" << std::endl;
-    }
-
-    if (abt_proximity->isProximity)
-        updateAverageVelocity();
-
-    if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRG(); // test for moving objects
-}
-
-// AABB tree for collision detection process
-void CollisionSolver3d::aabbCollision()
-{
-    clearCollisionTimes();
-
-    if (!abt_collision)
-    {
-        abt_collision =
-            std::unique_ptr<AABBTree>(new AABBTree(MotionState::MOVING));
-
-        for (auto it = hseList.begin(); it != hseList.end(); it++)
-        {
-            double tol = CollisionSolver3d::getFabricRoundingTolerance();
-            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-                tol = CollisionSolver3d::getStringRoundingTolerance();
-
-            AABB* ab = new AABB(tol,*it,s_dt);
-            abt_collision->addAABB(ab);
-        }
-        abt_collision->updatePointMap(hseList);
-        volume = abt_collision->getVolume();
-    }
-    else
-    {
-        abt_collision->isCollsn = false;
-        abt_collision->setTimeStep(s_dt);
-        abt_collision->updateAABBTree(hseList);
-
-        if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
-        {
-            build_count_col++;
-            abt_collision->updateTreeStructure();
-            volume = abt_collision->getVolume();
-        }
-    }
-}
-
-void CollisionSolver3d::detectCollision()
-{
-	std::cout << "Starting collision handling: " << std::endl;
-	
-	const int MAX_ITER = 12;
-	
-    bool is_collision = true; 
-	setHasCollision(false);
-	
-    int niter = 1;
-	int cd_count = 0;
-   
-    while(is_collision)
-    {
-	    is_collision = false;
-	    
-        start_clock("dynamic_AABB_collision");
-        aabbCollision();
-        abt_collision->query();
-        stop_clock("dynamic_AABB_collision");
-
-        is_collision = abt_collision->getCollsnState();
-
-	    if (debugging("collision"))
-        {
-            std::cout << "    #" << niter << ": "
-                << abt_collision->getCount() 
-                << " collision pairs";
-            
-            if (is_collision)
-            {
-                std::cout << ",  avg_collsn_dt = "
-                    << getAverageCollisionTime();
-            }
-            std::cout << std::endl;
-        }
-
-        if (++niter > MAX_ITER)
-            break;
-	}
-
-    start_clock("computeImpactZone");
-	if (is_collision) 
-	    computeImpactZone();
-    stop_clock("computeImpactZone");
-}
-
-//Note: num has default value of 4,
-//and first has default value of false
-extern void createImpZone(POINT* pts[], int num, bool first)
-{
-	for (int i = 0; i < num; ++i)
-	{
-	    for (int j = 0; j < i; ++j)
-	    {
-	        if (!first && (isMovableRigidBody(pts[i])
-                 || isMovableRigidBody(pts[j])))
-            {
-                continue;
-            }
-            mergePoint(pts[i],pts[j]); 
-	    }
-	}
-}
-
-void CollisionSolver3d::limitStrainRate()
-{
-	const int MAX_ITER = 5;
-    for (int iter = 0; iter <= MAX_ITER; ++iter)
-    {
-        modifyStrainRate();
-        
-        if (debugging("strain_limiting"))
-        {
-            printf("   %d Strain Rate Edges\n",numStrainRateEdges);
-        }
-
-	    bool excess_strain = false;
-        if (numStrainRateEdges > 0)
-            excess_strain = true;
-
-        if (!excess_strain)
-            break;
-	}
-}
-
-//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
-//gauss-seidel iteration
-void CollisionSolver3d::modifyStrainRate()
-{
-    numStrainRateEdges = 0;
-	double dt = getTimeStepSize();
-    double TOL = strainrate_limit;
-    
-    unsortHseList(hseList);
-
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        if (isRigidBody(*it)) continue;
-	    
-        POINT* p[2];
-        STATE* sl[2];
-
-        int np = (*it)->num_pts();
-        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
-        {
-            p[0] = (*it)->Point_of_hse(i%np);	
-            p[1] = (*it)->Point_of_hse((i+1)%np);
-
-            //TODO: THIS DOES NOT WORK! MISSES EDGES.
-            if (sorted(p[0]) && sorted(p[1])) continue;
-
-            sl[0] = (STATE*)left_state(p[0]);
-            sl[1] = (STATE*)left_state(p[1]);
-
-            double x_cand0[3], x_cand1[3];
-            for (int j = 0; j < 3; ++j)
-            {
-                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
-                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
-            }
-
-		    double lnew = distBetweenCoords(x_cand0,x_cand1);
-		    double lold = distBetweenCoords(sl[0]->x_old,sl[1]->x_old);
-
-            if (fabs(lnew - lold) > TOL*lold)
-            {
-                double I = (fabs(lnew - lold) - TOL*lold)/dt;
-                double I0, I1;
-
-                if (lnew > lold) //Tension
-                {
-                    I0 = 0.5*I;
-                    I1 = -0.5*I;
-                }
-                else             //Compression
-                {
-                    I0 = -0.5*I;
-                    I1 = 0.5*I;
-                }
-
-                double e01[3];
-                Pts2Vec(p[0],p[1],e01);
-                scalarMult(1.0/lold,e01,e01);
-
-                for (int j = 0; j < 3; ++j)
-                {
-                    sl[0]->avgVel[j] += I0*e01[j];
-                    sl[1]->avgVel[j] += I1*e01[j];
-                }
-                sl[0]->has_strainlim = true;
-                sl[1]->has_strainlim = true;
-                numStrainRateEdges++;
-            }
-
-            sorted(p[0]) = YES;
-            sorted(p[1]) = YES;
-        }
-    }
-}
-
-void CollisionSolver3d::limitStrain()
-{
-	const int MAX_ITER = 2;
-    for (int iter = 0; iter < MAX_ITER; ++iter)
-    {
-        numStrainEdges = 0;
-
-        modifyStrain();
-        
-        if (debugging("strain_limiting"))
-        {
-            printf("   %d Strain Edges\n",numStrainEdges);
-        }
-
-	    bool excess_strain = false;
-        if (numStrainEdges > 0)
-            excess_strain = true;
-
-        if (!excess_strain)
-            break;
-	}
-}
-
-//TODO: FIX TRAVERSAL, and enforce relative velocity constraint
-//jacobi iteration
-void CollisionSolver3d::modifyStrain()
-{
-    double dt = getTimeStepSize();
-    double TOL = strain_limit;
-    double CTOL = 0.01;//TODO: add input parameter for this
-
-	unsortHseList(hseList);
-    
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        if (isRigidBody(*it)) continue;
-	    
-        POINT* p[2];
-        STATE* sl[2];
-
-        int np = (*it)->num_pts();
-        for (int i = 0; i < ((np == 2) ? 1 : np); ++i)
-        {
-            p[0] = (*it)->Point_of_hse(i%np);	
-            p[1] = (*it)->Point_of_hse((i+1)%np);
-
-            //TODO: THIS DOES NOT WORK! MISSES EDGES.
-                //if (sorted(p[0]) && sorted(p[1])) continue;
-
-            sl[0] = (STATE*)left_state(p[0]);
-            sl[1] = (STATE*)left_state(p[1]);
-
-            double x_cand0[3], x_cand1[3];
-            for (int j = 0; j < 3; ++j)
-            {
-                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
-                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
-            }
-
-		    double lnew = distBetweenCoords(x_cand0,x_cand1);
-            double len0;
-
-            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-            {
-                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
-                len0 = cd_bond->m_bond->length0;
-            }
-            else
-            {
-                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
-                len0 = cd_tri->m_tri->side_length0[i];
-            }
-            
-            double strain = lnew - len0;
-            if (strain > TOL*len0 || strain < -CTOL*len0)
-            {
-                double I0, I1;
-                if (strain > TOL*len0) //Tension
-                {
-                    double I = (strain - TOL*len0)/dt;
-                    I0 = 0.5*I;
-                    I1 = -0.5*I;
-                }
-                else                   //Compression
-                {
-                    double I = -(strain + CTOL*len0)/dt;
-                    I0 = -0.5*I;
-                    I1 = 0.5*I;
-                } 
-                
-                double e01[3];
-                Pts2Vec(p[0],p[1],e01);
-                scalarMult(1.0/lnew,e01,e01);
-		    
-                for (int j = 0; j < 3; ++j)
-                {
-                    sl[0]->strainImpulse[j] += I0*e01[j];
-                    sl[1]->strainImpulse[j] += I1*e01[j];
-                }
-
-                sl[0]->strain_num++;
-                sl[1]->strain_num++;
-                numStrainEdges++;
-            }
-        
-            //sorted(p[0]) = YES;
-            //sorted(p[1]) = YES;
-        }
-    }
-    
-	unsortHseList(hseList);
-    
-	for (it = hseList.begin(); it < hseList.end(); ++it)
-    {
-        if (isRigidBody(*it)) continue;
-	    
-        int np = (*it)->num_pts();
-        for (int i = 0; i < np; ++i)
-	    {
-            POINT* p = (*it)->Point_of_hse(i);
-            if (sorted(p)) continue;
-
-		    STATE* sl = (STATE*)left_state(p);
-            if (sl->strain_num > 0)
-            {
-                sl->has_strainlim = true;
-                for (int j = 0; j > 3; ++j)
-                {
-                    sl->avgVel[j] += sl->strainImpulse[j];
-                    sl->strainImpulse[j] = 0.0;
-                }
-                sl->strain_num = 0;
-            }
-
-            sorted(p) = YES;
-        }
-    }
-}
-
 void CollisionSolver3d::updateFinalPosition()
 {
     unsortHseList(hseList);
@@ -1053,8 +920,7 @@ void CollisionSolver3d::updateFinalPosition()
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt) || isStaticRigidBody(pt))
-                continue;
+            if (sorted(pt) || isStaticRigidBody(pt)) continue;
 
             STATE* sl = (STATE*)left_state(pt);
             for (int j = 0; j < 3; ++j)
@@ -1062,9 +928,10 @@ void CollisionSolver3d::updateFinalPosition()
                 double ncoord = sl->x_old[j] + sl->avgVel[j]*dt;
                 if (std::isnan(ncoord))
                 {
-                    printf("nan coords, x_old = %f, avgVel = %f\n",
-                            sl->x_old[j],sl->avgVel[j]);
-                    clean_up(ERROR);
+                    printf("updateFinalPosition() ERROR: nan final position\n");
+                    fprint_general_vector(stdout,"x_old",sl->x_old,MAXD,"\n");
+                    fprint_general_vector(stdout,"avgVel",sl->avgVel,MAXD,"\n");
+                    LOC(); clean_up(EXIT_FAILURE);
                 }
                 
                 Coords(pt)[j] = ncoord;
@@ -1085,12 +952,11 @@ void CollisionSolver3d::updateFinalVelocity()
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt) || isStaticRigidBody(pt))
-                continue;
-
+            if (sorted(pt) || isStaticRigidBody(pt)) continue;
+            sorted(pt) = YES;
+            
             STATE* sl = (STATE*)left_state(pt);
-            //if (!sl->has_collsn && !sl->has_strainlim) continue;
-            if (!sl->has_collsn) continue;
+            if (!sl->has_collsn && !sl->has_strainlim) continue;
 
             for (int j = 0; j < 3; ++j)
             {
@@ -1099,23 +965,21 @@ void CollisionSolver3d::updateFinalVelocity()
                 
                 if (std::isnan(pt->vel[j]))
                 {
-                    printf("nan vel and avgVel\n");
-                    clean_up(ERROR);
+                    printf("updateFinalVelocity() ERROR: nan final velocity\n");
+                    fprint_general_vector(stdout,"coords",Coords(pt),MAXD,"\n");
+                    fprint_general_vector(stdout,"vel",pt->vel,MAXD,"\n");
+                    LOC(); clean_up(EXIT_FAILURE);
                 }
             }
-
-            sorted(pt) = YES;
         }
         
     }
     
-    updateFinalForRG();
 }
 
-//Consolidate updateFinalPosition() and updateFinalVelocity()
-//since avgVel is not further modified by updateFinalVelocity()
-//by solving the implicit equation needed for central differencing
-//as in the Bridson and Fedkiw paper.
+//Factored into separate position and velocity updates
+//in order to apply strain limiting impulses to excessively
+//strained edges in the final configuration. 
 void CollisionSolver3d::updateFinalStates()
 {
     unsortHseList(hseList);
@@ -1138,13 +1002,13 @@ void CollisionSolver3d::updateFinalStates()
                     printf("CollisionSolver3d::updateFinalState() ERROR:\n");
                     printf("\tx_old = %f\n \tavgVel = %f\n",
                             sl->x_old[j],sl->avgVel[j]);
-                    clean_up(ERROR);
+                    LOC(); clean_up(ERROR);
                 }
                 Coords(pt)[j] = ncoord;
             }
             
             sorted(pt) = YES;
-            if (!sl->has_collsn) continue;
+            if (!sl->has_collsn && !sl->has_strainlim) continue;
             
             for (int j = 0; j < 3; ++j)
             {
@@ -1154,9 +1018,9 @@ void CollisionSolver3d::updateFinalStates()
         }
 	}
     
-    updateFinalForRG();
 }
 
+//TODO: Figure out what's going on here.
 void CollisionSolver3d::updateFinalForRG()
 {
 	POINT* pt;
@@ -1232,63 +1096,1047 @@ void CollisionSolver3d::updateFinalForRG()
     }
 }
 
-//For Jacobi velocity update
-void CollisionSolver3d::updateAverageVelocity()
+//Note: num has default value of 4,
+//and first has default value of false
+extern void createImpZone(POINT* pts[], int num, bool first)
+{
+	for (int i = 0; i < num; ++i)
+	{
+	    for (int j = 0; j < i; ++j)
+	    {
+            //TODO: Should it check isRigidBody() instead?
+            //      Otherwise, static rigid bodies can become
+            //      part of the impact zone.
+            //
+            //      However, this appears to be useful for resting
+            //      fabric-solid contact -- should find out if
+            //      anyone has done this before. Almost certain
+            //      this was done unintentionally ... 
+            
+            if (!first)
+            {
+                if (isRigidBody(pts[i]) ||
+                    isRigidBody(pts[j])) continue;
+                /*
+                if (isMovableRigidBody(pts[i]) ||
+                    isMovableRigidBody(pts[j])) continue;
+                */
+                //TODO: In this scenario a fabric element collides
+                //      with a movable rigid body element, and only
+                //      the fabric points are merged into an impact
+                //      zone. This doesn't make sense because the
+                //      fabric element can't collide with itself.
+            }
+
+            mergePoint(pts[i],pts[j]); 
+	    }
+	}
+}
+
+//What is the minimum number of mergePoint() calls?
+//
+//      For TRI and POINT should only require 3:
+//
+//          mergePoint(pts[0],pts[1]);
+//          mergePoint(pts[0],pts[2]);
+//          mergePoint(pts[0],pts[3]);
+//
+//      For BOND and BOND should only require 3:
+//
+//          mergePoint(pts[0],pts[1]);
+//          mergePoint(pts[0],pts[2]);
+//          mergePoint(pts[0],pts[3]);
+//
+//      The current looping structure makes 6 calls to mergePoint().
+//      Each findSet() call within mergePoint() is O(n) in the worst
+//      case, i.e. when impact zones have grown large.
+	
+void createImpactZone(POINT* pts[], int num)
+{
+    for (int i = 1; i < num; ++i)
+	{
+        mergePoint(pts[0],pts[i]);
+	}
+}
+
+void CollisionSolver3d::initRigidBodyImpactZones(INTERFACE* intfc)
+{
+	SURFACE** s;
+	TRI* tri;
+
+	intfc_surface_loop(intfc, s)
+	{
+	    if (is_bdry(*s)) continue;
+	    if (!isRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+	    //if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+
+        surf_tri_loop(*s, tri)
+	    {
+            //TODO: can make more efficient by marking points sorted
+            //      and skipping if (sorted(pt)). Hold a pointer to
+            //      the head that each point is always merged to
+            //      mergePoint(head,p);
+    		
+            createImpactZone(Point_of_tri(tri),3);
+    		//createImpactZoneRigidBody(Point_of_tri(tri),3);
+	    }
+	}
+}
+
+//TODO: may not need this
+void createImpactZoneRigidBody(POINT* pts[], int num)
+{
+	for (int i = 0; i < num; ++i)
+	{
+	    for (int j = 0; j < i; ++j)
+	    {
+            mergePoint(pts[i],pts[j]); 
+	    }
+	}
+}
+
+void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
+void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
+bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
+
+void CollisionSolver3d::computeImpactZone()
+{
+    std::cout<<"Starting compute Impact Zone: "<<std::endl;
+
+	int niter = 0;
+    const int MAXITER = 100;
+
+	turnOnImpZone();
+    
+	bool is_collision = true;
+    while(is_collision)
+    {
+        niter++;
+        is_collision = false;
+
+        start_clock("dynamic_AABB_collision");
+        aabbCollision();
+            abt_collision->turn_off_GS_update();//turn on Jacobi style update
+        abt_collision->query();
+        stop_clock("dynamic_AABB_collision");
+
+        is_collision = abt_collision->getCollsnState();
+
+            //for Jacobi style update
+            updateAverageVelocity();
+            updateImpactZoneVelocity();
+
+        if (debugging("collision"))
+        {
+            infoImpactZones();
+
+            std::cout << "    #" << niter << ": "
+                      << abt_collision->getCount() 
+                      << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
+
+            std::cout << "     " << numImpactZones
+                      << " impact zones" << std::endl;
+            std::cout << "     " << numImpactZonePoints
+                      << " total impact zone points" << std::endl;
+        }
+        
+        //TODO: Appropriate to limit strain rate during impact zone handling?
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainRatePosnGS();
+                    //limitStrainRatePosn();
+            }
+
+        if (niter >= MAXITER)
+        {
+            printf("computeImpactZone(): ERROR\n\t\
+                    maxiters %d without convergence!\n",
+                    MAXITER);
+            
+            debugImpactZones();
+            clean_up(EXIT_FAILURE);
+        }
+    }
+	
+    turnOffImpZone();
+    skip_strain_velo_constraint = true;
+}
+
+void CollisionSolver3d::debugImpactZones()
+{
+    std::string outdir = CollisionSolver3d::getOutputDirectory();
+    
+    unsortHseList(hseList);
+	int numImpactZone = 0;
+
+	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
+            
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(head) == 1)
+                continue;
+            else
+            {
+                std::vector<POINT*> impactzone_pts;
+                std::string fname = outdir + "/impzone-" +
+                    std::to_string(numImpactZone);
+                
+                printf("Impact Zone #%d -- %d points",
+                        numImpactZone,weight(head));
+                
+                POINT* p = head;
+                while (p)
+                {
+                    double* coords = Coords(p);
+                    printf("\t\tGindex = %ld coords = %g %g %g\n",
+                            Gindex(p),coords[0],coords[1],coords[2]);
+                    
+                    sorted(p) = YES;
+                    impactzone_pts.push_back(p);
+                    p = next_pt(p);
+                }
+                printf("\n\n");
+                vtk_write_pointset(impactzone_pts,fname,numImpactZone);
+                numImpactZone++;
+            }
+        }
+    }
+    
+    FT_Save(ft);
+    FT_Draw(ft);
+}
+
+void CollisionSolver3d::infoImpactZones()
+{
+	numImpactZones = 0;
+	numImpactZonePoints = 0;
+
+    //TODO: Only report elastic hse impact zones
+	unsortHseList(elasticHseList);
+	//unsortHseList(hseList);
+    
+	//for (auto it = hseList.begin(); it < hseList.end(); ++it)
+	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
+		
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(head) == 1)
+                continue;
+            else
+            {
+                markImpactZonePoints(head);
+                numImpactZonePoints += weight(head);
+                numImpactZones++;
+            }
+	    }
+	}
+}
+
+void CollisionSolver3d::markImpactZonePoints(POINT* head)
+{
+    POINT* p = head;
+    while (p)
+    {
+        sorted(p) = YES;
+        p = next_pt(p);
+    }
+}
+
+void CollisionSolver3d::updateImpactZoneVelocityForRG()
+{
+	//unsortHseList(hseList);
+	unsortHseList(movableRigidTriList);
+
+	//for (auto it = hseList.begin(); it != hseList.end(); ++it)
+	for (auto it = movableRigidTriList.begin(); it != movableRigidTriList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            POINT* pt = (*it)->Point_of_hse(i);
+            
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(findSet(pt)) == 1) continue;
+            else if (!isMovableRigidBody(pt))
+            {
+                sorted(pt) = YES;
+                continue;
+            }
+            else
+                updateImpactListVelocity(findSet(pt));
+	    }
+	}
+}
+
+//For jacobi style update of impact zones
+void CollisionSolver3d::updateImpactZoneVelocity()
+{
+	numImpactZones = 0;
+	numImpactZonePoints = 0;
+
+	unsortHseList(hseList);
+	//unsortHseList(elasticHseList);
+    
+	//for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)
+	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+		    POINT* head = findSet(pt);
+		
+            //skip traversed or isolated pts
+            if (sorted(pt) || weight(head) == 1) continue;
+            else
+            {
+                updateImpactListVelocity(head);
+                numImpactZonePoints += weight(head);
+                numImpactZones++;
+            }
+	    }
+	}
+}
+
+void updateImpactListVelocity(POINT* head)
+{
+    POINT* p = nullptr;
+	
+    //compute impact zone's center of mass position and velocity
+    int num_pts = 0;
+    double totalmass = 0.0;
+    double avg_dt = 0.0;
+
+    double x_cm[3] = {0.0};
+    double v_cm[3] = {0.0};
+	
+    p = head;
+	while(p)
+    {
+		STATE* sl = (STATE*)left_state(p);
+        avg_dt += sl->collsn_dt;
+        sl->has_collsn = true;
+
+        double m = CollisionSolver3d::getFabricPointMass();
+        if (sl->is_stringpt)
+            m = CollisionSolver3d::getStringPointMass();
+        else if (isStaticRigidBody(p))//TODO: temp hack
+        {
+            m = 1000;
+            //m = total_mass(p->hs);
+            
+            //TODO: Center of Motion computations will be incorrect
+            //      if rigid body points are in the impact zone.
+        }
+
+        totalmass += m;
+        for (int i = 0; i < 3; ++i)
+        {
+		    x_cm[i] += sl->x_old[i]*m; 
+		    v_cm[i] += sl->avgVel[i]*m;
+		}
+
+        sorted(p) = YES;
+        //Still need to mark sorted() for updateImpactZoneVelocityForRG(),
+        //and potentially for jacobi style updating
+        
+        p = next_pt(p);
+		num_pts++;
+    }
+	
+    //TODO: Is this justified, or just use the full step dt?
+    avg_dt += CollisionSolver3d::getTimeStepSize();
+    avg_dt /= num_pts;
+        //double dt = CollisionSolver3d::getTimeStepSize();
+    
+    //temp debug
+        //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
+
+	for (int i = 0; i < 3; ++i)
+    {
+	    x_cm[i] /= totalmass;
+	    v_cm[i] /= totalmass;
+	}
+
+	//compute angular momentum
+	double L[3] = {0.0};
+
+    p = head;
+	while(p)
+    {
+	    STATE* sl = (STATE*)left_state(p);
+        double m = CollisionSolver3d::getFabricPointMass();
+        if (sl->is_stringpt)
+            m = CollisionSolver3d::getStringPointMass();
+        else if (isStaticRigidBody(p))//TODO: temp hack
+        {
+            m = 1000;
+        }
+	    
+	    double dx[3], dv[3], Li[3];
+        minusVec(sl->x_old,x_cm,dx);
+	    minusVec(sl->avgVel,v_cm,dv); 	
+	    Cross3d(dx,dv,Li);
+	    scalarMult(m,Li,Li);
+	    addVec(Li,L,L);    
+	    p = next_pt(p);
+	}
+
+	//compute Inertia tensor
+	double I[3][3] = {0.0};
+
+	p = head;
+	while(p)
+    {
+	    STATE* sl = (STATE*)left_state(p);
+        double m = CollisionSolver3d::getFabricPointMass();
+        if (sl->is_stringpt)
+            m = CollisionSolver3d::getStringPointMass();
+        else if (isStaticRigidBody(p))//TODO: temp hack
+        {
+            m = 1000;
+        }
+
+	    double dx[3];
+        minusVec(sl->x_old,x_cm,dx);
+	    double mag_dx = Mag3d(dx);
+
+        for (int i = 0; i < 3; ++i)
+	    for (int j = 0; j < 3; ++j)
+        {
+		    double val = -dx[i]*dx[j];
+            if (i == j)
+                val += mag_dx*mag_dx; 
+    	 	I[i][j] += val*m;
+	    }
+
+        p = next_pt(p);
+	}
+
+	//compute angular velocity w: I*w = L;
+	double w[3];
+    
+    if (myDet3d(I) < ROUND_EPS)
+    {
+        //I is non-invertible, calculate pseudoinverse with SVD
+        arma::mat arI(3, 3);
+        arma::vec arL(3);
+
+        for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+             arI(i, j) = I[i][j];
+        for (int i = 0; i < 3; i++)
+             arL(i) = L[i];
+
+        arma::mat arU;
+        arma::mat arV;
+        arma::vec ars;
+
+        arma::svd(arU, ars, arV, arI);
+        for (int i = 0; i < 3; i++)
+        {
+            if (ars(i)) ars(i) = 1.0/ars(i);
+        }
+        arma::mat pinvarI = arV*arma::diagmat(ars)*arU.t();
+        arma::vec arw = pinvarI*arL;
+
+        for (int i = 0; i < 3; i++)
+            w[i] = arw[i];
+    }
+    else
+    {
+        double tmp[3][3];
+        for (int i = 0; i < 3; ++i)
+        {
+            memcpy(tmp,I,9*sizeof(double));
+            for (int j = 0; j < 3; j++)
+                tmp[j][i] = L[j];
+            w[i] = myDet3d(tmp)/myDet3d(I);
+        }
+    }
+    double mag_w = Mag3d(w);
+	
+	//compute average velocity for each point
+	p = head;
+    while(p)
+    {
+        //if (isRigidBody(p))
+        if (isStaticRigidBody(p))
+        {
+            //printf("updateImpactListVelocity() ERROR: isStaticRigidBody(p)\n");
+            //LOC(); clean_up(EXIT_FAILURE);
+            p = next_pt(p);
+            continue;
+	    }
+
+	    double x_new[3],dx[3];
+	    double xF[3], xR[3];
+	    double wxR[3],tmpV[3];
+	    
+        STATE* sl = (STATE*)left_state(p);
+	    minusVec(sl->x_old,x_cm,dx);
+	    
+        if (mag_w < ROUND_EPS)
+        {
+	        for (int i = 0; i < 3; ++i)
+            {
+                xF[i] = dx[i];
+                wxR[i] = 0.0;
+            }
+		    minusVec(dx,xF,xR);
+	    }
+	    else
+        {
+	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
+	        minusVec(dx,xF,xR);
+            scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
+                //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+	        Cross3d(tmpV,xR,wxR);
+	    }
+
+	    for (int i = 0; i < 3; ++i)
+	    {
+            x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
+                       + cos(avg_dt*mag_w)*xR[i] + wxR[i];
+
+		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
+
+            //TODO: Try reverting to this computation that uses
+            //      the full time step dt when rigid body points
+            //      have been removed from impact zones.
+            
+            /*
+            x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
+                       + cos(dt*mag_w)*xR[i] + wxR[i];
+	
+		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+            */
+	    	
+            if (std::isnan(sl->avgVel[i]))
+            { 
+                printf("x_old[3], avgVel[3]\n");
+                
+                p = head;
+                while(p)
+                {
+                    STATE* sl = (STATE*)left_state(p);
+                    printf("%f %f %f %f %f %f;\n",
+                            sl->x_old[0],sl->x_old[1],sl->x_old[2],
+                            sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
+                    p = next_pt(p);
+                }
+
+                printf("num_pts = %d, weight = %d\n",num_pts,weight(head));
+                printf("nan vel, w = %f, mag_w = %f\n",w[i],mag_w);
+                printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
+                printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
+                        I[0][0],I[0][1],I[0][2],
+                        I[1][0],I[1][1],I[1][2],
+                        I[2][0],I[2][1],I[2][2]);
+                printf("xF = %f %f %f, xR = %f %f %f\n",
+                        xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
+            
+                clean_up(ERROR);
+            }
+	    }
+
+        p = next_pt(p);
+	}
+}
+
+void CollisionSolver3d::turnOnGsUpdate() {gs_update = true;}
+void CollisionSolver3d::turnOffGsUpdate() {gs_update = false;}
+bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
+
+//jacobi iteration
+void CollisionSolver3d::limitStrainPosn()
+{
+	const int MAX_ITER = 3;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrain = computeStrainImpulsesPosn(stringBondList);
+        int numTriStrain = computeStrainImpulsesPosn(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Edges\n",numBondStrain);
+            printf("%d TRI Strain Edges\n",numTriStrain);
+        }
+
+        if (numBondStrain == 0 && numTriStrain == 0) break;
+
+        applyStrainImpulses();
+	}
+}
+
+int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
+{
+    double TOL = getStrainLimit();
+    double dt = getTimeStepSize();
+
+    int numStrainEdges = 0;
+	for (auto it = list.begin(); it < list.end(); ++it)
+    {
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = (*it)->num_pts();
+        int ne = ((np == 2) ? 1 : np);
+
+        for (int i = 0; i < ne; ++i)
+        {
+            double len0;
+            
+            if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+            {
+                CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
+                len0 = cd_bond->m_bond->length0;
+            }
+            else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+            {
+                //      Check the three edges of each triangle.
+                //      If there isn't another triangle adjacent
+                //      to the edge, operate on the edge.
+                //      If there is another adjacent triangle,
+                //      operate on the edge only if the current
+                //      triangle has a smaller pointer than its
+                //      neighbor (use global_index instead).
+                //      This way, each edge is considered only once.
+                //
+                //          From triangle.c : writeedges()
+
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                TRI* tri = cd_tri->m_tri;
+                TRI* tri_nb = Tri_on_side(tri,i);
+                
+                //TODO: unsure about is_side_bdry(tri,i)
+                    //if (!is_side_bdry(tri,i) && Tri_on_side(tri,i) != nullptr)
+                
+                if (tri_nb != nullptr)
+                {
+                    if (Gindex(tri_nb) < Gindex(tri)) continue;
+                }
+                
+                len0 = cd_tri->m_tri->side_length0[i];
+            }
+            else
+            {
+                printf("computeStrainImpulsesPosn() ERROR: "
+                        "unknown CD_HSE_TYPE\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+            
+
+            p[0] = (*it)->Point_of_hse(i%np);
+            p[1] = (*it)->Point_of_hse((i+1)%np);
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+            double lnew = distBetweenCoords(x_cand0,x_cand1);
+
+            double delta_len0 = lnew - len0;
+            
+            double CTOL = 0.01;//TODO: Make input option
+            if (delta_len0 > TOL*len0 || delta_len0 < -1.0*CTOL*len0)
+            {
+                double I;
+                if (delta_len0 > TOL*len0) //Tension
+                { 
+                    I = 0.5*(delta_len0 - TOL*len0)/dt;
+                }
+                else                       //Compression
+                {
+                    I = 0.5*(delta_len0 + CTOL*len0)/dt;
+                }
+
+                double vec01[MAXD];
+                Pts2Vec(p[0],p[1],vec01);
+                scalarMult(1.0/lnew,vec01,vec01);
+                
+                //Do not apply impulses to fixed nodes
+                
+                //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
+                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                } 
+                //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
+                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
+                    sl[0]->strain_num++;
+                }
+                //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
+                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
+                    sl[1]->strain_num++;
+                }
+                else
+                {
+                    printf("ERROR: rigid body tri has been deformed\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                numStrainEdges++;
+            }
+        }
+    }
+    
+    return numStrainEdges;
+}
+
+//gauss-seidel iteration
+void CollisionSolver3d::limitStrainRatePosnGS()
+{
+    turnOnGsUpdate();
+	
+    const int MAX_ITER = 3;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList);
+        int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Rate Edges\n",numBondStrainRate);
+            printf("%d TRI Strain Rate Edges\n",numTriStrainRate);
+        }
+
+        if (numBondStrainRate == 0 && numTriStrainRate == 0) break;
+	}
+
+    turnOffGsUpdate();
+}
+
+//jacobi iteration
+void CollisionSolver3d::limitStrainRatePosn()
+{
+	const int MAX_ITER = 3;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList);
+        int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Rate Edges\n",numBondStrainRate);
+            printf("%d TRI Strain Rate Edges\n",numTriStrainRate);
+        }
+
+        if (numBondStrainRate == 0 && numTriStrainRate == 0) break;
+
+        applyStrainImpulses();
+	}
+}
+
+int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
+{
+    double dt = getTimeStepSize();
+    double TOL = getStrainRateLimit();
+    bool gauss_seidel = getGsUpdateStatus();
+
+    int numStrainRateEdges = 0;
+	for (auto it = list.begin(); it < list.end(); ++it)
+    {
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = (*it)->num_pts();
+        int ne = ((np == 2) ? 1 : np);
+
+        for (int i = 0; i < ne; ++i)
+        {
+            if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+            {
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                TRI* tri = cd_tri->m_tri;
+                TRI* tri_nb = Tri_on_side(tri,i);
+                
+                if (tri_nb != nullptr)
+                {
+                    if (Gindex(tri_nb) < Gindex(tri))
+                        continue;
+                }
+            }
+
+            p[0] = (*it)->Point_of_hse(i%np);
+            p[1] = (*it)->Point_of_hse((i+1)%np);
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+
+            double x_cand0[3], x_cand1[3];
+            for (int j = 0; j < 3; ++j)
+            {
+                x_cand0[j] = sl[0]->x_old[j] + sl[0]->avgVel[j]*dt;
+                x_cand1[j] = sl[1]->x_old[j] + sl[1]->avgVel[j]*dt;
+            }
+
+            double lnew = distBetweenCoords(x_cand0,x_cand1);
+            double lold = distance_between_positions(sl[0]->x_old,sl[1]->x_old,3);
+            double delta_lold = lnew - lold;
+
+            //if (delta_lold > TOL*lold)
+            if (fabs(delta_lold) > TOL*lold)
+            {
+                double I;
+                if (delta_lold > TOL*lold) //Tension
+                { 
+                    I = 0.5*(delta_lold - TOL*lold)/dt;
+                }
+                else                       //Compression
+                {
+                    I = 0.5*(delta_lold + TOL*lold)/dt;
+                }
+                
+                //double I = 0.5*(delta_lold - TOL*lold)/dt;
+
+                double vec01[MAXD];
+                Pts2Vec(p[0],p[1],vec01);
+                scalarMult(1.0/lnew,vec01,vec01);
+                
+                //Do not apply impulses to fixed nodes
+                
+                //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
+                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        sl[0]->strainImpulse[j] += I*vec01[j];
+                        sl[1]->strainImpulse[j] -= I*vec01[j];
+                    }
+                    sl[0]->strain_num++;
+                    sl[1]->strain_num++;
+                } 
+                //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
+                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
+                    sl[0]->strain_num++;
+                }
+                //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
+                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
+                    sl[1]->strain_num++;
+                }
+                else
+                {
+                    printf("ERROR: rigid body tri has been deformed\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+                
+                numStrainRateEdges++;
+
+                if (gauss_seidel)
+                {
+                    for (int k = 0; k < 2; ++k)
+                    {
+                        sl[k]->has_strainlim = true;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            sl[k]->avgVel[j] += sl[k]->strainImpulse[j]/sl[k]->strain_num;
+                            sl[k]->strainImpulse[j] = 0.0;
+                        }
+                        sl[k]->strain_num = 0;
+                    }
+                }
+
+            }
+        }
+    }
+    
+    return numStrainRateEdges;
+}
+
+//jacobi iteration
+void CollisionSolver3d::limitStrainVel()
+{
+    const int MAX_ITER = 3;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
+        int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Velocity Edges\n",numBondStrainVel);
+            printf("%d TRI Strain Velocity Edges\n",numTriStrainVel);
+        }
+
+        if (numBondStrainVel == 0 && numTriStrainVel == 0) break;
+
+        applyStrainImpulses();
+	}
+}
+
+int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
+{
+    int numRelVelStrainEdges = 0;
+	for (auto it = list.begin(); it < list.end(); ++it)
+    {
+        POINT* p[2];
+        STATE* sl[2];
+
+        int np = (*it)->num_pts();
+        int ne = ((np == 2) ? 1 : np);
+
+        for (int i = 0; i < ne; ++i)
+        {
+            if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+            {
+                CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+                TRI* tri = cd_tri->m_tri;
+                TRI* tri_nb = Tri_on_side(tri,i);
+                
+                if (tri_nb != nullptr)
+                {
+                    if (Gindex(tri_nb) < Gindex(tri))
+                        continue;
+                }
+            }
+
+            p[0] = (*it)->Point_of_hse(i%np);
+            p[1] = (*it)->Point_of_hse((i+1)%np);
+
+            sl[0] = (STATE*)left_state(p[0]);
+            sl[1] = (STATE*)left_state(p[1]);
+            
+            //skip edges that did not get strain limiting impulses
+            //in limitStrainPos() or limitStrainRatePos()
+            if (!(sl[0]->has_strainlim && sl[1]->has_strainlim)) continue;
+
+            double vel_rel[MAXD];
+            for (int j = 0; j < 3; ++j)
+                vel_rel[j] = sl[1]->avgVel[j] - sl[0]->avgVel[j];
+            
+            double vec01[MAXD];
+            Pts2Vec(p[0],p[1],vec01);//p1 - p0
+            double len = Mag3d(vec01);
+            scalarMult(1.0/len,vec01,vec01);
+
+            //component of the relative velocity in the direction
+            //of the edge joining points a and b (a-->b)
+            double vcomp01 = Dot3d(vel_rel,vec01);
+            if (fabs(vcomp01) < MACH_EPS) continue; //TODO: MACH_EPS may be too strict of a tolerance here
+                
+            double I = 0.5*vcomp01;
+
+            //Do not apply impulses to rg_string_nodes
+            
+            //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
+            if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+            {
+                for (int j = 0; j < 3; ++j)
+                {
+                    sl[0]->strainImpulse[j] += I*vec01[j];
+                    sl[1]->strainImpulse[j] -= I*vec01[j];
+                }
+                sl[0]->strain_num++;
+                sl[1]->strain_num++;
+            } 
+            //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
+            else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+            {
+                for (int j = 0; j < 3; ++j)
+                    sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
+                sl[0]->strain_num++;
+            }
+            //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
+            else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+            {
+                for (int j = 0; j < 3; ++j)
+                    sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
+                sl[1]->strain_num++;
+            }
+            else
+            {
+                printf("ERROR: rigid body tri has been deformed\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+                
+            numRelVelStrainEdges++;
+        }
+    }
+    
+    return numRelVelStrainEdges;
+}
+
+void CollisionSolver3d::applyStrainImpulses()
 {
 	POINT *p;
 	STATE *sl;
 	double maxSpeed = 0;
 	double* maxVel = nullptr;
 
-    unsortHseList(hseList);
+	unsortHseList(elasticHseList);
+    //unsortHseList(hseList);
     
-    std::vector<CD_HSE*>::iterator it;
-	for (it = hseList.begin(); it < hseList.end(); ++it)
+	//for (auto it = hseList.begin(); it < hseList.end(); ++it)
+	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
     {
-        if (isRigidBody(*it)) continue;
+        //if (isRigidBody(*it)) continue;
 	    
         int np = (*it)->num_pts(); 
 	    for (int j = 0; j < np; ++j)
 	    {
             p = (*it)->Point_of_hse(j);
-            
-            if (sorted(p) || isStaticRigidBody(p))
-                continue;
+            if (sorted(p)) continue;
 
             sl = (STATE*)left_state(p);
-            if (sl->collsn_num > 0)
+            if (sl->strain_num > 0)
             {
-                sl->has_collsn = true;
+                sl->has_strainlim = true;
 
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] +=
-                        (sl->collsnImpulse[k] + sl->friction[k])/((double)sl->collsn_num);
+                    sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
-                        printf("inf/nan vel[%d]: impulse = %f, friction = %f, collsn_num = %d\n",
-                        k,sl->collsnImpulse[k],sl->friction[k],sl->collsn_num);
-                        clean_up(ERROR);
+                        printf("inf/nan vel[%d]: strain_impulse = %f, strain_num = %d\n",
+                                k,sl->strainImpulse[k],sl->strain_num);
+                        LOC(); clean_up(ERROR);
                     }
                 
-                    sl->collsnImpulse[k] = 0.0;
-                    sl->friction[k] = 0.0;
+                    sl->strainImpulse[k] = 0.0;
                 }
 
-                sl->collsn_num = 0;
+                sl->strain_num = 0;
             }
-
-            if (sl->collsn_num_RG > 0)
-            {
-                sl->has_collsn = true;
-                for (int k = 0; k < 3; ++k)
-                {
-                    sl->avgVel[k] += sl->collsnImpulse_RG[k]/((double)sl->collsn_num_RG);
-                }
-                sl->collsn_num_RG = 0;
-            }
-
+            
             if (debugging("average_velocity"))
             {
                 double speed = Mag3d(sl->avgVel);
@@ -1298,17 +2146,11 @@ void CollisionSolver3d::updateAverageVelocity()
                     maxSpeed = speed;
                 }
             }
-		
-            sorted(p) = YES;
-	    }
-	}
-	
-    /*
-    //TODO: Moved into detect_proximity(), if successful can remove.
-    if (getTimeStepSize() > 0.0)
-	    updateImpactZoneVelocityForRG(); // test for moving objects
-    */
 
+            sorted(p) = YES;
+        }
+    }
+	
 	if (debugging("average_velocity"))
     {
 	    if (maxVel != nullptr)
@@ -1318,107 +2160,6 @@ void CollisionSolver3d::updateAverageVelocity()
         }
     }
 }
-
-bool getCollision(const CD_HSE* a, const CD_HSE* b)
-{
-	const CD_BOND *cd_b1, *cd_b2;
-	const CD_TRI  *cd_t1, *cd_t2;
-
-	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
-	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    TRI* t1 = cd_t1->m_tri;
-	    TRI* t2 = cd_t2->m_tri;
-	    if ((t1->surf == t2->surf) && isRigidBody(a))
-            return false;
-	    return MovingTriToTri(t1,t2);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
-	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    BOND* b2 = cd_b2->m_bond;
-	    return MovingBondToBond(b1,b2);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
-		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1);
-	}
-	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
-                 (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return MovingTriToBond(t1,b1);
-	}
-	else
-	{
-	    std::cout<<"This case has not been implemented"<<std::endl;
-	    clean_up(ERROR);
-	}
-	return false;
-}
-
-//This is checking the geometric primitive for intersection
-bool getProximity(const CD_HSE* a, const CD_HSE* b)
-{
-	const CD_BOND *cd_b1, *cd_b2;
-	const CD_TRI  *cd_t1, *cd_t2;
-
-	if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) && 
-	    (cd_t2 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    TRI* t1 = cd_t1->m_tri;
-	    TRI* t2 = cd_t2->m_tri;
-	    if ((t1->surf == t2->surf) && isRigidBody(a))
-            return false;
-	    return TriToTri(t1,t2);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) && 
-	         (cd_b2 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    BOND* b2 = cd_b2->m_bond;
-	    return BondToBond(b1,b2);
-	}
-	else if ((cd_b1 = dynamic_cast<const CD_BOND*>(a)) &&
-		 (cd_t1 = dynamic_cast<const CD_TRI*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1);
-	}
-	else if ((cd_t1 = dynamic_cast<const CD_TRI*>(a)) &&
-                 (cd_b1 = dynamic_cast<const CD_BOND*>(b)))
-	{
-	    BOND* b1 = cd_b1->m_bond;
-	    TRI* t1  = cd_t1->m_tri;
-	    return TriToBond(t1,b1);
-	}
-	else
-	{
-	    std::cout<<"This case has not been implemented"<<std::endl;
-	    clean_up(ERROR);
-	}
-	return false;
-}
-
-void CollisionSolver3d::printDebugVariable()
-{
-	std::cout << "Enter EdgeToEdge " << edg_to_edg 
-		  << " times"<< std::endl;
-	std::cout << "Enter PointToTri " << pt_to_tri 
-		  << " times"<< std::endl;
-	std::cout << "Enter isCoplanar " << is_coplanar
-		  << " times"<< std::endl;
-	
-    moving_edg_to_edg = moving_pt_to_tri = is_coplanar = 0;
-	edg_to_edg = pt_to_tri = 0;
-}
-
 
 /*******************************
 * utility functions start here *
@@ -1463,23 +2204,6 @@ extern double myDet3d(double a[3][3]){
 	  + a[0][2]*(a[1][0]*a[2][1] - a[2][0]*a[1][1]);
 }
 
-void unsortHseList(std::vector<CD_HSE*>& hseList)
-{
-    std::vector<CD_HSE*>::iterator it; 
-    for (it = hseList.begin(); it < hseList.end(); ++it)
-	{
-	    int np = (*it)->num_pts();
-	    for (int i = 0; i < np; ++i)
-            sorted((*it)->Point_of_hse(i)) = NO;
-            
-        if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
-        {
-            CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
-            sorted(cd_tri->m_tri) = NO;
-        }
-	}
-}
-
 //functions for UF alogrithm
 int& weight(POINT* p){
 	STATE* sl = (STATE*)left_state(p);
@@ -1501,20 +2225,19 @@ inline POINT*& tail(POINT* p){
 	return sl->impZone.tail;
 }
 
-//TODO: verify anything related to this and impact zones
 extern void makeSet(std::vector<CD_HSE*>& hseList)
 {
 	STATE* sl;
 	POINT* pt;
-    for (std::vector<CD_HSE*>::iterator it = hseList.begin();
-            it < hseList.end(); ++it)
+
+    for (auto it = hseList.begin(); it < hseList.end(); ++it)
     {
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             pt = (*it)->Point_of_hse(i);
             sorted(pt) = NO;
             sl = (STATE*)left_state(pt);
-            sl->impZone.next_pt = NULL;
+            sl->impZone.next_pt = nullptr;
             sl->impZone.tail = pt;
             sl->impZone.root = pt;
             sl->impZone.num_pts = 1;
@@ -1529,7 +2252,7 @@ POINT* findSet(POINT* p)
     return p;
 }
 
-//TODO: Don't think next_pt pointers being properly updated.
+//TODO: check that the next_pt pointers being properly updated.
 void mergePoint(POINT* X, POINT* Y)
 {
     POINT* PX = findSet(X);
@@ -1572,6 +2295,11 @@ bool isStaticRigidBody(const POINT* p)
     return sl->is_fixed;
 }
 
+bool isStaticRigidBody(const STATE* sl)
+{
+    return sl->is_fixed;
+}
+
 bool isStaticRigidBody(const CD_HSE* hse)
 {
     for (int i = 0; i < hse->num_pts(); ++i)
@@ -1585,6 +2313,11 @@ bool isStaticRigidBody(const CD_HSE* hse)
 bool isMovableRigidBody(const POINT* p)
 {
     STATE* sl = (STATE*)left_state(p);
+    return sl->is_movableRG;
+}
+
+bool isMovableRigidBody(const STATE* sl)
+{
     return sl->is_movableRG;
 }
 
@@ -1603,12 +2336,16 @@ bool isRigidBody(const POINT* p)
     return isStaticRigidBody(p) || isMovableRigidBody(p);
 }
 
+bool isRigidBody(const STATE* sl)
+{
+    return sl->is_fixed || sl->is_movableRG;
+}
+
 bool isRigidBody(const CD_HSE* hse)
 {
     return isStaticRigidBody(hse) || isMovableRigidBody(hse);
 }
 
-//HACK, should never be used
 extern void SpreadImpactZoneImpulse(
         POINT* p,
         double impulse,

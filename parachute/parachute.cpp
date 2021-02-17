@@ -117,7 +117,8 @@ int main(int argc, char **argv)
 	FT_ReadTimeControl(in_name,&front);
 
     //FT_SetGlobalIndex() Must be called before setMotionParams()
-    //in order to allow advanced restart scenarios
+    //in order to allow advanced restart scenarios involving the
+    //setting/unsetting of registered points.
 	if (!RestartRun)
     {
         optimizeElasticMesh(&front);
@@ -133,13 +134,20 @@ int main(int argc, char **argv)
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+    l_cartesian->initMesh();
+    l_cartesian->writeMeshFileVTK();
 	
     //TODO: Why not use iFluid ambient_state()?
     //      Can specify an ambient velocity with input file option.
     //      "Enter fluid ambient velocity: "
     l_cartesian->getInitialState = zero_state;
+
+
+    //TODO: For parallelization of collision solver -- not working with fluid
+    //      and not fully understood yet
+        
+    //set_is_fabric_run(YES);
     
-    l_cartesian->initMesh();
 	l_cartesian->skip_neumann_solver = YES;
 
 	if (debugging("sample_velocity"))
@@ -151,13 +159,17 @@ int main(int argc, char **argv)
         if (ReSetTime)
         {
             readAfExtraData(&front,restart_state_name);
-                //clearRegisteredPoints(&front);
-                //resetRigidBodyVelocity(&front);
-            modifyInitialization(&front);
+            clearRegisteredPoints(&front);
+            resetRigidBodyVelocity(&front);
                 //setRigidBodyMotionParams(&front,&rgb_params);
+            
+                //modifyInitialization(&front);
+            
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh(); //TODO: may be able to remove this one
-            l_cartesian->setInitialCondition();
+            
+            if (!af_params.no_fluid)
+                l_cartesian->setInitialCondition();
         
             if (debugging("trace"))
             {
@@ -171,13 +183,15 @@ int main(int argc, char **argv)
             //TODO: Want to be able to load restart state even
             //      when we are reseting the time of the simulation.
             //      For generating turbulent flow initial conditions.
-            l_cartesian->readFrontInteriorStates(restart_state_name);
+            if (!af_params.no_fluid)
+                l_cartesian->readFrontInteriorStates(restart_state_name);
             readAfExtraData(&front,restart_state_name);
         }
     }
     else
     {
-        l_cartesian->setInitialCondition();
+        if (!af_params.no_fluid)
+            l_cartesian->setInitialCondition();
     }
 
     l_cartesian->initMovieVariables();
@@ -202,7 +216,7 @@ void airfoil_driver(Front *front,
 
     
     //TODO: Put vortex initialization and injection
-    //      code into functions and link into libiFluid.la
+    //      code into functions (iFinjection.cpp) and link into libiFluid.la
     VPARAMS vort_params;
     bool inject_vortex = false;
     double start_time = HUGE;
@@ -256,16 +270,11 @@ void airfoil_driver(Front *front,
 	    
         if (ReSetTime)
             setSpecialNodeForce(front,af_params->kl);
-        else
-            l_cartesian->writeMeshFileVTK();
 
         FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
-        if (!af_params->no_fluid)
-        {
-	        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-	        front->dt = std::min(front->dt,springCharTimeStep(front));
-        }
+        
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 	}
 	else
 	{
@@ -346,13 +355,7 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         }
         
-        if (!af_params->no_fluid)
-        {
-            front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-            //TODO:necessary?
-            //
-            //front->dt = std::min(front->dt,springCharTimeStep(front));
-        }
+        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
 
         if (debugging("step_size"))
         {

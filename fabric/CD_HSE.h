@@ -3,15 +3,19 @@
 
 #include <FronTier.h>
 #include "state.h"
+#include "vtk.h"
 
 #include <string>
+#include <utility>
+#include <numeric>
 
 
 enum class CD_HSE_TYPE
 {
     FABRIC_TRI,
-    STRING_BOND,
-    RIGID_TRI
+    MOVABLE_RIGID_TRI,
+    STATIC_RIGID_TRI,
+    STRING_BOND
 };
 
 
@@ -20,7 +24,7 @@ enum class CD_HSE_TYPE
 struct CD_HSE
 {
     CD_HSE_TYPE type;
-	virtual double max_static_coord(int) = 0;
+    virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;
 	virtual double max_moving_coord(int,double) = 0;
 	virtual double min_moving_coord(int,double) = 0;

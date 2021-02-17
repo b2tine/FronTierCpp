@@ -30,6 +30,7 @@ static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
+
 //TODO: STRING-FLUID INTERACTION BAD RESTART
 void printAfExtraData(
 	Front *front,
@@ -58,96 +59,142 @@ void printAfExtraData(
         sprintf(filename,"%s-afdata",filename);
         outfile = fopen(filename,"w");
 
-    //TODO: don't think we need this anymore since calling FT_WriteFrontState() at end.
-    //      May still need p->vel[i] though...
-    
     fprintf(outfile,"\nAirfoil extra front state data:\n");
 
-    /*    
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_WriteFrontState(outfile,front);
+
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],
-					sr->impulse[i]);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        /*
+        if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_STRING) continue;
+        */
+
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
 	    fprintf(outfile,"\n");
-        }
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
+        fprintf(outfile,"\n");
+        
+        /*
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
+        */
+    }
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
-	    b = (*c)->first;	p = b->start;
+	    b = (*c)->first;
+        p = b->start;
+        
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+        
 	    sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
+	    fprintf(outfile,"\n");
+
+        /*
+        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->impulse[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->impulse[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->vel[i]);
+	    fprintf(outfile,"\n");
+        */
+	    
+        for (b = (*c)->first; b != NULL; b = b->next)
+	    {
+		    p = b->end;
+	    	
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
+            for (i = 0; i < dim; ++i)
+                fprintf(outfile,"%24.18g ",p->force[i]);
+	    	fprintf(outfile,"\n");
+            
+            sl = (STATE*)left_state(p);
+	    	sr = (STATE*)right_state(p);
+            fwrite(sl,1,front->sizest,outfile);
+            fwrite(sr,1,front->sizest,outfile);
+            fprintf(outfile,"\n");
+            
+            /*
             fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    fprintf(outfile,"\n");
+	    	fprintf(outfile,"\n");
             for (i = 0; i < dim; ++i)
                 fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    fprintf(outfile,"\n");
-	    for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		p = b->end;
-	    	sl = (STATE*)left_state(p);
-	    	sr = (STATE*)right_state(p);
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",p->vel[i]);
 	    	fprintf(outfile,"\n");
-            	fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    	fprintf(outfile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    	fprintf(outfile,"\n");
+            */
 	    }
 	}
-	for (n = intfc->nodes; n && *n; ++n)
+	
+    for (n = intfc->nodes; n && *n; ++n)
 	{
 	    p = (*n)->posn;
-	    sl = (STATE*)left_state(p);
+        
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->vel[i]);
+	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",p->force[i]);
+	    fprintf(outfile,"\n");
+	    
+        sl = (STATE*)left_state(p);
 	    sr = (STATE*)right_state(p);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
-            fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
+        fwrite(sl,1,front->sizest,outfile);
+        fwrite(sr,1,front->sizest,outfile);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->impulse[i]);
+        
+        /*
+        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->impulse[i]);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->impulse[i]);
 	    fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->vel[i]);
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sl->vel[i]);
 	    fprintf(outfile,"\n");
+        for (i = 0; i < dim; ++i)
+            fprintf(outfile,"%24.18g ",sr->vel[i]);
+	    fprintf(outfile,"\n");
+        */
 	}
-    */
 
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
@@ -168,7 +215,11 @@ void printAfExtraData(
             for (i = 0; i < num_pts; ++i)
                 fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
         }
+
         /*
+        //TODO: This all gets handled in one of the user_fprint_surface functions
+        //      and can be removed.
+        //
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);
@@ -233,7 +284,6 @@ void printAfExtraData(
     while (next_point(intfc,&p,&hse,&hs))
         fprintf(outfile,"%ld\n",Gindex(p));
 
-    //TODO: why are these extra traversals needed for global point index?
     for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
@@ -295,7 +345,6 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	}
 
-    FT_WriteFrontState(outfile,front);
 	fclose(outfile);
 }	/* end printAfExtraData */
 
@@ -326,11 +375,148 @@ void readAfExtraData(
 	printf("filename = %s\n",filename);
     infile = fopen(filename,"r");
 
-    //TODO: may still need p->vel[i]
-    
 	next_output_line_containing_string(infile,
 		"Airfoil extra front state data:");
 
+    //TODO: When done debugging can package up the functionality in here.
+    //      FT_ReadFrontState(infile,front);
+
+	next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        /*
+        if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_STRING) continue;
+        */
+
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+        fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+        fscanf(infile,"\n");
+
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+
+        /*
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
+        */
+    }
+
+	for (c = intfc->curves; c && *c; ++c)
+	{
+	    b = (*c)->first;
+        p = b->start;
+	    
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+        fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+        fscanf(infile,"\n");
+        
+        sl = (STATE*)left_state(p);
+	    sr = (STATE*)right_state(p);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+       
+        /*
+        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->vel[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->vel[i]);
+	    fscanf(infile,"\n");
+        */
+	    
+        for (b = (*c)->first; b != NULL; b = b->next)
+	    {
+		    p = b->end;
+
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&p->vel[i]);
+	    	fscanf(infile,"\n");
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&p->force[i]);
+	    	fscanf(infile,"\n");
+
+	    	sl = (STATE*)left_state(p);
+	    	sr = (STATE*)right_state(p);
+            fread(sl,1,front->sizest,infile);
+            fread(sr,1,front->sizest,infile);
+            fscanf(infile,"\n");
+            
+            /*
+            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+	    	fscanf(infile,"\n");
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sl->impulse[i]);
+	    	fscanf(infile,"\n");
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sr->impulse[i]);
+	    	fscanf(infile,"\n");
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sl->vel[i]);
+	    	fscanf(infile,"\n");
+            for (i = 0; i < dim; ++i)
+                fscanf(infile,"%lf ",&sr->vel[i]);
+	    	fscanf(infile,"\n");
+            */
+	    }
+	}
+
+	for (n = intfc->nodes; n && *n; ++n)
+	{
+	    p = (*n)->posn;
+
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->vel[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&p->force[i]);
+	    fscanf(infile,"\n");
+	    
+        sl = (STATE*)left_state(p);
+	    sr = (STATE*)right_state(p);
+        fread(sl,1,front->sizest,infile);
+        fread(sr,1,front->sizest,infile);
+        fscanf(infile,"\n");
+
+        /*
+        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->impulse[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sl->vel[i]);
+	    fscanf(infile,"\n");
+        for (i = 0; i < dim; ++i)
+            fscanf(infile,"%lf ",&sr->vel[i]);
+	    fscanf(infile,"\n");
+        */
+	}
+
+
+    //////////////////////////////////////////////////////////
     /*
 	next_point(intfc,NULL,NULL,NULL);
         while (next_point(intfc,&p,&hse,&hs))
@@ -339,15 +525,26 @@ void readAfExtraData(
 		wave_type(hs) != ELASTIC_STRING) 
 		continue;
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            
+            //TODO: Replace below with this
+            //
+            //      fread(sl,1,front->sizest,outfile);
+            //      fread(sr,1,front->sizest,outfile);
+            //
+            
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
+
+            //TODO:Keep this though
             for (i = 0; i < dim; ++i)
                 fscanf(infile,"%lf ",&p->vel[i]);
-	    fscanf(infile,"\n");
+                
+            fscanf(infile,"\n");
         }
-	for (c = intfc->curves; c && *c; ++c)
+	
+    for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
 	    sl = (STATE*)left_state(p);
@@ -414,6 +611,7 @@ void readAfExtraData(
 	    fscanf(infile,"\n");
 	}
     */
+    ////////////////////////////////////////////////////////////
 	
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
@@ -436,7 +634,11 @@ void readAfExtraData(
                     fscanf(infile,"%d",registered_pts->global_ids+i);
             }
         }
+        
         /*
+        //TODO: This gets handled by (user_)read_print_surface() function somewhere.
+        //      Can be removed.
+
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
             HYPER_SURF* hs = Hyper_surf(*s);
@@ -509,7 +711,6 @@ void readAfExtraData(
 	    clean_up(ERROR);
 	}
 	
-    //TODO: why are these extra traversals needed for global point index?
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
 	{
@@ -607,7 +808,6 @@ void readAfExtraData(
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
 
-    FT_ReadFrontState(infile,front);
     fclose(infile);
 }	/* end readAfExtraData */
 
@@ -1207,60 +1407,74 @@ static void singleCanopyModification(
 	double L[MAXD],U[MAXD];
 	int i,dim,gmax[MAXD];
 
+
 	dim = FT_Dimension();
-	CursorAfterString(infile,
-		"Enter yes for translation of interior interface:");
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to modify interior interface:"))
+    {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-	if (string[0] != 'y' || string[0] != 'Y')
-	{
-	    CursorAfterString(infile,"Enter displacement of translation:");
-            fscanf(infile,"%lf %lf %lf",disp,disp+1,disp+2);
-            (void) printf("%f %f %f\n",disp[0],disp[1],disp[2]);
-	    I_TransInteriorIntfcPoints(intfc,disp);
-	}
-	CursorAfterString(infile,
-		"Enter yes for rotation of interior interface:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-	if (string[0] != 'y' || string[0] != 'Y')
-	{
-	    CursorAfterString(infile,"Enter center of rotation:");
-            fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
-            (void) printf("%f %f %f\n",center[0],center[1],center[2]);
-	    CursorAfterString(infile,"Enter azimuthal and polar angles:");
-            fscanf(infile,"%lf %lf",&phi,&theta);
-            (void) printf("%f %f\n",phi,theta);
-	    theta *= PI/180.0;
-	    phi *= PI/180.0;
-	    I_SphericalRotateInteriorIntfcPoints(intfc,center,phi,theta);
-	}
-	if (CursorAfterStringOpt(infile,
-            "Entering yes to modify computational grid:"))
+        if (string[0] == 'y' || string[0] == 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
+            CursorAfterString(infile,
+                "Enter yes for translation of interior interface:");
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
             if (string[0] == 'y' || string[0] == 'Y')
-	    {
-		for (i = 0; i < dim; ++i)
-        	{
-	            sprintf(input_string,
-				"New domain limit in %d-th dimension:",i);
-	            CursorAfterString(infile,input_string);
-	            fscanf(infile,"%lf %lf",&L[i],&U[i]);
-	            (void) printf("%f %f\n",L[i],U[i]);
-        	}
-		CursorAfterString(infile,"New computational grid:");
-        	for (i = 0; i < dim; ++i)
-        	{
-	            fscanf(infile,"%d",&gmax[i]);
-		    (void) printf("%d ",gmax[i]);
-        	}
-        	(void) printf("\n");
-		FT_ResetDomainAndGrid(front,L,U,gmax);
-	    }
+            {
+                CursorAfterString(infile,"Enter displacement of translation:");
+                    fscanf(infile,"%lf %lf %lf",disp,disp+1,disp+2);
+                    (void) printf("%f %f %f\n",disp[0],disp[1],disp[2]);
+                I_TransInteriorIntfcPoints(intfc,disp);
+            }
+            CursorAfterString(infile,
+                "Enter yes for rotation of interior interface:");
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                CursorAfterString(infile,"Enter center of rotation:");
+                    fscanf(infile,"%lf %lf %lf",center,center+1,center+2);
+                    (void) printf("%f %f %f\n",center[0],center[1],center[2]);
+                CursorAfterString(infile,"Enter azimuthal and polar angles:");
+                    fscanf(infile,"%lf %lf",&phi,&theta);
+                    (void) printf("%f %f\n",phi,theta);
+                theta *= PI/180.0;
+                phi *= PI/180.0;
+                I_SphericalRotateInteriorIntfcPoints(intfc,center,phi,theta);
+            }
         }
-	fclose(infile);
+    }
+	
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to modify computational grid:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                sprintf(input_string,
+                "New domain limit in %d-th dimension:",i);
+                CursorAfterString(infile,input_string);
+                fscanf(infile,"%lf %lf",&L[i],&U[i]);
+                (void) printf("%f %f\n",L[i],U[i]);
+            }
+    
+            CursorAfterString(infile,"New computational grid:");
+            for (i = 0; i < dim; ++i)
+            {
+                fscanf(infile,"%d",&gmax[i]);
+                (void) printf("%d ",gmax[i]);
+            }
+            (void) printf("\n");
+        
+            FT_ResetDomainAndGrid(front,L,U,gmax);
+        }
+    }
+	
+    fclose(infile);
 }	/* end singleCanopyModification */
 
 static void bifurcateCanopyModification(

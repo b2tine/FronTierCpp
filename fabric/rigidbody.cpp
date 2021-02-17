@@ -312,23 +312,6 @@ static void init_rigid_human(
 	}
 }	/* end init_rigid_human */
 
-/*
-extern void unsort_surf_point(SURFACE *surf)
-{
-	TRI *tri;
-	POINT *p;
-
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (int i = 0; i < 3; ++i)
-	    {
-            p = Point_of_tri(tri)[i];
-            sorted(p) = NO;
-	    }
-	}
-}*/	/* end unsort_surf_point */
-
 static void surf_com_translation(
 	SURFACE *surf,
 	double *cen)
@@ -426,8 +409,13 @@ extern void rgb_init(Front*front, RG_PARAMS* rgb_params)
         {
             for (s = front->interf->surfaces; s && *s; ++s)
             {
-                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+                if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+                    wave_type(*s) == NEUMANN_BOUNDARY)
                 {
+                    if (wave_type(*s) == NEUMANN_BOUNDARY)
+                    {
+                        rgb_params->is_fixed = true;
+                    }
                     prompt_for_rigid_body_params(dim,inname,rgb_params);
                     set_rgbody_params(rgb_params,Hyper_surf(*s));
                 }
@@ -467,6 +455,8 @@ static void prompt_for_rigid_body_params(
         }
 
         rgb_params->body_index = count++;
+        if (rgb_params->is_fixed) return;
+
         sprintf(s, "For rigid body %d", rgb_params->body_index);
         CursorAfterString(infile, s); printf("\n");
         long idpos = ftell(infile);

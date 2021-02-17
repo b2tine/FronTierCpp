@@ -642,6 +642,24 @@ EXPORT	void sprint_general_vector(
 	    (void) strcat(s,end);
 }		/*end sprint_general_vector*/
 
+EXPORT	void fprint_int_vector(
+	FILE        *file,
+	const char  *mesg,
+	const int   *v,
+	int         dim,
+	const char  *end)
+{
+	int    i;
+
+	if (mesg != NULL)
+	    (void) fprintf(file,"%s",mesg);
+	(void) fprintf(file,"(");
+	for (i = 0; i < dim; ++i)
+	    (void) fprintf(file,"%d%s",v[i],(i==(dim-1)) ? ")" : ", ");
+	if (end != NULL)
+	    (void) fprintf(file,"%s",end);
+}		/*end fprint_general_vector*/
+
 /*
 *			random_gaussian():
 *

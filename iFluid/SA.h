@@ -1,7 +1,7 @@
 #ifndef SA_H
 #define SA_H
 
-#include "iFturb.h"
+#include "iRANS.h"
 
 
 class SA_Solver2d : public TurbSolver2d

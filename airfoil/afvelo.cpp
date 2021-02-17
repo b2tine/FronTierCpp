@@ -266,12 +266,19 @@ void setMotionParams(Front* front)
 
             if (iFparams->with_porosity == YES)
             {
+                if (CursorAfterStringOpt(infile,"Enter porosity:"))
+                {
+                    //TODO: can probably remove this ...
+                    fscanf(infile,"%lf",&af_params->porosity);
+                    (void) printf("%f\n",af_params->porosity);
+                }
                 CursorAfterString(infile,"Enter viscous parameter:");
                 fscanf(infile,"%lf",&af_params->porous_coeff[0]);
                 (void) printf("%f\n",af_params->porous_coeff[0]);
                 CursorAfterString(infile,"Enter inertial parameter:");
                 fscanf(infile,"%lf",&af_params->porous_coeff[1]);
                 (void) printf("%f\n",af_params->porous_coeff[1]);
+                iFparams->porosity = af_params->porosity;
                 iFparams->porous_coeff[0] = af_params->porous_coeff[0];
                 iFparams->porous_coeff[1] = af_params->porous_coeff[1];
             }

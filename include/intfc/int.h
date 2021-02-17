@@ -145,7 +145,6 @@ typedef struct _BOND_REDIST_PARAMS BOND_REDIST_PARAMS;
  /* A Curve in the Plane: */
 struct _CURVE
 {
-
 	int _boundary;		/* Mandatory first element,  see notes on
 				 *  boundary macros below */
 	struct _CURVE *obj;	/* refers back to curve, see boundary macro */
@@ -259,9 +258,15 @@ struct _TRI
 	int boundary;		/* tri bonds on interface curves? */
 	int order;		/* used as an identification for a tri, avoid 
 				   the conflict with _index in private_data. */
-        long global_index;
-	boolean	constrained;	/* If yes will not free to move */
-	union
+        
+    long global_index;
+	
+    //TODO: should TRI struct have pos and neg comp info???
+        //COMPONENT pos_comp, neg_comp;
+	
+    boolean	constrained;	/* If yes will not free to move */
+	
+    union
 	{
 	    int		   _index;
 	    POINTER 	   _workspace;
@@ -1069,6 +1074,9 @@ enum {
 	((A)[0]*(B)[0] + (A)[1]*(B)[1])
 #define Dot3d(A,B)							\
 	((A)[0]*(B)[0] + (A)[1]*(B)[1] + (A)[2]*(B)[2])
+#define	Dotd(A,B,dim) \
+    ((dim) == 1 ? (A)[0]*(B)[0] : \
+     (dim) == 2 ? Dot2d(A,B) : Dot3d(A,B))
 
 #define	Mag2d(A) sqrt(Dot2d(A,A))
 #define	Mag3d(A) sqrt(Dot3d(A,A))

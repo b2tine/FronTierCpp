@@ -418,8 +418,14 @@ void setRigidBodyMotionParams(
     {
         for (s = front->interf->surfaces; s && *s; ++s)
         {
-            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+            if (is_bdry(*s)) continue;
+            if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
+                wave_type(*s) == NEUMANN_BOUNDARY)
             {
+                if (wave_type(*s) == NEUMANN_BOUNDARY)
+                {
+                    rgb_params->is_fixed = true;
+                }
                 prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
             }
@@ -459,6 +465,8 @@ static void prompt_for_rigid_body_params(
         }
 
         rgb_params->body_index = count++;
+        if (rgb_params->is_fixed) return;
+
         sprintf(s, "For rigid body %d", rgb_params->body_index);
         CursorAfterString(infile, s); printf("\n");
         long idpos = ftell(infile);
@@ -741,6 +749,26 @@ static void prompt_for_rigid_body_params(
             }
             (void) fseek(infile,idpos,SEEK_SET);
         }
+
+        //TODO: should be YES by default
+        //      NOTE: currently not being used. Still prototyping
+        //
+        //      "Enter yes to use slip wall boundary condition:"
+        rgb_params->no_slip = YES;
+        if (CursorAfterStringOpt(infile,
+            "Type yes to use no-slip boundary condition:"))
+        {
+                fscanf(infile,"%s",s);
+                (void) printf("%s\n",s);
+                //if (s[0] == 'y' || s[0] == 'Y')
+                if (s[0] == 'n' || s[0] == 'N')
+                {
+                    rgb_params->no_slip = NO;
+                    //rgb_params->no_slip = YES;
+                }
+                (void) fseek(infile,idpos,SEEK_SET);
+        }
+
         fclose(infile);
 
         if (debugging("rgbody"))
@@ -752,7 +780,7 @@ static void set_rgbody_params(
         HYPER_SURF* hs)
 {
         int i,dim = rg_params->dim;
-	body_index(hs) = rg_params->body_index;
+	    body_index(hs) = rg_params->body_index;
         total_mass(hs) = rg_params->total_mass;
         mom_inertial(hs) = rg_params->moment_of_inertial;
         angular_velo(hs) = rg_params->angular_velo;
@@ -760,6 +788,7 @@ static void set_rgbody_params(
         vparams(hs) = rg_params->vparams;
         vel_func(hs) = rg_params->vel_func;
         surface_tension(hs) = 0.0;
+        
         for (i = 0; i < dim; ++i)
         {
             center_of_mass(hs)[i] = rg_params->center_of_mass[i];
@@ -773,11 +802,14 @@ static void set_rgbody_params(
                 p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
             }
         }
+        
         if (dim == 3)
         {
             for (i = 0; i < 4; i++)
                 euler_params(hs)[i] = rg_params->euler_params[i];
         }
+
+        no_slip(hs) = rg_params->no_slip;
 }       /* end set_rgbody_params */
 
 /*

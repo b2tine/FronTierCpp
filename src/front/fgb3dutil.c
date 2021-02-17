@@ -1214,9 +1214,17 @@ EXPORT 	boolean track_comp_through_crxings3d(
 	int count = 0;
 	static int **ips = NULL;
 	int idir,num_ip;
+    
+    if (is_fabric_run())
+    {
+        //TODO: Complete ramifications of this not fully understood
+        //
+        //THIS ALLOWS PARALLEL FABRIC RUN
+        return fill_default_component(smin,smax,gmax,intfc);
+    }
 
-        if (I_NumOfIntfcSurfaces(intfc) == 0)
-            return fill_default_component(smin,smax,gmax,intfc);
+    if (I_NumOfIntfcSurfaces(intfc) == 0)
+        return fill_default_component(smin,smax,gmax,intfc);
 
 	DEBUG_ENTER(track_comp_through_crxings3d)
 
@@ -6428,7 +6436,7 @@ loops_out:
             patch[npatch].pixel = pixel;
             status = paint_the_patch(smin,smax,gmax,intfc,ip,patch+npatch,
                                 comp,ip_store);
-            /* Record potentially demaged patch */
+            /* Record potentially damaged patch */
             if (status == YES)
             {
                 if (npatch >= max_num_patch - 1)

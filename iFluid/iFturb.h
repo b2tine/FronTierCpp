@@ -1,68 +1,90 @@
-#ifndef IFTURB_H
-#define IFTURB_H
+#ifndef IF_TURB_H
+#define IF_TURB_H
 
-#include "iFluid.h"
-
-class TurbSolver
+struct SpaldingWallLaw
 {
-    public:
+public:
 
-        TurbSolver(Front* ft);
-        virtual ~TurbSolver() = default;
+    SpaldingWallLaw(double u_tan, double dist, double nu_lam)
+        : u(u_tan), y(dist), nu(nu_lam)
+    {}
 
-        virtual void initMesh();		    // set up the cartesian grid
-        virtual void initFieldVariables();  // allocate field variables memory (previously setDomain())
-        virtual void setComponent();	    // initialize cell components	
-   
-   
-    protected:
+    SpaldingWallLaw(double u_tan, double dist, double nu_lam, double b)
+        : u(u_tan), y(dist), nu(nu_lam), B(b)
+    {}
 
-        Front* front;
+    ~SpaldingWallLaw() = default;
+
+    SpaldingWallLaw() = delete;
+    SpaldingWallLaw(const SpaldingWallLaw&) = delete;
+    SpaldingWallLaw& operator=(const SpaldingWallLaw&) = delete;
+    SpaldingWallLaw(SpaldingWallLaw&&) = delete;
+    SpaldingWallLaw& operator=(SpaldingWallLaw&&) = delete;
+
         
-        // Topological grid variables (Dual to Comp Grid)
-        RECT_GRID* top_grid;
-        COMPONENT* top_comp;
-        int* top_gmax;
-        double* top_L;
-        double* top_U;
-        int* lbuf;
-        int* ubuf;
+    const int MAXITER = 5000;
+    const double TOL = 1.0e-08;
+        
+    double solve(double u0)
+    {
+        if (u < TOL) return 0.0;
 
-	    std::vector<IF_RECTANGLE> cells; //Centered at nodes of top_grid
+        double un = u0;
+        for (int i = 0; i < MAXITER; ++i)
+        {
+            double fval = f(un);
+            if (fabs(fval) < TOL) return un;
 
-        // Parallel partitioning
-        int NLblocks;
-        int ilower;
-        int iupper;
-        int* n_dist;
+            un = un - f(un)/fprime(un);
+        }
+
+        printf("\nERROR: SpaldingWallLaw::solve() could not find root\n");
+        printf("u = %g  y = %g  nu = %g\n",u,y,nu);
+        printf("un = %g   f(un) = %g\n",un,f(un));
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+private:
     
-        double dt; //time step
+    double u;           //tangential fluid velocity magnitude
+    double y;           //physical distance to wall
+    double nu;          //fluid kinematic viscosity (laminar)
+    double B {5.2};     //model constant ~ 5.2 for smooth walls
+    double K {0.41};    //Karman constant
+
+    double f(double u_plus)
+    {
+        double kup = K*u_plus;
+
+        double val = y*u - nu*u_plus*u_plus
+                    - nu*exp(-K*B)*((exp(kup) - 1.0) - kup
+                            - 0.5*kup*kup - 1.0/6.0*kup*kup*kup)*u_plus;
+        
+        return val;
+    }
+
+    double fprime(double u_plus)
+    {
+        double kup = K*u_plus;
+
+        double val = -2.0*nu*u_plus - nu*exp(-K*B)*((exp(kup) - 1.0)
+                        - kup - 0.5*kup*kup - 1.0/6.0*kup*kup*kup)
+                    - nu*u_plus*exp(-K*B)*(K*exp(kup) - K - K*kup - K*0.5*kup*kup);
+
+        return val;
+    }
+
 };
 
 
-class TurbSolver2d : public TurbSolver
-{
-    protected:
+double computeWallShearStress(double u_tan, double walldist,
+            double mu, double rho, double u_far);
 
-        // Parallel solver index mapping
-        int** ij_to_I;
-        int** I_to_ij;
+double computeFrictionVelocity(double u_tan, double walldist,
+            double nu, double u_far);
 
-};
-
-
-
-class TurbSolver3d : public TurbSolver
-{
-    protected:
-
-        // Parallel solver index mapping
-        int*** ijk_to_I;
-        int** I_to_ijk;
-
-};
-
-
+double computeWallVelocity(double u_tan, double walldist,
+            double nu, double u_far);
 
 
 #endif

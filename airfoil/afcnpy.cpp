@@ -43,11 +43,11 @@ static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void new_setNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
-static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
+static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);//doesn't exist
+static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);//doesn't exist
 static void setCollisionFreePoints3d(INTERFACE*);
 static void break_string_curve(CURVE*,double);
-static void linkGlobalIndexToTri(INTERFACE*,TRI***);
+static void linkGlobalIndexToTri(INTERFACE*,TRI***);//nowhere used
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
 
@@ -99,6 +99,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
+//NOTE: nowhere used
 extern void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
@@ -224,6 +225,8 @@ int af_find_state_at_crossing(
                 return CONST_P_PDE_BOUNDARY;
             else
                 return CONST_V_PDE_BOUNDARY;
+        /*case ELASTIC_BOUNDARY:
+            return POROUS_BOUNDARY;*/
         }
     }
     //TODO: this should return CONST_V_PDE_BOUNDARY
@@ -288,7 +291,7 @@ static boolean is_pore(
 	SURFACE **s;
 	TRI *tri;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double gamma = af_params->gamma;
+	double gamma = af_params->porosity;
 	static int current_step = -1;
 
 	if (front->rect_grid->dim != 3) return NO;
@@ -496,8 +499,7 @@ extern void compute_curve_accel1(
 	    x_diff = len - len0; 
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
 		vect[j] = x_diff*dir[j];
 		if (b != curve->first)
 		{
@@ -538,12 +540,10 @@ extern void compute_curve_accel1(
 				length0 = tris[j]->side_length0[side];
 				length = separation(p,p_nb,3);
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/length;
-                            	    f[i][k] += ks*(length - length0)*
-					dir[k]/m_l;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    f[i][k] += ks*(length - length0)*dir[k]/m_l;
+                }
 			    }
 			}
 		    }
@@ -621,8 +621,7 @@ extern void compute_node_accel1(
 	    x_diff = len - len0; 
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
 		vect[j] = x_diff*dir[j];
 		if (dim == 3)
 		{
@@ -767,7 +766,8 @@ static void compute_center_of_mass_velo(
 	    for (j = 0; j < 3; ++j)
 	    	vcan[j] = 0.0;
 	    area = mass_canopy = 0.0;
-	    surf_tri_loop(canopy,tri)
+	    
+        surf_tri_loop(canopy,tri)
 	    {
 	    	for (j = 0; j < 3; ++j)
 	    	{
@@ -798,29 +798,31 @@ static void compute_center_of_mass_velo(
 	    	xcan[j] /= area;
 	    }
 
+        //TODO: If using a rigid body instead of pointmass
+        //      will we enter here? If not, find a work around.
 	    if (NULL != geom_set->load_node)
 	    {
-	  	node = geom_set->load_node;
-	  	state = (STATE*)left_state(node->posn);
-	  	for (j = 0; j < 3; ++j)
-	  	{
-	    	    vload[j] = state->vel[j];
-	    	    xload[j] = Coords(node->posn)[j];
-	  	}
+            node = geom_set->load_node;
+            state = (STATE*)left_state(node->posn);
+            for (j = 0; j < 3; ++j)
+            {
+                vload[j] = state->vel[j];
+                xload[j] = Coords(node->posn)[j];
+            }
 
-        //NOTE: payload and rigid body mass are equal when a
-        //      rigid body is attached to the suspension lines.
-        //      See installString() and InstallNewLoadNode().
-	  	payload = af_params->payload;
-	  	xcom = center_of_mass(Hyper_surf(canopy));
-	  	vcom = center_of_mass_velo(Hyper_surf(canopy));
-	  	for (j = 0; j < 3; ++j)
-	  	{
-	    	    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
-				(mass_canopy + payload);
-	    	    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
-				(mass_canopy + payload);
-	  	}
+            //NOTE: payload and rigid body mass are equal when a
+            //      rigid body is attached to the suspension lines.
+            //      See installString() and InstallNewLoadNode().
+            payload = af_params->payload;
+            xcom = center_of_mass(Hyper_surf(canopy));
+            vcom = center_of_mass_velo(Hyper_surf(canopy));
+            for (j = 0; j < 3; ++j)
+            {
+                    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
+                    (mass_canopy + payload);
+                    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
+                    (mass_canopy + payload);
+            }
 	    }
 	    else
 	    {
@@ -848,21 +850,23 @@ static void smooth_vel(
 	
 	PointAndFirstRingTris(p,hse,hs,&nt,tris);
 	np = 0;
-	for (k = 0; k < 3; ++k)
+	
+    for (k = 0; k < 3; ++k)
 	    vel[k] = 0.0;
+
 	for (i = 0; i < nt; ++i)
 	{
 	    for (j = 0; j < 3; ++j)
 	    {
-		pt = Point_of_tri(tris[i])[j];
-		if (pointer_in_list((POINTER)pt,np,(POINTER*)pt_list))
-		    continue;
-		pt_list[np++] = pt;	
-		hse = Hyper_surf_element(tris[i]);
-		FT_GetStatesAtPoint(pt,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		for (k = 0; k < 3; ++k)
-	    	    vel[k] += sl->vel[k];
-		
+            pt = Point_of_tri(tris[i])[j];
+            if (pointer_in_list((POINTER)pt,np,(POINTER*)pt_list))
+                continue;
+
+            pt_list[np++] = pt;	
+            hse = Hyper_surf_element(tris[i]);
+            FT_GetStatesAtPoint(pt,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            for (k = 0; k < 3; ++k)
+                vel[k] += sl->vel[k];
 	    }
 	}
 	for (k = 0; k < 3; ++k)
@@ -924,8 +928,7 @@ extern void compute_node_accel2(
 	    len0 = bond_length0(b);
 	    for (j = 0; j < dim; ++j)
 	    {
-		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
-				len0*b->dir0[j];
+		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] - len0*b->dir0[j];
 		if (dim == 3)
 		{
 		    if (is_load_node(node) == YES)
@@ -1018,12 +1021,11 @@ extern void compute_node_accel2(
 			len = separation(p,p_nb,3);
 			x_diff = len - len0;
 			for (k = 0; k < 3; ++k)
-                       	{
-                       	    dir[k] = tri->side_dir0[side][k]; 
-                       	    vect[k] = (Coords(p_nb)[k] - Coords(p)[k])
-					- len0*dir[k];
-                       	    f[*n][k] += ks*vect[k]/mass;
-                       	}
+            {
+                dir[k] = tri->side_dir0[side][k]; 
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - len0*dir[k];
+                f[*n][k] += ks*vect[k]/mass;
+            }
 		    }
 		}
 	    }
@@ -1092,7 +1094,7 @@ extern void compute_curve_accel2(
 	    {
 	    	x[i][j] = Coords(b->end)[j];
 	    	v[i][j] = b->end->vel[j];
-		f[i][j] = -lambda_l*v[i][j]/m_l;
+		    f[i][j] = -lambda_l*v[i][j]/m_l;
 	    }
 	    i++;
 	}
@@ -1223,19 +1225,18 @@ static void spring_force_at_point2(
 		    length0 = tris[i]->side_length0[j];
 		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
 		    length = separation(p,p_nb,3);
-	    	    for (k = 0; k < 3; ++k)
+            for (k = 0; k < 3; ++k)
 		    {
-			dir[k] = tris[i]->side_dir0[j][k];
-			vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) -
-				//length0*tris[i]->side_dir0[j][k];
-				length0*dir[k];
-			f[k] += ks*vect[k];
+                dir[k] = tris[i]->side_dir0[j][k];
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
+                    //vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*tris[i]->side_dir0[j][k];
+                f[k] += ks*vect[k];
 		    }
 		    if (is_side_bdry(tris[i],(j+2)%3))
 		    {
-			(void) printf("Detect boundary "
-				"in spring_force_at_point2()\n");
-			clean_up(ERROR);
+                (void) printf("Detect boundary "
+                    "in spring_force_at_point2()\n");
+                clean_up(ERROR);
 		    }
 		}
 	    }
@@ -1351,13 +1352,11 @@ extern void compute_node_accel3(
 				len = separation(p,p_nb,3);
 	    			x_diff = len - len0; 
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/len;
-                            	    vect[k] = len0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[*n][k] += ks*vect[k]/m_s;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
 			    }
 			}
 		    }
@@ -1389,13 +1388,11 @@ extern void compute_node_accel3(
 				len = separation(p,p_nb,3);
 				x_diff = len - len0;
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/len;
-                            	    vect[k] = len0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[*n][k] += ks*vect[k]/m_s;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
 			    }
 			}
 		    }
@@ -1458,7 +1455,7 @@ extern void compute_curve_accel3(
 	    {
 	    	x[i][j] = Coords(b->end)[j];
 	    	v[i][j] = b->end->vel[j];
-		f[i][j] = -lambda_l*v[i][j]/m_l;
+            f[i][j] = -lambda_l*v[i][j]/m_l;
 	    }
 	    i++;
 	}
@@ -1469,8 +1466,7 @@ extern void compute_curve_accel3(
 	    len0 = bond_length0(b);
 	    for (j = 0; j < dim; ++j)
 	    {
-		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
-				/bond_length(b) - b->dir0[j]);
+		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])/bond_length(b) - b->dir0[j]);
 		if (b != curve->first)
 		{
 	    	    f[i-1][j]   += kl*vect[j]/m_l;
@@ -1510,13 +1506,11 @@ extern void compute_curve_accel3(
 				length0 = tris[j]->side_length0[side];
 				length = separation(p,p_nb,3);
 				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = (Coords(p_nb)[k] - 
-						Coords(p)[k])/length;
-				    vect[k] = length0*(dir[k]
-					- tris[j]->side_dir0[side][k]);
-                            	    f[i][k] += kl*vect[k]/m_l;
-                        	}
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    vect[k] = length0*(dir[k] - tris[j]->side_dir0[side][k]);
+                    f[i][k] += kl*vect[k]/m_l;
+                }
 			    }
 			}
 		    }
@@ -1808,7 +1802,7 @@ static void print_elastic_params(
 
 void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
-    if (pp_numnodes() > 1)
+    if (pp_numnodes() > 1 && !debugging("collision_off"))
     {
         fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
     }
@@ -1899,8 +1893,15 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                    ELASTIC_BOUNDARY);
+            //TODO: Including NEUMANN_BOUNDARY in the w_type array can
+            //      cause problems with rectangular domain numann boundarys.
+            //      Need to put a continue statement inside a domain boundary
+            //      check of the hypersurface in collect_hyper_surfaces()
+            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+            //TODO: Or use this one???
+                //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1942,13 +1943,14 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
                     sizeof(SPRING_VERTEX));
             
             //allocate mem for point_set via point_set_store, and store
-            //gindex values of elastic_intfc points in array positions
+            //elastic_intfc points in the point_set array mapped to their
+            //respective gindex values.
             link_point_set(&geom_set,point_set,point_set_store);
 
             count_vertex_neighbors(&geom_set,sv);
             set_spring_vertex_memory(sv,owner_size);
 
-            //links sv to point_set
+            //links sv to the point_set
             set_vertex_neighbors(&geom_set,sv,point_set);
 
             if (elastic_intfc != fr->interf)
@@ -1984,16 +1986,17 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
             point_set[i] = NULL;
         
         //allocate mem for point_set via point_set_store, and store
-        //gindex values of elastic_intfc points in array positions
+        //elastic_intfc points in the point_set array mapped to their
+        //respective gindex values.
 	    link_point_set(&geom_set,point_set,point_set_store);
 	    
         count_vertex_neighbors(&geom_set,sv);
 	    set_spring_vertex_memory(sv,client_size);
 	    
-        //links sv to point_set
+        //links sv to the point_set
         set_vertex_neighbors(&geom_set,sv,point_set);
 
-        //Write from owner geom_set to owner point_set
+        //Write from client's geom_set to client's point_set
         //(which sv has pointers to)
 	    get_point_set_from(&geom_set,point_set);
 
@@ -2009,20 +2012,28 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     }
 
 
-    CollisionSolver3d* collision_solver;
+    CollisionSolver3d* collision_solver = nullptr;
 
 
+    //Collect all point_set data at owner node then
+    //run fabric solver and collision solver. Then return to clients
 	if (myid == owner_id)
 	{
-	
         if (!debugging("collision_off") && FT_Dimension() == 3) 
         {
-            collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
+            collision_solver = new CollisionSolver3d();
 
+            //NOTE: These two functions need to be called before the spring
+            //      solver runs.
             setCollisionFreePoints3d(fr->interf);
             collision_solver->initializeSystem(fr);
 
+            //These two also must be set before??
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
+
+            //TODO: consolidate the following into a setDefaultCollisionParams() function
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);
 
@@ -2040,14 +2051,12 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
             //collision_solver->setStrainLimit(af_params->strain_limit);
             //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
-
-            collision_solver->gpoints = fr->gpoints;
-            collision_solver->gtris = fr->gtris;
         }
         else
         {
             printf("COLLISION DETECTION OFF\n");
         }
+
 
         //Write from owner geom_set to owner point_set
 	    get_point_set_from(&geom_set,point_set);
@@ -2055,7 +2064,9 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
         //Write from client point_sets to owner point_set
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
+            //if (i == owner_id) continue;
             if (i == myid) continue;
+            
             pp_recv(5,i,client_L,MAXD*sizeof(double));
             pp_recv(6,i,client_U,MAXD*sizeof(double));
             pp_recv(1,i,client_size_new+i,sizeof(int));
@@ -2070,10 +2081,12 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
                 FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
                         client_size_new[i], sizeof(GLOBAL_POINT));
             }
+
+            //receive point_set_stores from clients
             pp_recv(2,i,client_point_set_store[i],
                     client_size_new[i]*sizeof(GLOBAL_POINT));
 
-            //performs the actual write
+            //performs the actual write to owner point_set
             copy_from_client_point_set(point_set,client_point_set_store[i],
                     client_size_new[i],client_L,client_U);
 	    } 
@@ -2095,6 +2108,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	    stop_clock("spring_model");
 
         //Write back to owner geomset from owner point set
+        //(which was updated through sv in the spring solver)
         put_point_set_to(&geom_set,point_set);
         set_vertex_impulse(&geom_set,point_set);
 	    set_geomset_velocity(&geom_set,point_set);
@@ -2121,7 +2135,8 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
             pp_send(3,client_point_set_store[i],
                             client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
-	}//end myid == owner_id
+	
+    }//end myid == owner_id
 
 
     //Clients recevie their point sets back from owner
@@ -2135,31 +2150,11 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	put_point_set_to(&geom_set,point_set);
 
 	// Calculate the real force on load_node and rg_string_node
-    //TODO: make sure fr is the current interface
 	setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
-
-    /*
-	if(!debugging("collision_off"))
-    {
-        if (myid == owner_id)
-        {
-            if (FT_Dimension() == 3)
-            {
-                start_clock("resolveCollision");
-                collision_solver->resolveCollision();
-                stop_clock("resolveCollision");
-            }
-        }
-        setSpecialNodeForce(fr,geom_set.kl);
-	    compute_center_of_mass_velo(&geom_set);
-
-        delete collision_solver;
-    }
-    */
 
     if (debugging("max_speed"))
     {
@@ -2167,8 +2162,8 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
-}	/* end fourth_order_elastic_set_propagate() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
+}	/* end fourth_order_elastic_set_propagate_parallel() */
 
 void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 {
@@ -2199,7 +2194,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 
 
 	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
+	    (void) printf("Entering fourth_order_elastic_set_propagate_serial()\n");
 	geom_set.front = fr;
 
 	if (first_break_strings && break_strings_num > 0 &&
@@ -2231,15 +2226,19 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 
 	if (first)
 	{
-            owner[0] = 0;
-            owner[1] = 0;
-            owner[2] = 0;
-	    if (point_set != NULL)
-		FT_FreeThese(1, point_set);
-	    FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
+        owner[0] = 0;
+        owner[1] = 0;
+        owner[2] = 0;
+	    
+        if (point_set != NULL)
+            FT_FreeThese(1, point_set);
+	    
+        FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
 					sizeof(GLOBAL_POINT*));
-	    for (i = 0; i < max_point_gindex; ++i)
-		point_set[i] = NULL;
+	    
+        // every processor has a point_set with global indexing
+        for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = NULL;
 
 	    if (pp_numnodes() > 1)
 	    {
@@ -2252,28 +2251,33 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	    
         start_clock("set_data");
 	    if (myid == owner_id)
-            {
-		if (client_size_old != NULL)
-		    FT_FreeThese(3, client_size_old, client_size_new, 
-					client_point_set_store);
-		FT_VectorMemoryAlloc((POINTER*)&client_size_old,pp_numnodes(),
-                                        sizeof(int));
-                FT_VectorMemoryAlloc((POINTER*)&client_size_new,pp_numnodes(),
-                                        sizeof(int));
-                FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
-                                        pp_numnodes(),sizeof(GLOBAL_POINT*));
-                for (i = 0; i < pp_numnodes(); i++)
-                    client_size_old[i] = client_size_new[i] = 0;
+        {
+            if (client_size_old != NULL)
+                FT_FreeThese(3, client_size_old, client_size_new, 
+                        client_point_set_store);
 
-		assembleParachuteSet(elastic_intfc,&geom_set);
-		owner_size = geom_set.num_verts;
-		if (point_set_store != NULL) 
-		    FT_FreeThese(2,point_set_store, sv);
-		FT_VectorMemoryAlloc((POINTER*)&point_set_store,owner_size,
-                                        sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
-                                        sizeof(SPRING_VERTEX));
-		link_point_set(&geom_set,point_set,point_set_store);
+            FT_VectorMemoryAlloc((POINTER*)&client_size_old,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_size_new,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
+                    pp_numnodes(),sizeof(GLOBAL_POINT*));
+
+            for (i = 0; i < pp_numnodes(); i++)
+                client_size_old[i] = client_size_new[i] = 0;
+
+            assembleParachuteSet(elastic_intfc,&geom_set);
+            owner_size = geom_set.num_verts;
+            
+            if (point_set_store != NULL) 
+                FT_FreeThese(2,point_set_store, sv);
+            
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    owner_size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
+                    sizeof(SPRING_VERTEX));
+
+            link_point_set(&geom_set,point_set,point_set_store);
 	    	count_vertex_neighbors(&geom_set,sv);
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
@@ -2282,11 +2286,13 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 delete_interface(elastic_intfc);
 	    }
 	    stop_clock("set_data");
-	    first = NO;
+	    
+        first = NO;
 	}
 
 	elastic_intfc = fr->interf;
 	assembleParachuteSet(elastic_intfc,&geom_set);
+
 	if (myid != owner_id)
 	{
 	    client_size = geom_set.num_verts;
@@ -2294,44 +2300,45 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	    {
 	    	size = client_size;
 	    	if (point_set_store != NULL)
-		{
-		    FT_FreeThese(2,point_set_store,sv);
-		}
-	    	FT_VectorMemoryAlloc((POINTER*)&point_set_store,size,
-                                        sizeof(GLOBAL_POINT));
-                FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+                FT_FreeThese(2,point_set_store,sv);
+
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,
+                    sizeof(SPRING_VERTEX));
 	    }
+
 	    for (i = 0; i < max_point_gindex; ++i)
-                point_set[i] = NULL;
+            point_set[i] = NULL;
+
 	    link_point_set(&geom_set,point_set,point_set_store);
 	    count_vertex_neighbors(&geom_set,sv);
 	    set_spring_vertex_memory(sv,client_size);
 	    set_vertex_neighbors(&geom_set,sv,point_set);
 	    get_point_set_from(&geom_set,point_set);
-	    pp_send(5,L,MAXD*sizeof(double),owner_id);
+	    
+        pp_send(5,L,MAXD*sizeof(double),owner_id);
 	    pp_send(6,U,MAXD*sizeof(double),owner_id);
 	    pp_send(1,&(client_size),sizeof(int),owner_id);
-            pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
-					owner_id);
+        pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
+                owner_id);
 	}
 	else
-	    size = owner_size;
-
-    CollisionSolver3d* collision_solver;
-    if (!debugging("collision_off"))
     {
-        collision_solver = new CollisionSolver3d();
-        printf("COLLISION DETECTION ON\n");
+	    size = owner_size;
     }
-    else
-        printf("COLLISION DETECTION OFF\n");
 
+
+    CollisionSolver3d* collision_solver = nullptr;
 
 	if (myid == owner_id)
 	{
 	
     if (!debugging("collision_off"))
     {
+        printf("COLLISION DETECTION ON\n");
+        collision_solver = new CollisionSolver3d();
+
 	    if (FT_Dimension() == 3)
         {
             setCollisionFreePoints3d(fr->interf);
@@ -2352,16 +2359,21 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             collision_solver->setStringSpringConstant(af_params->kl); 
             collision_solver->setStringPointMass(af_params->m_l);
 
-            //collision_solver->setStrainLimit(af_params->strain_limit);
-            //collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;
             collision_solver->gtris = fr->gtris;
         }
     }
+    else
+    {
+        printf("COLLISION DETECTION OFF\n");
+    }
 
 	    get_point_set_from(&geom_set,point_set);
-	    for (i = 0; i < pp_numnodes(); i++)
+	    
+        for (i = 0; i < pp_numnodes(); i++)
 	    {
 		if (i == myid) continue;
 		pp_recv(5,i,client_L,MAXD*sizeof(double));
@@ -2396,6 +2408,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
+        // owner writes and sends back the updated client point_set_stores
 	    for (i = 0; i < pp_numnodes(); i++)
         {
             if (i == myid) continue;
@@ -2404,24 +2417,40 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             pp_send(3,client_point_set_store[i],
                             client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
-	}
 
+	}//myid == owner_id
+
+    // clients receive the updated point_set_stores
     if (myid != owner_id)
     {
         pp_recv(3,owner_id,point_set_store,
             client_size*sizeof(GLOBAL_POINT));
     }
 
-	/* Owner send and patch point_set_store from other processors */	
+    // all processes write from their point_set to their geom_set
 	put_point_set_to(&geom_set,point_set);
-	/* Calculate the real force on load_node and rg_string_node */
-	setSpecialNodeForce(fr, geom_set.kl);
+	
+    //TODO: Does this need to be called before the collision
+    //      solver has completed?
+    //      Also, should be passing in the geom_set instead of
+    //      looping over all nodes of fr->interf.
+    //      ELASTIC_SET likely did not consider rigid bodies
+    //      when it was created -- should make a new struct
+    //      PARACHUTE_SET that does and leave ELASTIC_SET for
+    //      pointmass runs and for debugging.
+	setSpecialNodeForce(fr,geom_set.kl);
 
+    //TODO: I think this function can be eliminated,
+    //      see comments inside put_point_value_to()
+    //      for required modification.
 	set_vertex_impulse(&geom_set,point_set);
+    
     //TODO: why only normal component of velocities retained?
     //      see set_geomset_velocity()
 	set_geomset_velocity(&geom_set,point_set);
-	compute_center_of_mass_velo(&geom_set);
+	
+    //TODO: verify com_velo computation
+    compute_center_of_mass_velo(&geom_set);
 
 	if(!debugging("collision_off"))
     {
@@ -2433,11 +2462,12 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
                 collision_solver->resolveCollision();
                 stop_clock("resolveCollision");
             }
+            delete collision_solver;
         }
+
+        /* Calculate the real force on load_node and rg_string_node */
         setSpecialNodeForce(fr,geom_set.kl);
 	    compute_center_of_mass_velo(&geom_set);
-
-        delete collision_solver;
     }
 
     if (debugging("max_speed"))
@@ -2447,8 +2477,8 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
-}	/* end fourth_order_elastic_set_propagate() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_serial()\n");
+}	/* end fourth_order_elastic_set_propagate_serial() */
 
 static void print_max_fabric_speed(Front* fr)
 {
@@ -2514,8 +2544,7 @@ static void print_max_string_speed(Front* fr)
     {
         if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 
-        //TODO: Add nodes etc. below is just skeleton.
-        //      Not traversing every point of the curve
+        //TODO: Add nodes etc. below is not traversing every point of the curve.
         curve = *c;
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -2578,15 +2607,17 @@ static void setSurfVelocity(
 		nor_speed = scalar_product(vel,nor,3);
 		for (j = 0; j < 3; ++j)
 		{
-		    //sl->vel[j] = vel[j];
-		    //sr->vel[j] = vel[j];
-		    sl->vel[j] = nor_speed*nor[j];
-		    sr->vel[j] = nor_speed*nor[j];
+            sl->vel[j] = nor_speed*nor[j];
+            sr->vel[j] = nor_speed*nor[j];
 		}
 		sorted(p) = YES;
 	    }
 	}
-	//reduce_high_freq_vel(front,surf);
+
+    //TODO: should this be used?
+    //
+    //reduce_high_freq_vel(front,surf);
+
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -2603,13 +2634,13 @@ static void setCurveVelocity(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed;
-	double *vel;
-	double crds_max[MAXD];
+	double *vel = nullptr;
+	double *crds_max = nullptr;
+    double max_nor_speed = 0.0;
 	int gindex_max;
 	long gindex;
 	int dim = FT_Dimension();
 
-    //TODO: need to test this new string_hsbdry block
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         for (b = curve->first; b != curve->last; b = b->next)
@@ -2641,11 +2672,17 @@ static void setCurveVelocity(
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
                 nor_speed = scalar_product(vel,nor,3);
+
+                /*
+                if (max_nor_speed < fabs(nor_speed))
+                {
+                    max_nor_speed = nor_speed;
+                    crds_max = Coords(p);
+                }
+                */
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
                     sl->vel[j] = nor_speed*nor[j];
                     sr->vel[j] = nor_speed*nor[j];
                 }
@@ -2657,6 +2694,11 @@ static void setCurveVelocity(
     {
 	    set_bond_length(b,dim);
     }
+
+    //TODO: Do we need the folllowing???
+    //
+    //  set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2739,6 +2781,7 @@ static void new_setNodeVelocity3d(
 		    gindex = Gindex(p);
 		    vel = point_set[gindex]->v;
 		    
+            //TODO: Should MONO_COMP_HSBDRY be treated the same as PASSIVE_HSBDRY???
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
                 for (j = 0; j < 3; ++j)
@@ -2760,9 +2803,7 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-		    	//sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
-		    	sl->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
             }
 		}
@@ -2808,8 +2849,6 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                //sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
             }
@@ -2908,8 +2947,6 @@ extern void collectNodeExtra(
 }	/* end collectNodeExtra */
 
 
-//TODO: this should be done during
-//      initialization and stored in the STATE.
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;
@@ -3065,60 +3102,68 @@ extern void setSpecialNodeForce(
 	intfc_node_loop(intfc, n)
 	{
 	    if ( (!is_load_node(*n)) && (!is_rg_string_node(*n)) )
-		continue;
-            for (k = 0; k < dim; ++k)
-            {
-                if (Coords((*n)->posn)[k] <= L[k] ||
-                    Coords((*n)->posn)[k] > U[k])
-                    break;
-            }
-            if (k != dim) continue;
+            continue;
+
+        for (k = 0; k < dim; ++k)
+        {
+            if (Coords((*n)->posn)[k] <= L[k] ||
+                Coords((*n)->posn)[k] > U[k])
+                break;
+        }
+        if (k != dim) continue;
 
 	    for (i = 0; i < dim; ++i)
-		f[i] = 0.0;
-	    node_out_curve_loop(*n,c)
+            f[i] = 0.0;
+	    
+        node_out_curve_loop(*n,c)
 	    {
-		b = (*c)->first;
-		set_bond_length(b,dim);
+            b = (*c)->first;
+            set_bond_length(b,dim);
 	    }
-	    node_in_curve_loop(*n,c)
+	    
+        node_in_curve_loop(*n,c)
 	    {
-		b = (*c)->last;
-		set_bond_length(b,dim);
+            b = (*c)->last;
+            set_bond_length(b,dim);
 	    }
-	    node_out_curve_loop(*n,c)
+	    
+        node_out_curve_loop(*n,c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->first;
-		for (i = 0; i < dim; ++i)
-		{
-		    vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
-		    vec[i] /= bond_length(b);
-		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-		}
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+            
+            b = (*c)->first;
+            for (i = 0; i < dim; ++i)
+            {
+                vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
+                vec[i] /= bond_length(b);
+                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            }
 	    }
-	    node_in_curve_loop(*n,c)
+	    
+        node_in_curve_loop(*n,c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->last;
-		for (i = 0; i < dim; ++i)
-		{
-		    vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
-		    vec[i] /= bond_length(b);
-		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-		}
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+            
+            b = (*c)->last;
+            for (i = 0; i < dim; ++i)
+            {
+                vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
+                vec[i] /= bond_length(b);
+                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            }
 	    }
-	    for (i = 0; i < dim; ++i)
-		(*n)->posn->force[i] = f[i];
+	    
+        for (i = 0; i < dim; ++i)
+            (*n)->posn->force[i] = f[i];
 
 	    if (debugging("rigid_body"))
 	    {
-		printf("special node coords = %f %f %f \n", 
-			Coords((*n)->posn)[0], Coords((*n)->posn)[1], 
-			Coords((*n)->posn)[2]);
-		printf("force on the node = %f %f %f \n", f[0], f[1], f[2]);
-		printf("velo of the node = %f %f %f \n", (*n)->posn->vel[0], 
-				(*n)->posn->vel[1], (*n)->posn->vel[2]);
+            printf("special node coords = %f %f %f \n", 
+                Coords((*n)->posn)[0], Coords((*n)->posn)[1], 
+                Coords((*n)->posn)[2]);
+            printf("force on the node = %f %f %f \n", f[0], f[1], f[2]);
+            printf("velo of the node = %f %f %f \n", (*n)->posn->vel[0], 
+                    (*n)->posn->vel[1], (*n)->posn->vel[2]);
 	    }
 	}
 
@@ -3334,6 +3379,7 @@ extern void set_unequal_strings(Front *front)
 	    printf("Leaving set_unequal_strings()\n");
 }	/* end set_unequal_strings */
 
+//NOTE: nowhere used
 static void linkGlobalIndexToTri(
         INTERFACE *intfc,
         TRI ***gtri)

@@ -1,0 +1,80 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 50 50 50
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: max_speed
+
+Start parameters for modules
+
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
+
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+
+Enter yes for parachute system: no
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: R
+Enter the height of the plane: 0.5
+Enter lower bounds of the rectangle: 0.19 0.19
+Enter upper bounds of the rectangle: 0.81 0.81
+Enter yes for fixed boundary: yes
+Enter yes to install boundary on each side: no
+
+Start parameters for spring-mass system
+
+Enter the number of fabric optimization rounds: 0
+
+Enter fabric spring constant: 15000
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.2
+Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
+
+Type yes to perturb the surface: n
+
+Enter yes to add rigid body: no
+Enter the number of rigid bodies: 0
+
+Start test velocity function set
+Available velocity functions are:
+        Vortex velocity (R)
+        Double vortex velocity (D)
+        Vertical velocity (V)
+        Toroidal velocity (T)
+        Parabolic velocity (P)
+        Singular velocity (S)
+        Zero velocity (Z)
+        Fixed area velocity (FA)
+        Fixed point velocity (FP)
+        Free fall velocity (FF)
+Enter velocity function: Z
+Enter gravity: 0 0 -9.8
+
+Start test time control parameters
+Max time: 3.0
+Max step: 2500
+Print interval: 0.025
+Movie frame interval: 0.025
+CFL factor: 0.5
+Redistribution interval: 1000000
+Type yes to turn off auto-redistribution: yes

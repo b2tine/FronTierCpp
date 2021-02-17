@@ -8,7 +8,7 @@ struct SPRING_VERTEX
     double *x;
     double *v;
 	double *f;
-    double *ext_impul;
+    double *ext_impul; //links to GLOBAL_POINT::impuls
 	int ix;
     int num_nb;
     double m;           //mass
@@ -28,7 +28,7 @@ struct GLOBAL_POINT
     double x[3];
     double v[3];
 	double f[3];
-    double impuls[3];
+    double impuls[3]; //links to STATE::impulse
     long gindex;
 	double fluid_accel[3];
 	double other_accel[3];

@@ -1157,7 +1157,7 @@ LIB_LOCAL boolean nearest_interface_point_within_range3d(
 	{
 	    int j;
 
-	    ans[i] = 0.;
+	    ans[i] = 0.0;
 	    for (j = 0; j < 3; ++j)
 	    	ans[i] += Closest.a[j]*Coords(Point_of_tri(Closest.tri)[j])[i];
 	    a[i] = Closest.a[i];
@@ -1214,7 +1214,7 @@ LIB_LOCAL boolean long_nearest_interface_point3d(
 	eq_comps = equivalent_components_list(comp,&n_eq,intfc);
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    /* new made wall surface has no tris, should be excluded */
+	    /* newly made wall surface has no tris, should be excluded */
 	    if(first_tri(*s) == NULL)
 	        continue;
 	    

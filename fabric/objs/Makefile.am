@@ -34,6 +34,8 @@ libfabric_la_SOURCES = \
 ../CD_HSE.cpp \
 ../AABB.h \
 ../AABB.cpp \
+../vtk.h \
+../vtk.cpp \
 ../fluid.h \
 ../fluidinit.cpp \
 ../fluidprop.cpp \
@@ -52,8 +54,14 @@ endif
 
 
 
+if CGAL_INTFC_OPT
+$(libfabric_la_DEPENDENCIES): FORCE
+	@$(MAKE) -C $(top_builddir)/CGAL_Interface/objs libCgalIntfc.la
+else
 $(libfabric_la_DEPENDENCIES): FORCE
 	@$(MAKE) -C $(top_builddir)/lib all
+endif
+
 
 FORCE:
 

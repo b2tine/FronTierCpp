@@ -1679,7 +1679,7 @@ LOCAL int resolve_front_collision(
 	    d -= spherical_radius(surfs[i]);
 	    d -= spherical_radius(surfs[j]);
 	    /*
-	    printf("touch_disntance[%d,%d] = %f\n",i,j,d);
+	    printf("touch_distance[%d,%d] = %f\n",i,j,d);
 	    */
 	    if (min_dist > d) min_dist = d;
 	}

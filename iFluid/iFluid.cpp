@@ -154,9 +154,9 @@ int main(int argc, char **argv)
     if (debugging("trace"))
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
-	l_cartesian->initMesh();
-	l_cartesian->initMovieVariables();
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
+	l_cartesian->initMesh();
+    l_cartesian->writeMeshFileVTK();
 	
     if (debugging("sample_velocity"))
 	    l_cartesian->initSampleVelocity(in_name);
@@ -172,6 +172,8 @@ int main(int argc, char **argv)
 	
     if (debugging("trace"))
         printf("Passed state initialization()\n");
+	
+    l_cartesian->initMovieVariables();
 
 	if (iFparams.surf_tension != 0.0)
         front._contact_node_propagate = contact_node_propagate;
@@ -219,9 +221,6 @@ static void ifluid_driver(Front *front,
         FT_Draw(front);
         FT_Save(front);
         l_cartesian->printFrontInteriorStates(out_name);
-        
-        l_cartesian->writeMeshFileVTK();
-        
         FT_SetOutputCounter(front);
     }
     else

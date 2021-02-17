@@ -240,6 +240,9 @@ extern void SMM_InitModules()
         Front *front = SMM_GetFront();
         F_BASIC_DATA *fbasic = SMM_GetBasicData();
 
+        //For using collision solver with parallel fluid solver
+        set_is_fabric_run(YES);
+
         if (!fbasic->RestartRun)
         {
             FILE *infile = fopen(InName(front),"r");
@@ -394,7 +397,6 @@ extern void SMM_InitSpringMassParams()
         }
 	}
 
-    /*
     CursorAfterStringOpt(infile,"Enter strain limit:");
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
@@ -402,7 +404,6 @@ extern void SMM_InitSpringMassParams()
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
-    */      
 	
     if (dim == 3 && af_params->is_parachute_system == YES)
 	{
@@ -560,7 +561,7 @@ extern void SMM_TestDriver()
         reset_clock();
         start_clock("timeStep");
 
-        coating_mono_hyper_surf(front);
+        //coating_mono_hyper_surf(front);
 
         FrontPreAdvance(front);
         FT_Propagate(front);

@@ -12,13 +12,13 @@
 #include "ifluid_state.h"
 #include "rigidbody.h"
 
-#define         SOLID_COMP		0
-#define         LIQUID_COMP1		2
-#define         LIQUID_COMP2		3
-#define		LIQUID_COMP		3
-#define		FILL_COMP		10
+#define SOLID_COMP		0
+#define LIQUID_COMP1	2
+#define LIQUID_COMP2	3
+#define LIQUID_COMP		3
+#define	FILL_COMP		10
 
-#define		ifluid_comp(comp)   (((comp) == LIQUID_COMP1 || 	\
+#define	ifluid_comp(comp) (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
 
 enum _IF_PROB_TYPE {
@@ -63,6 +63,7 @@ typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct IF_FIELD {
 	double **vel;			/* Velocities */
+	double **prev_vel;
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
@@ -87,7 +88,10 @@ enum _PROJC_METHOD {
         SIMPLE			=  1,
         BELL_COLELLA,
         KIM_MOIN,
-        PEROT_BOTELLA
+        PEROT_BOTELLA,
+        PMI,
+        PMII,
+        PMIII
 };
 typedef enum _PROJC_METHOD PROJC_METHOD;
 
@@ -116,7 +120,7 @@ typedef enum _DOMAIN_METHOD DOMAIN_METHOD;
 
 enum _EDDY_VISC {
 	BALDWIN_LOMAX		= 1,
-	MOIN,
+	VREMAN,
 	SMAGORINSKY,
     KEPSILON
 };
@@ -136,6 +140,7 @@ struct FINITE_STRING {         // For fluid drag on string chord
     double ampFluidFactor;
 };
 
+//vortex params
 struct VPARAMS {
     double center[MAXD];            // center of vortex
     double D;                       // size of vortex
@@ -168,16 +173,17 @@ struct IF_PARAMS
 
 	int adv_order;
 	boolean total_div_cancellation;
-	boolean buoyancy_flow;
-	boolean if_buoyancy;
+	boolean buoyancy_flow {NO};
+	boolean if_buoyancy {NO};
 	double  ref_temp;
-	boolean if_ref_pres;
+	boolean if_ref_pres {NO};
 	double  ref_pres;
 	double  Amplitute; 	/*Amplitute of velocity*/
-	boolean  with_porosity;    /*porosity: 1/0 with/without porosity*/
-        
-    double  porous_coeff[2];   /*dp = a*v + b*v^2*/
-	double	porosity;
+	
+    boolean with_porosity {NO};
+    double  porous_coeff[2];   /*dp = alpha*v + beta*v^2*/
+	double	porosity {0.0};
+
 	char base_dir_name[200];
     int base_step;
 	boolean scalar_field; /*include scalar field or not*/
@@ -185,12 +191,14 @@ struct IF_PARAMS
     int fsi_startstep;
 
     //TODO: factor out turbulence params into separate data structure, eddy_params
-	POINTER eddy_params;
-	EDDY_VISC eddy_visc_model;
+	//POINTER eddy_params;
+	
+    EDDY_VISC eddy_visc_model;
 	boolean use_eddy_visc;	/* Yes if to use eddy viscosity */
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
-    double C_v;     //Vreman (MOIN) model constant
+    double C_v;     //Vreman model constant
+    boolean use_no_slip {YES};
 };
 
 struct _FLOW_THROUGH_PARAMS {
@@ -301,12 +309,17 @@ public:
 
 	double m_dt;
 	double accum_dt;
-	double max_speed;
+	
+    double max_speed;
 	double min_pressure;
-        double max_pressure;
-        double min_value; //for debugging
+    double max_pressure;
+    
+    double U_FreeStream;   //far field velocity (Inlet/Outlet speed)
+    
+    double min_value; //for debugging
 	double max_value; //for debugging
-	double max_dt;
+	
+    double max_dt;
 	double min_dt;
 	double *top_h;
 	double vmin[MAXD],vmax[MAXD];
@@ -314,15 +327,17 @@ public:
 	int icrds_max[MAXD];
 
 	void initMesh(void);
-	void computeMaxSpeed(void);
-	void setAdvectionDt(void); 
-			//using max speed and hmin to determine max_dt, min_dt
-	void readFrontInteriorStates(char *state_name);
+    void readFrontInteriorStates(char *state_name);
 	void printFrontInteriorStates(char *state_name);
 	void initMovieVariables(void);
+	
 	void getVelocity(double *p, double *U);
 	void initSampleVelocity(char *in_name);
     
+    void computeMaxSpeed(void);
+	void setAdvectionDt(void);
+    void recordVelocity();
+	
     void printEnstrophy();
     void printEnstrophy2d();
     void printEnstrophy3d();
@@ -333,20 +348,35 @@ public:
 	/*set initial velocity with one function, no loop needed*/
 	void (*setInitialVelocity)(COMPONENT,int*,double*,double*,double*,
                                 RECT_GRID*,IF_PARAMS*);
+
  	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
 				POINTER*,HYPER_SURF**,double*);
 	int (*findStateAtCGCrossing)(Front*,int*,GRID_DIRECTION,int,
 				POINTER*,HYPER_SURF**,double*);
-	void applicationSetComponent();
+	
+    void applicationSetComponent();
 	void applicationSetStates();
 	
-    double computeFieldPointPressureJump(int*,double,double);
-        void computeFieldPointGradJump(int*,double*,double*);
+    double computeFieldPointPressureJump(int*,double,double);     
+    void computeFieldPointGradJump(int*,double*,double*);
 
+    void setFreeStreamVelocity();
+    
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+        
+    void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
-	//For debugging test
+        void setSlipBoundaryGNOR(int* icoords, int idir, int nb, int comp,
+                HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+    
+    std::vector<double> computeGradPhiTangential(int* icoords,
+            GRID_DIRECTION dir, COMPONENT comp, HYPER_SURF *hs,
+            double* crx_coords);
+
+
+    //For debugging test
 	void compareWithBaseSoln(void);
         void readBaseFront(IF_PARAMS *,int i);
         void readBaseStates(char *restart_name);
@@ -359,8 +389,7 @@ public:
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
-
-    void writeMeshFileVTK();
+    virtual void writeMeshFileVTK();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
@@ -385,7 +414,8 @@ protected:
 	int **ij_to_I, ***ijk_to_I;
 	int *domain_status;
 	int smin[MAXD],smax[MAXD];
-	// Sweeping limits
+	
+    // Sweeping limits
 	int imin, jmin, kmin;
 	int imax, jmax, kmax;
 	// for parallel partition
@@ -398,7 +428,7 @@ protected:
         int ext_l[MAXD],ext_u[MAXD];
         int D_extension;
 	int **dij_to_I,***dijk_to_I;
-	// Sweeping limites
+	// Sweeping limits
 	int ext_imin[MAXD];
 	int ext_imax[MAXD];
 	// for parallel partition
@@ -410,7 +440,7 @@ protected:
 
     //TODO: should rename this to avoid confusion/collision with the macro in geom.h
 	//member data: mesh storage
-	std::vector<IF_RECTANGLE>   cell_center;
+	std::vector<IF_RECTANGLE> cell_center;
 
 	//member data:
 	int    m_comp[2];
@@ -433,7 +463,9 @@ protected:
 	void makeGlobalColorMap(int&);
 	void paintConnectedRegion(int,int);
 	boolean paintToSolveGridPoint2(int);
+
 protected:
+
 	void setComponent(void); //init components;
 	void setDomain();
 	void setDoubleDomain();
@@ -474,20 +506,20 @@ protected:
 	double computeFieldPointDivSimple(int*, double**);
 	double computeFieldPointDivDouble(int*, double**);
 	double computeMuOfBaldwinLomax(int*, double, boolean);
-	double computeMuOfMoinModel(int*);
+	double computeMuOfVremanModel(int*);
 	double computeMuofSmagorinskyModel(int*);
 	KE_PARAMS* computeMuOfKepsModel();
 	
+    std::vector<std::vector<double>> computeVelocityGradient(int* icoords);
+
     void computeFieldPointGrad(int* icoords, double* field, double* grad_field);
-    /*void computeFieldPointGrad(int* icoords,double* field,
-            double* grad_field, bool is_phi_field = true);*/
+    void computeFieldPointGradQ(int* icoords, double* field, double* grad_field);
 
 	void checkVelocityDiv(const char*);
 /************* TMP Functions which are not implemented or used ***********/
 
 	void computeSubgridModel(void);    // subgrid model by Hyunkyung Lim
-	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,
-					double*); 
+	void getNearestInterfacePoint(COMPONENT,double*,double*,double*,double*); 
 };
 
 ///////////////Interface for Embedded Boundary Method////////////////////
@@ -532,35 +564,44 @@ protected:
     void addImmersedForce();
 };
 
-class Incompress_Solver_Smooth_2D_Cartesian:
-public 	Incompress_Solver_Smooth_2D_Basis{
+class Incompress_Solver_Smooth_2D_Cartesian
+    : public 	Incompress_Solver_Smooth_2D_Basis
+{
 public:
-        Incompress_Solver_Smooth_2D_Cartesian(Front &front):
-	Incompress_Solver_Smooth_2D_Basis(front) {};
-	~Incompress_Solver_Smooth_2D_Cartesian() {};
+        Incompress_Solver_Smooth_2D_Cartesian(Front &front)
+            : Incompress_Solver_Smooth_2D_Basis(front)
+        {}
+	
+        ~Incompress_Solver_Smooth_2D_Cartesian()
+        {}
 
 	void setInitialCondition(void);
 	void setParallelVelocity(void);
 	void solve(double dt);
         void vtk_plot_scalar(char*, const char*);
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+    
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	    //void computeProjectionDual(void);
-	void computePressure(void);
+	
+    void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
-	void computeGradientQ(void);
+	void computePressureSimple(void);
+	
+    void computeGradientQ(void);
 	void computeNewVelocity(void);
 	void extractFlowThroughVelocity(void);
 	void computeSourceTerm(double *coords, double *source);
@@ -569,7 +610,9 @@ protected:
 	void computeVarIncrement(double*,double*,boolean);
 	void computeVelDivergence();
 
-	/***************   Low level computation functions  *************/
+    void copyMeshStates(void);
+	
+    /***************   Low level computation functions  *************/
 	double getVorticity(int i, int j);
 };
 
@@ -587,23 +630,30 @@ public:
         void vtk_plot_scalar(char*, const char*);
 
 protected:
-	void copyMeshStates(void);
-	void computeAdvection(void);
-	void computeDiffusion(void);
+	
+    void copyMeshStates(void);
+	
+    void computeAdvection(void);
+	
+    void computeDiffusion(void);
 	void computeDiffusionCN(void);
 	void computeDiffusionExplicit(void);
 	void computeDiffusionImplicit(void);
 	void computeDiffusionParab(void);
-	void computeProjection(void);
+	
+    void computeProjection(void);
 	void computeProjectionCim(void);
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
-	void computePressure(void);
-	void computePressurePmI(void);
+	
+    void computePressure(void);
+    void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
+	void computePressureSimple(void);
+
 	void computeGradientQ(void);
-	//void computeGradientPhi();
+	    //void computeGradientPhi();
 	void computeNewVelocity(void);
 	void updateComponent(void);
 	void extractFlowThroughVelocity(void);
@@ -618,8 +668,9 @@ protected:
     std::vector<double> computePointVorticity(int* icoords, double** vel);
 };
 
-extern double getStatePres(POINTER);
-extern double getStatePhi(POINTER);
+
+extern int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
+
 extern double getStateVort(POINTER);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
@@ -629,9 +680,19 @@ extern double getStateYimp(POINTER);
 extern double getStateZimp(POINTER);
 extern double getStateComp(POINTER);
 extern double getStateMu(POINTER);
+extern double getStateDens(POINTER);
 extern double getStateTemp(POINTER);
+
+extern double getStatePres(POINTER);
+extern double getStatePhi(POINTER);
+extern double getStateQ(POINTER);
+extern double getStateGradPhiX(POINTER);
+extern double getStateGradPhiY(POINTER);
+extern double getStateGradPhiZ(POINTER);
+
 extern double getPressure(Front*,double*,double*);
-extern double getPhiFromPres(Front*,double);
+extern double getPhiFromPres(Front* front, double pres);
+extern double getQFromPres(Front* front, double pres);
 
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);

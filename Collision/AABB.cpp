@@ -452,3 +452,12 @@ bool AABBTree::queryCollision(Node* n)
 
     return count > 0;
 }
+
+bool AABBTree::getCollision(const CD_HSE* a, const CD_HSE* b)
+{
+    if (gauss_seidel)
+        return getCollisionGS(a,b);
+    else
+        return getCollisionJac(a,b);
+}
+

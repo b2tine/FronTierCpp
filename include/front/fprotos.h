@@ -271,6 +271,8 @@ IMPORT	void  	set_gindex_to_point(Front*);
 IMPORT  void	exchange_curve_gindex(Front*);
 
         /* fgrid.c*/
+IMPORT  void    set_is_fabric_run(boolean);
+IMPORT  boolean is_fabric_run(void);
 IMPORT	int  	count_grid_intfc_crossings(INTERFACE*);
 IMPORT 	int 	insert_grid_intfc_crossings(INTERFACE*);
 IMPORT  int     set_grid_intfc_components(INTERFACE*,INTERFACE*);

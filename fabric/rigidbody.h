@@ -24,6 +24,8 @@ struct RG_PARAMS
 	void	(*vel_func)(Front*,POINTER,double*,double*);
 	POINTER vparams;
     MOTION_TYPE motion_type;
+    bool is_fixed {false};
+    //boolean no_slip {YES};
 };
 
 

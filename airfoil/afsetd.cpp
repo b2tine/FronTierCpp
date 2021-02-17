@@ -347,65 +347,71 @@ void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
-                v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
+            x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
+            v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/6.0;
-	    }
+	        }
 
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*sv[i].v[j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
-	    for (i = 0; i < size; ++i)
+	    
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/3.0;
-	    }
+	        }
 	
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
+
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + sv[i].v[j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt; 
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/3.0;
-	    }
+	        }
 
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+            compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/6.0;
-                v_new[i][j] += dt*accel[i][j]/6.0;
+		    x_new[i][j] += dt*sv[i].v[j]/6.0;
+            v_new[i][j] += dt*accel[i][j]/6.0;
 	    }
 
 	    for (i = 0; i < size; ++i)
@@ -414,25 +420,26 @@ void generic_spring_solver(
             sv[i].x[j] = x_new[i][j];
             sv[i].v[j] = v_new[i][j];
 	    }
-	    for (i = 0; i < size; ++i)
+
+        for (i = 0; i < size; ++i)
             for (j = 0; j < 3; ++j)
             {
                 sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
 					sv[i].fluid_accel[j])*dt/6.0;
-	    }
+            }
 
 	    if (n != n_loop-1)
 	    {
-		for (i = 0; i < size; ++i)
+            for (i = 0; i < size; ++i)
                 for (j = 0; j < 3; ++j)
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
                 }
 	    	for (i = 0; i < size; ++i)
-		{
-		    compute_spring_accel1(&sv[i],accel[i],dim);
-		}
+            {
+                compute_spring_accel1(&sv[i],accel[i],dim);
+            }
 	    }
 	}
 	if (debugging("trace"))
@@ -1125,7 +1132,16 @@ static void put_point_value_to(
 {
 	int i;
 	long gindex = Gindex(p);
-	STATE *state = (STATE*)left_state(p);
+    
+    //TODO: Can we set both the left and right states here? 
+    //      If so we can eliminate the call to set_vertex_impulse(),
+    //      since all it does is set the left and right state's impulse.
+	/*
+    STATE *sl = (STATE*)left_state(p);
+	STATE *sr = (STATE*)right_state(p);
+	*/
+
+    STATE *state = (STATE*)left_state(p);
 
 	for (i = 0; i < 3; ++i)
 	{
@@ -1133,6 +1149,10 @@ static void put_point_value_to(
 	    p->vel[i] = point_set[gindex]->v[i];
 	    p->force[i] = point_set[gindex]->f[i];
 	    state->impulse[i] = point_set[gindex]->impuls[i];
+	    /*
+        sl->impulse[i] = point_set[gindex]->impuls[i];
+	    sr->impulse[i] = point_set[gindex]->impuls[i];
+        */
 	}
 }	/* end put_point_value_to */
 	
@@ -1520,8 +1540,8 @@ static void assembleParachuteSet3d(
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
+            geom_set->load_node = nodes[i];
+            reorder_string_curves(nodes[i]);
 	    }
 	}
 	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", ns, nc, nn, 
@@ -1535,30 +1555,32 @@ extern void copy_from_client_point_set(
 	double *client_L,
 	double *client_U)
 {
-	int j,k;
-	long gindex;
-	for (j = 0; j < client_size; j++)
+	for (int j = 0; j < client_size; ++j)
+    {
+        GLOBAL_POINT cpoint = client_point_set[j];
+
+        bool skip_copy = false;
+        for (int k = 0; k < 3; ++k)
         {
-            gindex = client_point_set[j].gindex;
-            for (k = 0; k < 3; k++)
-	    {
-	    	if (client_point_set[j].x[k] < client_L[k] ||
-		    client_point_set[j].x[k] >= client_U[k])
-		    break;
-	    }
-	    if (k < 3) continue;
-            for (k = 0; k < 3; k++)
+            if (cpoint.x[k] < client_L[k] || cpoint.x[k] >= client_U[k])
             {
-                point_set[gindex]->x[k] = client_point_set[j].x[k];
-                point_set[gindex]->v[k] = client_point_set[j].v[k];
-                point_set[gindex]->f[k] = client_point_set[j].f[k];
-                point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
-                point_set[gindex]->fluid_accel[k] = 
-					client_point_set[j].fluid_accel[k];
-                point_set[gindex]->other_accel[k] = 
-					client_point_set[j].other_accel[k];
+                skip_copy = true;
+                break;
             }
+        }    
+        if (skip_copy) continue;
+
+        long gindex = cpoint.gindex;
+        for (int k = 0; k < 3; ++k)
+        {
+            point_set[gindex]->x[k] = cpoint.x[k];
+            point_set[gindex]->v[k] = cpoint.v[k];
+            point_set[gindex]->f[k] = cpoint.f[k];
+            point_set[gindex]->impuls[k] = cpoint.impuls[k];
+            point_set[gindex]->fluid_accel[k] = cpoint.fluid_accel[k];
+            point_set[gindex]->other_accel[k] = cpoint.other_accel[k];
         }
+    }
 }	/* end copy_from_client_point_set */
 
 extern void copy_to_client_point_set(
@@ -1640,6 +1662,9 @@ static void reorder_string_curves(NODE *node)
     set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
+//TODO: it seems that we should be able to perform the
+//      assignments of this function inside put_point_set_to().
+//      put_point_value_to()
 extern void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)
@@ -1730,7 +1755,7 @@ static void set_surf_impulse(
             sorted(p) = YES;
             gindex = Gindex(p);
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-                
+    
             for (k = 0; k < 3; ++k)
             {
                 sl->impulse[k] = point_set[gindex]->impuls[k];

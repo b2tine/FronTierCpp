@@ -1804,33 +1804,53 @@ static void setCurveVelocity(
 	int gindex_max;
 	int dim = FT_Dimension();
 
-        nor_speed = 0.0;
-        max_nor_speed = 0.0;
-	for (b = curve->first; b != curve->last; b = b->next)
+    nor_speed = 0.0;
+    max_nor_speed = 0.0;
+
+    if (hsbdry_type(curve) == STRING_HSBDRY)
     {
-        p = b->end;
-	    for (btris = Btris(b); btris && *btris; ++btris)
+        for (b = curve->first; b != curve->last; b = b->next)
         {
-            p->hse = hse = Hyper_surf_element((*btris)->tri);
-            p->hs = hs = Hyper_surf((*btris)->surface);
-		    gindex = Gindex(p);
-        
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		    FT_NormalAtPoint(p,front,nor,NO_COMP);
-		    vel = point_set[gindex]->v;
-		    nor_speed = scalar_product(vel,nor,3);
-        
-            if (max_nor_speed < fabs(nor_speed))
+            p = b->end;
+            gindex = Gindex(p);
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
+            vel = point_set[gindex]->v;
+
+            for (j = 0; j < 3; ++j)
             {
-                max_nor_speed = nor_speed;
-                crds_max = Coords(p);
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
             }
-            
-            //TODO: why only normal velocity?
-            for (j = 0; j < dim; ++j)
+        }
+    }
+    else
+    {
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            p = b->end;
+            for (btris = Btris(b); btris && *btris; ++btris)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                p->hse = hse = Hyper_surf_element((*btris)->tri);
+                p->hs = hs = Hyper_surf((*btris)->surface);
+                gindex = Gindex(p);
+            
+                FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+                FT_NormalAtPoint(p,front,nor,NO_COMP);
+                vel = point_set[gindex]->v;
+                nor_speed = scalar_product(vel,nor,3);
+            
+                if (max_nor_speed < fabs(nor_speed))
+                {
+                    max_nor_speed = nor_speed;
+                    crds_max = Coords(p);
+                }
+                
+                for (j = 0; j < dim; ++j)
+                {
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
+                }
             }
         }
     }
@@ -1946,7 +1966,6 @@ static void newSetNodeVelocity3d(
                 crds_max = Coords(p);
             }
 
-            //TODO: Why only normal velocity?
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] =  nor_speed*nor[j];
@@ -1990,7 +2009,6 @@ static void newSetNodeVelocity3d(
                 crds_max = Coords(p);
             }
 
-            //TODO: Why only normal velocity?
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = nor_speed*nor[j];
@@ -2013,8 +2031,6 @@ extern void set_geomset_velocity(
 	nn = geom_set->num_nodes;
 	for (i = 0; i < ns; ++i)
     {
-        if (wave_type(geom_set->surfs[i]) == MOVABLE_BODY_BOUNDARY ||
-            wave_type(geom_set->surfs[i]) == NEUMANN_BOUNDARY) continue;
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
     }
 	for (i = 0; i < nc; ++i)
@@ -2164,7 +2180,7 @@ extern void scatterAirfoilExtra(
 
 extern void setSpecialNodeForce(
     Front* front,
-	INTERFACE* intfc,
+    INTERFACE* intfc,
 	double kl)
 {
 	//INTERFACE *intfc = front->interf;

@@ -1570,6 +1570,7 @@ static void findStringNodePoints(
 	*cbdry = canopy_bdry;
 }	/* end findStringNodePoints */
 
+//TODO: see other versions of this function that save the current interface ...
 static void installString(
 	FILE *infile,
 	Front *front,

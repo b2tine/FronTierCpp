@@ -41,13 +41,21 @@ Enter rotation angles: 0.0
 
 Start parameters for spring-mass system
 Enter yes to use total mass: no
+Enter payload: 100
+
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
-Enter string spring constant: 5000
-Enter string damping constant: 0.0
-Enter string point mass: 0.01
-Enter payload: 100
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
+Enter string spring constant: 50000
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
 
 
 Start test velocity function set
@@ -79,8 +87,12 @@ CFL factor: 0.5
 ////////////////////////////////////////
 
 Enter yes for debugging: yes
-Enter the debugging string: trace
+Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
+
+Enter the debugging stringX: trace
 
 
 

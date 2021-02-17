@@ -29,9 +29,78 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define		soln_comp(comp)					\
 		((comp) == soln_comp1 || (comp) == soln_comp2)
 
-HYPERB_SOLVER::HYPERB_SOLVER(Front &front):front(&front)
+
+HYPERB_SOLVER::HYPERB_SOLVER(Front &front)
+    : front(&front)
+{}
+
+void HYPERB_SOLVER::computeAdvectionTerm()
 {
-	porosity = 0.0;
+        static boolean first = YES;
+        int i,j,l;
+
+        /* Allocate memory for Runge-Kutta of order */
+        start_clock("solveRungeKutta");
+        setSolverDomain();
+
+        if (first)
+        {
+            first = NO;
+            FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
+
+            FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+            FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+
+            FT_MatrixMemoryAlloc((POINTER*)&st_tmp.vel,dim,size,sizeof(double));
+            for (i = 0; i < order; ++i)
+            {
+                FT_MatrixMemoryAlloc((POINTER*)&st_field[i].vel,dim,size,
+                                sizeof(double));
+                FT_MatrixMemoryAlloc((POINTER*)&st_flux[i].vel_flux,dim,size,
+                                sizeof(double));
+                FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
+                                sizeof(double));
+            }
+            /* Set coefficient a, b, c for different order of RK method */
+            switch (order)
+            {
+            case 1:
+                b[0] = 1.0;
+                nrad = 1;
+                break;
+            case 2:
+                a[0][0] = 1.0;
+                b[0] = 0.5;  b[1] = 0.5;
+                nrad = 2;
+                break;
+            case 4:
+                a[0][0] = 0.5;
+                a[1][0] = 0.0;  a[1][1] = 0.5;
+                a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
+                b[0] = 1.0/6.0;  b[1] = 1.0/3.0;
+                b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+                nrad = 3;
+                break;
+            case 5:
+                nrad = 3;
+                break;
+            default:
+                (void)printf("ERROR: %d-th order RK method not implemented\n",
+                                        order);
+                clean_up(ERROR);
+            }
+        }
+
+        /* Compute flux and advance field */
+        copyToMeshVst(&st_field[0]);
+        computeMeshFlux(st_field[0],&st_flux[0]);
+	for (i = 0; i < size; i++)
+	for (l = 0; l < dim; l++)
+	if (dt != 0)
+	    adv_term[l][i] = st_flux[0].vel_flux[l][i]/dt;
+	else
+	    adv_term[l][i] = 0.0;
 }
 
 void HYPERB_SOLVER::solveRungeKutta()
@@ -563,11 +632,12 @@ void HYPERB_SOLVER::setSolverDomain(void)
 	int i;
 
 	dim = Dimension(front->interf);
-        top_comp = T->components;
-        top_gmax = rgr->gmax;
+    top_comp = T->components;
+    top_gmax = rgr->gmax;
 	top_h = rgr->h;
 	top_L = rgr->L;
-	if (first)
+    
+    if (first)
 	{
 	    first = NO;
 	    size = 1;
@@ -703,8 +773,6 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 2:
             for (l = 0; l < dim; ++l)
             {
-                //for (j = 0; j <= top_gmax[1]; ++j)
-                //for (i = 0; i <= top_gmax[0]; ++i)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)
                 {
@@ -726,9 +794,6 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 3:
             for (l = 0; l < dim; ++l)
             {
-            	//for (k = 0; k <= top_gmax[2]; ++k)
-            	//for (j = 0; j <= top_gmax[1]; ++j)
-            	//for (i = 0; i <= top_gmax[0]; ++i)
             	for (k = kmin; k <= kmax; ++k)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)
@@ -823,13 +888,13 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    
 		if (is_crxing == NO_PDE_BOUNDARY)
 		{
-		    ic[idir]--;
-		    index = d_index(ic,top_gmax,dim);
-		    for (j = 0; j < dim; j++)
-		    {
+            ic[idir]--;
+            index = d_index(ic,top_gmax,dim);
+            for (j = 0; j < dim; j++)
+            {
                 vst->vel[j][nrad-i] = m_vst->vel[j][index];
-		    }
-		    vst->rho[nrad-i] = rho_of_comp(top_comp[index]);
+            }
+            vst->rho[nrad-i] = rho_of_comp(top_comp[index]);
 		}
 		else
 		{
@@ -846,7 +911,7 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    	setDirichletStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
-		    case ELASTIC_BOUNDARY:
+            case ELASTIC_BOUNDARY:
 		    	setElasticStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
@@ -870,11 +935,13 @@ void HYPERB_SOLVER::appendGhostBuffer(
                                 	&state,&hs,crx_coords);
 		if (is_crxing == NO_PDE_BOUNDARY)
 		{
-		    ic[idir]++;
-		    index = d_index(ic,top_gmax,dim);
-		    for (j = 0; j < dim; j++)
-			vst->vel[j][n+nrad+i-1] = m_vst->vel[j][index];
-		    vst->rho[n+nrad+i-1] = rho_of_comp(top_comp[index]);
+            ic[idir]++;
+            index = d_index(ic,top_gmax,dim);
+            for (j = 0; j < dim; j++)
+            {
+                vst->vel[j][n+nrad+i-1] = m_vst->vel[j][index];
+            }
+            vst->rho[n+nrad+i-1] = rho_of_comp(top_comp[index]);
 		}
 		else
 		{
@@ -891,7 +958,7 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    	setDirichletStates(vst,m_vst,hs,state,ic,idir,
 					nb,n,i,comp);
 		    	break;
-		    case ELASTIC_BOUNDARY:
+		    case ELASTIC_BOUNDARY://Never enters with af_findcrossing
 		    	setElasticStates(vst,m_vst,hs,state,ic,idir,
 					nb,n,i,comp);
 		    	break;
@@ -931,7 +998,7 @@ void HYPERB_SOLVER::setNeumannStates(
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
 	GRID_DIRECTION  dir;
-	double vel_reflect[MAXD],vel_ref[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
+	double vel_reflect[MAXD],vel_rel[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
 
 	index = d_index(icoords,top_gmax,dim);
 	for (int i = 0; i < dim; ++i)
@@ -962,8 +1029,9 @@ void HYPERB_SOLVER::setNeumannStates(
 	    /* Find ghost point */
 	    ic_ghost[idir] = (nb == 0) ?
             icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
-	        //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
-	    for (int j = 0; j < dim; ++j)
+	            //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
+	    
+        for (int j = 0; j < dim; ++j)
         {
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
             coords_reflect[j] = coords_ghost[j];
@@ -980,6 +1048,7 @@ void HYPERB_SOLVER::setNeumannStates(
 
 	    for (int j = 0; j < dim; ++j)
             v[j] = 2.0*vn*nor[j] - v[j];
+
 	    for (int j = 0; j < dim; ++j)
             coords_reflect[j] = crx_coords[j] + v[j];
 		
@@ -996,19 +1065,15 @@ void HYPERB_SOLVER::setNeumannStates(
 	    for (int j = 0; j < dim; ++j)
 	    {
             /* Relative velocity of reflected point to boundary */
-            vel_ref[j] = vel_reflect[j] - vel_intfc[j];
+            vel_rel[j] = vel_reflect[j] - vel_intfc[j];
             /* Normal component of the relative velocity */
-            vn += vel_ref[j]*nor[j];
+            vn += vel_rel[j]*nor[j];
 	    }
 
 	    /* reflect normal component of velocity */
 	    for (int j = 0; j < dim; ++j)
         {
-            //TODO: Need to use slip wall boundary condition here, for wall functions?
-            //      v_ghost[j] = vel_reflect[j] - vn*nor[j]; //slip vel (no rel normal vel)
-            
-            v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j]; //with slip vel
-            //v_ghost[j] = vel_intfc[j] - vn*nor[j]; //no relative tangential vel
+            v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];
         }
 
 	    if (nb == 0)
@@ -1035,6 +1100,7 @@ void HYPERB_SOLVER::setNeumannStates(
 }
 
 /*
+//TODO: I think this was thoroughly abandoned and may now be removed
 void HYPERB_SOLVER::setNeumannStates(
 	SWEEP *vst, 
 	SWEEP *m_vst,
@@ -1263,6 +1329,139 @@ void HYPERB_SOLVER::setDirichletStates(
 	}
 }
 
+//Reflection Boundary Formulation of Porosity -- No relative tangential velocity
+
+void HYPERB_SOLVER::setElasticStates(
+	SWEEP *vst, 
+	SWEEP *m_vst,
+	HYPER_SURF *hs,
+	POINTER state,
+	int *icoords,
+	int idir,
+	int nb,
+	int n,
+	int istart,
+	int comp)
+{
+	int 		index;
+	int 		ic_ghost[MAXD];
+	double		coords[MAXD],coords_reflect[MAXD],crx_coords[MAXD],coords_ghost[MAXD];
+	double		nor[MAXD],vn,v[MAXD];
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+	GRID_DIRECTION  dir;
+	double vel_reflect[MAXD],vel_rel[MAXD],v_ghost[MAXD],vel_intfc[MAXD];
+
+	index = d_index(icoords,top_gmax,dim);
+	for (int i = 0; i < dim; ++i)
+	{
+	    vel_intfc[i] = (*getStateVel[i])(state);
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ic_ghost[i] = icoords[i];
+	}
+	dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+	double poro = this->porosity;
+
+	if (debugging("elastic_buffer"))
+	{
+	    (void) printf("Entering setElasticStates()\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],
+				icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
+	}
+
+	for (int i = istart; i <= nrad; ++i)
+	{
+	    /* Find ghost point */
+	    ic_ghost[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+	            //ic[idir] = (nb == 0) ? icoords[idir] - i : icoords[idir] + i;
+	    
+	    int ghost_index = d_index(ic_ghost,top_gmax,dim);
+
+        for (int j = 0; j < dim; ++j)
+        {
+            coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_reflect[j] = coords_ghost[j];
+        }
+
+	    /* Reflect ghost point through intfc-mirror at crossing */
+	    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+	    vn = 0.0;
+        for (int j = 0; j < dim; ++j)
+	    {
+            v[j] = coords_reflect[j] - crx_coords[j];
+            vn += v[j]*nor[j];
+	    }
+
+	    for (int j = 0; j < dim; ++j)
+            v[j] = 2.0*vn*nor[j] - v[j];
+
+	    for (int j = 0; j < dim; ++j)
+            coords_reflect[j] = crx_coords[j] + v[j];
+		
+        double vel_prev[MAXD] = {0.0};
+	    /* Interpolate the state at the reflected point */
+	    for (int j = 0; j < dim; ++j)
+        {
+	    	FT_IntrpStateVarAtCoords(front,comp,coords_reflect,
+                    m_vst->vel[j],getStateVel[j],&vel_reflect[j],
+                    &m_vst->vel[j][index]);
+            vel_prev[j] = m_vst->vel[j][ghost_index];
+        }
+
+		/* Galileo Transformation */
+	    vn = 0.0;
+	    for (int j = 0; j < dim; ++j)
+	    {
+            /* Relative velocity of reflected point to boundary */
+            vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+            /* Normal component of the relative velocity */
+            vn += vel_rel[j]*nor[j];
+	    }
+
+	    /* reflect normal component of velocity */
+	    for (int j = 0; j < dim; ++j)
+        {
+            v_ghost[j] = vel_intfc[j] - vn*nor[j];//zero tangential velocity
+            //v_ghost[j] = vel_reflect[j] - 2.0*vn*nor[j];//with tangential velocity
+        
+            //porosity weighted average
+            v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*vel_prev[j];
+        }
+
+	    if (nb == 0)
+	    {
+	    	for (int j = 0; j < dim; ++j)
+		    {
+                vst->vel[j][nrad-i] = v_ghost[j];
+    		}
+            vst->rho[nrad-i] = rho_of_comp(comp);
+	    }
+	    else
+	    {
+	    	for (int j = 0; j < dim; ++j)
+		    {   
+                vst->vel[j][n+nrad+i-1] = v_ghost[j];
+            }
+            vst->rho[n+nrad+i-1] = rho_of_comp(comp);
+	    }
+	
+    }// i loop
+
+	if (debugging("elastic_buffer"))
+	    (void) printf("Leaving setElasticStates()\n");
+}
+
+/*
 void HYPERB_SOLVER::setElasticStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -1281,21 +1480,22 @@ void HYPERB_SOLVER::setElasticStates(
 	{
 	    for (k = istart; k <= nrad; ++k)
 	    {
-		for (j = 0; j < dim; j++)
-		    vst->vel[j][nrad-k] = (*getStateVel[j])(state);
-		vst->rho[nrad-k] = rho_of_comp(comp);
+            for (j = 0; j < dim; j++)
+                vst->vel[j][nrad-k] = (*getStateVel[j])(state);
+            vst->rho[nrad-k] = rho_of_comp(comp);
 	    }
 	}
 	else
 	{
 	    for (k = istart; k <= nrad; ++k)
 	    {
-		for (j = 0; j < dim; j++)
-                    vst->vel[j][n+nrad+k-1] = (*getStateVel[j])(state);
-		vst->rho[n+nrad+k-1] = rho_of_comp(comp);
+            for (j = 0; j < dim; j++)
+                vst->vel[j][n+nrad+k-1] = (*getStateVel[j])(state);
+            vst->rho[n+nrad+k-1] = rho_of_comp(comp);
 	    }
 	}
 }
+*/
 
 void HYPERB_SOLVER::addSourceTerm(SWEEP *state, FSWEEP * flux)
 {

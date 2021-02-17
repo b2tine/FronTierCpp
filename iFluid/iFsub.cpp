@@ -73,6 +73,42 @@ static int modify_contact_node(NODE*,NODE*,O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,
                               double,double,RPROBLEM**,Front*,POINTER,
                               double,double*,NODE_FLAG);
 
+
+extern int next_index_in_dir(
+        int* icoords,
+        GRID_DIRECTION dir,
+        int dim,
+        int* top_gmax)
+{
+	int icrds[MAXD];
+	for (int i = 0; i < dim; ++i)
+	    icrds[i] = icoords[i];
+
+    switch (dir)
+    {
+        case WEST:
+            icrds[0] -= 1;
+            break;
+        case EAST:
+            icrds[0] += 1;
+            break;
+        case SOUTH:
+            icrds[1] -= 1;
+            break;
+        case NORTH:
+            icrds[1] += 1;
+            break;
+        case LOWER:
+            icrds[2] -= 1;
+            break;
+        case UPPER:
+            icrds[2] += 1;
+    }
+
+    int index = d_index(icrds,top_gmax,dim);
+	return index;
+}
+
 extern double getStatePres(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
@@ -84,6 +120,30 @@ extern double getStatePhi(POINTER state)
 	STATE *fstate = (STATE*)state;
 	return fstate->phi;
 }	/* end getStatePhi */
+
+extern double getStateGradPhiX(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[0];
+}	/* end getStateGradPhiX */
+
+extern double getStateGradPhiY(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[1];
+}	/* end getStateGradPhiY */
+
+extern double getStateGradPhiZ(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->grad_phi[2];
+}	/* end getStateGradPhiZ */
+
+extern double getStateQ(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->q;
+}	/* end getStateQ */
 
 extern double getStateVort(POINTER state)
 {
@@ -133,11 +193,18 @@ extern double getStateMu(POINTER state)
 	return fstate->mu;
 }	/* end getStateMu */
 
+extern double getStateDens(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->dens;
+}	/* end getStateDens */
+
 extern double getStateTemp(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
 	return fstate->temperature;
 }	/* end getStateMTemp */
+
 
 extern void read_iF_dirichlet_bdry_data(
 	char *inname,
@@ -171,9 +238,11 @@ extern void read_iF_dirichlet_bdry_data(
 		    sprintf(msg,"For upper boundary in %d-th dimension",i);
 		CursorAfterString(infile,msg);
 		(void) printf("\n");
-		promptForDirichletBdryState(infile,front,&hs,i_hs);
+		
+        promptForDirichletBdryState(infile,front,&hs,i_hs);
 		i_hs++;
-	    }
+	    
+        }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
             {
 		HYPER_SURF **hss;
@@ -353,6 +422,8 @@ extern void iF_timeDependBoundaryState(
 	}
 }	/* end iF_timeDependBoundaryState */
 
+//TODO: 1. Update q and phi in these functions.
+//      2. Viscous terms in tangential direction
 extern void iF_flowThroughBoundaryState(
         double          *p0,
         HYPER_SURF      *hs,
@@ -424,6 +495,7 @@ static void iF_flowThroughBoundaryState3d(
 			field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
 	    u[1] += vtmp*dir[i];
 	    newst->vel[i] = vtmp;
+        newst->vel_old[i] = oldst->vel[i];
 	}
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
                             getStatePres,&pres[2],&oldst->pres);
@@ -481,15 +553,41 @@ static void iF_flowThroughBoundaryState3d(
 
 	    for (i = 0; i < dim; ++i)
 	    {
-	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	    }
 	    newst->pres += - dt/dn*f_pres;
 	}
-	if (debugging("flow_through"))
+
+    //TODO: Is this reasonably correct? -- see rationale below
+    newst->phi = newst->pres;
+    newst->q = 0.0;
+        //state->q = getQFromPres(front,oldst->pres);
+            //newst->q = oldst->pres;
+        //newst->phi -= newst->q;
+
+    
+    //TODO: add a conditional for incorporating q,
+    //      when lagged pressure scheme used.
+
+    
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
+
+    //TODO: check div(u*) = 0 valid for outflow??
+    
+
+    if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
 	}
 }	/* end iF_flowThroughBoundaryState3d */
 
@@ -559,6 +657,7 @@ static void iF_flowThroughBoundaryState2d(
         
         u[1] += vtmp*dir[i];
 	    newst->vel[i] = vtmp;
+        newst->vel_old[i] = oldst->vel[i];
 	}
 
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->vort,
@@ -613,21 +712,41 @@ static void iF_flowThroughBoundaryState2d(
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 
 	for (i = 0; i < dim; ++i)
-	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	newst->vort += - dt/dn*f_vort;
 	newst->pres += - dt/dn*f_pres;
-	
-    if (newst->pres < 0.0)
-    {
-        newst->pres = oldst->pres;
-    }
 
-	if (debugging("flow_through"))
+    
+    //TODO: Is this reasonably correct? -- see rationale below
+    newst->phi = newst->pres;
+    newst->q = 0.0;
+        //state->q = getQFromPres(front,oldst->pres);
+            //newst->q = oldst->pres;
+        //newst->phi -= newst->q;
+    
+    //TODO: add a conditional for incorporating q,
+    //      when lagged pressure scheme used.
+
+    
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
+
+    //TODO: check div(u*) = 0 valid for outflow??
+    
+
+    if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
 	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    (void) printf("Vorticity: %f\n",newst->vort);
 	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
 	}
 }       /* end iF_flowThroughBoundaryState2d */
 
@@ -698,6 +817,9 @@ static  void neumann_point_propagate(
 	    oldst = (STATE*)sr;
 	    newst = (STATE*)right_state(newp);
 	}
+
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure (below).
 	setStateViscosity(iFparams,newst,comp);
 	FT_NormalAtPoint(oldp,front,nor,comp);
 
@@ -707,18 +829,24 @@ static  void neumann_point_propagate(
 
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i];
+        Coords(newp)[i] = Coords(oldp)[i];
 	    newst->vel[i] = 0.0;
-            FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
 	}
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
-	/*
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
-			getStatePhi,&newst->phi,&oldst->phi);
-	*/
-	if (dim == 2)
-	{
+    
+    newst->phi = newst->pres;
+    newst->q = 0.0;
+        //newst->q = oldst->pres;
+	
+    /*
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi
+            getStatePhi,&newst->phi,&oldst->phi)
+    */
+
+    if (dim == 2)
+    {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
@@ -759,9 +887,14 @@ static  void dirichlet_point_propagate(
 	    newst = (STATE*)right_state(newp);
 	    comp = positive_component(oldhs);
 	}
-	setStateViscosity(iFparams,newst,comp);
-	if (newst == NULL) return;	// node point
+    
+    if (newst == NULL) return;	// node point
+    
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure in neumann_point_propagate()???
+    setStateViscosity(iFparams,newst,comp);
 
+    //Constant State
 	if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
@@ -773,17 +906,21 @@ static  void dirichlet_point_propagate(
 	    }
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
+        newst->vort = 0.0;
 
-        newst->pres = bstate->pres;
-	    newst->phi = bstate->phi;
-            newst->vort = 0.0;
+        newst->pres = 0.0;
+        newst->phi = 0.0;
+	    newst->q = 0.0;
+            //newst->pres = bstate->pres;
+            //newst->phi = bstate->pres;
+	        //newst->q = bstate->pres;
 
 	    if (debugging("dirichlet_bdry"))
 	    {
 		(void) printf("Preset boundary state:\n");
 		(void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
-		(void) printf("Pressure: %f\n",newst->pres);
-		(void) printf("Vorticity: %f\n",newst->vort);
+		//(void) printf("Vorticity: %f\n",newst->vort);
+		//(void) printf("Pressure: %f\n",newst->pres);
 	    }
 	}
 	else if (boundary_state_function(oldhs))
@@ -826,6 +963,7 @@ static  void dirichlet_point_propagate(
         return;
 }	/* end dirichlet_point_propagate */
 
+//TODO: Need to set phi here????
 static  void contact_point_propagate(
         Front *front,
         POINTER wave,
@@ -886,7 +1024,8 @@ static  void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
-static  void rgbody_point_propagate(
+//TODO: Need to set phi here????
+static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -898,12 +1037,13 @@ static  void rgbody_point_propagate(
 {
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	IF_FIELD *field = iFparams->field;
-        double vel[MAXD];
-        int i, dim = front->rect_grid->dim;
+    double vel[MAXD];
+    int i, dim = front->rect_grid->dim;
 	double dn,*h = front->rect_grid->h;
 	double *m_pre = field->pres;
 	double *m_vor = field->vort;
 	double *m_temp = field->temperature;
+	double *m_mu = field->mu;
 	double nor[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
 	STATE *oldst,*newst;
@@ -923,127 +1063,152 @@ static  void rgbody_point_propagate(
 	    oldst = (STATE*)sr;
 	    newst = (STATE*)right_state(newp);
 	}
-	setStateViscosity(iFparams,newst,comp);
-	FT_NormalAtPoint(oldp,front,nor,comp);
 
+    //TODO: Interpolate viscosity from nearby like it is
+    //      done for the pressure (below)?
+	setStateViscosity(iFparams,newst,comp);
+	
+    FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
+
 	for (i = 0; i < dim; ++i)
 	    p1[i] = p0[i] + nor[i]*dn;
 
-        if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
+    if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
+    {
+        if(!debugging("collision_off"))
         {
-            if(!debugging("collision_off"))
-            {
-                for (i = 0; i < dim; ++i)
-                    newst->x_old[i] = Coords(oldp)[i];
-            }
-            
-            double omega_dt,crds_com[MAXD];
-            omega_dt = angular_velo(oldhs)*dt;
-
-            //TODO: test/verify
             for (i = 0; i < dim; ++i)
-    	    {
-                vel[i] = center_of_mass_velo(oldhs)[i];
-                crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
-				*0.5 - rotation_center(oldhs)[i];
-	        }
-            if (dim == 2)
+                newst->x_old[i] = Coords(oldp)[i];
+        }
+        
+        double omega_dt,crds_com[MAXD];
+        omega_dt = angular_velo(oldhs)*dt;
+
+        for (i = 0; i < dim; ++i)
+        {
+            vel[i] = center_of_mass_velo(oldhs)[i];
+            crds_com[i] = Coords(oldp)[i]
+                + 0.5*(vel[i] + oldst->vel[i])*dt - rotation_center(oldhs)[i];
+        }
+
+        if (dim == 2)
+        {
+            vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
+                angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
+            vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
+                angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
+            
+            for (i = 0; i < dim; ++i)
             {
-		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
-		vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
-                for (i = 0; i < dim; ++i)
-                {
-                    Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + 
-					oldst->vel[i])*0.5;
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-						Coords(newp),front);
-                }
-	    }
+                Coords(newp)[i] =
+                    Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
+                newst->vel[i] = vel[i];
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),
+                        NULL,Coords(newp),front);
+            }
+        }
 	    else if (dim == 3)
 	    {
-		vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
-                          +p_angular_velo(oldhs)[1] * crds_com[2];
-                vel[1] +=  p_angular_velo(oldhs)[2] * crds_com[0]
-                          -p_angular_velo(oldhs)[0] * crds_com[2];
-                vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
-                          +p_angular_velo(oldhs)[0] * crds_com[1];
-		// propagate by euler parameters
-		if (motion_type(oldhs) == ROTATION ||
-		    motion_type(oldhs) == PRESET_ROTATION)
-		{
-                    double A[3][3],AI[3][3];
-                    double ep[4];
-                    int j,k;
-                    double initial[MAXD];
-                    for (i = 0; i< 4; i++)
-                        ep[i] = old_euler_params(oldhs)[i];
-                    AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                               - ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               + ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        initial[j] = 0.0;
-                        for (k = 0; k < 3; k++)
-                            initial[j] += AI[j][k]*crds_com[k];
-                    }
-                    for (i = 0; i< 4; i++)
-                        ep[i] = euler_params(oldhs)[i];
-                    A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                              - ep[2]*ep[2] - ep[3]*ep[3];
-                    A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              + ep[2]*ep[2] - ep[3]*ep[3];
-                    A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        Coords(newp)[j] = rotation_center(oldhs)[j];
-                        for (k = 0; k < 3; k++)
-                            Coords(newp)[j] += A[j][k]*initial[k];
-                    }
-		}
-		else
-		    for (i = 0; i < dim; ++i)
-                        Coords(newp)[i] = Coords(oldp)[i] + 
-					dt*(vel[i] + oldst->vel[i])*0.5;
-		for (i = 0; i < dim; ++i)
+            vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
+                        + p_angular_velo(oldhs)[1] * crds_com[2];
+            vel[1] += p_angular_velo(oldhs)[2] * crds_com[0]
+                        - p_angular_velo(oldhs)[0] * crds_com[2];
+            vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
+                        + p_angular_velo(oldhs)[0] * crds_com[1];
+
+            // propagate by euler parameters
+            if (motion_type(oldhs) == ROTATION ||
+                motion_type(oldhs) == PRESET_ROTATION)
+            {
+                double A[3][3],AI[3][3];
+                double ep[4];
+                int j,k;
+                double initial[MAXD];
+
+                for (i = 0; i< 4; i++)
+                    ep[i] = old_euler_params(oldhs)[i];
+
+                AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                           - ep[2]*ep[2] - ep[3]*ep[3];
+                AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                           + ep[2]*ep[2] - ep[3]*ep[3];
+                AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                           - ep[2]*ep[2] + ep[3]*ep[3];
+                
+                for (j = 0; j < 3; j++)
                 {
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                                        Coords(newp),front);
-		}
-	    }
+                    initial[j] = 0.0;
+                    for (k = 0; k < 3; k++)
+                        initial[j] += AI[j][k]*crds_com[k];
+                }
+                
+                for (i = 0; i< 4; i++)
+                    ep[i] = euler_params(oldhs)[i];
+                
+                A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                          - ep[2]*ep[2] - ep[3]*ep[3];
+                A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                          + ep[2]*ep[2] - ep[3]*ep[3];
+                A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                          - ep[2]*ep[2] + ep[3]*ep[3];
+                
+                for (j = 0; j < 3; j++)
+                {
+                    Coords(newp)[j] = rotation_center(oldhs)[j];
+                    for (k = 0; k < 3; k++)
+                        Coords(newp)[j] += A[j][k]*initial[k];
+                }
+            }
+		    else
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    Coords(newp)[i] = Coords(oldp)[i]
+                        + 0.5*(vel[i] + oldst->vel[i])*dt;
+                }
+            }
+    
+            for (i = 0; i < dim; ++i)
+            {
+                newst->vel[i] = vel[i];
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
+                        Coords(newp),front);
+            }
+	    
         }
-        else
-        {
-            fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
-                                    oldhs,dt,vel);
-        }
-	for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+        
+    }
+    else
+    {
+        fourth_order_point_propagate(front,NULL,oldp,newp,
+                oldhse,oldhs,dt,vel);
+    }
+    
+    for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
-	if (m_temp != NULL)
-            FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-                        getStateTemp,&newst->temperature,&oldst->temperature);
-	if (dim == 2)
+	
+    if (m_temp != NULL)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,getStateTemp,
+                &newst->temperature,&oldst->temperature);
+    }
+
+    if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
@@ -1057,7 +1222,6 @@ static  void rgbody_point_propagate(
         else if (ifluid_comp(positive_component(oldhs)))
             std::copy(newst, newst+1, (STATE*)left_state(newp));
     }
-    return;
 }	/* end rgbody_point_propagate */
 
 extern void fluid_print_front_states(
@@ -1152,11 +1316,6 @@ extern void read_iFparams(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = iFparams->dim;
 
-	/* defaults numerical schemes */
-	iFparams->num_scheme.projc_method = SIMPLE;
-	iFparams->num_scheme.advec_method = WENO;
-	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
-
     if (CursorAfterStringOpt(infile,
         "Entering yes to turn off fluid solver: "))
     {
@@ -1169,7 +1328,20 @@ extern void read_iFparams(
         }
     }
 
-	CursorAfterString(infile,"Enter projection type:");
+	/* defaults numerical schemes */
+	iFparams->num_scheme.projc_method = SIMPLE;
+	iFparams->num_scheme.advec_method = WENO;
+	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
+
+    (void) printf("The default advection order is WENO-Runge-Kutta 4\n");
+	iFparams->adv_order = 4;
+	if (CursorAfterStringOpt(infile,"Enter advection order:"))
+	{
+	    fscanf(infile,"%d",&iFparams->adv_order);
+	    (void) printf("%d\n",iFparams->adv_order);
+	}
+
+    CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	switch (string[0])
@@ -1180,25 +1352,24 @@ extern void read_iFparams(
 	    break;
 	case 'B':
 	case 'b':
-	    iFparams->num_scheme.projc_method = BELL_COLELLA;
+	case '1':
+	    iFparams->num_scheme.projc_method = PMI;
+	    //iFparams->num_scheme.projc_method = BELL_COLELLA;
 	    break;
 	case 'K':
 	case 'k':
-	    iFparams->num_scheme.projc_method = KIM_MOIN;
+	case '2':
+	    iFparams->num_scheme.projc_method = PMII;
+	    //iFparams->num_scheme.projc_method = KIM_MOIN;
 	    break;
 	case 'P':
 	case 'p':
-	    iFparams->num_scheme.projc_method = PEROT_BOTELLA;
+	case '3':
+	    iFparams->num_scheme.projc_method = PMIII;
+	    //iFparams->num_scheme.projc_method = PEROT_BOTELLA;
 	}
 	assert(iFparams->num_scheme.projc_method != ERROR_PROJC_SCHEME);
-	(void) printf("The default advection order is WENO-Runge-Kutta 4\n");
-	iFparams->adv_order = 4;
-	if (CursorAfterStringOpt(infile,"Enter advection order:"))
-	{
-	    fscanf(infile,"%d",&iFparams->adv_order);
-	    (void) printf("%d\n",iFparams->adv_order);
-	}
-
+	
 	(void) printf("Available elliptic methods are:\n");
 	(void) printf("\tSimple elliptic (S)\n");
 	(void) printf("\tDouble elliptic (DB)\n");
@@ -1266,7 +1437,7 @@ extern void read_iFparams(
 
             printf("Available turbulence models are:\n");
             printf("\tBaldwin-Lomax (B)\n");
-            printf("\tMoin (M)\n");
+            printf("\tVreman (V)\n");
             printf("\tKEPSILON (K)\n");
         	
             CursorAfterString(infile,"Enter turbulence model:");
@@ -1282,9 +1453,11 @@ extern void read_iFparams(
                     fscanf(infile,"%lf",&iFparams->ymax);
                     printf("%f\n",iFparams->ymax);
                     break;
-                case 'm':
-                case 'M':
-                    iFparams->eddy_visc_model = MOIN;
+                case 'm'://keeping for backwards compatibility with old input files
+                case 'M'://keeping for backwards compatibility with old input files
+                case 'v':
+                case 'V':
+                    iFparams->eddy_visc_model = VREMAN;
                     CursorAfterString(infile,"Enter model constant:");
                     fscanf(infile,"%lf",&iFparams->C_v);
                     printf("%f\n",iFparams->C_v);
@@ -1304,11 +1477,25 @@ extern void read_iFparams(
                     (void) printf("Unknown eddy viscosity model!\n");
                     clean_up(ERROR);
             }
+
+            //      "Enter yes to use slip wall boundary condition:"
+            iFparams->use_no_slip = YES;
+            if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
+            {
+                fscanf(infile,"%s",string);
+                printf("%s\n",string);
+                //if (string[0] == 'y' || string[0] == 'Y')
+                if (string[0] == 'n' || string[0] == 'N')
+                {
+                    iFparams->use_no_slip = NO;
+                    //iFparams->use_no_slip = YES;
+                }
+            }
 	    }
 	}
    
     
-    //TODO: Need these here, or gets handled in iFinit.cpp for 2 phase flow problems?
+    //TODO: Need these here? or gets handled in iFinit.cpp for 2 phase flow problems?
     CursorAfterStringOpt(infile,"Enter surface tension:");
     fscanf(infile,"%lf",&iFparams->surf_tension);
     printf("%f\n",iFparams->surf_tension);
@@ -1363,7 +1550,7 @@ extern boolean isDirichletPresetBdry(
 	    return NO;
 	if (wave_type(hs) != DIRICHLET_BOUNDARY)
 	    return NO;
-	if (boundary_state(hs) != NULL)
+	if (boundary_state(hs) == nullptr)
 	    return NO;
 	return YES;
 }	/* end isDirichletPresetBdry */
@@ -1461,6 +1648,7 @@ static void get_parabolic_state_params(
             fscanf(infile,"%lf",&parab_st_params->state.temperature);
             (void) printf("%f\n",parab_st_params->state.temperature);
         }
+
         parab_st_params->state.phi = getPhiFromPres(front,
                         parab_st_params->state.pres);
 }	/* end get_parabolic_state_params */
@@ -1639,8 +1827,6 @@ extern void recordBdryEnergyFlux(
 }	/* end recordBdryEnergyFlux */
 
 
-//TODO: Fix this.
-//     partial_x (e+p)u + partial_y (e+p)v + partial_z (e+p)w
 static void addToEnergyFlux(
 	RECT_GRID *rgr,
 	HYPER_SURF *hs,
@@ -1744,6 +1930,7 @@ static void addToEnergyFlux(
 	}
 }	/* end addToEnergyFlux */
 
+//TODO: To remove if not used anywhere
 extern double p_jump(
 	POINTER params,
 	int D,
@@ -1771,21 +1958,56 @@ extern double grad_p_jump_t(
 	return 0.0;
 }	/* end grad_p_jump_t */
 
-//TODO: Did they really mean getQfromPres()?
+//TODO: This should be used for updating boundary states only.
+//      Should not be used for initialization.
 extern double getPhiFromPres(
         Front *front,
         double pres)
 {
     IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    /*
+    IF_FIELD* field = iFparams->field;
+    double* div_U = field->div_U;
+    double* mu = field->mu;
+    double* q = field->q;
+    */
+
     switch (iFparams->num_scheme.projc_method)
     {
-        case BELL_COLELLA:
-            return 0.0;
-        case KIM_MOIN:
-            return 0.0;
-        case SIMPLE:
-        case PEROT_BOTELLA:
+        case PMI:
+        case PMII:
+            /*if (!isbdry)
+                return pres - q[index] + 0.5*mu[index]*div_U[index];
+            else
+                return 0.0;*/
             return pres;
+        case PMIII:
+        case SIMPLE:
+            /*if (!isbdry)
+                return pres + 0.5*mu[index]*div_U[index];
+            else
+                return pres;*/
+            return 0.0;
+        default:
+            (void) printf("Unknown projection type\n");
+            clean_up(0);
+    }
+}       /* end getPhiFromPres */
+
+extern double getQFromPres(
+        Front *front,
+        double pres)
+{
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+
+    switch (iFparams->num_scheme.projc_method)
+    {
+        case PMI:
+        case PMII:
+            return pres;
+        case PMIII:
+        case SIMPLE:
+            return 0.0;
         default:
             (void) printf("Unknown projection type\n");
             clean_up(0);
@@ -1806,8 +2028,8 @@ extern double getPressure(
         double rho = iFparams->rho2;
         boolean hyper_surf_found = NO;
 
-        
         return 0.0;
+        
         //TODO: Does below work???
         //
         //      It appears this early return of 0.0 may have been
@@ -1822,7 +2044,9 @@ extern double getPressure(
         //      would include the initial boundary conditions at
         //      the inlet/outlet at appears.
 
-        pres0 = 1.0;
+        pres0 = 0.0;
+        //pres0 = 1.0;
+        
         if (dim == 2)
         {
             CURVE **c;
@@ -1834,6 +2058,7 @@ extern double getPressure(
                     p0 = (*c)->first->start;
                     pres0 = getStatePres(boundary_state(*c));
                     hyper_surf_found = YES;
+                    break;
                 }
             }
         }
@@ -1848,20 +2073,32 @@ extern double getPressure(
                     p0 = Point_of_tri(first_tri(*s))[0];
                     pres0 = getStatePres(boundary_state(*s));
                     hyper_surf_found = YES;
+                    break;
                 }
             }
         }
+        
         pres = pres0;
+        //return pres;
+        
+        //TODO: 
         if (hyper_surf_found)
         {
+            //NOTE: Assume g = {0,0,-9.8} is standard gravity.
+            //      Then if the inlet pressure is prescribed at the
+            //      lower z boundary, points in the domain above
+            //      will have lower pressure.
             for (i = 0; i < dim; ++i)
-                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+                pres += rho*(coords[i] - Coords(p0)[i])*g[i];
+                //pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
         }
         else if (base_coords != NULL)
         {
             for (i = 0; i < dim; ++i)
-                pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
+                pres += rho*(coords[i] - Coords(p0)[i])*g[i];
+                //pres -= rho*(coords[i] - Coords(p0)[i])*g[i];
         }
+
         return pres;
 }       /* end getPressure */
 
@@ -1923,7 +2160,8 @@ static  void ifluid_compute_force_and_torque2d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t,pres;
-        double area[MAXD],posn[MAXD];
+        double posn[MAXD],bnor[MAXD];
+        double area;
         BOND *b;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -1951,14 +2189,16 @@ static  void ifluid_compute_force_and_torque2d(
             for (b = curve->first; b != NULL; b = b->next)
             {
                 if (force_on_hse(Hyper_surf_element(b),Hyper_surf(curve),gr,
-                        &pres,area,posn,pos_side))
+                        &pres,bnor,posn,pos_side))
                 {
+                    area = bond_length(b);
+                    double mag_bnor = Mag2d(bnor);
                     for (i = 0; i < dim; ++i)
                     {
-                        f[i] = pres*area[i];
+                        f[i] = pres*area*bnor[i]/mag_bnor;
                         rr[i] = posn[i] - rotation_center(curve)[i];
-                        //rr[i] = 0.5*(Coords(b->start)[i] + Coords(b->end)[i])
-                                //- rotation_center(curve)[i];
+                        //NOTE: posn = 0.5*(Coords(b->start)[i] + Coords(b->end)[i])
+                        //      in most cases.
                         force[i] += f[i];
                     }
                     Cross2d(rr,f,t);
@@ -1966,12 +2206,16 @@ static  void ifluid_compute_force_and_torque2d(
                 }
             }
 	}
-         /* Add gravity to the total force */
+
+    //TODO: Need to add rotational motion
+         
+        /* Add gravity to the total force */
         if (motion_type(curve) != ROTATION)
         {
             for (i = 0; i < dim; ++i)
                 force[i] += gravity[i]*total_mass(curve);
         }
+
         if (debugging("rigid_body"))
         {
             (void) printf("Leaving ifluid_compute_force_and_torque2d()\n");
@@ -1991,7 +2235,8 @@ static  void ifluid_compute_force_and_torque3d(
         RECT_GRID *gr = computational_grid(front->interf);
         double f[MAXD],rr[MAXD];
         double t[MAXD],tdir,pres;
-        double area,posn[MAXD],tnor[MAXD];
+        double posn[MAXD],tnor[MAXD];
+        double area;
         TRI *tri;
         boolean pos_side;
         int i,dim = gr->dim;
@@ -2090,6 +2335,7 @@ static  void ifluid_compute_force_and_torque3d(
                         &pres,tnor,posn,pos_side))
                 {
                     area = tri_area(tri);
+                        //area = 0.5*Mag3d(tnor);
                     double mag_tnor = Mag3d(tnor);
                     for (i = 0; i < dim; ++i)
                     {
@@ -2116,11 +2362,12 @@ static  void ifluid_compute_force_and_torque3d(
     
         /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&
-	    motion_type(surface) != PRESET_ROTATION)
+	        motion_type(surface) != PRESET_ROTATION)
         {
             for (i = 0; i < dim; ++i)
                 force[i] += gravity[i]*total_mass(surface)/num_clips(surface);
         }
+
         if (debugging("rigid_body"))
         {
             printf("In ifluid_compute_force_and_torque3d()\n");
@@ -2140,7 +2387,7 @@ static boolean force_on_hse(
         HYPER_SURF *hs,                 /* Curve (2D) or surface (3D) */
         RECT_GRID *gr,                  /* Rectangular grid */
         double *pres,           /* Average pressure */
-        double *area,           /* Area as a vector, pointing onto body */
+        double *nor,           /* normal vector pointing into body */
         double *posn,           /* Position of the pressure */
         boolean pos_side)       /* Is the body on the positive side of hs? */
 {
@@ -2148,9 +2395,9 @@ static boolean force_on_hse(
         switch (dim)
         {
         case 2:
-            return force_on_hse2d(hse,hs,gr,pres,area,posn,pos_side);
+            return force_on_hse2d(hse,hs,gr,pres,nor,posn,pos_side);
         case 3:
-            return force_on_hse3d(hse,hs,gr,pres,area,posn,pos_side);
+            return force_on_hse3d(hse,hs,gr,pres,nor,posn,pos_side);
         default:
             return NO;
         }
@@ -2162,7 +2409,7 @@ static boolean force_on_hse2d(
         HYPER_SURF *hs,
         RECT_GRID *gr,
         double *pres,
-        double *area,
+        double *nor,
         double *posn,
         boolean pos_side)
 {
@@ -2243,11 +2490,15 @@ static boolean force_on_hse2d(
                 }
             }
         }
-        area[0] = pos_side ? crds1[1] - crds2[1] : crds2[1] - crds1[1];
-        area[1] = pos_side ? crds2[0] - crds1[0] : crds1[0] - crds2[0];
+        
+        nor[0] = pos_side ? crds1[1] - crds2[1] : crds2[1] - crds1[1];
+        nor[1] = pos_side ? crds2[0] - crds1[0] : crds1[0] - crds2[0];
+        
         *pres = 0.5*(p1 + p2);
+        
         posn[0] = 0.5*(crds1[0] + crds2[0]);
         posn[1] = 0.5*(crds1[1] + crds2[1]);
+        
         return YES;
 }       /* end force_on_hse2d */
 
@@ -2280,8 +2531,10 @@ static boolean force_on_hse3d(
                 *pres += getStatePres(sl);
         }
         *pres /= 3.0;
+        
         for (i = 0; i < dim; ++i)
         {
+            //normal points toward the surface
             tnor[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
             posn[i] /= 3.0;
         }
@@ -2324,7 +2577,7 @@ static void promptForDirichletBdryState(
 	FILE *infile,
 	Front *front,
 	HYPER_SURF **hs,
-        int i_hs)
+    int i_hs)
 {
 	static STATE *state;
 	char s[100];
@@ -2353,8 +2606,12 @@ static void promptForDirichletBdryState(
 	    FT_InsertDirichletBoundary(front,NULL,NULL,
 			NULL,(POINTER)state,*hs,i_hs);
 	    
-        //TODO: this should be called in setInitialCondition() instead of here
-        state->phi = getPhiFromPres(front,state->pres);
+        //TODO: Can not prescribe pressure with velocity in current formulation
+        state->phi = 0.0;
+        state->q = 0.0;
+            //state->phi = state->pres;
+            //state->q = getQFromPres(front,state->pres);
+
 	    break;
 	case 'f':			// Flow through state
 	case 'F':

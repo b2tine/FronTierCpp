@@ -32,12 +32,12 @@ double CD_BOND::min_moving_coord(int dim,double dt){
     return ans;
 }
 
-POINT* CD_BOND::Point_of_hse(int i) const{
+POINT* CD_BOND::Point_of_hse(int i) const
+{
     if (i >= num_pts())
-	return NULL;
+        return NULL;
     else
-        return (i == 0) ? m_bond->start : 
-			  m_bond->end;
+        return (i == 0) ? m_bond->start : m_bond->end;
 }
 
 double CD_TRI::max_static_coord(int dim){

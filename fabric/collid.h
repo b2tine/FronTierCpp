@@ -3,8 +3,6 @@
 
 #include "AABB.h"
 
-#include <numeric>
-
 #if defined(isnan)
 #undef isnan
 #endif
@@ -12,9 +10,11 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
+
+
+using collision_pair = std::pair<CD_HSE*,CD_HSE*>;
 
 
 class CollisionSolver3d {
@@ -22,7 +22,14 @@ public:
 	
     int m_dim {3};
 	std::vector<CD_HSE*> hseList;
-	std::map< int, std::vector<double> > mrg_com;
+    std::vector<CD_HSE*> fabricTriList;
+    std::vector<CD_HSE*> staticRigidTriList;
+    std::vector<CD_HSE*> movableRigidTriList;
+    std::vector<CD_HSE*> stringBondList;
+    std::vector<CD_HSE*> elasticHseList;
+    std::vector<collision_pair> collisionPairsList;
+	
+    std::map<int,std::vector<double>> mrg_com;
 	
     int build_count_pre = 1;
     int build_count_col = 1;
@@ -62,50 +69,31 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
-
-    
-    static void clearCollisionTimes()
-    {
-        CollisionTimes.clear();
-    }
-
-    static void setSizeCollisionTimes(unsigned int size)
-    {
-        CollisionTimes.reserve(size);
-    }
-
-    static void addCollisionTime(double collsn_dt)
-    {
-        CollisionTimes.push_back(collsn_dt);
-    }
-
-    static double getAverageCollisionTime()
-    {
-        double avg_dt =
-            std::accumulate(CollisionTimes.begin(),CollisionTimes.end(),0.0);
-        avg_dt /= CollisionTimes.size();
-        return avg_dt;
-    }
-
 	
-    void setStrainLimit(double);
-	//double getStrainLimit();
-	void setStrainRateLimit(double);
-	//double getStrainRateLimit();
-
-
     double setVolumeDiff(double);
+    
+    void setStrainLimit(double);
+	double getStrainLimit();
+	void setStrainRateLimit(double);
+	double getStrainRateLimit();
+	static bool getGsUpdateStatus();	
 
 	void clearHseList();
-	void assembleFromInterface(const INTERFACE*,double dt);
-	void createImpZoneForRG(const INTERFACE*);
+    const std::vector<CD_HSE*>& getHseList() const;
+
+    void initializeSystem(Front* front);
+	void assembleFromInterface(INTERFACE*);
+	void recordOriginalPosition();	
+    void setHseTypeLists();
+    void initializeImpactZones();
+	void initRigidBodyImpactZones(INTERFACE*);
 	
     void resolveCollision();
-	void recordOriginalPosition();	
-	void setDomainBoundary(double* L,double *U);
 
+	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
-	bool hasCollision() {return has_collision;}
+	
+    bool hasCollision() {return has_collision;}
 
     POINT **gpoints;
     TRI **gtris;
@@ -121,7 +109,26 @@ public:
     TRI *res_tris[100];
     int num_res_tris;
 
+    static void clearCollisionTimes();
+    static void setSizeCollisionTimes(unsigned int size);
+    static void addCollisionTime(double collsn_dt);
+    static double getAverageCollisionTime();
+
+    static int tstep;
+    static int getStep() {return tstep;}
+    static void setStep(int step) {tstep = step;}
+
+    static std::string outdir;
+    static std::string getOutputDirectory() {return outdir;}
+    static void setOutputDirectory(std::string dir) {outdir = dir;}
+    static void saveFront() {FT_Save(ft);}
+    static void drawFront() {FT_Draw(ft);}
+
 private:
+
+    //Front* ft;
+    static Front* ft;
+
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
@@ -148,33 +155,42 @@ private:
 	static double l_k;
 	static double l_mu;
 
+    static bool gs_update;
+	static void turnOnGsUpdate();
+    static void turnOffGsUpdate();
+
     double strain_limit {0.1};
     double strainrate_limit {0.1};
+    bool skip_strain_velo_constraint {false};
 
     static bool s_detImpZone;
+	static void turnOnImpZone();
+    static void turnOffImpZone();
 
     int numImpactZones {0};
     int numImpactZonePoints {0};
-	
-    static void turnOffImpZone();
-	static void turnOnImpZone();
 
-    int numStrainRateEdges {0};
-    int numStrainEdges {0};
-
-    void limitStrainRate();
-    void modifyStrainRate();
-    void limitStrain();
-    void modifyStrain();
+    std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
+    
+    void limitStrainPosn();
+    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainRatePosn();
+    void limitStrainRatePosnGS();
+    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainVel();
+    int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
+    void applyStrainImpulses();
 
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
 	void updateFinalVelocity();
+    void updateFinalStates();
 	void updateAverageVelocity();
-	void updateExternalImpulse();
+	    //void updateExternalImpulse();
 	void computeImpactZone();
 	void infoImpactZones();
+	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
@@ -185,33 +201,30 @@ private:
     void aabbCollision();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
-	void setHasCollision(bool judge) {has_collision = judge;}
+	void setHasCollision(bool judge) {has_collision = judge;}//TODO: can remove?
 };
 
+void unsortHseList(std::vector<CD_HSE*>&);
 
 bool BondToBond(const BOND*,const BOND*);
 bool TriToBond(const TRI*,const BOND*);
 bool TriToTri(const TRI*,const TRI*);
-bool MovingBondToBond(const BOND*,const BOND*);
-bool MovingTriToBond(const TRI*,const BOND*);
-bool MovingTriToTri(const TRI*,const TRI*);
+bool MovingBondToBondGS(const BOND*,const BOND*);
+bool MovingTriToBondGS(const TRI*,const BOND*);
+bool MovingTriToTriGS(const TRI*,const TRI*);
+bool MovingBondToBondJac(const BOND*,const BOND*);
+bool MovingTriToBondJac(const TRI*,const BOND*);
+bool MovingTriToTriJac(const TRI*,const TRI*);
 
+void makeSet(std::vector<CD_HSE*>&);
+void createImpZone(POINT*[],int num = 4,bool first = NO);
+void createImpactZone(POINT*[],int num);
+void createImpactZoneRigidBody(POINT*[],int num);
 void updateImpactListVelocity(POINT* head);
+void SpreadImpactZoneImpulse(POINT*, double, double*);
+void printPointList(POINT**, const int);
 
-void initSurfaceState(SURFACE*,const double*);
-void initCurveState(CURVE*,const double*);
-void initTestModule(Front&, char*);
-void Pts2Vec(const POINT*, const POINT*, double*); 
-void scalarMult(double a,double* v, double* ans); 
-void addVec(double* v1, double* v2, double* ans); 
-void minusVec(double* v1, double* v2, double* ans); 
-double myDet3d(double[][3]);
-double distBetweenCoords(double* x1, double* x2);
-extern void printPointList(POINT**, const int);
-extern void createImpZone(POINT*[],int num = 4,bool first = NO);
-extern void makeSet(std::vector<CD_HSE*>&);
-void unsortHseList(std::vector<CD_HSE*>&);
-void unsort_surface_point(SURFACE *surf);
+void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 
 POINT* findSet(POINT* p);
 POINT*& next_pt(POINT* p);
@@ -219,14 +232,23 @@ void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
 bool isStaticRigidBody(const POINT*);
+bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
 bool isMovableRigidBody(const POINT*);
+bool isMovableRigidBody(const STATE*);
 bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
+bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
 
-extern void SpreadImpactZoneImpulse(POINT*, double, double*);
-
-void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
+void initSurfaceState(SURFACE*,const double*);
+void initCurveState(CURVE*,const double*);
+void initTestModule(Front&, char*);
+void Pts2Vec(const POINT*, const POINT*, double*);
+void scalarMult(double a,double* v, double* ans);
+void addVec(double* v1, double* v2, double* ans);
+void minusVec(double* v1, double* v2, double* ans);
+double myDet3d(double[][3]);
+double distBetweenCoords(double* x1, double* x2);
 
 #endif

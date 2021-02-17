@@ -942,6 +942,10 @@ LOCAL void clip_intfc_at_grid_bdry3(
 	DEBUG_LEAVE(clip_intfc_at_grid_bdry3)
 }		/*end clip_intfc_at_grid_bdry3*/
 
+//TODO: Including NEUMANN_BOUNDARY in the w_type array can
+//      cause problems with rectangular domain numann boundarys.
+//      Need to put a continue statement inside a domain boundary
+//      check of the hypersurface in collect_hyper_surfaces()
 EXPORT INTERFACE *collect_hyper_surfaces(
 	Front *fr,
         int *owner,                     /* Destination of collection */

@@ -23,6 +23,7 @@ enum
     NEUMANN_PDE_BOUNDARY,
     DIRICHLET_PDE_BOUNDARY,
     MOVING_BOUNDARY,
+    POROUS_BOUNDARY,
     MIXED_PDE_BOUNDARY
 };
 
@@ -109,7 +110,8 @@ public:
 	
     void SetPrevSolnInitialGuess();
 	void SetMaxIter(int val); 	// Set maximum number of iterations 
-	void SetTol(double val);	// Set the convergence tolerance 
+	void SetTol(double rel_tol);	// Set the convergence tolerance 
+    void SetTolerances(double rel_tol, double abs_tol, double div_tol);
 	
     void SetKDim(int k_dim);	// Set the maximum size of the Krylov space 
 	
@@ -316,55 +318,63 @@ private:
 	double dual_average_D_3d(int dir, int nb, int***,COMPONENT***);
 };
 
-class ELLIPTIC_SOLVER{
-        Front *front;
-public:
-        ELLIPTIC_SOLVER(Front &front);
+class ELLIPTIC_SOLVER
+{
+    Front* front;
 
-        // On topological grid
-	int *i_to_I;
-	int **ij_to_I;
-	int ***ijk_to_I;
-	int ilower;
-	int iupper;
+    public:
+        
+        ELLIPTIC_SOLVER(Front* front);
 
-        double dt;          //time step
-	double porosity;
-	double *soln;		/* field variable of new step */
-	double *source;		/* source field */
-    double **vel;       /* velocity field */
-    double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+            // On topological grid
+        int *i_to_I;
+        int **ij_to_I;
+        int ***ijk_to_I;
+        int ilower;
+        int iupper;
+
+            double dt;          //time step
+        double porosity;
+        double *soln;		/* field variable of new step */
+        double *source;		/* source field */
+        double **vel;       /* velocity field */
+        double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
+        double* rho;
+
+	    COMPONENT obst_comp;
+        
+        void set_solver_domain(void);
+        void solve(double *soln);
+        void dsolve(double *soln);
+        
+        double (*getStateVar)(POINTER);
+        double (*getStateVel[3])(POINTER);
+
+        int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+                                    POINTER*,HYPER_SURF**,double*);
+        double checkSolver(int *icoords,boolean print_details);
+        void printIsolatedCells();
+        int skip_neumann_solver;
     
-    //double* rho;
-
-	void set_solver_domain(void);
-	void solve(double *soln);
-	void dsolve(double *soln);
-	
-    double (*getStateVar)(POINTER);
-    double (*getStateVel[3])(POINTER);
-
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
-                                POINTER*,HYPER_SURF**,double*);
-	double checkSolver(int *icoords,boolean print_details);
-    void printIsolatedCells();
-	int skip_neumann_solver;
-private:
-        // Dimension
+    private:
+   
         int dim;
-        COMPONENT *top_comp;
-	double *top_h;
-	double *top_L;
+        double *top_h;
+        double *top_L;
         int *top_gmax;
-	int imin,jmin,kmin;
-	int imax,jmax,kmax;
+        COMPONENT *top_comp;
+        
+        int imin,jmin,kmin;
+        int imax,jmax,kmax;
+        
         double *array;          // for scatter states;
-	int array_size;
-	double max_soln;
-	double min_soln;
-	void solve1d(double *soln);
-	void solve2d(double *soln);
-	void solve3d(double *soln);
+        int array_size;
+        double max_soln;
+        double min_soln;
+
+        void solve1d(double *soln);
+        void solve2d(double *soln);
+        void solve3d(double *soln);
 };
 
 struct _SWEEP {
@@ -392,20 +402,29 @@ public:
 	COMPONENT soln_comp1;
 	COMPONENT soln_comp2;
 	COMPONENT obst_comp;
-	double porosity;
+	double porosity {0.0};
 	double **var;		/* field variable of old step */
 	double **soln;		/* field variable of new step */
 	double **source;	/* source field */
-	double *rho;
+    
+    double **adv_term;	
+    
+    double *rho;
 	double rho1;
 	double rho2;
-	double var_obst;	/* default solution in obst_comp */
+
+    double var_obst;	/* default solution in obst_comp */
 	double max_speed;
-	int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+	
+    int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-	void (*numericalFlux)(SWEEP*,FSWEEP*,double,int,int,int);
-	void solveRungeKutta();
 	double (*getStateVel[3])(POINTER);
+
+	void (*numericalFlux)(SWEEP*,FSWEEP*,double,int,int,int);
+
+	void solveRungeKutta();
+    void computeAdvectionTerm();
+
 private:
         // Dimension
         int dim;
@@ -419,7 +438,8 @@ private:
 	SWEEP *st_field,st_tmp;
         FSWEEP *st_flux;
         double **a,*b;
-	void setSolverDomain(void);
+	
+    void setSolverDomain(void);
 	void allocMeshVst(SWEEP*);
 	void allocMeshFlux(FSWEEP*);
 	void allocDirectionalVstFlux(SWEEP*,FSWEEP*);
@@ -427,20 +447,22 @@ private:
 	void copyToMeshVst(SWEEP*);
 	void copyMeshVst(SWEEP,SWEEP*);
 	void computeMeshFlux(SWEEP,FSWEEP*);
+    void addSourceTerm(SWEEP*,FSWEEP*);
 	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
 	void copyFromMeshVst(const SWEEP&);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection1d(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection2d(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection3d(int,SWEEP*,FSWEEP*);
-	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
-	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
+	
+    void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
+	
+    void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
 	void setDirichletStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
 	void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,POINTER,int*,int,
 				int,int,int,int);
-	void addSourceTerm(SWEEP*,FSWEEP*);
 };
 
 
