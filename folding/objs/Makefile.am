@@ -8,8 +8,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/folding \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-#AM_CPPFLAGS += -DDAMPING_FORCE
-
 
 AM_LDFLAGS = @CVODE_LIBS@ \
 			 @NLOPT_LIBS@ \
