@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 	FT_AddTimeStepToCounter(&front);
 
 	//initialize folding solver
-	Folder* folder = new Folder3d(front.interf,surf, out_name);
+	Folder* folder = new Folder3d(front.interf,surf,out_name);
 	
 	//adding folding plan from file
 	std::string inname(in_name); 

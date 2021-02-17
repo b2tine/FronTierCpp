@@ -163,9 +163,16 @@ void Folder3d::doFolding() {
     //						getOdeScheme()); 
     SpringSolver* sp_solver = new SpringSolver();	
     CollisionSolver3d* cd_solver = new CollisionSolver3d();
-    
+
     //configure collision solver
-    cd_solver->assembleFromInterface(m_intfc,getFrameStepSize());
+    CollisionSolver3d::setOutputDirectory(outname);
+    CollisionSolver3d::setTimeStepSize(getFrameStepSize());
+    cd_solver->assembleFromInterface(m_intfc);
+        //cd_solver->assembleFromInterface(m_intfc,getFrameStepSize());
+    cd_solver->setHseTypeLists();
+    cd_solver->initializeImpactZones();
+    //NOTE: cd_solver->recordOriginalPosition() gets called in doFolding().
+
     cd_solver->setFabricSpringConstant(getSpringParams().k);
     cd_solver->setFabricFrictionConstant(getSpringParams().lambda);
     cd_solver->setFabricPointMass(getSpringParams().m);
@@ -356,13 +363,16 @@ void Folder3d::doFolding(
 	cd_solver->recordOriginalPosition();
 	cd_solver->setTimeStepSize(dt);
 	recordData(t,movie->out_dir);
-    	sp_solver->solve(dt);
-        if (drag->id() != "RelaxDrag")
-            sp_solver->resetVelocity();
-	//cd_solver->resolveCollision();
+    sp_solver->solve(dt);
+
+    if (drag->id() != "RelaxDrag")
+        sp_solver->resetVelocity();
+	
+    //TODO: TURN THIS ON
+    //  cd_solver->resolveCollision();
 
 	t += dt;
-        t0 += dt; 
+    t0 += dt; 
 	if (movie->isMovieTime(t))
 	    movie->recordMovieFrame();
     }
@@ -541,8 +551,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc, Drag* drag)
         }
 }       /* setCollisionFreePoints3d() */
 
-Folder3d::Folder3d(INTERFACE* intfc, SURFACE* s, std::string out_name) : 
-        Folder(out_name), m_intfc(intfc) {}
+Folder3d::Folder3d(INTERFACE* intfc, SURFACE* s, std::string out_name)
+    : Folder(out_name), m_intfc(intfc) {}
 
 Folder3d::~Folder3d() {
     if (movie) delete movie;

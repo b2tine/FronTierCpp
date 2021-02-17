@@ -16,7 +16,7 @@ MAYBE_BVH = BVH
 endif
 MAYBE_COLLISION = Collision
 if FOLDING_OPT
-#MAYBE_FOLDING = folding
+MAYBE_FOLDING = folding
 endif
 MAYBE_AIRFOIL = airfoil
 MAYBE_PARACHUTE = parachute
