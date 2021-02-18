@@ -76,10 +76,6 @@ bool MovingBondToBondGS(const BOND* b1, const BOND* b2)
     return status;
 }
 
-//TODO: This use of const does not seem appropriate
-//      since we are modifying the states of the points
-//      of each TRI ... Compiler may not be catching
-//      it because Point_of_tri() is a macro, not a function.
 bool MovingTriToTriGS(const TRI* a, const TRI* b)
 {
 	POINT* pts[4];
@@ -307,7 +303,7 @@ static bool MovingPointToTriGS(POINT* pts[])
     		    for (int k = 0; k < 3; ++k)
                     Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
 		    }
-    
+
             MotionState mstate = MotionState::MOVING;
             if (PointToTri(pts,tol,mstate,roots[i]))
             {
@@ -1053,11 +1049,16 @@ static void EdgeToEdgeImpulse(
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
 
+        /*
+        impulse[i] = inelastic_impulse[i];
+        if (mstate == MotionState::MOVING)
+            impulse[i] += elastic_impulse[i];
+        */
+
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = elastic_impulse[i];
-            //f_impulse[i] = inelastic_impulse[i];
+            f_impulse[i] = impulse[i];
         }
         else
         {
@@ -1065,8 +1066,7 @@ static void EdgeToEdgeImpulse(
                               + sqr(wab[2]) + sqr(wab[3]);
         
             m_impulse[i] = 2.0*impulse[i]/wabs_sqr;
-            f_impulse[i] = 2.0*elastic_impulse[i]/wabs_sqr;
-            //f_impulse[i] = 2.0*inelastic_impulse[i]/wabs_sqr;
+            f_impulse[i] = 2.0*impulse[i]/wabs_sqr;
         }
     }
 
@@ -1152,8 +1152,6 @@ static void EdgeToEdgeImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            //if (t_impulse < 0) continue;
-    
             if (mstate == MotionState::STATIC)
             {
                 for (int j = 0; j < 3; ++j)
@@ -1174,9 +1172,6 @@ static void EdgeToEdgeImpulse(
             {
                 for (int j = 0; j < 3; ++j)
                     sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                    //sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
-                
-                //TODO: Need to apply a tangential impulse here too?
             }
                 
             sl[i]->collsn_num++;
@@ -1528,18 +1523,22 @@ static void PointToTriImpulse(
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
+        
+        /*
+        impulse[i] = inelastic_impulse[i];
+        if (mstate == MotionState::MOVING)
+            impulse[i] += elastic_impulse[i];
+        */
 
         if (fabs(sum_w) < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = elastic_impulse[i];
-            //f_impulse[i] = inelastic_impulse[i];
+            f_impulse[i] = impulse[i];
         }
         else
         {
             m_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
-            f_impulse[i] = 2.0*elastic_impulse[i]/(1.0 + Dot3d(w, w));
-            //f_impulse[i] = 2.0*inelastic_impulse[i]/(1.0 + Dot3d(w, w));
+            f_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
         }
     }
 
@@ -1625,8 +1624,6 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            //if (t_impulse < 0) continue;
-                
             if (mstate == MotionState::STATIC)
             {
                 for (int j = 0; j < 3; ++j)
@@ -1647,9 +1644,6 @@ static void PointToTriImpulse(
             {
                 for (int j = 0; j < 3; ++j)
                     sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                    //sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
-
-                //TODO: Need to apply a tangential impulse here too?
             }
             
             sl[i]->collsn_num++;
