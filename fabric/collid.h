@@ -86,7 +86,8 @@ public:
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
-	void initRigidBodyImpactZones(INTERFACE*);
+    void initializeImpactZones(const INTERFACE* intfc);
+	void initRigidBodyImpactZones(const INTERFACE* intfc);
 	
     void resolveCollision();
 
