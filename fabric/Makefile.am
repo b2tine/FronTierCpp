@@ -24,7 +24,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/fabric \
 			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  @ARMA_CFLAGS@ @MPI_CFLAGS@ \
-			  -I$(abs_top_srcdir)/include \
+			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 

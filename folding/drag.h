@@ -62,6 +62,7 @@ public:
 	void clear() {_id.clear(); _data.clear(); }
         bool empty() { return _id.empty(); }
     };
+
     virtual std::string id() = 0; 
     static std::vector<Drag*> prototypes;
     static Drag* dragFactory(const Info &);

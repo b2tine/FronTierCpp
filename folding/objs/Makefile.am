@@ -1,10 +1,10 @@
 AM_CPPFLAGS = -I$(top_srcdir)/folding \
-			  @NLOPT_CFLAGS@ \
-			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
-			  @ARMA_CFLAGS@ @CVODE_CFLAGS@ \
+			  @NLOPT_CFLAGS@ @CVODE_CFLAGS@ \
 			  -I$(top_srcdir)/Collision \
+			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/iFluid \
 			  @PETSC_CFLAGS@ @MPI_CFLAGS@ \
+			  -I$(top_srcdir)/CGAL_Interface \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 

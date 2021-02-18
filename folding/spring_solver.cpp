@@ -171,8 +171,8 @@ void SpringSolver::setDrag(Drag* dg) {
 void SpringSolver::resetVelocity() {
     for (size_t i = 0; i < pts.size(); ++i)
     {
-        std::fill(pts[i]->v,pts[i]->v+3,0);
-        std::fill(pts[i]->ext_accel,pts[i]->ext_accel+3,0);
+        std::fill(pts[i]->v,pts[i]->v+3,0.0);
+        std::fill(pts[i]->ext_accel,pts[i]->ext_accel+3,0.0);
     }
 }
 
