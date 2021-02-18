@@ -30,3 +30,9 @@ Enter file path of folding plan: fogm_para_COB
 
 Enter yes for debugging: yes 
 Enter the debugging string: folding
+Enter the debugging string: collision_off
+
+Enter the debugging stringX: proximity
+Enter the debugging stringX: collision
+Enter the debugging stringX: strain_limiting
+

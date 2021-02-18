@@ -368,10 +368,14 @@ void Folder3d::doFolding(
     if (drag->id() != "RelaxDrag")
         sp_solver->resetVelocity();
 	
-    //TODO: TURN THIS ON
-    //  cd_solver->resolveCollision();
+    
+    if (!debugging("collision_off"))
+    {
+        cd_solver->resolveCollision();
+    }
 
-	t += dt;
+	
+    t += dt;
     t0 += dt; 
 	if (movie->isMovieTime(t))
 	    movie->recordMovieFrame();
