@@ -35,9 +35,17 @@ double CD_BOND::min_moving_coord(int dim,double dt){
 POINT* CD_BOND::Point_of_hse(int i) const
 {
     if (i >= num_pts())
-        return NULL;
+        return nullptr;
     else
         return (i == 0) ? m_bond->start : m_bond->end;
+}
+
+CD_POINT* CD_BOND::CD_Point_of_hse(int i)
+{
+    if (i >= num_pts())
+        return NULL;
+    else
+        return &cpts[i];
 }
 
 double CD_TRI::max_static_coord(int dim){
@@ -82,13 +90,21 @@ double CD_TRI::min_moving_coord(int dim,double dt){
     return ans;
 }
 
-POINT* CD_TRI::Point_of_hse(int i) const{
+POINT* CD_TRI::Point_of_hse(int i) const
+{
     if (i >= num_pts())
-	return NULL;
+        return nullptr;
     else
         return Point_of_tri(m_tri)[i];
 }
 
+CD_POINT* CD_TRI::CD_Point_of_hse(int i)
+{
+    if (i >= num_pts())
+        return nullptr;
+    else
+        return &cpts[i];
+}
 
 bool adjacentHSE(CD_HSE* A, CD_HSE* B)
 {

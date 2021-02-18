@@ -1079,7 +1079,13 @@ static void rgbody_point_propagate(
         if(!debugging("collision_off"))
         {
             for (i = 0; i < dim; ++i)
+            {
                 newst->x_old[i] = Coords(oldp)[i];
+                newp->x_old[i] = Coords(oldp)[i];
+                //TODO: attempt to decouple collision state data
+                //      from the STATE structure that is internal
+                //      to POINTs.
+            }
         }
         
         double omega_dt,crds_com[MAXD];

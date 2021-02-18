@@ -5,19 +5,18 @@ struct STATE
 {
     double dens;                    /* Density */
     double pres;                    /* Pressure */
-    //double phi;                     /* Potential */
     double vel[MAXD];               /* Velocities */
     double vort;                    /* Vorticity in 2D */
-
 	double temperature;             /* For melting with flow problem */
 	double mu;			            /* For eddy viscosity */
 	double fluid_accel[MAXD];       /* acceleration from fluid force */
     double other_accel[MAXD];       /* acceleration for special nodes */
-
     double impulse[MAXD];            /* Accum impact from external force */
 
 
-	/* for collision */
+    //TODO: Move collision state data into a proxy class for POINTs.
+	
+    /* for collision */
 	struct UF   
     {
         int num_pts;
@@ -26,7 +25,7 @@ struct STATE
         POINT* next_pt;
     };
     
-    UF     impZone;
+    UF impZone;
     double collsn_dt;
     double collsnImpulse[3];
     double collsnImpulse_RG[3];

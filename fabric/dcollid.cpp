@@ -510,11 +510,9 @@ void CollisionSolver3d::detectProximity()
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        //gauss-seidel updating
         limitStrainRatePosnGS();
-            //limitStrainRatePosn();
     }
-    
+
     /*
     //TODO: Not ready for rigid-rigid collisions right now.
     if (getTimeStepSize() > 0.0)
@@ -2258,7 +2256,6 @@ POINT* findSet(POINT* p)
     return p;
 }
 
-//TODO: check that the next_pt pointers being properly updated.
 void mergePoint(POINT* X, POINT* Y)
 {
     POINT* PX = findSet(X);
