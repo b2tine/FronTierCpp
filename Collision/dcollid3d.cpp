@@ -1025,10 +1025,7 @@ static void EdgeToEdgeImpulse(
         // Apply one or the other for collision, NOT BOTH.
         // Zero the relative velocity with inelastic impulse.
         if (vn < 0.0)
-        {
             EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
-                //EdgeToEdgeInelasticImpulse(mag_vrel,pts,inelastic_impulse,rigid_impulse,wab);
-        }
         else if (vn * dt <  overlap_coef * overlap)
             EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
@@ -1039,7 +1036,6 @@ static void EdgeToEdgeImpulse(
         // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
-        //if (fabs(vn)*dt < overlap_coef * overlap)
         if (vn * dt <  overlap_coef * overlap)
             EdgeToEdgeElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
@@ -1056,8 +1052,7 @@ static void EdgeToEdgeImpulse(
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = elastic_impulse[i];
-            //f_impulse[i] = inelastic_impulse[i];
+            f_impulse[i] = impulse[i];
         }
         else
         {
@@ -1065,8 +1060,7 @@ static void EdgeToEdgeImpulse(
                               + sqr(wab[2]) + sqr(wab[3]);
         
             m_impulse[i] = 2.0*impulse[i]/wabs_sqr;
-            f_impulse[i] = 2.0*elastic_impulse[i]/wabs_sqr;
-            //f_impulse[i] = 2.0*inelastic_impulse[i]/wabs_sqr;
+            f_impulse[i] = 2.0*impulse[i]/wabs_sqr;
         }
     }
 
@@ -1152,13 +1146,11 @@ static void EdgeToEdgeImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            //if (t_impulse < 0) continue;
-    
+            for (int j = 0; j < 3; ++j)
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+   
             if (mstate == MotionState::STATIC)
             {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-       
                 double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
@@ -1169,14 +1161,6 @@ static void EdgeToEdgeImpulse(
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
-            }
-            else
-            {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                    //sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
-                
-                //TODO: Need to apply a tangential impulse here too?
             }
                 
             sl[i]->collsn_num++;
@@ -1502,10 +1486,7 @@ static void PointToTriImpulse(
         // Apply one or the other for collision, NOT BOTH.
         // Zero the relative velocity with inelastic impulse.
         if (vn < 0.0)
-        {
             PointToTriInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
-                //PointToTriInelasticImpulse(mag_vrel,pts,inelastic_impulse,rigid_impulse,w,&sum_w);
-        }
         else if (vn*dt < overlap_coef*overlap)
             PointToTriElasticImpulse(vn,overlap_coef,overlap,pts,
                     elastic_impulse,rigid_impulse,dt,m,k);
@@ -1532,14 +1513,12 @@ static void PointToTriImpulse(
         if (fabs(sum_w) < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = elastic_impulse[i];
-            //f_impulse[i] = inelastic_impulse[i];
+            f_impulse[i] = impulse[i];
         }
         else
         {
             m_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
-            f_impulse[i] = 2.0*elastic_impulse[i]/(1.0 + Dot3d(w, w));
-            //f_impulse[i] = 2.0*inelastic_impulse[i]/(1.0 + Dot3d(w, w));
+            f_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
         }
     }
 
@@ -1625,13 +1604,11 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
-            //if (t_impulse < 0) continue;
-                
+            for (int j = 0; j < 3; ++j)
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+
             if (mstate == MotionState::STATIC)
             {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-
                 double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
@@ -1642,14 +1619,6 @@ static void PointToTriImpulse(
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
-            }
-            else
-            {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-                    //sl[i]->collsnImpulse[j] -= W[i]*t_impulse*v_rel[j]/mag_vrel;
-
-                //TODO: Need to apply a tangential impulse here too?
             }
             
             sl[i]->collsn_num++;
