@@ -365,6 +365,10 @@ void CollisionSolver3d::resolveCollision()
         skip_strain_velo_constraint = false;
     }
 
+        //TODO: check for proximity at end of time step
+        //
+        //      detectProximity();
+
 	updateFinalVelocity();
 
     /*
@@ -717,6 +721,11 @@ void CollisionSolver3d::detectCollision()
             }
             std::cout << std::endl;
         }
+
+        //TODO: check for proximity and apply elastic impulse
+        //      using avg_collsn_dt in computation.
+        //
+        //      detectProximity();
 
         if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
@@ -2054,13 +2063,11 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //component of the relative velocity in the direction
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
-            if (fabs(vcomp01) < MACH_EPS) continue; //TODO: MACH_EPS may be too strict of a tolerance here
+            if (fabs(vcomp01) < MACH_EPS) continue;
                 
             double I = 0.5*vcomp01;
 
             //Do not apply impulses to rg_string_nodes
-            
-            //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
             if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
@@ -2071,14 +2078,12 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                 sl[0]->strain_num++;
                 sl[1]->strain_num++;
             } 
-            //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
             else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
                     sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                 sl[0]->strain_num++;
             }
-            //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
             else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
