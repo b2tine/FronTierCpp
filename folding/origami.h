@@ -161,7 +161,8 @@ public:
 		const std::vector<std::vector<int>>&,
                 const std::vector<std::pair<int, int>>&,
                 const std::vector<std::vector<int>>&, 
-                const std::vector<double>&, int);
+                const std::vector<double>&,
+                int);//tengbo has int s = 0.015 as default val
     OrigamiFold();
     ~OrigamiFold();
     size_t dataSize();
@@ -182,6 +183,8 @@ private:
     Drag * clone(const Info&);
     size_t totalDataSize;
     int optAlgoType_; 
+    //TODO: from tengbo code
+    //  readAnglesTrace();
 };
 
 #endif

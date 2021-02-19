@@ -196,7 +196,9 @@ void Folder3d::doFolding() {
     Drag::setTolerance(m_intfc->table->rect_grid.h[0]*0.5);
     Drag::setThickness(0.001);
     
-    deleteLines(); 
+    //TODO: this was commented out in tengbo's code
+    deleteLines();
+
     for (std::vector<Drag*>::iterator it = drags.begin();
 	 it != drags.end(); ++it) 
     {
@@ -318,7 +320,7 @@ double Folder3d::computeKineticEnergy() {
                  double* vel = state->vel;
 
                  for (int i = 0; i < 3; i++)
-                      E += 0.5*vel[i]*vel[i];
+                      E += 0.5*vel[i]*vel[i]*spring_params.m;
             }
         }    
     }

@@ -1,0 +1,20 @@
+airfoil:
+            cgal.cpp -- CgalCircleFold()
+
+
+folding:
+
+            origami.h and origami.cpp have significant changes;
+            the function readAnglesTrace() appears in several places
+
+
+parachute"
+
+            parachute.cpp has folding function calls and definitions.
+            folding plans fogm* files in the directory -- found a good
+            initialization using the folding method; need to find the
+            corresponding input files. The 'in-' has been stripped off
+            the input files he used to work with the mrun script.
+
+            pressure field looks very good, but could just be due to large
+            animation frame interval -- check projection method in iFluid.
