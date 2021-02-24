@@ -333,14 +333,14 @@ void CollisionSolver3d::resolveCollision()
 	computeAverageVelocity();
     stop_clock("computeAverageVelocity");
             
-    computeMaxSpeed(); //debug
+        //computeMaxSpeed(); //debug
 
     // Apply impulses to enforce strain limiting
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainPosnJac();
-        computeMaxSpeed(); //debug
+            //computeMaxSpeed(); //debug
     }
 
     // Static proximity handling
@@ -378,7 +378,7 @@ void CollisionSolver3d::resolveCollision()
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainVel();
-        computeMaxSpeed(); //debug
+            //computeMaxSpeed(); //debug
     }
 
 	updateFinalVelocity();
@@ -572,13 +572,13 @@ void CollisionSolver3d::detectProximity()
     if (abt_proximity->isProximity)
         updateAverageVelocity(MotionState::STATIC);
 
-    computeMaxSpeed(); //debug    
+        //computeMaxSpeed(); //debug    
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainRatePosnGS(MotionState::STATIC);
-            //limitStrainRatePosnJac(MotionState::STATIC);
-        computeMaxSpeed(); //debug    
+        //limitStrainRatePosnJac(MotionState::STATIC);
+            //computeMaxSpeed(); //debug    
     }
 }
 
@@ -836,7 +836,7 @@ void CollisionSolver3d::detectCollision()
             }
             std::cout << std::endl;
         
-            computeMaxSpeed(); //debug
+                //computeMaxSpeed(); //debug
         }
         
         if (is_collision)
@@ -844,8 +844,8 @@ void CollisionSolver3d::detectCollision()
             if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
             {
                 limitStrainRatePosnGS(MotionState::MOVING);
-                    //limitStrainRatePosnJac(MotionState::MOVING);
-                computeMaxSpeed(); //debug
+                //limitStrainRatePosnJac(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
             }
         }
 
@@ -1377,7 +1377,7 @@ void CollisionSolver3d::computeImpactZoneGS()
             std::cout << "     " << numImpactZonePoints
                       << " total impact zone points" << std::endl;
 
-            computeMaxSpeed(); //debug
+                //computeMaxSpeed(); //debug
         }
         
         //TODO: Appropriate to limit strain rate during impact zone handling?
@@ -1386,8 +1386,8 @@ void CollisionSolver3d::computeImpactZoneGS()
             if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
             {
                 limitStrainRatePosnGS(MotionState::MOVING);
-                    //limitStrainRatePosnJac(MotionState::MOVING);
-                computeMaxSpeed(); //debug
+                //limitStrainRatePosnJac(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
             }
         }
 
@@ -1454,7 +1454,7 @@ void CollisionSolver3d::computeImpactZoneJac()
             std::cout << "     " << numImpactZonePoints
                       << " total impact zone points" << std::endl;
 
-            computeMaxSpeed(); //debug
+                //computeMaxSpeed(); //debug
         }
         
         //TODO: Appropriate to limit strain rate during impact zone handling?
@@ -1463,8 +1463,8 @@ void CollisionSolver3d::computeImpactZoneJac()
             if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
             {
                 limitStrainRatePosnGS(MotionState::MOVING);
-                    //limitStrainRatePosnJac(MotionState::MOVING);
-                computeMaxSpeed(); //debug
+                //limitStrainRatePosnJac(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
             }
         }
 
