@@ -263,20 +263,22 @@ extern void compute_spring_accel1(
 
 	for (k = 0; k < dim; ++k)
 	    accel[k] = 0.0;
-	for (i = 0; i < sv->num_nb; ++i)
+	
+    for (i = 0; i < sv->num_nb; ++i)
 	{
 	    len = 0.0;
 	    for (k = 0; k < dim; ++k)
 	    {
-		vec[k] = sv->x_nb[i][k] - sv->x[k];
-		len += sqr(vec[k]);
+            vec[k] = sv->x_nb[i][k] - sv->x[k];
+            len += sqr(vec[k]);
 	    }
+
 	    len = sqrt(len);
 
 	    for (k = 0; k < dim; ++k)
 	    {
-		vec[k] /= len;
-		accel[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
+            accel[k] += sv->k[i]*(1.0 - sv->len0[i]/len)*vec[k]/sv->m;
+            accel[k] += sv->bendforce[k]/sv->m;
 	    }
 	}
 
@@ -700,6 +702,7 @@ extern void set_node_spring_vertex(
 	sv[*n].x = point_set[gindex]->x;
 	sv[*n].v = point_set[gindex]->v;
 	sv[*n].f = point_set[gindex]->f;
+    sv[*n].bendforce = point_set[gindex]->bendforce;
 	sv[*n].ext_impul = point_set[gindex]->impuls;
 	sv[*n].fluid_accel = point_set[gindex]->fluid_accel;
 	sv[*n].other_accel = point_set[gindex]->other_accel;
@@ -916,6 +919,7 @@ extern void set_curve_spring_vertex(
 	    sv[i].x = point_set[gindex]->x;
 	    sv[i].v = point_set[gindex]->v;
 	    sv[i].f = point_set[gindex]->f;
+        sv[i].bendforce = point_set[gindex]->bendforce;
 	    sv[i].ext_impul = point_set[gindex]->impuls;
 	    sv[i].fluid_accel = point_set[gindex]->fluid_accel;
 	    sv[i].other_accel = point_set[gindex]->other_accel;
@@ -1078,10 +1082,14 @@ extern void set_surf_spring_vertex(
 		sv[i].x = point_set[gindex]->x;
 		sv[i].v = point_set[gindex]->v;
 		sv[i].f = point_set[gindex]->f;
-	    	sv[i].ext_impul = point_set[gindex]->impuls;
-	    	sv[i].fluid_accel = point_set[gindex]->fluid_accel;
-	    	sv[i].other_accel = point_set[gindex]->other_accel;
-		PointAndFirstRingTris(p,Hyper_surf_element(tri),
+
+        sv[i].bendforce = point_set[gindex]->bendforce;
+
+        sv[i].ext_impul = point_set[gindex]->impuls;
+        sv[i].fluid_accel = point_set[gindex]->fluid_accel;
+        sv[i].other_accel = point_set[gindex]->other_accel;
+		
+        PointAndFirstRingTris(p,Hyper_surf_element(tri),
 				Hyper_surf(surf),&nt,tris);
 		sv[i].num_nb = nt;
 		for (k = 0; k < nt; ++k)
@@ -1120,6 +1128,7 @@ static void get_point_value_from(
 	    point_set[gindex]->x[i] = Coords(p)[i] - p->pshift[i];
 	    point_set[gindex]->v[i] = p->vel[i];
 	    point_set[gindex]->f[i] = p->force[i];
+        point_set[gindex]->bendforce[i] = state->bendforce[i];
 	    point_set[gindex]->impuls[i] = state->impulse[i];
 	    point_set[gindex]->fluid_accel[i] = state->fluid_accel[i];
 	    point_set[gindex]->other_accel[i] = state->other_accel[i];
@@ -1576,6 +1585,7 @@ extern void copy_from_client_point_set(
             point_set[gindex]->x[k] = cpoint.x[k];
             point_set[gindex]->v[k] = cpoint.v[k];
             point_set[gindex]->f[k] = cpoint.f[k];
+            point_set[gindex]->bendforce[k] = cpoint.bendforce[k];
             point_set[gindex]->impuls[k] = cpoint.impuls[k];
             point_set[gindex]->fluid_accel[k] = cpoint.fluid_accel[k];
             point_set[gindex]->other_accel[k] = cpoint.other_accel[k];

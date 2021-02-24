@@ -265,7 +265,6 @@ void CollisionSolver3d::recordOriginalPosition()
             sl->has_strainlim_prox = false;
             sl->has_collsn = false;
             sl->has_strainlim_collsn = false;
-            sl->has_endstep_proximity = false;
             sl->collsn_dt = -1.0;
 
             //NOTE: sl->x_old for movable rigid body points

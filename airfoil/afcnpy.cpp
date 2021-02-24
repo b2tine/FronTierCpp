@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "collid.h"
 #include "iFluid.h"
 #include "airfoil.h"
+#include "bending.h"
 #include "solver.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
@@ -2291,6 +2292,12 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	}
 
 	elastic_intfc = fr->interf;
+
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeBendingForce(elastic_intfc,bends,bendd);
+
 	assembleParachuteSet(elastic_intfc,&geom_set);
 
 	if (myid != owner_id)
@@ -2360,6 +2367,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             collision_solver->setStringPointMass(af_params->m_l);
 
             collision_solver->setStrainLimit(af_params->strain_limit);
+            //collision_solver->setCompressiveStrainLimit(af_params->compress_strain_limit);
             collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;

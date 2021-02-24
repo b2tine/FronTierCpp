@@ -275,7 +275,6 @@ extern void compute_spring_accel1(
 	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
-            //bending force
             accel[k] += sv->bendforce[k]/sv->m;
         }
 	}
@@ -1540,10 +1539,8 @@ extern void copy_from_client_point_set(
                 point_set[gindex]->f[k] = client_point_set[j].f[k];
                 point_set[gindex]->bendforce[k] = client_point_set[j].bendforce[k];
                 point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
-                point_set[gindex]->fluid_accel[k] = 
-					client_point_set[j].fluid_accel[k];
-                point_set[gindex]->other_accel[k] = 
-					client_point_set[j].other_accel[k];
+                point_set[gindex]->fluid_accel[k] = client_point_set[j].fluid_accel[k];
+                point_set[gindex]->other_accel[k] = client_point_set[j].other_accel[k];
             }
         }
 }	/* end copy_from_client_point_set */

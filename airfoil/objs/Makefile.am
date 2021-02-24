@@ -29,6 +29,8 @@ libairfoil_la_SOURCES = \
 ../afsetd.cpp \
 ../aftest.cpp \
 ../afvelo.cpp \
+../bending.h \
+../bending.cpp \
 ../cgal.cpp
 
 
