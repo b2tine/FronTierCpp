@@ -11,7 +11,9 @@ struct STATE
 	double mu;			            /* For eddy viscosity */
 	double fluid_accel[MAXD];       /* acceleration from fluid force */
     double other_accel[MAXD];       /* acceleration for special nodes */
-    double impulse[MAXD];            /* Accum impact from external force */
+    double impulse[MAXD];           /* Accum impact from external force */
+    
+    double bendforce[MAXD];         /* bending force */
 
 
     //TODO: Move collision state data into a proxy class for POINTs.
@@ -33,6 +35,7 @@ struct STATE
     double friction[3];
     double avgVel[3];
     double avgVel_old[3];
+    double avgVel_postprox[3];
     double x_old[3];
     int strain_num;
     int collsn_num;

@@ -95,12 +95,14 @@ struct AF_PARAMS
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
 	double payload;
+	double kbs {0.0};	 /* spring bending constant of surface */
 	double ks {5000.0};	 /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
     double mu_s;         /* fabric static friction consant */
     double mu_l;         /* string curves static friction consant */
-	double lambda_s;	 /* damping factor of surface */
+	double lambda_bs {0.0};	 /* bending damping factor of surface */
+	double lambda_s;	 /* frict factor of surface */
 	double lambda_l;	 /* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
 	double m_s {0.001};	 /* point mass of surface */

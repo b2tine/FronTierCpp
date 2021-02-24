@@ -9,6 +9,11 @@
 #include <utility>
 #include <numeric>
 
+//TODO: ideally we should combine SPRING_VERTEX and CD_POINT into
+//      a single class that the spring solver and collision solver
+//      can both operate on
+
+
 //Proxy class for POINT
 struct CD_POINT
 {

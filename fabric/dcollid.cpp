@@ -340,7 +340,9 @@ void CollisionSolver3d::resolveCollision()
 	detectProximity();
     stop_clock("detectProximity");
 
-	// Check linear trajectories for collisions
+    saveAverageVelocity();
+	
+    // Check linear trajectories for collisions
     start_clock("detectCollision");
 	detectCollision();
     stop_clock("detectCollision");
@@ -355,36 +357,22 @@ void CollisionSolver3d::resolveCollision()
 	//update position using final midstep velocity
 	updateFinalPosition();
 
+    //check for proximity again at end step positions
+    detectProximity();
+
+    /*
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainVel();
-        //if (!skip_strain_velo_constraint)
-          //  limitStrainVel();
-        skip_strain_velo_constraint = false;
     }
-
-        //TODO: check for proximity at end of time step
-        //
-        //      detectProximity();
+    */
 
 	updateFinalVelocity();
 
-    /*
-    //Consolidates updateFinalPosition() and updateFinalVelocity()
-    //in order to avoid a second traversal of the points. However,
-    //when strain limiting is eventually implemented, the separate
-    //traversals may be necessary to adjust the velocities based on
-    //the final positions in order to limit the strain/strain rate.
-    
-    start_clock("updateFinalStates");
-    updateFinalStates(); 
-    stop_clock("updateFinalStates");
-    */
-
     //TODO: 
-        //updateFinalForRG();
+    updateFinalForRG();
 }
 
 void CollisionSolver3d::computeAverageVelocity()
@@ -519,6 +507,9 @@ void CollisionSolver3d::detectProximity()
 
     /*
     //TODO: Not ready for rigid-rigid collisions right now.
+    //      also this should be moved out of this function and
+    //      placed in resolveCollision()
+    //
     if (getTimeStepSize() > 0.0)
 	    updateImpactZoneVelocityForRG(); // test for moving objects
     */
@@ -683,6 +674,60 @@ void CollisionSolver3d::updateAverageVelocity()
     }
 }
 
+void CollisionSolver3d::saveAverageVelocity()
+{
+	POINT *p;
+	STATE *sl;
+
+    unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        int np = (*it)->num_pts(); 
+	    for (int j = 0; j < np; ++j)
+	    {
+            p = (*it)->Point_of_hse(j);
+            if (sorted(p)) continue;
+
+            sl = (STATE*)left_state(p);
+            for (int k = 0; k < 3; ++k)
+            {
+                sl->avgVel_postprox[k] = sl->avgVel[k];
+            }
+
+            sorted(p) = YES;
+	    }
+	}
+}
+
+void CollisionSolver3d::revertAverageVelocity()
+{
+	POINT *p;
+	STATE *sl;
+
+    unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        int np = (*it)->num_pts(); 
+	    for (int j = 0; j < np; ++j)
+	    {
+            p = (*it)->Point_of_hse(j);
+            if (sorted(p)) continue;
+
+            sl = (STATE*)left_state(p);
+            for (int k = 0; k < 3; ++k)
+            {
+                sl->avgVel[k] = sl->avgVel_postprox[k];
+            }
+
+            sorted(p) = YES;
+	    }
+	}
+}
+
 void CollisionSolver3d::detectCollision()
 {
 	std::cout << "Starting collision handling: " << std::endl;
@@ -739,8 +784,11 @@ void CollisionSolver3d::detectCollision()
     start_clock("computeImpactZone");
 	if (is_collision) 
     {
-        //collisionPairsList.clear();
-	    computeImpactZone();
+            //collisionPairsList.clear();
+        //return avg_vel to value before point to point collisions
+        revertAverageVelocity();
+        computeImpactZoneJac();
+        //computeImpactZoneGS();
     }
     stop_clock("computeImpactZone");
 
@@ -750,6 +798,7 @@ void CollisionSolver3d::detectCollision()
 // AABB tree for kinetic collision detection process
 void CollisionSolver3d::aabbCollision()
 {
+    // NOTE: Using hseList -- checking for any kind of interference
     clearCollisionTimes();
 
     if (!abt_collision)
@@ -1081,7 +1130,7 @@ void CollisionSolver3d::updateFinalForRG()
                 }
                 visited[rg_index] = false;
 		    
-                if (debugging("rigid_body"))
+                if (debugging("rigid_body_collision"))
                 {
                     printf("After collision handling: \n");
                     printf("Body Index: %d\n", rg_index);
@@ -1180,8 +1229,8 @@ void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
 	intfc_surface_loop(intfc, s)
 	{
 	    if (is_bdry(*s)) continue;
-	    if (!isRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
-	    //if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
+	        //if (!isRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
 
         surf_tri_loop(*s, tri)
 	    {
@@ -1212,7 +1261,7 @@ void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
 void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
 bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
-void CollisionSolver3d::computeImpactZone()
+void CollisionSolver3d::computeImpactZoneGS()
 {
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
@@ -1229,15 +1278,11 @@ void CollisionSolver3d::computeImpactZone()
 
         start_clock("dynamic_AABB_collision");
         aabbCollision();
-            abt_collision->turn_off_GS_update();//turn on Jacobi style update
+        abt_collision->turn_on_GS_update();
         abt_collision->query();
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
-
-            //for Jacobi style update
-            updateAverageVelocity();
-            updateImpactZoneVelocity();
 
         if (debugging("collision"))
         {
@@ -1269,7 +1314,7 @@ void CollisionSolver3d::computeImpactZone()
 
         if (niter >= MAXITER)
         {
-            printf("computeImpactZone(): ERROR\n\t\
+            printf("computeImpactZoneGS(): ERROR\n\t\
                     maxiters %d without convergence!\n",
                     MAXITER);
             
@@ -1279,7 +1324,77 @@ void CollisionSolver3d::computeImpactZone()
     }
 	
     turnOffImpZone();
-    skip_strain_velo_constraint = true;
+}
+
+void CollisionSolver3d::computeImpactZoneJac()
+{
+    std::cout<<"Starting compute Impact Zone: "<<std::endl;
+
+	int niter = 0;
+    const int MAXITER = 100;
+
+	turnOnImpZone();
+    
+	bool is_collision = true;
+    while(is_collision)
+    {
+        niter++;
+        is_collision = false;
+
+        start_clock("dynamic_AABB_collision");
+        aabbCollision();
+        abt_collision->turn_off_GS_update();//turn on Jacobi style update
+        abt_collision->query();
+        stop_clock("dynamic_AABB_collision");
+
+        is_collision = abt_collision->getCollsnState();
+
+        //for Jacobi style update
+        if (is_collision)
+        {
+            updateImpactZoneVelocity();
+        }
+
+        if (debugging("collision"))
+        {
+            infoImpactZones();
+
+            std::cout << "    #" << niter << ": "
+                      << abt_collision->getCount() 
+                      << " collision pairs";
+            
+            if (is_collision)
+            {
+                std::cout << ",  avg_collsn_dt = "
+                    << getAverageCollisionTime();
+            }
+            std::cout << std::endl;
+
+            std::cout << "     " << numImpactZones
+                      << " impact zones" << std::endl;
+            std::cout << "     " << numImpactZonePoints
+                      << " total impact zone points" << std::endl;
+        }
+        
+        //TODO: Appropriate to limit strain rate during impact zone handling?
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainRatePosnGS();
+                    //limitStrainRatePosn();
+            }
+
+        if (niter >= MAXITER)
+        {
+            printf("computeImpactZoneJac(): ERROR\n\t\
+                    maxiters %d without convergence!\n",
+                    MAXITER);
+            
+            debugImpactZones();
+            clean_up(EXIT_FAILURE);
+        }
+    }
+	
+    turnOffImpZone();
 }
 
 void CollisionSolver3d::debugImpactZones()
@@ -1448,7 +1563,7 @@ void updateImpactListVelocity(POINT* head)
             m = CollisionSolver3d::getStringPointMass();
         else if (isStaticRigidBody(p))//TODO: temp hack
         {
-            m = 1000;
+            m = HUGE;
             //m = total_mass(p->hs);
             
             //TODO: Center of Motion computations will be incorrect
@@ -1470,10 +1585,11 @@ void updateImpactListVelocity(POINT* head)
 		num_pts++;
     }
 	
+    double dt = CollisionSolver3d::getTimeStepSize();
+
     //TODO: Is this justified, or just use the full step dt?
-    avg_dt += CollisionSolver3d::getTimeStepSize();
+    avg_dt += dt;//maybe don't add this...
     avg_dt /= num_pts;
-        //double dt = CollisionSolver3d::getTimeStepSize();
     
     //temp debug
         //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
@@ -1496,7 +1612,7 @@ void updateImpactListVelocity(POINT* head)
             m = CollisionSolver3d::getStringPointMass();
         else if (isStaticRigidBody(p))//TODO: temp hack
         {
-            m = 1000;
+            m = HUGE;
         }
 	    
 	    double dx[3], dv[3], Li[3];
@@ -1520,7 +1636,7 @@ void updateImpactListVelocity(POINT* head)
             m = CollisionSolver3d::getStringPointMass();
         else if (isStaticRigidBody(p))//TODO: temp hack
         {
-            m = 1000;
+            m = HUGE;
         }
 
 	    double dx[3];
@@ -1625,7 +1741,8 @@ void updateImpactListVelocity(POINT* head)
             x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
                        + cos(avg_dt*mag_w)*xR[i] + wxR[i];
 
-		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
+		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+		        //sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
 
             //TODO: Try reverting to this computation that uses
             //      the full time step dt when rigid body points
@@ -1677,7 +1794,7 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosn()
 {
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         int numBondStrain = computeStrainImpulsesPosn(stringBondList);
@@ -1770,7 +1887,7 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
 
             double delta_len0 = lnew - len0;
             
-            double CTOL = 0.01;//TODO: Make input option
+            double CTOL = 0.025;//TODO: Make input option
             if (delta_len0 > TOL*len0 || delta_len0 < -1.0*CTOL*len0)
             {
                 double I;
@@ -1788,8 +1905,6 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
                 scalarMult(1.0/lnew,vec01,vec01);
                 
                 //Do not apply impulses to fixed nodes
-                
-                //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
                 if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
@@ -1800,14 +1915,12 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
                 else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
                 else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
@@ -1854,7 +1967,7 @@ void CollisionSolver3d::limitStrainRatePosnGS()
 //jacobi iteration
 void CollisionSolver3d::limitStrainRatePosn()
 {
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList);
@@ -1931,16 +2044,12 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                 {
                     I = 0.5*(delta_lold + TOL*lold)/dt;
                 }
-                
-                //double I = 0.5*(delta_lold - TOL*lold)/dt;
 
                 double vec01[MAXD];
                 Pts2Vec(p[0],p[1],vec01);
                 scalarMult(1.0/lnew,vec01,vec01);
                 
                 //Do not apply impulses to fixed nodes
-                
-                //if (!sl[0]->is_fixed && !sl[1]->is_fixed)
                 if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
@@ -1951,14 +2060,12 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                //else if (!sl[0]->is_fixed && sl[1]->is_fixed)
                 else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                //else if (!sl[1]->is_fixed && sl[0]->is_fixed)
                 else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
@@ -1980,7 +2087,7 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
                         sl[k]->has_strainlim = true;
                         for (int j = 0; j < 3; ++j)
                         {
-                            sl[k]->avgVel[j] += sl[k]->strainImpulse[j]/sl[k]->strain_num;
+                            sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
                             sl[k]->strainImpulse[j] = 0.0;
                         }
                         sl[k]->strain_num = 0;
@@ -1997,7 +2104,7 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list)
 //jacobi iteration
 void CollisionSolver3d::limitStrainVel()
 {
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
@@ -2131,7 +2238,9 @@ void CollisionSolver3d::applyStrainImpulses()
 
                 for (int k = 0; k < 3; ++k)
                 {
-                    sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
+                    //TODO: should we be dividing by sl->strain_num?
+                    sl->avgVel[k] += sl->strainImpulse[k];
+                        //sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {

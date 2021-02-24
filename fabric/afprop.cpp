@@ -21,7 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include "fabric.h"
+#include "bending.h"
+//#include "fabric.h"
 #include "collid.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
@@ -563,6 +564,12 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
 	}
 
 	elastic_intfc = fr->interf;
+    
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeBendingForce(elastic_intfc,bends,bendd);
+
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	
     if (myid != owner_id)
@@ -872,7 +879,13 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 
 	
     elastic_intfc = fr->interf;
-	assembleParachuteSet(elastic_intfc,&geom_set);
+    
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeBendingForce(elastic_intfc,bends,bendd);
+	
+    assembleParachuteSet(elastic_intfc,&geom_set);
 
 
 	if (myid != owner_id)
@@ -934,8 +947,6 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             setCollisionFreePoints3d(fr->interf);
             
             collision_solver->initializeSystem(fr);
-                //collision_solver->assembleFromInterface(elastic_intfc,fr->dt);
-                //collision_solver->recordOriginalPosition();
 
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);

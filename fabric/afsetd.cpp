@@ -275,6 +275,8 @@ extern void compute_spring_accel1(
 	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
+            //bending force
+            accel[k] += sv->bendforce[k]/sv->m;
         }
 	}
 
@@ -710,6 +712,7 @@ extern void set_node_spring_vertex(
 	sv[*n].x = point_set[gindex]->x;
 	sv[*n].v = point_set[gindex]->v;
 	sv[*n].f = point_set[gindex]->f;
+    sv[*n].bendforce = point_set[gindex]->bendforce;
 	sv[*n].ext_impul = point_set[gindex]->impuls;
 	sv[*n].fluid_accel = point_set[gindex]->fluid_accel;
 	sv[*n].other_accel = point_set[gindex]->other_accel;
@@ -938,6 +941,7 @@ extern void set_curve_spring_vertex(
 	    sv[i].x = point_set[gindex]->x;
 	    sv[i].v = point_set[gindex]->v;
 	    sv[i].f = point_set[gindex]->f;
+        sv[i].bendforce = point_set[gindex]->bendforce;
 	    sv[i].ext_impul = point_set[gindex]->impuls;
 	    sv[i].fluid_accel = point_set[gindex]->fluid_accel;
 	    sv[i].other_accel = point_set[gindex]->other_accel;
@@ -1107,6 +1111,8 @@ extern void set_surf_spring_vertex(
 		sv[i].v = point_set[gindex]->v;
 		sv[i].f = point_set[gindex]->f;
 
+        sv[i].bendforce = point_set[gindex]->bendforce;
+
         sv[i].ext_impul = point_set[gindex]->impuls;
         sv[i].fluid_accel = point_set[gindex]->fluid_accel;
         sv[i].other_accel = point_set[gindex]->other_accel;
@@ -1150,6 +1156,7 @@ static void get_point_value_from(
 	    point_set[gindex]->x[i] = Coords(p)[i] - p->pshift[i];
 	    point_set[gindex]->v[i] = p->vel[i];
 	    point_set[gindex]->f[i] = p->force[i];
+	    point_set[gindex]->bendforce[i] = state->bendforce[i];
 	    point_set[gindex]->impuls[i] = state->impulse[i];
 	    point_set[gindex]->fluid_accel[i] = state->fluid_accel[i];
 	    point_set[gindex]->other_accel[i] = state->other_accel[i];
@@ -1531,6 +1538,7 @@ extern void copy_from_client_point_set(
                 point_set[gindex]->x[k] = client_point_set[j].x[k];
                 point_set[gindex]->v[k] = client_point_set[j].v[k];
                 point_set[gindex]->f[k] = client_point_set[j].f[k];
+                point_set[gindex]->bendforce[k] = client_point_set[j].bendforce[k];
                 point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
                 point_set[gindex]->fluid_accel[k] = 
 					client_point_set[j].fluid_accel[k];
