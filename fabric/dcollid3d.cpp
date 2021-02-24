@@ -25,8 +25,6 @@ static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double
 static bool isCoplanar(POINT**,double,double*);
 
 
-//TODO: Jacobi Update For ImpactZones
-//      Gauss-Seidel Update For Strain Rate Limiting
 
 bool MovingTriToBondGS(const TRI* tri,const BOND* bd)
 {
@@ -345,7 +343,6 @@ static bool MovingPointToTriGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                        //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                     //move to new candidate position
                     Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
@@ -355,8 +352,9 @@ static bool MovingPointToTriGS(POINT* pts[])
         }
             
         MotionState pmstate = MotionState::POSTCOLLISION;
-        double ftol = CollisionSolver3d::getFabricThickness();
-        if (PointToTri(pts,ftol,pmstate))
+        //double ftol = CollisionSolver3d::getFabricThickness();
+        //if (PointToTri(pts,ftol,pmstate))
+        if (PointToTri(pts,rtol,pmstate))
         {
             //apply elastic repulsion impulse if still not well separated
             for (int j = 0; j < 4; ++j)
@@ -386,7 +384,7 @@ static bool MovingPointToTriGS(POINT* pts[])
     else if (status && is_detImpZone)
     {
         createImpactZone(pts,4);
-        POINT* head = findSet(pts[0]);
+        POINT* head = findSet(pts[0]);//could be a rigid body point
         updateImpactListVelocity(head);
         
         /*
@@ -555,8 +553,9 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         }
         
         MotionState pmstate = MotionState::POSTCOLLISION;
-        double ftol = CollisionSolver3d::getFabricThickness();
-        if (EdgeToEdge(pts,ftol,pmstate))
+        //double ftol = CollisionSolver3d::getFabricThickness();
+        //if (EdgeToEdge(pts,ftol,pmstate))
+        if (EdgeToEdge(pts,rtol,pmstate))
         {
             //apply elastic repulsion impulse if still not well separated
             for (int j = 0; j < 4; ++j)
@@ -573,7 +572,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 }
             }
         }
-
+        
         //return to original position
         for (int j = 0; j < 4; ++j)
         {

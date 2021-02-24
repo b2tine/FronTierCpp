@@ -34,7 +34,7 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
                     TRI* n_tri = Tri_on_side(tri, (i+1)%3);
 		            if (is_side_bdry(tri, (i+1)%3)) continue; 
 	                
-                    //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);
+                    //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);//TODO: test this one
                     calculateBendingForce3d2006(p1,tri,n_tri,bends,bendd);
                     //calculateBendingForce3dparti(p1,tri,n_tri,bends,bendd);
                     

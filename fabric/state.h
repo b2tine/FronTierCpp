@@ -40,8 +40,11 @@ struct STATE
     int strain_num;
     int collsn_num;
     int collsn_num_RG;
+    bool has_proximity;
+    bool has_strainlim_prox;
     bool has_collsn;
-    bool has_strainlim;
+    bool has_strainlim_collsn;
+    bool has_endstep_proximity;
     bool is_fixed;
     bool is_movableRG;
     bool is_stringpt;

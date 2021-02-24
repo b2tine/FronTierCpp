@@ -173,14 +173,14 @@ private:
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
-    void limitStrainPosn();
+    void limitStrainPosnJac();
     int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
-    void limitStrainRatePosn();
-    void limitStrainRatePosnGS();
-    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainRatePosnJac(MotionState mstate);
+    void limitStrainRatePosnGS(MotionState mstate);
+    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainVel();
     int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
-    void applyStrainImpulses();
+    void applyStrainImpulses(MotionState mstate);
 
 	void computeAverageVelocity();
 	void computeMaxSpeed();
@@ -188,10 +188,9 @@ private:
 	void updateFinalPosition();
 	void updateFinalVelocity();
     void updateFinalStates();
-	void updateAverageVelocity();
+	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
-	    //void updateExternalImpulse();
 	void computeImpactZoneGS();
 	void computeImpactZoneJac();
 	void infoImpactZones();
