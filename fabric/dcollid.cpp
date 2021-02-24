@@ -339,7 +339,7 @@ void CollisionSolver3d::resolveCollision()
     start_clock("detectProximity");
 	detectProximity();
     stop_clock("detectProximity");
-
+    
     saveAverageVelocity();
 	
     // Check linear trajectories for collisions
@@ -347,12 +347,10 @@ void CollisionSolver3d::resolveCollision()
 	detectCollision();
     stop_clock("detectCollision");
 
-
     /*
     //TODO: function needs fixing -- is this even worth correcting/using?
     detectDomainBoundaryCollision();
     */
-
 
 	//update position using final midstep velocity
 	updateFinalPosition();
@@ -365,7 +363,10 @@ void CollisionSolver3d::resolveCollision()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
+        //TODO: Appears to be the cause of unphysical velocity spikes...
+        //      This may only have physical significance for inextensible cloth
         limitStrainVel();
+        //computeMaxSpeed(); //debug
     }
     */
 
@@ -373,6 +374,58 @@ void CollisionSolver3d::resolveCollision()
 
     //TODO: 
     updateFinalForRG();
+}
+
+void CollisionSolver3d::computeMaxSpeed()
+{
+    POINT* p;
+    STATE* sl;
+    
+    double max_speed = 0.0;
+    double* max_vel = nullptr;
+    POINT* max_pt = nullptr;
+
+    unsortHseList(hseList);
+    
+    std::vector<CD_HSE*>::iterator it;
+    for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+        for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            p = (*it)->Point_of_hse(i);
+            if (sorted(p) || isStaticRigidBody(p)) continue;
+            
+            sl = (STATE*)left_state(p); 
+            
+            if (Mag3d(sl->avgVel) > max_speed)
+            {
+                max_speed = Mag3d(sl->avgVel);
+                max_vel = sl->avgVel;
+                max_pt = p;
+            }
+
+            sorted(p);
+        }
+    }
+
+
+    std::cout << "\nMax fabric speed = " << max_speed << "\n";
+    
+    if (max_vel)
+    {
+        std::cout << "Maximum average velocity is "
+            << max_vel[0] << " "
+            << max_vel[1] << " "
+            << max_vel[2] << "\n"; 
+    }
+    
+    if (max_pt)
+    {
+        STATE* sl = (STATE*)left_state(max_pt);
+        printf("x_old = [%f %f %f]\t",
+                sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+        printf("Gindex(max_pt) = %d\n\n",Gindex(max_pt));
+    }
 }
 
 void CollisionSolver3d::computeAverageVelocity()
@@ -500,9 +553,12 @@ void CollisionSolver3d::detectProximity()
     if (abt_proximity->isProximity)
         updateAverageVelocity();
 
+    //computeMaxSpeed(); //debug    
+
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainRatePosnGS();
+        //computeMaxSpeed(); //debug    
     }
 
     /*
@@ -765,17 +821,18 @@ void CollisionSolver3d::detectCollision()
                     << getAverageCollisionTime();
             }
             std::cout << std::endl;
+        
+            //computeMaxSpeed(); //debug
         }
-
-        //TODO: check for proximity and apply elastic impulse
-        //      using avg_collsn_dt in computation.
-        //
-        //      detectProximity();
-
-        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        
+        if (is_collision)
         {
-            limitStrainRatePosnGS();
-                //limitStrainRatePosn();
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainRatePosnGS();
+                    //limitStrainRatePosn();
+                //computeMaxSpeed(); //debug
+            }
         }
 
         if (niter >= MAX_ITER) break;

@@ -183,6 +183,7 @@ private:
     void applyStrainImpulses();
 
 	void computeAverageVelocity();
+	void computeMaxSpeed();
     void resetPositionCoordinates();
 	void updateFinalPosition();
 	void updateFinalVelocity();
