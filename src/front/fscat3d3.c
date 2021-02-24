@@ -1155,6 +1155,7 @@ LOCAL INTERFACE *cut_intfc_to_wave_types(
         boolean deletesurf = YES;
         for (int n = 0; n < ntypes; ++n)
         {
+            if (is_bdry(*s)) break;
             if (wave_type(*s) == w_type[n])
             {
                 deletesurf = NO;

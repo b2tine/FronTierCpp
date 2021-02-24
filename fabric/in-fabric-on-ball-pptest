@@ -1,7 +1,7 @@
 
 Start test time control parameters
 Max time: 5.0
-Max step: 2000
+Max step: 200
 Print interval: 0.01
 Movie frame interval: 0.01
 Print intervalX: 0.025
@@ -41,21 +41,27 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: c
-Enter the height of the plane: 0.8
+Enter the height of the plane: 0.75
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
 
-Enter yes to adjust cgal triangulation criteria: no
-Enter B ratioX: 0.125
-Enter min triangle edge lengthX: 0.025
+Enter yes to adjust cgal triangulation criteria: yes
+Enter B ratio: 0.125
+Enter min triangle edge length: 0.018
+Enter min triangle edge lengthX: 0.015
 
 
 Start parameters for spring-mass system
 
 Enter the number of fabric optimization rounds: 0
+Enter interior sub step number: 1
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constantX: 10.0
+Enter fabric bending damping constantX: 0.001
+Enter fabric bending stiffness constant: 50.0
+Enter fabric bending damping constant: 0.01
 Enter fabric friction constant: 0.2
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
@@ -93,9 +99,11 @@ Enter gravity: 0 0 -9.8
 
 ***********************************************************
 Enter yes for debugging: yes
-Enter the debugging string: strain_limiting
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
+
+Enter the debugging stringX: collision_max_speed
 
 Enter the debugging stringX: intfc_assembly

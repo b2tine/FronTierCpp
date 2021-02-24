@@ -1894,15 +1894,9 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            //TODO: Including NEUMANN_BOUNDARY in the w_type array can
-            //      cause problems with rectangular domain numann boundarys.
-            //      Need to put a continue statement inside a domain boundary
-            //      check of the hypersurface in collect_hyper_surfaces()
+            //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-	        elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
-            //TODO: Or use this one???
-                //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
-            
+            elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else

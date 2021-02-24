@@ -266,11 +266,46 @@ static bool MovingPointToTriJac(POINT* pts[])
             Coords(pts[j])[k] = sl->x_old[k];
     }
     
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && is_detImpZone)
+    if (status && is_detImpZone && !rigid_body_point)
+    {
+        createImpZone(pts,4);//only collects fabric points
+    }
+    
+    /*
     if (status && is_detImpZone)
     {
-        createImpactZone(pts,4);
+        //TODO: could just call updateAverageVelocity() in outer loop???
+        if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                STATE* sl = (STATE*)left_state(pts[j]);
+                if (sl->collsn_num > 0)
+                {
+                    sl->has_collsn = true;
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        sl->avgVel[k] += sl->collsnImpulse[k];
+                        sl->collsnImpulse[k] = 0.0;
+                    }
+                    sl->collsn_num = 0;
+                }
+            }
+        }
+        else
+        {           
+            createImpZone(pts,4);//only collects fabric points
+        }
+        
+        //createImpactZone(pts,4);
     }
+    */
 
     return status;
 }
@@ -280,7 +315,6 @@ static bool MovingPointToTriGS(POINT* pts[])
 {
 	double dt = CollisionSolver3d::getTimeStepSize();
 	double roots[4] = {-1,-1,-1,dt};
-
     double rtol = CollisionSolver3d::getFabricRoundingTolerance();
     //
     //STATE* s = (STATE*)left_state(pts[3]);
@@ -329,10 +363,10 @@ static bool MovingPointToTriGS(POINT* pts[])
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
         rigid_body_point = true;
-
+    
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (status && (!is_detImpZone || rigid_body_point))
-    if (status && !is_detImpZone)
+    //if (status && !is_detImpZone)
+    if (status && (!is_detImpZone || rigid_body_point))
     {
         for (int j = 0; j < 4; ++j)
         {
@@ -346,6 +380,8 @@ static bool MovingPointToTriGS(POINT* pts[])
                     sl->collsnImpulse[k] = 0.0;
                     //move to new candidate position
                     Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
+                        //TODO: this won't work for movable rigid bodies,
+                        //      move out of this loop...
                 }
                 sl->collsn_num = 0;
             }
@@ -383,22 +419,43 @@ static bool MovingPointToTriGS(POINT* pts[])
     }
     else if (status && is_detImpZone)
     {
-        createImpactZone(pts,4);
-        POINT* head = findSet(pts[0]);//could be a rigid body point
-        updateImpactListVelocity(head);
-        
-        /*
         createImpZone(pts,4);
-        for (int i = 0; i < 4; ++i)
+        //createImpactZone(pts,4);
+        POINT* head = findSet(pts[0]);
+        updateImpactListVelocity(head);
+    }
+    /*
+    else if (status && is_detImpZone)
+    {
+        if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
         {
-            if (!isRigidBody(pts[i]))
+            for (int j = 0; j < 4; ++j)
             {
-                updateImpactListVelocity(pts[i]);
-                break;
+                STATE* sl = (STATE*)left_state(pts[j]);
+                if (sl->collsn_num > 0)
+                {
+                    sl->has_collsn = true;
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        sl->avgVel[k] += sl->collsnImpulse[k];
+                        sl->collsnImpulse[k] = 0.0;
+                    }
+                    sl->collsn_num = 0;
+                }
             }
         }
-        */
+            
+        createImpZone(pts,4);//only collects fabric points
+
+        POINT* head;
+        if (isRigidBody(pts[3]))
+            head = findSet(pts[0]);
+        else
+            head = findSet(pts[3]);
+
+        updateImpactListVelocity(head);
     }
+    */
     
     return status;
 }
@@ -456,11 +513,45 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
             Coords(pts[j])[k] = sl->x_old[k];
     }
     
-	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    bool rigid_body_point = false;
+    if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        rigid_body_point = true;
+    
+    bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
+    //if (status && is_detImpZone)
+    if (status && is_detImpZone && !rigid_body_point)
+    {
+        createImpZone(pts,4);//only collects fabric points
+        //createImpactZone(pts,4);
+    }
+    
+    /*
     if (status && is_detImpZone)
     {
-        createImpactZone(pts,4);
+        //TODO: could just call updateAverageVelocity() in outer loop???
+        if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                STATE* sl = (STATE*)left_state(pts[j]);
+                if (sl->collsn_num > 0)
+                {
+                    sl->has_collsn = true;
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        sl->avgVel[k] += sl->collsnImpulse[k];
+                        sl->collsnImpulse[k] = 0.0;
+                    }
+                    sl->collsn_num = 0;
+                }
+            }
+        }
+        else
+        {
+            createImpZone(pts,4);//only collects fabric points
+        }
     }
+    */
 
     return status;
 }
@@ -518,7 +609,6 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING INTERACTIONS FOR NOW.
     bool string_string = false;
-
     //
     //No Impact Zones for string-string interactions
     //bool string_string = false;
@@ -529,10 +619,10 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
         rigid_body_point = true;
-
+    
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (status && (!is_detImpZone || string_string || rigid_body_point))
-    if (status && (!is_detImpZone || string_string))
+    //if (status && (!is_detImpZone || string_string))
+    if (status && (!is_detImpZone || rigid_body_point || string_string))
     {
         for (int j = 0; j < 4; ++j)
         {
@@ -543,10 +633,11 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
-                        //sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num;
                     sl->collsnImpulse[k] = 0.0;
                     //move to new candidate position
                     Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
+                        //TODO: this won't work for movable rigid bodies,
+                        //      move out of this loop...
                 }
                 sl->collsn_num = 0;
             }
@@ -584,23 +675,45 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     }
     else if (status && is_detImpZone && !string_string)
     {
-        createImpactZone(pts,4);
+        createImpZone(pts,4);
+        //createImpactZone(pts,4);
         POINT* head = findSet(pts[0]);
         updateImpactListVelocity(head);
- 
-        /*
-        createImpZone(pts,4);
-        for (int i = 0; i < 4; ++i)
-        {
-            if (!isRigidBody(pts[i]))
-            {
-                updateImpactListVelocity(pts[i]);
-                break;
-            }
-        }
-        */
     }
 
+    /*
+    else if (status && is_detImpZone && !string_string)
+    {
+        if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                STATE* sl = (STATE*)left_state(pts[j]);
+                if (sl->collsn_num > 0)
+                {
+                    sl->has_collsn = true;
+                    for (int k = 0; k < 3; ++k)
+                    {
+                        sl->avgVel[k] += sl->collsnImpulse[k];
+                        sl->collsnImpulse[k] = 0.0;
+                    }
+                    sl->collsn_num = 0;
+                }
+            }
+        }
+            
+        createImpZone(pts,4);//only collects fabric points
+
+        POINT* head;
+        if (isRigidBody(pts[3]))
+            head = findSet(pts[0]);
+        else
+            head = findSet(pts[3]);
+
+        updateImpactListVelocity(head);
+    }
+    */
+    
     return status;
 }
 
@@ -997,11 +1110,10 @@ static bool EdgeToEdge(
         rigid_body_point = true;
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (!is_detImpZone || string_string || rigid_body_point)
-    if (!is_detImpZone || string_string)
+    //if (!is_detImpZone || string_string)
+    if (!is_detImpZone || string_string || rigid_body_point)
     {
         double dt = root;
-        //if (mstate == MotionState::STATIC)
         if (mstate != MotionState::MOVING)
             dt = CollisionSolver3d::getTimeStepSize();
         EdgeToEdgeImpulse(pts,vec,sC,tC,dist,mstate,dt);
@@ -1189,10 +1301,10 @@ static void EdgeToEdgeImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
-    //TODO: Do this correctly using impulse method
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
+        //TODO: current nor vector not correct for rigid-rigid collision
 	    if (isMovableRigidBody(pts[0]))
             SpreadImpactZoneImpulse(pts[0], -1.0*rigid_impulse[0], nor);
         if (isMovableRigidBody(pts[2]))
@@ -1476,11 +1588,10 @@ static bool PointToTri(
         rigid_body_point = true;
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (!is_detImpZone || rigid_body_point)
-    if (!is_detImpZone)
+    //if (!is_detImpZone)
+    if (!is_detImpZone || rigid_body_point)
     {
         double dt = root;
-        //if (mstate == MotionState::STATIC)
         if (mstate != MotionState::MOVING)
             dt = CollisionSolver3d::getTimeStepSize();
         PointToTriImpulse(pts,tri_nor,w,dist,mstate,dt);
@@ -1661,10 +1772,10 @@ static void PointToTriImpulse(
     }
     ////////////////////////////////////////////////////////////////////
 
-    //TODO: Investigate if this is correct or not
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
+        //TODO: current nor vector not correct for rigid-rigid collision
 	    if (isMovableRigidBody(pts[0]))
             SpreadImpactZoneImpulse(pts[0], -1.0*rigid_impulse[0], nor);
 	    if (isMovableRigidBody(pts[3]))
@@ -1695,11 +1806,11 @@ static void PointToTriImpulse(
             if (isMovableRigidBody(pts[i]))
                 t_impulse = R[i];
             
+            for (int j = 0; j < 3; ++j)
+                sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
+            
             if (mstate == MotionState::STATIC)
             {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
-
                 double friction_impulse = F[i];
                 if (fabs(vt) > ROUND_EPS)
                 {
@@ -1710,11 +1821,6 @@ static void PointToTriImpulse(
                     for (int j = 0; j < 3; ++j)
                         sl[i]->friction[j] -= W[i]*delta_vt*(v_rel[j] - vn*nor[j])/vt;
                 }
-            }
-            else
-            {
-                for (int j = 0; j < 3; ++j)
-                    sl[i]->collsnImpulse[j] += W[i]*t_impulse*nor[j];
             }
             
             sl[i]->collsn_num++;

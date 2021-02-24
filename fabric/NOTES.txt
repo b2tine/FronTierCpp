@@ -1,0 +1,23 @@
+Attempting to decouple static rigid bodies from fabric impact zones.
+
+1. In initImpactZonesRG() only skip STATIC rigid bodies
+
+2. when impact zone handling on, if one or more of the points being checked
+for collision belong to a rigid body, continue on to compute the impulse
+that would otherwise not be computed in the PointToTri() and EdgeToEdge()
+checks.
+
+3. When merging points, skip the rigid body points; createImpZone(pts,4)
+3.(a) If rigid body point present, do not merge any points -- treat like regular collision in detectCollision()???
+
+4. Do not zero the existing collision impulses by calling revertAverageVelocity() when switching from collision handling to impact zone handling (like we did when the static rigid bodies were permitted to be in the impact zone).
+
+5. use full dt in the updateImpactListVelocity()
+
+6. When 0 impact zones, but collisions remain ... how to handle???
+    Could use the alternate createImpactZone() to merge in the rigid body point ...
+
+
+
+TODO: Try impact zone method where impact zones are updated with a jacobi iteration and fabric-rigid collisions are updated with gauss-seidel iteration
+
