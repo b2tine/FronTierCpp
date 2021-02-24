@@ -89,6 +89,9 @@ double CollisionSolver3d::getStringPointMass(){return l_m;}
 void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
 double CollisionSolver3d::getStrainLimit() {return strain_limit;}
 
+void CollisionSolver3d::setCompressiveStrainLimit(double cslim) {compressive_strain_limit = cslim;}
+double CollisionSolver3d::getCompressiveStrainLimit() {return compressive_strain_limit;}
+
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
 double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
 
@@ -395,15 +398,15 @@ void CollisionSolver3d::computeMaxSpeed()
     double* max_vel = nullptr;
     POINT* max_pt = nullptr;
 
-    unsortHseList(hseList);
+    unsortHseList(elasticHseList);
     
     std::vector<CD_HSE*>::iterator it;
-    for (it = hseList.begin(); it < hseList.end(); ++it)
+    for (it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
     {
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             p = (*it)->Point_of_hse(i);
-            if (sorted(p) || isStaticRigidBody(p)) continue;
+            if (sorted(p)) continue;
             
             sl = (STATE*)left_state(p); 
             
@@ -419,22 +422,29 @@ void CollisionSolver3d::computeMaxSpeed()
     }
 
 
-    std::cout << "\n    Max fabric speed = " << max_speed << "\n";
-    
-    if (max_vel)
+    prev_max_fabric_speed = max_fabric_speed;
+    max_fabric_speed = max_speed;
+
+
+    if (debugging("collision_max_speed"))
     {
-        std::cout << "      Maximum average velocity is "
-            << max_vel[0] << " "
-            << max_vel[1] << " "
-            << max_vel[2] << "\n"; 
-    }
-    
-    if (max_pt)
-    {
-        STATE* sl = (STATE*)left_state(max_pt);
-        printf("        x_old = [%f %f %f]\t",
-                sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-        printf("Gindex(max_pt) = %d\n\n",Gindex(max_pt));
+        std::cout << "\n    Max fabric speed = " << max_speed << "\n";
+        
+        if (max_vel)
+        {
+            std::cout << "      Maximum average velocity is "
+                << max_vel[0] << " "
+                << max_vel[1] << " "
+                << max_vel[2] << "\n"; 
+        }
+        
+        if (max_pt)
+        {
+            STATE* sl = (STATE*)left_state(max_pt);
+            printf("        x_old = [%f %f %f]\t",
+                    sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+            printf("Gindex(max_pt) = %d\n\n",Gindex(max_pt));
+        }
     }
 }
 
@@ -796,9 +806,7 @@ void CollisionSolver3d::detectCollision()
 	std::cout << "Starting collision handling: " << std::endl;
 	
 	const int MAX_ITER = 12;
-	
     bool is_collision = true; 
-	setHasCollision(false);//TODO: can remove?
 	
     int niter = 0;
 	int cd_count = 0;
@@ -1872,6 +1880,15 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosnJac()
 {
+    //switch to gauss-seidel if dt small
+    double dt = getTimeStepSize();
+    if (dt < 1.0e-06)
+    {
+        //TODO: or just skip?
+        limitStrainPosnGS();
+        return;
+    }
+
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
@@ -1890,10 +1907,34 @@ void CollisionSolver3d::limitStrainPosnJac()
 	}
 }
 
+void CollisionSolver3d::limitStrainPosnGS()
+{
+    turnOnGsUpdate();
+
+	const int MAX_ITER = 2;
+    for (int iter = 0; iter < MAX_ITER; ++iter)
+    {
+        int numBondStrain = computeStrainImpulsesPosn(stringBondList);
+        int numTriStrain = computeStrainImpulsesPosn(fabricTriList);
+        
+        if (debugging("strain_limiting"))
+        {
+            printf("%d BOND Strain Edges\n",numBondStrain);
+            printf("%d TRI Strain Edges\n",numTriStrain);
+        }
+
+        if (numBondStrain == 0 && numTriStrain == 0) break;
+	}
+    
+    turnOffGsUpdate();
+}
+
 int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
 {
-    double TOL = getStrainLimit();
     double dt = getTimeStepSize();
+    double TOL = getStrainLimit();
+    double CTOL = getCompressiveStrainLimit();
+    bool gauss_seidel = getGsUpdateStatus();
 
     int numStrainEdges = 0;
 	for (auto it = list.begin(); it < list.end(); ++it)
@@ -1965,8 +2006,6 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
 
             double delta_len0 = lnew - len0;
             
-            //TODO: Make input option for CTOL
-            double CTOL = TOL;
             if (delta_len0 > TOL*len0 || delta_len0 < -1.0*CTOL*len0)
             {
                 double I;
@@ -2013,6 +2052,21 @@ int CollisionSolver3d::computeStrainImpulsesPosn(std::vector<CD_HSE*>& list)
                 }
 
                 numStrainEdges++;
+                
+                if (gauss_seidel)
+                {
+                    for (int k = 0; k < 2; ++k)
+                    {
+                        sl[k]->has_strainlim_prox = true;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                            sl[k]->strainImpulse[j] = 0.0;
+                        }
+                        sl[k]->strain_num = 0;
+                    }
+                }
+
             }
         }
     }

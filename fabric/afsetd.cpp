@@ -1347,7 +1347,7 @@ extern void set_elastic_params(
         if (af_params->strings_present &&
             dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
             dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
-        if (af_params->gores_present != 0.0 &&
+        if (af_params->gores_present &&
             dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
             dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
 	pp_global_min(&dt_tol,1);

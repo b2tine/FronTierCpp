@@ -60,7 +60,7 @@ Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constantX: 10.0
 Enter fabric bending damping constantX: 0.001
-Enter fabric bending stiffness constant: 100.0
+Enter fabric bending stiffness constant: 50.0
 Enter fabric bending damping constant: 0.01
 Enter fabric friction constant: 0.2
 Enter fabric point mass: 0.001
@@ -68,6 +68,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter strain limit: 0.1
+Enter compressive strain limit: 0.025
 Enter strain rate limit: 0.1
 
 
@@ -101,6 +102,7 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
+Enter the debugging string: collision_max_speed
 Enter the debugging string: max_speed
 
 Enter the debugging stringX: intfc_assembly

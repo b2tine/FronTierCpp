@@ -61,8 +61,9 @@ Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter strain limit: 0.025
-Enter strain rate limit: 0.075
+Enter strain limit: 0.1
+Enter compressive strain limit: 0.05
+Enter strain rate limit: 0.1
 
 
 Type yes to perturb the surface: n

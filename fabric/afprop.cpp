@@ -964,6 +964,7 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             collision_solver->setStringPointMass(af_params->m_l);
 
             collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setCompressiveStrainLimit(af_params->compressive_strain_limit);
             collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;

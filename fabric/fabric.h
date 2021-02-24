@@ -141,6 +141,7 @@ struct AF_PARAMS
     double string_thickness {0.004};
 
     double strain_limit {0.1};
+    double compressive_strain_limit {0.025};
     double strainrate_limit {0.1};
 
     double vol_diff {0.0};              //for refitting AABBTree

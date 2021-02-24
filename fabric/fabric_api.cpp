@@ -409,6 +409,10 @@ extern void SMM_InitSpringMassParams()
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
             
+    CursorAfterStringOpt(infile,"Enter compressive strain limit:");
+    fscanf(infile,"%lf",&af_params->compressive_strain_limit);
+    (void) printf("%f\n",af_params->compressive_strain_limit);
+            
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
