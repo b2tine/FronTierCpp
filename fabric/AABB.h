@@ -93,6 +93,8 @@ public:
     std::map<std::vector<long>, CD_HSE*> vhMap;
     std::unordered_set<Node*> nodeSet;
     std::vector<std::shared_ptr<Node>> nodeArray;
+    
+        //std::unordered_set<CD_HSE*> collisionHseSet;
 
     int count {0};
     int numLeaf {0};

@@ -265,6 +265,7 @@ void CollisionSolver3d::recordOriginalPosition()
             sl->has_strainlim_prox = false;
             sl->has_collsn = false;
             sl->has_strainlim_collsn = false;
+            sl->impzone_orphan = false;
             sl->collsn_dt = -1.0;
 
             //NOTE: sl->x_old for movable rigid body points
@@ -341,8 +342,9 @@ void CollisionSolver3d::resolveCollision()
     {
         limitStrainPosnJac();
             computeMaxSpeed(); //debug
-        limitStrainRatePosnGS(MotionState::STATIC);
-            computeMaxSpeed(); //debug
+        //TODO: this might be interfering with proximity impulses...
+        //limitStrainRatePosnGS(MotionState::STATIC);
+            //computeMaxSpeed(); //debug
     }
 
     // Static proximity handling
@@ -857,9 +859,8 @@ void CollisionSolver3d::detectCollision()
     start_clock("computeImpactZone");
 	if (is_collision) 
     {
-        //return avg_vel to post detectProximity() value
-            //revertAverageVelocity();
-            //computeMaxSpeed(); //debug
+        //revertAverageVelocity(); //return avg_vel to post detectProximity() value
+        //computeMaxSpeed(); //debug
         computeImpactZoneGS();
         //computeImpactZoneJac();
     }
@@ -896,6 +897,7 @@ void CollisionSolver3d::aabbCollision()
         abt_collision->isCollsn = false;
         abt_collision->setTimeStep(s_dt);
         abt_collision->updateAABBTree(hseList);
+            //abt_collision->collisionHseSet.clear();
 
         if (fabs(abt_collision->getVolume() - volume) > vol_diff * volume)
         {
@@ -1379,7 +1381,9 @@ void CollisionSolver3d::computeImpactZoneGS()
             std::cout << "     " << numImpactZonePoints
                       << " total impact zone points" << std::endl;
 
-                computeMaxSpeed(); //debug
+            //TODO: report number impzone orphans
+                
+            computeMaxSpeed(); //debug
         }
         
         //TODO: Appropriate to limit strain rate during impact zone handling?
@@ -1488,9 +1492,9 @@ void CollisionSolver3d::computeImpactZoneJac()
 void CollisionSolver3d::debugImpactZones()
 {
     std::string outdir = CollisionSolver3d::getOutputDirectory();
-    
+	
+    int numImpactZone = 0;
     unsortHseList(hseList);
-	int numImpactZone = 0;
 
 	for (auto it = hseList.begin(); it < hseList.end(); ++it)
     {
@@ -1528,7 +1532,35 @@ void CollisionSolver3d::debugImpactZones()
             }
         }
     }
+
+    //find orphan collisions
+    std::vector<POINT*> impzone_orphans;
+    unsortHseList(hseList);
+
+	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+		    POINT* pt = (*it)->Point_of_hse(i);
+            if (sorted(pt)) continue;
+
+            STATE* sl = (STATE*)left_state(pt);
+            if (sl->impzone_orphan)
+            {
+                impzone_orphans.push_back(pt);
+            }
+
+            sorted(pt) = YES;
+        }
+    }
+
+    if (!impzone_orphans.empty())
+    {
+        std::string fname = outdir + "/impzone_orphans";
+        vtk_write_pointset(impzone_orphans,fname,0);
+    }
     
+
     FT_Save(ft);
     FT_Draw(ft);
 }
@@ -1547,18 +1579,16 @@ void CollisionSolver3d::infoImpactZones()
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
-		    POINT* pt = (*it)->Point_of_hse(i);
-		    POINT* head = findSet(pt);
-		
             //skip traversed or isolated pts
-            if (sorted(pt) || weight(head) == 1)
-                continue;
-            else
-            {
-                markImpactZonePoints(head);
-                numImpactZonePoints += weight(head);
-                numImpactZones++;
-            }
+		    POINT* pt = (*it)->Point_of_hse(i);
+            if (sorted(pt)) continue;
+
+		    POINT* head = findSet(pt);
+            if (weight(head) == 1) continue;
+                
+            markImpactZonePoints(head);
+            numImpactZonePoints += weight(head);
+            numImpactZones++;
 	    }
 	}
 }
@@ -1651,9 +1681,6 @@ void updateImpactListVelocity(POINT* head)
         {
             m = HUGE;
             //m = total_mass(p->hs);
-            
-            //TODO: Center of Motion computations will be incorrect
-            //      if rigid body points are in the impact zone.
         }
 
         totalmass += m;
@@ -1791,8 +1818,6 @@ void updateImpactListVelocity(POINT* head)
         //if (isRigidBody(p))
         if (isStaticRigidBody(p))
         {
-            //printf("updateImpactListVelocity() ERROR: isStaticRigidBody(p)\n");
-            //LOC(); clean_up(EXIT_FAILURE);
             p = next_pt(p);
             continue;
 	    }
@@ -1824,6 +1849,11 @@ void updateImpactListVelocity(POINT* head)
 
 	    for (int i = 0; i < 3; ++i)
 	    {
+            x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
+                       + cos(dt*mag_w)*xR[i] + wxR[i];
+	
+		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
+	    	
             /*
             x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
                        + cos(avg_dt*mag_w)*xR[i] + wxR[i];
@@ -1832,15 +1862,6 @@ void updateImpactListVelocity(POINT* head)
 		        //sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
             */
 
-            //TODO: Try reverting to this computation that uses
-            //      the full time step dt when rigid body points
-            //      have been removed from impact zones.
-            
-            x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
-                       + cos(dt*mag_w)*xR[i] + wxR[i];
-	
-		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-	    	
             if (std::isnan(sl->avgVel[i]))
             { 
                 printf("x_old[3], avgVel[3]\n");
@@ -1880,13 +1901,8 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosnJac()
 {
-    //switch to gauss-seidel if dt small
     double dt = getTimeStepSize();
-    if (dt < 1.0e-04)
-    {
-        //limitStrainPosnGS();
-        return;
-    }
+    if (dt < 1.0e-04) return;
 
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
@@ -1908,6 +1924,9 @@ void CollisionSolver3d::limitStrainPosnJac()
 
 void CollisionSolver3d::limitStrainPosnGS()
 {
+    double dt = getTimeStepSize();
+    if (dt < 1.0e-04) return;
+
     turnOnGsUpdate();
 
 	const int MAX_ITER = 2;

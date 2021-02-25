@@ -426,7 +426,11 @@ bool AABBTree::queryCollision(Node* n)
                         if (!adjacentHSE(a,b))
                         {
                             if (getCollision(a,b)) 
+                            {
                                 count++;
+                                //collisionHseSet.insert(a);
+                                //collisionHseSet.insert(b);
+                            }
                         }
                     }
                 }

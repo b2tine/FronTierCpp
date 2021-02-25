@@ -229,6 +229,7 @@ void createImpactZoneRigidBody(POINT*[],int num);
 void updateImpactListVelocity(POINT* head);
 void SpreadImpactZoneImpulse(POINT*, double, double*);
 void printPointList(POINT**, const int);
+void printPointCollisionStats(POINT* pt);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
 

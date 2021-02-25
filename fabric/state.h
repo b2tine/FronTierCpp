@@ -44,6 +44,7 @@ struct STATE
     bool has_strainlim_prox;
     bool has_collsn;
     bool has_strainlim_collsn;
+    bool impzone_orphan;
     bool is_fixed;
     bool is_movableRG;
     bool is_stringpt;
