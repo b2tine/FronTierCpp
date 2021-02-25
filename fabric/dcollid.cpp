@@ -1879,14 +1879,8 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 //jacobi iteration
 void CollisionSolver3d::limitStrainPosnJac()
 {
-    //switch to gauss-seidel if dt small
     double dt = getTimeStepSize();
-    if (dt < 1.0e-06)
-    {
-        //TODO: or just skip?
-        limitStrainPosnGS();
-        return;
-    }
+    if (dt < 1.0e-04) return;
 
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
@@ -1908,6 +1902,9 @@ void CollisionSolver3d::limitStrainPosnJac()
 
 void CollisionSolver3d::limitStrainPosnGS()
 {
+    double dt = getTimeStepSize();
+    if (dt < 1.0e-04) return;
+
     turnOnGsUpdate();
 
 	const int MAX_ITER = 2;

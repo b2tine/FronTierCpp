@@ -104,6 +104,6 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 
-Enter the debugging stringX: collision_max_speed
+Enter the debugging string: collision_max_speed
 
 Enter the debugging stringX: intfc_assembly

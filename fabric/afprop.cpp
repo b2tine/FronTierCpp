@@ -798,6 +798,7 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
         dt = fr_dt/n_sub;
     }
 
+    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
 
 	if (first)
 	{
@@ -816,9 +817,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
-                //int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-	            //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+            //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1067,25 +1068,6 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
 	compute_center_of_mass_velo(&geom_set);
-
-    /*
-	if(!debugging("collision_off"))
-    {
-        if (myid == owner_id)
-        {
-            if (FT_Dimension() == 3)
-            {
-                start_clock("resolveCollision");
-                collision_solver->resolveCollision();
-                stop_clock("resolveCollision");
-            }
-        }
-        setSpecialNodeForce(fr,geom_set.kl);
-	    compute_center_of_mass_velo(&geom_set);
-
-        delete collision_solver;
-    }
-    */
 
     if (debugging("max_speed"))
     {
