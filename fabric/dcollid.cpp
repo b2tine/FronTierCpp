@@ -17,8 +17,9 @@ inline POINT*& tail(POINT*);
 //default parameters for collision detection
 double CollisionSolver3d::s_dt = DT;
 double CollisionSolver3d::s_cr = 1.0;
-bool CollisionSolver3d::s_detImpZone = false;
 bool CollisionSolver3d::gs_update = false;
+bool CollisionSolver3d::s_detImpZone = false;
+bool CollisionSolver3d::ImpZoneRgbAnchor = false;
 
 double CollisionSolver3d::s_eps = EPS;
 double CollisionSolver3d::s_thickness = 0.001;
@@ -375,7 +376,7 @@ void CollisionSolver3d::resolveCollision()
 
     //TODO: Don't think we need this ...
     //check for proximity again at end step positions
-        //detectProximity();
+    //detectProximity();
 
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
@@ -576,13 +577,13 @@ void CollisionSolver3d::detectProximity()
     if (abt_proximity->isProximity)
         updateAverageVelocity(MotionState::STATIC);
 
-        //computeMaxSpeed(); //debug    
+        computeMaxSpeed(); //debug    
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainRatePosnGS(MotionState::STATIC);
         //limitStrainRatePosnJac(MotionState::STATIC);
-            //computeMaxSpeed(); //debug    
+            computeMaxSpeed(); //debug    
     }
 }
 
@@ -859,10 +860,10 @@ void CollisionSolver3d::detectCollision()
     start_clock("computeImpactZone");
 	if (is_collision) 
     {
-        //revertAverageVelocity(); //return avg_vel to post detectProximity() value
-        //computeMaxSpeed(); //debug
-        computeImpactZoneGS();
-        //computeImpactZoneJac();
+        revertAverageVelocity(); //return avg_vel to post detectProximity() value
+        computeMaxSpeed(); //debug
+        //computeImpactZoneGS();
+        computeImpactZoneJac();
     }
     stop_clock("computeImpactZone");
 
@@ -1338,12 +1339,16 @@ void CollisionSolver3d::turnOnImpZone(){s_detImpZone = true;}
 void CollisionSolver3d::turnOffImpZone(){s_detImpZone = false;}
 bool CollisionSolver3d::getImpZoneStatus(){return s_detImpZone;}
 
+void CollisionSolver3d::turnOnImpZoneRgbAnchor(){ImpZoneRgbAnchor = true;}
+void CollisionSolver3d::turnOffImpZoneRgbAnchor(){ImpZoneRgbAnchor = false;}
+bool CollisionSolver3d::getImpZoneRgbAnchorStatus(){return ImpZoneRgbAnchor;}
+
 void CollisionSolver3d::computeImpactZoneGS()
 {
     std::cout<<"Starting compute Impact Zone: "<<std::endl;
 
 	int niter = 0;
-    const int MAXITER = 100;
+    const int MAXITER = 50;
 
 	turnOnImpZone();
     
@@ -1413,10 +1418,10 @@ void CollisionSolver3d::computeImpactZoneGS()
 
 void CollisionSolver3d::computeImpactZoneJac()
 {
-    std::cout<<"Starting compute Impact Zone: "<<std::endl;
+    std::cout<<"Starting compute Impact Zone: "<< std::endl;
 
 	int niter = 0;
-    const int MAXITER = 100;
+    const int MAXITER = 50;
 
 	turnOnImpZone();
     
@@ -1634,11 +1639,11 @@ void CollisionSolver3d::updateImpactZoneVelocity()
 	numImpactZones = 0;
 	numImpactZonePoints = 0;
 
-	//unsortHseList(hseList);
-	unsortHseList(elasticHseList);
+	unsortHseList(hseList);
+	//unsortHseList(elasticHseList);
     
-	//for (auto it = hseList.begin(); it < hseList.end(); ++it)
-	for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)
+	//for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)
+	for (auto it = hseList.begin(); it < hseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
@@ -1762,7 +1767,7 @@ void updateImpactListVelocity(POINT* head)
 		    double val = -dx[i]*dx[j];
             if (i == j)
                 val += mag_dx*mag_dx; 
-    	 	I[i][j] += val*m;
+    	 	I[i][j] += m*val;
 	    }
 
         p = next_pt(p);
@@ -1815,8 +1820,7 @@ void updateImpactListVelocity(POINT* head)
 	p = head;
     while(p)
     {
-        //if (isRigidBody(p))
-        if (isStaticRigidBody(p))
+        if (isStaticRigidBody(p)) //if (isRigidBody(p))
         {
             p = next_pt(p);
             continue;

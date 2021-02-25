@@ -9,7 +9,7 @@
 
 #define DEBUGGING false
 
-const double ROUND_EPS = DBL_EPSILON;
+const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -47,6 +47,7 @@ public:
 	static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
 	static bool getImpZoneStatus();	
+	static bool getImpZoneRgbAnchorStatus();	
 	
     static void setFabricThickness(double);
 	static double getFabricThickness();
@@ -170,6 +171,10 @@ private:
 	static void turnOnImpZone();
     static void turnOffImpZone();
 
+    static bool ImpZoneRgbAnchor;
+    static void turnOnImpZoneRgbAnchor();
+    static void turnOffImpZoneRgbAnchor();
+
     int numImpactZones {0};
     int numImpactZonePoints {0};
 
@@ -229,6 +234,7 @@ void createImpactZoneRigidBody(POINT*[],int num);
 void updateImpactListVelocity(POINT* head);
 void SpreadImpactZoneImpulse(POINT*, double, double*);
 void printPointList(POINT**, const int);
+void printPointSetCollisionStats(POINT* pts[], int npts);
 void printPointCollisionStats(POINT* pt);
 
 void vtkplotVectorSurface(std::vector<CD_HSE*>&,const char*);
