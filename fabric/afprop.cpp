@@ -817,9 +817,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 
 	    if (pp_numnodes() > 1)
 	    {
-            //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-            elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
+            //int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
             collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
@@ -936,6 +936,11 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 
     CollisionSolver3d* collision_solver;
 
+    //TODO: THIS DIDN'T WORK
+    INTERFACE *collision_intfc = nullptr;
+    int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+    collision_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
+    collectNodeExtra(fr,collision_intfc,owner_id);
 
 	if (myid == owner_id)
 	{
@@ -945,9 +950,17 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
 
-            setCollisionFreePoints3d(fr->interf);
+            setCollisionFreePoints3d(collision_intfc);
+                //setCollisionFreePoints3d(fr->interf);
             
-            collision_solver->initializeSystem(fr);
+            CollisionSolver3d::setOutputDirectory(OutName(fr));    
+            CollisionSolver3d::setStep(fr->step);
+            CollisionSolver3d::setTimeStepSize(fr->dt);
+            collision_solver->assembleFromInterface(collision_intfc);
+            collision_solver->recordOriginalPosition();
+            collision_solver->setHseTypeLists();
+            collision_solver->initializeImpactZones(collision_intfc);
+                //collision_solver->initializeSystem(fr);
 
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(0.0);
