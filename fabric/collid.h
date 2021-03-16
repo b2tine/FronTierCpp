@@ -86,11 +86,13 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
+    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
     void initializeImpactZones(const INTERFACE* intfc);
-	void initRigidBodyImpactZones(const INTERFACE* intfc);
+	void initRigidBodyImpactZones();
+	    //void initRigidBodyImpactZones(const INTERFACE* intfc);//TODO: remove?
 	
     void resolveCollision();
 

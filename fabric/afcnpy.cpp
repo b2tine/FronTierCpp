@@ -2180,10 +2180,9 @@ extern void scatterAirfoilExtra(
 
 extern void setSpecialNodeForce(
     Front* front,
-    INTERFACE* intfc,
 	double kl)
 {
-	//INTERFACE *intfc = front->interf;
+	INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;

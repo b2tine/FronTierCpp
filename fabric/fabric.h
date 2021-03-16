@@ -147,13 +147,17 @@ struct AF_PARAMS
     double vol_diff {0.0};              //for refitting AABBTree
 }; 
 
+//TODO: Collision solver needs to be able to assemble hseList from
+//      the surfaces, curves and nodes of ELASTIC_SET...
 struct ELASTIC_SET
 {
 	Front *front;
     NODE *load_node;
+    SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
+	int num_rgb_surfs;
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
@@ -166,7 +170,8 @@ struct ELASTIC_SET
 	double m_s;
 	double m_l;
 	double m_g;
-	int num_verts;		/* Total number of spring-mass points */
+	int num_verts;		    /* Total number of spring-mass points */
+	int total_num_verts;	/* Total number of spring-mass and rigid body points */
 	double dt_tol;
 	double dt;
 };
@@ -340,8 +345,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,INTERFACE*,double);
-    //extern void setSpecialNodeForce(Front*,double);
+extern void setSpecialNodeForce(Front*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);
 extern void set_unequal_strings(Front*);

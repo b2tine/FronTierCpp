@@ -1153,53 +1153,38 @@ LOCAL INTERFACE *cut_intfc_to_wave_types(
 	intfc_surface_loop(tmp_intfc,s)
 	{
         boolean deletesurf = YES;
-        for (int n = 0; n < ntypes; ++n)
+        if (!is_bdry(*s))
         {
-            if (wave_type(*s) == w_type[n])
+            for (int n = 0; n < ntypes; ++n)
             {
-                deletesurf = NO;
-                for (dir = 0; dir < dim; ++dir)
-                for (nb = 0; nb < 2; ++nb)
+                if (wave_type(*s) == w_type[n] || w_type[n] == ANY_WAVE_TYPE)
                 {
-                    open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
+                    deletesurf = NO;
+                    for (dir = 0; dir < dim; ++dir)
+                    {
+                        for (nb = 0; nb < 2; ++nb)
+                            open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
+                    }
+                    break;
                 }
-                break;
             }
         }
 
         if (deletesurf)
         {
-            boolean anywavetype = NO;
-            for (int n = 0; n < ntypes; ++n)
-            {
-                if (w_type[n] == ANY_WAVE_TYPE)
-                    anywavetype = YES;
-            }
-
-            if (!anywavetype)
-                surfs_del[num_delete++] = *s;
+            surfs_del[num_delete++] = *s;
         }
 
-        /*
-	    if (wave_type(*s) != w_type && w_type != ANY_WAVE_TYPE)
-            surfs_del[num_delete++] = *s;
-	    else
-	    {
-            for (dir = 0; dir < dim; ++dir)
-            for (nb = 0; nb < 2; ++nb)
-            {
-                open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
-            }
-	    }
-        */
 	}
 
 	for (i = 0; i < num_delete; ++i)
 	    delete_surface_set(surfs_del[i]);
 
 	for (dir = 0; dir < dim; ++dir)
-	for (nb = 0; nb < 2; ++nb)
-	    open_null_bonds(tmp_intfc,gr->L,gr->U,dir,nb);
+    {
+        for (nb = 0; nb < 2; ++nb)
+            open_null_bonds(tmp_intfc,gr->L,gr->U,dir,nb);
+    }
 
 	reset_intfc_num_points(tmp_intfc);
 	cut_intfc = copy_interface(tmp_intfc);
@@ -1407,15 +1392,21 @@ LOCAL INTERFACE *cut_intfc_to_wave_type(
 	set_floating_point_tolerance1(computational_grid(intfc)->h);
 	intfc_surface_loop(tmp_intfc,s)
 	{
-	    if (wave_type(*s) != w_type && w_type != ANY_WAVE_TYPE)
-		surfs_del[num_delete++] = *s;
+        if (is_bdry(*s))
+        {
+		    surfs_del[num_delete++] = *s;
+        }
+        else if (wave_type(*s) != w_type && w_type != ANY_WAVE_TYPE)
+        {
+            surfs_del[num_delete++] = *s;
+        }
 	    else
 	    {
-		for (dir = 0; dir < dim; ++dir)
-		for (nb = 0; nb < 2; ++nb)
-		{
-		    open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
-		}
+            for (dir = 0; dir < dim; ++dir)
+            for (nb = 0; nb < 2; ++nb)
+            {
+                open_surf_null_sides(*s,gr->L,gr->U,dir,nb);
+            }
 	    }
 	}
 	for (i = 0; i < num_delete; ++i)

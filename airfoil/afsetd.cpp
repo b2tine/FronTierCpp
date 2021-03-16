@@ -1608,11 +1608,10 @@ extern void copy_to_client_point_set(
                 client_point_set[j].x[k] = point_set[gindex]->x[k];
                 client_point_set[j].v[k] = point_set[gindex]->v[k];
                 client_point_set[j].f[k] = point_set[gindex]->f[k];
+                client_point_set[j].bendforce[k] = point_set[gindex]->bendforce[k];
                 client_point_set[j].impuls[k] = point_set[gindex]->impuls[k];
-                client_point_set[j].fluid_accel[k] = 
-					point_set[gindex]->fluid_accel[k];
-                client_point_set[j].other_accel[k] = 
-					point_set[gindex]->other_accel[k];
+                client_point_set[j].fluid_accel[k] = point_set[gindex]->fluid_accel[k];
+                client_point_set[j].other_accel[k] = point_set[gindex]->other_accel[k];
             }
         }
 }	/* end copy_to_client_point_set */

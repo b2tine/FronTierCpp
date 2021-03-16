@@ -242,6 +242,87 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	}
 }
 
+/*
+//NOTE: Must be called before calling the spring solver
+void CollisionSolver3d::assembleFromInterface(ELASTIC_SET* geom_set)
+{
+	clearHseList();
+
+	SURFACE** s;
+	CURVE** c;
+	TRI *tri;
+	BOND *b;
+
+	int n_tri = 0;
+	int n_fabric_tri = 0;
+	int n_static_rigid_tri = 0;
+	int n_movable_rigid_tri = 0;
+    int n_bond = 0;
+	
+    intfc_surface_loop(intfc,s)
+	{
+	    if (is_bdry(*s)) continue;
+	    unsort_surf_point(*s);
+	    
+        surf_tri_loop(*s,tri)
+	    {
+            CD_HSE_TYPE tag;
+
+            if (wave_type(*s) == ELASTIC_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::FABRIC_TRI;
+                n_fabric_tri++;
+            }
+            else if (wave_type(*s) == NEUMANN_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
+                n_static_rigid_tri++;
+            }
+            else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+            {
+                tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
+                n_movable_rigid_tri++;
+            }
+            else 
+            {
+                printf("assembleFromInterface() ERROR: "
+                        "unknown surface type\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+            
+            hseList.push_back(new CD_TRI(tri,tag));
+		    n_tri++;
+	    }
+	}
+
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+
+        unsort_curve_point(*c);
+
+        CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
+	    curve_bond_loop(*c,b)
+	    {
+            hseList.push_back(new CD_BOND(b,tag));
+		    n_bond++;
+	    }
+	}
+
+    setSizeCollisionTimes(hseList.size());
+    setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
+	
+	if (debugging("intfc_assembly"))
+    {
+	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
+	    printf("%lu number of elements is assembled\n",hseList.size());
+	    printf("%d num fabric tris\n",n_fabric_tri);
+	    printf("%d num static rigid tris\n",n_static_rigid_tri);
+	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
+	}
+}
+*/
+
 void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 {
 	for (int i = 0; i < m_dim; ++i)
@@ -315,13 +396,15 @@ void CollisionSolver3d::setHseTypeLists()
 void CollisionSolver3d::initializeImpactZones()
 {
     makeSet(hseList);
-    initRigidBodyImpactZones(ft->interf);
+    initRigidBodyImpactZones();
+        //initRigidBodyImpactZones(ft->interf);
 }
 
 void CollisionSolver3d::initializeImpactZones(const INTERFACE* intfc)
 {
     makeSet(hseList);
-    initRigidBodyImpactZones(intfc);
+    initRigidBodyImpactZones();
+        //initRigidBodyImpactZones(intfc);
 }
 
 void CollisionSolver3d::resolveCollision()
@@ -1294,12 +1377,25 @@ void createImpactZone(POINT* pts[], int num)
 	}
 }
 
-void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
+//void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
+void CollisionSolver3d::initRigidBodyImpactZones()
 {
+    POINT* pts[3];
+	
+    unsortHseList(movableRigidTriList);
+	for (auto it = movableRigidTriList.begin(); it != movableRigidTriList.end(); ++it)
+    {
+        for (int i = 0; i < 3; ++i)
+            pts[i] = (*it)->Point_of_hse(i);
+            
+        createImpactZone(pts,3);
+    }
+
+    /*
 	SURFACE** s;
 	TRI* tri;
 
-	intfc_surface_loop(intfc, s)
+	intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
 	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
@@ -1316,6 +1412,7 @@ void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
     		//createImpactZoneRigidBody(Point_of_tri(tri),3);
 	    }
 	}
+    */
 }
 
 //TODO: may not need this

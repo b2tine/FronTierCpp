@@ -485,28 +485,36 @@ extern void link_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *point_set_store)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering link_point_set()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+
+	for (int i = 0; i < ns; ++i)
     {
         link_surf_point_set(geom_set,geom_set->surfs[i],point_set,
 				point_set_store,&n);
     }
-    for (i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
 	{
 	    link_curve_point_set(geom_set,geom_set->curves[i],point_set,
 				point_set_store,&n);
 	}
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
+    {
 	    link_node_point_set(geom_set,geom_set->nodes[i],point_set,
 				point_set_store,&n);
+    }
+
+	int nrgbs = geom_set->num_rgb_surfs;
+	for (int i = 0; i < nrgbs; ++i)
+    {
+        link_surf_point_set(geom_set,geom_set->rgb_surfs[i],point_set,
+				point_set_store,&n);
+    }
 
 	if (debugging("canopy"))
 	{
@@ -1183,22 +1191,23 @@ extern void get_point_set_from(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering get_point_set_from()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
-    {
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	
+    for (int i = 0; i < ns; ++i)
         surf_get_point_set_from(geom_set->surfs[i],point_set);
-    }
-    for (i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
 	    curve_get_point_set_from(geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
 	    node_get_point_set_from(geom_set->nodes[i],point_set);
+
+	int nrgbs = geom_set->num_rgb_surfs;
+    for (int i = 0; i < nrgbs; ++i)
+        surf_get_point_set_from(geom_set->rgb_surfs[i],point_set);
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving get_point_set_from()\n");
@@ -1208,22 +1217,23 @@ extern void put_point_set_to(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering put_point_set_to()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
-    {
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+
+	for (int i = 0; i < ns; ++i)
         surf_put_point_set_to(geom_set->surfs[i],point_set);
-    }
-    for (i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
 	    curve_put_point_set_to(geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
 	    node_put_point_set_to(geom_set->nodes[i],point_set);
+
+	int nrgbs = geom_set->num_rgb_surfs;
+	for (int i = 0; i < nrgbs; ++i)
+        surf_put_point_set_to(geom_set->rgb_surfs[i],point_set);
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving put_point_set_to()\n");
@@ -1381,18 +1391,28 @@ static void assembleParachuteSet3d(
 	CURVE **c = NULL;
 	NODE **n = NULL;
 	
+    SURFACE **rgb_surfs = geom_set->rgb_surfs;
     SURFACE **surfs = geom_set->surfs;
 	CURVE **curves = geom_set->curves;
 	NODE **nodes = geom_set->nodes;
 	
     /* Assemble canopy surfaces */
 
+	int nrgbs = 0;
 	int ns = 0;
     int nc = 0;
     int nn = 0;
 	
     intfc_surface_loop(intfc,s)
 	{
+        if (is_bdry(*s)) continue;
+        
+        if (wave_type(*s) == NEUMANN_BOUNDARY ||
+            wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            rgb_surfs[nrgbs++] = *s;
+        }
+
         if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
         
         surfs[ns++] = *s;
@@ -1487,15 +1507,21 @@ static void assembleParachuteSet3d(
 	geom_set->num_curves = nc;
 	geom_set->num_nodes = nn;
 	geom_set->num_verts = 0;
-	
+    
     for (int i = 0; i < ns; ++i)
-    {
         geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
-    }
     for (int i = 0; i < nc; ++i)
 	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
     geom_set->num_verts += nn;
 	
+	
+    geom_set->num_rgb_surfs = nrgbs;
+    geom_set->total_num_verts = geom_set->num_verts;
+    
+    for (int i = 0; i < nrgbs; ++i)
+        geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
+
+    
     geom_set->load_node = NULL;
     for (int i = 0; i < nn; ++i)
 	{
@@ -1508,8 +1534,8 @@ static void assembleParachuteSet3d(
 
     if (debugging("intfc_assembly"))
     {
-        printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n",
-                ns, nc, nn, geom_set->num_verts);
+        printf("nrgbs = %d ns = %d, nc = %d, nn = %d, num_verts = %d\n",
+                nrgbs, ns, nc, nn, geom_set->num_verts);
     }
 }	/* end assembleParachuteSet */
 
@@ -1523,26 +1549,26 @@ extern void copy_from_client_point_set(
 	int j,k;
 	long gindex;
 	for (j = 0; j < client_size; j++)
+    {
+        gindex = client_point_set[j].gindex;
+        for (k = 0; k < 3; k++)
         {
-            gindex = client_point_set[j].gindex;
-            for (k = 0; k < 3; k++)
-	    {
-	    	if (client_point_set[j].x[k] < client_L[k] ||
-		    client_point_set[j].x[k] >= client_U[k])
-		    break;
-	    }
-	    if (k < 3) continue;
-            for (k = 0; k < 3; k++)
-            {
-                point_set[gindex]->x[k] = client_point_set[j].x[k];
-                point_set[gindex]->v[k] = client_point_set[j].v[k];
-                point_set[gindex]->f[k] = client_point_set[j].f[k];
-                point_set[gindex]->bendforce[k] = client_point_set[j].bendforce[k];
-                point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
-                point_set[gindex]->fluid_accel[k] = client_point_set[j].fluid_accel[k];
-                point_set[gindex]->other_accel[k] = client_point_set[j].other_accel[k];
-            }
+            if (client_point_set[j].x[k] < client_L[k] ||
+                client_point_set[j].x[k] >= client_U[k]) break;
         }
+        if (k < 3) continue;
+        
+        for (k = 0; k < 3; k++)
+        {
+            point_set[gindex]->x[k] = client_point_set[j].x[k];
+            point_set[gindex]->v[k] = client_point_set[j].v[k];
+            point_set[gindex]->f[k] = client_point_set[j].f[k];
+            point_set[gindex]->bendforce[k] = client_point_set[j].bendforce[k];
+            point_set[gindex]->impuls[k] = client_point_set[j].impuls[k];
+            point_set[gindex]->fluid_accel[k] = client_point_set[j].fluid_accel[k];
+            point_set[gindex]->other_accel[k] = client_point_set[j].other_accel[k];
+        }
+    }
 }	/* end copy_from_client_point_set */
 
 extern void copy_to_client_point_set(
@@ -1553,20 +1579,19 @@ extern void copy_to_client_point_set(
 	int j,k;
 	long gindex;
 	for (j = 0; j < client_size; j++)
+    {
+        gindex = client_point_set[j].gindex;
+        for (k = 0; k < 3; k++)
         {
-            gindex = client_point_set[j].gindex;
-            for (k = 0; k < 3; k++)
-            {
-                client_point_set[j].x[k] = point_set[gindex]->x[k];
-                client_point_set[j].v[k] = point_set[gindex]->v[k];
-                client_point_set[j].f[k] = point_set[gindex]->f[k];
-                client_point_set[j].impuls[k] = point_set[gindex]->impuls[k];
-                client_point_set[j].fluid_accel[k] = 
-					point_set[gindex]->fluid_accel[k];
-                client_point_set[j].other_accel[k] = 
-					point_set[gindex]->other_accel[k];
-            }
+            client_point_set[j].x[k] = point_set[gindex]->x[k];
+            client_point_set[j].v[k] = point_set[gindex]->v[k];
+            client_point_set[j].f[k] = point_set[gindex]->f[k];
+            client_point_set[j].bendforce[k] = point_set[gindex]->bendforce[k];
+            client_point_set[j].impuls[k] = point_set[gindex]->impuls[k];
+            client_point_set[j].fluid_accel[k] = point_set[gindex]->fluid_accel[k];
+            client_point_set[j].other_accel[k] = point_set[gindex]->other_accel[k];
         }
+    }
 }	/* end copy_to_client_point_set */
 
 static void reorder_string_curves(NODE *node)
