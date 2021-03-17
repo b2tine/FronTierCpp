@@ -258,16 +258,15 @@ extern void compute_spring_accel1(
 	double *accel,
 	int dim)
 {
-	int i,k;
-	double len,vec[MAXD];
-
-	for (k = 0; k < dim; ++k)
+	for (int k = 0; k < dim; ++k)
 	    accel[k] = 0.0;
 	
-    for (i = 0; i < sv->num_nb; ++i)
+    for (int i = 0; i < sv->num_nb; ++i)
 	{
-	    len = 0.0;
-	    for (k = 0; k < dim; ++k)
+	    double vec[MAXD];
+	    double len = 0.0;
+
+	    for (int k = 0; k < dim; ++k)
 	    {
             vec[k] = sv->x_nb[i][k] - sv->x[k];
             len += sqr(vec[k]);
@@ -275,28 +274,38 @@ extern void compute_spring_accel1(
 
 	    len = sqrt(len);
 
-	    for (k = 0; k < dim; ++k)
+	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[i]*(1.0 - sv->len0[i]/len)*vec[k]/sv->m;
-            accel[k] += sv->bendforce[k]/sv->m;
 	    }
 	}
 
-        //TODO: This has not been implemented.
-        //computeElasticForce(sv,f);
+    for (int k = 0; k < dim; ++k)
+    {
+        accel[k] += sv->bendforce[k]/sv->m;
+        accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
 
-	for (k = 0; k < dim; ++k)
+        //TODO: Make sure this is supposed to be the total force on the fabric point,
+        //      and not just the contribution from the internal forces of the system.
+        //      Also check for explicit uses of fabric point force
+        sv->f[k] = accel[k]*sv->m;
+    }
+
+    /*
+    //TODO: Why aren't the damping and external accelerations
+    //      included in this force computation??
+	for (int k = 0; k < dim; ++k)
     {
 	    sv->f[k] = accel[k]*sv->m;
     }
 	
-    for (k = 0; k < dim; ++k)
+    for (int k = 0; k < dim; ++k)
 	{
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-
-	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
-                    + sv->other_accel[k];
+	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
 	}
+    */
 }	/* end compute_spring_accel */
 
 

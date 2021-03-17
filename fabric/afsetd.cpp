@@ -255,34 +255,43 @@ extern void compute_spring_accel1(
 	double* accel,
 	int dim)
 {
-	double vec[MAXD];
-	double v_rel[MAXD];
-
 	for (int k = 0; k < dim; ++k)
         accel[k] = 0.0;
 
     for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    double len = 0.0;
-	    for (int k = 0; k < dim; ++k)
+	    double vec[MAXD];
+        double len = 0.0;
+
+        for (int k = 0; k < dim; ++k)
 	    {
             vec[k] = sv->x_nb[j][k] - sv->x[k];
             len += vec[k]*vec[k];
 	    }
-
-	    len = sqrt(len);
+        
+        len = sqrt(len);
 
 	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
-            accel[k] += sv->bendforce[k]/sv->m;
         }
 	}
+            
+    for (int k = 0; k < dim; ++k)
+    {
+        accel[k] += sv->bendforce[k]/sv->m;
+	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
+	    
+        //TODO: Make sure this is supposed to be the total force on the fabric point,
+        //      and not just the contribution from the internal forces of the system.
+        //      Also check for explicit uses of fabric point force
+        sv->f[k] = accel[k]*sv->m;
+    }
 
-        //TODO: Try to salvage this function, or just use
-        //      qqshi implementation in AngStiff_sprModel?
-        //computeElasticForce(sv,f);
-
+    /*
+    //TODO: Why aren't the damping and external accelerations
+    //      included in this force computation??
 	for (int k = 0; k < dim; ++k)
     {
 	    sv->f[k] = accel[k]*sv->m;
@@ -291,10 +300,9 @@ extern void compute_spring_accel1(
     for (int k = 0; k < dim; ++k)
 	{
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-        
-        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
-                    + sv->other_accel[k];
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
 	}
+    */
 }	/* end compute_spring_accel */
 
 

@@ -1301,13 +1301,6 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 }       /* setCollisionFreePoints3d() */
 
-/*
-static void setCollisionFreePoints3d(ELASTIC_SET* geom_set)
-{
-    //TODO: need a version than can use ELASTIC_SET* instead of INTERFACE* arg
-}
-*/
-
 extern void elastic_point_propagate(
         Front *front,
         POINTER wave,
@@ -1579,16 +1572,19 @@ static void gore_point_propagate(
             newsl->vel[i] -= left_nor_speed*nor[i];
             newsr->vel[i] -= right_nor_speed*nor[i];
         }
-	/* Impulse is incremented by the fluid pressure force */
-        for (i = 0; i < 3; ++i)
-        {
-	    dv = 0.0;
+	
+    /* Impulse is incremented by the fluid pressure force */
+    for (i = 0; i < 3; ++i)
+    {
+        dv = 0.0;
 
 	    if (front->step > 5)
-		dv = (sl->pres - sr->pres)*nor[i]/area_dens;
-	    if (debugging("rigid_canopy"))
+            dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+	
+        if (debugging("rigid_canopy"))
 	    	dv = 0.0;
-	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
+	
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	}
@@ -1702,8 +1698,7 @@ static void load_node_propagate(
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 0.0;
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
-	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + 
-				(accel[i] + g[i]) * dt;
+	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i]) * dt;
 	}
 	node_out_curve_loop(newn,c)
 	{

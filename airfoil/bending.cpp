@@ -14,34 +14,47 @@ static void DebugShow(const double& sva);
 
 void computeBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
-        SURFACE **surf;
-        TRI *tri;
+    SURFACE **surf;
+    TRI *tri;
 
-        intfc_surface_loop(intfc, surf)
+    intfc_surface_loop(intfc, surf)
+    {
+        if (is_bdry(*surf)) continue;
+        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+        
+        unsort_surf_point(*surf);
+
+        //NOTE: next surf_tri_loop() replaces the function
+        //      clear_surf_point_force(*surf);
+        surf_tri_loop(*surf, tri)
         {
-            if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
-            if (is_bdry(*surf)) continue;
-            unsort_surf_point(*surf);
-            //clear_surf_point_force(*surf);
-            surf_tri_loop(*surf, tri)
+            for (int i = 0; i < 3; ++i)
             {
-                if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
-                if (is_bdry(*surf)) continue;
-                for (int i = 0; i < 3; ++i)
-                {
-                    POINT *p1 = Point_of_tri(tri)[i];
-	            
-                    TRI* n_tri = Tri_on_side(tri, (i+1)%3);
-		            if (is_side_bdry(tri, (i+1)%3)) continue; 
-	                
-                    //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);//TODO: test this one
-                    calculateBendingForce3d2006(p1,tri,n_tri,bends,bendd);
-                    //calculateBendingForce3dparti(p1,tri,n_tri,bends,bendd);
-                    
-                    //(this->*method[methodIndex()])(p1, tri, n_tri); //from folding dir
-                }
+                POINT* p = Point_of_tri(tri)[i];
+                STATE* sl = (STATE*)left_state(p);
+                for (int j = 0; j < 3; ++j)
+                    sl->bendforce[j] = 0.0;
             }
         }
+
+        surf_tri_loop(*surf, tri)
+        {
+            if (is_bdry(*surf)) continue;
+            if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+
+            for (int i = 0; i < 3; ++i)
+            {
+                POINT *p1 = Point_of_tri(tri)[i];
+            
+                TRI* n_tri = Tri_on_side(tri, (i+1)%3);
+                if (is_side_bdry(tri, (i+1)%3)) continue; 
+                
+                //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);//TODO: test this one
+                calculateBendingForce3d2006(p1,tri,n_tri,bends,bendd);
+                //calculateBendingForce3dparti(p1,tri,n_tri,bends,bendd);
+            }
+        }
+    }
 }       /* setBendingForce3d */
 
 
@@ -393,11 +406,11 @@ void calculateBendingForce3dparti(
 	STATE* statep1 = static_cast<STATE*>(left_state(p1));
     for (int i = 0; i < 3; i++)
     {
-         statep1->bendforce[i] = bends * (length - length0) * dir[i]; 
+         statep1->bendforce[i] += bends * (length - length0) * dir[i]; 
             //p1->force[i] += bends * (length - length0) * dir[i]; 
          
          // bending force excerts along virtual edge
-         statep1->bendforce[i] = bendd * velr[i]; 
+         statep1->bendforce[i] -= bendd * velr[i]; 
                 //p1->force[i] -= bendd * dot * dir[i]; 
          //p1->force[i] += bendd * velr[i]; 
     }
