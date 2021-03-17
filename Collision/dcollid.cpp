@@ -1053,7 +1053,11 @@ void CollisionSolver3d::updateFinalPosition()
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt) || isStaticRigidBody(pt)) continue;
+            if (sorted(pt) || isRigidBody(pt)) continue;
+                //if (sorted(pt) || isStaticRigidBody(pt)) continue;
+
+            //NOTE: updateFinalForRG() updates the final position
+            //      and velocity of movable rigid body points
 
             STATE* sl = (STATE*)left_state(pt);
             for (int j = 0; j < 3; ++j)
@@ -1085,7 +1089,12 @@ void CollisionSolver3d::updateFinalVelocity()
         for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt) || isStaticRigidBody(pt)) continue;
+            if (sorted(pt) || isRigidBody(pt)) continue;
+                //if (sorted(pt) || isStaticRigidBody(pt)) continue;
+
+            //NOTE: updateFinalForRG() updates the final position
+            //      and velocity of movable rigid body points
+
             sorted(pt) = YES;
             
             STATE* sl = (STATE*)left_state(pt);
@@ -1125,7 +1134,11 @@ void CollisionSolver3d::updateFinalStates()
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
             POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt) || isStaticRigidBody(pt)) continue;
+            if (sorted(pt) || isRigidBody(pt)) continue;
+                //if (sorted(pt) || isStaticRigidBody(pt)) continue;
+
+            //NOTE: updateFinalForRG() updates the final position
+            //      and velocity of movable rigid body points
 
             STATE* sl = (STATE*)left_state(pt);
             for (int j = 0; j < 3; ++j)
@@ -1155,7 +1168,6 @@ void CollisionSolver3d::updateFinalStates()
     
 }
 
-//TODO: Figure out what's going on here.
 void CollisionSolver3d::updateFinalForRG()
 {
 	POINT* pt;
@@ -1198,8 +1210,7 @@ void CollisionSolver3d::updateFinalForRG()
                 for (int j = 0; j < 3; ++j)
                 {
                     center_of_mass_velo(pt->hs)[j] = sl->avgVel[j];
-                    center_of_mass(pt->hs)[j] = 
-                        sl->avgVel[j]*dt + (mrg_com[rg_index])[j];
+                    center_of_mass(pt->hs)[j] = (mrg_com[rg_index])[j] + sl->avgVel[j]*dt;
                 }
                 visited[rg_index] = false;
 		    
