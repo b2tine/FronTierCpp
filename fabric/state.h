@@ -47,6 +47,7 @@ struct STATE
     bool is_fixed;
     bool is_movableRG;
     bool is_stringpt;
+    bool is_registeredpt;
 };
 
 #endif

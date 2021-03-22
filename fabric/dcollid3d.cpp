@@ -110,13 +110,6 @@ bool MovingTriToTriGS(const TRI* a, const TRI* b)
 	    }
     }
 
-    /*
-    if (status)
-    {
-        collisionPairsList.push_back();
-    }
-    */
-
     return status;
 }
 
@@ -202,13 +195,6 @@ bool MovingTriToTriJac(const TRI* a, const TRI* b)
 	    }
     }
 
-    /*
-    if (status)
-    {
-        collisionPairsList.push_back();
-    }
-    */
-
     return status;
 }
 
@@ -244,6 +230,7 @@ static bool MovingPointToTriJac(POINT* pts[])
             MotionState mstate = MotionState::MOVING;
             if (PointToTri(pts,tol,mstate,roots[i]))
             {
+                //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
@@ -303,6 +290,7 @@ static bool MovingPointToTriGS(POINT* pts[])
             MotionState mstate = MotionState::MOVING;
             if (PointToTri(pts,rtol,mstate,roots[i]))
             {
+                //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
@@ -421,6 +409,7 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
             MotionState mstate = MotionState::MOVING;
             if (EdgeToEdge(pts,tol,mstate,roots[i]))
             {
+                //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
@@ -481,6 +470,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
             MotionState mstate = MotionState::MOVING;
             if (EdgeToEdge(pts,rtol,mstate,roots[i]))
             {
+                //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
@@ -719,10 +709,12 @@ bool TriToBond(const TRI* tri,const BOND* bd)
 	for (int i = 0; i < 3; ++i)
 	    pts[i] = Point_of_tri(tri)[i];
 
+    //TODO: add points to set of proximity points (no duplicate element set)
 	pts[3] = bd->start;
 	if (PointToTri(pts,tol))
         status = true;
 
+    //TODO: add points to set of proximity points (no duplicate element set)
 	pts[3] = bd->end;
     if (PointToTri(pts,tol))
         status = true;
@@ -733,6 +725,7 @@ bool TriToBond(const TRI* tri,const BOND* bd)
 	{
 	    pts[0] = Point_of_tri(tri)[i];
 	    pts[1] = Point_of_tri(tri)[(i+1)%3];
+        //TODO: add points to set of proximity points (no duplicate element set)
 	    if (EdgeToEdge(pts,tol))
             status = true;
 	}
@@ -752,6 +745,7 @@ bool BondToBond(const BOND* b1, const BOND* b2)
     double tol = CollisionSolver3d::getStringThickness();
 
 	bool status = false;
+    //TODO: add points to set of proximity points (no duplicate element set)
 	if (EdgeToEdge(pts,tol))
 		status = true;
 
@@ -775,6 +769,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2)
             pts[j] = Point_of_tri(tmp_tri2)[j];
 	    pts[3] = Point_of_tri(tmp_tri1)[i];
 	
+        //TODO: add points to set of proximity points (no duplicate element set)
 	    if (PointToTri(pts,tol))
             status = true;
 	}
@@ -788,6 +783,7 @@ bool TriToTri(const TRI* tri1, const TRI* tri2)
             pts[2] = Point_of_tri(tri2)[j];
             pts[3] = Point_of_tri(tri2)[(j+1)%3];
             
+            //TODO: add points to set of proximity points (no duplicate element set)
             if (EdgeToEdge(pts,tol))
                 status = true;
 	    }  

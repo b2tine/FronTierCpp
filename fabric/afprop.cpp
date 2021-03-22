@@ -182,7 +182,7 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
             //TODO: this should be named assembleElasticSet()
 		    assembleParachuteSet(elastic_intfc,&geom_set);
 
-		    owner_size = geom_set.num_verts;
+		    owner_size = geom_set.elastic_num_verts;
 		    if (point_set_store != NULL) 
                 FT_FreeThese(2,point_set_store, sv);
 	
@@ -235,7 +235,7 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 
 	if (myid != owner_id)
 	{
-	    client_size = geom_set.num_verts;
+	    client_size = geom_set.elastic_num_verts;
 	    if (size < client_size)
 	    {
 	    	size = client_size;
@@ -557,7 +557,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
             assembleParachuteSet(elastic_intfc,&geom_set);
             
             total_owner_size = geom_set.total_num_verts; //fabric + rgb points
-            owner_size = geom_set.num_verts; //just fabric points
+            owner_size = geom_set.elastic_num_verts; //just fabric points
             
             if (point_set_store != NULL) 
                 FT_FreeThese(2,point_set_store, sv);
@@ -565,7 +565,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
             FT_VectorMemoryAlloc((POINTER*)&point_set_store,
                     total_owner_size,sizeof(GLOBAL_POINT));//TODO: use total_num_verts here
             FT_VectorMemoryAlloc((POINTER*)&sv,
-                    owner_size,sizeof(SPRING_VERTEX));//TODO: use num_verts here
+                    owner_size,sizeof(SPRING_VERTEX));//TODO: use elastic_num_verts here
             
             link_point_set(&geom_set,point_set,point_set_store);
 	    	count_vertex_neighbors(&geom_set,sv);
@@ -592,7 +592,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
     if (myid != owner_id)
 	{
 	    total_client_size = geom_set.total_num_verts; //fabric + rigid body points
-        client_size = geom_set.num_verts; //just fabric points
+        client_size = geom_set.elastic_num_verts; //just fabric points
 	    if (size < client_size || total_size < total_client_size)
 	    {
 	    	size = client_size;
@@ -879,14 +879,14 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             assembleParachuteSet(elastic_intfc,&geom_set);
 
             total_owner_size = geom_set.total_num_verts; //fabric + rgb points
-            owner_size = geom_set.num_verts; //just fabric points
+            owner_size = geom_set.elastic_num_verts; //just fabric points
             
             if (point_set_store != NULL) 
                 FT_FreeThese(2,point_set_store, sv);
             
             FT_VectorMemoryAlloc((POINTER*)&point_set_store,//TODO: use total_num_verts here
                     total_owner_size,sizeof(GLOBAL_POINT));
-            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,//TODO: use num_verts here
+            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,//TODO: use elastic_num_verts here
                     sizeof(SPRING_VERTEX));
             
             //allocate mem for point_set via point_set_store, and store
@@ -899,7 +899,6 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             //links sv to point_set
             set_vertex_neighbors(&geom_set,sv,point_set);
 
-            //TODO: is this preventing 
             if (elastic_intfc != fr->interf)
                 delete_interface(elastic_intfc);
         }
@@ -922,7 +921,7 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 	if (myid != owner_id)
 	{
         total_client_size = geom_set.total_num_verts;
-        client_size = geom_set.num_verts;
+        client_size = geom_set.elastic_num_verts;
 	    if (size < client_size || total_size < total_client_size)
 	    {
 	    	size = client_size;
@@ -1255,17 +1254,17 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         sl->is_fixed = false;
         sl->is_movableRG = false;
         
-        if ((surf = Surface_of_hs(hs)) &&
-                (is_registered_point(surf,p) ||
-                 wave_type(hs) == NEUMANN_BOUNDARY))
+        if ((surf = Surface_of_hs(hs)))
         {
-            sl->is_fixed = true;
-        }
-    
-        if ((surf = Surface_of_hs(hs)) &&
-                (wave_type(hs) == MOVABLE_BODY_BOUNDARY))
-        {
-            sl->is_movableRG = true;
+            if (wave_type(hs) == NEUMANN_BOUNDARY)
+                sl->is_fixed = true;
+            if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                sl->is_movableRG = true;
+            if (is_registered_point(surf,p))
+            {
+                sl->is_registeredpt = true;
+                sl->is_fixed = true;
+            }
         }
     }
 

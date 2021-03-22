@@ -45,13 +45,13 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
             for (int i = 0; i < 3; ++i)
             {
                 POINT *p1 = Point_of_tri(tri)[i];
-            
                 TRI* n_tri = Tri_on_side(tri, (i+1)%3);
-                if (is_side_bdry(tri, (i+1)%3)) continue; 
+
+                if (is_side_bdry(tri,(i+1)%3)) continue; 
                 
-                //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);//TODO: test this one
                 calculateBendingForce3d2006(p1,tri,n_tri,bends,bendd);
-                //calculateBendingForce3dparti(p1,tri,n_tri,bends,bendd);
+                //calculateBendingForce3d2003(p1,tri,n_tri,bends,bendd);//TODO: test this one
+                    //calculateBendingForce3dparti(p1,tri,n_tri,bends,bendd);
             }
         }
     }
@@ -219,21 +219,35 @@ void calculateBendingForce3d2003(
 	STATE* state4 = static_cast<STATE*>(left_state(p4));
 
     // each tri_pair will be calculated twice
-    std::transform(u1, u1 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff)); 
-    std::transform(state1->bendforce, state1->bendforce + 3, tmp, state1->bendforce, std::plus<double>());
-        //std::transform(p1->force, p1->force + 3, tmp, p1->force, std::plus<double>());
-	
-    std::transform(u2, u2 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-    std::transform(state2->bendforce, state2->bendforce + 3, tmp, state2->bendforce, std::plus<double>());
-        //std::transform(p2->force, p2->force + 3, tmp, p2->force, std::plus<double>());
     
-    std::transform(u3, u3 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-    std::transform(state3->bendforce, state3->bendforce + 3, tmp, state3->bendforce, std::plus<double>());
-        //std::transform(p3->force, p3->force + 3, tmp, p3->force, std::plus<double>());
+    
+    if (!state1->is_fixed && !state1->is_registeredpt)
+    {
+        std::transform(u1, u1 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff)); 
+        std::transform(state1->bendforce, state1->bendforce + 3, tmp, state1->bendforce, std::plus<double>());
+            //std::transform(p1->force, p1->force + 3, tmp, p1->force, std::plus<double>());
+    }
 	
-    std::transform(u4, u4 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-    std::transform(state4->bendforce, state4->bendforce + 3, tmp, state4->bendforce, std::plus<double>());
-        //std::transform(p4->force, p4->force + 3, tmp, p4->force, std::plus<double>());
+    if (!state2->is_fixed && !state2->is_registeredpt)
+    {
+        std::transform(u2, u2 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
+        std::transform(state2->bendforce, state2->bendforce + 3, tmp, state2->bendforce, std::plus<double>());
+            //std::transform(p2->force, p2->force + 3, tmp, p2->force, std::plus<double>());
+    }
+    
+    if (!state3->is_fixed && !state3->is_registeredpt)
+    {
+        std::transform(u3, u3 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
+        std::transform(state3->bendforce, state3->bendforce + 3, tmp, state3->bendforce, std::plus<double>());
+            //std::transform(p3->force, p3->force + 3, tmp, p3->force, std::plus<double>());
+    }
+	
+    if (!state4->is_fixed && !state4->is_registeredpt)
+    {
+        std::transform(u4, u4 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
+        std::transform(state4->bendforce, state4->bendforce + 3, tmp, state4->bendforce, std::plus<double>());
+            //std::transform(p4->force, p4->force + 3, tmp, p4->force, std::plus<double>());
+    }
 
 }       /* calculateBendingForce3d */
 
@@ -294,19 +308,42 @@ void calculateBendingForce3d2006(
         double bend_stiff = bends;
         double lambda = 2.0*(h1 + h2)*E_mag*bend_stiff / (3.0*h1*h2*h1*h2);
 
-	STATE* state = static_cast<STATE*>(left_state(p1));
+    STATE* state[4];
+    POINT* pts[4] = {p1,p2,p3,p4};
+    double a[4] = {a1,a2,a3,a4};
+
+    for (int j = 0; j < 4; ++j)
+    {
+        state[j] = static_cast<STATE*>(left_state(pts[j]));
+        if (state[j]->is_fixed || state[j]->is_registeredpt) continue;
+
+        //TODO: should the force of a fixed/registered point be
+        //      redistributed to the non fixed/registered points?
+
+        for (int i = 0; i < 3; ++i)
+        {
+            state[j]->bendforce[i] += -1.0*lambda*a[j]*R[i]*0.5;
+        }
+    }
+
+    /*
+	STATE* state1 = static_cast<STATE*>(left_state(p1));
+	STATE* state2 = static_cast<STATE*>(left_state(p2));
+	STATE* state3 = static_cast<STATE*>(left_state(p3));
+	STATE* state4 = static_cast<STATE*>(left_state(p4));
     for (int i = 0; i < 3; ++i)
     {
-        state->bendforce[i] += -lambda * a1 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a2 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a3 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a4 * R[i] * 0.5;
+        state1->bendforce[i] += -lambda * a1 * R[i] * 0.5;
+        state2->bendforce[i] += -lambda * a2 * R[i] * 0.5;
+        state3->bendforce[i] += -lambda * a3 * R[i] * 0.5;
+        state4->bendforce[i] += -lambda * a4 * R[i] * 0.5;
         
         //p1->force[i] += -lambda * a1 * R[i] * 0.5;
         //p2->force[i] += -lambda * a2 * R[i] * 0.5;
         //p3->force[i] += -lambda * a3 * R[i] * 0.5;
         //p4->force[i] += -lambda * a4 * R[i] * 0.5;
     }
+    */
 	
     /*
     //TODO: use state->bendforce

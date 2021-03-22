@@ -258,6 +258,7 @@ extern void compute_spring_accel1(
 	for (int k = 0; k < dim; ++k)
         accel[k] = 0.0;
 
+    //acceleration due to elastic stretching force
     for (int j = 0; j < sv->num_nb; ++j)
 	{
 	    double vec[MAXD];
@@ -276,17 +277,23 @@ extern void compute_spring_accel1(
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
         }
 	}
-            
+
+    //acceleration due to elastic bending and damping forces
     for (int k = 0; k < dim; ++k)
     {
         accel[k] += sv->bendforce[k]/sv->m;
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
+    }
 	    
-        //TODO: Make sure this is supposed to be the total force on the fabric point,
-        //      and not just the contribution from the internal forces of the system.
-        //      Also check for explicit uses of fabric point force
+    for (int k = 0; k < dim; ++k)
+    {
+        //TODO: Make sure this is supposed to be internal force on the fabric point
         sv->f[k] = accel[k]*sv->m;
+    }
+
+    for (int k = 0; k < dim; ++k)
+    {
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
     }
 
     /*
@@ -1514,17 +1521,17 @@ static void assembleParachuteSet3d(
 	geom_set->num_surfs = ns;
 	geom_set->num_curves = nc;
 	geom_set->num_nodes = nn;
-	geom_set->num_verts = 0;
+	geom_set->elastic_num_verts = 0;
     
     for (int i = 0; i < ns; ++i)
-        geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
+        geom_set->elastic_num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
     for (int i = 0; i < nc; ++i)
-	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-    geom_set->num_verts += nn;
+	    geom_set->elastic_num_verts += I_NumOfCurveInteriorPoints(curves[i]);
+    geom_set->elastic_num_verts += nn;
 	
 	
     geom_set->num_rgb_surfs = nrgbs;
-    geom_set->total_num_verts = geom_set->num_verts;
+    geom_set->total_num_verts = geom_set->elastic_num_verts;
     
     for (int i = 0; i < nrgbs; ++i)
         geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
@@ -1542,8 +1549,9 @@ static void assembleParachuteSet3d(
 
     if (debugging("intfc_assembly"))
     {
-        printf("nrgbs = %d ns = %d, nc = %d, nn = %d, num_verts = %d\n",
-                nrgbs, ns, nc, nn, geom_set->num_verts);
+        printf("ns = %d, nc = %d, nn = %d, elastic_num_verts = %d\n",
+                ns, nc, nn, geom_set->elastic_num_verts);
+        printf("nrgbs = %d, total_num_verts = %d\n", geom_set->total_num_verts);
     }
 }	/* end assembleParachuteSet */
 
@@ -1755,70 +1763,3 @@ static void set_surf_impulse(
 	}
 }	/* end set_surf_impulse */
 
-/*
-#include <algorithm>
-
-static void findPosnOnVector(std::vector<double*>& v, double x[], int index[])
-{
-    int idx = 0; 
-
-    for (size_t i = 0; i < v.size(); i++)
-    {
-	 if (v[i][0] = x[0] && v[i][1] == x[1] && v[i][2] == x[2])
-	     index[idx] = i; 
-    }
-}
-
-static void computeElasticForce(SPRING_VERTEX* sv, double *f)
-{
-    int nt = sv->num_nb;
-
-    for (int i = 0; i < nt; i++)
-    {
-	 int indexj[2]; 
-	 double uij[3];
-	 int j;  
-
-	 findPosnOnVector(sv->nbTriPoint, sv->x_nb[i], indexj); 
-         for (j = 0; j < 3; j++)
-	      uij[j] = sv->nbTriPoint[indexj[0]][j] - sv->x[j]; 
-
-	 double lij = Mag3d(uij); 
-
-	 for (j = 0; j < 3; j++)
-	      uij[j] /= lij; 
-
-	 double dlij = lij - sv->len0[i];
-
-	 // tensile force
-	 for (j = 0; j < 3; j++)
-	      f[j] += (sv->nbTenStiff[indexj[0]] + sv->nbTenStiff[indexj[1]]) * dlij
-			* uij[j];  
-	 int indexk1 = indexj[0] % 2 == 0 ? indexj[0] + 1 : indexj[0] - 1; 
-	 int indexk2 = indexj[1] % 2 == 0 ? indexj[1] + 1 : indexj[1] - 1;
-	 
-	 double uik1[3], ujk1[3], uik2[3], ujk2[3]; 
-
-	 for (j = 0; j < 3; j++)
-	 {
-	      uik1[j] = sv->nbTriPoint[indexk1][j] - sv->x[j];
-	      ujk1[j] = sv->nbTriPoint[indexk1][j] - sv->nbTriPoint[indexj[0]][j];
-	      uik2[j] = sv->nbTriPoint[indexk2][j] - sv->x[j];
-              ujk2[j] = sv->nbTriPoint[indexk2][j] - sv->nbTriPoint[indexj[0]][j];
-         }
-	 
-	 double lik1 = Mag3d(uik1), lik2 = Mag3d(uik2);
-	 double ljk1 = Mag3d(ujk1), ljk2 = Mag3d(ujk2);
-	 double dlik1 = lik1 - sv->oriLength[indexk1];
-	 double dlik2 = lik2 - sv->oriLength[indexk2]; 
-	 double dljk1 = ljk1 - sv->oriLength[indexj[0]]; 
-	 double dljk2 = ljk2 - sv->oriLength[indexj[1]];
-
-	 // angular force
-         for (j = 0; j < 3; j++)
-	      f[j] += (sv->nbAngStiff[indexk1] * dlik1 + sv->nbAngStiff[indexk2] 
-		* dlik2 + sv->nbAngStiff[indexj[0]] * dljk1 
-		+ sv->nbAngStiff[indexj[1]] * dljk2) * uij[j]; 
-    } 
-}
-*/

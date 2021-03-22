@@ -170,7 +170,7 @@ struct ELASTIC_SET
 	double m_s;
 	double m_l;
 	double m_g;
-	int num_verts;		    /* Total number of spring-mass points */
+	int elastic_num_verts;		    /* Total number of spring-mass points */
 	int total_num_verts;	/* Total number of spring-mass and rigid body points */
 	double dt_tol;
 	double dt;
