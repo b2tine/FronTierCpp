@@ -10,6 +10,7 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
+//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -85,11 +86,13 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
+    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
     void initializeImpactZones(const INTERFACE* intfc);
-	void initRigidBodyImpactZones(const INTERFACE* intfc);
+	void initRigidBodyImpactZones();
+	    //void initRigidBodyImpactZones(const INTERFACE* intfc);//TODO: remove?
 	
     void resolveCollision();
 
@@ -181,7 +184,8 @@ private:
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
     int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
-    void limitStrainVel();
+    void limitStrainVelJAC();
+    void limitStrainVelGS();
     int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     void applyStrainImpulses(MotionState mstate);
 
@@ -196,6 +200,7 @@ private:
 	void revertAverageVelocity();
 	void computeImpactZoneGS();
 	void computeImpactZoneJac();
+    void connectNearbyImpactZones();
 	void infoImpactZones();
 	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);

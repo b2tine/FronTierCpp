@@ -96,8 +96,8 @@ Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 25.0
-Enter fabric bending damping constant: 0.001
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.01
 Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001

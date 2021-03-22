@@ -41,13 +41,14 @@ Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
-Type yes if motion is preset: no
-Enter type of dynamic motion: COM_MOTION
+Type yes if motion is preset: yes
+Enter type of preset motion: TRANSLATION
+Enter type of dynamic motionXXX: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 11.951
-Enter the initial center of mass velocity: 0 0 0
-Enter the initial center of mass velocityX: 0 0 -5
+Enter the initial center of mass velocity: 0 0 -3
+Enter the initial center of mass velocityXXX: 0 0 0
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -56,6 +57,13 @@ Enter type of canopy boundary: C
 Enter the height of the plane: 18
 Enter circle center: 6 6
 Enter circle radius: 4.2672
+
+Enter yes to adjust cgal triangulation criteria: yes
+Enter B ratio: 0.3
+Enter min triangle edge length: 0.125
+Enter B ratioXXX: 0.125
+Enter min triangle edge lengthXXX: 0.12
+
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: yes
 Enter radius of the vent: 0.25
@@ -72,11 +80,12 @@ Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity function: FA
+Enter velocity function: Zero
+Enter velocity functionXXX: FA
 Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.275 0.275
-Enter area velocity: 0 0 10
+Enter radii of ellipse: 0.50 0.50
+Enter area velocity: 0 0 5
 Enter gravity: 0 0 0
 
 Enter timestep to activate FSI: 5
@@ -93,6 +102,8 @@ Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0
 Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
@@ -104,6 +115,10 @@ Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
+
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.1
 
 ******************Turbulence Parameters****************
 Enter yes to use eddy viscosity: yes
@@ -138,7 +153,10 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
+Enter the debugging string: rigid_body
 Enter the debugging string: max_speed
+
+Enter the debugging stringXXX: collision_max_speed
 
 Enter the debugging string: Xtrace
 Enter the debugging string: XCLOCK

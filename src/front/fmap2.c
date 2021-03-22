@@ -1540,6 +1540,9 @@ EXPORT void FT_AddVtkIntfcMovieVariable(
 	vtk_movie_var->plot_intfc_var = YES;
 	sprintf(vtk_movie_var->intfc_var_name,"%s",var_name);
 
+    //TODO: see other FT_AddVtk*() functions ...
+    //  Need to add fields to VTK_MOVIE_VAR structure
+
         if (debugging("trace"))
             (void) printf("Leaving FT_AddVtkIntfcMovieVariable()\n");
 }	/* end FT_AddVtkIntfcMovieVariable */

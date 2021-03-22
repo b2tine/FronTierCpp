@@ -129,8 +129,8 @@ void calculateBendingForce3d2003(
     double bend_stiff = bends;
         double coeff = bend_stiff * sqr(E_mag) / (N1_mag + N2_mag);
 
-        if (Dot3d(n1, n2) > 1.0 + 1.0e-10)
-        {
+    if (Dot3d(n1, n2) > 1.0 + 1.0e-10)
+    {
 	    std::cout << std::fixed << std::setprecision(14); 
 	    std::cout << "t1 = "; 
 	    std::for_each(Tri_normal(t1),Tri_normal(t1) + 3, DebugShow); 
@@ -166,7 +166,7 @@ void calculateBendingForce3d2003(
             std::for_each(N2,N2 + 3, DebugShow);
             std::cout << std::endl;
             clean_up(0);
-        }
+    }
 
         double sine_half_theta = sqrt(0.5 * std::max(0.0, 1.0 - Dot3d(n1, n2)));
         double tmp[3];
@@ -183,6 +183,7 @@ void calculateBendingForce3d2003(
         dtheta = Dot3d(u1, p1->vel) + Dot3d(u2, p2->vel) +
                  Dot3d(u3, p3->vel) + Dot3d(u4, p4->vel);
         if (fabs(dtheta) < 1.0e-10) dtheta = 0.0;
+
 // used for debugging        
 //	double sum[3] = {0.0};
 
@@ -294,20 +295,81 @@ void calculateBendingForce3d2006(
         double bend_stiff = bends;
         double lambda = 2.0*(h1 + h2)*E_mag*bend_stiff / (3.0*h1*h2*h1*h2);
 
-	STATE* state = static_cast<STATE*>(left_state(p1));
+	
+    STATE* state[4];
+    POINT* pts[4] = {p1,p2,p3,p4};
+    double a[4] = {a1,a2,a3,a4};
+    
+    /*
+    for (int j = 0; j < 4; ++j)
+    {
+        if (state[j]->is_fixed || state[j]->is_registeredpt) continue;
+        
+        //TODO: Should force be redistributed to non fixed/registered point?
+        //      See below for naive redistribution ...
+        
+        for (int i = 0; i < 3; ++i)
+        {
+            state[j]->bendforce[i] += -1.0*lambda*a[j]*R[i]*0.5;
+        }
+    }
+    */
+
+    for (int j = 0; j < 2; ++j)
+    {
+        int j0 = 2*j;
+        int j1 = 2*j + 1;
+
+        state[j0] = static_cast<STATE*>(left_state(pts[j0]));
+        state[j1] =  static_cast<STATE*>(left_state(pts[j1]));
+
+        if (!(state[j0]->is_fixed || state[j0]->is_registeredpt) &&
+            !(state[j1]->is_fixed || state[j1]->is_registeredpt))
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                state[j0]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
+                state[j1]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+            }
+        }
+        else if (!(state[j0]->is_fixed || state[j0]->is_registeredpt) &&
+                 (state[j1]->is_fixed || state[j1]->is_registeredpt))
+        {
+            //TODO: correct???
+            for (int i = 0; i < 3; ++i)
+            {
+                state[j0]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
+                state[j0]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+            }
+        }
+        else if ((state[j0]->is_fixed || state[j0]->is_registeredpt) &&
+                 !(state[j1]->is_fixed || state[j1]->is_registeredpt))
+        {
+            //TODO: correct???
+            for (int i = 0; i < 3; ++i)
+            {
+                state[j1]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
+                state[j1]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+            }
+        }
+        /*
+        else
+        {
+            //Both points pinned; do nothing.
+        }
+        */    
+    }
+	
+    /*
     for (int i = 0; i < 3; ++i)
     {
-        state->bendforce[i] += -lambda * a1 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a2 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a3 * R[i] * 0.5;
-        state->bendforce[i] += -lambda * a4 * R[i] * 0.5;
-        
         //p1->force[i] += -lambda * a1 * R[i] * 0.5;
         //p2->force[i] += -lambda * a2 * R[i] * 0.5;
         //p3->force[i] += -lambda * a3 * R[i] * 0.5;
         //p4->force[i] += -lambda * a4 * R[i] * 0.5;
     }
-	
+    */
+    
     /*
     //TODO: use state->bendforce
     if (fabs(Coords(p1)[0] -0.75) < 0.1)
@@ -344,7 +406,6 @@ void calculateBendingForce3d2006(
 
 
 //Appears to be a simple naive bending model
-//TODO: has some problems near edges of fabric
 void calculateBendingForce3dparti(
         POINT* p1,
         TRI* tri,

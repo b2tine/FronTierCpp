@@ -186,6 +186,8 @@ int main(int argc, char **argv)
             if (!af_params.no_fluid)
                 l_cartesian->readFrontInteriorStates(restart_state_name);
             readAfExtraData(&front,restart_state_name);
+            clearRegisteredPoints(&front);
+            resetRigidBodyVelocity(&front);
         }
     }
     else

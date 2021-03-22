@@ -2963,12 +2963,14 @@ LOCAL void FrontPreAdvance3d(
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
 	    {
-		index = body_index(*s);
-		for (i = 0; i < dim; ++i)
-		    old_vel[i] = center_of_mass_velo(*s)[i];
-		if (motion_type(*s) == PRESET_MOTION ||
+		
+            index = body_index(*s);
+            for (i = 0; i < dim; ++i)
+                old_vel[i] = center_of_mass_velo(*s)[i];
+		
+        if (motion_type(*s) == PRESET_MOTION ||
 		    motion_type(*s) == PRESET_COM_MOTION ||
-                    motion_type(*s) == PRESET_TRANSLATION)
+            motion_type(*s) == PRESET_TRANSLATION)
 		{
 		    if (debugging("rigid_body"))
 		    {
@@ -3207,9 +3209,11 @@ LOCAL void FrontPreAdvance3d(
                                 2*temp[1][i] + 2*temp[2][i] + temp[3][i]);
 
 		}
+
 		for (i = 0; i < dim; ++i)
-                    center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + 
-							old_vel[i])*0.5;
+        {
+            center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + old_vel[i])*0.5;
+        }
 		
         if (debugging("rigid_body"))
 		{

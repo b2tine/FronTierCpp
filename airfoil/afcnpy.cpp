@@ -2974,22 +2974,20 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         sl->is_fixed = false;
         sl->is_movableRG = false;
         
-        if ((surf = Surface_of_hs(hs)) &&
-                (is_registered_point(surf,p) ||
-                 wave_type(hs) == NEUMANN_BOUNDARY))
+        if ((surf = Surface_of_hs(hs)))
         {
-            sl->is_fixed = true;
-        }
-    
-        if ((surf = Surface_of_hs(hs)) &&
-                (wave_type(hs) == MOVABLE_BODY_BOUNDARY))
-        {
-            sl->is_movableRG = true;
+            if (wave_type(hs) == NEUMANN_BOUNDARY)
+                sl->is_fixed = true;
+            if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                sl->is_movableRG = true;
+            if (is_registered_point(surf,p))
+            {
+                sl->is_registeredpt = true;
+                sl->is_fixed = true;
+            }
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY tag
-    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)

@@ -3,11 +3,6 @@
 #include "iFluid.h"
 
 
-static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 
-static void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
-static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
-static void sine_vel_func(Front*,POINTER,double*,double*);
-
 static void initSingleRigidBody(FILE*,Front*);
 static void initMultiRigidBodies(FILE*,Front*,int);
 
@@ -19,6 +14,12 @@ static void init_rigid_human(FILE*,Front*);
 // functions for changing the human body surface
 static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
+
+static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 
+static void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
+static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
+static void sine_vel_func(Front*,POINTER,double*,double*);
+static void const_vel_translation_func(Front*,POINTER,double*,double*);
 
 
 extern void initRigidBody(
@@ -502,6 +503,8 @@ static void prompt_for_rigid_body_params(
                 clean_up(ERROR);
             }
             (void) fseek(infile,idpos,SEEK_SET);
+
+            rgb_params->total_mass = HUGE;
         }
         else
         {
@@ -843,8 +846,18 @@ extern void rgb_modification(
 //      end up taking its place.
 extern void resetRigidBodyVelocity(Front *front)
 {
-    SURFACE **s;
+    FILE *infile = fopen(InName(front),"r");
+    char string[100];
 
+    if (CursorAfterStringOpt(infile,"Enter yes to reset rigid body velocity: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'n' || string[0] == 'n')
+            return;
+    }
+
+    SURFACE **s;
     for (s = front->interf->surfaces; s && *s; ++s)
     {
         if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
@@ -925,7 +938,14 @@ static void prompt_for_velocity_func(
             "Enter the prescribed velocity function type:");
     fscanf(infile,"%s",s);
     (void)printf("%s\n",s);
-    if (s[0] == 's' || s[0] == 'S')
+    if (s[0] == 't' || s[0] == 'T')
+    {
+        printf("PRESET_TRANSLATION FUNCTION NOT READY\n");
+        LOC(); clean_up(EXIT_FAILURE);
+        CursorAfterString(infile,"Enter translation velocity :");
+        //TODO: add translation function
+    }
+    else if (s[0] == 's' || s[0] == 'S')
     {
         td_params->td_type = SINE_FUNC;
         CursorAfterString(infile,"Enter velocity amplitude:");
@@ -958,16 +978,37 @@ static void sine_vel_func(
         Front* front,
         POINTER vparams,
         double *coords,
-        double *velo)
+        double *vel)
 {
-        int i;
-        int dim = front->rect_grid->dim;
-        TIME_DEPENDENT_PARAMS *td_params;
-        double time = front->time;
+    int dim = front->rect_grid->dim;
+    TIME_DEPENDENT_PARAMS *td_params;
+    double time = front->time;
 
-        td_params = (TIME_DEPENDENT_PARAMS*)vparams;
-        for (i = 0; i < dim; ++i)
-            velo[i] = td_params->v_amp[i] * sin(td_params->omega*time
-                        + td_params->phase);
+    td_params = (TIME_DEPENDENT_PARAMS*)vparams;
+    for (int i = 0; i < dim; ++i)
+    {
+        vel[i] = td_params->v_amp[i] * sin(td_params->omega*time
+                    + td_params->phase);
+    }
 }       /* end sine_vel_func */
+
+/*
+static void const_vel_translation_func(
+        Front* front,
+        POINTER vparams,
+        double *coords,
+        double *vel)
+{
+    int dim = front->rect_grid->dim;
+    TRANSLATE_PARAMS* tparams = (TRANSLATE_PARAMS*)vparams;
+    double* tvel = tparams->translation_vel;
+
+    for (int i = 0; i < dim; ++i)
+    {
+        vel[i] = tvel[i];
+    }
+
+}
+*/
+
 

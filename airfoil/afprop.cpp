@@ -1326,11 +1326,6 @@ static void rg_string_node_propagate(
             accel[i] = 0.0;
 	}
 
-    /*
-	for (i = 0; i < dim; ++i)
-        accel[i] -= g[i];
-    */
-
     if (debugging("rigid_body"))
     {
 	    (void)printf("accel = %f %f %f\n", accel[0], accel[1], accel[2]);
@@ -1354,7 +1349,6 @@ static void rg_string_node_propagate(
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
-	        //newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
