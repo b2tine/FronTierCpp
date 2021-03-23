@@ -998,16 +998,20 @@ static void EdgeToEdgeImpulse(
     double wb[2] = {1.0 - b, b};
     double wab[4] = {wa[0], wa[1], wb[0], wb[1]};
 
+    //NOTE: That the spring constant k does not need to
+    //      be the Young's Modulus stiffness coefficient
+    //      used by the spring solver.
+
 	double h = CollisionSolver3d::getFabricThickness();
 	double k = CollisionSolver3d::getFabricSpringConstant();
 	double m = CollisionSolver3d::getFabricPointMass();
     double mu = CollisionSolver3d::getFabricFrictionConstant(); 
-    double overlap_coef = 0.1;
 	
 	STATE *sl[4];
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
+    /*
     if (sl[0]->is_stringpt || sl[2]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
@@ -1015,6 +1019,10 @@ static void EdgeToEdgeImpulse(
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
     }
+    */
+    
+    //TODO: need input file option for overlap_coef
+    double overlap_coef = 0.1;
     double overlap = h - dist;
 
 	//apply impulses to the average velocity (linear trajectory)
@@ -1081,12 +1089,6 @@ static void EdgeToEdgeImpulse(
     for (int i = 0; i < 2; ++i)
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
-
-        /*
-        impulse[i] = inelastic_impulse[i];
-        if (mstate == MotionState::MOVING)
-            impulse[i] += elastic_impulse[i];
-        */
 
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
@@ -1473,6 +1475,10 @@ static void PointToTriImpulse(
     
     double sum_w = 0.0;
 
+    //NOTE: That the spring constant k does not need to
+    //      be the Young's Modulus stiffness coefficient
+    //      used by the spring solver.
+
 	double h = CollisionSolver3d::getFabricThickness();
 	double k = CollisionSolver3d::getFabricSpringConstant();
 	double m = CollisionSolver3d::getFabricPointMass();
@@ -1482,18 +1488,20 @@ static void PointToTriImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
-    double overlap_coef = 0.1;
     /*
+    //TODO: Impulse computations for inhomogeneous materials
     if (sl[3]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
         k = CollisionSolver3d::getStringSpringConstant();
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
-        overlap_coef = 0.1;
     }
     */
-	double overlap = h - dist;
+	
+    //TODO: Need to add input file option for overlap_coef
+    double overlap_coef = 0.1;
+    double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
 	for (int i = 0; i < 3; ++i)
@@ -1556,12 +1564,6 @@ static void PointToTriImpulse(
     {
         impulse[i] = inelastic_impulse[i] + elastic_impulse[i];
         
-        /*
-        impulse[i] = inelastic_impulse[i];
-        if (mstate == MotionState::MOVING)
-            impulse[i] += elastic_impulse[i];
-        */
-
         if (fabs(sum_w) < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
@@ -1625,7 +1627,7 @@ static void PointToTriImpulse(
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
-        //TODO: current nor vector not correct for rigid-rigid collision
+        //TODO: investigate if this can be done correctly
 	    if (isMovableRigidBody(pts[0]))
             SpreadImpactZoneImpulse(pts[0], -1.0*rigid_impulse[0], nor);
 	    if (isMovableRigidBody(pts[3]))

@@ -153,6 +153,7 @@ struct ELASTIC_SET
 {
 	Front *front;
     NODE *load_node;
+    NODE *rg_string_nodes[5];
     SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];

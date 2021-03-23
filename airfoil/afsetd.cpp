@@ -1446,8 +1446,8 @@ static void assembleParachuteSet2d(
 	for (i = 0; i < nn; ++i)
 	    if (is_load_node(nodes[i]))
 	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
+            geom_set->load_node = nodes[i];
+            reorder_string_curves(nodes[i]);
 	    }
 	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", 0, nc, nn, 
 		geom_set->num_verts);
@@ -1561,11 +1561,17 @@ static void assembleParachuteSet3d(
 	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
 	geom_set->num_verts += nn;
 	geom_set->load_node = NULL;
+    
+    int nrg = 0;
 	for (i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-            geom_set->load_node = nodes[i];
+            if (is_load_node(nodes[i]))
+                geom_set->load_node = nodes[i];
+            else
+                geom_set->rg_string_nodes[nrg++] = nodes[i];
+
             reorder_string_curves(nodes[i]);
 	    }
 	}

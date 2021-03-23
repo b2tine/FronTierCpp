@@ -9,6 +9,7 @@
 
 #define DEBUGGING false
 
+//TODO: ROUND_EPS optimal val
 const double ROUND_EPS = DBL_EPSILON;
 //const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
@@ -86,7 +87,7 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
-    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs
+    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs?
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
@@ -255,6 +256,8 @@ bool isRigidBody(const CD_HSE*);
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
 void initTestModule(Front&, char*);
+
+//TODO: Move into new file and make available globally
 void Pts2Vec(const POINT*, const POINT*, double*);
 void scalarMult(double a,double* v, double* ans);
 void addVec(double* v1, double* v2, double* ans);

@@ -883,17 +883,20 @@ void CollisionSolver3d::revertAverageVelocity()
             sorted(p) = YES;
 	    }
 	}
+
+    clearCollisionTimes();
 }
 
 void CollisionSolver3d::detectCollision()
 {
 	std::cout << "Starting collision handling: " << std::endl;
 	
-	const int MAX_ITER = 12;
-    bool is_collision = true; 
+	const int MAX_ITER = 8;
+	    //const int MAX_ITER = 12;
 	
     int niter = 0;
 	int cd_count = 0;
+    bool is_collision = true; 
    
     while(is_collision)
     {
@@ -943,7 +946,7 @@ void CollisionSolver3d::detectCollision()
         //TODO: Return avg_vel to value before point to point collisions???
         //      See todo in computeImpactZoneJac() regarding a startup step
         //
-        //  revertAverageVelocity();
+        revertAverageVelocity();
         computeImpactZoneJac();
             //computeImpactZoneGS();
     }

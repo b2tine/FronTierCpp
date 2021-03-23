@@ -595,8 +595,37 @@ static void DebugShow(const double & sva)
 
 static void computeCurvatureBinormal(BOND* b0, BOND* b1)
 {
-    //TODO: implement
-    printf("computeCurvatureBinormal() not implemented yet!\n");
+    //(kb)_i = (2*e_{i-1} ^ e_i)/(|e_{i-1}||e_i| + < e_{i-1}, e_i >
+    
+    /*
+    double* x0 = Coords(b0->start);
+    double* x1 = Coords(b0->end);
+    double* x2 = Coords(b1->start);
+    
+    double e0[MAXD];
+    double e1[MAXD];
+
+    difference(x1,x0,e0,3);
+    difference(x2,x1,e1,3);
+    */
+
+    double nor01[MAXD];
+    vector_product_on_bonds(b0,b1,3,nor01);
+
+    double len0 = bond_length(b0);
+    double len1 = bond_length(b1);
+    double dot01 = scalar_product_on_bonds(b0,b1,3);
+    
+    double denom = len0*len1 + dot01;
+
+    //TODO: need to return or store this someway...
+    double kB[MAXD];
+    for (int i = 0; i < 3; ++i)
+    {
+        kB[i] = 2.0*nor01[i]/denom;
+    }
+
+    printf("computeCurvatureBinormal() not ready yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
 }
 

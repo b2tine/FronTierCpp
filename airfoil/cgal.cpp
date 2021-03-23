@@ -282,7 +282,7 @@ static void CgalCircle(
         double *out_nodes_coords,*in_nodes_coords;
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
-	int out_vtx_oneside = 15, in_vtx_oneside = 2;//TODO: Why these hardcoded values?
+	int out_vtx_oneside = 15, in_vtx_oneside = 2;
 	char gore_bool[10],vent_bool[10], string_bool[10],string[10];
 	std::list<Cgal_Point> list_of_seeds;
 	
@@ -300,13 +300,12 @@ static void CgalCircle(
     fscanf(infile,"%lf",&CirR[0]);
     (void) printf("%f\n",CirR[0]);
 
-	CirR[1] = 0;
+	CirR[1] = 0.0;
 	CursorAfterStringOpt(infile,"Enter yes to attach gores to canopy:");
     fscanf(infile,"%s",gore_bool);
     (void) printf("%s\n",gore_bool);
     if (gore_bool[0]=='y' || gore_bool[0]=='Y')
     {
-        //TODO: Bug? CirR[1] gets overwritten if vent present.
         CirR[1] = 0.1 * CirR[0];
         af_params->attach_gores = YES;
 	}
@@ -347,6 +346,7 @@ static void CgalCircle(
 	out_nodes_coords = new double[num_strings*2];
 	in_nodes_coords = new double[num_strings*2];
 
+    //circle boundary 
 	for (i = 0; i < num_out_vtx; i++)
 	{
 	    v_out[i] = cdt.insert(Cgal_Point(
@@ -430,36 +430,31 @@ static void CgalCircle(
 	flag = new int[cdt.number_of_faces()];
 	double tri_center[2];
 
-        i=0;
+    i = 0;
 	if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
 	{
-            for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end();
-				 ++fit)
-            {
-                tri_center[0] = (fit->vertex(0)->point()[0] + 
-				fit->vertex(1)->point()[0]
-                    + fit->vertex(2)->point()[0]) / 3.0;
-                tri_center[1] = (fit->vertex(0)->point()[1] + 
-				fit->vertex(1)->point()[1]
-                    + fit->vertex(2)->point()[1]) / 3.0;
+        for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
+        {
+            tri_center[0] = (fit->vertex(0)->point()[0]
+                    + fit->vertex(1)->point()[0] + fit->vertex(2)->point()[0]) / 3.0;
+            tri_center[1] = (fit->vertex(0)->point()[1]
+                    + fit->vertex(1)->point()[1] + fit->vertex(2)->point()[1]) / 3.0;
 
-                if (ptoutcircle(tri_center, CirCenter, CirR[1]))
-                    flag[i] = 1;
-                else
-                    flag[i] = 0;
-                i++;
-            }
+            if (ptoutcircle(tri_center, CirCenter, CirR[1]))
+                flag[i] = 1;
+            else
+                flag[i] = 0;
+            i++;
+        }
 	}
 	else
 	{
-            for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end();
-				++fit)
-	    	flag[i++] = 1;	
+        for (fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
+            flag[i++] = 1;	
 	}
 
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
-	checkReducedTri(*surf);//TODO: How necessary is this check???
-                           //      Prevents use of finer fluid grids.
+	checkReducedTri(*surf);
     wave_type(*surf) = ELASTIC_BOUNDARY;
     FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(*surf);
@@ -474,7 +469,7 @@ static void CgalCircle(
     //TODO: Gore installation fails. Needs to be debugged.
     //      See above TODO where the bool "attach_gore" is set.
 	if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
-        {
+    {
             if (vent_bool[0] !='y' && vent_bool[0] !='Y')
 		InstallInCurve(front,*surf,in_nodes_coords[0],
 				in_nodes_coords[num_strings],
@@ -1551,7 +1546,6 @@ static void findStringNodePoints(
 	*cbdry = canopy_bdry;
 }	/* end findStringNodePoints */
 
-//TODO: see comments regarding saving and setting the interface below
 static void installString(
 	FILE *infile,
 	Front *front,
@@ -1574,13 +1568,11 @@ static void installString(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: Need these calls below?
-    //      See usage in InstallNewLoadNode() and GenerateCgalSurf() etc.
-    //
-        //INTERFACE *sav_intfc = current_interface();
-	    //set_current_interface(intfc);
-
-    //For point mass only?
+    ////////////////////////////////////////////////////////////////////
+    //TODO: Group with the code at the end of this function,
+    //      and factor out of rigid body initialization.
+    //      Create separate functions for these two distinct
+    //      initializations.
     CursorAfterString(infile,"Enter initial position of load:");
     fscanf(infile,"%lf %lf %lf",&cload[0],&cload[1],&cload[2]);
     (void) printf("%f %f %f\n",cload[0],cload[1],cload[2]);
@@ -1599,9 +1591,11 @@ static void installString(
 	}
     nload->extra = (POINTER)extra;
     nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+    ////////////////////////////////////////////////////////////////////
 
-	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,
-                                sizeof(NODE*));
+
+
+	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,sizeof(NODE*));
 
 	node_moved = NO;
 	for (i = 0; i < num_strings; ++i)
@@ -1677,9 +1671,8 @@ static void installString(
 		    }
 		}
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
-		delete_node(nload);
-        //TODO: Need this call below? -- see usage in InstallNewLoadNode()
-	        //set_current_interface(sav_intfc);
+		delete_node(nload);//TODO: Can remove by factoring out the pointmass
+                           //      load node initialization from the rgb initialization.
 		return;
 	    }
 	}
@@ -1712,6 +1705,10 @@ static void installString(
     }
     */
 
+
+    //TODO: Move load node (point mass) initialization here,
+    //      or to a separate function...
+
     /* make the all initial springs at their equilibruim length */
     FT_VectorMemoryAlloc((POINTER*)&string_curves,
             num_strings,sizeof(CURVE*));
@@ -1722,7 +1719,6 @@ static void installString(
     for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
-            //string_curves[i]->extra = (POINTER)finite_string;
 
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
@@ -1745,11 +1741,7 @@ static void installString(
 	    af_params->string_curves.push_back(string_curves[i]);
 	}
         
-    //TODO: should these be freed?
 	FT_FreeThese(1,string_curves);
-
-    //TODO: Need this call below? -- see use in InstallNewLoadNode()
-	    //set_current_interface(sav_intfc);
 }	/* end installString */
 
 static void resetStringNodePoints(
@@ -1838,7 +1830,6 @@ static void setSurfZeroMesh(
 {
 	TRI *t;
 	int i,j;
-	    //double total_num_sides;
 	double max_len,min_len,ave_len,len;
 
 	if (debugging("zero_mesh"))
@@ -1848,7 +1839,6 @@ static void setSurfZeroMesh(
 	max_len = 0.0;
 	min_len = HUGE;
     int total_num_sides = 0;
-	    //total_num_sides = 0.0;
 
 	surf_tri_loop(surf,t)
 	{
@@ -1870,7 +1860,6 @@ static void setSurfZeroMesh(
 		    min_len = t->side_length0[i];
 		ave_len += t->side_length0[i];
 		total_num_sides++;
-		    //total_num_sides += 1.0;
 	    }
 	}
 	never_redistribute(Hyper_surf(surf)) = YES;
@@ -1878,7 +1867,6 @@ static void setSurfZeroMesh(
 	if (debugging("zero_mesh"))
 	{
 	    (void) printf("Leaving setSurfZeroMesh()\n");
-	        //if (total_num_sides == 0.0)
 	    if (total_num_sides == 0)
 	    {
 		(void) printf("Nothing done.\n");
@@ -1887,11 +1875,9 @@ static void setSurfZeroMesh(
 	    {
 	    	(void) printf("Equilibrium length:\n");
 	    	(void) printf("total_num_sides = %d\n",total_num_sides);
-	    	    //(void) printf("total_num_sides = %d\n",(int)total_num_sides);
 	    	(void) printf("min_len = %16.12f\n",min_len);
 	    	(void) printf("max_len = %16.12f\n",max_len);
 	    	(void) printf("ave_len = %16.12f\n",ave_len/((double)total_num_sides));
-	    	    //(void) printf("ave_len = %16.12f\n",ave_len/total_num_sides);
 	    }
 	}
 }	/* end setSurfZeroMesh */
@@ -2163,6 +2149,8 @@ static void connectStringtoRGB(
 	    else
 	    {
             //TODO: probably need to move this into seperate for loop
+            //      ... Also does not look correct, if it worked before
+            //      it could just be dumb luck
             start = *string_nodes;
             end = rg_string_nodes[k];
 	    }

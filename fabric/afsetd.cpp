@@ -1537,12 +1537,17 @@ static void assembleParachuteSet3d(
         geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
 
     
+    int nrg = 0;
     geom_set->load_node = NULL;
+    
     for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-		    geom_set->load_node = nodes[i];
+	        if (is_load_node(nodes[i]))
+                geom_set->load_node = nodes[i];
+            else
+                geom_set->rg_string_nodes[nrg++] = nodes[i];
 		    reorder_string_curves(nodes[i]);
 	    }
 	}

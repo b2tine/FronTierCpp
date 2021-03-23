@@ -414,9 +414,8 @@ void CollisionSolver3d::resolveCollision()
 	//catch floating point exception: nan/inf
         //feenableexcept(FE_INVALID | FE_OVERFLOW);
 
-    start_clock("computeAverageVelocity");
 	computeAverageVelocity();
-    stop_clock("computeAverageVelocity");
+    resetPositionCoordinates();
             
         //computeMaxSpeed(); //debug
 
@@ -615,8 +614,6 @@ void CollisionSolver3d::computeAverageVelocity()
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
     }
-
-    resetPositionCoordinates();
 }
 
 void CollisionSolver3d::resetPositionCoordinates()
@@ -884,18 +881,21 @@ void CollisionSolver3d::revertAverageVelocity()
             sorted(p) = YES;
 	    }
 	}
+
+    clearCollisionTimes();
 }
 
 void CollisionSolver3d::detectCollision()
 {
 	std::cout << "Starting collision handling: " << std::endl;
 	
-	const int MAX_ITER = 12;
-    bool is_collision = true; 
+	const int MAX_ITER = 8;
+	    //const int MAX_ITER = 12;
 	
     int niter = 0;
 	int cd_count = 0;
-   
+    bool is_collision = true; 
+
     while(is_collision)
     {
         niter++;
@@ -944,7 +944,7 @@ void CollisionSolver3d::detectCollision()
         //TODO: Return avg_vel to value before point to point collisions???
         //      See todo in computeImpactZoneJac() regarding a startup step
         //
-        //  revertAverageVelocity();
+        revertAverageVelocity();
         computeImpactZoneJac();
             //computeImpactZoneGS();
     }
@@ -1824,13 +1824,18 @@ void updateImpactListVelocity(POINT* head)
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
             m = CollisionSolver3d::getStringPointMass();
-        else if (isStaticRigidBody(p))//TODO: temp hack
+        else if (isStaticRigidBody(p))
         {
+            //TODO: Document "impact zone anchoring"
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
             m = HUGE/num_pts;
         }
         else if (isMovableRigidBody(p))
         {
-            m = total_mass(p->hs)/num_pts;
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
+            m = total_mass(p->hs)/num_surfpts;
         }
 
         totalmass += m;
@@ -1875,12 +1880,16 @@ void updateImpactListVelocity(POINT* head)
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
             m = CollisionSolver3d::getStringPointMass();
-        else if (isStaticRigidBody(p))//TODO: temp hack
+        else if (isStaticRigidBody(p))
         {
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
             m = HUGE/num_pts;
         }
         else if (isMovableRigidBody(p))
         {
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
             m = total_mass(p->hs)/num_pts;
         }
 	    
@@ -1903,12 +1912,16 @@ void updateImpactListVelocity(POINT* head)
         double m = CollisionSolver3d::getFabricPointMass();
         if (sl->is_stringpt)
             m = CollisionSolver3d::getStringPointMass();
-        else if (isStaticRigidBody(p))//TODO: temp hack
+        else if (isStaticRigidBody(p))
         {
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
             m = HUGE/num_pts;
         }
         else if (isMovableRigidBody(p))
         {
+            SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
+            int num_surfpts = I_NumOfSurfInteriorPoints(s);
             m = total_mass(p->hs)/num_pts;
         }
 

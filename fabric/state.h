@@ -16,8 +16,6 @@ struct STATE
     double bendforce[MAXD];         /* bending force */
 
 
-    //TODO: Move collision state data into a proxy class for POINTs.
-	
     /* for collision */
 	struct UF   
     {

@@ -368,9 +368,7 @@ void calculateBendingForce3d2006(
         //p3->force[i] += -lambda * a3 * R[i] * 0.5;
         //p4->force[i] += -lambda * a4 * R[i] * 0.5;
     }
-    */
     
-    /*
     //TODO: use state->bendforce
     if (fabs(Coords(p1)[0] -0.75) < 0.1)
 	{
