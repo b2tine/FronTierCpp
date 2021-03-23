@@ -1769,7 +1769,6 @@ static void setSurfVelocity(
                 max_coords = Coords(p);
             }
             
-            //TODO: why only normal velocity?
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = nor_speed*nor[j];
@@ -1781,7 +1780,7 @@ static void setSurfVelocity(
 	}
 
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
-	//reduce_high_freq_vel(front,surf);//TODO: what was this?
+	//reduce_high_freq_vel(front,surf); //TODO: should this be used?
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -1842,7 +1841,7 @@ static void setCurveVelocity(
             
                 if (max_nor_speed < fabs(nor_speed))
                 {
-                    max_nor_speed = nor_speed;
+                    max_nor_speed = fabs(nor_speed);
                     crds_max = Coords(p);
                 }
                 
@@ -1853,12 +1852,15 @@ static void setCurveVelocity(
                 }
             }
         }
+
+        set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
 	for (b = curve->first; b != NULL; b = b->next)
         set_bond_length(b,dim);
 
-    set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+    //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2037,6 +2039,7 @@ extern void set_geomset_velocity(
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
 	for (i = 0; i < nn; ++i)
 	{
+        //TODO: should rg_string_nodes get skipped also?
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}

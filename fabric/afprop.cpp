@@ -1234,7 +1234,6 @@ static void print_max_string_speed(Front* fr)
     }
 }
 
-//TODO: need a version than can use ELASTIC_SET* instead of INTERFACE* arg
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;
@@ -1336,7 +1335,6 @@ extern void elastic_point_propagate(
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
 
-	//FT_GetStatesAtPoint(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
 	sl = (STATE*)left_state(oldp);
 	sr = (STATE*)right_state(oldp);
 	newsl = (STATE*)left_state(newp);
@@ -1827,8 +1825,11 @@ static void rg_string_node_propagate(
 	else
 	{
 	    for (i = 0; i < dim; ++i)
-		accel[i] = 0.0;
+		    accel[i] = 0.0;
 	}
+
+	    for (i = 0; i < dim; ++i)
+		    accel[i] -= g[i];
 
         if (debugging("rigid_body"))
         {
@@ -1853,8 +1854,8 @@ static void rg_string_node_propagate(
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
-        newsr->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
+	    newsl->fluid_accel[i] = accel[i] - f[i]/mass;
+        newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = f[i]/mass;
         newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];

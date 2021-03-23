@@ -217,9 +217,10 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 
 	intfc_curve_loop(intfc,c)
 	{
+        if (is_bdry(*c)) continue;
 	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
 
-        unsort_curve_point(*c);
+        unsort_curve_point(*c);//TODO: can remove?
 
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
