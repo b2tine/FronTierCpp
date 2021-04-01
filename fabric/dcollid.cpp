@@ -889,8 +889,7 @@ void CollisionSolver3d::detectCollision()
 {
 	std::cout << "Starting collision handling: " << std::endl;
 	
-	const int MAX_ITER = 8;
-	    //const int MAX_ITER = 12;
+    const int MAX_ITER = 12;
 	
     int niter = 0;
 	int cd_count = 0;
@@ -1455,16 +1454,20 @@ void CollisionSolver3d::computeImpactZoneGS()
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
+        /*
         if (is_collision)
         {
             //Update due to connecting nearby impact zones only.
             //Gauss-seidel updates have already been applied.
             if (niter > 5)
             {
+                //TODO: This is probably not appropriate for strings
+                //
                 connectNearbyImpactZones();
                 updateImpactZoneVelocity();
             }
         }
+        */
 
 
         if (debugging("collision"))
@@ -1544,10 +1547,14 @@ void CollisionSolver3d::computeImpactZoneJac()
         is_collision = abt_collision->getCollsnState();
         if (is_collision)
         {
+            /*
             if (niter > 5)
             {
+                //TODO: This is probably not appropriate for strings
+                //
                 connectNearbyImpactZones();
             }
+            */
             updateImpactZoneVelocity();
         }
 

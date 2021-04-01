@@ -1322,6 +1322,11 @@ extern void read_iFparams(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = iFparams->dim;
 
+	/* defaults numerical schemes */
+	iFparams->num_scheme.projc_method = SIMPLE;
+	iFparams->num_scheme.advec_method = WENO;
+	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
+    
     if (CursorAfterStringOpt(infile,
         "Entering yes to turn off fluid solver: "))
     {
@@ -1333,11 +1338,6 @@ extern void read_iFparams(
             return;
         }
     }
-
-	/* defaults numerical schemes */
-	iFparams->num_scheme.projc_method = SIMPLE;
-	iFparams->num_scheme.advec_method = WENO;
-	iFparams->num_scheme.ellip_method = SIMPLE_ELLIP;
 
     (void) printf("The default advection order is WENO-Runge-Kutta 4\n");
 	iFparams->adv_order = 4;
@@ -2016,7 +2016,7 @@ extern double getQFromPres(
             return 0.0;
         default:
             (void) printf("Unknown projection type\n");
-            clean_up(0);
+            clean_up(EXIT_FAILURE);
     }
 }       /* end getPhiFromPres */
 
