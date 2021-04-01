@@ -243,86 +243,23 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	}
 }
 
-/*
-//NOTE: Must be called before calling the spring solver
-void CollisionSolver3d::assembleFromInterface(ELASTIC_SET* geom_set)
+void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
 {
-	clearHseList();
-
-	SURFACE** s;
-	CURVE** c;
-	TRI *tri;
-	BOND *b;
-
-	int n_tri = 0;
-	int n_fabric_tri = 0;
-	int n_static_rigid_tri = 0;
-	int n_movable_rigid_tri = 0;
-    int n_bond = 0;
-	
-    intfc_surface_loop(intfc,s)
-	{
-	    if (is_bdry(*s)) continue;
-	    unsort_surf_point(*s);
-	    
-        surf_tri_loop(*s,tri)
-	    {
-            CD_HSE_TYPE tag;
-
-            if (wave_type(*s) == ELASTIC_BOUNDARY)
-            {
-                tag = CD_HSE_TYPE::FABRIC_TRI;
-                n_fabric_tri++;
-            }
-            else if (wave_type(*s) == NEUMANN_BOUNDARY)
-            {
-                tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
-                n_static_rigid_tri++;
-            }
-            else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-            {
-                tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
-                n_movable_rigid_tri++;
-            }
-            else 
-            {
-                printf("assembleFromInterface() ERROR: "
-                        "unknown surface type\n");
-                LOC(); clean_up(EXIT_FAILURE);
-            }
-            
-            hseList.push_back(new CD_TRI(tri,tag));
-		    n_tri++;
-	    }
-	}
-
-	intfc_curve_loop(intfc,c)
-	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
-
-        unsort_curve_point(*c);
-
-        CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
-	    curve_bond_loop(*c,b)
-	    {
-            hseList.push_back(new CD_BOND(b,tag));
-		    n_bond++;
-	    }
-	}
-
-    setSizeCollisionTimes(hseList.size());
-    setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
-	
-	if (debugging("intfc_assembly"))
-    {
-	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
-	    printf("%lu number of elements is assembled\n",hseList.size());
-	    printf("%d num fabric tris\n",n_fabric_tri);
-	    printf("%d num static rigid tris\n",n_static_rigid_tri);
-	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
-	}
+    printf("ERROR! assembleFromSurf() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }
-*/
+
+void CollisionSolver3d::assembleFromCurve(CURVE* curve)
+{
+    printf("ERROR! assembleFromCurve() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+}
+
+void CollisionSolver3d::assembleFromNode(NODE* node)
+{
+    printf("ERROR! assembleFromNode() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+}
 
 void CollisionSolver3d::setDomainBoundary(double* L, double* U)
 {
@@ -943,7 +880,7 @@ void CollisionSolver3d::detectCollision()
         //TODO: Return avg_vel to value before point to point collisions???
         //      See todo in computeImpactZoneJac() regarding a startup step
         //
-        revertAverageVelocity();
+            //revertAverageVelocity();
         computeImpactZoneJac();
             //computeImpactZoneGS();
     }
@@ -1493,6 +1430,7 @@ void CollisionSolver3d::computeImpactZoneGS()
                 //computeMaxSpeed(); //debug
         }
         
+        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         if (is_collision)
         {
@@ -1503,6 +1441,7 @@ void CollisionSolver3d::computeImpactZoneGS()
                     //computeMaxSpeed(); //debug
             }
         }
+        */
 
         if (niter >= MAXITER)
         {
@@ -1581,6 +1520,7 @@ void CollisionSolver3d::computeImpactZoneJac()
                 //computeMaxSpeed(); //debug
         }
         
+        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         if (is_collision)
         {
@@ -1591,6 +1531,7 @@ void CollisionSolver3d::computeImpactZoneJac()
                     //computeMaxSpeed(); //debug
             }
         }
+        */
 
         if (niter >= MAXITER)
         {
@@ -1606,13 +1547,65 @@ void CollisionSolver3d::computeImpactZoneJac()
     turnOffImpZone();
 }
 
+//TODO: probably should rename to spreadNearbyImpactZones()
+//      since that is the principal action, and any connecting
+//      of impact zones is incidental.
 void CollisionSolver3d::connectNearbyImpactZones()
 {
-	unsortHseList(elasticHseList);
-	for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)
+    //TODO: This is probably not appropriate for strings.
+    //      For now, just use fabricTriList
+	
+    /*unsortHseList(elasticHseList);
+	for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)*/
+
+	unsortHseList(fabricTriList);
+	for (auto it = fabricTriList.begin(); it != fabricTriList.end(); ++it)
     {
-        if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+        if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
         {
+            CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
+            TRI* tri = cd_tri->m_tri;
+            
+            int num_pts = (*it)->num_pts();
+            for (int i = 0; i < num_pts; ++i)
+            {
+                POINT* p = (*it)->Point_of_hse(i);
+                POINT* head = findSet(p);
+                if (sorted(p) || weight(head) != 1) continue;
+                
+                int npts = 0;
+                POINT* ringpts[25];
+                PointArrayRing1(p,Hyper_surf_element(tri),Hyper_surf(tri->surf),&npts,ringpts);
+                
+                std::vector<POINT*> pvec;
+                for (int j = 0; j < npts; ++j)
+                {
+                    if (weight(findSet(ringpts[j])) > 1)
+                    {
+                        pvec.push_back(ringpts[j]);
+                    }
+                    else
+                    {
+                        //TODO: will this help limit spread??
+                        sorted(ringpts[j]) = YES;
+                    }
+                }
+
+                if (pvec.size() >= 2)
+                {
+                    pvec.push_back(p);
+                    POINT* pts[pvec.size()];
+                    std::copy(pvec.begin(),pvec.end(),pts);
+                    createImpactZone(pts,pvec.size());
+                }
+            }
+        }
+        else if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+        {
+            continue;
+            //TODO: This is probably not appropriate for strings.
+            //      For now, just use fabricTriList
+
             POINT* p1 = (*it)->Point_of_hse(0);
             POINT* head1 = findSet(p1);
             if (weight(head1) != 1) continue;
@@ -1632,40 +1625,6 @@ void CollisionSolver3d::connectNearbyImpactZones()
             {
                 POINT* pts[3] = {p0, p1, p2};
                 createImpactZone(pts,3);
-            }
-        }
-        else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
-        {
-            CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
-            TRI* tri = cd_tri->m_tri;
-            
-            int num_pts = (*it)->num_pts();
-            for (int i = 0; i < num_pts; ++i)
-            {
-                POINT* p = (*it)->Point_of_hse(i);
-                POINT* head = findSet(p);
-                if (weight(head) != 1) continue;
-                
-                int npts = 0;
-                POINT* ringpts[25];
-                PointArrayRing1(p,Hyper_surf_element(tri),Hyper_surf(tri->surf),&npts,ringpts);
-                
-                std::vector<POINT*> pvec;
-                for (int j = 0; j < npts; ++j)
-                {
-                    if (weight(findSet(ringpts[j])) > 1)
-                    {
-                        pvec.push_back(ringpts[j]);
-                    }
-                }
-
-                if (pvec.size() >= 2)
-                {
-                    pvec.push_back(p);
-                    POINT* pts[pvec.size()];
-                    std::copy(pvec.begin(),pvec.end(),pts);
-                    createImpactZone(pts,pvec.size());
-                }
             }
         }
         else

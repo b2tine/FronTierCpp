@@ -37,7 +37,15 @@ static void rg_string_node_propagate(Front*,NODE*,NODE*,double);
 static void fourth_order_elastic_set_propagate2d(Front*,double);
 static void fourth_order_elastic_set_propagate3d_parallel(Front*,double);
 static void fourth_order_elastic_set_propagate3d_serial(Front*,double);
+
 static void setCollisionFreePoints3d(INTERFACE*);
+static void setCollisionFreePoints3d(ELASTIC_SET* geom_set);
+static void setSurfCollisionFreePoints(SURFACE* surf);
+static void setCurveCollisionFreePoints(CURVE* curve);
+static void setNodeCollisionFreePoints(NODE* node);
+
+static void assembleFromElasticSet(ELASTIC_SET* geom_set, CollisionSolver3d* cs);
+
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
 static void coating_mono_hyper_surf3d(Front*);
@@ -968,8 +976,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
     }
 
 
-    CollisionSolver3d* collision_solver;
+    CollisionSolver3d* collision_solver = nullptr;
 
+    /*
     //TODO: THIS DIDN'T WORK
     INTERFACE *collision_intfc = nullptr;
     int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
@@ -979,6 +988,7 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
     //TODO: Need an owner_geom_set like structure that links to the owner point_set...
     //
     //  assembleParachuteSet(collision_intfc,&collision_set);
+    */
 
 	if (myid == owner_id)
 	{
@@ -1020,8 +1030,14 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             //TODO: Need setCollisionFreePoints3d(ELASTIC_SET* elastic_intfc)???
             //        -- instead of INTERFACE* argument
             
-            setCollisionFreePoints3d(collision_intfc);
-                //setCollisionFreePoints3d(fr->interf);
+            //Write to owner geomset from owner point set
+            put_point_set_to(&geom_set,point_set);
+            set_vertex_impulse(&geom_set,point_set);
+            set_geomset_velocity(&geom_set,point_set);
+
+            setCollisionFreePoints3d(&geom_set);
+                //setCollisionFreePoints3d(collision_intfc);
+                    //setCollisionFreePoints3d(fr->interf);
             
             //TODO: Also need assembleFromInterface(ELASTIC_SET* elastic_intfc),
             //      and initializeImpactZones(ELASTIC_SET* elastic_intfc) ???
@@ -1032,7 +1048,8 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             CollisionSolver3d::setOutputDirectory(OutName(fr));    
             CollisionSolver3d::setStep(fr->step);
             CollisionSolver3d::setTimeStepSize(fr->dt);
-            collision_solver->assembleFromInterface(collision_intfc);
+            assembleFromElasticSet(&geom_set,collision_solver);
+                //collision_solver->assembleFromInterface(collision_intfc);
             collision_solver->recordOriginalPosition();
             collision_solver->setHseTypeLists();
             collision_solver->initializeImpactZones();
@@ -1088,7 +1105,6 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
         put_point_set_to(&geom_set,point_set);
         set_vertex_impulse(&geom_set,point_set);
 	    set_geomset_velocity(&geom_set,point_set);
-
 
         if (!debugging("collision_off") && FT_Dimension() == 3) 
         {
@@ -1299,6 +1315,82 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     }
 }       /* setCollisionFreePoints3d() */
 
+static void setCollisionFreePoints3d(ELASTIC_SET* geom_set)
+{
+    printf("ERROR! setCollisionFreePoints3d(ELASTIC_SET* geom_set) not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    //TODO: implelment function calls
+
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+
+	for (int i = 0; i < ns; ++i)
+    {
+        setSurfCollisionFreePoints(geom_set->surfs[i]);
+    }
+	
+    for (int i = 0; i < nc; ++i)
+    {
+	    setCurveCollisionFreePoints(geom_set->curves[i]);
+    }
+    
+    for (int i = 0; i < nn; ++i)
+	{
+	    if (is_load_node(geom_set->nodes[i])) continue;
+	    setNodeCollisionFreePoints(geom_set->nodes[i]);
+	}
+
+    //TODO: RGB SURF POINTS
+
+}       /* setCollisionFreePoints3d() */
+
+static void setSurfCollisionFreePoints(SURFACE* surf)
+{
+    //TODO: implement
+}
+
+static void setCurveCollisionFreePoints(CURVE* curve)
+{
+    //TODO: implement
+}
+
+static void setNodeCollisionFreePoints(NODE* node)
+{
+    //TODO: implement
+}
+
+static void assembleFromElasticSet(ELASTIC_SET* geom_set, CollisionSolver3d* cs)
+{
+    printf("ERROR! assembleFromElasticSet(ELASTIC_SET* geom_set, CollisionSolver3d* cs) not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    //TODO: implelment function calls
+
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+
+	for (int i = 0; i < ns; ++i)
+    {
+        cs->assembleFromSurf(geom_set->surfs[i]);
+    }
+	
+    for (int i = 0; i < nc; ++i)
+    {
+	    cs->assembleFromCurve(geom_set->curves[i]);
+    }
+    
+    for (int i = 0; i < nn; ++i)
+	{
+	    //if (is_load_node(geom_set->nodes[i])) continue;
+	    cs->assembleFromNode(geom_set->nodes[i]);
+	}
+
+    //TODO: RGB SURF POINTS
+
+}       /* setCollisionFreePoints3d() */
 extern void elastic_point_propagate(
         Front *front,
         POINTER wave,

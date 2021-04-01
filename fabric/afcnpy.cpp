@@ -2031,6 +2031,7 @@ extern void set_geomset_velocity(
 	ns = geom_set->num_surfs;
 	nc = geom_set->num_curves;
 	nn = geom_set->num_nodes;
+
 	for (i = 0; i < ns; ++i)
     {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
@@ -2043,6 +2044,8 @@ extern void set_geomset_velocity(
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
+
+    //TODO: add rgb_surfs
 
 }	/* end set_geomset_velocity */
 

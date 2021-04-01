@@ -87,7 +87,9 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
-    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs?
+    void assembleFromSurf(SURFACE* surf);//TODO: Need this for parallel runs?
+    void assembleFromCurve(CURVE* curve);//TODO: Need this for parallel runs?
+    void assembleFromNode(NODE* node);//TODO: Need this for parallel runs?
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();

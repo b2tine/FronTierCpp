@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: 0 2
-Computational grid: 50 50 100
+Domain limit in 2-th dimension: 0 1
+Computational grid: 50 50 50
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -17,7 +17,7 @@ For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Max time: 1.0 
-Max step: 1000
+Max step: 2500
 Print interval: 0.01
 Movie frame interval: 0.01
 CFL factor: 0.75
@@ -56,8 +56,8 @@ Enter fluid force scaling factor: 10
 **************************************************************
 Enter the number of curves: 2
 
-Enter the start of curve 0: 0.5 0.2 0.65
-Enter the end of curve 0: 0.5 0.8 0.65
+Enter the start of curve 0: 0.5 0.2 0.75
+Enter the end of curve 0: 0.5 0.8 0.75
 Enter yes to fix the endpoints of curve 0: y
 
 Enter the start of curve 1: 0.2 0.5 0.85

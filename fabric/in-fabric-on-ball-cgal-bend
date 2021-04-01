@@ -4,7 +4,7 @@ Max time: 5.0
 Max step: 2500
 Print interval: 0.01
 Movie frame interval: 0.01
-CFL factor: 0.5
+CFL factor: 0.75
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes
 
@@ -39,7 +39,8 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: c
-Enter the height of the plane: 0.8
+Enter the height of the plane: 0.75
+Enter the height of the planeXXX: 0.8
 Enter circle center: 0.5 0.5
 Enter circle radius: 0.4
 
@@ -52,20 +53,20 @@ Enter min triangle edge length: 0.0125
 Start parameters for spring-mass system
 
 Enter the number of fabric optimization rounds: 0
-Enter interior sub step number: 1
+Enter interior sub step number: 10
 
 Enter fabric spring constant: 5000
-Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.0005
+Enter fabric damping constant: 0.02
+Enter fabric bending stiffness constant: 0.00025
 Enter fabric bending damping constant: 0.0
-Enter fabric friction constant: 0.2
+Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter strain limit: 0.01
-Enter compressive strain limit: 0.01
-Enter strain rate limit: 0.05
+Enter strain limit: 0.015
+Enter compressive strain limit: 0.015
+Enter strain rate limit: 0.1
 
 
 Type yes to perturb the surface: n

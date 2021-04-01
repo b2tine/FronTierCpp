@@ -634,6 +634,7 @@ static void computeGradCurvatureBinormal(BOND* b0, BOND* b1)
     //TODO: implement
     printf("computeGradCurvatureBinormal() not implemented yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
+    //TODO: need to return or store this someway...
 }
 
 static void computeStringBendingForce(BOND* b0, BOND* b1)

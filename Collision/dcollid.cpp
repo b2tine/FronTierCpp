@@ -945,7 +945,7 @@ void CollisionSolver3d::detectCollision()
         //TODO: Return avg_vel to value before point to point collisions???
         //      See todo in computeImpactZoneJac() regarding a startup step
         //
-        revertAverageVelocity();
+            //revertAverageVelocity();
         computeImpactZoneJac();
             //computeImpactZoneGS();
     }
@@ -1495,6 +1495,7 @@ void CollisionSolver3d::computeImpactZoneGS()
                 //computeMaxSpeed(); //debug
         }
         
+        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         if (is_collision)
         {
@@ -1505,6 +1506,7 @@ void CollisionSolver3d::computeImpactZoneGS()
                     //computeMaxSpeed(); //debug
             }
         }
+        */
 
         if (niter >= MAXITER)
         {
@@ -1583,6 +1585,7 @@ void CollisionSolver3d::computeImpactZoneJac()
                 //computeMaxSpeed(); //debug
         }
         
+        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         if (is_collision)
         {
@@ -1593,6 +1596,7 @@ void CollisionSolver3d::computeImpactZoneJac()
                     //computeMaxSpeed(); //debug
             }
         }
+        */
 
         if (niter >= MAXITER)
         {
@@ -1610,33 +1614,16 @@ void CollisionSolver3d::computeImpactZoneJac()
 
 void CollisionSolver3d::connectNearbyImpactZones()
 {
-	unsortHseList(elasticHseList);
-	for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)
+    //TODO: This is probably not appropriate for strings.
+    //      For now, just use fabricTriList
+
+    /*unsortHseList(elasticHseList);
+    for (auto it = elasticHseList.begin(); it != elasticHseList.end(); ++it)*/
+
+    unsortHseList(fabricTriList);
+    for (auto it = fabricTriList.begin(); it != fabricTriList.end(); ++it)
     {
-        if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
-        {
-            POINT* p1 = (*it)->Point_of_hse(0);
-            POINT* head1 = findSet(p1);
-            if (weight(head1) != 1) continue;
-
-            CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
-            BOND* bond = cd_bond->m_bond;
-            BOND* nb_bond = bond->prev;
-            if (!nb_bond) continue;
-                
-            POINT* p0 = nb_bond->start;
-            POINT* head0 = findSet(p0);
-                
-            POINT* p2 = (*it)->Point_of_hse(1);
-            POINT* head2 = findSet(p2);
-
-            if (weight(head0) > 1 && weight(head2) > 1)
-            {
-                POINT* pts[3] = {p0, p1, p2};
-                createImpactZone(pts,3);
-            }
-        }
-        else if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
+        if ((*it)->type == CD_HSE_TYPE::FABRIC_TRI)
         {
             CD_TRI* cd_tri = dynamic_cast<CD_TRI*>(*it);
             TRI* tri = cd_tri->m_tri;
@@ -1659,6 +1646,11 @@ void CollisionSolver3d::connectNearbyImpactZones()
                     {
                         pvec.push_back(ringpts[j]);
                     }
+                    else
+                    {
+                        //TODO: will this help limit spread??
+                        sorted(ringpts[j]) = YES;
+                    }
                 }
 
                 if (pvec.size() >= 2)
@@ -1668,6 +1660,33 @@ void CollisionSolver3d::connectNearbyImpactZones()
                     std::copy(pvec.begin(),pvec.end(),pts);
                     createImpactZone(pts,pvec.size());
                 }
+            }
+        }
+        else if ((*it)->type == CD_HSE_TYPE::STRING_BOND)
+        {
+            continue;
+            //TODO: This is probably not appropriate for strings.
+            //      For now, just use fabricTriList
+
+            POINT* p1 = (*it)->Point_of_hse(0);
+            POINT* head1 = findSet(p1);
+            if (weight(head1) != 1) continue;
+
+            CD_BOND* cd_bond = dynamic_cast<CD_BOND*>(*it);
+            BOND* bond = cd_bond->m_bond;
+            BOND* nb_bond = bond->prev;
+            if (!nb_bond) continue;
+                
+            POINT* p0 = nb_bond->start;
+            POINT* head0 = findSet(p0);
+                
+            POINT* p2 = (*it)->Point_of_hse(1);
+            POINT* head2 = findSet(p2);
+
+            if (weight(head0) > 1 && weight(head2) > 1)
+            {
+                POINT* pts[3] = {p0, p1, p2};
+                createImpactZone(pts,3);
             }
         }
         else
