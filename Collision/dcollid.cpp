@@ -946,8 +946,19 @@ void CollisionSolver3d::detectCollision()
         //      See todo in computeImpactZoneJac() regarding a startup step
         //
             //revertAverageVelocity();
-        computeImpactZoneJac();
-            //computeImpactZoneGS();
+
+        //TODO: If we don't revert to the post proximity avg_vel,
+        //      let's try limiting the strain before beginning impact
+        //      zone handling. Probably not worth calling if we do
+        //      call revertAverageVelocity() above.
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainPosnJac();
+                //computeMaxSpeed(); //debug
+        }
+
+        computeImpactZoneGS();
+            //computeImpactZoneJac();
     }
     stop_clock("computeImpactZone");
 
@@ -1702,10 +1713,10 @@ void CollisionSolver3d::debugImpactZones()
 {
     std::string outdir = CollisionSolver3d::getOutputDirectory();
     
-    unsortHseList(hseList);
+    unsortHseList(elasticHseList);
 	int numImpactZone = 0;
 
-	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {
@@ -1720,7 +1731,7 @@ void CollisionSolver3d::debugImpactZones()
             std::string fname = outdir + "/impzone-" +
                 std::to_string(numImpactZone);
             
-            printf("Impact Zone #%d -- %d points",
+            printf("Impact Zone #%d -- %d points\n",
                     numImpactZone,weight(head));
             
             POINT* p = head;
@@ -1749,11 +1760,11 @@ void CollisionSolver3d::infoImpactZones()
 	numImpactZones = 0;
 	numImpactZonePoints = 0;
 
-	unsortHseList(hseList);
-	//unsortHseList(elasticHseList);
+	//unsortHseList(hseList);
+	unsortHseList(elasticHseList);
     
-	//for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
-	for (auto it = hseList.begin(); it < hseList.end(); ++it)
+	//for (auto it = hseList.begin(); it < hseList.end(); ++it)
+	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
     {
 	    for (int i = 0; i < (*it)->num_pts(); ++i)
         {

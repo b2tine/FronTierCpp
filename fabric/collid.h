@@ -181,9 +181,9 @@ private:
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
-    void limitStrainPosnJac();
-    void limitStrainPosnGS();
-    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainPosnJac(MotionState mstate);
+    void limitStrainPosnGS(MotionState mstate);
+    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
     int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
@@ -201,19 +201,19 @@ private:
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
-	void computeImpactZoneGS();
-	void computeImpactZoneJac();
-    void connectNearbyImpactZones();
+	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
+	void computeImpactZoneJac(std::vector<CD_HSE*>& list);
+    void connectNearbyImpactZones(std::vector<CD_HSE*>& list);
 	void infoImpactZones();
 	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximityRGB();
-	void detectProximity();
-	void detectCollision();
-    void aabbProximity();
-    void aabbCollision();
+	void detectProximity(std::vector<CD_HSE*>& list);
+	void detectCollision(std::vector<CD_HSE*>& list);
+    void aabbProximity(std::vector<CD_HSE*>& list);
+    void aabbCollision(std::vector<CD_HSE*>& list);
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
 };

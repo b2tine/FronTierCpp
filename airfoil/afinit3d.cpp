@@ -2870,9 +2870,11 @@ static CURVE *init3dCurves(
                       Coords(string_nodes[0]->posn)[j])/spacing;
         }
 
+        //TODO: add input file option for specifying bond spacing
         double *h = computational_grid(intfc)->h;
         int nb = (int)(spacing/(0.5*h[0]));
         spacing /= (double)nb;
+
         BOND* b = curve->first;
         double coords[3];
         for (int j = 1; j < nb; ++j)

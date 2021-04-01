@@ -137,6 +137,8 @@ struct _BOND
         long global_index;
 
 	struct _BOND_TRI **_btris;	/* Bounding triangles in angle order */
+
+    POINTER extra;
 };
 typedef struct _BOND BOND;
 

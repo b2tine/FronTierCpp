@@ -14,6 +14,59 @@ static void computeGradCurvatureBinormal(BOND* b0, BOND* b1);
 static void computeStringBendingForce(BOND* b0, BOND* b1);
 
 
+//TODO: When finished call after interface initialization
+void addStringBenders(INTERFACE* intfc)
+{
+    //TODO: Implement.
+    //      Add BOND_BENDER to BOND::extra
+    
+    CURVE** curve;
+    BOND *b;
+
+    intfc_curve_loop(intfc,curve)
+    {
+        if (is_bdry(*curve)) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+
+        unsort_curve_point(*curve);//TODO: can remove?
+
+        curve_bond_loop(*curve,b)
+        {
+            BOND_BENDER* bond_bender = nullptr;
+        }
+    }
+
+    /*
+    //TODO: need to initialize in similar manner
+    //
+    FILE* infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    {
+        char string[100];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' || string[0] != 'Y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING))
+            CursorAfterString(infile,"Enter string radius: ");
+            fscanf(infile,"%lf",&finite_string->radius);
+            printf("%f\n",finite_string->radius);
+            CursorAfterString(infile,"Enter string mass density: ");
+            fscanf(infile,"%lf",&finite_string->dens);
+            printf("%f\n",finite_string->dens);
+            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
+            {
+                fscanf(infile,"%lf",&finite_string->c_drag);
+                printf("%f\n",finite_string->c_drag);
+            }
+        }
+    }
+    fclose(infile);
+    */
+
+    //TODO: Need to be able to restart with BOND_BENDER in bond->extra
+}
+
 void computeBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
     SURFACE **surf;
@@ -57,6 +110,9 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
             }
         }
     }
+
+    //TODO: STRING BENDING FORCE NOT READY YET
+    return;
 
     
     CURVE** curve;
@@ -609,8 +665,8 @@ static void computeCurvatureBinormal(BOND* b0, BOND* b1)
     difference(x2,x1,e1,3);
     */
 
-    double nor01[MAXD];
-    vector_product_on_bonds(b0,b1,3,nor01);
+    double cross01[MAXD];
+    vector_product_on_bonds(b0,b1,3,cross01);//cross product
 
     double len0 = bond_length(b0);
     double len1 = bond_length(b1);
@@ -622,7 +678,7 @@ static void computeCurvatureBinormal(BOND* b0, BOND* b1)
     double kB[MAXD];
     for (int i = 0; i < 3; ++i)
     {
-        kB[i] = 2.0*nor01[i]/denom;
+        kB[i] = 2.0*cross01[i]/denom;
     }
 
     printf("computeCurvatureBinormal() not ready yet!\n");

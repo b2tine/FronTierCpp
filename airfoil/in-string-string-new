@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
 Domain limit in 2-th dimension: 0 1
-Computational grid: 50 50 50
+Computational grid: 75 75 75
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -60,8 +60,10 @@ Enter the start of curve 0: 0.5 0.2 0.75
 Enter the end of curve 0: 0.5 0.8 0.75
 Enter yes to fix the endpoints of curve 0: y
 
-Enter the start of curve 1: 0.2 0.5 0.85
-Enter the end of curve 1: 0.8 0.5 0.85
+Enter the start of curve 1: 0.35 0.55 0.8
+Enter the end of curve 1: 0.8 0.45 0.8
+Enter the start of curve 1XXX: 0.2 0.5 0.8
+Enter the end of curve 1XXX: 0.8 0.5 0.8
 Enter yes to fix the endpoints of curve 1: n
 
 **************************************************************
@@ -80,8 +82,8 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
-Enter string damping constant: 0.1
-Enter string friction constant: 0.05
+Enter string damping constant: 0.95
+Enter string friction constant: 0.25
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004

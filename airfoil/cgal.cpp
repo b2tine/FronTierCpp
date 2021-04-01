@@ -2120,6 +2120,8 @@ static void connectStringtoRGB(
         }
     }
     fclose(infile);
+    //TODO: Need to be able to restart with FINITE_STRING in curve->extra
+
 
     //TODO: Need to distinguish the multi-chute initialization
     //      from DGB style initialization.

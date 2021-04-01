@@ -1,10 +1,11 @@
 
 Start test time control parameters
 Max time: 5.0
+Max stepXXX: 448
 Max step: 2500
 Print interval: 0.01
 Movie frame interval: 0.01
-CFL factor: 0.75
+CFL factor: 0.5
 Redistribution interval: 1000000
 Type yes to turn off auto-redistribution: yes
 
