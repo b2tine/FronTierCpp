@@ -9,14 +9,12 @@
 
 #define DEBUGGING false
 
-//TODO: ROUND_EPS optimal val
+//TODO: Determine ROUND_EPS optimal value; currently it seems
+//      to be too small to be meaningful in the context it is used.
 const double ROUND_EPS = DBL_EPSILON;
 //const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
-
-
-using collision_pair = std::pair<CD_HSE*,CD_HSE*>;
 
 
 class CollisionSolver3d {
@@ -29,7 +27,6 @@ public:
     std::vector<CD_HSE*> movableRigidTriList;
     std::vector<CD_HSE*> stringBondList;
     std::vector<CD_HSE*> elasticHseList;
-    std::vector<collision_pair> collisionPairsList;
 	
     std::map<int,std::vector<double>> mrg_com;
 	
@@ -133,8 +130,7 @@ public:
 
 private:
 
-    //Front* ft;
-    static Front* ft;
+    static Front* ft; //static so we can call FT_Save() and FT_Draw() for debugging 
     
     double max_fabric_speed {0.0};
     double prev_max_fabric_speed {0.0};
@@ -216,6 +212,11 @@ private:
     void aabbCollision(std::vector<CD_HSE*>& list);
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
+
+    void writeCollisionPoints();
+    std::vector<POINT*> getCollisionPoints();
+        //void writeProximityPoints();
+        //std::vector<POINT*> getProximityPoints();
 };
 
 void unsortHseList(std::vector<CD_HSE*>&);

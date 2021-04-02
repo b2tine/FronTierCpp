@@ -496,7 +496,9 @@ void CollisionSolver3d::computeAverageVelocity()
             sl = (STATE*)left_state(p); 
             for (int j = 0; j < 3; ++j)
     	    {
-                if (dt > ROUND_EPS)
+                //TODO: ROUND_EPS == 2.22045e-16 too small???
+                    //if (dt > ROUND_EPS)
+                if (dt > 1.0e-05)
                 {
                     sl->avgVel[j] = (Coords(p)[j] - sl->x_old[j])/dt;
                     sl->avgVel_old[j] = sl->avgVel[j];
@@ -648,6 +650,8 @@ void CollisionSolver3d::aabbProximity(std::vector<CD_HSE*>& list)
             build_count_pre++;
         }
     }
+
+    abt_proximity->interference_pairs.clear();
 }
 
 //This is checking the geometric primitive for intersection
@@ -928,8 +932,6 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 // AABB tree for kinetic collision detection process
 void CollisionSolver3d::aabbCollision(std::vector<CD_HSE*>& list)
 {
-    clearCollisionTimes();
-
     if (!abt_collision)
     {
         abt_collision =
@@ -960,6 +962,65 @@ void CollisionSolver3d::aabbCollision(std::vector<CD_HSE*>& list)
             volume = abt_collision->getVolume();
         }
     }
+
+    abt_collision->interference_pairs.clear();
+    clearCollisionTimes();
+}
+
+//TODO: write proximity version
+std::vector<POINT*> CollisionSolver3d::getCollisionPoints()
+{
+    unsortHseList(hseList);
+
+    std::vector<POINT*> collision_points;
+    auto collision_pairs = abt_collision->getInterferencePairs();
+
+    for (auto it = collision_pairs.begin(); it != collision_pairs.end(); ++it)
+    {
+        auto A = it->first;
+	    for (int i = 0; i < A->num_pts(); ++i)
+        {
+		    POINT* pt = A->Point_of_hse(i);
+            if (sorted(pt)) continue;
+            collision_points.push_back(pt);
+            sorted(pt) = YES;
+        }
+
+        auto B = it->second;
+	    for (int i = 0; i < B->num_pts(); ++i)
+        {
+		    POINT* pt = B->Point_of_hse(i);
+            if (sorted(pt)) continue;
+            collision_points.push_back(pt);
+            sorted(pt) = YES;
+        }
+    }
+
+    return collision_points;
+}
+
+//TODO: write proximity version
+void CollisionSolver3d::writeCollisionPoints()
+{
+    auto collision_points = getCollisionPoints();
+    int num_collision_pts = collision_points.size();
+
+    printf("\n%d Collision Points:\n",num_collision_pts); 
+    for (auto it = collision_points.begin(); it != collision_points.end(); ++it)
+    {
+        POINT* pt = *it;
+        double* coords = Coords(pt);
+        printf("\t\tGindex = %ld coords = %g %g %g\n",
+                Gindex(pt),coords[0],coords[1],coords[2]);
+
+    }
+    printf("\n");
+
+    
+    std::string fname = CollisionSolver3d::getOutputDirectory();
+    fname += "/CollisionPoints-" + std::to_string(num_collision_pts);
+
+    vtk_write_pointset(collision_points,fname,0);
 }
 
 //TODO: If impact zone handling is enabled, should all
@@ -1687,52 +1748,6 @@ void CollisionSolver3d::connectNearbyImpactZones(std::vector<CD_HSE*>& list)
     }
 }
 
-void CollisionSolver3d::debugImpactZones()
-{
-    std::string outdir = CollisionSolver3d::getOutputDirectory();
-    
-    unsortHseList(elasticHseList);
-	int numImpactZone = 0;
-
-	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
-    {
-	    for (int i = 0; i < (*it)->num_pts(); ++i)
-        {
-            //skip traversed or isolated pts
-		    POINT* pt = (*it)->Point_of_hse(i);
-            if (sorted(pt)) continue;
-
-		    POINT* head = findSet(pt);
-            if (weight(head) == 1) continue;
-
-            std::vector<POINT*> impactzone_pts;
-            std::string fname = outdir + "/impzone-" +
-                std::to_string(numImpactZone);
-            
-            printf("Impact Zone #%d -- %d points\n",
-                    numImpactZone,weight(head));
-            
-            POINT* p = head;
-            while (p)
-            {
-                double* coords = Coords(p);
-                printf("\t\tGindex = %ld coords = %g %g %g\n",
-                        Gindex(p),coords[0],coords[1],coords[2]);
-                
-                sorted(p) = YES;
-                impactzone_pts.push_back(p);
-                p = next_pt(p);
-            }
-            printf("\n\n");
-            vtk_write_pointset(impactzone_pts,fname,numImpactZone);
-            numImpactZone++;
-        }
-    }
-    
-    FT_Save(ft);
-    FT_Draw(ft);
-}
-
 void CollisionSolver3d::infoImpactZones()
 {
 	numImpactZones = 0;
@@ -1768,6 +1783,53 @@ void CollisionSolver3d::markImpactZonePoints(POINT* head)
         sorted(p) = YES;
         p = next_pt(p);
     }
+}
+
+void CollisionSolver3d::debugImpactZones()
+{
+    std::string outdir = CollisionSolver3d::getOutputDirectory();
+    
+    unsortHseList(elasticHseList);
+	int numImpactZone = 0;
+
+	for (auto it = elasticHseList.begin(); it < elasticHseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            //skip traversed or isolated pts
+		    POINT* pt = (*it)->Point_of_hse(i);
+            if (sorted(pt)) continue;
+
+		    POINT* head = findSet(pt);
+            if (weight(head) == 1) continue;
+
+            std::vector<POINT*> impactzone_pts;
+            std::string fname = outdir + "/impzone-" + std::to_string(numImpactZone);
+            
+            printf("Impact Zone #%d -- %d points\n",
+                    numImpactZone,weight(head));
+            
+            POINT* p = head;
+            while (p)
+            {
+                double* coords = Coords(p);
+                printf("\t\tGindex = %ld coords = %g %g %g\n",
+                        Gindex(p),coords[0],coords[1],coords[2]);
+                
+                sorted(p) = YES;
+                impactzone_pts.push_back(p);
+                p = next_pt(p);
+            }
+            printf("\n\n");
+            vtk_write_pointset(impactzone_pts,fname,numImpactZone);
+            numImpactZone++;
+        }
+    }
+
+    writeCollisionPoints();
+    
+    FT_Save(ft);
+    FT_Draw(ft);
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()
@@ -2094,7 +2156,7 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-04) return;
+        //if (dt < 1.0e-04) return;
 
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
@@ -2117,7 +2179,7 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-04) return;
+        //if (dt < 1.0e-04) return;
 
     turnOnGsUpdate();
 
