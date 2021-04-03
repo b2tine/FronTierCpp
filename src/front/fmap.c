@@ -49,7 +49,6 @@ EXPORT	void FT_Propagate(
 {
 	double dt_frac;
 	Front *newfront;
-	double *xtest;
 
 	if (debugging("trace"))
 	{
@@ -74,9 +73,10 @@ EXPORT	void FT_Propagate(
 	{
 	    if (TwoStepIntfc(front) == YES)
 	    {
-                if (front->old_grid_intfc != NULL)
-                    FT_FreeOldGridIntfc(front);
-		front->old_grid_intfc = front->grid_intfc;
+            if (front->old_grid_intfc != NULL)
+                FT_FreeOldGridIntfc(front);
+		
+            front->old_grid_intfc = front->grid_intfc;
 	    	FT_MakeGridIntfc(front);
 	    }
 	    else
@@ -97,15 +97,20 @@ EXPORT	void FT_Propagate(
 EXPORT	void FT_InteriorPropagate(
 	Front *front)
 {
-        if (front->interior_propagate != NULL)
+	double dt_frac;
+	Front *newfront;
+    if (front->interior_propagate != NULL)
+    {
+        //TODO: rewrite to allow return of error code
+        //      and time step modification like FT_Propagate()
+        interior_advance_front(front);
+    
+        if (front->grid_intfc != NULL)
         {
-            interior_advance_front(front);
-	    if (front->grid_intfc != NULL)
-            {
-	    	FT_FreeGridIntfc(front);
-	    	FT_MakeGridIntfc(front);
-            }
+            FT_FreeGridIntfc(front);
+            FT_MakeGridIntfc(front);
         }
+    }
 }	/* end FT_InteriorPropagate */
 
 EXPORT	void FrontSwapAndFree(
@@ -129,6 +134,8 @@ EXPORT	int FrontAdvance(
 	front->dt_frac = dt_frac;
 	*front->max_scaled_propagation = 0.0;
         
+    //For 2D: advance_front2d()
+    //For 3D: advance_front3d_tracking_control()
     status = advance_front(front->dt,dt_frac,front,newfront,wave);
 
     count = 0;
@@ -140,9 +147,6 @@ EXPORT	int FrontAdvance(
             front->dt = (*dt_frac)*start_dt;
     start_dt = front->dt;
     *front->max_scaled_propagation = 0.0;
-    /* For 2D: advance_front2d()
-       For 3D: advance_front3d_tracking_control()
-    */
         status = advance_front(front->dt,dt_frac,front,newfront,wave);
         count++;
         if (count > 15) 

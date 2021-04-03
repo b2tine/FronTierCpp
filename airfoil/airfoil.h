@@ -282,7 +282,6 @@ extern void initParabolicSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initPlaneSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initAirbag(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initIsolated3dCurves(Front*);
-extern void initRigidBody_OLD(Front*);//TODO: to be removed
 
 // afprop.cpp
 extern void airfoil_point_propagate(Front*,POINTER,POINT*,POINT*,
