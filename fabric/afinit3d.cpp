@@ -2670,6 +2670,14 @@ static void init3dCurves(
         int nb = (int)(spacing/(0.5*h[0]));
         spacing /= (double)nb;
         
+        //overide default spacing with input file option
+        FILE *infile = fopen(InName(front),"r");
+        if (CursorAfterStringOpt(infile,"Enter string point spacing:"))
+        {
+            fscanf(infile,"%lf",&spacing);
+            (void) printf("%f\n",spacing);
+        }
+        
         BOND* b = curve->first;
         for (int j = 1; j < nb; ++j)
         {

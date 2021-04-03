@@ -887,7 +887,7 @@ std::vector<std::vector<double>> crossMat(double* u)
 
     cross_mat[0][0] = 0.0;   cross_mat[0][1] = -u[2];   cross_mat[0][2] = u[1];
     cross_mat[1][0] = u[2];  cross_mat[1][1] = 0.0;     cross_mat[1][2] = -u[0];
-    cross_mat[2][0] = -u[1];   cross_mat[2][1] = u[0];   cross_mat[2][2] = 0.0;
+    cross_mat[2][0] = -u[1]; cross_mat[2][1] = u[0];    cross_mat[2][2] = 0.0;
 
     return cross_mat;
 }

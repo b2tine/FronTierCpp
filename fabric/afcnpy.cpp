@@ -1796,18 +1796,17 @@ static void setCurveVelocity(
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
-	double nor[MAXD],nor_speed,max_nor_speed;
+	double nor[MAXD];
 	double *vel = nullptr;
 	double *crds_max = nullptr;
 	long gindex;
 	int gindex_max;
 	int dim = FT_Dimension();
 
-    nor_speed = 0.0;
-    max_nor_speed = 0.0;
-
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -1815,6 +1814,13 @@ static void setCurveVelocity(
             sl = (STATE*)left_state(p);
             sr = (STATE*)right_state(p);
             vel = point_set[gindex]->v;
+            
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
 
             for (j = 0; j < 3; ++j)
             {
@@ -1822,9 +1828,16 @@ static void setCurveVelocity(
                 sr->vel[j] = vel[j];
             }
         }
+        
+        //TODO: Can we set non normal max front speed?
+        //
+        //      This appears to significantly improve string behavior
+        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
     }
     else
     {
+        double max_nor_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -1837,8 +1850,8 @@ static void setCurveVelocity(
                 FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
-                nor_speed = scalar_product(vel,nor,3);
-            
+               
+                double nor_speed = scalar_product(vel,nor,3);
                 if (max_nor_speed < fabs(nor_speed))
                 {
                     max_nor_speed = fabs(nor_speed);
@@ -1855,6 +1868,7 @@ static void setCurveVelocity(
 
         set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
+
 
 	for (b = curve->first; b != NULL; b = b->next)
         set_bond_length(b,dim);

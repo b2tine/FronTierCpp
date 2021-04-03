@@ -1350,17 +1350,29 @@ static void setCollisionFreePoints3d(ELASTIC_SET* geom_set)
 
 static void setSurfCollisionFreePoints(SURFACE* surf)
 {
+    ///////////////////////////////////////////////////////////////
     //TODO: implement
+    printf("ERROR! setSurfCollisionFreePoints() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+    ///////////////////////////////////////////////////////////////
 }
 
 static void setCurveCollisionFreePoints(CURVE* curve)
 {
+    ///////////////////////////////////////////////////////////////
     //TODO: implement
+    printf("ERROR! setCurveCollisionFreePoints() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+    ///////////////////////////////////////////////////////////////
 }
 
 static void setNodeCollisionFreePoints(NODE* node)
 {
+    ///////////////////////////////////////////////////////////////
     //TODO: implement
+    printf("ERROR! setNodeCollisionFreePoints() not ready yet.\n");
+    LOC(); clean_up(EXIT_FAILURE);
+    ///////////////////////////////////////////////////////////////
 }
 
 static void assembleFromElasticSet(ELASTIC_SET* geom_set, CollisionSolver3d* cs)

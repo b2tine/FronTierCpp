@@ -99,6 +99,8 @@ struct _POINT
 	
     /* Periodic shift since initialization, for static mesh only */
     double pshift[3];
+	
+    POINTER extra;			/* For special use */
 };
 typedef struct _POINT POINT;
 
@@ -137,8 +139,6 @@ struct _BOND
         long global_index;
 
 	struct _BOND_TRI **_btris;	/* Bounding triangles in angle order */
-
-    POINTER extra;
 };
 typedef struct _BOND BOND;
 
