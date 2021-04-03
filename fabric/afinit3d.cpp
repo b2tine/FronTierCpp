@@ -50,8 +50,8 @@ static void initEllipticPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 static void initWingsPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 		STRING_PARAMS*,PLANE_PARAMS*);
 
-// Yan Li
 static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
+
 static void init3dCurves(Front*,double*,double*,int,AF_NODE_TYPE);
 
 

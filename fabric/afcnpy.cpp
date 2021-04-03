@@ -1871,7 +1871,9 @@ static void setCurveVelocity(
 
 
 	for (b = curve->first; b != NULL; b = b->next)
+    {
         set_bond_length(b,dim);
+    }
 
     //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
 
@@ -2054,7 +2056,6 @@ extern void set_geomset_velocity(
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
 	for (i = 0; i < nn; ++i)
 	{
-        //TODO: should rg_string_nodes get skipped also?
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}

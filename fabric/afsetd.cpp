@@ -282,12 +282,12 @@ extern void compute_spring_accel1(
     for (int k = 0; k < dim; ++k)
     {
         accel[k] += sv->bendforce[k]/sv->m;
-	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+        accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
     }
 	    
     for (int k = 0; k < dim; ++k)
     {
-        //TODO: Make sure this is supposed to be internal force on the fabric point
+        //TODO: Make sure this is supposed to be just the internal force on the fabric point
         sv->f[k] = accel[k]*sv->m;
     }
 
@@ -456,7 +456,7 @@ void generic_spring_solver(
                     {
                         printf("After loop %d = %d: x_old[%d][%d] = %f\n",
                                     n,i,j,x_old[i][j]);
-                        clean_up(ERROR);
+                        LOC(); clean_up(ERROR);
                     }
                 }
 	    	for (i = 0; i < size; ++i)
@@ -661,14 +661,12 @@ extern void set_node_spring_vertex(
 	double lambda_g = geom_set->lambda_g;
 	boolean is_fixed = NO;
 	STATE *sl,*sr;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double *g;
 	long gindex,gindex_nb;
 
-	if (af_params != NULL)
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
  	    g = af_params->gravity;
-	else
-	    g = NULL;
 
 	if (dim == 3)
 	{
@@ -683,9 +681,13 @@ extern void set_node_spring_vertex(
 		else if (extra->af_node_type == LOAD_NODE || 
 			extra->af_node_type == RG_STRING_NODE)
 		{
-	    	    Front *front = geom_set->front;
-	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+            Front *front = geom_set->front;
+            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 		    mass = af_params->payload;
+            //TODO: If multiple RG_STRING_NODE nodes,
+            //      should the mass be a fraction of the total
+            //      payload (which is the mass of the RGB)?
+            //      i.e. mass = payload/(double)num_rg_string_nodes;
 		}
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
@@ -752,7 +754,7 @@ extern void set_node_spring_vertex(
 	    if (dim == 3)
 	    {
 		if (is_fixed || is_load_node(node) || is_rg_string_node(node))
-		    sv[*n].k[nn] = 0.0;//TODO: is this correct????
+		    sv[*n].k[nn] = 0.0;
 		else if (hsbdry_type(*c) == STRING_HSBDRY)
 		    sv[*n].k[nn] = kl;
 		else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
@@ -763,12 +765,14 @@ extern void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-            {
-                if (wave_type(*c) == ELASTIC_STRING)
-                    sv[*n].k[nn] = kl;
-                else if (wave_type(*c) == ELASTIC_BOUNDARY)
-                    sv[*n].k[nn] = ks;
-            }
+        {
+            sv[*n].k[nn] = kl;
+            //TODO: is this needed?
+            if (wave_type(*c) == ELASTIC_STRING)
+                sv[*n].k[nn] = kl;
+            else if (wave_type(*c) == ELASTIC_BOUNDARY)
+                sv[*n].k[nn] = ks;
+        }
 	    ++nn;
 	}
 	for (c = node->in_curves; c && *c; ++c)
@@ -795,13 +799,15 @@ extern void set_node_spring_vertex(
 		else if (hsbdry_type(*c) == FIXED_HSBDRY)
 		    is_fixed = YES;
 	    }
-            else
-            {
-                if (wave_type(*c) == ELASTIC_STRING)
-                    sv[*n].k[nn] = kl;
-                else if (wave_type(*c) == ELASTIC_BOUNDARY)
-                    sv[*n].k[nn] = ks;
-            }
+        else
+        {
+            sv[*n].k[nn] = kl;
+            //TODO: is this needed?
+            if (wave_type(*c) == ELASTIC_STRING)
+                sv[*n].k[nn] = kl;
+            else if (wave_type(*c) == ELASTIC_BOUNDARY)
+                sv[*n].k[nn] = ks;
+        }
 	    ++nn;
 	}
 	if (dim == 3)
@@ -866,10 +872,9 @@ extern void set_node_spring_vertex(
 	    }
 	    if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
 	    {
-            ///TODO: is this correct????
-		sv[*n].lambda = 0.0;
+		    sv[*n].lambda = 0.0;
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
-		    sv[*n].k[i] = 0.0;
+                sv[*n].k[i] = 0.0;
 	    }
 	}
 	else
@@ -877,7 +882,6 @@ extern void set_node_spring_vertex(
 	    sv[*n].lambda = lambda_l;
 	    if (is_fixed)
             {
-                //TODO: is this correct????
                 sv[*n].lambda = 0.0;
                 for (i = 0; i < sv[*n].num_nb; ++i)
                     sv[*n].k[i] = 0.0;
@@ -905,14 +909,13 @@ extern void set_curve_spring_vertex(
 	BOND *b;
 	double kl,m_l,lambda_l;
 	int dim = front->rect_grid->dim;
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-        double *g;
 	long gindex,gindex_nb;
 
-	if (af_params != NULL)
-	    g = af_params->gravity;
-	else
-	    g = NULL;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
+
 	if (dim == 3)
 	{
 	    if (hsbdry_type(curve) == STRING_HSBDRY)
@@ -1097,9 +1100,9 @@ extern void set_surf_spring_vertex(
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-    double* g = nullptr;
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	if (af_params != nullptr)
+    double* g = nullptr;
+	if (af_params)
  	    g = af_params->gravity;
 
 	unsort_surf_point(surf);
@@ -1621,6 +1624,9 @@ static void reorder_string_curves(NODE *node)
 	int i,j,num_curves;
 	POINT **nb_points,*p_tmp;
 
+    INTERFACE *save_intfc = current_interface();
+    set_current_interface(node->interface);
+
 	num_curves = I_NumOfNodeCurves(node);
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_curves,
 				sizeof(CURVE*));
@@ -1664,7 +1670,9 @@ static void reorder_string_curves(NODE *node)
 	    if (string_curves[i]->start == node)
 		unique_add_to_pointers(string_curves[i],&node->out_curves);
 	}
+
 	FT_FreeThese(2,string_curves,nb_points);
+    set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
 extern void set_vertex_impulse(

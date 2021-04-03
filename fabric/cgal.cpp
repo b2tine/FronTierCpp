@@ -1608,29 +1608,38 @@ static void installString(
 		intfc_surface_loop(intfc, rg_surf)
 		{
 		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
-			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
+			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
-			if (body_index(*rg_surf) == rg_index)
-			    break;
+		    	if (body_index(*rg_surf) == rg_index)
+                {
+                    if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        HYPER_SURF* hs = Hyper_surf(*rg_surf);
+                        af_params->rgb_payload = true;
+                    }
+			        break;
+                }
 		    }
 		}
-                if (*rg_surf == NULL)
+        
+        if (*rg_surf == NULL)
+        {
+            printf("Cannot find rigid body surface, rg_index = %d\n",
+                        rg_index);
+            printf("Available rigid body indices are: ");
+            intfc_surface_loop(intfc, rg_surf)
+            {
+                if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
+                    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
                 {
-                    printf("Cannot find rigid body surface, rg_index = %d\n",
-                                rg_index);
-                    printf("Available rigid body indices are: ");
-		    intfc_surface_loop(intfc, rg_surf)
-		    {
-		        if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
-			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
-		        {
-                            printf("surf %d index: %d\n",rg_surf,
-                                        body_index(*rg_surf));
-		        }
-		    }
-                    printf("\n");
-                    clean_up(ERROR);
+                    printf("surf %d index: %d\n",rg_surf,
+                    body_index(*rg_surf));
                 }
+            }
+            printf("\n");
+            clean_up(ERROR);
+        }
+
 		connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
 		delete_node(nload);
 		return;
@@ -1899,6 +1908,8 @@ static void resetGoreBdryZerolength(
         }
 }       /* end resetGoreBdryZerolength */
 
+//TODO: Need to update this function to closer match the version
+//      in the airfoil directory.
 static void connectStringtoRGB(
         Front *front,
         SURFACE *rg_surf,
@@ -1928,6 +1939,10 @@ static void connectStringtoRGB(
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
 	num = target.size();
+
+    HYPER_SURF* hs = Hyper_surf(rg_surf);
+    af_params->payload = total_mass(hs)/num;
+
 	FT_VectorMemoryAlloc((POINTER*)&rg_string_nodes, num, sizeof(NODE*));
 	for (i = 0; i < num; ++i)
 	{
@@ -1961,7 +1976,10 @@ static void connectStringtoRGB(
 	    linkCurveTriBond(rg_curves[i],rg_surf);
 	}
 
-	/* distinguish single parachute system from multi-parachute system */
+    //TODO: Need to update this function to closer match the version
+    //      in the airfoil directory
+	
+    /* distinguish single parachute system from multi-parachute system */
 	boolean multi_para = NO;
 	int string_curve_onenode = 1; //test
 	if (num_strings == 1)
@@ -1969,6 +1987,7 @@ static void connectStringtoRGB(
 	    num_strings = num;
 	    multi_para = YES;
 	    string_curve_onenode = 10;
+        af_params->payload = total_mass(hs);
 	}
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
 						sizeof(CURVE*));
@@ -2370,8 +2389,15 @@ extern void InstallNewLoadNode(
 		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) ||
 			(wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
 		    {
-			if (body_index(*rg_surf) == rg_index)
-			    break;
+			    if (body_index(*rg_surf) == rg_index)
+                {
+                    if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
+                    {
+                        HYPER_SURF* hs = Hyper_surf(*rg_surf);
+                        af_params->rgb_payload = true;
+                    }
+                    break;
+                }
 		    }
 		}
 		connectStringtoRGB(front,*rg_surf,&sec_nload,1);

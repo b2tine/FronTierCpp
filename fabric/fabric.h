@@ -89,12 +89,14 @@ struct AF_PARAMS
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
+	double payload;
+    bool rgb_payload {false};
     bool strings_present {false};
     bool gores_present {false};
 
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
-	double payload;
+
 	double kbs {0.0};	 /* spring bending constant of surface */
 	double ks {5000.0};	 /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
