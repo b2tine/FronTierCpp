@@ -246,6 +246,7 @@ POINT*& next_pt(POINT* p);
 void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
+bool isImpactZonePoint(POINT*);
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
