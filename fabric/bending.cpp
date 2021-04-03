@@ -9,65 +9,71 @@ static double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri);
 static double divEx(double numerator, double denominator);
 static void DebugShow(const double& sva);
     
-static void computeCurvatureBinormal(BOND* b0, BOND* b1);
-static void computeGradCurvatureBinormal(BOND* b0, BOND* b1);
-static void computeStringBendingForce(BOND* b0, BOND* b1);
+static void computeCurvatureBinormal(BOND* b1, BOND* b2);
+static void computeGradCurvatureBinormal(BOND* b1, BOND* b2);
+static void computeStringPointBendingForce(BOND* b1, BOND* b2);
+
+static std::vector<std::vector<double>> crossMat(double* u);
+static std::vector<std::vector<double>> outerProduct(double* u, double* v, int dim);
+static std::vector<std::vector<double>> scalarMultMatrix(
+        double c, std::vector<std::vector<double>> M, int dimX, int dimY);
+static std::vector<std::vector<double>> matAdd(
+        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
+static std::vector<std::vector<double>> matMinus(
+        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
+static std::vector<double> multMatVec(std::vector<std::vector<double>> A, std::vector<double> u, int m, int n);
 
 
-//TODO: When finished call after interface initialization
-void addStringBenders(INTERFACE* intfc)
+
+//TODO: NEED TO CALL SOMEWHERE AFTER INTERFACE INITIALIZATION
+void addStringBenders(Front* front)
 {
-    //TODO: Implement.
-    //      Add BOND_BENDER to BOND::extra
-    
-    CURVE** curve;
-    BOND *b;
+    double string_bends = 0.0;
 
-    intfc_curve_loop(intfc,curve)
-    {
-        if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
-
-        unsort_curve_point(*curve);//TODO: can remove?
-
-        curve_bond_loop(*curve,b)
-        {
-            BOND_BENDER* bond_bender = nullptr;
-        }
-    }
-
-    /*
-    //TODO: need to initialize in similar manner
-    //
     FILE* infile = fopen(InName(front),"r");
-    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+    if (CursorAfterStringOpt(infile,"Enter yes for string bending force:"))
     {
         char string[100];
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] != 'y' || string[0] != 'Y')
         {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING))
-            CursorAfterString(infile,"Enter string radius: ");
-            fscanf(infile,"%lf",&finite_string->radius);
-            printf("%f\n",finite_string->radius);
-            CursorAfterString(infile,"Enter string mass density: ");
-            fscanf(infile,"%lf",&finite_string->dens);
-            printf("%f\n",finite_string->dens);
-            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
-            {
-                fscanf(infile,"%lf",&finite_string->c_drag);
-                printf("%f\n",finite_string->c_drag);
-            }
+            CursorAfterString(infile,"Enter string bending stiffness constant:");
+            fscanf(infile,"%lf",&string_bends);
         }
     }
+    else
+    {
+        fclose(infile);
+        return;
+    }
     fclose(infile);
-    */
+    
 
-    //TODO: Need to be able to restart with BOND_BENDER in bond->extra
+    INTERFACE* intfc = front->interf;
+    CURVE** curve;
+    BOND* bond;
+
+    intfc_curve_loop(intfc,curve)
+    {
+        if (is_bdry(*curve)) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+
+        //curve_bond_loop(*curve,bond)
+        for (bond = (*curve)->first; bond != (*curve)->last; bond = bond->next)
+        {
+            BOND_BENDER* bond_bender = nullptr;
+            FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
+            bond_bender->bends = string_bends;
+            POINT* pt = bond->end;
+            pt->extra = bond_bender;
+        }
+    }
+
+    //TODO: Need to be able to restart with BOND_BENDER in pt->extra
 }
 
-void computeBendingForce(INTERFACE* intfc, const double bends, const double bendd)
+void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
     SURFACE **surf;
     TRI *tri;
@@ -97,6 +103,7 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
             if (is_bdry(*surf)) continue;
             if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
             
+            //TODO: edge traversal of surface (requires half the computation)
             for (int i = 0; i < 3; ++i)
             {
                 POINT *p = Point_of_tri(tri)[i];
@@ -110,11 +117,10 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
             }
         }
     }
+}
 
-    //TODO: STRING BENDING FORCE NOT READY YET
-    return;
-
-    
+void computeStringBendingForce(INTERFACE* intfc)
+{
     CURVE** curve;
     BOND *b;
 
@@ -122,8 +128,6 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
     {
         if (is_bdry(*curve)) continue;
         if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
-
-        unsort_curve_point(*curve);//TODO: can remove?
 
         curve_bond_loop(*curve,b)
         {
@@ -156,7 +160,7 @@ void computeBendingForce(INTERFACE* intfc, const double bends, const double bend
         for (b = (*curve)->first; b != (*curve)->last; b = b->next)
         {
             //compute bending force on x_i
-            computeStringBendingForce(b,b->next);
+            computeStringPointBendingForce(b,b->next);
         }
     }
 
@@ -592,7 +596,7 @@ void calculateBendingForce3dparti(
     }
 }
 
-static double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri)
+double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri)
 {
     double c = tri->side_length0[(index1+1)%3]; 
     double b1 = tri->side_length0[index1]; 
@@ -637,66 +641,335 @@ static double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri)
     return sqrt(sqr(a1) + sqr(a2) - 2 * cangle * a1 * a2); 
 }
 
-static double divEx(double numerator, double denominator)
+double divEx(double numerator, double denominator)
 {
     if (fabs(denominator) < 1.0e-10)
         throw std::overflow_error("Divide by zero exception!\n");
     return numerator / denominator;
 }
 
-static void DebugShow(const double & sva)
+void DebugShow(const double & sva)
 {
     std::cout << std::setw(20) << sva << " ";
 }
 
-static void computeCurvatureBinormal(BOND* b0, BOND* b1)
+void computeCurvatureBinormal(BOND* b1, BOND* b2)
 {
-    //(kb)_i = (2*e_{i-1} ^ e_i)/(|e_{i-1}||e_i| + < e_{i-1}, e_i >
+    POINT* pt = b1->end;
+    if (!pt->extra) return;
+    BOND_BENDER* bond_bender = (BOND_BENDER*)pt->extra;
+
+    //Compute the curvature binormal vector:
+    //  (kb)_i = (2*e_{i-1} ^ e_i)/(|e_{i-1}||e_i| + < e_{i-1}, e_i >
     
-    /*
-    double* x0 = Coords(b0->start);
-    double* x1 = Coords(b0->end);
-    double* x2 = Coords(b1->start);
-    
-    double e0[MAXD];
-    double e1[MAXD];
+    double cross12[MAXD];
+    vector_product_on_bonds(b1,b2,3,cross12);//cross product
 
-    difference(x1,x0,e0,3);
-    difference(x2,x1,e1,3);
-    */
-
-    double cross01[MAXD];
-    vector_product_on_bonds(b0,b1,3,cross01);//cross product
-
-    double len0 = bond_length(b0);
     double len1 = bond_length(b1);
-    double dot01 = scalar_product_on_bonds(b0,b1,3);
-    
-    double denom = len0*len1 + dot01;
+    double len2 = bond_length(b2);
+    double dot12 = scalar_product_on_bonds(b1,b2,3);
+    double denom = len1*len2 + dot12;
 
-    //TODO: need to return or store this someway...
-    double kB[MAXD];
     for (int i = 0; i < 3; ++i)
     {
-        kB[i] = 2.0*cross01[i]/denom;
+        bond_bender->kb[i] = 2.0*cross12[i]/denom;
+    }
+}
+
+void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
+{
+    POINT* p2 = b1->end;
+    if (!p2->extra) return;
+    BOND_BENDER* bbender2 = (BOND_BENDER*)p2->extra;
+
+    for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+    {
+        bbender2->gradprev_kb[i][j] = 0.0;
+        bbender2->grad_kb[i][j] = 0.0;
+        bbender2->gradnext_kb[i][j] = 0.0;
     }
 
-    printf("computeCurvatureBinormal() not ready yet!\n");
-    LOC(); clean_up(EXIT_FAILURE);
+    //TODO: take fixed points into consideration ...
+
+    //compute grad_{i}(kb[i-1])
+    if (b1->prev != nullptr)
+    {
+        BOND* b0 = b1->prev;
+        double len0 = bond_length(b0);
+        double len1 = bond_length(b1);
+        double dot01 = scalar_product_on_bonds(b0,b1,3);
+        double denom01 = len0*len1 + dot01;
+
+        double e0[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            e0[i] = Coords(b0->end)[i] - Coords(b0->start)[i];
+        }
+        auto e0cross_mat = crossMat(e0);
+        
+        POINT* p1 = b0->end;
+        BOND_BENDER* bbender1 = (BOND_BENDER*)p1->extra;
+        double* kb1 = bbender1->kb;
+        auto op10_mat = outerProduct(kb1,e0,3);
+        
+        auto grad2_kb1_mat = scalarMultMatrix(2.0,e0cross_mat,3,3);
+        grad2_kb1_mat = matMinus(grad2_kb1_mat,op10_mat,3,3);
+        grad2_kb1_mat = scalarMultMatrix(1.0/denom01,grad2_kb1_mat,3,3);
+
+        for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+        {
+            bbender2->gradprev_kb[i][j] = grad2_kb1_mat[i][j];
+        }
+    }
+
+    //compute grad_{i}(kb[i+1])
+    if (b2->next != nullptr)
+    {
+        BOND* b3 = b2->next;
+        double len2 = bond_length(b2);
+        double len3 = bond_length(b3);
+        double dot23 = scalar_product_on_bonds(b2,b3,3);
+        double denom23 = len2*len3 + dot23;
+
+        double e3[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            e3[i] = Coords(b3->end)[i] - Coords(b3->start)[i];
+        }
+        auto e3cross_mat = crossMat(e3);
+        
+        POINT* p3 = b3->start;
+        BOND_BENDER* bbender3 = (BOND_BENDER*)p3->extra;
+        double* kb3 = bbender3->kb;
+        auto op33_mat = outerProduct(kb3,e3,3);
+        
+        auto grad2_kb3_mat = scalarMultMatrix(2.0,e3cross_mat,3,3);
+        grad2_kb3_mat = matAdd(grad2_kb3_mat,op33_mat,3,3);
+        grad2_kb3_mat = scalarMultMatrix(1.0/denom23,grad2_kb3_mat,3,3);
+
+        for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+        {
+            bbender2->gradnext_kb[i][j] = grad2_kb3_mat[i][j];
+        }
+    }
+
+    //compute grad_{i}(kb[i])
+    double len1 = bond_length(b1);
+    double len2 = bond_length(b2);
+    double dot12 = scalar_product_on_bonds(b1,b2,3);
+    double denom12 = len1*len2 + dot12;
+
+    double e1[3], e2[3];
+    double diff21[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        e1[i] = Coords(b1->end)[i] - Coords(b1->start)[i];
+        e2[i] = Coords(b2->end)[i] - Coords(b2->start)[i];
+        diff21[i] = e2[i] - e1[i];
+    }
+    auto e1cross_mat = crossMat(e1);
+    auto e2cross_mat = crossMat(e2);
+        
+    double* kb2 = bbender2->kb;
+        //auto op21_mat = outerProduct(kb2,e1,3);
+        //auto op22_mat = outerProduct(kb2,e2,3);
+    auto op2diff21_mat = outerProduct(kb2,diff21,3);
+
+    auto grad2_kb2_mat = matAdd(e1cross_mat,e2cross_mat,3,3);
+    grad2_kb2_mat = scalarMultMatrix(2.0,grad2_kb2_mat,3,3);
+    grad2_kb2_mat = matAdd(grad2_kb2_mat,op2diff21_mat,3,3);
+    grad2_kb2_mat = scalarMultMatrix(-1.0/denom12,grad2_kb2_mat,3,3);
+
+    for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+    {
+        bbender2->grad_kb[i][j] = grad2_kb2_mat[i][j];
+    }
 }
 
-static void computeGradCurvatureBinormal(BOND* b0, BOND* b1)
+void computeStringPointBendingForce(BOND* b1, BOND* b2)
 {
-    //TODO: implement
-    printf("computeGradCurvatureBinormal() not implemented yet!\n");
-    LOC(); clean_up(EXIT_FAILURE);
-    //TODO: need to return or store this someway...
+    POINT* p2 = b1->end;
+    if (!p2->extra) return;
+    BOND_BENDER* bbender2 = (BOND_BENDER*)p2->extra;
+
+    double bendforce[3] = {0.0};
+    double bends = bbender2->bends;
+
+    //contribution from i-1
+    if (b1->prev != nullptr)
+    {
+        BOND* b0 = b1->prev;
+        double restlen0 = bond_length0(b0);
+        double restlen1 = bond_length0(b1);
+        double l1_bar = restlen0 + restlen1;
+
+        std::vector<std::vector<double>> gradprev_kb_T(3,std::vector<double>(3,0.0));
+        for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+        {
+            gradprev_kb_T[i][j] = bbender2->gradprev_kb[j][i];
+        }
+
+        POINT* p1 = b0->end;
+        BOND_BENDER* bbender1 = (BOND_BENDER*)p1->extra;
+        std::vector<double> kb1 = std::vector<double>(bbender1->kb, bbender1->kb + 3);
+        
+        auto bendforce1 = multMatVec(gradprev_kb_T,kb1,3,3);
+        for (int i = 0; i < 3; ++i)
+        {
+            bendforce1[i] *= -2.0*bends/l1_bar;
+            bendforce[i] += bendforce1[i];
+        }
+    }
+
+    //contribution from i+1
+    if (b2->next != nullptr)
+    {
+        BOND* b3 = b2->next;
+        double restlen2 = bond_length0(b2);
+        double restlen3 = bond_length0(b3);
+        double l3_bar = restlen2 + restlen3;
+
+        std::vector<std::vector<double>> gradnext_kb_T(3,std::vector<double>(3,0.0));
+        for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+        {
+            gradnext_kb_T[i][j] = bbender2->gradnext_kb[j][i];
+        }
+
+        POINT* p3 = b3->start;
+        BOND_BENDER* bbender3 = (BOND_BENDER*)p3->extra;
+        std::vector<double> kb3 = std::vector<double>(bbender3->kb, bbender3->kb + 3);
+        
+        auto bendforce3 = multMatVec(gradnext_kb_T,kb3,3,3);
+        for (int i = 0; i < 3; ++i)
+        {
+            bendforce3[i] *= -2.0*bends/l3_bar;
+            bendforce[i] += bendforce3[i];
+        }
+    }
+
+    //contribution from i
+    double restlen1 = bond_length0(b1);
+    double restlen2 = bond_length0(b2);
+    double l2_bar = restlen1 + restlen2;
+
+    std::vector<std::vector<double>> grad_kb_T(3,std::vector<double>(3,0.0));
+    for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+    {
+        grad_kb_T[i][j] = bbender2->grad_kb[j][i];
+    }
+
+    std::vector<double> kb2 = std::vector<double>(bbender2->kb, bbender2->kb + 3);
+    
+    auto bendforce2 = multMatVec(grad_kb_T,kb2,3,3);
+    for (int i = 0; i < 3; ++i)
+    {
+        bendforce2[i] *= -2.0*bends/l2_bar;
+        bendforce[i] += bendforce2[i];
+    }
+
+    STATE* sl2 = static_cast<STATE*>(left_state(p2));
+    for (int i = 0; i < 3; ++i)
+    {
+        sl2->bendforce[i] = bendforce[i];
+    }
 }
 
-static void computeStringBendingForce(BOND* b0, BOND* b1)
+std::vector<std::vector<double>> crossMat(double* u)
 {
-    //TODO: implement
-    printf("computeBendingForce() not implemented yet!\n");
-    LOC(); clean_up(EXIT_FAILURE);
+    std::vector<std::vector<double>> cross_mat(3,std::vector<double>(3,0.0));
+
+    cross_mat[0][0] = 0.0;   cross_mat[0][1] = -u[2];   cross_mat[0][2] = u[1];
+    cross_mat[1][0] = u[2];  cross_mat[1][1] = 0.0;     cross_mat[1][2] = -u[0];
+    cross_mat[2][0] = -u[1];   cross_mat[2][1] = u[0];   cross_mat[2][2] = 0.0;
+
+    return cross_mat;
+}
+
+std::vector<std::vector<double>> outerProduct(double* u, double* v, int dim)
+{
+    std::vector<std::vector<double>> op_mat(dim,std::vector<double>(dim,0.0));
+    
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        op_mat[i][j] = u[i]*v[j];
+    }
+    
+    return op_mat;
+}
+
+std::vector<std::vector<double>> scalarMultMatrix(
+        double c,
+        std::vector<std::vector<double>> M,
+        int dimX,
+        int dimY)
+{
+    std::vector<std::vector<double>> cM(dimX,std::vector<double>(dimY,0.0));
+
+    for (int i = 0; i < dimX; ++i)
+    for (int j = 0; j < dimY; ++j)
+    {
+        cM[i][j] = c*M[i][j];
+    }
+
+    return cM;
+}
+
+std::vector<std::vector<double>> matAdd(
+        std::vector<std::vector<double>> A,
+        std::vector<std::vector<double>> B,
+        int dimX,
+        int dimY)
+{
+    std::vector<std::vector<double>> sum_mat(dimX,std::vector<double>(dimY,0.0));
+    
+    for (int i = 0; i < dimX; ++i)
+    for (int j = 0; j < dimY; ++j)
+    {
+        sum_mat[i][j] = A[i][j] + B[i][j];
+    }
+
+    return sum_mat;
+}
+
+std::vector<std::vector<double>> matMinus(
+        std::vector<std::vector<double>> A,
+        std::vector<std::vector<double>> B,
+        int dimX,
+        int dimY)
+{
+    std::vector<std::vector<double>> diff_mat(dimX,std::vector<double>(dimY,0.0));
+    
+    for (int i = 0; i < dimX; ++i)
+    for (int j = 0; j < dimY; ++j)
+    {
+        diff_mat[i][j] = A[i][j] - B[i][j];
+    }
+
+    return diff_mat;
+}
+
+std::vector<double> multMatVec(
+        std::vector<std::vector<double>> A,
+        std::vector<double> u,
+        int m,
+        int n)
+{
+    std::vector<double> vec(m,0.0);
+    
+    for (int i = 0; i < m; ++i)
+    for (int j = 0; j < n; ++j)
+    {
+        vec[i] = A[i][j]*u[j];
+    }
+
+    return vec;
 }
 

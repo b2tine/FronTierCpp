@@ -593,7 +593,8 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, double fr_dt)
     //compute bending force
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
-    computeBendingForce(elastic_intfc,bends,bendd);
+    computeSurfBendingForce(elastic_intfc,bends,bendd);
+        //computeStringBendingForce(elastic_intfc); //TODO: finish implementation
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	
@@ -921,7 +922,8 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
     //compute bending force
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
-    computeBendingForce(elastic_intfc,bends,bendd);
+    computeSurfBendingForce(elastic_intfc,bends,bendd);
+        //computeStringBendingForce(elastic_intfc); //TODO: finish implementation
 	
     assembleParachuteSet(elastic_intfc,&geom_set);
 
