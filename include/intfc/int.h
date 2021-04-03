@@ -91,7 +91,6 @@ struct _POINT
 	
     double vel[3];
 	double force[3];
-    double x_old[3];
 	
     boolean	crx;
 	int	indx;

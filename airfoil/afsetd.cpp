@@ -262,22 +262,22 @@ extern void compute_spring_accel1(
 	    accel[k] = 0.0;
 
 	//acceleration due to elastic stretching force
-    for (int i = 0; i < sv->num_nb; ++i)
+    for (int j = 0; j < sv->num_nb; ++j)
 	{
 	    double vec[MAXD];
 	    double len = 0.0;
 
 	    for (int k = 0; k < dim; ++k)
 	    {
-            vec[k] = sv->x_nb[i][k] - sv->x[k];
-            len += sqr(vec[k]);
+            vec[k] = sv->x_nb[j][k] - sv->x[k];
+            len += vec[k]*vec[k];
 	    }
 
 	    len = sqrt(len);
 
 	    for (int k = 0; k < dim; ++k)
 	    {
-            accel[k] += sv->k[i]*(1.0 - sv->len0[i]/len)*vec[k]/sv->m;
+            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
 	    }
 	}
 
@@ -290,7 +290,7 @@ extern void compute_spring_accel1(
 
     for (int k = 0; k < dim; ++k)
     {
-        //TODO: Make sure this is supposed to be the internal force on the fabric point
+        //TODO: Make sure this is supposed to be just the internal force on the fabric point
         sv->f[k] = accel[k]*sv->m;
     }
 
@@ -453,6 +453,13 @@ void generic_spring_solver(
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
+                    if (isnan(x_old[i][j]))
+                    {
+                        printf("After loop %d = %d: x_old[%d][%d] = %f\n",
+                                    n,i,j,x_old[i][j]);
+                        LOC(); clean_up(ERROR);
+                    }
+
                 }
 	    	for (i = 0; i < size; ++i)
             {
@@ -641,14 +648,12 @@ extern void set_node_spring_vertex(
 	double lambda_g = geom_set->lambda_g;
 	boolean is_fixed = NO;
 	STATE *sl,*sr;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g;
 	long gindex,gindex_nb;
-
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
-	else
-	    g = NULL;
+	
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
 
 	if (dim == 3)
 	{
@@ -665,16 +670,19 @@ extern void set_node_spring_vertex(
 		{
             Front *front = geom_set->front;
             AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+		    mass = af_params->payload;
             //TODO: If multiple RG_STRING_NODE nodes,
             //      should the mass be a fraction of the total
             //      payload (which is the mass of the RGB)?
             //      i.e. mass = payload/(double)num_rg_string_nodes;
-		    mass = af_params->payload;
+            //
+            //      The above has been added in cgal.cpp : connectStringtoRGB().
+            //      Leaving this todo and comment for now since it is not obvious.
 		}
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_s;
+                    mass = geom_set->m_l;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
         else if (extra->af_node_type == SEC_LOAD_NODE)
@@ -747,7 +755,7 @@ extern void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-		sv[*n].k[nn] = kl;
+		    sv[*n].k[nn] = kl;
 	    ++nn;
 	}
 	for (c = node->in_curves; c && *c; ++c)
@@ -775,7 +783,7 @@ extern void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-		sv[*n].k[nn] = kl;
+            sv[*n].k[nn] = kl;
 	    ++nn;
 	}
 	if (dim == 3)
@@ -840,9 +848,9 @@ extern void set_node_spring_vertex(
 	    }
 	    if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
 	    {
-		sv[*n].lambda = 0.0;
+		    sv[*n].lambda = 0.0;
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
-		    sv[*n].k[i] = 0.0;
+		        sv[*n].k[i] = 0.0;
 	    }
 	}
 	else
@@ -877,14 +885,13 @@ extern void set_curve_spring_vertex(
 	BOND *b;
 	double kl,m_l,lambda_l;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        double *g;
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
-	    g = iFparams->gravity;
-	else
-	    g = NULL;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
+
 	if (dim == 3)
 	{
 	    if (hsbdry_type(curve) == STRING_HSBDRY)
@@ -1061,16 +1068,15 @@ extern void set_surf_spring_vertex(
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        double *g;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
-	else g = NULL;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
 
 	unsort_surf_point(surf);
 	i = *n;
@@ -1121,7 +1127,7 @@ extern void set_surf_spring_vertex(
 		    	sv[i].k[k] = 0.0;
 		    else
 		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];;
+		    sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;
@@ -1310,7 +1316,6 @@ static void node_put_point_set_to(
 	GLOBAL_POINT **point_set)
 {
 	POINT *p = node->posn;
-
 	put_point_value_to(p,point_set);
 }	/* end node_put_point_set_to */
 
@@ -1643,9 +1648,10 @@ static void reorder_string_curves(NODE *node)
 	CURVE **c,**string_curves,*c_tmp;
 	int i,j,num_curves;
 	POINT **nb_points,*p_tmp;
+    
     INTERFACE *save_intfc = current_interface();
-
     set_current_interface(node->interface);
+
 	num_curves = I_NumOfNodeCurves(node);
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_curves,
 				sizeof(CURVE*));
@@ -1689,13 +1695,14 @@ static void reorder_string_curves(NODE *node)
 	    if (string_curves[i]->start == node)
 		unique_add_to_pointers(string_curves[i],&node->out_curves);
 	}
+
 	FT_FreeThese(2,string_curves,nb_points);
     set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
 //TODO: it seems that we should be able to perform the
-//      assignments of this function inside put_point_set_to().
-//      put_point_value_to()
+//      assignments of this function inside put_point_value_to()
+//      called by the XXX_put_point_set_to() functions
 extern void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)

@@ -89,6 +89,12 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter strain limit: 0.015
+Enter compressive strain limit: 0.015
+Enter strain rate limit: 0.1
+
+**************************************************************
+
 Type y to make movie of pressure: n
 Type y to make movie of vorticity: n
 Type y to make movie of velocity: n

@@ -322,7 +322,9 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    if (!is_load_node(oldc->start))
+    //TODO: Do we need to check for rg_string_nodes also?
+    //if (!is_load_node(oldc->start))
+    if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
     {
         oldp = oldc->start->posn;
         newp = newc->start->posn;
@@ -330,7 +332,8 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    if (!is_load_node(oldc->end))
+    //if (!is_load_node(oldc->end))
+    if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
     {
         oldp = oldc->end->posn;
         newp = newc->end->posn;
@@ -1208,7 +1211,6 @@ static void rg_string_node_propagate(
         double *g = iFparams->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
-        double mass = af_params->payload;
         CURVE **c;
         STATE *sl,*sr,*newsl,*newsr;
         double vec[MAXD],vec_mag;
@@ -1220,6 +1222,8 @@ static void rg_string_node_propagate(
 	double V[MAXD];
 
     if (!is_rg_string_node(oldn)) return;
+        
+    double mass = af_params->payload;
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -1376,6 +1380,9 @@ extern int airfoil_node_propagate(
 	    rg_string_node_propagate(front,oldn,newn,dt);
 	else
 	    return GOOD_NODE;
+
+    //TODO: return a meaningful exit status for
+    //      time step modification in propagate_node_points()
 	return GOOD_NODE;
 }	/* end airfoil_node_propagate */
 

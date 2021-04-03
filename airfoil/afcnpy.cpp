@@ -799,8 +799,12 @@ static void compute_center_of_mass_velo(
 	    	xcan[j] /= area;
 	    }
 
-        //TODO: If using a rigid body instead of pointmass
-        //      will we enter here? If not, find a work around.
+        
+        //TODO: Add string curves; need to specify linear density for the paracord
+
+        //TODO: Add rigid body center of mass velocity if present
+
+
 	    if (NULL != geom_set->load_node)
 	    {
             node = geom_set->load_node;
@@ -819,16 +823,14 @@ static void compute_center_of_mass_velo(
             vcom = center_of_mass_velo(Hyper_surf(canopy));
             for (j = 0; j < 3; ++j)
             {
-                    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
-                    (mass_canopy + payload);
-                    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
-                    (mass_canopy + payload);
+                vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/(mass_canopy + payload);
+                xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/(mass_canopy + payload);
             }
 	    }
 	    else
 	    {
-	  	xcom = center_of_mass(Hyper_surf(canopy));
-	  	vcom = center_of_mass_velo(Hyper_surf(canopy));
+            xcom = center_of_mass(Hyper_surf(canopy));
+            vcom = center_of_mass_velo(Hyper_surf(canopy));
 	    }	
 	}
 	if (debugging("canopy"))
@@ -2652,16 +2654,17 @@ static void setCurveVelocity(
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
-	double nor[MAXD],nor_speed;
+	double nor[MAXD];
 	double *vel = nullptr;
 	double *crds_max = nullptr;
-    double max_nor_speed = 0.0;
 	int gindex_max;
 	long gindex;
 	int dim = FT_Dimension();
 
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -2670,15 +2673,29 @@ static void setCurveVelocity(
             sr = (STATE*)right_state(p);
             vel = point_set[gindex]->v;
             
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
+
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
             }
         }
+
+        //TODO: Can we set non normal max front speed?
+        //
+        //      This appears to significantly improve string behavior
+        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
     }
     else
     {
+        double max_nor_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -2690,8 +2707,8 @@ static void setCurveVelocity(
                 FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
-                nor_speed = scalar_product(vel,nor,3);
 
+                double nor_speed = scalar_product(vel,nor,3);
                 if (max_nor_speed < fabs(nor_speed))
                 {
                     max_nor_speed = fabs(nor_speed);
@@ -2713,9 +2730,6 @@ static void setCurveVelocity(
     {
 	    set_bond_length(b,dim);
     }
-
-    //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
-
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2757,7 +2771,7 @@ static void new_setNodeVelocity2d(
 	    gindex = Gindex(node->posn);
 	    vel = point_set[gindex]->v;
         
-        for (j = 0; j < 3; ++j)
+        for (j = 0; j < 2; ++j)
         {
             sl->vel[j] = vel[j];
             sr->vel[j] = vel[j];
@@ -2811,6 +2825,11 @@ static void new_setNodeVelocity3d(
 		    
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
+                //TODO: should we compute max_speed
+                //      for use with set_max_front_speed()?
+                //      Should be the speed of the rigid body
+                //      center of motion that the rg_string_node
+                //      is attached to.
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -2856,6 +2875,7 @@ static void new_setNodeVelocity3d(
         
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
             {
+                //TODO: see above
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -2898,8 +2918,6 @@ extern void set_geomset_velocity(
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
 	for (i = 0; i < nn; ++i)
 	{
-        //TODO: should rigid body string nodes also be skipped???
-        //  if (is_rg_string_node(geom_set->nodes[i]) continue;
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}

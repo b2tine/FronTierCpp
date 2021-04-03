@@ -1663,7 +1663,6 @@ static void installString(
                     if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
                     {
                         HYPER_SURF* hs = Hyper_surf(*rg_surf);
-                        af_params->payload = total_mass(hs);
                         af_params->rgb_payload = true;
                     }
                     break;
@@ -2010,6 +2009,8 @@ static void connectStringtoRGB(
     //      for use in set_node_spring_vertex() when assigning
     //      node mass.
     //      mass_per_rg_string_node = payload/num_rg_string_nodes
+    HYPER_SURF* hs = Hyper_surf(rg_surf);
+    af_params->payload = total_mass(hs)/num_target;
     
     if (num_strings == 1)
     {
@@ -2036,7 +2037,9 @@ static void connectStringtoRGB(
         POINT* max_zpoint = target[max_zindex];
         target.clear();
         target.push_back(max_zpoint);
+        af_params->payload = total_mass(hs);
     }
+
     //TODO: probably need seperate "num_target" variable
 	num = target.size();
 
@@ -2577,7 +2580,6 @@ extern void InstallNewLoadNode(
                     if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
                     {
                         HYPER_SURF* hs = Hyper_surf(*rg_surf);
-                        af_params->payload = total_mass(hs);
                         af_params->rgb_payload = true;
                     }
                     break;
