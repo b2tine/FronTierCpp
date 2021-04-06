@@ -932,6 +932,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 // AABB tree for kinetic collision detection process
 void CollisionSolver3d::aabbCollision(std::vector<CD_HSE*>& list)
 {
+    //TODO: randomize ordering of list for gauss-seidel updating
+    
     if (!abt_collision)
     {
         abt_collision =
