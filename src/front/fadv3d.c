@@ -1460,11 +1460,11 @@ LOCAL int struct_advance_front3d(
 
 	init_intfc_curvature3d(*newfront,(*newfront)->interf);
 
-    //TODO: Figure out how to modify the time step for interior
-    //      propagation when called outside this function
-
     //NOTE: This is where interior_advance_front() was called
     //      before it was decoupled from struct_advance_front3d().
+
+    //TODO: Figure out how to modify the time step for interior
+    //      propagation when called outside this function
 
 	return return_advance_front(front,newfront,status,fname);
 }	/* end struct_advance_front3d */

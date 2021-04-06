@@ -57,7 +57,7 @@ Start parameters for spring-mass system
 Enter the number of fabric optimization rounds: 0
 Enter interior sub step number: 1
 
-Enter fabric spring constant: 5000
+Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.00025
 Enter fabric bending damping constant: 0.0

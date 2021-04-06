@@ -821,8 +821,12 @@ void clearRegisteredPoints(Front* front)
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] == 'y' || string[0] == 'Y')
+        {
+            fclose(infile);
             return;
+        }
     }
+    fclose(infile);
 
     SURFACE** s;
     intfc_surface_loop(front->interf,s)
