@@ -369,11 +369,21 @@ void CollisionSolver3d::resolveCollision()
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
+        limitStrainRatePosnJac(MotionState::STATIC);
+        //limitStrainRatePosnGS(MotionState::STATIC);
+            //computeMaxSpeed(); //debug    
+        
         limitStrainPosnJac(MotionState::STATIC);
                 //limitStrainRatePosnGS(MotionState::STATIC);
                     //limitStrainRatePosnJac(MotionState::STATIC);
             //computeMaxSpeed(); //debug
     }
+
+
+    //TODO: Should we reset bond length somehow between strain limiting
+    //      and strain rate limiting? It seems that the strain rate
+    //      limiting may hinder the strain limiting itself...
+
 
     // Static proximity handling
     start_clock("detectProximity");
@@ -403,7 +413,9 @@ void CollisionSolver3d::resolveCollision()
 	//update position using final midstep velocity
 	updateFinalPosition();
 
-    //TODO: Don't think we need this ...
+    //TODO: Do we need this ???
+    //      Could use this proximity step to enforce history based updates
+    //      using positions from the first call to detectProximity() ...
     //check for proximity again at end step positions
         //detectProximity();
 
@@ -904,9 +916,9 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         //      call revertAverageVelocity() above.
         if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
-            limitStrainPosnGS(MotionState::MOVING);
-                //limitStrainPosnJac(MotionState::MOVING);
-                //computeMaxSpeed(); //debug
+            limitStrainPosnJac(MotionState::MOVING);
+                //limitStrainPosnGS(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
         }
 
         computeImpactZoneGS(list);
@@ -1476,6 +1488,7 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
+        /*
         if (is_collision)
         {
             //Update due to connecting nearby impact zones only.
@@ -1490,6 +1503,7 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
                 turnOffGsUpdate();
             }
         }
+        */
 
         if (debugging("collision"))
         {
@@ -1576,6 +1590,7 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
         is_collision = abt_collision->getCollsnState();
         if (is_collision)
         {
+            /*
             if (niter >= 50)
             {
                 //TODO: This is probably not appropriate for strings.
@@ -1583,6 +1598,7 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                 connectNearbyImpactZones(fabricTriList);
                     //connectNearbyImpactZones(elasticHseList);
             }
+            */
             updateImpactZoneVelocity();
         }
 
@@ -2356,8 +2372,11 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
     const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList,mstate);
-        int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList,mstate);
+        //TODO: randomize the ordering of input lists to avoid biased updates
+        int numBondStrainRate = computeStrainRateImpulsesRand(stringBondList,mstate);
+        int numTriStrainRate = computeStrainRateImpulsesRand(fabricTriList,mstate);
+            //int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList,mstate);
+            //int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList,mstate);
         
         if (debugging("strain_limiting"))
         {
@@ -2369,6 +2388,16 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 	}
 
     turnOffGsUpdate();
+}
+
+int CollisionSolver3d::computeStrainRateImpulsesRand(
+        std::vector<CD_HSE*>& list,
+        MotionState mstate)
+{
+    std::vector<CD_HSE*> shuffled_list(list.begin(),list.end());
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::shuffle(shuffled_list.begin(),shuffled_list.end(),std::default_random_engine(seed));
+    return computeStrainRateImpulsesPosn(shuffled_list,mstate);
 }
 
 //jacobi iteration
