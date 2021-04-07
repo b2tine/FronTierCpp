@@ -120,16 +120,16 @@ struct AF_PARAMS
 	int n_sub;			/* number of sub-steps for tan prop */
 	int num_opt_round;		/* number of mesh optimizations rounds*/
 	int num_smooth_layers;	/* number of layer to smooth high frequency velocity */
-	int    num_np;			/* number of master node to run spring model */
+	int num_np;			/* number of master node to run spring model */
     
-	int    node_id[10];		/* master node id */
+	int node_id[10];		/* master node id */
 	
-        double break_strings_time;	/* time to break some strings */
-	int    break_strings_num;	/* number of strings to break */
-	int    *break_strings_gindex;	/* gindex of strings to break */
+    double break_strings_time {HUGE};	/* time to break some strings */
+	int break_strings_num {0};	/* number of strings to break */
+	int* break_strings_gindex;	/* gindex of strings to break */
 	double unequal_coeff;		/* the unequal coefficient */
-	int    unequal_strings_num;	/* number of unequal strings */
-	int    *unequal_strings_gindex; /* gindex of unequal strings */
+	int unequal_strings_num;	/* number of unequal strings */
+	int* unequal_strings_gindex; /* gindex of unequal strings */
 
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
