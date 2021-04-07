@@ -1148,6 +1148,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
             generic_spring_solver(sv,dim,size,n_sub,dt);
 	    stop_clock("spring_model");
 
+        //TODO: it seems that put_point_set_to() does not write back to
+        //      the non-owner geom_set data.
+        
         //Write back to owner geomset from owner point set
         put_point_set_to(&geom_set,point_set);
         set_vertex_impulse(&geom_set,point_set);
