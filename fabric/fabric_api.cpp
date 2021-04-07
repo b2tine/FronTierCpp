@@ -99,6 +99,7 @@ extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
         FT_SetOutputCounter(front);
 }
 
+//TODO: update this function to match the driver function
 extern void SMM_StartUpStep()
 {
         Front *front = SMM_GetFront();
@@ -114,9 +115,10 @@ extern void SMM_StartUpStep()
 
         if (!f_basic->RestartRun)
         {
+            FrontPreAdvance(front);
             FT_Propagate(front);
             FT_RelinkGlobalIndex(front);
-	        FT_InteriorPropagate(front);
+	            //FT_InteriorPropagate(front);
 
             FT_SetOutputCounter(front);
             FT_SetTimeStep(front);

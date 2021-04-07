@@ -1475,13 +1475,15 @@ EXPORT void interior_advance_front(
 	start_clock("interior_propagate");
 	(*front->interior_propagate)(front,front->dt);
     //TODO: What happened to the call to scatter_front() that 
-    //      was present before removal from struct_advance_front3d()? 
-	init_intfc_curvature3d(front,front->interf);
+    //      was present before removal from struct_advance_front3d()?
+    //      -- is being called by:
+    //         new_fourth_order_elastic_set_propagate3d_parallel_1()
+    init_intfc_curvature3d(front,front->interf);
 	stop_clock("interior_propagate");
 
-    //TODO: rewrite to allow return of error code like struct_advance_front3d()
-        
-        //return return_advance_front(front,newfront,status,fname);
+    //TODO: Allow return of error code like struct_advance_front3d().
+    
+    //return return_advance_front(front,newfront,status,fname);
 
 }       /* end interior_advance_front3d */
 

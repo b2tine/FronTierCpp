@@ -622,6 +622,7 @@ extern void set_vertex_neighbors(
 	nc = geom_set->num_curves;
 	nn = geom_set->num_nodes;
 	n = 0;
+
 	for (i = 0; i < ns; ++i)
     {
         set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,point_set);

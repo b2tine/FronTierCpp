@@ -97,14 +97,14 @@ EXPORT	void FT_Propagate(
 EXPORT	void FT_InteriorPropagate(
 	Front *front)
 {
-	double dt_frac;
-	Front *newfront;
     if (front->interior_propagate != NULL)
     {
         //TODO: rewrite to allow return of error code
-        //      and time step modification like FT_Propagate()
+        //      for time step modification like FT_Propagate()
+        //      -- do inside interior_propagate() function
+        //         instead of here
         interior_advance_front(front);
-    
+
         if (front->grid_intfc != NULL)
         {
             FT_FreeGridIntfc(front);
