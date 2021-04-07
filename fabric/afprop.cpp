@@ -1149,7 +1149,9 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 	    stop_clock("spring_model");
 
         //TODO: it seems that put_point_set_to() does not write back to
-        //      the non-owner geom_set data.
+        //      the non-owner geom_set data. assembleParachuteSet() only
+        //      populates the geomset with interface data within a single
+        //      processor subdomain.
         
         //Write back to owner geomset from owner point set
         put_point_set_to(&geom_set,point_set);
