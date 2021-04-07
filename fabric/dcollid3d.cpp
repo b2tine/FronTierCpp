@@ -671,13 +671,13 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
     {
 		a = b; b = c; c = d;
 	   	double delta = b*b-4.0*a*c;
-	   	if (fabs(a) > ROUND_EPS && delta > 0)
+	   	if (fabs(a) > MACH_EPS && delta > 0)
         {
 		    double delta_sqrt = sqrt(delta);
 		    roots[0] = (-b+delta_sqrt)/(2.0*a);
             roots[1] = (-b-delta_sqrt)/(2.0*a);
 	   	}
-		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
+		else if (fabs(a) < MACH_EPS && fabs(b) > MACH_EPS)
 		{
 		    roots[0] = -c/b;
         }
@@ -842,7 +842,7 @@ static bool EdgeToEdge(
     double vec[3];
 	Cross3d(x12,x34,vec);
 
-    if (D < ROUND_EPS || Mag3d(vec) < ROUND_EPS)
+    if (D < MACH_EPS || Mag3d(vec) < MACH_EPS)
     {
         //Lines containing the edges are nearly parallel.
         //Setting sC = 0, and solving for tC yields tC = e/c.
@@ -911,12 +911,12 @@ static bool EdgeToEdge(
     if (sN == sD)
         sC = 1.0;
     else
-        sC = fabs(sN) < ROUND_EPS ? 0.0 : sN/sD;
+        sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
 
     if (tN == tD)
         tC = 1.0;
     else
-        tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
+        tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
     
 	double x13[3];
     Pts2Vec(pts[0],pts[2],x13);
@@ -1207,7 +1207,7 @@ static void EdgeToEdgeImpulse(
             if (mstate == MotionState::STATIC)
             {
                 double friction_impulse = F[i];
-                if (fabs(vt) > ROUND_EPS)
+                if (fabs(vt) > MACH_EPS)
                 {
                     double delta_vt = max_friction;
                     if (fabs(mu*friction_impulse) < max_friction)
@@ -1683,7 +1683,7 @@ static void PointToTriImpulse(
             if (mstate == MotionState::STATIC)
             {
                 double friction_impulse = F[i];
-                if (fabs(vt) > ROUND_EPS)
+                if (fabs(vt) > MACH_EPS)
                 {
                     double delta_vt = max_friction;
                     if (fabs(mu*friction_impulse) < max_friction)

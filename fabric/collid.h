@@ -9,12 +9,9 @@
 
 #define DEBUGGING false
 
-//TODO: Determine ROUND_EPS optimal value; currently it seems
-//      to be too small to be meaningful in the context it is used.
+//TODO: Consistent use of ROUND_EPS AND MACH_EPS.
+//      Currently they are equal, and we can change all to MACH_EPS. 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
-const double EPS = 1.0e-06;
-const double DT = 0.001;
 
 
 class CollisionSolver3d {
@@ -84,15 +81,12 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
-    void assembleFromSurf(SURFACE* surf);//TODO: Need this for parallel runs?
-    void assembleFromCurve(CURVE* curve);//TODO: Need this for parallel runs?
-    void assembleFromNode(NODE* node);//TODO: Need this for parallel runs?
+    void assembleFromSurf(SURFACE* surf); //TODO: Need this for parallel runs?
+    void assembleFromCurve(CURVE* curve); //TODO: Need this for parallel runs?
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
-    void initializeImpactZones(const INTERFACE* intfc);
 	void initRigidBodyImpactZones();
-	    //void initRigidBodyImpactZones(const INTERFACE* intfc);//TODO: remove?
 	
     void resolveCollision();
 

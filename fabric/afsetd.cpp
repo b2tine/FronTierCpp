@@ -1279,7 +1279,7 @@ static void surf_get_point_set_from(
 	    {
             p = Point_of_tri(tri)[j];
             if (sorted(p) || Boundary_point(p)) continue;
-            get_point_value_from(p,point_set);
+                get_point_value_from(p,point_set);
             sorted(p) = YES;
 	    }
 	}
@@ -1322,7 +1322,7 @@ static void surf_put_point_set_to(
 	    {
             p = Point_of_tri(tri)[j];
             if (sorted(p) || Boundary_point(p)) continue;
-            put_point_value_to(p,point_set);
+                put_point_value_to(p,point_set);
             sorted(p) = YES;
 	    }
 	}

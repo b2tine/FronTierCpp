@@ -15,19 +15,19 @@ inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 
 //default parameters for collision detection
-double CollisionSolver3d::s_dt = DT;
+double CollisionSolver3d::s_dt = 1.0e-06;
 double CollisionSolver3d::s_cr = 1.0;
 bool CollisionSolver3d::s_detImpZone = false;
 bool CollisionSolver3d::gs_update = false;
 
-double CollisionSolver3d::s_eps = EPS;
+double CollisionSolver3d::s_eps = 1.0e-06;
 double CollisionSolver3d::s_thickness = 0.001;
 double CollisionSolver3d::s_k = 5000;
 double CollisionSolver3d::s_m = 0.001;
 double CollisionSolver3d::s_mu = 0.5;
 
-double CollisionSolver3d::l_eps = 10.0*EPS;
-double CollisionSolver3d::l_thickness = 0.005;
+double CollisionSolver3d::l_eps = 4.0e-06;
+double CollisionSolver3d::l_thickness = 0.004;
 double CollisionSolver3d::l_k = 50000;
 double CollisionSolver3d::l_m = 0.002;
 double CollisionSolver3d::l_mu = 0.5;
@@ -166,6 +166,9 @@ void CollisionSolver3d::initializeSystem(Front* front)
 //NOTE: Must be called before calling the spring solver
 void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 {
+    //TODO: Can the action of setCollisionFreePoints()
+    //      be performed in assembleFromInterface()?
+
 	clearHseList();
 
 	SURFACE** s;
@@ -173,16 +176,19 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	TRI *tri;
 	BOND *b;
 
+    /*
 	int n_tri = 0;
 	int n_fabric_tri = 0;
 	int n_static_rigid_tri = 0;
 	int n_movable_rigid_tri = 0;
     int n_bond = 0;
+    */
 	
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
-	    unsort_surf_point(*s);
+	    
+        unsort_surf_point(*s); //TODO: can remove?
 	    
         surf_tri_loop(*s,tri)
 	    {
@@ -191,17 +197,17 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             if (wave_type(*s) == ELASTIC_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::FABRIC_TRI;
-                n_fabric_tri++;
+                    //n_fabric_tri++;
             }
             else if (wave_type(*s) == NEUMANN_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
-                n_static_rigid_tri++;
+                    //n_static_rigid_tri++;
             }
             else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
-                n_movable_rigid_tri++;
+                    //n_movable_rigid_tri++;
             }
             else 
             {
@@ -211,7 +217,7 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             }
             
             hseList.push_back(new CD_TRI(tri,tag));
-		    n_tri++;
+		        //n_tri++;
 	    }
 	}
 
@@ -226,13 +232,20 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	    curve_bond_loop(*c,b)
 	    {
             hseList.push_back(new CD_BOND(b,tag));
-		    n_bond++;
+		        //n_bond++;
 	    }
 	}
 
     setSizeCollisionTimes(hseList.size());
+
+    //TODO: move into different function for reuse with
+    //      assembleFromSurf() and assembleFromCurve() functions.
     setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
 	
+    /*
+    //TODO: To be removed when new implementation in
+    //      setHseTypeLists() is tested and working correctly.
+    //
 	if (debugging("intfc_assembly"))
     {
 	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
@@ -241,33 +254,57 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	    printf("%d num static rigid tris\n",n_static_rigid_tri);
 	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
 	}
+    */
 }
 
 void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
 {
-    /////////////////////////////////////////////////////
-    //TODO: implement
-    printf("ERROR! assembleFromSurf() not ready yet.\n");
-    LOC(); clean_up(EXIT_FAILURE);
-    /////////////////////////////////////////////////////
+    if (is_bdry(surf)) return;
+    
+    unsort_surf_point(surf);
+    
+    TRI* tri;
+    surf_tri_loop(surf,tri)
+    {
+        CD_HSE_TYPE tag;
+
+        if (wave_type(surf) == ELASTIC_BOUNDARY)
+        {
+            tag = CD_HSE_TYPE::FABRIC_TRI;
+        }
+        else if (wave_type(surf) == NEUMANN_BOUNDARY)
+        {
+            tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
+        }
+        else if (wave_type(surf) == MOVABLE_BODY_BOUNDARY)
+        {
+            tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
+        }
+        else 
+        {
+            printf("assembleFromInterface() ERROR: "
+                    "unknown surface type\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+        
+        hseList.push_back(new CD_TRI(tri,tag));
+    }
 }
 
 void CollisionSolver3d::assembleFromCurve(CURVE* curve)
 {
-    /////////////////////////////////////////////////////
-    //TODO: implement
-    printf("ERROR! assembleFromCurve() not ready yet.\n");
-    LOC(); clean_up(EXIT_FAILURE);
-    /////////////////////////////////////////////////////
-}
+    if (hsbdry_type(curve) != STRING_HSBDRY) return; 
+    if (is_bdry(curve)) return;
 
-void CollisionSolver3d::assembleFromNode(NODE* node)
-{
-    /////////////////////////////////////////////////////
-    //TODO: implement
-    printf("ERROR! assembleFromNode() not ready yet.\n");
-    LOC(); clean_up(EXIT_FAILURE);
-    /////////////////////////////////////////////////////
+    unsort_curve_point(curve);//TODO: can remove?
+    
+    CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
+    
+    BOND* b;
+    curve_bond_loop(curve,b)
+    {
+        hseList.push_back(new CD_BOND(b,tag));
+    }
 }
 
 void CollisionSolver3d::setDomainBoundary(double* L, double* U)
@@ -338,21 +375,21 @@ void CollisionSolver3d::setHseTypeLists()
     stringBondList = getHseTypeList(CD_HSE_TYPE::STRING_BOND);
     elasticHseList.assign(stringBondList.begin(),stringBondList.end());
     elasticHseList.insert(elasticHseList.end(),fabricTriList.begin(),fabricTriList.end());
+
+	if (debugging("intfc_assembly"))
+    {
+	    printf("%lu number of elements is assembled\n",hseList.size());
+	    printf("%d num fabric tris\n",fabricTriList.size());
+	    printf("%d num string bonds\n",stringBondList.size());
+	    printf("%d num static rigid tris\n",staticRigidTriList.size());
+	    printf("%d num movable rigid tris\n",movableRigidTriList.size());
+	}
 }
 
 void CollisionSolver3d::initializeImpactZones()
 {
     makeSet(hseList);
     initRigidBodyImpactZones();
-        //initRigidBodyImpactZones(ft->interf);
-}
-
-//TODO: Can we remove?
-void CollisionSolver3d::initializeImpactZones(const INTERFACE* intfc)
-{
-    makeSet(hseList);
-    initRigidBodyImpactZones();
-        //initRigidBodyImpactZones(intfc);
 }
 
 void CollisionSolver3d::resolveCollision()
@@ -517,9 +554,9 @@ void CollisionSolver3d::computeAverageVelocity()
             sl = (STATE*)left_state(p); 
             for (int j = 0; j < 3; ++j)
     	    {
-                //TODO: ROUND_EPS == 2.22045e-16 too small???
-                //if (dt > ROUND_EPS)
-                if (dt > 1.0e-05)
+                //TODO: MACH_EPS == 2.22045e-16 too small???
+                //if (dt > MACH_EPS)
+                if (dt > 1.0e-05) //TODO: what's best max_dt?
                 {
                     sl->avgVel[j] = (Coords(p)[j] - sl->x_old[j])/dt;
                     sl->avgVel_old[j] = sl->avgVel[j];
@@ -916,6 +953,7 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         //      call revertAverageVelocity() above.
         if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
+            //TODO: causing jumping?
             limitStrainPosnJac(MotionState::MOVING);
                 //limitStrainPosnGS(MotionState::MOVING);
                     //computeMaxSpeed(); //debug
@@ -1414,7 +1452,6 @@ void createImpactZone(POINT* pts[], int num)
 	}
 }
 
-//void CollisionSolver3d::initRigidBodyImpactZones(const INTERFACE* intfc)
 void CollisionSolver3d::initRigidBodyImpactZones()
 {
     POINT* pts[3];
@@ -1422,37 +1459,19 @@ void CollisionSolver3d::initRigidBodyImpactZones()
     unsortHseList(movableRigidTriList);
 	for (auto it = movableRigidTriList.begin(); it != movableRigidTriList.end(); ++it)
     {
+        //TODO: can make more efficient by marking points sorted
+        //      and skipping if (sorted(pt)). Can also hold a pointer
+        //      to the head that each point is always merged and
+        //      set as pts[0].
+        
         for (int i = 0; i < 3; ++i)
             pts[i] = (*it)->Point_of_hse(i);
             
         createImpactZone(pts,3);
     }
-
-    /*
-	SURFACE** s;
-	TRI* tri;
-
-	intfc_surface_loop(intfc,s)
-	{
-	    if (is_bdry(*s)) continue;
-	    if (!isMovableRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
-	        //if (!isRigidBody(Point_of_tri(first_tri(*s))[0])) continue;
-
-        surf_tri_loop(*s, tri)
-	    {
-            //TODO: can make more efficient by marking points sorted
-            //      and skipping if (sorted(pt)). Hold a pointer to
-            //      the head that each point is always merged to
-            //      mergePoint(head,p);
-    		
-            createImpactZone(Point_of_tri(tri),3);
-    		//createImpactZoneRigidBody(Point_of_tri(tri),3);
-	    }
-	}
-    */
 }
 
-//TODO: may not need this
+//TODO: may not need this -- can remove
 void createImpactZoneRigidBody(POINT* pts[], int num)
 {
 	for (int i = 0; i < num; ++i)
@@ -2030,7 +2049,7 @@ void updateImpactListVelocity(POINT* head)
 	//compute angular velocity w: I*w = L;
 	double w[3];
     
-    if (myDet3d(I) < ROUND_EPS)
+    if (myDet3d(I) < MACH_EPS)
     {
         //I is non-invertible, calculate pseudoinverse with SVD
         arma::mat arI(3, 3);
@@ -2087,7 +2106,7 @@ void updateImpactListVelocity(POINT* head)
         STATE* sl = (STATE*)left_state(p);
 	    minusVec(sl->x_old,x_cm,dx);
 	    
-        if (mag_w < ROUND_EPS)
+        if (mag_w < MACH_EPS)
         {
 	        for (int i = 0; i < 3; ++i)
             {

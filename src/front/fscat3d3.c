@@ -1113,7 +1113,7 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 	if (debugging("collect_intfc"))
 	{
 	    (void) printf("Leaving collect_hyper_surface()\n");
-	    sprintf(fname,"final-intfc.%d",myid);
+        sprintf(fname,"final-intfc.%d",myid);
 	    gview_plot_interface(fname,cut_intfc);
 	    (void) printf("Checking consistency:\n");
 	    null_sides_are_consistent();

@@ -75,6 +75,8 @@ void addStringBenders(Front* front)
 
 void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
+    //TODO: add switch to turn off (early retur)
+
     SURFACE **surf;
     TRI *tri;
 

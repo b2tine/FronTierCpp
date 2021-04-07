@@ -1735,18 +1735,19 @@ static void setSurfVelocity(
 	POINT *p;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
+    HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed,max_nor_speed;
 	double *vel = nullptr;
     double *max_coords = nullptr;
 	int gindex_max;
-        int dim = front->rect_grid->dim;
+    int dim = front->rect_grid->dim;
 	long gindex;
 
-        nor_speed = 0.0;
-        max_nor_speed = 0.0;
-	unsort_surf_point(surf);
+    nor_speed = 0.0;
+    max_nor_speed = 0.0;
+	
+    unsort_surf_point(surf);
 	hs = Hyper_surf(surf);
 	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 			tri = tri->next)
@@ -2199,17 +2200,23 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
+/*
 extern void setSpecialNodeForce(
     Front* front,
 	double kl)
+*/
+extern void setSpecialNodeForce(
+    INTERFACE* intfc,
+	double kl)
 {
-	INTERFACE *intfc = front->interf;
+	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
-	RECT_GRID *gr = front->rect_grid;
+	RECT_GRID *gr = &(intfc->table->rect_grid);
+	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;
