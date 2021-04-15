@@ -34,6 +34,7 @@ static void passive_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
 static void gore_point_propagate(Front*,POINTER,POINT*,POINT*,BOND*,double);
 static void load_node_propagate(Front*,NODE*,NODE*,double);
 static void rg_string_node_propagate(Front*,NODE*,NODE*,double);
+
 static void fourth_order_elastic_set_propagate2d(Front*,double);
 static void fourth_order_elastic_set_propagate3d_serial(Front*,Front**,double);
 static void fourth_order_elastic_set_propagate3d_parallel(Front*,double);
@@ -50,6 +51,7 @@ static void assembleFromElasticSet(ELASTIC_SET* geom_set, CollisionSolver3d* cs)
 
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
+
 static void coating_mono_hyper_surf3d(Front*);
 
 
@@ -469,7 +471,10 @@ void fourth_order_elastic_set_propagate3d(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate()\n");
 }*/	/* end fourth_order_elastic_set_propagate() */
 
-static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfront, double fr_dt)
+static void fourth_order_elastic_set_propagate3d_serial(
+        Front* fr,
+        Front** newfront,
+        double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int total_size = 0;
@@ -491,7 +496,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
 	int owner_id = af_params->node_id[0];
     int myid = pp_mynode();
 	int gindex;
-    INTERFACE *elastic_intfc = NULL;
+    INTERFACE *elastic_intfc = nullptr;
 	double *L = fr->rect_grid->L;
 	double *U = fr->rect_grid->U;
 	double *h = fr->rect_grid->h;
@@ -507,7 +512,7 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
     *newfront = copy_front(fr);
     set_size_of_intfc_state(size_of_state(fr->interf));
     set_copy_intfc_states(YES);
-        //set_copy_intfc_states(NO); //TODO: Why is this set to NO?
+        //set_copy_intfc_states(NO); //TODO: Why was this set to NO?
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
@@ -521,7 +526,8 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
         //geom_set.front = fr;
 
     /*
-	if (first_break_strings && break_strings_num > 0 &&
+	//TODO: omitting for now -- needs to be tested.
+    if (first_break_strings && break_strings_num > 0 &&
 	    break_strings_time >= 0.0 && 
 	    fr->time + fr->dt >= break_strings_time)
 	{
@@ -569,7 +575,6 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
             elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
                 //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
-                
                 //elastic_intfc = FT_CollectHypersurfFromSubdomains(*newfront,owner,ELASTIC_BOUNDARY);
                     //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             
@@ -608,9 +613,9 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
                 FT_FreeThese(2,point_set_store, sv);
             
             FT_VectorMemoryAlloc((POINTER*)&point_set_store,
-                    total_owner_size,sizeof(GLOBAL_POINT));//TODO: use total_num_verts here
+                    total_owner_size,sizeof(GLOBAL_POINT)); //NOTE: uses total_num_verts here
             FT_VectorMemoryAlloc((POINTER*)&sv,
-                    owner_size,sizeof(SPRING_VERTEX));//TODO: use elastic_num_verts here
+                    owner_size,sizeof(SPRING_VERTEX)); //NOTE: uses elastic_num_verts here
             
             link_point_set(&geom_set,point_set,point_set_store);
 	    	count_vertex_neighbors(&geom_set,sv);
@@ -753,11 +758,11 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
         /*
         //Write from owner geom_set to owner point_set
 	    get_point_set_from(&geom_set,point_set);
+        */
 
         //TODO: for parallel runs, does calling get_point_set_from()
         //      after the call to copy_from_client_point_set()
         //      behave differently than calling beforehand?
-        */
 
 	    start_clock("spring_model");
 #if defined(__GPU__)
@@ -824,8 +829,6 @@ static void fourth_order_elastic_set_propagate3d_serial(Front* fr, Front** newfr
     {
         print_max_fabric_speed(*newfront);
         print_max_string_speed(*newfront);
-            //print_max_fabric_speed(fr);
-            //print_max_string_speed(fr);
     }
 
 	if (debugging("trace"))
@@ -1257,7 +1260,10 @@ void fourth_order_elastic_set_propagate3d_parallel(Front* fr, double fr_dt)
 //TODO: memory/synchronization bugs
 //
 //uses a collision solver on each processor
-void new_fourth_order_elastic_set_propagate3d_parallel_1(Front* fr, Front** newfront, double fr_dt)
+void new_fourth_order_elastic_set_propagate3d_parallel_1(
+        Front* fr,
+        Front** newfront,
+        double fr_dt)
 {
 	static ELASTIC_SET geom_set;
 	static int total_size = 0;
@@ -1297,7 +1303,7 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(Front* fr, Front** newf
     *newfront = copy_front(fr);
     set_size_of_intfc_state(size_of_state(fr->interf));
     set_copy_intfc_states(YES);
-        //set_copy_intfc_states(NO); //TODO: Why is this set to NO?
+        //set_copy_intfc_states(NO); //TODO: Why was this set to NO?
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
@@ -1486,7 +1492,6 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(Front* fr, Front** newf
         printf("COLLISION DETECTION ON\n");
 
         setCollisionFreePoints3d(elastic_intfc);
-            //setCollisionFreePoints3d(&geom_set);
         
         //collision_solver->initializeSystem(*newfront); //TODO: may use this now
         CollisionSolver3d::setStep((*newfront)->step);
@@ -1494,7 +1499,6 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(Front* fr, Front** newf
         CollisionSolver3d::setOutputDirectory(OutName(*newfront));    
 
         collision_solver->assembleFromInterface(elastic_intfc);
-            //assembleFromElasticSet(&geom_set,collision_solver);
         collision_solver->recordOriginalPosition();
         collision_solver->setHseTypeLists();
         collision_solver->initializeImpactZones();
@@ -2047,7 +2051,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     {
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
-        
+
+        //TODO: Need to make sure RG_STRING_NODEs stay fixed to rigid body
         AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
         if (extra && extra->af_node_type == PRESET_NODE)
         {

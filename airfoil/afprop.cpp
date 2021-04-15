@@ -1125,7 +1125,7 @@ static void load_node_propagate(
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	POINT *oldp,*newp;
-	double *g = iFparams->gravity;
+	double *g = af_params->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
 	double mass = af_params->payload;
@@ -1207,7 +1207,7 @@ static void rg_string_node_propagate(
         AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	RECT_GRID *gr = computational_grid(front->interf);
         POINT *oldp,*newp;
-        double *g = iFparams->gravity;
+        double *g = af_params->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
         CURVE **c;

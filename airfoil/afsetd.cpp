@@ -234,20 +234,25 @@ extern void set_spring_vertex_memory(
 	SPRING_VERTEX *sv,
 	int size)
 {
-	int i,j,num_nb;
-	for (i = 0; i < size; ++i)
+	for (int i = 0; i < size; ++i)
 	{
-	    num_nb = sv[i].num_nb;
 	    if (sv[i].x_nb != NULL)
-		FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k, 
-				sv[i].len0, sv[i].ix_nb);
+        {
+		    FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k,
+                    sv[i].len0, sv[i].ix_nb);
+        }
+
+	    int num_nb = sv[i].num_nb;
+
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].x_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].v_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
-	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
-		sv[i].ext_accel[j] = 0.0;
+	    
+	    // reset external acceleration
+        for (int j = 0; j < MAXD; ++j)
+		    sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
 
@@ -473,21 +478,26 @@ extern void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering count_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+
+	for (int i = 0; i < ns; ++i)
+    {
 	    count_surf_neighbors(geom_set->surfs[i],sv,&n);
-	for (i = 0; i < nc; ++i)
+    }
+	for (int i = 0; i < nc; ++i)
+    {
 	    count_curve_neighbors(geom_set->curves[i],sv,&n);
-	for (i = 0; i < nn; ++i)
+    }
+	for (int i = 0; i < nn; ++i)
+    {
 	    count_node_neighbors(geom_set->nodes[i],sv,&n);	
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving count_vertex_neighbors()\n");
@@ -498,26 +508,36 @@ extern void link_point_set(
 	GLOBAL_POINT **point_set,
 	GLOBAL_POINT *point_set_store)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering link_point_set()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+
+	for (int i = 0; i < ns; ++i)
+    {
 	    link_surf_point_set(geom_set,geom_set->surfs[i],point_set,
 				point_set_store,&n);
-	for (i = 0; i < nc; ++i)
+    }
+	for (int i = 0; i < nc; ++i)
 	{
 	    link_curve_point_set(geom_set,geom_set->curves[i],point_set,
 				point_set_store,&n);
 	}
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
+    {
 	    link_node_point_set(geom_set,geom_set->nodes[i],point_set,
 				point_set_store,&n);
+    }
+
+    int nrgbs = geom_set->num_rgb_surfs;
+    for (int i = 0; i < nrgbs; ++i)
+    {
+        link_surf_point_set(geom_set,geom_set->rgb_surfs[i],point_set,
+                point_set_store,&n);
+    }
 
 	if (debugging("canopy"))
 	{
@@ -601,24 +621,29 @@ extern void set_vertex_neighbors(
 	SPRING_VERTEX *sv,
 	GLOBAL_POINT **point_set)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering set_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+	
+    for (int i = 0; i < ns; ++i)
+    {
 	    set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,
 					point_set);
-	for (i = 0; i < nc; ++i)
+    }
+	for (int i = 0; i < nc; ++i)
+    {
 	    set_curve_spring_vertex(geom_set,geom_set->curves[i],sv,&n,
 					point_set);
-	for (i = 0; i < nn; ++i)
+    }
+	for (int i = 0; i < nn; ++i)
+    {
 	    set_node_spring_vertex(geom_set,geom_set->nodes[i],sv,&n,
 					point_set);
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving set_vertex_neighbors()\n");
@@ -1193,20 +1218,23 @@ extern void get_point_set_from(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering get_point_set_from()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+
+	for (int i = 0; i < ns; ++i)
 	    surf_get_point_set_from(geom_set->surfs[i],point_set);
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
 	    curve_get_point_set_from(geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
 	    node_get_point_set_from(geom_set->nodes[i],point_set);
+
+    int nrgbs = geom_set->num_rgb_surfs;
+    for (int i = 0; i < nrgbs; ++i)
+        surf_get_point_set_from(geom_set->rgb_surfs[i],point_set);
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving get_point_set_from()\n");
@@ -1216,20 +1244,23 @@ extern void put_point_set_to(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering put_point_set_to()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+
+	for (int i = 0; i < ns; ++i)
 	    surf_put_point_set_to(geom_set->surfs[i],point_set);
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
 	    curve_put_point_set_to(geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+	for (int i = 0; i < nn; ++i)
 	    node_put_point_set_to(geom_set->nodes[i],point_set);
+
+    int nrgbs = geom_set->num_rgb_surfs;
+    for (int i = 0; i < nrgbs; ++i)
+        surf_put_point_set_to(geom_set->rgb_surfs[i],point_set);
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving put_point_set_to()\n");
@@ -1442,22 +1473,25 @@ static void assembleParachuteSet2d(
 	    	}
 	    }
 	}
-	geom_set->num_surfs = 0;
+	
+    geom_set->num_surfs = 0;
 	geom_set->num_curves = nc;
 	geom_set->num_nodes = nn;
-	geom_set->num_verts = 0;
-	for (i = 0; i < nc; ++i)
-	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-	geom_set->num_verts += nn;
-	geom_set->load_node = NULL;
+	geom_set->elastic_num_verts = 0;
+	
+    for (i = 0; i < nc; ++i)
+	    geom_set->elastic_num_verts += I_NumOfCurveInteriorPoints(curves[i]);
+	geom_set->elastic_num_verts += nn;
+	
+    geom_set->load_node = NULL;
 	for (i = 0; i < nn; ++i)
 	    if (is_load_node(nodes[i]))
 	    {
             geom_set->load_node = nodes[i];
             reorder_string_curves(nodes[i]);
 	    }
-	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", 0, nc, nn, 
-		geom_set->num_verts);
+	printf("ns = %d, nc = %d, nn = %d, elastic_num_verts = %d\n", 0, nc, nn, 
+		geom_set->elastic_num_verts);
 }	/* end assembleParachuteSet2d */
 
 static void assembleParachuteSet3d(
@@ -1467,16 +1501,29 @@ static void assembleParachuteSet3d(
 	SURFACE **s = NULL;
 	CURVE **c = NULL;
 	NODE **n = NULL;
-	int i,l,ns,nc,nn;
-	SURFACE **surfs = geom_set->surfs;
+
+    SURFACE **rgb_surfs = geom_set->rgb_surfs;
+    SURFACE **surfs = geom_set->surfs;
 	CURVE **curves = geom_set->curves;
 	NODE **nodes = geom_set->nodes;
-	int num_layers = 3;
 
-	ns = nc = nn = 0;
 	/* Assemble canopy surfaces */
-	intfc_surface_loop(intfc,s)
+	
+    int nrgbs = 0;
+    int ns = 0;
+    int nc = 0;
+    int nn = 0;
+	
+    intfc_surface_loop(intfc,s)
 	{
+        if (is_bdry(*s)) continue;
+
+        if (wave_type(*s) == NEUMANN_BOUNDARY ||
+            wave_type(*s) == MOVABLE_BODY_BOUNDARY)
+        {
+            rgb_surfs[nrgbs++] = *s;
+        }
+
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 	    surfs[ns++] = *s;
 	    surf_pos_curve_loop(*s,c)
@@ -1523,10 +1570,13 @@ static void assembleParachuteSet3d(
 	    }
 	}	
 
+
 	/* Assemble curves and nodes */
-	for (l = 0; l < num_layers; ++l)
+	
+    int num_layers = 3; //TODO: what does this mean???
+	for (int l = 0; l < num_layers; ++l)
 	{
-	    for (i = 0; i < nn; ++i)
+	    for (int i = 0; i < nn; ++i)
 	    {
 	    	node_in_curve_loop(nodes[i],c)
 	    	{
@@ -1558,19 +1608,30 @@ static void assembleParachuteSet3d(
 	    	}
 	    }
 	}
+
 	geom_set->num_surfs = ns;
 	geom_set->num_curves = nc;
 	geom_set->num_nodes = nn;
-	geom_set->num_verts = 0;
-	for (i = 0; i < ns; ++i)
-	    geom_set->num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
-	for (i = 0; i < nc; ++i)
-	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-	geom_set->num_verts += nn;
-	geom_set->load_node = NULL;
-    
+	geom_set->elastic_num_verts = 0;
+	
+    for (int i = 0; i < ns; ++i)
+	    geom_set->elastic_num_verts += I_NumOfSurfInteriorPoints(surfs[i]);
+	for (int i = 0; i < nc; ++i)
+	    geom_set->elastic_num_verts += I_NumOfCurveInteriorPoints(curves[i]);
+	geom_set->elastic_num_verts += nn;
+	
+ 
+    geom_set->num_rgb_surfs = nrgbs;
+    geom_set->total_num_verts = geom_set->elastic_num_verts;
+
+    for (int i = 0; i < nrgbs; ++i)
+        geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
+
+
     int nrg = 0;
-	for (i = 0; i < nn; ++i)
+    geom_set->load_node = NULL;
+
+	for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
@@ -1578,12 +1639,16 @@ static void assembleParachuteSet3d(
                 geom_set->load_node = nodes[i];
             else
                 geom_set->rg_string_nodes[nrg++] = nodes[i];
-
             reorder_string_curves(nodes[i]);
 	    }
 	}
-	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", ns, nc, nn, 
-		geom_set->num_verts);
+
+    if (debugging("intfc_assembly"))
+    {
+        printf("ns = %d, nc = %d, nn = %d, elastic_num_verts = %d\n",
+                ns, nc, nn, geom_set->elastic_num_verts);
+        printf("nrgbs = %d, total_num_verts = %d\n", geom_set->total_num_verts);
+    }
 }	/* end assembleParachuteSet */
 
 extern void copy_from_client_point_set(

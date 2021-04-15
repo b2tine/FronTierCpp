@@ -1875,9 +1875,6 @@ static void setCurveVelocity(
     {
         set_bond_length(b,dim);
     }
-
-    //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
-
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2061,7 +2058,7 @@ extern void set_geomset_velocity(
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 
-    //TODO: add rgb_surfs
+    //TODO: add rgb_surfs ?
 
 }	/* end set_geomset_velocity */
 

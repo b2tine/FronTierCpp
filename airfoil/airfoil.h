@@ -64,7 +64,8 @@ struct _PERT_PARAMS {
 };
 typedef struct _PERT_PARAMS PERT_PARAMS;
 
-typedef struct {
+struct AF_PARAMS
+{
     int dim;
     SPRING_MODEL spring_model;
 	boolean no_fluid;
@@ -74,6 +75,7 @@ typedef struct {
 	boolean cut_vent;
     boolean use_total_mass;
 	boolean use_gpu;
+
 	PERT_PARAMS pert_params;
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
@@ -85,6 +87,7 @@ typedef struct {
 
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
+
     double kbs {0.0};    /* spring bending constant of surface */
 	double ks {5000.0};  /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
@@ -140,8 +143,7 @@ typedef struct {
     double vol_diff {0.0};
     double pre_tol;
     double rest;
-
-} AF_PARAMS;
+};
 
 /*	airfoil.cpp functions */
 
@@ -238,13 +240,16 @@ struct _REGISTERED_PTS {
 };
 typedef struct _REGISTERED_PTS REGISTERED_PTS;
 
-struct _ELASTIC_SET{
+struct ELASTIC_SET
+{
 	Front *front;
     NODE *load_node;
     NODE *rg_string_nodes[5];
+    SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
+    int num_rgb_surfs;
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
@@ -257,12 +262,12 @@ struct _ELASTIC_SET{
 	double m_s;
 	double m_l;
 	double m_g;
-	int num_verts;		/* Total number of spring-mass points */
+	int elastic_num_verts;		/* Total number of spring-mass points */
+    int total_num_verts;    /* Total number of spring-mass and rigid body points */
 	double dt_tol;
 	double dt;
 };
 
-typedef struct _ELASTIC_SET ELASTIC_SET;
 
 void read_iFparams(char*,IF_PARAMS*);
 void restart_set_dirichlet_bdry_function(Front*);
@@ -292,8 +297,6 @@ extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
 extern void fourth_order_elastic_set_propagate(Front*,double);
-extern void fourth_order_elastic_set_propagate_parallel(Front*,double);
-extern void fourth_order_elastic_set_propagate_serial(Front*,double);
 
 extern void airfoil_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
 extern int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
@@ -357,7 +360,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,double);
+extern void setSpecialNodeForce(INTERFACE*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);
 extern void set_unequal_strings(Front*);

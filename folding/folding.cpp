@@ -170,7 +170,7 @@ void Folder3d::doFolding() {
     cd_solver->assembleFromInterface(m_intfc);
         //cd_solver->assembleFromInterface(m_intfc,getFrameStepSize());
     cd_solver->setHseTypeLists();
-    cd_solver->initializeImpactZones(m_intfc);
+    cd_solver->initializeImpactZones();
     //NOTE: cd_solver->recordOriginalPosition() gets called in doFolding().
 
     cd_solver->setFabricSpringConstant(getSpringParams().k);

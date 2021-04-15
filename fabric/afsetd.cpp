@@ -233,19 +233,24 @@ extern void set_spring_vertex_memory(
 	SPRING_VERTEX *sv,
 	int size)
 {
-	int i,j,num_nb;
-	for (i = 0; i < size; ++i)
+	for (int i = 0; i < size; ++i)
 	{
-	    num_nb = sv[i].num_nb;
 	    if (sv[i].x_nb != NULL)
-		FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k, 
-				sv[i].len0, sv[i].ix_nb);
+        {
+		    FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k,
+                    sv[i].len0, sv[i].ix_nb);
+        }
+
+	    int num_nb = sv[i].num_nb;
+
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].x_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].v_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
-	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
+
+	    // reset external acceleration
+	    for (int j = 0; j < MAXD; ++j)
             sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
@@ -473,23 +478,26 @@ extern void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering count_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+	
+    for (int i = 0; i < ns; ++i)
     {
         count_surf_neighbors(geom_set->surfs[i],sv,&n);
     }
-    for (i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
+    {
 	    count_curve_neighbors(geom_set->curves[i],sv,&n);
-	for (i = 0; i < nn; ++i)
+    }
+	for (int i = 0; i < nn; ++i)
+    {
 	    count_node_neighbors(geom_set->nodes[i],sv,&n);	
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving count_vertex_neighbors()\n");
@@ -613,28 +621,28 @@ extern void set_vertex_neighbors(
 	SPRING_VERTEX *sv,
 	GLOBAL_POINT **point_set)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering set_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
 
-	for (i = 0; i < ns; ++i)
+	for (int i = 0; i < ns; ++i)
     {
         set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,point_set);
     }
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
     {
 	    set_curve_spring_vertex(geom_set,geom_set->curves[i],sv,&n,
 					point_set);
     }
-    for (i = 0; i < nn; ++i)
+    for (int i = 0; i < nn; ++i)
+    {
 	    set_node_spring_vertex(geom_set,geom_set->nodes[i],sv,&n,
 					point_set);
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving set_vertex_neighbors()\n");
@@ -1479,10 +1487,6 @@ static void assembleParachuteSet3d(
 	    }
 	}	
 
-    if (debugging("intfc_assembly"))
-    {
-        printf("ns = %d, nc = %d, nn = %d\n",ns,nc,nn);
-    }
 
 	/* Assemble curves and nodes */
 
