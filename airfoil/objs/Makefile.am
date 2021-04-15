@@ -11,9 +11,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/airfoil \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
 
-AM_LDFLAGS = @CVODE_LIBS@ \
-			 @NLOPT_LIBS@ \
-			 @CGAL_LIBS@ \
+AM_LDFLAGS = @CGAL_LIBS@ \
 			 @BOOST_LIBS@ \
 			 @ARMA_LIBS@
 

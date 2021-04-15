@@ -109,13 +109,14 @@ AC_SUBST(HDF_CFLAGS,${hdfinc})
 AC_SUBST(HDF_LIBS,${hdflib})
 
 
-#TODO: use pkg-config for this -- everything else too when possible
 mpi_libflags="-lmpi"
 
 #configure with MPI present in user environment (or in petsc installation)
 AC_ARG_WITH([mpi],[AS_HELP_STRING([--with-mpi],
             [use when mpi provided by user environment])],
-            [with_mpi=yes],
+            [with_mpi=yes
+             mpiinc=
+             mpilib=${mpi_libflags}],
             [with_mpi=no])
 
 #configure with OpenMPI
