@@ -195,12 +195,11 @@ void setMotionParams(Front* front)
 	    	{
 	    	case 'n':
 	    	case 'N':
-	    	    front->interior_propagate = NULL;
+	    	    front->interior_propagate = nullptr;
 	    	    break;
 	    	case 'e':
 	    	case 'E':
-                    front->interior_propagate = 
-                                fourth_order_elastic_surf_propagate;
+                front->interior_propagate = fourth_order_elastic_surf_propagate;
 #if defined(__GPU__)
             	    if (CursorAfterStringOpt(infile,
 				"Enter yes to use GPU solver:"))
@@ -214,8 +213,7 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'p':
 	    	case 'P':
-	    	    front->interior_propagate = 
-                                fourth_order_elastic_set_propagate;
+	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -224,9 +222,9 @@ void setMotionParams(Front* front)
 	    }
 	}
 	else
-        {
-	    front->interior_propagate = fourth_order_elastic_set_propagate;
-        }
+    {
+        front->interior_propagate = fourth_order_elastic_set_propagate;
+    }
 
 
         //TODO: Assignments to Fparams (formerly iFparams) likely

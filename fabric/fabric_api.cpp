@@ -99,6 +99,7 @@ extern void SMM_Restart(Front *front, F_BASIC_DATA *f_basic)
         FT_SetOutputCounter(front);
 }
 
+//TODO: update this function to match the driver function
 extern void SMM_StartUpStep()
 {
         Front *front = SMM_GetFront();
@@ -114,9 +115,10 @@ extern void SMM_StartUpStep()
 
         if (!f_basic->RestartRun)
         {
+            FrontPreAdvance(front);
             FT_Propagate(front);
             FT_RelinkGlobalIndex(front);
-	        FT_InteriorPropagate(front);
+	            //FT_InteriorPropagate(front);
 
             FT_SetOutputCounter(front);
             FT_SetTimeStep(front);
@@ -324,6 +326,14 @@ extern void SMM_InitSpringMassParams()
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
 
+            CursorAfterString(infile,"Enter fabric bending stiffness constant:");
+            fscanf(infile,"%lf",&af_params->kbs);
+            (void) printf("%f\n",af_params->kbs);
+
+            CursorAfterString(infile,"Enter fabric bending damping constant:");
+            fscanf(infile,"%lf",&af_params->lambda_bs);
+            (void) printf("%f\n",af_params->lambda_bs);
+
             CursorAfterString(infile,"Enter fabric friction constant:");
             fscanf(infile,"%lf",&af_params->mu_s);
             (void) printf("%f\n",af_params->mu_s);
@@ -400,6 +410,10 @@ extern void SMM_InitSpringMassParams()
     CursorAfterStringOpt(infile,"Enter strain limit:");
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
+            
+    CursorAfterStringOpt(infile,"Enter compressive strain limit:");
+    fscanf(infile,"%lf",&af_params->compressive_strain_limit);
+    (void) printf("%f\n",af_params->compressive_strain_limit);
             
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);

@@ -1735,18 +1735,19 @@ static void setSurfVelocity(
 	POINT *p;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
+    HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD],nor_speed,max_nor_speed;
 	double *vel = nullptr;
     double *max_coords = nullptr;
 	int gindex_max;
-        int dim = front->rect_grid->dim;
+    int dim = front->rect_grid->dim;
 	long gindex;
 
-        nor_speed = 0.0;
-        max_nor_speed = 0.0;
-	unsort_surf_point(surf);
+    nor_speed = 0.0;
+    max_nor_speed = 0.0;
+	
+    unsort_surf_point(surf);
 	hs = Hyper_surf(surf);
 	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 			tri = tri->next)
@@ -1769,7 +1770,6 @@ static void setSurfVelocity(
                 max_coords = Coords(p);
             }
             
-            //TODO: why only normal velocity?
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = nor_speed*nor[j];
@@ -1781,7 +1781,7 @@ static void setSurfVelocity(
 	}
 
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
-	//reduce_high_freq_vel(front,surf);//TODO: what was this?
+	//reduce_high_freq_vel(front,surf); //TODO: should this be used?
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -1797,18 +1797,17 @@ static void setCurveVelocity(
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
-	double nor[MAXD],nor_speed,max_nor_speed;
+	double nor[MAXD];
 	double *vel = nullptr;
 	double *crds_max = nullptr;
 	long gindex;
 	int gindex_max;
 	int dim = FT_Dimension();
 
-    nor_speed = 0.0;
-    max_nor_speed = 0.0;
-
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -1816,6 +1815,13 @@ static void setCurveVelocity(
             sl = (STATE*)left_state(p);
             sr = (STATE*)right_state(p);
             vel = point_set[gindex]->v;
+            
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
 
             for (j = 0; j < 3; ++j)
             {
@@ -1823,9 +1829,16 @@ static void setCurveVelocity(
                 sr->vel[j] = vel[j];
             }
         }
+        
+        //TODO: Can we set non normal max front speed?
+        //
+        //      This appears to significantly improve string behavior
+        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
     }
     else
     {
+        double max_nor_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -1838,11 +1851,11 @@ static void setCurveVelocity(
                 FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
-                nor_speed = scalar_product(vel,nor,3);
-            
+               
+                double nor_speed = scalar_product(vel,nor,3);
                 if (max_nor_speed < fabs(nor_speed))
                 {
-                    max_nor_speed = nor_speed;
+                    max_nor_speed = fabs(nor_speed);
                     crds_max = Coords(p);
                 }
                 
@@ -1853,12 +1866,18 @@ static void setCurveVelocity(
                 }
             }
         }
+
+        set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
-	for (b = curve->first; b != NULL; b = b->next)
-        set_bond_length(b,dim);
 
-    set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+	for (b = curve->first; b != NULL; b = b->next)
+    {
+        set_bond_length(b,dim);
+    }
+
+    //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2029,6 +2048,7 @@ extern void set_geomset_velocity(
 	ns = geom_set->num_surfs;
 	nc = geom_set->num_curves;
 	nn = geom_set->num_nodes;
+
 	for (i = 0; i < ns; ++i)
     {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
@@ -2040,6 +2060,8 @@ extern void set_geomset_velocity(
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
+
+    //TODO: add rgb_surfs
 
 }	/* end set_geomset_velocity */
 
@@ -2178,18 +2200,23 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
+/*
 extern void setSpecialNodeForce(
     Front* front,
+	double kl)
+*/
+extern void setSpecialNodeForce(
     INTERFACE* intfc,
 	double kl)
 {
-	//INTERFACE *intfc = front->interf;
+	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
-	RECT_GRID *gr = front->rect_grid;
+	RECT_GRID *gr = &(intfc->table->rect_grid);
+	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;

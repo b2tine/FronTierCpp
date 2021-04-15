@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     else
         level_func_pack.pos_component = LIQUID_COMP2;
        
-    //TODO: to be removed along with initRigidBody_OLD()
+    //TODO: to be removed
 	    //setInitialIntfcAF(&front,&level_func_pack,in_name);
 	if (!RestartRun)
 	{

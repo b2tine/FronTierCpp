@@ -89,18 +89,22 @@ struct AF_PARAMS
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
+	double payload;
+    bool rgb_payload {false};
     bool strings_present {false};
     bool gores_present {false};
 
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
-	double payload;
+
+	double kbs {0.0};	 /* spring bending constant of surface */
 	double ks {5000.0};	 /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
     double mu_s;         /* fabric static friction consant */
     double mu_l;         /* string curves static friction consant */
-	double lambda_s;	 /* damping factor of surface */
+	double lambda_bs {0.0};	 /* bending damping factor of surface */
+	double lambda_s;	 /* frict factor of surface */
 	double lambda_l;	 /* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
 	double m_s {0.001};	 /* point mass of surface */
@@ -116,16 +120,16 @@ struct AF_PARAMS
 	int n_sub;			/* number of sub-steps for tan prop */
 	int num_opt_round;		/* number of mesh optimizations rounds*/
 	int num_smooth_layers;	/* number of layer to smooth high frequency velocity */
-	int    num_np;			/* number of master node to run spring model */
+	int num_np;			/* number of master node to run spring model */
     
-	int    node_id[10];		/* master node id */
+	int node_id[10];		/* master node id */
 	
-        double break_strings_time;	/* time to break some strings */
-	int    break_strings_num;	/* number of strings to break */
-	int    *break_strings_gindex;	/* gindex of strings to break */
+    double break_strings_time {HUGE};	/* time to break some strings */
+	int break_strings_num {0};	/* number of strings to break */
+	int* break_strings_gindex;	/* gindex of strings to break */
 	double unequal_coeff;		/* the unequal coefficient */
-	int    unequal_strings_num;	/* number of unequal strings */
-	int    *unequal_strings_gindex; /* gindex of unequal strings */
+	int unequal_strings_num;	/* number of unequal strings */
+	int* unequal_strings_gindex; /* gindex of unequal strings */
 
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
@@ -139,18 +143,24 @@ struct AF_PARAMS
     double string_thickness {0.004};
 
     double strain_limit {0.1};
+    double compressive_strain_limit {0.025};
     double strainrate_limit {0.1};
 
     double vol_diff {0.0};              //for refitting AABBTree
 }; 
 
+//TODO: Collision solver needs to be able to assemble hseList from
+//      the surfaces, curves and nodes of ELASTIC_SET...
 struct ELASTIC_SET
 {
 	Front *front;
     NODE *load_node;
+    NODE *rg_string_nodes[5];
+    SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
+	int num_rgb_surfs;
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
@@ -163,7 +173,8 @@ struct ELASTIC_SET
 	double m_s;
 	double m_l;
 	double m_g;
-	int num_verts;		/* Total number of spring-mass points */
+	int elastic_num_verts;		    /* Total number of spring-mass points */
+	int total_num_verts;	/* Total number of spring-mass and rigid body points */
 	double dt_tol;
 	double dt;
 };
@@ -337,7 +348,7 @@ extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
-extern void setSpecialNodeForce(Front*,INTERFACE*,double);
+extern void setSpecialNodeForce(INTERFACE*,double);
     //extern void setSpecialNodeForce(Front*,double);
 extern void break_strings(Front*);
 extern void record_break_strings_gindex(Front*);

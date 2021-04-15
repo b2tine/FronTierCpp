@@ -440,13 +440,11 @@ static void setInitialIntfcAF2d(
 static void zero_state(
         COMPONENT comp,
         double *coords,
-	IF_FIELD *field,
-	int index,
+        IF_FIELD *field,
+        int index,
         int dim,
         IF_PARAMS *af_params)
 {
-        int i;
-        for (i = 0; i < dim; ++i)
+        for (int i = 0; i < dim; ++i)
             field->vel[i][index] = 0.0;
-        field->vel[1][index] = 0.0;
 }       /* end zero_state */

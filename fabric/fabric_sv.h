@@ -6,6 +6,7 @@ struct SPRING_VERTEX
     double *x;              //position
     double *v;              //velocity
 	double *f;              //force
+	double *bendforce;      //bending force
     double *ext_impul;      //velocity comp due to impulse of external force
 	int ix;
     int num_nb;             //number of neighboring vertices
@@ -26,6 +27,7 @@ struct GLOBAL_POINT
     double x[3];            //position
     double v[3];            //velocity
 	double f[3];            //force
+	double bendforce[3];    //bending force
     double impuls[3];
 	double fluid_accel[3];  //acceleration due to fluid pressue difference on fabric
 	double other_accel[3];  //acceleration for special nodes

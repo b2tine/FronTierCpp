@@ -50,8 +50,8 @@ static void initEllipticPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 static void initWingsPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 		STRING_PARAMS*,PLANE_PARAMS*);
 
-// Yan Li
 static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
+
 static void init3dCurves(Front*,double*,double*,int,AF_NODE_TYPE);
 
 
@@ -2669,6 +2669,14 @@ static void init3dCurves(
         double* h = computational_grid(intfc)->h;
         int nb = (int)(spacing/(0.5*h[0]));
         spacing /= (double)nb;
+        
+        //overide default spacing with input file option
+        FILE *infile = fopen(InName(front),"r");
+        if (CursorAfterStringOpt(infile,"Enter string point spacing:"))
+        {
+            fscanf(infile,"%lf",&spacing);
+            (void) printf("%f\n",spacing);
+        }
         
         BOND* b = curve->first;
         for (int j = 1; j < nb; ++j)

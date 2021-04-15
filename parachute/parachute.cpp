@@ -162,8 +162,9 @@ int main(int argc, char **argv)
             clearRegisteredPoints(&front);
             resetRigidBodyVelocity(&front);
                 //setRigidBodyMotionParams(&front,&rgb_params);
-            
                 //modifyInitialization(&front);
+            set_equilibrium_mesh(&front);
+            static_mesh(front.interf) = YES;
             
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             l_cartesian->initMesh(); //TODO: may be able to remove this one
@@ -186,6 +187,8 @@ int main(int argc, char **argv)
             if (!af_params.no_fluid)
                 l_cartesian->readFrontInteriorStates(restart_state_name);
             readAfExtraData(&front,restart_state_name);
+            clearRegisteredPoints(&front);
+            resetRigidBodyVelocity(&front);
         }
     }
     else

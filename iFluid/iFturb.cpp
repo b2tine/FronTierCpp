@@ -153,7 +153,7 @@ double Incompress_Solver_Smooth_Basis::computeMuofSmagorinskyModel(
         double **vel = field->vel;
         double C_s = iFparams->C_s;
         
-        //TODO: Need to detect boundary's and apply boundary condition (slip, noslip etc.)???
+        //TODO: detect boundary's and apply boundary condition, like vreman model implementation
         switch (dim)
 	    {
             case 2:
@@ -214,6 +214,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
     double C_v = iFparams->C_v;
 
     /*
+    //TODO: add switch to run below without detecting boundaries (for comparison)
     switch (dim)
     {
         case 2:

@@ -258,43 +258,61 @@ extern void compute_spring_accel1(
 	double *accel,
 	int dim)
 {
-	int i,k;
-	double len,vec[MAXD];
-
-	for (k = 0; k < dim; ++k)
+	for (int k = 0; k < dim; ++k)
 	    accel[k] = 0.0;
-	for (i = 0; i < sv->num_nb; ++i)
+
+	//acceleration due to elastic stretching force
+    for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    len = 0.0;
-	    for (k = 0; k < dim; ++k)
+	    double vec[MAXD];
+	    double len = 0.0;
+
+	    for (int k = 0; k < dim; ++k)
 	    {
-		vec[k] = sv->x_nb[i][k] - sv->x[k];
-		len += sqr(vec[k]);
+            vec[k] = sv->x_nb[j][k] - sv->x[k];
+            len += vec[k]*vec[k];
 	    }
+
 	    len = sqrt(len);
 
-	    for (k = 0; k < dim; ++k)
+	    for (int k = 0; k < dim; ++k)
 	    {
-		vec[k] /= len;
-		accel[k] += sv->k[i]*((len - sv->len0[i])*vec[k])/sv->m;
+            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
 	    }
 	}
 
-        //TODO: This has not been implemented.
-        //computeElasticForce(sv,f);
+    //acceleration due to elastic bending and damping forces
+    for (int k = 0; k < dim; ++k)
+    {
+        accel[k] += sv->bendforce[k]/sv->m;
+        accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
+    }
 
-	for (k = 0; k < dim; ++k)
+    for (int k = 0; k < dim; ++k)
+    {
+        //TODO: Make sure this is supposed to be just the internal force on the fabric point
+        sv->f[k] = accel[k]*sv->m;
+    }
+
+    for (int k = 0; k < dim; ++k)
+    {
+        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
+    }
+
+    /*
+    //TODO: Why aren't the damping and external accelerations
+    //      included in this force computation??
+	for (int k = 0; k < dim; ++k)
     {
 	    sv->f[k] = accel[k]*sv->m;
     }
 	
-    for (k = 0; k < dim; ++k)
+    for (int k = 0; k < dim; ++k)
 	{
 	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-
-	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k]
-                    + sv->other_accel[k];
+	    accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
 	}
+    */
 }	/* end compute_spring_accel */
 
 
@@ -435,6 +453,13 @@ void generic_spring_solver(
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
+                    if (isnan(x_old[i][j]))
+                    {
+                        printf("After loop %d = %d: x_old[%d][%d] = %f\n",
+                                    n,i,j,x_old[i][j]);
+                        LOC(); clean_up(ERROR);
+                    }
+
                 }
 	    	for (i = 0; i < size; ++i)
             {
@@ -623,14 +648,12 @@ extern void set_node_spring_vertex(
 	double lambda_g = geom_set->lambda_g;
 	boolean is_fixed = NO;
 	STATE *sl,*sr;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g;
 	long gindex,gindex_nb;
-
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
-	else
-	    g = NULL;
+	
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
 
 	if (dim == 3)
 	{
@@ -647,16 +670,19 @@ extern void set_node_spring_vertex(
 		{
             Front *front = geom_set->front;
             AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+		    mass = af_params->payload;
             //TODO: If multiple RG_STRING_NODE nodes,
             //      should the mass be a fraction of the total
             //      payload (which is the mass of the RGB)?
             //      i.e. mass = payload/(double)num_rg_string_nodes;
-		    mass = af_params->payload;
+            //
+            //      The above has been added in cgal.cpp : connectStringtoRGB().
+            //      Leaving this todo and comment for now since it is not obvious.
 		}
 		else if (extra->af_node_type == GORE_NODE)
                     mass = geom_set->m_g;
 		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_s;
+                    mass = geom_set->m_l;
 		else if (extra->af_node_type == THR_LOAD_NODE)
 		    mass = geom_set->m_l;
         else if (extra->af_node_type == SEC_LOAD_NODE)
@@ -700,6 +726,7 @@ extern void set_node_spring_vertex(
 	sv[*n].x = point_set[gindex]->x;
 	sv[*n].v = point_set[gindex]->v;
 	sv[*n].f = point_set[gindex]->f;
+    sv[*n].bendforce = point_set[gindex]->bendforce;
 	sv[*n].ext_impul = point_set[gindex]->impuls;
 	sv[*n].fluid_accel = point_set[gindex]->fluid_accel;
 	sv[*n].other_accel = point_set[gindex]->other_accel;
@@ -728,7 +755,7 @@ extern void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-		sv[*n].k[nn] = kl;
+		    sv[*n].k[nn] = kl;
 	    ++nn;
 	}
 	for (c = node->in_curves; c && *c; ++c)
@@ -756,7 +783,7 @@ extern void set_node_spring_vertex(
 		    is_fixed = YES;
 	    }
 	    else
-		sv[*n].k[nn] = kl;
+            sv[*n].k[nn] = kl;
 	    ++nn;
 	}
 	if (dim == 3)
@@ -821,9 +848,9 @@ extern void set_node_spring_vertex(
 	    }
 	    if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
 	    {
-		sv[*n].lambda = 0.0;
+		    sv[*n].lambda = 0.0;
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
-		    sv[*n].k[i] = 0.0;
+		        sv[*n].k[i] = 0.0;
 	    }
 	}
 	else
@@ -858,14 +885,13 @@ extern void set_curve_spring_vertex(
 	BOND *b;
 	double kl,m_l,lambda_l;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        double *g;
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
-	    g = iFparams->gravity;
-	else
-	    g = NULL;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
+
 	if (dim == 3)
 	{
 	    if (hsbdry_type(curve) == STRING_HSBDRY)
@@ -916,6 +942,7 @@ extern void set_curve_spring_vertex(
 	    sv[i].x = point_set[gindex]->x;
 	    sv[i].v = point_set[gindex]->v;
 	    sv[i].f = point_set[gindex]->f;
+        sv[i].bendforce = point_set[gindex]->bendforce;
 	    sv[i].ext_impul = point_set[gindex]->impuls;
 	    sv[i].fluid_accel = point_set[gindex]->fluid_accel;
 	    sv[i].other_accel = point_set[gindex]->other_accel;
@@ -1041,16 +1068,15 @@ extern void set_surf_spring_vertex(
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
 	int dim = front->rect_grid->dim;
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        double *g;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs = Hyper_surf(surf);
 	long gindex,gindex_nb;
 
-	if (iFparams != NULL)
- 	    g = iFparams->gravity;
-	else g = NULL;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double *g = nullptr;
+	if (af_params)
+ 	    g = af_params->gravity;
 
 	unsort_surf_point(surf);
 	i = *n;
@@ -1078,10 +1104,14 @@ extern void set_surf_spring_vertex(
 		sv[i].x = point_set[gindex]->x;
 		sv[i].v = point_set[gindex]->v;
 		sv[i].f = point_set[gindex]->f;
-	    	sv[i].ext_impul = point_set[gindex]->impuls;
-	    	sv[i].fluid_accel = point_set[gindex]->fluid_accel;
-	    	sv[i].other_accel = point_set[gindex]->other_accel;
-		PointAndFirstRingTris(p,Hyper_surf_element(tri),
+
+        sv[i].bendforce = point_set[gindex]->bendforce;
+
+        sv[i].ext_impul = point_set[gindex]->impuls;
+        sv[i].fluid_accel = point_set[gindex]->fluid_accel;
+        sv[i].other_accel = point_set[gindex]->other_accel;
+		
+        PointAndFirstRingTris(p,Hyper_surf_element(tri),
 				Hyper_surf(surf),&nt,tris);
 		sv[i].num_nb = nt;
 		for (k = 0; k < nt; ++k)
@@ -1097,7 +1127,7 @@ extern void set_surf_spring_vertex(
 		    	sv[i].k[k] = 0.0;
 		    else
 		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];;
+		    sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;
@@ -1120,6 +1150,7 @@ static void get_point_value_from(
 	    point_set[gindex]->x[i] = Coords(p)[i] - p->pshift[i];
 	    point_set[gindex]->v[i] = p->vel[i];
 	    point_set[gindex]->f[i] = p->force[i];
+        point_set[gindex]->bendforce[i] = state->bendforce[i];
 	    point_set[gindex]->impuls[i] = state->impulse[i];
 	    point_set[gindex]->fluid_accel[i] = state->fluid_accel[i];
 	    point_set[gindex]->other_accel[i] = state->other_accel[i];
@@ -1285,7 +1316,6 @@ static void node_put_point_set_to(
 	GLOBAL_POINT **point_set)
 {
 	POINT *p = node->posn;
-
 	put_point_value_to(p,point_set);
 }	/* end node_put_point_set_to */
 
@@ -1421,8 +1451,8 @@ static void assembleParachuteSet2d(
 	for (i = 0; i < nn; ++i)
 	    if (is_load_node(nodes[i]))
 	    {
-		geom_set->load_node = nodes[i];
-		reorder_string_curves(nodes[i]);
+            geom_set->load_node = nodes[i];
+            reorder_string_curves(nodes[i]);
 	    }
 	printf("ns = %d, nc = %d, nn = %d, num_verts = %d\n", 0, nc, nn, 
 		geom_set->num_verts);
@@ -1536,11 +1566,17 @@ static void assembleParachuteSet3d(
 	    geom_set->num_verts += I_NumOfCurveInteriorPoints(curves[i]);
 	geom_set->num_verts += nn;
 	geom_set->load_node = NULL;
+    
+    int nrg = 0;
 	for (i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(nodes[i]) || is_rg_string_node(nodes[i]))
 	    {
-            geom_set->load_node = nodes[i];
+            if (is_load_node(nodes[i]))
+                geom_set->load_node = nodes[i];
+            else
+                geom_set->rg_string_nodes[nrg++] = nodes[i];
+
             reorder_string_curves(nodes[i]);
 	    }
 	}
@@ -1576,6 +1612,7 @@ extern void copy_from_client_point_set(
             point_set[gindex]->x[k] = cpoint.x[k];
             point_set[gindex]->v[k] = cpoint.v[k];
             point_set[gindex]->f[k] = cpoint.f[k];
+            point_set[gindex]->bendforce[k] = cpoint.bendforce[k];
             point_set[gindex]->impuls[k] = cpoint.impuls[k];
             point_set[gindex]->fluid_accel[k] = cpoint.fluid_accel[k];
             point_set[gindex]->other_accel[k] = cpoint.other_accel[k];
@@ -1598,11 +1635,10 @@ extern void copy_to_client_point_set(
                 client_point_set[j].x[k] = point_set[gindex]->x[k];
                 client_point_set[j].v[k] = point_set[gindex]->v[k];
                 client_point_set[j].f[k] = point_set[gindex]->f[k];
+                client_point_set[j].bendforce[k] = point_set[gindex]->bendforce[k];
                 client_point_set[j].impuls[k] = point_set[gindex]->impuls[k];
-                client_point_set[j].fluid_accel[k] = 
-					point_set[gindex]->fluid_accel[k];
-                client_point_set[j].other_accel[k] = 
-					point_set[gindex]->other_accel[k];
+                client_point_set[j].fluid_accel[k] = point_set[gindex]->fluid_accel[k];
+                client_point_set[j].other_accel[k] = point_set[gindex]->other_accel[k];
             }
         }
 }	/* end copy_to_client_point_set */
@@ -1612,9 +1648,10 @@ static void reorder_string_curves(NODE *node)
 	CURVE **c,**string_curves,*c_tmp;
 	int i,j,num_curves;
 	POINT **nb_points,*p_tmp;
+    
     INTERFACE *save_intfc = current_interface();
-
     set_current_interface(node->interface);
+
 	num_curves = I_NumOfNodeCurves(node);
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_curves,
 				sizeof(CURVE*));
@@ -1658,13 +1695,14 @@ static void reorder_string_curves(NODE *node)
 	    if (string_curves[i]->start == node)
 		unique_add_to_pointers(string_curves[i],&node->out_curves);
 	}
+
 	FT_FreeThese(2,string_curves,nb_points);
     set_current_interface(save_intfc);
 }	/* end reorder_string_curves */
 
 //TODO: it seems that we should be able to perform the
-//      assignments of this function inside put_point_set_to().
-//      put_point_value_to()
+//      assignments of this function inside put_point_value_to()
+//      called by the XXX_put_point_set_to() functions
 extern void set_vertex_impulse(
         ELASTIC_SET *geom_set,
         GLOBAL_POINT **point_set)
@@ -1765,70 +1803,3 @@ static void set_surf_impulse(
 	}
 }	/* end set_surf_impulse */
 
-/*
-#include <algorithm>
-
-static void findPosnOnVector(std::vector<double*>& v, double x[], int index[])
-{
-    int idx = 0; 
-
-    for (size_t i = 0; i < v.size(); i++)
-    {
-	 if (v[i][0] = x[0] && v[i][1] == x[1] && v[i][2] == x[2])
-	     index[idx] = i; 
-    }
-}
-
-static void computeElasticForce(SPRING_VERTEX* sv, double *f)
-{
-    int nt = sv->num_nb;
-
-    for (int i = 0; i < nt; i++)
-    {
-	 int indexj[2]; 
-	 double uij[3];
-	 int j;  
-
-	 findPosnOnVector(sv->nbTriPoint, sv->x_nb[i], indexj); 
-         for (j = 0; j < 3; j++)
-	      uij[j] = sv->nbTriPoint[indexj[0]][j] - sv->x[j]; 
-
-	 double lij = Mag3d(uij); 
-
-	 for (j = 0; j < 3; j++)
-	      uij[j] /= lij; 
-
-	 double dlij = lij - sv->len0[i];
-
-	 // tensile force
-	 for (j = 0; j < 3; j++)
-	      f[j] += (sv->nbTenStiff[indexj[0]] + sv->nbTenStiff[indexj[1]]) * dlij
-			* uij[j];  
-	 int indexk1 = indexj[0] % 2 == 0 ? indexj[0] + 1 : indexj[0] - 1; 
-	 int indexk2 = indexj[1] % 2 == 0 ? indexj[1] + 1 : indexj[1] - 1;
-	 
-	 double uik1[3], ujk1[3], uik2[3], ujk2[3]; 
-
-	 for (j = 0; j < 3; j++)
-	 {
-	      uik1[j] = sv->nbTriPoint[indexk1][j] - sv->x[j];
-	      ujk1[j] = sv->nbTriPoint[indexk1][j] - sv->nbTriPoint[indexj[0]][j];
-	      uik2[j] = sv->nbTriPoint[indexk2][j] - sv->x[j];
-              ujk2[j] = sv->nbTriPoint[indexk2][j] - sv->nbTriPoint[indexj[0]][j];
-         }
-	 
-	 double lik1 = Mag3d(uik1), lik2 = Mag3d(uik2);
-	 double ljk1 = Mag3d(ujk1), ljk2 = Mag3d(ujk2);
-	 double dlik1 = lik1 - sv->oriLength[indexk1];
-	 double dlik2 = lik2 - sv->oriLength[indexk2]; 
-	 double dljk1 = ljk1 - sv->oriLength[indexj[0]]; 
-	 double dljk2 = ljk2 - sv->oriLength[indexj[1]];
-
-	 // angular force
-         for (j = 0; j < 3; j++)
-	      f[j] += (sv->nbAngStiff[indexk1] * dlik1 + sv->nbAngStiff[indexk2] 
-		* dlik2 + sv->nbAngStiff[indexj[0]] * dljk1 
-		+ sv->nbAngStiff[indexj[1]] * dljk2) * uij[j]; 
-    } 
-}
-*/

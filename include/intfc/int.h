@@ -84,16 +84,22 @@ struct _POINT
 	    struct _NODE *_node;
 	    int          _index;
 	} private_data;
-	double		_nor[3];
-	double		_nor0[3];	/* First order normal for WLSP */
-	double		curvature;
-	double          vel[3];
-	double          force[3];
-	boolean		crx;
-	int		indx;
-	long            global_index;
-	/* Periodic shift since initialization, for static mesh only */
-        double          pshift[3];
+	
+    double _nor[3];
+	double _nor0[3];	/* First order normal for WLSP */
+	double curvature;
+	
+    double vel[3];
+	double force[3];
+	
+    boolean	crx;
+	int	indx;
+	long global_index;
+	
+    /* Periodic shift since initialization, for static mesh only */
+    double pshift[3];
+	
+    POINTER extra;			/* For special use */
 };
 typedef struct _POINT POINT;
 

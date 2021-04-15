@@ -10,6 +10,7 @@
 #define DEBUGGING false
 
 const double ROUND_EPS = DBL_EPSILON;
+//const double ROUND_EPS = 1.0e-10;
 const double EPS = 1.0e-06;
 const double DT = 0.001;
 
@@ -74,6 +75,8 @@ public:
     
     void setStrainLimit(double);
 	double getStrainLimit();
+    void setCompressiveStrainLimit(double);
+	double getCompressiveStrainLimit();
 	void setStrainRateLimit(double);
 	double getStrainRateLimit();
 	static bool getGsUpdateStatus();	
@@ -83,19 +86,19 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
+    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
     void initializeImpactZones(const INTERFACE* intfc);
-	void initRigidBodyImpactZones(const INTERFACE* intfc);
+	void initRigidBodyImpactZones();
+	    //void initRigidBodyImpactZones(const INTERFACE* intfc);//TODO: remove?
 	
     void resolveCollision();
 
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	
-    bool hasCollision() {return has_collision;}
-
     POINT **gpoints;
     TRI **gtris;
 
@@ -129,11 +132,13 @@ private:
 
     //Front* ft;
     static Front* ft;
+    
+    double max_fabric_speed {0.0};
+    double prev_max_fabric_speed {0.0};
 
 	std::unique_ptr<AABBTree> abt_proximity {nullptr};
     std::unique_ptr<AABBTree> abt_collision {nullptr};
 
-    bool has_collision;
 	double Boundary[3][2]; //domain boundary[dir][side]
 
     double volume;
@@ -161,8 +166,8 @@ private:
     static void turnOffGsUpdate();
 
     double strain_limit {0.1};
+    double compressive_strain_limit {0.1};
     double strainrate_limit {0.1};
-    bool skip_strain_velo_constraint {false};
 
     static bool s_detImpZone;
 	static void turnOnImpZone();
@@ -173,36 +178,41 @@ private:
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
-    void limitStrainPosn();
+    void limitStrainPosnJac();
+    void limitStrainPosnGS();
     int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
-    void limitStrainRatePosn();
-    void limitStrainRatePosnGS();
-    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list);
-    void limitStrainVel();
+    void limitStrainRatePosnJac(MotionState mstate);
+    void limitStrainRatePosnGS(MotionState mstate);
+    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    void limitStrainVelJAC();
+    void limitStrainVelGS();
     int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
-    void applyStrainImpulses();
+    void applyStrainImpulses(MotionState mstate);
 
+	void computeMaxSpeed();
 	void computeAverageVelocity();
     void resetPositionCoordinates();
 	void updateFinalPosition();
 	void updateFinalVelocity();
     void updateFinalStates();
-	void updateAverageVelocity();
-	    //void updateExternalImpulse();
-	void computeImpactZone();
+	void updateAverageVelocity(MotionState mstate);
+	void saveAverageVelocity();
+	void revertAverageVelocity();
+	void computeImpactZoneGS();
+	void computeImpactZoneJac();
+    void connectNearbyImpactZones();
 	void infoImpactZones();
 	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
+	void detectProximityRGB();
 	void detectProximity();
-	void detectProximityEndStep();
 	void detectCollision();
     void aabbProximity();
     void aabbCollision();
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
-	void setHasCollision(bool judge) {has_collision = judge;}//TODO: can remove?
 };
 
 void unsortHseList(std::vector<CD_HSE*>&);

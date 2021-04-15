@@ -322,7 +322,9 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    if (!is_load_node(oldc->start))
+    //TODO: Do we need to check for rg_string_nodes also?
+    //if (!is_load_node(oldc->start))
+    if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
     {
         oldp = oldc->start->posn;
         newp = newc->start->posn;
@@ -330,7 +332,8 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    if (!is_load_node(oldc->end))
+    //if (!is_load_node(oldc->end))
+    if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
     {
         oldp = oldc->end->posn;
         newp = newc->end->posn;
@@ -1168,7 +1171,6 @@ static void load_node_propagate(
 	    }
 	}
 
-    //TODO: Is this correct???
 	for (i = 0; i < dim; ++i)
 	{
 	    accel[i] = f[i]/mass;
@@ -1209,7 +1211,6 @@ static void rg_string_node_propagate(
         double *g = iFparams->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
-        double mass = af_params->payload;
         CURVE **c;
         STATE *sl,*sr,*newsl,*newsr;
         double vec[MAXD],vec_mag;
@@ -1221,6 +1222,8 @@ static void rg_string_node_propagate(
 	double V[MAXD];
 
     if (!is_rg_string_node(oldn)) return;
+        
+    double mass = af_params->payload;
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -1300,7 +1303,8 @@ static void rg_string_node_propagate(
 	    clean_up(ERROR);
 	}
 	
-    //hs should have wave_type == MOVABLE_BODY_BOUNDARY?
+    //TODO: hs should have wave_type == MOVABLE_BODY_BOUNDARY?
+    //
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
@@ -1312,12 +1316,9 @@ static void rg_string_node_propagate(
         //
         //          x_{n+1} = x_{n} + v_{n}*dt + 0.5*accel*dt*dt
         //
-        //      in this case accel would equal F_external/mass
-        //
 	    for (i = 0; i < dim; ++i)
         {
-            accel[i] = (Coords(newp)[i] - Coords(oldp)[i]
-                    - oldp->vel[i] * dt) * 2.0 / dt / dt;
+            accel[i] = 2.0*(Coords(newp)[i] - Coords(oldp)[i] - oldp->vel[i]*dt)/dt/dt;
         }
 	}
 	else
@@ -1326,10 +1327,8 @@ static void rg_string_node_propagate(
             accel[i] = 0.0;
 	}
 
-    /*
-	for (i = 0; i < dim; ++i)
+    for (i = 0; i < dim; ++i)
         accel[i] -= g[i];
-    */
 
     if (debugging("rigid_body"))
     {
@@ -1353,8 +1352,7 @@ static void rg_string_node_propagate(
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass - g[i];
-	        //newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
@@ -1382,6 +1380,9 @@ extern int airfoil_node_propagate(
 	    rg_string_node_propagate(front,oldn,newn,dt);
 	else
 	    return GOOD_NODE;
+
+    //TODO: return a meaningful exit status for
+    //      time step modification in propagate_node_points()
 	return GOOD_NODE;
 }	/* end airfoil_node_propagate */
 

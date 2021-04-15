@@ -16,7 +16,7 @@
 
 using CPoint = std::vector<double>;
 
-enum class MotionState {STATIC, MOVING};
+enum class MotionState {STATIC, MOVING, POSTCOLLISION};
 
 
 class Node;

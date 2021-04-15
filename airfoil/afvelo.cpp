@@ -310,7 +310,7 @@ void setMotionParams(Front* front)
         (void) printf("%f\n",af_params->payload);
     }
 	
-	af_params->n_sub = 10;//TODO: move to parachute_defaults()?
+	af_params->n_sub = 1;
 	CursorAfterString(infile,"Enter interior sub step number:");
 	fscanf(infile,"%d",&af_params->n_sub);
 	(void) printf("%d\n",af_params->n_sub);
@@ -333,6 +333,14 @@ void setMotionParams(Front* front)
             CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
+
+            CursorAfterString(infile,"Enter fabric bending stiffness constant:");
+            fscanf(infile,"%lf",&af_params->kbs);
+            (void) printf("%f\n",af_params->kbs);
+
+            CursorAfterString(infile,"Enter fabric bending damping constant:");
+            fscanf(infile,"%lf",&af_params->lambda_bs);
+            (void) printf("%f\n",af_params->lambda_bs);
 
             CursorAfterString(infile,"Enter fabric friction constant:");
             fscanf(infile,"%lf",&af_params->mu_s);
@@ -367,6 +375,8 @@ void setMotionParams(Front* front)
 	if ( (dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	     (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
+        af_params->strings_present = true;
+
 	    CursorAfterString(infile,"Enter string spring constant:");
             fscanf(infile,"%lf",&af_params->kl);
             (void) printf("%f\n",af_params->kl);
@@ -409,6 +419,10 @@ void setMotionParams(Front* front)
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
             
+    CursorAfterStringOpt(infile,"Enter compressive strain limit:");
+    fscanf(infile,"%lf",&af_params->compressive_strain_limit);
+    (void) printf("%f\n",af_params->compressive_strain_limit);
+
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
@@ -416,9 +430,11 @@ void setMotionParams(Front* front)
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
 	    af_params->m_g = af_params->m_s;
-            if (af_params->attach_gores == YES)
+        if (af_params->attach_gores == YES)
 	    {
-		CursorAfterString(infile,"Enter gore spring constant:");
+            af_params->gores_present = true;
+
+		    CursorAfterString(infile,"Enter gore spring constant:");
         	fscanf(infile,"%lf",&af_params->kg);
         	(void) printf("%f\n",af_params->kg);
         	CursorAfterString(infile,"Enter gore friction constant:");

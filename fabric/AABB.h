@@ -15,8 +15,15 @@
 #include <map>
 
 using CPoint = std::vector<double>;
+//using collision_pair = std::pair<CD_HSE*,CD_HSE*>;
 
-enum class MotionState {STATIC, MOVING};
+
+enum class MotionState
+{
+    STATIC,
+    MOVING,
+    POSTCOLLISION
+};
 
 
 class Node;
@@ -95,6 +102,9 @@ public:
     std::vector<std::shared_ptr<Node>> nodeArray;
 
     int count {0};
+    std::vector<std::pair<CD_HSE*,CD_HSE*>> interference_pairs;
+    std::vector<std::pair<CD_HSE*,CD_HSE*>> getInterferencePairs() const;
+
     int numLeaf {0};
     double treeHeight(Node*); 
     double dt;

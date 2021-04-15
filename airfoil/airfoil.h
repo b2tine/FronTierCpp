@@ -6,6 +6,7 @@
 #include "airfoil_sv.h"
 #include "airfoil_gpu.cuh"
 
+#include <iostream>
 #include <vector>
 #include <map>
 
@@ -84,17 +85,19 @@ typedef struct {
 
     double gore_len_fac;
     double gravity[MAXD];		/* gravitational force */
+    double kbs {0.0};    /* spring bending constant of surface */
 	double ks {5000.0};  /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
     double mu_s;        /* fabric static friction consant */
     double mu_l;        /* string curves static friction consant */
+    double lambda_bs {0.0};  /* bending damping factor of surface */
 	double lambda_s;		/* damping factor of surface */
 	double lambda_l;		/* damping factor of string curves */
 	double lambda_g;                /* damping factor of gore curves */
 	double m_s {0.001};	 /* point mass of surface */
-	double m_l {0.0};//{0.015}; /* point mass of string curves */
-	double m_g {0.0};     /*(disabled) point mass of gore curves */
+	double m_l {0.0015}; /* point mass of string curves */
+	double m_g {0.001};     /*(disabled) point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
     double total_gore_mass;         /* Total mass of gore */
@@ -131,6 +134,7 @@ typedef struct {
     double string_thickness {0.004};
 
     double strain_limit {0.1};
+    double compressive_strain_limit {0.025};
     double strainrate_limit {0.1};
 
     double vol_diff {0.0};
@@ -236,7 +240,8 @@ typedef struct _REGISTERED_PTS REGISTERED_PTS;
 
 struct _ELASTIC_SET{
 	Front *front;
-        NODE *load_node;
+    NODE *load_node;
+    NODE *rg_string_nodes[5];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
@@ -277,7 +282,6 @@ extern void initParabolicSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initPlaneSurf(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initAirbag(FILE*,Front*,LEVEL_FUNC_PACK*);
 extern void initIsolated3dCurves(Front*);
-extern void initRigidBody_OLD(Front*);//TODO: to be removed
 
 // afprop.cpp
 extern void airfoil_point_propagate(Front*,POINTER,POINT*,POINT*,

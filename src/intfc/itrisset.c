@@ -305,8 +305,8 @@ EXPORT	void	tri_bound_block(
 	    p = Coords(Point_of_tri(t)[i]);
 	    for(j=0; j<3; j++)
 	    {
-		fbox[0][j] = min(fbox[0][j], p[j]);
-		fbox[1][j] = max(fbox[1][j], p[j]);
+            fbox[0][j] = min(fbox[0][j], p[j]);
+            fbox[1][j] = max(fbox[1][j], p[j]);
 	    }
 	}
 }

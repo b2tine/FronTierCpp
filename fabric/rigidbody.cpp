@@ -151,8 +151,13 @@ static void init_rigid_sphere(
 
         if (cgal_mesh)
         {
-            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,w_type,
-                                        1,&surf);
+            int refinement_level = 1;
+            CursorAfterStringOpt(infile,"Enter refinement level:");
+            fscanf(infile,"%ld",&refinement_level);
+            printf("%d\n",refinement_level);
+
+            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,
+                    w_type,refinement_level,&surf);
         }
         else
         {

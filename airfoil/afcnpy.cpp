@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "collid.h"
 #include "iFluid.h"
 #include "airfoil.h"
+#include "bending.h"
 #include "solver.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
@@ -798,8 +799,12 @@ static void compute_center_of_mass_velo(
 	    	xcan[j] /= area;
 	    }
 
-        //TODO: If using a rigid body instead of pointmass
-        //      will we enter here? If not, find a work around.
+        
+        //TODO: Add string curves; need to specify linear density for the paracord
+
+        //TODO: Add rigid body center of mass velocity if present
+
+
 	    if (NULL != geom_set->load_node)
 	    {
             node = geom_set->load_node;
@@ -818,16 +823,14 @@ static void compute_center_of_mass_velo(
             vcom = center_of_mass_velo(Hyper_surf(canopy));
             for (j = 0; j < 3; ++j)
             {
-                    vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/
-                    (mass_canopy + payload);
-                    xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/
-                    (mass_canopy + payload);
+                vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/(mass_canopy + payload);
+                xcom[j] = (xcan[j]*mass_canopy + xload[j]*payload)/(mass_canopy + payload);
             }
 	    }
 	    else
 	    {
-	  	xcom = center_of_mass(Hyper_surf(canopy));
-	  	vcom = center_of_mass_velo(Hyper_surf(canopy));
+            xcom = center_of_mass(Hyper_surf(canopy));
+            vcom = center_of_mass_velo(Hyper_surf(canopy));
 	    }	
 	}
 	if (debugging("canopy"))
@@ -2291,6 +2294,12 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	}
 
 	elastic_intfc = fr->interf;
+
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeBendingForce(elastic_intfc,bends,bendd);
+
 	assembleParachuteSet(elastic_intfc,&geom_set);
 
 	if (myid != owner_id)
@@ -2360,6 +2369,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             collision_solver->setStringPointMass(af_params->m_l);
 
             collision_solver->setStrainLimit(af_params->strain_limit);
+            //collision_solver->setCompressiveStrainLimit(af_params->compress_strain_limit);
             collision_solver->setStrainRateLimit(af_params->strainrate_limit);
 
             collision_solver->gpoints = fr->gpoints;
@@ -2585,10 +2595,15 @@ static void setSurfVelocity(
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
-	double nor[MAXD],nor_speed;
-	double *vel;
+	double nor[MAXD];
+	double *vel = nullptr;
 	int gindex_max;
 	long gindex;
+
+    int dim = front->rect_grid->dim;
+    double nor_speed = 0.0;
+    double max_nor_speed = 0.0;
+    double *max_coords = nullptr;
 
 	unsort_surf_point(surf);
 	hs = Hyper_surf(surf);
@@ -2597,27 +2612,33 @@ static void setSurfVelocity(
 	{
 	    hse = Hyper_surf_element(tri);
 	    for (i = 0; i < 3; ++i)
-	    {
-		p = Point_of_tri(tri)[i];
-		if (sorted(p) || Boundary_point(p)) continue;
-		gindex = Gindex(p);
-		FT_NormalAtPoint(p,front,nor,NO_COMP);
-		FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		vel = point_set[gindex]->v;
-		nor_speed = scalar_product(vel,nor,3);
-		for (j = 0; j < 3; ++j)
-		{
-            sl->vel[j] = nor_speed*nor[j];
-            sr->vel[j] = nor_speed*nor[j];
-		}
-		sorted(p) = YES;
-	    }
+        {
+            p = Point_of_tri(tri)[i];
+            if (sorted(p) || Boundary_point(p)) continue;
+            
+            gindex = Gindex(p);
+            FT_NormalAtPoint(p,front,nor,NO_COMP);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            vel = point_set[gindex]->v;
+            nor_speed = scalar_product(vel,nor,3);
+            
+            if (max_nor_speed < fabs(nor_speed))
+            {
+                max_nor_speed = fabs(nor_speed);
+                max_coords = Coords(p);
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+            }
+            sorted(p) = YES;
+        }
 	}
 
-    //TODO: should this be used?
-    //
-    //reduce_high_freq_vel(front,surf);
-
+    set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
+    //  reduce_high_freq_vel(front,surf); //TODO: should this be used?
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -2633,16 +2654,17 @@ static void setCurveVelocity(
 	HYPER_SURF_ELEMENT *hse;
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
-	double nor[MAXD],nor_speed;
+	double nor[MAXD];
 	double *vel = nullptr;
 	double *crds_max = nullptr;
-    double max_nor_speed = 0.0;
 	int gindex_max;
 	long gindex;
 	int dim = FT_Dimension();
 
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -2651,15 +2673,29 @@ static void setCurveVelocity(
             sr = (STATE*)right_state(p);
             vel = point_set[gindex]->v;
             
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
+
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
             }
         }
+
+        //TODO: Can we set non normal max front speed?
+        //
+        //      This appears to significantly improve string behavior
+        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
     }
     else
     {
+        double max_nor_speed = 0.0;
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -2671,15 +2707,13 @@ static void setCurveVelocity(
                 FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
                 FT_NormalAtPoint(p,front,nor,NO_COMP);
                 vel = point_set[gindex]->v;
-                nor_speed = scalar_product(vel,nor,3);
 
-                /*
+                double nor_speed = scalar_product(vel,nor,3);
                 if (max_nor_speed < fabs(nor_speed))
                 {
-                    max_nor_speed = nor_speed;
+                    max_nor_speed = fabs(nor_speed);
                     crds_max = Coords(p);
                 }
-                */
                 
                 for (j = 0; j < 3; ++j)
                 {
@@ -2688,17 +2722,14 @@ static void setCurveVelocity(
                 }
             }
         }
+    
+        set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
     for (b = curve->first; b != NULL; b = b->next)
     {
 	    set_bond_length(b,dim);
     }
-
-    //TODO: Do we need the folllowing???
-    //
-    //  set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
-
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2727,8 +2758,11 @@ static void new_setNodeVelocity2d(
 	BOND *b;
 	POINT *p;
 	STATE *sl,*sr;
-	double *vel;
+    Front *front = geom_set->front;
+	double *vel = nullptr;
 	long gindex;
+
+    double max_speed = 0.0;
 
 	if (is_load_node(node))
 	{
@@ -2736,11 +2770,16 @@ static void new_setNodeVelocity2d(
         sr = (STATE*)right_state(node->posn);
 	    gindex = Gindex(node->posn);
 	    vel = point_set[gindex]->v;
-            for (j = 0; j < 3; ++j)
-            {
-            	sl->vel[j] = vel[j];
-            	sr->vel[j] = vel[j];
-            }
+        
+        for (j = 0; j < 2; ++j)
+        {
+            sl->vel[j] = vel[j];
+            sr->vel[j] = vel[j];
+            max_speed += sqr(vel[j]);
+        }
+
+        max_speed = sqrt(max_speed);
+        set_max_front_speed(2,max_speed,NULL,Coords(node->posn),front);
 	}
 }	/* end setNodeVelocity2d */
 
@@ -2758,11 +2797,14 @@ static void new_setNodeVelocity3d(
         HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	CURVE **c;
-	double nor[MAXD],nor_speed,max_speed;
-	double *vel;
-	double crds_max[MAXD];
+	double nor[MAXD];
+	double *vel = nullptr;
 	int gindex_max;
 	long gindex;
+
+    double nor_speed = 0.0;
+    double max_nor_speed = 0.0;
+    double *crds_max = nullptr;
 
 	for (c = node->out_curves; c && *c; ++c)
     {
@@ -2781,9 +2823,13 @@ static void new_setNodeVelocity3d(
 		    gindex = Gindex(p);
 		    vel = point_set[gindex]->v;
 		    
-            //TODO: Should MONO_COMP_HSBDRY be treated the same as PASSIVE_HSBDRY???
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
+                //TODO: should we compute max_speed
+                //      for use with set_max_front_speed()?
+                //      Should be the speed of the rigid body
+                //      center of motion that the rg_string_node
+                //      is attached to.
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -2793,12 +2839,11 @@ static void new_setNodeVelocity3d(
 		    }
 
 		    nor_speed = scalar_product(vel,nor,3);
-		    if (max_speed < fabs(nor_speed)) 
+		    if (max_nor_speed < fabs(nor_speed)) 
 		    {
-		    	max_speed = fabs(nor_speed);
+		    	max_nor_speed = fabs(nor_speed);
 		    	gindex_max = Gindex(p);
-		    	for (j = 0; j < 3; ++j)
-                    crds_max[j] = Coords(p)[j];
+                crds_max = Coords(p);
 		    }
 
             for (j = 0; j < 3; ++j)
@@ -2830,6 +2875,7 @@ static void new_setNodeVelocity3d(
         
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
             {
+                //TODO: see above
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -2839,12 +2885,11 @@ static void new_setNodeVelocity3d(
             }
 
             nor_speed = scalar_product(vel,nor,3);
-            if (max_speed < fabs(nor_speed))
+            if (max_nor_speed < fabs(nor_speed))
             {
-                max_speed = fabs(nor_speed);
+                max_nor_speed = fabs(nor_speed);
                 gindex_max = Gindex(p);
-                for (j = 0; j < 3; ++j)
-                    crds_max[j] = Coords(p)[j];
+                crds_max = Coords(p);
             }
 
             for (j = 0; j < 3; ++j)
@@ -2854,6 +2899,8 @@ static void new_setNodeVelocity3d(
             }
         }
     }
+
+    set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
 }	/* end setNodeVelocity3d */
 
 extern void set_geomset_velocity(
@@ -2966,22 +3013,20 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         sl->is_fixed = false;
         sl->is_movableRG = false;
         
-        if ((surf = Surface_of_hs(hs)) &&
-                (is_registered_point(surf,p) ||
-                 wave_type(hs) == NEUMANN_BOUNDARY))
+        if ((surf = Surface_of_hs(hs)))
         {
-            sl->is_fixed = true;
-        }
-    
-        if ((surf = Surface_of_hs(hs)) &&
-                (wave_type(hs) == MOVABLE_BODY_BOUNDARY))
-        {
-            sl->is_movableRG = true;
+            if (wave_type(hs) == NEUMANN_BOUNDARY)
+                sl->is_fixed = true;
+            if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                sl->is_movableRG = true;
+            if (is_registered_point(surf,p))
+            {
+                sl->is_registeredpt = true;
+                sl->is_fixed = true;
+            }
         }
     }
 
-    //TODO: add ELASTIC_BOUNDARY tag
-    
     CURVE **c;
     BOND* b;
     intfc_curve_loop(intfc,c)

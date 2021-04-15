@@ -18,6 +18,8 @@ libfabric_la_SOURCES = \
 ../fabric.h \
 ../fabric_sv.h \
 ../state.h \
+../bending.h \
+../bending.cpp \
 ../afprop.cpp \
 ../afcnpy.cpp \
 ../afdata.cpp \
