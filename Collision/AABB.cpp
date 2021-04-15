@@ -379,7 +379,10 @@ bool AABBTree::queryProximity(Node* n)
                         if (!adjacentHSE(a,b))
                         {
                             if (getProximity(a,b))
+                            {
+                                interference_pairs.push_back(std::make_pair(a,b));
                                 count++; 
+                            }
                         }
                     }
                 }
@@ -426,7 +429,10 @@ bool AABBTree::queryCollision(Node* n)
                         if (!adjacentHSE(a,b))
                         {
                             if (getCollision(a,b)) 
+                            {
+                                interference_pairs.push_back(std::make_pair(a,b));
                                 count++;
+                            }
                         }
                     }
                 }
@@ -459,5 +465,10 @@ bool AABBTree::getCollision(const CD_HSE* a, const CD_HSE* b)
         return getCollisionGS(a,b);
     else
         return getCollisionJac(a,b);
+}
+
+std::vector<std::pair<CD_HSE*,CD_HSE*>> AABBTree::getInterferencePairs() const
+{
+    return interference_pairs;
 }
 

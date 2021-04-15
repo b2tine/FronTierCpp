@@ -9,13 +9,9 @@
 
 #define DEBUGGING false
 
+//TODO: Consistent use of ROUND_EPS AND MACH_EPS.
+//      Currently they are equal, and we can change all to MACH_EPS. 
 const double ROUND_EPS = DBL_EPSILON;
-//const double ROUND_EPS = 1.0e-10;
-const double EPS = 1.0e-06;
-const double DT = 0.001;
-
-
-using collision_pair = std::pair<CD_HSE*,CD_HSE*>;
 
 
 class CollisionSolver3d {
@@ -28,7 +24,6 @@ public:
     std::vector<CD_HSE*> movableRigidTriList;
     std::vector<CD_HSE*> stringBondList;
     std::vector<CD_HSE*> elasticHseList;
-    std::vector<collision_pair> collisionPairsList;
 	
     std::map<int,std::vector<double>> mrg_com;
 	
@@ -86,13 +81,12 @@ public:
 
     void initializeSystem(Front* front);
 	void assembleFromInterface(INTERFACE*);
-    //void assembleFromInterface(ELASTIC_SET*);//TODO: Need this for parallel runs
+    void assembleFromSurf(SURFACE* surf); //TODO: Need this for parallel runs?
+    void assembleFromCurve(CURVE* curve); //TODO: Need this for parallel runs?
 	void recordOriginalPosition();	
     void setHseTypeLists();
     void initializeImpactZones();
-    void initializeImpactZones(const INTERFACE* intfc);
 	void initRigidBodyImpactZones();
-	    //void initRigidBodyImpactZones(const INTERFACE* intfc);//TODO: remove?
 	
     void resolveCollision();
 
@@ -130,8 +124,7 @@ public:
 
 private:
 
-    //Front* ft;
-    static Front* ft;
+    static Front* ft; //static so we can call FT_Save() and FT_Draw() for debugging 
     
     double max_fabric_speed {0.0};
     double prev_max_fabric_speed {0.0};
@@ -178,11 +171,12 @@ private:
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
     
-    void limitStrainPosnJac();
-    void limitStrainPosnGS();
-    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list);
+    void limitStrainPosnJac(MotionState mstate);
+    void limitStrainPosnGS(MotionState mstate);
+    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
+    int computeStrainRateImpulsesRand(std::vector<CD_HSE*>& list, MotionState mstate);
     int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainVelJAC();
     void limitStrainVelGS();
@@ -198,21 +192,26 @@ private:
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
-	void computeImpactZoneGS();
-	void computeImpactZoneJac();
-    void connectNearbyImpactZones();
+	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
+	void computeImpactZoneJac(std::vector<CD_HSE*>& list);
+    void connectNearbyImpactZones(std::vector<CD_HSE*>& list);
 	void infoImpactZones();
 	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
 	void detectProximityRGB();
-	void detectProximity();
-	void detectCollision();
-    void aabbProximity();
-    void aabbCollision();
+	void detectProximity(std::vector<CD_HSE*>& list);
+	void detectCollision(std::vector<CD_HSE*>& list);
+    void aabbProximity(std::vector<CD_HSE*>& list);
+    void aabbCollision(std::vector<CD_HSE*>& list);
 	void detectDomainBoundaryCollision();
 	void updateFinalForRG();
+
+    void writeCollisionPoints();
+    std::vector<POINT*> getCollisionPoints();
+        //void writeProximityPoints();
+        //std::vector<POINT*> getProximityPoints();
 };
 
 void unsortHseList(std::vector<CD_HSE*>&);
@@ -242,6 +241,7 @@ POINT*& next_pt(POINT* p);
 void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
+bool isImpactZonePoint(POINT*);
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
@@ -255,6 +255,8 @@ bool isRigidBody(const CD_HSE*);
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);
 void initTestModule(Front&, char*);
+
+//TODO: Move into new file and make available globally
 void Pts2Vec(const POINT*, const POINT*, double*);
 void scalarMult(double a,double* v, double* ans);
 void addVec(double* v1, double* v2, double* ans);

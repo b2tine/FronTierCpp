@@ -1007,9 +1007,10 @@ static void EdgeToEdgeImpulse(
     double wb[2] = {1.0 - b, b};
     double wab[4] = {wa[0], wa[1], wb[0], wb[1]};
 
-    //NOTE: That the spring constant k does not need to
-    //      be the Young's Modulus stiffness coefficient
-    //      used by the spring solver.
+    //NOTE: That the spring constant k does not necessarily
+    //      need to be the Young's Modulus stiffness coefficient
+    //      used by the spring solver -- tune for the desired
+    //      elastic impulse magnitude.
 
 	double h = CollisionSolver3d::getFabricThickness();
 	double k = CollisionSolver3d::getFabricSpringConstant();
@@ -1489,9 +1490,10 @@ static void PointToTriImpulse(
     
     double sum_w = 0.0;
 
-    //NOTE: That the spring constant k does not need to
-    //      be the Young's Modulus stiffness coefficient
-    //      used by the spring solver.
+    //NOTE: That the spring constant k does not necessarily
+    //      need to be the Young's Modulus stiffness coefficient
+    //      used by the spring solver -- tune for the desired
+    //      elastic impulse magnitude.
 
 	double h = CollisionSolver3d::getFabricThickness();
 	double k = CollisionSolver3d::getFabricSpringConstant();
