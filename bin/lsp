@@ -27,7 +27,7 @@ for file in vtk.ts*; do
         echo "      No $filename files"
         exit 0
     fi
-    i=$(expr $i + 1)
+    i=$((i+1))
     ln -P ${file}/${filename}.vtk ./${dname}/${filename}-${i}.vtk > /dev/null 2>&1
 done
 
