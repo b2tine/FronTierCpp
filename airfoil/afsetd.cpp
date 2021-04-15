@@ -21,9 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
-#include "solver.h"
+#include "airfoil.h"
 
 static void link_surf_point_set(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**,
 				GLOBAL_POINT*,int*);
@@ -1088,18 +1086,22 @@ extern void set_surf_spring_vertex(
 	    {
 		p = Point_of_tri(tri)[j];
 		if (sorted(p) || Boundary_point(p)) continue;
-		is_stationary_point = is_registered_point(surf,p);
-		sv[i].m = m_s;
+		
+        sv[i].m = m_s;
 		sv[i].lambda = lambda_s;
+		
+        is_stationary_point = is_registered_point(surf,p);
 		if (is_stationary_point == YES)
 		    sv[i].lambda = 0.0;
-            	for (k = 0; k < dim; ++k)
-            	{
+
+        for (k = 0; k < dim; ++k)
+        {
 		    if (is_stationary_point == YES || g == NULL)
 	    	    	sv[i].ext_accel[k] = 0.0;
 		    else
-			sv[i].ext_accel[k] = g[k];
-	    	}
+			    sv[i].ext_accel[k] = g[k];
+        }
+
 		gindex = Gindex(p);
 		sv[i].x = point_set[gindex]->x;
 		sv[i].v = point_set[gindex]->v;

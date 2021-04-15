@@ -199,26 +199,26 @@ void printAfExtraData(
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
-        {
-            int num_pts;
-            REGISTERED_PTS *registered_pts;
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
 
-            if ((*s)->extra == NULL)
-                num_pts = 0;
-            else
-            {
-                registered_pts = (REGISTERED_PTS*)(*s)->extra;
-                num_pts = registered_pts->num_pts;
-            }
-            fprintf(outfile,"number of registered points = %d\n",num_pts);
-            for (i = 0; i < num_pts; ++i)
-                fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+        int num_pts;
+        REGISTERED_PTS *registered_pts;
+
+        if ((*s)->extra == nullptr)
+            num_pts = 0;
+        else
+        {
+            registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            num_pts = registered_pts->num_pts;
         }
+        fprintf(outfile,"number of registered points = %d\n",num_pts);
+        for (i = 0; i < num_pts; ++i)
+            fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
 
         /*
-        //TODO: This all gets handled in one of the user_fprint_surface functions
-        //      and can be removed.
+        //TODO: This all gets handled in one of the user_fprint_surface
+        //      functions and can be removed -- keep for now as reference.
         //
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
@@ -616,28 +616,29 @@ void readAfExtraData(
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
+
+        int num_pts;
+        fgetstring(infile,"number of registered points = ");
+        fscanf(infile,"%d",&num_pts);
+        if (num_pts != 0)
         {
-            int num_pts;
-            fgetstring(infile,"number of registered points = ");
-            fscanf(infile,"%d",&num_pts);
-            if (num_pts != 0)
-            {
-                static REGISTERED_PTS *registered_pts;
-                FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                            sizeof(REGISTERED_PTS));
-                FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
-                            num_pts,sizeof(int));
-                (*s)->extra = (REGISTERED_PTS*)registered_pts;
-                registered_pts->num_pts = num_pts;
-                for (i = 0; i < num_pts; ++i)
-                    fscanf(infile,"%d",registered_pts->global_ids+i);
-            }
+            static REGISTERED_PTS *registered_pts;
+            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                        sizeof(REGISTERED_PTS));
+            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                        num_pts,sizeof(int));
+            (*s)->extra = (REGISTERED_PTS*)registered_pts;
+            registered_pts->num_pts = num_pts;
+            for (i = 0; i < num_pts; ++i)
+                fscanf(infile,"%d",registered_pts->global_ids+i);
         }
         
         /*
-        //TODO: This gets handled by (user_)read_print_surface() function somewhere.
-        //      Can be removed.
+        //TODO: This gets handled by the user_read_print_surface()
+        //      function somewhere and can be removed -- keep for
+        //      now as reference.
 
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {

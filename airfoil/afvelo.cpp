@@ -21,7 +21,6 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
 #include <airfoil.h>
 
 typedef struct {
@@ -162,7 +161,7 @@ void setMotionParams(Front* front)
 	    	{
 	    	case 'n':
 	    	case 'N':
-	    	    front->tan_curve_propagate = NULL;
+	    	    front->tan_curve_propagate = nullptr;
 	    	    break;
 	    	case 'f':
 	    	case 'F':
@@ -201,7 +200,7 @@ void setMotionParams(Front* front)
 	    	{
 	    	case 'n':
 	    	case 'N':
-	    	    front->interior_propagate = NULL;
+	    	    front->interior_propagate = nullptr;
 	    	    break;
 	    	case 'e':
 	    	case 'E':
@@ -1044,6 +1043,7 @@ typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
 
 static boolean within_shape(SHAPE_PARAMS,double*);
 
+//TODO: compare to fabric directory version of this function
 static void init_fixarea_params(
 	Front *front,
 	FILE *infile,

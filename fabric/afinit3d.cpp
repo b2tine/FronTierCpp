@@ -1852,82 +1852,84 @@ static void initCircularPlaneEdge(
 	fscanf(infile,"%lf",&circle_constr_params.R);
 	(void) printf("%f\n",circle_constr_params.R);
 
-        level_func_pack->attach_string = NO;
-        if (af_params->is_parachute_system == YES)
+    level_func_pack->attach_string = NO;
+    if (af_params->is_parachute_system == YES)
+    {
+        CursorAfterString(infile,"Enter yes to attach strings to canopy:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+    
+        if (string[0] == 'y' || string[0] == 'Y')
         {
-            CursorAfterString(infile,"Enter yes to attach strings to canopy:");
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-        
-            if (string[0] == 'y' || string[0] == 'Y')
-            {
-                level_func_pack->attach_string = YES;
-                level_func_pack->string_params = (POINTER)string_params;
-	        level_func_pack->string_func = install_strings_and_rotate;
-	        if (CursorAfterStringOpt(infile,
-			"Enter yes to attach gores on canopy:"))
-	        {
-		    fscanf(infile,"%s",string);
-		    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-		    {
-		        level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_gores;
-		        af_params->attach_gores = YES;
-		        if (CursorAfterStringOpt(infile,
-				"Enter gore length factor:"))
-		        {
-		    	    fscanf(infile,"%lf",&(af_params->gore_len_fac));
-		    	    (void) printf("%f\n",af_params->gore_len_fac);
-		        }
-		    }
-	        }
-	        if (CursorAfterStringOpt(infile,
-			"Enter yes to attach fixer on canopy:"))
-	        {
-		    fscanf(infile,"%s",string);
-		    (void) printf("%s\n",string);
-                    if (string[0] == 'y' || string[0] == 'Y')
-		    {
-		        level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_fixer;
-		        af_params->attach_fixer = YES;
-		    }
-	        }
+            level_func_pack->attach_string = YES;
+            level_func_pack->string_params = (POINTER)string_params;
+            level_func_pack->string_func = install_strings_and_rotate;
 
-                for (i = 0; i < num_canopy; ++i)
+            if (CursorAfterStringOpt(infile,
+                "Enter yes to attach gores on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
                 {
-                    string_params[i].cen[0] = cen[0];
-                    string_params[i].cen[1] = cen[1];
-		    string_params[i].P[2] = plane_params->P[2];
-                    CursorAfterString(infile,"Enter number of chords:");
-                    fscanf(infile,"%d",&string_params[i].num_strings);
-                    (void) printf("%d\n",string_params[i].num_strings);
-                    CursorAfterString(infile,"Enter start angle of chord:");
-                    fscanf(infile,"%lf",&string_params[i].start_angle);
-                    (void) printf("%f\n",string_params[i].start_angle);
-                    CursorAfterString(infile,"Enter initial position of load:");
-                    fscanf(infile,"%lf %lf %lf",
-                                        &string_params[i].coords_load[0],
-                                        &string_params[i].coords_load[1],
-                                        &string_params[i].coords_load[2]);
-                    (void) printf("%f %f %f\n",
-                                        string_params[i].coords_load[0],
-                                        string_params[i].coords_load[1],
-                                        string_params[i].coords_load[2]);
-                    CursorAfterString(infile,"Enter rotation angles:");
-                    fscanf(infile,"%lf %lf",&string_params[i].theta,
-                                        &string_params[i].phi);
-                    (void) printf("%f %f\n",string_params[i].theta,
-                                        string_params[i].phi);
-                    string_params[i].theta *= PI/180.0;
-                    string_params[i].phi *= PI/180.0;
+                    level_func_pack->string_func = 
+                            install_strings_and_rotate_w_gores;
+                    af_params->attach_gores = YES;
+                    if (CursorAfterStringOpt(infile,
+                    "Enter gore length factor:"))
+                    {
+                        fscanf(infile,"%lf",&(af_params->gore_len_fac));
+                        (void) printf("%f\n",af_params->gore_len_fac);
+                    }
                 }
-	    
             }
+    
+            if (CursorAfterStringOpt(infile,
+                "Enter yes to attach fixer on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+            
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    level_func_pack->string_func = 
+                            install_strings_and_rotate_w_fixer;
+                    af_params->attach_fixer = YES;
+                }
+            }
+
+            for (i = 0; i < num_canopy; ++i)
+            {
+                string_params[i].cen[0] = cen[0];
+                string_params[i].cen[1] = cen[1];
+                string_params[i].P[2] = plane_params->P[2];
+                CursorAfterString(infile,"Enter number of chords:");
+                fscanf(infile,"%d",&string_params[i].num_strings);
+                (void) printf("%d\n",string_params[i].num_strings);
+                CursorAfterString(infile,"Enter start angle of chord:");
+                fscanf(infile,"%lf",&string_params[i].start_angle);
+                (void) printf("%f\n",string_params[i].start_angle);
+                CursorAfterString(infile,"Enter initial position of load:");
+                fscanf(infile,"%lf %lf %lf",
+                                    &string_params[i].coords_load[0],
+                                    &string_params[i].coords_load[1],
+                                    &string_params[i].coords_load[2]);
+                (void) printf("%f %f %f\n",
+                                    string_params[i].coords_load[0],
+                                    string_params[i].coords_load[1],
+                                    string_params[i].coords_load[2]);
+                CursorAfterString(infile,"Enter rotation angles:");
+                fscanf(infile,"%lf %lf",&string_params[i].theta,
+                                    &string_params[i].phi);
+                (void) printf("%f %f\n",string_params[i].theta,
+                                    string_params[i].phi);
+                string_params[i].theta *= PI/180.0;
+                string_params[i].phi *= PI/180.0;
+            }
+    
         }
         else if (CursorAfterStringOpt(infile,
-		 "Enter yes to change canopy boundary:"))
+                "Enter yes to change canopy boundary:"))
         {
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
@@ -1938,6 +1940,8 @@ static void initCircularPlaneEdge(
                 level_func_pack->string_params = NULL;
             }
         }
+    }
+
 }	/* end init_circular_edge */
 
 static void initCrossPlaneEdge(

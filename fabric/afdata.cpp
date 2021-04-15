@@ -197,13 +197,13 @@ void printAfExtraData(
 	fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-        int num_pts;
-        REGISTERED_PTS *registered_pts;
-
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
 
-        if ((*s)->extra == NULL)
+        int num_pts;
+        REGISTERED_PTS *registered_pts;
+
+        if ((*s)->extra == nullptr)
             num_pts = 0;
         else
         {
@@ -482,10 +482,10 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        int num_pts;
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
     
+        int num_pts;
         fgetstring(infile,"number of registered points = ");
         fscanf(infile,"%d",&num_pts);
         if (num_pts != 0)
@@ -814,7 +814,7 @@ void optimizeElasticMesh(
 	    gview_plot_interface(gvdir,intfc);
 	}
 
-    int num_opt_round = 1;
+    int num_opt_round = 0;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if(af_params)
     {

@@ -21,8 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
 
 static boolean parachute_constr_func(POINTER,double*);
 static boolean install_strings(INTERFACE*,SURFACE*,POINTER,int);
@@ -1859,42 +1858,43 @@ static void initCircularPlaneEdge(
         CursorAfterString(infile,"Enter yes to attach strings to canopy:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
-        
         if (string[0] == 'y' || string[0] == 'Y')
         {
             level_func_pack->attach_string = YES;
             level_func_pack->string_params = (POINTER)string_params;
 	        level_func_pack->string_func = install_strings_and_rotate;
-	    if (CursorAfterStringOpt(infile,
-			"Enter yes to attach gores on canopy:"))
-	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
+    
+            if (CursorAfterStringOpt(infile,
+                "Enter yes to attach gores on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-		{
-		    level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_gores;
-		    af_params->attach_gores = YES;
-		    if (CursorAfterStringOpt(infile,
-				"Enter gore length factor:"))
-		    {
-		    	fscanf(infile,"%lf",&(af_params->gore_len_fac));
-		    	(void) printf("%f\n",af_params->gore_len_fac);
-		    }
-		}
-	    }
-	    if (CursorAfterStringOpt(infile,
-			"Enter yes to attach fixer on canopy:"))
-	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
+                {
+                    level_func_pack->string_func = 
+                                install_strings_and_rotate_w_gores;
+                    af_params->attach_gores = YES;
+                    if (CursorAfterStringOpt(infile,
+                        "Enter gore length factor:"))
+                    {
+                        fscanf(infile,"%lf",&(af_params->gore_len_fac));
+                        (void) printf("%f\n",af_params->gore_len_fac);
+                    }
+                }
+            }
+    
+            if (CursorAfterStringOpt(infile,
+		    	"Enter yes to attach fixer on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-		{
-		    level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_fixer;
-		    af_params->attach_fixer = YES;
-		}
-	    }
+                {
+                    level_func_pack->string_func = 
+                                install_strings_and_rotate_w_fixer;
+                    af_params->attach_fixer = YES;
+                }
+            }
 
             for (i = 0; i < num_canopy; ++i)
             {
@@ -1927,14 +1927,14 @@ static void initCircularPlaneEdge(
 	    
         }
         else if (CursorAfterStringOpt(infile,
-		 "Enter yes to change canopy boundary:"))
+                "Enter yes to change canopy boundary:"))
         {
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
-                if (string[0] == 'y' || string[0] == 'Y')
+            if (string[0] == 'y' || string[0] == 'Y')
             {
-                    level_func_pack->attach_string = YES;
-                    level_func_pack->string_func = change_mono_boundary;
+                level_func_pack->attach_string = YES;
+                level_func_pack->string_func = change_mono_boundary;
                 level_func_pack->string_params = NULL;
             }
         }

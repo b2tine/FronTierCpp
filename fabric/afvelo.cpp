@@ -299,7 +299,7 @@ void setMotionParams(Front* front)
 	    CursorAfterString(infile,"Enter fabric spring constant:");
             fscanf(infile,"%lf",&af_params->ks);
             (void) printf("%f\n",af_params->ks);
-            CursorAfterString(infile,"Enter fabric friction constant:");
+            CursorAfterString(infile,"Enter fabric damping constant:");
             fscanf(infile,"%lf",&af_params->lambda_s);
             (void) printf("%f\n",af_params->lambda_s);
             if (af_params->use_total_mass)
@@ -872,6 +872,7 @@ typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
 
 static boolean within_shape(SHAPE_PARAMS,double*);
 
+//TODO: compare to airfoil directory version of this function
 static void init_fixarea_params(
 	Front *front,
 	FILE *infile,
@@ -1121,45 +1122,51 @@ extern void resetFrontVelocity(Front *front)
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    for (i = 0; i < dim; ++i)
 	    {
-		p->vel[i] = 0.0;
-		sl->vel[i] = sr->vel[i] = 0.0;
-		sl->impulse[i] = sr->impulse[i] = 0.0;
+            p->vel[i] = 0.0;
+            p->force[i] = 0.0;
+            sl->vel[i] = sr->vel[i] = 0.0;
+            sl->impulse[i] = sr->impulse[i] = 0.0;
 	    }
 	}
 	if (dim == 3)
 	{
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		p = (*c)->start->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
+            p = (*c)->start->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
 	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-		}
-		for (b = (*c)->first; b != (*c)->last; b = b->next)
-		{
-		    p = b->end;
-		    sl = (STATE*)left_state(p);
-		    sr = (STATE*)right_state(p);
-	            for (i = 0; i < dim; ++i)
-		    {
-		    	p->vel[i] = 0.0;
-		    	sl->vel[i] = sr->vel[i] = 0.0;
-		    	sl->impulse[i] = sr->impulse[i] = 0.0;
-		    }
-		}
-		p = (*c)->end->posn;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
-	        for (i = 0; i < dim; ++i)
-		{
-		    p->vel[i] = 0.0;
-		    sl->vel[i] = sr->vel[i] = 0.0;
-		    sl->impulse[i] = sr->impulse[i] = 0.0;
-		}
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
+            }
+    
+            for (b = (*c)->first; b != (*c)->last; b = b->next)
+            {
+                p = b->end;
+                sl = (STATE*)left_state(p);
+                sr = (STATE*)right_state(p);
+                for (i = 0; i < dim; ++i)
+                {
+                    p->vel[i] = 0.0;
+                    p->force[i] = 0.0;
+                    sl->vel[i] = sr->vel[i] = 0.0;
+                    sl->impulse[i] = sr->impulse[i] = 0.0;
+                }
+            }
+                
+            p = (*c)->end->posn;
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
+            for (i = 0; i < dim; ++i)
+            {
+                p->vel[i] = 0.0;
+                p->force[i] = 0.0;
+                sl->vel[i] = sr->vel[i] = 0.0;
+                sl->impulse[i] = sr->impulse[i] = 0.0;
+            }
 	    }
 	}
 }	/* end resetFrontVelocity */

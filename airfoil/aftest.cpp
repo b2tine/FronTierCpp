@@ -21,14 +21,10 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
-#include "solver.h"
+#include "airfoil.h"
 
 #if defined(__GPU__)
-
 #include "airfoil_gpu.cuh"
-
 #endif
 
 #define		MAX_SURF_CURVES		10
@@ -527,17 +523,27 @@ static void set_equilibrium_mesh3d(
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY ||
+            hsbdry_type(*c) != GORE_HSBDRY) continue;
+
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
-		set_bond_length(b,3);
-		b->length0 = bond_length(b);
-		if (hsbdry_type(*c) == GORE_HSBDRY)
-		    b->length0 *= gore_len_fac;
-		for (i = 0; i < 3; ++i)
-		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])/
-					b->length0;	
+            set_bond_length(b,3);
+            b->length0 = bond_length(b);
+            
+            if (hsbdry_type(*c) == GORE_HSBDRY)
+                b->length0 *= gore_len_fac;
+            
+            for (i = 0; i < 3; ++i)
+            {
+                b->dir0[i] =
+                    (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
+            }
 	    }
+    
+        never_redistribute(Hyper_surf(*c)) = YES;
 	}
+
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
@@ -704,12 +710,9 @@ extern void print_airfoil_stat(
 	Front *front,
 	char *out_name)
 {
-	if (FT_Dimension() == 2 && pp_numnodes() > 1)
-	    return;
-    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY)
-        && !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) {
-        return;
-    }
+    if (FT_Dimension() == 2 && pp_numnodes() > 1) return;
+    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY) &&
+        !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
 
 	start_clock("print_airfoil_stat");
 
@@ -737,7 +740,9 @@ extern void print_airfoil_stat(
 	            print_airfoil_stat3d(front,out_name);
 	    	    break;
             default:
-                break;
+                printf("print_airfoil_stat() ERROR: invalid dimension! "
+                        "dim must be equal to 2 or 3\n");
+                LOC(); clean_up(EXIT_FAILURE);
         }
 	}
 

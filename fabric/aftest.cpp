@@ -24,9 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "fabric.h"
 
 #if defined(__GPU__)
-
 #include "fabric_gpu.cuh"
-
 #endif
 
 #define		MAX_SURF_CURVES		10
@@ -541,6 +539,7 @@ static void set_equilibrium_mesh3d(
                     (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
             }
 	    }
+
 	    never_redistribute(Hyper_surf(*c)) = YES;
 	}
 
@@ -716,15 +715,16 @@ extern void print_airfoil_stat(
 	Front *front,
 	char *out_name)
 {
-	if (FT_Dimension() == 2 && pp_numnodes() > 1)
-	    return;
+	if (FT_Dimension() == 2 && pp_numnodes() > 1) return;
+    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY) &&
+        !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
+
 	start_clock("print_airfoil_stat");
 
 	INTERFACE* elas_intfc = NULL;
 	INTERFACE* save_intfc = front->interf; 
 	if (pp_numnodes() > 1)
 	{
-	    //parallel
 	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	    int owner[MAXD] = {0};
 	    int owner_id = af_params->node_id[0];
@@ -744,8 +744,13 @@ extern void print_airfoil_stat(
 	    	case 3:
 	            print_airfoil_stat3d(front,out_name);
 	    	    break;
+            default:
+                printf("print_airfoil_stat() ERROR: invalid dimension! "
+                        "dim must be equal to 2 or 3\n");
+                LOC(); clean_up(EXIT_FAILURE);
 	    }
 	}
+
 	front->interf = save_intfc;
 	if (elas_intfc)
 	    delete_interface(elas_intfc);
@@ -902,7 +907,8 @@ static void print_airfoil_stat3d(
 	default:
 	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
 	}
-        if (af_params->no_fluid) return;
+
+    //if (af_params->no_fluid) return;
 
 	print_drag3d(front,out_name);
 	print_strings(front,out_name);
@@ -2515,7 +2521,7 @@ static void print_drag3d(
                     point = Point_of_tri(tri)[i];
                     sl = (STATE*)left_state(point);
                     sr = (STATE*)right_state(point);
-                    pres_drop += getStatePres(sr)-getStatePres(sl);
+                    pres_drop += getStatePres(sl)-getStatePres(sr);
                 }
                 pres_drop /= 3.0;
                 for (i = 0; i < dim; i++)
