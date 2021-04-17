@@ -97,9 +97,10 @@ public:
     
     // set an AABB element to be a leaf
     void setLeaf(AABB*);
-    bool isCollid(std::shared_ptr<Node> node);
+    bool isCollid(Node* node) const;
     void updateAABB();
-    std::shared_ptr<Node> getSibling() const;
+    Node* getSibling() const;
+
     ~Node();
 };
 
@@ -113,8 +114,9 @@ public:
     // map from object's indices (2 or 3 points' global indices)
     // to corresponding CD_HSE* in collision library 
     std::map<std::vector<long>, CD_HSE*> vhMap;
-    std::unordered_set<std::shared_ptr<Node>> nodeSet;
-        //std::unordered_set<Node*> nodeSet;
+    std::unordered_set<Node*> nodeSet;
+
+    //only used for rebuilding tree in call to updateTreeStructure()
     std::vector<std::shared_ptr<Node>> nodeArray;
 
     int count {0};
@@ -122,7 +124,7 @@ public:
     std::vector<std::pair<CD_HSE*,CD_HSE*>> getInterferencePairs() const;
 
     int numLeaf {0};
-    double treeHeight(std::shared_ptr<Node> node); 
+    double treeHeight(Node* node); 
     double dt;
     bool isProximity {false};
     bool isCollsn {false};
@@ -166,8 +168,8 @@ private:
 
     bool gauss_seidel {false};
 
-    bool queryProximity(std::shared_ptr<Node> n);
-    bool queryCollision(std::shared_ptr<Node> n);
+    bool queryProximity(Node* n);
+    bool queryCollision(Node* n);
     bool getCollision(const CD_HSE* a, const CD_HSE* b);
 };
 

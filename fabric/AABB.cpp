@@ -137,16 +137,16 @@ void Node::updateAABB()
     }
 }
 
-bool Node::isCollid(std::shared_ptr<Node> node) const
+bool Node::isCollid(Node* node) const
 {
     return box.isCollid(node->box);
 }
 
-std::shared_ptr<Node> Node::getSibling() const
+Node* Node::getSibling() const
 {
     auto parent = this->parent.lock();
     if (!parent) return nullptr;
-    return (shared_from_this() == parent->left) ? parent->right : parent->left;
+    return (this == parent->left.get()) ? parent->right.get() : parent->left.get();
 }
 
 Node::~Node()
@@ -224,6 +224,8 @@ void AABBTree::updateTreeStructure()
 void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parentNode)
 {
     std::shared_ptr<Node> p = parentNode;
+    //Node* p = parentNode.get();
+    
     // if parent is a leaf node, then create a branch
     // with n and parent to be two children
     if (p->isLeaf())
@@ -257,8 +259,8 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
             //double vdiff2 = abr.merge(n->box).volume()-abr.volume();
         double vdiff1 = abl.merge(n->box).volume();
         double vdiff2 = abr.merge(n->box).volume();
-            // int vdiff1 = treeHeight(p->left);
-            // int vdiff2 = treeHeight(p->right);
+            // int vdiff1 = treeHeight(p->left.get());
+            // int vdiff2 = treeHeight(p->right.get());
         
         // insert to left subtree
         if (vdiff1 < vdiff2)
@@ -332,25 +334,25 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList)
     } while (!sn.empty());
 }
 
-double AABBTree::treeHeight(std::shared_ptr<Node> node)
+double AABBTree::treeHeight(Node* node)
 {
     if (!node) return 0;
-    return std::max(treeHeight(node->left), treeHeight(node->right)) + 1;
+    return std::max(treeHeight(node->left.get()), treeHeight(node->right.get())) + 1;
 }
 
 // inorder traversal of the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
 void AABBTree::query()
 {
-    std::shared_ptr<Node> cur = root;
-    std::stack<std::shared_ptr<Node>> sn;
+    Node* cur = root.get();
+    std::stack<Node*> sn;
 
     while (cur || !sn.empty())
     {
         while (cur)
         {
             sn.push(cur);
-            cur = cur->left;
+            cur = cur->left.get();
         }
 
         cur = sn.top();
@@ -366,7 +368,7 @@ void AABBTree::query()
             nodeSet.insert(cur);
         }
         
-        cur = cur->right;
+        cur = cur->right.get();
     }
 }
 
@@ -374,10 +376,10 @@ void AABBTree::query()
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-bool AABBTree::queryProximity(std::shared_ptr<Node> n)
+bool AABBTree::queryProximity(Node* n)
 {
-    std::stack<std::shared_ptr<Node>> sn;
-    std::shared_ptr<Node> cur = root;
+    std::stack<Node*> sn;
+    Node* cur = root.get();
 
     while (cur || !sn.empty())
     {
@@ -403,7 +405,7 @@ bool AABBTree::queryProximity(std::shared_ptr<Node> n)
                 }
 
                 sn.push(cur);
-                cur = cur->left;
+                cur = cur->left.get();
             }   
             else
             { 
@@ -418,16 +420,16 @@ bool AABBTree::queryProximity(std::shared_ptr<Node> n)
 
         cur = sn.top();
         sn.pop();
-        cur = cur->right;
+        cur = cur->right.get();
     }
 
     return count > 0;
 }
 
-bool AABBTree::queryCollision(std::shared_ptr<Node> n)
+bool AABBTree::queryCollision(Node* n)
 {
-    std::stack<std::shared_ptr<Node>> sn;
-    std::shared_ptr<Node> cur = root;
+    std::stack<Node*> sn;
+    Node* cur = root.get();
 
     while (cur || !sn.empty())
     {
@@ -453,7 +455,7 @@ bool AABBTree::queryCollision(std::shared_ptr<Node> n)
                 }
 
                 sn.push(cur);
-                cur = cur->left;
+                cur = cur->left.get();
             }
             else 
             {
@@ -468,7 +470,7 @@ bool AABBTree::queryCollision(std::shared_ptr<Node> n)
 
         cur = sn.top();
         sn.pop();
-        cur = cur->right;
+        cur = cur->right.get();
     }
 
     return count > 0;
