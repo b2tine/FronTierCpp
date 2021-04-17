@@ -37,17 +37,23 @@ class AABB
 
     CPoint lowerbound;
     CPoint upperbound;
-    // indices will store the index of points on the  
+    
+    // indices store the index of points on the  
     // corresponding triangle or bond.
     std::vector<long> indices;
+    
     void updateAABBInfo(double);
     //void updateAABBInfo(const std::unordered_map<long, POINT*>&);
+    
     bool contain(const AABB*);
-    CD_HSE* hse = nullptr;
+    CD_HSE* hse {nullptr};
     double dt;
     MotionState abType;
     double tol;
+
+
 public:
+
     AABB(double, CD_HSE*);
     AABB(double, CD_HSE*, double);
     AABB(const CPoint&, const CPoint&);
@@ -66,7 +72,8 @@ public:
     bool isCollid(const AABB&) const;
 };
 
-class Node : public std::enable_shared_from_this<Node>
+//class Node : public std::enable_shared_from_this<Node>
+class Node
 {
 public:
      
@@ -81,16 +88,20 @@ public:
     // empty for branch
     std::unique_ptr<AABB> data;
     
-    std::weak_ptr<Node> parent;
-    std::shared_ptr<Node> left;
-    std::shared_ptr<Node> right;
+    Node* parent {nullptr}; //std::weak_ptr<Node> parent;
+    Node* left {nullptr};   //std::shared_ptr<Node> left;
+    Node* right {nullptr};  //std::shared_ptr<Node> right;
 
     void updateBranch();
     
     // make this node to be branch from two Node parameter
-    void setBranch(std::shared_ptr<Node> n1,
-                   std::shared_ptr<Node> n2,
-                   std::shared_ptr<Node> parent);
+    void setBranch(Node* n1, Node* n2);
+        //void setBranch(Node* n1, Node* n2, Node* parent);
+        /*
+        void setBranch(std::shared_ptr<Node> n1,
+                       std::shared_ptr<Node> n2,
+                       std::shared_ptr<Node> parent);
+        */
     
     // check if this node is a leaf
     bool isLeaf() const;
@@ -106,7 +117,7 @@ public:
 
 class AABBTree {
 public:
-    std::shared_ptr<Node> root;
+    Node* root {nullptr}; //std::shared_ptr<Node> root;
     
     // node needed to be removed and reinsert to the tree
     std::unordered_map<long, POINT*> ump;
@@ -117,7 +128,8 @@ public:
     std::unordered_set<Node*> nodeSet;
 
     //only used for rebuilding tree in call to updateTreeStructure()
-    std::vector<std::shared_ptr<Node>> nodeArray;
+    std::vector<Node*> nodeArray;
+        //std::vector<std::shared_ptr<Node>> nodeArray;
 
     int count {0};
     std::vector<std::pair<CD_HSE*,CD_HSE*>> interference_pairs;
@@ -134,7 +146,10 @@ public:
 
     // insert a node into the subtree with parent 
     // as the root
-    void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
+    Node* insertNode(Node* n, Node* parentNode);
+    //void insertNode(Node* n, Node* parentNode);
+        //void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
+    
     MotionState type;
     double tolerance;
     
