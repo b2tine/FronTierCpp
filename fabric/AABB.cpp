@@ -32,24 +32,27 @@ AABB::AABB(const CPoint& pl, const CPoint& pu)
     : lowerbound(pl), upperbound(pu)
 {}
 
-AABB AABB::merge(const AABB& ab) const {
+AABB AABB::merge(const AABB& ab) const
+{
     CPoint pl(3), pu(3);
-
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
          pl[i] = std::min(lowerbound[i], ab.lowerbound[i]);
          pu[i] = std::max(upperbound[i], ab.upperbound[i]);
     }
     return AABB(pl, pu);
 } 
 
-double AABB::volume() {
-    return (upperbound[0]-lowerbound[0])*(upperbound[1]-lowerbound[1])*
-            (upperbound[2]-lowerbound[2]);
+double AABB::volume() const
+{
+    double val = 1.0;
+    for (int i = 0; i < 3; ++i)
+        val *= upperbound[i] - lowerbound[i];
+    return val;
 }
 
 //This is the intersection test for AABB's.
-//Not a collision or geometric primitive check.
-bool AABB::isCollid(const AABB& ab)
+bool AABB::isCollid(const AABB& ab) const
 {
     for (int i = 0; i < 3; ++i)
     {
@@ -57,11 +60,6 @@ bool AABB::isCollid(const AABB& ab)
         if (ab.lowerbound[i] > upperbound[i]) return false;
     }
     return true;
-    /*
-    return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
-           (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
-           (lowerbound[2] <= ab.upperbound[2] && upperbound[2] >= ab.lowerbound[2]); 
-    */
 }
 
 void AABB::updateAABBInfo(double dt)
@@ -84,43 +82,53 @@ void AABB::updateAABBInfo(double dt)
     }
 }
 
-bool AABB::contain(const AABB* ab) {
+bool AABB::contain(const AABB* ab)
+{
     return lowerbound[0] <= ab->lowerbound[0] && lowerbound[1] <= ab->lowerbound[1] &&
         lowerbound[2] <= ab->lowerbound[2] && upperbound[0] >= ab->upperbound[0] &&
         upperbound[1] >= ab->upperbound[1] && upperbound[2] >= ab->upperbound[2];
 }
 
-void Node::setBranch(std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
-            std::shared_ptr<Node> parent) {
+void Node::setBranch(
+        std::shared_ptr<Node> n1, std::shared_ptr<Node> n2,
+        std::shared_ptr<Node> parent)
+{
     n1->parent = parent; 
     n2->parent = parent;
     left = n1;
     right = n2;
 }
 
-bool Node::isLeaf() {
+bool Node::isLeaf() const
+{
     return left == nullptr && right == nullptr;
 }
 
-void Node::setLeaf(AABB* ab) {
+void Node::setLeaf(AABB* ab)
+{
     data.reset(ab);
 }
 
-void Node::updateBranch() {
-    if (isLeaf())
-        return;
-    for (int i = 0; i < 3; i++) {
+void Node::updateBranch()
+{
+    if (this->isLeaf()) return;
+    
+    for (int i = 0; i < 3; i++)
+    {
          box.lowerbound[i] = std::min(left->box.lowerbound[i], right->box.lowerbound[i]);
          box.upperbound[i] = std::max(left->box.upperbound[i], right->box.upperbound[i]);
     }
 }
 
-void Node::updateAABB() {
-    if (isLeaf()) {
+void Node::updateAABB()
+{
+    if (isLeaf())
+    {
         box.lowerbound = data->lowerbound;
         box.upperbound = data->upperbound;
     }
-    else {
+    else
+    {
         // branch node has no AABB yet
         if (box.lowerbound.size() == 0)
             box = left->box.merge(right->box);
@@ -129,16 +137,16 @@ void Node::updateAABB() {
     }
 }
 
-bool Node::isCollid(Node* n) {
-    return box.isCollid(n->box);
+bool Node::isCollid(std::shared_ptr<Node> node) const
+{
+    return box.isCollid(node->box);
 }
 
-Node* Node::getSibling() const {
+std::shared_ptr<Node> Node::getSibling() const
+{
     auto parent = this->parent.lock();
-    if (!parent.get())
-        return nullptr;
-    return this == parent->left.get() ? parent->right.get() :
-        parent->left.get();
+    if (!parent) return nullptr;
+    return (shared_from_this() == parent->left) ? parent->right : parent->left;
 }
 
 Node::~Node()
@@ -158,9 +166,10 @@ AABBTree::~AABBTree()
     deleteTree();
 }
 
+//Breadth first (level order) traversal
 void AABBTree::deleteTree()
 {
-    std::queue<std::shared_ptr<Node> > q;
+    std::queue<std::shared_ptr<Node>> q;
 
     q.push(this->root);
     while (!q.empty())
@@ -178,8 +187,10 @@ void AABBTree::deleteTree()
     }
 }
 
-void AABBTree::addAABB(AABB* ab) {
-    if (root.get()) {
+void AABBTree::addAABB(AABB* ab)
+{
+    if (root)
+    {
         auto node = std::make_shared<Node>();
         node->setLeaf(ab);
         node->updateAABB();
@@ -187,7 +198,8 @@ void AABBTree::addAABB(AABB* ab) {
         nodeArray.push_back(node);
         numLeaf++;
     }
-    else {
+    else
+    {
         root = std::make_shared<Node>();
         root->setLeaf(ab);
         root->updateAABB();
@@ -197,35 +209,44 @@ void AABBTree::addAABB(AABB* ab) {
 }
 
 // reorganize the tree structure
-void AABBTree::updateTreeStructure() {
+void AABBTree::updateTreeStructure()
+{
     root.reset();
-    for (auto node : nodeArray) {
-         if (root.get()) 
+    for (auto node : nodeArray)
+    {
+         if (root) 
              insertNode(node, root);
          else 
              root = node;
     }
 }
 
-void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parentNode) {
+void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parentNode)
+{
     std::shared_ptr<Node> p = parentNode;
     // if parent is a leaf node, then create a branch
     // with n and parent to be two children
-    if (p->isLeaf()) {
+    if (p->isLeaf())
+    {
         auto newParentNode = std::make_shared<Node>();
         
         newParentNode->parent = p->parent;
         auto par = p->parent.lock();
 
-        if (par.get())
-            par->left.get() == parentNode.get() ? par->left = newParentNode :
-              par->right = newParentNode;
+        if (par)
+        {
+            if (par->left == parentNode)
+                par->left = newParentNode;
+            else
+                par->right = newParentNode;
+        }
         newParentNode->setBranch(n, p, newParentNode);
         parentNode = newParentNode;
     }
-    // we have to decide which subtree to insert to
-    // the rule is insert to the subtree with smaller volume 
-    else {
+    else
+    {
+        // we have to decide which subtree to insert to
+        // the rule is insert to the subtree with smaller volume 
         AABB& abl = p->left->box;
         AABB& abr = p->right->box;
         // get volume after inserting current node to 
@@ -238,20 +259,18 @@ void AABBTree::insertNode(std::shared_ptr<Node> n, std::shared_ptr<Node>& parent
         double vdiff2 = abr.merge(n->box).volume();
             // int vdiff1 = treeHeight(p->left);
             // int vdiff2 = treeHeight(p->right);
+        
         // insert to left subtree
-        if (vdiff1 < vdiff2) {
+        if (vdiff1 < vdiff2)
             insertNode(n, p->left);
-        }
-        else {
+        else
             insertNode(n, p->right);
-        }
     }
-    // this will guarantee all relavent ancestor will be 
-    // updated
+    
+    // this will guarantee all relavent ancestor will be updated
     parentNode->updateAABB();
 }
 
-//sets AABBTree::count = 0
 void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList)
 {
     vhMap.clear();
@@ -263,7 +282,6 @@ void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList)
          std::vector<long> ids;
          for (int i = 0; i < it->num_pts(); i++) 
               ids.push_back(it->Point_of_hse(i)->global_index);
-   
          vhMap.insert({ids, it});
     }
 }
@@ -272,30 +290,29 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList)
 {
     updatePointMap(hseList);
 
-    std::stack<Node*> sn;
-    Node* cur = root.get();
+    if (!root) return;
 
-    if (!root.get())
-        return;
+    std::stack<std::shared_ptr<Node>> sn;
+    std::shared_ptr<Node> cur = root;
     
     //iterative postorder traversal of tree
     do {
         while (cur)
         {
             if (cur->right)
-                sn.push(cur->right.get());
+                sn.push(cur->right);
             sn.push(cur);
-            cur = cur->left.get();
+            cur = cur->left;
         }
 
         cur = sn.top();
         sn.pop();
 
-        if (cur->right && !sn.empty() && cur->right.get() == sn.top())
+        if (cur->right && !sn.empty() && cur->right == sn.top())
         {
             sn.pop();
             sn.push(cur);
-            cur = cur->right.get();
+            cur = cur->right;
         }
         else
         {
@@ -309,33 +326,31 @@ void AABBTree::updateAABBTree(const std::vector<CD_HSE*>& hseList)
             if (!cur->isLeaf())
                 cur->updateBranch();
 
-            cur = nullptr;
+            cur.reset();
         }
 
     } while (!sn.empty());
 }
 
-
-double AABBTree::treeHeight(Node* root) {
-    if (!root)
-        return 0;
-    return std::max(treeHeight(root->left.get()),
-                    treeHeight(root->right.get())) + 1;
+double AABBTree::treeHeight(std::shared_ptr<Node> node)
+{
+    if (!node) return 0;
+    return std::max(treeHeight(node->left), treeHeight(node->right)) + 1;
 }
 
-// inorder traverse the tree and whenever come up with a leaf node, 
+// inorder traversal of the tree and whenever come up with a leaf node, 
 // find collided pairs correspond to it.
 void AABBTree::query()
 {
-    Node* cur = root.get();
-    std::stack<Node*> sn;
+    std::shared_ptr<Node> cur = root;
+    std::stack<std::shared_ptr<Node>> sn;
 
     while (cur || !sn.empty())
     {
         while (cur)
         {
             sn.push(cur);
-            cur = cur->left.get();
+            cur = cur->left;
         }
 
         cur = sn.top();
@@ -351,7 +366,7 @@ void AABBTree::query()
             nodeSet.insert(cur);
         }
         
-        cur = cur->right.get();
+        cur = cur->right;
     }
 }
 
@@ -359,10 +374,10 @@ void AABBTree::query()
 // Preorder traverse the tree and if find a collided node to be 
 // (1) leaf, find a pair and add to the list
 // (2) branch, push two children into the stack
-bool AABBTree::queryProximity(Node* n)
+bool AABBTree::queryProximity(std::shared_ptr<Node> n)
 {
-    std::stack<Node*> sn;
-    Node* cur = root.get();
+    std::stack<std::shared_ptr<Node>> sn;
+    std::shared_ptr<Node> cur = root;
 
     while (cur || !sn.empty())
     {
@@ -388,7 +403,7 @@ bool AABBTree::queryProximity(Node* n)
                 }
 
                 sn.push(cur);
-                cur = cur->left.get();
+                cur = cur->left;
             }   
             else
             { 
@@ -403,16 +418,16 @@ bool AABBTree::queryProximity(Node* n)
 
         cur = sn.top();
         sn.pop();
-        cur = cur->right.get();
+        cur = cur->right;
     }
 
     return count > 0;
 }
 
-bool AABBTree::queryCollision(Node* n)
+bool AABBTree::queryCollision(std::shared_ptr<Node> n)
 {
-    std::stack<Node*> sn;
-    Node* cur = root.get();
+    std::stack<std::shared_ptr<Node>> sn;
+    std::shared_ptr<Node> cur = root;
 
     while (cur || !sn.empty())
     {
@@ -438,7 +453,7 @@ bool AABBTree::queryCollision(Node* n)
                 }
 
                 sn.push(cur);
-                cur = cur->left.get();
+                cur = cur->left;
             }
             else 
             {
@@ -453,7 +468,7 @@ bool AABBTree::queryCollision(Node* n)
 
         cur = sn.top();
         sn.pop();
-        cur = cur->right.get();
+        cur = cur->right;
     }
 
     return count > 0;

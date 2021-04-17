@@ -460,6 +460,9 @@ void CollisionSolver3d::resolveCollision()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
+        //TODO: Appropriate to use after impact zone handling used?
+        //      Make boolean flag that indicates impact zone handling
+        //      was enabled during this time step.
         limitStrainVelGS();
         //limitStrainVelJAC();
             //computeMaxSpeed(); //debug
