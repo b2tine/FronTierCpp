@@ -2,8 +2,7 @@
 Start test time control parameters
 
 Max time: 5.0
-Max stepXXX: 797
-Max step: 2500
+Max step: 3500
 Print interval: 0.01
 Movie frame interval: 0.01
 CFL factor: 0.5
@@ -59,9 +58,9 @@ Enter interior sub step number: 1
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.00025
+Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0
-Enter fabric friction constant: 0.15
+Enter fabric friction constant: 0.25
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001

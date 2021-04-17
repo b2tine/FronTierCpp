@@ -170,13 +170,13 @@ private:
     int numImpactZonePoints {0};
 
     std::vector<CD_HSE*> getHseTypeList(CD_HSE_TYPE type);
+    std::vector<CD_HSE*> shuffleHseList(const std::vector<CD_HSE*>& list) const;
     
     void limitStrainPosnJac(MotionState mstate);
     void limitStrainPosnGS(MotionState mstate);
     int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
-    int computeStrainRateImpulsesRand(std::vector<CD_HSE*>& list, MotionState mstate);
     int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     void limitStrainVelJAC();
     void limitStrainVelGS();
