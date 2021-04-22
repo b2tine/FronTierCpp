@@ -420,13 +420,17 @@ void CollisionSolver3d::resolveCollision()
     //TODO: Should we reset bond length somehow between strain limiting
     //      and strain rate limiting? It seems that the strain rate
     //      limiting may hinder the strain limiting itself...
+    //      -- Reversing the above order seems to limit the cancellation
 
 
     // Static proximity handling
     start_clock("detectProximity");
-    //Check for fabric-fabric proximity and apply repulsions
-    //in isolation before, checking all elements for proximity.
+    //TODO: Check for fabric-fabric proximity and apply repulsions
+    //      in isolation before, checking all elements for proximity?
+    //      -- Good for avoiding crashes, but exacerbates fabric kicking/jumping.
+    //
     detectProximity(elasticHseList);
+    abt_proximity.reset();
     detectProximity(hseList);
     stop_clock("detectProximity");
     
@@ -653,8 +657,6 @@ void CollisionSolver3d::resetPositionCoordinates()
 
 void CollisionSolver3d::detectProximity(std::vector<CD_HSE*>& list)
 {
-    abt_proximity.reset();
-
     start_clock("dynamic_AABB_proximity");
     aabbProximity(list);
     abt_proximity->query();
@@ -958,21 +960,13 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 	if (is_collision) 
     {
         //TODO: Return avg_vel to value before point to point collisions???
-        //      See todo in computeImpactZoneJac() regarding a startup step
+        //      
+        //      --This should most likely be called, but may be better if
+        //      we perform at least one pointwise collision iteration to
+        //      get the impact zone handling started. See todo in computeImpactZoneJac()
+        //      regarding a startup step...
         //
-            //revertAverageVelocity();
-
-        //TODO: If we don't revert to the post proximity avg_vel,
-        //      let's try limiting the strain before beginning impact
-        //      zone handling. Probably not worth calling if we do
-        //      call revertAverageVelocity() above.
-        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-        {
-            //TODO: causing jumping?
-            limitStrainPosnJac(MotionState::MOVING);
-                //limitStrainPosnGS(MotionState::MOVING);
-                    //computeMaxSpeed(); //debug
-        }
+        revertAverageVelocity();
 
         computeImpactZoneGS(list);
             //computeImpactZoneJac(list);
