@@ -235,14 +235,14 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
         for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
-		ic = d_index2d(i,j,top_gmax);
-		if (domain_status[ic] != TO_SOLVE)
-		    continue;
-                if (cell_center[ic].comp != SOLID_COMP)
-                {
-                    ij_to_I[i][j] = index + ilower;
-                    index++;
-                }
+            ic = d_index2d(i,j,top_gmax);
+            if (domain_status[ic] != TO_SOLVE) continue;
+
+            if (cell_center[ic].comp != SOLID_COMP)
+            {
+                ij_to_I[i][j] = index + ilower;
+                index++;
+            }
 	    }
 	    FT_ParallelExchCellIndex(front,llbuf,uubuf,(POINTER)ij_to_I);
 	    break;
@@ -251,13 +251,14 @@ void Incompress_Solver_Smooth_Basis::setIndexMap(void)
 	    for (j = 0; j <= top_gmax[1]; j++)
 	    for (i = 0; i <= top_gmax[0]; i++)
 		    ijk_to_I[i][j][k] = -1;
+
 	    for (k = kmin; k <= kmax; k++)
 	    for (j = jmin; j <= jmax; j++)
 	    for (i = imin; i <= imax; i++)
 	    {
             ic = d_index3d(i,j,k,top_gmax);
-            if (domain_status[ic] != TO_SOLVE)
-                continue;
+            if (domain_status[ic] != TO_SOLVE) continue;
+
             if (cell_center[ic].comp != SOLID_COMP)
             {
                 ijk_to_I[i][j][k] = index + ilower;

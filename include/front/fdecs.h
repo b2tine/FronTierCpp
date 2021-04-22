@@ -1408,15 +1408,18 @@ enum {
 
 struct _INTRP_CELL {
     int dim;
+    boolean is_linear;
     boolean is_bilinear;
     double **coords;
     double *var;
     int nv;
+    int nv_lin;
     double **p_lin;
     double *var_lin;
 	double *dist;
-    int **icoords;
-    int **ip_lin;
+    int **icoords; //For using intrp coefs in matrix 
+    int **icoords_lin; //For using intrp coefs in matrix 
+    double *coefs; //For using intrp coefs in matrix 
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 

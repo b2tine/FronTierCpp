@@ -423,20 +423,74 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     coords_reflect[m] = crx_coords[m] + v[m];
                 
                 //Interpolate phi at the reflected point,
-                double phi_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,&soln[index]);
-                
-                //TODO: getStateVar() returns phi which is what we are solving for.
-                //      More correct method would place the interpolation coefficients
-                //      of the points used in the approximiation into the matrix.
-                //
-                //      See FrontGetRectCellIntrpCoeffs() for some ideas.
-                //      (This function would only work for bilinear intrp 
-                //          i.e. no grid crxing)
+                static INTRP_CELL blk_cell;
+                static bool first_phi_reflect = true;
 
-                aII += -coeff[l];
-                rhs -= coeff[l]*phi_reflect; 
+                if (first_phi_reflect)
+                {
+                    const int MAX_NUM_VERTEX_IN_CELL = 20;
+                    uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coefs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
+                    bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords_lin,MAXD+1,MAXD,sizeof(double));
+                    uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
+                    first_phi_reflect = false;
+                }
+                
+                double phi_reflect;
+                FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
+                        coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
+                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                            getStateVar,&phi_reflect,&soln[index]);*/
+
+                //Place interpolation coefficients of the points used in the
+                //approximiation into the system matrix.
+                if (blk_cell.is_bilinear)
+                {
+                    for (int k = 0; k < blk_cell.nv; ++k)
+                    {
+                        int* ic_intrp = blk_cell.icoords[k];
+                        int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                        solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                        aII -= coeff[l];
+                            //printf("ELLIPTIC_SOLVER::solve2d() : BILINEAR INTERPOLATION!\n");
+                    }
+                }
+                else if (blk_cell.is_linear)
+                {
+                    for (int k = 0; k < blk_cell.nv_lin; ++k)
+                    {
+                        int* ic_intrp = blk_cell.icoords_lin[k];
+                        if (ic_intrp[0] == -1)
+                        {
+                            //move contribution of interface points to the RHS.
+                            rhs -= coeff[l]*blk_cell.coefs[k]*blk_cell.var_lin[k];
+                        }
+                        else
+                        {
+                            int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                        }
+                        aII -= coeff[l];
+                            //printf("ELLIPTIC_SOLVER::solve2d() : LINEAR INTERPOLATION!\n");
+                    }
+                }
+                else
+                {
+                    aII -= coeff[l];
+                    rhs -= coeff[l]*phi_reflect; 
+                }
+
+                /*
+                //NOTE: Removed because blk_cell is now a static variable.
+                //
+                FT_FreeThese(8, blk_cell.var, blk_cell.dist, blk_cell.coefs,
+                        blk_cell.coords, blk_cell.icoords, blk_cell.p_lin,
+                        blk_cell.var_lin, blk_cell.icoords_lin);
+                */
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -662,7 +716,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
         
     PETSc solver;
-    solver.Create(ilower, iupper-1, 7, 7);
+    //TODO: Determine minimum number of nonzero entries in diagonal
+    //      and off-diagonal blocks. 15 was a conservative guess and
+    //      appears to be working, but likely not optimal...
+    solver.Create(ilower, iupper-1, 15, 15);
+        //solver.Create(ilower, iupper-1, 7, 7);
     
     solver.Reset_A();
 	solver.Reset_b();
@@ -701,6 +759,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
         //TODO: This loop should be consolidated with the next loop,
         //      no need to check the intersection twice like we currently are ...
+        //
+        //      Should however be checking if we've crossed back over, in the
+        //      case when interface highly curved/folded.
 	    for (l = 0; l < 6; ++l)
 	    {
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
@@ -790,22 +851,79 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     coords_reflect[m] = crx_coords[m] + v[m];
 
                 //Interpolate phi at the reflected point,
-                double phi_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,&soln[index]);
-                /*
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
-                        // but intfc state may not have a valid phi ...
-                */
-                //TODO: getStateVar() returns phi which is what we are solving for.
-                //      More correct method would place the weights of the points
-                //      used to interpolate at the reflected point into the matrix.
-                //
-                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
+                static INTRP_CELL blk_cell;
+                static bool first_phi_reflect = true;
 
-                aII += -coeff[l];
-                rhs -= coeff[l]*phi_reflect; 
+                if (first_phi_reflect)
+                {
+                    const int MAX_NUM_VERTEX_IN_CELL = 20;
+                    uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coefs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
+                    bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords_lin,MAXD+1,MAXD,sizeof(double));
+                    uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
+                    first_phi_reflect = false;
+                }
+                
+                double phi_reflect;
+                FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
+                        coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
+                    /*
+                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                            getStateVar,&phi_reflect,&soln[index]);
+                        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                                getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                                // but intfc state may not have a valid phi ...
+                    */
+
+                //Place interpolation coefficients of the points used in the
+                //approximiation into the system matrix.
+                if (blk_cell.is_bilinear)
+                {
+                    for (int k = 0; k < blk_cell.nv; ++k)
+                    {
+                        int* ic_intrp = blk_cell.icoords[k];
+                        int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
+                        solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                        aII -= coeff[l];
+                            //printf("ELLIPTIC_SOLVER::solve3d() : BILINEAR INTERPOLATION!\n");
+                    }
+                }
+                else if (blk_cell.is_linear)
+                {
+                    for (int k = 0; k < blk_cell.nv_lin; ++k)
+                    {
+                        int* ic_intrp = blk_cell.icoords_lin[k];
+                        if (ic_intrp[0] == -1)
+                        {
+                            //move contribution of interface points to the RHS.
+                            rhs -= coeff[l]*blk_cell.coefs[k]*blk_cell.var_lin[k];
+                        }
+                        else
+                        {
+                            int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                        }
+                        aII -= coeff[l];
+                            //printf("ELLIPTIC_SOLVER::solve3d() : LINEAR INTERPOLATION!\n");
+                    }
+                }
+                else
+                {
+                    aII -= coeff[l];
+                    rhs -= coeff[l]*phi_reflect; 
+                }
+
+                /*
+                //NOTE: Removed because blk_cell is now a static variable.
+                //
+                FT_FreeThese(8, blk_cell.var, blk_cell.dist, blk_cell.coefs,
+                        blk_cell.coords, blk_cell.icoords, blk_cell.p_lin,
+                        blk_cell.var_lin, blk_cell.icoords_lin);
+                */
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
