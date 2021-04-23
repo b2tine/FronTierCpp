@@ -264,8 +264,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
     */
 
 	paintAllGridPoint(NOT_SOLVED);
-    
     num_colors = drawColorMap();
+
 	for (i = 1; i < num_colors; ++i)
 	{
 	    paintToSolveGridPoint2(i);
@@ -284,7 +284,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
     {
         setGlobalIndex();
         setIndexMap();
-        elliptic_solver.ijk_to_I = ijk_to_I;
+        elliptic_solver.ij_to_I = ij_to_I;
         elliptic_solver.ilower = ilower;
         elliptic_solver.iupper = iupper;
         

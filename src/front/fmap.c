@@ -1948,6 +1948,7 @@ EXPORT	double FrontLinIntrp(
             f[2] = QDet3d(v1,q,v3)/den;
             f[3] = QDet3d(v1,v2,q)/den;
             f[0] = 1.0 - f[1] - f[2] - f[3];
+
             f[0] = max(0.0,f[0]);	f[0] = min(1.0,f[0]);
             f[1] = max(0.0,f[1]);	f[1] = min(1.0,f[1]);
             f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);

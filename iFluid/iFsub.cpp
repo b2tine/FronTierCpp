@@ -821,7 +821,8 @@ static  void neumann_point_propagate(
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below).
 	setStateViscosity(iFparams,newst,comp);
-	FT_NormalAtPoint(oldp,front,nor,comp);
+	
+    FT_NormalAtPoint(oldp,front,nor,comp);
 
 	dn = grid_size_in_direction(nor,h,dim);
 	for (i = 0; i < dim; ++i)
@@ -833,18 +834,16 @@ static  void neumann_point_propagate(
 	    newst->vel[i] = 0.0;
         FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
 	}
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
-    newst->phi = newst->pres;
-    newst->q = 0.0;
-        //newst->q = oldst->pres;
-	
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi
-            getStatePhi,&newst->phi,&oldst->phi)
-    */
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
+            getStatePhi,&newst->phi,&oldst->phi);
 
+    //newst->phi = newst->pres;
+    newst->q = 0.0; //newst->q = oldst->pres;
+	
     if (dim == 2)
     {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
@@ -1024,7 +1023,6 @@ static  void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
-//TODO: Need to set phi here????
 static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
@@ -1041,6 +1039,7 @@ static void rgbody_point_propagate(
     int i, dim = front->rect_grid->dim;
 	double dn,*h = front->rect_grid->h;
 	double *m_pre = field->pres;
+	double *m_phi = field->phi;
 	double *m_vor = field->vort;
 	double *m_temp = field->temperature;
 	double *m_mu = field->mu;
@@ -1199,10 +1198,16 @@ static void rgbody_point_propagate(
                 oldhse,oldhs,dt,vel);
     }
     
-    for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+    for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] = vel[i];
+    }
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
+	
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
+			getStatePhi,&newst->phi,&oldst->phi);
 	
     if (m_temp != NULL)
     {

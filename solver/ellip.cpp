@@ -273,7 +273,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	int index,index_nb[4];
 	double k0,k_nb[4];
 	double rhs,coeff[4];
-	int I,I_nb[4],I_oppnb[4];
+	int I,I_nb[4];
 	int i,j,l,icoords[MAXD];
 	COMPONENT comp;
 	double aII;
@@ -320,15 +320,13 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    index_nb[1] = d_index2d(i+1,j,top_gmax);
 	    index_nb[2] = d_index2d(i,j-1,top_gmax);
 	    index_nb[3] = d_index2d(i,j+1,top_gmax);
-	    I_nb[0] = ij_to_I[i-1][j];
+	    
+        I_nb[0] = ij_to_I[i-1][j];
 	    I_nb[1] = ij_to_I[i+1][j];
 	    I_nb[2] = ij_to_I[i][j-1];
 	    I_nb[3] = ij_to_I[i][j+1];
-	    I_oppnb[0] = ij_to_I[i+1][j];
-	    I_oppnb[1] = ij_to_I[i-1][j];
-	    I_oppnb[2] = ij_to_I[i][j+1];
-	    I_oppnb[3] = ij_to_I[i][j-1];
-	    icoords[0] = i;
+
+        icoords[0] = i;
 	    icoords[1] = j;
 	
 	    k0 = D[index];
@@ -350,9 +348,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
+	    aII = 0.0;
 	    rhs = source[index];
 
-	    aII = 0.0;
+        std::set<int> SetIndices;
+
 	    for (l = 0; l < 4; ++l)
         {
             refl_side[l] = NO;
@@ -363,8 +363,18 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             
             if (status == NO_PDE_BOUNDARY)
             {
-                solver.Set_A(I,I_nb[l],coeff[l]);
-                aII += -coeff[l];
+                if (SetIndices.count(I_nb[l]) == 0)
+                {
+                    solver.Set_A(I,I_nb[l],coeff[l]);
+                    SetIndices.insert(I_nb[l]);
+                }
+                else
+                {
+                    solver.FlushMatAssembly_A();
+                    solver.Add_A(I,I_nb[l],coeff[l]);
+                    solver.FlushMatAssembly_A();
+                }
+                aII -= coeff[l];
             }
             else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
@@ -389,7 +399,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
                 //////////////////////////////////////////////////////////////////////
-
                 for (int m = 0; m < dim; ++m)
                 {
                     coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
@@ -421,6 +430,25 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
+                ////////////////////////////////////////////////////////////////////////
+
+                /*
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
+                //////////////////////////////////////////////////////////////////////
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                }
+
+                //TODO: Finish this version and test ... goal is for nearly all of the
+                //      interpolation to be bilinear by choosing the reflection point
+                //      just far enough away from the interface.
+
+                ////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////
+                */
+                
                 
                 //Interpolate phi at the reflected point,
                 static INTRP_CELL blk_cell;
@@ -439,6 +467,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
                     first_phi_reflect = false;
                 }
+                blk_cell.is_linear = NO;
+                blk_cell.is_bilinear = NO;
                 
                 double phi_reflect;
                 FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
@@ -450,47 +480,64 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //approximiation into the system matrix.
                 if (blk_cell.is_bilinear)
                 {
-                    for (int k = 0; k < blk_cell.nv; ++k)
+                    for (int m = 0; m < blk_cell.nv; ++m)
                     {
-                        int* ic_intrp = blk_cell.icoords[k];
+                        int* ic_intrp = blk_cell.icoords[m];
                         int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
-                        solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
-                        aII -= coeff[l];
-                            //printf("ELLIPTIC_SOLVER::solve2d() : BILINEAR INTERPOLATION!\n");
+                        if (I_intrp == I)
+                        {
+                           aII += coeff[l]*blk_cell.coefs[m];
+                        }
+                        else if (SetIndices.count(I_intrp) == 0)
+                        {
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            SetIndices.insert(I_intrp);
+                        }
+                        else
+                        {
+                            solver.FlushMatAssembly_A();
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.FlushMatAssembly_A();
+                        }
                     }
                 }
                 else if (blk_cell.is_linear)
                 {
-                    for (int k = 0; k < blk_cell.nv_lin; ++k)
+                    for (int m = 0; m < blk_cell.nv_lin; ++m)
                     {
-                        int* ic_intrp = blk_cell.icoords_lin[k];
+                        int* ic_intrp = blk_cell.icoords_lin[m];
                         if (ic_intrp[0] == -1)
                         {
                             //move contribution of interface points to the RHS.
-                            rhs -= coeff[l]*blk_cell.coefs[k]*blk_cell.var_lin[k];
+                            rhs -= coeff[l]*blk_cell.coefs[m]*blk_cell.var_lin[m];
                         }
                         else
                         {
                             int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
-                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                            if (I_intrp == I)
+                            {
+                               aII += coeff[l]*blk_cell.coefs[m];
+                            }
+                            else if (SetIndices.count(I_intrp) == 0)
+                            {
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                SetIndices.insert(I_intrp);
+                            }
+                            else
+                            {
+                                solver.FlushMatAssembly_A();
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.FlushMatAssembly_A();
+                            }
                         }
-                        aII -= coeff[l];
-                            //printf("ELLIPTIC_SOLVER::solve2d() : LINEAR INTERPOLATION!\n");
                     }
                 }
                 else
                 {
-                    aII -= coeff[l];
                     rhs -= coeff[l]*phi_reflect; 
                 }
-
-                /*
-                //NOTE: Removed because blk_cell is now a static variable.
-                //
-                FT_FreeThese(8, blk_cell.var, blk_cell.dist, blk_cell.coefs,
-                        blk_cell.coords, blk_cell.icoords, blk_cell.p_lin,
-                        blk_cell.var_lin, blk_cell.icoords_lin);
-                */
+                
+                aII -= coeff[l];
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -502,8 +549,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
+                    rhs -= coeff[l]*getStateVar(intfc_state);
+                    aII -= coeff[l];
                     use_neumann_solver = NO;
                 }
             }
@@ -516,7 +563,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	     * handle such case. If we have better understanding, this should
 	     * be changed back.
 	     */
-	    if(num_nb > 0)
+	    
+        if(num_nb > 0)
 	    {
             solver.Set_A(I,I,aII);
 	    }
@@ -528,16 +576,18 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             solver.Set_A(I,I,1.0);
             rhs = soln[index];
         }
-
         solver.Set_b(I,rhs);
-	}
-
-    use_neumann_solver = pp_min_status(use_neumann_solver);
 	
+        SetIndices.clear();
+    }
+
+
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
         //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
+    use_neumann_solver = pp_min_status(use_neumann_solver);
+	
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
 	{
@@ -744,13 +794,15 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    index_nb[3] = d_index3d(i,j+1,k,top_gmax);
 	    index_nb[4] = d_index3d(i,j,k-1,top_gmax);
 	    index_nb[5] = d_index3d(i,j,k+1,top_gmax);
+
 	    I_nb[0] = ijk_to_I[i-1][j][k];
 	    I_nb[1] = ijk_to_I[i+1][j][k];
 	    I_nb[2] = ijk_to_I[i][j-1][k];
 	    I_nb[3] = ijk_to_I[i][j+1][k];
 	    I_nb[4] = ijk_to_I[i][j][k-1];
 	    I_nb[5] = ijk_to_I[i][j][k+1];
-	    icoords[0] = i;
+	    
+        icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
 	
@@ -779,9 +831,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
-	    rhs = source[index];
-
 	    aII = 0.0;
+	    rhs = source[index];
+        
+        std::set<int> SetIndices;
+
 	    for (l = 0; l < 6; ++l)
 	    {
 		    if (num_nb == 0) break;
@@ -792,8 +846,18 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             if (status == NO_PDE_BOUNDARY)
             {
                 //NOTE: Includes ELASTIC_BOUNDARY when af_findcrossing used
-                solver.Set_A(I,I_nb[l],coeff[l]);
-                aII += -coeff[l];
+                if (SetIndices.count(I_nb[l]) == 0)
+                {
+                    solver.Set_A(I,I_nb[l],coeff[l]);
+                    SetIndices.insert(I_nb[l]);
+                }
+                else
+                {
+                    solver.FlushMatAssembly_A();
+                    solver.Add_A(I,I_nb[l],coeff[l]);
+                    solver.FlushMatAssembly_A();
+                }
+                aII -= coeff[l];
             }
             else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
@@ -867,63 +931,81 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
                     first_phi_reflect = false;
                 }
+                blk_cell.is_linear = NO;
+                blk_cell.is_bilinear = NO;
                 
                 double phi_reflect;
                 FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
                         coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
                     /*
                     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&phi_reflect,&soln[index]);
+                            getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
                         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                                getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
-                                // but intfc state may not have a valid phi ...
+                                getStateVar,&phi_reflect,&soln[index]);
                     */
 
                 //Place interpolation coefficients of the points used in the
                 //approximiation into the system matrix.
                 if (blk_cell.is_bilinear)
                 {
-                    for (int k = 0; k < blk_cell.nv; ++k)
+                    for (int m = 0; m < blk_cell.nv; ++m)
                     {
-                        int* ic_intrp = blk_cell.icoords[k];
+                        int* ic_intrp = blk_cell.icoords[m];
                         int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
-                        solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
-                        aII -= coeff[l];
-                            //printf("ELLIPTIC_SOLVER::solve3d() : BILINEAR INTERPOLATION!\n");
+                        if (I_intrp == I)
+                        {
+                           aII += coeff[l]*blk_cell.coefs[m];
+                        }
+                        else if (SetIndices.count(I_intrp) == 0)
+                        {
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            SetIndices.insert(I_intrp);
+                        }
+                        else
+                        {
+                            solver.FlushMatAssembly_A();
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.FlushMatAssembly_A();
+                        }
                     }
                 }
                 else if (blk_cell.is_linear)
                 {
-                    for (int k = 0; k < blk_cell.nv_lin; ++k)
+                    for (int m = 0; m < blk_cell.nv_lin; ++m)
                     {
-                        int* ic_intrp = blk_cell.icoords_lin[k];
+                        int* ic_intrp = blk_cell.icoords_lin[m];
                         if (ic_intrp[0] == -1)
                         {
                             //move contribution of interface points to the RHS.
-                            rhs -= coeff[l]*blk_cell.coefs[k]*blk_cell.var_lin[k];
+                            rhs -= coeff[l]*blk_cell.coefs[m]*blk_cell.var_lin[m];
                         }
                         else
                         {
                             int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
-                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[k]);
+                            if (I_intrp == I)
+                            {
+                               aII += coeff[l]*blk_cell.coefs[m];
+                            }
+                            else if (SetIndices.count(I_intrp) == 0)
+                            {
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                SetIndices.insert(I_intrp);
+                            }
+                            else
+                            {
+                                solver.FlushMatAssembly_A();
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.FlushMatAssembly_A();
+                            }
                         }
-                        aII -= coeff[l];
-                            //printf("ELLIPTIC_SOLVER::solve3d() : LINEAR INTERPOLATION!\n");
                     }
                 }
                 else
                 {
-                    aII -= coeff[l];
                     rhs -= coeff[l]*phi_reflect; 
                 }
 
-                /*
-                //NOTE: Removed because blk_cell is now a static variable.
-                //
-                FT_FreeThese(8, blk_cell.var, blk_cell.dist, blk_cell.coefs,
-                        blk_cell.coords, blk_cell.icoords, blk_cell.p_lin,
-                        blk_cell.var_lin, blk_cell.icoords_lin);
-                */
+                aII -= coeff[l];
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -935,8 +1017,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
+                    rhs -= coeff[l]*getStateVar(intfc_state);
+                    aII -= coeff[l];
                     use_neumann_solver = NO;
                 }
             }
@@ -959,9 +1041,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             solver.Set_A(I,I,1.0);
             rhs = soln[index];
         }
-
         solver.Set_b(I,rhs);
+
+        SetIndices.clear();
 	}
+
 
 	solver.SetMaxIter(40000);
     solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);

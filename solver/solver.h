@@ -6,14 +6,15 @@
 #define FT_IFLUID_SOLVER_H
 
 #include <FronTier.h>
-#include <vector>
-#include <assert.h>
 
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscpc.h>
 
+#include <assert.h>
 #include <algorithm>
+#include <vector>
+#include <set>
 
 enum
 {
@@ -96,6 +97,7 @@ public:
 	void Reset_A();				// Set A[i][j]=0.0;
 	void Reset_b();
 	void Reset_x();
+    void FlushMatAssembly_A();
 	void Set_A(PetscInt i, PetscInt j, double val);	// A[i][j]=val;
     //void Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals);
 	void Add_A(PetscInt i, PetscInt j, double val);	// A[i][j]=A[i][j]+val;
