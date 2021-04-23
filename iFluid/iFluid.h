@@ -77,6 +77,9 @@ struct IF_FIELD {
 	double **f_surf;		// Surface force (such as tension)
 	double **old_var;		// For debugging purpose
 
+    double **adv_term;      /* Advection at tn */
+    double **adv_term_old;      /* Advection at tn-1 */
+
         //double *d_phi;          //Dual grid phi
 	double *div_U;
 	double *nu_t;			/* Turbulent viscosity */
@@ -172,6 +175,8 @@ struct IF_PARAMS
     IF_FIELD *field;
 
 	int adv_order;
+    bool extrapolate_advection {false};
+
 	boolean total_div_cancellation;
 	boolean buoyancy_flow {NO};
 	boolean if_buoyancy {NO};
@@ -308,7 +313,8 @@ public:
 	virtual ~Incompress_Solver_Smooth_Basis() {};
 
 	double m_dt;
-	double accum_dt;
+	double old_dt;
+	double accum_dt {0.0};
 	
     double max_speed;
 	double min_pressure;
@@ -582,6 +588,7 @@ public:
 protected:
     
     void computeAdvection(void);
+    void computeAdvectionTerm();
 	
     void computeDiffusion(void);
 	void computeDiffusionCN(void);

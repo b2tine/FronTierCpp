@@ -983,7 +983,7 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    scalar(&blk_cell,sizeof(INTRP_CELL));
 	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-	    uni_array(&blk_cell->coefs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+	    uni_array(&blk_cell->coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
 	    bi_array(&blk_cell->icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
 	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
@@ -1872,8 +1872,8 @@ EXPORT	double FrontLinIntrp(
                 f[0] = 1.0;	f[1] = 0.0;
             }
             
-            blk_cell->coefs[0] = f[0];
-            blk_cell->coefs[1] = f[1];
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
 
             ans = f[0]*var[0] + f[1]*var[1];
         }
@@ -1902,9 +1902,9 @@ EXPORT	double FrontLinIntrp(
                 f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
             }
             
-            blk_cell->coefs[0] = f[0];
-            blk_cell->coefs[1] = f[1];
-            blk_cell->coefs[2] = f[2];
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
+            blk_cell->coeffs[2] = f[2];
 
             ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2];
 
@@ -1954,10 +1954,10 @@ EXPORT	double FrontLinIntrp(
             f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
             f[3] = max(0.0,f[3]);	f[3] = min(1.0,f[3]);
             
-            blk_cell->coefs[0] = f[0];
-            blk_cell->coefs[1] = f[1];
-            blk_cell->coefs[2] = f[2];
-            blk_cell->coefs[3] = f[3];
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
+            blk_cell->coeffs[2] = f[2];
+            blk_cell->coeffs[3] = f[3];
 
             ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2] + f[3]*var[3];
         }
@@ -2013,7 +2013,7 @@ EXPORT  double FrontBilinIntrp(
         case 1:
             for (i = 0; i < 2; ++i)
             {
-                blk_cell->coefs[index] = f[0][i];
+                blk_cell->coeffs[index] = f[0][i];
                 ans += blk_cell->var[index++]*f[0][i];
             }
             break;
@@ -2021,7 +2021,7 @@ EXPORT  double FrontBilinIntrp(
             for (i = 0; i < 2; ++i)
             for (j = 0; j < 2; ++j)
             {
-                blk_cell->coefs[index] = f[0][i]*f[1][j];
+                blk_cell->coeffs[index] = f[0][i]*f[1][j];
                 ans += blk_cell->var[index++]*f[0][i]*f[1][j];
             }
             break;
@@ -2030,7 +2030,7 @@ EXPORT  double FrontBilinIntrp(
             for (j = 0; j < 2; ++j)
             for (k = 0; k < 2; ++k)
             {
-                blk_cell->coefs[index] = f[0][i]*f[1][j]*f[2][k];
+                blk_cell->coeffs[index] = f[0][i]*f[1][j]*f[2][k];
                 ans += blk_cell->var[index++]*f[0][i]*f[1][j]*f[2][k];
             }
             break;

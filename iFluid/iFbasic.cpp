@@ -501,11 +501,11 @@ void Incompress_Solver_Smooth_Basis::setDomain()
         {
             if (field != NULL)
             {
-                FT_FreeThese(16,array,source,diff_coeff,field->mu,
+                FT_FreeThese(18,array,source,diff_coeff,field->mu,
                     field->rho,field->pres,field->phi,field->grad_phi,
                     field->q,field->div_U,field->vort,field->vel,
                     field->prev_vel,field->grad_q,field->f_surf,
-                    domain_status);
+                    field->adv_term,field->adv_term_old,domain_status);
                 
                 if (debugging("field_var"))
                     FT_FreeThese(1,field->old_var);
@@ -531,6 +531,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&field->vort,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,2,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->adv_term,2,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->adv_term_old,2,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
 
             if (debugging("field_var"))
@@ -553,11 +555,11 @@ void Incompress_Solver_Smooth_Basis::setDomain()
         {
             if (field != NULL)
             {
-                FT_FreeThese(16,array,source,diff_coeff,field->mu,
+                FT_FreeThese(18,array,source,diff_coeff,field->mu,
                     field->rho,field->pres,field->phi,field->grad_phi,
                     field->q,field->div_U,field->vel,field->prev_vel,
                     field->vorticity,field->grad_q,field->f_surf,
-                    domain_status);
+                    field->adv_term,field->adv_term_old,domain_status);
                 
                 if (debugging("field_var"))
                     FT_FreeThese(1,field->old_var);
@@ -583,6 +585,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->f_surf,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->adv_term,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->adv_term_old,3,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&domain_status,size,INT);
             
             if (debugging("field_var"))

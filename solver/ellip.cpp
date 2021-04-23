@@ -459,7 +459,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     const int MAX_NUM_VERTEX_IN_CELL = 20;
                     uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
                     uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-                    uni_array(&blk_cell.coefs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
                     bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
                     bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
                     bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
@@ -486,17 +486,17 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                         int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
                         if (I_intrp == I)
                         {
-                           aII += coeff[l]*blk_cell.coefs[m];
+                           aII += coeff[l]*blk_cell.coeffs[m];
                         }
                         else if (SetIndices.count(I_intrp) == 0)
                         {
-                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                             SetIndices.insert(I_intrp);
                         }
                         else
                         {
                             solver.FlushMatAssembly_A();
-                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                             solver.FlushMatAssembly_A();
                         }
                     }
@@ -509,24 +509,24 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                         if (ic_intrp[0] == -1)
                         {
                             //move contribution of interface points to the RHS.
-                            rhs -= coeff[l]*blk_cell.coefs[m]*blk_cell.var_lin[m];
+                            rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
                         }
                         else
                         {
                             int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
                             if (I_intrp == I)
                             {
-                               aII += coeff[l]*blk_cell.coefs[m];
+                               aII += coeff[l]*blk_cell.coeffs[m];
                             }
                             else if (SetIndices.count(I_intrp) == 0)
                             {
-                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                                 SetIndices.insert(I_intrp);
                             }
                             else
                             {
                                 solver.FlushMatAssembly_A();
-                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                                 solver.FlushMatAssembly_A();
                             }
                         }
@@ -923,7 +923,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     const int MAX_NUM_VERTEX_IN_CELL = 20;
                     uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
                     uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
-                    uni_array(&blk_cell.coefs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
                     bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
                     bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
                     bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
@@ -954,17 +954,17 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
                         if (I_intrp == I)
                         {
-                           aII += coeff[l]*blk_cell.coefs[m];
+                           aII += coeff[l]*blk_cell.coeffs[m];
                         }
                         else if (SetIndices.count(I_intrp) == 0)
                         {
-                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                             SetIndices.insert(I_intrp);
                         }
                         else
                         {
                             solver.FlushMatAssembly_A();
-                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                             solver.FlushMatAssembly_A();
                         }
                     }
@@ -977,24 +977,24 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         if (ic_intrp[0] == -1)
                         {
                             //move contribution of interface points to the RHS.
-                            rhs -= coeff[l]*blk_cell.coefs[m]*blk_cell.var_lin[m];
+                            rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
                         }
                         else
                         {
                             int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
                             if (I_intrp == I)
                             {
-                               aII += coeff[l]*blk_cell.coefs[m];
+                               aII += coeff[l]*blk_cell.coeffs[m];
                             }
                             else if (SetIndices.count(I_intrp) == 0)
                             {
-                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                                 SetIndices.insert(I_intrp);
                             }
                             else
                             {
                                 solver.FlushMatAssembly_A();
-                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coefs[m]);
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
                                 solver.FlushMatAssembly_A();
                             }
                         }

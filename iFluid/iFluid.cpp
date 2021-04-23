@@ -166,10 +166,18 @@ int main(int argc, char **argv)
 	    printf("Passed l_cartesian.initMesh()\n");
 
 	if (!RestartRun)
+    {
+        l_cartesian->old_dt = 0.0;
 	    l_cartesian->setInitialCondition();
+    }
 	else
+    {
+        //TODO: need to read/write in l_cartesian->field->adv_term,
+        //      l_cartesian->field->adv_term, and l_cartesian->old_dt
+        //      for restart runs.
 	    l_cartesian->readFrontInteriorStates(restart_state_name);
-	
+    }
+
     if (debugging("trace"))
         printf("Passed state initialization()\n");
 	

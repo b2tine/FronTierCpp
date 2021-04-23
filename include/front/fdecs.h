@@ -1419,7 +1419,7 @@ struct _INTRP_CELL {
 	double *dist;
     int **icoords; //For using intrp coefs in matrix 
     int **icoords_lin; //For using intrp coefs in matrix 
-    double *coefs; //For using intrp coefs in matrix 
+    double *coeffs; //For using intrp coefs in matrix 
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 

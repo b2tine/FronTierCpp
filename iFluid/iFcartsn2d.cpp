@@ -36,7 +36,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 {
 	int i,j,index;
 	static HYPERB_SOLVER hyperb_solver(*front);
-        static int count = 0;
+    static int count = 0;
 	
 	static double *rho;
 
@@ -99,6 +99,98 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
 	
 	hyperb_solver.dt = m_dt;
     hyperb_solver.solveRungeKutta();
+
+	if (debugging("field_var"))
+	{
+	    (void) printf("\nIn computeAdvection(), \n");
+	    (void) printf("one step increment for v[0]:\n");
+	    computeVarIncrement(field->old_var[0],field->vel[0],NO);
+	    (void) printf("one step increment for v[1]:\n");
+	    computeVarIncrement(field->old_var[1],field->vel[1],NO);
+	    (void) printf("\n");
+	}
+}
+
+//For adding the convective flux to the RHS of the diffusion solver system
+void Incompress_Solver_Smooth_2D_Cartesian::computeAdvectionTerm()
+{
+	int index;
+	static HYPERB_SOLVER hyperb_solver(*front);
+	static double *rho;
+    static int count = 0;
+
+	if (rho == nullptr)
+	{
+	    int size = (top_gmax[0]+1)*(top_gmax[1]+1);
+	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
+	}
+
+	for (int j = 0; j <= top_gmax[1]; j++)
+	for (int i = 0; i <= top_gmax[0]; i++)
+	{
+	    index = d_index2d(i,j,top_gmax);
+	    rho[index] = field->rho[index];
+        for (int l = 0; l < dim; l++)
+        {
+            field->adv_term_old[l][index] = field->adv_term[l][index];
+        }
+	}
+	hyperb_solver.rho = rho;
+    
+    count++;
+	if (debugging("field_var"))
+	{
+	    for (int j = jmin; j <= jmax; j++)
+	    for (int i = imin; i <= imax; i++)
+	    {
+	    	index = d_index2d(i,j,top_gmax);
+            field->old_var[0][index] = field->vel[0][index];
+            field->old_var[1][index] = field->vel[1][index];
+	    }
+	}
+
+	hyperb_solver.obst_comp = SOLID_COMP;
+	switch (iFparams->adv_order)
+	{
+	case 1:
+	    hyperb_solver.order = 1;
+	    hyperb_solver.numericalFlux = upwind_flux;
+	    break;
+	case 4:
+	    hyperb_solver.order = 4;
+	    hyperb_solver.numericalFlux = weno5_flux;
+	    break;
+	default:
+	    (void) printf("Advection order %d not implemented!\n",
+					iFparams->adv_order);
+	    clean_up(ERROR);
+	}
+
+
+    hyperb_solver.adv_term = field->adv_term;
+	
+    hyperb_solver.var = field->vel;
+	hyperb_solver.soln = field->vel;
+	
+    hyperb_solver.soln_comp1 = LIQUID_COMP1;
+	hyperb_solver.soln_comp2 = LIQUID_COMP2;
+	
+    hyperb_solver.rho1 = iFparams->rho1;
+	hyperb_solver.rho2 = iFparams->rho2;
+
+	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
+	hyperb_solver.getStateVel[0] = getStateXvel;
+	hyperb_solver.getStateVel[1] = getStateYvel;
+	
+	hyperb_solver.dt = m_dt;
+    
+    hyperb_solver.computeAdvectionTerm();
+
+
+    //TODO: Approximate adv_term at t^{n+1/2} via linear extrapolation.
+    //      Use adv_term_old and the newly computed adv_term.
+    //      -- computated in computeDiffusion()
+
 
 	if (debugging("field_var"))
 	{
@@ -583,8 +675,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-	computeAdvection();
-	if (debugging("check_div") || debugging("step_size"))
+    
+    if (iFparams->extrapolate_advection)
+	    computeAdvectionTerm();
+    else
+        computeAdvection();
+	
+    if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
 	    (void) printf("max_speed after   computeAdvection(): %20.14f ",
@@ -595,8 +692,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 
 	if (debugging("sample_velocity"))
 	    sampleVelocity();
-	start_clock("computeDiffusion");
+	
+    start_clock("computeDiffusion");
 	computeDiffusion();
+    old_dt = m_dt;
+
 	if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -793,6 +893,10 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     double** f_surf = field->f_surf;
     double** grad_q = field->grad_q;
     double** grad_phi = field->grad_phi;
+
+    double **adv_term = field->adv_term;
+    double **adv_term_old = field->adv_term_old;
+
 
     if (debugging("trace"))
         (void) printf("Entering Incompress_Solver_Smooth_2D_Cartesian::"
@@ -994,6 +1098,22 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 iFparams->num_scheme.projc_method != SIMPLE)
             {
                 rhs -= m_dt*grad_q[l][index]/rho;
+            }
+        
+            if (iFparams->extrapolate_advection)
+            {
+                if (old_dt == 0.0)
+                {
+                    rhs -= m_dt*adv_term[l][index];
+                }
+                else
+                {   
+                    //extrapolate to t^{n+1/2}
+                    double W0 = 1.0 + 0.5*m_dt/old_dt;
+                    double W1 = -0.5*m_dt/old_dt;
+                    double adv_half = W0*adv_term[l][index] + W1*adv_term_old[l][index];
+                    rhs -= m_dt*adv_half;
+                }
             }
 
             solver.Set_A(I,I,aII);

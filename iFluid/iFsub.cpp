@@ -1347,6 +1347,14 @@ extern void read_iFparams(
 	    fscanf(infile,"%d",&iFparams->adv_order);
 	    (void) printf("%d\n",iFparams->adv_order);
 	}
+	iFparams->extrapolate_advection = false;
+	if (CursorAfterStringOpt(infile,"Enter yes for advection term extrapolation:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            iFparams->extrapolate_advection = true;
+    }
 
     CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);

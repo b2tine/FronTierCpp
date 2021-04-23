@@ -175,12 +175,9 @@ void PETSc::Set_A(PetscInt i, PetscInt j, double val)	// A[i][j]=val;
 	ierr = MatSetValues(A,1,&i,1,&j,&val,INSERT_VALUES);
 }
 
-//TODO: add calls to FlushMatAssembly_A()
 void PETSc::Add_A(PetscInt i, PetscInt j, double val)	// A[i][j]+=val;
 {	
-    //FlushMatAssembly_A();
 	ierr = MatSetValues(A,1,&i,1,&j,&val,ADD_VALUES);
-    //FlushMatAssembly_A();
 }
 
 void PETSc::Get_row_of_A(PetscInt i, PetscInt *ncol, PetscInt **cols, double **row)
