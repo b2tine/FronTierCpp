@@ -36,35 +36,31 @@ HYPERB_SOLVER::HYPERB_SOLVER(Front &front)
 
 void HYPERB_SOLVER::computeAdvectionTerm()
 {
-        static boolean first = YES;
-        int i,j,l;
+    static boolean first = YES;
+    setSolverDomain();
 
-        /* Allocate memory for Runge-Kutta of order */
-        start_clock("solveRungeKutta");
-        setSolverDomain();
+    if (first)
+    {
+        first = NO;
+        FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
 
-        if (first)
+        FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
+        FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+
+        FT_MatrixMemoryAlloc((POINTER*)&st_tmp.vel,dim,size,sizeof(double));
+        for (int i = 0; i < order; ++i)
         {
-            first = NO;
-            FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
-
-            FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
-            FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
-
-            FT_MatrixMemoryAlloc((POINTER*)&st_tmp.vel,dim,size,sizeof(double));
-            for (i = 0; i < order; ++i)
-            {
-                FT_MatrixMemoryAlloc((POINTER*)&st_field[i].vel,dim,size,
-                                sizeof(double));
-                FT_MatrixMemoryAlloc((POINTER*)&st_flux[i].vel_flux,dim,size,
-                                sizeof(double));
-                FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
-                                sizeof(double));
-            }
-            /* Set coefficient a, b, c for different order of RK method */
-            switch (order)
-            {
+            FT_MatrixMemoryAlloc((POINTER*)&st_field[i].vel,dim,size,
+                            sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&st_flux[i].vel_flux,dim,size,
+                            sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
+                            sizeof(double));
+        }
+        /* Set coefficient a, b, c for different order of RK method */
+        switch (order)
+        {
             case 1:
                 b[0] = 1.0;
                 nrad = 1;
@@ -86,27 +82,28 @@ void HYPERB_SOLVER::computeAdvectionTerm()
                 nrad = 3;
                 break;
             default:
-                (void)printf("ERROR: %d-th order RK method not implemented\n",order);
-                clean_up(ERROR);
-            }
+                printf("ERROR: %d-th order RK method "
+                        "not implemented\n",order);
+                LOC(); clean_up(ERROR);
         }
-
+    }
 
     /* Compute flux and advance field */
     copyToMeshVst(&st_field[0]);
     computeMeshFlux(st_field[0],&st_flux[0]);
 
-	for (l = 0; l < dim; l++)
-	for (i = 0; i < size; i++)
+    for (int k = 0; k < dim; ++k)
+    for (int i = 0; i < size; ++i)
     {
-        adv_term[l][i] = st_flux[0].vel_flux[l][i];
-        /*
-        if (dt != 0)
-            adv_term[l][i] = st_flux[0].vel_flux[l][i]/dt;
+        //TODO: Need to divide by -1.0*dt since the flux is
+        //      weighted by lambda = -dt/top_h[dir]; ???
+        if (dt != 0.0)
+            adv_term[k][i] = -1.0*st_flux[0].vel_flux[k][i]/dt;
         else
-            adv_term[l][i] = 0.0;
-        */
+            adv_term[k][i] = 0.0;
     }
+
+    //TODO: scatter the adv_term array
 }
 
 void HYPERB_SOLVER::solveRungeKutta()
@@ -198,10 +195,8 @@ void HYPERB_SOLVER::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux)
 {
-	int dir;
-
 	resetFlux(m_flux);
-	for (dir = 0; dir < dim; ++dir)
+	for (int dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux);
 	}
@@ -269,6 +264,7 @@ void HYPERB_SOLVER::addFluxInDirection2d(
 	int i,j,l,n,seg_min,seg_max,index;
 	int icoords[MAXD];
 	int comp;
+
 	double lambda = -dt/top_h[dir];
 
 	if (first)
@@ -420,6 +416,7 @@ void HYPERB_SOLVER::addFluxInDirection3d(
 	int i,j,k,l,n,seg_min,seg_max,index;
 	int icoords[MAXD];
 	int comp;
+
 	double lambda = -dt/top_h[dir];
 
 	if (first)

@@ -894,8 +894,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::
     double** grad_q = field->grad_q;
     double** grad_phi = field->grad_phi;
 
-    double **adv_term = field->adv_term;
-    double **adv_term_old = field->adv_term_old;
+    double **adv_flux = field->adv_term;
+    double **adv_flux_old = field->adv_term_old;
 
 
     if (debugging("trace"))
@@ -1100,19 +1100,19 @@ void Incompress_Solver_Smooth_2D_Cartesian::
                 rhs -= m_dt*grad_q[l][index]/rho;
             }
         
+            //extrapolate to t^{n+1/2}
             if (iFparams->extrapolate_advection)
             {
-                if (old_dt == 0.0)
+                if (old_dt != 0.0)
                 {
-                    rhs -= m_dt*adv_term[l][index];
+                    double W0 = -0.5*m_dt/old_dt;
+                    double W1 = 1.0 + 0.5*m_dt/old_dt;
+                    rhs -= m_dt*(W0*adv_flux_old[l][index]
+                            + W1*adv_flux[l][index]);
                 }
                 else
-                {   
-                    //extrapolate to t^{n+1/2}
-                    double W0 = 1.0 + 0.5*m_dt/old_dt;
-                    double W1 = -0.5*m_dt/old_dt;
-                    double adv_half = W0*adv_term[l][index] + W1*adv_term_old[l][index];
-                    rhs -= m_dt*adv_half;
+                {
+                    rhs -= m_dt*adv_flux[l][index];
                 }
             }
 
