@@ -82,13 +82,13 @@ double CD_TRI::min_moving_coord(int dim,double dt){
     return ans;
 }
 
-POINT* CD_TRI::Point_of_hse(int i) const{
+POINT* CD_TRI::Point_of_hse(int i) const
+{
     if (i >= num_pts())
 	return nullptr;
     else
         return Point_of_tri(m_tri)[i];
 }
-
 
 bool adjacentHSE(CD_HSE* A, CD_HSE* B)
 {

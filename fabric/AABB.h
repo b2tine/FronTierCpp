@@ -72,7 +72,6 @@ public:
     bool isCollid(const AABB&) const;
 };
 
-//class Node : public std::enable_shared_from_this<Node>
 class Node
 {
 public:
@@ -89,19 +88,13 @@ public:
     std::unique_ptr<AABB> data;
     
     Node* parent {nullptr}; //std::weak_ptr<Node> parent;
-    Node* left {nullptr};   //std::shared_ptr<Node> left;
-    Node* right {nullptr};  //std::shared_ptr<Node> right;
+    Node* left {nullptr};
+    Node* right {nullptr};
 
     void updateBranch();
     
     // make this node to be branch from two Node parameter
     void setBranch(Node* n1, Node* n2);
-        //void setBranch(Node* n1, Node* n2, Node* parent);
-        /*
-        void setBranch(std::shared_ptr<Node> n1,
-                       std::shared_ptr<Node> n2,
-                       std::shared_ptr<Node> parent);
-        */
     
     // check if this node is a leaf
     bool isLeaf() const;
@@ -117,7 +110,7 @@ public:
 
 class AABBTree {
 public:
-    Node* root {nullptr}; //std::shared_ptr<Node> root;
+    Node* root {nullptr};
     
     // node needed to be removed and reinsert to the tree
     std::unordered_map<long, POINT*> ump;
@@ -129,7 +122,6 @@ public:
 
     //only used for rebuilding tree in call to updateTreeStructure()
     std::vector<Node*> nodeArray;
-        //std::vector<std::shared_ptr<Node>> nodeArray;
 
     int count {0};
     std::vector<std::pair<CD_HSE*,CD_HSE*>> interference_pairs;
@@ -144,11 +136,8 @@ public:
     // query all collid pairs
     void query();
 
-    // insert a node into the subtree with parent 
-    // as the root
+    // insert a node into the subtree with parent as the root
     Node* insertNode(Node* n, Node* parentNode);
-    //void insertNode(Node* n, Node* parentNode);
-        //void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
     
     MotionState type;
     double tolerance;

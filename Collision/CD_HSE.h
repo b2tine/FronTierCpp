@@ -5,6 +5,7 @@
 #include "ifluid_state.h"
 #include "vtk.h"
 
+#include <iostream>
 #include <string>
 #include <utility>
 #include <numeric>

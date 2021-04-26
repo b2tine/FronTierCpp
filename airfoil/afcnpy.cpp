@@ -2082,11 +2082,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
         //write to GLOBAL_POINT** point_set
         get_point_set_from(&geom_set,point_set);
         
-        //TODO: for parallel runs, does calling get_point_set_from()
-        //      after the call to copy_from_client_point_set()
-        //      behave differently than calling beforehand?
-
-
 	    for (i = 0; i < pp_numnodes(); i++)
 	    {
             if (i == myid) continue;
@@ -2109,15 +2104,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
             copy_from_client_point_set(point_set,client_point_set_store[i],
                     client_size_new[i],client_L,client_U);
 	    } 
-
-        /*
-        //Write from owner geom_set to owner point_set
-	    get_point_set_from(&geom_set,point_set);
-        */
-
-        //TODO: for parallel runs, does calling get_point_set_from()
-        //      after the call to copy_from_client_point_set()
-        //      behave differently than calling beforehand?
 
 	    start_clock("spring_model");
 #if defined(__GPU__)
@@ -2156,7 +2142,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	
     // Calculate the real force on load_node and rg_string_node
     setSpecialNodeForce(elastic_intfc,geom_set.kl);
-        //setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
@@ -2172,13 +2157,13 @@ static void fourth_order_elastic_set_propagate3d_serial(
         }
         
         setSpecialNodeForce(elastic_intfc,geom_set.kl);
-            //setSpecialNodeForce(fr,geom_set.kl);
         compute_center_of_mass_velo(&geom_set);
     }
     
 
-    //sync interfaces after collision handling
+    //sync interfaces after collision handling?
         //scatter_front(*newfront);
+
 
     if (debugging("max_speed"))
     {

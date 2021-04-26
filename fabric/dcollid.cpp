@@ -429,8 +429,8 @@ void CollisionSolver3d::resolveCollision()
     //      in isolation before, checking all elements for proximity?
     //      -- Good for avoiding crashes, but exacerbates fabric kicking/jumping.
     //
-    detectProximity(elasticHseList);
-    abt_proximity.reset();
+        //detectProximity(elasticHseList);
+        //abt_proximity.reset();
     detectProximity(hseList);
     stop_clock("detectProximity");
     

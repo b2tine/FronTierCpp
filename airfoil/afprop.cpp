@@ -321,8 +321,6 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    //TODO: Do we need to check for rg_string_nodes also?
-    //if (!is_load_node(oldc->start))
     if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
     {
         oldp = oldc->start->posn;
@@ -331,7 +329,6 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    //if (!is_load_node(oldc->end))
     if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
     {
         oldp = oldc->end->posn;
@@ -1303,7 +1300,6 @@ static void rg_string_node_propagate(
 	}
 	
     //TODO: hs should have wave_type == MOVABLE_BODY_BOUNDARY?
-    //
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)

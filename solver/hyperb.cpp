@@ -96,8 +96,8 @@ void HYPERB_SOLVER::computeAdvectionTerm()
     for (int k = 0; k < dim; ++k)
     for (int i = 0; i < size; ++i)
     {
-        //TODO: Need to divide by -1.0*dt since the flux is
-        //      weighted by lambda = -dt/top_h[dir]; ???
+        //NOTE: divide by -1.0*dt since the flux is
+        //      weighted by lambda = -dt/top_h[dir]
         if (dt != 0.0)
             adv_term[k][i] = -1.0*st_flux[0].vel_flux[k][i]/dt;
         else

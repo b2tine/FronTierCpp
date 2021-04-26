@@ -420,11 +420,18 @@ void CollisionSolver3d::resolveCollision()
     //TODO: Should we reset bond length somehow between strain limiting
     //      and strain rate limiting? It seems that the strain rate
     //      limiting may hinder the strain limiting itself...
+    //      -- Reversing the above order seems to limit the cancellation
 
 
     // Static proximity handling
     start_clock("detectProximity");
-	detectProximity(hseList);
+    //TODO: Check for fabric-fabric proximity and apply repulsions
+    //      in isolation before, checking all elements for proximity?
+    //      -- Good for avoiding crashes, but exacerbates fabric kicking/jumping.
+    //
+        //detectProximity(elasticHseList);
+        //abt_proximity.reset();
+    detectProximity(hseList);
     stop_clock("detectProximity");
     
     /*
@@ -438,28 +445,37 @@ void CollisionSolver3d::resolveCollision()
 	
     // Check linear trajectories for collisions
     start_clock("detectCollision");
-    detectCollision(hseList);
-	    //detectCollision(elasticHseList); //TODO: Only detect fabric collisions?
+    //TODO: check fabric-fabric collisions first like in detectProximity()?
+    //detectCollision(elasticHseList);
+    
+    //randomize list ordering for use with gauss-seidel updating
+    auto shuffledHseList = shuffleHseList(hseList);
+    detectCollision(shuffledHseList); //detectCollision(hseList);
     stop_clock("detectCollision");
 
     /*
-    //TODO: function needs fixing -- do we even need this?
+    //TODO: function needs fixing -- do we need this?
     detectDomainBoundaryCollision();
     */
 
 	//update position using final midstep velocity
 	updateFinalPosition();
 
-    //TODO: Do we need this ???
+    //TODO: Check for proximity again at final positions??
+    //
     //      Could use this proximity step to enforce history based updates
     //      using positions from the first call to detectProximity() ...
-    //check for proximity again at end step positions
-        //detectProximity();
+    //
+    //  detectProximity();
+
 
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
+        //TODO: Appropriate to use after impact zone handling used?
+        //      Make boolean flag that indicates impact zone handling
+        //      was enabled during this time step if we want skip.
         limitStrainVelGS();
         //limitStrainVelJAC();
             //computeMaxSpeed(); //debug
@@ -665,8 +681,8 @@ void CollisionSolver3d::detectProximity(std::vector<CD_HSE*>& list)
     }
 }
 
-// function to perform AABB tree building, updating structure
-// and query for proximity detection process
+// function to perform AABB tree building, and updating the
+// tree structure for proximity detection process
 void CollisionSolver3d::aabbProximity(std::vector<CD_HSE*>& list)
 {
     if (!abt_proximity)
@@ -690,6 +706,7 @@ void CollisionSolver3d::aabbProximity(std::vector<CD_HSE*>& list)
     {
         abt_proximity->isProximity = false;
         abt_proximity->updateAABBTree(list);
+
         if (fabs(abt_proximity->getVolume()-volume) > vol_diff*volume)
         {
             abt_proximity->updateTreeStructure();
@@ -897,7 +914,7 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 	int cd_count = 0;
     bool is_collision = true; 
 
-    while(is_collision)
+    while (is_collision)
     {
         niter++;
 	    is_collision = false;
@@ -943,21 +960,13 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 	if (is_collision) 
     {
         //TODO: Return avg_vel to value before point to point collisions???
-        //      See todo in computeImpactZoneJac() regarding a startup step
+        //      
+        //      --This should most likely be called, but may be better if
+        //      we perform at least one pointwise collision iteration to
+        //      get the impact zone handling started. See todo in computeImpactZoneJac()
+        //      regarding a startup step...
         //
-            //revertAverageVelocity();
-
-        //TODO: If we don't revert to the post proximity avg_vel,
-        //      let's try limiting the strain before beginning impact
-        //      zone handling. Probably not worth calling if we do
-        //      call revertAverageVelocity() above.
-        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-        {
-            //TODO: causing jumping?
-            limitStrainPosnJac(MotionState::MOVING);
-                //limitStrainPosnGS(MotionState::MOVING);
-                    //computeMaxSpeed(); //debug
-        }
+        revertAverageVelocity();
 
         computeImpactZoneGS(list);
             //computeImpactZoneJac(list);
@@ -970,8 +979,6 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 // AABB tree for kinetic collision detection process
 void CollisionSolver3d::aabbCollision(std::vector<CD_HSE*>& list)
 {
-    //TODO: randomize ordering of list for gauss-seidel updating
-    
     if (!abt_collision)
     {
         abt_collision =
@@ -1497,7 +1504,7 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
 	turnOnImpZone();
     
 	bool is_collision = true;
-    while(is_collision)
+    while (is_collision)
     {
         niter++;
         is_collision = false;
@@ -2393,11 +2400,11 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
     const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        //TODO: randomize the ordering of input lists to avoid biased updates
-        int numBondStrainRate = computeStrainRateImpulsesRand(stringBondList,mstate);
-        int numTriStrainRate = computeStrainRateImpulsesRand(fabricTriList,mstate);
-            //int numBondStrainRate = computeStrainRateImpulsesPosn(stringBondList,mstate);
-            //int numTriStrainRate = computeStrainRateImpulsesPosn(fabricTriList,mstate);
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        int numBondStrainRate = computeStrainRateImpulsesPosn(shuffledStringBondList,mstate);
+        
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        int numTriStrainRate = computeStrainRateImpulsesPosn(shuffledFabricTriList,mstate);
         
         if (debugging("strain_limiting"))
         {
@@ -2411,14 +2418,15 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
     turnOffGsUpdate();
 }
 
-int CollisionSolver3d::computeStrainRateImpulsesRand(
-        std::vector<CD_HSE*>& list,
-        MotionState mstate)
+//Randomize the ordering of input list to avoid bias in the cloth
+//when a Gauss-Seidel style of iterative updating as being used.
+std::vector<CD_HSE*> CollisionSolver3d::shuffleHseList(
+        const std::vector<CD_HSE*>& list) const
 {
     std::vector<CD_HSE*> shuffled_list(list.begin(),list.end());
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::shuffle(shuffled_list.begin(),shuffled_list.end(),std::default_random_engine(seed));
-    return computeStrainRateImpulsesPosn(shuffled_list,mstate);
+    return shuffled_list;
 }
 
 //jacobi iteration
@@ -2650,10 +2658,26 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             sl[0] = (STATE*)left_state(p[0]);
             sl[1] = (STATE*)left_state(p[1]);
             
+            /*
+            //TODO: Should we be applying this constraint
+            //      to edges that have not received strain or
+            //      strain rate limiting impulses???
+            //
+            //      Applying to edges that have not received
+            //      strain limiting or strain rate limiting
+            //      has a significant effect, but I'm not sure
+            //      if it is the desired behavior or not yet.
+            //
+            //TODO: Try only applying to edges that have received
+            //      strain limiting impulses only.
+            //      (NOT strain rate limiting impulses)
+            
+
             //skip edges that did not get strain limiting impulses
             //in limitStrainPos() or limitStrainRatePos()
             if (!(sl[0]->has_strainlim_prox || sl[0]->has_strainlim_collsn) &&
                 !(sl[1]->has_strainlim_prox || sl[1]->has_strainlim_collsn)) continue;
+            */
 
             double vel_rel[MAXD];
             for (int j = 0; j < 3; ++j)
@@ -2671,10 +2695,14 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                 
             double I = 0.5*vcomp01;
 
+
             //TODO: skip impact zone points also???
             //      appropriate to apply to non impact zone points
             //      that are incident to an impact zone point in the
             //      same manner as those incident to rigid body points?
+            //
+            //      Currently it appears to be beneficial to skip
+            //      over points that belomng to an impact zone.
             
             //Do not apply impulses to rg_string_nodes
             if (!(isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
@@ -2706,12 +2734,10 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             {
                 //NOTE: two "registered points" could show up here
                 continue;
-                /*
-                printf("ERROR: \n");
-                LOC(); clean_up(EXIT_FAILURE);
-                */
+                //printf("ERROR: \n"); LOC(); clean_up(EXIT_FAILURE);
             }
-                
+            
+
             numRelVelStrainEdges++;
 
             if (gauss_seidel)
@@ -2723,6 +2749,8 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                         sl[k]->has_strainlim_collsn = true;
 
                         /*
+                        //TODO: can probably remove
+                        //
                         if (mstate == MotionState::STATIC)
                             sl[k]->has_strainlim_prox = true;
                         else
