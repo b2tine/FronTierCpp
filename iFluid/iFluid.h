@@ -587,8 +587,8 @@ public:
         void vtk_plot_scalar(char*, const char*);
 protected:
     
-    void computeAdvection(void);
     void computeAdvectionTerm();
+    void computeAdvection(void);
 	
     void computeDiffusion(void);
 	void computeDiffusionCN(void);
@@ -640,6 +640,7 @@ protected:
 	
     void copyMeshStates(void);
 	
+    void computeAdvectionTerm();
     void computeAdvection(void);
 	
     void computeDiffusion(void);

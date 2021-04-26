@@ -36,8 +36,9 @@ HYPERB_SOLVER::HYPERB_SOLVER(Front &front)
 
 void HYPERB_SOLVER::computeAdvectionTerm()
 {
-    static boolean first = YES;
     setSolverDomain();
+    
+    static boolean first = YES;
 
     if (first)
     {

@@ -29,88 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
-
-//TODO: May want to copy the HYPERB_SOLVER class functionality
-//      into methods of Incompress_Solver_Smooth_2D_Cartesian
-void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
-{
-	int i,j,index;
-	static HYPERB_SOLVER hyperb_solver(*front);
-    static int count = 0;
-	
-	static double *rho;
-
-	if (rho == nullptr)
-	{
-	    int size = (top_gmax[0]+1)*(top_gmax[1]+1);
-	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
-	}
-
-	for (j = 0; j <= top_gmax[1]; j++)
-	for (i = 0; i <= top_gmax[0]; i++)
-	{
-	    index = d_index2d(i,j,top_gmax);
-	    rho[index] = field->rho[index];
-	}
-	hyperb_solver.rho = rho;
-    
-    count++;
-	if (debugging("field_var"))
-	{
-	    for (j = jmin; j <= jmax; j++)
-	    for (i = imin; i <= imax; i++)
-	    {
-	    	index = d_index2d(i,j,top_gmax);
-            field->old_var[0][index] = field->vel[0][index];
-            field->old_var[1][index] = field->vel[1][index];
-	    }
-	}
-
-	hyperb_solver.obst_comp = SOLID_COMP;
-	switch (iFparams->adv_order)
-	{
-	case 1:
-	    hyperb_solver.order = 1;
-	    hyperb_solver.numericalFlux = upwind_flux;
-	    break;
-	case 4:
-	    hyperb_solver.order = 4;
-	    hyperb_solver.numericalFlux = weno5_flux;
-	    break;
-	default:
-	    (void) printf("Advection order %d not implemented!\n",
-					iFparams->adv_order);
-	    clean_up(ERROR);
-	}
-	
-    //TODO: Don't overwrite soln this way -- limits our flexibility
-    hyperb_solver.var = field->vel;
-	hyperb_solver.soln = field->vel;
-	
-    hyperb_solver.soln_comp1 = LIQUID_COMP1;
-	hyperb_solver.soln_comp2 = LIQUID_COMP2;
-	
-    hyperb_solver.rho1 = iFparams->rho1;
-	hyperb_solver.rho2 = iFparams->rho2;
-
-	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
-	hyperb_solver.getStateVel[0] = getStateXvel;
-	hyperb_solver.getStateVel[1] = getStateYvel;
-	
-	hyperb_solver.dt = m_dt;
-    hyperb_solver.solveRungeKutta();
-
-	if (debugging("field_var"))
-	{
-	    (void) printf("\nIn computeAdvection(), \n");
-	    (void) printf("one step increment for v[0]:\n");
-	    computeVarIncrement(field->old_var[0],field->vel[0],NO);
-	    (void) printf("one step increment for v[1]:\n");
-	    computeVarIncrement(field->old_var[1],field->vel[1],NO);
-	    (void) printf("\n");
-	}
-}
-
 //For adding the convective flux to the RHS of the diffusion solver system
 void Incompress_Solver_Smooth_2D_Cartesian::computeAdvectionTerm()
 {
@@ -186,11 +104,86 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeAdvectionTerm()
     
     hyperb_solver.computeAdvectionTerm();
 
+	
+    if (debugging("field_var"))
+	{
+	    (void) printf("\nIn computeAdvection(), \n");
+	    (void) printf("one step increment for v[0]:\n");
+	    computeVarIncrement(field->old_var[0],field->vel[0],NO);
+	    (void) printf("one step increment for v[1]:\n");
+	    computeVarIncrement(field->old_var[1],field->vel[1],NO);
+	    (void) printf("\n");
+	}
+}
 
-    //TODO: Approximate adv_term at t^{n+1/2} via linear extrapolation.
-    //      Use adv_term_old and the newly computed adv_term.
-    //      -- computated in computeDiffusion()
 
+void Incompress_Solver_Smooth_2D_Cartesian::computeAdvection(void)
+{
+	int i,j,index;
+	static HYPERB_SOLVER hyperb_solver(*front);
+    static int count = 0;
+	
+	static double *rho;
+
+	if (rho == nullptr)
+	{
+	    int size = (top_gmax[0]+1)*(top_gmax[1]+1);
+	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
+	}
+
+	for (j = 0; j <= top_gmax[1]; j++)
+	for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index = d_index2d(i,j,top_gmax);
+	    rho[index] = field->rho[index];
+	}
+	hyperb_solver.rho = rho;
+    
+    count++;
+	if (debugging("field_var"))
+	{
+	    for (j = jmin; j <= jmax; j++)
+	    for (i = imin; i <= imax; i++)
+	    {
+	    	index = d_index2d(i,j,top_gmax);
+            field->old_var[0][index] = field->vel[0][index];
+            field->old_var[1][index] = field->vel[1][index];
+	    }
+	}
+
+	hyperb_solver.obst_comp = SOLID_COMP;
+	switch (iFparams->adv_order)
+	{
+	case 1:
+	    hyperb_solver.order = 1;
+	    hyperb_solver.numericalFlux = upwind_flux;
+	    break;
+	case 4:
+	    hyperb_solver.order = 4;
+	    hyperb_solver.numericalFlux = weno5_flux;
+	    break;
+	default:
+	    (void) printf("Advection order %d not implemented!\n",
+					iFparams->adv_order);
+	    clean_up(ERROR);
+	}
+	
+    //TODO: Don't overwrite soln this way -- limits our flexibility
+    hyperb_solver.var = field->vel;
+	hyperb_solver.soln = field->vel;
+	
+    hyperb_solver.soln_comp1 = LIQUID_COMP1;
+	hyperb_solver.soln_comp2 = LIQUID_COMP2;
+	
+    hyperb_solver.rho1 = iFparams->rho1;
+	hyperb_solver.rho2 = iFparams->rho2;
+
+	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
+	hyperb_solver.getStateVel[0] = getStateXvel;
+	hyperb_solver.getStateVel[1] = getStateYvel;
+	
+	hyperb_solver.dt = m_dt;
+    hyperb_solver.solveRungeKutta();
 
 	if (debugging("field_var"))
 	{
@@ -681,6 +674,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
     else
         computeAdvection();
 	
+	stop_clock("computeAdvection");
     if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
@@ -688,13 +682,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 				max_speed);
 	    (void) printf("occured at (%d, %d)\n",icrds_max[0],icrds_max[1]);
 	}
-	stop_clock("computeAdvection");
 
 	if (debugging("sample_velocity"))
 	    sampleVelocity();
 	
     start_clock("computeDiffusion");
-	computeDiffusion();
+	
+    computeDiffusion();
     old_dt = m_dt;
 
 	if (debugging("check_div") || debugging("step_size"))
