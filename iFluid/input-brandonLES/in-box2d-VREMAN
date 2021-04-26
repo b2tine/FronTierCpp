@@ -25,6 +25,10 @@ Enter the center of the rectangle: 0.4 0.492
 Enter lengths of the rectangle: 0.2 0.075
 
 Enter yes if the object is fixed: yes
+
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         SIMPLE
         BELL_COLELLA

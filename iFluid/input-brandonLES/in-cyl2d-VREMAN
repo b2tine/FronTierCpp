@@ -24,6 +24,11 @@ Enter the center of the circle: 0.775 0.492
 Enter radius of the circle: 0.075
 
 Enter yes if the object is fixed: yes
+
+
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         PMI     (1)
         PMII    (2)
