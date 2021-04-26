@@ -27,6 +27,9 @@ Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
 **************Fluid parameters***************
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         SIMPLE
         BELL_COLELLA
