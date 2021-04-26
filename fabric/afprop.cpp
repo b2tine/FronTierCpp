@@ -2054,9 +2054,46 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
 
         //TODO: Need to make sure RG_STRING_NODEs stay fixed to rigid body
         AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
-        if (extra && extra->af_node_type == PRESET_NODE)
+        if (extra)
         {
-            sl->is_fixed = true;
+            if (extra->af_node_type == PRESET_NODE)
+            {
+                sl->is_fixed = true;
+            }
+            else if (extra->af_node_type == RG_STRING_NODE)
+            {
+                node_out_curve_loop(*n,c)
+                {
+                    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+                    {
+                        b = (*c)->first;
+                        hs = Hyper_surf(b->_btris[0]->surface);
+                        break;
+                    }
+                }
+
+                node_in_curve_loop(*n,c)
+                {
+                    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+                    {
+                        b = (*c)->last;
+                        hs = Hyper_surf(b->_btris[0]->surface);
+                        break;
+                    }
+                }
+
+                if (hs == NULL)
+                {
+                    printf("ERROR in setCollisionFreePoints3d() : ");
+                    printf("No related hs found\n");
+                    LOC(); clean_up(ERROR);
+                }
+
+                if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    sl->is_fixed = true;
+                if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                    sl->is_movableRG = true;
+            }
         }
         else if ((*n)->hsb && is_fixed_node(*n)) //TODO: do we need this?
         {
