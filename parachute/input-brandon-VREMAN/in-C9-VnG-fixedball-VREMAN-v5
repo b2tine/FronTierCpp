@@ -40,7 +40,7 @@ Enter projection type: 3
 Enter projection typeXXX: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
