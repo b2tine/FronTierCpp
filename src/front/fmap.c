@@ -2591,21 +2591,21 @@ LOCAL	Tan_stencil **FrontGetTanStencils3d(
 	static  Tparams tp[2];
 
 	if (nrad > current_nrad)
-        {
+    {
 	    if (sten == NULL)
-		uni_array(&sten,dim-1,sizeof(Tan_stencil*));
+            uni_array(&sten,dim-1,sizeof(Tan_stencil*));
 	    for (i = 0; i < dim-1; ++i)
 	    {
 	    	if (sten[i] != NULL) free_these(1,sten[i]);
             	sten[i] = alloc_tan_stencil(fr,nrad);
 	    }
 	    current_nrad = nrad;
-        }
-	set_tol_for_tri_sect(1.0e-6*min3(h[0], h[1], h[2]));
-	if (Boundary_point(p))
-	    return NULL;
-	if (!set_up_tangent_params(fr,p,p->hse,p->hs,tp))
-            return NULL;
+    }
+	
+    set_tol_for_tri_sect(1.0e-6*min3(h[0], h[1], h[2]));
+
+	if (Boundary_point(p)) return NULL;
+	if (!set_up_tangent_params(fr,p,p->hse,p->hs,tp)) return NULL;
 
 	FT_CurvatureAtPoint(p,fr,&kappa);
 	for (i = 0; i < dim-1; ++i)
@@ -2778,7 +2778,7 @@ EXPORT	Nor_stencil *FT_CreateNormalStencil(
 	{
 	    for (j = 0; j < dim; ++j)
 	    {
-		sten->pts[i][j] = Coords(p)[j] + i*dn*sten->nor[j];	
+		    sten->pts[i][j] = Coords(p)[j] + i*dn*sten->nor[j];	
 	    }
 	}
 	return sten;

@@ -254,20 +254,24 @@ void setMotionParams(Front* front)
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
         {
             // default: no porosity
-            iFparams->with_porosity = af_params->with_porosity = NO;
+            iFparams->with_porosity = NO;
+            af_params->with_porosity = NO;
             if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-                iFparams->with_porosity=af_params->with_porosity=YES;
+                {
+                    iFparams->with_porosity = YES;
+                    af_params->with_porosity = YES;
+                }
             }
 
             if (iFparams->with_porosity == YES)
             {
                 if (CursorAfterStringOpt(infile,"Enter porosity:"))
                 {
-                    //TODO: can probably remove this ...
+                    //TODO: can probably remove this ... 
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }
@@ -295,6 +299,19 @@ void setMotionParams(Front* front)
         }
         iFparams->fsi_startstep = af_params->fsi_startstep;
 
+        if (CursorAfterStringOpt(infile,"Enter yes to disable FSI:"))
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                iFparams->with_porosity = NO;
+                af_params->with_porosity = NO;
+                iFparams->fsi_startstep = 100000000;
+                af_params->fsi_startstep = 100000000;
+            }
+        }
 
         for (i = 0; i < dim; ++i)
             af_params->gravity[i] = iFparams->gravity[i];

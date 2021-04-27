@@ -245,7 +245,6 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
 	}
     */
 
-    //Boundary aware computation appears to be working correctly
     auto alpha = computeVelocityGradient(icoords);
    	
     double sum_alpha = 0.0;
@@ -384,10 +383,11 @@ double computeWallShearStress(
         double walldist,
         double mu,
         double rho,
-        double u_far)
+        double u_wall_initial_guess)
 {
     if (u_tan < MACH_EPS) return 0.0;
-    double u_friction = computeFrictionVelocity(u_tan,walldist,mu/rho,u_far);
+    double u_friction = computeFrictionVelocity(u_tan,walldist,mu/rho,
+            u_wall_initial_guess);
     double tau_wall = u_friction*u_friction*rho;
     return tau_wall;
 }
@@ -396,9 +396,10 @@ double computeFrictionVelocity(
         double u_tan,
         double walldist,
         double nu,
-        double u_far)
+        double u_wall_initial_guess)
 {
-    double u_wall = computeWallVelocity(u_tan,walldist,nu,u_far);
+    double u_wall = computeWallVelocity(u_tan,walldist,nu,
+            u_wall_initial_guess);
     if (u_wall < MACH_EPS) return 0.0;
     double u_friction = u_tan/u_wall;
     return u_friction;
@@ -416,11 +417,11 @@ double computeWallVelocity(
         double u_tan,
         double walldist,
         double nu,
-        double u_far)
+        double u_wall_initial_guess)
 {
     SpaldingWallLaw wallfunc(u_tan,walldist,nu);
-    double u_wall_initialguess = u_far;//TODO: method for better initial guess?
-    double u_wall = wallfunc.solve(u_wall_initialguess);
+    //TODO: method for better initial guess?
+    double u_wall = wallfunc.solve(u_wall_initial_guess);
     return u_wall;
 }
 

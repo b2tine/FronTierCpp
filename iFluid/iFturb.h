@@ -78,13 +78,13 @@ private:
 
 
 double computeWallShearStress(double u_tan, double walldist,
-            double mu, double rho, double u_far);
+            double mu, double rho, double u_wall_initial_guess);
 
 double computeFrictionVelocity(double u_tan, double walldist,
-            double nu, double u_far);
+            double nu, double u_wall_initial_guess);
 
 double computeWallVelocity(double u_tan, double walldist,
-            double nu, double u_far);
+            double nu, double u_wall_initial_guess);
 
 
 #endif

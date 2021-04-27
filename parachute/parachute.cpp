@@ -156,6 +156,9 @@ int main(int argc, char **argv)
 
     if (RestartRun)
     {
+        //TODO: If doing another move on a new set of registered points,
+        //      then the below restart/reset code would clear the new
+        //      registered points just set in setMotionParams()...
         if (ReSetTime)
         {
             readAfExtraData(&front,restart_state_name);
@@ -167,16 +170,22 @@ int main(int argc, char **argv)
             static_mesh(front.interf) = YES;
             
             read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+            //TODO: need to call this instead???
+            //      //restart_set_dirichlet_bdry_function(Front *front);
             l_cartesian->initMesh(); //TODO: may be able to remove this one
             
             if (!af_params.no_fluid)
                 l_cartesian->setInitialCondition();
         
-            if (debugging("trace"))
+            if (debugging("reset_time"))
             {
                 if (consistent_interface(front.interf) == NO)
-                    clean_up(ERROR);
-                gview_plot_interface("gmodified",front.interf);
+                {
+                    LOC(); clean_up(ERROR);
+                }
+                char gv_restart[100];
+                sprintf(gv_restart,"%s/gv_restart",out_name);
+                gview_plot_interface(gv_restart,front.interf);
             }
         }
         else
@@ -196,6 +205,10 @@ int main(int argc, char **argv)
         if (!af_params.no_fluid)
             l_cartesian->setInitialCondition();
     }
+
+    //TODO: can we call this here instead (of where called above)?
+    //
+    //  setMotionParams(&front);
 
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);

@@ -3157,8 +3157,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    for (j = 0; j < dim; ++j)
         {
 	    	icnb[j] = icoords[j];
-                //icnb_opp1[j] = icoords[j];
-                //icnb_opp2[j] = icoords[j];
         }
 
 	    for (nb = 0; nb < 2; nb++)
@@ -3191,28 +3189,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                      (wave_type(hs) == NEUMANN_BOUNDARY ||
                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
-                /*
-                //TODO: Since we only use gradient of phi to update
-                //      velocity points in the domain interior can we
-                //      use the one sided (extrapolated) 3pt derivative
-                //      as we do for the divergence computation?
-                //
-                //      Don't think this is appropriate since the gradient
-                //      of phi is prescribed at the boundary. Results also
-                //      do not appear to be an improvement.
-                
-                //Use one sided 3pt derivative
-                icnb_opp1[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
-                index_oppnb1 = d_index(icnb_opp1,top_gmax,dim);
-                double p_oppnb1 = field_array[index_oppnb1];
-                
-                icnb_opp2[idir] = (nb == 0) ? icoords[idir] + 2 : icoords[idir] - 2;
-                index_oppnb2 = d_index(icnb_opp2,top_gmax,dim);
-                double p_oppnb2 = field_array[index_oppnb2];
-
-                p_edge[idir][nb] = 3.0*p0 - 3.0*p_oppnb1 + p_oppnb2;
-                */
-
                 //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
                 for (int m = 0; m < dim; ++m)
@@ -3267,8 +3243,6 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 
                 //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
                 //        getStatePhi,&phi_reflect,nullptr);//default_ans uses nearest intfc state
-                //        but intfc state may not have a valid phi ...
-                //        TODO: See neumann_point_propagate() for updating phi on intfc
 
                 p_edge[idir][nb] = phi_reflect;
             }
@@ -4075,12 +4049,13 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         double* grad_var)
 {
         computeFieldPointGrad(icoords,var,grad_var);
+
         if (!iFparams->with_porosity) return;
 
         int index_nb, i;
         int top_gmin[MAXD], ipn[MAXD], nb;
         bool is_intfc = false;
-        double d_p,side,coords[MAXD],crx_coords[MAXD],nor[MAXD],vec[MAXD];
+        double side,coords[MAXD],crx_coords[MAXD],nor[MAXD],vec[MAXD];
         double vel_rel[MAXD], Un = 0.0;
         double vel_intfc[MAXD];
         double alpha = iFparams->porous_coeff[0];
@@ -4153,7 +4128,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 //  d_p/d_r = alpha*Un + beta*|Un|*Un
                 
                 //NOTE: alpha and beta include thickness factor d_r
-                d_p = Un*(alpha + fabs(Un)*beta);
+                double d_p = Un*(alpha + fabs(Un)*beta);
 		 
                 for (i = 0; i < dim; i++)
                     vec[i] = coords[i] - crx_coords[i];
@@ -4886,8 +4861,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     
     double tau_wall[MAXD] = {0.0};
-    /*double mag_tau_wall = computeWallShearStress(mag_vtan,
-                    dist_reflect,mu_l,rho_l,U_FreeStream);*/
     double mag_tau_wall = computeWallShearStress(mag_vtan,
                     dist_reflect,mu_l,rho_l,45.0);
     //NOTE: In all numerical experiments, Newton's method converged

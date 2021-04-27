@@ -1,24 +1,31 @@
-Domain limit in 0-th dimension: 0 2.2
-Domain limit in 1-th dimension: 0 0.984
-Domain limit in 2-th dimension: 0 0.984
-
-Computational grid: 89 45 45
-XComputational gridX: 67 30 30
-
-Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
-Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
-Lower boundary in 2-th dimension: PERIODIC_BOUNDARY
-Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
-
 Max time: 10.0
 Max step: 10000
-Print interval: 0.5
-Movie frame interval: 0.05
+Print interval: 0.01
+Movie frame interval: 0.01
 CFL factor: 0.5
 Redistribution interval: 1000000
 
+Domain limit in 0-th dimension: -2 14
+Domain limit in 1-th dimension: -2 14
+Domain limit in 2-th dimension: 0 36
+
+Computational grid: 80 80 180
+
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT
+Enter velocity: 0 0 5 
+Enter pressure: 0
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+**************Fluid parameters***************
 Enter problem type: CHANNEL_FLOW
 
 Enter advection order: 4
@@ -31,32 +38,11 @@ Projection type can be
         PEROT_BOTELLA
 Enter projection type: SIMPLE
 
-Enter density and viscosity of the fluid: 1.0 0.0001
+Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter yes if the object is fixed: yes
 Enter gravity: 0 0 0
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
-
-************Rigid body parameters*************
-
-Enter yes to add rigid body: yes
-Enter the number of rigid bodies: 1
-
-For rigid body 1
-Enter type of rigid body: Sphere
-Enter center of the sphereXXX: 0.275 0.492 0.492
-Enter center of the sphere: 0.275 0.496 0.496
-Enter radius of the sphere: 0.075 0.075 0.075
-Type yes if the rigid body is fixed: yes
-Type yes to use CGAL for rigid body: yes
-Enter refinement level: 1
-
-Type yes if motion is presetX: no
-Enter type of dynamic motionX: COM_MOTION
-Enter the direction of motionX: 0 0 1
-Enter the total mass for rigid bodyX: 300
-Enter the initial center of mass for rigid bodyX: 6.0 6.0 1.0
-Enter the initial center of mass velocityX: 0 0 0
 
 ******************Turbulence Parameters****************
 Enter yes to use eddy viscosity: yes
@@ -71,36 +57,47 @@ Enter model constant: 0.025
 
 Enter yes to use no-slip boundary condition: no
 
-*******************************************************
+************Rigid body parameters*************
 
+Enter yes to add rigid body: yes
+Enter the number of rigid bodies: 1
 
-For lower boundary in 0-th dimension
-Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 5 0 0 
-Enter pressure: 0
-For upper boundary in 0-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
+For rigid body 1
+Enter type of rigid body: Sphere
+Enter center of the sphere: 6 6 11.951
+Enter radius of the sphere: 0.5 0.5 0.5
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
 
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 300
+Enter the initial center of mass for rigid body: 6 6 11.951
+Enter the initial center of mass velocity: 0 0 0
 
+****************Movie options*****************
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-Type y to make movie of pressure: y
-Type y to make movie of vorticity: y
-Type y to make movie of velocity: y
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
 
 Type y to make viscosity field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar phi field movie: n
 Type y to make scalar intermediate velocity divergence field movie: n
 
-Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
-
 ************Debugging options*****************
 
 Enter yes for debugging: yes
 Enter the debugging string: PETSc 
+
 Enter the debugging stringX: slip_boundary 
 
 Enter the debugging stringX: trace

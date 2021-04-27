@@ -931,9 +931,11 @@ static bool EdgeToEdge(
     if (dist > tol) return false;
 
     //TODO: handle another way -- restart with smaller dt for example
-    if (dist > 0)
+    if (dist > 0.0)
+    {
         scalarMult(1.0/dist,vec,vec);
-    else if (dist == 0 && mstate == MotionState::STATIC)
+    }
+    else if (dist == 0.0 && mstate == MotionState::STATIC)
     {
         printf("\n\tEdgeToEdge() ERROR: dist == 0 in proximity detection\n");
         printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
@@ -956,7 +958,7 @@ static bool EdgeToEdge(
         std::vector<POINT*> edge_pts(pts,pts+4);
         vtk_write_pointset(edge_pts,fname,ERROR);
 
-        LOC(); clean_up(ERROR);
+        LOC(); clean_up(EXIT_FAILURE);
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
@@ -1362,7 +1364,6 @@ static bool PointToTri(
  * x13*x13*w1 + x13*x23*w2 = x13*x43
  * x13*x23*w1 + x23*x23*w2 = x23*x43
  */
-    double nor[3];
 	double w[3] = {0.0};
 	double x13[3], x23[3], x43[3], x34[3];
     double tri_nor[3] = {0.0};
@@ -1375,7 +1376,10 @@ static bool PointToTri(
     //unit normal vector of the plane of the triangle
     Cross3d(x13,x23,tri_nor);
     double mag_tnor = Mag3d(tri_nor);
-    scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
+    if (mag_tnor > 0.0)
+        scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
+    else
+        LOC(); clean_up(EXIT_FAILURE);
 
     //correct the triangle's normal direction to point to same
     //side as the point (not used right now, but may need at some
@@ -1418,7 +1422,7 @@ static bool PointToTri(
 
         CollisionSolver3d::saveFront();
         CollisionSolver3d::drawFront();
-        LOC(); clean_up(ERROR);
+        LOC(); clean_up(EXIT_FAILURE);
         //return false;
 	}
 	else

@@ -461,33 +461,40 @@ static void iF_flowThroughBoundaryState3d(
 	double f_u;		/* u flux in the sweeping direction */
 	double f_v[MAXD];	/* v flux in the orthogonal direction */
 	double f_pres;		/* pressure flux */
-	double dn,dt = front->dt;
-	STATE *oldst,*newst = (STATE*)state;
+	double dn;
+
+    double dt = front->dt;
+	STATE *oldst, *newst = (STATE*)state;
 	STATE  **sts;
 	POINTER sl,sr;
 	int i,j,k,dim = front->rect_grid->dim;
 	int nrad = 2;
 
+
 	if (debugging("flow_through"))
 	    printf("Entering iF_flowThroughBoundaryState3d()\n");
 
 	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
-	oldst = NULL;
+	oldst = nullptr;
 	if (comp == negative_component(hs))  
 	    oldst = (STATE*)sl;
 	else 
 	    oldst = (STATE*)sr;
 
+    //Normal
 	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 	for (i = 0; i < dim; ++i)
 	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(dir,front);
 
 	u[1] = 0.0;
-	for (j = 0; j < 2; ++j)
+    //for (j = 0; j < 3; ++j) u[j] = 0.0;
+	
+    for (j = 0; j < 2; ++j)
 	{
 	    pres[j] = oldst->pres;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
 	    double vtmp;
@@ -502,6 +509,7 @@ static void iF_flowThroughBoundaryState3d(
 
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 	newst->pres = oldst->pres - dt/dn*f_pres;
+
 	if (debugging("flow_through"))
 	{
 	    (void) print_Nor_stencil(front,nsten);
@@ -509,8 +517,9 @@ static void iF_flowThroughBoundaryState3d(
 			newst->vel[0],newst->vel[1],newst->vel[2]);
 	}
 	
+    //Tangential
 	tsten = FrontGetTanStencils(front,oldp,nrad);
-	if (tsten == NULL) return;
+	if (tsten == NULL) return; //TODO: Does this always exit here (see next TODO)?
 
 	for (k = 0; k < dim-1; ++k)
 	{
@@ -525,22 +534,27 @@ static void iF_flowThroughBoundaryState3d(
 
 	    if (debugging("flow_through"))
 	    {
-	    	(void) printf("Ambient component: %d\n",comp);
-	    	(void) printf("Tangential grid size = %f\n",dn);
-		(void) printf("For direction %d\n",k);
-	    	(void) print_Tan_stencil(front,tsten[k]);
+	    	printf("Ambient component: %d\n",comp);
+	    	printf("Tangential grid size = %f\n",dn);
+		    printf("For direction %d\n",k);
+	    	print_Tan_stencil(front,tsten[k]);
 	    }
 
-	    for (j = 0; j < 3; ++j)
-	    	u[j] = 0.0;
+	    for (j = 0; j < 3; ++j) u[j] = 0.0;
+
 	    for (j = 0; j < 3; ++j)
 	    {
+            //TODO: bad indexing never seg faults
 	    	pres[j] = sts[j-1]->pres;
-	    	for (i = 0; i < dim; ++i)
-		    u[j] += sts[j-1]->vel[i]*dir[i];
-	    	for (i = 0; i < dim; ++i)
+
+            for (i = 0; i < dim; ++i)
+            {
+                u[j] += sts[j-1]->vel[i]*dir[i];
+            }
+
+            for (i = 0; i < dim; ++i)
 	    	{
-		    v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
+                v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
 	    	}
 	    }
 
@@ -693,6 +707,7 @@ static void iF_flowThroughBoundaryState2d(
 	    u[j] = 0.0;
 	for (j = 0; j < 3; ++j)
 	{
+        //TODO: Why doesn't this seg fault on j = 0 --> sts[-1]?
 	    vort[j] = sts[j-1]->vort;
 	    pres[j] = sts[j-1]->pres;
 	    for (i = 0; i < dim; ++i)

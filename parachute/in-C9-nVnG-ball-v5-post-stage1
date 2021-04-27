@@ -18,6 +18,9 @@ Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
 **************Fluid parameters***************
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         SIMPLE
         BELL_COLELLA
@@ -41,10 +44,6 @@ Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
-
-Type yes if motion is presetXXX: yes
-Enter type of preset motionXXX: TRANSLATION
-
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
@@ -53,7 +52,6 @@ Enter the total mass for rigid body: 300
 Enter the initial center of mass for rigid body: 6 6 11.951
 
 Enter the initial center of mass velocity: 0 0 0
-Enter the initial center of mass velocityXXX: 0 0 -0.5
 
 
 ************Parachute parameters*************
@@ -83,20 +81,11 @@ Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
-Entering yes to turn off fluid solver: yes
+Entering yes to turn off fluid solver: no
 Enter interior propagator: p
 
-Enter velocity functionXXX: Zero
-
-Enter velocity function: FA
-Enter initial shape of fixed area: Ellipse
-Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.5 0.5
-Enter area velocityXXX: 0 0 3.0
-Enter area velocity: 0 0 3.5
-Enter gravity: 0 0 0
-
 Enter timestep to activate FSI: 5
+Enter yes to disable FSI: yes
 
 Enter yes to use porosity: yes
 Enter porosity: 0.01
@@ -110,13 +99,11 @@ Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.01
-Enter fabric bending stiffness constantXXX: 0.0001
+Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0
 Enter fabric friction constant: 0.25
 Enter fabric point mass: 0.001
-Enter fabric thickness: 0.005
-Enter fabric thicknessXXX: 0.001
+Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
@@ -126,7 +113,7 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
-Enter strain limit: 0.01
+Enter strain limit: 0.05
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.1
 
@@ -155,7 +142,13 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-Type y to make vector velocity field movie: n
+
+Type y to make viscosity field movie: y
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar phi field movie: n
+
 Type y to plot surface stress: n
 
 ************Debugging options*****************
@@ -164,6 +157,9 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
+Enter the debugging string: PETSc
+
+Enter the debugging stringX: reset_time
 
 Enter the debugging stringX: collision_max_speed
 Enter the debugging stringX: rigid_body
@@ -171,7 +167,6 @@ Enter the debugging stringX: rigid_body
 Enter the debugging stringXXX: trace
 Enter the debugging stringXXX: CLOCK
 Enter the debugging stringXXX: step_size
-Enter the debugging stringXXX: PETSc
 Enter the debugging stringXXX: coat_comp
 Enter the debugging stringXXX: dirichlet_bdry
 Enter the debugging stringXXX: flow_through

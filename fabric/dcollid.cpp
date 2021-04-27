@@ -2747,16 +2747,6 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                     if (sl[k]->strain_num > 0)
                     {
                         sl[k]->has_strainlim_collsn = true;
-
-                        /*
-                        //TODO: can probably remove
-                        //
-                        if (mstate == MotionState::STATIC)
-                            sl[k]->has_strainlim_prox = true;
-                        else
-                            sl[k]->has_strainlim_collsn = true;
-                        */
-
                         for (int j = 0; j < 3; ++j)
                         {
                             sl[k]->avgVel[j] += sl[k]->strainImpulse[j];

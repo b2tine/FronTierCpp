@@ -206,11 +206,11 @@ struct IF_PARAMS
     boolean use_no_slip {YES};
 };
 
-struct _FLOW_THROUGH_PARAMS {
-        POINT *oldp;
-        COMPONENT comp;
+struct FLOW_THROUGH_PARAMS
+{
+    POINT *oldp;
+    COMPONENT comp;
 };
-typedef struct _FLOW_THROUGH_PARAMS FLOW_THROUGH_PARAMS;
 
 enum _TIME_FUNC_TYPE {
 	CONSTANT		=  1,
