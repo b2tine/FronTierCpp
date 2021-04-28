@@ -432,7 +432,7 @@ extern void cF_flowThroughBoundaryState(
 	    f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
 
 	    for (i = 0; i < dim; ++i)
-	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]);
 	    newst->vort = sts[0]->vort - dt/dn*f_vort;
 	    newst->pres = sts[0]->pres - dt/dn*f_pres;
 	    newst->dens = sts[0]->dens - dt/dn*f_dens;

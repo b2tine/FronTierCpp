@@ -345,7 +345,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             }
 
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+
+            //TODO: with dt in numerator of LHS better?
+            coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]);
+                //coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    aII = 0.0;
