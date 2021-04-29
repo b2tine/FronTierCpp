@@ -59,10 +59,9 @@ void addStringBenders(Front* front)
         if (is_bdry(*curve)) continue;
         if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
 
-        //curve_bond_loop(*curve,bond)
         for (bond = (*curve)->first; bond != (*curve)->last; bond = bond->next)
         {
-            BOND_BENDER* bond_bender = nullptr;
+            BOND_BENDER* bond_bender;
             FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
             bond_bender->bends = string_bends;
             POINT* pt = bond->end;
@@ -75,7 +74,7 @@ void addStringBenders(Front* front)
 
 void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
-    //TODO: add switch to turn off (early retur)
+    //TODO: add switch to turn off (early return)
 
     SURFACE **surf;
     TRI *tri;
@@ -87,8 +86,8 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
         
         unsort_surf_point(*surf);//TODO: can remove?
         
-        //NOTE: next surf_tri_loop() replaces the function
-        //      clear_surf_point_force(*surf);
+        //NOTE: this surf_tri_loop() block replaces the
+        //      function clear_surf_point_force(*surf);
         surf_tri_loop(*surf, tri)
         {
             for (int i = 0; i < 3; ++i)
@@ -166,7 +165,7 @@ void computeStringBendingForce(INTERFACE* intfc)
         }
     }
 
-} /* setBendingForce3d */
+} /* computeStringBendingForce */
 
 
 //Appears to be from "Simple Linear Bending Stiffness in Particle Systems"

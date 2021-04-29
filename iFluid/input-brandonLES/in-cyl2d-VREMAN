@@ -1,7 +1,9 @@
 Domain limit in 0-th dimension: 0 2.694
-Domain limit in 1-th dimension: 0 0.984
+Domain limit in 1-th dimension: 0 1.245
+Domain limit in 1-th dimensionXXX: 0 0.984
 
-Computational grid: 109 45
+Computational grid: 109 57
+Computational gridXXX: 109 45
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -20,7 +22,8 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circle: 0.775 0.492 
+Enter the center of the circle: 0.775 0.6225 
+Enter the center of the circleXXX: 0.775 0.492 
 Enter radius of the circle: 0.075
 
 Enter yes if the object is fixed: yes

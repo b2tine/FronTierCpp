@@ -59,10 +59,9 @@ void addStringBenders(Front* front)
         if (is_bdry(*curve)) continue;
         if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
 
-        //curve_bond_loop(*curve,bond)
         for (bond = (*curve)->first; bond != (*curve)->last; bond = bond->next)
         {
-            BOND_BENDER* bond_bender = nullptr;
+            BOND_BENDER* bond_bender;
             FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
             bond_bender->bends = string_bends;
             POINT* pt = bond->end;
@@ -71,54 +70,6 @@ void addStringBenders(Front* front)
     }
 
     //TODO: Need to be able to restart with BOND_BENDER in pt->extra
-}
-
-void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
-{
-    //TODO: add switch to turn off (early retur)
-
-    SURFACE **surf;
-    TRI *tri;
-
-    intfc_surface_loop(intfc, surf)
-    {
-        if (is_bdry(*surf)) continue;
-        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
-        
-        unsort_surf_point(*surf);//TODO: can remove?
-        
-        //NOTE: next surf_tri_loop() replaces the function
-        //      clear_surf_point_force(*surf);
-        surf_tri_loop(*surf, tri)
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                POINT* p = Point_of_tri(tri)[i];
-                STATE* sl = (STATE*)left_state(p);
-                for (int j = 0; j < 3; ++j)
-                    sl->bendforce[j] = 0.0;
-            }
-        }
-        
-        surf_tri_loop(*surf, tri)
-        {
-            if (is_bdry(*surf)) continue;
-            if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
-            
-            //TODO: edge traversal of surface (requires half the computation)
-            for (int i = 0; i < 3; ++i)
-            {
-                POINT *p = Point_of_tri(tri)[i];
-                TRI* n_tri = Tri_on_side(tri, (i+1)%3);
-
-                if (is_side_bdry(tri,(i+1)%3)) continue; 
-                
-                calculateBendingForce3d2006(p,tri,n_tri,bends,bendd);
-                //calculateBendingForce3d2003(p,tri,n_tri,bends,bendd);//TODO: test this one
-                    //calculateBendingForce3dparti(p,tri,n_tri,bends,bendd);
-            }
-        }
-    }
 }
 
 void computeStringBendingForce(INTERFACE* intfc)
@@ -166,7 +117,55 @@ void computeStringBendingForce(INTERFACE* intfc)
         }
     }
 
-} /* setBendingForce3d */
+} /* end computeStringBendingForce */
+
+void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
+{
+    //TODO: add switch to turn off (early return)
+
+    SURFACE **surf;
+    TRI *tri;
+
+    intfc_surface_loop(intfc, surf)
+    {
+        if (is_bdry(*surf)) continue;
+        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+        
+        unsort_surf_point(*surf);//TODO: can remove?
+        
+        //NOTE: next surf_tri_loop() replaces the function
+        //      clear_surf_point_force(*surf);
+        surf_tri_loop(*surf, tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                POINT* p = Point_of_tri(tri)[i];
+                STATE* sl = (STATE*)left_state(p);
+                for (int j = 0; j < 3; ++j)
+                    sl->bendforce[j] = 0.0;
+            }
+        }
+        
+        surf_tri_loop(*surf, tri)
+        {
+            if (is_bdry(*surf)) continue;
+            if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+            
+            //TODO: edge traversal of surface (requires half the computation)
+            for (int i = 0; i < 3; ++i)
+            {
+                POINT *p = Point_of_tri(tri)[i];
+                TRI* n_tri = Tri_on_side(tri, (i+1)%3);
+
+                if (is_side_bdry(tri,(i+1)%3)) continue; 
+                
+                calculateBendingForce3d2006(p,tri,n_tri,bends,bendd);
+                //calculateBendingForce3d2003(p,tri,n_tri,bends,bendd);//TODO: test this one
+                    //calculateBendingForce3dparti(p,tri,n_tri,bends,bendd);
+            }
+        }
+    }
+}
 
 
 //Appears to be from "Simple Linear Bending Stiffness in Particle Systems"
