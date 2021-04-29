@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include "fabric.h"
+#include "bending.h"
 
 static boolean parachute_constr_func(POINTER,double*);
 static boolean install_strings(INTERFACE*,SURFACE*,POINTER,int);
@@ -2643,6 +2644,11 @@ extern void initIsolated3dCurves(Front* front)
             init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
         }
 	}
+
+    if (debugging("string_bending")) //if(!debugging("no_string_bending"))
+    {
+        addStringBenders(front);
+    }
 }	/* initIsolated3dCurves() */
 
 static void init3dCurves(

@@ -3442,9 +3442,12 @@ EXPORT POINT *i_copy_point(
 
 	if (newp == NULL)
 	    return NULL;
-        newp->curvature = p->curvature;
-        for(i = 0; i < 3; ++i)
-            newp->_nor[i] = p->_nor[i];
+        
+    newp->curvature = p->curvature;
+    for(i = 0; i < 3; ++i)
+        newp->_nor[i] = p->_nor[i];
+
+    newp->extra = p->extra;
 
 	return newp;
 }		/*end i_copy_point*/

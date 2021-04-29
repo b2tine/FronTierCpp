@@ -77,20 +77,21 @@ Enter factor of smoothing radius: 1
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
-Enter fabric friction constant: 0.05
+Enter fabric friction constant: 0.25
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
-Enter string damping constant: 0.95
-Enter string friction constant: 0.25
+Enter string damping constant: 0.1
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
-Enter strain limit: 0.015
-Enter compressive strain limit: 0.015
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.1
 
 **************************************************************
@@ -112,11 +113,12 @@ Type y to make vector vorticity field movie: n
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: PETSc
-Enter the debugging string: max_speed
-Enter the debugging string: strain_limiting
+Enter the debugging stringX: no_string_bending
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
+Enter the debugging string: PETSc
 
 Enter the debugging string: ttrace
 Enter the debugging string: tisect3d

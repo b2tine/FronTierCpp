@@ -2052,15 +2052,12 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
 
-        //TODO: Need to make sure RG_STRING_NODEs stay fixed to rigid body
         AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
         if (extra)
         {
-            if (extra->af_node_type == PRESET_NODE)
-            {
-                sl->is_fixed = true;
-            }
-            else if (extra->af_node_type == RG_STRING_NODE)
+            //Ensure RG_STRING_NODEs stay fixed to the rigid body
+            // during collision handling and strain limiting.
+            if (extra->af_node_type == RG_STRING_NODE)
             {
                 node_out_curve_loop(*n,c)
                 {
@@ -2094,13 +2091,15 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
                 if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                     sl->is_movableRG = true;
             }
+            else if (extra->af_node_type == PRESET_NODE)
+            {
+                sl->is_fixed = true;
+            }
         }
-        else if ((*n)->hsb && is_fixed_node(*n)) //TODO: do we need this?
+        else if ((*n)->hsb && is_fixed_node(*n))
         {
             sl->is_fixed = true;
         }
-        //TODO: should we be setting is_fixed_node(node) = YES
-        //      when seeting af_node_type = PRESET_NODE ???
     }
 }       /* setCollisionFreePoints3d() */
 

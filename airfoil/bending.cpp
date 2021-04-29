@@ -72,6 +72,53 @@ void addStringBenders(Front* front)
     //TODO: Need to be able to restart with BOND_BENDER in pt->extra
 }
 
+void computeStringBendingForce(INTERFACE* intfc)
+{
+    CURVE** curve;
+    BOND *b;
+
+    intfc_curve_loop(intfc,curve)
+    {
+        if (is_bdry(*curve)) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+
+        curve_bond_loop(*curve,b)
+        {
+            STATE* ss = (STATE*)left_state(b->start);
+            STATE* se = (STATE*)left_state(b->end);
+            for (int j = 0; j < 3; ++j)
+            {
+                ss->bendforce[j] = 0.0;
+                se->bendforce[j] = 0.0;
+            }
+        }
+
+        //TODO: Continue string bending stiffness implementation.
+        //      Skeleton is below; need implementations for the
+        //      following functions, and storage for intermediate
+        //      computations.
+        
+        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
+        {
+            //compute and store (kb)_i in x_i joining e_{i-1} and e_i
+            computeCurvatureBinormal(b,b->next);
+        }
+        
+        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
+        {
+            //compute and store grad_{i}(kb)_j for j = i-1, i, i+1 at x_i
+            computeGradCurvatureBinormal(b,b->next);
+        }
+
+        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
+        {
+            //compute bending force on x_i
+            computeStringPointBendingForce(b,b->next);
+        }
+    }
+
+} /* computeStringBendingForce */
+
 void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
     //TODO: add switch to turn off (early return)
@@ -119,53 +166,6 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
         }
     }
 }
-
-void computeStringBendingForce(INTERFACE* intfc)
-{
-    CURVE** curve;
-    BOND *b;
-
-    intfc_curve_loop(intfc,curve)
-    {
-        if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
-
-        curve_bond_loop(*curve,b)
-        {
-            STATE* ss = (STATE*)left_state(b->start);
-            STATE* se = (STATE*)left_state(b->end);
-            for (int j = 0; j < 3; ++j)
-            {
-                ss->bendforce[j] = 0.0;
-                se->bendforce[j] = 0.0;
-            }
-        }
-
-        //TODO: Continue string bending stiffness implementation.
-        //      Skeleton is below; need implementations for the
-        //      following functions, and storage for intermediate
-        //      computations.
-        
-        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
-        {
-            //compute and store (kb)_i in x_i joining e_{i-1} and e_i
-            computeCurvatureBinormal(b,b->next);
-        }
-        
-        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
-        {
-            //compute and store grad_{i}(kb)_j for j = i-1, i, i+1 at x_i
-            computeGradCurvatureBinormal(b,b->next);
-        }
-
-        for (b = (*curve)->first; b != (*curve)->last; b = b->next)
-        {
-            //compute bending force on x_i
-            computeStringPointBendingForce(b,b->next);
-        }
-    }
-
-} /* computeStringBendingForce */
 
 
 //Appears to be from "Simple Linear Bending Stiffness in Particle Systems"
