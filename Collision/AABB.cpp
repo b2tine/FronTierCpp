@@ -163,7 +163,7 @@ AABBTree::~AABBTree()
 //Iterative Breadth First (Level Order) Traversal
 void AABBTree::deleteTree()
 {
-    std::queue<Node*> q; //std::queue<std::shared_ptr<Node>> q;
+    std::queue<Node*> q;
     q.push(this->root);
 
     while (!q.empty())
