@@ -2067,7 +2067,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         if (!ifluid_comp(top_comp[index])) continue;
 
         div_U[index] = source[index];
-        source[index] /= accum_dt;
+            //source[index] /= accum_dt;
         
         icoords[0] = i; 
         icoords[1] = j;
@@ -2079,7 +2079,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         array[index] = phi[index];
     }
 
-    if(debugging("step_size"))
+    if (debugging("step_size"))
     {
         sum_div = 0.0;
         min_value =  HUGE;
@@ -3000,12 +3000,14 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     }
                 }
 
-                //TODO: Put inside debugging string block
-                printf("\n");
-                printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
-                printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
-                printf("\tc_drag = %f  |  A_ref = %f  |  rhoF = %f\n",c_drag,A_ref,rhoF);
-                printf("\tspeed = %f  |  ampfactor = %f\n\n",speed,ampFluidFactor);
+                if (debugging("string_fluid"))
+                {
+                    printf("\n");
+                    printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                    printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
+                    printf("\tc_drag = %f  |  A_ref = %f  |  rhoF = %f\n",c_drag,A_ref,rhoF);
+                    printf("\tspeed = %f  |  ampfactor = %f\n\n",speed,ampFluidFactor);
+                }
 
                 /*
                 printf("\t\tstate->linedrag_force = %g %g %g \n",

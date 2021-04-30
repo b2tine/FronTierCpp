@@ -114,7 +114,7 @@ Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 Type y to make cross sectional component movie: n
 
-Type y to make viscosity field movie: n
+Type y to make viscosity field movie: y
 Type y to make scalar pressure field movie: y
 
 Type y to make vector velocity field movie: y
@@ -128,11 +128,13 @@ Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 Enter the debugging string: PETSc
 
-Enter the debugging string: ttrace
-Enter the debugging string: tisect3d
-Enter the debugging string: tCLOCK
-Enter the debugging string: tstep_size
-Enter the debugging string: ttri_cluster
-Enter the debugging string: tCollisionImpulse
-Enter the debugging string: tsample_velocity
-Enter the debugging string: no_optimize 
+Enter the debugging stringX: string_fluid
+
+Enter the debugging stringX: trace
+Enter the debugging stringX: isect3d
+Enter the debugging stringX: CLOCK
+Enter the debugging stringX: step_size
+Enter the debugging stringX: tri_cluster
+Enter the debugging stringX: CollisionImpulse
+Enter the debugging stringX: sample_velocity
+Enter the debugging stringX: no_optimize 

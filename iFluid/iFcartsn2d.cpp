@@ -286,7 +286,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         if (!ifluid_comp(top_comp[index])) continue;
 	    
         div_U[index] = source[index];
-            //source[index] /= accum_dt;
 
         // Compute pressure jump due to porosity
         icoords[0] = i;
@@ -952,14 +951,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                             U_nb[nb] = getStateVel[l](intfc_state);
                                 //STATE* fstate = (STATE*)intfc_state;
                                 //U_nb_prev[nb] = fstate->vel_old[l];
-                            //U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+                            //TODO: use only tangential component of grad_phi
+                            //      at the outlet, or use the whole thing?
+                                //U_nb[nb] += m_dt*grad_phi[l][index]/rho;
                         }
                         else
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
                         }
-                        
+                            
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
