@@ -245,12 +245,14 @@ void printAfExtraData(
             if (p->extra == nullptr)
             {
                 fprintf(outfile,"string point extra: no\n");
-                continue;
             }
-            fprintf(outfile,"string point extra: yes\n");
-            BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
-            fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
-	        fprintf(outfile,"\n");
+            else
+            {
+                fprintf(outfile,"string point extra: yes\n");
+                BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
+                fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
+                fprintf(outfile,"\n");
+            }
         }
 	}
 	
@@ -530,29 +532,31 @@ void readAfExtraData(
 	{
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
-            fscanf(infile,"%s",string);
-	    if (string[0] == 'n') continue;
-	    FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
-	    fgetstring(infile,"point_mass = ");
-            fscanf(infile,"%lf",&c_params->point_mass);
-	    fgetstring(infile,"load_mass = ");
-            fscanf(infile,"%lf",&c_params->load_mass);
-	    fgetstring(infile,"load_type = ");
-            fscanf(infile,"%d",(int*)&c_params->load_type);
-	    fgetstring(infile,"dir = ");
-            fscanf(infile,"%d",&c_params->dir);
-	    (*c)->extra = (POINTER)c_params;
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
+            fgetstring(infile,"point_mass = ");
+                fscanf(infile,"%lf",&c_params->point_mass);
+            fgetstring(infile,"load_mass = ");
+                fscanf(infile,"%lf",&c_params->load_mass);
+            fgetstring(infile,"load_type = ");
+                fscanf(infile,"%d",(int*)&c_params->load_type);
+            fgetstring(infile,"dir = ");
+                fscanf(infile,"%d",&c_params->dir);
+            (*c)->extra = (POINTER)c_params;
+        }
 
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
             fgetstring(infile,"string point extra:");
             fscanf(infile,"%s",string);
 	        if (string[0] == 'n') continue;
-            //fscanf(infile,"\n");
             
             BOND_BENDER* bond_bender;
             FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
             fread(bond_bender,1,sizeof(BOND_BENDER),infile);
+            b->end->extra = (POINTER)bond_bender;
             fscanf(infile,"\n");
         }
 	}

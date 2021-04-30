@@ -21,8 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
+#include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
 static void singleCanopyModification(Front*);
@@ -254,16 +254,33 @@ void printAfExtraData(
 	{
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
-                fprintf(outfile,"curve extra: no\n");
-	    else
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
 	    {
-                fprintf(outfile,"curve extra: yes\n");
-                fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
-                fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
-                fprintf(outfile,"load_type = %d\n",c_params->load_type);
-                fprintf(outfile,"dir = %d\n",c_params->dir);
+            fprintf(outfile,"curve extra: yes\n");
+            fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
+            fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
+            fprintf(outfile,"load_type = %d\n",c_params->load_type);
+            fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
         
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+		    p = b->end;
+            if (p->extra == nullptr)
+            {
+                fprintf(outfile,"string point extra: no\n");
+            }
+            else
+            {
+                fprintf(outfile,"string point extra: yes\n");
+                BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
+                fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
+                fprintf(outfile,"\n");
+            }
+        }
 	}
 	
     fprintf(outfile,"\nNode extra data:\n");
@@ -668,24 +685,40 @@ void readAfExtraData(
         */
     }
     
-    //TODO: need FINITE_STRING also
+    //TODO: Replace C_PARAMS with FINITE_STRING for curve extra data.
+    //      C_PARAMS no longer in use.
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
+            fgetstring(infile,"point_mass = ");
+                fscanf(infile,"%lf",&c_params->point_mass);
+            fgetstring(infile,"load_mass = ");
+                fscanf(infile,"%lf",&c_params->load_mass);
+            fgetstring(infile,"load_type = ");
+                fscanf(infile,"%d",(int*)&c_params->load_type);
+            fgetstring(infile,"dir = ");
+                fscanf(infile,"%d",&c_params->dir);
+            (*c)->extra = (POINTER)c_params;
+        }
+        
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+            fgetstring(infile,"string point extra:");
             fscanf(infile,"%s",string);
-	    if (string[0] == 'n') continue;
-	    FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
-	    fgetstring(infile,"point_mass = ");
-            fscanf(infile,"%lf",&c_params->point_mass);
-	    fgetstring(infile,"load_mass = ");
-            fscanf(infile,"%lf",&c_params->load_mass);
-	    fgetstring(infile,"load_type = ");
-            fscanf(infile,"%d",(int*)&c_params->load_type);
-	    fgetstring(infile,"dir = ");
-            fscanf(infile,"%d",&c_params->dir);
-	    (*c)->extra = (POINTER)c_params;
+            if (string[0] == 'n') continue;
+
+            BOND_BENDER* bond_bender;
+            FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
+            fread(bond_bender,1,sizeof(BOND_BENDER),infile);
+            b->end->extra = (POINTER)bond_bender;
+            fscanf(infile,"\n");
+        }   
 	}
 
 	next_output_line_containing_string(infile,"Node extra data:");

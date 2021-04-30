@@ -1996,7 +1996,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
     computeSurfBendingForce(elastic_intfc,bends,bendd);
-        //computeStringBendingForce(elastic_intfc); //TODO: finish implementation
+    computeStringBendingForce(elastic_intfc);
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
 #include "airfoil.h"
+#include "bending.h"
 
 static boolean parachute_constr_func(POINTER,double*);
 static boolean install_strings(INTERFACE*,SURFACE*,POINTER,int);
@@ -2664,6 +2665,9 @@ extern void initIsolated3dCurves(Front* front)
             curve->extra = (POINTER)finite_string;
         }
 	}
+
+    addStringBenders(front);
+
 }	/* initIsolated3dCurves() */
 
 static CURVE *init3dCurve(
