@@ -222,6 +222,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	int index;
 	int i,j,l,icoords[MAXD];
 	double **vel = field->vel;
+	double **prev_vel = field->prev_vel;
 	double *phi = field->phi;
 	double *div_U = field->div_U;
 	double sum_div;
@@ -256,6 +257,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 
         source[index] = computeFieldPointDiv(icoords,vel);
         diff_coeff[index] = 1.0/field->rho[index];
+        
+        //TODO: updatePhiBoundaryStates(icoords,vel)
+        //       -- in the style of computeFieldPointDiv()
         
         if (debugging("check_div"))
 	    {
@@ -550,6 +554,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	}
 	return;
 }	/* end computeProjectionDouble */
+
+void Incompress_Solver_Smooth_2D_Cartesian::updatePhiBoundaryStates(int* icoords)
+{
+    //TODO: WRITE
+    //
+    //1. Check if interface crossing exists and if it is a flow-through boundary.
+    //   Exit if not.
+    //2. Compute the sum of the vector laplacians of u^{*} and u^{n} and save to
+    //   the boundary state structure. 
+}
 
 //u^{n+1} = u^{*} - dt*grad(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
@@ -855,6 +869,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusion(void)
     return computeDiffusionCN();
 }
 
+//TODO: Write ADI version of this.
 void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
 {
     COMPONENT comp;
@@ -1039,7 +1054,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
             //first equation  decoupled, some terms may be lost
             aII = 1.0+coeff[0]+coeff[1]+coeff[2]+coeff[3];
             rhs = (1.0-coeff[0]-coeff[1]-coeff[2]-coeff[3])*vel[l][index];
-                //rhs = vel[l][index] - (coeff[0]+coeff[1]+coeff[2]+coeff[3])*prev_vel[l][index];
 
             for (nb = 0; nb < 4; nb++)
             {
@@ -1050,7 +1064,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                 {
                     solver.Set_A(I,I_nb[nb],-1.0*coeff[nb]);
                     rhs += coeff[nb]*U_nb[nb];
-                        //rhs += coeff[nb]*U_nb_prev[nb];
                 }
                 else
                 {
@@ -1061,7 +1074,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                             //TODO: outlet not the same at n and n+1
                             //OUTLET
                             rhs += 2.0*coeff[nb]*U_nb[nb];
-                                //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                         }
                         else
                         {
@@ -1082,7 +1094,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                         //      to access it if that functionality already exists
                         
                         rhs += 2.0*coeff[nb]*U_nb[nb];
-                            //rhs += coeff[nb]*(U_nb[nb] + U_nb_prev[nb]);
                     }
                     else
                     {

@@ -203,7 +203,7 @@ struct IF_PARAMS
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
     double C_v;     //Vreman model constant
-    boolean use_no_slip {YES};
+    boolean use_no_slip {NO};
 };
 
 struct FLOW_THROUGH_PARAMS
@@ -601,6 +601,8 @@ protected:
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	    //void computeProjectionDual(void);
+    
+    void updatePhiBoundaryStates(int* icoords);
 	
     void computePressure(void);
 	void computePressurePmI(void);

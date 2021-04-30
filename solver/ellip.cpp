@@ -553,6 +553,17 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     rhs -= coeff[l]*getStateVar(intfc_state);
                     aII -= coeff[l];
                     use_neumann_solver = NO;
+                    
+                    //TODO: Instead of calling getStateVar() we
+                    //      should compute phi directly with:
+                    //
+                    //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
+                    //      t dot grad(phi^n+1) = 0.5*mu * t dot (grad^2(u^{*} + u^{n})
+                    //
+                    //      Or we could precompute the values and set the boundary states
+                    //      in computeProjection(), in a similar manner to how the divergence
+                    //      is precomputed.
+
                 }
             }
         }

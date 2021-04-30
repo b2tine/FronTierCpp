@@ -496,23 +496,17 @@ static void iF_flowThroughBoundaryState2d(
 	newst->phi = oldst->phi;
     
 
-    /*
-    //Attempting to compute phi directly
-    
-    int ic[MAXD];
-    RECT_GRID* top_grid = &topological_grid(front->grid_intfc);
-    if (!rect_in_which(p0,ic,top_grid))
-    {
-        printf("ERROR iF_flowThroughBoundaryState2d() : rect_in_which() failed\n");
-        LOC(); clean_up(EXIT_FAILURE);
-    }
-
-    int index = d_index(ic,top_grid->gmax,dim);
-    printf("flow through index = %d\n",index);//This works..
-
-    //TODO: Need to figure out correct icoords/index of the fluid
-    //      cell near the interface
-    */
+    //TODO: Computing phi at the boundary can not be done with this function!
+    //
+    //      We require the intermediate velocity, u*, of the current time step
+    //      to evaluate phi at the flow-through boundary, but this function
+    //      gets called before we compute u*.
+    //
+    //      Need to apply the boundary condition for phi after computeDiffusion()
+    //      and before computeProjection().
+    //
+    //      It appears that we can compute it inside the function ellip.cpp : solve2d().
+    //      If successful, the phi computations in this function should be removed.
 
 
     //Normal
