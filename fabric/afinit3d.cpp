@@ -1159,32 +1159,35 @@ static boolean change_mono_boundary(
 	if (params != NULL)
 	{
 	    BDRY_PARAMS *bdry_params = (BDRY_PARAMS*)params;
-	    double *L,*U;
 	    boolean *lower_bdry = bdry_params->lower_bdry;
 	    boolean *upper_bdry = bdry_params->upper_bdry;
 	    CURVE *cside00,*cside01,*cside10,*cside11;
-	    L = bdry_params->L;
-	    U = bdry_params->U;
-	    set_side_curves(L,U,surf,&cside00,&cside01,&cside10,&cside11);
-	    if (lower_bdry[0] == YES)
-		hsbdry_type(cside00) = FIXED_HSBDRY;
+	    double* L = bdry_params->L;
+	    double* U = bdry_params->U;
+	    
+        set_side_curves(L,U,surf,&cside00,&cside01,&cside10,&cside11);
+	    
+        if (lower_bdry[0] == YES)
+		    hsbdry_type(cside00) = FIXED_HSBDRY;
 	    if (upper_bdry[0] == YES)
-		hsbdry_type(cside01) = FIXED_HSBDRY;
+		    hsbdry_type(cside01) = FIXED_HSBDRY;
 	    else
+        {   //TODO: what is this case? Load Node bearing string???
+            static C_PARAMS c_params;
+            int i,npts = I_NumOfCurvePoints(cside01);
+            c_params.load_type = bdry_params->upper_side[0];
+            c_params.load_mass = bdry_params->upper_mass[0];
+            c_params.point_mass = bdry_params->upper_mass[0]/npts;
+            c_params.dir = 0;
+            
+            for (i = 0; i < 3; ++i)
             {
-                static C_PARAMS c_params;
-                int i,npts = I_NumOfCurvePoints(cside01);
-                c_params.load_type = bdry_params->upper_side[0];
-                c_params.load_mass = bdry_params->upper_mass[0];
-                c_params.point_mass = bdry_params->upper_mass[0]/npts;
-                c_params.dir = 0;
-		for (i = 0; i < 3; ++i)
-		{
-                    c_params.force[i] = bdry_params->upper_force[0][i]/
-				bdry_params->upper_mass[0];
-		}
-                cside01->extra = (POINTER)&c_params;
+                c_params.force[i] = bdry_params->upper_force[0][i]/bdry_params->upper_mass[0];
             }
+
+            cside01->extra = (POINTER)&c_params;
+        }
+
 	    if (lower_bdry[1] == YES)
 		hsbdry_type(cside10) = FIXED_HSBDRY;
 	    if (upper_bdry[1] == YES)

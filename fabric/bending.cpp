@@ -106,7 +106,7 @@ void computeStringBendingForce(INTERFACE* intfc)
         for (b = (*curve)->first; b != (*curve)->last; b = b->next)
         {
             //compute and store grad_{i}(kb)_j for j = i-1, i, i+1 at x_i
-            computeGradCurvatureBinormal(b,b->next);
+            computeGradCurvatureBinormal(b,b->next); //TODO: verify these computations
         }
 
         for (b = (*curve)->first; b != (*curve)->last; b = b->next)
@@ -141,6 +141,7 @@ void computeCurvatureBinormal(BOND* b1, BOND* b2)
     }
 }
 
+//TODO: Make sure these calculations are correct
 void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
 {
     POINT* p2 = b1->end;
@@ -253,6 +254,7 @@ void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
     }
 }
 
+//TODO: debugging print statements for computed force
 void computeStringPointBendingForce(BOND* b1, BOND* b2)
 {
     POINT* p2 = b1->end;

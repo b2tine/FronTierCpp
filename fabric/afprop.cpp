@@ -1962,8 +1962,6 @@ static void print_max_string_speed(Front* fr)
     double max_speed = -HUGE;
     POINT* max_pt = nullptr;
 
-    if (!FT_FrontContainHsbdryType(fr,STRING_HSBDRY)) return;
-
     intfc_curve_loop(fr->interf,c)
     {
         if (hsbdry_type(*c) != STRING_HSBDRY) continue;
@@ -1976,6 +1974,7 @@ static void print_max_string_speed(Front* fr)
             state = (STATE*)left_state(pt);
             speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
                         + sqr(state->vel[2]));
+            
             if (max_speed < speed)
             {
                 max_speed = speed;

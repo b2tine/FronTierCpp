@@ -1925,7 +1925,6 @@ static void adjust_for_curve_type(
 	double m_l,
 	double *g)
 {
-	C_PARAMS *c_params =  (C_PARAMS*)c->extra;
 	int j,dir,dim = 3;
 	double load_point_mass;
 	BOND *b;
@@ -1933,50 +1932,52 @@ static void adjust_for_curve_type(
 	double ave_accel;
 	double *force;
 
-	if (c_params == NULL) return;
+	C_PARAMS *c_params =  (C_PARAMS*)c->extra;
+	if (c_params == nullptr || c_params->load_type == NO_LOAD) return;
+
 	force = c_params->force;
 	dir = c_params->dir;
 	load_point_mass = c_params->point_mass;
 
-	if (c_params->load_type == NO_LOAD) return;
-	else if (c_params->load_type == FREE_LOAD)
+	if (c_params->load_type == FREE_LOAD)
 	{
 	    for (b = c->first; b != c->last; b = b->next)
 	    {
 	    	for (j = 0; j < dim; ++j)
-		{
-                    f[index][j] = f[index][j]*m_l/load_point_mass + g[j]
-				+ force[j];
-		}
-		index++;
+            {
+                f[index][j] = f[index][j]*m_l/load_point_mass + g[j] + force[j];
+            }
+            index++;
 	    }
 	}
 	else if (c_params->load_type == RIGID_LOAD)
 	{
 	    ave_accel = 0.0;
 	    n = 0;
-	    for (b = c->first; b != c->last; b = b->next)
+	    
+        for (b = c->first; b != c->last; b = b->next)
 	    {
-            	ave_accel += f[index][dir];
-		n++;
-		index++;
+            ave_accel += f[index][dir];
+    		n++;
+	    	index++;
 	    }
-	    ave_accel /= n;
+	    
+        ave_accel /= n;
 	    c_params->ave_accel = ave_accel;
-	    index = index0;
+	    
+        index = index0;
 	    for (b = c->first; b != c->last; b = b->next)
 	    {
 	    	for (j = 0; j < dim; ++j)
 	    	{
-		    if (j == dir)
-		    {
-            	    	f[index][dir] = ave_accel*m_l/load_point_mass + 
-					g[dir] + force[dir];
-		    }
-		    else
-		    	f[index][j] = v[index][j] = 0.0;
+                if (j == dir)
+                {
+                    f[index][dir] = ave_accel*m_l/load_point_mass + g[dir] + force[dir];
+                }
+                else
+                    f[index][j] = v[index][j] = 0.0;
 	    	}
-		index++;
+            index++;
 	    }
 	}
 }	/* end adjust_for_curve_type */
@@ -1990,46 +1991,52 @@ static void adjust_for_cnode_type(
 	double *g)
 {
 	CURVE **c;
-	C_PARAMS *c_params =  NULL;
 	int j,dir,dim = 3;
+	
+    C_PARAMS *c_params = nullptr;
 	double load_point_mass;
 	double *force;
 	double ave_accel;
 
 	for (c = n->in_curves; c && *c; ++c)
 	{
-	    if ((*c)->extra != NULL)
+	    if ((*c)->extra != nullptr)
 	    	c_params = (C_PARAMS*)(*c)->extra;
 	}
 	for (c = n->out_curves; c && *c; ++c)
 	{
-	    if ((*c)->extra != NULL)
+	    if ((*c)->extra != nullptr)
 	    	c_params = (C_PARAMS*)(*c)->extra;
 	}
-	if (c_params == NULL) return;
+
+	if (c_params == nullptr || c_params->load_type == NO_LOAD) return;
 
 	dir = c_params->dir;
 	force = c_params->force;
 	load_point_mass = c_params->point_mass;
-	if (c_params->load_type == NO_LOAD) return;
-	else if (c_params->load_type == FREE_LOAD)
+	
+	if (c_params->load_type == FREE_LOAD)
 	{
 	    for (j = 0; j < dim; ++j)
-                f[index][j] = f[index][j]*m_l/load_point_mass + g[j]
-				+ force[j];
+        {
+            f[index][j] = f[index][j]*m_l/load_point_mass + g[j] + force[j];
+        }
 	}
 	else if (c_params->load_type == RIGID_LOAD)
 	{
 	    ave_accel = c_params->ave_accel;
 	    for (j = 0; j < dim; ++j)
 	    {
-		if (j == dir)
-            	    //f[index][dir] = f[index][dir]*m_l/load_point_mass + g[dir]
-            	    f[index][dir] = ave_accel*m_l/load_point_mass + g[dir]
-				+ force[dir];
-		else
-		    f[index][j] = v[index][j] = 0.0;
-	    }
+            if (j == dir)
+            {
+                //f[index][dir] = f[index][dir]*m_l/load_point_mass + g[dir]
+                f[index][dir] = ave_accel*m_l/load_point_mass + g[dir] + force[dir];
+            }
+            else
+            {
+                f[index][j] = v[index][j] = 0.0;
+            }
+        }
 	}
 }	/* end adjust_for_cnode_type */
 
@@ -2049,12 +2056,12 @@ static void adjust_for_node_type(
 	if (end_type == FIXED_END)
 	{
 	    for (j = 0; j < dim; ++j)
-		f[index][j] = v[index][j] = 0.0;
+            f[index][j] = v[index][j] = 0.0;
 	}
 	else if (end_type == LOADED_END)
 	{
 	    for (j = 0; j < dim; ++j)
-		f[index][j] = f[index][j]*mass/payload + g[j];
+            f[index][j] = f[index][j]*mass/payload + g[j];
 	}
 }	/* end adjust_for_node_type */
 
@@ -2083,7 +2090,7 @@ static void propagate_curve(
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    v = sl->vel;
 	    for (j = 0; j < 2; ++j)
-		x[n][j] += v[j]*dt;
+            x[n][j] += v[j]*dt;
 	    ++n;
 	}
 }	/* end propagate_curve */
@@ -2198,10 +2205,10 @@ static void print_airfoil_stat2d_2(
 	if (pp_mynode() == 0)
 	{
 	    fprintf(ekfile,"%16.12f  %16.12f\n",front->time,ek);
-            fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
-            fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
-            fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
-            fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
+        fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
+        fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
+        fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
+        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
 	    fflush(ekfile);
 	    fflush(epfile);
 	    fflush(exfile);
@@ -2278,14 +2285,14 @@ static void set_special_node_type(
 	    for (j = 0; j < sv[n].num_nb; ++j)
 	    	sv[n].k[j] = 0.0;
 	    for (j = 0; j < dim; ++j)
-		sv[n].ext_accel[j] = 0.0;
+            sv[n].ext_accel[j] = 0.0;
 	    sv[n].lambda = 0.0;
 	}
 	else if (end_type == LOADED_END)
 	{
 	    sv[n].m = payload;
 	    for (j = 0; j < dim; ++j)
-		sv[n].ext_accel[j] = g[j];
+            sv[n].ext_accel[j] = g[j];
 	}
 }	/* set_special_node_type */
 

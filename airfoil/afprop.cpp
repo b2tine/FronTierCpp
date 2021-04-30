@@ -757,6 +757,15 @@ extern boolean is_gore_node(
 	    return NO;
 }	/* end is_gore_node */
 
+extern boolean is_string_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == STRING_NODE) return YES;
+        return NO;
+}       /* end is_load_node */
+
 extern boolean is_load_node(NODE *n)
 {
         AF_NODE_EXTRA *af_node_extra;

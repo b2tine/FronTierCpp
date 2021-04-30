@@ -3409,6 +3409,34 @@ static void setCurveVelocity(
     {
         double max_speed = 0.0;
 
+        NODE* string_nodes[2];
+        string_nodes[0] = curve->start;
+        string_nodes[1] = curve->end;
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (!is_string_node(string_nodes[i])) continue;
+
+            p = curve->start->posn;
+            gindex = Gindex(p);
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
+            vel = point_set[gindex]->v;
+            
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+            }
+        }
+
         for (b = curve->first; b != curve->last; b = b->next)
         {
             p = b->end;
@@ -3651,16 +3679,19 @@ extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
+	for (int i = 0; i < ns; ++i)
+    {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
-	for (i = 0; i < nc; ++i)
-	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+    }
+    for (int i = 0; i < nc; ++i)
+    {
+        setCurveVelocity(geom_set,geom_set->curves[i],point_set);
+    }
+    for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);

@@ -413,11 +413,12 @@ extern int numOfGoreNodes(INTERFACE*);
 extern int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
 extern int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
 extern int getGoreNodes(INTERFACE*,NODE**);
+extern boolean is_string_node(NODE*);
 extern boolean is_load_node(NODE*);
 extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
-extern double springCharTimeStep(Front*);	// spring characteristic time
+extern double springCharTimeStep(Front*);
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);

@@ -520,6 +520,7 @@ void readAfExtraData(
             fscanf(infile,"%d",&c_params->dir);
 	    (*c)->extra = (POINTER)c_params;
 	}
+
 	next_output_line_containing_string(infile,"Node extra data:");
 	for (n = intfc->nodes; n && *n; ++n)
 	{
@@ -1484,6 +1485,15 @@ extern boolean is_gore_node(
 	else 
 	    return NO;
 }	/* end is_gore_node */
+
+extern boolean is_string_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == STRING_NODE) return YES;
+        return NO;
+}       /* end is_load_node */
 
 extern boolean is_load_node(NODE *n)
 {

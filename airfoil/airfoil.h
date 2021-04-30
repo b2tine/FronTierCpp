@@ -307,6 +307,7 @@ extern  int numOfMonoHsbdry(INTERFACE*);
 extern  int numOfGoreNodes(INTERFACE*);
 extern 	int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
 			double,double*,NODE_FLAG,POINTER);
+extern boolean is_string_node(NODE*);
 extern boolean is_load_node(NODE*);
 extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
