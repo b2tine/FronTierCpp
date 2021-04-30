@@ -58,6 +58,8 @@ Enter the start of curve 0: 0.5 0.2 0.45
 Enter the end of curve 0: 0.5 0.8 0.45
 Enter yes to fix the endpoints of curve 0: y
 
+Enter string point spacingX: 0.01
+
 Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0.0 0.0 -9.8
 Enter payload: 0.0
@@ -77,6 +79,8 @@ Enter string friction constant: 0.3
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
+
+Enter yes for string bending force: no
 
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.01

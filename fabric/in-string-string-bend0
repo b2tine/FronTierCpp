@@ -70,6 +70,8 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter yes for string bending force: yes
+
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.1
@@ -102,7 +104,6 @@ Type y to make vector vorticity field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: string_bending
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting

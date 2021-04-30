@@ -52,7 +52,7 @@ static void initWingsPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 
 static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
 
-static CURVE* init3dCurves(Front* front, double* pt_s, double* pt_e, int hsb_type, AF_NODE_TYPE nd_type);
+static CURVE* init3dCurve(Front* front, double* pt_s, double* pt_e, int hsb_type, AF_NODE_TYPE nd_type);
 
 
 extern void initEllipticSurf(
@@ -2600,7 +2600,7 @@ extern void initIsolated3dCurves(Front* front)
                 else
                     nd_type = STRING_NODE;
 	    }
-	    curve = init3dCurves(front,pt_s,pt_e,hsb_type,nd_type);
+	    curve = init3dCurve(front,pt_s,pt_e,hsb_type,nd_type);
             curve->extra = (POINTER)finite_string;
 
 	    sprintf(string,"Enter yes to have parallel curves for curve %d:",i);
@@ -2652,7 +2652,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] += shift*(i+1)*shift_dir[j];
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
-            init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
             for (int j = 0; j < 3; ++j)
@@ -2660,13 +2660,13 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] -= shift*(i+1)*shift_dir[j];
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
-            curve = init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
             curve->extra = (POINTER)finite_string;
         }
 	}
 }	/* initIsolated3dCurves() */
 
-static CURVE *init3dCurves(
+static CURVE *init3dCurve(
 	Front* front,
 	double* pt_s,
 	double* pt_e,
@@ -2708,13 +2708,16 @@ static CURVE *init3dCurves(
         for (int j = 1; j < nb; ++j)
         {
             for (int k = 0; k < 3; ++k)
-                coords[k] = Coords(string_nodes[0]->posn)[k] +
-                                   j*dir[k]*spacing;
+            {
+                coords[k] = Coords(string_nodes[0]->posn)[k]
+                            + j*dir[k]*spacing;
+            }
             insert_point_in_bond(Point(coords),b,curve);
-	    b->length0 = spacing;
+
+            b->length0 = spacing;
             b = b->next;
         }
-	b->length0 = spacing;
+	    b->length0 = spacing;
 
         for (int i = 0; i < 2; ++i){
             FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
@@ -2723,5 +2726,5 @@ static CURVE *init3dCurves(
             string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
         }
         return curve;
-}	/* end init3dCurves() */
+}	/* end init3dCurve() */
 

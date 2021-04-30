@@ -53,7 +53,7 @@ static void initWingsPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 
 static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
 
-static void init3dCurves(Front*,double*,double*,int,AF_NODE_TYPE);
+static void init3dCurve(Front*,double*,double*,int,AF_NODE_TYPE);
 
 
 extern void initEllipticSurf(
@@ -2568,7 +2568,10 @@ extern void initIsolated3dCurves(Front* front)
 	    }
 	    (void) printf("\n");
 	    
+        
+        int hsb_type = STRING_HSBDRY;
         AF_NODE_TYPE nd_type = STRING_NODE;
+
         sprintf(string, "Enter yes to fix the endpoints of curve %d:", i);
 	    if (CursorAfterStringOpt(infile, string))
 	    {
@@ -2578,8 +2581,7 @@ extern void initIsolated3dCurves(Front* front)
                 nd_type = PRESET_NODE;
 	    }
 
-        int hsb_type = STRING_HSBDRY;
-	    init3dCurves(front,pt_s,pt_e,hsb_type,nd_type);
+	    init3dCurve(front,pt_s,pt_e,hsb_type,nd_type);
 
 	    sprintf(string, "Enter yes to have parallel curves for curve %d:", i);
 	    if (CursorAfterStringOpt(infile, string))
@@ -2631,7 +2633,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
 
-            init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
 
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
@@ -2641,17 +2643,15 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
 
-            init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
         }
 	}
 
-    if (debugging("string_bending")) //if(!debugging("no_string_bending"))
-    {
-        addStringBenders(front);
-    }
+    addStringBenders(front);
+
 }	/* initIsolated3dCurves() */
 
-static void init3dCurves(
+static void init3dCurve(
 	Front* front,
 	double* pt_s,
 	double* pt_e,
@@ -2712,5 +2712,5 @@ static void init3dCurves(
             string_nodes[i]->extra = (POINTER)extra;
             string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
         }
-}	/* end init3dCurves() */
+}	/* end init3dCurve() */
 

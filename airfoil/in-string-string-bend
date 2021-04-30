@@ -67,6 +67,7 @@ Enter the start of curve 1XXX: 0.2 0.5 0.8
 Enter the end of curve 1XXX: 0.8 0.5 0.8
 Enter yes to fix the endpoints of curve 1: n
 
+Enter string point spacingX: 0.01
 **************************************************************
 
 Enter density and viscosity of the fluid: 1.29 0.00001813
@@ -90,6 +91,8 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter yes for string bending force: yes
+
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.1
@@ -111,9 +114,7 @@ Type y to make vector velocity field movie: n
 Type y to make vector vorticity field movie: n
 
 ************Debugging options*****************
-
 Enter yes for debugging: yes
-Enter the debugging stringX: no_string_bending
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting

@@ -72,6 +72,8 @@ Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter yes for string bending force: no
+
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.1
@@ -108,8 +110,6 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
-
-Enter the debugging stringX: string_bending
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: isect3d

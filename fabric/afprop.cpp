@@ -637,8 +637,8 @@ static void fourth_order_elastic_set_propagate3d_serial(
     //compute bending force
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
-    computeSurfBendingForce(elastic_intfc,bends,bendd);
-        //computeStringBendingForce(elastic_intfc); //TODO: finish implementation
+    computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
+    computeStringBendingForce(elastic_intfc);
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	
@@ -2354,15 +2354,13 @@ extern void airfoil_curve_propagate(
 static void string_curve_propagation(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+	    CURVE *oldc,
+	    CURVE *newc,
         double dt)
 {
 	BOND *oldb,*newb;
 	POINT *oldp,*newp;
 
-    //TODO: Do we need to check for rg_string_nodes also?
-    //if (!is_load_node(oldc->start))
     if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
 	{
 	    oldp = oldc->start->posn;
@@ -2371,7 +2369,6 @@ static void string_curve_propagation(
 	    ft_assign(right_state(newp),right_state(oldp),front->sizest);
 	}
 
-	//if (!is_load_node(oldc->end))
     if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
 	{
 	    oldp = oldc->end->posn;
