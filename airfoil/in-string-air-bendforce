@@ -49,7 +49,7 @@ Entering yes to turn off fluid solver: n
 Enter yes to add isolated curves: yes
 
 Enter yes for string-fluid interaction: yes
-Enter string radius: 0.03
+Enter string radius: 0.04
 Enter string mass density: 5.0
 Enter string mass densityXXX: 0.5
 Enter drag coefficient: 1.3

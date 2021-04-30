@@ -25,7 +25,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 10
-Enter pressure: 1.0
+Enter pressure: 0.0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -65,8 +65,7 @@ Enter fabric rounding tolerance: 0.000001
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
 Enter string damping constantXXX: 0.05
-Enter string bending stiffness constant: 0.0005
-Enter string bending stiffness constantXXX: 0.0001
+Enter string bending stiffness constant: 0.00005
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

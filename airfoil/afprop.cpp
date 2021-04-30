@@ -431,10 +431,10 @@ static void string_curve_propagation(
             }
             speed = sqrt(speed);
 
-                //double A_ref = 2.0*PI*radius*length;
-                //double Vol = PI*radius*radius*length;
-            double A_ref = 2.0*PI*radius*(0.25*length);
-            double Vol = PI*radius*radius*(0.25*length);
+            double A_ref = 2.0*PI*radius*length;
+            double Vol = PI*radius*radius*length;
+            //double A_ref = 2.0*PI*radius*(0.25*length);
+            //double Vol = PI*radius*radius*(0.25*length);
             double massCyl = rhoS*Vol;
 
             double dragForce[MAXD] = {0.0};
