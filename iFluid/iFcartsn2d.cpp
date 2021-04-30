@@ -626,9 +626,9 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeSourceTerm(
 
 	if(iFparams->if_buoyancy)
 	{
-	    int ic[MAXD],index;
+	    int ic[MAXD];
         rect_in_which(coords,ic,top_grid);
-        index = d_index(ic,top_gmax,dim);
+        int index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
         {
             source[i] += field->ext_accel[i][index];
@@ -959,6 +959,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
+                            /*
+                            auto grad_phi_tangent = computeGradPhiTangential(
+                                    icoords,dir[nb],comp,hs,crx_coords);
+                            U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+                            */
                         }
                             
                         auto grad_phi_tangent = computeGradPhiTangential(

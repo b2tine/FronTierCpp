@@ -455,7 +455,7 @@ void CollisionSolver3d::resolveCollision()
     updateFinalForRG();
 }
 
-//for debugggin -- should rename to printMaxSpeed()
+//for debuggging -- should rename to printMaxSpeed()
 void CollisionSolver3d::computeMaxSpeed()
 {
     POINT* p;

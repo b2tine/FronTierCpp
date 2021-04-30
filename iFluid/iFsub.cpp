@@ -496,6 +496,25 @@ static void iF_flowThroughBoundaryState2d(
 	newst->phi = oldst->phi;
     
 
+    /*
+    //Attempting to compute phi directly
+    
+    int ic[MAXD];
+    RECT_GRID* top_grid = &topological_grid(front->grid_intfc);
+    if (!rect_in_which(p0,ic,top_grid))
+    {
+        printf("ERROR iF_flowThroughBoundaryState2d() : rect_in_which() failed\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    int index = d_index(ic,top_grid->gmax,dim);
+    printf("flow through index = %d\n",index);//This works..
+
+    //TODO: Need to figure out correct icoords/index of the fluid
+    //      cell near the interface
+    */
+
+
     //Normal
 	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 
@@ -1385,7 +1404,6 @@ static  void dirichlet_point_propagate(
             oldp->hs = oldhs;
 	    	ft_params.oldp = oldp;
             ft_params.comp = comp;
-	    	    //ft_params.comp = flowthru_comp;
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
                     (POINTER)&ft_params,(POINTER)newst);	
 	    }

@@ -1,7 +1,6 @@
 
 tagsfile:
-	ctags ../*/*.h \
-		../../src/*/*.c ../../src/*/*.cpp
+	ctags ../*/*.h ../../src/*/*.c
 
 
 clean:

@@ -3990,7 +3990,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                 Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
         
                 //NOTE: alpha and beta include thickness factor
-                d_p = Un*(alpha + fabs(Un)*beta);
+                d_p = (alpha + fabs(Un)*beta)*Un;
 
                 for (i = 0; i < dim; i++)
                     vec[i] = coords[i] - crx_coords[i];
@@ -4128,7 +4128,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                 //  d_p/d_r = alpha*Un + beta*|Un|*Un
                 
                 //NOTE: alpha and beta include thickness factor d_r
-                double d_p = Un*(alpha + fabs(Un)*beta);
+                double d_p = (alpha + fabs(Un)*beta)*Un;
 		 
                 for (i = 0; i < dim; i++)
                     vec[i] = coords[i] - crx_coords[i];

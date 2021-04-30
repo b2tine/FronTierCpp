@@ -565,9 +565,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
     if(iFparams->if_buoyancy)
     {
-        int ic[MAXD],index;
+        int ic[MAXD];
         rect_in_which(coords,ic,top_grid);
-        index = d_index(ic,top_gmax,dim);
+        int index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
         {
             source[i] += field->ext_accel[i][index];
