@@ -1280,6 +1280,7 @@ extern void resetFrontVelocity(Front *front)
             sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
             sl->other_accel[i] = sr->other_accel[i] = 0.0;
             sl->shear_force[i] = sr->shear_force[i] = 0.0;
+            sl->bendforce[i] = sr->bendforce[i] = 0.0;
 	    }
 	}
 
@@ -1298,6 +1299,7 @@ extern void resetFrontVelocity(Front *front)
                 sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                sl->bendforce[i] = sr->bendforce[i] = 0.0;
             }
     
             for (b = (*c)->first; b != (*c)->last; b = b->next)
@@ -1313,6 +1315,7 @@ extern void resetFrontVelocity(Front *front)
                     sl->impulse[i] = sr->impulse[i] = 0.0;
                     sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                     sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                    sl->bendforce[i] = sr->bendforce[i] = 0.0;
                 }
             }
     
@@ -1327,6 +1330,7 @@ extern void resetFrontVelocity(Front *front)
                 sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                sl->bendforce[i] = sr->bendforce[i] = 0.0;
             }
 	    }
 	}

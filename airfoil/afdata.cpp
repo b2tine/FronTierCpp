@@ -31,7 +31,6 @@ static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
 
-//TODO: STRING-FLUID INTERACTION BAD RESTART
 void printAfExtraData(
 	Front *front,
 	char *out_name)
@@ -252,6 +251,9 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        /*
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
         {
@@ -265,6 +267,21 @@ void printAfExtraData(
             fprintf(outfile,"load_type = %d\n",c_params->load_type);
             fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
+        */
+
+        if ((*c)->extra == nullptr)
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
+        {
+            fprintf(outfile,"curve extra: yes\n");
+            FINITE_STRING* s_params = (FINITE_STRING*)(*c)->extra;
+            fprintf(outfile,"radius = %24.18g\n",s_params->radius);
+            fprintf(outfile,"density = %24.18g\n",s_params->dens);
+            fprintf(outfile,"c_drag = %24.18g\n",s_params->c_drag);
+            fprintf(outfile,"ampFluidFactor = %24.18g\n",s_params->ampFluidFactor);
+        }
         
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
@@ -365,7 +382,6 @@ void printAfExtraData(
 	fclose(outfile);
 }	/* end printAfExtraData */
 
-//TODO: STRING-FLUID INTERACTION BAD RESTART
 void readAfExtraData(
 	Front *front,
 	char *restart_name)
@@ -685,11 +701,13 @@ void readAfExtraData(
         */
     }
     
-    //TODO: Replace C_PARAMS with FINITE_STRING for curve extra data.
-    //      C_PARAMS no longer in use.
+    //TODO: C_PARAMS no longer in use, should be removed.
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        /*
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
         fscanf(infile,"%s",string);
@@ -705,6 +723,24 @@ void readAfExtraData(
             fgetstring(infile,"dir = ");
                 fscanf(infile,"%d",&c_params->dir);
             (*c)->extra = (POINTER)c_params;
+        }
+        */
+
+        FINITE_STRING* s_params;
+	    fgetstring(infile,"curve extra:");
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&s_params,sizeof(FINITE_STRING));
+            fgetstring(infile,"radius = ");
+            fscanf(infile,"%lf",&s_params->radius);
+            fgetstring(infile,"density = ");
+            fscanf(infile,"%lf",&s_params->dens);
+            fgetstring(infile,"c_drag = ");
+            fscanf(infile,"%lf",&s_params->c_drag);
+            fgetstring(infile,"ampFluidFactor = ");
+            fscanf(infile,"%lf",&s_params->ampFluidFactor);
+            (*c)->extra = (POINTER)s_params;
         }
         
         for (b = (*c)->first; b != (*c)->last; b = b->next)
@@ -726,15 +762,15 @@ void readAfExtraData(
 	{
 	    AF_NODE_EXTRA *n_params;
 	    fgetstring(infile,"node extra:");
-            fscanf(infile,"%s",string);
+        fscanf(infile,"%s",string);
 	    if (string[0] == 'n') 
 	    {
 	    	(*n)->extra = NULL;
-		continue;
+		    continue;
 	    }
 	    FT_ScalarMemoryAlloc((POINTER*)&n_params,sizeof(AF_NODE_EXTRA));
 	    fgetstring(infile,"af_node_type =");
-            fscanf(infile,"%d",(int*)&n_params->af_node_type);
+        fscanf(infile,"%d",(int*)&n_params->af_node_type);
 	    (*n)->extra = (POINTER)n_params;
 	    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}

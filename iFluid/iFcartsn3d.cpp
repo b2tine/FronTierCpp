@@ -2984,8 +2984,6 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 
                 double A_ref = 2.0*PI*radius*length;
                 double Vol = PI*radius*radius*length;
-                //double A_ref = 2.0*PI*radius*(0.25*length);
-                //double Vol = PI*radius*radius*(0.25*length);
                 double mass = rhoS*Vol;
 
                 double VolFluid = top_h[0]*top_h[1]*top_h[2];
@@ -3004,10 +3002,10 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 
                 //TODO: Put inside debugging string block
                 printf("\n");
-                printf("pt = %f %f %f \n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
                 printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
-                printf("\tc_drag = %f  |  A_ref = %g  |  rhoF = %g \n",c_drag,A_ref,rhoF);
-                printf("\tspeed = %f\n\n",speed);
+                printf("\tc_drag = %f  |  A_ref = %f  |  rhoF = %f\n",c_drag,A_ref,rhoF);
+                printf("\tspeed = %f  |  ampfactor = %f\n\n",speed,ampFluidFactor);
 
                 /*
                 printf("\t\tstate->linedrag_force = %g %g %g \n",

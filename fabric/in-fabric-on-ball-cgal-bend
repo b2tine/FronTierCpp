@@ -56,11 +56,11 @@ Start parameters for spring-mass system
 Enter the number of fabric optimization rounds: 0
 Enter interior sub step number: 1
 
-Enter fabric spring constant: 7500
+Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0
-Enter fabric friction constant: 0.25
+Enter fabric friction constant: 0.3
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
@@ -106,6 +106,5 @@ Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 Enter the debugging string: collect_intfc
 
-Enter the debugging string: collision_max_speed
-
-Enter the debugging stringX: intfc_assembly
+Enter the debugging stringX: collision_max_speed
+Enter the debugging string: intfc_assembly

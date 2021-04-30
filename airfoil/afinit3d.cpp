@@ -1171,20 +1171,19 @@ static boolean change_mono_boundary(
 	    if (upper_bdry[0] == YES)
 		hsbdry_type(cside01) = FIXED_HSBDRY;
 	    else
+        {
+            static C_PARAMS c_params;
+            int i,npts = I_NumOfCurvePoints(cside01);
+            c_params.load_type = bdry_params->upper_side[0];
+            c_params.load_mass = bdry_params->upper_mass[0];
+            c_params.point_mass = bdry_params->upper_mass[0]/npts;
+            c_params.dir = 0;
+            for (i = 0; i < 3; ++i)
             {
-                static C_PARAMS c_params;
-                int i,npts = I_NumOfCurvePoints(cside01);
-                c_params.load_type = bdry_params->upper_side[0];
-                c_params.load_mass = bdry_params->upper_mass[0];
-                c_params.point_mass = bdry_params->upper_mass[0]/npts;
-                c_params.dir = 0;
-		for (i = 0; i < 3; ++i)
-		{
-                    c_params.force[i] = bdry_params->upper_force[0][i]/
-				bdry_params->upper_mass[0];
-		}
-                cside01->extra = (POINTER)&c_params;
+                c_params.force[i] = bdry_params->upper_force[0][i]/bdry_params->upper_mass[0];
             }
+            cside01->extra = (POINTER)&c_params;
+        }
 	    if (lower_bdry[1] == YES)
 		hsbdry_type(cside10) = FIXED_HSBDRY;
 	    if (upper_bdry[1] == YES)

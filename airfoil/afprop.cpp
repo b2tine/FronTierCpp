@@ -170,19 +170,12 @@ extern void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
+        {
             dv[i] = 0.0;
+        }
 	    else if (front->step > af_params->fsi_startstep)
         {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-                    
-            //TODO: Should triangle area be involved in these computations???
-            //      see print_drag3d(). However we are not looping over tris,
-            //      we are just propagating a single point in isolation.
-            //      Would need to use ring of tris around the point?
-            //
-            //      double area_tri = tri_area(tri);
-            //      double mass_tri = area_tri*area_dens;
-            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri;
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
@@ -433,8 +426,6 @@ static void string_curve_propagation(
 
             double A_ref = 2.0*PI*radius*length;
             double Vol = PI*radius*radius*length;
-            //double A_ref = 2.0*PI*radius*(0.25*length);
-            //double Vol = PI*radius*radius*(0.25*length);
             double massCyl = rhoS*Vol;
 
             double dragForce[MAXD] = {0.0};

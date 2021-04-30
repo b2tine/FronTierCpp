@@ -50,9 +50,11 @@ Enter yes to add isolated curves: yes
 
 Enter yes for string-fluid interaction: yes
 Enter string radius: 0.04
-Enter string mass density: 5.0
-Enter string mass densityXXX: 0.5
-Enter drag coefficient: 1.3
+Enter string mass density: 0.25
+Enter string mass densityXXX: 5.0
+Enter drag coefficient: 0.5
+Enter drag coefficientXXX: 0.1
+Enter drag coefficientXXX: 1.3
 Enter fluid force scaling factor: 10
 
 Enter the number of curves: 1

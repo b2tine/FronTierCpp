@@ -219,12 +219,11 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        
         //TODO: C_PARAMS no longer being used, and should be
         //      replaced with the appropiate data structure for
         //      point mass runs (load_nodes)
-        //
-        //      This is where FINITE_STRING for string-fluid interaction
-        //      will likely go instead.
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
         {
@@ -530,6 +529,8 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
         fscanf(infile,"%s",string);
@@ -748,8 +749,7 @@ void printHyperSurfQuality(
 	    min_length = HUGE;
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		if (hsbdry_type(*c) != STRING_HSBDRY)
-		    continue;
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 		curve = *c;
 		for (bond = curve->first; bond != NULL; bond = bond->next)
 		{
@@ -767,8 +767,7 @@ void printHyperSurfQuality(
 	    min_area = min_length = HUGE;
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
-		if (wave_type(*s) != ELASTIC_BOUNDARY)
-		    continue;
+		if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 		surf = *s;
 		for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 				tri = tri->next)
