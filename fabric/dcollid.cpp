@@ -178,8 +178,6 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	{
 	    if (is_bdry(*s)) continue;
 	    
-        unsort_surf_point(*s); //TODO: can remove?
-	    
         surf_tri_loop(*s,tri)
 	    {
             CD_HSE_TYPE tag;
@@ -215,8 +213,6 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	{
         if (is_bdry(*c)) continue;
 	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
-
-        unsort_curve_point(*c);//TODO: can remove?
 
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)

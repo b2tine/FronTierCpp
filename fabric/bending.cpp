@@ -67,12 +67,27 @@ void addStringBenders(Front* front)
             pt->extra = bond_bender;
         }
     }
-
-    //TODO: Need to be able to restart with BOND_BENDER in pt->extra
 }
 
-void computeStringBendingForce(INTERFACE* intfc)
+void resetBendingForce(INTERFACE* intfc)
 {
+    SURFACE **surf;
+    TRI *tri;
+
+    intfc_surface_loop(intfc, surf)
+    {
+        surf_tri_loop(*surf, tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                POINT* p = Point_of_tri(tri)[i];
+                STATE* sl = (STATE*)left_state(p);
+                for (int j = 0; j < 3; ++j)
+                    sl->bendforce[j] = 0.0;
+            }
+        }
+    }
+        
     CURVE** curve;
     BOND *b;
 
@@ -91,12 +106,19 @@ void computeStringBendingForce(INTERFACE* intfc)
                 se->bendforce[j] = 0.0;
             }
         }
+    }
+}
 
-        //TODO: Continue string bending stiffness implementation.
-        //      Skeleton is below; need implementations for the
-        //      following functions, and storage for intermediate
-        //      computations.
-        
+void computeStringBendingForce(INTERFACE* intfc)
+{
+    CURVE** curve;
+    BOND *b;
+
+    intfc_curve_loop(intfc,curve)
+    {
+        if (is_bdry(*curve)) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+
         for (b = (*curve)->first; b != (*curve)->last; b = b->next)
         {
             //compute and store (kb)_i in x_i joining e_{i-1} and e_i
@@ -360,27 +382,9 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
         if (is_bdry(*surf)) continue;
         if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
         
-        unsort_surf_point(*surf);//TODO: can remove?
-        
-        //NOTE: next surf_tri_loop() replaces the function
-        //      clear_surf_point_force(*surf);
         surf_tri_loop(*surf, tri)
         {
-            for (int i = 0; i < 3; ++i)
-            {
-                POINT* p = Point_of_tri(tri)[i];
-                STATE* sl = (STATE*)left_state(p);
-                for (int j = 0; j < 3; ++j)
-                    sl->bendforce[j] = 0.0;
-            }
-        }
-        
-        surf_tri_loop(*surf, tri)
-        {
-            if (is_bdry(*surf)) continue;
-            if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
-            
-            //TODO: edge traversal of surface (requires half the computation)
+            //TODO: use edge traversal of surface (requires half the computation)
             for (int i = 0; i < 3; ++i)
             {
                 POINT *p = Point_of_tri(tri)[i];
@@ -486,8 +490,8 @@ void calculateBendingForce3d2006(
         {
             for (int i = 0; i < 3; ++i)
             {
-                state[j0]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
-                state[j1]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+                state[j0]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
+                state[j1]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
             }
         }
         else if (!(state[j0]->is_fixed || state[j0]->is_registeredpt) &&
@@ -496,8 +500,8 @@ void calculateBendingForce3d2006(
             //TODO: correct???
             for (int i = 0; i < 3; ++i)
             {
-                state[j0]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
-                state[j0]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+                state[j0]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
+                state[j0]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
             }
         }
         else if ((state[j0]->is_fixed || state[j0]->is_registeredpt) &&
@@ -506,8 +510,8 @@ void calculateBendingForce3d2006(
             //TODO: correct???
             for (int i = 0; i < 3; ++i)
             {
-                state[j1]->bendforce[i] += -1.0*lambda*a[j0]*R[i]*0.5;
-                state[j1]->bendforce[i] += -1.0*lambda*a[j1]*R[i]*0.5;
+                state[j1]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
+                state[j1]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
             }
         }
         /*

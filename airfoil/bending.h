@@ -17,6 +17,7 @@ struct BOND_BENDER
 
 
 void addStringBenders(Front* front);
+void resetBendingForce(INTERFACE* intfc);
 void computeStringBendingForce(INTERFACE* intfc);
 void computeSurfBendingForce(INTERFACE* intfc, double bends, double bendd);
 

@@ -54,7 +54,7 @@ Enter string point spacing: 0.01
 Start parameters for spring-mass system
 
 Enter the number of fabric optimization rounds: 0
-Enter interior sub step number: 10
+Enter interior sub step number: 1
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01

@@ -26,7 +26,7 @@ Type yes to turn off auto-redistribution: y
 Entering yes to turn off fluid solver: no
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 100
+Enter interior sub step number: 1
 
 Projection type can be
         SIMPLE

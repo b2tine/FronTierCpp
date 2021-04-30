@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 10
-Enter pressure: 1.0
+Enter pressure: 0.0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -26,7 +26,7 @@ Type yes to turn off auto-redistribution: y
 Entering yes to turn off fluid solver: no
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 100
+Enter interior sub step number: 1
 
 Projection type can be
         SIMPLE
@@ -47,9 +47,11 @@ Enter yes to add rigid body: n
 Entering yes to turn off fluid solver: n
 
 Enter yes to add isolated curves: yes
-Enter yes for string-fluid interaction: y
+
+Enter yes for string-fluid interaction: yes
 Enter string radius: 0.03
 Enter string mass density: 5.0
+Enter string mass densityXXX: 0.5
 Enter drag coefficient: 1.3
 Enter fluid force scaling factor: 10
 

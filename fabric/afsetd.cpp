@@ -292,7 +292,6 @@ extern void compute_spring_accel1(
 	    
     for (int k = 0; k < dim; ++k)
     {
-        //TODO: Make sure this is supposed to be just the internal force on the fabric point
         sv->f[k] = accel[k]*sv->m;
     }
 
@@ -301,20 +300,6 @@ extern void compute_spring_accel1(
         accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
     }
 
-    /*
-    //TODO: Why aren't the damping and external accelerations
-    //      included in this force computation??
-	for (int k = 0; k < dim; ++k)
-    {
-	    sv->f[k] = accel[k]*sv->m;
-    }
-	
-    for (int k = 0; k < dim; ++k)
-	{
-	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
-	}
-    */
 }	/* end compute_spring_accel */
 
 

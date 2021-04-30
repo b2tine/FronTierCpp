@@ -1993,6 +1993,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    //elastic_intfc = fr->interf;
     
     //compute bending force
+    resetBendingForce(elastic_intfc);
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
     computeSurfBendingForce(elastic_intfc,bends,bendd);
