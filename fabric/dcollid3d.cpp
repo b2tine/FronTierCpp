@@ -22,6 +22,9 @@ static void PointToTriImpulse(POINT**,double*,double*,double,MotionState,double)
 static void PointToTriInelasticImpulse(double,POINT**,double*,double*,double*,double*);
 static void PointToTriElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
+static void PointToTri_DebugInfo(POINT**);
+
+
 static bool isCoplanar(POINT**,double,double*);
 
 static double getPointMass(POINT* pt);
@@ -1376,10 +1379,21 @@ static bool PointToTri(
     //unit normal vector of the plane of the triangle
     Cross3d(x13,x23,tri_nor);
     double mag_tnor = Mag3d(tri_nor);
-    if (mag_tnor > 0.0)
-        scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
-    else
+    if (mag_tnor < MACH_EPS)
+    {
+        printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
+                \t\t\t (Mag3d(tri_nor) < MACH_EPS)\n\n");
+        
+        PointToTri_DebugInfo(pts);
+        
+        CollisionSolver3d::saveFront();
+        CollisionSolver3d::drawFront();
         LOC(); clean_up(EXIT_FAILURE);
+    }
+    else
+    {
+        scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
+    }
 
     //correct the triangle's normal direction to point to same
     //side as the point (not used right now, but may need at some
@@ -1399,31 +1413,11 @@ static bool PointToTri(
         printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
         
-        printf("\tPOINTS:\n");
-        for (int i = 0; i < 4; ++i)
-        {
-            double* coords = Coords(pts[i]);
-            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
-                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
-        }
-
-        //For debugging, comment out clean_up() below to print all instances.
-        static int ecount = 0;
-        std::string dname = CollisionSolver3d::getOutputDirectory();
-        std::string fname = dname + "/PointToTri_error-" + std::to_string(ecount);
-        ecount++;
-
-        std::vector<POINT*> pt2tri_pts(pts,pts+4);
-        vtk_write_pointset(pt2tri_pts,fname,ERROR);
-
-        double BBL[3], BBU[3];
-        set_point_list_bounding_box(pts,4,BBL,BBU,NO,YES);
-        gview_plot_vertices(dname.c_str(),"PointToTri_error",pts,4,BBL,BBU);
-
+        PointToTri_DebugInfo(pts);
+        
         CollisionSolver3d::saveFront();
         CollisionSolver3d::drawFront();
         LOC(); clean_up(EXIT_FAILURE);
-        //return false;
 	}
 	else
     {
@@ -1839,6 +1833,29 @@ static void PointToTriElasticImpulse(
         rigid_impulse[0] += 0.5*I;
         rigid_impulse[1] += 0.5*I;
     }
+}
+
+void PointToTri_DebugInfo(POINT** pts)
+{
+    printf("\tPOINTS:\n");
+    for (int i = 0; i < 4; ++i)
+    {
+        double* coords = Coords(pts[i]);
+        printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+    }
+
+    static int ecount = 0;
+    std::string dname = CollisionSolver3d::getOutputDirectory();
+    std::string fname = dname + "/PointToTri_error-" + std::to_string(ecount);
+    ecount++;
+
+    std::vector<POINT*> pt2tri_pts(pts,pts+4);
+    vtk_write_pointset(pt2tri_pts,fname,ERROR);
+
+    double BBL[3], BBU[3];
+    set_point_list_bounding_box(pts,4,BBL,BBU,NO,YES);
+    gview_plot_vertices(dname.c_str(),"PointToTri_error",pts,4,BBL,BBU);
 }
 
 void CollisionSolver3d::printDebugVariable()
