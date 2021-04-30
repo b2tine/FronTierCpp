@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include "fabric.h"
+#include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
 static void singleCanopyModification(Front*);
@@ -218,17 +219,39 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
+        //TODO: C_PARAMS no longer being used, and should be
+        //      replaced with the appropiate data structure for
+        //      point mass runs (load_nodes)
+        //
+        //      This is where FINITE_STRING for string-fluid interaction
+        //      will likely go instead.
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
-                fprintf(outfile,"curve extra: no\n");
-	    else
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
 	    {
-                fprintf(outfile,"curve extra: yes\n");
-                fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
-                fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
-                fprintf(outfile,"load_type = %d\n",c_params->load_type);
-                fprintf(outfile,"dir = %d\n",c_params->dir);
+            fprintf(outfile,"curve extra: yes\n");
+            fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
+            fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
+            fprintf(outfile,"load_type = %d\n",c_params->load_type);
+            fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
+
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+		    p = b->end;
+            if (p->extra == nullptr)
+            {
+                fprintf(outfile,"string point extra: no\n");
+                continue;
+            }
+            fprintf(outfile,"string point extra: yes\n");
+            BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
+            fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
+	        fprintf(outfile,"\n");
+        }
 	}
 	
     fprintf(outfile,"\nNode extra data:\n");
@@ -519,6 +542,19 @@ void readAfExtraData(
 	    fgetstring(infile,"dir = ");
             fscanf(infile,"%d",&c_params->dir);
 	    (*c)->extra = (POINTER)c_params;
+
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+            fgetstring(infile,"string point extra:");
+            fscanf(infile,"%s",string);
+	        if (string[0] == 'n') continue;
+            //fscanf(infile,"\n");
+            
+            BOND_BENDER* bond_bender;
+            FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
+            fread(bond_bender,1,sizeof(BOND_BENDER),infile);
+            fscanf(infile,"\n");
+        }
 	}
 
 	next_output_line_containing_string(infile,"Node extra data:");

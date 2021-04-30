@@ -172,17 +172,7 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	clearHseList();
 
 	SURFACE** s;
-	CURVE** c;
 	TRI *tri;
-	BOND *b;
-
-    /*
-	int n_tri = 0;
-	int n_fabric_tri = 0;
-	int n_static_rigid_tri = 0;
-	int n_movable_rigid_tri = 0;
-    int n_bond = 0;
-    */
 	
     intfc_surface_loop(intfc,s)
 	{
@@ -197,17 +187,14 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             if (wave_type(*s) == ELASTIC_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::FABRIC_TRI;
-                    //n_fabric_tri++;
             }
             else if (wave_type(*s) == NEUMANN_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
-                    //n_static_rigid_tri++;
             }
             else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
-                    //n_movable_rigid_tri++;
             }
             else 
             {
@@ -217,9 +204,12 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             }
             
             hseList.push_back(new CD_TRI(tri,tag));
-		        //n_tri++;
 	    }
 	}
+
+
+	CURVE** c;
+	BOND *b;
 
 	intfc_curve_loop(intfc,c)
 	{
@@ -232,7 +222,6 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	    curve_bond_loop(*c,b)
 	    {
             hseList.push_back(new CD_BOND(b,tag));
-		        //n_bond++;
 	    }
 	}
 
@@ -241,20 +230,6 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
     //TODO: move into different function for reuse with
     //      assembleFromSurf() and assembleFromCurve() functions.
     setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
-	
-    /*
-    //TODO: To be removed when new implementation in
-    //      setHseTypeLists() is tested and working correctly.
-    //
-	if (debugging("intfc_assembly"))
-    {
-	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
-	    printf("%lu number of elements is assembled\n",hseList.size());
-	    printf("%d num fabric tris\n",n_fabric_tri);
-	    printf("%d num static rigid tris\n",n_static_rigid_tri);
-	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
-	}
-    */
 }
 
 void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
@@ -296,8 +271,6 @@ void CollisionSolver3d::assembleFromCurve(CURVE* curve)
     if (hsbdry_type(curve) != STRING_HSBDRY) return; 
     if (is_bdry(curve)) return;
 
-    unsort_curve_point(curve);//TODO: can remove?
-    
     CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
     
     BOND* b;
