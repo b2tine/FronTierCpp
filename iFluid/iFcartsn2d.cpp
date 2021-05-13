@@ -964,16 +964,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                         {
                             //OUTLET
                             U_nb[nb] = getStateVel[l](intfc_state);
-                                //STATE* fstate = (STATE*)intfc_state;
-                                //U_nb_prev[nb] = fstate->vel_old[l];
                             //TODO: use only tangential component of grad_phi
                             //      at the outlet, or use the whole thing?
-                                //U_nb[nb] += m_dt*grad_phi[l][index]/rho;
+                            U_nb[nb] += m_dt*grad_phi[l][index]/rho;
                         }
                         else
                         {
                             //INLET
                             U_nb[nb] = getStateVel[l](intfc_state);
+                            //TODO: What about grad_phi for the inlet?
                             /*
                             auto grad_phi_tangent = computeGradPhiTangential(
                                     icoords,dir[nb],comp,hs,crx_coords);
@@ -981,9 +980,11 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                             */
                         }
                             
+                        /*
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
+                        */
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
