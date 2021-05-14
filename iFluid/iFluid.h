@@ -609,6 +609,7 @@ protected:
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computePressureSimple(void);
+    void computeInitialPressure();
 	
     void computeGradientQ(void);
 	void computeNewVelocity(void);

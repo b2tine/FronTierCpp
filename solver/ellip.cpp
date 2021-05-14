@@ -990,6 +990,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                         {
                             //move contribution of interface points to the RHS.
                             rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
+                            //TODO: the value at the interface is itself computed
+                            //      via interpolation -- should use the interpolating
+                            //      points and corresponding coefficients in the matrix
+                            //      instead of using this.
                         }
                         else
                         {

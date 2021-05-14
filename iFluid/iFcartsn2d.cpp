@@ -656,6 +656,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	if (first)
 	{
 	    accum_dt = 0.0;
+        if (iFparams->num_scheme.projc_method == PMI ||
+            iFparams->num_scheme.projc_method == PMII)
+        {
+            computeInitialPressure();
+            FT_ParallelExchGridArrayBuffer(field->pres,front,NULL);
+        }
 	    first = NO;
 	}
 	m_dt = dt;
@@ -1186,6 +1192,525 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                     "computeDiffusionCN()\n");
 }	/* end computeDiffusionCN */
 
+//TODO: Need to set indices prior to calling this function
+//      -- follow pattern used in computeProjection().
+void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
+{
+    printf("ERROR computeInitialPressure(): function not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    //TODO: write implementation -- solve equation resulting from taking
+    //      the divergence of the momentum balance equation ...
+    //      \nabla^{2} P = 0 ????  Or is there a RHS???
+    
+    if (debugging("trace"))
+            printf("Enterng computeInitialPressure()\n");
+
+	int index,index_nb[4];
+	double rhs,coeff[4];
+	int I,I_nb[4];
+	int i,j,l,icoords[MAXD];
+	COMPONENT comp;
+	double aII;
+	int num_nb;
+	GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
+	GRID_DIRECTION opp_dir[4] = {EAST,WEST,NORTH,SOUTH};
+	boolean refl_side[4];
+	boolean use_neumann_solver = YES;
+	PetscInt num_iter = 0;
+	double residual = 0.0;
+	HYPER_SURF *hs;
+	double crx_coords[MAXD];
+    int status;
+	POINTER intfc_state;
+	int icrds_max[MAXD],icrds_min[MAXD];
+
+    double* pres = field->pres;
+
+	double *x;
+	int size = iupper - ilower;
+    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+
+    PETSc solver;
+    solver.Create(ilower, iupper-1, 5, 5);
+
+    solver.Reset_A();
+	solver.Reset_b();
+	solver.Reset_x();
+
+	max_soln = -HUGE;
+	min_soln = HUGE;
+
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+	    comp = top_comp[index];
+	    I = ij_to_I[i][j];
+	    if (I == -1) continue;
+
+	    index_nb[0] = d_index2d(i-1,j,top_gmax);
+	    index_nb[1] = d_index2d(i+1,j,top_gmax);
+	    index_nb[2] = d_index2d(i,j-1,top_gmax);
+	    index_nb[3] = d_index2d(i,j+1,top_gmax);
+	    
+        I_nb[0] = ij_to_I[i-1][j];
+	    I_nb[1] = ij_to_I[i+1][j];
+	    I_nb[2] = ij_to_I[i][j-1];
+	    I_nb[3] = ij_to_I[i][j+1];
+
+        icoords[0] = i;
+	    icoords[1] = j;
+	
+	    num_nb = 0;
+	    for (l = 0; l < 4; ++l)
+	    {
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+                                    &intfc_state,&hs,crx_coords);
+
+            if (status != CONST_V_PDE_BOUNDARY)
+                num_nb++;
+                    
+            if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
+            {
+                index_nb[l] = index;
+            }
+
+            coeff[l] = 1.0/(top_h[l/2]*top_h[l/2]);
+	    }
+
+	    aII = 0.0;
+	    rhs = 0.0;
+
+        std::set<int> SetIndices;
+
+	    for (l = 0; l < 4; ++l)
+        {
+            refl_side[l] = NO;
+            if (num_nb == 0) break;
+
+            status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
+                                    &intfc_state,&hs,crx_coords);
+            
+            if (status == NO_PDE_BOUNDARY)
+            {
+                if (SetIndices.count(I_nb[l]) == 0)
+                {
+                    solver.Set_A(I,I_nb[l],coeff[l]);
+                    SetIndices.insert(I_nb[l]);
+                }
+                else
+                {
+                    solver.FlushMatAssembly_A();
+                    solver.Add_A(I,I_nb[l],coeff[l]);
+                    solver.FlushMatAssembly_A();
+                }
+                aII -= coeff[l];
+            }
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                //NEUMANN_BOUNDARY on domain hypersurface bdry
+                //  do-nothing
+            }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            { 
+                //grad(phi) dot normal = 0
+                int icoords_ghost[MAXD];
+                for (int m = 0; m < dim; ++m)
+                    icoords_ghost[m] = icoords[m];
+                
+                int idir = l/2; int nb = l%2;
+                icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+                
+                double coords_ghost[MAXD];
+                double coords_reflect[MAXD];
+                
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                //////////////////////////////////////////////////////////////////////
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                    coords_reflect[m] = coords_ghost[m];
+                }
+
+                double nor[MAXD];
+                FT_NormalAtGridCrossing(front,icoords,
+                        dir[l],comp,nor,&hs,crx_coords);
+                        
+                //Reflect the ghost point through intfc-mirror at crossing.
+                //first reflect across the grid line containing intfc crossing,
+                coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+                
+                //Reflect the displacement vector across the line
+                //containing the intfc normal vector
+                double v[MAXD];
+                double vn = 0.0;
+
+                for (int m = 0; m < dim; ++m)
+                {
+                    v[m] = coords_reflect[m] - crx_coords[m];
+                    vn += v[m]*nor[m];
+                }
+
+                for (int m = 0; m < dim; ++m)
+                    v[m] = 2.0*vn*nor[m] - v[m];
+
+                //The desired reflected point
+                for (int m = 0; m < dim; ++m)
+                    coords_reflect[m] = crx_coords[m] + v[m];
+                ////////////////////////////////////////////////////////////////////////
+
+                /*
+                ////////////////////////////////////////////////////////////////////////
+                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
+                //////////////////////////////////////////////////////////////////////
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                }
+
+                //TODO: Finish this version and test ... goal is for nearly all of the
+                //      interpolation to be bilinear by choosing the reflection point
+                //      just far enough away from the interface.
+
+                ////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////
+                */
+                
+                
+                //Interpolate phi at the reflected point,
+                static INTRP_CELL blk_cell;
+                static bool first_pres_reflect = true;
+
+                //TODO: This function should only get called once, so checking for the
+                //      first call is unneccesary.
+                if (first_pres_reflect)
+                {
+                    const int MAX_NUM_VERTEX_IN_CELL = 20;
+                    uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
+                    bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords_lin,MAXD+1,MAXD,sizeof(double));
+                    uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
+                    first_pres_reflect = false;
+                }
+                blk_cell.is_linear = NO;
+                blk_cell.is_bilinear = NO;
+                
+                double pres_reflect;
+                FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
+                        coords_reflect,pres,getStatePres,&pres_reflect,&pres[index]);
+                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,pres,
+                            getStatePres,&pres_reflect,&pres[index]);*/
+
+                //Place interpolation coefficients of the points used in the
+                //approximiation into the system matrix.
+                if (blk_cell.is_bilinear)
+                {
+                    for (int m = 0; m < blk_cell.nv; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords[m];
+                        int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                        if (I_intrp == I)
+                        {
+                           aII += coeff[l]*blk_cell.coeffs[m];
+                        }
+                        else if (SetIndices.count(I_intrp) == 0)
+                        {
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            SetIndices.insert(I_intrp);
+                        }
+                        else
+                        {
+                            solver.FlushMatAssembly_A();
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            solver.FlushMatAssembly_A();
+                        }
+                    }
+                }
+                else if (blk_cell.is_linear)
+                {
+                    for (int m = 0; m < blk_cell.nv_lin; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords_lin[m];
+                        if (ic_intrp[0] == -1)
+                        {
+                            //move contribution of interface points to the RHS.
+                            rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
+                            //TODO: the value at the interface is itself computed
+                            //      via interpolation -- should use the interpolating
+                            //      points and corresponding coefficients in the matrix
+                            //      instead of using this.
+                        }
+                        else
+                        {
+                            int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                            if (I_intrp == I)
+                            {
+                               aII += coeff[l]*blk_cell.coeffs[m];
+                            }
+                            else if (SetIndices.count(I_intrp) == 0)
+                            {
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                SetIndices.insert(I_intrp);
+                            }
+                            else
+                            {
+                                solver.FlushMatAssembly_A();
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                solver.FlushMatAssembly_A();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    rhs -= coeff[l]*pres_reflect; 
+                }
+                
+                aII -= coeff[l];
+            }
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+            {
+                if (status == CONST_V_PDE_BOUNDARY)
+                {
+                    //INLET
+                    // do-nothing
+                }
+                else if (status == CONST_P_PDE_BOUNDARY)
+                {
+                    //OUTLET
+                    rhs -= coeff[l]*getStatePres(intfc_state);
+                    aII -= coeff[l];
+                    use_neumann_solver = NO;
+                }
+            }
+        }
+
+        //TODO: investigate this comment and below if (num_nb > 0) block
+	    /*
+	     * This change reflects the need to treat point with only one
+	     * interior neighbor (a convex point). Not sure why PETSc cannot
+	     * handle such case. If we have better understanding, this should
+	     * be changed back.
+	     */
+	    
+        if(num_nb > 0)
+	    {
+            solver.Set_A(I,I,aII);
+	    }
+        else
+        {
+            if (debugging("linear_solver"))
+                (void) printf("WARNING: isolated value!\n");
+
+            solver.Set_A(I,I,1.0);
+            rhs = pres[index];
+        }
+        solver.Set_b(I,rhs);
+	
+        SetIndices.clear();
+    }
+
+
+	solver.SetMaxIter(40000);
+    solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+
+    use_neumann_solver = pp_min_status(use_neumann_solver);
+	
+	start_clock("Petsc Solver");
+	if (use_neumann_solver)
+	{
+	    if (skip_neumann_solver) 
+	    {
+            stop_clock("Petsc Solver");
+            return;
+	    }
+	    
+        if (debugging("linear_solver"))
+	    	(void) printf("\nUsing Neumann Solver!\n");
+	    
+        //TODO: What is the purpose of this?
+        if (size < 20)
+	    {
+	    	if (debugging("linear_solver"))
+                printf("Isolated small region for solve2d()\n");
+            stop_clock("Petsc Solver");
+            return;
+	    }
+	    
+        solver.Solve_withPureNeumann();
+	    solver.GetNumIterations(&num_iter);
+	    solver.GetResidualNorm(&residual);
+	    
+        //TODO: skip residual check? GMRES often worse
+        if(residual > 1)
+	    {
+            printf("\n The solution diverges! The residual "
+                   "is %g. Solve again using GMRES!\n",residual);
+            
+            solver.Reset_x();
+            solver.Solve_withPureNeumann_GMRES();
+            solver.GetNumIterations(&num_iter);
+            solver.GetResidualNorm(&residual);
+                
+            if(residual > 1)
+            {
+                printf("\n The solution diverges using GMRES. \
+                        The residual is %g after %d iterations. Exiting ...\n",
+                        residual,num_iter);
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+	    }
+
+	}
+	else
+	{
+	    solver.Solve();
+	    solver.GetNumIterations(&num_iter);
+	    solver.GetResidualNorm(&residual);
+
+        //TODO: skip residual check? GMRES often worse
+	    if(residual > 1)
+	    {
+            printf("\n The solution diverges! The residual "
+                   "is %g. Solve again using GMRES!\n",residual);
+            
+            solver.Reset_x();
+            solver.Solve_GMRES();
+            solver.GetNumIterations(&num_iter);
+            solver.GetResidualNorm(&residual);
+
+            if(residual > 1)
+            {
+                printf("\n The solution diverges using GMRES. \
+                        The residual is %g after %d iterations. Exiting ...\n",
+                        residual,num_iter);
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+	    }
+
+	}
+	stop_clock("Petsc Solver");
+
+	solver.Get_x(x);
+
+	if (debugging("PETSc"))
+    {
+        printf("In poisson_solver(): "
+                "num_iter = %d, residual = %g\n",
+                num_iter, residual);
+    }
+
+	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    index = d_index2d(i,j,top_gmax);
+	    I = ij_to_I[i][j];
+	    if (I == -1) continue;
+	    
+        pres[index] = x[I-ilower];
+	    
+        if (max_soln < pres[index]) 
+	    {
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            max_soln = pres[index];
+	    }
+
+	    if (min_soln > pres[index]) 
+	    {
+            icrds_min[0] = i;
+            icrds_min[1] = j;
+            min_soln = pres[index];
+	    }
+	}
+	pp_global_max(&max_soln,1);
+	pp_global_min(&min_soln,1);
+
+	if (debugging("step_size"))
+	{
+        printf("Max solution = %20.14f occuring at: %d %d\n",
+                max_soln,icrds_max[0],icrds_max[1]);
+        checkSolver(icrds_max,YES);
+        
+        printf("Min solution = %20.14f occuring at: %d %d\n",
+                min_soln,icrds_min[0],icrds_min[1]);
+        checkSolver(icrds_min,YES);
+	}
+
+    if (debugging("elliptic_error"))
+    {
+        double error,max_error = 0.0;
+        for (j = jmin; j <= jmax; j++)
+        for (i = imin; i <= imax; i++)
+        {
+            icoords[0] = i;
+            icoords[1] = j;
+            if (ij_to_I[i][j] == -1) continue;
+
+            error = checkSolver(icoords,NO);
+            
+            if (error > max_error)
+            {
+                max_error = error;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+            }
+        }
+
+        printf("In elliptic solver:\n");
+        printf("Max relative elliptic error: %20.14f\n",max_error);
+        printf("Occuring at (%d %d)\n",icrds_max[0],icrds_max[1]);
+        error = checkSolver(icrds_max,YES);
+	}
+
+	if (debugging("trace"))
+            printf("Leaving computeInitialPressure()\n");
+
+    FT_FreeThese(1,x);
+}
+
+//TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
+void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
+{
+	switch (iFparams->num_scheme.projc_method)
+	{
+	case PMI:
+	    computePressurePmI();
+	    break;
+	case PMII:
+	    computePressurePmII();
+	    break;
+	case PMIII:
+    case SIMPLE:
+	    computePressurePmIII();
+	    break;
+    /*case SIMPLE:
+	    computePressureSimple();
+	    break;*/
+	case ERROR_PROJC_SCHEME:
+	default:
+	    (void) printf("Unknown computePressure scheme!\n");
+	    clean_up(ERROR);
+	}
+
+    /*
+    if (iFparams->num_scheme.projc_method == PMIII ||
+        iFparams->num_scheme.projc_method == SIMPLE) return;
+    */
+
+    computeGradientQ();
+}
+
 //TODO: PmI and PmII use a lagged pressure term (q) and require solving
 //      a poisson problem for the pressure as a startup step.
 //      The poisson problem is obtained by taking the divergence of
@@ -1324,38 +1849,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressureSimple(void)
 	    (void) printf("\n");
 	}
 }*/        /* end computePressureSimple */
-
-//TODO: Just Specify PmI, PmII, PmIII. It's confusing otherwise.
-void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
-{
-	switch (iFparams->num_scheme.projc_method)
-	{
-	case PMI:
-	    computePressurePmI();
-	    break;
-	case PMII:
-	    computePressurePmII();
-	    break;
-	case PMIII:
-    case SIMPLE:
-	    computePressurePmIII();
-	    break;
-    /*case SIMPLE:
-	    computePressureSimple();
-	    break;*/
-	case ERROR_PROJC_SCHEME:
-	default:
-	    (void) printf("Unknown computePressure scheme!\n");
-	    clean_up(ERROR);
-	}
-
-    /*
-    if (iFparams->num_scheme.projc_method == PMIII ||
-        iFparams->num_scheme.projc_method == SIMPLE) return;
-    */
-
-    computeGradientQ();
-}
 
 void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ()
 {
