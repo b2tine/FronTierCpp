@@ -169,6 +169,24 @@ extern double getStateZvel(POINTER state)
 	return fstate->vel[2];
 }	/* end getStateZvel */
 
+extern double getStateOldXvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[0];
+}	/* end getStateXvel */
+
+extern double getStateOldYvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[1];
+}	/* end getStateYvel */
+
+extern double getStateOldZvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[2];
+}	/* end getStateZvel */
+
 extern double getStateXimp(POINTER state)
 {
 	STATE *fstate = (STATE*)state;

@@ -340,8 +340,10 @@ class ELLIPTIC_SOLVER
         double *soln;		/* field variable of new step */
         double *source;		/* source field */
         double **vel;       /* velocity field */
+        double **prev_vel;  /* old velocity field */
         double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
         double* rho;
+        double* mu;
 
 	    COMPONENT obst_comp;
         
@@ -351,6 +353,7 @@ class ELLIPTIC_SOLVER
         
         double (*getStateVar)(POINTER);
         double (*getStateVel[3])(POINTER);
+        double (*getStateOldVel[3])(POINTER);
 
         int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                     POINTER*,HYPER_SURF**,double*);

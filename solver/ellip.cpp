@@ -270,7 +270,7 @@ void ELLIPTIC_SOLVER::solve1d(double *soln)
 
 void ELLIPTIC_SOLVER::solve2d(double *soln)
 {
-	int index,index_nb[4];
+	int index,index_nb[4],index_nb_opp[4];
 	double k0,k_nb[4];
 	double rhs,coeff[4];
 	int I,I_nb[4];
@@ -320,6 +320,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    index_nb[1] = d_index2d(i+1,j,top_gmax);
 	    index_nb[2] = d_index2d(i,j-1,top_gmax);
 	    index_nb[3] = d_index2d(i,j+1,top_gmax);
+	    
+        index_nb_opp[0] = d_index2d(i+1,j,top_gmax);
+	    index_nb_opp[1] = d_index2d(i-1,j,top_gmax);
+	    index_nb_opp[2] = d_index2d(i,j+1,top_gmax);
+	    index_nb_opp[3] = d_index2d(i,j-1,top_gmax);
 	    
         I_nb[0] = ij_to_I[i-1][j];
 	    I_nb[1] = ij_to_I[i+1][j];
@@ -550,20 +555,59 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
+                    
                     rhs -= coeff[l]*getStateVar(intfc_state);
                     aII -= coeff[l];
                     use_neumann_solver = NO;
                     
+                    /*
                     //TODO: Instead of calling getStateVar() we
                     //      should compute phi directly with:
                     //
                     //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
                     //      t dot grad(phi^n+1) = 0.5*mu * t dot (grad^2(u^{*} + u^{n})
-                    //
-                    //      Or we could precompute the values and set the boundary states
-                    //      in computeProjection(), in a similar manner to how the divergence
-                    //      is precomputed.
 
+                    std::vector<double> vector_laplacian(dim,0.0);
+                    for (int ii = 0; ii < dim; ++ii)
+                    {
+                        //compute laplacian i-th component of vel and prev_vel
+                        for (int m = 0; m < dim; ++m)
+                        {
+                            double laplacian = vel[m][index_nb_opp[l]]
+                                - 2.0*vel[m][index] + getStateVel[m](intfc_state);
+                            laplacian /= top_h[m]*top_h[m];
+
+                            double prev_laplacian = prev_vel[m][index_nb_opp[l]]
+                                - 2.0*prev_vel[m][index] + getStateOldVel[m](intfc_state);
+                            prev_laplacian /= top_h[m]*top_h[m];
+
+                            vector_laplacian[ii] += laplacian + prev_laplacian;
+                        }
+                    }
+
+                    double nor[MAXD];
+                    FT_NormalAtGridCrossing(front,icoords,
+                            dir[l],comp,nor,&hs,crx_coords);
+
+                    double sign = 1.0;
+                    if (l % 2 == 1)
+                    {
+                        for (int ii = 0; ii < dim; ++ii)
+                            nor[ii] *= -1.0;
+                        sign = -1.0;
+                    }
+
+                    double laplace_n = 0.0;
+                    for (int ii = 0; ii < dim; ++ii)
+                        laplace_n += vector_laplacian[ii]*nor[ii];
+
+                    
+                    //TODO: tangential components
+                    //
+
+                    rhs += sign*dt*0.5*mu[index]*laplace_n/rho[index];
+                    use_neumann_solver = NO;
+                    */
                 }
             }
         }

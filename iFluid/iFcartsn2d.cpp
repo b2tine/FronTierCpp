@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "iFluid.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
+static double (*getStateOldVel[3])(POINTER) = {getStateOldXvel,getStateOldYvel,getStateOldZvel};
 
 //For adding the convective flux to the RHS of the diffusion solver system
 void Incompress_Solver_Smooth_2D_Cartesian::computeAdvectionTerm()
@@ -258,9 +259,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         source[index] = computeFieldPointDiv(icoords,vel);
         diff_coeff[index] = 1.0/field->rho[index];
         
-        //TODO: updatePhiBoundaryStates(icoords,vel)
-        //       -- in the style of computeFieldPointDiv()
-        
         if (debugging("check_div"))
 	    {
 		    for (l = 0; l < dim; ++l)
@@ -329,13 +327,22 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         checkVelocityDiv("Before computeProjection()");
     }
         
+    //TODO: add vel and prev_vel arrays to elliptic_solver
+    //
     elliptic_solver.dt = accum_dt;
     elliptic_solver.D = diff_coeff;
+    elliptic_solver.mu = field->mu;
     elliptic_solver.rho = field->rho;
+    elliptic_solver.vel = field->vel;
+    elliptic_solver.prev_vel = field->prev_vel;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
 	elliptic_solver.set_solver_domain();
 	elliptic_solver.getStateVar = getStatePhi;
+	elliptic_solver.getStateVel[0] = getStateVel[0];
+	elliptic_solver.getStateVel[1] = getStateVel[1];
+	elliptic_solver.getStateOldVel[0] = getStateOldVel[0];
+	elliptic_solver.getStateOldVel[1] = getStateOldVel[1];
 	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 
@@ -554,16 +561,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionDouble(void)
 	}
 	return;
 }	/* end computeProjectionDouble */
-
-void Incompress_Solver_Smooth_2D_Cartesian::updatePhiBoundaryStates(int* icoords)
-{
-    //TODO: WRITE
-    //
-    //1. Check if interface crossing exists and if it is a flow-through boundary.
-    //   Exit if not.
-    //2. Compute the sum of the vector laplacians of u^{*} and u^{n} and save to
-    //   the boundary state structure. 
-}
 
 //u^{n+1} = u^{*} - dt*grad(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
@@ -1239,8 +1236,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	solver.Reset_b();
 	solver.Reset_x();
 
-	max_soln = -HUGE;
-	min_soln = HUGE;
+	double max_soln = -HUGE;
+	double min_soln = HUGE;
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -1640,13 +1637,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	{
         printf("Max solution = %20.14f occuring at: %d %d\n",
                 max_soln,icrds_max[0],icrds_max[1]);
-        checkSolver(icrds_max,YES);
+        //checkSolver(icrds_max,YES);
         
         printf("Min solution = %20.14f occuring at: %d %d\n",
                 min_soln,icrds_min[0],icrds_min[1]);
-        checkSolver(icrds_min,YES);
+        //checkSolver(icrds_min,YES);
 	}
 
+    /*
     if (debugging("elliptic_error"))
     {
         double error,max_error = 0.0;
@@ -1672,6 +1670,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
         printf("Occuring at (%d %d)\n",icrds_max[0],icrds_max[1]);
         error = checkSolver(icrds_max,YES);
 	}
+    */
 
 	if (debugging("trace"))
             printf("Leaving computeInitialPressure()\n");

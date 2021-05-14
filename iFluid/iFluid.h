@@ -602,8 +602,6 @@ protected:
 	void computeProjectionDouble(void);
 	    //void computeProjectionDual(void);
     
-    void updatePhiBoundaryStates(int* icoords);
-	
     void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
@@ -686,6 +684,9 @@ extern double getStateVort(POINTER);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
 extern double getStateZvel(POINTER);
+extern double getStateOldXvel(POINTER);
+extern double getStateOldYvel(POINTER);
+extern double getStateOldZvel(POINTER);
 extern double getStateXimp(POINTER);
 extern double getStateYimp(POINTER);
 extern double getStateZimp(POINTER);
