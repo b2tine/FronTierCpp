@@ -2067,7 +2067,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         if (!ifluid_comp(top_comp[index])) continue;
 
         div_U[index] = source[index];
-            //source[index] /= accum_dt;
+        source[index] /= accum_dt;
         
         icoords[0] = i; 
         icoords[1] = j;

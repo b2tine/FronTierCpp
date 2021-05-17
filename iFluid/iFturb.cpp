@@ -269,7 +269,7 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
     //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
     //  (about 10x larger than MACH_EPS)
     double nu_t;
-    if (B_beta < MACH_EPS) // || sum_alpha < MACH_EPS)
+    if (sum_alpha < MACH_EPS)
         nu_t = 0.0;
     else
         nu_t = C_v*sqrt(B_beta/sum_alpha);

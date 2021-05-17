@@ -42,6 +42,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static double (*getStateVel[3])(POINTER) =
     {getStateXvel,getStateYvel,getStateZvel};
 
+static double (*getStateOldVel[3])(POINTER) =
+    {getStateOldXvel,getStateOldYvel,getStateOldZvel};
+
 static double (*getStateGradPhi[3])(POINTER) =
     {getStateGradPhiX,getStateGradPhiY,getStateGradPhiZ};
 
@@ -504,7 +507,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
                 FT_FreeThese(18,array,source,diff_coeff,field->mu,
                     field->rho,field->pres,field->phi,field->grad_phi,
                     field->q,field->div_U,field->vort,field->vel,
-                    field->prev_vel,field->grad_q,field->f_surf,
+                    field->vel_star,field->prev_vel,field->grad_q,field->f_surf,
                     field->adv_term,field->adv_term_old,domain_status);
                 
                 if (debugging("field_var"))
@@ -527,6 +530,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,2,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->vel,2,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->vel_star,2,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,2,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->vort,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
@@ -557,8 +561,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             {
                 FT_FreeThese(18,array,source,diff_coeff,field->mu,
                     field->rho,field->pres,field->phi,field->grad_phi,
-                    field->q,field->div_U,field->vel,field->prev_vel,
-                    field->vorticity,field->grad_q,field->f_surf,
+                    field->q,field->div_U,field->vel,field->vel_star,
+                    field->prev_vel,field->vorticity,field->grad_q,field->f_surf,
                     field->adv_term,field->adv_term_old,domain_status);
                 
                 if (debugging("field_var"))
@@ -581,6 +585,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->grad_phi,3,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->vel,3,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&field->vel_star,3,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->prev_vel,3,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->vorticity,3,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->div_U,size,sizeof(double));
@@ -3127,9 +3132,8 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
         double *field_array,
         double *grad_field)
 {
-    int index,index_nb, icnb[MAXD];
-    int icnb_opp1[MAXD], icnb_opp2[MAXD];
-    int index_oppnb1, index_oppnb2;
+    int index, index_nb, index_nb_opp;
+    int icnb[MAXD], icnb_opp[MAXD];
     COMPONENT comp;
     int i,j,idir,nb;
 	double p_edge[3][2],p0;
@@ -3139,6 +3143,12 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
     GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
 	int status;
 	boolean refl_side[2];
+    bool flowthrough[3] = {false,false,false};
+
+    double** vel_star = field->vel_star;
+    double** prev_vel= field->prev_vel;
+    double* rho = field->rho;
+    double* mu = field->mu;
 
 	index = d_index(icoords,top_gmax,dim);
     comp = top_comp[index];
@@ -3157,13 +3167,17 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	    for (j = 0; j < dim; ++j)
         {
 	    	icnb[j] = icoords[j];
+	    	icnb_opp[j] = icoords[j];
         }
 
 	    for (nb = 0; nb < 2; nb++)
 	    {
             refl_side[nb] = NO;
 	    	icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
-	    	index_nb = d_index(icnb,top_gmax,dim);
+	    	icnb_opp[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
+	    	
+            index_nb = d_index(icnb,top_gmax,dim);
+            index_nb_opp = d_index(icnb_opp,top_gmax,dim);
 	
             status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                     comp,&intfc_state,&hs,crx_coords);
@@ -3178,6 +3192,45 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
                 {
                     //OUTLET
                     p_edge[idir][nb] = getStatePhi(intfc_state);
+
+                    /*
+                    //////////////////////////////////////////////////////////////////////
+                    //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
+                    //      t dot grad(phi^n+1) = 0.5*mu * t dot (grad^2(u^{*} + u^{n})
+
+                    std::vector<double> vector_laplacian(dim,0.0);
+                    for (int ii = 0; ii < dim; ++ii)
+                    {
+                        //compute laplacian i-th component of vel and prev_vel
+                        for (int m = 0; m < dim; ++m)
+                        {
+                            double laplacian = vel_star[m][index_nb_opp]
+                                - 2.0*vel_star[m][index] + getStateVel[m](intfc_state);
+                            laplacian /= top_h[m]*top_h[m];
+
+                            double prev_laplacian = prev_vel[m][index_nb_opp]
+                                - 2.0*prev_vel[m][index] + getStateOldVel[m](intfc_state);
+                            prev_laplacian /= top_h[m]*top_h[m];
+
+                            vector_laplacian[ii] += laplacian + prev_laplacian;
+                        }
+                    }
+
+                    double nor[MAXD];
+                    FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+
+                    double laplace_n = 0.0;
+                    for (int ii = 0; ii < dim; ++ii)
+                        laplace_n += vector_laplacian[ii]*nor[ii];
+                    
+                    //TODO: tangential components
+
+	                grad_field[idir] = 0.5*mu[index]*laplace_n;
+                    flowthrough[idir] = true;
+                    continue;
+                    //////////////////////////////////////////////////////////////////////
+                    */
                 }
                 else 
                 {
@@ -3260,7 +3313,10 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGrad(
 	}
 
 	for (i = 0; i < dim; ++i)
+    {
+        //if (flowthrough[i]) continue;
 	    grad_field[i] = 0.5*(p_edge[i][1] - p_edge[i][0])/top_h[i];
+    }
 }      /* end computeFieldPointGrad */
 
 void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(

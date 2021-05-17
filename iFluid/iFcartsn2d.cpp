@@ -288,6 +288,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
         if (!ifluid_comp(top_comp[index])) continue;
 	    
         div_U[index] = source[index];
+        source[index] /= accum_dt;
 
         // Compute pressure jump due to porosity
         icoords[0] = i;
@@ -333,7 +334,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
     elliptic_solver.D = diff_coeff;
     elliptic_solver.mu = field->mu;
     elliptic_solver.rho = field->rho;
-    elliptic_solver.vel = field->vel;
+    elliptic_solver.vel = field->vel_star;
     elliptic_solver.prev_vel = field->prev_vel;
     elliptic_solver.source = source;
     elliptic_solver.soln = array;
@@ -571,7 +572,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
 	int icoords[MAXD];
 	
     double **vel = field->vel;
-	double **prev_vel = field->prev_vel;
+	double **vel_star = field->vel_star;
 	double **grad_phi = field->grad_phi;
 	double *phi = field->phi;
 
@@ -607,12 +608,13 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeNewVelocity(void)
  
         for (int l = 0; l < dim; ++l)
         {
-            vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
+            //vel[l][index] -= accum_dt*point_grad_phi[l]/rho;
+            vel[l][index] = vel_star[l][index] - accum_dt*point_grad_phi[l]/rho;
             grad_phi[l][index] = point_grad_phi[l];
         }
 
 	}
-
+	
         //TODO: May need to explicitly enforce some tangential boundary
         //      conditions following this velocity update...
 
@@ -898,6 +900,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
     double *x;
     
     double** vel = field->vel;
+    double** vel_star = field->vel_star;
     double** prev_vel = field->prev_vel;
     double** f_surf = field->f_surf;
     double** grad_q = field->grad_q;
@@ -1162,9 +1165,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
             I = ij_to_I[i][j];
             index = d_index2d(i,j,top_gmax);
             if (I >= 0)
-                vel[l][index] = x[I-ilower];
+            {
+                vel_star[l][index] = x[I-ilower];
+                //vel[l][index] = x[I-ilower];
+            }
             else
-                vel[l][index] = 0.0;
+            {
+                vel_star[l][index] = 0.0;
+                //vel[l][index] = 0.0;
+            }
         }
     
     }

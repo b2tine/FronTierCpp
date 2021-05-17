@@ -63,7 +63,8 @@ typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct IF_FIELD {
 	double **vel;			/* Velocities */
-	double **prev_vel;
+    double **vel_star;      /* Intermediate Velocities */
+	double **prev_vel;      /* Previous Step Velocities */
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;

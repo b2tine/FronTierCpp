@@ -351,7 +351,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
 
-            coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]);
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]);
 	    }
 
 	    aII = 0.0;
@@ -442,16 +442,84 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
                 //////////////////////////////////////////////////////////////////////
+                int ghost_index = d_index(icoords_ghost,top_gmax,dim);
+                COMPONENT ghost_comp = top_comp[ghost_index];
+
                 for (int m = 0; m < dim; ++m)
                 {
                     coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
                 }
 
-                //TODO: Finish this version and test ... goal is for nearly all of the
-                //      interpolation to be bilinear by choosing the reflection point
-                //      just far enough away from the interface.
+                double intrp_coeffs[MAXD] = {0.0};
+                HYPER_SURF_ELEMENT* hsurf_elem;
+                HYPER_SURF* hsurf;
+                double range = 2;
 
-                ////////////////////////////////////////////////////////////////////////
+                FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
+                        crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+                
+                double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+
+                //compute the normal and velocity vectors at the interface point
+                double vel_intfc[MAXD] = {0.0};
+
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                POINTER ss;
+                POINTER se;
+
+                if (negative_component(hsurf) == 2 ||
+                    negative_component(hsurf) == 3)
+                {
+                    ss = left_state(Bond_of_hse(hsurf_elem)->start);
+                    se = left_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else if (positive_component(hsurf) == 2 ||
+                         positive_component(hsurf) == 3)
+                {
+                    ss = right_state(Bond_of_hse(hsurf_elem)->start);
+                    se = right_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else
+                {
+                    printf("setSlipBoundaryNIP() ERROR: "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                double nor[MAXD];
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*getStateVel[i](ss) + intrp_coeffs[0]*getStateVel[i](se);
+                }
+
+                double mag_nor = Magd(nor,dim);
+                for (int i = 0; i < dim; ++i)
+                    nor[i] /= mag_nor;
+
+                if (comp == negative_component(hsurf))
+                {
+                    for (int i = 0; i < dim; ++i)
+                        nor[i] *= -1.0;
+                }
+
+                //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+                double dist_reflect = FT_GridSizeInDir(nor,front);
+
+                    // Compute dist_reflect as the diagonal length of rect grid blocks
+                        //double dist_reflect = 0.0;
+                        //for (int j = 0; j < 3; ++j)
+                        //     dist_reflect += sqr(top_h[j]);
+                        //dist_reflect = sqrt(dist_reflect);
+
+                //The desired reflected point
+                for (int j = 0; j < dim; ++j)
+                    coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
                 ///////////////////////////////////////////////////////////////////////
                 */
                 
@@ -556,16 +624,22 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 {
                     //OUTLET
                     
+                    /*
                     rhs -= coeff[l]*getStateVar(intfc_state);
                     aII -= coeff[l];
                     use_neumann_solver = NO;
-                    
-                    /*
+                    */
+
+                    /////////////////////////////////////////////////////////////////////
                     //TODO: Instead of calling getStateVar() we
                     //      should compute phi directly with:
                     //
                     //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
                     //      t dot grad(phi^n+1) = 0.5*mu * t dot (grad^2(u^{*} + u^{n})
+                    //
+                    //      NOT SURE ABOUT THIS ... VIRTUALLY NO LITERATURE ON THE TOPIC ...
+                    //      CURRENTLY DOES NOT WORK
+
 
                     std::vector<double> vector_laplacian(dim,0.0);
                     for (int ii = 0; ii < dim; ++ii)
@@ -603,11 +677,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
                     
                     //TODO: tangential components
-                    //
 
                     rhs += sign*dt*0.5*mu[index]*laplace_n/rho[index];
                     use_neumann_solver = NO;
-                    */
+                    /////////////////////////////////////////////////////////////////////
                 }
             }
         }
@@ -673,7 +746,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         if(residual > 1)
 	    {
             printf("\n The solution diverges! The residual "
-                   "is %g. Solve again using GMRES!\n",residual);
+                   "is %g after %d iterations. Solve again using GMRES!\n",
+                   residual,num_iter);
             
             solver.Reset_x();
             solver.Solve_withPureNeumann_GMRES();
@@ -884,7 +958,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             }
     
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = dt*k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
 	    aII = 0.0;
