@@ -986,8 +986,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
 
-            if (iFparams->num_scheme.projc_method != PMIII &&
-                iFparams->num_scheme.projc_method != SIMPLE)
+            if (iFparams->num_scheme.projc_method == PMI ||
+                iFparams->num_scheme.projc_method == PMII)
             {
                 rhs -= m_dt*grad_q[l][index]/rho;
             }

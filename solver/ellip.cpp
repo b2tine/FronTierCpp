@@ -623,13 +623,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
-                    
-                    /*
                     rhs -= coeff[l]*getStateVar(intfc_state);
                     aII -= coeff[l];
                     use_neumann_solver = NO;
-                    */
 
+                    /*
                     /////////////////////////////////////////////////////////////////////
                     //TODO: Instead of calling getStateVar() we
                     //      should compute phi directly with:
@@ -681,6 +679,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     rhs += sign*dt*0.5*mu[index]*laplace_n/rho[index];
                     use_neumann_solver = NO;
                     /////////////////////////////////////////////////////////////////////
+                    */
                 }
             }
         }

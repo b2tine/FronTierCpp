@@ -3333,8 +3333,10 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
 	int status;
 	boolean refl_side[2];
 
-	int icnb[MAXD], icnb_opp1[MAXD], icnb_opp2[MAXD];
-    int index_nb,index_oppnb1,index_oppnb2;
+	int icnb[MAXD], icnb_opp[MAXD];
+    int index_nb,index_nb_opp;
+    int icnb_opp1[3], icnb_opp2[3];
+    int index_oppnb1, index_oppnb2;
 
 
     for (i = 0; i < dim; ++i)
@@ -3345,9 +3347,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
 
     int index = d_index(icoords,top_gmax,dim);
     comp = top_comp[index];
-
     if (!ifluid_comp(comp)) return;
-
 
     double q0 = field_array[index];
 	double q_edge[3][2];
@@ -3357,6 +3357,7 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
 	    for (j = 0; j < dim; ++j)
         {
 	    	icnb[j] = icoords[j];
+            icnb_opp[j] = icoords[j];
             icnb_opp1[j] = icoords[j];
             icnb_opp2[j] = icoords[j];
         }
@@ -3365,7 +3366,9 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
 	    {
             refl_side[nb] = NO;
 	    	icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+	    	icnb_opp[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
 	    	index_nb = d_index(icnb,top_gmax,dim);
+	    	index_nb_opp = d_index(icnb_opp,top_gmax,dim);
 	
             status = (*findStateAtCrossing)(front,icoords,dir[idir][nb],
                     comp,&intfc_state,&hs,crx_coords);
@@ -3384,23 +3387,90 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
                 if(wave_type(hs) == DIRICHLET_BOUNDARY)
                 {
                     //INLET
-                    q_edge[idir][nb] = getStateQ(intfc_state);
-                        //q_edge[idir][nb] = q0;
+                    q_edge[idir][nb] = q0;
                 }
                 else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                         wave_type(hs) == MOVABLE_BODY_BOUNDARY)
                 {
+                    /*
                     //Use one sided 3pt derivative
                     icnb_opp1[idir] = (nb == 0) ? icoords[idir] + 1 : icoords[idir] - 1;
                     index_oppnb1 = d_index(icnb_opp1,top_gmax,dim);
                     double q_oppnb1 = field_array[index_oppnb1];
-                    
+
                     icnb_opp2[idir] = (nb == 0) ? icoords[idir] + 2 : icoords[idir] - 2;
                     index_oppnb2 = d_index(icnb_opp2,top_gmax,dim);
                     double q_oppnb2 = field_array[index_oppnb2];
 
                     q_edge[idir][nb] = 3.0*q0 - 3.0*q_oppnb1 + q_oppnb2;
+                    */
+
+                    //grad(q) dot normal = 0   //TODO: is this correct bdry condition????? 
+                    int icoords_ghost[MAXD];
+                    for (int m = 0; m < dim; ++m)
+                        icoords_ghost[m] = icoords[m];
+
+                    icoords_ghost[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+
+                    double coords_ghost[MAXD];
+                    double coords_reflect[MAXD];
+
+                    ////////////////////////////////////////////////////////////////////////
+                    ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
+                    //////////////////////////////////////////////////////////////////////
+
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                        coords_reflect[m] = coords_ghost[m];
+                    }
+
+                    double nor[MAXD];
+                    FT_NormalAtGridCrossing(front,icoords,
+                            dir[idir][nb],comp,nor,&hs,crx_coords);
+
+                    //Reflect the ghost point through intfc-mirror at crossing.
+                    //first reflect across the grid line containing intfc crossing,
+                    coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+
+                    //Reflect the displacement vector across the line
+                    //containing the intfc normal vector
+                    double v[MAXD];
+                    double vn = 0.0;
+
+                    for (int m = 0; m < dim; ++m)
+                    {
+                        v[m] = coords_reflect[m] - crx_coords[m];
+                        vn += v[m]*nor[m];
+                    }
+
+                    for (int m = 0; m < dim; ++m)
+                        v[m] = 2.0*vn*nor[m] - v[m];
+
+                    //The desired reflected point
+                    for (int m = 0; m < dim; ++m)
+                        coords_reflect[m] = crx_coords[m] + v[m];
+                    ///////////////////////////////////////////////////////////////////////
+
+                    //Interpolate phi at the reflected point,
+                    double q_reflect;
+                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                            getStateQ,&q_reflect,&field_array[index]);
+                        //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field_array,
+                        //        getStateQ,&q_reflect,nullptr);//default_ans uses nearest intfc state
+
+                    q_edge[idir][nb] = q_reflect;
                 }
+                else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+                {
+                    q_edge[idir][nb] = q0;
+                }
+                else
+                {
+                    printf("ERROR in computeFieldPointGradQ() : Unknown Boundary Type!\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
             }
 	    }
 	}
@@ -4070,7 +4140,13 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                     jump_q = q0 - q_nb;
                 }
 
-                d_p += jump_mudiv; //NOTE: q equal to zero for now.
+                d_p += jump_mudiv;
+
+                if (iFparams->num_scheme.projc_method == PMI ||
+                    iFparams->num_scheme.projc_method == PMII)
+                {
+                    d_p -= jump_q;
+                }
                 /////////////////////////////////////////////////////////////////
 
                 if (side <= 0)
@@ -4091,6 +4167,122 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
                     printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
                     printf("d_p = %f, Un = %f, jump_mudiv = %f, jump_q = %f\n",
                             d_p, Un, jump_mudiv, jump_q);
+                }
+            }
+        }
+        
+        /*return source term for Poisson equation due to jump condition*/
+        return ans;
+}
+
+double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJumpQ(
+        int *icoords,
+        double alpha,
+        double beta)
+{
+        if (!iFparams->with_porosity) return 0.0;
+
+        int nb, index_nb, idir, i;
+        int top_gmin[MAXD], ipn[MAXD];
+        double crx_coords[MAXD], coords[MAXD], grad_phi[MAXD];
+        double vel_intfc[MAXD], vel_rel[MAXD], nor[MAXD],vec[MAXD];
+        double Un = 0.0, ans = 0.0, side = 0.0, d_p = 0.0;
+        
+        double *phi = field->phi;
+        double* mu = field->mu;
+        double* div_U = field->div_U;
+        double* q = field->q;
+        
+        GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+        POINTER intfc_state;
+        HYPER_SURF *hs;
+        INTERFACE *grid_intfc = front->grid_intfc;
+        RECT_GRID *rgr = computational_grid(front->interf);
+        POINTER state;
+        bool is_intfc = false;
+        
+        top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
+        for (i = 0; i < dim; i++)
+            coords[i] = top_L[i] + icoords[i]*top_h[i];
+        
+        
+        int index = d_index(icoords,top_gmax,dim);
+        double mudiv = 0.5*mu[index]*div_U[index]; 
+        double q0 = q[index];
+
+        double rho = (field->rho[index] == 0) ?
+            iFparams->rho2 : field->rho[index];
+
+        int max_nb = (dim == 2) ? 4 : 6;
+        for (nb = 0; nb < max_nb; nb++)
+        {
+            is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
+                                  top_comp[index],nor,&hs,crx_coords);
+            
+            if (is_intfc && dim == 2 && is_bdry(Curve_of_hs(hs)))
+                continue;
+            else if (is_intfc && dim == 3 && is_bdry(Surface_of_hs(hs)))
+                continue;
+            else if (is_intfc && dim == 2 &&
+                     hsbdry_type(Curve_of_hs(hs)) == STRING_HSBDRY)
+                continue;
+            
+            /*Ghost Fluid Method(GFM): p_+ - p_- = alpha*Un*nor + beta*(Un*nor)^2*/
+            /*p+ and p- is defined by normal vector*/
+            if(is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
+            {
+                next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
+                index_nb = d_index(ipn,top_gmax,dim);
+
+                double mudiv_nb = 0.5*mu[index_nb]*div_U[index_nb]; 
+                double q_nb = q[index_nb];
+
+                /*get relative velocity*/
+                FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
+                                top_comp[index],&state,&hs,crx_coords);
+                
+                double vel_fluid[MAXD] = {0.0};
+                for (idir = 0 ; idir < dim; idir++)
+                {
+                    if (state)
+                        vel_intfc[idir] = (*getStateVel[idir])(state);
+                    else
+                        vel_intfc[idir] = 0.0;
+
+                    FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
+                                             field->vel[idir],getStateVel[idir],
+                                             &vel_fluid[idir],NULL);
+
+                    vel_rel[idir] = vel_fluid[idir] - vel_intfc[idir];
+                }
+
+                /*project to normal direction*/
+                Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
+        
+                //NOTE: alpha and beta include thickness factor
+                d_p = (alpha + fabs(Un)*beta)*Un;
+
+                for (i = 0; i < dim; i++)
+                    vec[i] = coords[i] - crx_coords[i];
+
+                side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+                if (side <= 0)
+                {
+                    ans -= d_p/sqr(top_h[nb/2])/rho;
+                }
+                else
+                {
+                    ans += d_p/(sqr(top_h[nb/2]))/rho;
+                }
+            
+                if (debugging("pressure_drop"))
+                {
+                    printf("\ncomputeFieldPointPressureJump()\n");
+                    printf("crds = [%f %f %f], crx = [%f %f %f],"
+                            " side = %f, nb = %d\n",coords[0],coords[1],coords[2],
+                            crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
+                    printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
+                    printf("d_p = %f, Un = %f\n",d_p, Un);
                 }
             }
         }
@@ -4207,7 +4399,13 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
                     jump_q = q0 - q_nb;
                 }
                 
-                d_p += jump_mudiv; //NOTE: q equal to zero for now.
+                d_p += jump_mudiv;
+
+                if (iFparams->num_scheme.projc_method == PMI ||
+                    iFparams->num_scheme.projc_method == PMII)
+                {
+                    d_p -= jump_q;
+                }
                 /////////////////////////////////////////////////////////////////
                 
                 // modify pressure gradient
@@ -4235,6 +4433,121 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradJump(
         }
 }
 
+void Incompress_Solver_Smooth_Basis::computeFieldPointGradJumpQ(
+        int* icoords,
+        double* var,
+        double* grad_var)
+{
+        computeFieldPointGradQ(icoords,var,grad_var);
+
+        if (!iFparams->with_porosity) return;
+
+        int index_nb, i;
+        int top_gmin[MAXD], ipn[MAXD], nb;
+        bool is_intfc = false;
+        double side,coords[MAXD],crx_coords[MAXD],nor[MAXD],vec[MAXD];
+        double vel_rel[MAXD], Un = 0.0;
+        double vel_intfc[MAXD];
+        double alpha = iFparams->porous_coeff[0];
+        double beta = iFparams->porous_coeff[1];
+
+        double* mu = field->mu;
+        double* div_U = field->div_U;
+        double* q = field->q;
+        
+        POINTER intfc_state;
+        HYPER_SURF *hs;
+        INTERFACE *grid_intfc = front->grid_intfc;
+        RECT_GRID *rgr = computational_grid(front->interf);
+        GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
+        
+        top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
+        for (i = 0; i < dim; i++)
+            coords[i] = top_L[i] + icoords[i]*top_h[i];
+
+        
+        int index = d_index(icoords,top_gmax,dim);
+        double mudiv = 0.5*mu[index]*div_U[index]; 
+        double q0 = q[index];
+
+
+        double max_nb = (dim == 2) ? 4 : 6;
+        for (nb = 0; nb < max_nb; nb++)
+        {
+            is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
+                                  top_comp[index],nor,&hs,crx_coords);
+            
+            if (is_intfc && dim == 2 && is_bdry(Curve_of_hs(hs)))
+                continue;
+            else if (is_intfc && dim == 3 && is_bdry(Surface_of_hs(hs)))
+                continue;
+            else if (is_intfc && dim == 2 &&
+                     hsbdry_type(Curve_of_hs(hs)) == STRING_HSBDRY)
+                continue;
+            
+            if (is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
+            {
+                next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
+                index_nb = d_index(ipn,top_gmax,dim);
+
+                double mudiv_nb = 0.5*mu[index_nb]*div_U[index_nb]; 
+                double q_nb = q[index_nb];
+
+                FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
+                                top_comp[index],&intfc_state,&hs,crx_coords);
+                
+                double vel_fluid[MAXD] = {0.0};
+                for (int idir = 0 ; idir < dim; idir++)
+                {
+                    vel_intfc[idir] = (*getStateVel[idir])(intfc_state);
+                    FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
+                                             field->vel[idir],getStateVel[idir],
+                                             &vel_fluid[idir],NULL);
+                    vel_rel[idir] = vel_fluid[idir] - vel_intfc[idir];
+                }
+                    
+                //project to relative fluid velocity to intfc normal direction
+                Un = (dim == 2) ? Dot2d(nor,vel_rel) : Dot3d(nor,vel_rel);
+                
+                //Compute interface pressure jump
+                //  
+                //  d_p = p^{+} - p^{-}
+                //
+                //given by the Ergun Equation                
+                //
+                //  d_p/d_r = alpha*Un + beta*|Un|*Un
+                
+                //NOTE: alpha and beta include thickness factor d_r
+                double d_p = (alpha + fabs(Un)*beta)*Un;
+		 
+                for (i = 0; i < dim; i++)
+                    vec[i] = coords[i] - crx_coords[i];
+                
+                side = (dim == 2) ? Dot2d(nor,vec) : Dot3d(nor,vec);
+
+                // modify pressure gradient
+                if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
+                {
+                    grad_var[nb/2] -= 0.5*d_p/top_h[nb/2];
+                }
+                else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
+                {
+                    grad_var[nb/2] += 0.5*d_p/top_h[nb/2];
+                }
+
+                if (debugging("pressure_drop"))
+                {
+                    printf("\ncomputeFieldPointGradJumpQ()\n");
+                    printf("d_p = %f, vel_rel = [%f %f %f], Un = %f\n",
+                            d_p,vel_rel[0],vel_rel[1],vel_rel[2],Un);
+                    printf("crds = [%f %f %f], crx = [%f %f %f], side = %f, nb = %d\n",
+                            coords[0],coords[1],coords[2],
+                            crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
+                }
+
+            }
+        }
+}
 int Incompress_Solver_Smooth_Basis::drawColorMap() {
 	int num_colors = 0;
 	int size;

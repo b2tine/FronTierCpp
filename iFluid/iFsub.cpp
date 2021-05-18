@@ -615,7 +615,6 @@ static void iF_flowThroughBoundaryState2d(
 	newst->pres -= dt/dn*f_pres;
     newst->phi -= dt/dn*f_phi;
 
-
     //Tangential
 	tsten = FrontGetTanStencils(front,oldp,nrad);
 
@@ -681,13 +680,24 @@ static void iF_flowThroughBoundaryState2d(
 	newst->pres -= dt/dn*f_pres;
     newst->phi -= dt/dn*f_phi;
     
-    
-    newst->q = 0.0;
-    //newst->q = oldst->pres;
-    
-    //TODO: add a conditional for incorporating q,
-    //      when lagged pressure scheme used.
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
 
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
+    
+    //TODO: correct?
+    if (iFparams->num_scheme.projc_method == PMI ||
+        iFparams->num_scheme.projc_method == PMII)
+    {
+        newst->phi = newst->pres - newst->q;
+    }
+    
     if (debugging("flow_through"))
 	{
 	    (void) printf("State after tangential sweep:\n");
@@ -887,15 +897,19 @@ static void iF_flowThroughBoundaryState3d(
             }
             
             newst->pres -= dt/dn*f_pres;
-            newst->pres -= dt/dn*f_pres;
+            newst->phi -= dt/dn*f_phi;
         }
     }
 
-    newst->q = 0.0;
-    //newst->q = oldst->pres;
-
-    //TODO: add a conditional for incorporating q,
-    //      when lagged pressure scheme used.
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
+     
+    //TODO: correct?
+    if (iFparams->num_scheme.projc_method == PMI ||
+        iFparams->num_scheme.projc_method == PMII)
+    {
+        newst->phi = newst->pres - newst->q;
+    }
 
     if (debugging("flow_through"))
 	{
@@ -1038,14 +1052,13 @@ static void iF_flowThroughBoundaryState2d(
     
     //TODO: Is this reasonably correct? -- see rationale below
     newst->phi = newst->pres;
-    newst->q = 0.0;
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
         //state->q = getQFromPres(front,oldst->pres);
-            //newst->q = oldst->pres;
         //newst->phi -= newst->q;
     
     //TODO: add a conditional for incorporating q,
     //      when lagged pressure scheme used.
-
     
     //Since pressure is usually updated as
     //      
@@ -1203,9 +1216,9 @@ static void iF_flowThroughBoundaryState3d(
 
     //TODO: Is this reasonably correct? -- see rationale below
     newst->phi = newst->pres;
-    newst->q = 0.0;
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
         //state->q = getQFromPres(front,oldst->pres);
-            //newst->q = oldst->pres;
         //newst->phi -= newst->q;
 
     
@@ -1326,7 +1339,8 @@ static  void neumann_point_propagate(
             getStatePhi,&newst->phi,&oldst->phi);
 
     //newst->phi = newst->pres;
-    newst->q = 0.0; //newst->q = oldst->pres;
+    newst->q = oldst->pres;
+    //newst->q = 0.0;
 	
     if (dim == 2)
     {

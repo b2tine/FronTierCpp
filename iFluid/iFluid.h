@@ -366,6 +366,9 @@ public:
 	
     double computeFieldPointPressureJump(int*,double,double);     
     void computeFieldPointGradJump(int*,double*,double*);
+    
+    double computeFieldPointPressureJumpQ(int*,double,double);     
+    void computeFieldPointGradJumpQ(int*,double*,double*);
 
     void setFreeStreamVelocity();
     

@@ -223,6 +223,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	int index;
 	int i,j,l,icoords[MAXD];
 	double **vel = field->vel;
+	double **vel_star = field->vel_star;
 	double **prev_vel = field->prev_vel;
 	double *phi = field->phi;
 	double *div_U = field->div_U;
@@ -254,9 +255,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    index  = d_index(icoords,top_gmax,dim);
-        if (!ifluid_comp(top_comp[index])) continue;
+        if (!ifluid_comp(top_comp[index]))
+        {
+            source[index] = 0.0;
+            diff_coeff[index] = 0.0;
+            continue;
+        }
 
-        source[index] = computeFieldPointDiv(icoords,vel);
+        //source[index] = computeFieldPointDiv(icoords,vel);
+        source[index] = computeFieldPointDiv(icoords,vel_star);
         diff_coeff[index] = 1.0/field->rho[index];
         
         if (debugging("check_div"))
@@ -659,7 +666,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
             iFparams->num_scheme.projc_method == PMII)
         {
             computeInitialPressure();
-            FT_ParallelExchGridArrayBuffer(field->pres,front,NULL);
+            computeGradientQ();
         }
 	    first = NO;
 	}
@@ -1113,8 +1120,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
 
-            if (iFparams->num_scheme.projc_method != PMIII &&
-                iFparams->num_scheme.projc_method != SIMPLE)
+            if (iFparams->num_scheme.projc_method == PMI ||
+                iFparams->num_scheme.projc_method == PMII)
             {
                 rhs -= m_dt*grad_q[l][index]/rho;
             }
@@ -1198,19 +1205,21 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                     "computeDiffusionCN()\n");
 }	/* end computeDiffusionCN */
 
-//TODO: Need to set indices prior to calling this function
-//      -- follow pattern used in computeProjection().
+//TODO: solve equation resulting from taking
+//      the divergence of the momentum balance equation ...
+//      \nabla^{2} P = 0 ????  Or is there a RHS???
 void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 {
+    /*
     printf("ERROR computeInitialPressure(): function not implemented yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
-
-    //TODO: write implementation -- solve equation resulting from taking
-    //      the divergence of the momentum balance equation ...
-    //      \nabla^{2} P = 0 ????  Or is there a RHS???
+    */
     
     if (debugging("trace"))
             printf("Enterng computeInitialPressure()\n");
+
+    setGlobalIndex();
+    setIndexMap();
 
 	int index,index_nb[4];
 	double rhs,coeff[4];
@@ -1232,6 +1241,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	int icrds_max[MAXD],icrds_min[MAXD];
 
     double* pres = field->pres;
+    double* q = field->q;
+    double* rho = field->rho;
 
 	double *x;
 	int size = iupper - ilower;
@@ -1248,7 +1259,45 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	double max_soln = -HUGE;
 	double min_soln = HUGE;
 
+    //set source term
 	for (j = jmin; j <= jmax; j++)
+    for (i = imin; i <= imax; i++)
+	{
+	    icoords[0] = i;
+	    icoords[1] = j;
+	    index  = d_index(icoords,top_gmax,dim);
+        
+        if (!ifluid_comp(top_comp[index]))
+        {
+            source[index] = 0.0;
+            diff_coeff[index] = 0.0;
+            continue;
+        }
+
+        source[index] = 0.0;
+        diff_coeff[index] = 1.0/field->rho[index];
+    }
+    
+    FT_ParallelExchGridArrayBuffer(source,front,NULL);
+	FT_ParallelExchGridArrayBuffer(diff_coeff,front,NULL);
+	
+    for (j = 0; j <= top_gmax[1]; j++)
+    for (i = 0; i <= top_gmax[0]; i++)
+	{
+	    index  = d_index2d(i,j,top_gmax);
+        if (!ifluid_comp(top_comp[index])) continue;
+	    
+        // Compute pressure jump due to porosity
+        icoords[0] = i;
+        icoords[1] = j;
+        source[index] += computeFieldPointPressureJumpQ(icoords,
+                         iFparams->porous_coeff[0],
+                         iFparams->porous_coeff[1]);
+	}
+    //end set source term
+
+    
+    for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
@@ -1287,7 +1336,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	    }
 
 	    aII = 0.0;
-	    rhs = 0.0;
+	    rhs = source[index]*rho[index];
 
         std::set<int> SetIndices;
 
@@ -1369,26 +1418,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
                 ////////////////////////////////////////////////////////////////////////
-
-                /*
-                ////////////////////////////////////////////////////////////////////////
-                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
-                //////////////////////////////////////////////////////////////////////
-                for (int m = 0; m < dim; ++m)
-                {
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
-                }
-
-                //TODO: Finish this version and test ... goal is for nearly all of the
-                //      interpolation to be bilinear by choosing the reflection point
-                //      just far enough away from the interface.
-
-                ////////////////////////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////////////////////
-                */
                 
-                
-                //Interpolate phi at the reflected point,
+                //Interpolate pressure at the reflected point,
                 static INTRP_CELL blk_cell;
                 static bool first_pres_reflect = true;
 
@@ -1489,6 +1520,12 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
                 {
                     //INLET
                     // do-nothing
+                
+                    /*
+                    rhs -= coeff[l]*getStatePres(intfc_state);
+                    aII -= coeff[l];
+                    use_neumann_solver = NO;
+                    */
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
@@ -1624,6 +1661,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeInitialPressure()
 	    if (I == -1) continue;
 	    
         pres[index] = x[I-ilower];
+        q[index] = x[I-ilower];
 	    
         if (max_soln < pres[index]) 
 	    {
@@ -1711,10 +1749,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressure(void)
 	    clean_up(ERROR);
 	}
 
-    /*
     if (iFparams->num_scheme.projc_method == PMIII ||
         iFparams->num_scheme.projc_method == SIMPLE) return;
-    */
 
     computeGradientQ();
 }
@@ -1864,7 +1900,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ()
 	int icoords[MAXD];
 	double point_grad_q[MAXD];
 	double **grad_q = field->grad_q;
-	double *phi = field->phi;
     double *q = field->q;
 
 	if (debugging("field_var"))
@@ -1899,7 +1934,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ()
 	    icoords[0] = i;
 	    icoords[1] = j;
 	    
-        computeFieldPointGradQ(icoords,array,point_grad_q);
+        computeFieldPointGradJumpQ(icoords,array,point_grad_q);
 	    
         for (l = 0; l < dim; ++l)
 	    	grad_q[l][index] = point_grad_q[l];
@@ -1916,7 +1951,7 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeGradientQ()
 	    computeVarIncrement(field->old_var[1],field->grad_q[1],NO);
 	    printf("\n");
 	}
-}	/* end computeGradientQ2d */
+}	/* end computeGradientQ */
 
 void Incompress_Solver_Smooth_2D_Cartesian::surfaceTension(
 	double *coords,
