@@ -8,7 +8,6 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
 
-//TODO: Finish Implementation
 void G_CARTESIAN::addViscousFlux(
         SWEEP* m_vst,
         FSWEEP *m_flux,
@@ -27,8 +26,9 @@ void G_CARTESIAN::addViscousFlux(
                 
                 VStencil2d vsten;
                 fillViscousFluxStencil2d(icoords,m_vst,&vsten);
-                //VFLUX v_flux;
-                //computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
+                
+                VFLUX v_flux;
+                computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
             }
             break;
         }
@@ -91,7 +91,7 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
         {
-            setViscousGhostState(icoords,comp,vs,m_vst);
+            setViscousGhostState(comp,vs,m_vst);
         }
         else
         {
@@ -216,10 +216,9 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
 */
 
 void G_CARTESIAN::setViscousGhostState(
-        int* icoords,
         COMPONENT comp,
-        SWEEP* m_vst,
-        VSWEEP* vs)
+        VSWEEP* vs,
+        SWEEP* m_vst)
 {
     double nip_coords[MAXD];
     double intrp_coeffs[MAXD];
@@ -230,7 +229,7 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     
     bool nip_found = nearest_interface_point(&ghost_coords[0],
-                vs->comp,front->interf,NO_SUBDOMAIN,nullptr,
+                comp,front->interf,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
     
     if (!nip_found)
@@ -394,7 +393,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 	}
     
     double dist_reflect = FT_GridSizeInDir(nor,front);
-    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    double dist_ghost = distance_between_positions(ghost_coords,crx_coords,dim);
     
     double coords_reflect[MAXD] = {0.0};
     for (int j = 0; j < dim; ++j)
@@ -402,18 +401,22 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     double dens_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
-            getStateDens,&dens_reflect,&m_vst->dens[index]);
+            getStateDens,&dens_reflect,nullptr);
+    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+            getStateDens,&dens_reflect,&m_vst->dens[index]);*/
 
     double mom_reflect[MAXD];
     double vel_reflect[MAXD];
     for (int j = 0; j < dim; ++j)
     {
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
-                getStateMom[j],&momn_reflect[j],&m_vst->momn[j][index]);
-        vel_reflect[j] = momn_reflect[j]/dens_reflect;
+                getStateMom[j],&mom_reflect[j],nullptr);
+        /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
+                getStateMom[j],&momn_reflect[j],&m_vst->momn[j][index]);*/
+        vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
-    //TODO: modify vel_reflect .... ?
+    //TODO: modify vel_reflect -- slip velocity etc. 
 
     for (int j = 0; j < dim; ++j)
     {
@@ -421,7 +424,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 }
 
-/*
+//TODO: See gvisc.c : g_ns_soln()
 void G_CARTESIAN::computeViscousFlux(
         int* icoords,
         SWEEP* m_vst,
@@ -430,6 +433,7 @@ void G_CARTESIAN::computeViscousFlux(
 {
     LOC(); clean_up(0);
 
+    /*
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
     if (!gas_comp(comp)) return;
@@ -488,9 +492,8 @@ void G_CARTESIAN::computeViscousFlux(
 
 //TODO: For mixed partials write functions that accept an icoords array and
 //      a direction. Then can compute individual ghost states per derivative.
-
+    */
 
 }
-*/
 
 
