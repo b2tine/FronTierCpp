@@ -91,19 +91,21 @@ enum _SHOCK_PARAMETER {
 };
 typedef enum _SHOCK_PARAMETER SHOCK_PARAMETER;
 
-typedef struct {
-        int dim;
-        PROB_TYPE prob_type;
-        POINTER level_func_params;
+typedef struct 
+{
+    int dim;
+    PROB_TYPE prob_type;
+    POINTER level_func_params;
 	NUM_SCHEME num_scheme;
-        POINT_PROP_SCHEME point_prop_scheme;
-	EOS_PARAMS      eos[MAX_COMP];
+    POINT_PROP_SCHEME point_prop_scheme;
+	EOS_PARAMS eos[MAX_COMP];
 	boolean tracked;
 	boolean articomp;
 	boolean contact_stationary;
 	int idir;
 	int shock_side;
-	double p0;
+	
+    double p0;
         double p1;
         double p2;
         double p3;
@@ -117,13 +119,16 @@ typedef struct {
         double v3[MAXD];
 	double min_dens;
         double min_pres;
-	double mu1;
+	
+    double mu1;
 	double mu2;
 	double gamma;
 	double gravity[MAXD];
 	double Mach_number;
 	double shock_position;
 	double contact_vel;
+    
+    double *mu;
 	double **vel;
 	double **mom;
 	double *dens;
@@ -131,7 +136,8 @@ typedef struct {
 	double *pres;
 	double *vort;    /* Vorticity-2d */
     double **vort3d; /* Vorticity-3d */
-	//GFM
+
+    //GFM
 	double **gnor;
 	double **Gdens;
 	double ***Gvel;
@@ -301,6 +307,7 @@ struct FIELD
 	double *pres;
     double *vort;
     double **vort3d;
+    double *mu;
 };
 
 struct SWEEP
@@ -454,7 +461,11 @@ private:
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
 
-    void computeViscousFlux(int* icoords, SWEEP* m_vst, VFLUX* v_flux, double delta_t);
+    void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
+            double delta_t, VStencil2d* vsten);
+
+    void computeViscousFlux3d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
+            double delta_t, VStencil3d* vsten);
     
     // -------------------------------------------------------
 	// 		initialization functions

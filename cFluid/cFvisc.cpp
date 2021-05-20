@@ -28,11 +28,15 @@ void G_CARTESIAN::addViscousFlux(
                 fillViscousFluxStencil2d(icoords,m_vst,&vsten);
                 
                 VFLUX v_flux;
-                computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
+                computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
+
+                for (int k = 0; k < dim; ++k)
+                    m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
+                m_flux->engy_flux[index] += v_flux.engy_flux;
             }
             break;
         }
-    /*case 3:
+    case 3:
         {
             for (int k = imin[2]; k <= imax[2]; k++)
             for (int j = imin[1]; j <= imax[1]; j++)
@@ -44,19 +48,22 @@ void G_CARTESIAN::addViscousFlux(
                 
                 VStencil3d vsten;
                 fillViscousFluxStencil3d(icoords,m_vst,&vsten);
-                //VFLUX v_flux;
-                //computeViscousFlux(icoords,m_vst,&v_flux,delta_t);
+
+                VFLUX v_flux;
+                computeViscousFlux3d(icoords,m_vst,&v_flux,delta_t,&vsten);
+
+                for (int k = 0; k < dim; ++k)
+                    m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
+                m_flux->engy_flux[index] += v_flux.engy_flux;
             }
             break;
-        }*/
+        }
     default:
         {
             printf("addViscousFlux() ERROR: Invalid Dimension\n");
             LOC(); clean_up(EXIT_FAILURE);
         }
     }
-
-    LOC(); clean_up(0);
 }
 
 void G_CARTESIAN::fillViscousFluxStencil2d(
@@ -64,27 +71,13 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         SWEEP* m_vst,
         VStencil2d* vsten)
 {
-    /*
-    POINTER intfc_state;
-    double nip_coords[MAXD];
-    double intrp_coeffs[MAXD];
-    HYPER_SURF_ELEMENT* hse;
-    HYPER_SURF* hs;
-    
-    int crx_status;
-
-    const GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-    */
-
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
     for (int jj = 0; jj < 3; ++jj)
     for (int ii = 0; ii < 3; ++ii)
     {
-        VSWEEP* vs = &vsten->st[ii][jj];
+        VSWEEP* vs = &vsten->st[jj][ii];
         vs->icoords[0] = icoords[0] + ii - 1;
         vs->icoords[1] = icoords[1] + jj - 1;
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
@@ -99,8 +92,6 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
             {
                 vs->vel[i] = m_vst->momn[i][idx_nb]/m_vst->dens[idx_nb];
             }
-            //vs->mu = m_vst->mu;;
-            //vs->temp = m_vst->temp;
         }
     }
 
@@ -114,7 +105,6 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
             VSWEEP vs = vsten->st[ii][jj];
             if (vs.comp != comp)
             {
-                //TODO: generate a ghost state
                 needghost = true;
             }
         }
@@ -206,14 +196,14 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     */
 }
 
-/*
 void G_CARTESIAN::fillViscousFluxStencil3d(
         int* icoords,
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
+    printf("ERROR: fillViscousFluxStencil3d() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }
-*/
 
 void G_CARTESIAN::setViscousGhostState(
         COMPONENT comp,
@@ -285,9 +275,6 @@ void G_CARTESIAN::setDirichletViscousGhostState(
 
     for (int i = 0; i < dim; ++i)
         vs->vel[i] = state->vel[i];
-    //TODO: need to add viscosity to STATE?
-    //vs->mu = state->mu;
-    //vs->temp = state->temp;
 
     FT_FreeThese(1,state);
 }
@@ -309,12 +296,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     {
     case 2:
         {
-            double ns[MAXD] = {0.0};
-            double ne[MAXD] = {0.0};
-            
-            normal(Bond_of_hse(hse)->start,hse,hs,ns,front);
-            normal(Bond_of_hse(hse)->end,hse,hs,ne,front);
-
             STATE* ss;
             STATE* se;
 
@@ -335,6 +316,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
                 LOC(); clean_up(EXIT_FAILURE);
             }
 
+            double ns[MAXD] = {0.0};
+            double ne[MAXD] = {0.0};
+            
+            normal(Bond_of_hse(hse)->start,hse,hs,ns,front);
+            normal(Bond_of_hse(hse)->end,hse,hs,ne,front);
+
             for (int i = 0; i < dim; ++i)
             {
                 nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
@@ -345,9 +332,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     case 3:
         {
-            TRI* nearTri = Tri_of_hse(hse);
-            
             STATE* st[3];
+            TRI* nearTri = Tri_of_hse(hse);
 
             if (gas_comp(negative_component(hs)))
             {
@@ -424,76 +410,105 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 }
 
-//TODO: See gvisc.c : g_ns_soln()
-void G_CARTESIAN::computeViscousFlux(
+void G_CARTESIAN::computeViscousFlux2d(
         int* icoords,
         SWEEP* m_vst,
         VFLUX* v_flux,
-        double delta_t)
+        double delta_t,
+        VStencil2d* vsten)
 {
-    LOC(); clean_up(0);
+    auto sten = vsten->st;
+
+    double u = sten[1][1].vel[0];
+    double v = sten[1][1].vel[1];
+
+    double u_x = 0.5*(sten[1][2].vel[0] - sten[1][0].vel[0])/top_h[0];
+    double u_y = 0.5*(sten[2][1].vel[0] - sten[0][1].vel[0])/top_h[1];
+    double v_x = 0.5*(sten[1][2].vel[1] - sten[1][0].vel[1])/top_h[0];
+    double v_y = 0.5*(sten[2][1].vel[1] - sten[0][1].vel[1])/top_h[1];
+
+    double u_xx = (sten[1][2].vel[0] - 2.0*sten[1][1].vel[0]
+            + sten[1][0].vel[0])/sqr(top_h[0]);
+    double u_yy = (sten[2][1].vel[0] - 2.0*sten[1][1].vel[0] 
+            + sten[0][1].vel[0])/sqr(top_h[1]);
+    double v_xx = (sten[1][2].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[1][0].vel[1])/sqr(top_h[0]);
+    double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[0][1].vel[1])/sqr(top_h[1]);
+    
+    double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
+            - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
+    double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
+            - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
+
+    double* mu = field.mu;
+    int index = d_index(icoords,top_gmax,dim);
+    
+    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
+    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x);
+    double tauxy = mu[index]*(u_y + v_x);
+
+    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy);
+    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
+    double tauxy_y = mu[index]*(u_yy + v_xy);
+    double tauxy_x = mu[index]*(u_xy + v_xx);
+    
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+}
+
+void G_CARTESIAN::computeViscousFlux3d(
+        int* icoords,
+        SWEEP* m_vst,
+        VFLUX* v_flux,
+        double delta_t,
+        VStencil3d* sten)
+{
+    printf("ERROR: computeViscousFlux3d() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
 
     /*
+    double u = sten[1][1].vel[0];
+    double v = sten[1][1].vel[1];
+
+    double u_x = 0.5*(sten[1][2].vel[0] - sten[1][0].vel[0])/top_h[0];
+    double u_y = 0.5*(sten[2][1].vel[0] - sten[0][1].vel[0])/top_h[1];
+    double v_x = 0.5*(sten[1][2].vel[1] - sten[1][0].vel[1])/top_h[0];
+    double v_y = 0.5*(sten[2][1].vel[1] - sten[0][1].vel[1])/top_h[1];
+
+    double u_xx = (sten[1][2].vel[0] - 2.0*sten[1][1].vel[0]
+            + sten[1][0].vel[0])/sqr(top_h[0]);
+    double u_yy = (sten[2][1].vel[0] - 2.0*sten[1][1].vel[0] 
+            + sten[0][1].vel[0])/sqr(top_h[1]);
+    double v_xx = (sten[1][2].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[1][0].vel[1])/sqr(top_h[0]);
+    double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[0][1].vel[1])/sqr(top_h[1]);
+    
+    double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
+            - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
+    double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
+            - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
+
+    double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-    if (!gas_comp(comp)) return;
-
-    POINTER state;
-    HYPER_SURF* hs;
-        //HYPER_SURF_ELEMENT* hse;
-    double crx_coords[MAXD];
-    int crx_status;
-
-    const GRID_DIRECTION dir[3][2] = {
-        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
-    };
-
     
-    int ic[MAXD];
-    VStencil3d vsten;
-    VSWEEP vstate = vsten.st[1][1][1];//center of stencil
+    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
+    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x);
+    double tauxy = mu[index]*(u_y + v_x);
+
+    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy);
+    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
+    double tauxy_y = mu[index]*(u_yy + v_xy);
+    double tauxy_x = mu[index]*(u_xy + v_xx);
     
-    for (int l = 0; l < dim; ++l)
-    {
-        vstate.icoords[l] = icoords[l];
-        vstate.vel[l] = m_vst->momn[l][index]/m_vst->dens[index];
-    }
-
-    //From grid point i,j,k need to check for interface crossings
-    //between immediate neighbors. Will then need to move to each
-    //immediate neighbor and check for interface crossings between
-    //its neighbors involved in computing the mixed derivatives.
-    
-    //NOTE: Not possible to precompute every state ahead of time,
-    //      must check crossing and generate ghost states when computing
-    //      a specific derivative -- a single point that is involved
-    //      in the computation of two separate derivatives may have different
-    //      states in the two computations...
-
-    //TODO: The non-mixed second derivatives can be computed with
-    //      a loop like this one, and the mixed ones can be dealt with
-    //      separately.
-    
-    double u_nb[2], v_nb[2], w_nb[2], mu_nb[2];
-
-    for (int l = 0; l < dim; ++l)
-    {
-        for (int nb = 0; nb < 2; ++nb)
-        {
-            for (int j = 0; j < dim; ++j)
-                ic[j] = icoords[j];
-            ic[l] = (nb == 0) ? icoords[l] - 1 : icoords[l] + 1;
-            
-            vstate = vsten.st[ic[0]][ic[1]][ic[2]];
-    
-        }
-
-    }
-
-//TODO: For mixed partials write functions that accept an icoords array and
-//      a direction. Then can compute individual ghost states per derivative.
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
     */
-
 }
 
 

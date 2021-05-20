@@ -486,6 +486,7 @@ void G_CARTESIAN::computeMeshFlux(
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
     
+    //TODO: add switch to turn on/off
     addViscousFlux(&m_vst,m_flux,delta_t);
 	
     addSourceTerm(m_vst,m_flux,delta_t);
@@ -993,7 +994,9 @@ void G_CARTESIAN::setDomain()
 	    	imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : 
 				top_gmax[i] - ubuf[i];
 	    }
-
+	    
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu,size,
+					sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,size,
 					sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,size,
@@ -1027,6 +1030,7 @@ void G_CARTESIAN::setDomain()
                         sizeof(double));
         }
 	    
+	    field.mu = eqn_params->mu;
         field.dens = eqn_params->dens;
 	    field.engy = eqn_params->engy;
 	    field.pres = eqn_params->pres;
