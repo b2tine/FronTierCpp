@@ -511,7 +511,6 @@ void G_CARTESIAN::addFluxInDirection(
 	double delta_t)
 {
 	int i,j,icoords[MAXD];
-        int num_thread = get_num_of_thread();
 	switch (dim)
 	{
 	case 1:
@@ -789,7 +788,8 @@ void G_CARTESIAN::solve(double dt)
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-	computeAdvection();
+	computeAdvection();//TODO: compute just the flux, do not advance in time.
+
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
 	stop_clock("computeAdvection");

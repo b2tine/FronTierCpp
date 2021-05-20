@@ -3,6 +3,14 @@
 
 //#include "cFluid.h"
 
+struct VFLUX
+{
+    int icoords[MAXD];
+    double momn_flux[MAXD];
+    double engy_flux;
+    double heat_flux;
+};
+
 struct VSWEEP
 {
     int icoords[MAXD];
@@ -21,15 +29,6 @@ struct VStencil3d
 {
     VSWEEP st[MAXD][MAXD][MAXD]; //[1][1][1] is center of stencil (i,j,k)
 };
-
-struct VFLUX
-{
-    int icoords[MAXD];
-    double momn_flux[MAXD];
-    double engy_flux;
-    double heat_flux;
-};
-
 
 
 #endif

@@ -445,13 +445,13 @@ private:
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
     void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
-    void setViscousGhostState(VSWEEP* vs, COMPONENT comp, int index);
+    void setViscousGhostState(int* icoords, COMPONENT comp, SWEEP* m_vst, VSWEEP* vs);
     
     void setDirichletViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
 
-    void setNeumannViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
-            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+    void setNeumannViscousGhostState(SWEEP* m_vst, VSWEEP* vs, COMPONENT comp,
+            double* intrp_coeffs, HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
 
         //void computeViscousFlux(int* icoords, SWEEP* m_vst, VFLUX* v_flux, double delta_t);
     
