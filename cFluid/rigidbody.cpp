@@ -169,8 +169,7 @@ static void init_rigid_sphere(
         }
         else
         {
-            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
-                                        &surf);
+            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,&surf);
         }
 }	/* end init_rigid_sphere */
 

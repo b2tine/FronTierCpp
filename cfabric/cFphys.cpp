@@ -308,8 +308,9 @@ void setFabricParams(char* inname, EQN_PARAMS* eqn_params)
 	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
-	    (void) printf("%f\n",eqn_params->gravity[i]);
+	    (void) printf("%f",eqn_params->gravity[i]);
 	}
+    (void) printf("\n");
 
 	CursorAfterString(infile,"Type yes to track the interface:");
 	fscanf(infile,"%s",s);

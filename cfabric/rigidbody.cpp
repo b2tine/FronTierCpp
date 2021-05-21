@@ -255,7 +255,7 @@ static void init_rigid_box(
         (void) printf("The default is Movable (M)\n");
         w_type = MOVABLE_BODY_BOUNDARY;
         neg_comp = SOLID_COMP;
-        pos_comp = LIQUID_COMP2;
+        pos_comp = GAS_COMP2;
         if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
         {
             fscanf(infile,"%s",string);

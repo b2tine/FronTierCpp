@@ -141,7 +141,8 @@ int main(int argc, char **argv)
                     xgraph_2d_intfc(test_name,front.interf);
                     break;
                 case 3:
-                    gview_plot_interface("gv-init",front.interf);
+                    sprintf(test_name,"%s/gv-init",OutName(&front));
+                    gview_plot_interface(test_name,front.interf);
                     break;
                 }
 	    }

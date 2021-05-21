@@ -8,17 +8,17 @@ Redistribution interval: 10000000000000
 *******************************************************
 
 Domain limit in 0-th dimension: 0 2.0
-Domain limit in 1-th dimension: 0 1.0
+Domain limit in 1-th dimension: 0 1.0 
 Domain limit in 2-th dimension: 0 1.0
 
 Computational grid: 100 50 50
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
-Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
-Lower boundary in 2-th dimension: PERIODIC_BOUNDARY
-Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY 
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY 
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
@@ -26,6 +26,16 @@ Enter velocity: 1.0 0 0
 Enter pressure: 1
 Enter density: 1
 For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 *******************************************************
@@ -63,6 +73,7 @@ Enter center of the sphere: 0.275 0.496 0.496
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
+Type yes to use CGAL for rigid bodyXXX: no
 Enter refinement level: 1
 
 Type yes if motion is preset: no
@@ -84,9 +95,10 @@ Type y to make vector vorticity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging stringXXX: no_viscflux
+Enter the debugging string: init_intfc
+
+Enter the debugging stringX: no_viscflux
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK
 Enter the debugging stringX: step_size
-Enter the debugging stringX: init_intfc

@@ -84,6 +84,8 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
         {
+            //TODO: Can we eliminate this warning?
+            //          Warning: calling long_nearest_interface_point2d()
             setViscousGhostState(comp,vs,m_vst);
         }
         else
@@ -142,8 +144,11 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     
     bool nip_found = nearest_interface_point(&ghost_coords[0],
-                comp,front->interf,NO_SUBDOMAIN,nullptr,
+                comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
+    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);*/
     
     if (!nip_found)
     {

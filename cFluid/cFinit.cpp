@@ -1405,7 +1405,6 @@ static void getAmbientState(
 	    break;
 	case GAS_COMP2:
         state->mu = mu2;
-	    state->dens = rho1;
 	    state->dens = rho2;
 	    state->pres = p2;
 	    for (i = 0; i < dim; ++i)
@@ -1448,14 +1447,21 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	(eqn_params->eos[GAS_COMP1]).gamma = gamma;
 	(eqn_params->eos[GAS_COMP1]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP1]).einf = einf;
+	(eqn_params->eos[GAS_COMP2]).gamma = gamma;
+	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
+	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
-	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p2);
-	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p2);
+	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p1);
+	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p1);
 
     CursorAfterString(infile,"Enter density and viscosity of the fluid:");
-    fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
-    (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
+    fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->mu1);
+    (void) printf("%f %f\n",eqn_params->rho1,eqn_params->mu1);
+
+    eqn_params->p2 = eqn_params->p1;
+    eqn_params->mu2 = eqn_params->mu1;
+    eqn_params->rho2 = eqn_params->rho1;
 
     /*
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
@@ -1474,7 +1480,16 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	    (void) printf("%f ",eqn_params->gravity[i]);
 	}
 	(void) printf("\n");
-	fclose(infile);
+
+    CursorAfterString(infile,"Type yes to track the interface:");
+    fscanf(infile,"%s",str);
+    (void) printf("%s\n",str);
+    if (str[0] == 'y' || str[0] == 'Y')
+        eqn_params->tracked = YES;
+    else
+        eqn_params->tracked = NO;
+
+    fclose(infile);
 }	/* end setChannelFlowParams */
 
 void G_CARTESIAN::initChannelFlowStates()

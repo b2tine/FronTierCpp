@@ -1043,11 +1043,8 @@ void G_CARTESIAN::setDomain()
 	    field.pres = eqn_params->pres;
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
-
-        /*
-	    field.vort = eqn_params->vort;
+        field.vort = eqn_params->vort;
 	    field.vort3d = eqn_params->vort3d;
-        */
 	}
 
     //GFM
@@ -1693,7 +1690,6 @@ void G_CARTESIAN::computeVorticity()
         {
             printf("computeVorticity() ERROR: Invalid Dimension\n");
             LOC(); clean_up(EXIT_FAILURE);
-
         }
     }
 }
