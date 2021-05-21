@@ -6,6 +6,7 @@
  **********************************************************************/
 
 #include <FronTier.h>
+#include "rigidbody.h"
 #include "cFvisc.h"
 
 #include <vector>
@@ -43,7 +44,8 @@ enum _PROB_TYPE {
         FLUID_SOLID_RECT,
         FLUID_SOLID_TRIANGLE,
         FLUID_SOLID_CYLINDER,
-        OBLIQUE_SHOCK_REFLECT
+        OBLIQUE_SHOCK_REFLECT,
+    CHANNEL_FLOW
 };
 typedef enum _PROB_TYPE PROB_TYPE;
 
@@ -167,17 +169,18 @@ struct _FLOW_THROUGH_PARAMS {
 };
 typedef struct _FLOW_THROUGH_PARAMS FLOW_THROUGH_PARAMS;
 
+/*
 struct _RG_PARAMS {
         int dim;
-	boolean no_fluid;               /* For benchmark tests */
-        double  total_mass;             /* Total mass */
-        double  moment_of_inertial;     /* Moment of inertial about the axis */
-        double  center_of_mass[MAXD];   /* Center of mass */
-        double  rotation_dir[MAXD];     /* Direction of rotation */
-        double  translation_dir[MAXD];  /* Restricted direction of motion */
-        double  rotation_cen[MAXD];     /* Center of rotation */
-        double  cen_of_mass_velo[MAXD]; /* Center of mass velocity */
-        double  angular_velo;           /* Angular velocity of rotation */
+	    boolean no_fluid;               //For benchmark tests
+        double  total_mass;             //Total mass
+        double  moment_of_inertial;     //Moment of inertial about the axis
+        double  center_of_mass[MAXD];   //Center of mass
+        double  rotation_dir[MAXD];     //Direction of rotation
+        double  translation_dir[MAXD];  //Restricted direction of motion
+        double  rotation_cen[MAXD];     //Center of rotation
+        double  cen_of_mass_velo[MAXD]; //Center of mass velocity
+        double  angular_velo;           //Angular velocity of rotation
         double  p_moment_of_inertial[MAXD];
         double  p_angular_velo[MAXD];
         double  euler_params[4];
@@ -185,6 +188,7 @@ struct _RG_PARAMS {
         MOTION_TYPE motion_type;
 };
 typedef struct _RG_PARAMS RG_PARAMS;
+*/
 
 typedef class G_CARTESIAN G_CARTESIAN_EB;
 
@@ -470,6 +474,7 @@ private:
     // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
+	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initCirclePlaneIntfc(LEVEL_FUNC_PACK*,char*);
@@ -483,7 +488,7 @@ private:
 	void initBubbleStates();
 	void initImplosionStates();
 	void initMTFusionStates();
-	void initProjectileStates();
+	void initChannelFlowStates(); //void initProjectileStates();
 	void initRiemProbStates();
 	void initBlastWaveStates();
 	void initShockSineWaveStates();
@@ -498,7 +503,7 @@ private:
 	void setBubbleParams(char*);
 	void setImplosionParams(char*);
 	void setMTFusionParams(char*);
-	void setProjectileParams(char*);
+	void setChannelFlowParams(char*); //void setProjectileParams(char*);
 	void setRiemProbParams(char*);
 	void setRiemProbParams1d(char*);
 	void setRiemProbParams2d(char*);
@@ -646,11 +651,11 @@ private:
         int imax,jmax,kmax;
 };
 
-extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
-
 // cFinit.cpp
 extern void insert_objects(Front*);
+//extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
+//extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
+
 
 
 #endif

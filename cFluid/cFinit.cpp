@@ -1425,7 +1425,7 @@ static void getAmbientState(
 			comp,state->dens,state->pres,state->engy);
 }	/* end getAmbientState */
 
-void G_CARTESIAN::setProjectileParams(char *inname)
+void G_CARTESIAN::setChannelFlowParams(char *inname)
 {
 	int i;
 	FILE *infile = fopen(inname,"r");
@@ -1452,9 +1452,9 @@ void G_CARTESIAN::setProjectileParams(char *inname)
 	}
 	(void) printf("\n");
 	fclose(infile);
-}	/* end setProjectileParams */
+}	/* end setChannelFlowParams */
 
-void G_CARTESIAN::initProjectileStates()
+void G_CARTESIAN::initChannelFlowStates()
 {
 	int i,j,k,l,index;
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
@@ -1515,7 +1515,16 @@ void G_CARTESIAN::initProjectileStates()
 	    break;
 	}
 	scatMeshStates();
-}	/* end initProjectileStates */
+}	/* end initChannelFlowStates */
+
+void G_CARTESIAN::initChannelFlow(
+	LEVEL_FUNC_PACK *level_func_pack,
+	char *inname)
+{
+    m_comp[0] = SOLID_COMP;
+    level_func_pack->pos_component = GAS_COMP1;
+    level_func_pack->neg_component = SOLID_COMP;
+}
 
 void G_CARTESIAN::initRiemannProb(
 	LEVEL_FUNC_PACK *level_func_pack,
@@ -2174,6 +2183,7 @@ void G_CARTESIAN::initCylinderPlaneIntfc(
         fclose(infile);
 }       /* end initCylinderPlaneIntfc */
 
+/*
 extern  void prompt_for_rigid_body_params(
         int dim,
         char *inname,
@@ -2299,8 +2309,8 @@ extern  void prompt_for_rigid_body_params(
         }
         if (rgb_params->motion_type == PRESET_ROTATION)
         {
-            /* 2D preset rotation is always about the z-axis */
-            /* 3D preset rotation axis along rotation_dir */
+            //2D preset rotation is always about the z-axis
+            //3D preset rotation axis along rotation_dir
             if (dim == 3)
             {
                 mag_dir = 0.0;
@@ -2315,12 +2325,12 @@ extern  void prompt_for_rigid_body_params(
                 mag_dir = sqrt(mag_dir);
                 for (i = 0; i < dim; ++i)
                     rgb_params->rotation_dir[i] /= mag_dir;
-                /* initialize the euler parameters */
+                
                 rgb_params->euler_params[0] = 1.0;
                 for (i = 1; i < 4; ++i)
                     rgb_params->euler_params[i] = 0.0;
             }
-            /* Center of axis is the coordinate of a point on the axis */
+            //Center of axis is the coordinate of a point on the axis
             CursorAfterString(infile,"Enter rotation center:");
             for (i = 0; i < dim; ++i)
             {
@@ -2333,7 +2343,7 @@ extern  void prompt_for_rigid_body_params(
             (void) printf("%f\n",rgb_params->angular_velo);
             if (dim == 3)
             {
-                /* used to update the maximum speed in 3D cases */
+                //used to update the maximum speed in 3D cases
                 for (i = 0; i < dim; ++i)
                     rgb_params->p_angular_velo[i] = rgb_params->angular_velo
                                         * rgb_params->rotation_dir[i];
@@ -2365,7 +2375,7 @@ extern  void prompt_for_rigid_body_params(
                 (void) printf("%s\n",s);
                 if (s[0] == 'y' || s[0] == 'Y')
                 {
-                    /* For 2D, it is always about the z-axis */
+                    //For 2D, it is always about the z-axis
                     if (dim == 3)
                     {
                         sprintf(msg,"Enter direction of the axis:");
@@ -2416,7 +2426,7 @@ extern  void prompt_for_rigid_body_params(
                     (void) printf("%f ",rgb_params->p_angular_velo[i]);
                 }
                 (void) printf("\n");
-                /* initialize the euler parameters */
+                
                 rgb_params->euler_params[0] = 1.0;
                 for (i = 1; i < 4; ++i)
                     rgb_params->euler_params[i] = 0.0;
@@ -2425,8 +2435,9 @@ extern  void prompt_for_rigid_body_params(
 
         if (debugging("rgbody"))
             (void) printf("Leaving prompt_for_rigid_body_params()\n");
-}       /* end prompt_for_rigid_body_params */
+}*/       /* end prompt_for_rigid_body_params */
 
+/*
 extern void set_rgbody_params(
         RG_PARAMS rg_params,
         HYPER_SURF *hs)
@@ -2457,7 +2468,7 @@ extern void set_rgbody_params(
             for (i = 0; i < 4; i++)
                 euler_params(hs)[i] = rg_params.euler_params[i];
         }
-}       /* end set_rgbody_params */
+}*/       /* end set_rgbody_params */
 
 static double getStationaryVelocity(
 	EQN_PARAMS *eqn_params)

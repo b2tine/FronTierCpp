@@ -35,7 +35,7 @@ static void gas_driver(Front*,G_CARTESIAN&);
 static int g_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
                         HYPER_SURF*,double*);
 static boolean compare_with_base_data(Front *front);
-static void rgb_init(Front*,RG_PARAMS);
+//static void rgb_init(Front*,RG_PARAMS);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -97,12 +97,14 @@ int main(int argc, char **argv)
 
 	if (eqn_params.use_base_soln == YES)
 	{
-            for (i = 0; i < f_basic.dim; ++i)
-                eqn_params.f_basic->subdomains[i] = f_basic.subdomains[i];
+        for (i = 0; i < f_basic.dim; ++i)
+            eqn_params.f_basic->subdomains[i] = f_basic.subdomains[i];
 	}
 
 	front.extra1 = (POINTER)&eqn_params;
-	if (debugging("trace")) printf("Passed read_cFluid_params()\n");
+	front.extra3 = (POINTER)&rgb_params;
+	
+    if (debugging("trace")) printf("Passed read_cFluid_params()\n");
 
 	/* Initialize interface through level function */
 
@@ -113,10 +115,15 @@ int main(int argc, char **argv)
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);
 	    if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
 	    FT_InitIntfc(&front,&level_func_pack);
+
 	    insert_objects(&front);
-	    rgb_init(&front,rgb_params);
-	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
-	    if (debugging("trace"))
+        initRigidBody(&front);
+        setRigidBodyMotionParams(&front,&rgb_params);
+	        //rgb_init(&front,rgb_params);
+	    
+        FT_PromptSetMixedTypeBoundary2d(in_name,&front);
+	    
+        if (debugging("trace"))
 	    	printf("Passed g_cartesian.setProbParams()\n");
 	    read_dirichlet_bdry_data(in_name,&front);
 	    read_open_end_bdry_data(in_name,&front);
@@ -329,6 +336,7 @@ static boolean compare_with_base_data(Front *front)
 	return eqn_params->use_base_soln;
 }	/* end compare_with_base_data */
 
+/*
 static void rgb_init(Front *front,
 	RG_PARAMS rgb_params)
 {
@@ -362,4 +370,5 @@ static void rgb_init(Front *front,
 		}
 	    }
 	}
-} /* end rgb_init */
+}*/ /* end rgb_init */
+

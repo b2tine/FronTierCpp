@@ -250,8 +250,8 @@ void G_CARTESIAN::setInitialIntfc(
 	    initTrianglePlaneIntfc(level_func_pack,inname);
 	    break;
 	case FLUID_SOLID_CYLINDER:
-             initCylinderPlaneIntfc(level_func_pack,inname);
-             break;
+         initCylinderPlaneIntfc(level_func_pack,inname);
+         break;
 	case RIEMANN_PROB:
 	case ONED_BLAST:
 	case ONED_SSINE:
@@ -261,6 +261,9 @@ void G_CARTESIAN::setInitialIntfc(
 	case OBLIQUE_SHOCK_REFLECT:
 	    initObliqueIntfc(level_func_pack,inname);
 	    break;
+    case CHANNEL_FLOW:
+        initChannelFlow(level_func_pack,inname);
+        break;
 	default:
 	    (void) printf("Problem type not implemented, code needed!\n");
 	    clean_up(ERROR);
@@ -294,7 +297,8 @@ void G_CARTESIAN::setProbParams(char *inname)
 	case FLUID_SOLID_RECT:
 	case FLUID_SOLID_TRIANGLE:
 	case FLUID_SOLID_CYLINDER:
-	    setProjectileParams(inname);
+    case CHANNEL_FLOW:
+	    setChannelFlowParams(inname); //setProjectileParams(inname);
 	    break;
 	case RIEMANN_PROB:
 	    setRiemProbParams(inname);
@@ -334,11 +338,12 @@ void G_CARTESIAN::setInitialStates()
 	    initMTFusionStates();
 	    break;
 	case PROJECTILE:
-        case FLUID_SOLID_CIRCLE:
-        case FLUID_SOLID_RECT:
-        case FLUID_SOLID_TRIANGLE:
-        case FLUID_SOLID_CYLINDER:
-	    initProjectileStates();
+    case FLUID_SOLID_CIRCLE:
+    case FLUID_SOLID_RECT:
+    case FLUID_SOLID_TRIANGLE:
+    case FLUID_SOLID_CYLINDER:
+    case CHANNEL_FLOW:
+	    initChannelFlowStates(); //initProjectileStates();
 	    break;
 	case RIEMANN_PROB:
 	    initRiemProbStates();
@@ -1240,7 +1245,8 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	m_mu[1] = eqn_params->mu2;		
 	if (eqn_params->prob_type == FLUID_SOLID_CIRCLE ||
 	    eqn_params->prob_type == FLUID_RIGID_BODY ||
-	    eqn_params->prob_type == FLUID_CRYSTAL)
+	    eqn_params->prob_type == FLUID_CRYSTAL ||
+	    eqn_params->prob_type == CHANNEL_FLOW)
 	    m_comp[0] = SOLID_COMP;
 	else
 	    m_comp[0] = GAS_COMP1;

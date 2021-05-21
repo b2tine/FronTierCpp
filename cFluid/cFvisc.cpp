@@ -74,12 +74,12 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
-    for (int jj = 0; jj < 3; ++jj)
-    for (int ii = 0; ii < 3; ++ii)
+    for (int j = 0; j < 3; ++j)
+    for (int i = 0; i < 3; ++i)
     {
-        VSWEEP* vs = &vsten->st[jj][ii];
-        vs->icoords[0] = icoords[0] + ii - 1;
-        vs->icoords[1] = icoords[1] + jj - 1;
+        VSWEEP* vs = &vsten->st[j][i];
+        vs->icoords[0] = icoords[0] + i - 1;
+        vs->icoords[1] = icoords[1] + j - 1;
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
         if (vs->comp != comp)
@@ -88,112 +88,12 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         }
         else
         {
-            for (int i = 0; i < dim; ++i)
+            for (int l = 0; l < dim; ++l)
             {
-                vs->vel[i] = m_vst->momn[i][idx_nb]/m_vst->dens[idx_nb];
+                vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
             }
         }
     }
-
-    /*
-    //TESTING
-    bool needghost = false;
-    for (int jj = 0; jj < 3; ++jj)
-    {
-        for (int ii = 0; ii < 3; ++ii)
-        {
-            VSWEEP vs = vsten->st[ii][jj];
-            if (vs.comp != comp)
-            {
-                needghost = true;
-            }
-        }
-    }
-
-    if (needghost)
-    {
-        printf("\nicoords = (%d,%d,%d) index = %d\n\n",
-                icoords[0],icoords[1],icoords[2],index);
-        
-        for (int jj = 2; jj >= 0; --jj)
-        {
-            for (int ii = 0; ii < 3; ++ii)
-            {
-                VSWEEP vs = vsten->st[ii][jj];
-                printf("  %d  %s",vs.comp,
-                        ((ii+1) % 3 == 0) ? "" : "|");
-            }
-            printf("\n-----------------\n");
-        }
-    }
-
-    return;
-    ////////////////////////////////////////////////////////
-    */
-
-    //OLD DEBUG INFO
-    /*
-    int icx0[MAXD], icx1[MAXD];
-    int icy0[MAXD], icy1[MAXD];
-    int icx0y0[MAXD], icx1y0[MAXD];
-    int icx0y1[MAXD], icx1y1[MAXD];
-    for (int i = 0; i < dim; ++i)
-    {
-        icx0[i] = icoords[i];
-        icx1[i] = icoords[i];
-        icy0[i] = icoords[i];
-        icy1[i] = icoords[i];
-        icx0y0[i] = icoords[i];
-        icx1y0[i] = icoords[i];
-        icx0y1[i] = icoords[i];
-        icx1y1[i] = icoords[i];
-    }
-
-    icx0[0] = icoords[0] - 1;
-    icx1[0] = icoords[0] + 1;
-    icy0[1] = icoords[1] - 1;
-    icy1[1] = icoords[1] + 1;
-    
-    icx0y0[0] = icoords[0] - 1; icx0y0[1] = icoords[1] - 1;
-    icx1y0[0] = icoords[0] + 1; icx1y0[1] = icoords[1] - 1;
-    icx0y1[0] = icoords[0] - 1; icx0y1[1] = icoords[1] + 1;
-    icx1y1[0] = icoords[0] + 1; icx1y1[1] = icoords[1] + 1;
-
-    int index_x0 = d_index(icx0,top_gmax,dim);
-    int index_x1 = d_index(icx1,top_gmax,dim);
-    int index_y0 = d_index(icy0,top_gmax,dim);
-    int index_y1 = d_index(icy1,top_gmax,dim);
-    
-    int index_x0y0 = d_index(icx0y0,top_gmax,dim);
-    int index_x1y0 = d_index(icx1y0,top_gmax,dim);
-    int index_x0y1 = d_index(icx0y1,top_gmax,dim);
-    int index_x1y1 = d_index(icx1y1,top_gmax,dim);
-
-    COMPONENT comp_x0 = top_comp[index_x0];
-    COMPONENT comp_x1 = top_comp[index_x1];
-    COMPONENT comp_y0 = top_comp[index_y0];
-    COMPONENT comp_y1 = top_comp[index_y1];
-    
-    COMPONENT comp_x0y0 = top_comp[index_x0y0];
-    COMPONENT comp_x1y0 = top_comp[index_x1y0];
-    COMPONENT comp_x0y1 = top_comp[index_x0y1];
-    COMPONENT comp_x1y1 = top_comp[index_x1y1];
-
-    if (comp_x0 != comp || comp_x1 != comp ||
-        comp_y0 != comp || comp_y1 != comp ||
-        comp_x0y0 != comp || comp_x1y0 != comp ||
-        comp_x0y1 != comp || comp_x1y1 != comp)
-    {
-        printf("\nicoords = (%d,%d,%d) index = %d\n\n",
-                icoords[0],icoords[1],icoords[2],index);
-
-        printf("  %d  |  %d  |  %d  \n",comp_x0y1,comp_y1,comp_x1y1);
-        printf("--------------------\n");
-        printf("  %d  |  %d  |  %d  \n",comp_x0,comp,comp_x1);
-        printf("--------------------\n");
-        printf("  %d  |  %d  |  %d  \n",comp_x0y0,comp_y0,comp_x1y0);
-    }
-    */
 }
 
 void G_CARTESIAN::fillViscousFluxStencil3d(
@@ -201,8 +101,31 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
-    printf("ERROR: fillViscousFluxStencil3d() not implemented yet!\n");
-    LOC(); clean_up(EXIT_FAILURE);
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    for (int k = 0; k < 3; ++k)
+    for (int j = 0; j < 3; ++j)
+    for (int i = 0; i < 3; ++i)
+    {
+        VSWEEP* vs = &vsten->st[k][j][i];
+        vs->icoords[0] = icoords[0] + i - 1;
+        vs->icoords[1] = icoords[1] + j - 1;
+        vs->icoords[2] = icoords[2] + k - 1;
+        int idx_nb = d_index(vs->icoords,top_gmax,dim);
+        vs->comp = top_comp[idx_nb];
+        if (vs->comp != comp)
+        {
+            setViscousGhostState(comp,vs,m_vst);
+        }
+        else
+        {
+            for (int l = 0; l < dim; ++l)
+            {
+                vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
+            }
+        }
+    }
 }
 
 void G_CARTESIAN::setViscousGhostState(
@@ -455,6 +378,7 @@ void G_CARTESIAN::computeViscousFlux2d(
     
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    
     v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
 }
@@ -464,51 +388,98 @@ void G_CARTESIAN::computeViscousFlux3d(
         SWEEP* m_vst,
         VFLUX* v_flux,
         double delta_t,
-        VStencil3d* sten)
+        VStencil3d* vsten)
 {
-    printf("ERROR: computeViscousFlux3d() not implemented yet!\n");
-    LOC(); clean_up(EXIT_FAILURE);
+    auto sten = vsten->st;
 
-    /*
-    double u = sten[1][1].vel[0];
-    double v = sten[1][1].vel[1];
+    double u = sten[1][1][1].vel[0];
+    double v = sten[1][1][1].vel[1];
+    double w = sten[1][1][1].vel[2];
 
-    double u_x = 0.5*(sten[1][2].vel[0] - sten[1][0].vel[0])/top_h[0];
-    double u_y = 0.5*(sten[2][1].vel[0] - sten[0][1].vel[0])/top_h[1];
-    double v_x = 0.5*(sten[1][2].vel[1] - sten[1][0].vel[1])/top_h[0];
-    double v_y = 0.5*(sten[2][1].vel[1] - sten[0][1].vel[1])/top_h[1];
+    double u_x = 0.5*(sten[1][1][2].vel[0] - sten[1][1][0].vel[0])/top_h[0];
+    double u_y = 0.5*(sten[1][2][1].vel[0] - sten[1][0][1].vel[0])/top_h[1];
+    double u_z = 0.5*(sten[2][1][1].vel[0] - sten[0][1][1].vel[0])/top_h[2];
 
-    double u_xx = (sten[1][2].vel[0] - 2.0*sten[1][1].vel[0]
-            + sten[1][0].vel[0])/sqr(top_h[0]);
-    double u_yy = (sten[2][1].vel[0] - 2.0*sten[1][1].vel[0] 
-            + sten[0][1].vel[0])/sqr(top_h[1]);
-    double v_xx = (sten[1][2].vel[1] - 2.0*sten[1][1].vel[1]
-            + sten[1][0].vel[1])/sqr(top_h[0]);
-    double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
-            + sten[0][1].vel[1])/sqr(top_h[1]);
+    double v_x = 0.5*(sten[1][1][2].vel[1] - sten[1][1][0].vel[1])/top_h[0];
+    double v_y = 0.5*(sten[1][2][1].vel[1] - sten[1][0][1].vel[1])/top_h[1];
+    double v_z = 0.5*(sten[2][1][1].vel[1] - sten[0][1][1].vel[1])/top_h[2];
     
-    double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
-            - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
-    double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
-            - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
+    double w_x = 0.5*(sten[1][1][2].vel[2] - sten[1][1][0].vel[2])/top_h[0];
+    double w_y = 0.5*(sten[1][2][1].vel[2] - sten[1][0][1].vel[2])/top_h[1];
+    double w_z = 0.5*(sten[2][1][1].vel[2] - sten[0][1][1].vel[2])/top_h[2];
+
+    double u_xx = (sten[1][1][2].vel[0] - 2.0*sten[1][1][1].vel[0]
+            + sten[1][1][0].vel[0])/sqr(top_h[0]);
+    double u_yy = (sten[1][2][1].vel[0] - 2.0*sten[1][1][1].vel[0] 
+            + sten[1][0][1].vel[0])/sqr(top_h[1]);
+    double u_zz = (sten[2][1][1].vel[0] - 2.0*sten[1][1][1].vel[0]
+            + sten[0][1][1].vel[0])/sqr(top_h[2]);
+
+    double v_xx = (sten[1][1][2].vel[1] - 2.0*sten[1][1][1].vel[1]
+            + sten[1][1][0].vel[1])/sqr(top_h[0]);
+    double v_yy = (sten[1][2][1].vel[1] - 2.0*sten[1][1][1].vel[1]
+            + sten[1][0][1].vel[1])/sqr(top_h[1]);
+    double v_zz = (sten[2][1][1].vel[1] - 2.0*sten[1][1][1].vel[1]
+            + sten[0][1][1].vel[1])/sqr(top_h[2]);
+    
+    double w_xx = (sten[1][1][2].vel[2] - 2.0*sten[1][1][1].vel[2]
+            + sten[1][1][0].vel[2])/sqr(top_h[0]);
+    double w_yy = (sten[1][2][1].vel[2] - 2.0*sten[1][1][1].vel[2]
+            + sten[1][0][1].vel[2])/sqr(top_h[1]);
+    double w_zz = (sten[2][1][1].vel[2] - 2.0*sten[1][1][1].vel[2]
+            + sten[0][1][1].vel[2])/sqr(top_h[2]);
+
+    double u_xy = 0.25*(sten[1][2][2].vel[0] - sten[1][2][0].vel[0]
+            - sten[1][0][2].vel[0] + sten[1][0][0].vel[0])/top_h[0]/top_h[1];
+    double v_xy = 0.25*(sten[1][2][2].vel[1] - sten[1][2][0].vel[1]
+            - sten[1][0][2].vel[1] + sten[1][0][0].vel[1])/top_h[0]/top_h[1];
+    double w_xy = 0.25*(sten[1][2][2].vel[2] - sten[1][2][0].vel[2]
+            - sten[1][0][2].vel[2] + sten[1][0][0].vel[2])/top_h[0]/top_h[1];
+
+    double u_xz = 0.25*(sten[2][1][2].vel[0] - sten[2][1][0].vel[0]
+            - sten[0][1][2].vel[0] + sten[0][1][0].vel[0])/top_h[0]/top_h[2];
+    double v_xz = 0.25*(sten[2][1][2].vel[1] - sten[2][1][0].vel[1]
+            - sten[0][1][2].vel[1] + sten[0][1][0].vel[1])/top_h[0]/top_h[2];
+    double w_xz = 0.25*(sten[2][1][2].vel[2] - sten[2][1][0].vel[2]
+            - sten[0][1][2].vel[2] + sten[0][1][0].vel[2])/top_h[0]/top_h[2];
+
+    double u_yz = 0.25*(sten[2][2][1].vel[0] - sten[2][0][1].vel[0]
+            - sten[0][2][1].vel[0] + sten[0][0][1].vel[0])/top_h[1]/top_h[2];
+    double v_yz = 0.25*(sten[2][2][1].vel[1] - sten[2][0][1].vel[1]
+            - sten[0][2][1].vel[1] + sten[0][0][1].vel[1])/top_h[1]/top_h[2];
+    double w_yz = 0.25*(sten[2][2][1].vel[2] - sten[2][0][1].vel[2]
+            - sten[0][2][1].vel[2] + sten[0][0][1].vel[2])/top_h[1]/top_h[2];
 
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
-    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
-    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x);
-    double tauxy = mu[index]*(u_y + v_x);
-
-    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy);
-    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
-    double tauxy_y = mu[index]*(u_yy + v_xy);
-    double tauxy_x = mu[index]*(u_xy + v_xx);
+    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y - w_z);
+    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x - w_z);
+    double tauzz = 2.0/3.0*mu[index]*(2.0*w_z - u_x - v_y);
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    double tauxy = mu[index]*(u_y + v_x);
+    double tauxz = mu[index]*(u_z + w_x);
+    double tauyz = mu[index]*(v_z + w_y);
+
+    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy - w_xz);
+    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy - w_yz);
+    double tauzz_z = 2.0/3.0*mu[index]*(2.0*w_zz - u_xz - v_yz);
+
+    double tauxy_x = mu[index]*(u_xy + v_xx);
+    double tauxz_x = mu[index]*(u_xz + w_xx);
+    double tauxy_y = mu[index]*(u_yy + v_xy);
+    double tauyz_y = mu[index]*(v_yz + w_yy);
+    double tauxz_z = mu[index]*(u_zz + w_xz);
+    double tauyz_z = mu[index]*(v_zz + w_yz);
+    
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
+    v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
+    
     v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
-    */
+            + v*tauxy_y + w_x*tauxz + w*tauxz_x + u_y*tauxy + u*tauxy_y
+            + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
+            + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
 }
 
 

@@ -7,11 +7,11 @@ Redistribution interval: 5
 
 *******************************************************
 
-Domain limit in 0-th dimension: 0 2
-Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: 0 1
+Domain limit in 0-th dimension: 0 2.2
+Domain limit in 1-th dimension: 0 0.984
+Domain limit in 2-th dimension: 0 0.984
 
-Computational grid: 100 50
+Computational grid: 89 45 45
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -22,7 +22,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 5 0
+Enter velocity: 5 0 0
 Enter pressure: 1
 Enter density: 1
 For upper boundary in 0-th dimension
@@ -53,11 +53,11 @@ Numerical scheme for interior solver can be
         TVD_4th_ORDER
 Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
-Enter order of point propagator: 2
+Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
 Enter density and pressure of ambient air: 1 1 
-Enter gravity: 0 0 
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 
@@ -66,7 +66,7 @@ Enter the number of rigid bodies: 1
 
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphere: 0.275 0.5 0.5
+Enter center of the sphere: 0.275 0.496 0.496
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
@@ -74,9 +74,9 @@ Enter refinement level: 1
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
-Enter the direction of motion: 0 0 1
+Enter the direction of motion: 1 0 0
 Enter the total mass for rigid body: 10
-Enter the initial center of mass for rigid body: 6.0 6.0 1.0
+Enter the initial center of mass for rigid body: 0.275 0.496 0.496
 Enter the initial center of mass velocity: 0 0 0
 
 *******************************************************
@@ -88,7 +88,8 @@ Type y to make movie of velocity: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
+Enter the debugging string: trace
+Enter the debugging string: init_intfc
 
-Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK
 Enter the debugging stringX: step_size

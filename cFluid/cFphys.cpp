@@ -83,13 +83,18 @@ extern void read_cFluid_params(
 	    else if (string[5] == 'A' || string[5] == 'a')
 	    	eqn_params->prob_type = ONED_ASINE;
 	}
-        printf("Available numerical schemes are:\n");
-        printf("\tTVD_1st_order\n");
-        printf("\tTVD_2nd_order\n");
-        printf("\tTVD_4th_order\n");
-        printf("\tWENO_1st_order\n");
-        printf("\tWENO_2nd_order\n");
-        printf("\tWENO_4th_order\n");
+	else if (string[0] == 'C' || string[0] == 'c')
+    {
+        eqn_params->prob_type = CHANNEL_FLOW;
+    }
+
+    printf("Available numerical schemes are:\n");
+    printf("\tTVD_1st_order\n");
+    printf("\tTVD_2nd_order\n");
+    printf("\tTVD_4th_order\n");
+    printf("\tWENO_1st_order\n");
+    printf("\tWENO_2nd_order\n");
+    printf("\tWENO_4th_order\n");
 	CursorAfterString(infile,"Enter numerical scheme for interior solver:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
