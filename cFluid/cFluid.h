@@ -63,6 +63,7 @@ struct _STATE {
 	double pres;			/* Pressure */
 	double vel[MAXD];		/* Velocities */
 	double vort;			/* Vorticity-2d */
+    double mu;
 	EOS_PARAMS      *eos;
 	int dim;
 };

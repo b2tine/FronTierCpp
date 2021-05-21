@@ -1368,6 +1368,8 @@ static void getAmbientState(
 	COMPONENT comp)
 {
 	EOS_PARAMS	*eos;
+	double mu1 = eqn_params->mu1;
+	double mu2 = eqn_params->mu2;
 	double rho1 = eqn_params->rho1;
 	double rho2 = eqn_params->rho2;
 	double p1 = eqn_params->p1;
@@ -1391,6 +1393,7 @@ static void getAmbientState(
 	switch (comp)
 	{
 	case GAS_COMP1:
+        state->mu = mu1;
 	    state->dens = rho1;
 	    state->pres = p1;
 	    for (i = 0; i < dim; ++i)
@@ -1401,6 +1404,8 @@ static void getAmbientState(
 	    state->engy = EosEnergy(state);
 	    break;
 	case GAS_COMP2:
+        state->mu = mu2;
+	    state->dens = rho1;
 	    state->dens = rho2;
 	    state->pres = p2;
 	    for (i = 0; i < dim; ++i)
@@ -1411,6 +1416,7 @@ static void getAmbientState(
 	    state->engy = EosEnergy(state);
 	    break;
 	case SOLID_COMP:
+        state->mu = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
 	    state->engy = 0.0;
@@ -1433,6 +1439,8 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	double		pinf,einf,gamma;
 	char str[256];
 
+    eqn_params->tracked = YES;
+
 	sprintf(str, "Enter gamma, pinf, einf of ambient air:");
 	CursorAfterString(infile,str);
 	fscanf(infile,"%lf %lf %lf",&gamma,&pinf,&einf);
@@ -1442,8 +1450,23 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	(eqn_params->eos[GAS_COMP1]).einf = einf;
 	
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
+	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p2);
+	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p2);
+
+    CursorAfterString(infile,"Enter density and viscosity of the fluid:");
+    fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
+    (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
+
+    /*
+	CursorAfterString(infile,"Enter density and pressure of ambient air:");
 	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p1);
 	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p1);
+
+    CursorAfterString(infile,"Enter density and viscosity of the fluid:");
+    fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->mu1);
+    (void) printf("%f %f\n",eqn_params->rho1,eqn_params->mu1);
+    */
+
 	CursorAfterString(infile,"Enter gravity:");
 	for (i = 0; i < dim; ++i)
 	{
@@ -1465,6 +1488,7 @@ void G_CARTESIAN::initChannelFlowStates()
         HYPER_SURF *hs;
         HYPER_SURF_ELEMENT *hse;
 	INTERFACE *intfc = front->interf;
+	double *mu = field.mu;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
@@ -1490,6 +1514,7 @@ void G_CARTESIAN::initChannelFlowStates()
 		comp = top_comp[index];
 		getRectangleCenter(index,coords);
 	    	getAmbientState(&state,eqn_params,coords,comp);
+        mu[index] = state.mu;
 		dens[index] = state.dens;
 		pres[index] = state.pres;
 		engy[index] = state.engy;
@@ -1506,6 +1531,7 @@ void G_CARTESIAN::initChannelFlowStates()
 		comp = top_comp[index];
 		getRectangleCenter(index,coords);
 	    	getAmbientState(&state,eqn_params,coords,comp);
+        mu[index] = state.mu;
 		dens[index] = state.dens;
 		pres[index] = state.pres;
 		engy[index] = state.engy;
@@ -1521,9 +1547,12 @@ void G_CARTESIAN::initChannelFlow(
 	LEVEL_FUNC_PACK *level_func_pack,
 	char *inname)
 {
-    m_comp[0] = SOLID_COMP;
-    m_comp[1] = GAS_COMP2;
+    //m_comp[0] = SOLID_COMP;
+    //m_comp[1] = GAS_COMP1;
+    //m_comp[1] = GAS_COMP2;
+    level_func_pack->neg_component = SOLID_COMP;
     level_func_pack->pos_component = GAS_COMP2;
+    //level_func_pack->pos_component = GAS_COMP1;
 }
 
 void G_CARTESIAN::initRiemannProb(

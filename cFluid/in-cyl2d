@@ -52,7 +52,8 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 2
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
-Enter density and pressure of ambient air: 1 1 
+Enter density and pressure of ambient air: 1.0 1.0 
+Enter density and viscosity of the fluid: 1.0 0.01
 Enter gravity: 0 0 
 
 *******************************************************

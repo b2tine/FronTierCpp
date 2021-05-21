@@ -23,7 +23,7 @@ Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 5 0 0
+Enter velocity: 1 0 0
 Enter pressure: 1
 Enter density: 1
 For upper boundary in 0-th dimension
@@ -47,13 +47,15 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
-Enter density and pressure of ambient air: 1 1 
+Enter density and pressure of ambient air: 1.0 1.0
+Enter density and viscosity of the fluid: 1.0 0.01
 Enter gravity: 0 0 0
+
+Type yes to track the interface: no
 
 ************Rigid body parameters*************
 
-Enter yes to add rigid body: no
-Enter yes to add rigid bodyXXX: yes
+Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 
 For rigid body 1
@@ -84,7 +86,7 @@ Type y to make movie of velocity: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: no_viscflux
+Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK
