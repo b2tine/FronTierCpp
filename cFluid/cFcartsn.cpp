@@ -1321,7 +1321,7 @@ void G_CARTESIAN::setAdvectionDt()
 	else
 	    max_dt = 0.0;
 
-    min_dt = 0.0000001*sqr(hmin)/mu_min;
+    //TODO: viscous time step restriction
 	
     if (debugging("trace"))
 	    printf("In setAdvectionDt: max_dt = %24.18g\n",max_dt);
