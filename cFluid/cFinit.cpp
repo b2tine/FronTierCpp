@@ -1522,8 +1522,8 @@ void G_CARTESIAN::initChannelFlow(
 	char *inname)
 {
     m_comp[0] = SOLID_COMP;
-    level_func_pack->pos_component = GAS_COMP1;
-    level_func_pack->neg_component = SOLID_COMP;
+    m_comp[1] = GAS_COMP2;
+    level_func_pack->pos_component = GAS_COMP2;
 }
 
 void G_CARTESIAN::initRiemannProb(

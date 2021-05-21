@@ -491,8 +491,10 @@ void G_CARTESIAN::computeMeshFlux(
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
     
-    //TODO: add switch to turn on/off
-    addViscousFlux(&m_vst,m_flux,delta_t);
+	if (!debugging("no_viscflux"))
+    {
+        addViscousFlux(&m_vst,m_flux,delta_t);
+    }
 	
     addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
