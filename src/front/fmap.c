@@ -3841,47 +3841,53 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 	char *in_name,
         Front *front)
 {
-	FILE *infile;
 	INTERFACE *intfc = front->interf;
-	RECT_GRID *rgr = front->rect_grid;
+    RECT_GRID *rgr = front->rect_grid;
 	NODE **n,*nodes[21],*ntmp;
 	CURVE **c,*curves[20];
 	int n_nodes,n_curves;
-	int i,j,dim,idir,nb;
+	int i,j,idir,nb;
 	char input_string[100],s[100];
 	int status;
 
-	dim = intfc->dim;
-	if (dim != 2) return;	/* 3D not implemented */
-	infile = fopen(in_name,"r");
+	int dim = intfc->dim;
+    if (dim != 2) return;	/* 3D not implemented */
+	
+	FILE* infile = fopen(in_name,"r");
 
 	for (idir = 0; idir < dim; ++idir)
 	for (nb = 0; nb < 2; ++nb)
 	{
 	    n_nodes = n_curves = 0;
-	    if (rect_boundary_type(intfc,idir,nb) != MIXED_TYPE_BOUNDARY)
-	    	continue;
-	    for (n = intfc->nodes; n && *n; ++n)
+	    if (rect_boundary_type(intfc,idir,nb) != MIXED_TYPE_BOUNDARY) continue;
+	    
+        for (n = intfc->nodes; n && *n; ++n)
 	    {
 	    	if (is_rect_side_node(rgr,*n,idir,nb))
-		   nodes[n_nodes++] = *n; 
+                nodes[n_nodes++] = *n; 
 	    }
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
 	    	if (is_rect_side_curve(rgr,*c,idir,nb))
-		   curves[n_curves++] = *c; 
+                curves[n_curves++] = *c; 
 	    }
+
+        //sort the array of boundary nodes along the boundary
+        // e.g.  at the idir = 0 boundary  (x = L[0], y) sort the nodes
+        //       in increasing order with respect to the y coords.
 	    for (i = 0; i < n_nodes-1; ++i)
 	    for (j = i+1; j < n_nodes; ++j)
+        {
 	    	if (Coords(nodes[i]->posn)[(idir+1)%dim] > 
-		    Coords(nodes[j]->posn)[(idir+1)%dim])
-		{
-		    ntmp = nodes[i];
-		    nodes[i] = nodes[j];
-		    nodes[j] = ntmp;
-		}
-	    (void) printf("Direction %d side %d is MIXED_TYPE_BOUNDARY\n",
-	    			idir,nb);
+                    Coords(nodes[j]->posn)[(idir+1)%dim])
+            {
+                ntmp = nodes[i];
+                nodes[i] = nodes[j];
+                nodes[j] = ntmp;
+            }
+        }
+
+	    (void) printf("Direction %d side %d is MIXED_TYPE_BOUNDARY\n",idir,nb);
 	    (void) printf("Total number of nodes %d\n",n_nodes);
 	    (void) printf("Nodes coordinates are:\n");
 	    for (i = 0; i < n_nodes; ++i)
@@ -3918,20 +3924,17 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 	    for (i = 0; i < n_nodes-1; ++i)
 	    {
 		CURVE *curve = NULL;
-	    	for (j = 0; j < n_curves; ++j)
+        for (j = 0; j < n_curves; ++j)
 		{
-		    if ((curves[j]->start == nodes[i] && 
-		         curves[j]->end == nodes[i+1]) ||
-		    	(curves[j]->start == nodes[i+1] && 
-		         curves[j]->end == nodes[i])) 
+		    if ((curves[j]->start == nodes[i] && curves[j]->end == nodes[i+1]) ||
+		    	(curves[j]->start == nodes[i+1] && curves[j]->end == nodes[i])) 
 		    {
-			 curve = curves[j];
-			 break;
+                curve = curves[j];
+                break;
 		    }
 		}
 		sprintf(input_string,
-		    	"Enter wave type of the curve between nodes %d%d:",
-		    	i+1,i+2);
+		    	"Enter wave type of the curve between nodes %d%d:",i+1,i+2);
 		if (curve == NULL)
 		{
 		    printf("curve not found!\n");

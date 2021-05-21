@@ -21,7 +21,8 @@
 #define	ifluid_comp(comp) (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
 
-enum _IF_PROB_TYPE {
+enum IF_PROB_TYPE
+{
         ERROR_TYPE = -1,
 	BEE_3D = 1,
         BUBBLE_SURFACE,
@@ -45,21 +46,24 @@ enum _IF_PROB_TYPE {
         TWO_FLUID_RT,
 	WINDMILL_2D,
         WINDMILL_3D,
-	HUMAN_BODY_3D
+	HUMAN_BODY_3D,
+    BACKWARD_FACING_STEP,
+    BUMP,
+    RAMP
 };
-typedef enum _IF_PROB_TYPE IF_PROB_TYPE;
+
 
 enum EBM_COORD
 {
     COORD_X = 0,  COORD_Y = 1,  COORD_Z = 2
 };
 
-enum _DOMAIN_STATUS {
-        NOT_SOLVED      =       0,
-        TO_SOLVE,
-        SOLVED
+enum DOMAIN_STATUS
+{
+    NOT_SOLVED = 0,
+    TO_SOLVE,
+    SOLVED
 };
-typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct IF_FIELD {
 	double **vel;			/* Velocities */
@@ -170,8 +174,9 @@ struct IF_PARAMS
 	
     double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */
-	COMPONENT m_comp1;
-	COMPONENT m_comp2;
+	
+    COMPONENT m_comp1; //negative comp
+	COMPONENT m_comp2; //positive comp
 	
     IF_FIELD *field;
 
@@ -716,8 +721,13 @@ extern double linear_flux(double,double,double,double);
 extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
 
+extern void restart_set_dirichlet_bdry_function(Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);
+
+extern void initBackwardFacingStep(Front* front);
+extern void initBump(Front* front);
+extern void initRamp(Front* front);
 
 extern int ifluid_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
@@ -738,9 +748,6 @@ extern boolean neumann_type_bdry(int);
 extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
                         double*);
 
-extern void initInnerBoundary(Front*,LEVEL_FUNC_PACK*);
-extern void restart_set_dirichlet_bdry_function(Front*);
-
 extern void iF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
 extern void iF_timeDependBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
@@ -751,13 +758,16 @@ extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
 extern void ifluid_compute_force_and_torque(Front*,CURVE*,double,double*,
                         double*);
 
-extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
-extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
-extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
-extern void recordBdryEnergyFlux(Front*,char*);
+extern void read_iFparams(char*,IF_PARAMS*);
+extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
+extern void insert_boundary_objects(Front* front);
 
+extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);//TODO: Make member function
+
+extern void recordBdryEnergyFlux(Front*,char*);
 extern void read_open_end_bdry_data(char*,Front*);
+
 extern void setContactNodeType(Front*);
 extern int contact_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG);

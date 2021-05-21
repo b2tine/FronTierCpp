@@ -26,18 +26,23 @@ extern void initRigidBody(
 	Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
-        char string[100];
+    char string[100];
 	int num_rgb;
 
+    bool add_rigid_body = false;
 	if (CursorAfterStringOpt(infile,"Enter yes to add rigid body:"))
 	{
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
-	    if (string[0] != 'y' && string[0] != 'Y')
-            return;
+	    if (string[0] == 'y' || string[0] == 'Y')
+            add_rigid_body = true;
 	}
-	else
-	    return;
+
+    if (!add_rigid_body)
+    {
+        fclose(infile);
+        return;
+    }
 
 	num_rgb = 1;
 	if (CursorAfterStringOpt(infile,"Enter the number of rigid bodies:"))
@@ -56,10 +61,10 @@ extern void initRigidBody(
 }
 
 static void initSingleRigidBody(
-	FILE *infile,
-	Front *front)
+	    FILE *infile,
+	    Front *front)
 {
-        char string[100];
+    char string[100];
 	(void) printf("Available type of rigid body include:\n");
 	(void) printf("\tSphere (S)\n");
 	(void) printf("\tBox (B)\n");

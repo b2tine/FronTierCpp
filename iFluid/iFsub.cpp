@@ -246,45 +246,42 @@ extern void read_iF_dirichlet_bdry_data(
 	{
 	    if (rect_boundary_type(intfc,i,j) == DIRICHLET_BOUNDARY)
 	    {
-		hs = NULL;
+            hs = NULL;
 	        if (rect_boundary_type(front->interf,i,j) == DIRICHLET_BOUNDARY)
-		    hs = FT_RectBoundaryHypSurf(front->interf,
-					DIRICHLET_BOUNDARY,i,j);
-		if (j == 0)
-		    sprintf(msg,"For lower boundary in %d-th dimension",i);
-		else
-		    sprintf(msg,"For upper boundary in %d-th dimension",i);
-		CursorAfterString(infile,msg);
-		(void) printf("\n");
-		
-        promptForDirichletBdryState(infile,front,&hs,i_hs);
-		i_hs++;
+                hs = FT_RectBoundaryHypSurf(front->interf,DIRICHLET_BOUNDARY,i,j);
+            if (j == 0)
+                sprintf(msg,"For lower boundary in %d-th dimension",i);
+            else
+                sprintf(msg,"For upper boundary in %d-th dimension",i);
+            CursorAfterString(infile,msg);
+            (void) printf("\n");
+            
+            promptForDirichletBdryState(infile,front,&hs,i_hs);
+            i_hs++;
 	    
         }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
+        {
+            HYPER_SURF **hss;
+            int k,nhs;
+            hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,&nhs);
+            printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",i,j,nhs);
+            if (dim == 2)
             {
-		HYPER_SURF **hss;
-		int k,nhs;
-                hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,
-                                        &nhs);
-                printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",
-                                        i,j,nhs);
-                if (dim == 2)
+                for (k = 0; k < nhs; ++k)
                 {
-                    for (k = 0; k < nhs; ++k)
-                    {
-                        CURVE *c = Curve_of_hs(hss[k]);
-                        (void) printf("Curve %d start and end at: ",k+1);
-                        (void) printf("(%f %f)->(%f %f)\n",
-                                  Coords(c->start->posn)[0],
-                                  Coords(c->start->posn)[1],
-                                  Coords(c->end->posn)[0],
-                                  Coords(c->end->posn)[1]);
-                        promptForDirichletBdryState(infile,front,hss+k,i_hs);
-                        i_hs++;
-                    }
+                    CURVE *c = Curve_of_hs(hss[k]);
+                    (void) printf("Curve %d start and end at: ",k+1);
+                    (void) printf("(%f %f)->(%f %f)\n",
+                              Coords(c->start->posn)[0],
+                              Coords(c->start->posn)[1],
+                              Coords(c->end->posn)[0],
+                              Coords(c->end->posn)[1]);
+                    promptForDirichletBdryState(infile,front,hss+k,i_hs);
+                    i_hs++;
                 }
             }
+        }
 	}
 	fclose(infile);
 }	/* end read_iF_dirichlet_bdry_data */
@@ -1906,18 +1903,20 @@ extern void read_iFparams(
 	    }
 	}
 
+    //TODO: Should move this into the ambient_state() function
 	for (i = 0; i < dim; ++i) iFparams->U_ambient[i] = 0.0;
-        if (CursorAfterStringOpt(infile,"Enter fluid ambient velocity:"))
+    if (CursorAfterStringOpt(infile,"Enter fluid ambient velocity:"))
+    {
+        for (i = 0; i < dim; ++i)
         {
-            for (i = 0; i < dim; ++i)
-            {
-                fscanf(infile,"%lf ",&iFparams->U_ambient[i]);
-                (void) printf("%f ",iFparams->U_ambient[i]);
-            }
-            (void) printf("\n");
+            fscanf(infile,"%lf ",&iFparams->U_ambient[i]);
+            (void) printf("%f ",iFparams->U_ambient[i]);
         }
-	iFparams->ub_speed = HUGE;
-        if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
+        (void) printf("\n");
+    }
+	
+    iFparams->ub_speed = HUGE;
+    if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
 	{
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);

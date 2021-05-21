@@ -94,8 +94,6 @@ int main(int argc, char **argv)
     if (debugging("trace"))
         printf("Passed read_iFparams()\n");
 
-	/* Initialize interface through level function */
-
 	setInitialIntfc(&front,&level_func_pack,in_name,prob_type);
 
 	if (debugging("trace"))
@@ -103,13 +101,23 @@ int main(int argc, char **argv)
 
 	if (!RestartRun)
 	{
+        //TODO: Check that boundary types match up with the
+        //      boundary object being inserted.
+        //      
+        //      Could have insert_boundary_objects() overwrite the
+        //      boundary type specified in the input file to ensure
+        //      it is consistent with the boundary object being inserted.
+        
+        //NOTE: insert_boundary_objects() must be called before FT_InitIntfc()
+        insert_boundary_objects(&front);
+
 	    if (f_basic.dim == 3)
             level_func_pack.set_3d_bdry = YES;
-	    
+        
         FT_InitIntfc(&front,&level_func_pack);
+        
         initRigidBody(&front);
         setRigidBodyMotionParams(&front,&rgb_params);
-	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 
 	    if (debugging("trace"))
 	    {
@@ -129,6 +137,7 @@ int main(int argc, char **argv)
             }
 	    }
 
+        FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
 	    
         if (f_basic.dim < 3)
@@ -148,22 +157,22 @@ int main(int argc, char **argv)
 	velo_func_pack.func_params = (POINTER)l_cartesian;
 	velo_func_pack.func = l_cartesian_vel;
 	velo_func_pack.point_propagate = ifluid_point_propagate;
-	
     FT_InitFrontVeloFunc(&front,&velo_func_pack);
 	
     if (debugging("trace"))
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
-	l_cartesian->initMesh();
+    l_cartesian->initMesh();
     l_cartesian->writeMeshFileVTK();
+
+	if (debugging("trace"))
+	    printf("Passed l_cartesian.initMesh()\n");
 	
     if (debugging("sample_velocity"))
 	    l_cartesian->initSampleVelocity(in_name);
 
 	init_fluid_state_func(l_cartesian,prob_type);
-	if (debugging("trace"))
-	    printf("Passed l_cartesian.initMesh()\n");
 
 	if (!RestartRun)
     {

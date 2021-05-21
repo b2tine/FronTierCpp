@@ -751,8 +751,8 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 	{
 	    if(ifluid_comp(m_comp[i]))
 	    {
-		mu_min = std::min(mu_min,m_mu[i]);
-		rho_min = std::min(rho_min,m_rho[i]);
+		    mu_min = std::min(mu_min,m_mu[i]);
+		    rho_min = std::min(rho_min,m_rho[i]);
 	    }
 	}
 
