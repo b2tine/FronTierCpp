@@ -87,9 +87,12 @@ void G_CARTESIAN::initMesh(void)
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
-	/*TMP*/
+	
+    /*TMP*/
+    min_mu = HUGE;
 	min_dens = 0.0001;
 	min_pres = 0.0001;
+
 	FT_MakeGridIntfc(front);
 	setDomain();
 	num_cells = 1;
@@ -1317,7 +1320,10 @@ void G_CARTESIAN::setAdvectionDt()
 	    max_dt = hmin/max_speed/d;
 	else
 	    max_dt = 0.0;
-	if (debugging("trace"))
+
+    min_dt = 0.0000001*sqr(hmin)/mu_min;
+	
+    if (debugging("trace"))
 	    printf("In setAdvectionDt: max_dt = %24.18g\n",max_dt);
 }	/* end setAdvectionDt */
 
@@ -5558,6 +5564,8 @@ void G_CARTESIAN::initSampleVelocity(char *in_name)
 
 void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 {
+	if (state->mu < min_mu)
+	    state->mu = min_mu;
 	if (state->dens < min_dens)
 	    state->dens = min_dens;
 	if (state->pres < min_pres)

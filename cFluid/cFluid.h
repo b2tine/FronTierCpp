@@ -339,6 +339,7 @@ public:
 	int dim;
 	double m_dt;			// time increment
 	double max_dt;			// max_dt from cartesian
+    double min_dt;
 	double hmin;			// smallest spacing
 
 	void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
@@ -392,7 +393,9 @@ private:
 
 	double m_t;                     // time
 	double max_speed;		// for stability of convection
-	double min_dens,min_pres;	// minimum physical variables
+	double min_dens;
+    double min_pres;    // minimum physical variables
+    double min_mu;
 
 
 	// for parallel partition

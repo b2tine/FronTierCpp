@@ -119,7 +119,6 @@ int main(int argc, char **argv)
 	    insert_objects(&front);
         initRigidBody(&front);
         setRigidBodyMotionParams(&front,&rgb_params);
-	        //rgb_init(&front,rgb_params);
 	    
         FT_PromptSetMixedTypeBoundary2d(in_name,&front);
 	    
@@ -212,6 +211,8 @@ static  void gas_driver(
 
 	    FT_SetTimeStep(front);
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
+        //TODO: incorporate min_dt into time step determination
+
 	    FT_SetOutputCounter(front);
         }
         else
@@ -336,40 +337,4 @@ static boolean compare_with_base_data(Front *front)
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	return eqn_params->use_base_soln;
 }	/* end compare_with_base_data */
-
-/*
-static void rgb_init(Front *front,
-	RG_PARAMS rgb_params)
-{
-	CURVE **c;
-	SURFACE **s;
-
-	if (FT_Dimension() == 1) return;
-	else if (FT_Dimension() == 2)
-	{
-	    for (c = front->interf->curves; c && *c; ++c)
-	    {
-		if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-		{
-		    prompt_for_rigid_body_params(front->f_basic->dim,
-				front->f_basic->in_name,&rgb_params);
-		    body_index(*c) = 0;
-		    set_rgbody_params(rgb_params,Hyper_surf(*c));
-		}
-	    }
-	}
-	else
-	{
-	    for (s = front->interf->surfaces; s && *s; ++s)
-	    {
-		if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-		{
-		    prompt_for_rigid_body_params(front->f_basic->dim,
-				front->f_basic->in_name,&rgb_params);
-		    body_index(*s) = 0;
-		    set_rgbody_params(rgb_params,Hyper_surf(*s));
-		}
-	    }
-	}
-}*/ /* end rgb_init */
 
