@@ -267,20 +267,24 @@ extern void compute_spring_accel1(
 	//acceleration due to elastic stretching force
     for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    double vec[MAXD];
 	    double len = 0.0;
-
+	    double vec[MAXD];
 	    for (int k = 0; k < dim; ++k)
 	    {
             vec[k] = sv->x_nb[j][k] - sv->x[k];
             len += vec[k]*vec[k];
 	    }
-
 	    len = sqrt(len);
+
+        //zero compressive stress
+        double dL = len - sv->len0[j];
+        if (dL < 0.0) continue;
 
 	    for (int k = 0; k < dim; ++k)
 	    {
-            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
+            accel[k] += sv->k[j]*dL*vec[k]/len/sv->m;
+            //accel[k] += sv->k[j]*(len - sv->len0[j])*vec[k]/len/sv->m;
+            //accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
 	    }
 	}
 

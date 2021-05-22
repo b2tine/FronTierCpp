@@ -147,9 +147,9 @@ extern void initParachuteModules(Front *front)
 
 	if (debugging("trace"))
 	{
-            char gvdir[100];
-            char* out_name = OutName(front);
-            sprintf(gvdir,"%s/gv-init",out_name);
+        char gvdir[100];
+        char* out_name = OutName(front);
+        sprintf(gvdir,"%s/gv-init",out_name);
 	    gview_plot_interface(gvdir,front->interf);
 	    (void) printf("Leaving initParachuteModules()\n");
 	}

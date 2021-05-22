@@ -172,23 +172,11 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	clearHseList();
 
 	SURFACE** s;
-	CURVE** c;
 	TRI *tri;
-	BOND *b;
-
-    /*
-	int n_tri = 0;
-	int n_fabric_tri = 0;
-	int n_static_rigid_tri = 0;
-	int n_movable_rigid_tri = 0;
-    int n_bond = 0;
-    */
 	
     intfc_surface_loop(intfc,s)
 	{
 	    if (is_bdry(*s)) continue;
-	    
-        unsort_surf_point(*s); //TODO: can remove?
 	    
         surf_tri_loop(*s,tri)
 	    {
@@ -197,17 +185,14 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             if (wave_type(*s) == ELASTIC_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::FABRIC_TRI;
-                    //n_fabric_tri++;
             }
             else if (wave_type(*s) == NEUMANN_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::STATIC_RIGID_TRI;
-                    //n_static_rigid_tri++;
             }
             else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::MOVABLE_RIGID_TRI;
-                    //n_movable_rigid_tri++;
             }
             else 
             {
@@ -217,22 +202,22 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
             }
             
             hseList.push_back(new CD_TRI(tri,tag));
-		        //n_tri++;
 	    }
 	}
+
+
+	CURVE** c;
+	BOND *b;
 
 	intfc_curve_loop(intfc,c)
 	{
         if (is_bdry(*c)) continue;
 	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
 
-        unsort_curve_point(*c);//TODO: can remove?
-
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
 	    {
             hseList.push_back(new CD_BOND(b,tag));
-		        //n_bond++;
 	    }
 	}
 
@@ -241,20 +226,6 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
     //TODO: move into different function for reuse with
     //      assembleFromSurf() and assembleFromCurve() functions.
     setDomainBoundary(intfc->table->rect_grid.L,intfc->table->rect_grid.U);
-	
-    /*
-    //TODO: To be removed when new implementation in
-    //      setHseTypeLists() is tested and working correctly.
-    //
-	if (debugging("intfc_assembly"))
-    {
-	    printf("%d num of tris, %d num of bonds\n",n_tri,n_bond);
-	    printf("%lu number of elements is assembled\n",hseList.size());
-	    printf("%d num fabric tris\n",n_fabric_tri);
-	    printf("%d num static rigid tris\n",n_static_rigid_tri);
-	    printf("%d num movable rigid tris\n",n_movable_rigid_tri);
-	}
-    */
 }
 
 void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
@@ -296,8 +267,6 @@ void CollisionSolver3d::assembleFromCurve(CURVE* curve)
     if (hsbdry_type(curve) != STRING_HSBDRY) return; 
     if (is_bdry(curve)) return;
 
-    unsort_curve_point(curve);//TODO: can remove?
-    
     CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
     
     BOND* b;
@@ -386,6 +355,17 @@ void CollisionSolver3d::setHseTypeLists()
 	}
 }
 
+//Randomize the ordering of input list to avoid bias in the cloth
+//when a Gauss-Seidel style of iterative updating as being used.
+std::vector<CD_HSE*> CollisionSolver3d::shuffleHseList(
+        const std::vector<CD_HSE*>& list) const
+{
+    std::vector<CD_HSE*> shuffled_list(list.begin(),list.end());
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::shuffle(shuffled_list.begin(),shuffled_list.end(),std::default_random_engine(seed));
+    return shuffled_list;
+}
+
 void CollisionSolver3d::initializeImpactZones()
 {
     makeSet(hseList);
@@ -407,12 +387,10 @@ void CollisionSolver3d::resolveCollision()
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainRatePosnJac(MotionState::STATIC);
-        //limitStrainRatePosnGS(MotionState::STATIC);
-            //computeMaxSpeed(); //debug    
+            //limitStrainRatePosnGS(MotionState::STATIC);
+                //computeMaxSpeed(); //debug    
         
-        limitStrainPosnJac(MotionState::STATIC);
-                //limitStrainRatePosnGS(MotionState::STATIC);
-                    //limitStrainRatePosnJac(MotionState::STATIC);
+        //limitStrainPosnJac(MotionState::STATIC);
             //computeMaxSpeed(); //debug
     }
 
@@ -473,12 +451,17 @@ void CollisionSolver3d::resolveCollision()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        //TODO: Appropriate to use after impact zone handling used?
+        limitStrainPosnJac(MotionState::STATIC);
+            //limitStrainRatePosnGS(MotionState::STATIC);
+                //limitStrainRatePosnJac(MotionState::STATIC);
+        
+        //TODO: Appropriate to limit relative velocity after impact zone handling used?
         //      Make boolean flag that indicates impact zone handling
         //      was enabled during this time step if we want skip.
-        limitStrainVelGS();
-        //limitStrainVelJAC();
-            //computeMaxSpeed(); //debug
+        
+        //limitStrainVelGS();
+            //limitStrainVelJAC();
+                //computeMaxSpeed(); //debug
     }
 
 	updateFinalVelocity();
@@ -486,7 +469,7 @@ void CollisionSolver3d::resolveCollision()
     updateFinalForRG();
 }
 
-//for debugggin -- should rename to printMaxSpeed()
+//for debuggging -- should rename to printMaxSpeed()
 void CollisionSolver3d::computeMaxSpeed()
 {
     POINT* p;
@@ -675,9 +658,9 @@ void CollisionSolver3d::detectProximity(std::vector<CD_HSE*>& list)
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainRatePosnGS(MotionState::STATIC);
-        //limitStrainRatePosnJac(MotionState::STATIC);
-            //computeMaxSpeed(); //debug    
+        //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainRatePosnJac(MotionState::STATIC);
+                //computeMaxSpeed(); //debug    
     }
 }
 
@@ -948,8 +931,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
             if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
             {
                 limitStrainRatePosnGS(MotionState::MOVING);
-                //limitStrainRatePosnJac(MotionState::MOVING);
-                    //computeMaxSpeed(); //debug
+                    //limitStrainRatePosnJac(MotionState::MOVING);
+                        //computeMaxSpeed(); //debug
             }
         }
 
@@ -968,8 +951,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         //
         revertAverageVelocity();
 
-        computeImpactZoneGS(list);
-            //computeImpactZoneJac(list);
+        computeImpactZoneJac(list);
+            //computeImpactZoneGS(list);
     }
     stop_clock("computeImpactZone");
 
@@ -1241,6 +1224,11 @@ void CollisionSolver3d::updateFinalPosition()
 	}
 }
 
+//TODO: Implicit spring solver to update final velocity.
+//      The hope is that it will damp out any spurious velocity
+//      osscilations arising from the explicit time integration
+//      used to obtain the initial linear trajectories of the
+//      fabric mesh vertices, or failure of the collision solver.
 void CollisionSolver3d::updateFinalVelocity()
 {
     unsortHseList(hseList);
@@ -1557,7 +1545,6 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         }
         
         
-        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         //
         //      Most recent experiments confirm we should not limit the strain
@@ -1573,7 +1560,6 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
                     //computeMaxSpeed(); //debug
             }
         }
-        */
 
         if (niter >= MAXITER)
         {
@@ -1618,6 +1604,7 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
         is_collision = abt_collision->getCollsnState();
         if (is_collision)
         {
+            updateImpactZoneVelocity();
             /*
             if (niter >= 50)
             {
@@ -1627,7 +1614,6 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                     //connectNearbyImpactZones(elasticHseList);
             }
             */
-            updateImpactZoneVelocity();
         }
 
         if (debugging("collision"))
@@ -1653,7 +1639,6 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                 //computeMaxSpeed(); //debug
         }
         
-        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
         //
         //      Most recent experiments confirm we should not limit the strain
@@ -1669,7 +1654,6 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                     //computeMaxSpeed(); //debug
             }
         }
-        */
 
         if (niter >= MAXITER)
         {
@@ -1977,8 +1961,8 @@ void updateImpactListVelocity(POINT* head)
     double dt = CollisionSolver3d::getTimeStepSize();
     
     //TODO: Is this justified, or just use the full step dt?
-        //avg_dt += dt; //maybe don't add this...
     avg_dt /= num_pts;
+    avg_dt = 0.5*(avg_dt + dt);
     
         //printf("avg_dt = %g,  dt = %g\n",avg_dt,dt);
 
@@ -1996,13 +1980,13 @@ void updateImpactListVelocity(POINT* head)
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = HUGE/num_pts;
+            m = HUGE/num_surfpts;
         }
         else if (isMovableRigidBody(p))
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = total_mass(p->hs)/num_pts;
+            m = total_mass(p->hs)/num_surfpts;
         }
 	    
 	    double dx[3], dv[3], Li[3];
@@ -2028,13 +2012,13 @@ void updateImpactListVelocity(POINT* head)
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = HUGE/num_pts;
+            m = HUGE/num_surfpts;
         }
         else if (isMovableRigidBody(p))
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = total_mass(p->hs)/num_pts;
+            m = total_mass(p->hs)/num_surfpts;
         }
 
 	    double dx[3];
@@ -2056,7 +2040,7 @@ void updateImpactListVelocity(POINT* head)
 	//compute angular velocity w: I*w = L;
 	double w[3];
     
-    if (myDet3d(I) < MACH_EPS)
+    if (fabs(myDet3d(I)) < MACH_EPS)
     {
         //I is non-invertible, calculate pseudoinverse with SVD
         arma::mat arI(3, 3);
@@ -2151,20 +2135,19 @@ void updateImpactListVelocity(POINT* head)
             
             if (std::isnan(sl->avgVel[i]))
             { 
-                printf("x_old[3], avgVel[3]\n");
-                
                 p = head;
                 while(p)
                 {
                     STATE* sl = (STATE*)left_state(p);
-                    printf("%f %f %f %f %f %f;\n",
-                            sl->x_old[0],sl->x_old[1],sl->x_old[2],
+                    printf("x_old = %f %f %f\n",
+                            sl->x_old[0],sl->x_old[1],sl->x_old[2]);
+                    printf("avgVel = %f %f %f\n",
                             sl->avgVel[0],sl->avgVel[1],sl->avgVel[2]);
                     p = next_pt(p);
                 }
 
                 printf("num_pts = %d, weight = %d\n",num_pts,weight(head));
-                printf("nan vel, w = %f, mag_w = %f\n",w[i],mag_w);
+                printf("w = %f, mag_w = %f\n",w[i],mag_w);
                 printf("L = [%f %f %f]\n",L[0],L[1],L[2]);
                 printf("I = [%f %f %f;  %f %f %f; %f %f %f]\n",
                         I[0][0],I[0][1],I[0][2],
@@ -2173,7 +2156,8 @@ void updateImpactListVelocity(POINT* head)
                 printf("xF = %f %f %f, xR = %f %f %f\n",
                         xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
             
-                clean_up(ERROR);
+                printf("ERROR: updateImpactListVelocity() nan avgVel!\n");
+                LOC(); clean_up(ERROR);
             }
 	    }
 
@@ -2327,7 +2311,8 @@ int CollisionSolver3d::computeStrainImpulsesPosn(
                 scalarMult(1.0/lnew,vec01,vec01);
                 
                 //Do not apply impulses to fixed nodes
-                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                if (!(isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                    !(isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                     {
@@ -2337,13 +2322,15 @@ int CollisionSolver3d::computeStrainImpulsesPosn(
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                else if (!(isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                          (isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                else if ((isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                        !(isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
@@ -2353,10 +2340,7 @@ int CollisionSolver3d::computeStrainImpulsesPosn(
                 {
                     //NOTE: 2 "registered points" could show up here
                     continue;
-                    /*
-                    printf("ERROR: \n");
-                    LOC(); clean_up(EXIT_FAILURE);
-                    */
+                    //printf("ERROR: \n"); LOC(); clean_up(EXIT_FAILURE);
                 }
 
                 numStrainEdges++;
@@ -2416,17 +2400,6 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 	}
 
     turnOffGsUpdate();
-}
-
-//Randomize the ordering of input list to avoid bias in the cloth
-//when a Gauss-Seidel style of iterative updating as being used.
-std::vector<CD_HSE*> CollisionSolver3d::shuffleHseList(
-        const std::vector<CD_HSE*>& list) const
-{
-    std::vector<CD_HSE*> shuffled_list(list.begin(),list.end());
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::shuffle(shuffled_list.begin(),shuffled_list.end(),std::default_random_engine(seed));
-    return shuffled_list;
 }
 
 //jacobi iteration
@@ -2517,8 +2490,9 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(
                 Pts2Vec(p[0],p[1],vec01);
                 scalarMult(1.0/lnew,vec01,vec01);
                 
-                //Do not apply impulses to fixed nodes
-                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                //Do not apply impulses to rg_string_nodes
+                if (!(isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                    !(isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                     {
@@ -2528,13 +2502,15 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                else if (!(isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                          (isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                else if ((isRigidBody(sl[0]) || isImpactZonePoint(p[0])) &&
+                        !(isRigidBody(sl[1]) || isImpactZonePoint(p[1])))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
@@ -2544,10 +2520,7 @@ int CollisionSolver3d::computeStrainRateImpulsesPosn(
                 {
                     //NOTE: two "registered points" could show up here
                     continue;
-                    /*
-                    printf("ERROR: \n");
-                    LOC(); clean_up(EXIT_FAILURE);
-                    */
+                    //printf("ERROR: \n"); LOC(); clean_up(EXIT_FAILURE);
                 }
                 
                 numStrainRateEdges++;
@@ -2692,6 +2665,7 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
             if (fabs(vcomp01) < MACH_EPS) continue;
+            //TODO: Specify a tolerance for the relative velocity in input file.
                 
             double I = 0.5*vcomp01;
 
@@ -2747,16 +2721,6 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                     if (sl[k]->strain_num > 0)
                     {
                         sl[k]->has_strainlim_collsn = true;
-
-                        /*
-                        //TODO: can probably remove
-                        //
-                        if (mstate == MotionState::STATIC)
-                            sl[k]->has_strainlim_prox = true;
-                        else
-                            sl[k]->has_strainlim_collsn = true;
-                        */
-
                         for (int j = 0; j < 3; ++j)
                         {
                             sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
@@ -2876,7 +2840,8 @@ void scalarMult(double a, double* v, double* ans)
             ans[i] = a*v[i];	
 }
 
-extern double myDet3d(double a[3][3]){
+extern double myDet3d(double a[3][3])
+{
     return  a[0][0]*(a[1][1]*a[2][2] - a[2][1]*a[1][2]) 
 	  - a[0][1]*(a[1][0]*a[2][2] - a[2][0]*a[1][2]) 
 	  + a[0][2]*(a[1][0]*a[2][1] - a[2][0]*a[1][1]);

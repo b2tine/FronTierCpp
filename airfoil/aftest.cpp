@@ -895,7 +895,7 @@ static void print_airfoil_stat3d(
 	switch (af_params->spring_model)
 	{
 	case MODEL1:
-	    print_airfoil_stat3d_1(front,out_name);
+	    print_airfoil_stat3d_1(front,out_name);//default
 	    break;
 	case MODEL2:
 	    print_airfoil_stat3d_2(front,out_name);
@@ -914,7 +914,6 @@ static void print_airfoil_stat3d(
 	    print_rgb3d(front,out_name);
 }	/* end print_airfoil_stat3d */
 
-//TODO: check computations
 static void print_airfoil_stat3d_1(
 	Front *front,
 	char *out_name)
@@ -1028,8 +1027,7 @@ static void print_airfoil_stat3d_1(
 	psample = NULL;
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY)
-	    	continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 	    surf = *s;
 	    zcom = center_of_mass(Hyper_surf(surf))[2];
 	    vcom = center_of_mass_velo(Hyper_surf(surf))[2];
@@ -1041,10 +1039,10 @@ static void print_airfoil_stat3d_1(
 	    }
 	    else if (I_NumOfSurfPoints(surf) > np) 
 	    {
-                np = I_NumOfSurfPoints(surf);
-                FT_FreeThese(1, pts);
-                FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
-            }
+            np = I_NumOfSurfPoints(surf);
+            FT_FreeThese(1, pts);
+            FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
+        }
 	    I_ArrayOfSurfPoints(surf,pts);
 	    psample = pts[ip];
 	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
@@ -1057,7 +1055,7 @@ static void print_airfoil_stat3d_1(
                                 Point_of_tri(tri)[(j+1)%3],3);
 		    x_diff = side_length - tri->side_length0[j];
 		    if (!is_side_bdry(tri,j))
-                    	epi += 0.5*ks*sqr(x_diff);
+                epi += 0.5*ks*sqr(x_diff);
 		}
 	    }
 	    unsort_surf_point(surf);
@@ -1070,18 +1068,18 @@ static void print_airfoil_stat3d_1(
 		    if (sorted(p) || Boundary_point(p)) continue;
 		    for (k = 0; k < dim; ++k)
 		    {
-			if (fabs(p->vel[k]) > vmax)
-			{
-			    vmax = fabs(p->vel[k]);
-			    Gmax = Gindex(p);
-			    Posn_max = 0;
-			    obj_max = (POINTER)surf;
-			}
-                    	esk += 0.5*m_s*sqr(p->vel[k]);
-			egp += -g[k]*m_s*Coords(p)[k];
-			st = (STATE*)left_state(p);
-			exk += 0.5*m_s*sqr(st->impulse[k]);
-			enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
+                if (fabs(p->vel[k]) > vmax)
+                {
+                    vmax = fabs(p->vel[k]);
+                    Gmax = Gindex(p);
+                    Posn_max = 0;
+                    obj_max = (POINTER)surf;
+                }
+                esk += 0.5*m_s*sqr(p->vel[k]);
+                egp += -g[k]*m_s*Coords(p)[k];
+                st = (STATE*)left_state(p);
+                exk += 0.5*m_s*sqr(st->impulse[k]);
+                enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
 		    }
 		    sorted(p) = YES;
 		}
@@ -1156,56 +1154,67 @@ static void print_airfoil_stat3d_1(
 	    }
 	    else
 	    {
-		if (is_gore_node(node))
+            if (is_gore_node(node))
+            {
+                m_l = af_params->m_g;
+            }
+            else
+            {
+                m_l = af_params->m_s;
+            }
+
+            for (k = 0; k < dim; ++k)
+            {
+                if (fabs(node->posn->vel[k]) > vmax)
                 {
-                    m_l = af_params->m_g;
+                    vmax = fabs(node->posn->vel[k]);
+                    Gmax = Gindex(node->posn);
+                    Posn_max = 2;
+                    obj_max = (POINTER)node;
                 }
-                else
-                {
-                    m_l = af_params->m_s;
-                }
-                for (k = 0; k < dim; ++k)
-                {
-		    if (fabs(node->posn->vel[k]) > vmax)
-		    {
-			vmax = fabs(node->posn->vel[k]);
-			Gmax = Gindex(node->posn);
-			Posn_max = 2;
-			obj_max = (POINTER)node;
-		    }
-                    esk += 0.5*m_l*sqr(node->posn->vel[k]);
-                    egp += -g[k]*m_l*Coords(node->posn)[k];
-                    st = (STATE*)left_state(node->posn);
-                    exk += 0.5*m_l*sqr(st->impulse[k]);
-                    enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
-                }
-	    }
+                
+                esk += 0.5*m_l*sqr(node->posn->vel[k]);
+                egp += -g[k]*m_l*Coords(node->posn)[k];
+                st = (STATE*)left_state(node->posn);
+                exk += 0.5*m_l*sqr(st->impulse[k]);
+                enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
+            }
+        }
 	}
 
-	nc = 0;		str_length = 0.0;
+    //TODO: Monitor enk (total kinetic energy) to detect
+    //      unphysical configurations of the fabric interface.
+    //      Failure of the fabric solver is nearly always
+    //      preceded by a spike in the spring system kinetic
+    //      energy and a rapid increase in the max speed of
+    //      the canopy points
+
+	nc = 0;
+    str_length = 0.0;
 	for (c = intfc->curves; c && *c; ++c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY)
-		continue;
+	    if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 	    str_length += curve_length(*c);
 	    nc++;
 	}
-	if (nc != 0)
-	    str_length /= (double)nc;
-	if (first)
+	if (nc != 0) str_length /= (double)nc;
+	
+    if (first)
 	{
 	    if (psample != NULL)
+        {
 	    	for (k = 0; k < dim; ++k)
-		    p0[k] = Coords(psample)[k];
+                p0[k] = Coords(psample)[k];
+        }
 	    first = NO;
 	}
 
 	fprintf(eskfile,"%16.12f  %16.12f\n",front->time,esk);
-        fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
-        fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
-        fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
-        fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
-        fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
+    fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
+    fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
+    fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
+    fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
+    fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
 	fflush(eskfile);
 	fflush(espfile);
 	fflush(egpfile);
@@ -1255,12 +1264,9 @@ static void print_airfoil_stat3d_1(
 	fflush(vcom_file);
 	if (psample != NULL)
 	{
-            fprintf(samplex,"%16.12f  %16.12f\n",front->time,Coords(psample)[0]
-				- p0[0]);
-            fprintf(sampley,"%16.12f  %16.12f\n",front->time,Coords(psample)[1]
-				- p0[1]);
-            fprintf(samplez,"%16.12f  %16.12f\n",front->time,Coords(psample)[2]
-				- p0[2]);
+        fprintf(samplex,"%16.12f  %16.12f\n",front->time,Coords(psample)[0] - p0[0]);
+        fprintf(sampley,"%16.12f  %16.12f\n",front->time,Coords(psample)[1] - p0[1]);
+        fprintf(samplez,"%16.12f  %16.12f\n",front->time,Coords(psample)[2] - p0[2]);
 	}
 	fflush(samplex);
 	fflush(sampley);

@@ -1,10 +1,6 @@
-Domain limit in 0-th dimensionXXX: 0.0 6.0
-Domain limit in 1-th dimensionXXX: 0.0 2.25
-Computational gridXXX: 242 185
-
-Domain limit in 0-th dimension: -2.25 9.0
+Domain limit in 0-th dimension: 0.0 6.0
 Domain limit in 1-th dimension: 0.0 2.25
-Computational grid: 454 185
+Computational grid: 242 185
 
 
 Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
@@ -44,9 +40,9 @@ Enter boundary object type: BACKWARD_FACING_STEP
 
 Enter number of node points: 3
 Enter coordinates of node points:
-0.0000 0.000
-0.0000 0.450
--2.2500 0.450
+1.0000 0.000
+1.0000 0.250
+0.0000 0.250
 
 Direction 0 side 0 is MIXED_TYPE_BOUNDARY
 Enter type of node 1: FIXED_NODE
@@ -63,7 +59,7 @@ Enter wave type of the curve between nodes 12: PASSIVE_BOUNDARY
 Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
 
 Number of Dirichlet boundaries on dir 0 side 0: 1
-Curve 1 start and end at: (-2.250000 0.450000)->(-2.250000 2.250000)
+Curve 1 start and end at: (0.000000 0.250000)->(0.000000 3.000000)
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 44.2 0
 Enter pressure: 0
@@ -93,11 +89,11 @@ Type y to make movie of viscosity: y
 
 Type y to make viscosity field movie: y
 Type y to make scalar pressure field movie: y
-Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
-
 Type y to make scalar phi field movie: n
 Type y to make scalar intermediate velocity divergence field movie: n
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes

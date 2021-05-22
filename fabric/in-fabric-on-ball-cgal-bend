@@ -59,7 +59,8 @@ Enter interior sub step number: 1
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
-Enter fabric bending damping constant: 0.0
+Enter fabric bending stiffness constantXXX: 0.1
+Enter fabric bending damping constant: 0.01
 Enter fabric friction constant: 0.3
 Enter fabric point mass: 0.00035
 Enter fabric point massXXX: 0.001
@@ -67,7 +68,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter strain limit: 0.01
-Enter compressive strain limit: 0.01
+Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.1
 
 

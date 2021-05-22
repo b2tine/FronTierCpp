@@ -1,6 +1,25 @@
 #include "bending.h"
 
 
+static void computeCurvatureBinormal(BOND* b1, BOND* b2);
+static void computeGradCurvatureBinormal(BOND* b1, BOND* b2);
+static void computeStringPointBendingForce(BOND* b1, BOND* b2);
+
+static std::vector<std::vector<double>> crossMat(double* u);
+static std::vector<std::vector<double>> outerProduct(double* u, double* v, int dim);
+
+static std::vector<std::vector<double>> scalarMultMatrix(
+        double c, std::vector<std::vector<double>> M, int dimX, int dimY);
+
+static std::vector<std::vector<double>> matAdd(
+        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
+
+static std::vector<std::vector<double>> matMinus(
+        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
+
+static std::vector<double> multMatVec(
+        std::vector<std::vector<double>> A, std::vector<double> u, int m, int n);
+
 static void calculateBendingForce3d2003(POINT* p1, TRI* tri, TRI* n_tri, double bends, double bendd);
 static void calculateBendingForce3d2006(POINT* p1, TRI* tri, TRI* n_tri, double bends, double bendd);
 static void calculateBendingForce3dparti(POINT* p1, TRI* tri, TRI* n_tr, double bends, double bendd);
@@ -9,21 +28,46 @@ static double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri);
 static double divEx(double numerator, double denominator);
 static void DebugShow(const double& sva);
     
-static void computeCurvatureBinormal(BOND* b1, BOND* b2);
-static void computeGradCurvatureBinormal(BOND* b1, BOND* b2);
-static void computeStringPointBendingForce(BOND* b1, BOND* b2);
 
-static std::vector<std::vector<double>> crossMat(double* u);
-static std::vector<std::vector<double>> outerProduct(double* u, double* v, int dim);
-static std::vector<std::vector<double>> scalarMultMatrix(
-        double c, std::vector<std::vector<double>> M, int dimX, int dimY);
-static std::vector<std::vector<double>> matAdd(
-        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
-static std::vector<std::vector<double>> matMinus(
-        std::vector<std::vector<double>> A, std::vector<std::vector<double>> B, int dimX, int dimY);
-static std::vector<double> multMatVec(std::vector<std::vector<double>> A, std::vector<double> u, int m, int n);
+void resetBendingForce(INTERFACE* intfc)
+{
+    SURFACE **surf;
+    TRI *tri;
 
+    intfc_surface_loop(intfc, surf)
+    {
+        surf_tri_loop(*surf, tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                POINT* p = Point_of_tri(tri)[i];
+                STATE* sl = (STATE*)left_state(p);
+                for (int j = 0; j < 3; ++j)
+                    sl->bendforce[j] = 0.0;
+            }
+        }
+    }
+        
+    CURVE** curve;
+    BOND *b;
 
+    intfc_curve_loop(intfc,curve)
+    {
+        if (is_bdry(*curve)) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+
+        curve_bond_loop(*curve,b)
+        {
+            STATE* ss = (STATE*)left_state(b->start);
+            STATE* se = (STATE*)left_state(b->end);
+            for (int j = 0; j < 3; ++j)
+            {
+                ss->bendforce[j] = 0.0;
+                se->bendforce[j] = 0.0;
+            }
+        }
+    }
+}
 
 void addStringBenders(Front* front)
 {
@@ -65,46 +109,6 @@ void addStringBenders(Front* front)
             bond_bender->bends = string_bends;
             POINT* pt = bond->end;
             pt->extra = bond_bender;
-        }
-    }
-}
-
-void resetBendingForce(INTERFACE* intfc)
-{
-    SURFACE **surf;
-    TRI *tri;
-
-    intfc_surface_loop(intfc, surf)
-    {
-        surf_tri_loop(*surf, tri)
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                POINT* p = Point_of_tri(tri)[i];
-                STATE* sl = (STATE*)left_state(p);
-                for (int j = 0; j < 3; ++j)
-                    sl->bendforce[j] = 0.0;
-            }
-        }
-    }
-        
-    CURVE** curve;
-    BOND *b;
-
-    intfc_curve_loop(intfc,curve)
-    {
-        if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
-
-        curve_bond_loop(*curve,b)
-        {
-            STATE* ss = (STATE*)left_state(b->start);
-            STATE* se = (STATE*)left_state(b->end);
-            for (int j = 0; j < 3; ++j)
-            {
-                ss->bendforce[j] = 0.0;
-                se->bendforce[j] = 0.0;
-            }
         }
     }
 }
@@ -384,17 +388,21 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
         
         surf_tri_loop(*surf, tri)
         {
-            //TODO: use edge traversal of surface (requires half the computation)
             for (int i = 0; i < 3; ++i)
             {
-                POINT *p = Point_of_tri(tri)[i];
-                TRI* n_tri = Tri_on_side(tri, (i+1)%3);
-
-                if (is_side_bdry(tri,(i+1)%3)) continue; 
+                if (is_side_bdry(tri,(i+1)%3)) continue; //do we need this?
                 
-                calculateBendingForce3d2006(p,tri,n_tri,bends,bendd);
-                //calculateBendingForce3d2003(p,tri,n_tri,bends,bendd);//TODO: test this one
-                    //calculateBendingForce3dparti(p,tri,n_tri,bends,bendd);
+                TRI* tri_opp = Tri_on_side(tri,(i+1)%3);
+                
+                if (tri_opp != nullptr) //tri_opp shouln't be nullptr if we passed is_side_bdry()
+                {
+                    //TRI with the lower gindex handles the
+                    //bending forces about the shared edge
+                    if (Gindex(tri_opp) < Gindex(tri)) continue;
+                }
+
+                POINT* pt = Point_of_tri(tri)[i];
+                calculateBendingForce3d2006(pt,tri,tri_opp,bends,bendd);
             }
         }
     }
@@ -410,147 +418,97 @@ void calculateBendingForce3d2006(
         const double bends,
         const double bendd)
 {
-        if (Mag3d(Tri_normal(t1)) < MACH_EPS ||
-            Mag3d(Tri_normal(t2)) < MACH_EPS) return;
+    if (Mag3d(Tri_normal(t1)) < MACH_EPS ||
+        Mag3d(Tri_normal(t2)) < MACH_EPS) return;
 
-        int index = Vertex_of_point(t1, p1);
-        POINT *p3 = Point_of_tri(t1)[(index+1)%3];
-        POINT *p4 = Point_of_tri(t1)[(index+2)%3];
-        index = 3 - Vertex_of_point(t2, p3) - Vertex_of_point(t2, p4);
-        POINT *p2 = Point_of_tri(t2)[index];
-
-        double x13[3], x14[3], x23[3], x24[3], E[3];
-        for (int i = 0; i < 3; ++i)
-        {
-            x13[i] = Coords(p1)[i] - Coords(p3)[i];
-            x14[i] = Coords(p1)[i] - Coords(p4)[i];
-            x23[i] = Coords(p2)[i] - Coords(p3)[i];
-            x24[i] = Coords(p2)[i] - Coords(p4)[i];
-            E[i] = Coords(p4)[i] - Coords(p3)[i];
-        }
-        double N1[3], N2[3], N3[3], N4[3];
-        Cross3d(x13, x14, N1);
-        Cross3d(x24, x23, N2);
-        Cross3d(x23, x13, N3);
-        Cross3d(x14, x24, N4);
-        double N1_mag, N2_mag, N3_mag, N4_mag;
-        N1_mag = Mag3d(N1);
-        N2_mag = Mag3d(N2);
-        N3_mag = Mag3d(N3);
-        N4_mag = Mag3d(N4);
-        double a1, a2, a3, a4;
-        a1 = N2_mag / (N1_mag + N2_mag);
-        a2 = 1 - a1;
-        a3 = - N4_mag / (N3_mag + N4_mag);
-        a4 = -1 - a3;
-        double R[3];
-        for (int i = 0; i < 3; ++i)
-            R[i] = a1 * Coords(p1)[i] + a2 * Coords(p2)[i] +
-                   a3 * Coords(p3)[i] + a4 * Coords(p4)[i];
-        double E_mag, h1, h2;
-        E_mag = Mag3d(E);
-        h1 = fabs(Dot3d(x13, E) / E_mag);
-        h1 = sqrt(Dot3d(x13, x13) - h1 * h1);
-        h2 = fabs(Dot3d(x23, E) / E_mag);
-        h2 = sqrt(Dot3d(x23, x23) - h2 * h2);
-
-	    //double bend_stiff = getBendStiff(); 
-        double bend_stiff = bends;
-        double lambda = 2.0*(h1 + h2)*E_mag*bend_stiff / (3.0*h1*h2*h1*h2);
-
-    STATE* state[4];
-    POINT* pts[4] = {p1,p2,p3,p4};
-    double a[4] = {a1,a2,a3,a4};
-
-    /*
-    for (int j = 0; j < 4; ++j)
-    {
-        if (state[j]->is_fixed || state[j]->is_registeredpt) continue;
-        
-        //TODO: Should force be redistributed to non fixed/registered point?
-        //      See below for naive redistribution ...
-        
-        for (int i = 0; i < 3; ++i)
-        {
-            state[j]->bendforce[i] += -1.0*lambda*a[j]*R[i]*0.5;
-        }
-    }
-    */
-
-    for (int j = 0; j < 2; ++j)
-    {
-        int j0 = 2*j;
-        int j1 = 2*j + 1;
-
-        state[j0] = static_cast<STATE*>(left_state(pts[j0]));
-        state[j1] =  static_cast<STATE*>(left_state(pts[j1]));
-
-        if (!(state[j0]->is_fixed || state[j0]->is_registeredpt) &&
-            !(state[j1]->is_fixed || state[j1]->is_registeredpt))
-        {
-            for (int i = 0; i < 3; ++i)
-            {
-                state[j0]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
-                state[j1]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
-            }
-        }
-        else if (!(state[j0]->is_fixed || state[j0]->is_registeredpt) &&
-                 (state[j1]->is_fixed || state[j1]->is_registeredpt))
-        {
-            //TODO: correct???
-            for (int i = 0; i < 3; ++i)
-            {
-                state[j0]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
-                state[j0]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
-            }
-        }
-        else if ((state[j0]->is_fixed || state[j0]->is_registeredpt) &&
-                 !(state[j1]->is_fixed || state[j1]->is_registeredpt))
-        {
-            //TODO: correct???
-            for (int i = 0; i < 3; ++i)
-            {
-                state[j1]->bendforce[i] -= 0.5*lambda*a[j0]*R[i];
-                state[j1]->bendforce[i] -= 0.5*lambda*a[j1]*R[i];
-            }
-        }
-        /*
-        else
-        {
-            //Both points pinned; do nothing.
-        }
-        */    
-    }
-	
-    /*
+    int index = Vertex_of_point(t1,p1);
+    POINT *p3 = Point_of_tri(t1)[(index+1)%3];
+    POINT *p4 = Point_of_tri(t1)[(index+2)%3];
+    
+    int index_opp = 3 - Vertex_of_point(t2,p3) - Vertex_of_point(t2,p4);
+    POINT *p2 = Point_of_tri(t2)[index_opp];
+    
+    //          C(4)
+    //  A(1) - - | - - - B(2)
+    //          D(3)
+    
+    double x41[3], x31[3], x32[3], x42[3], E[3];
     for (int i = 0; i < 3; ++i)
     {
-        //p1->force[i] += -lambda * a1 * R[i] * 0.5;
-        //p2->force[i] += -lambda * a2 * R[i] * 0.5;
-        //p3->force[i] += -lambda * a3 * R[i] * 0.5;
-        //p4->force[i] += -lambda * a4 * R[i] * 0.5;
+        x41[i] = Coords(p1)[i] - Coords(p4)[i];
+        x31[i] = Coords(p1)[i] - Coords(p3)[i];
+        x32[i] = Coords(p2)[i] - Coords(p3)[i];
+        x42[i] = Coords(p2)[i] - Coords(p4)[i];
+        E[i] = Coords(p4)[i] - Coords(p3)[i];
     }
-	
-    //TODO: use state->bendforce
+    
+    double N1[3], N2[3], N3[3], N4[3];
+    Cross3d(x41, x31, N1);
+    Cross3d(x32, x42, N2);
+    Cross3d(x31, x32, N3);
+    Cross3d(x42, x41, N4);
+    
+    double N1_mag = Mag3d(N1);
+    double N2_mag = Mag3d(N2);
+    double N3_mag = Mag3d(N3);
+    double N4_mag = Mag3d(N4);
+    
+    double a1 = N2_mag/(N1_mag + N2_mag);
+    double a2 = 1.0 - a1;
+    double a3 = -1.0*N4_mag/(N3_mag + N4_mag);
+    double a4 = -1.0 - a3;
+    
+    double R[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        R[i] = a1*Coords(p1)[i] + a2*Coords(p2)[i]
+               + a3*Coords(p3)[i] + a4*Coords(p4)[i];
+    } 
+    
+    double E_mag = Mag3d(E);
+    double h1 = sqrt(Dot3d(x31,x31) - sqr(Dot3d(x31,E)/E_mag));
+    double h2 = sqrt(Dot3d(x32,x32) - sqr(Dot3d(x32,E)/E_mag));
+
+    //double bend_stiff = getBendStiff(); 
+    double bend_stiff = bends;
+    double lambda = 2.0/3.0*bend_stiff*(h1 + h2)*E_mag/sqr(h1*h2);
+
+    double a[4] = {a1,a2,a3,a4};
+    POINT* pts[4] = {p1,p2,p3,p4};
+
+    STATE* state[4];
+    for (int j = 0; j < 4; ++j)
+    {
+        state[j] = static_cast<STATE*>(left_state(pts[j]));
+        if (state[j]->is_fixed || state[j]->is_registeredpt) continue;
+        for (int i = 0; i < 3; ++i)
+        {
+            state[j]->bendforce[i] -= lambda*a[j]*R[i];
+        }
+    }
+
+    /*
+    //Save for now in case we want to reuse debugging
+    //
     if (fabs(Coords(p1)[0] -0.75) < 0.1)
-	{
-	    double R_mag = Mag3d(R);
-	    int count = 0;
-	    if (Coords(p1)[2] > 0.8) count++;
-	    if (Coords(p2)[2] > 0.8) count++;
-	    if (Coords(p3)[2] > 0.8) count++;
-	    if (Coords(p4)[2] > 0.8) count++;
-	    if (R_mag > 0 && count == 3)
-	    {
-	    printf("R = [%f %f %f], R_mag = %e, lambda = %e\n", R[0],R[1],R[2],R_mag,lambda);
-	    printf("nor R = [%f %f %f]\n", R[0]/R_mag, R[1]/R_mag, R[2]/R_mag);
-	    printf("h1 = %f, h2 = %f, E_mag = %f\n", h1, h2, E_mag);
-	    printf("p1 = [%f %f %f]\n", Coords(p1)[0], Coords(p1)[1], Coords(p1)[2]); 
-	    printf("p2 = [%f %f %f]\n", Coords(p2)[0], Coords(p2)[1], Coords(p2)[2]); 
-	    printf("p3 = [%f %f %f]\n", Coords(p3)[0], Coords(p3)[1], Coords(p3)[2]); 
-	    printf("p4 = [%f %f %f]\n", Coords(p4)[0], Coords(p4)[1], Coords(p4)[2]); 
-	    }
-	}
+    {
+        double R_mag = Mag3d(R);
+        int count = 0;
+        if (Coords(p1)[2] > 0.8) count++;
+        if (Coords(p2)[2] > 0.8) count++;
+        if (Coords(p3)[2] > 0.8) count++;
+        if (Coords(p4)[2] > 0.8) count++;
+        if (R_mag > 0 && count == 3)
+        {
+        printf("R = [%f %f %f], R_mag = %e, lambda = %e\n", R[0],R[1],R[2],R_mag,lambda);
+        printf("nor R = [%f %f %f]\n", R[0]/R_mag, R[1]/R_mag, R[2]/R_mag);
+        printf("h1 = %f, h2 = %f, E_mag = %f\n", h1, h2, E_mag);
+        printf("p1 = [%f %f %f]\n", Coords(p1)[0], Coords(p1)[1], Coords(p1)[2]); 
+        printf("p2 = [%f %f %f]\n", Coords(p2)[0], Coords(p2)[1], Coords(p2)[2]); 
+        printf("p3 = [%f %f %f]\n", Coords(p3)[0], Coords(p3)[1], Coords(p3)[2]); 
+        printf("p4 = [%f %f %f]\n", Coords(p4)[0], Coords(p4)[1], Coords(p4)[2]); 
+        }
+    }
         
     if (Mag3d(p1->force) == 0)
     {
@@ -562,7 +520,7 @@ void calculateBendingForce3d2006(
         printf("h1 = %e, h2 = %e\n", h1, h2);
     }
     */
-}       /* end calculateBendingForce3d */
+}   /* end calculateBendingForce3d */
 
 
 // Appears to be from "Simulation of Clothing with Folds and Wrinkles"
