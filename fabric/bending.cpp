@@ -1,4 +1,5 @@
 #include "bending.h"
+#include "collid.h"
 
 
 static void computeCurvatureBinormal(BOND* b1, BOND* b2);
@@ -24,6 +25,7 @@ static void calculateBendingForce3d2003(POINT* p1, TRI* tri, TRI* n_tri, double 
 static void calculateBendingForce3d2006(POINT* p1, TRI* tri, TRI* n_tri, double bends, double bendd);
 static void calculateBendingForce3dparti(POINT* p1, TRI* tri, TRI* n_tr, double bends, double bendd);
 
+static std::vector<double> EdgeToEdge(POINT** pts);
 static double calOriLeng(int index1, int index2, TRI* tri, TRI* n_tri);
 static double divEx(double numerator, double denominator);
 static void DebugShow(const double& sva);
@@ -409,8 +411,11 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
 }
 
 
-//Appears to be from "Simple Linear Bending Stiffness in Particle Systems"
-//Pascal Volino and Nadia Magnenat-Thalmann
+//From "Simple Linear Bending Stiffness in Particle Systems"
+//Authors: Pascal Volino and Nadia Magnenat-Thalmann
+//
+//This bending model is best suited to deformable structures with
+//low curvature and high bending stiffness.
 void calculateBendingForce3d2006(
         POINT* p1,
         TRI* t1,
@@ -442,22 +447,76 @@ void calculateBendingForce3d2006(
         E[i] = Coords(p4)[i] - Coords(p3)[i];
     }
     
-    double N1[3], N2[3], N3[3], N4[3];
-    Cross3d(x41, x31, N1);
-    Cross3d(x32, x42, N2);
-    Cross3d(x31, x32, N3);
-    Cross3d(x42, x41, N4);
+    static double N1[3], N1_mag, a1, h1;
+    static double N2[3], N2_mag, a2, h2;
+    static double N3[3], N3_mag, a3, h3;
+    static double N4[3], N4_mag, a4, h4;
+    static double lambda;
+
+    static bool first = true;
+    if (first) //Precompute a1, a2, a3, a4, and lambda
+    {
+        Cross3d(x41, x31, N1);
+        Cross3d(x32, x42, N2);
+        Cross3d(x31, x32, N3);
+        Cross3d(x42, x41, N4);
+        
+        N1_mag = Mag3d(N1);
+        N2_mag = Mag3d(N2);
+        N3_mag = Mag3d(N3);
+        N4_mag = Mag3d(N4);
+        
+        a1 = N2_mag/(N1_mag + N2_mag);
+        a2 = 1.0 - a1;
+        a3 = -1.0*N4_mag/(N3_mag + N4_mag);
+        a4 = -1.0 - a3;
+
+        /*
+        //NOTE: This calculation of h1 and h2 is wrong!
+                  h1 = sqrt(Dot3d(x31,x31) - sqr(Dot3d(x31,E)/E_mag));
+                  h2 = sqrt(Dot3d(x32,x32) - sqr(Dot3d(x32,E)/E_mag));
+        */
+
+        double E_mag = Mag3d(E);
+        double comp31_E = Dot3d(x31,E)/E_mag;
+        double comp32_E = Dot3d(x32,E)/E_mag;
+        
+        double proj_h1[3];
+        double proj_h2[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            proj_h1[i] = Coords(p3)[i] + comp31_E*E[i];
+            proj_h2[i] = Coords(p4)[i] + comp32_E*E[i];
+        }
+
+        //find height of altitude spring by find closest
+        //distance between the line segments x12 and x34
+        POINT* points[4] = {p1,p2,p3,p4};
+        auto shortest_vec = EdgeToEdge(points);
+        
+        double h1_pt[3], h1_vec[3];
+        double h2_pt[3], h2_vec[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            h1_pt[i] = proj_h1[i] + shortest_vec[i];
+            h1_vec[i] = h1_pt[i] - Coords(p1)[i];
+
+            h2_pt[i] = proj_h2[i] + shortest_vec[i];
+            h2_vec[i] = h2_pt[i] - Coords(p2)[i];
+        }
+
+        h1 = Mag3d(h1_vec);
+        h2 = Mag3d(h2_vec);
+
+        //double bend_stiff = getBendStiff(); 
+        double bend_stiff = bends;
+        lambda = 2.0/3.0*bend_stiff*(h1 + h2)*E_mag/sqr(h1*h2);
+
+        first = false;
+    }
     
-    double N1_mag = Mag3d(N1);
-    double N2_mag = Mag3d(N2);
-    double N3_mag = Mag3d(N3);
-    double N4_mag = Mag3d(N4);
-    
-    double a1 = N2_mag/(N1_mag + N2_mag);
-    double a2 = 1.0 - a1;
-    double a3 = -1.0*N4_mag/(N3_mag + N4_mag);
-    double a4 = -1.0 - a3;
-    
+
+    //compute the bending vector R
     double R[3];
     for (int i = 0; i < 3; ++i)
     {
@@ -465,14 +524,6 @@ void calculateBendingForce3d2006(
                + a3*Coords(p3)[i] + a4*Coords(p4)[i];
     } 
     
-    double E_mag = Mag3d(E);
-    double h1 = sqrt(Dot3d(x31,x31) - sqr(Dot3d(x31,E)/E_mag));
-    double h2 = sqrt(Dot3d(x32,x32) - sqr(Dot3d(x32,E)/E_mag));
-
-    //double bend_stiff = getBendStiff(); 
-    double bend_stiff = bends;
-    double lambda = 2.0/3.0*bend_stiff*(h1 + h2)*E_mag/sqr(h1*h2);
-
     double a[4] = {a1,a2,a3,a4};
     POINT* pts[4] = {p1,p2,p3,p4};
 
@@ -522,9 +573,174 @@ void calculateBendingForce3d2006(
     */
 }   /* end calculateBendingForce3d */
 
+static std::vector<double> EdgeToEdge(POINT** pts)
+{
+	double x12[3], x34[3], x31[3];
+	Pts2Vec(pts[0],pts[1],x12);    
+	Pts2Vec(pts[2],pts[3],x34);
+	Pts2Vec(pts[2],pts[0],x31);
 
-// Appears to be from "Simulation of Clothing with Folds and Wrinkles"
-// R. Bridson, S. Marino and R. Fedkiw
+    //Matrix entries
+    double a = Dot3d(x12,x12);
+    double b = Dot3d(x12,x34);
+    double c = Dot3d(x34,x34);
+
+    //RHS
+    double d = Dot3d(x12,x31);
+    double e = Dot3d(x34,x31);
+	
+    //Matrix Determinant
+    double D = fabs(a*c - b*b);
+
+    //Solution, and solution numerators and denominators
+    double sC = 0;  double sN = 0;  double sD = D;    
+    double tC = 0;  double tN = 0;  double tD = D;    
+    
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
+
+    double vec[3];
+	Cross3d(x12,x34,vec);
+
+    if (D < MACH_EPS || Mag3d(vec) < MACH_EPS)
+    {
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
+        {
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
+
+        }
+        else if( sN > sD )
+        {
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
+        }
+    }
+
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if (-1.0*d < 0.0)
+            sN = 0.0;
+        else if (-1.0*d > a)
+            sN = sD;
+        else
+        {
+            sN = -d;
+            sD = a;
+        }
+    }
+    else if (tN > tD)
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if ((b - d)  < 0.0)
+            sN = 0.0;
+        else if ((b - d) > a)
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
+
+    //Compute the closest pair of points
+    if (sN == sD)
+        sC = 1.0;
+    else
+        sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
+
+    if (tN == tD)
+        tC = 1.0;
+    else
+        tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+    
+    /*
+	double x13[3];
+    Pts2Vec(pts[0],pts[2],x13);
+    
+    scalarMult(tC,x34,x34);
+    addVec(x13,x34,vec);
+    
+    scalarMult(sC,x12,x12);
+    minusVec(vec,x12,vec);
+    */
+
+    scalarMult(tC,x34,x34);
+    addVec(Coords(pts[2]),x34,x34);
+
+    scalarMult(sC,x12,x12);
+    addVec(Coords(pts[0]),x12,x12);
+
+    minusVec(x34,x12,vec);
+
+    /*
+    double dist = Mag3d(vec);
+    if (dist == 0.0)
+    {
+        //TODO: Is this a problem???
+        //      Or is it ok for the precomputation of bending quantities
+        //      when distance between the shared triangle edge and the altitude
+        //      spring may be zero, as is the case for planar triangulations
+        //      used in initialization of the fabric mesh.
+        
+        printf("\n\tEdgeToEdge() ERROR: dist == 0 in bending force computation\n");
+        printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
+        printf(",\t dist = %g\n\n",dist);
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[i]);
+            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
+
+        //For debugging, comment out clean_up() below to print all
+        //violating edge points.
+        static int ecount = 0;
+        std::string fname = CollisionSolver3d::getOutputDirectory();
+        fname += "/BendForceEdgeToEdge_error-" + std::to_string(ecount);
+        ecount++;
+
+        std::vector<POINT*> edge_pts(pts,pts+4);
+        vtk_write_pointset(edge_pts,fname,ERROR);
+
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+    */
+
+    std::vector<double> shortest_vec(vec,vec+3);
+    return shortest_vec;
+}
+
+// From "Simulation of Clothing with Folds and Wrinkles"
+// Authors: R. Bridson, S. Marino and R. Fedkiw
 void calculateBendingForce3d2003(
         POINT* p1,
         TRI* t1,
