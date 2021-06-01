@@ -404,7 +404,10 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
                 }
 
                 POINT* pt = Point_of_tri(tri)[i];
-                calculateBendingForce3d2006(pt,tri,tri_opp,bends,bendd);
+                calculateBendingForce3d2003(pt,tri,tri_opp,bends,bendd);
+                    //calculateBendingForce3d2006(pt,tri,tri_opp,bends,bendd);
+                
+                //TODO: add switch for different bending models
             }
         }
     }
@@ -748,190 +751,162 @@ void calculateBendingForce3d2003(
         const double bends,
         const double bendd)
 {
-        if (Mag3d(Tri_normal(t1)) < MACH_EPS ||
-            Mag3d(Tri_normal(t2)) < MACH_EPS) return;
+    if (Mag3d(Tri_normal(t1)) < MACH_EPS ||
+        Mag3d(Tri_normal(t2)) < MACH_EPS) return;
+    
+    int index = Vertex_of_point(t1,p1);
+    POINT *p3 = Point_of_tri(t1)[(index+1)%3];
+    POINT *p4 = Point_of_tri(t1)[(index+2)%3];
+    
+    int index_opp = 3 - Vertex_of_point(t2,p3) - Vertex_of_point(t2,p4);
+    POINT *p2 = Point_of_tri(t2)[index_opp];
+    
+    //          C(4)
+    //  A(1) - - | - - - B(2)
+    //          D(3)
+    
+    double x31[3], x41[3], x32[3], x42[3], E[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        x31[i] = Coords(p1)[i] - Coords(p3)[i];
+        x41[i] = Coords(p1)[i] - Coords(p4)[i];
+        x42[i] = Coords(p2)[i] - Coords(p4)[i];
+        x32[i] = Coords(p2)[i] - Coords(p3)[i];
+        E[i] = Coords(p4)[i] - Coords(p3)[i];
+    }
 
-        int index = Vertex_of_point(t1, p1);
-        POINT *p3 = Point_of_tri(t1)[(index+1)%3];
-        POINT *p4 = Point_of_tri(t1)[(index+2)%3];
-        index = 3 - Vertex_of_point(t2, p3) - Vertex_of_point(t2, p4);
-        POINT *p2 = Point_of_tri(t2)[index];
-        double x13[3], x14[3], x23[3], x24[3], E[3];
+    double N1[3];
+    double N2[3];
+    
+    Cross3d(x31,x41,N1);
+    Cross3d(x42,x32,N2);
+    
+    double u1[3];
+    double u2[3];
+    double u3[3];
+    double u4[3];
 
-	std::transform(Coords(p1), Coords(p1) + 3, Coords(p3), 
-		x13, std::minus<double>());
-	std::transform(Coords(p1), Coords(p1) + 3, Coords(p4), 
-		x14, std::minus<double>());
-	std::transform(Coords(p2), Coords(p2) + 3, Coords(p3), 
-		x23, std::minus<double>());
-	std::transform(Coords(p2), Coords(p2) + 3, Coords(p4), 
-		x24, std::minus<double>());
-	std::transform(Coords(p4), Coords(p4) + 3, Coords(p3), 
-		E, std::minus<double>());
+    double E_mag = Mag3d(E);
+    double N1_sqr_mag = Dot3d(N1,N1);
+    double N2_sqr_mag = Dot3d(N2,N2);
 
-        double N1[3], N2[3], E_mag, N1_mag, N2_mag;
-        double n1[3], n2[3];
+    for (int i = 0; i < 3; ++ i)
+    {
+        u1[i] = E_mag*N1[i]/N1_sqr_mag;
+        u2[i] = E_mag*N2[i]/N2_sqr_mag;
+        u3[i] = Dot3d(x41,E)/E_mag*N1[i]/N1_sqr_mag + Dot3d(x42,E)/E_mag*N2[i]/N2_sqr_mag;
+        u3[i] = Dot3d(x31,E)/E_mag*N1[i]/N1_sqr_mag + Dot3d(x32,E)/E_mag*N2[i]/N2_sqr_mag;
+    }
 
-        Cross3d(x13, x14, N1);
-        Cross3d(x24, x23, N2);
-        E_mag = Mag3d(E);
-        N1_mag = Mag3d(N1);
-        N2_mag = Mag3d(N2);
-        std::transform(E, E + 3, E, 
-		std::bind2nd(std::divides<double>(), E_mag));
-	std::transform(N1, N1 + 3, n1, 
-		std::bind2nd(std::divides<double>(), N1_mag));
-	std::transform(N2, N2 + 3, n2, 
-		std::bind2nd(std::divides<double>(), N2_mag));
-        std::transform(n1, n1 + 3, N1, 
-		std::bind2nd(std::divides<double>(), N1_mag));
-	std::transform(n2, n2 + 3, N2, 
-		std::bind2nd(std::divides<double>(), N2_mag));
+    double N1_mag = Mag3d(N1);
+    double N2_mag = Mag3d(N2);
 
-        double u1[3], u2[3], u3[3], u4[3];
+    double n1[3], n2[3], e[3];
+    for (int i = 0; i < 3; ++ i)
+    {
+        n1[i] = N1[i]/N1_mag;
+        n2[i] = N2[i]/N2_mag;
+        e[i] = E[i]/E_mag;
+    }
 
-	std::transform(N1, N1 + 3, u1,
-                std::bind1st(std::multiplies<double>(), Dot3d(x14, E)));
-	std::transform(N2, N2 + 3, u2,
-                std::bind1st(std::multiplies<double>(), Dot3d(x24, E)));
-	std::transform(u1, u1 + 3, u2, u3, std::plus<double>()); 
-        std::transform(N1, N1 + 3, u1,
-                std::bind1st(std::multiplies<double>(), -Dot3d(x13, E)));
-        std::transform(N2, N2 + 3, u2,
-                std::bind1st(std::multiplies<double>(), -Dot3d(x23, E)));
-        std::transform(u1, u1 + 3, u2, u4, std::plus<double>());
-	std::transform(N1, N1 + 3, u1, 
-	        std::bind1st(std::multiplies<double>(), E_mag));
-	std::transform(N2, N2 + 3, u2, 
-	        std::bind1st(std::multiplies<double>(), E_mag));
+    double n1Xn2[3];
+    Cross3d(n1,n2,n1Xn2);
+
+    double sign = 1.0;
+    if (Dot3d(n1Xn2,e) < 0)
+    {
+        sign = -1.0;
+    }
+
+    double sine_half_theta = sign*sqrt(0.5*std::max(1.0 - Dot3d(n1,n2),0.0));
 
 	//double bend_stiff = getBendStiff();
     double bend_stiff = bends;
-        double coeff = bend_stiff * sqr(E_mag) / (N1_mag + N2_mag);
+    double coeff_bend = bend_stiff*sqr(E_mag)/(N1_mag + N2_mag)*sine_half_theta;
 
-        if (Dot3d(n1, n2) > 1.0 + 1.0e-10)
+    
+    double dtheta_dt = Dot3d(u1,p1->vel) + Dot3d(u2,p2->vel)
+                       + Dot3d(u3,p3->vel) + Dot3d(u4,p4->vel);
+        //if (fabs(dtheta_dt) < 1.0e-10) dtheta = 0.0;
+	
+    //double bend_damp = getBendDamp(); 
+    double bend_damp = bendd;
+    double coeff_damp = -1.0*bend_damp*E_mag*dtheta_dt;
+
+    STATE* state[4];
+    POINT* pts[4] = {p1,p2,p3,p4};
+    
+    std::vector<std::vector<double>> U(4);
+    U[0].assign(u1,u1+3);
+    U[1].assign(u2,u2+3);
+    U[2].assign(u3,u3+3);
+    U[3].assign(u4,u4+3);
+    
+    for (int j = 0; j < 4; ++j)
+    {
+        state[j] = static_cast<STATE*>(left_state(pts[j]));
+        if (state[j]->is_fixed || state[j]->is_registeredpt) continue;
+        for (int i = 0; i < 3; ++i)
         {
-	    std::cout << std::fixed << std::setprecision(14); 
-	    std::cout << "t1 = "; 
-	    std::for_each(Tri_normal(t1),Tri_normal(t1) + 3, DebugShow); 
-	    std::cout << std::endl; 
-	    std::cout << "n1 = ";
-            std::for_each(n1,n1 + 3, DebugShow);
-            std::cout << std::endl;
-	    std::cout << "t2 = ";
-            std::for_each(Tri_normal(t2),Tri_normal(t2) + 3, DebugShow);
-            std::cout << std::endl;
-	    std::cout << "n2 = ";
-            std::for_each(n2,n2 + 3, DebugShow);
-            std::cout << std::endl;
-	    std::cout << "Dot3d(n1, n2) = "; 
-            DebugShow(Dot3d(n1, n2)); 
-            std::cout << std::endl; 
-	    std::cout << "u1 = ";
-            std::for_each(u1,u1 + 3, DebugShow);
-            std::cout << std::endl;
-            std::cout << "u2 = ";
-            std::for_each(u2,u2 + 3, DebugShow);
-            std::cout << std::endl;
-            std::cout << "u3 = ";
-            std::for_each(u3,u3 + 3, DebugShow);
-            std::cout << std::endl;
-            std::cout << "u4 = ";
-            std::for_each(u4,u4 + 3, DebugShow);
-            std::cout << std::endl;
-            std::cout << "N1 = ";
-            std::for_each(N1,N1 + 3, DebugShow);
-            std::cout << std::endl;
-            std::cout << "N2 = ";
-            std::for_each(N2,N2 + 3, DebugShow);
-            std::cout << std::endl;
-            clean_up(0);
+            state[j]->bendforce[i] += (coeff_bend + coeff_damp)*U[j][i];
         }
+    }
 
-        double sine_half_theta = sqrt(0.5 * std::max(0.0, 1.0 - Dot3d(n1, n2)));
-        double tmp[3];
-
-        Cross3d(n1, n2, tmp);
-        if (Dot3d(tmp, E) < 0)
-            sine_half_theta *= -1.0;
-        coeff *= sine_half_theta;
-	
-	//double bend_damp = getBendDamp(); 
-	double bend_damp = bendd;
-        double dtheta = 0.0;
-
-        dtheta = Dot3d(u1, p1->vel) + Dot3d(u2, p2->vel) +
-                 Dot3d(u3, p3->vel) + Dot3d(u4, p4->vel);
-        if (fabs(dtheta) < 1.0e-10) dtheta = 0.0;
-// used for debugging        
-//	double sum[3] = {0.0};
-
-//	for (int i = 0; i < 3; i++) 
-//	     sum[i] = u1[i] + u2[i] + u3[i] + u4[i]; 
-//	int summ = Mag3d(sum); 
-//	if (summ > 1.0e-6)
-//	{
-//	    std::cout << "u vector is too large\n"; 
-//	    std::cout << "sum is: " << sum[0] << ' ' << sum[1] 
-//		<< ' ' << sum[2];
-//	    std::cout << "p1 is: " << Coords(p1)[0] << ' ' 
-//		<< Coords(p1)[1] << ' ' << Coords(p1)[2] << std::endl;    
-//	}
+    /*
+    if (Dot3d(n1, n2) > 1.0 + 1.0e-10)
+    {
+        std::cout << std::fixed << std::setprecision(14); 
+        std::cout << "t1 = "; 
         
-
-// used for debugging
-//      if (dtheta > 0.0)
-//        {
-//            double sum[3];
-//            for (int i = 0; i < 3; ++i)
-//                sum[i] = u1[i] + u2[i] + u3[i] + u4[i];
-//           printf("sum = %20.14f %20.14f %20.14f\n",sum[0],sum[1],sum[2]);
-//            printf("p1->vel = %f %f %f\n",p1->vel[0],p1->vel[1],p1->vel[2]);
-//            printf("dtheta = %20.14f\n", dtheta);
-//            clean_up(0);
-//        }     
-
-    coeff += -1.0*bend_damp*E_mag*dtheta;
-
-	STATE* state1 = static_cast<STATE*>(left_state(p1));
-	STATE* state2 = static_cast<STATE*>(left_state(p2));
-	STATE* state3 = static_cast<STATE*>(left_state(p3));
-	STATE* state4 = static_cast<STATE*>(left_state(p4));
-
-    // each tri_pair will be calculated twice
-    
-    
-    if (!state1->is_fixed && !state1->is_registeredpt)
-    {
-        std::transform(u1, u1 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff)); 
-        std::transform(state1->bendforce, state1->bendforce + 3, tmp, state1->bendforce, std::plus<double>());
-            //std::transform(p1->force, p1->force + 3, tmp, p1->force, std::plus<double>());
+        std::for_each(Tri_normal(t1),Tri_normal(t1) + 3, DebugShow); 
+        std::cout << std::endl; 
+        std::cout << "n1 = ";
+        
+        std::for_each(n1,n1 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "t2 = ";
+        
+        std::for_each(Tri_normal(t2),Tri_normal(t2) + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "n2 = ";
+        
+        std::for_each(n2,n2 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "Dot3d(n1, n2) = "; 
+        
+        DebugShow(Dot3d(n1, n2)); 
+        std::cout << std::endl; 
+        std::cout << "u1 = ";
+        
+        std::for_each(u1,u1 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "u2 = ";
+        
+        std::for_each(u2,u2 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "u3 = ";
+        
+        std::for_each(u3,u3 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "u4 = ";
+        
+        std::for_each(u4,u4 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "N1 = ";
+        std::for_each(N1,N1 + 3, DebugShow);
+        std::cout << std::endl;
+        std::cout << "N2 = ";
+        std::for_each(N2,N2 + 3, DebugShow);
+        std::cout << std::endl;
+        
+        printf("Debugging: calculateBendingForce3d2003()\n");
+        LOC(); clean_up(0);
     }
-	
-    if (!state2->is_fixed && !state2->is_registeredpt)
-    {
-        std::transform(u2, u2 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-        std::transform(state2->bendforce, state2->bendforce + 3, tmp, state2->bendforce, std::plus<double>());
-            //std::transform(p2->force, p2->force + 3, tmp, p2->force, std::plus<double>());
-    }
-    
-    if (!state3->is_fixed && !state3->is_registeredpt)
-    {
-        std::transform(u3, u3 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-        std::transform(state3->bendforce, state3->bendforce + 3, tmp, state3->bendforce, std::plus<double>());
-            //std::transform(p3->force, p3->force + 3, tmp, p3->force, std::plus<double>());
-    }
-	
-    if (!state4->is_fixed && !state4->is_registeredpt)
-    {
-        std::transform(u4, u4 + 3, tmp, std::bind1st(std::multiplies<double>(), coeff));
-        std::transform(state4->bendforce, state4->bendforce + 3, tmp, state4->bendforce, std::plus<double>());
-            //std::transform(p4->force, p4->force + 3, tmp, p4->force, std::plus<double>());
-    }
+    */
 
 }       /* calculateBendingForce3d */
 
-
+//TODO: Remove this model
 //Appears to be a simple naive bending model
 void calculateBendingForce3dparti(
         POINT* p1,
