@@ -61,9 +61,7 @@ Enter fabric spring constantXXX: 2000
 Enter fabric damping constant: 0.01
 
 Enter fabric bending stiffness constant: 0.0
-Enter fabric bending damping constant: 0.00001
-Enter fabric bending stiffness constantXXX: 0.00001
-Enter fabric bending damping constantXXX: 0.00001
+Enter fabric bending damping constant: 0.0000001
 
 Enter fabric friction constant: 0.3
 Enter fabric point mass: 0.00035

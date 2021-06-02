@@ -1403,10 +1403,11 @@ static bool PointToTri(
         MotionState mstate,
         double root)
 {
-/*	x1
- *  	/\     x4 *
+/*	    x3
+ *  	/\     * x4
  *     /  \
- * x2 /____\ x3
+ *    /____\
+ *  x1      x2
  *
  * solve equation
  * x13*x13*w1 + x13*x23*w2 = x13*x43
@@ -1426,6 +1427,14 @@ static bool PointToTri(
     double mag_tnor = Mag3d(tri_nor);
     if (mag_tnor < MACH_EPS)
     {
+        //TODO: This warrants retrying the time step using a reduced
+        //      time step or an increase in the number of substeps.
+        //      Currently there is only one collision substep; it begins
+        //      after the spring solver (which uses adaptive substeps)
+        //      has finished computing the new candidate positions and
+        //      velocities of the fabric mesh points. Ideally we want to
+        //      to use collision substeps in between some number of spring
+        //      solver substeps.
         printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
                 \t\t\t (Mag3d(tri_nor) < MACH_EPS)\n\n");
         
