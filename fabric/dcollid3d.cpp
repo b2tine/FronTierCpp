@@ -8,7 +8,7 @@ static bool MovingEdgeToEdgeJac(POINT**);
 static bool EdgeToEdge(POINT**, double,
         MotionState mstate = MotionState::STATIC, double root = -1.0);
 
-static void EdgeToEdgeImpulse(POINT**,double*,double,double,double,MotionState,double);
+static void EdgeToEdgeImpulse(POINT**,double*,const double,const double,const double,MotionState,double);
 static void EdgeToEdgeInelasticImpulse(double,POINT**,double*,double*,double*);
 static void EdgeToEdgeElasticImpulse(double,double,double,POINT**,double*,double*,double,double,double);
 
@@ -830,7 +830,7 @@ static bool EdgeToEdge(
     double e = Dot3d(x34,x31);
 	
     //Matrix Determinant
-    double D = fabs(a*c - b*b);
+    double D = a*c - b*b; // always >= 0
 
     //Solution, and solution numerators and denominators
     double sC = 0;  double sN = 0;  double sD = D;    
@@ -842,10 +842,11 @@ static bool EdgeToEdge(
     //(s,t) in [0,1]x[0,1], when the global minimum does not occur
     //within this region of parameter space.
 
-    double vec[3];
-	Cross3d(x12,x34,vec);
+    double s1Xs2[3];
+	Cross3d(x12,x34,s1Xs2);
+    double cross_mag = Mag3d(s1Xs2);
 
-    if (D < MACH_EPS || Mag3d(vec) < MACH_EPS)
+    if (D < MACH_EPS || cross_mag < MACH_EPS)
     {
         //Lines containing the edges are nearly parallel.
         //Setting sC = 0, and solving for tC yields tC = e/c.
@@ -860,15 +861,14 @@ static bool EdgeToEdge(
         sN = b*e - c*d;
         tN = a*e - b*d;
         
-        if( sN < 0.0 )
+        if (sN < 0.0)
         {
             //Implies sC < 0 and the s = 0 edge is visible.
             sN = 0.0;
             tN = e;
             tD = c;
-
         }
-        else if( sN > sD )
+        else if (sN > sD)
         {
             //Implies sC > 1 and the s = 1 edge is visible.
             sN = sD;
@@ -877,7 +877,7 @@ static bool EdgeToEdge(
         }
     }
 
-    if( tN < 0.0 )
+    if (tN < 0.0)
     {
         //Implies tC < 0 and the t = 0 edge visible.
         tN = 0.0;
@@ -899,7 +899,7 @@ static bool EdgeToEdge(
         tN = tD;
         
         //Recompute sC for this edge
-        if ((b - d)  < 0.0)
+        if ((b - d) < 0.0)
             sN = 0.0;
         else if ((b - d) > a)
             sN = sD;
@@ -911,6 +911,10 @@ static bool EdgeToEdge(
     }
 
     //Compute the closest pair of points
+    sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
+    tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+    
+    /*
     if (sN == sD)
         sC = 1.0;
     else
@@ -920,7 +924,27 @@ static bool EdgeToEdge(
         tC = 1.0;
     else
         tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+    */
+	    
+    if (std::isnan(sC) || std::isinf(sC) ||
+        std::isnan(tC) || std::isinf(tC))
+    {
+        printf("\n\tERROR EdgeToEdge():  (sC,tC) = (%f, %f)\n",sC,tC);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    //compute the vector joining the closest points and the distance
+    double vec[3];
     
+    scalarMult(tC,x34,x34);
+    addVec(Coords(pts[2]),x34,x34);
+
+    scalarMult(sC,x12,x12);
+    addVec(Coords(pts[0]),x12,x12);
+
+    minusVec(x34,x12,vec);
+
+    /*
 	double x13[3];
     Pts2Vec(pts[0],pts[2],x13);
     
@@ -929,14 +953,37 @@ static bool EdgeToEdge(
 
     scalarMult(sC,x12,x12);
     minusVec(vec,x12,vec);
+    */
 
+    
     double dist = Mag3d(vec);
     if (dist > tol) return false;
 
-    //TODO: handle another way -- restart with smaller dt for example
     if (dist > 0.0)
     {
         scalarMult(1.0/dist,vec,vec);
+    }
+    else if (dist == 0.0 && mstate != MotionState::STATIC)
+    {
+        for (int i = 0; i < 3; ++i)
+            vec[i] = s1Xs2[i]/cross_mag;
+
+        //need vec to point from seg1 towards seg2
+        double mid_s1[3], mid_s2[3], mid_s1s2[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            mid_s1[i] = Coords(pts[0])[i] + 0.5*x12[i];
+            mid_s2[i] = Coords(pts[2])[i] + 0.5*x34[i];
+            mid_s1s2[i] = mid_s2[i] - mid_s1[i];
+        }
+
+        if (Dot3d(vec,mid_s1s2) < 0.0)
+        {
+            for (int i = 0; i < 3; ++i)
+                vec[i] *= -1.0;
+        }
+
+        //TODO: Can this block be used for mstate == MotionState::STATIC also?
     }
     else if (dist == 0.0 && mstate == MotionState::STATIC)
     {
@@ -991,18 +1038,14 @@ static bool EdgeToEdge(
 static void EdgeToEdgeImpulse(
         POINT** pts,
         double* nor,
-        double a,
-        double b,
-        double dist,
-        MotionState mstate,
+        const double a,
+        const double b,
+        const double dist,
+        const MotionState mstate,
         double dt)
 {
     if (debugging("collision"))
         CollisionSolver3d::edg_to_edg++;
-
-	double v_rel[3] = {0.0, 0.0, 0.0};
-    double vn = 0.0;
-    double vt = 0.0;
 
     double rigid_impulse[2] = {0.0};
 	double inelastic_impulse[2] = {0.0};
@@ -1040,19 +1083,21 @@ static void EdgeToEdgeImpulse(
     double overlap_coef = 0.1;
     double overlap = h - dist;
 
-	//apply impulses to the average velocity (linear trajectory)
+	double v_rel[3]; 
 	for (int j = 0; j < 3; ++j)
 	{
-	    v_rel[j]  = (1.0-b) * sl[2]->avgVel[j] + b * sl[3]->avgVel[j];
-	    v_rel[j] -= (1.0-a) * sl[0]->avgVel[j] + a * sl[1]->avgVel[j];
+	    v_rel[j] = (1.0 - b)*sl[2]->avgVel[j] + b*sl[3]->avgVel[j];
+	    v_rel[j] -= (1.0 - a)*sl[0]->avgVel[j] + a*sl[1]->avgVel[j];
 	}
     double mag_vrel = Mag3d(v_rel);
 	
-    vn = Dot3d(v_rel, nor);
-	if (Dot3d(v_rel, v_rel) > sqr(vn))
+    double vt = 0.0;
+    double vn = Dot3d(v_rel,nor);
+	
+    if (Dot3d(v_rel, v_rel) > sqr(vn))
+    {
 	    vt = sqrt(Dot3d(v_rel, v_rel) - sqr(vn));
-	else
-	    vt = 0.0;
+    }
     
     if (debugging("CollisionImpulse"))
     {
@@ -1070,7 +1115,7 @@ static void EdgeToEdgeImpulse(
 
     if (mstate == MotionState::STATIC)
     {
-        // May apply both for repulsion.
+        // May apply both elastic and inelastic impulses for repulsion.
         // Zero the normal component of relative velocity with inelastic impulse.
         if (vn < 0.0)
             EdgeToEdgeInelasticImpulse(vn,pts,inelastic_impulse,rigid_impulse,wab);
@@ -1256,8 +1301,8 @@ static void EdgeToEdgeImpulse(
 	    if (std::isnan(sl[i]->collsnImpulse[j]) ||
             std::isinf(sl[i]->collsnImpulse[j]))
         {
-		    printf("EdgeToEdge: sl[%d]->collsnImpulse[%d] = nan\n",i,j);
-		    printf("a b = %g %g, nor = [%g %g %g], dist = %g\n",
+		    printf("ERROR EdgeToEdgeImpulse(): sl[%d]->collsnImpulse[%d] = nan\n",i,j);
+		    printf("(a,b) = (%g, %g) | nor = [%g %g %g] | dist = %g\n",
                     a,b,nor[0],nor[1],nor[2],dist);
 	        LOC(); clean_up(ERROR);
 	    }

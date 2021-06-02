@@ -38,6 +38,9 @@ void resetBendingForce(INTERFACE* intfc)
 
     intfc_surface_loop(intfc, surf)
     {
+        if (is_bdry(*surf)) continue;
+        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+
         surf_tri_loop(*surf, tri)
         {
             for (int i = 0; i < 3; ++i)
@@ -45,7 +48,9 @@ void resetBendingForce(INTERFACE* intfc)
                 POINT* p = Point_of_tri(tri)[i];
                 STATE* sl = (STATE*)left_state(p);
                 for (int j = 0; j < 3; ++j)
+                {
                     sl->bendforce[j] = 0.0;
+                }
             }
         }
     }
@@ -475,7 +480,7 @@ void calculateBendingForce3d2006(
         a4 = -1.0 - a3;
 
         /*
-        //NOTE: This calculation of h1 and h2 is wrong!
+        //NOTE: This calculation of h1 and h2 is wrong for the general case!
                   h1 = sqrt(Dot3d(x31,x31) - sqr(Dot3d(x31,E)/E_mag));
                   h2 = sqrt(Dot3d(x32,x32) - sqr(Dot3d(x32,E)/E_mag));
         */
@@ -576,172 +581,6 @@ void calculateBendingForce3d2006(
     */
 }   /* end calculateBendingForce3d */
 
-static std::vector<double> EdgeToEdge(POINT** pts)
-{
-	double x12[3], x34[3], x31[3];
-	Pts2Vec(pts[0],pts[1],x12);    
-	Pts2Vec(pts[2],pts[3],x34);
-	Pts2Vec(pts[2],pts[0],x31);
-
-    //Matrix entries
-    double a = Dot3d(x12,x12);
-    double b = Dot3d(x12,x34);
-    double c = Dot3d(x34,x34);
-
-    //RHS
-    double d = Dot3d(x12,x31);
-    double e = Dot3d(x34,x31);
-	
-    //Matrix Determinant
-    double D = fabs(a*c - b*b);
-
-    //Solution, and solution numerators and denominators
-    double sC = 0;  double sN = 0;  double sD = D;    
-    double tC = 0;  double tN = 0;  double tD = D;    
-    
-    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
-    //Seperation of the numerator and denominator allows us to
-    //efficiently analyze the boundary of the constrained domain,
-    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
-    //within this region of parameter space.
-
-    double vec[3];
-	Cross3d(x12,x34,vec);
-
-    if (D < MACH_EPS || Mag3d(vec) < MACH_EPS)
-    {
-        //Lines containing the edges are nearly parallel.
-        //Setting sC = 0, and solving for tC yields tC = e/c.
-        double sN = 0.0;
-        double sD = 1.0;
-        double tN = e;
-        double tD = c;
-    }
-    else
-    {
-        //Compute the closest pair of points on the infinite lines.
-        sN = b*e - c*d;
-        tN = a*e - b*d;
-        
-        if( sN < 0.0 )
-        {
-            //Implies sC < 0 and the s = 0 edge is visible.
-            sN = 0.0;
-            tN = e;
-            tD = c;
-
-        }
-        else if( sN > sD )
-        {
-            //Implies sC > 1 and the s = 1 edge is visible.
-            sN = sD;
-            tN = e + b;
-            tD = c;
-        }
-    }
-
-    if( tN < 0.0 )
-    {
-        //Implies tC < 0 and the t = 0 edge visible.
-        tN = 0.0;
-        
-        //Recompute sC for this edge
-        if (-1.0*d < 0.0)
-            sN = 0.0;
-        else if (-1.0*d > a)
-            sN = sD;
-        else
-        {
-            sN = -d;
-            sD = a;
-        }
-    }
-    else if (tN > tD)
-    {
-        //Implies tC > 1 and the t = 1 edge visible.
-        tN = tD;
-        
-        //Recompute sC for this edge
-        if ((b - d)  < 0.0)
-            sN = 0.0;
-        else if ((b - d) > a)
-            sN = sD;
-        else
-        {
-            sN = b - d;
-            sD = a;
-        }
-    }
-
-    //Compute the closest pair of points
-    if (sN == sD)
-        sC = 1.0;
-    else
-        sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
-
-    if (tN == tD)
-        tC = 1.0;
-    else
-        tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
-    
-    /*
-	double x13[3];
-    Pts2Vec(pts[0],pts[2],x13);
-    
-    scalarMult(tC,x34,x34);
-    addVec(x13,x34,vec);
-    
-    scalarMult(sC,x12,x12);
-    minusVec(vec,x12,vec);
-    */
-
-    scalarMult(tC,x34,x34);
-    addVec(Coords(pts[2]),x34,x34);
-
-    scalarMult(sC,x12,x12);
-    addVec(Coords(pts[0]),x12,x12);
-
-    minusVec(x34,x12,vec);
-
-    /*
-    double dist = Mag3d(vec);
-    if (dist == 0.0)
-    {
-        //TODO: Is this a problem???
-        //      Or is it ok for the precomputation of bending quantities
-        //      when distance between the shared triangle edge and the altitude
-        //      spring may be zero, as is the case for planar triangulations
-        //      used in initialization of the fabric mesh.
-        
-        printf("\n\tEdgeToEdge() ERROR: dist == 0 in bending force computation\n");
-        printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
-        printf(",\t dist = %g\n\n",dist);
-        printf("\tPOINTS:\n");
-        for (int i = 0; i < 4; ++i)
-        {
-            double* coords = Coords(pts[i]);
-            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
-                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
-        }
-
-        //For debugging, comment out clean_up() below to print all
-        //violating edge points.
-        static int ecount = 0;
-        std::string fname = CollisionSolver3d::getOutputDirectory();
-        fname += "/BendForceEdgeToEdge_error-" + std::to_string(ecount);
-        ecount++;
-
-        std::vector<POINT*> edge_pts(pts,pts+4);
-        vtk_write_pointset(edge_pts,fname,ERROR);
-
-        LOC(); clean_up(EXIT_FAILURE);
-    }
-    */
-
-    std::vector<double> shortest_vec(vec,vec+3);
-    return shortest_vec;
-}
-
 // From "Simulation of Clothing with Folds and Wrinkles"
 // Authors: R. Bridson, S. Marino and R. Fedkiw
 void calculateBendingForce3d2003(
@@ -813,7 +652,7 @@ void calculateBendingForce3d2003(
     Cross3d(n1,n2,n1Xn2);
 
     double sign = 1.0;
-    if (Dot3d(n1Xn2,e) < 0)
+    if (Dot3d(n1Xn2,e) < 0.0)
     {
         sign = -1.0;
     }
@@ -827,21 +666,22 @@ void calculateBendingForce3d2003(
     
     double dtheta_dt = Dot3d(u1,p1->vel) + Dot3d(u2,p2->vel)
                        + Dot3d(u3,p3->vel) + Dot3d(u4,p4->vel);
-        //if (fabs(dtheta_dt) < 1.0e-10) dtheta = 0.0;
+    
+    if (fabs(dtheta_dt) < 1.0e-10) dtheta_dt = 0.0;
 	
     //double bend_damp = getBendDamp(); 
     double bend_damp = bendd;
     double coeff_damp = -1.0*bend_damp*E_mag*dtheta_dt;
 
-    STATE* state[4];
-    POINT* pts[4] = {p1,p2,p3,p4};
-    
     std::vector<std::vector<double>> U(4);
     U[0].assign(u1,u1+3);
     U[1].assign(u2,u2+3);
     U[2].assign(u3,u3+3);
     U[3].assign(u4,u4+3);
     
+    POINT* pts[4] = {p1,p2,p3,p4};
+    STATE* state[4];
+
     for (int j = 0; j < 4; ++j)
     {
         state[j] = static_cast<STATE*>(left_state(pts[j]));
@@ -1035,6 +875,187 @@ double divEx(double numerator, double denominator)
 void DebugShow(const double & sva)
 {
     std::cout << std::setw(20) << sva << " ";
+}
+
+static std::vector<double> EdgeToEdge(POINT** pts)
+{
+	double x12[3], x34[3], x31[3];
+	Pts2Vec(pts[0],pts[1],x12);    
+	Pts2Vec(pts[2],pts[3],x34);
+	Pts2Vec(pts[2],pts[0],x31);
+
+    //Matrix entries
+    double a = Dot3d(x12,x12);
+    double b = Dot3d(x12,x34);
+    double c = Dot3d(x34,x34);
+
+    //RHS
+    double d = Dot3d(x12,x31);
+    double e = Dot3d(x34,x31);
+	
+    //Matrix Determinant
+    double D = fabs(a*c - b*b);
+
+    //Solution, and solution numerators and denominators
+    double sC = 0;  double sN = 0;  double sD = D;    
+    double tC = 0;  double tN = 0;  double tD = D;    
+    
+    //The solution is: sC = sN/sD and tC = tN/tD (Cramer's Rule).
+    //Seperation of the numerator and denominator allows us to
+    //efficiently analyze the boundary of the constrained domain,
+    //(s,t) in [0,1]x[0,1], when the global minimum does not occur
+    //within this region of parameter space.
+
+    double s1Xs2[3];
+	Cross3d(x12,x34,s1Xs2);
+
+    if (D < MACH_EPS || Mag3d(s1Xs2) < MACH_EPS)
+    {
+        //Lines containing the edges are nearly parallel.
+        //Setting sC = 0, and solving for tC yields tC = e/c.
+        double sN = 0.0;
+        double sD = 1.0;
+        double tN = e;
+        double tD = c;
+    }
+    else
+    {
+        //Compute the closest pair of points on the infinite lines.
+        sN = b*e - c*d;
+        tN = a*e - b*d;
+        
+        if( sN < 0.0 )
+        {
+            //Implies sC < 0 and the s = 0 edge is visible.
+            sN = 0.0;
+            tN = e;
+            tD = c;
+
+        }
+        else if( sN > sD )
+        {
+            //Implies sC > 1 and the s = 1 edge is visible.
+            sN = sD;
+            tN = e + b;
+            tD = c;
+        }
+    }
+
+    if( tN < 0.0 )
+    {
+        //Implies tC < 0 and the t = 0 edge visible.
+        tN = 0.0;
+        
+        //Recompute sC for this edge
+        if (-1.0*d < 0.0)
+            sN = 0.0;
+        else if (-1.0*d > a)
+            sN = sD;
+        else
+        {
+            sN = -d;
+            sD = a;
+        }
+    }
+    else if (tN > tD)
+    {
+        //Implies tC > 1 and the t = 1 edge visible.
+        tN = tD;
+        
+        //Recompute sC for this edge
+        if ((b - d)  < 0.0)
+            sN = 0.0;
+        else if ((b - d) > a)
+            sN = sD;
+        else
+        {
+            sN = b - d;
+            sD = a;
+        }
+    }
+
+    //Compute the closest pair of points
+    sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
+    tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+
+    if (std::isnan(sC) || std::isinf(sC) ||
+        std::isnan(tC) || std::isinf(tC))
+    {
+        printf("\n\tERROR EdgeToEdge():  (sC,tC) = (%f, %f)\n",sC,tC);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    /*
+    if (sN == sD)
+        sC = 1.0;
+    else
+        sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
+
+    if (tN == tD)
+        tC = 1.0;
+    else
+        tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+    */
+
+    double vec[3];
+
+    scalarMult(tC,x34,x34);
+    addVec(Coords(pts[2]),x34,x34);
+
+    scalarMult(sC,x12,x12);
+    addVec(Coords(pts[0]),x12,x12);
+
+    minusVec(x34,x12,vec);
+
+    /*
+	double x13[3];
+    Pts2Vec(pts[0],pts[2],x13);
+    
+    scalarMult(tC,x34,x34);
+    addVec(x13,x34,vec);
+    
+    scalarMult(sC,x12,x12);
+    minusVec(vec,x12,vec);
+    */
+    
+    
+    /*
+    double dist = Mag3d(vec);
+    if (dist == 0.0)
+    {
+        //TODO: Is this a problem???
+        //      Or is it ok for the precomputation of bending quantities
+        //      when distance between the shared triangle edge and the altitude
+        //      spring may be zero, as is the case for planar triangulations
+        //      used in initialization of the fabric mesh.
+        
+        printf("\n\tEdgeToEdge() ERROR: dist == 0 in bending force computation\n");
+        printf("\t vec = %g %g %g",vec[0],vec[1],vec[2]);
+        printf(",\t dist = %g\n\n",dist);
+        printf("\tPOINTS:\n");
+        for (int i = 0; i < 4; ++i)
+        {
+            double* coords = Coords(pts[i]);
+            printf("\t\tpts[%d]: %g %g %g\t Gindex = %ld\n",
+                    i,coords[0],coords[1],coords[2],Gindex(pts[i]));
+        }
+
+        //For debugging, comment out clean_up() below to print all
+        //violating edge points.
+        static int ecount = 0;
+        std::string fname = CollisionSolver3d::getOutputDirectory();
+        fname += "/BendForceEdgeToEdge_error-" + std::to_string(ecount);
+        ecount++;
+
+        std::vector<POINT*> edge_pts(pts,pts+4);
+        vtk_write_pointset(edge_pts,fname,ERROR);
+
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+    */
+
+    std::vector<double> shortest_vec(vec,vec+3);
+    return shortest_vec;
 }
 
 
