@@ -620,21 +620,21 @@ void calculateBendingForce3d2003(
     Cross3d(x31,x41,N1);
     Cross3d(x42,x32,N2);
     
+    double E_mag = Mag3d(E);
+    double N1_sqr_mag = Dot3d(N1,N1);
+    double N2_sqr_mag = Dot3d(N2,N2);
+
     double u1[3];
     double u2[3];
     double u3[3];
     double u4[3];
-
-    double E_mag = Mag3d(E);
-    double N1_sqr_mag = Dot3d(N1,N1);
-    double N2_sqr_mag = Dot3d(N2,N2);
 
     for (int i = 0; i < 3; ++ i)
     {
         u1[i] = E_mag*N1[i]/N1_sqr_mag;
         u2[i] = E_mag*N2[i]/N2_sqr_mag;
         u3[i] = Dot3d(x41,E)/E_mag*N1[i]/N1_sqr_mag + Dot3d(x42,E)/E_mag*N2[i]/N2_sqr_mag;
-        u3[i] = Dot3d(x31,E)/E_mag*N1[i]/N1_sqr_mag + Dot3d(x32,E)/E_mag*N2[i]/N2_sqr_mag;
+        u4[i] = Dot3d(x31,E)/E_mag*N1[i]/N1_sqr_mag - Dot3d(x32,E)/E_mag*N2[i]/N2_sqr_mag;
     }
 
     double N1_mag = Mag3d(N1);
