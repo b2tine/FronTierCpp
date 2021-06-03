@@ -447,8 +447,7 @@ void generic_spring_solver(
                     v_old[i][j] = sv[i].v[j];
                     if (isnan(x_old[i][j]))
                     {
-                        printf("After loop %d = %d: x_old[%d][%d] = %f\n",
-                                    n,i,j,x_old[i][j]);
+                        printf("After loop %d: x_old[%d][%d] = %f\n",n,i,j,x_old[i][j]);
                         LOC(); clean_up(ERROR);
                     }
 

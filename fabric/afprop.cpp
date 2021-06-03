@@ -544,6 +544,11 @@ static void fourth_order_elastic_set_propagate3d_serial(
             print_elastic_params(geom_set);
     }
 
+
+    //TODO: Incorporate collision substeps, each containing
+    //      some number of spring solver substeps.
+    //      i.e. Partition n_sub into sets of near equal size
+    //      based on the number of desired collision substeps.
     if (fr_dt > geom_set.dt_tol)
     {
         n_sub = (int)(fr_dt/geom_set.dt_tol);
@@ -554,7 +559,9 @@ static void fourth_order_elastic_set_propagate3d_serial(
         n_sub = af_params->n_sub;
         dt = fr_dt/n_sub;
     }
-    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
+    printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d dt = %f\n",
+            fr_dt,geom_set.dt_tol,n_sub,dt);
+
 
 	if (first)
 	{
