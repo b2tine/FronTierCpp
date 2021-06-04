@@ -454,6 +454,12 @@ void CollisionSolver3d::resolveCollision()
     detectDomainBoundaryCollision();
     */
 
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainPosnJac(MotionState::STATIC);
+            //limitStrainRatePosnGS(MotionState::STATIC);
+    }
+
 	//update position using final midstep velocity
 	updateFinalPosition();
 
@@ -469,11 +475,7 @@ void CollisionSolver3d::resolveCollision()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
-                //limitStrainRatePosnJac(MotionState::STATIC);
-        
-        //limitStrainVelJAC();
+        limitStrainVelJAC();
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
@@ -670,12 +672,14 @@ void CollisionSolver3d::detectProximity(std::vector<CD_HSE*>& list)
 
         //computeMaxSpeed(); //debug    
 
+    /*
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         //limitStrainRatePosnGS(MotionState::STATIC);
             //limitStrainRatePosnJac(MotionState::STATIC);
                 //computeMaxSpeed(); //debug    
     }
+    */
 }
 
 // function to perform AABB tree building, and updating the
@@ -971,8 +975,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         
             //revertAverageVelocity();
 
-        computeImpactZoneGS(list);
-        //computeImpactZoneJac(list);
+        computeImpactZoneJac(list);
+        //computeImpactZoneGS(list);
     }
     stop_clock("computeImpactZone");
 
@@ -2195,9 +2199,9 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-05) return;
+    //if (dt < 1.0e-05) return;
 
-	const int MAX_ITER = 5;
+	const int MAX_ITER = 3;
 	//const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
@@ -2221,11 +2225,11 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-05) return;
+    //if (dt < 1.0e-05) return;
 
     turnOnGsUpdate();
 
-	const int MAX_ITER = 5;
+	const int MAX_ITER = 3;
 	//const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
@@ -2446,7 +2450,7 @@ StrainStats CollisionSolver3d::computeStrainImpulsesPosn(
 void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-05) return;
+    //if (dt < 1.0e-05) return;
 
     turnOnGsUpdate();
 	
@@ -2477,7 +2481,7 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    if (dt < 1.0e-05) return;
+    //if (dt < 1.0e-05) return;
 
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
@@ -2694,7 +2698,7 @@ void CollisionSolver3d::limitStrainVelGS()
 //jacobi iteration
 void CollisionSolver3d::limitStrainVelJAC()
 {
-    const int MAX_ITER = 5;
+    const int MAX_ITER = 3;
     //const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {

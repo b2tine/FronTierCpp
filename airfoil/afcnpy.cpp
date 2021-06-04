@@ -1911,7 +1911,8 @@ static void fourth_order_elastic_set_propagate3d_serial(
         n_sub = af_params->n_sub;
         dt = fr_dt/n_sub;
     }
-    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
+    printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d dt = %f\n",
+            fr_dt,geom_set.dt_tol,n_sub,dt);
 
 	if (first)
 	{
@@ -1992,12 +1993,14 @@ static void fourth_order_elastic_set_propagate3d_serial(
     setCollisionFreePoints3d(elastic_intfc);
         //setCollisionFreePoints3d((*newfront)->interf);
     
-    //compute bending force
-    resetBendingForce(elastic_intfc);
-    double bends = af_params->kbs;
-    double bendd = af_params->lambda_bs;
-    computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
-    computeStringBendingForce(elastic_intfc);
+    if (!debugging("bendforce_off"))
+    {
+        resetBendingForce(elastic_intfc);
+        double bends = af_params->kbs;
+        double bendd = af_params->lambda_bs;
+        computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
+        computeStringBendingForce(elastic_intfc);
+    }
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
 	

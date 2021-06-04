@@ -291,6 +291,7 @@ void airfoil_driver(Front *front,
 	    FT_SetTimeStep(front);
         
         front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+        front->dt = std::min(front->dt,springCharTimeStep(front));
 	}
 	else
 	{

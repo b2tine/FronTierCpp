@@ -100,7 +100,6 @@ extern void initParachuteModules(Front *front)
 {
 	int i,num_canopy;
 	FILE *infile = fopen(InName(front),"r");
-	SURFACE *surf;
     RG_PARAMS* rgb_params = (RG_PARAMS*)front->extra3;
 
 	if (debugging("trace"))

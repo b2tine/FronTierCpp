@@ -13,7 +13,7 @@ Max time: 2.0
 Max step: 100000
 Print interval: 0.005
 Movie frame interval: 0.005
-CFL factor: 0.5
+CFL factor: 0.25
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
@@ -37,10 +37,10 @@ Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.5 0.5 0.5
 
-Type yes if the rigid body is fixed: no
+Type yes if the rigid body is fixed: yes
+
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
-
 
 Type yes if motion is presetXXX: yes
 Enter type of preset motionXXX: TRANSLATION
@@ -65,10 +65,10 @@ Enter circle center: 6 6
 Enter circle radius: 4.2672
 
 Enter yes to adjust cgal triangulation criteria: yes
-Enter B ratio: 0.3
-Enter min triangle edge length: 0.12
-Enter B ratioXXX: 0.125
+Enter B ratioXXX: 0.3
 Enter min triangle edge lengthXXX: 0.12
+Enter B ratio: 0.125
+Enter min triangle edge length: 0.12
 
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: no
@@ -86,14 +86,21 @@ Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity functionXXX: Zero
+Enter velocity functionXX: Zero
 
 Enter velocity function: FA
 Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.75 0.75
-Enter area velocity: 0 0 5
-Enter gravity: 0 0 0
+Enter radii of ellipse: 0.6 0.6
+Enter area velocity: 0 0 3.5
+Enter gravityXXX: 0 0 0
+
+Enter velocity functionX: Singular
+Enter center of velocityX: 6 6
+Enter center velocityX: 3.5
+Enter radius of centerX: 0.55
+Enter stop motion timeX: 2.0
+
 
 Enter timestep to activate FSI: 5
 
@@ -103,29 +110,22 @@ Enter viscous parameter: 0.00793389
 Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 160
+Enter payload: 180
 Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
-Enter fabric spring constant: 5000
+Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-
-Enter fabric bending stiffness constant: 0.0001
-Enter fabric bending damping constant: 0.0000001
-
-Enter fabric bending stiffness constantXXX: 0.001
-Enter fabric bending damping constantXXX: 0.01
-
-Enter fabric friction constant: 0.3
-Enter fabric point mass: 0.00035
+Enter fabric bending stiffness constant: 0.001
+Enter fabric bending damping constant: 0.000001
+Enter fabric friction constant: 0.25
 Enter fabric point massXXX: 0.001
-Enter fabric thicknessXXX: 0.0005
+Enter fabric point mass: 0.00035
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 50000
-Enter string damping constant: 0.05
-Enter string damping constantXXX: 0.1
+Enter string spring constant: 75000
+Enter string damping constant: 0.1
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
@@ -166,10 +166,11 @@ Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
-Enter the debugging string: max_speed
+Enter the debugging string: bendforce_off
 
 Enter the debugging stringX: collision_max_speed
 Enter the debugging stringX: rigid_body

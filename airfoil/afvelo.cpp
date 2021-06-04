@@ -445,7 +445,7 @@ void setMotionParams(Front* front)
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    af_params->m_g = af_params->m_s;
+	    af_params->m_g = 0.0;
         if (af_params->attach_gores == YES)
 	    {
             af_params->gores_present = true;
@@ -456,28 +456,28 @@ void setMotionParams(Front* front)
         	CursorAfterString(infile,"Enter gore friction constant:");
         	fscanf(infile,"%lf",&af_params->lambda_g);
         	(void) printf("%f\n",af_params->lambda_g);
-		if (af_params->use_total_mass)
-		{
-		    CursorAfterString(infile,"Enter gore total mass:");
-		    fscanf(infile,"%lf",&af_params->total_gore_mass);
-		    (void) printf("%f\n",af_params->total_gore_mass);
-		}
-		else
-		{
-		    CursorAfterString(infile,"Enter gore point mass:");
-		    fscanf(infile,"%lf",&af_params->m_g);
-		    (void) printf("%f\n",af_params->m_g);
-		}
+            if (af_params->use_total_mass)
+            {
+                CursorAfterString(infile,"Enter gore total mass:");
+                fscanf(infile,"%lf",&af_params->total_gore_mass);
+                (void) printf("%f\n",af_params->total_gore_mass);
+            }
+            else
+            {
+                CursorAfterString(infile,"Enter gore point mass:");
+                fscanf(infile,"%lf",&af_params->m_g);
+                (void) printf("%f\n",af_params->m_g);
+            }
 	    }
 	    
-            af_params->unequal_coeff = 1.0;
+        af_params->unequal_coeff = 1.0;
 	    if (CursorAfterStringOpt(infile,"Enter unequal coefficient:"))
 	    {
-		fscanf(infile,"%lf",&af_params->unequal_coeff);
-		(void) printf("%f\n",af_params->unequal_coeff);
+		    fscanf(infile,"%lf",&af_params->unequal_coeff);
+		    (void) printf("%f\n",af_params->unequal_coeff);
 	    }
 	    
-            af_params->unequal_strings_num = 0;
+        af_params->unequal_strings_num = 0;
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
