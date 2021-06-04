@@ -107,12 +107,15 @@ Enter payload: 160
 Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
-Enter fabric spring constant: 2000
-Enter fabric spring constantXXX: 5000
+Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.001
-Enter fabric bending stiffness constantXXX: 0.1
-Enter fabric bending damping constant: 0.01
+
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
+
+Enter fabric bending stiffness constantXXX: 0.001
+Enter fabric bending damping constantXXX: 0.01
+
 Enter fabric friction constant: 0.3
 Enter fabric point mass: 0.00035
 Enter fabric point massXXX: 0.001
@@ -120,10 +123,10 @@ Enter fabric thicknessXXX: 0.0005
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 20000
-Enter string spring constantXXX: 50000
-Enter string damping constant: 0.02
+Enter string spring constant: 50000
+Enter string damping constant: 0.05
 Enter string damping constantXXX: 0.1
+Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

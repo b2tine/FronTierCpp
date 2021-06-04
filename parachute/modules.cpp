@@ -144,8 +144,12 @@ extern void initParachuteDefault(
 
     af_params->is_parachute_system = YES;
     
-    //NOTE: This only appears to have an effect on what print_airfoil_stat3d() gets called
-    af_params->spring_model = MODEL1;
+    //TODO: MODEL2 is conceptually more like our current model,
+    //      should just get rid of these enums and just use a single
+    //      print_airfoil_stat3d() function
+    af_params->spring_model = MODEL2;
+        //af_params->spring_model = MODEL1;
+
 	
     af_params->gore_len_fac = 1.0;
     af_params->attach_gores = NO;
