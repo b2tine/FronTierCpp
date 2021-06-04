@@ -2251,23 +2251,16 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
-/*
-extern void setSpecialNodeForce(
-    Front* front,
-	double kl)
-*/
 extern void setSpecialNodeForce(
     INTERFACE* intfc,
 	double kl)
 {
-	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
 	RECT_GRID *gr = &(intfc->table->rect_grid);
-	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;

@@ -502,9 +502,11 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	double *h = fr->rect_grid->h;
 	double client_L[MAXD],client_U[MAXD];
 
+    /*
     static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
+    */
         
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d_serial()\n");
@@ -523,7 +525,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     }
 
     geom_set.front = *newfront;
-        //geom_set.front = fr;
 
     /*
 	//TODO: omitting for now -- needs to be tested.
@@ -581,17 +582,13 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    {
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
             elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
-                //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
                 //elastic_intfc = FT_CollectHypersurfFromSubdomains(*newfront,owner,ELASTIC_BOUNDARY);
-                    //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
-                //collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
         {
             elastic_intfc = (*newfront)->interf;
-                //elastic_intfc = fr->interf;
         }
 	    
         start_clock("set_data");
@@ -629,7 +626,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
 		
-            //if (elastic_intfc != fr->interf)
             if (elastic_intfc != (*newfront)->interf)
                 delete_interface(elastic_intfc);
 	    }
@@ -639,7 +635,13 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	}
 
 	elastic_intfc = (*newfront)->interf;
-	    //elastic_intfc = fr->interf;
+
+    //TODO: Do we need to call setCollisionFreePoints3d() prior to the
+    //      bending force computations? It appears that we may be using
+    //      lagged values for the STATE::is_fixed etc. boolean flags from
+    //      the previous time step. 
+    setCollisionFreePoints3d(elastic_intfc);
+        //setCollisionFreePoints3d((*newfront)->interf);
     
     //compute bending forces
     resetBendingForce(elastic_intfc);
@@ -698,11 +700,12 @@ static void fourth_order_elastic_set_propagate3d_serial(
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
             
-            setCollisionFreePoints3d((*newfront)->interf);
-                //setCollisionFreePoints3d(fr->interf);
+            //TODO: Moved setCollisionFreePoints3d() up to be called
+            //      before the bending force computations.
+            //
+            //setCollisionFreePoints3d((*newfront)->interf);
 
             collision_solver->initializeSystem(*newfront);
-                //collision_solver->initializeSystem(fr);
         
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);
@@ -724,8 +727,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 
             collision_solver->gpoints = (*newfront)->gpoints;
             collision_solver->gtris = (*newfront)->gtris;
-                //collision_solver->gpoints = fr->gpoints;
-                //collision_solver->gtris = fr->gtris;
         }
         else
         {
@@ -763,14 +764,14 @@ static void fourth_order_elastic_set_propagate3d_serial(
                     client_size_new[i],client_L,client_U);
 	    } 
 
+        //TODO: for parallel runs, does calling get_point_set_from()
+        //      after the call to copy_from_client_point_set()
+        //      behave differently than calling beforehand?
+
         /*
         //Write from owner geom_set to owner point_set
 	    get_point_set_from(&geom_set,point_set);
         */
-
-        //TODO: for parallel runs, does calling get_point_set_from()
-        //      after the call to copy_from_client_point_set()
-        //      behave differently than calling beforehand?
 
 	    start_clock("spring_model");
 #if defined(__GPU__)
@@ -809,7 +810,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	
     // Calculate the real force on load_node and rg_string_node
     setSpecialNodeForce(elastic_intfc,geom_set.kl);
-        //setSpecialNodeForce(fr,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
@@ -825,7 +825,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
         }
         
         setSpecialNodeForce(elastic_intfc,geom_set.kl);
-            //setSpecialNodeForce(fr,geom_set.kl);
         compute_center_of_mass_velo(&geom_set);
     }
     
@@ -2012,7 +2011,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     HYPER_SURF_ELEMENT *hse;
     SURFACE* surf;
     
-    if (intfc->dim == 2) {
+    if (intfc->dim != 3)
+    {
         printf("ERROR dim = %d\n",intfc->dim);
         clean_up(ERROR);
     }

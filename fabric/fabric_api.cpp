@@ -605,8 +605,8 @@ extern void SMM_TestDriver()
             
         /* Output section */
 
-        //print_airfoil_stat(front,OutName(front));
-        //print_strings(front,OutName(front));
+        print_airfoil_stat(front,OutName(front));
+        print_strings(front,OutName(front));
 
         if (FT_IsSaveTime(front))
             SMM_Save();

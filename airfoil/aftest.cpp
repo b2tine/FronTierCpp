@@ -710,7 +710,8 @@ extern void print_airfoil_stat(
 	Front *front,
 	char *out_name)
 {
-    if (FT_Dimension() == 2 && pp_numnodes() > 1) return;
+    int dim = FT_Dimension();
+    if (dim == 2 && pp_numnodes() > 1) return;
     if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY) &&
         !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
 
@@ -731,7 +732,7 @@ extern void print_airfoil_stat(
 	
 	if (pp_mynode() == 0)
 	{	
-	    switch (front->rect_grid->dim)
+	    switch (dim)
 	    {
 	        case 2:
 	            print_airfoil_stat2d(front,out_name);
@@ -2215,6 +2216,7 @@ static void print_airfoil_stat2d_2(
 	}
 }	/* end print_airfoil_stat2d_2 */
 
+//TODO: Rewrite similiar to strain limiting functions
 static void record_stretching_length(
 	SURFACE *surf,
 	char *out_name,
@@ -2434,7 +2436,7 @@ static void print_drag3d(
         double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
         FILE* pafile;
-	FILE *xforce, *yforce, *zforce;
+	    FILE *xforce, *yforce, *zforce;
 
         if (FT_Dimension() == 2)
             return;
@@ -2639,7 +2641,8 @@ static void print_strings(
 	char *out_name)
 {
 	static int dim = FT_Dimension();
-	if (dim == 2) return;
+	if (dim != 3) return;
+    if (!FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
 
 	static boolean first = YES;
 	char dirname[512];

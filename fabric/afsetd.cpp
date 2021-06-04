@@ -370,6 +370,8 @@ void generic_spring_solver(
 	old_size = size;
 
     /*
+    //TODO: This is just for mapping the function variables to the RK4 framework
+    //      and studying/verifying the function behavior. Should do a write up on this.
     //////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
     for (int i = 0; i < size; ++i)
@@ -381,8 +383,8 @@ void generic_spring_solver(
 
 	for (int n = 0; n < n_loop; ++n)
     {
-        for (int i = 0; i < size; ++i)
-            compute_spring_accel1(&sv[i],accel[i],dim);
+        //NOTE: compute_spring_accel1() can serve as lfunc(),
+        //      we only need to update sv[i].x and sv[i].v before calling.
 	
         for (int i = 0; i < size; ++i)
         for (int j = 0; j < dim; ++j)
@@ -402,9 +404,6 @@ void generic_spring_solver(
         
             L2[i][j] = lfunc(sv.x + 0.5*dt*K1,  sv.v + 0.5*dt*L1,  t + 0.5*dt);
             //L2[i][j] = lfunc(sv[i].x[j] + 0.5*dt*K1[i][j],  sv[i].v[j] + 0.5*dt*L1[i][j]);
-        
-            //NOTE: compute_spring_accel1() can serve as lfunc(),
-            //      we only need to update sv[i].x and sv[i].v before calling.
         }
     
         for (int i = 0; i < size; ++i)
@@ -433,22 +432,6 @@ void generic_spring_solver(
     //////////////////////////////////////////////////////////////////////////////////
     */
 
-
-    //original
-    /*
-    for (int i = 0; i < size; ++i)
-	for (int j = 0; j < dim; ++j)
-	{
-	    x_old[i][j] = sv[i].x[j];
-	    v_old[i][j] = sv[i].v[j];
-	}
-    
-	for (int i = 0; i < size; ++i)
-	{
-	    compute_spring_accel1(&sv[i],accel[i],dim);
-	}
-    */
-	
 	for (int n = 0; n < n_loop; ++n)
 	{
         for (int i = 0; i < size; ++i)
@@ -475,14 +458,6 @@ void generic_spring_solver(
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
 
-        /*
-	    for (int i = 0; i < size; ++i)
-        for (int j = 0; j < 3; ++j)
-        {
-            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
-        }
-        */
-
 	    for (int i = 0; i < size; ++i)
 	    {
 		    compute_spring_accel1(&sv[i],accel[i],dim);
@@ -500,14 +475,6 @@ void generic_spring_solver(
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
 	    
-        /*
-        for (int i = 0; i < size; ++i)
-        for (int j = 0; j < 3; ++j)
-        {
-            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
-	    }
-        */
-	
 	    for (int i = 0; i < size; ++i)
 	    {
             compute_spring_accel1(&sv[i],accel[i],dim);
@@ -525,14 +492,6 @@ void generic_spring_solver(
 	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt;
 	    }
 	
-        /*
-        for (int i = 0; i < size; ++i)
-        for (int j = 0; j < 3; ++j)
-        {
-            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
-	    }
-        */
-
 	    for (int i = 0; i < size; ++i)
 	    {
 		    compute_spring_accel1(&sv[i],accel[i],dim);
@@ -559,47 +518,6 @@ void generic_spring_solver(
             sv[i].v[j] = v_new[i][j];
 	    }
 
-        /*
-	    for (int i = 0; i < size; ++i)
-	    for (int j = 0; j < dim; ++j)
-	    {
-            sv[i].x[j] = x_new[i][j];
-            sv[i].v[j] = v_new[i][j];
-	    }
-
-	    for (int i = 0; i < size; ++i)
-        for (int j = 0; j < 3; ++j)
-        {
-            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
-	    }
-        */
-
-
-        /*
-	    if (n != n_loop-1)//TODO: can we lose this if() ?
-	    {
-		    for (int i = 0; i < size; ++i)
-            for (int j = 0; j < 3; ++j)
-            {
-                x_old[i][j] = sv[i].x[j];
-                v_old[i][j] = sv[i].v[j];
-                
-                if (std::isnan(x_old[i][j]) || std::isinf(x_old[i][j]) ||
-                    std::isnan(v_old[i][j]) || std::isinf(v_old[i][j]))
-                {
-                    printf("ERROR generic_spring_solver():\n\t");
-                    printf("After loop %d/%d: x_old[%d][%d] = %f v_old[%d][%d] = %f\n",
-                            n,n_loop,i,j,x_old[i][j],i,j,v_old[i][j]);
-                    LOC(); clean_up(ERROR);
-                }
-            }
-
-	    	for (int i = 0; i < size; ++i)
-            {
-                compute_spring_accel1(&sv[i],accel[i],dim);
-            }
-        }
-        */
 	}
 
     if (debugging("trace"))
