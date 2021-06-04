@@ -125,17 +125,17 @@ double CollisionSolver3d::getMinCollisionTime()
     return *std::min_element(CollisionTimes.begin(),CollisionTimes.end());
 }
 
-double CollisionSolver3d::getMinCollisionTime()
+double CollisionSolver3d::getMaxCollisionTime()
 {
     return *std::max_element(CollisionTimes.begin(),CollisionTimes.end());
 }
 
-CollisionTimeStats getCollisionTimeStats()
+CollisionTimeStats CollisionSolver3d::getCollisionTimeStats()
 {
     double avg_dt = getAverageCollisionTime();
     double min_dt = getMinCollisionTime();
     double max_dt = getMaxCollisionTime();
-    return CollsionTimeStats{avg_dt,min_dt,max_dt};
+    return CollisionTimeStats{avg_dt,min_dt,max_dt};
 }
 
 CollisionSolver3d::~CollisionSolver3d()

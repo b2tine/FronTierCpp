@@ -1437,6 +1437,7 @@ static bool PointToTri(
         //      solver substeps.
         printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
                 \t\t\t (Mag3d(tri_nor) < MACH_EPS)\n\n");
+        printf("\t\t\t tri_nor = %f %f %f\n\n",tri_nor[0],tri_nor[1],tri_nor[2]);
         
         PointToTri_DebugInfo(pts);
         

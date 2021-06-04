@@ -1274,6 +1274,7 @@ static void print_airfoil_stat3d_1(
 	fflush(samplez);
 }	/* end print_airfoil_stat3d_1 */
 
+//TODO: copy in version from fabric directory when it is stable
 static void print_airfoil_stat3d_2(
 	Front *front,
 	char *out_name)

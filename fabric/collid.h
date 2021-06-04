@@ -193,12 +193,10 @@ private:
     void limitStrainPosnJac(MotionState mstate);
     void limitStrainPosnGS(MotionState mstate);
     StrainStats computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
-    //int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
     
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
     StrainStats computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
-    //int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
 
     void limitStrainVelJAC();
     void limitStrainVelGS();

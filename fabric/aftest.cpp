@@ -1294,7 +1294,7 @@ static void print_airfoil_stat3d_2(
 	static bool first = true;
     static char eskfname[50], espfname[50], egpfname[50],
                 exkfname[50], enkfname[50], efname[50];
-    static char afname[50], sfname[50], pfname[50], pfname[50];
+    static char afname[50], sfname[50], pfname[50], vfname[50];
     static char xcomfname[50], vcomfname[50];
 
     /*
@@ -1545,18 +1545,18 @@ static void print_airfoil_stat3d_2(
 	fflush(vcom_file);
 
 
-    fclose(eskfname)
-    fclose(espfname)
-    fclose(egpfname)
-    fclose(exkfname)
-    fclose(enkfname)
-    fclose(efname)
-    fclose(afname);
-    fclose(sfname);
-    fclose(pfname);
-    fclose(vfname);
-    fclose(xcomfname);
-    fclose(vcomfname);
+    fclose(eskfile);
+    fclose(espfile);
+    fclose(egpfile);
+    fclose(exkfile);
+    fclose(enkfile);
+    fclose(efile);
+    fclose(afile);
+    fclose(sfile);
+    fclose(pfile);
+    fclose(vfile);
+    fclose(xcom_file);
+    fclose(vcom_file);
 }	/* end print_airfoil_stat3d_2 */
 
 extern void fourth_order_elastic_curve_propagate(

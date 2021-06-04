@@ -1881,7 +1881,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     }
 
     geom_set.front = *newfront;
-        //geom_set.front = fr;
 
     /*
     //TODO: omitting for now -- needs to be tested.
@@ -1932,17 +1931,13 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    {
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
             elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
-            //elastic_intfc = collect_hyper_surfaces(fr,owner,w_type,3);
                 //elastic_intfc = FT_CollectHypersurfFromSubdomains(*newfront,owner,ELASTIC_BOUNDARY);
-                //elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,ELASTIC_BOUNDARY);
             
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
-                //collectNodeExtra(fr,elastic_intfc,owner_id);
 	    }
 	    else
         {
             elastic_intfc = (*newfront)->interf;
-                //elastic_intfc = fr->interf;
         }
 	    
         start_clock("set_data");
@@ -1980,7 +1975,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    	set_spring_vertex_memory(sv,owner_size);
 	    	set_vertex_neighbors(&geom_set,sv,point_set);
 		
-            //if (elastic_intfc != fr->interf)
             if (elastic_intfc != (*newfront)->interf)
                 delete_interface(elastic_intfc);
 	    }
@@ -1990,13 +1984,19 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	}
 
 	elastic_intfc = (*newfront)->interf;
-	    //elastic_intfc = fr->interf;
+
+    //TODO: Do we need to call setCollisionFreePoints3d() prior to the
+    //      bending force computations? It appears that we may be using
+    //      lagged values for the STATE::is_fixed etc. boolean flags from
+    //      the previous time step. 
+    setCollisionFreePoints3d(elastic_intfc);
+        //setCollisionFreePoints3d((*newfront)->interf);
     
     //compute bending force
     resetBendingForce(elastic_intfc);
     double bends = af_params->kbs;
     double bendd = af_params->lambda_bs;
-    computeSurfBendingForce(elastic_intfc,bends,bendd);
+    computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
     computeStringBendingForce(elastic_intfc);
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
@@ -2046,11 +2046,12 @@ static void fourth_order_elastic_set_propagate3d_serial(
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
             
-            setCollisionFreePoints3d((*newfront)->interf);
-                //setCollisionFreePoints3d(fr->interf);
+            //TODO: Moved setCollisionFreePoints3d() up to be called
+            //      before the bending force computations.
+            //
+            //setCollisionFreePoints3d((*newfront)->interf);
 
             collision_solver->initializeSystem(*newfront);
-                //collision_solver->initializeSystem(fr);
         
             collision_solver->setRestitutionCoef(1.0);
             collision_solver->setVolumeDiff(af_params->vol_diff);
@@ -2072,8 +2073,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 
             collision_solver->gpoints = (*newfront)->gpoints;
             collision_solver->gtris = (*newfront)->gtris;
-                //collision_solver->gpoints = fr->gpoints;
-                //collision_solver->gtris = fr->gtris;
         }
         else
         {
