@@ -14,6 +14,21 @@
 const double ROUND_EPS = DBL_EPSILON;
 
 
+struct StrainStats
+{
+    int n_edges;
+    double total_edge_length;
+};
+
+
+struct CollisionTimeStats
+{
+    double avg_dt;
+    double min_dt;
+    double max_dt;
+};
+
+
 class CollisionSolver3d {
 public:
 	
@@ -111,6 +126,9 @@ public:
     static void setSizeCollisionTimes(unsigned int size);
     static void addCollisionTime(double collsn_dt);
     static double getAverageCollisionTime();
+    static double getMaxCollisionTime();
+    static double getMinCollisionTime();
+    static CollisionTimeStats getCollisionTimeStats();
 
     static int tstep;
     static int getStep() {return tstep;}
@@ -174,13 +192,18 @@ private:
     
     void limitStrainPosnJac(MotionState mstate);
     void limitStrainPosnGS(MotionState mstate);
-    int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    StrainStats computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    //int computeStrainImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    
     void limitStrainRatePosnJac(MotionState mstate);
     void limitStrainRatePosnGS(MotionState mstate);
-    int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    StrainStats computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+    //int computeStrainRateImpulsesPosn(std::vector<CD_HSE*>& list, MotionState mstate);
+
     void limitStrainVelJAC();
     void limitStrainVelGS();
     int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
+    
     void applyStrainImpulses(MotionState mstate);
 
 	void computeMaxSpeed();
