@@ -76,16 +76,17 @@ struct PERT_PARAMS
 
 struct AF_PARAMS
 {
-        int dim;
-        SPRING_MODEL spring_model;
+    int dim;
+    SPRING_MODEL spring_model;
 	boolean no_fluid;
 	boolean is_parachute_system;
 	boolean attach_gores;
 	boolean attach_fixer;
 	boolean cut_vent;
-        boolean use_total_mass;
+    boolean use_total_mass;
 	boolean use_gpu;
-	PERT_PARAMS pert_params;
+
+    PERT_PARAMS pert_params;
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
@@ -112,16 +113,18 @@ struct AF_PARAMS
 	double m_g {0.0};       /*(disabled) point mass of gore curves */
 	double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
-        double total_gore_mass;         /* Total mass of gore */
-	boolean with_porosity;          /* with or without porosity*/
-	double porous_coeff[2];         /* viscous and inertial coefficients*/
+    double total_gore_mass;         /* Total mass of gore */
+	
+    boolean with_porosity;          /* with or without porosity*/
+    double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double gamma;			/* canopy porosity */
-	double area_dens;		/* canopy area density */
+	
+    double area_dens;		/* canopy area density */
 	int n_sub;			/* number of sub-steps for tan prop */
 	int num_opt_round;		/* number of mesh optimizations rounds*/
 	int num_smooth_layers;	/* number of layer to smooth high frequency velocity */
-	int num_np;			/* number of master node to run spring model */
-    
+	
+    int num_np;			/* number of master node to run spring model */
 	int node_id[10];		/* master node id */
 	
     double break_strings_time {HUGE};	/* time to break some strings */
@@ -410,11 +413,12 @@ extern int numOfGoreNodes(INTERFACE*);
 extern int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
 extern int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
 extern int getGoreNodes(INTERFACE*,NODE**);
+extern boolean is_string_node(NODE*);
 extern boolean is_load_node(NODE*);
 extern boolean is_rg_string_node(NODE*);
 extern boolean is_gore_node(NODE*);
 extern boolean is_bdry_node(NODE*);
-extern double springCharTimeStep(Front*);	// spring characteristic time
+extern double springCharTimeStep(Front*);
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);

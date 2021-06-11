@@ -1993,7 +1993,7 @@ LOCAL   void FT_InitIntfc3d(
 	    if (!read_vtk_surface(intfc,neg_comp,pos_comp,
 	    		level_func_pack->vtk_name,&surf))
 	    {
-		screen("read_sdl_surface() failed!\n");
+		screen("read_vtk_surface() failed!\n");
 		clean_up(ERROR);
 	    }
 	}

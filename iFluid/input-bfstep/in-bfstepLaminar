@@ -1,0 +1,121 @@
+Domain limit in 0-th dimension: 0 20
+Domain limit in 1-th dimension: 0 3
+Computational grid: 200 30 
+Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: MIXED_TYPE_BOUNDARY
+Upper boundary in 1-th dimension: NEUMANN_BOUNDARY
+
+Max time: 100.0 
+Max step: 100000
+Print interval: 5
+Movie frame interval: 0.5
+CFL factor: 0.75
+Redistribution interval: 1000000000
+
+Problem type can be
+        TWO_FLUID_BUBBLE
+        TWO_FLUID_RT
+        FLUID_SOLID_CIRCLE
+	FLUID_RIGID_BODY
+	ROTRO_ONE_FLUID
+Enter problem type: PRESSURE_PUMP
+Projection type can be
+        SIMPLE
+        BELL_COLELLA
+        KIM_MOIN
+        PEROT_BOTELLA
+Enter projection type: SIMPLE
+
+Enter density and viscosity of the fluid: 1.0 0.000288
+Enter gravity: 0.0 0.0
+Enter ambient velocity: 1.0 0.0
+Available geometrical shapes of rigid body are
+	Ellipse (E)
+	Tilt Ellipse (N)
+	Triangle (T)
+	Rectangle (R)
+	Cosmos (C)
+	Taegeuk (G)
+	Wing (W)
+	Propeller (P)
+Enter the shape of the rotor: p
+Enter minimum speed to limit time step: 2.5
+Enter number of node point of pump: 3
+Enter coordinates of node points: 
+3.0000 0.000 
+3.0000 1.000 
+0.0000 1.000 
+Direction 0 side 0 is MIXED_TYPE_BOUNDARY
+Enter type of node 1: FIXED_NODE
+Enter type of node 2: FIXED_NODE
+Enter type of node 3: FIXED_NODE
+Enter wave type of the curve between nodes 12: PASSIVE_BOUNDARY
+Enter wave type of the curve between nodes 23: DIRICHLET_BOUNDARY
+Direction 1 side 0 is MIXED_TYPE_BOUNDARY
+Enter type of node 1: FIXED_NODE
+Enter type of node 2: FIXED_NODE
+Enter type of node 3: FIXED_NODE
+Enter wave type of the curve between nodes 12: PASSIVE_BOUNDARY
+Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
+
+Number of Dirichlet boundaries on dir 0 side 0: 1
+Curve 1 start and end at: (0.000000 1.000000)->(0.000000 3.000000)
+Enter type of Dirichlet boundary: Q
+Enter velocity: 12.81 0.0
+Enter pressure: 10.0
+Enter height: 1.0
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+******************Turbulence Parameters****************
+Enter yes to use eddy viscosity: no 
+Available tuebulence models are:
+        Baldwin-Lomax (B)
+        Moin (M)
+        Smagorinski (S)
+        KEPSILON  (K)
+Enter turbulence model: K
+Enter type of k-eps model: STD
+Enter turbulent Prandtl number for k: 0.8
+Enter turbulent Prandtl number for epsilon: 1.3
+Enter C1: 1.44
+Enter C2: 1.92
+Enter Cmu: 0.09
+Enter Cbc: 0.1
+Enter l0: 0.1
+Enter mu0: 0.00002
+Enter y+: 11.06
+Enter time to active turbulence model: 0.0
+
+************Rigid body parameters*************
+Type yes if motion is preset: y
+Enter type of preset motion: PRESET_TRANSLATION
+Enter the direction of motion: 0.0 -1.0
+Enter the initial center of mass for rigid body: 2.0 3.0
+Enter the initial center of mass velocity: 0.0 0.0
+Type yes to use prescribed velocity function: yes
+Enter the prescribed velocity function type: sine
+Enter velocity amplitude: 0.0 0.0
+Enter oscillation frequency: 1
+Enter initial phase: 180
+
+************Movie output parameters*************
+
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: y
+Type y to make movie of velocity: y
+Type y to make movie of pressure: y
+Type y to make movie of viscosity: y
+
+Type y to make vector velocity field movie: y
+
+************Debugging options*****************
+
+Enter yes for debugging: no 
+Enter the debugging string: rigid_body
+Enter the debugging string: tinit
+Enter the debugging string: trace
+Enter the debugging string: CLOCK
+Enter the debugging string: step_size
+Enter the debugging string: PETSc
+Enter the debugging string: tsample_velocity

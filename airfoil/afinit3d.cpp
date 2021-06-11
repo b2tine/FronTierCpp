@@ -21,8 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
+#include "bending.h"
 
 static boolean parachute_constr_func(POINTER,double*);
 static boolean install_strings(INTERFACE*,SURFACE*,POINTER,int);
@@ -53,7 +53,7 @@ static void initWingsPlaneEdge(FILE*,Front*,LEVEL_FUNC_PACK*,
 
 static boolean bond_intersect_with_xcoord(double, CURVE*,BOND**,int,double**);
 
-static CURVE* init3dCurves(Front* front, double* pt_s, double* pt_e, int hsb_type, AF_NODE_TYPE nd_type);
+static CURVE* init3dCurve(Front* front, double* pt_s, double* pt_e, int hsb_type, AF_NODE_TYPE nd_type);
 
 
 extern void initEllipticSurf(
@@ -1171,20 +1171,19 @@ static boolean change_mono_boundary(
 	    if (upper_bdry[0] == YES)
 		hsbdry_type(cside01) = FIXED_HSBDRY;
 	    else
+        {
+            static C_PARAMS c_params;
+            int i,npts = I_NumOfCurvePoints(cside01);
+            c_params.load_type = bdry_params->upper_side[0];
+            c_params.load_mass = bdry_params->upper_mass[0];
+            c_params.point_mass = bdry_params->upper_mass[0]/npts;
+            c_params.dir = 0;
+            for (i = 0; i < 3; ++i)
             {
-                static C_PARAMS c_params;
-                int i,npts = I_NumOfCurvePoints(cside01);
-                c_params.load_type = bdry_params->upper_side[0];
-                c_params.load_mass = bdry_params->upper_mass[0];
-                c_params.point_mass = bdry_params->upper_mass[0]/npts;
-                c_params.dir = 0;
-		for (i = 0; i < 3; ++i)
-		{
-                    c_params.force[i] = bdry_params->upper_force[0][i]/
-				bdry_params->upper_mass[0];
-		}
-                cside01->extra = (POINTER)&c_params;
+                c_params.force[i] = bdry_params->upper_force[0][i]/bdry_params->upper_mass[0];
             }
+            cside01->extra = (POINTER)&c_params;
+        }
 	    if (lower_bdry[1] == YES)
 		hsbdry_type(cside10) = FIXED_HSBDRY;
 	    if (upper_bdry[1] == YES)
@@ -1859,42 +1858,43 @@ static void initCircularPlaneEdge(
         CursorAfterString(infile,"Enter yes to attach strings to canopy:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
-        
         if (string[0] == 'y' || string[0] == 'Y')
         {
             level_func_pack->attach_string = YES;
             level_func_pack->string_params = (POINTER)string_params;
 	        level_func_pack->string_func = install_strings_and_rotate;
-	    if (CursorAfterStringOpt(infile,
-			"Enter yes to attach gores on canopy:"))
-	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
+    
+            if (CursorAfterStringOpt(infile,
+                "Enter yes to attach gores on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-		{
-		    level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_gores;
-		    af_params->attach_gores = YES;
-		    if (CursorAfterStringOpt(infile,
-				"Enter gore length factor:"))
-		    {
-		    	fscanf(infile,"%lf",&(af_params->gore_len_fac));
-		    	(void) printf("%f\n",af_params->gore_len_fac);
-		    }
-		}
-	    }
-	    if (CursorAfterStringOpt(infile,
-			"Enter yes to attach fixer on canopy:"))
-	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
+                {
+                    level_func_pack->string_func = 
+                                install_strings_and_rotate_w_gores;
+                    af_params->attach_gores = YES;
+                    if (CursorAfterStringOpt(infile,
+                        "Enter gore length factor:"))
+                    {
+                        fscanf(infile,"%lf",&(af_params->gore_len_fac));
+                        (void) printf("%f\n",af_params->gore_len_fac);
+                    }
+                }
+            }
+    
+            if (CursorAfterStringOpt(infile,
+		    	"Enter yes to attach fixer on canopy:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-		{
-		    level_func_pack->string_func = 
-			    		install_strings_and_rotate_w_fixer;
-		    af_params->attach_fixer = YES;
-		}
-	    }
+                {
+                    level_func_pack->string_func = 
+                                install_strings_and_rotate_w_fixer;
+                    af_params->attach_fixer = YES;
+                }
+            }
 
             for (i = 0; i < num_canopy; ++i)
             {
@@ -1927,14 +1927,14 @@ static void initCircularPlaneEdge(
 	    
         }
         else if (CursorAfterStringOpt(infile,
-		 "Enter yes to change canopy boundary:"))
+                "Enter yes to change canopy boundary:"))
         {
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
-                if (string[0] == 'y' || string[0] == 'Y')
+            if (string[0] == 'y' || string[0] == 'Y')
             {
-                    level_func_pack->attach_string = YES;
-                    level_func_pack->string_func = change_mono_boundary;
+                level_func_pack->attach_string = YES;
+                level_func_pack->string_func = change_mono_boundary;
                 level_func_pack->string_params = NULL;
             }
         }
@@ -2600,7 +2600,7 @@ extern void initIsolated3dCurves(Front* front)
                 else
                     nd_type = STRING_NODE;
 	    }
-	    curve = init3dCurves(front,pt_s,pt_e,hsb_type,nd_type);
+	    curve = init3dCurve(front,pt_s,pt_e,hsb_type,nd_type);
             curve->extra = (POINTER)finite_string;
 
 	    sprintf(string,"Enter yes to have parallel curves for curve %d:",i);
@@ -2652,7 +2652,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] += shift*(i+1)*shift_dir[j];
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
-            init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
             for (int j = 0; j < 3; ++j)
@@ -2660,13 +2660,16 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] -= shift*(i+1)*shift_dir[j];
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
-            curve = init3dCurves(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
             curve->extra = (POINTER)finite_string;
         }
 	}
+
+    addStringBenders(front);
+
 }	/* initIsolated3dCurves() */
 
-static CURVE *init3dCurves(
+static CURVE *init3dCurve(
 	Front* front,
 	double* pt_s,
 	double* pt_e,
@@ -2708,13 +2711,16 @@ static CURVE *init3dCurves(
         for (int j = 1; j < nb; ++j)
         {
             for (int k = 0; k < 3; ++k)
-                coords[k] = Coords(string_nodes[0]->posn)[k] +
-                                   j*dir[k]*spacing;
+            {
+                coords[k] = Coords(string_nodes[0]->posn)[k]
+                            + j*dir[k]*spacing;
+            }
             insert_point_in_bond(Point(coords),b,curve);
-	    b->length0 = spacing;
+
+            b->length0 = spacing;
             b = b->next;
         }
-	b->length0 = spacing;
+	    b->length0 = spacing;
 
         for (int i = 0; i < 2; ++i){
             FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
@@ -2723,5 +2729,5 @@ static CURVE *init3dCurves(
             string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
         }
         return curve;
-}	/* end init3dCurves() */
+}	/* end init3dCurve() */
 

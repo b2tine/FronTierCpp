@@ -233,19 +233,24 @@ extern void set_spring_vertex_memory(
 	SPRING_VERTEX *sv,
 	int size)
 {
-	int i,j,num_nb;
-	for (i = 0; i < size; ++i)
+	for (int i = 0; i < size; ++i)
 	{
-	    num_nb = sv[i].num_nb;
 	    if (sv[i].x_nb != NULL)
-		FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k, 
-				sv[i].len0, sv[i].ix_nb);
+        {
+		    FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k,
+                    sv[i].len0, sv[i].ix_nb);
+        }
+
+	    int num_nb = sv[i].num_nb;
+
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].x_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].v_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].len0,num_nb,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].ix_nb,num_nb,sizeof(int));
-	    for (j = 0; j < MAXD; ++j)	// reset external acceleration
+
+	    // reset external acceleration
+	    for (int j = 0; j < MAXD; ++j)
             sv[i].ext_accel[j] = 0.0;
 	}
 }	/* end set_spring_vertex_memory */
@@ -255,26 +260,28 @@ extern void compute_spring_accel1(
 	double* accel,
 	int dim)
 {
-	for (int k = 0; k < dim; ++k)
-        accel[k] = 0.0;
+	for (int k = 0; k < dim; ++k) accel[k] = 0.0;
 
     //acceleration due to elastic stretching force
     for (int j = 0; j < sv->num_nb; ++j)
 	{
 	    double vec[MAXD];
         double len = 0.0;
-
         for (int k = 0; k < dim; ++k)
 	    {
             vec[k] = sv->x_nb[j][k] - sv->x[k];
             len += vec[k]*vec[k];
 	    }
-        
         len = sqrt(len);
+
+        //zero compressive stress
+        double dL = len - sv->len0[j];
+        if (dL < 0.0) continue;
 
 	    for (int k = 0; k < dim; ++k)
 	    {
-            accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
+            accel[k] += sv->k[j]*dL*vec[k]/len/sv->m;
+            //accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
         }
 	}
 
@@ -287,7 +294,6 @@ extern void compute_spring_accel1(
 	    
     for (int k = 0; k < dim; ++k)
     {
-        //TODO: Make sure this is supposed to be just the internal force on the fabric point
         sv->f[k] = accel[k]*sv->m;
     }
 
@@ -296,24 +302,230 @@ extern void compute_spring_accel1(
         accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
     }
 
-    /*
-    //TODO: Why aren't the damping and external accelerations
-    //      included in this force computation??
-	for (int k = 0; k < dim; ++k)
-    {
-	    sv->f[k] = accel[k]*sv->m;
-    }
-	
-    for (int k = 0; k < dim; ++k)
-	{
-	    accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
-        accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
-	}
-    */
 }	/* end compute_spring_accel */
 
 
 //RK4
+void generic_spring_solver(
+	SPRING_VERTEX *sv,
+	int dim,
+	int size,
+	int n_loop,
+	double dt)
+{
+	static int old_size = size;
+	static double **x_old, **x_new, **v_old, **v_new, **accel;
+    
+    /*
+    static double **K1, **K2, **K3, **K4;
+    static double **L1, **L2, **L3, **L4;
+    */
+
+	if (debugging("trace"))
+        printf("Entering generic_spring_solver()\n");
+
+	if (x_old == NULL)
+	{
+	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+	    
+        /*
+        FT_MatrixMemoryAlloc((POINTER*)&K1,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K2,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K3,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K4,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L1,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L2,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L3,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L4,size,3,sizeof(double));
+        */
+	}
+
+	if (size > old_size)
+	{
+	    FT_FreeThese(5, x_old, v_old, x_new, v_new, accel);
+	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+	   
+        /* 
+	    FT_FreeThese(8,K1,K2,K3,K4,L1,L2,L3,L4);
+        FT_MatrixMemoryAlloc((POINTER*)&K1,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K2,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K3,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&K4,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L1,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L2,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L3,size,3,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&L4,size,3,sizeof(double));
+	    */
+        
+        printf("size = %d, old_size = %d\n", size, old_size);
+	}
+	old_size = size;
+
+    /*
+    //TODO: This is just for mapping the function variables to the RK4 framework
+    //      and studying/verifying the function behavior. Should do a write up on this.
+    //////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+    for (int i = 0; i < size; ++i)
+	for (int j = 0; j < dim; ++j)
+	{
+	    x_old[i][j] = sv[i].x[j];
+	    v_old[i][j] = sv[i].v[j];
+	}
+
+	for (int n = 0; n < n_loop; ++n)
+    {
+        //NOTE: compute_spring_accel1() can serve as lfunc(),
+        //      we only need to update sv[i].x and sv[i].v before calling.
+	
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            K1[i][j] = kfunc(sv[i].x[j],  sv[i].v[j],  t);
+            //K1[i][j] = sv[i].v[j];
+        
+            L1[i][j] = lfunc(sv[i].x[j],  sv[i].v[j],  t);
+            //L1[i][j] = accel[i][j];
+        }
+    
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            K2[i][j] = kfunc(sv.x + 0.5*dt*K1,  sv.v + 0.5*dt*L1,  t + 0.5*dt);
+            //K1[i][j] = sv[i].v[j] + 0.5*dt*L1[i][j];
+        
+            L2[i][j] = lfunc(sv.x + 0.5*dt*K1,  sv.v + 0.5*dt*L1,  t + 0.5*dt);
+            //L2[i][j] = lfunc(sv[i].x[j] + 0.5*dt*K1[i][j],  sv[i].v[j] + 0.5*dt*L1[i][j]);
+        }
+    
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            K3[i][j] = kfunc(sv.x + 0.5*dt*K2,  sv.v + 0.5*dt*L2,  t + 0.5*dt);
+            L3[i][j] = lfunc(sv.x + 0.5*dt*K2,  sv.v + 0.5*dt*L2,  t + 0.5*dt);
+        }
+    
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            K4[i][j] = kfunc(sv.x + dt*K3,  sv.v + dt*L3,  t + dt);
+            L4[i][j] = lfunc(sv.x + dt*K3,  sv.v + dt*L3,  t + dt);
+        }
+
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            x_new[i][j] = x_old[i][j] + (K1[i][j] + 2.0*K2[i][j] + 2.0*K3[i][j] + K4[i][j])*dt/6.0;
+            v_new[i][j] = v_old[i][j] + (L1[i][j] + 2.0*L2[i][j] + 2.0*L3[i][j] + L4[i][j])*dt/6.0;
+        }
+    
+    }
+    //////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+    */
+
+	for (int n = 0; n < n_loop; ++n)
+	{
+        for (int i = 0; i < size; ++i)
+        for (int j = 0; j < 3; ++j)
+        {
+            x_old[i][j] = sv[i].x[j];
+            v_old[i][j] = sv[i].v[j];
+        }
+                
+        for (int i = 0; i < size; ++i)
+        {
+            compute_spring_accel1(&sv[i],accel[i],dim);
+        }
+
+	    for (int i = 0; i < size; ++i)
+	    for (int j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] = x_old[i][j] + v_old[i][j]*dt/6.0;
+            v_new[i][j] = v_old[i][j] + accel[i][j]*dt/6.0;
+            
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
+	    	
+            sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
+	    }
+
+	    for (int i = 0; i < size; ++i)
+	    {
+		    compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+
+	    for (int i = 0; i < size; ++i)
+	    for (int j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] += sv[i].v[j]*dt/3.0;
+            v_new[i][j] += accel[i][j]*dt/3.0;
+            
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
+
+	    	sv[i].x[j] = x_old[i][j] + 0.5*sv[i].v[j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
+	    }
+	    
+	    for (int i = 0; i < size; ++i)
+	    {
+            compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+	
+        for (int i = 0; i < size; ++i)
+	    for (int j = 0; j < dim; ++j)
+	    {
+	    	x_new[i][j] += sv[i].v[j]*dt/3.0;
+            v_new[i][j] += accel[i][j]*dt/3.0;
+
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
+
+	    	sv[i].x[j] = x_old[i][j] + sv[i].v[j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt;
+	    }
+	
+	    for (int i = 0; i < size; ++i)
+	    {
+		    compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+
+	    for (int i = 0; i < size; ++i)
+	    for (int j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] += sv[i].v[j]*dt/6.0;
+            v_new[i][j] += accel[i][j]*dt/6.0;
+            
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
+
+            if (std::isnan(x_new[i][j]) || std::isinf(x_new[i][j]) ||
+                std::isnan(v_new[i][j]) || std::isinf(v_new[i][j]))
+            {
+                printf("ERROR generic_spring_solver():\n\t");
+                printf("After loop %d/%d: x_new[%d][%d] = %f v_new[%d][%d] = %f\n",
+                        n,n_loop,i,j,x_new[i][j],i,j,v_new[i][j]);
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+            
+            sv[i].x[j] = x_new[i][j];
+            sv[i].v[j] = v_new[i][j];
+	    }
+
+	}
+
+    if (debugging("trace"))
+        printf("Leaving generic_spring_solver()\n");
+}	/* end generic_spring_solver */
+
+/*
+//SAVE
 void generic_spring_solver(
 	SPRING_VERTEX *sv,
 	int dim,
@@ -326,32 +538,30 @@ void generic_spring_solver(
 	int i,j,n;
 
 	if (debugging("trace"))
-	    (void) printf("Entering generic_spring_solver()\n");
+        printf("Entering generic_spring_solver()\n");
+
 	if (x_old == NULL)
 	{
 	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
 	}
+
 	if (size > old_size)
 	{
 	    FT_FreeThese(5, x_old, v_old, x_new, v_new, accel);
 	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
-            FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+        FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
 	    printf("size = %d, old_size = %d\n", size, old_size);
 	}
 	old_size = size;
 
-	for (i = 0; i < size; ++i)
-	{
-	    compute_spring_accel1(&sv[i],accel[i],dim);
-	}
-	
+
     for (i = 0; i < size; ++i)
 	for (j = 0; j < dim; ++j)
 	{
@@ -359,6 +569,11 @@ void generic_spring_solver(
 	    v_old[i][j] = sv[i].v[j];
 	}
     
+	for (i = 0; i < size; ++i)
+	{
+	    compute_spring_accel1(&sv[i],accel[i],dim);
+	}
+	
     double max_v, max_x;
 	for (n = 0; n < n_loop; ++n)
 	{
@@ -366,130 +581,143 @@ void generic_spring_solver(
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
-                v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
+		    x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
+            v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
-                if (max_v < v_new[i][j]) max_v = v_new[i][j];
-                if (max_x < x_new[i][j]) max_x = x_new[i][j];
-	    }
-	    for (i = 0; i < size; ++i)
-            for (j = 0; j < 3; ++j)
-            {
-                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
-					sv[i].fluid_accel[j])*dt/6.0;
+            
+            if (max_v < v_new[i][j]) max_v = v_new[i][j];
+            if (max_x < x_new[i][j]) max_x = x_new[i][j];
 	    }
 
 	    for (i = 0; i < size; ++i)
+        for (j = 0; j < 3; ++j)
+        {
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
+        }
+
+	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
+
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + 0.5*sv[i].v[j]*dt;
 	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
 	    }
-	    for (i = 0; i < size; ++i)
-            for (j = 0; j < 3; ++j)
-            {
-                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
-					sv[i].fluid_accel[j])*dt/3.0;
+	    
+        for (i = 0; i < size; ++i)
+        for (j = 0; j < 3; ++j)
+        {
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
 	    }
 	
 	    for (i = 0; i < size; ++i)
 	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
+            compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
-	    for (i = 0; i < size; ++i)
+	
+        for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/3.0;
-                v_new[i][j] += dt*accel[i][j]/3.0;
+	    	x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
 	    	sv[i].x[j] = x_old[i][j] + sv[i].v[j]*dt;
-	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt; 
+	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt;
 	    }
+	
+        for (i = 0; i < size; ++i)
+        for (j = 0; j < 3; ++j)
+        {
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/3.0;
+	    }
+
 	    for (i = 0; i < size; ++i)
-            for (j = 0; j < 3; ++j)
-            {
-                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
-					sv[i].fluid_accel[j])*dt/3.0;
+	    {
+		    compute_spring_accel1(&sv[i],accel[i],dim);
 	    }
 
 	    for (i = 0; i < size; ++i)
-	    {
-		compute_spring_accel1(&sv[i],accel[i],dim);
-	    }
-	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-		x_new[i][j] += dt*sv[i].v[j]/6.0;
-                v_new[i][j] += dt*accel[i][j]/6.0;
+		    x_new[i][j] += dt*sv[i].v[j]/6.0;
+            v_new[i][j] += dt*accel[i][j]/6.0;
 	    }
 
-            max_v = max_x = -HUGE;
+        max_v = max_x = -HUGE;
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
 	    {
-                sv[i].x[j] = x_new[i][j];
-                sv[i].v[j] = v_new[i][j];
-                if (max_v < v_new[i][j]) max_v = v_new[i][j];
-                if (max_x < x_new[i][j]) max_x = x_new[i][j];
+            sv[i].x[j] = x_new[i][j];
+            sv[i].v[j] = v_new[i][j];
+            
+            if (max_v < v_new[i][j]) max_v = v_new[i][j];
+            if (max_x < x_new[i][j]) max_x = x_new[i][j];
 	    }
+
 	    for (i = 0; i < size; ++i)
-            for (j = 0; j < 3; ++j)
-            {
-                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
-					sv[i].fluid_accel[j])*dt/6.0;
+        for (j = 0; j < 3; ++j)
+        {
+            sv[i].ext_impul[j] += (sv[i].ext_accel[j] + sv[i].fluid_accel[j])*dt/6.0;
 	    }
 
 	    if (n != n_loop-1)
 	    {
-		for (i = 0; i < size; ++i)
-                for (j = 0; j < 3; ++j)
+		    for (i = 0; i < size; ++i)
+            for (j = 0; j < 3; ++j)
+            {
+                x_old[i][j] = sv[i].x[j];
+                v_old[i][j] = sv[i].v[j];
+                
+                if (std::isnan(x_old[i][j]) || std::isinf(x_old[i][j]) ||
+                    std::isnan(v_old[i][j]) || std::isinf(v_old[i][j]))
                 {
-                    x_old[i][j] = sv[i].x[j];
-                    v_old[i][j] = sv[i].v[j];
-                    if (isnan(x_old[i][j]))
-                    {
-                        printf("After loop %d = %d: x_old[%d][%d] = %f\n",
-                                    n,i,j,x_old[i][j]);
-                        LOC(); clean_up(ERROR);
-                    }
+                    printf("ERROR generic_spring_solver():\n\t");
+                    printf("After loop %d: x_old[%d][%d] = %f v_old[%d][%d] = %f\n",
+                            n,i,j,x_old[i][j],i,j,v_old[i][j]);
+                    LOC(); clean_up(ERROR);
                 }
+            }
+
 	    	for (i = 0; i < size; ++i)
-		{
-		    compute_spring_accel1(&sv[i],accel[i],dim);
-		}
-	    }
+            {
+                compute_spring_accel1(&sv[i],accel[i],dim);
+            }
+        }
 	}
-	if (debugging("trace"))
-	    (void) printf("Leaving generic_spring_solver()\n");
-}	/* end generic_spring_solver */
+
+    if (debugging("trace"))
+        printf("Leaving generic_spring_solver()\n");
+}*/	/* end generic_spring_solver */
 
 extern void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
 	SPRING_VERTEX *sv)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering count_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
-	for (i = 0; i < ns; ++i)
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
+	
+    for (int i = 0; i < ns; ++i)
     {
         count_surf_neighbors(geom_set->surfs[i],sv,&n);
     }
-    for (i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
+    {
 	    count_curve_neighbors(geom_set->curves[i],sv,&n);
-	for (i = 0; i < nn; ++i)
+    }
+	for (int i = 0; i < nn; ++i)
+    {
 	    count_node_neighbors(geom_set->nodes[i],sv,&n);	
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving count_vertex_neighbors()\n");
@@ -613,28 +841,28 @@ extern void set_vertex_neighbors(
 	SPRING_VERTEX *sv,
 	GLOBAL_POINT **point_set)
 {
-	int i,n,ns,nc,nn;
-
 	if (debugging("canopy"))
 	    (void) printf("Entering set_vertex_neighbors()\n");
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	n = 0;
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
+	int n = 0;
 
-	for (i = 0; i < ns; ++i)
+	for (int i = 0; i < ns; ++i)
     {
         set_surf_spring_vertex(geom_set,geom_set->surfs[i],sv,&n,point_set);
     }
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
     {
 	    set_curve_spring_vertex(geom_set,geom_set->curves[i],sv,&n,
 					point_set);
     }
-    for (i = 0; i < nn; ++i)
+    for (int i = 0; i < nn; ++i)
+    {
 	    set_node_spring_vertex(geom_set,geom_set->nodes[i],sv,&n,
 					point_set);
+    }
 
 	if (debugging("canopy"))
 	    (void) printf("Leaving set_vertex_neighbors()\n");
@@ -1414,6 +1642,9 @@ static void assembleParachuteSet3d(
     SURFACE **surfs = geom_set->surfs;
 	CURVE **curves = geom_set->curves;
 	NODE **nodes = geom_set->nodes;
+
+    INTERFACE *cur_intfc = current_interface();
+    set_current_interface(intfc);
 	
     /* Assemble canopy surfaces */
 
@@ -1479,10 +1710,6 @@ static void assembleParachuteSet3d(
 	    }
 	}	
 
-    if (debugging("intfc_assembly"))
-    {
-        printf("ns = %d, nc = %d, nn = %d\n",ns,nc,nn);
-    }
 
 	/* Assemble curves and nodes */
 
@@ -1562,6 +1789,8 @@ static void assembleParachuteSet3d(
                 ns, nc, nn, geom_set->elastic_num_verts);
         printf("nrgbs = %d, total_num_verts = %d\n", geom_set->total_num_verts);
     }
+
+    set_current_interface(cur_intfc);
 }	/* end assembleParachuteSet */
 
 extern void copy_from_client_point_set(

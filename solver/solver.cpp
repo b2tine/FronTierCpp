@@ -157,6 +157,12 @@ void PETSc::Reset_x()
     VecZeroEntries(x);
 }
 
+void PETSc::FlushMatAssembly_A()
+{
+    ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY);
+}
+
 /*
 void PETSc::Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals)
 {

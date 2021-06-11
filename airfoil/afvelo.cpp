@@ -21,7 +21,6 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
 #include <airfoil.h>
 
 typedef struct {
@@ -162,7 +161,7 @@ void setMotionParams(Front* front)
 	    	{
 	    	case 'n':
 	    	case 'N':
-	    	    front->tan_curve_propagate = NULL;
+	    	    front->tan_curve_propagate = nullptr;
 	    	    break;
 	    	case 'f':
 	    	case 'F':
@@ -201,7 +200,7 @@ void setMotionParams(Front* front)
 	    	{
 	    	case 'n':
 	    	case 'N':
-	    	    front->interior_propagate = NULL;
+	    	    front->interior_propagate = nullptr;
 	    	    break;
 	    	case 'e':
 	    	case 'E':
@@ -255,20 +254,24 @@ void setMotionParams(Front* front)
 	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
         {
             // default: no porosity
-            iFparams->with_porosity = af_params->with_porosity = NO;
+            iFparams->with_porosity = NO;
+            af_params->with_porosity = NO;
             if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
-                iFparams->with_porosity=af_params->with_porosity=YES;
+                {
+                    iFparams->with_porosity = YES;
+                    af_params->with_porosity = YES;
+                }
             }
 
             if (iFparams->with_porosity == YES)
             {
                 if (CursorAfterStringOpt(infile,"Enter porosity:"))
                 {
-                    //TODO: can probably remove this ...
+                    //TODO: can probably remove this ... 
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }
@@ -296,6 +299,19 @@ void setMotionParams(Front* front)
         }
         iFparams->fsi_startstep = af_params->fsi_startstep;
 
+        if (CursorAfterStringOpt(infile,"Enter yes to disable FSI:"))
+        {
+            fscanf(infile,"%s",string);
+            printf("%s\n",string);
+
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                iFparams->with_porosity = NO;
+                af_params->with_porosity = NO;
+                iFparams->fsi_startstep = 100000000;
+                af_params->fsi_startstep = 100000000;
+            }
+        }
 
         for (i = 0; i < dim; ++i)
             af_params->gravity[i] = iFparams->gravity[i];
@@ -429,7 +445,7 @@ void setMotionParams(Front* front)
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    af_params->m_g = af_params->m_s;
+	    af_params->m_g = 0.0;
         if (af_params->attach_gores == YES)
 	    {
             af_params->gores_present = true;
@@ -440,28 +456,28 @@ void setMotionParams(Front* front)
         	CursorAfterString(infile,"Enter gore friction constant:");
         	fscanf(infile,"%lf",&af_params->lambda_g);
         	(void) printf("%f\n",af_params->lambda_g);
-		if (af_params->use_total_mass)
-		{
-		    CursorAfterString(infile,"Enter gore total mass:");
-		    fscanf(infile,"%lf",&af_params->total_gore_mass);
-		    (void) printf("%f\n",af_params->total_gore_mass);
-		}
-		else
-		{
-		    CursorAfterString(infile,"Enter gore point mass:");
-		    fscanf(infile,"%lf",&af_params->m_g);
-		    (void) printf("%f\n",af_params->m_g);
-		}
+            if (af_params->use_total_mass)
+            {
+                CursorAfterString(infile,"Enter gore total mass:");
+                fscanf(infile,"%lf",&af_params->total_gore_mass);
+                (void) printf("%f\n",af_params->total_gore_mass);
+            }
+            else
+            {
+                CursorAfterString(infile,"Enter gore point mass:");
+                fscanf(infile,"%lf",&af_params->m_g);
+                (void) printf("%f\n",af_params->m_g);
+            }
 	    }
 	    
-            af_params->unequal_coeff = 1.0;
+        af_params->unequal_coeff = 1.0;
 	    if (CursorAfterStringOpt(infile,"Enter unequal coefficient:"))
 	    {
-		fscanf(infile,"%lf",&af_params->unequal_coeff);
-		(void) printf("%f\n",af_params->unequal_coeff);
+		    fscanf(infile,"%lf",&af_params->unequal_coeff);
+		    (void) printf("%f\n",af_params->unequal_coeff);
 	    }
 	    
-            af_params->unequal_strings_num = 0;
+        af_params->unequal_strings_num = 0;
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
@@ -1044,6 +1060,7 @@ typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
 
 static boolean within_shape(SHAPE_PARAMS,double*);
 
+//TODO: compare to fabric directory version of this function
 static void init_fixarea_params(
 	Front *front,
 	FILE *infile,
@@ -1263,6 +1280,7 @@ extern void resetFrontVelocity(Front *front)
             sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
             sl->other_accel[i] = sr->other_accel[i] = 0.0;
             sl->shear_force[i] = sr->shear_force[i] = 0.0;
+            sl->bendforce[i] = sr->bendforce[i] = 0.0;
 	    }
 	}
 
@@ -1281,6 +1299,7 @@ extern void resetFrontVelocity(Front *front)
                 sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                sl->bendforce[i] = sr->bendforce[i] = 0.0;
             }
     
             for (b = (*c)->first; b != (*c)->last; b = b->next)
@@ -1296,6 +1315,7 @@ extern void resetFrontVelocity(Front *front)
                     sl->impulse[i] = sr->impulse[i] = 0.0;
                     sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                     sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                    sl->bendforce[i] = sr->bendforce[i] = 0.0;
                 }
             }
     
@@ -1310,6 +1330,7 @@ extern void resetFrontVelocity(Front *front)
                 sl->impulse[i] = sr->impulse[i] = 0.0;
                 sl->fluid_accel[i] = sr->fluid_accel[i] = 0.0;
                 sl->other_accel[i] = sr->other_accel[i] = 0.0;
+                sl->bendforce[i] = sr->bendforce[i] = 0.0;
             }
 	    }
 	}

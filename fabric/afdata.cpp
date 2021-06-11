@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include "fabric.h"
+#include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
 static void singleCanopyModification(Front*);
@@ -197,13 +198,13 @@ void printAfExtraData(
 	fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-        int num_pts;
-        REGISTERED_PTS *registered_pts;
-
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
 
-        if ((*s)->extra == NULL)
+        int num_pts;
+        REGISTERED_PTS *registered_pts;
+
+        if ((*s)->extra == nullptr)
             num_pts = 0;
         else
         {
@@ -218,17 +219,40 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        
+        //TODO: C_PARAMS no longer being used, and should be
+        //      replaced with the appropiate data structure for
+        //      point mass runs (load_nodes)
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
-                fprintf(outfile,"curve extra: no\n");
-	    else
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
 	    {
-                fprintf(outfile,"curve extra: yes\n");
-                fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
-                fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
-                fprintf(outfile,"load_type = %d\n",c_params->load_type);
-                fprintf(outfile,"dir = %d\n",c_params->dir);
+            fprintf(outfile,"curve extra: yes\n");
+            fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
+            fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
+            fprintf(outfile,"load_type = %d\n",c_params->load_type);
+            fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
+
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+		    p = b->end;
+            if (p->extra == nullptr)
+            {
+                fprintf(outfile,"string point extra: no\n");
+            }
+            else
+            {
+                fprintf(outfile,"string point extra: yes\n");
+                BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
+                fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
+                fprintf(outfile,"\n");
+            }
+        }
 	}
 	
     fprintf(outfile,"\nNode extra data:\n");
@@ -482,10 +506,10 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        int num_pts;
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
     
+        int num_pts;
         fgetstring(infile,"number of registered points = ");
         fscanf(infile,"%d",&num_pts);
         if (num_pts != 0)
@@ -505,21 +529,39 @@ void readAfExtraData(
 	next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
+            fgetstring(infile,"point_mass = ");
+                fscanf(infile,"%lf",&c_params->point_mass);
+            fgetstring(infile,"load_mass = ");
+                fscanf(infile,"%lf",&c_params->load_mass);
+            fgetstring(infile,"load_type = ");
+                fscanf(infile,"%d",(int*)&c_params->load_type);
+            fgetstring(infile,"dir = ");
+                fscanf(infile,"%d",&c_params->dir);
+            (*c)->extra = (POINTER)c_params;
+        }
+
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+            fgetstring(infile,"string point extra:");
             fscanf(infile,"%s",string);
-	    if (string[0] == 'n') continue;
-	    FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
-	    fgetstring(infile,"point_mass = ");
-            fscanf(infile,"%lf",&c_params->point_mass);
-	    fgetstring(infile,"load_mass = ");
-            fscanf(infile,"%lf",&c_params->load_mass);
-	    fgetstring(infile,"load_type = ");
-            fscanf(infile,"%d",(int*)&c_params->load_type);
-	    fgetstring(infile,"dir = ");
-            fscanf(infile,"%d",&c_params->dir);
-	    (*c)->extra = (POINTER)c_params;
+	        if (string[0] == 'n') continue;
+            
+            BOND_BENDER* bond_bender;
+            FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
+            fread(bond_bender,1,sizeof(BOND_BENDER),infile);
+            b->end->extra = (POINTER)bond_bender;
+            fscanf(infile,"\n");
+        }
 	}
+
 	next_output_line_containing_string(infile,"Node extra data:");
 	for (n = intfc->nodes; n && *n; ++n)
 	{
@@ -707,8 +749,7 @@ void printHyperSurfQuality(
 	    min_length = HUGE;
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		if (hsbdry_type(*c) != STRING_HSBDRY)
-		    continue;
+		if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 		curve = *c;
 		for (bond = curve->first; bond != NULL; bond = bond->next)
 		{
@@ -726,8 +767,7 @@ void printHyperSurfQuality(
 	    min_area = min_length = HUGE;
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
-		if (wave_type(*s) != ELASTIC_BOUNDARY)
-		    continue;
+		if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 		surf = *s;
 		for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 				tri = tri->next)
@@ -814,7 +854,7 @@ void optimizeElasticMesh(
 	    gview_plot_interface(gvdir,intfc);
 	}
 
-    int num_opt_round = 1;
+    int num_opt_round = 0;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if(af_params)
     {
@@ -1484,6 +1524,15 @@ extern boolean is_gore_node(
 	else 
 	    return NO;
 }	/* end is_gore_node */
+
+extern boolean is_string_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == STRING_NODE) return YES;
+        return NO;
+}       /* end is_load_node */
 
 extern boolean is_load_node(NODE *n)
 {

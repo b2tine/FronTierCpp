@@ -1,0 +1,121 @@
+**************************************************************
+Start test time control parameters
+
+Max time: 1.0 
+Max step: 2500
+Print interval: 0.005
+Movie frame interval: 0.005
+CFL factor: 0.5
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+
+**************************************************************
+
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 1
+Computational grid: 50 50 50
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 10
+Enter pressure: 1.0
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+***********************************************************
+Start parameters for modules
+
+Enter number of canopy surfaces: 0
+Enter yes to add rigid body: n 
+
+Enter yes to add isolated curves: yes
+Enter the number of curves: 2
+
+Enter the start of curve 0: 0.5 0.2 0.75
+Enter the end of curve 0: 0.5 0.8 0.75
+Enter yes to fix the endpoints of curve 0: y
+
+Enter the start of curve 1: 0.35 0.55 0.8
+Enter the end of curve 1: 0.8 0.45 0.8
+Enter the start of curve 1XXX: 0.2 0.5 0.8
+Enter the end of curve 1XXX: 0.8 0.5 0.8
+Enter yes to fix the endpoints of curve 1: n
+
+Enter string point spacing: 0.01
+
+**************************************************************
+Start parameters for spring-mass system
+
+Enter the number of fabric optimization rounds: 0
+Enter interior sub step number: 1
+
+Enter fabric spring constant: 5000
+Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric friction constant: 0.25
+Enter fabric point mass: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
+Enter string spring constant: 75000
+Enter string damping constant: 0.1
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.35
+Enter string point mass: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
+
+Enter yes for string bending force: no
+
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.1
+
+***********************************************************
+Start test velocity function set
+
+Entering yes to turn off fluid solver: yes
+Enter velocity function: zero
+Enter interior propagator: p
+Enter interior sub step number: 1
+
+Enter gravity: 0.0 0.0 -9.8
+Enter factor of smoothing radius: 1
+
+**************************************************************
+Type y to make movie of pressure: n
+Type y to make movie of vorticity: n
+Type y to make movie of velocity: n
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+Type y to make cross sectional component movie: n
+
+Type y to make viscosity field movie: n
+Type y to make scalar pressure field movie: n
+
+Type y to make vector velocity field movie: n
+Type y to make vector vorticity field movie: n
+
+************Debugging options*****************
+Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
+
+Enter the debugging stringX: trace
+Enter the debugging stringX: isect3d
+Enter the debugging stringX: CLOCK
+Enter the debugging stringX: step_size
+Enter the debugging stringX: tri_cluster
+Enter the debugging stringX: CollisionImpulse
+Enter the debugging stringX: sample_velocity
+Enter the debugging stringX: no_optimize 

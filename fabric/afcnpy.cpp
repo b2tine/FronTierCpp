@@ -529,93 +529,112 @@ extern void compute_node_accel1(
 	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
 	    if (extra != NULL)
 	    {
-		if (extra->af_node_type == LOAD_NODE)
-		{
-	    	    Front *front = geom_set->front;
-	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-		    mass = af_params->payload;
-		}
-		else if (extra->af_node_type == GORE_NODE)
-                    mass = geom_set->m_g;
-		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_l;
-	    }
-	    else
-                mass = geom_set->m_s;
-	}
-	else if (dim == 2)
-	{
-	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
-            mass = geom_set->m_l;
-	    if (extra->af_node_type == LOAD_NODE)
+            if (extra->af_node_type == LOAD_NODE)
             {
                 Front *front = geom_set->front;
                 AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
                 mass = af_params->payload;
             }
+            else if (extra->af_node_type == GORE_NODE)
+            {
+                mass = geom_set->m_g;
+            }
+            else if (extra->af_node_type == STRING_NODE)
+            {
+                mass = geom_set->m_l;
+            }
+	    }
+	    else
+        {
+            mass = geom_set->m_s;
+        }
+	}
+	else if (dim == 2)
+	{
+        mass = geom_set->m_l;
+	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+        if (extra != nullptr)
+        {
+            if (extra->af_node_type == LOAD_NODE)
+            {
+                Front *front = geom_set->front;
+                AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+                mass = af_params->payload;
+            }
+        }
 	}
 
 	x[*n] = Coords(node->posn);
 	v[*n] = node->posn->vel;
-	for (i = 0; i < dim; ++i)
+	
+    for (i = 0; i < dim; ++i)
 	{
 	    f[*n][i] = 0.0;
 	}
-	for (c = node->out_curves; c && *c; ++c)
+	
+    for (c = node->out_curves; c && *c; ++c)
 	{
 	    b = (*c)->first;
 	    len = separation(b->start,b->end,dim);
 	    len0 = bond_length0(b);
 	    x_diff = len - len0; 
+
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
-		vect[j] = x_diff*dir[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   += ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   += kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   += kl*vect[j]/mass;
-	    }
+            dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
+            vect[j] = x_diff*dir[j];
+
+            if (dim == 3)
+            {
+                if (is_load_node(node) == YES)
+                    f[*n][j] += kl*vect[j]/mass;
+                else if (hsbdry_type(*c) == STRING_HSBDRY)
+                    f[*n][j] += kl*vect[j]/mass;
+                else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+                    f[*n][j] += ks*vect[j]/mass;
+                else if (hsbdry_type(*c) == GORE_HSBDRY)
+                    f[*n][j] += kg*vect[j]/mass;
+            }
+            else
+            {
+                f[*n][j] += kl*vect[j]/mass;
+            }
+        }
 	}
-	for (c = node->in_curves; c && *c; ++c)
+	
+    for (c = node->in_curves; c && *c; ++c)
 	{
-	    if (curve_in_pointer_list(*c,node->out_curves) && 
-		!is_closed_curve(*c)) 
-		continue;
+	    if (curve_in_pointer_list(*c,node->out_curves)
+                && !is_closed_curve(*c)) continue;
+
 	    b = (*c)->last;
 	    len = separation(b->start,b->end,dim);
 	    len0 = bond_length0(b);
 	    x_diff = len - len0; 
+
 	    for (j = 0; j < dim; ++j)
 	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
-		vect[j] = x_diff*dir[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   -= ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   -= kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   -= kl*vect[j]/mass;
+            dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
+            vect[j] = x_diff*dir[j];
+
+            if (dim == 3)
+            {
+                if (is_load_node(node) == YES)
+                    f[*n][j] -= kl*vect[j]/mass;
+                else if (hsbdry_type(*c) == STRING_HSBDRY)
+                    f[*n][j] -= kl*vect[j]/mass;
+                else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+                    f[*n][j] -= ks*vect[j]/mass;
+                else if (hsbdry_type(*c) == GORE_HSBDRY)
+                    f[*n][j] -= kg*vect[j]/mass;
+            }
+            else
+            {
+                f[*n][j] -= kl*vect[j]/mass;
+            }
 	    }
 	}
+
 	if (dim == 3)
 	{
 	    BOND_TRI **btris;
@@ -625,60 +644,66 @@ extern void compute_node_accel1(
 
 	    num_tris = 0;
 	    p = node->posn;
-	    for (c = node->out_curves; c && *c; ++c)
-	    {
-		b = (*c)->first;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (c = node->in_curves; c && *c; ++c)
-	    {
-		b = (*c)->last;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (i = 0; i < num_tris; ++i)
-	    {
-		tri = tri_list[i];
-		for (side = 0; side < 3; ++side)
-		{
-		    if (p == Point_of_tri(tri)[side])
-		    {
-			if (is_side_bdry(tri,side))
-			    continue;
-			p_nb = Point_of_tri(tri)[(side+1)%3];
-			len0 = tri->side_length0[side];
-			len = separation(p,p_nb,3);
-    			x_diff = len - len0; 
-			for (k = 0; k < 3; ++k)
-                       	{
-                       	    dir[k] = (Coords(p_nb)[k] - 
-					Coords(p)[k])/len;
-                       	    f[*n][k] += ks*x_diff*dir[k]/mass;
-                       	}
-		    }
-		}
-	    }
+
 	    if (!is_load_node(node))
 	    {
 	    	for (i = 0; i < 3; ++i)
+            {
 	    	    f[*n][i] -= lambda_s*v[*n][i]/mass;
+            }
+	    }
+
+        for (c = node->out_curves; c && *c; ++c)
+	    {
+            b = (*c)->first;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (j = 0; j < nt; ++j)
+                {
+                if (!pointer_in_list((POINTER)tris[j],num_tris,
+                        (POINTER*)tri_list))
+                    tri_list[num_tris++] = tris[j];
+                }
+            }
+	    }
+
+	    for (c = node->in_curves; c && *c; ++c)
+	    {
+            b = (*c)->last;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (j = 0; j < nt; ++j)
+                {
+                if (!pointer_in_list((POINTER)tris[j],num_tris,
+                        (POINTER*)tri_list))
+                    tri_list[num_tris++] = tris[j];
+                }
+            }
+	    }
+	    
+        for (i = 0; i < num_tris; ++i)
+	    {
+            tri = tri_list[i];
+            for (side = 0; side < 3; ++side)
+            {
+                if (p == Point_of_tri(tri)[side])
+                {
+                    if (is_side_bdry(tri,side)) continue;
+
+                    p_nb = Point_of_tri(tri)[(side+1)%3];
+                    len0 = tri->side_length0[side];
+                    len = separation(p,p_nb,3);
+                    x_diff = len - len0; 
+
+                    for (k = 0; k < 3; ++k)
+                    {
+                        dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                        f[*n][k] += ks*x_diff*dir[k]/mass;
+                    }
+                }
+            }
 	    }
 	}
 	else
@@ -686,6 +711,7 @@ extern void compute_node_accel1(
 	    for (i = 0; i < 3; ++i)
 	    	f[*n][i] -= lambda_l*v[*n][i]/mass;
 	}
+
 	(*n)++;
 }	/* end compute_node_accel1 */
 
@@ -1789,13 +1815,13 @@ static void setCurveVelocity(
 	CURVE *curve,
 	GLOBAL_POINT **point_set)
 {
-	int i,j;
+	int j;
 	BOND *b;
 	POINT *p;
 	BOND_TRI **btris;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
+    HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD];
 	double *vel = nullptr;
@@ -1807,6 +1833,34 @@ static void setCurveVelocity(
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         double max_speed = 0.0;
+
+        NODE* string_nodes[2];
+        string_nodes[0] = curve->start;
+        string_nodes[1] = curve->end;
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (!is_string_node(string_nodes[i])) continue;
+
+            p = curve->start->posn;
+            gindex = Gindex(p);
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
+            vel = point_set[gindex]->v;
+            
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+            }
+        }
 
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -1875,9 +1929,6 @@ static void setCurveVelocity(
     {
         set_bond_length(b,dim);
     }
-
-    //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
-
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -2043,25 +2094,25 @@ extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-
-	for (i = 0; i < ns; ++i)
+	for (int i = 0; i < ns; ++i)
     {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
     }
-	for (i = 0; i < nc; ++i)
+	for (int i = 0; i < nc; ++i)
+    {
 	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+    }
+	for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 
-    //TODO: add rgb_surfs
+    //TODO: add rgb_surfs ?
 
 }	/* end set_geomset_velocity */
 
@@ -2200,23 +2251,16 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
-/*
-extern void setSpecialNodeForce(
-    Front* front,
-	double kl)
-*/
 extern void setSpecialNodeForce(
     INTERFACE* intfc,
 	double kl)
 {
-	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
 	RECT_GRID *gr = &(intfc->table->rect_grid);
-	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;

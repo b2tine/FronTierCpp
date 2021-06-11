@@ -21,8 +21,8 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
+#include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
 static void singleCanopyModification(Front*);
@@ -31,7 +31,6 @@ static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
 static void rotateParachuteSet(ELASTIC_SET*,double*,double,double);
 
 
-//TODO: STRING-FLUID INTERACTION BAD RESTART
 void printAfExtraData(
 	Front *front,
 	char *out_name)
@@ -199,26 +198,26 @@ void printAfExtraData(
     fprintf(outfile,"\nSurface extra data:\n");
     intfc_surface_loop(intfc,s) 
     {
-        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
-        {
-            int num_pts;
-            REGISTERED_PTS *registered_pts;
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
 
-            if ((*s)->extra == NULL)
-                num_pts = 0;
-            else
-            {
-                registered_pts = (REGISTERED_PTS*)(*s)->extra;
-                num_pts = registered_pts->num_pts;
-            }
-            fprintf(outfile,"number of registered points = %d\n",num_pts);
-            for (i = 0; i < num_pts; ++i)
-                fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
+        int num_pts;
+        REGISTERED_PTS *registered_pts;
+
+        if ((*s)->extra == nullptr)
+            num_pts = 0;
+        else
+        {
+            registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            num_pts = registered_pts->num_pts;
         }
+        fprintf(outfile,"number of registered points = %d\n",num_pts);
+        for (i = 0; i < num_pts; ++i)
+            fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
 
         /*
-        //TODO: This all gets handled in one of the user_fprint_surface functions
-        //      and can be removed.
+        //TODO: This all gets handled in one of the user_fprint_surface
+        //      functions and can be removed -- keep for now as reference.
         //
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
@@ -252,18 +251,53 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        /*
 	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
 	    if (c_params == NULL)
-                fprintf(outfile,"curve extra: no\n");
-	    else
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
 	    {
-                fprintf(outfile,"curve extra: yes\n");
-                fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
-                fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
-                fprintf(outfile,"load_type = %d\n",c_params->load_type);
-                fprintf(outfile,"dir = %d\n",c_params->dir);
+            fprintf(outfile,"curve extra: yes\n");
+            fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
+            fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
+            fprintf(outfile,"load_type = %d\n",c_params->load_type);
+            fprintf(outfile,"dir = %d\n",c_params->dir);
 	    }
+        */
+
+        if ((*c)->extra == nullptr)
+        {
+            fprintf(outfile,"curve extra: no\n");
+        }
+        else
+        {
+            fprintf(outfile,"curve extra: yes\n");
+            FINITE_STRING* s_params = (FINITE_STRING*)(*c)->extra;
+            fprintf(outfile,"radius = %24.18g\n",s_params->radius);
+            fprintf(outfile,"density = %24.18g\n",s_params->dens);
+            fprintf(outfile,"c_drag = %24.18g\n",s_params->c_drag);
+            fprintf(outfile,"ampFluidFactor = %24.18g\n",s_params->ampFluidFactor);
+        }
         
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+		    p = b->end;
+            if (p->extra == nullptr)
+            {
+                fprintf(outfile,"string point extra: no\n");
+            }
+            else
+            {
+                fprintf(outfile,"string point extra: yes\n");
+                BOND_BENDER* bond_bender = (BOND_BENDER*)p->extra;
+                fwrite(bond_bender,1,sizeof(BOND_BENDER),outfile);
+                fprintf(outfile,"\n");
+            }
+        }
 	}
 	
     fprintf(outfile,"\nNode extra data:\n");
@@ -348,7 +382,6 @@ void printAfExtraData(
 	fclose(outfile);
 }	/* end printAfExtraData */
 
-//TODO: STRING-FLUID INTERACTION BAD RESTART
 void readAfExtraData(
 	Front *front,
 	char *restart_name)
@@ -616,28 +649,29 @@ void readAfExtraData(
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
-        if (wave_type(*s) == ELASTIC_BOUNDARY || wave_type(*s) == ELASTIC_STRING)
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
+
+        int num_pts;
+        fgetstring(infile,"number of registered points = ");
+        fscanf(infile,"%d",&num_pts);
+        if (num_pts != 0)
         {
-            int num_pts;
-            fgetstring(infile,"number of registered points = ");
-            fscanf(infile,"%d",&num_pts);
-            if (num_pts != 0)
-            {
-                static REGISTERED_PTS *registered_pts;
-                FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                            sizeof(REGISTERED_PTS));
-                FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
-                            num_pts,sizeof(int));
-                (*s)->extra = (REGISTERED_PTS*)registered_pts;
-                registered_pts->num_pts = num_pts;
-                for (i = 0; i < num_pts; ++i)
-                    fscanf(infile,"%d",registered_pts->global_ids+i);
-            }
+            static REGISTERED_PTS *registered_pts;
+            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                        sizeof(REGISTERED_PTS));
+            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                        num_pts,sizeof(int));
+            (*s)->extra = (REGISTERED_PTS*)registered_pts;
+            registered_pts->num_pts = num_pts;
+            for (i = 0; i < num_pts; ++i)
+                fscanf(infile,"%d",registered_pts->global_ids+i);
         }
         
         /*
-        //TODO: This gets handled by (user_)read_print_surface() function somewhere.
-        //      Can be removed.
+        //TODO: This gets handled by the user_read_print_surface()
+        //      function somewhere and can be removed -- keep for
+        //      now as reference.
 
         else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
         {
@@ -667,24 +701,60 @@ void readAfExtraData(
         */
     }
     
-    //TODO: need FINITE_STRING also
+    //TODO: C_PARAMS no longer in use, should be removed.
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        /*
 	    C_PARAMS *c_params;
 	    fgetstring(infile,"curve extra:");
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
+            fgetstring(infile,"point_mass = ");
+                fscanf(infile,"%lf",&c_params->point_mass);
+            fgetstring(infile,"load_mass = ");
+                fscanf(infile,"%lf",&c_params->load_mass);
+            fgetstring(infile,"load_type = ");
+                fscanf(infile,"%d",(int*)&c_params->load_type);
+            fgetstring(infile,"dir = ");
+                fscanf(infile,"%d",&c_params->dir);
+            (*c)->extra = (POINTER)c_params;
+        }
+        */
+
+        FINITE_STRING* s_params;
+	    fgetstring(infile,"curve extra:");
+        fscanf(infile,"%s",string);
+	    if (string[0] == 'y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&s_params,sizeof(FINITE_STRING));
+            fgetstring(infile,"radius = ");
+            fscanf(infile,"%lf",&s_params->radius);
+            fgetstring(infile,"density = ");
+            fscanf(infile,"%lf",&s_params->dens);
+            fgetstring(infile,"c_drag = ");
+            fscanf(infile,"%lf",&s_params->c_drag);
+            fgetstring(infile,"ampFluidFactor = ");
+            fscanf(infile,"%lf",&s_params->ampFluidFactor);
+            (*c)->extra = (POINTER)s_params;
+        }
+        
+        for (b = (*c)->first; b != (*c)->last; b = b->next)
+        {
+            fgetstring(infile,"string point extra:");
             fscanf(infile,"%s",string);
-	    if (string[0] == 'n') continue;
-	    FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
-	    fgetstring(infile,"point_mass = ");
-            fscanf(infile,"%lf",&c_params->point_mass);
-	    fgetstring(infile,"load_mass = ");
-            fscanf(infile,"%lf",&c_params->load_mass);
-	    fgetstring(infile,"load_type = ");
-            fscanf(infile,"%d",(int*)&c_params->load_type);
-	    fgetstring(infile,"dir = ");
-            fscanf(infile,"%d",&c_params->dir);
-	    (*c)->extra = (POINTER)c_params;
+            if (string[0] == 'n') continue;
+
+            BOND_BENDER* bond_bender;
+            FT_ScalarMemoryAlloc((POINTER*)&bond_bender,sizeof(BOND_BENDER));
+            fread(bond_bender,1,sizeof(BOND_BENDER),infile);
+            b->end->extra = (POINTER)bond_bender;
+            fscanf(infile,"\n");
+        }   
 	}
 
 	next_output_line_containing_string(infile,"Node extra data:");
@@ -692,15 +762,15 @@ void readAfExtraData(
 	{
 	    AF_NODE_EXTRA *n_params;
 	    fgetstring(infile,"node extra:");
-            fscanf(infile,"%s",string);
+        fscanf(infile,"%s",string);
 	    if (string[0] == 'n') 
 	    {
 	    	(*n)->extra = NULL;
-		continue;
+		    continue;
 	    }
 	    FT_ScalarMemoryAlloc((POINTER*)&n_params,sizeof(AF_NODE_EXTRA));
 	    fgetstring(infile,"af_node_type =");
-            fscanf(infile,"%d",(int*)&n_params->af_node_type);
+        fscanf(infile,"%d",(int*)&n_params->af_node_type);
 	    (*n)->extra = (POINTER)n_params;
 	    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}

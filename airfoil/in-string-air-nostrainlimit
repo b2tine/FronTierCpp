@@ -26,7 +26,7 @@ Type yes to turn off auto-redistribution: y
 Entering yes to turn off fluid solver: no
 Enter velocity function: zero
 Enter interior propagator: p
-Enter interior sub step number: 100
+Enter interior sub step number: 1
 
 Projection type can be
         SIMPLE
@@ -58,6 +58,8 @@ Enter the start of curve 0: 0.5 0.2 0.45
 Enter the end of curve 0: 0.5 0.8 0.45
 Enter yes to fix the endpoints of curve 0: y
 
+Enter string point spacingX: 0.01
+
 Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0.0 0.0 -9.8
 Enter payload: 0.0
@@ -66,18 +68,25 @@ Enter factor of smoothing radius: 1
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
-Enter fabric friction constant: 0.05
+Enter fabric friction constant: 0.25
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
-Enter string friction constant: 0.05
+Enter string friction constant: 0.3
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter yes for string bending force: no
+
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.1
+
+****************Movie options*****************
 Type y to make movie of pressure: n
 Type y to make movie of vorticity: n
 Type y to make movie of velocity: n
@@ -93,13 +102,13 @@ Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************
-
 Enter yes for debugging: yes
-Enter the debugging string: PETSc
-Enter the debugging string: max_speed
-Enter the debugging stringX: strainlim_off
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: max_speed
+Enter the debugging string: PETSc
+
+Enter the debugging stringX: strain_limiting
 
 Enter the debugging string: ttrace
 Enter the debugging string: tisect3d

@@ -21,7 +21,8 @@
 #define	ifluid_comp(comp) (((comp) == LIQUID_COMP1 || 	\
 		comp == LIQUID_COMP2) ? YES : NO)
 
-enum _IF_PROB_TYPE {
+enum IF_PROB_TYPE
+{
         ERROR_TYPE = -1,
 	BEE_3D = 1,
         BUBBLE_SURFACE,
@@ -45,25 +46,29 @@ enum _IF_PROB_TYPE {
         TWO_FLUID_RT,
 	WINDMILL_2D,
         WINDMILL_3D,
-	HUMAN_BODY_3D
+	HUMAN_BODY_3D,
+    BACKWARD_FACING_STEP,
+    BUMP,
+    RAMP
 };
-typedef enum _IF_PROB_TYPE IF_PROB_TYPE;
+
 
 enum EBM_COORD
 {
     COORD_X = 0,  COORD_Y = 1,  COORD_Z = 2
 };
 
-enum _DOMAIN_STATUS {
-        NOT_SOLVED      =       0,
-        TO_SOLVE,
-        SOLVED
+enum DOMAIN_STATUS
+{
+    NOT_SOLVED = 0,
+    TO_SOLVE,
+    SOLVED
 };
-typedef enum _DOMAIN_STATUS DOMAIN_STATUS;
 
 struct IF_FIELD {
 	double **vel;			/* Velocities */
-	double **prev_vel;
+    double **vel_star;      /* Intermediate Velocities */
+	double **prev_vel;      /* Previous Step Velocities */
 	double **vorticity;		/* 3d Vorticity vector */
 	double *temperature;            /* Temperature */
 	double *phi;
@@ -76,6 +81,9 @@ struct IF_FIELD {
 	double **grad_q;
 	double **f_surf;		// Surface force (such as tension)
 	double **old_var;		// For debugging purpose
+
+    double **adv_term;      /* Advection at tn */
+    double **adv_term_old;      /* Advection at tn-1 */
 
         //double *d_phi;          //Dual grid phi
 	double *div_U;
@@ -166,12 +174,15 @@ struct IF_PARAMS
 	
     double ub_speed;
 	double min_speed;	/* Limit time step in zero ambient velocity */
-	COMPONENT m_comp1;
-	COMPONENT m_comp2;
+	
+    COMPONENT m_comp1; //negative comp
+	COMPONENT m_comp2; //positive comp
 	
     IF_FIELD *field;
 
 	int adv_order;
+    bool extrapolate_advection {false};
+
 	boolean total_div_cancellation;
 	boolean buoyancy_flow {NO};
 	boolean if_buoyancy {NO};
@@ -198,14 +209,14 @@ struct IF_PARAMS
 	double	ymax {0};	   	/* Maximum distance in Baldwin-Lomax model */
     double C_s;     //Smagorinsky model constant
     double C_v;     //Vreman model constant
-    boolean use_no_slip {YES};
+    boolean use_no_slip {NO};
 };
 
-struct _FLOW_THROUGH_PARAMS {
-        POINT *oldp;
-        COMPONENT comp;
+struct FLOW_THROUGH_PARAMS
+{
+    POINT *oldp;
+    COMPONENT comp;
 };
-typedef struct _FLOW_THROUGH_PARAMS FLOW_THROUGH_PARAMS;
 
 enum _TIME_FUNC_TYPE {
 	CONSTANT		=  1,
@@ -308,7 +319,8 @@ public:
 	virtual ~Incompress_Solver_Smooth_Basis() {};
 
 	double m_dt;
-	double accum_dt;
+	double old_dt;
+	double accum_dt {0.0};
 	
     double max_speed;
 	double min_pressure;
@@ -359,6 +371,9 @@ public:
 	
     double computeFieldPointPressureJump(int*,double,double);     
     void computeFieldPointGradJump(int*,double*,double*);
+    
+    double computeFieldPointPressureJumpQ(int*,double,double);     
+    void computeFieldPointGradJumpQ(int*,double*,double*);
 
     void setFreeStreamVelocity();
     
@@ -581,6 +596,7 @@ public:
         void vtk_plot_scalar(char*, const char*);
 protected:
     
+    void computeAdvectionTerm();
     void computeAdvection(void);
 	
     void computeDiffusion(void);
@@ -594,12 +610,13 @@ protected:
 	void computeProjectionSimple(void);
 	void computeProjectionDouble(void);
 	    //void computeProjectionDual(void);
-	
+    
     void computePressure(void);
 	void computePressurePmI(void);
 	void computePressurePmII(void);
 	void computePressurePmIII(void);
 	void computePressureSimple(void);
+    void computeInitialPressure();
 	
     void computeGradientQ(void);
 	void computeNewVelocity(void);
@@ -633,6 +650,7 @@ protected:
 	
     void copyMeshStates(void);
 	
+    void computeAdvectionTerm();
     void computeAdvection(void);
 	
     void computeDiffusion(void);
@@ -675,6 +693,9 @@ extern double getStateVort(POINTER);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);
 extern double getStateZvel(POINTER);
+extern double getStateOldXvel(POINTER);
+extern double getStateOldYvel(POINTER);
+extern double getStateOldZvel(POINTER);
 extern double getStateXimp(POINTER);
 extern double getStateYimp(POINTER);
 extern double getStateZimp(POINTER);
@@ -700,8 +721,13 @@ extern double linear_flux(double,double,double,double);
 extern void fluid_print_front_states(FILE*,Front*);
 extern void fluid_read_front_states(FILE*,Front*);
 
+extern void restart_set_dirichlet_bdry_function(Front*);
 extern void read_iF_dirichlet_bdry_data(char*,Front*,F_BASIC_DATA);
 extern boolean isDirichletPresetBdry(Front*,int*,GRID_DIRECTION,COMPONENT);
+
+extern void initBackwardFacingStep(Front* front);
+extern void initBump(Front* front);
+extern void initRamp(Front* front);
 
 extern int ifluid_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
 			int,POINTER*,HYPER_SURF**,double*);
@@ -722,9 +748,6 @@ extern boolean neumann_type_bdry(int);
 extern void ifluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,
                         double*);
 
-extern void initInnerBoundary(Front*,LEVEL_FUNC_PACK*);
-extern void restart_set_dirichlet_bdry_function(Front*);
-
 extern void iF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
                         POINTER);
 extern void iF_timeDependBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
@@ -735,13 +758,16 @@ extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
 extern void ifluid_compute_force_and_torque(Front*,CURVE*,double,double*,
                         double*);
 
-extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
-extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);
-extern void read_iFparams(char*,IF_PARAMS*);
 extern void read_iF_prob_type(char*,IF_PROB_TYPE*);
-extern void recordBdryEnergyFlux(Front*,char*);
+extern void read_iFparams(char*,IF_PARAMS*);
+extern void setInitialIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
+extern void insert_boundary_objects(Front* front);
 
+extern void init_fluid_state_func(Incompress_Solver_Smooth_Basis*,IF_PROB_TYPE);//TODO: Make member function
+
+extern void recordBdryEnergyFlux(Front*,char*);
 extern void read_open_end_bdry_data(char*,Front*);
+
 extern void setContactNodeType(Front*);
 extern int contact_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG);

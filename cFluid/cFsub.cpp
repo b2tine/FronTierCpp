@@ -299,6 +299,8 @@ void cF_variableBoundaryState3d(
         POINTER         params,
         POINTER         state)
 {
+    printf("ERROR cF_variableBoundaryState3d() : not implemented!\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }	/* end cF_variableBoundaryState3d */
 
 extern void cF_flowThroughBoundaryState(
@@ -358,8 +360,9 @@ extern void cF_flowThroughBoundaryState(
 					sizeof(double));
 	}
 
+    //Tangential
 	tsten = FrontGetTanStencils(front,oldp,nrad);
-	if (tsten != NULL)
+	if (tsten != NULL) //TODO: Does this always exit here (see next TODO)?
 	{
 	    for (i = 0; i < dim; ++i)
 	    	dir[i] = tsten[0]->dir[i];
@@ -368,12 +371,12 @@ extern void cF_flowThroughBoundaryState(
 	    if (comp == negative_component(hs))  
 	    {
 	        sts = (STATE**)tsten[0]->leftst;
-		s0 = sts[0];
+		    s0 = sts[0];
 	    }
 	    else 
 	    {
 	        sts = (STATE**)tsten[0]->rightst;
-		s0 = sts[0];
+		    s0 = sts[0];
 	    }
 
 	    if (debugging("flow_through"))
@@ -407,15 +410,17 @@ extern void cF_flowThroughBoundaryState(
 
 	    for (j = 0; j < 3; ++j)
 	    	u[j] = 0.0;
-	    for (j = 0; j < 3; ++j)
+	    
+        for (j = 0; j < 3; ++j)
 	    {
+            //TODO: bad indexing never seg faults
 	    	vort[j] = sts[j-1]->vort;
 	    	pres[j] = sts[j-1]->pres;
 	    	dens[j] = sts[j-1]->dens;
 	    	for (i = 0; i < dim; ++i)
 	    	{
-		    u[j] += sts[j-1]->vel[i]*dir[i];
-		    v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
+                u[j] += sts[j-1]->vel[i]*dir[i];
+                v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
 	    	}
 	    }
 
@@ -427,7 +432,7 @@ extern void cF_flowThroughBoundaryState(
 	    f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
 
 	    for (i = 0; i < dim; ++i)
-	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]);
 	    newst->vort = sts[0]->vort - dt/dn*f_vort;
 	    newst->pres = sts[0]->pres - dt/dn*f_pres;
 	    newst->dens = sts[0]->dens - dt/dn*f_dens;
@@ -435,12 +440,13 @@ extern void cF_flowThroughBoundaryState(
 	else
 	{
 	    slsr(oldp,oldp->hse,oldp->hs,(POINTER*)&sl,(POINTER*)&sr);
-	    if (comp == negative_component(hs))  
-		s0 = sl;
+	    if (comp == negative_component(hs))
+            s0 = sl;
 	    else
-		s0 = sr;
+            s0 = sr;
 	}
 	
+    //Normal
 	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 	for (i = 0; i < dim; ++i)
 	    dir[i] = nsten->nor[i];
@@ -473,8 +479,8 @@ extern void cF_flowThroughBoundaryState(
 	    dens[j] = s0->dens;
 	    for (i = 0; i < dim; ++i)
 	    {
-		u[j] += s0->vel[i]*dir[i];
-		v[j][i] = s0->vel[i]*(1.0 - dir[i]);
+            u[j] += s0->vel[i]*dir[i];
+            v[j][i] = s0->vel[i]*(1.0 - dir[i]);
 	    }
 	}
 	for (i = 0; i < dim; ++i)
@@ -510,7 +516,7 @@ extern void cF_flowThroughBoundaryState(
 	f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
 
 	for (i = 0; i < dim; ++i)
-	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	newst->vort += - dt/dn*f_vort;
 	newst->pres += - dt/dn*f_pres;
 	newst->dens += - dt/dn*f_dens;

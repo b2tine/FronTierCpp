@@ -5,6 +5,7 @@
 #include "state.h"
 #include "vtk.h"
 
+#include <iostream>
 #include <string>
 #include <utility>
 #include <numeric>
@@ -68,7 +69,9 @@ enum class CD_HSE_TYPE
 struct CD_HSE
 {
     CD_HSE_TYPE type;
-	virtual ~CD_HSE(){};
+	
+    virtual ~CD_HSE() {};
+
     virtual int num_pts() const= 0;
     virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;

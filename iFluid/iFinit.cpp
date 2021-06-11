@@ -36,15 +36,22 @@ static void initTrianglePlaneIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
 static void initChannelFlow(Front*,LEVEL_FUNC_PACK*,char*);
 static void initCylinderPlaneIntfc(Front*,LEVEL_FUNC_PACK*,char*,IF_PROB_TYPE);
 
+/*
+static void initBackwardFacingStep(Front* front);
+static void initBump(Front* front);
+static void initRamp(Front* front);
+*/
+
 extern void setInitialIntfc(
-	Front *front,
+	    Front *front,
         LEVEL_FUNC_PACK *level_func_pack,
         char *inname,
-	IF_PROB_TYPE prob_type)
+	    IF_PROB_TYPE prob_type)
 {
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	iFparams->m_comp1 = LIQUID_COMP1;
-	iFparams->m_comp2 = LIQUID_COMP2;
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	iFparams->m_comp1 = LIQUID_COMP1;//negative comp
+	iFparams->m_comp2 = LIQUID_COMP2;//positive comp
+    
     switch (prob_type)
     {
         case TWO_FLUID_BUBBLE:
@@ -52,15 +59,15 @@ extern void setInitialIntfc(
             initCirclePlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
         case FLUID_SOLID_CIRCLE:
-	    iFparams->m_comp1 = SOLID_COMP;
+	        iFparams->m_comp1 = SOLID_COMP;
             initCirclePlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
         case FLUID_SOLID_RECT:
-	    iFparams->m_comp1 = SOLID_COMP;
+	        iFparams->m_comp1 = SOLID_COMP;
             initRectPlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
         case FLUID_SOLID_TRIANGLE:
-	    iFparams->m_comp1 = SOLID_COMP;
+	        iFparams->m_comp1 = SOLID_COMP;
             initTrianglePlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
         case TWO_FLUID_RT:
@@ -79,7 +86,8 @@ extern void setInitialIntfc(
             initCylinderPlaneIntfc(front,level_func_pack,inname,prob_type);
             break;
 	    default:
-            (void) printf("In setInitialIntfc unknown type: %d\n",prob_type);
+            printf("In setInitialIntfc() unknown type: %d\n",prob_type);
+            break;
     }
 }       /* end setInitialIntfc */
 
@@ -458,10 +466,11 @@ static void ambient_state(
 	int dim,
 	IF_PARAMS *iFparams)
 {
-	int i;
+    //TODO: should read input file option to set ambient velocity
+    //      here instead of in read_iFparams()
 	double *U_ambient = iFparams->U_ambient;
 	double **vel = field->vel;
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    if (ifluid_comp(comp))
 	    	vel[i][index] = U_ambient[i];
@@ -494,28 +503,33 @@ extern void read_iF_prob_type(
 	} 
 	else if (string[0] == 'F' || string[0] == 'f')
 	{
-            if (string[6] == 'S' || string[6] == 's')
+        if (string[6] == 'S' || string[6] == 's')
 	    {
-		if (string[12] == 'C' || string[12] == 'c')
-                {
-                    if (string[13] == 'I' || string[13] == 'i')
-                        *prob_type = FLUID_SOLID_CIRCLE;
-                    else if (string[13] == 'Y' || string[13] == 'y')
-                        *prob_type = FLUID_SOLID_CYLINDER;
-                }
-		else if (string[12] == 'R' || string[12] == 'r')
-                    *prob_type = FLUID_SOLID_RECT;
-		else if (string[12] == 'T' || string[12] == 't')
-                    *prob_type = FLUID_SOLID_TRIANGLE;
+		    if (string[12] == 'C' || string[12] == 'c')
+            {
+                if (string[13] == 'I' || string[13] == 'i')
+                    *prob_type = FLUID_SOLID_CIRCLE;
+                else if (string[13] == 'Y' || string[13] == 'y')
+                    *prob_type = FLUID_SOLID_CYLINDER;
+            }
+            else if (string[12] == 'R' || string[12] == 'r')
+                        *prob_type = FLUID_SOLID_RECT;
+            else if (string[12] == 'T' || string[12] == 't')
+                        *prob_type = FLUID_SOLID_TRIANGLE;
 	    }
-            else if (string[6] == 'R' || string[6] == 'r')
-                *prob_type = FLUID_RIGID_BODY;
+        else if (string[6] == 'R' || string[6] == 'r')
+            *prob_type = FLUID_RIGID_BODY;
 	}
 	else if (string[0] == 'B' || string[0] == 'b')
 	{
-	    *prob_type = BUBBLE_SURFACE;
+        if (string[1] == 'U' || string[1] == 'u')
+            *prob_type = BUBBLE_SURFACE;
+        /*
+        else if (string[1] == 'A' || string[1] == 'a')
+            *prob_type = BACKWARD_FACING_STEP;
+        */
 	}
-        else if (string[0] == 'R' || string[0] == 'r')
+    else if (string[0] == 'R' || string[0] == 'r')
 	{
             if (string[6] == 'O' || string[6] == 'o')
                 *prob_type = ROTOR_ONE_FLUID;
@@ -536,23 +550,25 @@ static void initChannelFlow(
 	LEVEL_FUNC_PACK *level_func_pack,
 	char *inname)
 {
-        IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    IF_PARAMS* iFparams = (IF_PARAMS*)front->extra1;
 	FILE *infile = fopen(inname,"r");
-	int i,dim = front->rect_grid->dim;
-
-	iFparams = (IF_PARAMS*)front->extra1;
+	int dim = front->rect_grid->dim;
 
 	// No interface 
-        level_func_pack->neg_component = LIQUID_COMP2;
-        level_func_pack->pos_component = LIQUID_COMP2;
-        level_func_pack->func = NULL;
-        CursorAfterString(infile,"Enter density and viscosity of the fluid:");
-        fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
-        (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
-	CursorAfterString(infile,"Enter gravity:");
-        for (i = 0; i < dim; ++i)
+    level_func_pack->neg_component = LIQUID_COMP2;
+    level_func_pack->pos_component = LIQUID_COMP2;
+    level_func_pack->func = NULL;
+    
+    CursorAfterString(infile,"Enter density and viscosity of the fluid:");
+    fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
+    (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
+    iFparams->rho1 = iFparams->rho2;
+    iFparams->mu1 = iFparams->mu2;
+	
+    CursorAfterString(infile,"Enter gravity:");
+    for (int i = 0; i < dim; ++i)
 	{
-            fscanf(infile,"%lf",&iFparams->gravity[i]);
+        fscanf(infile,"%lf",&iFparams->gravity[i]);
 	    (void) printf("%f ",iFparams->gravity[i]);
 	}
 	(void) printf("\n");
@@ -773,3 +789,118 @@ static void initCylinderPlaneIntfc(
 
         fclose(infile);
 }       /* end initCylinderPlaneIntfc */
+
+//Attach a wall structure, such as a backward facing step, to the boundary interface
+void insert_boundary_objects(Front *front)
+{
+    FILE* infile = fopen(InName(front),"r");
+    char string[100];
+
+    bool insert_bdry_obj = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to insert boundary object:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+            insert_bdry_obj = true;
+    }
+    
+    if (!insert_bdry_obj)
+    {
+        fclose(infile);
+        return;
+    }
+
+    CursorAfterString(infile,"Enter boundary object type:");
+    fscanf(infile,"%s",string);
+    printf("%s\n",string);
+    if (string[0] == 'B' || string[0] == 'b')
+    {
+        if (string[1] == 'A' || string[1] == 'a')
+        {
+            initBackwardFacingStep(front);
+        }
+        else if (string[1] == 'U' || string[1] == 'u')
+        {
+            initBump(front);
+        }
+    }
+    else if (string[0] == 'R' || string[0] == 'r')
+    {
+        initRamp(front);
+    }
+
+    fclose(infile);
+}
+
+///////////////////////////////////////////////////////////////
+//TODO: initialization functions below only for 2d runs;    //
+//       write 3d versions when working                    //
+////////////////////////////////////////////////////////////
+
+//static void initBackwardFacingStep(Front* front)
+void initBackwardFacingStep(Front* front)
+{
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initBackwardFacingStep() "
+                "currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    int num_nodes;
+    double** node_coords;
+
+    FILE *infile = fopen(InName(front),"r");
+    CursorAfterString(infile,"Enter number of node points:");
+    fscanf(infile,"%d",&num_nodes);
+    printf("%d\n",num_nodes);
+    FT_MatrixMemoryAlloc((POINTER*)&node_coords,num_nodes,MAXD,sizeof(double));
+    
+    CursorAfterString(infile,"Enter coordinates of node points:"); printf("\n");
+    for (int i = 0; i < num_nodes; ++i)
+    {
+        fscanf(infile,"%lf %lf",&node_coords[i][0],&node_coords[i][1]);
+        printf("%f %f\n",node_coords[i][0],node_coords[i][1]);
+    }
+    fclose(infile);
+    
+    double scale_factor = 0.75;
+    COMPONENT neg_comp = SOLID_COMP;
+    COMPONENT pos_comp = LIQUID_COMP2;
+    boolean closed_curve = NO;
+
+    CURVE* bfstep = FT_MakeNodeArrayCurve(front,num_nodes,node_coords,
+            neg_comp,pos_comp,closed_curve,scale_factor,NEUMANN_BOUNDARY);
+
+    FT_FreeThese(1,node_coords);
+}
+
+//static void initBump(Front* front)
+void initBump(Front* front)
+{
+    printf("ERROR: initBump() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initBump() currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+}
+
+//static void initRamp(Front* front)
+void initRamp(Front* front)
+{
+    printf("ERROR: initRamp() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initRamp() currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+}
+
+
+

@@ -29,22 +29,31 @@ enum class MotionState
 class Node;
 class AABBTree;
 
-class AABB {
+class AABB
+{
+    //Node and AABBTree classes may access private members of AABB
     friend class Node;
     friend class AABBTree;
+
     CPoint lowerbound;
     CPoint upperbound;
-    // indices will store the index of points on the  
+    
+    // indices store the index of points on the  
     // corresponding triangle or bond.
     std::vector<long> indices;
+    
     void updateAABBInfo(double);
     //void updateAABBInfo(const std::unordered_map<long, POINT*>&);
+    
     bool contain(const AABB*);
-    CD_HSE* hse = nullptr;
+    CD_HSE* hse {nullptr};
     double dt;
     MotionState abType;
     double tol;
+
+
 public:
+
     AABB(double, CD_HSE*);
     AABB(double, CD_HSE*, double);
     AABB(const CPoint&, const CPoint&);
@@ -59,54 +68,67 @@ public:
     // merged AABB and construct the corresponding AABB tree
     AABB merge(const AABB&) const;
     // get the volume of the AABB
-    double volume();
-    bool isCollid(const AABB&);
+    double volume() const;
+    bool isCollid(const AABB&) const;
 };
 
-class Node {
+class Node
+{
 public:
-    friend class AABBTree;
+     
+    //Allows the AABBTree class to access private members of Node
+    friend class AABBTree; //TODO: which it has none ...
+
     // AABB stored in node. May store information for branch AABB
     // and may be adjusted for dynamic AABB 
     AABB box;
+
     // if leaf, point to the corresponding AABB
     // empty for branch
     std::unique_ptr<AABB> data;
-    // parent node
-    std::weak_ptr<Node> parent;
-    // left and right children node
-    std::shared_ptr<Node> left;
-    std::shared_ptr<Node> right;
+    
+    Node* parent {nullptr}; //std::weak_ptr<Node> parent;
+    Node* left {nullptr};
+    Node* right {nullptr};
+
     void updateBranch();
-    // make this node to be brance from two Node parameter
-    void setBranch(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>);
-    // judge if this node is a leaf
-    bool isLeaf();
+    
+    // make this node to be branch from two Node parameter
+    void setBranch(Node* n1, Node* n2);
+    
+    // check if this node is a leaf
+    bool isLeaf() const;
+    
     // set an AABB element to be a leaf
     void setLeaf(AABB*);
-    bool isCollid(Node*);
+    bool isCollid(Node* node) const;
     void updateAABB();
     Node* getSibling() const;
+
     ~Node();
 };
 
 class AABBTree {
 public:
-    std::shared_ptr<Node> root;
+    Node* root {nullptr};
+    
     // node needed to be removed and reinsert to the tree
     std::unordered_map<long, POINT*> ump;
+    
     // map from object's indices (2 or 3 points' global indices)
     // to corresponding CD_HSE* in collision library 
     std::map<std::vector<long>, CD_HSE*> vhMap;
     std::unordered_set<Node*> nodeSet;
-    std::vector<std::shared_ptr<Node>> nodeArray;
+
+    //only used for rebuilding tree in call to updateTreeStructure()
+    std::vector<Node*> nodeArray;
 
     int count {0};
     std::vector<std::pair<CD_HSE*,CD_HSE*>> interference_pairs;
     std::vector<std::pair<CD_HSE*,CD_HSE*>> getInterferencePairs() const;
 
     int numLeaf {0};
-    double treeHeight(Node*); 
+    double treeHeight(Node* node); 
     double dt;
     bool isProximity {false};
     bool isCollsn {false};
@@ -114,13 +136,13 @@ public:
     // query all collid pairs
     void query();
 
-    // insert a node into the subtree with parent 
-    // as the root
-    void insertNode(std::shared_ptr<Node>, std::shared_ptr<Node>&);
+    // insert a node into the subtree with parent as the root
+    Node* insertNode(Node* n, Node* parentNode);
+    
     MotionState type;
     double tolerance;
     
-    AABBTree(MotionState mstate);
+    explicit AABBTree(MotionState mstate);
     ~AABBTree();
     void deleteTree();
 
@@ -140,10 +162,11 @@ public:
     void setTimeStep(double t) { dt = t; }
     bool getCollsnState() { return isCollsn; }
     void updateAABBTree(const std::vector<CD_HSE*>&);
-    MotionState getType() { return type; }
+    MotionState getType() {return type;}
 
     bool turn_on_GS_update() {gauss_seidel = true;}
     bool turn_off_GS_update() {gauss_seidel = false;}
+    bool get_GS_update_status() const {return gauss_seidel;}
 
 private:
 

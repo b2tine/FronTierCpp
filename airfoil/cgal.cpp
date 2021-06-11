@@ -136,7 +136,10 @@ static void CgalParabolicSurface(
 	{
 	    for (i = 0; i < 3; i++)
 	    {
-		    //tri->side_length0[i] = -1.0;
+            //TODO: setting rest edge length equal to -1.0 was
+            //      previously commented out here, but not in
+            //      the fabric directory version ...
+            tri->side_length0[i] = -1.0;
             p = Point_of_tri(tri)[i];
             if (sorted(p) == NO)
             {

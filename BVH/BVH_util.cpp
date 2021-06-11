@@ -42,7 +42,7 @@ void TriMeshOFF2MonoCompSurf(Front* front, Mesh* mesh)
     TriMeshOFF2Surf(intfc,amb_comp,amb_comp,mesh,&surf);
     wave_type(surf) = ELASTIC_BOUNDARY;
     FT_InstallSurfEdge(surf,MONO_COMP_HSBDRY);
-    if( consistent_interface(front->interf) == NO )
+    if (consistent_interface(front->interf) == NO)
         clean_up(ERROR);
 }
 

@@ -36,8 +36,75 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 
 
-//TODO: May want to copy the HYPERB_SOLVER class functionality
-//      into methods of Incompress_Solver_Smooth_3D_Cartesian
+void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
+{
+	int index;
+	static HYPERB_SOLVER hyperb_solver(*front);
+    double speed;
+
+	static double *rho;
+    
+    if (rho == nullptr)
+	{
+	    int size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
+	    FT_VectorMemoryAlloc((POINTER*)&rho,size,sizeof(double));
+	}
+
+	for (int k = 0; k <= top_gmax[2]; k++)
+	for (int j = 0; j <= top_gmax[1]; j++)
+	for (int i = 0; i <= top_gmax[0]; i++)
+	{
+	    index = d_index3d(i,j,k,top_gmax);
+	    rho[index] = field->rho[index];
+        for (int l = 0; l < dim; l++)
+        {
+            field->adv_term_old[l][index] = field->adv_term[l][index];
+        }
+	}
+	hyperb_solver.rho = rho;
+
+	hyperb_solver.obst_comp = SOLID_COMP;
+	switch (iFparams->adv_order)
+	{
+	case 1:
+	    hyperb_solver.order = 1;
+	    hyperb_solver.numericalFlux = upwind_flux;
+	    break;
+	case 4:
+	    hyperb_solver.order = 4;
+	    hyperb_solver.numericalFlux = weno5_flux;
+	    break;
+	default:
+	    (void) printf("Advection order %d not implemented!\n",
+					iFparams->adv_order);
+	    clean_up(ERROR);
+	}
+    
+    
+    hyperb_solver.adv_term = field->adv_term;
+
+    hyperb_solver.var = field->vel;
+	hyperb_solver.soln = field->vel;
+	
+    hyperb_solver.soln_comp1 = LIQUID_COMP1;
+	hyperb_solver.soln_comp2 = LIQUID_COMP2;
+	
+    hyperb_solver.rho1 = iFparams->rho1;
+	hyperb_solver.rho2 = iFparams->rho2;
+	
+    hyperb_solver.porosity = iFparams->porosity;
+
+	hyperb_solver.findStateAtCrossing = findStateAtCrossing;
+	hyperb_solver.getStateVel[0] = getStateXvel;
+	hyperb_solver.getStateVel[1] = getStateYvel;
+	hyperb_solver.getStateVel[2] = getStateZvel;
+	
+    hyperb_solver.dt = m_dt;
+    hyperb_solver.computeAdvectionTerm();
+
+    //TODO: scatter adv_term?
+}
+
 void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 {
 	int i,j,k,l,index;
@@ -77,10 +144,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvection(void)
 					iFparams->adv_order);
 	    clean_up(ERROR);
 	}
-    //TODO: probably need to save field->vel before overwriting with soln..
-    //      flux soln should be sent to rhs of diffusion computation.... 
 	
-    //TODO: Don't overwrite soln this way -- limits our flexibility
     hyperb_solver.var = field->vel;
 	hyperb_solver.soln = field->vel;
 	
@@ -501,9 +565,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 
     if(iFparams->if_buoyancy)
     {
-        int ic[MAXD],index;
+        int ic[MAXD];
         rect_in_which(coords,ic,top_grid);
-        index = d_index(ic,top_gmax,dim);
+        int index = d_index(ic,top_gmax,dim);
         for (int i = 0; i < dim; ++i)
         {
             source[i] += field->ext_accel[i][index];
@@ -573,9 +637,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-	computeAdvection();
-	stop_clock("computeAdvection");
-	if (debugging("check_div") || debugging("step_size"))
+    
+    if (iFparams->extrapolate_advection)
+        computeAdvectionTerm();
+    else
+        computeAdvection();
+	
+    stop_clock("computeAdvection");
+	
+    if (debugging("check_div") || debugging("step_size"))
 	{
 	    computeMaxSpeed();
 	    checkVelocityDiv("After computeAdvection()");
@@ -584,12 +654,17 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    (void) printf("max speed occured at (%d %d %d)\n",icrds_max[0],
 				icrds_max[1],icrds_max[2]);
 	}
+
 	if (debugging("sample_velocity"))
 	    sampleVelocity();
 	
-	start_clock("computeDiffusion");
-	computeDiffusion();
-	stop_clock("computeDiffusion");
+	
+    start_clock("computeDiffusion");
+	
+    computeDiffusion();
+    old_dt = m_dt;
+	
+    stop_clock("computeDiffusion");
 
 	if (debugging("step_size"))
 	{
@@ -726,6 +801,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     double** grad_q = field->grad_q;
     double** grad_phi = field->grad_phi;
 	
+    double **adv_flux = field->adv_term;
+    double **adv_flux_old = field->adv_term_old;
+
+
 	if (debugging("trace"))
 	    (void) printf("Entering Incompress_Solver_Smooth_3D_Cartesian::"
 			"computeDiffusionCN()\n");
@@ -907,10 +986,26 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
 
-            if (iFparams->num_scheme.projc_method != PMIII &&
-                iFparams->num_scheme.projc_method != SIMPLE)
+            if (iFparams->num_scheme.projc_method == PMI ||
+                iFparams->num_scheme.projc_method == PMII)
             {
                 rhs -= m_dt*grad_q[l][index]/rho;
+            }
+
+            //extrapolate to t^{n+1/2}
+            if (iFparams->extrapolate_advection)
+            {
+                if (old_dt != 0.0)
+                {
+                    double W0 = -0.5*m_dt/old_dt;
+                    double W1 = 1.0 + 0.5*m_dt/old_dt;
+                    rhs -= m_dt*(W0*adv_flux_old[l][index]
+                            + W1*adv_flux[l][index]);
+                }
+                else
+                {
+                    rhs -= m_dt*adv_flux[l][index];
+                }
             }
             
             solver.Set_A(I,I,aII);
@@ -1984,7 +2079,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeProjectionSimple(void)
         array[index] = phi[index];
     }
 
-    if(debugging("step_size"))
+    if (debugging("step_size"))
     {
         sum_div = 0.0;
         min_value =  HUGE;
@@ -2887,10 +2982,8 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                 }
                 speed = sqrt(speed);
 
-                //double A_ref = 2.0*PI*radius*length;
-                //double Vol = PI*radius*radius*length;
-                double A_ref = 2.0*PI*radius*(0.25*length);
-                double Vol = PI*radius*radius*(0.25*length);
+                double A_ref = 2.0*PI*radius*length;
+                double Vol = PI*radius*radius*length;
                 double mass = rhoS*Vol;
 
                 double VolFluid = top_h[0]*top_h[1]*top_h[2];
@@ -2907,13 +3000,16 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     }
                 }
 
-                /*
-                //TODO: Put inside debugging string block
-                printf("pt = %f %f %f \n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
-                printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
-                printf("\tc_drag = %f  |  A_ref = %g  |  rhoF = %g \n",c_drag,A_ref,rhoF);
-                printf("\tspeed = %f\n",speed);
+                if (debugging("string_fluid"))
+                {
+                    printf("\n");
+                    printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                    printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
+                    printf("\tc_drag = %f  |  A_ref = %f  |  rhoF = %f\n",c_drag,A_ref,rhoF);
+                    printf("\tspeed = %f  |  ampfactor = %f\n\n",speed,ampFluidFactor);
+                }
 
+                /*
                 printf("\t\tstate->linedrag_force = %g %g %g \n",
                         state_intfc->linedrag_force[0],
                         state_intfc->linedrag_force[1],
@@ -2951,7 +3047,7 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                     //TODO: radius should be factored into the smoothing operation
 
                     dist = distance_between_positions(Coords(p),coords,3);
-                    if (dist >= top_h[0]*4.0) continue;
+                        //if (dist >= top_h[0]*4.0) continue;
 
                     double vec[MAXD];
                     for (int l = 0; l < dim; ++l)
@@ -2961,6 +3057,8 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
 
                     alpha = dir_h*4.0 - dist;
                     alpha /= dir_h*4.0;
+
+                    if (alpha < 0) continue;
 
                     for (int l = 0; l < dim; ++l)
                     {

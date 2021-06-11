@@ -118,7 +118,6 @@ extern void SMM_StartUpStep()
             FrontPreAdvance(front);
             FT_Propagate(front);
             FT_RelinkGlobalIndex(front);
-	            //FT_InteriorPropagate(front);
 
             FT_SetOutputCounter(front);
             FT_SetTimeStep(front);
@@ -127,7 +126,7 @@ extern void SMM_StartUpStep()
         }
         else
         {
-                //setSpecialNodeForce(front,af_params->kl);
+            setSpecialNodeForce(front->interf,af_params->kl);
             FT_SetOutputCounter(front);
 	        FT_TimeControlFilter(front);
         }
@@ -544,14 +543,13 @@ extern void SMM_TestDriver()
         FrontPreAdvance(front);
         FT_Propagate(front);
         FT_RelinkGlobalIndex(front);
-            //FT_InteriorPropagate(front);
 
         FT_SetOutputCounter(front);
         FT_SetTimeStep(front);
     }
     else
     {
-            //setSpecialNodeForce(front,af_params->kl);
+        setSpecialNodeForce(front->interf,af_params->kl);
         FT_SetOutputCounter(front);
     }
 
@@ -607,8 +605,8 @@ extern void SMM_TestDriver()
             
         /* Output section */
 
-        //print_airfoil_stat(front,OutName(front));
-        //print_strings(front,OutName(front));
+        print_airfoil_stat(front,OutName(front));
+        print_strings(front,OutName(front));
 
         if (FT_IsSaveTime(front))
             SMM_Save();

@@ -5,6 +5,7 @@
 #include "ifluid_state.h"
 #include "vtk.h"
 
+#include <iostream>
 #include <string>
 #include <utility>
 #include <numeric>
@@ -13,9 +14,9 @@
 enum class CD_HSE_TYPE
 {
     FABRIC_TRI,
-    MOVABLE_RIGID_TRI,
+    STRING_BOND,
     STATIC_RIGID_TRI,
-    STRING_BOND
+    MOVABLE_RIGID_TRI
 };
 
 
@@ -24,13 +25,15 @@ enum class CD_HSE_TYPE
 struct CD_HSE
 {
     CD_HSE_TYPE type;
+	
+    virtual ~CD_HSE() {};
+	
+    virtual int num_pts() const= 0;
     virtual double max_static_coord(int) = 0;
 	virtual double min_static_coord(int) = 0;
 	virtual double max_moving_coord(int,double) = 0;
 	virtual double min_moving_coord(int,double) = 0;
 	virtual POINT* Point_of_hse(int) const  = 0;
-	virtual int num_pts() const= 0;
-	virtual ~CD_HSE(){};
 };
 
 //wrap class for triangle
@@ -44,12 +47,12 @@ struct CD_TRI: public CD_HSE
         type = tag;
     }
 
+	int num_pts() const {return 3;}
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
 	double min_moving_coord(int,double);
 	POINT* Point_of_hse(int) const;
-	int num_pts() const {return 3;}
 };
 
 //wrap class for bond
@@ -72,12 +75,12 @@ struct CD_BOND: public CD_HSE
         }
     }
 
+	int num_pts()const{return 2;}
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
 	double min_moving_coord(int,double);
 	POINT* Point_of_hse(int) const;
-	int num_pts()const{return 2;}
 };
 
 /*
@@ -90,12 +93,12 @@ struct CD_POINT: public CD_HSE
         : m_point(point)
     {}
 
+	int num_pts()const {return 1;}
 	double max_static_coord(int);
 	double min_static_coord(int);
 	double max_moving_coord(int,double);
 	double min_moving_coord(int,double);
 	POINT* Point_of_hse(int) const;
-	int num_pts()const {return 1;}
 };
 */
 

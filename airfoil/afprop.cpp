@@ -21,8 +21,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include "airfoil.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
 
@@ -171,19 +170,12 @@ extern void elastic_point_propagate(
 	    dv[i] = 0.0;
 
 	    if (debugging("rigid_canopy"))
+        {
             dv[i] = 0.0;
+        }
 	    else if (front->step > af_params->fsi_startstep)
         {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
-                    
-            //TODO: Should triangle area be involved in these computations???
-            //      see print_drag3d(). However we are not looping over tris,
-            //      we are just propagating a single point in isolation.
-            //      Would need to use ring of tris around the point?
-            //
-            //      double area_tri = tri_area(tri);
-            //      double mass_tri = area_tri*area_dens;
-            //      dv[i] = (newsl->pres - newsr->pres)*nor[i]/mass_tri;
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
@@ -322,8 +314,6 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    //TODO: Do we need to check for rg_string_nodes also?
-    //if (!is_load_node(oldc->start))
     if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
     {
         oldp = oldc->start->posn;
@@ -332,7 +322,6 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    //if (!is_load_node(oldc->end))
     if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
     {
         oldp = oldc->end->posn;
@@ -435,10 +424,8 @@ static void string_curve_propagation(
             }
             speed = sqrt(speed);
 
-                //double A_ref = 2.0*PI*radius*length;
-                //double Vol = PI*radius*radius*length;
-            double A_ref = 2.0*PI*radius*(0.25*length);
-            double Vol = PI*radius*radius*(0.25*length);
+            double A_ref = 2.0*PI*radius*length;
+            double Vol = PI*radius*radius*length;
             double massCyl = rhoS*Vol;
 
             double dragForce[MAXD] = {0.0};
@@ -760,6 +747,15 @@ extern boolean is_gore_node(
 	else 
 	    return NO;
 }	/* end is_gore_node */
+
+extern boolean is_string_node(NODE *n)
+{
+        AF_NODE_EXTRA *af_node_extra;
+        if (n->extra == NULL) return NO;
+        af_node_extra = (AF_NODE_EXTRA*)n->extra;
+        if (af_node_extra->af_node_type == STRING_NODE) return YES;
+        return NO;
+}       /* end is_load_node */
 
 extern boolean is_load_node(NODE *n)
 {
@@ -1126,7 +1122,7 @@ static void load_node_propagate(
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	POINT *oldp,*newp;
-	double *g = iFparams->gravity;
+	double *g = af_params->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
 	double mass = af_params->payload;
@@ -1208,7 +1204,7 @@ static void rg_string_node_propagate(
         AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	RECT_GRID *gr = computational_grid(front->interf);
         POINT *oldp,*newp;
-        double *g = iFparams->gravity;
+        double *g = af_params->gravity;
         double f[MAXD],accel[MAXD];
         double kl = af_params->kl;
         CURVE **c;
@@ -1304,7 +1300,6 @@ static void rg_string_node_propagate(
 	}
 	
     //TODO: hs should have wave_type == MOVABLE_BODY_BOUNDARY?
-    //
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)

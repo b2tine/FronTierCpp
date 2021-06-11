@@ -645,6 +645,35 @@ extern "C" {
 				double *ans,
 				double *default_ans);
 
+/*! \fn INTRP_CELL* FT_IntrpStateVarAtCoordsWithIntrpCoefs(Front *front, int comp, double *coords, double *var_array, double (*state_func)(POINTER), double *ans, double *default_ans)
+ *  \ingroup GRIDINTFC
+    \brief Interpolate a state variable at a space point with coords and return
+     the INTRP_CELL structure containing the indices of the points and their
+     corresponding coefficients use in the interpolation. Currently the indices
+     and coefficents are only available if the interpolation is bilinear, which
+     can be checked with the boolean flag INTRP_CELL::is_bilinear.
+     If comp == NO_COMP, it interpolates with no regard of interface. Otherwise
+     it will interpolate in the subdomain of comp. The state_func() is needed
+     to tell the function how to retrieve the variable from the interface
+     state. The interpolated variable is assigned in ans. Return YES if
+     the interpolation is successful.
+    \param front @b in	Pointer to Front.
+    \param comp @b in	Component in which the state should be interpolated.
+    \param var_array @b in	Array of the variable on the expanded dual grid.
+    \param state_func() @b in	Function to retrieve the variable from the interface state pointer.
+    \param ans @b out	Address of the interpolated variable.
+    \param default_ans @b in	Address of default solution, if NULL, the function will look for solution at nearest interface point.
+ */
+
+   IMPORT  boolean FT_IntrpStateVarAtCoordsWithIntrpCoefs(Front *front ,
+                INTRP_CELL* blk_cell ,
+   				int comp , 
+				double *coords , 
+				double *var_array , 
+				double (*state_func)(POINTER) , 
+				double *ans,
+				double *default_ans);
+
 /*! \fn boolean FT_CompGridIntrpStateVarAtCoords(Front *front, int comp, double *coords, double *var_array, double (*state_func)(POINTER), double *ans, double *default_ans)
  *  \ingroup GRIDINTFC
     \brief Interpolate a state variable at a space point with coords 

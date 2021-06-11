@@ -24,10 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 #include "collid.h"
-#include "iFluid.h"
 #include "airfoil.h"
 #include "bending.h"
-#include "solver.h"
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
@@ -44,11 +42,18 @@ static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void new_setNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void new_setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+
 static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);//doesn't exist
 static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);//doesn't exist
-static void setCollisionFreePoints3d(INTERFACE*);
+
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);//nowhere used
+
+static void setCollisionFreePoints3d(INTERFACE*);
+
+static void fourth_order_elastic_set_propagate3d_serial(Front*,Front**,double);
+static void new_fourth_order_elastic_set_propagate3d_parallel_1(Front*,Front**,double);
+
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
 
@@ -230,13 +235,15 @@ int af_find_state_at_crossing(
             return POROUS_BOUNDARY;*/
         }
     }
-    //TODO: this should return CONST_V_PDE_BOUNDARY
+    //TODO: this should return CONST_V_PDE_BOUNDARY,
     //      or MOVABLE_BODY_BOUNDAY should return
     //      NEUMANN_PDE_BOUNDARY in order to be consistent
     return NEUMANN_PDE_BOUNDARY;
 }       /* af_find_state_at_crossing */
 
 /*
+//NOTE: old version -- save for now as reference
+//
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -1232,7 +1239,6 @@ static void spring_force_at_point2(
 		    {
                 dir[k] = tris[i]->side_dir0[j][k];
                 vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
-                    //vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*tris[i]->side_dir0[j][k];
                 f[k] += ks*vect[k];
 		    }
 		    if (is_side_bdry(tris[i],(j+2)%3))
@@ -1805,16 +1811,1078 @@ static void print_elastic_params(
 
 void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
+    Front* newfront;
+    double dt_frac;
+
     if (pp_numnodes() > 1 && !debugging("collision_off"))
     {
-        fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
+        new_fourth_order_elastic_set_propagate3d_parallel_1(fr,&newfront,fr_dt);
+            //fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
     }
     else
     {
-        fourth_order_elastic_set_propagate_serial(fr,fr_dt);
+        fourth_order_elastic_set_propagate3d_serial(fr,&newfront,fr_dt);
+            //fourth_order_elastic_set_propagate_serial(fr,fr_dt);
     }
+
+    //assign newfront to front
+    assign_interface_and_free_front(fr,newfront);
 }
 
+static void fourth_order_elastic_set_propagate3d_serial(
+        Front* fr,
+        Front** newfront,
+        double fr_dt)
+{
+	static ELASTIC_SET geom_set;
+	static int total_size = 0;
+    static int size = 0;
+    static int total_owner_size, owner_size, total_client_size, client_size;
+	static int *client_size_old, *client_size_new;
+    static SPRING_VERTEX *sv;
+    static boolean first = YES;
+    static GLOBAL_POINT **point_set;
+    static GLOBAL_POINT *point_set_store;
+	static GLOBAL_POINT **client_point_set_store;
+    
+    AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+    int i,j,k,n_sub;
+    double dt;
+    int dim = FT_Dimension();
+    long max_point_gindex = fr->interf->max_point_gindex;
+	int owner[MAXD];
+	int owner_id = af_params->node_id[0];
+    int myid = pp_mynode();
+	int gindex;
+    INTERFACE *elastic_intfc = nullptr;
+	double *L = fr->rect_grid->L;
+	double *U = fr->rect_grid->U;
+	double *h = fr->rect_grid->h;
+	double client_L[MAXD],client_U[MAXD];
+
+    static boolean first_break_strings = YES;
+	static double break_strings_time = af_params->break_strings_time;
+	static int break_strings_num = af_params->break_strings_num;
+        
+	if (debugging("trace"))
+	    (void) printf("Entering fourth_order_elastic_set_propagate3d_serial()\n");
+
+    *newfront = copy_front(fr);
+    set_size_of_intfc_state(size_of_state(fr->interf));
+    set_copy_intfc_states(YES);
+        //set_copy_intfc_states(NO); //TODO: Why was this set to NO?
+    (*newfront)->interf = pp_copy_interface(fr->interf);
+    if ((*newfront)->interf == NULL)
+    {
+        (void) printf("WARNING in fourth_order_elastic_set_propagate3d_serial(), "
+                      "unable to copy interface\n");
+        LOC(); clean_up(EXIT_FAILURE);
+            //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
+    }
+
+    geom_set.front = *newfront;
+
+    /*
+    //TODO: omitting for now -- needs to be tested.
+	if (first_break_strings && break_strings_num > 0 &&
+	    break_strings_time >= 0.0 && 
+	    fr->time + fr->dt >= break_strings_time)
+	{
+	    printf("Some strings break! Count and set spring vertex again.\n");
+	    first_break_strings = NO;
+	    first = YES;
+	}
+    */
+
+	if (first)
+    {
+        set_elastic_params(&geom_set,fr_dt);
+        if (debugging("step_size"))
+            print_elastic_params(geom_set);
+    }
+
+    if (fr_dt > geom_set.dt_tol)
+    {
+        n_sub = (int)(fr_dt/geom_set.dt_tol);
+        dt = fr_dt/n_sub;
+    }
+    else
+    {
+        n_sub = af_params->n_sub;
+        dt = fr_dt/n_sub;
+    }
+    printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d dt = %f\n",
+            fr_dt,geom_set.dt_tol,n_sub,dt);
+
+	if (first)
+	{
+        owner[0] = 0;
+        owner[1] = 0;
+        owner[2] = 0;
+	    
+        if (point_set != NULL)
+		    FT_FreeThese(1, point_set);
+
+	    FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,sizeof(GLOBAL_POINT*));
+	    
+        for (i = 0; i < max_point_gindex; ++i)
+		    point_set[i] = NULL;
+
+	    if (pp_numnodes() > 1)
+	    {
+            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
+                //elastic_intfc = FT_CollectHypersurfFromSubdomains(*newfront,owner,ELASTIC_BOUNDARY);
+            
+            collectNodeExtra(*newfront,elastic_intfc,owner_id);
+	    }
+	    else
+        {
+            elastic_intfc = (*newfront)->interf;
+        }
+	    
+        start_clock("set_data");
+        if (myid == owner_id)
+        {
+
+            if (client_size_old != NULL)
+                FT_FreeThese(3, client_size_old, client_size_new, client_point_set_store);
+
+            FT_VectorMemoryAlloc((POINTER*)&client_size_old,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_size_new,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
+                    pp_numnodes(),sizeof(GLOBAL_POINT*));
+
+            for (i = 0; i < pp_numnodes(); i++)
+                client_size_old[i] = client_size_new[i] = 0;
+
+            assembleParachuteSet(elastic_intfc,&geom_set);
+            
+            total_owner_size = geom_set.total_num_verts; //fabric + rgb points
+            owner_size = geom_set.elastic_num_verts; //just fabric points
+            
+            if (point_set_store != NULL) 
+                FT_FreeThese(2,point_set_store, sv);
+            
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    total_owner_size,sizeof(GLOBAL_POINT)); //NOTE: uses total_num_verts here
+            FT_VectorMemoryAlloc((POINTER*)&sv,
+                    owner_size,sizeof(SPRING_VERTEX)); //NOTE: uses elastic_num_verts here
+            
+            link_point_set(&geom_set,point_set,point_set_store);
+	    	count_vertex_neighbors(&geom_set,sv);
+	    	set_spring_vertex_memory(sv,owner_size);
+	    	set_vertex_neighbors(&geom_set,sv,point_set);
+		
+            if (elastic_intfc != (*newfront)->interf)
+                delete_interface(elastic_intfc);
+	    }
+	    
+        stop_clock("set_data");
+	    first = NO;
+	}
+
+	elastic_intfc = (*newfront)->interf;
+
+    //TODO: Do we need to call setCollisionFreePoints3d() prior to the
+    //      bending force computations? It appears that we may be using
+    //      lagged values for the STATE::is_fixed etc. boolean flags from
+    //      the previous time step. 
+    setCollisionFreePoints3d(elastic_intfc);
+        //setCollisionFreePoints3d((*newfront)->interf);
+    
+    if (!debugging("bendforce_off"))
+    {
+        resetBendingForce(elastic_intfc);
+        double bends = af_params->kbs;
+        double bendd = af_params->lambda_bs;
+        computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
+        computeStringBendingForce(elastic_intfc);
+    }
+
+	assembleParachuteSet(elastic_intfc,&geom_set);
+	
+    if (myid != owner_id)
+	{
+	    total_client_size = geom_set.total_num_verts; //fabric + rigid body points
+        client_size = geom_set.elastic_num_verts; //just fabric points
+	    if (size < client_size || total_size < total_client_size)
+	    {
+	    	size = client_size;
+	    	total_size = total_client_size;
+	    	if (point_set_store != NULL)
+            {
+	    	    FT_FreeThese(2,point_set_store,sv);
+            }
+	
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,total_size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+	    }
+	    for (i = 0; i < max_point_gindex; ++i)
+                point_set[i] = NULL;
+	    
+        link_point_set(&geom_set,point_set,point_set_store);
+	    count_vertex_neighbors(&geom_set,sv);
+	    set_spring_vertex_memory(sv,client_size);
+	    set_vertex_neighbors(&geom_set,sv,point_set);
+	    get_point_set_from(&geom_set,point_set);
+	    
+        pp_send(5,L,MAXD*sizeof(double),owner_id);
+	    pp_send(6,U,MAXD*sizeof(double),owner_id);
+	    pp_send(1,&(total_client_size),sizeof(int),owner_id);
+        pp_send(2,point_set_store,total_client_size*sizeof(GLOBAL_POINT),owner_id);
+	}
+	else
+    {
+	    size = owner_size;
+        total_size = total_owner_size;
+    }
+
+    CollisionSolver3d* collision_solver = nullptr;
+
+    if (myid == owner_id)
+	{
+        if (!debugging("collision_off"))
+        {
+            collision_solver = new CollisionSolver3d();
+            printf("COLLISION DETECTION ON\n");
+            
+            //TODO: Moved setCollisionFreePoints3d() up to be called
+            //      before the bending force computations.
+            //
+            //setCollisionFreePoints3d((*newfront)->interf);
+
+            collision_solver->initializeSystem(*newfront);
+        
+            collision_solver->setRestitutionCoef(1.0);
+            collision_solver->setVolumeDiff(af_params->vol_diff);
+            
+            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
+
+            collision_solver->setStringRoundingTolerance(af_params->string_eps);
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
+
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+
+            collision_solver->gpoints = (*newfront)->gpoints;
+            collision_solver->gtris = (*newfront)->gtris;
+        }
+        else
+        {
+            printf("COLLISION DETECTION OFF\n");
+        }
+
+        //write to GLOBAL_POINT** point_set
+        get_point_set_from(&geom_set,point_set);
+        
+	    for (i = 0; i < pp_numnodes(); i++)
+	    {
+            if (i == myid) continue;
+            pp_recv(5,i,client_L,MAXD*sizeof(double));
+            pp_recv(6,i,client_U,MAXD*sizeof(double));
+            pp_recv(1,i,client_size_new+i,sizeof(int));
+            if (client_size_new[i] > client_size_old[i])
+            {
+                client_size_old[i] = client_size_new[i];
+                if (client_point_set_store[i] != NULL)
+                    FT_FreeThese(1,client_point_set_store[i]);
+
+                FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
+                        client_size_new[i],sizeof(GLOBAL_POINT));
+            }
+
+            pp_recv(2,i,client_point_set_store[i],
+                    client_size_new[i]*sizeof(GLOBAL_POINT));
+            
+            copy_from_client_point_set(point_set,client_point_set_store[i],
+                    client_size_new[i],client_L,client_U);
+	    } 
+
+	    start_clock("spring_model");
+#if defined(__GPU__)
+            if (af_params->use_gpu)
+            {
+            	if (debugging("trace"))
+                    (void) printf("Enter gpu_spring_solver()\n");
+                gpu_spring_solver(sv,dim,size,n_sub,dt);
+                if (debugging("trace"))
+                    (void) printf("Left gpu_spring_solver()\n");
+            }
+            else
+#endif
+                generic_spring_solver(sv,dim,size,n_sub,dt);
+	    stop_clock("spring_model");
+
+	    // Owner send and patch point_set_store from other processors
+	    for (i = 0; i < pp_numnodes(); i++)
+        {
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                        client_point_set_store[i],client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                        client_size_new[i]*sizeof(GLOBAL_POINT),i);
+        }
+	}
+
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,total_client_size*sizeof(GLOBAL_POINT));
+            //pp_recv(3,owner_id,point_set_store,client_size*sizeof(GLOBAL_POINT));
+    }
+	
+    //  write from point_set to geom_set
+    put_point_set_to(&geom_set,point_set);
+	
+    // Calculate the real force on load_node and rg_string_node
+    setSpecialNodeForce(elastic_intfc,geom_set.kl);
+
+	set_vertex_impulse(&geom_set,point_set);
+	set_geomset_velocity(&geom_set,point_set);
+	compute_center_of_mass_velo(&geom_set);
+
+	if (!debugging("collision_off"))
+    {
+        if (myid == owner_id)
+        {
+            if (FT_Dimension() == 3)
+                collision_solver->resolveCollision();
+            delete collision_solver;
+        }
+        
+        setSpecialNodeForce(elastic_intfc,geom_set.kl);
+        compute_center_of_mass_velo(&geom_set);
+    }
+    
+
+    //sync interfaces after collision handling?
+        //scatter_front(*newfront);
+
+
+    if (debugging("max_speed"))
+    {
+        print_max_fabric_speed(*newfront);
+        print_max_string_speed(*newfront);
+    }
+
+	if (debugging("trace"))
+	    (void) printf("Leaving fourth_order_elastic_set_propagate3d_serial()\n");
+}	/* end fourth_order_elastic_set_propagate3d_serial() */
+
+
+/*
+void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
+{
+	static ELASTIC_SET geom_set;
+	static int size = 0,owner_size,client_size;
+	static int *client_size_old, *client_size_new;
+        AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+        int i,j,k,n_sub;
+        double dt;
+        static SPRING_VERTEX *sv;
+        static boolean first = YES;
+        static GLOBAL_POINT **point_set;
+        static GLOBAL_POINT *point_set_store;
+	static GLOBAL_POINT **client_point_set_store;
+        int dim = FT_Dimension();
+        long max_point_gindex = fr->interf->max_point_gindex;
+	int owner[MAXD];
+	int owner_id = af_params->node_id[0];
+        int myid = pp_mynode();
+	int gindex;
+        INTERFACE *elastic_intfc = NULL;
+	double *L = fr->rect_grid->L;
+	double *U = fr->rect_grid->U;
+	double client_L[MAXD],client_U[MAXD];
+	static boolean first_break_strings = YES;
+	static double break_strings_time = af_params->break_strings_time;
+	static int break_strings_num = af_params->break_strings_num;
+
+
+	if (debugging("trace"))
+	    (void) printf("Entering fourth_order_elastic_set_propagate_serial()\n");
+	geom_set.front = fr;
+
+	if (first_break_strings && break_strings_num > 0 &&
+	    break_strings_time >= 0.0 && 
+	    fr->time + fr->dt >= break_strings_time)
+	{
+	    printf("Some strings break! Count and set spring vertex again.\n");
+	    first_break_strings = NO;
+	    first = YES;
+	}
+
+	    if (first)
+        {
+            set_elastic_params(&geom_set,fr_dt);
+            if (debugging("step_size"))
+                print_elastic_params(geom_set);
+        }
+
+        if (fr_dt > geom_set.dt_tol)
+        {
+            n_sub = (int)(fr_dt/geom_set.dt_tol);
+            dt = fr_dt/n_sub;
+        }
+	    else
+        {
+            n_sub = af_params->n_sub;
+            dt = fr_dt/n_sub;
+        }
+
+	if (first)
+	{
+        owner[0] = 0;
+        owner[1] = 0;
+        owner[2] = 0;
+	    
+        if (point_set != NULL)
+            FT_FreeThese(1, point_set);
+	    
+        FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
+					sizeof(GLOBAL_POINT*));
+	    
+        // every processor has a point_set with global indexing
+        for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = NULL;
+
+	    if (pp_numnodes() > 1)
+	    {
+            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
+                    ELASTIC_BOUNDARY);
+            collectNodeExtra(fr,elastic_intfc,owner_id);
+	    }
+	    else
+            elastic_intfc = fr->interf;
+	    
+        start_clock("set_data");
+	    if (myid == owner_id)
+        {
+            if (client_size_old != NULL)
+                FT_FreeThese(3, client_size_old, client_size_new, 
+                        client_point_set_store);
+
+            FT_VectorMemoryAlloc((POINTER*)&client_size_old,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_size_new,
+                    pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
+                    pp_numnodes(),sizeof(GLOBAL_POINT*));
+
+            for (i = 0; i < pp_numnodes(); i++)
+                client_size_old[i] = client_size_new[i] = 0;
+
+            assembleParachuteSet(elastic_intfc,&geom_set);
+            owner_size = geom_set.num_verts;
+            
+            if (point_set_store != NULL) 
+                FT_FreeThese(2,point_set_store, sv);
+            
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    owner_size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
+                    sizeof(SPRING_VERTEX));
+
+            link_point_set(&geom_set,point_set,point_set_store);
+	    	count_vertex_neighbors(&geom_set,sv);
+	    	set_spring_vertex_memory(sv,owner_size);
+	    	set_vertex_neighbors(&geom_set,sv,point_set);
+		
+            if (elastic_intfc != fr->interf)
+                delete_interface(elastic_intfc);
+	    }
+	    stop_clock("set_data");
+	    
+        first = NO;
+	}
+
+	elastic_intfc = fr->interf;
+
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeBendingForce(elastic_intfc,bends,bendd);
+
+	assembleParachuteSet(elastic_intfc,&geom_set);
+
+	if (myid != owner_id)
+	{
+	    client_size = geom_set.num_verts;
+	    if (size < client_size)
+	    {
+	    	size = client_size;
+	    	if (point_set_store != NULL)
+                FT_FreeThese(2,point_set_store,sv);
+
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
+                    size,sizeof(GLOBAL_POINT));
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,
+                    sizeof(SPRING_VERTEX));
+	    }
+
+	    for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = NULL;
+
+	    link_point_set(&geom_set,point_set,point_set_store);
+	    count_vertex_neighbors(&geom_set,sv);
+	    set_spring_vertex_memory(sv,client_size);
+	    set_vertex_neighbors(&geom_set,sv,point_set);
+	    get_point_set_from(&geom_set,point_set);
+	    
+        pp_send(5,L,MAXD*sizeof(double),owner_id);
+	    pp_send(6,U,MAXD*sizeof(double),owner_id);
+	    pp_send(1,&(client_size),sizeof(int),owner_id);
+        pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
+                owner_id);
+	}
+	else
+    {
+	    size = owner_size;
+    }
+
+
+    CollisionSolver3d* collision_solver = nullptr;
+
+	if (myid == owner_id)
+	{
+	
+    if (!debugging("collision_off"))
+    {
+        printf("COLLISION DETECTION ON\n");
+        collision_solver = new CollisionSolver3d();
+
+	    if (FT_Dimension() == 3)
+        {
+            setCollisionFreePoints3d(fr->interf);
+            collision_solver->initializeSystem(fr);
+
+            collision_solver->setRestitutionCoef(1.0);
+            collision_solver->setVolumeDiff(0.0);
+
+            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+            collision_solver->setFabricThickness(af_params->fabric_thickness);
+            collision_solver->setFabricFrictionConstant(af_params->mu_s);
+            collision_solver->setFabricSpringConstant(af_params->ks); 
+            collision_solver->setFabricPointMass(af_params->m_s);
+
+            collision_solver->setStringRoundingTolerance(af_params->string_eps);
+            collision_solver->setStringThickness(af_params->string_thickness);
+            collision_solver->setStringFrictionConstant(af_params->mu_l);
+            collision_solver->setStringSpringConstant(af_params->kl); 
+            collision_solver->setStringPointMass(af_params->m_l);
+
+            collision_solver->setStrainLimit(af_params->strain_limit);
+            //collision_solver->setCompressiveStrainLimit(af_params->compress_strain_limit);
+            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+
+            collision_solver->gpoints = fr->gpoints;
+            collision_solver->gtris = fr->gtris;
+        }
+    }
+    else
+    {
+        printf("COLLISION DETECTION OFF\n");
+    }
+
+	    get_point_set_from(&geom_set,point_set);
+	    
+        for (i = 0; i < pp_numnodes(); i++)
+	    {
+		if (i == myid) continue;
+		pp_recv(5,i,client_L,MAXD*sizeof(double));
+		pp_recv(6,i,client_U,MAXD*sizeof(double));
+		pp_recv(1,i,client_size_new+i,sizeof(int));
+		if (client_size_new[i] > client_size_old[i])
+		{
+		    client_size_old[i] = client_size_new[i];
+		    if (client_point_set_store[i] != NULL)
+		    	FT_FreeThese(1,client_point_set_store[i]);
+	    	    FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
+				client_size_new[i], sizeof(GLOBAL_POINT));
+		}
+		pp_recv(2,i,client_point_set_store[i],
+		    client_size_new[i]*sizeof(GLOBAL_POINT));
+		copy_from_client_point_set(point_set,client_point_set_store[i],
+				client_size_new[i],client_L,client_U);
+	    } 
+
+	    start_clock("spring_model");
+#if defined(__GPU__)
+            if (af_params->use_gpu)
+            {
+            	if (debugging("trace"))
+                    (void) printf("Enter gpu_spring_solver()\n");
+                gpu_spring_solver(sv,dim,size,n_sub,dt);
+                if (debugging("trace"))
+                    (void) printf("Left gpu_spring_solver()\n");
+            }
+            else
+#endif
+                generic_spring_solver(sv,dim,size,n_sub,dt);
+	    stop_clock("spring_model");
+
+        // owner writes and sends back the updated client point_set_stores
+	    for (i = 0; i < pp_numnodes(); i++)
+        {
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                    client_point_set_store[i], client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                            client_size_new[i]*sizeof(GLOBAL_POINT),i);
+        }
+
+	}//myid == owner_id
+
+    // clients receive the updated point_set_stores
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,
+            client_size*sizeof(GLOBAL_POINT));
+    }
+
+    // all processes write from their point_set to their geom_set
+	put_point_set_to(&geom_set,point_set);
+	
+    //TODO: Does this need to be called before the collision
+    //      solver has completed?
+    //      Also, should be passing in the geom_set instead of
+    //      looping over all nodes of fr->interf.
+    //      ELASTIC_SET likely did not consider rigid bodies
+    //      when it was created -- should make a new struct
+    //      PARACHUTE_SET that does and leave ELASTIC_SET for
+    //      pointmass runs and for debugging.
+	setSpecialNodeForce(fr,geom_set.kl);
+
+    //TODO: I think this function can be eliminated,
+    //      see comments inside put_point_value_to()
+    //      for required modification.
+	set_vertex_impulse(&geom_set,point_set);
+    
+    //TODO: why only normal component of velocities retained?
+    //      see set_geomset_velocity()
+	set_geomset_velocity(&geom_set,point_set);
+	
+    //TODO: verify com_velo computation
+    compute_center_of_mass_velo(&geom_set);
+
+	if(!debugging("collision_off"))
+    {
+        if (myid == owner_id)
+        {
+            if (FT_Dimension() == 3)
+            {
+                start_clock("resolveCollision");
+                collision_solver->resolveCollision();
+                stop_clock("resolveCollision");
+            }
+            delete collision_solver;
+        }
+
+        // Calculate the real force on load_node and rg_string_node
+        setSpecialNodeForce(fr,geom_set.kl);
+	    compute_center_of_mass_velo(&geom_set);
+    }
+
+    if (debugging("max_speed"))
+    {
+        print_max_fabric_speed(fr);
+        print_max_string_speed(fr);
+    }
+
+	if (debugging("trace"))
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_serial()\n");
+}*/	/* end fourth_order_elastic_set_propagate_serial() */
+
+
+//TODO: memory/synchronization bugs
+//
+//uses a collision solver on each processor
+void new_fourth_order_elastic_set_propagate3d_parallel_1(
+        Front* fr,
+        Front** newfront,
+        double fr_dt)
+{
+	static ELASTIC_SET geom_set;
+	static int total_size = 0;
+    static int size = 0;
+    static int total_owner_size, owner_size, total_client_size, client_size;
+	static int *client_size_old, *client_size_new;
+    static SPRING_VERTEX *sv;
+    static boolean first = YES;
+    static GLOBAL_POINT **point_set;
+    static GLOBAL_POINT *point_set_store;
+	static GLOBAL_POINT **client_point_set_store;
+
+    AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+    int i,j,k,n_sub;
+    double dt;
+    int dim = FT_Dimension();
+    long max_point_gindex = fr->interf->max_point_gindex;
+	int owner[MAXD];
+	int owner_id = af_params->node_id[0];
+    int myid = pp_mynode();
+	int gindex;
+    
+    INTERFACE *elastic_intfc = NULL;
+	double *L = fr->rect_grid->L;
+	double *U = fr->rect_grid->U;
+	double client_L[MAXD],client_U[MAXD];
+	
+    static boolean first_break_strings = YES;
+	static double break_strings_time = af_params->break_strings_time;
+	static int break_strings_num = af_params->break_strings_num;
+
+    static const char *fname = "fourth_order_elastic_set_propagate3d_parallel_1";
+
+	if (debugging("trace"))
+	    (void) printf("Entering fourth_order_elastic_set_propagate()\n");
+	
+    *newfront = copy_front(fr);
+    set_size_of_intfc_state(size_of_state(fr->interf));
+    set_copy_intfc_states(YES);
+        //set_copy_intfc_states(NO); //TODO: Why was this set to NO?
+    (*newfront)->interf = pp_copy_interface(fr->interf);
+    if ((*newfront)->interf == NULL)
+    {
+        (void) printf("WARNING in fourth_order_elastic_set_propagate3d_parallel_1(), "
+                      "unable to copy interface\n");
+        LOC(); clean_up(EXIT_FAILURE);
+            //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
+    }
+
+    geom_set.front = *newfront;
+
+    /*
+    //TODO: omitting for now -- needs to be tested.
+	if (first_break_strings && break_strings_num > 0 &&
+	    break_strings_time >= 0.0 && 
+	    fr->time + fr->dt >= break_strings_time)
+	{
+	    printf("Some strings break! Count and set spring vertex again.\n");
+	    first_break_strings = NO;
+	    first = YES;
+	}
+    */
+
+    if (first)
+    {
+        set_elastic_params(&geom_set,fr_dt);
+        if (debugging("step_size"))
+            print_elastic_params(geom_set);
+    }
+
+
+    if (fr_dt > geom_set.dt_tol)
+    {
+        n_sub = (int)(fr_dt/geom_set.dt_tol);
+        dt = fr_dt/n_sub;
+    }
+    else
+    {
+        n_sub = af_params->n_sub;
+        dt = fr_dt/n_sub;
+    }
+
+    printf("fr_dt = %f  dt = %f  n_sub = %d\n",fr_dt,dt,n_sub);
+
+	if (first)
+	{
+        owner[0] = 0;
+        owner[1] = 0;
+        owner[2] = 0;
+	    
+        if (point_set != NULL)
+            FT_FreeThese(1, point_set);
+
+        FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
+					sizeof(GLOBAL_POINT*));
+
+        for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = NULL;
+
+	    if (pp_numnodes() > 1)
+	    {
+            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
+            collectNodeExtra(*newfront,elastic_intfc,owner_id);
+	    }
+	    else
+        {
+            elastic_intfc = (*newfront)->interf;
+        }
+
+        start_clock("set_data");
+	    if (myid == owner_id)
+        {
+            if (client_size_old != NULL)
+            {
+                FT_FreeThese(3, client_size_old, client_size_new, 
+                        client_point_set_store);
+            }
+
+            FT_VectorMemoryAlloc((POINTER*)&client_size_old,pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_size_new,pp_numnodes(),sizeof(int));
+            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,pp_numnodes(),sizeof(GLOBAL_POINT*));
+            
+            for (i = 0; i < pp_numnodes(); i++)
+            {
+                client_size_old[i] = 0;
+                client_size_new[i] = 0;
+            }
+
+            assembleParachuteSet(elastic_intfc,&geom_set);
+
+            owner_size = geom_set.elastic_num_verts; //just fabric points
+            total_owner_size = geom_set.total_num_verts; //fabric + rgb points
+            
+            if (point_set_store != NULL) 
+            {
+                FT_FreeThese(2,point_set_store, sv);
+            }
+
+            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,sizeof(SPRING_VERTEX));
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,total_owner_size,sizeof(GLOBAL_POINT));
+            
+            //allocate mem for point_set via point_set_store, and store
+            //gindex values of elastic_intfc points in array positions
+            link_point_set(&geom_set,point_set,point_set_store);
+
+            count_vertex_neighbors(&geom_set,sv);
+            set_spring_vertex_memory(sv,owner_size);
+
+            //links sv to point_set
+            set_vertex_neighbors(&geom_set,sv,point_set);
+
+            if (elastic_intfc != (*newfront)->interf)
+                delete_interface(elastic_intfc);
+        }
+
+	    stop_clock("set_data");
+	    first = NO;
+	}
+
+	
+    elastic_intfc = (*newfront)->interf;
+    
+    //compute bending force
+    double bends = af_params->kbs;
+    double bendd = af_params->lambda_bs;
+    computeSurfBendingForce(elastic_intfc,bends,bendd);
+        //computeStringBendingForce(elastic_intfc); //TODO: finish implementation
+
+    assembleParachuteSet(elastic_intfc,&geom_set);
+
+
+	if (myid != owner_id)
+	{
+        client_size = geom_set.elastic_num_verts;
+        total_client_size = geom_set.total_num_verts;
+
+	    if (size < client_size || total_size < total_client_size)
+	    {
+	    	size = client_size;
+	    	total_size = total_client_size;
+
+	    	if (point_set_store != NULL)
+            {
+                FT_FreeThese(2,point_set_store,sv);
+            }
+
+            FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
+            FT_VectorMemoryAlloc((POINTER*)&point_set_store,total_size,sizeof(GLOBAL_POINT));
+	    }
+
+        for (i = 0; i < max_point_gindex; ++i)
+            point_set[i] = nullptr;
+        
+        //allocate mem for point_set via point_set_store, and store
+        //gindex values of elastic_intfc points in array positions
+	    link_point_set(&geom_set,point_set,point_set_store);
+	    
+        count_vertex_neighbors(&geom_set,sv);
+	    set_spring_vertex_memory(sv,client_size);
+	    
+        //links sv to point_set
+        set_vertex_neighbors(&geom_set,sv,point_set);
+
+        //Write from client geom_set to client point_set
+        // (which sv has pointers to)
+	    get_point_set_from(&geom_set,point_set);
+
+        //Send client point_sets to owner
+	    pp_send(5,L,MAXD*sizeof(double),owner_id);
+	    pp_send(6,U,MAXD*sizeof(double),owner_id);
+	    pp_send(1,&(total_client_size),sizeof(int),owner_id);
+        pp_send(2,point_set_store,total_client_size*sizeof(GLOBAL_POINT),owner_id);
+	}
+	else
+    {
+	    size = owner_size;
+	    total_size = total_owner_size;
+    }
+
+
+    CollisionSolver3d* collision_solver = nullptr;
+
+    if (!debugging("collision_off") && FT_Dimension() == 3) 
+    {
+        collision_solver = new CollisionSolver3d();
+        printf("COLLISION DETECTION ON\n");
+
+        setCollisionFreePoints3d(elastic_intfc);
+        
+        //collision_solver->initializeSystem(*newfront); //TODO: may use this now
+        CollisionSolver3d::setStep((*newfront)->step);
+        CollisionSolver3d::setTimeStepSize((*newfront)->dt);
+        CollisionSolver3d::setOutputDirectory(OutName(*newfront));    
+
+        collision_solver->assembleFromInterface(elastic_intfc);
+        collision_solver->recordOriginalPosition();
+        collision_solver->setHseTypeLists();
+        collision_solver->initializeImpactZones();
+
+        collision_solver->setRestitutionCoef(1.0);
+        collision_solver->setVolumeDiff(0.0);
+
+        collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
+        collision_solver->setFabricThickness(af_params->fabric_thickness);
+        collision_solver->setFabricFrictionConstant(af_params->mu_s);
+        collision_solver->setFabricSpringConstant(af_params->ks); 
+        collision_solver->setFabricPointMass(af_params->m_s);
+
+        collision_solver->setStringRoundingTolerance(af_params->string_eps);
+        collision_solver->setStringThickness(af_params->string_thickness);
+        collision_solver->setStringFrictionConstant(af_params->mu_l);
+        collision_solver->setStringSpringConstant(af_params->kl); 
+        collision_solver->setStringPointMass(af_params->m_l);
+
+        collision_solver->setStrainLimit(af_params->strain_limit);
+        collision_solver->setCompressiveStrainLimit(af_params->compressive_strain_limit);
+        collision_solver->setStrainRateLimit(af_params->strainrate_limit);
+
+        collision_solver->gpoints = (*newfront)->gpoints;
+        collision_solver->gtris = (*newfront)->gtris;
+    }
+    else
+    {
+        printf("COLLISION DETECTION OFF\n");
+    }
+
+
+	if (myid == owner_id)
+	{
+        //Write from owner geom_set to owner point_set
+        get_point_set_from(&geom_set,point_set);
+
+        //Write from client point_sets to owner point_set
+	    for (i = 0; i < pp_numnodes(); i++)
+	    {
+            if (i == myid) continue;
+            pp_recv(5,i,client_L,MAXD*sizeof(double));
+            pp_recv(6,i,client_U,MAXD*sizeof(double));
+            pp_recv(1,i,client_size_new+i,sizeof(int));
+
+            if (client_size_new[i] > client_size_old[i])
+            {
+                client_size_old[i] = client_size_new[i];
+   
+                if (client_point_set_store[i] != NULL)
+                    FT_FreeThese(1,client_point_set_store[i]);
+   
+                FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
+                        client_size_new[i],sizeof(GLOBAL_POINT));
+            }
+
+            pp_recv(2,i,client_point_set_store[i],
+                    client_size_new[i]*sizeof(GLOBAL_POINT));
+
+            //performs the actual write
+            copy_from_client_point_set(point_set,client_point_set_store[i],
+                    client_size_new[i],client_L,client_U);
+	    } 
+
+        //Call spring solver now that owner holds all the point set data
+	    start_clock("spring_model");
+#if defined(__GPU__)
+        if (af_params->use_gpu)
+        {
+            if (debugging("trace"))
+                (void) printf("Enter gpu_spring_solver()\n");
+            gpu_spring_solver(sv,dim,size,n_sub,dt);
+            if (debugging("trace"))
+                (void) printf("Left gpu_spring_solver()\n");
+        }
+        else
+#endif
+            generic_spring_solver(sv,dim,size,n_sub,dt);
+	    stop_clock("spring_model");
+
+        //Owner writes back to client point sets and sends to clients
+	    for (i = 0; i < pp_numnodes(); i++)
+        {
+            if (i == myid) continue;
+            copy_to_client_point_set(point_set,
+                    client_point_set_store[i],client_size_new[i]);
+            pp_send(3,client_point_set_store[i],
+                    client_size_new[i]*sizeof(GLOBAL_POINT),i);
+        }
+	
+    }//end myid == owner_id
+
+
+    //Clients receive their point sets back from owner
+    if (myid != owner_id)
+    {
+        pp_recv(3,owner_id,point_set_store,total_client_size*sizeof(GLOBAL_POINT));
+    }
+
+	//All processes write from point sets to their geom_sets
+	put_point_set_to(&geom_set,point_set);
+
+	// Calculate the real force on load_node and rg_string_node
+    setSpecialNodeForce(elastic_intfc,geom_set.kl);
+        //setSpecialNodeForce(fr,geom_set.kl);
+
+	set_vertex_impulse(&geom_set,point_set);
+	set_geomset_velocity(&geom_set,point_set);
+	compute_center_of_mass_velo(&geom_set);
+
+    if (!debugging("collision_off") && FT_Dimension() == 3) 
+    {
+        start_clock("resolveCollision");
+        collision_solver->resolveCollision();
+        stop_clock("resolveCollision");
+        delete collision_solver;
+
+        setSpecialNodeForce(elastic_intfc,geom_set.kl);
+        compute_center_of_mass_velo(&geom_set);
+    }
+
+
+    //sync interfaces after collision handling
+    scatter_front(*newfront);
+
+    if (debugging("max_speed"))
+    {
+        print_max_fabric_speed(*newfront);
+        print_max_string_speed(*newfront);
+    }
+
+	if (debugging("trace"))
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
+}	/* end new_fourth_order_elastic_set_propagate_parallel_1() */
+
+
+/*
 void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 {
 	static ELASTIC_SET geom_set;
@@ -2162,333 +3230,12 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     if (debugging("max_speed"))
     {
         print_max_fabric_speed(fr);
-    }
-
-	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
-}	/* end fourth_order_elastic_set_propagate_parallel() */
-
-void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
-{
-	static ELASTIC_SET geom_set;
-	static int size = 0,owner_size,client_size;
-	static int *client_size_old, *client_size_new;
-        AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
-        int i,j,k,n_sub;
-        double dt;
-        static SPRING_VERTEX *sv;
-        static boolean first = YES;
-        static GLOBAL_POINT **point_set;
-        static GLOBAL_POINT *point_set_store;
-	static GLOBAL_POINT **client_point_set_store;
-        int dim = FT_Dimension();
-        long max_point_gindex = fr->interf->max_point_gindex;
-	int owner[MAXD];
-	int owner_id = af_params->node_id[0];
-        int myid = pp_mynode();
-	int gindex;
-        INTERFACE *elastic_intfc = NULL;
-	double *L = fr->rect_grid->L;
-	double *U = fr->rect_grid->U;
-	double client_L[MAXD],client_U[MAXD];
-	static boolean first_break_strings = YES;
-	static double break_strings_time = af_params->break_strings_time;
-	static int break_strings_num = af_params->break_strings_num;
-
-
-	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate_serial()\n");
-	geom_set.front = fr;
-
-	if (first_break_strings && break_strings_num > 0 &&
-	    break_strings_time >= 0.0 && 
-	    fr->time + fr->dt >= break_strings_time)
-	{
-	    printf("Some strings break! Count and set spring vertex again.\n");
-	    first_break_strings = NO;
-	    first = YES;
-	}
-
-	    if (first)
-        {
-            set_elastic_params(&geom_set,fr_dt);
-            if (debugging("step_size"))
-                print_elastic_params(geom_set);
-        }
-
-        if (fr_dt > geom_set.dt_tol)
-        {
-            n_sub = (int)(fr_dt/geom_set.dt_tol);
-            dt = fr_dt/n_sub;
-        }
-	    else
-        {
-            n_sub = af_params->n_sub;
-            dt = fr_dt/n_sub;
-        }
-
-	if (first)
-	{
-        owner[0] = 0;
-        owner[1] = 0;
-        owner[2] = 0;
-	    
-        if (point_set != NULL)
-            FT_FreeThese(1, point_set);
-	    
-        FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,
-					sizeof(GLOBAL_POINT*));
-	    
-        // every processor has a point_set with global indexing
-        for (i = 0; i < max_point_gindex; ++i)
-            point_set[i] = NULL;
-
-	    if (pp_numnodes() > 1)
-	    {
-            elastic_intfc = FT_CollectHypersurfFromSubdomains(fr,owner,
-                    ELASTIC_BOUNDARY);
-            collectNodeExtra(fr,elastic_intfc,owner_id);
-	    }
-	    else
-            elastic_intfc = fr->interf;
-	    
-        start_clock("set_data");
-	    if (myid == owner_id)
-        {
-            if (client_size_old != NULL)
-                FT_FreeThese(3, client_size_old, client_size_new, 
-                        client_point_set_store);
-
-            FT_VectorMemoryAlloc((POINTER*)&client_size_old,
-                    pp_numnodes(),sizeof(int));
-            FT_VectorMemoryAlloc((POINTER*)&client_size_new,
-                    pp_numnodes(),sizeof(int));
-            FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
-                    pp_numnodes(),sizeof(GLOBAL_POINT*));
-
-            for (i = 0; i < pp_numnodes(); i++)
-                client_size_old[i] = client_size_new[i] = 0;
-
-            assembleParachuteSet(elastic_intfc,&geom_set);
-            owner_size = geom_set.num_verts;
-            
-            if (point_set_store != NULL) 
-                FT_FreeThese(2,point_set_store, sv);
-            
-            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
-                    owner_size,sizeof(GLOBAL_POINT));
-            FT_VectorMemoryAlloc((POINTER*)&sv,owner_size,
-                    sizeof(SPRING_VERTEX));
-
-            link_point_set(&geom_set,point_set,point_set_store);
-	    	count_vertex_neighbors(&geom_set,sv);
-	    	set_spring_vertex_memory(sv,owner_size);
-	    	set_vertex_neighbors(&geom_set,sv,point_set);
-		
-            if (elastic_intfc != fr->interf)
-                delete_interface(elastic_intfc);
-	    }
-	    stop_clock("set_data");
-	    
-        first = NO;
-	}
-
-	elastic_intfc = fr->interf;
-
-    //compute bending force
-    double bends = af_params->kbs;
-    double bendd = af_params->lambda_bs;
-    computeBendingForce(elastic_intfc,bends,bendd);
-
-	assembleParachuteSet(elastic_intfc,&geom_set);
-
-	if (myid != owner_id)
-	{
-	    client_size = geom_set.num_verts;
-	    if (size < client_size)
-	    {
-	    	size = client_size;
-	    	if (point_set_store != NULL)
-                FT_FreeThese(2,point_set_store,sv);
-
-            FT_VectorMemoryAlloc((POINTER*)&point_set_store,
-                    size,sizeof(GLOBAL_POINT));
-            FT_VectorMemoryAlloc((POINTER*)&sv,size,
-                    sizeof(SPRING_VERTEX));
-	    }
-
-	    for (i = 0; i < max_point_gindex; ++i)
-            point_set[i] = NULL;
-
-	    link_point_set(&geom_set,point_set,point_set_store);
-	    count_vertex_neighbors(&geom_set,sv);
-	    set_spring_vertex_memory(sv,client_size);
-	    set_vertex_neighbors(&geom_set,sv,point_set);
-	    get_point_set_from(&geom_set,point_set);
-	    
-        pp_send(5,L,MAXD*sizeof(double),owner_id);
-	    pp_send(6,U,MAXD*sizeof(double),owner_id);
-	    pp_send(1,&(client_size),sizeof(int),owner_id);
-        pp_send(2,point_set_store,client_size*sizeof(GLOBAL_POINT),
-                owner_id);
-	}
-	else
-    {
-	    size = owner_size;
-    }
-
-
-    CollisionSolver3d* collision_solver = nullptr;
-
-	if (myid == owner_id)
-	{
-	
-    if (!debugging("collision_off"))
-    {
-        printf("COLLISION DETECTION ON\n");
-        collision_solver = new CollisionSolver3d();
-
-	    if (FT_Dimension() == 3)
-        {
-            setCollisionFreePoints3d(fr->interf);
-            collision_solver->initializeSystem(fr);
-
-            collision_solver->setRestitutionCoef(1.0);
-            collision_solver->setVolumeDiff(0.0);
-
-            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
-            collision_solver->setFabricThickness(af_params->fabric_thickness);
-            collision_solver->setFabricFrictionConstant(af_params->mu_s);
-            collision_solver->setFabricSpringConstant(af_params->ks); 
-            collision_solver->setFabricPointMass(af_params->m_s);
-
-            collision_solver->setStringRoundingTolerance(af_params->string_eps);
-            collision_solver->setStringThickness(af_params->string_thickness);
-            collision_solver->setStringFrictionConstant(af_params->mu_l);
-            collision_solver->setStringSpringConstant(af_params->kl); 
-            collision_solver->setStringPointMass(af_params->m_l);
-
-            collision_solver->setStrainLimit(af_params->strain_limit);
-            //collision_solver->setCompressiveStrainLimit(af_params->compress_strain_limit);
-            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
-
-            collision_solver->gpoints = fr->gpoints;
-            collision_solver->gtris = fr->gtris;
-        }
-    }
-    else
-    {
-        printf("COLLISION DETECTION OFF\n");
-    }
-
-	    get_point_set_from(&geom_set,point_set);
-	    
-        for (i = 0; i < pp_numnodes(); i++)
-	    {
-		if (i == myid) continue;
-		pp_recv(5,i,client_L,MAXD*sizeof(double));
-		pp_recv(6,i,client_U,MAXD*sizeof(double));
-		pp_recv(1,i,client_size_new+i,sizeof(int));
-		if (client_size_new[i] > client_size_old[i])
-		{
-		    client_size_old[i] = client_size_new[i];
-		    if (client_point_set_store[i] != NULL)
-		    	FT_FreeThese(1,client_point_set_store[i]);
-	    	    FT_VectorMemoryAlloc((POINTER*)&client_point_set_store[i],
-				client_size_new[i], sizeof(GLOBAL_POINT));
-		}
-		pp_recv(2,i,client_point_set_store[i],
-		    client_size_new[i]*sizeof(GLOBAL_POINT));
-		copy_from_client_point_set(point_set,client_point_set_store[i],
-				client_size_new[i],client_L,client_U);
-	    } 
-
-	    start_clock("spring_model");
-#if defined(__GPU__)
-            if (af_params->use_gpu)
-            {
-            	if (debugging("trace"))
-                    (void) printf("Enter gpu_spring_solver()\n");
-                gpu_spring_solver(sv,dim,size,n_sub,dt);
-                if (debugging("trace"))
-                    (void) printf("Left gpu_spring_solver()\n");
-            }
-            else
-#endif
-                generic_spring_solver(sv,dim,size,n_sub,dt);
-	    stop_clock("spring_model");
-
-        // owner writes and sends back the updated client point_set_stores
-	    for (i = 0; i < pp_numnodes(); i++)
-        {
-            if (i == myid) continue;
-            copy_to_client_point_set(point_set,
-                    client_point_set_store[i], client_size_new[i]);
-            pp_send(3,client_point_set_store[i],
-                            client_size_new[i]*sizeof(GLOBAL_POINT),i);
-        }
-
-	}//myid == owner_id
-
-    // clients receive the updated point_set_stores
-    if (myid != owner_id)
-    {
-        pp_recv(3,owner_id,point_set_store,
-            client_size*sizeof(GLOBAL_POINT));
-    }
-
-    // all processes write from their point_set to their geom_set
-	put_point_set_to(&geom_set,point_set);
-	
-    //TODO: Does this need to be called before the collision
-    //      solver has completed?
-    //      Also, should be passing in the geom_set instead of
-    //      looping over all nodes of fr->interf.
-    //      ELASTIC_SET likely did not consider rigid bodies
-    //      when it was created -- should make a new struct
-    //      PARACHUTE_SET that does and leave ELASTIC_SET for
-    //      pointmass runs and for debugging.
-	setSpecialNodeForce(fr,geom_set.kl);
-
-    //TODO: I think this function can be eliminated,
-    //      see comments inside put_point_value_to()
-    //      for required modification.
-	set_vertex_impulse(&geom_set,point_set);
-    
-    //TODO: why only normal component of velocities retained?
-    //      see set_geomset_velocity()
-	set_geomset_velocity(&geom_set,point_set);
-	
-    //TODO: verify com_velo computation
-    compute_center_of_mass_velo(&geom_set);
-
-	if(!debugging("collision_off"))
-    {
-        if (myid == owner_id)
-        {
-            if (FT_Dimension() == 3)
-            {
-                start_clock("resolveCollision");
-                collision_solver->resolveCollision();
-                stop_clock("resolveCollision");
-            }
-            delete collision_solver;
-        }
-
-        /* Calculate the real force on load_node and rg_string_node */
-        setSpecialNodeForce(fr,geom_set.kl);
-	    compute_center_of_mass_velo(&geom_set);
-    }
-
-    if (debugging("max_speed"))
-    {
-        print_max_fabric_speed(fr);
         print_max_string_speed(fr);
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate_serial()\n");
-}	/* end fourth_order_elastic_set_propagate_serial() */
+	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
+}*/	/* end fourth_order_elastic_set_propagate_parallel() */
 
 static void print_max_fabric_speed(Front* fr)
 {
@@ -2664,6 +3411,34 @@ static void setCurveVelocity(
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
         double max_speed = 0.0;
+
+        NODE* string_nodes[2];
+        string_nodes[0] = curve->start;
+        string_nodes[1] = curve->end;
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (!is_string_node(string_nodes[i])) continue;
+
+            p = curve->start->posn;
+            gindex = Gindex(p);
+            sl = (STATE*)left_state(p);
+            sr = (STATE*)right_state(p);
+            vel = point_set[gindex]->v;
+            
+            double speed = Mag3d(vel);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                crds_max = Coords(p);
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+            }
+        }
 
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -2907,20 +3682,25 @@ extern void set_geomset_velocity(
 	ELASTIC_SET *geom_set,
 	GLOBAL_POINT **point_set)
 {
-	int i,ns,nc,nn;
+	int ns = geom_set->num_surfs;
+	int nc = geom_set->num_curves;
+	int nn = geom_set->num_nodes;
 
-	ns = geom_set->num_surfs;
-	nc = geom_set->num_curves;
-	nn = geom_set->num_nodes;
-	for (i = 0; i < ns; ++i)
+	for (int i = 0; i < ns; ++i)
+    {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
-	for (i = 0; i < nc; ++i)
-	    setCurveVelocity(geom_set,geom_set->curves[i],point_set);
-	for (i = 0; i < nn; ++i)
+    }
+    for (int i = 0; i < nc; ++i)
+    {
+        setCurveVelocity(geom_set,geom_set->curves[i],point_set);
+    }
+    for (int i = 0; i < nn; ++i)
 	{
 	    if (is_load_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
+
+    //TODO: add rgb_surfs ?
 
 }	/* end set_geomset_velocity */
 
@@ -3006,6 +3786,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         clean_up(ERROR);
     }
 
+    //TODO: is this loop more efficient than using the intfc_surface_loop()?
     next_point(intfc,NULL,NULL,NULL);
     while(next_point(intfc,&p,&hse,&hs))
     {
@@ -3046,12 +3827,51 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     {
         STATE* sl = (STATE*)left_state((*n)->posn);
         sl->is_fixed = false;
-        AF_NODE_EXTRA* extra;
+        sl->is_movableRG = false;
 
-        if ((extra = (AF_NODE_EXTRA*)(*n)->extra) &&
-                (extra->af_node_type == PRESET_NODE))
+        AF_NODE_EXTRA* extra = (AF_NODE_EXTRA*)(*n)->extra;
+        if (extra)
         {
-            sl->is_fixed = true;
+            //Ensure RG_STRING_NODEs stay fixed to the rigid body
+            // during collision handling and strain limiting.
+            if (extra->af_node_type == RG_STRING_NODE)
+            {
+                node_out_curve_loop(*n,c)
+                {
+                    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+                    {
+                        b = (*c)->first;
+                        hs = Hyper_surf(b->_btris[0]->surface);
+                        break;
+                    }
+                }
+
+                node_in_curve_loop(*n,c)
+                {
+                    if (hsbdry_type(*c) == PASSIVE_HSBDRY)
+                    {
+                        b = (*c)->last;
+                        hs = Hyper_surf(b->_btris[0]->surface);
+                        break;
+                    }
+                }
+
+                if (hs == NULL)
+                {
+                    printf("ERROR in setCollisionFreePoints3d() : ");
+                    printf("No related hs found\n");
+                    LOC(); clean_up(ERROR);
+                }
+
+                if (wave_type(hs) == NEUMANN_BOUNDARY)
+                    sl->is_fixed = true;
+                if (wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                    sl->is_movableRG = true;
+            }
+            else if (extra->af_node_type == PRESET_NODE)
+            {
+                sl->is_fixed = true;
+            }
         }
         else if ((*n)->hsb && is_fixed_node(*n))
         {
@@ -3127,16 +3947,17 @@ extern void scatterAirfoilExtra(
 }	/* end scatterAirfoilExtra */
 
 extern void setSpecialNodeForce(
-	Front *front,
+	INTERFACE* intfc,
 	double kl)
 {
-	INTERFACE *intfc = front->interf;
+	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
-	RECT_GRID *gr = front->rect_grid;
+	RECT_GRID *gr = &(intfc->table->rect_grid);
+	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;
@@ -3198,8 +4019,11 @@ extern void setSpecialNodeForce(
             }
 	    }
 	    
+        //The update
         for (i = 0; i < dim; ++i)
+        {
             (*n)->posn->force[i] = f[i];
+        }
 
 	    if (debugging("rigid_body"))
 	    {

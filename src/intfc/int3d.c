@@ -387,7 +387,7 @@ LOCAL	void copy_tris(
 
 		/* Allocate Tmp Storage for Copied Tris */
 
-	h_size = 4*(s->interface->num_points) + 1;
+	h_size = 5*(s->interface->num_points) + 1;
 	uni_array(&ntris,s->num_tri,sizeof(TRI *));
 	uni_array(&hash_table,h_size,sizeof(P_LINK));
 	reset_hash_table(hash_table,h_size);
@@ -422,7 +422,7 @@ LOCAL	void copy_tris(
 	    for (j = 0; j < 3; ++j)
 	    	ntris[i]->side_length0[j] = oldtri->side_length0[j];
 
-        Gindex(ntris[i]) = Gindex(oldtri);
+            Gindex(ntris[i]) = Gindex(oldtri);
 
 	    if (i)
 	    {
@@ -537,6 +537,7 @@ LIB_LOCAL void copy_all_surfaces(
 	num_curves = size_of_pointers(intfc1->curves);
 	uni_array(&npos_curves,num_curves+1,sizeof(CURVE*));
 	uni_array(&nneg_curves,num_curves+1,sizeof(CURVE*));
+        int count = 0;
 	for (ps = intfc1->surfaces; ps && *ps; ++ps)
 	{
 	    CURVE **pos_curves, **neg_curves;
@@ -575,8 +576,17 @@ LIB_LOCAL void copy_all_surfaces(
 	    	nneg_curves[i] = *pnc;
 	    }
 	    nneg_curves[i] = NULL;
+            if (count == 3)
+            {
+                add_to_debug("DD");
+            }
 
 	    (void) copy_surface(*ps,npos_curves,nneg_curves,YES);
+            if (count == 3)
+            {
+                remove_from_debug("DD");
+            }
+            count++;
 	}
 	vmfree(npos_curves);
 	vmfree(nneg_curves);

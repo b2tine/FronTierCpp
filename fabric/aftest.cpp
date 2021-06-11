@@ -24,9 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "fabric.h"
 
 #if defined(__GPU__)
-
 #include "fabric_gpu.cuh"
-
 #endif
 
 #define		MAX_SURF_CURVES		10
@@ -541,6 +539,7 @@ static void set_equilibrium_mesh3d(
                     (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
             }
 	    }
+
 	    never_redistribute(Hyper_surf(*c)) = YES;
 	}
 
@@ -716,15 +715,17 @@ extern void print_airfoil_stat(
 	Front *front,
 	char *out_name)
 {
-	if (FT_Dimension() == 2 && pp_numnodes() > 1)
-	    return;
+    int dim = FT_Dimension();
+	if (dim == 2 && pp_numnodes() > 1) return;
+    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY) &&
+        !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
+
 	start_clock("print_airfoil_stat");
 
 	INTERFACE* elas_intfc = NULL;
 	INTERFACE* save_intfc = front->interf; 
 	if (pp_numnodes() > 1)
 	{
-	    //parallel
 	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	    int owner[MAXD] = {0};
 	    int owner_id = af_params->node_id[0];
@@ -736,19 +737,27 @@ extern void print_airfoil_stat(
 	
 	if (pp_mynode() == 0)
 	{	
-	    switch (front->rect_grid->dim)
+	    switch (dim)
 	    {
 	        case 2:
 	            print_airfoil_stat2d(front,out_name);
-		    break;
+                break;
 	    	case 3:
 	            print_airfoil_stat3d(front,out_name);
 	    	    break;
+            default:
+                printf("print_airfoil_stat() ERROR: invalid dimension! "
+                        "dim must be equal to 2 or 3\n");
+                LOC(); clean_up(EXIT_FAILURE);
 	    }
 	}
+
 	front->interf = save_intfc;
 	if (elas_intfc)
+    {
 	    delete_interface(elas_intfc);
+    }
+
 	stop_clock("print_airfoil_stat");
 }	/* end print_airfoil_stat */
 
@@ -902,7 +911,8 @@ static void print_airfoil_stat3d(
 	default:
 	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
 	}
-        if (af_params->no_fluid) return;
+
+    //if (af_params->no_fluid) return;
 
 	print_drag3d(front,out_name);
 	print_strings(front,out_name);
@@ -1266,73 +1276,98 @@ static void print_airfoil_stat3d_2(
 	Front *front,
 	char *out_name)
 {
-	INTERFACE *intfc = front->interf;
 	NODE **n,*node;
 	CURVE **c,*curve;
 	SURFACE **s,*surf;
 	BOND *b;
 	TRI *tri;
 	POINT *p;
-	static FILE *eskfile,*espfile,*egpfile,*efile,*exkfile,*enkfile;
-	static FILE *afile,*sfile,*pfile,*vfile;
-	static FILE *xcom_file,*vcom_file;
-	static boolean first = YES;
-	char fname[256];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double esk,esp,epi,epb,egp,exk,enk;
-	double ks,m_s,kl,m_l,kg,m_g,x_sqr,side_length,vect[3];
-	int j,k,nc,dim = intfc->dim;
-	double cnp_area,str_length,pz,pv;
-	double zcom,vcom;
-	double payload = af_params->payload;
-	double *g = af_params->gravity;
 	STATE *st;
 
-	if (eskfile == NULL)
-        {
-	    sprintf(fname,"%s/esk.xg",out_name);
-            eskfile = fopen(fname,"w");
-	    sprintf(fname,"%s/esp.xg",out_name);
-            espfile = fopen(fname,"w");
-	    sprintf(fname,"%s/egp.xg",out_name);
-            egpfile = fopen(fname,"w");
-	    sprintf(fname,"%s/exk.xg",out_name);
-            exkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/enk.xg",out_name);
-            enkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/eng.xg",out_name);
-            efile = fopen(fname,"w");
-	    sprintf(fname,"%s/area.xg",out_name);
-            afile = fopen(fname,"w");
-	    sprintf(fname,"%s/str_length.xg",out_name);
-            sfile = fopen(fname,"w");
-	    sprintf(fname,"%s/payload.xg",out_name);
-            pfile = fopen(fname,"w");
-	    sprintf(fname,"%s/loadvel.xg",out_name);
-            vfile = fopen(fname,"w");
-	    sprintf(fname,"%s/xcom.xg",out_name);
-            xcom_file = fopen(fname,"w");
-	    sprintf(fname,"%s/vcom.xg",out_name);
-            vcom_file = fopen(fname,"w");
-            fprintf(eskfile,"\"Spr-kinetic energy vs. time\"\n");
-            fprintf(espfile,"\"Spr-potentl energy vs. time\"\n");
-            fprintf(exkfile,"\"Ext-kinetic energy vs. time\"\n");
-            fprintf(egpfile,"\"Ext-potentl energy vs. time\"\n");
-            fprintf(enkfile,"\"Kinetic energy vs. time\"\n");
-            fprintf(efile,"\"Total energy vs. time\"\n");
-            fprintf(afile,"\"Canopy area vs. time\"\n");
-            fprintf(sfile,"\"String length vs. time\"\n");
-            fprintf(pfile,"\"Payload hight vs. time\"\n");
-            fprintf(vfile,"\"Payload velo vs. time\"\n");
-            fprintf(xcom_file,"\"COM vs. time\"\n");
-            fprintf(vcom_file,"\"V-COM vs. time\"\n");
-        }
+	INTERFACE *intfc = front->interf;
+    int dim = intfc->dim;
+
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double payload = af_params->payload;
+	double *g = af_params->gravity;
+
+	static bool first = true;
+    static char eskfname[50], espfname[50], egpfname[50],
+                exkfname[50], enkfname[50], efname[50];
+    static char afname[50], sfname[50], pfname[50], vfname[50];
+    static char xcomfname[50], vcomfname[50];
+
+    /*
+    static FILE *eskfile,*espfile,*egpfile,*exkfile,*enkfile,*efile;
+	static FILE *afile,*sfile,*pfile,*vfile;
+	static FILE *xcom_file,*vcom_file;
+	*/
+	
+    FILE *eskfile,*espfile,*egpfile,*exkfile,*enkfile,*efile;
+	FILE *afile,*sfile,*pfile,*vfile;
+	FILE *xcom_file,*vcom_file;
+    
+
+	if (first)
+    {
+	    sprintf(eskfname,"%s/esk.xg",out_name);
+        sprintf(espfname,"%s/esp.xg",out_name);
+        sprintf(egpfname,"%s/egp.xg",out_name);
+        sprintf(exkfname,"%s/exk.xg",out_name);
+        sprintf(enkfname,"%s/enk.xg",out_name);
+        sprintf(efname,"%s/eng.xg",out_name);
+        sprintf(afname,"%s/area.xg",out_name);
+        sprintf(sfname,"%s/str_length.xg",out_name);
+        sprintf(pfname,"%s/payload.xg",out_name);
+        sprintf(vfname,"%s/loadvel.xg",out_name);
+        sprintf(xcomfname,"%s/xcom.xg",out_name);
+        sprintf(vcomfname,"%s/vcom.xg",out_name);
+    }
+
+    eskfile = fopen(eskfname,"a");
+    espfile = fopen(espfname,"a");
+    egpfile = fopen(egpfname,"a");
+    exkfile = fopen(exkfname,"a");
+    enkfile = fopen(enkfname,"a");
+    efile = fopen(efname,"a");
+    afile = fopen(afname,"a");
+    sfile = fopen(sfname,"a");
+    pfile = fopen(pfname,"a");
+    vfile = fopen(vfname,"a");
+    xcom_file = fopen(xcomfname,"a");
+    vcom_file = fopen(vcomfname,"a");
+
+	if (first)
+    {
+        fprintf(eskfile,"\"Spr-kinetic energy vs. time\"\n");
+        fprintf(espfile,"\"Spr-potentl energy vs. time\"\n");
+        fprintf(egpfile,"\"Ext-potentl energy vs. time\"\n");
+        fprintf(exkfile,"\"Ext-kinetic energy vs. time\"\n");
+        fprintf(enkfile,"\"Kinetic energy vs. time\"\n");
+        fprintf(efile,"\"Total energy vs. time\"\n");
+        fprintf(afile,"\"Canopy area vs. time\"\n");
+        fprintf(sfile,"\"String length vs. time\"\n");
+        fprintf(pfile,"\"Payload hight vs. time\"\n");
+        fprintf(vfile,"\"Payload velo vs. time\"\n");
+        fprintf(xcom_file,"\"COM vs. time\"\n");
+        fprintf(vcom_file,"\"V-COM vs. time\"\n");
+        first = false;
+    }
+
+    
+    double esk,esp,epi,epb,egp,exk,enk;
+	double ks,m_s,kl,m_l,kg,m_g,x_sqr,side_length,vect[3];
+	double cnp_area,str_length,pz,pv;
+	double zcom,vcom;
+	int j,k,nc;
+
 	ks = af_params->ks;
-        m_s = af_params->m_s;
+    m_s = af_params->m_s;
 
 	esk = esp = epi = epb = egp = exk = enk = 0.0;
 	cnp_area = 0.0;
-	for (s = intfc->surfaces; s && *s; ++s)
+	
+    for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY)
 	    	continue;
@@ -1379,7 +1414,8 @@ static void print_airfoil_stat3d_2(
 		}
 	    }
 	}
-	epi *= 0.5;	//Each side is counted twice
+	
+    epi *= 0.5;	//Each side is counted twice
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (hsbdry_type(*c) == STRING_HSBDRY)
@@ -1473,39 +1509,54 @@ static void print_airfoil_stat3d_2(
 	    str_length += curve_length(*c);
 	    nc++;
 	}
-	if (nc != 0)
+	
+    if (nc != 0)
 	    str_length /= (double)nc;
-	if (first)
-	{
-	    first = NO;
-	}
+	
 
 	fprintf(eskfile,"%16.12f  %16.12f\n",front->time,esk);
-        fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
-        fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
-        fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
-        fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
-        fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
-	fflush(eskfile);
+    fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
+    fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
+    fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
+    fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
+    fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
+	
+    fflush(eskfile);
 	fflush(espfile);
 	fflush(egpfile);
 	fflush(exkfile);
 	fflush(enkfile);
 	fflush(efile);
 
-        fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
-        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-        fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
-        fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
-	fflush(afile);
+    fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
+    fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
+    fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
+    fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
+	
+    fflush(afile);
 	fflush(sfile);
 	fflush(pfile);
 	fflush(vfile);
 
-        fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
-        fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
-	fflush(xcom_file);
+    fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
+    fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
+	
+    fflush(xcom_file);
 	fflush(vcom_file);
+
+
+    fclose(eskfile);
+    fclose(espfile);
+    fclose(egpfile);
+    fclose(exkfile);
+    fclose(enkfile);
+    fclose(efile);
+    fclose(afile);
+    fclose(sfile);
+    fclose(pfile);
+    fclose(vfile);
+    fclose(xcom_file);
+    fclose(vcom_file);
 }	/* end print_airfoil_stat3d_2 */
 
 extern void fourth_order_elastic_curve_propagate(
@@ -1919,7 +1970,6 @@ static void adjust_for_curve_type(
 	double m_l,
 	double *g)
 {
-	C_PARAMS *c_params =  (C_PARAMS*)c->extra;
 	int j,dir,dim = 3;
 	double load_point_mass;
 	BOND *b;
@@ -1927,50 +1977,52 @@ static void adjust_for_curve_type(
 	double ave_accel;
 	double *force;
 
-	if (c_params == NULL) return;
+	C_PARAMS *c_params =  (C_PARAMS*)c->extra;
+	if (c_params == nullptr || c_params->load_type == NO_LOAD) return;
+
 	force = c_params->force;
 	dir = c_params->dir;
 	load_point_mass = c_params->point_mass;
 
-	if (c_params->load_type == NO_LOAD) return;
-	else if (c_params->load_type == FREE_LOAD)
+	if (c_params->load_type == FREE_LOAD)
 	{
 	    for (b = c->first; b != c->last; b = b->next)
 	    {
 	    	for (j = 0; j < dim; ++j)
-		{
-                    f[index][j] = f[index][j]*m_l/load_point_mass + g[j]
-				+ force[j];
-		}
-		index++;
+            {
+                f[index][j] = f[index][j]*m_l/load_point_mass + g[j] + force[j];
+            }
+            index++;
 	    }
 	}
 	else if (c_params->load_type == RIGID_LOAD)
 	{
 	    ave_accel = 0.0;
 	    n = 0;
-	    for (b = c->first; b != c->last; b = b->next)
+	    
+        for (b = c->first; b != c->last; b = b->next)
 	    {
-            	ave_accel += f[index][dir];
-		n++;
-		index++;
+            ave_accel += f[index][dir];
+    		n++;
+	    	index++;
 	    }
-	    ave_accel /= n;
+	    
+        ave_accel /= n;
 	    c_params->ave_accel = ave_accel;
-	    index = index0;
+	    
+        index = index0;
 	    for (b = c->first; b != c->last; b = b->next)
 	    {
 	    	for (j = 0; j < dim; ++j)
 	    	{
-		    if (j == dir)
-		    {
-            	    	f[index][dir] = ave_accel*m_l/load_point_mass + 
-					g[dir] + force[dir];
-		    }
-		    else
-		    	f[index][j] = v[index][j] = 0.0;
+                if (j == dir)
+                {
+                    f[index][dir] = ave_accel*m_l/load_point_mass + g[dir] + force[dir];
+                }
+                else
+                    f[index][j] = v[index][j] = 0.0;
 	    	}
-		index++;
+            index++;
 	    }
 	}
 }	/* end adjust_for_curve_type */
@@ -1984,46 +2036,52 @@ static void adjust_for_cnode_type(
 	double *g)
 {
 	CURVE **c;
-	C_PARAMS *c_params =  NULL;
 	int j,dir,dim = 3;
+	
+    C_PARAMS *c_params = nullptr;
 	double load_point_mass;
 	double *force;
 	double ave_accel;
 
 	for (c = n->in_curves; c && *c; ++c)
 	{
-	    if ((*c)->extra != NULL)
+	    if ((*c)->extra != nullptr)
 	    	c_params = (C_PARAMS*)(*c)->extra;
 	}
 	for (c = n->out_curves; c && *c; ++c)
 	{
-	    if ((*c)->extra != NULL)
+	    if ((*c)->extra != nullptr)
 	    	c_params = (C_PARAMS*)(*c)->extra;
 	}
-	if (c_params == NULL) return;
+
+	if (c_params == nullptr || c_params->load_type == NO_LOAD) return;
 
 	dir = c_params->dir;
 	force = c_params->force;
 	load_point_mass = c_params->point_mass;
-	if (c_params->load_type == NO_LOAD) return;
-	else if (c_params->load_type == FREE_LOAD)
+	
+	if (c_params->load_type == FREE_LOAD)
 	{
 	    for (j = 0; j < dim; ++j)
-                f[index][j] = f[index][j]*m_l/load_point_mass + g[j]
-				+ force[j];
+        {
+            f[index][j] = f[index][j]*m_l/load_point_mass + g[j] + force[j];
+        }
 	}
 	else if (c_params->load_type == RIGID_LOAD)
 	{
 	    ave_accel = c_params->ave_accel;
 	    for (j = 0; j < dim; ++j)
 	    {
-		if (j == dir)
-            	    //f[index][dir] = f[index][dir]*m_l/load_point_mass + g[dir]
-            	    f[index][dir] = ave_accel*m_l/load_point_mass + g[dir]
-				+ force[dir];
-		else
-		    f[index][j] = v[index][j] = 0.0;
-	    }
+            if (j == dir)
+            {
+                //f[index][dir] = f[index][dir]*m_l/load_point_mass + g[dir]
+                f[index][dir] = ave_accel*m_l/load_point_mass + g[dir] + force[dir];
+            }
+            else
+            {
+                f[index][j] = v[index][j] = 0.0;
+            }
+        }
 	}
 }	/* end adjust_for_cnode_type */
 
@@ -2043,12 +2101,12 @@ static void adjust_for_node_type(
 	if (end_type == FIXED_END)
 	{
 	    for (j = 0; j < dim; ++j)
-		f[index][j] = v[index][j] = 0.0;
+            f[index][j] = v[index][j] = 0.0;
 	}
 	else if (end_type == LOADED_END)
 	{
 	    for (j = 0; j < dim; ++j)
-		f[index][j] = f[index][j]*mass/payload + g[j];
+            f[index][j] = f[index][j]*mass/payload + g[j];
 	}
 }	/* end adjust_for_node_type */
 
@@ -2077,7 +2135,7 @@ static void propagate_curve(
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    v = sl->vel;
 	    for (j = 0; j < 2; ++j)
-		x[n][j] += v[j]*dt;
+            x[n][j] += v[j]*dt;
 	    ++n;
 	}
 }	/* end propagate_curve */
@@ -2192,10 +2250,10 @@ static void print_airfoil_stat2d_2(
 	if (pp_mynode() == 0)
 	{
 	    fprintf(ekfile,"%16.12f  %16.12f\n",front->time,ek);
-            fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
-            fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
-            fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
-            fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
+        fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
+        fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
+        fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
+        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
 	    fflush(ekfile);
 	    fflush(epfile);
 	    fflush(exfile);
@@ -2272,14 +2330,14 @@ static void set_special_node_type(
 	    for (j = 0; j < sv[n].num_nb; ++j)
 	    	sv[n].k[j] = 0.0;
 	    for (j = 0; j < dim; ++j)
-		sv[n].ext_accel[j] = 0.0;
+            sv[n].ext_accel[j] = 0.0;
 	    sv[n].lambda = 0.0;
 	}
 	else if (end_type == LOADED_END)
 	{
 	    sv[n].m = payload;
 	    for (j = 0; j < dim; ++j)
-		sv[n].ext_accel[j] = g[j];
+            sv[n].ext_accel[j] = g[j];
 	}
 }	/* set_special_node_type */
 
@@ -2515,7 +2573,7 @@ static void print_drag3d(
                     point = Point_of_tri(tri)[i];
                     sl = (STATE*)left_state(point);
                     sr = (STATE*)right_state(point);
-                    pres_drop += getStatePres(sr)-getStatePres(sl);
+                    pres_drop += getStatePres(sl)-getStatePres(sr);
                 }
                 pres_drop /= 3.0;
                 for (i = 0; i < dim; i++)
@@ -2550,7 +2608,8 @@ extern void print_strings(
 	char *out_name)
 {
 	static int dim = FT_Dimension();
-	if (dim == 2) return;
+	if (dim != 3) return;
+    if (!FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
 
 	static boolean first = YES;
 	char dirname[512];

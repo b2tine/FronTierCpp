@@ -6,9 +6,20 @@
 #include <iomanip>
 #include <set>
 
+struct BOND_BENDER
+{
+    double bends;
+    double kb[3];
+    double gradprev_kb[3][3];
+    double grad_kb[3][3];
+    double gradnext_kb[3][3];
+};
 
 
-void computeBendingForce(INTERFACE* intfc, double bends, double bendd);
+void addStringBenders(Front* front);
+void resetBendingForce(INTERFACE* intfc);
+void computeStringBendingForce(INTERFACE* intfc);
+void computeSurfBendingForce(INTERFACE* intfc, double bends, double bendd);
 
 
 

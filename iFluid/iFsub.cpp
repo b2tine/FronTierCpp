@@ -169,6 +169,24 @@ extern double getStateZvel(POINTER state)
 	return fstate->vel[2];
 }	/* end getStateZvel */
 
+extern double getStateOldXvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[0];
+}	/* end getStateXvel */
+
+extern double getStateOldYvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[1];
+}	/* end getStateYvel */
+
+extern double getStateOldZvel(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->vel_old[2];
+}	/* end getStateZvel */
+
 extern double getStateXimp(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
@@ -228,45 +246,42 @@ extern void read_iF_dirichlet_bdry_data(
 	{
 	    if (rect_boundary_type(intfc,i,j) == DIRICHLET_BOUNDARY)
 	    {
-		hs = NULL;
+            hs = NULL;
 	        if (rect_boundary_type(front->interf,i,j) == DIRICHLET_BOUNDARY)
-		    hs = FT_RectBoundaryHypSurf(front->interf,
-					DIRICHLET_BOUNDARY,i,j);
-		if (j == 0)
-		    sprintf(msg,"For lower boundary in %d-th dimension",i);
-		else
-		    sprintf(msg,"For upper boundary in %d-th dimension",i);
-		CursorAfterString(infile,msg);
-		(void) printf("\n");
-		
-        promptForDirichletBdryState(infile,front,&hs,i_hs);
-		i_hs++;
+                hs = FT_RectBoundaryHypSurf(front->interf,DIRICHLET_BOUNDARY,i,j);
+            if (j == 0)
+                sprintf(msg,"For lower boundary in %d-th dimension",i);
+            else
+                sprintf(msg,"For upper boundary in %d-th dimension",i);
+            CursorAfterString(infile,msg);
+            (void) printf("\n");
+            
+            promptForDirichletBdryState(infile,front,&hs,i_hs);
+            i_hs++;
 	    
         }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
+        {
+            HYPER_SURF **hss;
+            int k,nhs;
+            hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,&nhs);
+            printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",i,j,nhs);
+            if (dim == 2)
             {
-		HYPER_SURF **hss;
-		int k,nhs;
-                hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,
-                                        &nhs);
-                printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",
-                                        i,j,nhs);
-                if (dim == 2)
+                for (k = 0; k < nhs; ++k)
                 {
-                    for (k = 0; k < nhs; ++k)
-                    {
-                        CURVE *c = Curve_of_hs(hss[k]);
-                        (void) printf("Curve %d start and end at: ",k+1);
-                        (void) printf("(%f %f)->(%f %f)\n",
-                                  Coords(c->start->posn)[0],
-                                  Coords(c->start->posn)[1],
-                                  Coords(c->end->posn)[0],
-                                  Coords(c->end->posn)[1]);
-                        promptForDirichletBdryState(infile,front,hss+k,i_hs);
-                        i_hs++;
-                    }
+                    CURVE *c = Curve_of_hs(hss[k]);
+                    (void) printf("Curve %d start and end at: ",k+1);
+                    (void) printf("(%f %f)->(%f %f)\n",
+                              Coords(c->start->posn)[0],
+                              Coords(c->start->posn)[1],
+                              Coords(c->end->posn)[0],
+                              Coords(c->end->posn)[1]);
+                    promptForDirichletBdryState(infile,front,hss+k,i_hs);
+                    i_hs++;
                 }
             }
+        }
 	}
 	fclose(infile);
 }	/* end read_iF_dirichlet_bdry_data */
@@ -422,8 +437,6 @@ extern void iF_timeDependBoundaryState(
 	}
 }	/* end iF_timeDependBoundaryState */
 
-//TODO: 1. Update q and phi in these functions.
-//      2. Viscous terms in tangential direction
 extern void iF_flowThroughBoundaryState(
         double          *p0,
         HYPER_SURF      *hs,
@@ -440,7 +453,8 @@ extern void iF_flowThroughBoundaryState(
 	}
 }	/* end iF_flowThroughBoundaryState */
 
-static void iF_flowThroughBoundaryState3d(
+//NEW VERSION
+static void iF_flowThroughBoundaryState2d(
         double          *p0,
         HYPER_SURF      *hs,
         Front           *front,
@@ -449,126 +463,219 @@ static void iF_flowThroughBoundaryState3d(
 {
 	Tan_stencil **tsten;
 	Nor_stencil *nsten;
-	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	
+    FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
 	POINT *oldp = ft_params->oldp;
 	COMPONENT comp = ft_params->comp;
+
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	IF_FIELD *field = iFparams->field;
-	double dir[MAXD];
-	double u[3];		/* velocity in the sweeping direction */
-	double v[3][MAXD];	/* velocity in the orthogonal direction */
-	double pres[3];		/* pressure stencil */
-	double f_u;		/* u flux in the sweeping direction */
-	double f_v[MAXD];	/* v flux in the orthogonal direction */
-	double f_pres;		/* pressure flux */
-	double dn,dt = front->dt;
-	STATE *oldst,*newst = (STATE*)state;
-	STATE  **sts;
-	POINTER sl,sr;
-	int i,j,k,dim = front->rect_grid->dim;
-	int nrad = 2;
 
+	double dir[MAXD];
+	double u[3];		// velocity in the sweeping direction
+	double v[3][MAXD];	// velocity in the orthogonal direction
+	double vort[3];		// vorticity stencil
+	double pres[3];		// pressure stencil
+	double phi[3];		// phi stencil
+	double f_u;		    // u flux in the sweeping direction
+	double f_v[MAXD];	// v flux in the orthogonal direction
+	double f_vort;		// vort flux
+	double f_pres;		// pressure flux
+	double f_phi;		// phi flux
+	double dn,dt = front->dt;
+	int i,j,dim = front->rect_grid->dim;
+
+	STATE *oldst, *newst = (STATE*)state;
+	STATE  **sts;
+    POINTER sl,sr;
+	
+    int nrad = 3;
+	
 	if (debugging("flow_through"))
-	    printf("Entering iF_flowThroughBoundaryState3d()\n");
+	    printf("Entering iF_flowThroughBoundaryState2d()\n");
 
 	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
-	oldst = NULL;
+    
 	if (comp == negative_component(hs))  
 	    oldst = (STATE*)sl;
 	else 
 	    oldst = (STATE*)sr;
 
-	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
-	for (i = 0; i < dim; ++i)
-	    dir[i] = nsten->nor[i];
-	dn = FT_GridSizeInDir(dir,front);
+    for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] = oldst->vel[i];
+        newst->vel_old[i] = oldst->vel[i];
+    }
+	newst->vort = oldst->vort;
+	newst->pres = oldst->pres;
+	newst->phi = oldst->phi;
+    
 
-	u[1] = 0.0;
+    //TODO: Computing phi at the boundary can not be done with this function!
+    //
+    //      We require the intermediate velocity, u*, of the current time step
+    //      to evaluate phi at the flow-through boundary, but this function
+    //      gets called before we compute u*.
+    //
+    //      Need to apply the boundary condition for phi after computeDiffusion()
+    //      and before computeProjection().
+    //
+    //      It appears that we can compute it inside the function ellip.cpp : solve2d().
+    //      If successful, the phi computations in this function should be removed.
+
+
+    //Normal
+	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+
+    /*
+    printf("\niF_flowThroughBoundaryState2d() Normal Stencil:\n");
+    fprint_general_vector(stdout,"at point",Coords(oldp),dim,"\n");
+    fprint_general_vector(stdout,"normal",nsten->nor,dim,"\n");
+    fprint_general_vector(stdout,"nsten->pts[0]",nsten->pts[0],dim,"\n");
+    fprint_general_vector(stdout,"nsten->pts[1]",nsten->pts[1],dim,"\n");
+    fprint_general_vector(stdout,"nsten->pts[2]",nsten->pts[2],dim,"\n\n");
+    */
+
+	for (j = 0; j < 3; ++j) u[j] = 0.0;
+
+    for (i = 0; i < dim; ++i)
+	    dir[i] = nsten->nor[i];
+	dn = FT_GridSizeInDir(nsten->nor,front);
+	
+    if (debugging("flow_through"))
+	{
+	    (void) printf("Normal grid size = %f\n",dn);
+	    (void) print_Nor_stencil(front,nsten);
+	}
+
 	for (j = 0; j < 2; ++j)
 	{
+	    for (i = 0; i < dim; ++i)
+        {
+            u[j] += oldst->vel[i]*dir[i];
+        }
+
+	    for (i = 0; i < dim; ++i)
+        {
+            v[j][i] = oldst->vel[i] - u[j]*dir[i];
+        }
+
+	    vort[j] = oldst->vort;
 	    pres[j] = oldst->pres;
+	    phi[j] = oldst->phi;
 	}
+
+    STATE s1;
 	for (i = 0; i < dim; ++i)
 	{
 	    double vtmp;
-	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
-			field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
-	    u[1] += vtmp*dir[i];
-	    newst->vel[i] = vtmp;
-        newst->vel_old[i] = oldst->vel[i];
+        FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+                field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
+	    s1.vel[i] = vtmp;
 	}
+
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->vort,
+                            getStateVort,&vort[2],&oldst->vort);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
                             getStatePres,&pres[2],&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->phi,
+                            getStatePhi,&phi[2],&oldst->phi);
 
+    s1.vort = vort[2];
+    s1.pres = pres[2];
+    s1.phi = phi[2];
+
+	for (i = 0; i < dim; ++i)
+    {
+        u[2] += s1.vel[i]*dir[i];
+    }
+
+	for (i = 0; i < dim; ++i)
+    {
+        v[2][i] = s1.vel[i] - u[2]*dir[i];
+    }
+
+    f_u = burger_flux(u[0],u[1],u[2]);
+	for (i = 0; i < dim; ++i)
+    {
+        f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+    }
+	f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
-	newst->pres = oldst->pres - dt/dn*f_pres;
-	if (debugging("flow_through"))
-	{
-	    (void) print_Nor_stencil(front,nsten);
-	    (void) printf("new velocity after normal prop: %f %f %f\n",
-			newst->vel[0],newst->vel[1],newst->vel[2]);
-	}
-	
+	f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
+
+	for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
+    }
+	newst->vort -= dt/dn*f_vort;
+	newst->pres -= dt/dn*f_pres;
+    newst->phi -= dt/dn*f_phi;
+
+    //Tangential
 	tsten = FrontGetTanStencils(front,oldp,nrad);
-	if (tsten == NULL) return;
 
-	for (k = 0; k < dim-1; ++k)
+    /*
+    printf("\niF_flowThroughBoundaryState2d() Tangent Stencil:\n");
+    for (j = 0; j < 3; ++j)
+    {
+        std::string printmsg = "tsten[0]->p[" + std::to_string(j-1) + "]";
+        fprint_general_vector(stdout,printmsg.c_str(),Coords(tsten[0]->p[j-1]),dim,"\n");
+    }
+    printf("\n\n");
+    */
+
+    if (debugging("flow_through"))
 	{
-	    for (i = 0; i < dim; ++i)
-	    	dir[i] = tsten[k]->dir[i];
-	    dn = FT_GridSizeInDir(dir,front);
-
-	    if (comp == negative_component(hs))  
-	    	sts = (STATE**)tsten[k]->leftst;
-	    else 
-	    	sts = (STATE**)tsten[k]->rightst;
-
-	    if (debugging("flow_through"))
-	    {
-	    	(void) printf("Ambient component: %d\n",comp);
-	    	(void) printf("Tangential grid size = %f\n",dn);
-		(void) printf("For direction %d\n",k);
-	    	(void) print_Tan_stencil(front,tsten[k]);
-	    }
-
-	    for (j = 0; j < 3; ++j)
-	    	u[j] = 0.0;
-	    for (j = 0; j < 3; ++j)
-	    {
-	    	pres[j] = sts[j-1]->pres;
-	    	for (i = 0; i < dim; ++i)
-		    u[j] += sts[j-1]->vel[i]*dir[i];
-	    	for (i = 0; i < dim; ++i)
-	    	{
-		    v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
-	    	}
-	    }
-
-	    f_u = burger_flux(u[0],u[1],u[2]);
-	    for (i = 0; i < dim; ++i)
-	    {
-	    	f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
-	    }
-	    f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
-
-	    for (i = 0; i < dim; ++i)
-	    {
-	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
-	    }
-	    newst->pres += - dt/dn*f_pres;
+	    (void) printf("Ambient component: %d\n",comp);
+	    (void) printf("Tangential grid size = %f\n",dn);
+	    (void) print_Tan_stencil(front,tsten[0]);
 	}
 
-    //TODO: Is this reasonably correct? -- see rationale below
-    newst->phi = newst->pres;
-    newst->q = 0.0;
-        //state->q = getQFromPres(front,oldst->pres);
-            //newst->q = oldst->pres;
-        //newst->phi -= newst->q;
+	for (j = 0; j < 3; ++j) u[j] = 0.0;
+	
+	for (i = 0; i < dim; ++i)
+	    dir[i] = tsten[0]->dir[i];
+	dn = FT_GridSizeInDir(dir,front);
 
-    
-    //TODO: add a conditional for incorporating q,
-    //      when lagged pressure scheme used.
+	if (comp == negative_component(hs))  
+	    sts = (STATE**)tsten[0]->leftst;
+	else 
+	    sts = (STATE**)tsten[0]->rightst;
 
+    for (j = 0; j < 3; ++j)
+	{
+        for (i = 0; i < dim; ++i)
+	    {
+		    u[j] += sts[j-1]->vel[i]*dir[i];
+	    }
+
+        for (i = 0; i < dim; ++i)
+	    {
+		    v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
+	    }
+
+	    vort[j] = sts[j-1]->vort;
+	    pres[j] = sts[j-1]->pres;
+	    phi[j] = sts[j-1]->phi;
+	}
+
+	f_u = burger_flux(u[0],u[1],u[2]);
+	for (i = 0; i < dim; ++i)
+    {
+	    f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+    }
+	f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
+	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+	f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
+
+	for (i = 0; i < dim; ++i)
+    {
+	    newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
+    }
+	newst->vort -= dt/dn*f_vort;
+	newst->pres -= dt/dn*f_pres;
+    newst->phi -= dt/dn*f_phi;
     
     //Since pressure is usually updated as
     //      
@@ -578,8 +685,228 @@ static void iF_flowThroughBoundaryState3d(
     //
     //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
 
-    //TODO: check div(u*) = 0 valid for outflow??
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
     
+    //TODO: correct?
+    if (iFparams->num_scheme.projc_method == PMI ||
+        iFparams->num_scheme.projc_method == PMII)
+    {
+        newst->phi = newst->pres - newst->q;
+    }
+    
+    if (debugging("flow_through"))
+	{
+	    (void) printf("State after tangential sweep:\n");
+	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
+	    (void) printf("Vorticity: %f\n",newst->vort);
+	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
+	}
+}       /* end iF_flowThroughBoundaryState2d */
+
+//NEW VERSION
+static void iF_flowThroughBoundaryState3d(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+	Tan_stencil **tsten;
+	Nor_stencil *nsten;
+	
+    FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	POINT *oldp = ft_params->oldp;
+	COMPONENT comp = ft_params->comp;
+	
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	IF_FIELD *field = iFparams->field;
+	
+    double dir[MAXD];
+	double u[3];		// velocity in the sweeping direction
+	double v[3][MAXD];	// velocity in the orthogonal direction
+	double pres[3];		// pressure stencil
+	double phi[3];		// phi stencil
+	double f_u;		    // u flux in the sweeping direction
+	double f_v[MAXD];	// v flux in the orthogonal direction
+	double f_pres;		// pressure flux
+	double f_phi;		// phi flux
+	double dn;
+    
+    int dim = front->rect_grid->dim;
+    double dt = front->dt;
+	
+    STATE *oldst, *newst = (STATE*)state;
+    STATE  **sts;
+	POINTER sl,sr;
+	int i,j,k;
+	
+    int nrad = 3;
+
+	if (debugging("flow_through"))
+	    printf("Entering iF_flowThroughBoundaryState3d()\n");
+
+	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
+	
+    if (comp == negative_component(hs))  
+	    oldst = (STATE*)sl;
+	else 
+	    oldst = (STATE*)sr;
+    
+    for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] = oldst->vel[i];
+        newst->vel_old[i] = oldst->vel[i];
+    }
+    newst->pres = oldst->pres;
+    newst->phi = oldst->phi;
+
+
+    //Normal
+	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+	
+    for (j = 0; j < 3; ++j) u[j] = 0.0;
+	
+    for (i = 0; i < dim; ++i)
+	    dir[i] = nsten->nor[i];
+	dn = FT_GridSizeInDir(dir,front);
+    
+    for (j = 0; j < 2; ++j)
+	{
+        for (i = 0; i < dim; ++i)
+        {
+            u[j] += oldst->vel[i]*dir[i];
+        }
+
+        for (i = 0; i < dim; ++i)
+        {
+            v[j][i] = oldst->vel[i] - u[j]*dir[i];
+        }
+
+	    pres[j] = oldst->pres;
+	    phi[j] = oldst->phi;
+	}
+
+    STATE s1;
+	for (i = 0; i < dim; ++i)
+	{
+	    double vtmp;
+	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+                field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
+	    s1.vel[i] = vtmp;
+	}
+
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
+                            getStatePres,&pres[2],&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->phi,
+                            getStatePhi,&phi[2],&oldst->phi);
+
+    s1.pres = pres[2];
+    s1.phi = phi[2];
+    
+    for (i = 0; i < dim; ++i)
+    {
+        u[2] += s1.vel[i]*dir[i];
+    }
+
+    for (i = 0; i < dim; ++i)
+    {
+        v[2][i] = s1.vel[i] - u[2]*dir[i];
+    }
+
+    f_u = burger_flux(u[0],u[1],u[2]);
+    for (i = 0; i < dim; ++i)
+    {
+        f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+    }
+    f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+    f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
+
+    for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
+    }
+    newst->pres -= dt/dn*f_pres;
+    newst->phi -= dt/dn*f_phi;
+
+    if (debugging("flow_through"))
+	{
+	    (void) print_Nor_stencil(front,nsten);
+	    (void) printf("new velocity after normal prop: %f %f %f\n",
+			newst->vel[0],newst->vel[1],newst->vel[2]);
+	}
+	
+    
+    //Tangential
+	tsten = FrontGetTanStencils(front,oldp,nrad);
+	if (tsten != nullptr)
+    {
+	    for (k = 0; k < dim-1; ++k)
+        {
+            for (j = 0; j < 3; ++j) u[j] = 0.0;
+
+            if (comp == negative_component(hs))  
+                sts = (STATE**)tsten[k]->leftst;
+            else 
+                sts = (STATE**)tsten[k]->rightst;
+
+            for (i = 0; i < dim; ++i)
+                dir[i] = tsten[k]->dir[i];
+            dn = FT_GridSizeInDir(dir,front);
+
+            if (debugging("flow_through"))
+            {
+                printf("Ambient component: %d\n",comp);
+                printf("Tangential grid size = %f\n",dn);
+                printf("For direction %d\n",k);
+                print_Tan_stencil(front,tsten[k]);
+            }
+
+            for (j = 0; j < 3; ++j)
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    u[j] += sts[j-1]->vel[i]*dir[i];
+                }
+
+                for (i = 0; i < dim; ++i)
+                {
+                    v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
+                }
+                
+                pres[j] = sts[j-1]->pres;
+                phi[j] = sts[j-1]->phi;
+            }
+
+            f_u = burger_flux(u[0],u[1],u[2]);
+            for (i = 0; i < dim; ++i)
+            {
+                f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+            }
+            f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+            f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
+
+            for (i = 0; i < dim; ++i)
+            {
+                newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
+            }
+            
+            newst->pres -= dt/dn*f_pres;
+            newst->phi -= dt/dn*f_phi;
+        }
+    }
+
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
+     
+    //TODO: correct?
+    if (iFparams->num_scheme.projc_method == PMI ||
+        iFparams->num_scheme.projc_method == PMII)
+    {
+        newst->phi = newst->pres - newst->q;
+    }
 
     if (debugging("flow_through"))
 	{
@@ -591,6 +918,8 @@ static void iF_flowThroughBoundaryState3d(
 	}
 }	/* end iF_flowThroughBoundaryState3d */
 
+/*
+//OLD VERSION
 static void iF_flowThroughBoundaryState2d(
         double          *p0,
         HYPER_SURF      *hs,
@@ -606,14 +935,14 @@ static void iF_flowThroughBoundaryState2d(
 	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
 	IF_FIELD *field = iFparams->field;
 	double dir[MAXD];
-	double u[3];		/* velocity in the sweeping direction */
-	double v[3][MAXD];	/* velocity in the orthogonal direction */
-	double vort[3];		/* vorticity stencil */
-	double pres[3];		/* pressure stencil */
-	double f_u;		/* u flux in the sweeping direction */
-	double f_v[MAXD];	/* v flux in the orthogonal direction */
-	double f_vort;		/* vort flux */
-	double f_pres;		/* pressure flux */
+	double u[3];		// velocity in the sweeping direction
+	double v[3][MAXD];	// velocity in the orthogonal direction
+	double vort[3];		// vorticity stencil
+	double pres[3];		// pressure stencil
+	double f_u;		    // u flux in the sweeping direction
+	double f_v[MAXD];	// v flux in the orthogonal direction
+	double f_vort;		// vort flux
+	double f_pres;		// pressure flux
 	double dn,dt = front->dt;
 	STATE *oldst,*newst = (STATE*)state;
 	STATE  **sts;
@@ -693,6 +1022,7 @@ static void iF_flowThroughBoundaryState2d(
 	    u[j] = 0.0;
 	for (j = 0; j < 3; ++j)
 	{
+        //TODO: Why doesn't this seg fault on j = 0 --> sts[-1]?
 	    vort[j] = sts[j-1]->vort;
 	    pres[j] = sts[j-1]->pres;
 	    for (i = 0; i < dim; ++i)
@@ -719,14 +1049,13 @@ static void iF_flowThroughBoundaryState2d(
     
     //TODO: Is this reasonably correct? -- see rationale below
     newst->phi = newst->pres;
-    newst->q = 0.0;
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
         //state->q = getQFromPres(front,oldst->pres);
-            //newst->q = oldst->pres;
         //newst->phi -= newst->q;
     
     //TODO: add a conditional for incorporating q,
     //      when lagged pressure scheme used.
-
     
     //Since pressure is usually updated as
     //      
@@ -748,7 +1077,172 @@ static void iF_flowThroughBoundaryState2d(
 	    (void) printf("Phi: %f\n",newst->phi);
 	    (void) printf("q: %f\n",newst->q);
 	}
-}       /* end iF_flowThroughBoundaryState2d */
+}*/       /* end iF_flowThroughBoundaryState2d */
+
+/*
+//OLD VERSION
+static void iF_flowThroughBoundaryState3d(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+	Tan_stencil **tsten;
+	Nor_stencil *nsten;
+	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	POINT *oldp = ft_params->oldp;
+	COMPONENT comp = ft_params->comp;
+	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	IF_FIELD *field = iFparams->field;
+	double dir[MAXD];
+	double u[3];		// velocity in the sweeping direction
+	double v[3][MAXD];	// velocity in the orthogonal direction
+	double pres[3];		// pressure stencil
+	double f_u;		    // u flux in the sweeping direction
+	double f_v[MAXD];	// v flux in the orthogonal direction
+	double f_pres;		// pressure flux
+	double dn;
+
+    double dt = front->dt;
+	STATE *oldst, *newst = (STATE*)state;
+	STATE  **sts;
+	POINTER sl,sr;
+	int i,j,k,dim = front->rect_grid->dim;
+	int nrad = 2;
+
+
+	if (debugging("flow_through"))
+	    printf("Entering iF_flowThroughBoundaryState3d()\n");
+
+	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
+	oldst = nullptr;
+	if (comp == negative_component(hs))  
+	    oldst = (STATE*)sl;
+	else 
+	    oldst = (STATE*)sr;
+
+    //Normal
+	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+	for (i = 0; i < dim; ++i)
+	    dir[i] = nsten->nor[i];
+	dn = FT_GridSizeInDir(dir,front);
+
+	u[1] = 0.0;
+	
+    for (j = 0; j < 2; ++j)
+	{
+	    pres[j] = oldst->pres;
+	}
+
+	for (i = 0; i < dim; ++i)
+	{
+	    double vtmp;
+	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+			field->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
+	    u[1] += vtmp*dir[i];
+	    newst->vel[i] = vtmp;
+        newst->vel_old[i] = oldst->vel[i];
+	}
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
+                            getStatePres,&pres[2],&oldst->pres);
+
+	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+	newst->pres = oldst->pres - dt/dn*f_pres;
+
+	if (debugging("flow_through"))
+	{
+	    (void) print_Nor_stencil(front,nsten);
+	    (void) printf("new velocity after normal prop: %f %f %f\n",
+			newst->vel[0],newst->vel[1],newst->vel[2]);
+	}
+	
+    //Tangential
+	tsten = FrontGetTanStencils(front,oldp,nrad);
+	if (tsten == NULL) return; //TODO: Does this always exit here (see next TODO)?
+
+	for (k = 0; k < dim-1; ++k)
+	{
+	    for (i = 0; i < dim; ++i)
+	    	dir[i] = tsten[k]->dir[i];
+	    dn = FT_GridSizeInDir(dir,front);
+
+	    if (comp == negative_component(hs))  
+	    	sts = (STATE**)tsten[k]->leftst;
+	    else 
+	    	sts = (STATE**)tsten[k]->rightst;
+
+	    if (debugging("flow_through"))
+	    {
+	    	printf("Ambient component: %d\n",comp);
+	    	printf("Tangential grid size = %f\n",dn);
+		    printf("For direction %d\n",k);
+	    	print_Tan_stencil(front,tsten[k]);
+	    }
+
+	    for (j = 0; j < 3; ++j) u[j] = 0.0;
+
+	    for (j = 0; j < 3; ++j)
+	    {
+	    	pres[j] = sts[j-1]->pres;
+
+            for (i = 0; i < dim; ++i)
+            {
+                u[j] += sts[j-1]->vel[i]*dir[i];
+            }
+
+            for (i = 0; i < dim; ++i)
+	    	{
+                v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
+	    	}
+	    }
+
+	    f_u = burger_flux(u[0],u[1],u[2]);
+	    for (i = 0; i < dim; ++i)
+	    {
+	    	f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+	    }
+	    f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+
+	    for (i = 0; i < dim; ++i)
+	    {
+	    	newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
+	    }
+	    newst->pres += - dt/dn*f_pres;
+	}
+
+    //TODO: Is this reasonably correct? -- see rationale below
+    newst->phi = newst->pres;
+    newst->q = oldst->pres;
+        //newst->q = 0.0;
+        //state->q = getQFromPres(front,oldst->pres);
+        //newst->phi -= newst->q;
+
+    
+    //TODO: add a conditional for incorporating q,
+    //      when lagged pressure scheme used.
+
+    
+    //Since pressure is usually updated as
+    //      
+    //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
+    //
+    //      set 
+    //
+    //      phi^{n+1} = p^{n+1/2} - q    (Div_U = 0 at the boundary) 
+
+    //TODO: check div(u*) = 0 valid for outflow??
+    
+
+    if (debugging("flow_through"))
+	{
+	    (void) printf("State after tangential sweep:\n");
+	    (void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
+	    (void) printf("Pressure: %f\n",newst->pres);
+	    (void) printf("Phi: %f\n",newst->phi);
+	    (void) printf("q: %f\n",newst->q);
+	}
+}*/	/* end iF_flowThroughBoundaryState3d */
 
 extern void ifluid_point_propagate(
         Front *front,
@@ -821,7 +1315,8 @@ static  void neumann_point_propagate(
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below).
 	setStateViscosity(iFparams,newst,comp);
-	FT_NormalAtPoint(oldp,front,nor,comp);
+	
+    FT_NormalAtPoint(oldp,front,nor,comp);
 
 	dn = grid_size_in_direction(nor,h,dim);
 	for (i = 0; i < dim; ++i)
@@ -833,18 +1328,17 @@ static  void neumann_point_propagate(
 	    newst->vel[i] = 0.0;
         FT_RecordMaxFrontSpeed(i,0.0,NULL,Coords(newp),front);
 	}
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
-    newst->phi = newst->pres;
-    newst->q = 0.0;
-        //newst->q = oldst->pres;
-	
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi
-            getStatePhi,&newst->phi,&oldst->phi)
-    */
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
+            getStatePhi,&newst->phi,&oldst->phi);
 
+    //newst->phi = newst->pres;
+    newst->q = oldst->pres;
+    //newst->q = 0.0;
+	
     if (dim == 2)
     {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
@@ -898,11 +1392,11 @@ static  void dirichlet_point_propagate(
 	if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
-            for (i = 0; i < dim; ++i)
+        for (i = 0; i < dim; ++i)
 	    {
 	    	newst->vel[i] = bstate->vel[i];
-		FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),
-					front);
+		    FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),
+                    NULL,Coords(newp),front);
 	    }
 	    speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
@@ -917,10 +1411,10 @@ static  void dirichlet_point_propagate(
 
 	    if (debugging("dirichlet_bdry"))
 	    {
-		(void) printf("Preset boundary state:\n");
-		(void) print_general_vector("Velocity: ",newst->vel,dim,"\n");
-		//(void) printf("Vorticity: %f\n",newst->vort);
-		//(void) printf("Pressure: %f\n",newst->pres);
+            printf("Preset boundary state:\n");
+            print_general_vector("Velocity: ",newst->vel,dim,"\n");
+            //printf("Vorticity: %f\n",newst->vort);
+            //printf("Pressure: %f\n",newst->pres);
 	    }
 	}
 	else if (boundary_state_function(oldhs))
@@ -928,13 +1422,13 @@ static  void dirichlet_point_propagate(
 	    if (strcmp(boundary_state_function_name(oldhs),
 		       "flowThroughBoundaryState") == 0)
 	    {
-		FLOW_THROUGH_PARAMS ft_params;
-		oldp->hse = oldhse;
-		oldp->hs = oldhs;
+            FLOW_THROUGH_PARAMS ft_params;
+            oldp->hse = oldhse;
+            oldp->hs = oldhs;
 	    	ft_params.oldp = oldp;
-	    	ft_params.comp = comp;
+            ft_params.comp = comp;
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)&ft_params,(POINTER)newst);	
+                    (POINTER)&ft_params,(POINTER)newst);	
 	    }
 	    else if (strcmp(boundary_state_function_name(oldhs),
 		       "iF_timeDependBoundaryState") == 0)
@@ -942,7 +1436,7 @@ static  void dirichlet_point_propagate(
 		TIME_DEPENDENT_PARAMS *td_params = (TIME_DEPENDENT_PARAMS*)
 				boundary_state_function_params(oldhs);
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)td_params,(POINTER)newst);	
+                    (POINTER)td_params,(POINTER)newst);	
 	    }
 	    else if (strcmp(boundary_state_function_name(oldhs),
 		       "iF_splitBoundaryState") == 0)
@@ -950,7 +1444,7 @@ static  void dirichlet_point_propagate(
 		SPLIT_STATE_PARAMS *sparams = (SPLIT_STATE_PARAMS*)
 				boundary_state_function_params(oldhs);
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)sparams,(POINTER)newst);	
+                    (POINTER)sparams,(POINTER)newst);	
 	    }
             for (i = 0; i < dim; ++i)
 		FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),
@@ -1024,7 +1518,6 @@ static  void contact_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 }	/* end contact_point_propagate */
 
-//TODO: Need to set phi here????
 static void rgbody_point_propagate(
         Front *front,
         POINTER wave,
@@ -1041,6 +1534,7 @@ static void rgbody_point_propagate(
     int i, dim = front->rect_grid->dim;
 	double dn,*h = front->rect_grid->h;
 	double *m_pre = field->pres;
+	double *m_phi = field->phi;
 	double *m_vor = field->vort;
 	double *m_temp = field->temperature;
 	double *m_mu = field->mu;
@@ -1199,10 +1693,16 @@ static void rgbody_point_propagate(
                 oldhse,oldhs,dt,vel);
     }
     
-    for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+    for (i = 0; i < dim; ++i)
+    {
+        newst->vel[i] = vel[i];
+    }
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
+	
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
+			getStatePhi,&newst->phi,&oldst->phi);
 	
     if (m_temp != NULL)
     {
@@ -1342,6 +1842,14 @@ extern void read_iFparams(
 	    fscanf(infile,"%d",&iFparams->adv_order);
 	    (void) printf("%d\n",iFparams->adv_order);
 	}
+	iFparams->extrapolate_advection = false;
+	if (CursorAfterStringOpt(infile,"Enter yes for advection term extrapolation:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            iFparams->extrapolate_advection = true;
+    }
 
     CursorAfterString(infile,"Enter projection type:");
 	fscanf(infile,"%s",string);
@@ -1395,18 +1903,20 @@ extern void read_iFparams(
 	    }
 	}
 
+    //TODO: Should move this into the ambient_state() function
 	for (i = 0; i < dim; ++i) iFparams->U_ambient[i] = 0.0;
-        if (CursorAfterStringOpt(infile,"Enter fluid ambient velocity:"))
+    if (CursorAfterStringOpt(infile,"Enter fluid ambient velocity:"))
+    {
+        for (i = 0; i < dim; ++i)
         {
-            for (i = 0; i < dim; ++i)
-            {
-                fscanf(infile,"%lf ",&iFparams->U_ambient[i]);
-                (void) printf("%f ",iFparams->U_ambient[i]);
-            }
-            (void) printf("\n");
+            fscanf(infile,"%lf ",&iFparams->U_ambient[i]);
+            (void) printf("%f ",iFparams->U_ambient[i]);
         }
-	iFparams->ub_speed = HUGE;
-        if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
+        (void) printf("\n");
+    }
+	
+    iFparams->ub_speed = HUGE;
+    if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
 	{
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);
