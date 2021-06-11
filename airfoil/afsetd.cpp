@@ -1495,6 +1495,9 @@ static void assembleParachuteSet3d(
 	CURVE **curves = geom_set->curves;
 	NODE **nodes = geom_set->nodes;
 
+    INTERFACE *cur_intfc = current_interface();
+    set_current_interface(intfc);
+
 	/* Assemble canopy surfaces */
 	
     int nrgbs = 0;
@@ -1637,6 +1640,8 @@ static void assembleParachuteSet3d(
                 ns, nc, nn, geom_set->elastic_num_verts);
         printf("nrgbs = %d, total_num_verts = %d\n", geom_set->total_num_verts);
     }
+
+    set_current_interface(cur_intfc);
 }	/* end assembleParachuteSet */
 
 extern void copy_from_client_point_set(
