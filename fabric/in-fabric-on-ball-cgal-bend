@@ -55,7 +55,7 @@ Enter min triangle edge length: 0.0125
 Start parameters for spring-mass system
 
 Enter the number of fabric optimization rounds: 0
-Enter interior sub step number: 2
+Enter interior sub step number: 10
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.001
