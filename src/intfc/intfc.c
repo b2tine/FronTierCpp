@@ -6584,6 +6584,8 @@ EXPORT  void  reset_nodes_posn(
 	INTERFACE	*intfc)
 {
 	CURVE   **c;
+    INTERFACE *cur_intfc = current_interface();
+    set_current_interface(intfc);
 
 	for(c = intfc->curves; c && *c; c++)
 	{
@@ -6633,6 +6635,7 @@ EXPORT  void  reset_nodes_posn(
 		       "closed curve is inconsistent.\n");
 	    }
 	}
+    set_current_interface(cur_intfc);
 }	/* end reset_nodes_posn */
 
 EXPORT void unsort_surf_point(SURFACE *surf)

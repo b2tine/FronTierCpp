@@ -1569,22 +1569,22 @@ typedef struct _SCALED_REDIST_PARAMS SCALED_REDIST_PARAMS;
 	for ((s) = (intfc)->surfaces; (s) && *(s); ++(s)) 
 
 #define	surf_pos_curve_loop(surf,c)	\
-	for ((c) = (surf)->pos_curves; (c) && (*c); ++(c))
+	for ((c) = (surf)->pos_curves; (c) && *(c); ++(c))
 
 #define	surf_neg_curve_loop(surf,c)	\
-	for ((c) = (surf)->neg_curves; (c) && (*c); ++(c))
+	for ((c) = (surf)->neg_curves; (c) && *(c); ++(c))
 
 #define	curve_pos_surf_loop(curve,s)	\
-	for ((s) = (curve)->pos_surfaces; (s) && (*s); ++(s))
+	for ((s) = (curve)->pos_surfaces; (s) && *(s); ++(s))
 
 #define	curve_neg_surf_loop(curve,s)	\
-	for ((s) = (curve)->neg_surfaces; (s) && (*s); ++(s))
+	for ((s) = (curve)->neg_surfaces; (s) && *(s); ++(s))
 
 #define	node_in_curve_loop(node,c)	\
-	for ((c) = (node)->in_curves; (c) && (*c); ++(c))
+	for ((c) = (node)->in_curves; (c) && *(c); ++(c))
 
 #define	node_out_curve_loop(node,c)	\
-	for ((c) = (node)->out_curves; (c) && (*c); ++(c))
+	for ((c) = (node)->out_curves; (c) && *(c); ++(c))
 
 #define bond_btri_loop(b,btris)		\
 	for ((btris) = Btris((b)); (btris) && *(btris); ++(btris))
