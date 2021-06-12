@@ -5000,7 +5000,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     double coords_reflect[MAXD], coords_ghost[MAXD];
     double nor[MAXD];
     
-    STATE* intfc_state = (STATE*)state;
     double vel_intfc_gcrx[MAXD];
     for (int i = 0; i < dim; ++i)
     {
@@ -5025,10 +5024,16 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     //TODO: Difference if we use ghost_comp instead of comp in nip?
     //      This is the correct usage of the api, remove previous version
     //      when certain no problems occur.
+    /*      
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    /*FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);*/
+    */
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    /*
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
 
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
@@ -5128,6 +5133,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
     double dist_reflect = FT_GridSizeInDir(nor,front);
+
+    //TODO: need to check if dist_reflect > dist_ghost ???
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
@@ -5197,7 +5204,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     {
         for (int j = 0; j < dim; ++j)
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-        
         return;
     }
     /////////////////////////////////////////////////////////////////////////
@@ -5242,9 +5248,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         for (int j = 0; j < dim; ++j)
             tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
-
-    for (int j = 0; j < dim; ++j)
-        intfc_state->shear_force[j] = tau_wall[j];
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;

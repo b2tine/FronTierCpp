@@ -123,12 +123,12 @@ struct _I_USER_INTERFACE {
 
 	/* Rect grid utility functions */
 		/*Writing*/
-	void	(*_fprint_intfc_rect_grids)(FILE*,INTERFACE*);
-	void	(*_user_fprint_intfc_rect_grids)(FILE*,INTERFACE*);
+	void (*_fprint_intfc_rect_grids)(FILE*,INTERFACE*);
+	void (*_user_fprint_intfc_rect_grids)(FILE*,INTERFACE*);
 		/*Reading*/
 	int	(*_read_print_intfc_rect_grids)(const IO_TYPE*,INTERFACE*,
 	                                        REMAP*);
-	void	(*_user_read_print_intfc_rect_grids)(const IO_TYPE*,INTERFACE*,
+	void (*_user_read_print_intfc_rect_grids)(const IO_TYPE*,INTERFACE*,
 						     boolean,REMAP*);
 
 	/* Curve utility functions */
@@ -309,11 +309,13 @@ typedef struct _I_INTERFACE I_INTERFACE;
 #define	excluded_comps(intfc)	(i_user_interface(intfc)._excluded_comps)
 #define	Random01_seed(intfc)	i_user_interface(intfc)._random01_seed
 
+
 enum _PRESERVE_USER_HOOKS {
 	SAVE_HOOKS,
 	RESTORE_HOOKS
 };
 typedef enum _PRESERVE_USER_HOOKS PRESERVE_USER_HOOKS;
+
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

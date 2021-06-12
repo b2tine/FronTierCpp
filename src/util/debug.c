@@ -393,9 +393,7 @@ EXPORT	void debug_print(
 	char buf[1000];
 	char *debug_l;
 
-	if (db_mode == NONE)
-	    return;
-
+	if (db_mode == NONE) return;
 
 	if (debugging(funcname))
 	{

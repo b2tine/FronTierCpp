@@ -2388,7 +2388,6 @@ EXPORT  void FT_InsertDirichletBoundary(
     BOUNDARY_STATE  Bstate;
 	int index;
     INTERFACE *intfc = front->interf;
-	/* int istate = 2*dir + nb; */
 
 	zero_scalar(&Bstate,sizeof(BOUNDARY_STATE));
 	
@@ -3500,10 +3499,12 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	int range)
 {
     //TODO: Is this a problem? Several functions pass INCLUDE_BOUNDARIES
-	/*return nearest_interface_point_within_range(coords,comp,front->interf,
-            bdry,NULL,p,t,phse,phs,range);*/
 	return nearest_interface_point_within_range(coords,comp,front->interf,
+            bdry,NULL,p,t,phse,phs,range);
+	/*
+    return nearest_interface_point_within_range(coords,comp,front->interf,
             NO_BOUNDARIES,NULL,p,t,phse,phs,range);
+    */
 }	/* FrontGetNearestPoint */
 
 EXPORT void FT_ResetTime(Front *front)

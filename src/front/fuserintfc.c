@@ -87,29 +87,26 @@ LOCAL	void	slsr3d(POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
 LOCAL	void	state_in_tri(COMPONENT,double*,HYPER_SURF_ELEMENT*,
 			     HYPER_SURF*,Locstate);
 
-EXPORT	F_USER_INTERFACE *f_user_hook(
-	int		dim)
+EXPORT F_USER_INTERFACE *f_user_hook(int dim)
 {
 	static F_USER_INTERFACE Fuser_hooks[3];
 	static boolean first = YES;
 
 	if (first == YES)
 	{
-	    int i;
 	    static F_INTERFACE_TOLERANCES Itol;
 
 	    first = NO;
 
 	    /* Set default values for F_INTERFACE_TOLERANCES */
-	    Itol._DtReductionFac      = 0.8;
+	    Itol._DtReductionFac = 0.8;
 
 	    /* Set default values for Fuser_hooks fields*/
 
 	    /* fields valid for all dimensions */
-	    for (i = 0; i < 3; ++i)
+	    for (int i = 0; i < 3; ++i)
 	    {
-	        zero_scalar(&Fuser_hooks[i]._computational_grid,
-			    sizeof(RECT_GRID));
+	        zero_scalar(&Fuser_hooks[i]._computational_grid,sizeof(RECT_GRID));
 	        Fuser_hooks[i]._bstates = NULL;
 	        Fuser_hooks[i]._num_bstates = 0;
 	        Fuser_hooks[i]._first_node = 0;
@@ -119,10 +116,8 @@ EXPORT	F_USER_INTERFACE *f_user_hook(
 	        Fuser_hooks[i]._mono_comp_curves = NO;
 	        Fuser_hooks[i]._fprint_wave_type = f_fprint_wave_type;
 	        Fuser_hooks[i]._wave_type_as_string = f_wave_type_as_string;
-	        Fuser_hooks[i]._read_wave_type_from_string =
-		    f_read_wave_type_from_string;
-	        Fuser_hooks[i]._bi_interpolate_intfc_states =
-		    linear_state_interpolator;
+	        Fuser_hooks[i]._read_wave_type_from_string = f_read_wave_type_from_string;
+	        Fuser_hooks[i]._bi_interpolate_intfc_states = linear_state_interpolator;
 	        Fuser_hooks[i]._fprint_state_data = f_fprint_state_data;
 	        Fuser_hooks[i]._read_print_state_data = f_read_print_state_data;
 	        Fuser_hooks[i]._nearest_intfc_state = f_nearest_intfc_state;
@@ -133,27 +128,22 @@ EXPORT	F_USER_INTERFACE *f_user_hook(
 	        Fuser_hooks[i]._clear_state = f_clear_state;
 	        Fuser_hooks[i]._obstacle_state = f_clear_state;
 	        Fuser_hooks[i]._FInterfaceTolerances = Itol;
-	        Fuser_hooks[i]._default_perform_redistribution_function =
-		    f_perform_redistribution;
+	        Fuser_hooks[i]._default_perform_redistribution_function = f_perform_redistribution;
 	        Fuser_hooks[i]._merge_hs_flags = f_merge_hs_flags;
 	        Fuser_hooks[i]._interface_tangent_function._tangent = f_tangent;
-	        Fuser_hooks[i]._interface_tangent_function._tangent_name =
-		    strdup("f_tangent");
+	        Fuser_hooks[i]._interface_tangent_function._tangent_name = strdup("f_tangent");
 	        Fuser_hooks[i]._set_tangent_function = f_set_tangent_function;
 	        Fuser_hooks[i]._set_normal_function = f_set_normal_function;
 	        Fuser_hooks[i]._alloc_MaxFrontSpeed = f_alloc_MaxFrontSpeed;
 	    }
 
 	    /* fields valid for both 2D and 3D */
-	    for (i = 1; i < 3; ++i)
+	    for (int i = 1; i < 3; ++i)
 	    {
 	        Fuser_hooks[i]._fprint_hsbdry_type = f_fprint_hsbdry_type;
-	        Fuser_hooks[i]._read_hsbdry_type_from_string =
-		    f_read_hsbdry_type_from_string;
-	        Fuser_hooks[i]._tri_interpolate_intfc_states =
-		    linear_tri_state_interpolator;
-	        Fuser_hooks[i]._read_print_boundary_state_data =
-		    f_read_print_boundary_state_data;
+	        Fuser_hooks[i]._read_hsbdry_type_from_string = f_read_hsbdry_type_from_string;
+	        Fuser_hooks[i]._tri_interpolate_intfc_states = linear_tri_state_interpolator;
+	        Fuser_hooks[i]._read_print_boundary_state_data = f_read_print_boundary_state_data;
 	    }
 
 	    /* Dimension specific fields */
@@ -162,48 +152,42 @@ EXPORT	F_USER_INTERFACE *f_user_hook(
 	    Fuser_hooks[0]._slsr = slsr1d;
 	    Fuser_hooks[0]._tri_interpolate_intfc_states = NULL;
 	    Fuser_hooks[0]._state_along_hypersurface_element = state_at_point;
-	    Fuser_hooks[0]._form_subintfc_via_communication =
-			f_intfc_communication1d;
+	    Fuser_hooks[0]._form_subintfc_via_communication = f_intfc_communication1d;
 	    Fuser_hooks[0]._fshow_intfc_states = f_fshow_intfc_states1d;
 
 	    Fuser_hooks[0]._mean_curvature_at_point = NULL;
 	    Fuser_hooks[0]._interface_normal_function._normal = normal1d;
-	    Fuser_hooks[0]._interface_normal_function._normal_name =
-	        	strdup("normal1d");
+	    Fuser_hooks[0]._interface_normal_function._normal_name = strdup("normal1d");
 
 	    Fuser_hooks[1]._slsr = slsr2d;
 	    Fuser_hooks[1]._state_along_hypersurface_element = state_along_bond;
-	    Fuser_hooks[1]._form_subintfc_via_communication =
-			f_intfc_communication2d;
+	    Fuser_hooks[1]._form_subintfc_via_communication = f_intfc_communication2d;
 
 	    Fuser_hooks[1]._fshow_intfc_states = f_fshow_intfc_states2d;
-	    Fuser_hooks[1]._mean_curvature_at_point =
-			f_wlsp_curvature;
-	    Fuser_hooks[1]._interface_normal_function._normal = 
-			f_wlsp_normal;
-	    Fuser_hooks[1]._interface_normal_function._normal_name =
-	        	strdup("f_wlsp_normal");
+	    Fuser_hooks[1]._mean_curvature_at_point = f_wlsp_curvature;
+	    Fuser_hooks[1]._interface_normal_function._normal = f_wlsp_normal;
+	    Fuser_hooks[1]._interface_normal_function._normal_name = strdup("f_wlsp_normal");
 
 	    Fuser_hooks[2]._slsr = slsr3d;
 	    Fuser_hooks[2]._state_along_hypersurface_element = state_in_tri;
-	    Fuser_hooks[2]._form_subintfc_via_communication =
-			f_intfc_communication3d;
+	    Fuser_hooks[2]._form_subintfc_via_communication = f_intfc_communication3d;
 	    Fuser_hooks[2]._fshow_intfc_states = f_fshow_intfc_states3d;
-	    Fuser_hooks[2]._mean_curvature_at_point =
-			f_wlsp_curvature;
-	    Fuser_hooks[2]._interface_normal_function._normal =
-	        	f_wlsp_normal;
-	    Fuser_hooks[2]._interface_normal_function._normal_name =
-	        	strdup("f_wlsp_normal");
+	    Fuser_hooks[2]._mean_curvature_at_point = f_wlsp_curvature;
+	    Fuser_hooks[2]._interface_normal_function._normal = f_wlsp_normal;
+	    Fuser_hooks[2]._interface_normal_function._normal_name = strdup("f_wlsp_normal");
 	}
-	if (dim < 1 || dim > 3)
+	
+    if (dim < 1 || dim > 3)
 	{
 	    screen("ERROR in f_user_hook(), invalid dim %d\n",dim);
 	    clean_up(ERROR);
 	    return NULL;
 	}
 	else
-	    return Fuser_hooks + dim - 1;
+    {
+        return Fuser_hooks + dim - 1;
+    }
+
 }		/*end f_user_hook*/
 
 EXPORT	void	f_preserve_user_hooks(
@@ -243,12 +227,11 @@ EXPORT	void	f_preserve_user_hooks(
 }		/*end f_preserve_user_hooks*/
 
 EXPORT	void f_set_interface_hooks(
-	int		dim,
-	INIT_DATA       *init)
+	int	dim,
+	INIT_DATA* init)
 {
 	I_USER_INTERFACE *iuh = i_user_hook(dim);
 	F_USER_INTERFACE *fuh = f_user_hook(dim);
-	int	         i;
 
 	/* Front extended structure sizes */
 	iuh->size_interface = sizeof(F_INTERFACE);
@@ -277,8 +260,7 @@ EXPORT	void f_set_interface_hooks(
 	iuh->_user_fprint_interface = f_user_fprint_interface;
 	iuh->_delete_interface = f_delete_interface;
 	iuh->_user_fprint_intfc_rect_grids = f_user_fprint_intfc_rect_grids;
-	iuh->_user_read_print_intfc_rect_grids =
-	    f_user_read_print_intfc_rect_grids;
+	iuh->_user_read_print_intfc_rect_grids = f_user_read_print_intfc_rect_grids;
 	iuh->_Point = f_Point;
 	iuh->_Static_point = f_Static_point;
 	iuh->_average_points = f_average_points;
@@ -316,7 +298,8 @@ EXPORT	void f_set_interface_hooks(
 	iuh->_is_subdomain_boundary = f_is_subdomain_boundary;
 	iuh->_cross_tolerance = f_cross_tolerance;
 	iuh->_receive_interface = f_receive_interface;
-	switch (dim)
+	
+    switch (dim)
 	{
 	case 1:
 	    iuh->_make_point = f_make_point;
@@ -354,7 +337,8 @@ EXPORT	void f_set_interface_hooks(
 	    iuh->_gview_plot_interface = f_gview_plot_interface;
 	    iuh->_consistent_interface = f_consistent_interface;
 	    iuh->_sort_bond_tris = f_sort_bond_tris;
-            /*#bjet2 */
+    
+        /*#bjet2 */
 	    iuh->_assign_btri_states = f_assign_btri_states;
 	    iuh->_detach_one_surface = f_detach_one_surface;
 	    break;
@@ -364,8 +348,8 @@ EXPORT	void f_set_interface_hooks(
 	fuh->_num_bstates = 6;
 	uni_array(&fuh->_bstates,fuh->_num_bstates+1,sizeof(BOUNDARY_STATE*));
 	++fuh->_bstates;
-	for (i = -1; i < fuh->_num_bstates; ++i)
-	    fuh->_bstates[i] = NULL;
+    for (int i = -1; i < fuh->_num_bstates; ++i)
+        fuh->_bstates[i] = NULL;
 }		/*end f_set_interface_hooks*/
 
 

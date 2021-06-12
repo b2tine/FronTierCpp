@@ -44,6 +44,11 @@ void Incompress_Solver_Smooth_Basis::printProblemSpecificStats()
 
 static void printBackwardFacingStepStats(Front* front, POINTER params)
 {
+    ////////////////////////////////////////////////////////////////
+    printf("\n\tERROR printBackwardFacingStepStats() : Function not complete!\n");
+    return;
+    ////////////////////////////////////////////////////////////////
+
     int dim = FT_Dimension();
     if (dim != 2) return;
 
@@ -100,6 +105,7 @@ static void printBackwardFacingStepStats(Front* front, POINTER params)
                 {
                     stat.coords[i] = Coords(pt)[i];
                     stat.val[i] = state->shear_force[i];
+                    //TODO: using the state not working ....
                 }
                 stat_vec.push_back(stat);
             }

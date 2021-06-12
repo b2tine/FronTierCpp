@@ -135,7 +135,7 @@ struct _BOND
 	double length;
 	double length0;			/* for fixed length bond */
 	double dir0[MAXD];		/* initial direction */
-        long global_index;
+    long global_index;
 
 	struct _BOND_TRI **_btris;	/* Bounding triangles in angle order */
 };
@@ -252,16 +252,16 @@ typedef enum _TRI_STORAGE_TYPE TRI_STORAGE_TYPE;
 
 struct _TRI
 {
-	POINT *__pts[3];
-	/* object adj to edge ij */
-	TRI_NEIGHBOR neighbor[3];
-	double side_length0[3];		/* equilibrium length of each side */
-	double side_dir0[3][3];		/* equilibrium length of each side */
-	double color;			/* to plot color scale of triangle */
-	struct _SURFACE	*surf;		/* surface in which the triangle lies */
+	POINT* __pts[3];
+	TRI_NEIGHBOR neighbor[3]; /* object adj to edge ij */
+	double side_length0[3];	  /* equilibrium length of each side */
+	double side_dir0[3][3];	  /* equilibrium length of each side */
+	double color;			  /* to plot color scale of triangle */
+	struct _SURFACE	*surf;	  /* surface in which the triangle lies */
 	struct _TRI *prev;
 	struct _TRI *next;
-	int boundary;		/* tri bonds on interface curves? */
+	
+    int boundary;		/* tri bonds on interface curves? */
 	int order;		/* used as an identification for a tri, avoid 
 				   the conflict with _index in private_data. */
         
@@ -270,25 +270,25 @@ struct _TRI
     //TODO: should TRI struct have pos and neg comp info???
         //COMPONENT pos_comp, neg_comp;
 	
-    boolean	constrained;	/* If yes will not free to move */
+    boolean	constrained;	/* If yes will not be free to move */
 	
     union
 	{
-	    int		   _index;
-	    POINTER 	   _workspace;
-	    struct _C_BOND **_tri_cross_list;
-	    int		   _icoords[3];
-	    boolean           _projection_computed;
-	    boolean	   _modified;
-	    boolean	    _sorted;
+	    int	_index;
+	    POINTER _workspace;
+	    struct _C_BOND** _tri_cross_list;
+	    int _icoords[3];
+	    boolean _projection_computed;
+	    boolean	_modified;
+	    boolean _sorted;
 	    /* The following is used in ellip for 3d tetrahedral mesh */
 	    struct
-            {
-                char c0;
-                char c1;
-                char c2;
-                char c3;
-            } c;
+        {
+            char c0;
+            char c1;
+            char c2;
+            char c3;
+        } c;
 	} private_data;
 };
 typedef struct _TRI TRI;
@@ -371,15 +371,16 @@ struct _O_SURFACE
 };
 typedef struct _O_SURFACE O_SURFACE;
 
-struct _WEDGE{
+struct _WEDGE
+{
 	SURFACE	*s;
 	TRI	**tris;
 	int	n_tris;
-
 };  
 typedef struct _WEDGE WEDGE;
 
-struct _NEIGHBORHOOD{
+struct _NEIGHBORHOOD
+{
 	struct  _POINT	*posn;
 	struct  _WEDGE	*wedge;
 	int		n_wedges;
@@ -452,12 +453,11 @@ struct _HYPER_SURF_BDRY
 typedef struct _HYPER_SURF_BDRY HYPER_SURF_BDRY;
 
 struct _COMP_LIST {
-	int ncomps, max_ncomps;
+	int ncomps;
+    int max_ncomps;
 	COMPONENT *comps;
-	boolean (*_is_comp_in_list)(COMPONENT,struct _COMP_LIST*,
-				    struct _INTERFACE*);
-	void (*_add_comp_to_list)(COMPONENT,struct _COMP_LIST*,
-				  struct _INTERFACE*);
+	boolean (*_is_comp_in_list)(COMPONENT,struct _COMP_LIST*,struct _INTERFACE*);
+	void (*_add_comp_to_list)(COMPONENT,struct _COMP_LIST*,struct _INTERFACE*);
 };
 typedef struct _COMP_LIST COMP_LIST;
 
@@ -505,6 +505,7 @@ typedef struct _INTERFACE INTERFACE;
 #define interface_reconstructed(intfc) ((intfc)->_interface_reconstructed)
 #define static_mesh(intfc) ((intfc)->_static_mesh)
 #define Dimension(intfc) ((intfc)->dim)
+
 /*#bjet2 */
 #define prev_interface(intfc)    ((intfc)->prev_interf)
 #define grid_comp(intfc)    (table_of_interface(intfc)->components)
@@ -704,16 +705,12 @@ typedef struct _EG_CRX EG_CRX;
 
 struct _C_SURF_FLAG
 {
-	boolean _on_bdry;        /* TRUE if the crossing point is on the
-				  * boundary (edge or vertex) of the
-				  * correspond triangle */
-	boolean _edge_vertex;    /* only used when _on_bdry is TRUE,  TRUE if
-				  * the crossing point is not a triangle
-				  * vertex */
-	int     _tri_side_index; /* only used when both _on_bdry iand
-			          * _edge_vertex are TRUE,  gives the side of
-			          * triangle upon which the crossing point
-				  * lies */
+	boolean _on_bdry;       /* TRUE if the crossing point is on the
+                               boundary (edge or vertex) of the correspond triangle */
+	boolean _edge_vertex;   /* only used when _on_bdry is TRUE,
+                               TRUE if the crossing point is not a triangle vertex */
+	int _tri_side_index;    /* only used when both _on_bdry and _edge_vertex are TRUE,
+                               gives the side of triangle upon which the crossing point lies */
 };
 typedef struct _C_SURF_FLAG C_SURF_FLAG;
 
@@ -723,11 +720,11 @@ typedef struct _C_SURF_FLAG C_SURF_FLAG;
 
 struct _C_SURF           /* records detailed crossing information */
 {
-    	struct	_TRI	*t,          /* pair of intersecting triangles */
-			*prev_t,     /* prev, next intscting tris */
-			*next_t;
-	C_SURF_FLAG 	_flag_start,  /* new stuff, records detailed crossing */
-			_flag_end;    /* information */
+    struct _TRI	*t;          /* pair of intersecting triangles */
+    struct _TRI* prev_t;     /* prev, next intersecting tris */
+    struct _TRI* next_t;
+	C_SURF_FLAG	_flag_start;
+	C_SURF_FLAG	_flag_end;
 };
 typedef struct _C_SURF C_SURF;
 

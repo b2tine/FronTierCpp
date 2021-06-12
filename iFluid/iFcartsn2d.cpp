@@ -1001,35 +1001,24 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+                        //TODO: Use flag added to hypersurface
+                        //      data structure, no_slip(hs), instead
+                        if (iFparams->use_no_slip)
                         {
-                            //TODO: this should get handled in the same way as interior wall bdrys
                             U_nb[nb] = getStateVel[l](intfc_state);
-                                //U_nb[nb] = vel[l][index];
-                                //U_nb_prev[nb] = prev_vel[l][index];
                         }
                         else
                         {
-                            //TODO: Use flag added to hypersurface
-                            //      data structure, no_slip(hs), instead
-                            if (iFparams->use_no_slip)
-                            {
-                                U_nb[nb] = getStateVel[l](intfc_state);
-                            }
-                            else
-                            {
-                                //Apply slip boundary condition
-                                //nb = 0; idir = 0, nbr = 0;
-                                //nb = 1; idir = 0, nbr = 1;
-                                //nb = 2; idir = 1, nbr = 0;
-                                //nb = 3; idir = 1, nbr = 1;
-                                double v_slip[MAXD] = {0.0};
-                                int idir = nb/2; int nbr = nb%2;
-                                setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                                U_nb[nb] = v_slip[l];
-                            }
+                            //Apply slip boundary condition
+                            //nb = 0; idir = 0, nbr = 0;
+                            //nb = 1; idir = 0, nbr = 1;
+                            //nb = 2; idir = 1, nbr = 0;
+                            //nb = 3; idir = 1, nbr = 1;
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2;
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];
                         }
-                        
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
