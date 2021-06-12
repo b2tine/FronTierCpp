@@ -23,10 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "iFluid.h"
 
-	/*  Function Declarations */
+static void initialization_debugging(Front*,Incompress_Solver_Smooth_Basis*);
 static void ifluid_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static int l_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
-                        HYPER_SURF*,double*);
+static int l_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -257,6 +256,11 @@ static void ifluid_driver(Front *front,
 
 	if (debugging("step_size"))
         printf("Time step from start: %f\n",front->dt);
+
+    
+    if (debugging("initialization"))
+        initialization_debugging(front,l_cartesian);
+
     
     for (;;)
     {
@@ -363,3 +367,27 @@ static int l_cartesian_vel(
 	((Incompress_Solver_Smooth_Basis*)params)->getVelocity(coords, vel);
 	return YES;
 }	/* end l_cartesian_vel */
+
+static void initialization_debugging(
+        Front* front,
+        Incompress_Solver_Smooth_Basis* l_cartesian)
+{
+    //show_COMP()
+    std::string dname = OutName(front);
+    std::string fname = dname + "/show_comp.txt";
+    FILE* outfile = fopen(fname.c_str(),"w");
+    show_COMP(outfile,front->interf);
+    fclose(outfile);
+
+    fname = dname + "/print_interface.txt";
+    outfile = fopen(fname.c_str(),"w");
+    i_fprint_interface(outfile,front->interf);
+    fclose(outfile);
+
+    //HYPER_SURF_BDRY** hsbs = hyper_surf_bdry_list(front->interf);
+    
+    printf("\nexiting after call to initialization_debugging()\n");
+    clean_up(0);
+}
+
+
