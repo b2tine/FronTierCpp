@@ -5000,6 +5000,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     double coords_reflect[MAXD], coords_ghost[MAXD];
     double nor[MAXD];
     
+    STATE* intfc_state = (STATE*)state;
     double vel_intfc_gcrx[MAXD];
     for (int i = 0; i < dim; ++i)
     {
@@ -5241,6 +5242,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         for (int j = 0; j < dim; ++j)
             tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
+
+    for (int j = 0; j < dim; ++j)
+        intfc_state->shear_force[j] = tau_wall[j];
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;

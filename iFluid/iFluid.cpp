@@ -89,6 +89,7 @@ int main(int argc, char **argv)
 	front.extra3 = (POINTER)&rgb_params;
 	
     read_iF_prob_type(in_name,&prob_type);
+    iFparams.prob_type = prob_type;
 	read_iFparams(in_name,&iFparams);
 
     if (debugging("trace"))
@@ -304,6 +305,7 @@ static void ifluid_driver(Front *front,
         /* Output section */
 
         l_cartesian->printEnstrophy();
+        l_cartesian->printProblemSpecificStats();
 
         if (FT_IsSaveTime(front))
         {

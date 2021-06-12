@@ -52,6 +52,11 @@ enum IF_PROB_TYPE
     RAMP
 };
 
+struct BWFSTEP_PARAMS
+{
+    double H;
+};
+
 
 enum EBM_COORD
 {
@@ -158,6 +163,8 @@ struct VPARAMS {
 struct IF_PARAMS
 {
     int dim;
+    IF_PROB_TYPE prob_type;
+    POINTER prob_params;
     POINTER level_func_params;
 	NS_SCHEME num_scheme;
     double rho1;
@@ -353,6 +360,8 @@ public:
     void printEnstrophy();
     void printEnstrophy2d();
     void printEnstrophy3d();
+
+    void printProblemSpecificStats();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,

@@ -27,7 +27,8 @@ libiFluid_la_SOURCES = \
 ../keps.cpp \
 ../rigidbody.h \
 ../rigidbody.cpp \
-../iFvisualize.cpp
+../iFvisualize.cpp \
+../iFstats.cpp
 								
 
 libiFluid_la_LIBADD = $(top_builddir)/solver/objs/libsolver.la

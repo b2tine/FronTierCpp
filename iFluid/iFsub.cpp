@@ -1938,8 +1938,7 @@ extern void read_iFparams(
 	}
 
 	iFparams->use_eddy_visc = NO;
-    if (CursorAfterStringOpt(infile,
-                "Enter yes to use eddy viscosity:"))
+    if (CursorAfterStringOpt(infile,"Enter yes to use eddy viscosity:"))
     {
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
@@ -1990,22 +1989,22 @@ extern void read_iFparams(
                     clean_up(ERROR);
             }
 
-            //      "Enter yes to use slip wall boundary condition:"
-            iFparams->use_no_slip = YES;
-            if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
-            {
-                fscanf(infile,"%s",string);
-                printf("%s\n",string);
-                //if (string[0] == 'y' || string[0] == 'Y')
-                if (string[0] == 'n' || string[0] == 'N')
-                {
-                    iFparams->use_no_slip = NO;
-                    //iFparams->use_no_slip = YES;
-                }
-            }
 	    }
 	}
    
+    //      "Enter yes to use slip wall boundary condition:"
+    iFparams->use_no_slip = YES;
+    if (CursorAfterStringOpt(infile,"Enter yes to use no-slip boundary condition:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        //if (string[0] == 'y' || string[0] == 'Y')
+        if (string[0] == 'n' || string[0] == 'N')
+        {
+            iFparams->use_no_slip = NO;
+            //iFparams->use_no_slip = YES;
+        }
+    }
     
     //TODO: Need these here? or gets handled in iFinit.cpp for 2 phase flow problems?
     CursorAfterStringOpt(infile,"Enter surface tension:");
