@@ -5021,16 +5021,14 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     HYPER_SURF* hsurf;
     double range = 2;
 
-    //TODO: Difference if we use ghost_comp instead of comp in nip?
-    //      This is the correct usage of the api, remove previous version
-    //      when certain no problems occur.
-    /*      
+    //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
+    //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
+    //      step scenario -- to what degree is it working?
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
+    /*      
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    /*
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */

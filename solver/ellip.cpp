@@ -290,13 +290,13 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-	double *x;
+	double *xsol;
 	int size = iupper - ilower;
-    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+    FT_VectorMemoryAlloc((POINTER*)&xsol,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
 
     PETSc solver;
-    solver.Create(ilower, iupper-1, 5, 5);
+    solver.Create(ilower, iupper-1, 7, 5);
 
     if (debugging("trace"))
             printf("Enterng solve2d()\n");
@@ -772,8 +772,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         //TODO: skip residual check? GMRES often worse
 	    if(residual > 1)
 	    {
-            printf("\n The solution diverges! The residual "
-                   "is %g. Solve again using GMRES!\n",residual);
+		    printf("\n The solution diverges! The residual "
+                    "is %g after %d iterations. Solve again using GMRES!\n",
+                    residual,num_iter);
+
             
             solver.Reset_x();
             solver.Solve_GMRES();
@@ -792,7 +794,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	}
 	stop_clock("Petsc Solver");
 
-	solver.Get_x(x);
+	solver.Get_x(xsol);
 
 	if (debugging("PETSc"))
     {
@@ -808,7 +810,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    I = ij_to_I[i][j];
 	    if (I == -1) continue;
 	    
-        soln[index] = x[I-ilower];
+        soln[index] = xsol[I-ilower];
 	    
         if (max_soln < soln[index]) 
 	    {
@@ -867,7 +869,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	if (debugging("trace"))
             printf("Leaving solve2d()\n");
 
-    FT_FreeThese(1,x);
+    FT_FreeThese(1,xsol);
 }	/* end solve2d */
 
 void ELLIPTIC_SOLVER::solve3d(double *soln)
@@ -898,7 +900,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     //TODO: Determine minimum number of nonzero entries in diagonal
     //      and off-diagonal blocks. 15 was a conservative guess and
     //      appears to be working, but likely not optimal...
-    solver.Create(ilower, iupper-1, 15, 15);
+    solver.Create(ilower, iupper, 15, 15);
+        //solver.Create(ilower, iupper-1, 15, 15);
         //solver.Create(ilower, iupper-1, 7, 7);
     
     solver.Reset_A();

@@ -76,15 +76,14 @@ void PETSc::Create(
     //      If not, simplify. We should not have to do index bookkeeping
     //      both inside and outside the class. Preferably only inside
     //      class member functions.
-	int n	= iupper - ilower + 1;
+	
+    int n	= iupper - ilower + 1;
 	
 	comm 	= Comm;
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-    /*MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DETERMINE,PETSC_DETERMINE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);*/
-    MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
+    MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DETERMINE,PETSC_DETERMINE,
        d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
 
     //TODO: See petsc manual for optimal sparse matrix
