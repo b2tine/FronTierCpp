@@ -61,8 +61,6 @@ static boolean force_on_hse3d(HYPER_SURF_ELEMENT*,HYPER_SURF*,RECT_GRID*,
                                         double*,double*,double*,boolean);
 static double intrp_between(double,double,double,double,double);
 static void setStateViscosity(IF_PARAMS*,STATE*,int);
-//static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
-//static void sine_vel_func(Front*,POINTER,double*,double*);
 static void pipe_end_func(Front*,POINTER,int*,COMPONENT,
                                 int,int,int*,Locstate);
 static boolean coords_in_subdomain(double*,RECT_GRID*);
@@ -73,6 +71,11 @@ static int modify_contact_node(NODE*,NODE*,O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,
                               double,double,RPROBLEM**,Front*,POINTER,
                               double,double*,NODE_FLAG);
 
+
+extern int face_index(int idir, int nb)
+{
+    return 2*idir + nb;
+}
 
 extern int next_index_in_dir(
         int* icoords,
@@ -2441,33 +2444,6 @@ static void addToEnergyFlux(
 	}
 }	/* end addToEnergyFlux */
 
-//TODO: To remove if not used anywhere
-extern double p_jump(
-	POINTER params,
-	int D,
-	double *coords)
-{
-	return 0.0;
-}	/* end p_jump */
-
-extern double grad_p_jump_n(
-	POINTER params,
-	int D,
-	double *N,
-	double *coords)
-{
-	return 0.0;
-}	/* end grad_p_jump_n */
-
-extern double grad_p_jump_t(
-	POINTER params,
-	int D,
-	int i,
-	double *N,
-	double *coords)
-{
-	return 0.0;
-}	/* end grad_p_jump_t */
 
 //TODO: This should be used for updating boundary states only.
 //      Should not be used for initialization.

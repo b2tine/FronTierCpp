@@ -279,19 +279,17 @@ struct _OPEN_PIPE_PARAMS
 };
 typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
 
-/******************************************************************************
- * 		lcartsn.h
- * A simple incompressible flow solver using the ghost fluid method and the
- * projection method.
- *
- * the main function is 
- * 	L_CARTESIAN::solve().
- *
- * References:
- ******************************************************************************/
+
+struct GHOST_COMPUTATION
+{
+    //int icoords[MAXD];
+    //GRID_DIRECTION dir;
+    double vel[MAXD];
+    double force[MAXD];
+};
+
 
 class SOLVER;
-class Incompress_Solver_Basis;
 
 class KE_PARAMS;
 
@@ -487,6 +485,9 @@ protected:
 	void makeGlobalColorMap(int&);
 	void paintConnectedRegion(int,int);
 	boolean paintToSolveGridPoint2(int);
+
+    //for storing precomputed values (to avoid recomputing)
+    std::vector<GHOST_COMPUTATION> ghost_data[6];
 
 protected:
 
@@ -696,6 +697,7 @@ protected:
 };
 
 
+extern int face_index(int idir, int nb);
 extern int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
 
 extern double getStateVort(POINTER);
