@@ -4107,7 +4107,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
             
             /*Ghost Fluid Method(GFM): p_+ - p_- = alpha*Un*nor + beta*(Un*nor)^2*/
             /*p+ and p- is defined by normal vector*/
-            if(is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
+            if (is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
             {
                 next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
                 index_nb = d_index(ipn,top_gmax,dim);

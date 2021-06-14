@@ -168,14 +168,17 @@ extern void elastic_point_propagate(
 	for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
-
-	    if (debugging("rigid_canopy"))
+        if (af_params->inflation_assist)
         {
-            dv[i] = 0.0;
+            dv[i] = af_params->delta_pres*nor[i]/area_dens;
         }
 	    else if (front->step > af_params->fsi_startstep)
         {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+        }
+        else if (debugging("rigid_canopy"))
+        {
+            dv[i] = 0.0;
         }
 
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
@@ -264,13 +267,15 @@ extern void airfoil_point_propagate(
         double              dt,
         double              *V)
 {
-        if (wave_type(oldhs) == ELASTIC_BOUNDARY ||
-	    wave_type(oldhs) == ELASTIC_STRING)
-            return elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,
-                                        dt,V);
-        else
-            return ifluid_point_propagate(front,wave,oldp,newp,oldhse,oldhs,
-                                        dt,V);
+    if (wave_type(oldhs) == ELASTIC_BOUNDARY ||
+        wave_type(oldhs) == ELASTIC_STRING)
+    {
+        return elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+    }
+    else
+    {
+        return ifluid_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+    }
 }       /* airfoil_point_propagate */
 
 extern void airfoil_curve_propagate(

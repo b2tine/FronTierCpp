@@ -3793,6 +3793,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         STATE* sl = (STATE*)left_state(p);
         sl->is_fixed = false;
         sl->is_movableRG = false;
+        sl->is_registeredpt = false;
         
         if ((surf = Surface_of_hs(hs)))
         {
@@ -3803,7 +3804,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
             if (is_registered_point(surf,p))
             {
                 sl->is_registeredpt = true;
-                sl->is_fixed = true;
+                sl->is_fixed = true;//TODO: to remove
             }
         }
     }
@@ -3812,13 +3813,18 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     BOND* b;
     intfc_curve_loop(intfc,c)
     {
-        if (hsbdry_type(*c) != FIXED_HSBDRY)
-            continue;
+        if (hsbdry_type(*c) != FIXED_HSBDRY &&
+            hsbdry_type(*c) != STRING_HSBDRY) continue;
 
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
             STATE* sl = (STATE*)left_state(b->end);
-            sl->is_fixed = true;
+            if (hsbdry_type(*c) == FIXED_HSBDRY)
+                sl->is_fixed = true;
+            /*
+            else if (is_registered_point(*c,b->end))
+                sl->is_registeredpt = true;
+            */ //TODO: define registered points on curves!
         }
     }
 

@@ -858,13 +858,11 @@ extern void resetRigidBodyVelocity(Front *front)
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] == 'n' || string[0] == 'n')
-        {
-            fclose(infile);
-            return;
-        }
     }
     fclose(infile);
+    
+    if (string[0] != 'Y' || string[0] != 'y') return;
+
 
     SURFACE **s;
     for (s = front->interf->surfaces; s && *s; ++s)

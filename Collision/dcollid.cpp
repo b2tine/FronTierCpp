@@ -1467,7 +1467,14 @@ void createImpactZone(POINT* pts[], int num)
 {
     for (int i = 1; i < num; ++i)
 	{
-        mergePoint(pts[0],pts[i]);
+        //mergePoint(pts[0],pts[i]);
+	    for (int j = 0; j < i; ++j)
+        {
+            if (isRegisteredPoint(pts[i]) ||
+                isRegisteredPoint(pts[j])) continue;
+            
+            mergePoint(pts[i],pts[j]); 
+        }
 	}
 }
 
@@ -2347,7 +2354,7 @@ StrainStats CollisionSolver3d::computeStrainImpulsesPosn(
                 scalarMult(1.0/lnew,vec01,vec01);
                 
                 //Do not apply impulses to nodes attached to a rigid body
-                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                     {
@@ -2357,13 +2364,13 @@ StrainStats CollisionSolver3d::computeStrainImpulsesPosn(
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                else if (!isConstrainedPoint(sl[0]) && isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                else if (isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
@@ -2572,7 +2579,7 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                 scalarMult(1.0/lnew,vec01,vec01);
                 
                 //Do not apply impulses to nodes attached to a rigid body
-                if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                     {
@@ -2582,13 +2589,13 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                     sl[0]->strain_num++;
                     sl[1]->strain_num++;
                 } 
-                else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+                else if (!isConstrainedPoint(sl[0]) && isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                     sl[0]->strain_num++;
                 }
-                else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+                else if (isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
                 {
                     for (int j = 0; j < 3; ++j)
                         sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
@@ -2790,7 +2797,7 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             double I = 0.5*vcomp01;
 
             //Do not apply impulses to nodes attached to a rigid body
-            if (!isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+            if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
                 {
@@ -2800,13 +2807,13 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                 sl[0]->strain_num++;
                 sl[1]->strain_num++;
             } 
-            else if (!isRigidBody(sl[0]) && isRigidBody(sl[1]))
+            else if (!isConstrainedPoint(sl[0]) && isConstrainedPoint(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
                     sl[0]->strainImpulse[j] += 2.0*I*vec01[j];
                 sl[0]->strain_num++;
             }
-            else if (isRigidBody(sl[0]) && !isRigidBody(sl[1]))
+            else if (isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
             {
                 for (int j = 0; j < 3; ++j)
                     sl[1]->strainImpulse[j] -= 2.0*I*vec01[j];
@@ -3073,14 +3080,6 @@ void mergePoint(POINT* X, POINT* Y)
 }
 //end of UF functions
 
-bool isImpactZonePoint(POINT* p)
-{
-    POINT* head = findSet(p);
-    if (weight(head) == 1)
-        return false;
-    return true;
-}
-
 bool isStaticRigidBody(const POINT* p)
 {
     STATE* sl = (STATE*)left_state(p);
@@ -3136,6 +3135,35 @@ bool isRigidBody(const STATE* sl)
 bool isRigidBody(const CD_HSE* hse)
 {
     return isStaticRigidBody(hse) || isMovableRigidBody(hse);
+}
+
+bool isRegisteredPoint(const POINT* p)
+{
+    STATE* sl = (STATE*)left_state(p);
+    return sl->is_registeredpt;
+}
+
+bool isRegisteredPoint(const STATE* sl)
+{
+    return sl->is_registeredpt;
+}
+
+bool isConstrainedPoint(const POINT* p)
+{
+    return isRegisteredPoint(p) || isRigidBody(p);
+}
+
+bool isConstrainedPoint(const STATE* sl)
+{
+    return isRegisteredPoint(sl) || isRigidBody(sl);
+}
+
+bool isImpactZonePoint(POINT* p)
+{
+    POINT* head = findSet(p);
+    if (weight(head) == 1)
+        return false;
+    return true;
 }
 
 void printPointList(POINT** plist,const int n)

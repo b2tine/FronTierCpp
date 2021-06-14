@@ -11,9 +11,9 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 2.0
 Max step: 100000
-Print interval: 0.005
-Movie frame interval: 0.005
-CFL factor: 0.25
+Print interval: 0.0075
+Movie frame interval: 0.0075
+CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
@@ -100,6 +100,8 @@ Enter center of velocityX: 6 6
 Enter center velocityX: 3.5
 Enter radius of centerX: 0.55
 Enter stop motion timeX: 2.0
+
+Enter yes to keep registered points: yes
 
 
 Enter timestep to activate FSI: 5

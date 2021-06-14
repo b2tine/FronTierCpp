@@ -93,6 +93,7 @@ int main(int argc, char **argv)
     front.extra1 = (POINTER)&iFparams;
     front.extra2 = (POINTER)&af_params;
     front.extra3 = (POINTER)&rgb_params;
+    
     read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
@@ -206,14 +207,10 @@ int main(int argc, char **argv)
             l_cartesian->setInitialCondition();
     }
 
-    //TODO: can we call this here instead (of where called above)?
-    //
-    //  setMotionParams(&front);
-
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
-	if (!RestartRun || ReSetTime)
+	if (!RestartRun || ReSetTime)//TODO ReSetTime may not want to reset velocity
         resetFrontVelocity(&front);
 
 	/* Propagate the front */

@@ -125,14 +125,14 @@ void setMotionParams(Front* front)
 	}
 #endif
 
-        if (CursorAfterStringOpt(infile,
-                "Entering yes to turn off fluid solver: "))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->no_fluid = YES;
-        }
+    if (CursorAfterStringOpt(infile,
+            "Entering yes to turn off fluid solver: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->no_fluid = YES;
+    }
 
     front->vfunc = nullptr;
     front->vparams = nullptr;
@@ -156,7 +156,7 @@ void setMotionParams(Front* front)
 	if (af_params->no_fluid == YES || 
 	    af_params->is_parachute_system == NO)
 	{
-            CursorAfterString(infile,"Enter interior propagator:");
+        CursorAfterString(infile,"Enter interior propagator:");
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (dim == 2)
@@ -255,7 +255,8 @@ void setMotionParams(Front* front)
                 fscanf(infile,"%lf",&iFparams->smoothing_radius);
                 (void) printf("%f\n",iFparams->smoothing_radius);
 	    }
-	    if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
+	    
+        if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
         {
             // default: no porosity
             iFparams->with_porosity = NO;
@@ -320,6 +321,27 @@ void setMotionParams(Front* front)
         for (i = 0; i < dim; ++i)
             af_params->gravity[i] = iFparams->gravity[i];
 	}
+
+
+    af_params->inflation_assist = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to enable inflation assist:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->inflation_assist = true;
+
+        if (af_params->inflation_assist)
+        {
+            CursorAfterString(infile,"Enter uniform normal pressure differential:");
+            fscanf(infile,"%lf",&af_params->delta_pres);
+            (void) printf("%f\n",af_params->delta_pres);
+        }
+
+        //TODO: Need criteria to end inflation assist and switch
+        //      back to normal fluid structure interaction routine.
+    }
+
 
     //For pointmass runs
     if (af_params->is_parachute_system == YES && !af_params->rgb_payload)
@@ -548,14 +570,15 @@ void setMotionParams(Front* front)
 	}
 
 
-        if (af_params->use_total_mass)
-            convert_to_point_mass(front,af_params);
-	if (af_params->is_parachute_system == NO)
+    if (af_params->use_total_mass)
+        convert_to_point_mass(front,af_params);
+	
+    if (af_params->is_parachute_system == NO)
 	{
 	    if (af_params->m_s == 0)
-		af_params->m_s = af_params->m_l;
+            af_params->m_s = af_params->m_l;
 	    if (af_params->m_l == 0)
-		af_params->m_l = af_params->m_s;
+            af_params->m_l = af_params->m_s;
 	}
 
 	printf("canopy points count (fabric+gore)  = %d, "

@@ -40,7 +40,7 @@ Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.5 0.5 0.5
 
-Type yes if the rigid body is fixed: no
+Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
@@ -48,7 +48,7 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 
-Enter the total mass for rigid body: 300
+Enter the total mass for rigid body: 180
 Enter the initial center of mass for rigid body: 6 6 11.951
 
 Enter the initial center of mass velocity: 0 0 0
@@ -63,9 +63,9 @@ Enter circle center: 6 6
 Enter circle radius: 4.2672
 
 Enter yes to adjust cgal triangulation criteria: yes
-Enter B ratio: 0.3
+Enter B ratio: 0.125
 Enter min triangle edge length: 0.12
-Enter B ratioXXX: 0.125
+Enter B ratioXXX: 0.3
 Enter min triangle edge lengthXXX: 0.12
 
 Enter yes to attach gores to canopy: no
@@ -81,11 +81,17 @@ Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
-Entering yes to turn off fluid solver: no
+
+Entering yes to turn off fluid solver: yes
+Entering yes to turn off fluid solverXXX: no
 Enter interior propagator: p
 
 Enter timestep to activate FSI: 5
-Enter yes to disable FSI: yes
+Enter yes to disable FSI: no
+
+Enter yes to enable inflation assist: yes
+Enter uniform normal pressure differential: 100.0
+
 
 Enter yes to use porosity: yes
 Enter porosity: 0.01
@@ -93,28 +99,29 @@ Enter viscous parameter: 0.00793389
 Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 300
+Enter payload: 180
 Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.0001
-Enter fabric bending damping constant: 0.0
+Enter fabric bending stiffness constant: 0.0
+Enter fabric bending damping constant: 0.000001
 Enter fabric friction constant: 0.25
-Enter fabric point mass: 0.001
+Enter fabric point mass: 0.00035
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
-Enter string friction constant: 0.3
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
-Enter strain limit: 0.05
-Enter compressive strain limit: 0.01
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.1
 
 ******************Turbulence Parameters****************

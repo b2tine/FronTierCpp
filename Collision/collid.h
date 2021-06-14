@@ -262,7 +262,6 @@ POINT*& next_pt(POINT* p);
 void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
-bool isImpactZonePoint(POINT*);
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
@@ -272,6 +271,11 @@ bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
+bool isRegisteredPoint(const POINT*);
+bool isRegisteredPoint(const STATE*);
+bool isConstrainedPoint(const POINT*);
+bool isConstrainedPoint(const STATE*);
+bool isImpactZonePoint(POINT*);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);

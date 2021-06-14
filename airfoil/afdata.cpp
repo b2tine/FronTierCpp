@@ -903,8 +903,16 @@ void clearRegisteredPoints(Front* front)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
-        (*s)->extra = nullptr;
+        
+        if ((*s)->extra)
+        {
+            REGISTERED_PTS* registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            FT_FreeThese(2,registered_pts->global_ids,registered_pts);
+            (*s)->extra = nullptr;
+        }
     }
+
+    //setMotionParams(front);
 }
 
 void printHyperSurfQuality(

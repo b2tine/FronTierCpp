@@ -64,6 +64,13 @@ struct _PERT_PARAMS {
 };
 typedef struct _PERT_PARAMS PERT_PARAMS;
 
+
+struct INFLATION_ASSIST_PARAMS
+{
+    double delta_pres;
+};
+
+
 struct AF_PARAMS
 {
     int dim;
@@ -128,6 +135,10 @@ struct AF_PARAMS
 					   id, for users' convenience */
     
     int fsi_startstep;
+
+    bool inflation_assist {false};
+    double delta_pres {0.0};
+    //INFLATION_ASSIST_PARAMS inflate_assist_params;
 
     //for Collision Handling
     double fabric_eps {1.0e-06};
