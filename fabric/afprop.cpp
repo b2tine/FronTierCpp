@@ -2308,8 +2308,9 @@ extern void elastic_point_propagate(
                 dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
                 newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-                newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
                 newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+                newsr->impulse[i] = newsl->impulse[i] = 0.0;
+                //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
             }
 	}
 }       /* elastic_point_propagate */
@@ -2523,7 +2524,8 @@ static void gore_point_propagate(
 	
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	    newsr->impulse[i] = newsl->impulse[i] = 0.0;
+	    //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	}
 }	/* end gore_point_propagate */
 
@@ -2555,7 +2557,7 @@ static void mono_curve_propagation(
 	    {
 	    	oldp->hse = oldhse = Hyper_surf_element((*btris)->tri);
 	    	oldp->hs = oldhs = Hyper_surf((*btris)->surface);
-		elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+		    elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
 	    }
 	}
 	if (debugging("interact_curve"))
@@ -2622,8 +2624,9 @@ static void load_node_propagate(
 	    accel[i] = f[i]/mass;
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 0.0;
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
-	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i]) * dt;
+	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
+	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
 	node_out_curve_loop(newn,c)
 	{
@@ -2786,7 +2789,8 @@ static void rg_string_node_propagate(
         newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = f[i]/mass;
         newsl->other_accel[i] = f[i]/mass;
-	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
+	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
 
         if (debugging("trace"))

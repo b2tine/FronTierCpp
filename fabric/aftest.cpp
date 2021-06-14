@@ -912,12 +912,12 @@ static void print_airfoil_stat3d(
 	    (void) printf("print_airfoil_stat3d_12() not implemented!\n");
 	}
 
-    //if (af_params->no_fluid) return;
-
-	print_drag3d(front,out_name);
-	print_strings(front,out_name);
+    print_strings(front,out_name);
 	if (pp_numnodes() == 1)
 	    print_rgb3d(front,out_name);
+
+    if (af_params->no_fluid) return;
+	print_drag3d(front,out_name);
 }	/* end print_airfoil_stat3d */
 
 static void print_airfoil_stat3d_1(

@@ -104,12 +104,16 @@ void setMotionParams(Front* front)
 	boolean status;
 
 	af_params->no_fluid = NO;
+    af_params->spring_model = MODEL2;
+
 	front->_scatter_front_extra = scatterAirfoilExtra;
-	if (dim == 3 && numOfGoreHsbdry(intfc) != 0)
+	
+    if (dim == 3 && numOfGoreHsbdry(intfc) != 0)
 	{
 	    af_params->attach_gores = YES;
 	    checkSetGoreNodes(intfc);
 	}
+
 #if defined(__GPU__)
      	if (CursorAfterStringOpt(infile,
 		"Enter yes to use GPU solver:"))

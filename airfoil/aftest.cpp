@@ -896,10 +896,10 @@ static void print_airfoil_stat3d(
 	switch (af_params->spring_model)
 	{
 	case MODEL1:
-	    print_airfoil_stat3d_1(front,out_name);//default
+	    print_airfoil_stat3d_1(front,out_name);
 	    break;
 	case MODEL2:
-	    print_airfoil_stat3d_2(front,out_name);
+	    print_airfoil_stat3d_2(front,out_name);//default
 	    break;
 	case MODEL3:
 	    printf("print_airfoil_stat3d_12() not implemented!\n");

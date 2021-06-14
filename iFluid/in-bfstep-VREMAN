@@ -4,8 +4,8 @@ Computational gridXXX: 454 185
 
 Domain limit in 0-th dimension: -2.25 7.0
 Domain limit in 1-th dimension: 0.0 1.5
-Computational gridX: 375 125
-Computational grid: 35 15
+Computational grid: 375 125
+Computational gridX: 35 15
 
 Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -107,7 +107,7 @@ Type y to make scalar intermediate velocity divergence field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: PETSc
-Enter the debugging string: initialization
+Enter the debugging stringX: initialization
 
 Enter the debugging stringX: slip_boundary
 Enter the debugging stringX: paint_color

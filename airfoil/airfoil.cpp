@@ -400,7 +400,6 @@ void initFabricModule(Front* front)
         fscanf(infile,"%d",&num_canopy);
         printf("%d\n",num_canopy);
     }
-    fclose(infile);
 
     SURFACE *surf;
     if (num_canopy >= 1)
@@ -415,4 +414,7 @@ void initFabricModule(Front* front)
             LOC(); clean_up(EXIT_FAILURE);
         }
     }
+    
+    fclose(infile);
 }
+
