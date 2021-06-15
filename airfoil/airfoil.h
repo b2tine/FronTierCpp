@@ -405,6 +405,8 @@ extern void set_geomset_velocity(ELASTIC_SET*,GLOBAL_POINT**);
 
 // afvelo.cpp
 extern void setMotionParams(Front*);
+extern void setFabricPropagators(Front*);
+extern void setFabricParams(Front*);
 extern void resetFrontVelocity(Front*);
 
 // afmodule.cpp

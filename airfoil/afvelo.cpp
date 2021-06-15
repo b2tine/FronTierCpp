@@ -41,25 +41,22 @@ typedef struct {
 } FIXAREA_PARAMS;
 
 static void initVelocityFunc(FILE*,Front*);
-static int zero_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int toroidal_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int parabolic_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int singular_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int vertical_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int random_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-static int marker_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
+static int zero_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int toroidal_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int parabolic_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int singular_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int vertical_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int random_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+static int marker_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+
 static void init_fixarea_params(Front*,FILE*,FIXAREA_PARAMS*);
+static void restart_fixarea_params(Front*,FILE*,FIXAREA_PARAMS*);
 static void init_fixpoint_params(Front*,FILE*,FIXAREA_PARAMS*);
+
 static void convert_to_point_mass(Front*, AF_PARAMS*);
 static void checkSetGoreNodes(INTERFACE*);
 static void set_gore_node(NODE*);
+
 
 int countSurfPoints(INTERFACE* intfc) {
 	int num_fabric_pts  = 0;
@@ -96,35 +93,11 @@ int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
 void setMotionParams(Front* front)
 {
 	FILE *infile = fopen(InName(front),"r");
-	int i,dim = front->rect_grid->dim;
 	char string[100];
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	INTERFACE *intfc = front->interf;
-	boolean status;
+	
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	af_params->no_fluid = NO;
-    af_params->spring_model = MODEL2;
-
-	front->_scatter_front_extra = scatterAirfoilExtra;
-	
-    if (dim == 3 && numOfGoreHsbdry(intfc) != 0)
-	{
-	    af_params->attach_gores = YES;
-	    checkSetGoreNodes(intfc);
-	}
-
-#if defined(__GPU__)
-     	if (CursorAfterStringOpt(infile,
-		"Enter yes to use GPU solver:"))
-	{
-	    fscanf(infile,"%s",string);
-	    (void) printf("%s\n",string);
-	    if (string[0] == 'y' || string[0] == 'Y')
-		af_params->use_gpu = YES;
-	}
-#endif
-
     if (CursorAfterStringOpt(infile,
             "Entering yes to turn off fluid solver: "))
     {
@@ -133,11 +106,27 @@ void setMotionParams(Front* front)
         if (string[0] == 'y' || string[0] == 'Y')
             af_params->no_fluid = YES;
     }
+    fclose(infile);
+    
+    setFabricPropagators(front);
+    setFabricParams(front);
+	
+    front->_scatter_front_extra = scatterAirfoilExtra;
+}
 
+void setFabricPropagators(Front* front)
+{
+    int dim = FT_Dimension();
+	FILE *infile = fopen(InName(front),"r");
+	char string[100];
+
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    af_params->spring_model = MODEL2;//TODO: Remove -- there is no MODEL#
+	
     front->vfunc = nullptr;
     front->vparams = nullptr;
-
-	if (af_params->no_fluid == YES)
+	
+    if (af_params->no_fluid == YES)
 	{
 	    front->curve_propagate = airfoil_curve_propagate;
 	    front->node_propagate = airfoil_node_propagate;
@@ -153,8 +142,7 @@ void setMotionParams(Front* front)
 	    }
 	}
 
-	if (af_params->no_fluid == YES || 
-	    af_params->is_parachute_system == NO)
+	if (af_params->no_fluid == YES || af_params->is_parachute_system == NO)
 	{
         CursorAfterString(infile,"Enter interior propagator:");
 	    fscanf(infile,"%s",string);
@@ -169,33 +157,29 @@ void setMotionParams(Front* front)
 	    	    break;
 	    	case 'f':
 	    	case 'F':
-	    	    front->tan_curve_propagate 
-				= fixed_length_tan_curve_propagate;
+	    	    front->tan_curve_propagate = fixed_length_tan_curve_propagate;
 	    	    break;
 	    	case 'e':
 	    	case 'E':
 	    	    if (string[1] == '2')
-	    	    	front->tan_curve_propagate 
-				= second_order_elastic_curve_propagate;
+	    	    	front->tan_curve_propagate = second_order_elastic_curve_propagate;
 	    	    else
-		    {
-	    	    	front->tan_curve_propagate 
-				= fourth_order_elastic_curve_propagate;
+		        {
+	    	    	front->tan_curve_propagate = fourth_order_elastic_curve_propagate;
 #if defined(__GPU__)
-            		if (CursorAfterStringOpt(infile,
-				"Enter yes to use GPU solver:"))
-			{
-	    		    fscanf(infile,"%s",string);
-	    		    (void) printf("%s\n",string);
-			    if (string[0] == 'y' || string[0] == 'Y')
-				af_params->use_gpu = YES;
-			}
+                    if (CursorAfterStringOpt(infile,"Enter yes to use GPU solver:"))
+			        {
+                        fscanf(infile,"%s",string);
+                        (void) printf("%s\n",string);
+                        if (string[0] == 'y' || string[0] == 'Y')
+                            af_params->use_gpu = YES;
+                    }
 #endif
-		    }
+		        }
 	    	    break;
 	    	default:
-		    (void) printf("Unknown interior propagator!\n");
-		    clean_up(ERROR);
+                (void) printf("Unknown interior propagator!\n");
+                LOC(); clean_up(ERROR);
 	    	}
 	    }
 	    else if (dim == 3)
@@ -209,32 +193,28 @@ void setMotionParams(Front* front)
 	    	case 'e':
 	    	case 'E':
 	    	    if (string[1] == '2')
-	    	    	front->interior_propagate = 
-                                    second_order_elastic_surf_propagate;
+	    	    	front->interior_propagate = second_order_elastic_surf_propagate;
 	    	    else
-		    {
-                        front->interior_propagate = 
-                                    fourth_order_elastic_surf_propagate;
+                {
+                    front->interior_propagate = fourth_order_elastic_surf_propagate;
 #if defined(__GPU__)
-            		if (CursorAfterStringOpt(infile,
-				"Enter yes to use GPU solver:"))
-			{
-	    		    fscanf(infile,"%s",string);
-	    		    (void) printf("%s\n",string);
-			    if (string[0] == 'y' || string[0] == 'Y')
-				af_params->use_gpu = YES;
-			}
+            		if (CursorAfterStringOpt(infile,"Enter yes to use GPU solver:"))
+                    {
+                        fscanf(infile,"%s",string);
+                        (void) printf("%s\n",string);
+                        if (string[0] == 'y' || string[0] == 'Y')
+                            af_params->use_gpu = YES;
+                    }
 #endif
-		    }
+		        }
 	    	    break;
 	    	case 'p':
 	    	case 'P':
-	    	    front->interior_propagate = 
-                                fourth_order_elastic_set_propagate;
+	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
-		    clean_up(ERROR);
+		    LOC(); clean_up(ERROR);
 	    	}
 	    }
 	}
@@ -243,22 +223,57 @@ void setMotionParams(Front* front)
         front->interior_propagate = fourth_order_elastic_set_propagate;
     }
 
-    
+	af_params->n_sub = 1;
+	if (CursorAfterStringOpt(infile,"Enter interior sub step number:"))
+    {
+        fscanf(infile,"%d",&af_params->n_sub);
+        (void) printf("%d\n",af_params->n_sub);
+    }
+
+    fclose(infile);
+}
+
+void setFabricParams(Front* front)
+{
+	int dim = FT_Dimension();
+	FILE *infile = fopen(InName(front),"r");
+	char string[100];
+	
+    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+    af_params->attach_gores = NO;
+    if (dim == 3 && numOfGoreHsbdry(front->interf) != 0)
+	{
+	    af_params->attach_gores = YES;
+	    checkSetGoreNodes(front->interf);
+	}
+
+    af_params->use_gpu = NO;
+#if defined(__GPU__)
+    if (CursorAfterStringOpt(infile,"Enter yes to use GPU solver:"))
+	{
+	    fscanf(infile,"%s",string);
+	    (void) printf("%s\n",string);
+	    if (string[0] == 'y' || string[0] == 'Y')
+		af_params->use_gpu = YES;
+	}
+#endif
+
     if (af_params->no_fluid == NO)
 	{
 	    if (FT_FrontContainWaveType(front,CONTACT))
 	    {
-            	CursorAfterString(infile,"Enter surface tension:");
-            	fscanf(infile,"%lf",&iFparams->surf_tension);
-            	(void) printf("%f\n",iFparams->surf_tension);
-                CursorAfterString(infile,"Enter factor of smoothing radius:");
-                fscanf(infile,"%lf",&iFparams->smoothing_radius);
-                (void) printf("%f\n",iFparams->smoothing_radius);
+            CursorAfterString(infile,"Enter surface tension:");
+            fscanf(infile,"%lf",&iFparams->surf_tension);
+            (void) printf("%f\n",iFparams->surf_tension);
+            CursorAfterString(infile,"Enter factor of smoothing radius:");
+            fscanf(infile,"%lf",&iFparams->smoothing_radius);
+            (void) printf("%f\n",iFparams->smoothing_radius);
 	    }
 	    
         if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
         {
-            // default: no porosity
             iFparams->with_porosity = NO;
             af_params->with_porosity = NO;
             if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
@@ -274,9 +289,10 @@ void setMotionParams(Front* front)
 
             if (iFparams->with_porosity == YES)
             {
+                //TODO: This is just for reference; only the porous_coeff
+                //      values govern the permeability of the interface.
                 if (CursorAfterStringOpt(infile,"Enter porosity:"))
                 {
-                    //TODO: can probably remove this ... 
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }
@@ -318,7 +334,7 @@ void setMotionParams(Front* front)
             }
         }
 
-        for (i = 0; i < dim; ++i)
+        for (int i = 0; i < dim; ++i)
             af_params->gravity[i] = iFparams->gravity[i];
 	}
 
@@ -326,6 +342,7 @@ void setMotionParams(Front* front)
     af_params->inflation_assist = false;
     if (CursorAfterStringOpt(infile,"Enter yes to enable inflation assist:"))
     {
+        //TODO: should we disable FSI when using this?
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] == 'y' || string[0] == 'Y')
@@ -341,30 +358,6 @@ void setMotionParams(Front* front)
         //TODO: Need criteria to end inflation assist and switch
         //      back to normal fluid structure interaction routine.
     }
-
-
-    //For pointmass runs
-    if (af_params->is_parachute_system == YES && !af_params->rgb_payload)
-    {
-        printf("setMotionParams(): pointmass payload detected\n");
-        CursorAfterString(infile,"Enter payload:");
-        fscanf(infile,"%lf",&af_params->payload);
-        (void) printf("%f\n",af_params->payload);
-    }
-	
-	af_params->n_sub = 1;
-	CursorAfterString(infile,"Enter interior sub step number:");
-	fscanf(infile,"%d",&af_params->n_sub);
-	(void) printf("%d\n",af_params->n_sub);
-
-        af_params->use_total_mass = NO;
-        if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                af_params->use_total_mass = YES;
-        }
 
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
@@ -507,68 +500,94 @@ void setMotionParams(Front* front)
 	    if (CursorAfterStringOpt(infile,
 				"Enter number of unequal strings:"))
 	    {
-		fscanf(infile,"%d",&af_params->unequal_strings_num);
-		(void) printf("%d\n",af_params->unequal_strings_num);
+            fscanf(infile,"%d",&af_params->unequal_strings_num);
+            (void) printf("%d\n",af_params->unequal_strings_num);
+	    }
+
+        if (af_params->unequal_strings_num > 0)
+	    {
+    		FT_VectorMemoryAlloc((POINTER*)&af_params->unequal_strings_gindex,
+                    af_params->unequal_strings_num,sizeof(int));
+            
+            int *us_gindex = af_params->unequal_strings_gindex;
+            
+            if (CursorAfterStringOpt(infile,"Enter ID of unequal strings:"))
+            {
+                for (int i = 0; i < af_params->unequal_strings_num; ++i)
+                {
+                    fscanf(infile,"%d",&us_gindex[i]);
+                    (void) printf("%d ",us_gindex[i]);
+                }
+                (void) printf("\n");
+            }
+            else
+            {
+                for (int i = 0; i < af_params->unequal_strings_num; ++i)
+                    us_gindex[i] = i;
+            }
 	    }
 	    
-            if (af_params->unequal_strings_num > 0)
-	    {
-		FT_VectorMemoryAlloc(
-				(POINTER*)&af_params->unequal_strings_gindex,
-                                af_params->unequal_strings_num,sizeof(int));
-		int *us_gindex = af_params->unequal_strings_gindex;
-		if (CursorAfterStringOpt(infile,
-				"Enter ID of unequal strings:"))
-		{
-		    for (i = 0; i < af_params->unequal_strings_num; ++i)
-		    {
-			fscanf(infile,"%d",&us_gindex[i]);
-			(void) printf("%d ",us_gindex[i]);
-		    }
-		    (void) printf("\n");
-		}
-		else
-		{
-		    for (i = 0; i < af_params->unequal_strings_num; ++i)
-			us_gindex[i] = i;
-		}
-	    }
-	    af_params->break_strings_time = -1.0;
+        af_params->break_strings_time = -1.0;
 	    if (CursorAfterStringOpt(infile,"Enter time to break strings:"))
 	    {
-		fscanf(infile,"%lf",&af_params->break_strings_time);
-		(void) printf("%f\n",af_params->break_strings_time);
+            fscanf(infile,"%lf",&af_params->break_strings_time);
+            (void) printf("%f\n",af_params->break_strings_time);
 	    }
-	    af_params->break_strings_num = 0;
-	    if (CursorAfterStringOpt(infile,
-				"Enter number of strings to break:"))
+	    
+        af_params->break_strings_num = 0;
+	    if (CursorAfterStringOpt(infile,"Enter number of strings to break:"))
 	    {
-		fscanf(infile,"%d",&af_params->break_strings_num);
-		(void) printf("%d\n",af_params->break_strings_num);
+            fscanf(infile,"%d",&af_params->break_strings_num);
+            (void) printf("%d\n",af_params->break_strings_num);
 	    }
-	    if (af_params->break_strings_num > 0)
+	    
+        if (af_params->break_strings_num > 0)
 	    {
-		FT_VectorMemoryAlloc((POINTER*)&af_params->break_strings_gindex,
-				af_params->break_strings_num,sizeof(int));
-		int *bs_gindex = af_params->break_strings_gindex;
-		if (CursorAfterStringOpt(infile,
-				"Enter ID of strings to break:"))
-		{
-		    for (i = 0; i < af_params->break_strings_num; ++i)
-		    {
-			fscanf(infile,"%d",&bs_gindex[i]);
-			(void) printf("%d ",bs_gindex[i]);
-		    }
-		    (void) printf("\n");
-		}
-		else
-		{
-		    for (i = 0; i < af_params->break_strings_num; ++i)
-			bs_gindex[i] = i;
-		}
+            FT_VectorMemoryAlloc((POINTER*)&af_params->break_strings_gindex,
+                    af_params->break_strings_num,sizeof(int));
+		
+            int *bs_gindex = af_params->break_strings_gindex;
+		
+            if (CursorAfterStringOpt(infile,"Enter ID of strings to break:"))
+            {
+                for (int i = 0; i < af_params->break_strings_num; ++i)
+                {
+                    fscanf(infile,"%d",&bs_gindex[i]);
+                    (void) printf("%d ",bs_gindex[i]);
+                }
+                (void) printf("\n");
+            }
+            else
+            {
+                for (int i = 0; i < af_params->break_strings_num; ++i)
+                    bs_gindex[i] = i;
+            }
 	    }
 	}
 
+    af_params->num_smooth_layers = 1;
+	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
+	{
+        fscanf(infile,"%d",&af_params->num_smooth_layers);
+        (void) printf("%d\n",af_params->num_smooth_layers);
+	}
+	
+    if (af_params->is_parachute_system == YES && !af_params->rgb_payload)
+    {
+        printf("setMotionParams(): pointmass payload detected\n");
+        CursorAfterString(infile,"Enter payload:");
+        fscanf(infile,"%lf",&af_params->payload);
+        (void) printf("%f\n",af_params->payload);
+    }
+	
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
+    }
 
     if (af_params->use_total_mass)
         convert_to_point_mass(front,af_params);
@@ -582,115 +601,34 @@ void setMotionParams(Front* front)
 	}
 
 	printf("canopy points count (fabric+gore)  = %d, "
-		"string points count = %d\n",
-	countSurfPoints(front->interf), 
-	countStringPoints(front->interf, af_params->is_parachute_system));
+		"string points count = %d\n", countSurfPoints(front->interf),
+        countStringPoints(front->interf, af_params->is_parachute_system));
+
 	printf("fabric point mass  = %f, string point mass = %f, "
-		"gore point mass = %f\n", af_params->m_s, af_params->m_l, 
-		af_params->m_g);
+		"gore point mass = %f\n", af_params->m_s, af_params->m_l, af_params->m_g);
 
-	af_params->num_smooth_layers = 1;
-	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
-	{
-            fscanf(infile,"%d",&af_params->num_smooth_layers);
-            (void) printf("%d\n",af_params->num_smooth_layers);
-	}
-	
 	fclose(infile);
-}	/* end setMotionParams */
-
-static void convert_to_point_mass(
-        Front *front,
-        AF_PARAMS *af_params)
-{
-        INTERFACE *intfc;
-        int num_str_pts, num_fabric_pts, num_gore_pts;
-        SURFACE **s;
-        CURVE **c;
-        intfc = front->interf;
-        int dim = Dimension(intfc);
-
-        switch (dim)
-        {
-        case 2:
-            num_str_pts = num_fabric_pts = 0;
-            for (c = intfc->curves; c && *c; ++c)
-            {
-                if (wave_type(*c) == ELASTIC_BOUNDARY)
-                    num_fabric_pts +=  I_NumOfCurvePoints(*c);
-		else if (wave_type(*c) == ELASTIC_STRING)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c);
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
-            }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
-	    if (num_str_pts != 0)
-		af_params->m_l = af_params->total_string_mass/num_str_pts;
-	    else
-		af_params->m_l = 0.002;
-            break;
-        case 3:
-            num_str_pts = num_fabric_pts = num_gore_pts = 0;
-            for (s = intfc->surfaces; s && *s; ++s)
-            {
-                if (wave_type(*s) == ELASTIC_BOUNDARY)
-                    num_fabric_pts += I_NumOfSurfPoints(*s);
-            }
-            for (c = intfc->curves; c && *c; ++c)
-            {
-                if (hsbdry_type(*c) == STRING_HSBDRY)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c); 
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
-		else if (hsbdry_type(*c) == GORE_HSBDRY)
-		    num_gore_pts += I_NumOfCurvePoints(*c);
-            }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    num_fabric_pts -= num_gore_pts;
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
-            if (num_str_pts != 0)
-                af_params->m_l = af_params->total_string_mass/num_str_pts;
-            else
-                af_params->m_l = 0.002;
-	    if (num_gore_pts != 0)
-		af_params->m_g = af_params->total_gore_mass/num_gore_pts;
-	    else
-		af_params->m_g = 0.001;
-	    break;
-        }
-}       /* end convert_to_point_mass */
-
+}	/* end setFabricParams */
 
 static void initVelocityFunc(
 	FILE *infile,
 	Front *front)
 {
+    // velocity function parameters
 	static VELO_FUNC_PACK velo_func_pack;
-	static VORTEX_PARAMS *vortex_params; /* velocity function parameters */
-        static BIPOLAR_PARAMS *dv_params;
+	static VORTEX_PARAMS *vortex_params;
+    static BIPOLAR_PARAMS *dv_params;
 	static VERTICAL_PARAMS *vert_params;
 	static RANDOMV_PARAMS *randv_params;
 	static TOROIDAL_PARAMS *toro_params;
 	static PARABOLIC_PARAMS *para_params;
 	static SINGULAR_PARAMS *sing_params;
 	static FIXAREA_PARAMS *fixarea_params;
-	int i,dim = front->rect_grid->dim;
-	char string[100];
+    
     IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	int dim = front->rect_grid->dim;
+	char string[100];
 
 	if (af_params->no_fluid == YES)
 	{
@@ -713,179 +651,181 @@ static void initVelocityFunc(
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    
-            switch (string[0])
+        switch (string[0])
+        {
+        case 'r':
+        case 'R':
+            if (string[1] == 'o' || string[1] == 'O')
             {
-            case 'r':
-            case 'R':
-		if (string[1] == 'o' || string[1] == 'O')
-		{
-                    FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
-                                sizeof(VORTEX_PARAMS));
-                    front->max_time = 0.4;
-                    front->movie_frame_interval = 0.02;
-                    vortex_params->dim = 2;
-                    vortex_params->type[0] = 'M';
-                    vortex_params->cos_time = 0;
-                    vortex_params->cen[0] = 0.5;
-                    vortex_params->cen[1] = 0.25;
-                    vortex_params->rad = 0.15;
-                    vortex_params->time = 0.5*front->max_time;
-                    velo_func_pack.func_params = (POINTER)vortex_params;
-                    velo_func_pack.func = vortex_vel;
-                }
-		else if (string[1] == 'a' || string[1] == 'A')
-		{
-	    	    FT_ScalarMemoryAlloc((POINTER*)&randv_params,
-				sizeof(RANDOMV_PARAMS));
-		    CursorAfterString(infile,"Enter random amplitude:");
-		    for (i = 0; i < dim; ++i)
-		    {
-        	    	fscanf(infile,"%lf",&randv_params->v0[i]);
-        	    	(void) printf("%fi ",randv_params->v0[i]);
-		    }
-        	    (void) printf("\n");
-		    CursorAfterString(infile,"Enter stop motion time:");
-        	    fscanf(infile,"%lf",&randv_params->stop_time);
-        	    (void) printf("%f\n",randv_params->stop_time);
-            	    velo_func_pack.func_params = (POINTER)randv_params;
-            	    velo_func_pack.func = random_velo;
-		}
-		else
-		{
-		    (void) printf("ERROR: need either RO or RA\n");
-		    clean_up(ERROR);
-		}
-            	break;
-            case 'd':
-            case 'D':
-	    	FT_ScalarMemoryAlloc((POINTER*)&dv_params,
-				sizeof(BIPOLAR_PARAMS));
-            	dv_params->cen1[0] = 0.25;
-            	dv_params->cen1[1] = 0.25;
-            	dv_params->cen2[0] = 0.75;
-            	dv_params->cen2[1] = 0.25;
-            	dv_params->i1 = -0.5;
-            	dv_params->i2 =  0.5;
-            	velo_func_pack.func_params = (POINTER)dv_params;
-            	velo_func_pack.func = double_vortex_vel;
-            	break;
-            case 'v':
-            case 'V':
-	    	FT_ScalarMemoryAlloc((POINTER*)&vert_params,
-				sizeof(VERTICAL_PARAMS));
-		CursorAfterString(infile,"Enter center velocity:");
-        	fscanf(infile,"%lf",&vert_params->v0);
-        	(void) printf("%f\n",vert_params->v0);
-		CursorAfterString(infile,"Enter stop motion time:");
-        	fscanf(infile,"%lf",&vert_params->stop_time);
-        	(void) printf("%f\n",vert_params->stop_time);
-		CursorAfterString(infile,"Enter center of vertical motion:");
-        	fscanf(infile,"%lf %lf",&vert_params->cen[0],
-                                        &vert_params->cen[1]);
-            	velo_func_pack.func_params = (POINTER)vert_params;
-            	velo_func_pack.func = vertical_velo;
-            	break;
-            case 't':
-            case 'T':
-	    	FT_ScalarMemoryAlloc((POINTER*)&toro_params,
-				sizeof(TOROIDAL_PARAMS));
-		CursorAfterString(infile,"Enter center of toroidal motion:");
-        	fscanf(infile,"%lf %lf %lf",&toro_params->tcen[0],
-				&toro_params->tcen[1],&toro_params->tcen[2]);
-        	(void) printf("%f %f %f\n",toro_params->tcen[0],
-				toro_params->tcen[1],toro_params->tcen[2]);
-		CursorAfterString(infile,"Enter distance to poloidal center:");
-        	fscanf(infile,"%lf",&toro_params->R0);
-        	(void) printf("%f\n",toro_params->R0);
-		CursorAfterString(infile,"Enter velocity magnitude:");
-        	fscanf(infile,"%lf",&toro_params->v0);
-        	(void) printf("%f\n",toro_params->v0);
-		CursorAfterString(infile,"Enter stop motion time:");
-        	fscanf(infile,"%lf",&toro_params->stop_time);
-        	(void) printf("%f\n",toro_params->stop_time);
-            	velo_func_pack.func_params = (POINTER)toro_params;
-            	velo_func_pack.func = toroidal_velo;
-            	break;
-            case 'p':
-            case 'P':
-	    	FT_ScalarMemoryAlloc((POINTER*)&para_params,
-				sizeof(PARABOLIC_PARAMS));
-		CursorAfterString(infile,"Enter center of parabolic velocity:");
-        	fscanf(infile,"%lf %lf",&para_params->cen[0],
-				&para_params->cen[1]);
-        	(void) printf("%f %f\n",para_params->cen[0],
-				para_params->cen[1]);
-		CursorAfterString(infile,"Enter center velocity:");
-        	fscanf(infile,"%lf",&para_params->v0);
-        	(void) printf("%f\n",para_params->v0);
-		CursorAfterString(infile,"Enter downward concavity:");
-        	fscanf(infile,"%lf",&para_params->a);
-        	(void) printf("%f\n",para_params->a);
-		CursorAfterString(infile,"Enter stop motion time:");
-        	fscanf(infile,"%lf",&para_params->stop_time);
-        	(void) printf("%f\n",para_params->stop_time);
-            	velo_func_pack.func_params = (POINTER)para_params;
-            	velo_func_pack.func = parabolic_velo;
-            	break;
-            case 's':
-            case 'S':
-	    	FT_ScalarMemoryAlloc((POINTER*)&sing_params,
-				sizeof(SINGULAR_PARAMS));
-		CursorAfterString(infile,"Enter center of velocity:");
-        	fscanf(infile,"%lf %lf",&sing_params->cen[0],
-				&sing_params->cen[1]);
-        	(void) printf("%f %f\n",sing_params->cen[0],
-				sing_params->cen[1]);
-		CursorAfterString(infile,"Enter center velocity:");
-        	fscanf(infile,"%lf",&sing_params->v0);
-        	(void) printf("%f\n",sing_params->v0);
-		CursorAfterString(infile,"Enter radius of center:");
-        	fscanf(infile,"%lf",&sing_params->R);
-        	(void) printf("%f\n",sing_params->R);
-		CursorAfterString(infile,"Enter stop motion time:");
-        	fscanf(infile,"%lf",&sing_params->stop_time);
-        	(void) printf("%f\n",sing_params->stop_time);
-            	velo_func_pack.func_params = (POINTER)sing_params;
-            	velo_func_pack.func = singular_velo;
-            	break;
-            case 'z':
-            case 'Z':
-            	velo_func_pack.func_params = NULL;
-            	velo_func_pack.func = zero_velo;
-            	break;
-            case 'f':
-            case 'F':
-	    	FT_ScalarMemoryAlloc((POINTER*)&fixarea_params,
-				sizeof(FIXAREA_PARAMS));
-                if (string[1] == 'a' || string[1] == 'A')
+                FT_ScalarMemoryAlloc((POINTER*)&vortex_params,
+                            sizeof(VORTEX_PARAMS));
+                front->max_time = 0.4;
+                front->movie_frame_interval = 0.02;
+                vortex_params->dim = 2;
+                vortex_params->type[0] = 'M';
+                vortex_params->cos_time = 0;
+                vortex_params->cen[0] = 0.5;
+                vortex_params->cen[1] = 0.25;
+                vortex_params->rad = 0.15;
+                vortex_params->time = 0.5*front->max_time;
+                velo_func_pack.func_params = (POINTER)vortex_params;
+                velo_func_pack.func = vortex_vel;
+            }
+            else if (string[1] == 'a' || string[1] == 'A')
+            {
+                FT_ScalarMemoryAlloc((POINTER*)&randv_params,
+                        sizeof(RANDOMV_PARAMS));
+                CursorAfterString(infile,"Enter random amplitude:");
+                for (int i = 0; i < dim; ++i)
                 {
+                    fscanf(infile,"%lf",&randv_params->v0[i]);
+                    (void) printf("%fi ",randv_params->v0[i]);
+                }
+                (void) printf("\n");
+                
+                CursorAfterString(infile,"Enter stop motion time:");
+                fscanf(infile,"%lf",&randv_params->stop_time);
+                (void) printf("%f\n",randv_params->stop_time);
+                velo_func_pack.func_params = (POINTER)randv_params;
+                velo_func_pack.func = random_velo;
+            }
+            else
+            {
+                (void) printf("ERROR: need either RO or RA\n");
+                LOC(); clean_up(ERROR);
+            }
+            break;
+            
+        case 'd':
+        case 'D':
+	    	FT_ScalarMemoryAlloc((POINTER*)&dv_params, sizeof(BIPOLAR_PARAMS));
+            dv_params->cen1[0] = 0.25;
+            dv_params->cen1[1] = 0.25;
+            dv_params->cen2[0] = 0.75;
+            dv_params->cen2[1] = 0.25;
+            dv_params->i1 = -0.5;
+            dv_params->i2 =  0.5;
+            velo_func_pack.func_params = (POINTER)dv_params;
+            velo_func_pack.func = double_vortex_vel;
+            break;
+            
+        case 'v':
+        case 'V':
+	    	FT_ScalarMemoryAlloc((POINTER*)&vert_params,sizeof(VERTICAL_PARAMS));
+            CursorAfterString(infile,"Enter center velocity:");
+                fscanf(infile,"%lf",&vert_params->v0);
+                (void) printf("%f\n",vert_params->v0);
+            CursorAfterString(infile,"Enter stop motion time:");
+                fscanf(infile,"%lf",&vert_params->stop_time);
+                (void) printf("%f\n",vert_params->stop_time);
+            CursorAfterString(infile,"Enter center of vertical motion:");
+                fscanf(infile,"%lf %lf",&vert_params->cen[0],&vert_params->cen[1]);
+                (void) printf("%f %f\n",vert_params->cen[0],vert_params->cen[1]);
+            velo_func_pack.func_params = (POINTER)vert_params;
+            velo_func_pack.func = vertical_velo;
+            break;
+            
+        case 't':
+        case 'T':
+	    	FT_ScalarMemoryAlloc((POINTER*)&toro_params,sizeof(TOROIDAL_PARAMS));
+            CursorAfterString(infile,"Enter center of toroidal motion:");
+                fscanf(infile,"%lf %lf %lf",&toro_params->tcen[0],
+                    &toro_params->tcen[1],&toro_params->tcen[2]);
+                (void) printf("%f %f %f\n",toro_params->tcen[0],
+                    toro_params->tcen[1],toro_params->tcen[2]);
+            CursorAfterString(infile,"Enter distance to poloidal center:");
+                fscanf(infile,"%lf",&toro_params->R0);
+                (void) printf("%f\n",toro_params->R0);
+            CursorAfterString(infile,"Enter velocity magnitude:");
+                fscanf(infile,"%lf",&toro_params->v0);
+                (void) printf("%f\n",toro_params->v0);
+            CursorAfterString(infile,"Enter stop motion time:");
+                fscanf(infile,"%lf",&toro_params->stop_time);
+                (void) printf("%f\n",toro_params->stop_time);
+            velo_func_pack.func_params = (POINTER)toro_params;
+            velo_func_pack.func = toroidal_velo;
+            break;
+            
+        case 'p':
+        case 'P':
+	    	FT_ScalarMemoryAlloc((POINTER*)&para_params,sizeof(PARABOLIC_PARAMS));
+            CursorAfterString(infile,"Enter center of parabolic velocity:");
+                fscanf(infile,"%lf %lf",&para_params->cen[0],
+                    &para_params->cen[1]);
+                (void) printf("%f %f\n",para_params->cen[0],
+                    para_params->cen[1]);
+            CursorAfterString(infile,"Enter center velocity:");
+                fscanf(infile,"%lf",&para_params->v0);
+                (void) printf("%f\n",para_params->v0);
+            CursorAfterString(infile,"Enter downward concavity:");
+                fscanf(infile,"%lf",&para_params->a);
+                (void) printf("%f\n",para_params->a);
+            CursorAfterString(infile,"Enter stop motion time:");
+                fscanf(infile,"%lf",&para_params->stop_time);
+                (void) printf("%f\n",para_params->stop_time);
+            velo_func_pack.func_params = (POINTER)para_params;
+            velo_func_pack.func = parabolic_velo;
+            break;
+            
+        case 's':
+        case 'S':
+	    	FT_ScalarMemoryAlloc((POINTER*)&sing_params,sizeof(SINGULAR_PARAMS));
+            CursorAfterString(infile,"Enter center of velocity:");
+                fscanf(infile,"%lf %lf",&sing_params->cen[0],&sing_params->cen[1]);
+                (void) printf("%f %f\n",sing_params->cen[0],sing_params->cen[1]);
+            CursorAfterString(infile,"Enter center velocity:");
+                fscanf(infile,"%lf",&sing_params->v0);
+                (void) printf("%f\n",sing_params->v0);
+            CursorAfterString(infile,"Enter radius of center:");
+                fscanf(infile,"%lf",&sing_params->R);
+                (void) printf("%f\n",sing_params->R);
+            CursorAfterString(infile,"Enter stop motion time:");
+                fscanf(infile,"%lf",&sing_params->stop_time);
+                (void) printf("%f\n",sing_params->stop_time);
+            velo_func_pack.func_params = (POINTER)sing_params;
+            velo_func_pack.func = singular_velo;
+            break;
+            
+        case 'f':
+        case 'F':
+	    	FT_ScalarMemoryAlloc((POINTER*)&fixarea_params,sizeof(FIXAREA_PARAMS));
+            if (string[1] == 'a' || string[1] == 'A')
+            {
+                if (!front->f_basic->RestartRun)
                     init_fixarea_params(front,infile,fixarea_params);
-                }
-                else if (string[1] == 'p' || string[1] == 'P')
-                {
-                    init_fixpoint_params(front,infile,fixarea_params);
-                }
-                else if (string[1] == 'f' || string[1] == 'F')
-                {
-                    velo_func_pack.func_params = NULL;
-                    velo_func_pack.func = NULL;
-                }
-            
-                velo_func_pack.func_params = (POINTER)fixarea_params;
-                velo_func_pack.func = marker_velo;
-                break;
-            
-            default:
-                (void) printf("Unknown velocity function, use zero_velo()\n");
+                else
+                    restart_fixarea_params(front,infile,fixarea_params);
+            }
+            else if (string[1] == 'p' || string[1] == 'P')
+            {
+                init_fixpoint_params(front,infile,fixarea_params);
+            }
+            else if (string[1] == 'f' || string[1] == 'F')
+            {
                 velo_func_pack.func_params = NULL;
-                velo_func_pack.func = zero_velo;
-                break;
-            }	
+                velo_func_pack.func = NULL;
+            }
+        
+            velo_func_pack.func_params = (POINTER)fixarea_params;
+            velo_func_pack.func = marker_velo;
+            break;
+            
+        case 'z':
+        case 'Z':
+            velo_func_pack.func_params = NULL;
+            velo_func_pack.func = zero_velo;
+            break;
+            
+        default:
+            printf("ERROR initVelocityFunc(): unknown velocity function!\n");
+            LOC(); clean_up(EXIT_FAILURE);
+            break;
+        }
 	}
 
     if (CursorAfterStringOpt(infile,"Enter gravity:"))
     {
-        for (i = 0; i < dim; ++i)
+        for (int i = 0; i < dim; ++i)
         {
             fscanf(infile,"%lf",af_params->gravity+i);
             printf(" %f",af_params->gravity[i]);
@@ -1075,7 +1015,6 @@ static int singular_velo(
 	return YES;
 }	/* end sigular_velo */
 
-//TODO: Make shape_id an enum
 struct _SHAPE_PARAMS {
 	int shape_id;
 	double L[2];
@@ -1087,7 +1026,177 @@ typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
 
 static boolean within_shape(SHAPE_PARAMS,double*);
 
-//TODO: compare to fabric directory version of this function
+static void init_fixarea_params(
+	Front *front,
+	FILE *infile,
+	FIXAREA_PARAMS *fixarea_params)
+{
+	char string[100];
+	SHAPE_PARAMS sparams;
+	int num_pts,dim = front->rect_grid->dim;
+	static REGISTERED_PTS *registered_pts;
+    SURFACE **s;
+    TRI *tri;
+	POINT *p;
+	INTERFACE *intfc = front->interf;
+
+	(void) printf("Available initial areas are:\n");
+	(void) printf("\tRectangle (R)\n");
+	(void) printf("\tEllipse (E)\n");
+	
+    CursorAfterString(infile,"Enter initial shape of fixed area:");
+    fscanf(infile,"%s",string);
+    (void) printf("%s\n",string);
+	
+    switch (string[0])
+	{
+	case 'r':
+	case 'R':
+	    sparams.shape_id = 0;
+	    CursorAfterString(infile,"Enter rectangle lower bounds:");
+            fscanf(infile,"%lf %lf",&sparams.L[0],&sparams.L[1]);
+            (void) printf("%f %f\n",sparams.L[0],sparams.L[1]);
+	    CursorAfterString(infile,"Enter rectangle upper bounds:");
+            fscanf(infile,"%lf %lf",&sparams.U[0],&sparams.U[1]);
+            (void) printf("%f %f\n",sparams.U[0],sparams.U[1]);
+	    break;
+	case 'e':
+	case 'E':
+	    sparams.shape_id = 1;
+	    CursorAfterString(infile,"Enter center of ellipse:");
+            fscanf(infile,"%lf %lf",&sparams.cen[0],&sparams.cen[1]);
+            (void) printf("%f %f\n",sparams.cen[0],sparams.cen[1]);
+	    CursorAfterString(infile,"Enter radii of ellipse:");
+            fscanf(infile,"%lf %lf",&sparams.R[0],&sparams.R[1]);
+            (void) printf("%f %f\n",sparams.R[0],sparams.R[1]);
+	    break;
+	}
+	
+    CursorAfterString(infile,"Enter area velocity:");
+    for (int i = 0; i < dim; ++i)
+    {
+        fscanf(infile,"%lf",&fixarea_params->vel[i]);
+        (void) printf("%f ",fixarea_params->vel[i]);
+    }
+    (void) printf("\n");
+
+	num_pts = 0;
+    if (!front->f_basic->RestartRun)
+    {
+        /* Count number of registered points */
+        num_pts = 0;
+        reset_sort_status(intfc);
+        intfc_surface_loop(intfc,s)
+        {
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
+
+            surf_tri_loop(*s,tri)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    p = Point_of_tri(tri)[i];
+                    if (sorted(p)) continue;
+            
+                    sorted(p) = YES;
+                    if (within_shape(sparams,Coords(p))) num_pts++;	
+                }
+            }
+        }
+
+        FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                sizeof(REGISTERED_PTS));
+        FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                num_pts,sizeof(int));
+        
+        registered_pts->num_pts = num_pts;
+
+        /* Record registered points */
+        num_pts = 0;	
+        reset_sort_status(intfc);
+        intfc_surface_loop(intfc,s)
+        {
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
+        
+            (*s)->extra = (POINTER)registered_pts;
+            surf_tri_loop(*s,tri)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    p = Point_of_tri(tri)[i];
+                    if (sorted(p)) continue;
+                    
+                    sorted(p) = YES;
+                    if (within_shape(sparams,Coords(p)))
+                    {
+                        registered_pts->global_ids[num_pts] = Gindex(p);	
+                        num_pts++;	
+                    }
+                }
+            }
+        }
+    }
+    /*else
+    {
+        //Restart runs
+        intfc_surface_loop(intfc,s)
+        {
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
+            if ((*s)->extra == NULL) continue;
+            registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            num_pts = registered_pts->num_pts;
+            break;
+        }
+    }*/
+    
+    if (num_pts == 0) return;
+
+    fixarea_params->num_pts = num_pts;
+    FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,sizeof(int));
+
+    for (int i = 0; i < num_pts; ++i)
+    {
+        fixarea_params->global_ids[i] = registered_pts->global_ids[i];	
+    }
+}	/* end init_fixarea_params */
+
+static void restart_fixarea_params(
+    Front* front,
+    FILE *infile,
+    FIXAREA_PARAMS *fixarea_params)
+{
+    REGISTERED_PTS* registered_pts;
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+    
+    intfc_surface_loop(intfc,s)
+    {
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_STRING) continue;
+        
+        if ((*s)->extra == NULL) continue;
+	    
+        registered_pts = (REGISTERED_PTS*)(*s)->extra;
+        break;
+    }
+
+	int num_pts = registered_pts->num_pts;
+    fixarea_params->num_pts = num_pts;
+    FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,sizeof(int));
+
+    for (int i = 0; i < num_pts; ++i)
+    {
+        fixarea_params->global_ids[i] = registered_pts->global_ids[i];	
+    }
+}
+    
+
+/*
+//TODO: Replacing with version that supports restart runs.
+//      Remove when restart runs are stable.
+//
 static void init_fixarea_params(
 	Front *front,
 	FILE *infile,
@@ -1139,18 +1248,15 @@ static void init_fixarea_params(
             (void) printf("%f ",fixarea_params->vel[i]);
         }
         (void) printf("\n");
-	num_pts = 0;
+	
+    num_pts = 0;
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING)
-		continue;
-	    if (within_shape(sparams,Coords(p)))
-	    {
-		num_pts++;	
-	    }
-	}
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_STRING) continue;
+        if (within_shape(sparams,Coords(p))) num_pts++;	
+    }
 	FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,
 				sizeof(int));
 	FT_ScalarMemoryAlloc((POINTER*)&registered_pts,sizeof(REGISTERED_PTS));
@@ -1177,7 +1283,7 @@ static void init_fixarea_params(
 	    	surf->extra = (POINTER)registered_pts;
 	    }
 	}
-}	/* end init_fixarea_params */
+}*/	/* end init_fixarea_params */
 
 static boolean within_shape(
 	SHAPE_PARAMS sparams,
@@ -1266,21 +1372,24 @@ static int marker_velo(
         double *vel)
 {
 	FIXAREA_PARAMS *fixarea_params = (FIXAREA_PARAMS*)params;
-	int i,j,dim = front->rect_grid->dim;
+	int dim = front->rect_grid->dim;
 	int num_pts = fixarea_params->num_pts;
 	int *global_ids = fixarea_params->global_ids;
-	for (i = 0; i < num_pts; ++i)
+	
+    for (int i = 0; i < num_pts; ++i)
 	{
 	    if (Gindex(p) == global_ids[i])
 	    {
-		for (j = 0; j < dim; ++j)
-		    vel[j] = fixarea_params->vel[j];
-		return YES;
+            for (int j = 0; j < dim; ++j)
+            {
+                vel[j] = fixarea_params->vel[j];
+            }
+            return YES;
 	    }
 	}
-	for (j = 0; j < dim; ++j)
-	    vel[j] = 0.0;
-	return YES;
+	
+    for (int j = 0; j < dim; ++j) vel[j] = 0.0;
+    return YES;
 }	/* end marker_velo */
 
 extern void resetFrontVelocity(Front *front)
@@ -1371,8 +1480,8 @@ static void checkSetGoreNodes(
 	{
 	    if (hsbdry_type(*c) == GORE_HSBDRY)
 	    {
-		set_gore_node((*c)->start);
-		set_gore_node((*c)->end);
+            set_gore_node((*c)->start);
+            set_gore_node((*c)->end);
 	    }
 	}
 }	/* end checkSetGoreNodes */
@@ -1407,3 +1516,78 @@ static void set_gore_node(
 	    n->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
 }	/* end set_gore_node */
+
+static void convert_to_point_mass(
+        Front *front,
+        AF_PARAMS *af_params)
+{
+        INTERFACE *intfc;
+        int num_str_pts, num_fabric_pts, num_gore_pts;
+        SURFACE **s;
+        CURVE **c;
+        intfc = front->interf;
+        int dim = Dimension(intfc);
+
+        switch (dim)
+        {
+        case 2:
+            num_str_pts = num_fabric_pts = 0;
+            for (c = intfc->curves; c && *c; ++c)
+            {
+                if (wave_type(*c) == ELASTIC_BOUNDARY)
+                    num_fabric_pts +=  I_NumOfCurvePoints(*c);
+		else if (wave_type(*c) == ELASTIC_STRING)
+		{
+		    num_str_pts += I_NumOfCurvePoints(*c);
+		    if (af_params->is_parachute_system == YES)
+			num_str_pts -= 2; //exclude curve boundary
+		}
+            }
+	    if (af_params->is_parachute_system == YES)
+		num_str_pts += 1; //load node
+	    if (num_fabric_pts != 0)
+		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+	    else
+		af_params->m_s = 0.001;
+	    if (num_str_pts != 0)
+		af_params->m_l = af_params->total_string_mass/num_str_pts;
+	    else
+		af_params->m_l = 0.002;
+            break;
+        case 3:
+            num_str_pts = num_fabric_pts = num_gore_pts = 0;
+            for (s = intfc->surfaces; s && *s; ++s)
+            {
+                if (wave_type(*s) == ELASTIC_BOUNDARY)
+                    num_fabric_pts += I_NumOfSurfPoints(*s);
+            }
+            for (c = intfc->curves; c && *c; ++c)
+            {
+                if (hsbdry_type(*c) == STRING_HSBDRY)
+		{
+		    num_str_pts += I_NumOfCurvePoints(*c); 
+		    if (af_params->is_parachute_system == YES)
+			num_str_pts -= 2; //exclude curve boundary
+		}
+		else if (hsbdry_type(*c) == GORE_HSBDRY)
+		    num_gore_pts += I_NumOfCurvePoints(*c);
+            }
+	    if (af_params->is_parachute_system == YES)
+		num_str_pts += 1; //load node
+	    num_fabric_pts -= num_gore_pts;
+	    if (num_fabric_pts != 0)
+		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+	    else
+		af_params->m_s = 0.001;
+            if (num_str_pts != 0)
+                af_params->m_l = af_params->total_string_mass/num_str_pts;
+            else
+                af_params->m_l = 0.002;
+	    if (num_gore_pts != 0)
+		af_params->m_g = af_params->total_gore_mass/num_gore_pts;
+	    else
+		af_params->m_g = 0.001;
+	    break;
+        }
+}       /* end convert_to_point_mass */
+

@@ -133,8 +133,10 @@ int main(int argc, char **argv)
 	record_break_strings_gindex(&front);
 	set_unequal_strings(&front);
 
+    front._scatter_front_extra = scatterAirfoilExtra;
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
-	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+	
+    l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
     l_cartesian->initMesh();
     l_cartesian->writeMeshFileVTK();
 	

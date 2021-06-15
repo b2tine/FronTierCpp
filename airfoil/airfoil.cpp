@@ -160,8 +160,10 @@ int main(int argc, char **argv)
 	/* Initialize velocity field function */
 	setMotionParams(&front);
 
+    front._scatter_front_extra = scatterAirfoilExtra;
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
-	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+	
+    l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->initMesh();
     l_cartesian->writeMeshFileVTK();
         

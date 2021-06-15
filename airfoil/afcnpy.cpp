@@ -1991,7 +1991,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     //      lagged values for the STATE::is_fixed etc. boolean flags from
     //      the previous time step. 
     setCollisionFreePoints3d(elastic_intfc);
-        //setCollisionFreePoints3d((*newfront)->interf);
     
     if (!debugging("bendforce_off"))
     {

@@ -911,8 +911,6 @@ void clearRegisteredPoints(Front* front)
             (*s)->extra = nullptr;
         }
     }
-
-    //setMotionParams(front);
 }
 
 void printHyperSurfQuality(
