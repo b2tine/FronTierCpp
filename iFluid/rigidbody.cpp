@@ -854,7 +854,7 @@ extern void resetRigidBodyVelocity(Front *front)
     FILE *infile = fopen(InName(front),"r");
     char string[100];
 
-    if (CursorAfterStringOpt(infile,"Enter yes to reset rigid body velocity: "))
+    if (CursorAfterStringOpt(infile,"Enter yes to reset rigid body velocity:"))
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
@@ -874,6 +874,8 @@ extern void resetRigidBodyVelocity(Front *front)
             {
                 center_of_mass_velo(hs)[i] = 0.0;
             }
+            //TODO: Do we need to loop over the surface tris and
+            //      zero out the points too? See resetFrontVelocity().
         }
     }
 }

@@ -86,14 +86,10 @@ Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity functionXX: Zero
+Enter velocity function: FP
+Enter initial fixed point coordinates: 6 6
+Enter point velocity: 0 0 4.0
 
-Enter velocity function: FA
-Enter initial shape of fixed area: Ellipse
-Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.6 0.6
-Enter area velocity: 0 0 3.5
-Enter gravityXXX: 0 0 0
 
 Enter velocity functionX: Singular
 Enter center of velocityX: 6 6
@@ -116,17 +112,16 @@ Enter payload: 180
 Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
-Enter fabric spring constant: 7500
+Enter fabric spring constant: 8500
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.000
 Enter fabric bending damping constant: 0.000001
 Enter fabric friction constant: 0.25
-Enter fabric point massXXX: 0.001
 Enter fabric point mass: 0.00035
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
-Enter string spring constant: 75000
+Enter string spring constant: 85000
 Enter string damping constant: 0.1
 Enter string bending stiffness constant: 0.0000
 Enter string friction constant: 0.35
@@ -154,7 +149,7 @@ Enter yes to use no-slip boundary condition: no
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 5
+Enter velocity: 0 0 15
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH

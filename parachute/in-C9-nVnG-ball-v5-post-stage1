@@ -80,17 +80,20 @@ Enter the body index of the target RGB: 1
 Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
-Enter yes to use GPU solver: no
-
-Entering yes to turn off fluid solver: no
+Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
+
+Enter yes to keep registered points: no
+Enter yes to reset front velocity: yes
+
+Enter velocity function: Zero
+
+Enter yes to enable inflation assist: yes
+Enter uniform normal pressure differential: 250.0
+
 
 Enter timestep to activate FSI: 5
 Enter yes to disable FSI: yes
-
-Enter yes to enable inflation assist: yes
-Enter uniform normal pressure differential: 100.0
-
 
 Enter yes to use porosity: yes
 Enter porosity: 0.01
@@ -113,7 +116,7 @@ Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
-Enter string bending stiffness constant: 0.0001
+Enter string bending stiffness constant: 0.0000
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

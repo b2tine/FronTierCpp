@@ -36,7 +36,6 @@ char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
 boolean ReSetTime;
 int RestartStep;
-int constrained_propagate;
 
 
 int main(int argc, char **argv)
@@ -113,6 +112,7 @@ int main(int argc, char **argv)
 	else
 	{
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+        readAfExtraData(&front,restart_state_name);
 	}
 
 	FT_ReadTimeControl(in_name,&front);
@@ -162,19 +162,19 @@ int main(int argc, char **argv)
         //TODO: If doing another move on a new set of registered points,
         //      then the below restart/reset code would clear the new
         //      registered points just set in setMotionParams()...
+        clearRegisteredPoints(&front);
+        resetFrontVelocity(&front);
+        resetRigidBodyVelocity(&front);
+        
         if (ReSetTime)
         {
-            readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);
-            resetRigidBodyVelocity(&front);
-                //setRigidBodyMotionParams(&front,&rgb_params);
-                //modifyInitialization(&front);
-            set_equilibrium_mesh(&front);
-            static_mesh(front.interf) = YES;
+            //setRigidBodyMotionParams(&front,&rgb_params);
+            //modifyInitialization(&front);
             
-            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+            //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             //TODO: need to call this instead???
             //      //restart_set_dirichlet_bdry_function(Front *front);
+            
             l_cartesian->initMesh(); //TODO: may be able to remove this one
             
             if (!af_params.no_fluid)
@@ -198,9 +198,6 @@ int main(int argc, char **argv)
             //      For generating turbulent flow initial conditions.
             if (!af_params.no_fluid)
                 l_cartesian->readFrontInteriorStates(restart_state_name);
-            readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);
-            resetRigidBodyVelocity(&front);
         }
     }
     else
@@ -212,8 +209,8 @@ int main(int argc, char **argv)
     l_cartesian->initMovieVariables();
 	initMovieStress(in_name,&front);
 	    
-	if (!RestartRun || ReSetTime)//TODO ReSetTime may not want to reset velocity
-        resetFrontVelocity(&front);
+	if (!RestartRun && !ReSetTime)
+        zeroFrontVelocity(&front);
 
 	/* Propagate the front */
 	airfoil_driver(&front,l_cartesian);
@@ -271,7 +268,6 @@ void airfoil_driver(Front *front,
 
         l_cartesian->printFrontInteriorStates(out_name);
 	    printAfExtraData(front,out_name);
-        FT_Draw(front);
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);

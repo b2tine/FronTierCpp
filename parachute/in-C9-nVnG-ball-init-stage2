@@ -81,30 +81,30 @@ Enter the body index of the target RGB: 1
 
 Enter number of canopy optimization rounds: 0
 
-*************Airfoil parameters**************
-Enter yes to use GPU solver: no
+*************Fabric parameters**************
+
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
+Enter interior sub step number: 1
+Enter yes to use GPU solver: no
 
-Enter velocity functionXX: Zero
+Enter yes to keep registered points: no
+Enter yes to reset front velocity: yes
 
-Enter velocity function: FA
+Enter velocity function: Zero
+
+Enter velocity functionXXX: FA
 Enter initial shape of fixed area: Ellipse
 Enter center of ellipse: 6 6
 Enter radii of ellipse: 0.6 0.6
 Enter area velocity: 0 0 3.5
 Enter gravityXXX: 0 0 0
 
-Enter velocity functionX: Singular
-Enter center of velocityX: 6 6
-Enter center velocityX: 3.5
-Enter radius of centerX: 0.55
-Enter stop motion timeX: 2.0
-
-Enter yes to keep registered points: yes
-
-
-Enter timestep to activate FSI: 5
+Enter velocity functionXXX: Singular
+Enter center of velocity: 6 6
+Enter center velocity: 3.5
+Enter radius of center: 0.55
+Enter stop motion time: 2.0
 
 Enter yes to use porosity: yes
 Enter porosity: 0.01
@@ -113,7 +113,6 @@ Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 180
-Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500

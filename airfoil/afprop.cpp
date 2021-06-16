@@ -39,7 +39,73 @@ static	int arrayOfMonoHsbdry(INTERFACE*,CURVE**);
 static	int arrayOfGoreHsbdry(INTERFACE*,CURVE**);
 static 	int getGoreNodes(INTERFACE*,NODE**);
 
+static void elastic_point_propagate_const_dP(Front*,POINTER,POINT*,POINT*,
+        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
+
+static void elastic_point_propagate_fsi(Front*,POINTER,POINT*,POINT*,
+        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
+
+
+
 extern void elastic_point_propagate(
+        Front *front,
+        POINTER wave,
+        POINT *oldp,
+        POINT *newp,
+        HYPER_SURF_ELEMENT *oldhse,
+        HYPER_SURF         *oldhs,
+        double              dt,
+        double              *V)
+{
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    if (af_params->inflation_assist)
+    {
+        elastic_point_propagate_const_dP(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+    }
+    else
+    {
+        elastic_point_propagate_fsi(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+    }
+}
+
+static void elastic_point_propagate_const_dP(
+        Front *front,
+        POINTER wave,
+        POINT *oldp,
+        POINT *newp,
+        HYPER_SURF_ELEMENT *oldhse,
+        HYPER_SURF         *oldhs,
+        double              dt,
+        double              *V)
+{
+	STATE* sl = (STATE*)left_state(oldp);
+	STATE* sr = (STATE*)right_state(oldp);
+	STATE* newsl = (STATE*)left_state(newp);
+	STATE* newsr = (STATE*)right_state(newp);
+    
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    double delta_pres = af_params->delta_pres;
+    double area_dens = af_params->area_dens;
+	
+    double nor[MAXD];
+	FT_NormalAtPoint(oldp,front,nor,NO_COMP);
+
+    int dim = FT_Dimension();
+	double dv[MAXD] = {0.0};
+    
+    for (int i = 0; i < dim; ++i)
+	{
+        dv[i] = delta_pres*nor[i]/area_dens;
+        newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
+	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+	    
+        newsr->vel[i] = newsl->vel[i] = sl->vel[i];
+        newsr->impulse[i] = newsl->impulse[i] = 0.0;
+        //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	}
+}
+
+static void elastic_point_propagate_fsi(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -56,6 +122,7 @@ extern void elastic_point_propagate(
     IF_FIELD *field = iFparams->field;
 	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double area_dens = af_params->area_dens;
 
 	int dim = front->rect_grid->dim;
     INTERFACE *grid_intfc = front->grid_intfc;
@@ -67,13 +134,12 @@ extern void elastic_point_propagate(
 	double **vel = field->vel;
 	double *pres = field->pres;
 	double *mu = field->mu;
-	COMPONENT base_comp = positive_component(oldhs);
 	double pp[MAXD],pm[MAXD],nor[MAXD];
-	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
-        
-	if (af_params->no_fluid)
+
+	
+    if (af_params->no_fluid)
 	{
 	    fourth_order_point_propagate(front,wave,oldp,newp,oldhse,
 				oldhs,dt,V);
@@ -105,7 +171,10 @@ extern void elastic_point_propagate(
     double mu_p;
     */
 
-	if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
+	
+    COMPONENT base_comp = positive_component(oldhs);
+	
+    if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
 	{
         FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
                 getStatePres,&newsl->pres,&sl->pres);
@@ -168,11 +237,7 @@ extern void elastic_point_propagate(
 	for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
-        if (af_params->inflation_assist)
-        {
-            dv[i] = af_params->delta_pres*nor[i]/area_dens;
-        }
-	    else if (front->step > af_params->fsi_startstep)
+	    if (front->step > af_params->fsi_startstep)
         {
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
@@ -200,7 +265,8 @@ extern void elastic_point_propagate(
                     getStateVort,&newsr->vort,&sr->vort);
 	        for (int i = 0; i < dim; ++i)
 	        {
-	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            newsr->impulse[i] = newsl->impulse[i] = 0.0;
+	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                 vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),

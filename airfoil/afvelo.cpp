@@ -1394,6 +1394,23 @@ static int marker_velo(
 
 extern void resetFrontVelocity(Front *front)
 {
+	FILE *infile = fopen(InName(front),"r");
+	char string[100];
+	
+    if (CursorAfterStringOpt(infile,"Enter yes to reset front velocity:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+    }
+    fclose(infile);
+        
+    if (string[0] == 'y' || string[0] == 'Y') return;
+    
+    zeroFrontVelocity(front);
+}
+
+extern void zeroFrontVelocity(Front *front)
+{
 	INTERFACE *intfc = front->interf;
 	POINT *p;
 	HYPER_SURF_ELEMENT *hse;

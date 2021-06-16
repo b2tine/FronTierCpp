@@ -343,33 +343,25 @@ extern void fourth_order_elastic_surf_propagate(Front*,double);
 extern void resolve_wall_collision(Front*,SPRING_VERTEX*,int);
 
 // afcnpy.cpp
-extern void compute_total_canopy_force(Front*,double*,double*);
-extern int airfoil_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
-extern int af_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
-                        int,POINTER*,HYPER_SURF**,double*);
+extern int airfoil_velo(POINTER,Front*,POINT*,
+        HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
+extern int af_find_state_at_crossing(Front*,int*,
+        GRID_DIRECTION,int,POINTER*,HYPER_SURF**,double*);
 extern void assign_node_field(NODE*,double**,double**,int*);
 extern void assign_curve_field(CURVE*,double**,double**,int*);
 extern void assign_surf_field(SURFACE*,double**,double**,int*);
-extern void compute_surf_accel1(ELASTIC_SET*,SURFACE*,double**,double**,
-				double**,int*);
-extern void compute_surf_accel2(ELASTIC_SET*,SURFACE*,double**,double**,
-				double**,int*);
-extern void compute_curve_accel1(ELASTIC_SET*,CURVE*,double**,double**,
-				double**,int*);
-extern void compute_node_accel1(ELASTIC_SET*,NODE*,double**,double**,double**,
-				int*);
-extern void compute_curve_accel2(ELASTIC_SET*,CURVE*,double**,double**,
-				double**,int*);
-extern void compute_node_accel2(ELASTIC_SET*,NODE*,double**,double**,double**,
-				int*);
-extern void compute_curve_accel3(ELASTIC_SET*,CURVE*,double**,double**,
-				double**,int*);
-extern void compute_node_accel3(ELASTIC_SET*,NODE*,double**,double**,double**,
-				int*);
+extern void compute_surf_accel1(ELASTIC_SET*,SURFACE*,double**,double**,double**,int*);
+extern void compute_surf_accel2(ELASTIC_SET*,SURFACE*,double**,double**,double**,int*);
+extern void compute_curve_accel1(ELASTIC_SET*,CURVE*,double**,double**,double**,int*);
+extern void compute_node_accel1(ELASTIC_SET*,NODE*,double**,double**,double**,int*);
+extern void compute_curve_accel2(ELASTIC_SET*,CURVE*,double**,double**,double**,int*);
+extern void compute_node_accel2(ELASTIC_SET*,NODE*,double**,double**,double**,int*);
+extern void compute_curve_accel3(ELASTIC_SET*,CURVE*,double**,double**,double**,int*);
+extern void compute_node_accel3(ELASTIC_SET*,NODE*,double**,double**,double**,int*);
 extern void propagate_surface(ELASTIC_SET*,SURFACE*,double**,int*);
 extern void propagate_curve(ELASTIC_SET*,CURVE*,double**,int*);
 extern void propagate_node(ELASTIC_SET*,NODE*,double**,int*);
+extern void compute_total_canopy_force(Front*,double*,double*);
 extern boolean is_registered_point(SURFACE*,POINT*);
 extern void scatterAirfoilExtra(Front*);
 extern void setSpecialNodeForce(INTERFACE*,double);
@@ -387,18 +379,14 @@ extern void set_vertex_impulse(ELASTIC_SET*,SPRING_VERTEX*);
 extern void set_geomset_velocity(ELASTIC_SET*,SPRING_VERTEX*);
 extern void link_point_set(ELASTIC_SET*,GLOBAL_POINT**,GLOBAL_POINT*);
 extern void set_vertex_neighbors(ELASTIC_SET*,SPRING_VERTEX*,GLOBAL_POINT**);
-extern void set_node_spring_vertex(ELASTIC_SET*,NODE*,SPRING_VERTEX*,
-				int*,GLOBAL_POINT**);
-extern void set_curve_spring_vertex(ELASTIC_SET*,CURVE*,SPRING_VERTEX*,
-				int*,GLOBAL_POINT**);
-extern void set_surf_spring_vertex(ELASTIC_SET*,SURFACE*,SPRING_VERTEX*,
-				int*,GLOBAL_POINT**);
+extern void set_node_spring_vertex(ELASTIC_SET*,NODE*,SPRING_VERTEX*,int*,GLOBAL_POINT**);
+extern void set_curve_spring_vertex(ELASTIC_SET*,CURVE*,SPRING_VERTEX*,int*,GLOBAL_POINT**);
+extern void set_surf_spring_vertex(ELASTIC_SET*,SURFACE*,SPRING_VERTEX*,int*,GLOBAL_POINT**);
 extern void get_point_set_from(ELASTIC_SET*,GLOBAL_POINT**);
 extern void put_point_set_to(ELASTIC_SET*,GLOBAL_POINT**);
 extern void set_elastic_params(ELASTIC_SET*,double);
 extern void merge_global_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int);
-extern void copy_from_client_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int,
-				double*,double*);
+extern void copy_from_client_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int,double*,double*);
 extern void copy_to_client_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int);
 extern void set_vertex_impulse(ELASTIC_SET*,GLOBAL_POINT**);
 extern void set_geomset_velocity(ELASTIC_SET*,GLOBAL_POINT**);
@@ -408,11 +396,11 @@ extern void setMotionParams(Front*);
 extern void setFabricPropagators(Front*);
 extern void setFabricParams(Front*);
 extern void resetFrontVelocity(Front*);
+extern void zeroFrontVelocity(Front*);
 
-// afmodule.cpp
+// modules.cpp
 extern void initParachuteDefault(Front*);
 extern void initParachuteModules(Front*);
-extern void init2DModules(Front*);
 
 // afdata.cpp
 extern void printAfExtraData(Front*,char*);
@@ -427,10 +415,7 @@ extern void vtkPlotSurfaceStress(Front*);
 extern void poisson_ratio(Front*);
 extern void initMovieStress(char*,Front*);
 
-// sprModel/modules.cpp
-extern void initSpringModel(Front*);
-
-// sprModel/cgal.cpp
+// cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 

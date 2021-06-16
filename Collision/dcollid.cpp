@@ -2195,7 +2195,7 @@ bool CollisionSolver3d::getGsUpdateStatus() {return gs_update;}
 void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    //if (dt < 1.0e-05) return;
+    if (dt < 1.0e-08) return;
 
 	const int MAX_ITER = 3;
 	//const int MAX_ITER = 2;
@@ -2221,7 +2221,7 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 {
     double dt = getTimeStepSize();
-    //if (dt < 1.0e-05) return;
+    if (dt < 1.0e-08) return;
 
     turnOnGsUpdate();
 
