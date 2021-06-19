@@ -1,7 +1,8 @@
 Domain limit in 0-th dimension: 0 2.694
 Domain limit in 1-th dimension: 0 0.984
 
-Computational grid: 109 45
+Computational grid: 250 120
+Computational gridXXX: 109 45
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -11,7 +12,7 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Max time: 5.0
 Max step: 5000
 Print interval: 0.5
-Movie frame interval: 0.05
+Movie frame interval: 0.015
 CFL factor: 0.75
 Redistribution interval: 100000000
 

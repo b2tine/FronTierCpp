@@ -8,6 +8,12 @@
 //Corresponds to the locations of fluid solver cell centers
 void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()
 {
+    if (pp_numnodes() > 1)
+    {
+        printf("\n\tWARNING writeMeshFileVTK() not implemented in parallel yet\n\n");
+        return;
+    }
+
     char dirname[250];
     sprintf(dirname,"%s/vtk",OutName(front));
 

@@ -164,7 +164,10 @@ int main(int argc, char **argv)
 
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
     l_cartesian->initMesh();
-    l_cartesian->writeMeshFileVTK();
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+    }
 
 	if (debugging("trace"))
 	    printf("Passed l_cartesian.initMesh()\n");
