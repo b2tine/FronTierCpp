@@ -59,9 +59,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <ctype.h>
 #include <math.h>
 
-//#if defined(__INTEL_COMPILER) || defined(__bg__)
+//#include <sys/types.h>
+
+#if defined(__INTEL_COMPILER) || defined(__bg__)
 #include <stdint.h>
-//#endif /* defined(__INTEL_COMPILER) || defined(__bg__)*/
+#endif /* defined(__INTEL_COMPILER) || defined(__bg__)*/
 
 #include <limits.h>
 #include <float.h>

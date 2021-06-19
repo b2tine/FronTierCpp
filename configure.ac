@@ -163,7 +163,7 @@ with_petsc=no
 AS_IF([test "x${petsc_dir}" != xno],
       [with_petsc=yes
        petscinc="-I${petsc_dir}/include"
-       petsclib="-L${petsc_dir}/lib ${petsc_libflags}"])
+       petsclib="-L${petsc_dir}/lib ${petsc_libflags} -Wl,-rpath-link=${petsc_dir}/lib -Wl,-rpath=${petsc_dir}/lib"])
 
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
