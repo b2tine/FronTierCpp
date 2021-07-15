@@ -374,11 +374,11 @@ with_nlopt=no
 AS_IF([test "x${nlopt_dir}" != xno],
       [with_nlopt=yes
        nloptinc="-I${nlopt_dir}/include"
-       nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags}"],
+       nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags} -Wl,-rpath-link=${nlopt_dir}/lib -Wl,-rpath=${nlopt_dir}/lib"],
        [test "x${nlopt_inc}" != xno && test "x${nlopt_lib}" != xno],
        [with_nlopt=yes
         nloptinc="-I${nlopt_inc}"
-        nloptlib="-L${nlopt_lib} ${nlopt_libflags}"])
+        nloptlib="-L${nlopt_lib} ${nlopt_libflags} -Wl,-rpath-link=${nlopt_lib} -Wl,-rpath=${nlopt_lib}"])
 
 AC_SUBST(NLOPT_CFLAGS,${nloptinc})
 AC_SUBST(NLOPT_LIBS,${nloptlib})

@@ -4,20 +4,6 @@
 ##                  Config Functions                     ##
 ###########################################################
 
-
-function config_opportunity {
-    OPENMPI_DIR=/shared/openmpi-2.1.1/gcc-6.2.1
-    export CC="${OPENMPI_DIR}/bin/mpicc"
-    export CXX="${OPENMPI_DIR}/bin/mpicxx"
-    export CFLAGS="-std=gnu11 $CFLAGS"
-    CONF="--with-openmpi-dir=${OPENMPI_DIR} --with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
-}
-
-function config_opportunity_serial {
-    export CFLAGS="-std=gnu11 $CFLAGS"
-    CONF="--with-gd-dir=/home/ext.bballentine/FT_External/gd-2.2.5 --with-hdf4-dir=/home/ext.bballentine/FT_External/hdf4-2.10 --with-cgal-inc=/home/ext.bballentine/FT_External/CGAL-4.14/include --with-cgal-lib=/home/ext.bballentine/FT_External/CGAL-4.14/lib64 --with-arma-inc=/home/ext.bballentine/FT_External/armadillo-9/include --with-arma-lib=/home/ext.bballentine/FT_External/armadillo-9/lib64"
-}
-
 function config_intruder {
     module load mvapich2/2.3.3-gcc-8.3.1
     export CC=mpicc
@@ -116,18 +102,15 @@ function config_ds9 {
     CONF="--with-mpi --with-petsc-dir=${PETSC_DIR} --with-hdf4-dir=/opt/hdf4-2.10 --with-gd-inc=/usr/include --with-gd-lib=/usr/lib/x86_64-linux-gnu --with-cgal-dir=${CGAL_DIR} --with-arma-inc=/usr/include --with-arma-lib=/usr/lib --with-cvode-inc=/usr/include --with-cvode-lib=/usr/lib --with-nlopt-inc=/usr/include --with-nlopt-lib=/usr/lib/x86_64-linux-gnu"
 }
 
-
 ###########################################################
 ##                   Start of Script                     ##
 ###########################################################
-
 
 ARCH="opt"
 OPT_FLAGS="-O2 -ffloat-store"
 
 DEBUG_FLAGS="-rdynamic"
 WARNING="-w"
-
 
 for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
@@ -143,13 +126,10 @@ for arg in $@ ; do
     fi
 done
 
-
 export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
 export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
 
-
 HOST=$(uname -n)
-
 
 if [[ "$HOST" == intruder.cluster ]]; then
     echo "Machine recognized as intruder."
@@ -187,18 +167,10 @@ elif [[ "$HOST" == defiant ]]; then
 elif [[ "$HOST" == ds9 ]]; then
     echo "Machine recognized as ds9."
     config_ds9
-elif [[ "$HOST" == head ]]; then
-    echo "Machine recognized as opportunity."
-    if [[ "$SERIAL" == 1 ]]; then
-        config_opportunity_serial
-    else
-        config_opportunity
-    fi
 else 
     echo Unrecognized machine.
     exit 1
 fi
-
 
 autoreconf -vif
 

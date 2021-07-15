@@ -6,7 +6,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/iFluid \
 			  -I$(top_srcdir)/include \
 			  @HDF_CFLAGS@ @GD_CFLAGS@
 
-AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
+AM_LDFLAGS = @CGAL_LIBS@ \
+			 @BOOST_LIBS@ \
+			 @ARMA_LIBS@ \
+			 @PETSC_LIBS@
 
 
 noinst_LTLIBRARIES = libiFluid.la
