@@ -37,25 +37,16 @@ For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.35 0.35 0.35
-Enter radius of the sphereXXX: 0.5 0.5 0.5
 
 Type yes if the rigid body is fixed: yes
-
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
+Entering yes to turn off fluid solver: y
 
-Type yes if motion is presetXXX: yes
-Enter type of preset motionXXX: TRANSLATION
-
-Type yes if motion is preset: no
-Enter type of dynamic motion: COM_MOTION
-Enter the direction of motion: 0 0 1
-
-Enter the total mass for rigid body: 180
-Enter the initial center of mass for rigid body: 6 6 11.951
-
-Enter the initial center of mass velocity: 0 0 0
-Enter the initial center of mass velocityXXX: 0 0 -0.5
+XXXEnter the total mass for rigid bodyXXX: 180
+XXXEnter the initial center of mass for rigid bodyXXX: 6 6 11.951
+XXXEnter the initial center of mass velocityXXX: 0 0 0
+XXXEnter the initial center of mass velocityXXX: 0 0 -0.5
 
 For rigid body 2
 Enter type of rigid body: Sphere
@@ -63,17 +54,17 @@ Enter center of the sphere: 6 6 17.0
 Enter radius of the sphere: 0.8 0.8 0.8
 
 Type yes if the rigid body is fixed: no
-
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
 Type yes if motion is preset: yes
 Enter type of preset motion: TRANSLATION
-
-Enter the total mass for rigid body: 180
+Enter the direction of motion: 0 0 1
 Enter the initial center of mass for rigid body: 6 6 17.0
+Enter the initial center of mass velocity: 0 0 0
+XXXXXEnter the initial center of mass velocityXXX: 0 0 3.5
+Type yes to use prescribed velocity function: yes
 
-Enter the initial center of mass velocity: 0 0 3.5
 
 ****************************************************
 TODO: Need to remove the second rigid body when
