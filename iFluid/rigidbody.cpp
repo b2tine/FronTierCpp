@@ -104,7 +104,10 @@ static void initMultiRigidBodies(
 {
 	int i;
 	char string[100];
-	INTERFACE *cur_intfc = current_interface();
+	
+    INTERFACE *intfc = front->interf;
+    INTERFACE *cur_intfc = current_interface();
+    set_current_interface(intfc);
 
 	for (i = 0; i < num_rgb; ++i)
 	{

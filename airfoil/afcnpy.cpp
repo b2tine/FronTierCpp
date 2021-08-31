@@ -3280,6 +3280,12 @@ static void print_max_fabric_speed(Front* fr)
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
     }
+
+    if (max_speed > 1000)
+    {
+        printf("\n\n\tmax speed of fabric/canopy exceeds 1000 m/s\n\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
 }
 
 static void print_max_string_speed(Front* fr)
@@ -3326,6 +3332,12 @@ static void print_max_string_speed(Front* fr)
         state = (STATE*)left_state(max_pt);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
+    }
+
+    if (max_speed > 1000)
+    {
+        printf("\n\n\tmax speed of elastic strings exceeds 1000 m/s\n\n");
+        LOC(); clean_up(EXIT_FAILURE);
     }
 }
 

@@ -31,7 +31,8 @@ Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
-Enter the number of rigid bodies: 1
+Enter the number of rigid bodies: 2
+
 For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
@@ -56,6 +57,28 @@ Enter the initial center of mass for rigid body: 6 6 11.951
 Enter the initial center of mass velocity: 0 0 0
 Enter the initial center of mass velocityXXX: 0 0 -0.5
 
+For rigid body 2
+Enter type of rigid body: Sphere
+Enter center of the sphere: 6 6 17.0
+Enter radius of the sphere: 0.8 0.8 0.8
+
+Type yes if the rigid body is fixed: no
+
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
+
+Type yes if motion is preset: yes
+Enter type of preset motion: TRANSLATION
+
+Enter the total mass for rigid body: 180
+Enter the initial center of mass for rigid body: 6 6 17.0
+
+Enter the initial center of mass velocity: 0 0 3.5
+
+****************************************************
+TODO: Need to remove the second rigid body when
+      the desired folded canopy shape is obtained
+****************************************************
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -87,20 +110,20 @@ Enter yes to use GPU solver: no
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity functionXX: Zero
+Enter velocity function: Zero
 
-Enter velocity function: FA
-Enter initial shape of fixed area: Ellipse
-Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.6 0.6
-Enter area velocity: 0 0 3.5
-Enter gravityXXX: 0 0 0
+XXXEnter velocity functionXXX: FA
+XXXEnter initial shape of fixed areaXXX: Ellipse
+XXXEnter center of ellipseXXX: 6 6
+XXXEnter radii of ellipseXXX: 0.6 0.6
+XXXEnter area velocityXXX: 0 0 3.5
+XXXEnter gravityXXX: 0 0 0
 
-Enter velocity functionX: Singular
-Enter center of velocityX: 6 6
-Enter center velocityX: 3.5
-Enter radius of centerX: 0.55
-Enter stop motion timeX: 2.0
+XEnter velocity functionX: Singular
+XEnter center of velocityX: 6 6
+XEnter center velocityX: 3.5
+XEnter radius of centerX: 0.55
+XEnter stop motion timeX: 2.0
 
 Enter yes to keep registered points: yes
 
@@ -175,6 +198,7 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: bendforce_off
+Enter the debugging string: init_geom
 
 Enter the debugging stringX: collision_max_speed
 Enter the debugging stringX: rigid_body

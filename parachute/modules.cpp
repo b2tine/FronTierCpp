@@ -124,11 +124,15 @@ extern void initParachuteModules(Front *front)
 	    setCanopyBodyIndex(front);
     }
 
-	if (debugging("trace"))
+	if (debugging("init_geom"))
 	{
         std::string gvdir = OutName(front);
         gvdir += "/ginit";
 	    gview_plot_interface(gvdir.c_str(),front->interf);
+	}
+
+	if (debugging("trace"))
+	{
 	    printf("Leaving initParachuteModules()\n");
 	}
 }	/* end initParachuteModules */
@@ -195,6 +199,7 @@ static void initMultiModule(
 
     INTERFACE *cur_intfc;
     cur_intfc = current_interface();
+    set_current_interface(intfc);
 
 	FT_VectorMemoryAlloc((POINTER*)&surfs,num_canopy,sizeof(SURFACE*));
 
