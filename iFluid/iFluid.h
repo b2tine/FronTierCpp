@@ -243,6 +243,11 @@ struct _TIME_DEPENDENT_PARAMS {
 };
 typedef struct _TIME_DEPENDENT_PARAMS TIME_DEPENDENT_PARAMS;
 
+struct TRANSLATION_PARAMS
+{
+    double translation_vel[3];
+};
+
 struct _SPLIT_STATE_PARAMS {
 	int dir;
 	double split_coord;

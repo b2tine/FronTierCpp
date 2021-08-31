@@ -458,7 +458,9 @@ static void prompt_for_rigid_body_params(
         if (debugging("rgbody"))
             (void) printf("Enter prompt_for_rigid_body_params()\n");
 
-        if( count == 1 )
+        //TODO: Does rgb_params need to know if fluid solver is on or not?
+        //      i.e. is it reguired for FrontPreAdvance()???
+        if (count == 1)
         {
             rgb_params->dim = dim;
             rgb_params->no_fluid = NO;
@@ -1004,7 +1006,6 @@ static void sine_vel_func(
     }
 }       /* end sine_vel_func */
 
-/*
 static void const_vel_translation_func(
         Front* front,
         POINTER vparams,
@@ -1012,7 +1013,7 @@ static void const_vel_translation_func(
         double *vel)
 {
     int dim = front->rect_grid->dim;
-    TRANSLATE_PARAMS* tparams = (TRANSLATE_PARAMS*)vparams;
+    TRANSLATION_PARAMS* tparams = (TRANSLATION_PARAMS*)vparams;
     double* tvel = tparams->translation_vel;
 
     for (int i = 0; i < dim; ++i)
@@ -1021,6 +1022,5 @@ static void const_vel_translation_func(
     }
 
 }
-*/
 
 
