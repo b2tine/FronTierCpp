@@ -178,9 +178,9 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: bendforce_off
 Enter the debugging string: init_geom
+Enter the debugging string: rigid_body
 
-Enter the debugging stringX: collision_max_speed
-Enter the debugging stringX: rigid_body
+Enter the debugging stringXXX: collision_max_speed
 
 Enter the debugging stringXXX: trace
 Enter the debugging stringXXX: CLOCK

@@ -3046,9 +3046,16 @@ LOCAL void FrontPreAdvance3d(
                 max_body_index = body_index(*s);
         }
 	}
-	max_body_index++;
+	
+    max_body_index++;
 	pp_global_imax(&max_body_index,1);
-	if (max_body_index == 0) return;
+
+	if (max_body_index == 0)
+    {
+        if (debugging("rigid_body"))
+            (void) printf("Leaving FrontPreAdvance3d()\n");
+        return;
+    }
 
 	bi_array(&torque,max_body_index,MAXD,FLOAT);
 	bi_array(&force,max_body_index,MAXD,FLOAT);
