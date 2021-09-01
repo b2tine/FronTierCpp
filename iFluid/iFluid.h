@@ -234,10 +234,10 @@ typedef enum _TIME_FUNC_TYPE TIME_FUNC_TYPE;
 
 struct _TIME_DEPENDENT_PARAMS {
 	TIME_FUNC_TYPE td_type;
-	double v_base[MAXD],p_base;
-	double v_peak[MAXD],p_peak;
-	double v_tail[MAXD],p_tail;
-	double v_amp[MAXD],p_amp;
+	double v_base[MAXD], p_base;
+	double v_peak[MAXD], p_peak;
+	double v_tail[MAXD], p_tail;
+	double v_amp[MAXD], p_amp;
 	double omega,phase;
 	double T[10];
 };
@@ -245,7 +245,7 @@ typedef struct _TIME_DEPENDENT_PARAMS TIME_DEPENDENT_PARAMS;
 
 struct TRANSLATION_PARAMS
 {
-    double translation_vel[3];
+    double vel[3];
 };
 
 struct _SPLIT_STATE_PARAMS {

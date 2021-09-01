@@ -381,10 +381,13 @@ struct _F_HYPER_SURF {
 	boolean	        (*_perform_redistribution)(HYPER_SURF*,Front*,boolean);
 	NORMAL_FUNCTION _hypersurface_normal_function;
 	REDISTRIBUTION_DIRECTION _redistribution_direction;
-	/* Application related parameters */
-	/* for fluid physics */
+	
+    /* Application related parameters */
+	
+    /* for fluid physics */
 	double           _surface_tension;
-	/* for rigid body mechanics */
+	
+    /* for rigid body mechanics */
 	int	body_index;		/* To identify different body */
 	int	num_clips;		/* number of partitions of the rg */
         double  mass;			/* Total mass */
