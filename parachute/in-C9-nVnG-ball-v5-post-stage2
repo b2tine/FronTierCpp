@@ -18,6 +18,9 @@ Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
 **************Fluid parameters***************
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         SIMPLE
         BELL_COLELLA
@@ -38,13 +41,18 @@ Enter center of the sphere: 6 6 11.951
 Enter radius of the sphere: 0.35 0.35 0.35
 
 Type yes if the rigid body is fixed: yes
-
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+
 Enter the total mass for rigid body: 180
 Enter the initial center of mass for rigid body: 6 6 11.951
+
 Enter the initial center of mass velocity: 0 0 0
+
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -71,18 +79,22 @@ Enter the body index of the target RGB: 1
 
 Enter number of canopy optimization rounds: 0
 
-*************Fabric parameters**************
-
+*************Airfoil parameters**************
 Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
-Enter interior sub step number: 1
-Enter yes to use GPU solver: no
 
 Enter yes to keep registered points: no
 Enter yes to reset front velocity: yes
 Enter yes to set new mesh equilibrium state: no
 
 Enter velocity function: Zero
+
+Enter yes to enable inflation assist: yes
+Enter uniform normal pressure differential: 100.0
+
+
+Enter timestep to activate FSI: 5
+Enter yes to disable FSI: yes
 
 Enter yes to use porosity: yes
 Enter porosity: 0.01
@@ -91,14 +103,14 @@ Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 180
+Enter interior sub step number: 1
 Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.000
+Enter fabric bending stiffness constant: 0.0
 Enter fabric bending damping constant: 0.000000
 Enter fabric friction constant: 0.25
-Enter fabric point massXXX: 0.001
 Enter fabric point mass: 0.00035
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
@@ -140,7 +152,13 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
+
+Type y to make viscosity field movie: n
 Type y to make vector velocity field movie: n
+Type y to make vector vorticity field movie: n
+Type y to make scalar pressure field movie: n
+Type y to make scalar phi field movie: n
+
 Type y to plot surface stress: n
 
 ************Debugging options*****************
@@ -150,6 +168,9 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: bendforce_off
+Enter the debugging string: restart_save_draw
+
+Enter the debugging stringX: PETSc
 
 Enter the debugging stringX: collision_max_speed
 Enter the debugging stringX: rigid_body
@@ -157,7 +178,6 @@ Enter the debugging stringX: rigid_body
 Enter the debugging stringXXX: trace
 Enter the debugging stringXXX: CLOCK
 Enter the debugging stringXXX: step_size
-Enter the debugging stringXXX: PETSc
 Enter the debugging stringXXX: coat_comp
 Enter the debugging stringXXX: dirichlet_bdry
 Enter the debugging stringXXX: flow_through

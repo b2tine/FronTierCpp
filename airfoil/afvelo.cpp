@@ -1404,9 +1404,10 @@ extern void resetFrontVelocity(Front *front)
     }
     fclose(infile);
         
-    if (string[0] == 'y' || string[0] == 'Y') return;
+    if (string[0] == 'y' || string[0] == 'Y')
+        zeroFrontVelocity(front);
     
-    zeroFrontVelocity(front);
+    return;
 }
 
 extern void zeroFrontVelocity(Front *front)

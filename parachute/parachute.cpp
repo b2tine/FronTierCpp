@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <airfoil.h>
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
+static void setNewEquilibriumMesh(Front *front);
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
 static void xgraph_front(Front*,char*);
 
@@ -165,6 +166,13 @@ int main(int argc, char **argv)
         clearRegisteredPoints(&front);
         resetFrontVelocity(&front);
         resetRigidBodyVelocity(&front);
+        setNewEquilibriumMesh(&front); 
+
+        if (debugging("restart_save_draw"))
+        {
+	        FT_Save(&front);
+            FT_Draw(&front);
+        }
         
         if (ReSetTime)
         {
@@ -180,6 +188,7 @@ int main(int argc, char **argv)
             if (!af_params.no_fluid)
                 l_cartesian->setInitialCondition();
         
+            /*
             if (debugging("reset_time"))
             {
                 if (consistent_interface(front.interf) == NO)
@@ -190,6 +199,7 @@ int main(int argc, char **argv)
                 sprintf(gv_restart,"%s/gv_restart",out_name);
                 gview_plot_interface(gv_restart,front.interf);
             }
+            */
         }
         else
         {
@@ -418,6 +428,24 @@ void airfoil_driver(Front *front,
     FT_FreeMainIntfc(front);
 }       /* end airfoil_driver */
 
+
+static void setNewEquilibriumMesh(Front *front)
+{
+	FILE *infile = fopen(InName(front),"r");
+	char string[100];
+	
+    if (CursorAfterStringOpt(infile,"Enter yes to set new mesh equilibrium state:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+    }
+    fclose(infile);
+        
+    if (string[0] == 'y' || string[0] == 'Y')
+        set_equilibrium_mesh(front);
+    
+    return;
+}
 
 void zero_state(
     COMPONENT comp,

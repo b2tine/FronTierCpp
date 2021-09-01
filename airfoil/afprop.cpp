@@ -100,8 +100,8 @@ static void elastic_point_propagate_const_dP(
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
-        newsr->impulse[i] = newsl->impulse[i] = 0.0;
-        //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+        newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 }
 
@@ -250,8 +250,8 @@ static void elastic_point_propagate_fsi(
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
-        newsr->impulse[i] = newsl->impulse[i] = 0.0;
-        //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+        newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 
 	/* Interpolating vorticity for the hyper surface point */
@@ -265,8 +265,8 @@ static void elastic_point_propagate_fsi(
                     getStateVort,&newsr->vort,&sr->vort);
 	        for (int i = 0; i < dim; ++i)
 	        {
-	            newsr->impulse[i] = newsl->impulse[i] = 0.0;
-	            //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                 vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
