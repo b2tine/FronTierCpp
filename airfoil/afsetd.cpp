@@ -281,7 +281,7 @@ extern void compute_spring_accel1(
 ///////////////////////////////////////////
 printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
 ///////////////////////////////////////////
-        */        
+        */
 
         //zero compressive stress
         double dL = len - sv->len0[j];

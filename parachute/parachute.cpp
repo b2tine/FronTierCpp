@@ -327,7 +327,8 @@ void airfoil_driver(Front *front,
             reset_clock();
 
         start_clock("timeStep");
-        if (!af_params->no_fluid)
+            //if (!af_params->no_fluid)
+        if (!af_params->no_fluid || af_params->inflation_assist)
         {
             coating_mono_hyper_surf(front);
             l_cartesian->applicationSetComponent();
@@ -340,7 +341,8 @@ void airfoil_driver(Front *front,
         FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
 
-        if (!af_params->no_fluid)
+            //if (!af_params->no_fluid)
+        if (!af_params->no_fluid || af_params->inflation_assist)
         {
             coating_mono_hyper_surf(front);
             l_cartesian->applicationSetStates();

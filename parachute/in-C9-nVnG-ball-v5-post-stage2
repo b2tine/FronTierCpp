@@ -90,7 +90,7 @@ Enter yes to set new mesh equilibrium state: no
 Enter velocity function: Zero
 
 Enter yes to enable inflation assist: yes
-Enter uniform normal pressure differential: 100.0
+Enter uniform normal pressure differential: 50.0
 
 
 Enter timestep to activate FSI: 5
@@ -169,6 +169,7 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: bendforce_off
 Enter the debugging string: restart_save_draw
+Enter the debugging string: immersed_surf
 
 Enter the debugging stringX: PETSc
 
