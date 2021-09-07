@@ -910,7 +910,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         
     PETSc solver;
     //TODO: iupper -1 not working .... 
-    solver.Create(ilower, iupper, 7, 7);
+    solver.Create(ilower, iupper - 1, 8, 8);
         //solver.Create(ilower, iupper-1, 15, 15);
         //solver.Create(ilower, iupper-1, 7, 7);
     
@@ -1684,7 +1684,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 //        }
 //    //
 	FT_FreeThese(1,x);
-}*/	/* end solve3d */
+}
+*/
+
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,
 	boolean print_details)
