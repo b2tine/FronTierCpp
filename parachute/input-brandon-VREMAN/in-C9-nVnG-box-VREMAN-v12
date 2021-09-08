@@ -48,7 +48,7 @@ Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Box
 Enter center of the box: 6.0 6.0 0.951
-Enter edges of the box: 0.5 0.5 0.5
+Enter edges of the box: 0.45 0.45 0.45
 
 Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: no
