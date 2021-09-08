@@ -104,7 +104,7 @@ void HYPERB_SOLVER::computeAdvectionTerm()
             adv_term[k][i] = 0.0;
     }
 
-    //TODO: scatter the adv_term array
+    //TODO: scatter the adv_term array????
 }
 
 void HYPERB_SOLVER::solveRungeKutta()
@@ -776,6 +776,10 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 2:
             for (l = 0; l < dim; ++l)
             {
+                //TODO: Use top_gmax?? -- xli version does.
+                //      what is the difference?
+                    //for (j = 0; j <= top_gmax[1]; ++j)
+                    //for (i = 0; i <= top_gmax[0]; ++i)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)
                 {
@@ -797,6 +801,11 @@ void HYPERB_SOLVER::addMeshFluxToVst(
         case 3:
             for (l = 0; l < dim; ++l)
             {
+                //TODO: Use top_gmax?? -- xli version does.
+                //      what is the difference?
+                    //for (k = 0; k <= top_gmax[2]; ++k)
+                    //for (j = 0; j <= top_gmax[1]; ++j)
+                    //for (i = 0; i <= top_gmax[0]; ++i)
             	for (k = kmin; k <= kmax; ++k)
                 for (j = jmin; j <= jmax; ++j)
                 for (i = imin; i <= imax; ++i)
