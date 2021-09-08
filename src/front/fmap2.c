@@ -1513,8 +1513,8 @@ EXPORT void FT_AddVtkIntfcMovieVariable(
 	static VTK_MOVIE_VAR *vtk_movie_var;
 	int i;
 
-        if (debugging("trace"))
-            (void) printf("Entering FT_AddVtkIntfcMovieVariable()\n");
+    if (debugging("trace"))
+        (void) printf("Entering FT_AddVtkIntfcMovieVariable()\n");
 
 	if (front->vtk_movie_var == NULL)
 	{
