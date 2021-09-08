@@ -301,9 +301,13 @@ void cF_variableBoundaryState3d(
         POINTER         params,
         POINTER         state)
 {
+    printf("\nERROR cF_variableBoundaryState3d() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }	/* end cF_variableBoundaryState3d */
 
 /*
+//TODO: Remove when new version is working and has been tested.
+//
 //OLD VERSION
 extern void cF_flowThroughBoundaryState(
         double          *p0,
@@ -588,43 +592,12 @@ extern void cF_flowThroughBoundaryState2d(
     STATE* oldst;
     STATE* newst = (STATE*)state;
 	STATE** sts;
-	
-    //TODO: Do we need static variables?
-    //      Are they being cleared between uses? i.e. are junk vals being used?
-        //static SWEEP *st_stencil;
-	    //static FSWEEP *st_flux;
-	    //static STATE *s1;
 
     int nrad = 3;
-	    //int size = 2*nrad + 1;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState2d()\n");
 	
-    /*
-        //if (s1 == NULL)
-    if (st_stencil == nullptr)
-	{
-	        //FT_ScalarMemoryAlloc((POINTER*)&s1,sizeof(STATE));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_stencil,sizeof(SWEEP));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_flux,sizeof(FSWEEP));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->dens,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->engy,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->pres,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_stencil->momn,MAXD,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->dens_flux,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->engy_flux,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_flux->momn_flux,MAXD,size,
-					sizeof(double));
-	}
-    */
-
 	POINTER sl, sr;
     FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
     
@@ -683,7 +656,6 @@ extern void cF_flowThroughBoundaryState2d(
 	    for (i = 0; i < dim; ++i)
 	    {
             u[j] += oldst->vel[i]*dir[i];
-                //v[j][i] = oldst->vel[i]*(1.0 - dir[i]);
 	    }
 
 	    for (i = 0; i < dim; ++i)
@@ -702,7 +674,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    double vtmp;
 	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
 			eqn_params->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
-	    s1.vel[i] = vtmp; //s1->vel[i] = vtmp;
+	    s1.vel[i] = vtmp;
 	}
 
     FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->vort,
@@ -712,19 +684,18 @@ extern void cF_flowThroughBoundaryState2d(
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&dens[2],&oldst->dens);
 
-    s1.vort = vort[2]; //s1->vort = vort[2];
-	s1.pres = pres[2]; //s1->pres = pres[2];
-	s1.dens = dens[2];	//s1->dens = dens[2];
+    s1.vort = vort[2];
+	s1.pres = pres[2];
+	s1.dens = dens[2];
 	
     for (i = 0; i < dim; ++i)
 	{
-	    u[2] += s1.vel[i]*dir[i]; //u[2] += s1->vel[i]*dir[i];
-	        //v[2][i] = s1->vel[i] - s1->vel[i]*dir[i];
+	    u[2] += s1.vel[i]*dir[i];
 	}
 
     for (i = 0; i < dim; ++i)
 	{
-        v[2][i] = s1.vel[i] - u[2]*dir[i]; //v[2][i] = s1->vel[i] - u[2]*dir[i];
+        v[2][i] = s1.vel[i] - u[2]*dir[i];
 	}
 
 	f_u = burger_flux(u[0],u[1],u[2]);
@@ -808,13 +779,11 @@ extern void cF_flowThroughBoundaryState2d(
 	    	for (i = 0; i < dim; ++i)
 	    	{
 		        u[j] += sts[j-1]->vel[i]*dir[i];
-		            //v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
 	    	}
 
 	    	for (i = 0; i < dim; ++i)
 	    	{
 		        v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
-		            //v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
 	    	}
 
 	    	vort[j] = sts[j-1]->vort;
@@ -883,42 +852,11 @@ extern void cF_flowThroughBoundaryState3d(
     STATE* newst = (STATE*)state;
 	STATE** sts;
 	
-    //TODO: Do we need static variables?
-    //      Are they being cleared between uses? i.e. are junk vals being used?
-        //static SWEEP *st_stencil;
-	    //static FSWEEP *st_flux;
-	    //static STATE *s1;
-
     int nrad = 3;
-	    //int size = 2*nrad + 1;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState3d()\n");
 	
-    /*
-        //if (s1 == NULL)
-    if (st_stencil == nullptr)
-	{
-	        //FT_ScalarMemoryAlloc((POINTER*)&s1,sizeof(STATE));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_stencil,sizeof(SWEEP));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_flux,sizeof(FSWEEP));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->dens,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->engy,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->pres,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_stencil->momn,MAXD,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->dens_flux,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->engy_flux,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_flux->momn_flux,MAXD,size,
-					sizeof(double));
-	}
-    */
-
 	POINTER sl, sr;
     FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
     
@@ -976,7 +914,6 @@ extern void cF_flowThroughBoundaryState3d(
 	    for (i = 0; i < dim; ++i)
 	    {
             u[j] += oldst->vel[i]*dir[i];
-                //v[j][i] = oldst->vel[i]*(1.0 - dir[i]);
 	    }
 
 	    for (i = 0; i < dim; ++i)
@@ -994,7 +931,7 @@ extern void cF_flowThroughBoundaryState3d(
 	    double vtmp;
 	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
 			eqn_params->vel[i],getStateVel[i],&vtmp,&oldst->vel[i]);
-	    s1.vel[i] = vtmp; //s1->vel[i] = vtmp;
+	    s1.vel[i] = vtmp;
 	}
 
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
@@ -1002,18 +939,17 @@ extern void cF_flowThroughBoundaryState3d(
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&dens[2],&oldst->dens);
 
-	s1.pres = pres[2]; //s1->pres = pres[2];
-	s1.dens = dens[2];	//s1->dens = dens[2];
+	s1.pres = pres[2];
+	s1.dens = dens[2];
 	
     for (i = 0; i < dim; ++i)
 	{
-	    u[2] += s1.vel[i]*dir[i]; //u[2] += s1->vel[i]*dir[i];
-	        //v[2][i] = s1->vel[i] - s1->vel[i]*dir[i];
+	    u[2] += s1.vel[i]*dir[i];
 	}
 
     for (i = 0; i < dim; ++i)
 	{
-        v[2][i] = s1.vel[i] - u[2]*dir[i]; //v[2][i] = s1->vel[i] - u[2]*dir[i];
+        v[2][i] = s1.vel[i] - u[2]*dir[i];
 	}
 
 	f_u = burger_flux(u[0],u[1],u[2]);
@@ -1098,13 +1034,11 @@ extern void cF_flowThroughBoundaryState3d(
                 for (i = 0; i < dim; ++i)
                 {
                     u[j] += sts[j-1]->vel[i]*dir[i];
-                        //v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
                 }
 
                 for (i = 0; i < dim; ++i)
                 {
                     v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
-                        //v[j][i] = sts[j-1]->vel[i]*(1.0 - dir[i]);
                 }
 
                 pres[j] = sts[j-1]->pres;
