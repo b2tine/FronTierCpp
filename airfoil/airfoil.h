@@ -411,10 +411,11 @@ extern void printHyperSurfQuality(Front*);
 extern void optimizeElasticMesh(Front*);
 extern void optimizeElasticStrings(Front*);
 extern void modifyInitialization(Front*);
+extern void initMovieStress(char*,Front*);
 extern void setStressColor(Front*);
 extern void vtkPlotSurfaceStress(Front*);
+extern void gviewSurfaceStress(Front*);
 extern void poisson_ratio(Front*);
-extern void initMovieStress(char*,Front*);
 
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);

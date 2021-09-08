@@ -1206,8 +1206,7 @@ EXPORT void gview_plot_color_scaled_interface(
 	double *BBL = topological_grid(intfc).GL;
 	double *BBU = topological_grid(intfc).GU;
 
-	if (intfc->dim != 3)
-	    return;
+	if (intfc->dim != 3) return;
 	if (create_directory(dname,YES) == FUNCTION_FAILED)
 	{
 	    (void) printf("WARNING in geomview_interface_plot(), directory "
