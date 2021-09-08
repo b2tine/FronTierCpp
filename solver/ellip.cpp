@@ -530,9 +530,11 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
                         getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
-                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&phi_reflect,&soln[index]);*/
+                */
                 
                 aII -= coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
@@ -909,10 +911,10 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
         
     PETSc solver;
-    //TODO: iupper -1 not working .... 
-    solver.Create(ilower, iupper - 1, 8, 8);
-        //solver.Create(ilower, iupper-1, 15, 15);
-        //solver.Create(ilower, iupper-1, 7, 7);
+    //TODO: Now need to use 8 non-zero entries??? -- find out why
+    //solver.Create(ilower, iupper - 1, 8, 8);
+        //solver.Create(ilower, iupper, 7, 7);
+    solver.Create(ilower, iupper - 1, 7, 7);
     
     solver.Reset_A();
 	solver.Reset_b();
@@ -1062,9 +1064,11 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
                         getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
-                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&phi_reflect,&soln[index]); */
+                */
                     
                 aII -= coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
