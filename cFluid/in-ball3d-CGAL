@@ -24,7 +24,7 @@ Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 3.0 0 0
+Enter velocity: 5.0 0 0
 Enter pressure: 1.0
 Enter density: 1.0
 For upper boundary in 0-th dimension

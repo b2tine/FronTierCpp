@@ -120,17 +120,18 @@ static void weno5_get_flux(
 	double f_prevp[5],f_nowp[5],f_prevm[5],f_nowm[5];
 	double gflux_tmp[5];
 
-    	for(i = 0; i < extend_size; ++i)
-    	{
-	    a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
+    for(i = 0; i < extend_size; ++i)
+    {
 	    v = u_old[1][i]/u_old[0][i];
+	    a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
+
 	    maxeig[0] = std::max(maxeig[0], fabs(v - a));
 	    maxeig[1] = std::max(maxeig[1], fabs(v));
 	    maxeig[4] = std::max(maxeig[4], fabs(v + a));
 	    for (j = 0; j < 6; ++j)
                 u[j] = u_old[j][i];
 	    u2f(u,f[i]);
-    	}
+    }
     	maxeig[2] = maxeig[1];
     	maxeig[3] = maxeig[1];
 
@@ -306,9 +307,13 @@ static double weno5_scal(double *f)
     	double alpha[3];
     	double omega[3]; // weights for stencils
     	double sum;
-    	double a[3][5] = {{1.0/3, -7.0/6, 11.0/6, 0, 0}, 
-			  {0, -1.0/6, 5.0/6, 1.0/3, 0}, 
-			  {0, 0, 1.0/3, 5.0/6, -1.0/6}}; 
+    	
+        double a[3][5] = {
+            {1.0/3.0, -7.0/6.0, 11.0/6.0, 0, 0}, 
+            {0, -1.0/6.0, 5.0/6.0, 1.0/3.0, 0}, 
+            {0, 0, 1.0/3.0, 5.0/6.0, -1.0/6.0}
+        }; 
+
 		//*** coefficients for 2nd-order ENO interpolation stencil
     	double w[5]; //weight for every point
 	double flux = 0.0;
@@ -327,9 +332,10 @@ static double weno5_scal(double *f)
                         f[0],f[1],f[2],f[3],f[4]);
                 //clean_up(EXIT_FAILURE);
             }
-	    alpha[i] = d[i]/pow(val,p);
-	    //alpha[i] = d[i]/pow(eps + is[i],p);
-	    sum += alpha[i];
+            
+            //alpha[i] = d[i]/pow(eps + is[i],p);
+            alpha[i] = d[i]/pow(val,p);
+            sum += alpha[i];
     	}
 
     	for(i = 0; i < 3; ++i)
@@ -356,12 +362,12 @@ static void f2is(
 	double *f, 
 	double *s)
 {
-	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2])) +
-                0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
-        s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) +
-                0.25*sqr((f[1] - f[3]));
-        s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) +
-                0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
+	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2]))
+            + 0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
+    s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) 
+            + 0.25*sqr((f[1] - f[3]));
+    s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) 
+            + 0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
 }
 
 static void matmvec(

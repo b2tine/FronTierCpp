@@ -1074,7 +1074,7 @@ void G_CARTESIAN::allocMeshVst(
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
 	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
-}	/* end allocMeshVstFlux */
+}	/* end allocMeshVst*/
 
 void G_CARTESIAN::allocMeshFlux(
 	FSWEEP *flux)
@@ -1088,7 +1088,7 @@ void G_CARTESIAN::allocMeshFlux(
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
 	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
-}	/* end allocMeshVstFlux */
+}	/* end allocMeshFlux */
 
 void G_CARTESIAN::allocDirVstFlux(
         SWEEP *vst,
@@ -1097,9 +1097,12 @@ void G_CARTESIAN::allocDirVstFlux(
 	int i,size;
 
 	size = 1;
-        for (i = 0; i < dim; ++i)
-	    if (size < top_gmax[i]+7) 
-		size = top_gmax[i]+7;
+    for (i = 0; i < dim; ++i)
+    {
+        if (size < top_gmax[i]+7) 
+            size = top_gmax[i]+7;
+    }
+
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
@@ -1108,7 +1111,7 @@ void G_CARTESIAN::allocDirVstFlux(
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
 	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
-}	/* end allocDirMeshVstFlux */
+}	/* end allocDirVstFlux */
 
 void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,

@@ -118,14 +118,17 @@ static void weno5_get_flux(
 
     	for(i = 0; i < extend_size; ++i)
     	{
-	    a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
-	    v = u_old[1][i]/u_old[0][i];
-	    maxeig[0] = std::max(maxeig[0], fabs(v - a));
-	    maxeig[1] = std::max(maxeig[1], fabs(v));
-	    maxeig[4] = std::max(maxeig[4], fabs(v + a));
-	    for (j = 0; j < 6; ++j)
+            v = u_old[1][i]/u_old[0][i];
+            a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
+            
+            maxeig[0] = std::max(maxeig[0], fabs(v - a));
+            maxeig[1] = std::max(maxeig[1], fabs(v));
+            maxeig[4] = std::max(maxeig[4], fabs(v + a));
+            
+            for (j = 0; j < 6; ++j)
                 u[j] = u_old[j][i];
-	    u2f(u,f[i]);
+	    
+            u2f(u,f[i]);
     	}
     	maxeig[2] = maxeig[1];
     	maxeig[3] = maxeig[1];
@@ -227,8 +230,7 @@ static void weno5_get_flux(
 	    for(k = 0; k < 5; ++k)
 	    {
 		gfluxp[j][k] = 0.5*(sten_f[k][j] + maxeig[j]*sten_u[k][j]);
-		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*
-				sten_u[5 - k][j]);
+		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*sten_u[5 - k][j]);
 	    }
 
 	    for(j = 0; j < 5; ++j)
