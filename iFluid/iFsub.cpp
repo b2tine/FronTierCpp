@@ -453,6 +453,11 @@ extern void iF_flowThroughBoundaryState(
 	    return iF_flowThroughBoundaryState2d(p0,hs,front,params,state);
 	case 3:
 	    return iF_flowThroughBoundaryState3d(p0,hs,front,params,state);
+    default:
+        printf("\nERROR iF_flowThroughBoundaryState() : \
+                unsupported spatial dimension! \n\tdim = %d\n",
+                front->rect_grid->dim);
+        LOC(); clean_up(EXIT_FAILURE);
 	}
 }	/* end iF_flowThroughBoundaryState */
 
@@ -464,9 +469,6 @@ static void iF_flowThroughBoundaryState2d(
         POINTER         params,
         POINTER         state)
 {
-	Tan_stencil **tsten;
-	Nor_stencil *nsten;
-	
     FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
 	POINT *oldp = ft_params->oldp;
 	COMPONENT comp = ft_params->comp;
@@ -488,15 +490,16 @@ static void iF_flowThroughBoundaryState2d(
 	double dn,dt = front->dt;
 	int i,j,dim = front->rect_grid->dim;
 
-	STATE *oldst, *newst = (STATE*)state;
-	STATE  **sts;
-    POINTER sl,sr;
+	STATE* oldst;
+    STATE* newst = (STATE*)state;
+	STATE** sts;
 	
     int nrad = 3;
 	
 	if (debugging("flow_through"))
 	    printf("Entering iF_flowThroughBoundaryState2d()\n");
 
+    POINTER sl, sr;
 	FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
     
 	if (comp == negative_component(hs))  
@@ -528,7 +531,7 @@ static void iF_flowThroughBoundaryState2d(
 
 
     //Normal
-	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 
     /*
     printf("\niF_flowThroughBoundaryState2d() Normal Stencil:\n");
@@ -539,8 +542,6 @@ static void iF_flowThroughBoundaryState2d(
     fprint_general_vector(stdout,"nsten->pts[2]",nsten->pts[2],dim,"\n\n");
     */
 
-	for (j = 0; j < 3; ++j) u[j] = 0.0;
-
     for (i = 0; i < dim; ++i)
 	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(nsten->nor,front);
@@ -550,6 +551,9 @@ static void iF_flowThroughBoundaryState2d(
 	    (void) printf("Normal grid size = %f\n",dn);
 	    (void) print_Nor_stencil(front,nsten);
 	}
+
+	for (j = 0; j < 3; ++j)
+        u[j] = 0.0;
 
 	for (j = 0; j < 2; ++j)
 	{
@@ -578,11 +582,11 @@ static void iF_flowThroughBoundaryState2d(
 	}
 
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->vort,
-                            getStateVort,&vort[2],&oldst->vort);
+            getStateVort,&vort[2],&oldst->vort);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->pres,
-                            getStatePres,&pres[2],&oldst->pres);
+            getStatePres,&pres[2],&oldst->pres);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],field->phi,
-                            getStatePhi,&phi[2],&oldst->phi);
+            getStatePhi,&phi[2],&oldst->phi);
 
     s1.vort = vort[2];
     s1.pres = pres[2];
@@ -616,69 +620,73 @@ static void iF_flowThroughBoundaryState2d(
     newst->phi -= dt/dn*f_phi;
 
     //Tangential
-	tsten = FrontGetTanStencils(front,oldp,nrad);
+	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 
-    /*
-    printf("\niF_flowThroughBoundaryState2d() Tangent Stencil:\n");
-    for (j = 0; j < 3; ++j)
+	if (tsten != nullptr)
     {
-        std::string printmsg = "tsten[0]->p[" + std::to_string(j-1) + "]";
-        fprint_general_vector(stdout,printmsg.c_str(),Coords(tsten[0]->p[j-1]),dim,"\n");
-    }
-    printf("\n\n");
-    */
-
-    if (debugging("flow_through"))
-	{
-	    (void) printf("Ambient component: %d\n",comp);
-	    (void) printf("Tangential grid size = %f\n",dn);
-	    (void) print_Tan_stencil(front,tsten[0]);
-	}
-
-	for (j = 0; j < 3; ++j) u[j] = 0.0;
-	
-	for (i = 0; i < dim; ++i)
-	    dir[i] = tsten[0]->dir[i];
-	dn = FT_GridSizeInDir(dir,front);
-
-	if (comp == negative_component(hs))  
-	    sts = (STATE**)tsten[0]->leftst;
-	else 
-	    sts = (STATE**)tsten[0]->rightst;
-
-    for (j = 0; j < 3; ++j)
-	{
         for (i = 0; i < dim; ++i)
-	    {
-		    u[j] += sts[j-1]->vel[i]*dir[i];
-	    }
+            dir[i] = tsten[0]->dir[i];
+        dn = FT_GridSizeInDir(dir,front);
+
+        /*
+        printf("\niF_flowThroughBoundaryState2d() Tangent Stencil:\n");
+        for (j = 0; j < 3; ++j)
+        {
+            std::string printmsg = "tsten[0]->p[" + std::to_string(j-1) + "]";
+            fprint_general_vector(stdout,printmsg.c_str(),Coords(tsten[0]->p[j-1]),dim,"\n");
+        }
+        printf("\n\n");
+        */
+
+        if (debugging("flow_through"))
+        {
+            (void) printf("Ambient component: %d\n",comp);
+            (void) printf("Tangential grid size = %f\n",dn);
+            (void) print_Tan_stencil(front,tsten[0]);
+        }
+
+        for (j = 0; j < 3; ++j)
+            u[j] = 0.0;
+        
+        if (comp == negative_component(hs))  
+            sts = (STATE**)tsten[0]->leftst;
+        else 
+            sts = (STATE**)tsten[0]->rightst;
+
+        for (j = 0; j < 3; ++j)
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                u[j] += sts[j-1]->vel[i]*dir[i];
+            }
+
+            for (i = 0; i < dim; ++i)
+            {
+                v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
+            }
+
+            vort[j] = sts[j-1]->vort;
+            pres[j] = sts[j-1]->pres;
+            phi[j] = sts[j-1]->phi;
+        }
+
+        f_u = burger_flux(u[0],u[1],u[2]);
+        for (i = 0; i < dim; ++i)
+        {
+            f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+        }
+        f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
+        f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
+        f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
 
         for (i = 0; i < dim; ++i)
-	    {
-		    v[j][i] = sts[j-1]->vel[i] - u[j]*dir[i];
-	    }
-
-	    vort[j] = sts[j-1]->vort;
-	    pres[j] = sts[j-1]->pres;
-	    phi[j] = sts[j-1]->phi;
-	}
-
-	f_u = burger_flux(u[0],u[1],u[2]);
-	for (i = 0; i < dim; ++i)
-    {
-	    f_v[i] = linear_flux(u[1],v[0][i],v[1][i],v[2][i]);
+        {
+            newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
+        }
+        newst->vort -= dt/dn*f_vort;
+        newst->pres -= dt/dn*f_pres;
+        newst->phi -= dt/dn*f_phi;
     }
-	f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
-	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
-	f_phi = linear_flux(u[1],phi[0],phi[1],phi[2]);
-
-	for (i = 0; i < dim; ++i)
-    {
-	    newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
-    }
-	newst->vort -= dt/dn*f_vort;
-	newst->pres -= dt/dn*f_pres;
-    newst->phi -= dt/dn*f_phi;
     
     //Since pressure is usually updated as
     //      
@@ -717,9 +725,6 @@ static void iF_flowThroughBoundaryState3d(
         POINTER         params,
         POINTER         state)
 {
-	Tan_stencil **tsten;
-	Nor_stencil *nsten;
-	
     FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
 	POINT *oldp = ft_params->oldp;
 	COMPONENT comp = ft_params->comp;
@@ -743,7 +748,7 @@ static void iF_flowThroughBoundaryState3d(
 	
     STATE *oldst, *newst = (STATE*)state;
     STATE  **sts;
-	POINTER sl,sr;
+	POINTER sl, sr;
 	int i,j,k;
 	
     int nrad = 3;
@@ -768,14 +773,15 @@ static void iF_flowThroughBoundaryState3d(
 
 
     //Normal
-	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
-	
-    for (j = 0; j < 3; ++j) u[j] = 0.0;
+	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 	
     for (i = 0; i < dim; ++i)
 	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(dir,front);
     
+    for (j = 0; j < 3; ++j)
+        u[j] = 0.0;
+	
     for (j = 0; j < 2; ++j)
 	{
         for (i = 0; i < dim; ++i)
@@ -843,18 +849,11 @@ static void iF_flowThroughBoundaryState3d(
 	
     
     //Tangential
-	tsten = FrontGetTanStencils(front,oldp,nrad);
+	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 	if (tsten != nullptr)
     {
 	    for (k = 0; k < dim-1; ++k)
         {
-            for (j = 0; j < 3; ++j) u[j] = 0.0;
-
-            if (comp == negative_component(hs))  
-                sts = (STATE**)tsten[k]->leftst;
-            else 
-                sts = (STATE**)tsten[k]->rightst;
-
             for (i = 0; i < dim; ++i)
                 dir[i] = tsten[k]->dir[i];
             dn = FT_GridSizeInDir(dir,front);
@@ -866,6 +865,14 @@ static void iF_flowThroughBoundaryState3d(
                 printf("For direction %d\n",k);
                 print_Tan_stencil(front,tsten[k]);
             }
+
+            for (j = 0; j < 3; ++j)
+                u[j] = 0.0;
+
+            if (comp == negative_component(hs))  
+                sts = (STATE**)tsten[k]->leftst;
+            else 
+                sts = (STATE**)tsten[k]->rightst;
 
             for (j = 0; j < 3; ++j)
             {
