@@ -529,12 +529,12 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,&soln[index]);
                 /*
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                        getStateVar,&phi_reflect,&soln[index]);
                 */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
                 
                 aII -= coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
@@ -1063,12 +1063,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
                 //Interpolate phi at the reflected point,
                 double phi_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,&soln[index]);
                 /*
                 FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                        getStateVar,&phi_reflect,&soln[index]);
                 */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
                     
                 aII -= coeff[l];
                 rhs -= coeff[l]*phi_reflect; 
