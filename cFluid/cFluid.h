@@ -58,12 +58,13 @@ typedef struct _EOS_PARAMS EOS_PARAMS;
 
 struct _STATE {
 	double dens;			/* density */
-	double engy;			/* energy density */
-	double momn[MAXD];		/* momentum deisnty */
-	double pres;			/* Pressure */
-	double vel[MAXD];		/* Velocities */
+	double momn[MAXD];		/* momentum density */
+	double vel[MAXD];		/* Velocity */
+	    //double vel_old[MAXD];	/* Previous Time Step Velocity */
 	double vort;			/* Vorticity-2d */
-    double mu;
+	double engy;			/* energy density */
+	double pres;			/* Pressure */
+    double mu;              /* viscosity */
 	EOS_PARAMS      *eos;
 	int dim;
 };
@@ -591,10 +592,13 @@ extern double linear_flux(double,double,double,double);
 extern void read_dirichlet_bdry_data(char*,Front*);
 extern void read_open_end_bdry_data(char*,Front*);
 extern void restart_set_dirichlet_bdry_function(Front*);
-extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
-                        POINTER);
-extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,
-                        POINTER);
+
+extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+
+extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+extern void cF_flowThroughBoundaryState2d(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+extern void cF_flowThroughBoundaryState3d(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+
 extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 /*	rgbody.c functions */
