@@ -5,36 +5,28 @@ Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 10000000000000
 
+Fixed time step: 0.0001
+
 *******************************************************
 
-Domain limit in 0-th dimension: 0 2.0
-Domain limit in 1-th dimension: 0 1.0 
-Domain limit in 2-th dimension: 0 1.0
+Domain limit in 0-th dimension: 0 1.0
+Domain limit in 1-th dimension: 0 1.0
+Domain limit in 2-th dimension: 0 2.0
 
-Computational grid: 100 50 50
+Computational grid: 50 50 100
 
-Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY 
-Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
-For lower boundary in 0-th dimension
+For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 3.0 0 0
+Enter velocity: 0 0 3.0
 Enter pressure: 1.0
 Enter density: 1.0
-For upper boundary in 0-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-
-For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-
-For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -69,18 +61,17 @@ Enter the number of rigid bodies: 1
 
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphere: 0.275 0.496 0.496
+Enter center of the sphere: 0.496 0.496 0.275
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
-Type yes to use CGAL for rigid bodyXXX: no
 Enter refinement level: 1
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
-Enter the direction of motion: 1 0 0
+Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 10
-Enter the initial center of mass for rigid body: 0.275 0.496 0.496
+Enter the initial center of mass for rigid body: 0.496 0.496 0.275
 Enter the initial center of mass velocity: 0 0 0
 
 *******************************************************
@@ -95,11 +86,11 @@ Type y to make vector vorticity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
-Enter the debugging string: init_intfc
 Enter the debugging string: flow_through
 
-Enter the debugging stringX: no_viscflux
+Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK
 Enter the debugging stringX: step_size
+Enter the debugging stringX: init_intfc

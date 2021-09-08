@@ -61,10 +61,6 @@ int main(int argc, char **argv)
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-	//Initialize the Petsc
-	//PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
-	//if (debugging("trace")) printf("Passed PetscInitialize()\n");
-
         in_name                 = f_basic.in_name;
         restart_state_name      = f_basic.restart_state_name;
         out_name                = f_basic.out_name;
@@ -177,7 +173,6 @@ int main(int argc, char **argv)
 
 	gas_driver(&front, g_cartesian);
 
-	//PetscFinalize();
 	clean_up(0);
 }
 
@@ -257,6 +252,8 @@ static  void gas_driver(
         //step, assuming the propagation is hyperbolic and
         //is not dependent on second order derivatives of
         //the interface such as curvature, and etc.
+
+        //TODO: Add option for using a fixed time step.
 
         FT_SetTimeStep(front);
         if (debugging("step_size"))

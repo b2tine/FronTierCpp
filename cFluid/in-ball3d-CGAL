@@ -1,9 +1,11 @@
 Max time: 5.0
 Max step: 100000
-Print interval: 0.5
+Print interval: 0.125
 Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 10000000000000
+
+Fixed time step: 0.0001
 
 *******************************************************
 
@@ -22,9 +24,9 @@ Upper boundary in 2-th dimension: PERIODIC_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 1.0 0 0
-Enter pressure: 1
-Enter density: 1
+Enter velocity: 3.0 0 0
+Enter pressure: 1.0
+Enter density: 1.0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -84,6 +86,8 @@ Type y to make vector vorticity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
+Enter the debugging string: flow_through
+
 Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging stringX: trace
