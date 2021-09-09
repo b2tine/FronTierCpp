@@ -283,6 +283,7 @@ void airfoil_driver(Front *front,
 	    FT_ResetTime(front);
 	    setStressColor(front);
 	    FT_Save(front);
+        
         if (!RestartRun && !ReSetTime)
         {
             FT_Draw(front);
@@ -403,10 +404,11 @@ void airfoil_driver(Front *front,
 
         if (!af_params->no_fluid)
             l_cartesian->printEnstrophy();
-
+    
+        setStressColor(front);
+        
         if (FT_IsSaveTime(front))
         {
-            setStressColor(front);
             FT_Save(front);
             l_cartesian->printFrontInteriorStates(out_name);
             printAfExtraData(front,out_name);
@@ -415,7 +417,6 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
         {
             FT_Draw(front);
-            setStressColor(front);
                 //vtkPlotSurfaceStress(front);
         }
 
