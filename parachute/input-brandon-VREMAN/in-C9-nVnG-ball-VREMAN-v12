@@ -140,7 +140,7 @@ Type y to make vector vorticity field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar phi field movie: n
 
-Type y to plot surface stress: n
+Type y to plot surface stress: y
 
 Type y to make turbulent kinetic energy field movie: n
 Type y to make turbulent kinetic energy dissipation field movie: n

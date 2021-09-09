@@ -47,8 +47,8 @@ Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Box
-Enter center of the box: 6.0 6.0 0.951
-Enter edges of the box: 0.45 0.45 0.45
+Enter center of the box: 5.9 5.9 0.951
+Enter edges of the box: 0.5 0.5 0.5
 
 Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: no
@@ -57,7 +57,7 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
-Enter the initial center of mass for rigid body: 6 6 0.951
+Enter the initial center of mass for rigid body: 5.9 5.9 0.951
 Enter the initial center of mass velocity: 0 0 0
 
 ************Parachute parameters*************
@@ -65,7 +65,7 @@ Enter number of canopy surfaces: 1
 Enter canopy surface type: FLAT
 Enter type of canopy boundary: C
 Enter the height of the plane: 7
-Enter circle center: 6 6
+Enter circle center: 5.9 5.9
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: no
