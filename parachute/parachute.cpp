@@ -443,19 +443,16 @@ void airfoil_driver(Front *front,
 static void setNewEquilibriumMesh(Front *front)
 {
 	FILE *infile = fopen(InName(front),"r");
-	char string[100];
-	
     if (CursorAfterStringOpt(infile,"Enter yes to set new mesh equilibrium state:"))
     {
+	    char string[100];
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
+        
+        if (string[0] == 'y' || string[0] == 'Y')
+            set_equilibrium_mesh(front);
     }
     fclose(infile);
-        
-    if (string[0] == 'y' || string[0] == 'Y')
-        set_equilibrium_mesh(front);
-    
-    return;
 }
 
 void zero_state(

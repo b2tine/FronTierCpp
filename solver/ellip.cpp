@@ -911,9 +911,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
     for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
         
     PETSc solver;
-    //TODO: Now need to use 8 non-zero entries??? -- find out why
-    //solver.Create(ilower, iupper - 1, 8, 8);
-        //solver.Create(ilower, iupper, 7, 7);
     solver.Create(ilower, iupper - 1, 7, 7);
     
     solver.Reset_A();
