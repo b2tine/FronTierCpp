@@ -1523,11 +1523,22 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         niter++;
         is_collision = false;
 
-        start_clock("dynamic_AABB_collision");
+    start_clock("dynamic_AABB_collision");
+        
         aabbCollision(list);
         abt_collision->turn_on_GS_update();
-        abt_collision->query();
-        stop_clock("dynamic_AABB_collision");
+        try
+        {
+            abt_collision->query();
+        }
+        catch(...)
+        {
+            debugImpactZones();
+            printf("\nERROR: updateImpactListVelocity() nan/inf avgVel!\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+        
+    stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
         /*
