@@ -3785,7 +3785,6 @@ EXPORT void vtk_interface_plot(
 				print_in_binary,time,step);
 	    vtk_print_box(dname,BBL,BBU,print_in_binary);
 	}
-
 }		/*end vtk_interface_plot*/
 
 

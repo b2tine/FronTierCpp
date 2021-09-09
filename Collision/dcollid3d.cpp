@@ -1,4 +1,3 @@
-//#include <armadillo>
 #include "collid.h"
 #include <iostream>
 

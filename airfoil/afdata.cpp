@@ -1700,6 +1700,10 @@ static void naturalStressOfTri(
     // Convert to Cartesian tensor
 	for (i = 0; i < 3; ++i)
 	{
+        //TODO: According to our 2015 paper in the Journal of Fluids and Structures
+        //      We should be multiplying the vector of natural stresses by the inverse
+        //      of the matrix that is used in the below computation.
+        //      Investigate if the computation below is correct or not.
 	    sigma[i] = sqr(c[i])*tau[0] + sqr(s[i])*tau[1] + s[i]*c[i]*tau[2];
 	}
 	

@@ -213,15 +213,17 @@ private:
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
+
 	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
 	void computeImpactZoneJac(std::vector<CD_HSE*>& list);
     void connectNearbyImpactZones(std::vector<CD_HSE*>& list);
-	void infoImpactZones();
-	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
-	void detectProximityRGB();
+	void infoImpactZones();
+	void debugImpactZones();
+	
+    void detectProximityRGB();
 	void detectProximity(std::vector<CD_HSE*>& list);
 	void detectCollision(std::vector<CD_HSE*>& list);
     void aabbProximity(std::vector<CD_HSE*>& list);
@@ -231,6 +233,7 @@ private:
 
     void writeCollisionPoints();
     std::vector<POINT*> getCollisionPoints();
+    //TODO: write these functions
         //void writeProximityPoints();
         //std::vector<POINT*> getProximityPoints();
 };

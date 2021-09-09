@@ -172,7 +172,7 @@ int main(int argc, char **argv)
         {
 	        FT_Save(&front);
             FT_Draw(&front);
-            vtkPlotSurfaceStress(&front);
+                //vtkPlotSurfaceStress(&front);
         }
         
         if (ReSetTime)
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     //      the stress array into initMovieStress() and modify
     //      FT_AddVtkIntfcMovieVariable() in order to plot the
     //      canopy surface stress.
-	    //initMovieStress(in_name,&front);
+    initMovieStress(in_name,&front);
 	    
 	if (!RestartRun && !ReSetTime)
         zeroFrontVelocity(&front);
@@ -286,7 +286,7 @@ void airfoil_driver(Front *front,
         if (!RestartRun && !ReSetTime)
         {
             FT_Draw(front);
-            vtkPlotSurfaceStress(front);
+                //vtkPlotSurfaceStress(front);
         }
 
         l_cartesian->printFrontInteriorStates(out_name);
@@ -336,8 +336,7 @@ void airfoil_driver(Front *front,
             reset_clock();
 
         start_clock("timeStep");
-            //if (!af_params->no_fluid)
-        if (!af_params->no_fluid || af_params->inflation_assist)
+        if (!af_params->no_fluid)
         {
             coating_mono_hyper_surf(front);
             l_cartesian->applicationSetComponent();
@@ -350,8 +349,7 @@ void airfoil_driver(Front *front,
         FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
 
-            //if (!af_params->no_fluid)
-        if (!af_params->no_fluid || af_params->inflation_assist)
+        if (!af_params->no_fluid)
         {
             coating_mono_hyper_surf(front);
             l_cartesian->applicationSetStates();
@@ -418,7 +416,7 @@ void airfoil_driver(Front *front,
         {
             FT_Draw(front);
             setStressColor(front);
-            vtkPlotSurfaceStress(front);
+                //vtkPlotSurfaceStress(front);
         }
 
         if (FT_TimeLimitReached(front))
