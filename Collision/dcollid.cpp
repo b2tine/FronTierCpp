@@ -1,6 +1,7 @@
 #include <armadillo>
 #include "collid.h"
 
+#include <stdexcept>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -970,8 +971,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         
             //revertAverageVelocity();
 
-        computeImpactZoneJac(list);
-        //computeImpactZoneGS(list);
+        computeImpactZoneGS(list);
+            //computeImpactZoneJac(list);
     }
     stop_clock("computeImpactZone");
 
@@ -1532,16 +1533,26 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         /*
         if (is_collision)
         {
-            //Update due to connecting nearby impact zones only.
-            //Gauss-seidel updates have already been applied.
-            if (niter >= 50)
+            try
             {
-                turnOnGsUpdate();
-                //TODO: This is probably not appropriate for strings.
-                //      For now, just use fabricTriList
-                connectNearbyImpactZones(fabricTriList);
-                    //connectNearbyImpactZones(elasticHseList);
-                turnOffGsUpdate();
+                //Update due to connecting nearby impact zones only.
+                //Gauss-seidel updates have already been applied.
+                if (niter >= 50)
+                {
+                    turnOnGsUpdate();
+                    //TODO: This is probably not appropriate for strings.
+                    //      For now, just use fabricTriList
+                    connectNearbyImpactZones(fabricTriList);
+                        //connectNearbyImpactZones(elasticHseList);
+                    
+                    turnOffGsUpdate();
+                }
+            }
+            catch (...)
+            {
+                debugImpactZones();
+                printf("\nERROR: updateImpactListVelocity() nan/inf avgVel!\n");
+                LOC(); clean_up(EXIT_FAILURE);
             }
         }
         */
@@ -1624,16 +1635,26 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
         is_collision = abt_collision->getCollsnState();
         if (is_collision)
         {
-            updateImpactZoneVelocity();
-            /*
-            if (niter >= 50)
+            try
             {
-                //TODO: This is probably not appropriate for strings.
-                //      For now, just use fabricTriList
-                connectNearbyImpactZones(fabricTriList);
-                    //connectNearbyImpactZones(elasticHseList);
+                updateImpactZoneVelocity();
+                
+                /*
+                if (niter >= 50)
+                {
+                    //TODO: This is probably not appropriate for strings.
+                    //      For now, just use fabricTriList
+                    connectNearbyImpactZones(fabricTriList);
+                        //connectNearbyImpactZones(elasticHseList);
+                }
+                */
             }
-            */
+            catch (...)
+            {
+                debugImpactZones();
+                printf("\nERROR: updateImpactListVelocity() nan/inf avgVel!\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
         }
 
         if (debugging("collision"))
@@ -1661,11 +1682,6 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
         }
         
         //TODO: Appropriate to limit strain rate during impact zone handling?
-        //
-        //      Most recent experiments confirm we should not limit the strain
-        //      rate of points belonging to impact zones. Leaving commented out
-        //      for now in case we wish some points to be excluded from impact
-        //      zones and apply impulses instead.
         if (is_collision)
         {
             if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
@@ -1828,6 +1844,8 @@ void CollisionSolver3d::debugImpactZones()
 {
     std::string outdir = CollisionSolver3d::getOutputDirectory();
     
+    //TODO: Do we want to show rigid body points too?
+    //      Or at least write them in a separate vtk file?
     unsortHseList(elasticHseList);
 	int numImpactZone = 0;
 
@@ -2154,8 +2172,11 @@ void updateImpactListVelocity(POINT* head)
 
             //TODO: see above todo regarding use of full time step
             //      for movable rigid body impact zones
-            
-            if (std::isnan(sl->avgVel[i]))
+        }    
+
+	    for (int i = 0; i < 3; ++i)
+	    {
+            if (std::isnan(sl->avgVel[i]) || std::isinf(sl->avgVel[i]))
             { 
                 p = head;
                 while(p)
@@ -2178,8 +2199,9 @@ void updateImpactListVelocity(POINT* head)
                 printf("xF = %f %f %f, xR = %f %f %f\n",
                         xF[0],xF[1],xF[2],xR[0],xR[1],xR[2]);
             
-                printf("ERROR: updateImpactListVelocity() nan avgVel!\n");
-                LOC(); clean_up(ERROR);
+                throw std::runtime_error("\nERROR: updateImpactListVelocity() nan/inf avgVel!\n");
+                    //printf("\nERROR: updateImpactListVelocity() nan/inf avgVel!\n");
+                    //LOC(); clean_up(EXIT_FAILURE);
             }
 	    }
 
