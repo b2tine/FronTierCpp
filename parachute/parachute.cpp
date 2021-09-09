@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     //      the stress array into initMovieStress() and modify
     //      FT_AddVtkIntfcMovieVariable() in order to plot the
     //      canopy surface stress.
-	initMovieStress(in_name,&front);
+	    //initMovieStress(in_name,&front);
 	    
 	if (!RestartRun && !ReSetTime)
         zeroFrontVelocity(&front);
@@ -417,6 +417,7 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
         {
             FT_Draw(front);
+            setStressColor(front);
             vtkPlotSurfaceStress(front);
         }
 
