@@ -42,7 +42,7 @@ Enter density and pressure of ambient air2: 1.225 750
 
 Enter density and viscosity of the fluid: 1.225 0.000628
 
-Enter gravity: 0 0 -3.5
+Enter gravity: 0 0 0
 
 Type yes to track the interface: no
 

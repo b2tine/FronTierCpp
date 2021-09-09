@@ -34,7 +34,7 @@ Enter density and pressure of ambient air2: 1.29 750
 
 Enter density and viscosity of the fluid: 1.29 0.00001813
 
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 Type yes to track the interface: no
 
@@ -65,7 +65,7 @@ For rigid body 1
 Enter type of rigid body: Box
 Enter center of the box: 6 6 11.951
 Enter edges of the box: 0.75 0.75 0.75
-Type yes if the rigid body is fixed: no
+Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: no
 
 Type yes if motion is preset: no
