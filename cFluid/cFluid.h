@@ -343,7 +343,6 @@ public:
     double visc_max_dt;     
     double min_dt;
 	double hmin;			// smallest spacing
-    double mu_max {0};
 
 	void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
 	void setInitialStates(); 	// setup initial state
@@ -395,9 +394,11 @@ private:
 	double m_smoothing_radius;	// used by getSmoothingFunction()
 
 	double m_t;                     // time
-	double max_speed;		// for stability of convection
+	double max_speed;	// for stability of convection
+    double mu_max;      // for viscous flux time step restriction
 	double min_dens;
     double min_pres;    // minimum physical variables
+    double min_mu;
 
 	// for parallel partition
 	int             NLblocks,ilower,iupper;
