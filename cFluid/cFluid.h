@@ -339,9 +339,11 @@ public:
 	G_CARTESIAN(Front &front);
 	int dim;
 	double m_dt;			// time increment
-	double max_dt;			// max_dt from cartesian
+	double max_dt;			// max_dt from cartesian (advection)
+    double visc_max_dt;     
     double min_dt;
 	double hmin;			// smallest spacing
+    double mu_max {0};
 
 	void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
 	void setInitialStates(); 	// setup initial state
@@ -396,8 +398,6 @@ private:
 	double max_speed;		// for stability of convection
 	double min_dens;
     double min_pres;    // minimum physical variables
-    double min_mu;
-
 
 	// for parallel partition
 	int             NLblocks,ilower,iupper;

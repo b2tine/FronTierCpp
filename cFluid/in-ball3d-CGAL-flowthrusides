@@ -1,7 +1,7 @@
-Max time: 5.0
+Max time: 1.0
 Max step: 100000
-Print interval: 0.125
-Movie frame interval: 0.025
+Print interval: 0.025
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000000000
 
@@ -23,7 +23,8 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 5.0 0 0
-Enter pressure: 1.0
+Enter pressure: 100
+                            XXXEnter pressureXXX: 1.0
 Enter density: 1.0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -55,8 +56,8 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
-Enter gamma, pinf, einf of ambient air: 1.67 0 0
-Enter density and pressure of ambient air: 1.0 1.0
+Enter gamma, pinf, einf of ambient air: 1.4 0 0
+Enter density and pressure of ambient air: 1.0 75.0
 Enter density and viscosity of the fluid: 1.0 0.01
 Enter gravity: 0 0 0
 
@@ -93,11 +94,13 @@ Type y to make vector velocity field movie: y
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make vector vorticity field movie: y
-************Debugging options*****************
 
+************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: init_intfc
-Enter the debugging string: flow_through
+Enter the debugging string: max_dt
+
+Enter the debugging stringXXX: init_intfc
+Enter the debugging stringXXX: flow_through
 
 Enter the debugging stringX: no_viscflux
 

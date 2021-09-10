@@ -1438,8 +1438,6 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	double		pinf,einf,gamma;
 	char str[256];
 
-    eqn_params->tracked = YES;
-
 	sprintf(str, "Enter gamma, pinf, einf of ambient air:");
 	CursorAfterString(infile,str);
 	fscanf(infile,"%lf %lf %lf",&gamma,&pinf,&einf);
@@ -1481,6 +1479,7 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	}
 	(void) printf("\n");
 
+    eqn_params->tracked = NO;
     CursorAfterString(infile,"Type yes to track the interface:");
     fscanf(infile,"%s",str);
     (void) printf("%s\n",str);

@@ -799,7 +799,7 @@ void G_CARTESIAN::solve(double dt)
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-	computeAdvection();//TODO: compute just the flux, do not advance in time.
+	computeAdvection(); //NOTE: Contains the viscous flux also now -- should rename function
 
 	if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
@@ -1324,10 +1324,39 @@ void G_CARTESIAN::setAdvectionDt()
 	else
 	    max_dt = 0.0;
 
-    //TODO: viscous time step restriction
+    //TODO: Once eddy viscosity model is implemented,
+    //      need to set mu_max in addMeshFluxToVst()
+    
+    //viscous time step restriction
+    visc_max_dt = HUGE;
+   
+    //TEMP: hardcode mu_max (temporary measure for debugging)
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    mu_max = eqn_params->mu1; //hardcoded
+    
+    if (mu_max > MACH_EPS)
+    {
+        visc_max_dt = 0.5*hmin*hmin/mu_max;
+    }
+
+    if (debugging("max_dt"))
+    {
+	    printf("In setAdvectionDt: \
+                adv_max_dt = %24.18g , visc_max_dt = %g\n",
+                max_dt, visc_max_dt);
+        printf("hmin = %g ,  mu_max = %g\n", hmin, mu_max); 
+    }
+
+    max_dt = std::min(max_dt,visc_max_dt);
+
+    //TODO: can calculate a single max_dt for advective and viscous flux
+    //      if we have the maximum eigenvalue of the jacobian of the inviscid
+    //      flux vector -- see weno code for this computation.
+    //      See Birken Habilitation paper on numerical methods for unsteady
+    //      compressible navier stokes (page 73) for this time step restriction.
 	
-    if (debugging("trace"))
-	    printf("In setAdvectionDt: max_dt = %24.18g\n",max_dt);
+    if (debugging("max_dt"))
+	    printf("In setAdvectionDt: final max_dt = %24.18g\n",max_dt);
 }	/* end setAdvectionDt */
 
 
