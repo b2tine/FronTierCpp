@@ -335,6 +335,7 @@ public:
     double max_speed;
 	double min_pressure;
     double max_pressure;
+    double mu_max {0.0};
     
     double U_FreeStream;   //far field velocity (Inlet/Outlet speed)
     
@@ -342,6 +343,7 @@ public:
 	double max_value; //for debugging
 	
     double max_dt;
+    double visc_max_dt;
 	double min_dt;
 	double *top_h;
 	double vmin[MAXD],vmax[MAXD];

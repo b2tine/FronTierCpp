@@ -838,9 +838,20 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 	
     if (iFparams->min_speed != 0.0)
 	    max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
+    
+    //viscous time step restriction
+    visc_max_dt = HUGE;
+	
+    pp_global_max(&mu_max,1);
+    if (mu_max > MACH_EPS)
+    {
+        visc_max_dt = 0.5*hmin*hmin/mu_max;
+    }
 
-    //Is this the viscous time step?
-	min_dt = 0.0000001*sqr(hmin)/mu_min;
+    max_dt = std::min(max_dt,visc_max_dt);
+	
+    //TODO: Why do we need min_dt?
+    min_dt = 0.0000001*sqr(hmin)/mu_min;
 	
     if (debugging("trace"))
 	{
@@ -1620,6 +1631,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         tke = ke_params->field->k;
     }
 
+    mu_max = 0.0;
+
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
@@ -1722,6 +1735,11 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             }
 	    }
 
+        //For computing viscous flux time step restriction
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -2455,6 +2473,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         tke = ke_params->field->k;
     }
 
+    mu_max = 0.0;
+
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -2557,6 +2577,11 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             }
 	    }
 
+        //For computing viscous flux time step restriction
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
