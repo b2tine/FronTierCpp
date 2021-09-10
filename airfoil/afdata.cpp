@@ -1738,16 +1738,17 @@ extern void vtkPlotSurfaceStress(
     sprintf(dirname,"%s/%s%s",outname,"vtk.ts",
             right_flush(front->step,7));
     if (!create_directory(dirname,NO))
-        {
-            printf("Cannot create directory %s\n",dirname);
-            clean_up(ERROR);
-        }
+    {
+        printf("Cannot create directory %s\n",dirname);
+        clean_up(ERROR);
+    }
     sprintf(fname,"%s/%s",dirname,"stress.vtk");
+
     vfile = fopen(fname,"w");
     fprintf(vfile,"# vtk DataFile Version 3.0\n");
-        fprintf(vfile,"Surface stress\n");
-        fprintf(vfile,"ASCII\n");
-        fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
+    fprintf(vfile,"Surface stress\n");
+    fprintf(vfile,"ASCII\n");
+    fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
 
     num_tri = 0;
 
@@ -1756,22 +1757,27 @@ extern void vtkPlotSurfaceStress(
         if (Boundary(*s)) continue;
         num_tri += (*s)->num_tri;
     }
+    
+    //TODO: 3*num_tri includes duplicate points,
+    //      should it be the actual number of points instead?
     fprintf(vfile,"POINTS %d double\n", 3*num_tri);
+    
     intfc_surface_loop(intfc,s)
     {
         if (Boundary(*s)) continue;
         surf_tri_loop(*s,tri)
         {
-        for (i = 0; i < 3; ++i)
-        {
-            p = Point_of_tri(tri)[i];
-            fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],
-                        Coords(p)[2]);
-        }
+            for (i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+            }
         }
     }
+
     fprintf(vfile,"CELLS %i %i\n",num_tri,4*num_tri);
     n = 0;
+    
     intfc_surface_loop(intfc,s)
     {
         if (Boundary(*s)) continue;

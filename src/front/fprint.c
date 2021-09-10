@@ -4655,14 +4655,12 @@ LOCAL void vtk_plot_intfc_color(
 	POINT *p;
 	static char *fname = NULL;
 	int i,j;
-	int n,N;
+	int N;
 	double *color;
 	FILE *vfile;
-	int num_tri;
 	size_t fname_len = 0;
 	
 	fname = get_vtk_file_name(fname,dirname,vname,&fname_len);
-	n = 0;
 	
     if (create_directory(dirname,YES) == FUNCTION_FAILED)
     {
@@ -4677,43 +4675,77 @@ LOCAL void vtk_plot_intfc_color(
     fprintf(vfile,"ASCII\n");
     fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
 
-	num_tri = 0;
+	int num_tri = 0;
+    int num_pts = 0;
 
 	intfc_surface_loop(intfc,s)
 	{
 	    if (Boundary(*s)) continue;
-	    num_tri += (*s)->num_tri;
-	}
-	
-    fprintf(vfile,"POINTS %d double\n", 3*num_tri);
-    
-    intfc_surface_loop(intfc,s)
-	{
-	    if (Boundary(*s)) continue;
+            //num_tri += (*s)->num_tri;
+        unsort_surf_point(*s);
 	    surf_tri_loop(*s,tri)
 	    {
 		    for (i = 0; i < 3; ++i)
             {
                 p = Point_of_tri(tri)[i];
-                fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                if (sorted(p)) continue;
+                sorted(p) = YES;
+                num_pts++;
+            }
+            num_tri++;
+        }
+	}
+
+    //NOTE: sorted(p) and Index_of_point(p) refer to variables
+    //      belonging to the same union data structure.
+    //      Therefore setting one overwrites the other.
+	
+    fprintf(vfile,"POINTS %d float\n", num_pts);
+    
+	int n = 0;
+    intfc_surface_loop(intfc,s)
+	{
+	    if (Boundary(*s)) continue;
+	    
+        surf_tri_loop(*s,tri)
+	    {
+		    for (i = 0; i < 3; ++i)
+            {
+                Index_of_point(Point_of_tri(tri)[i]) = -1;
+            }
+        }
+	    
+        surf_tri_loop(*s,tri)
+	    {
+		    for (i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                if (Index_of_point(p) == -1)
+                {
+                    fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                    Index_of_point(p) = n++;
+                }
             }
 	    }
 	}
+
+    //TODO: check if (n == num_pts)
 	
-    fprintf(vfile,"CELLS %i %i\n",num_tri,4*num_tri);
-	n = 0;
+    fprintf(vfile,"CELLS %d %d\n",num_tri,4*num_tri);
 
 	intfc_surface_loop(intfc,s)
 	{
 	    if (Boundary(*s)) continue;
 	    surf_tri_loop(*s,tri)
 	    {
-            fprintf(vfile,"3 %i %i %i\n",3*n,3*n+1,3*n+2);
-            n++;
+            fprintf(vfile,"3 %d %d %d\n",
+                    Index_of_point(Point_of_tri(tri)[0]),
+                    Index_of_point(Point_of_tri(tri)[1]),
+                    Index_of_point(Point_of_tri(tri)[2]));
 	    }
 	}
 	
-    fprintf(vfile, "CELL_TYPES %i\n",num_tri);
+    fprintf(vfile, "CELL_TYPES %d\n",num_tri);
     
     intfc_surface_loop(intfc,s)
 	{
@@ -4724,8 +4756,8 @@ LOCAL void vtk_plot_intfc_color(
         }
     }
 
-	fprintf(vfile, "CELL_DATA %i\n", num_tri);
-    fprintf(vfile, "SCALARS %s double\n",vname);
+	fprintf(vfile, "CELL_DATA %d\n", num_tri);
+    fprintf(vfile, "SCALARS %s float 1\n",vname);
     fprintf(vfile, "LOOKUP_TABLE default\n");
 	
     intfc_surface_loop(intfc,s)
