@@ -276,6 +276,13 @@ extern void compute_spring_accel1(
 	    }
 	    len = sqrt(len);
 
+        /*
+//TEMP DEBUG
+///////////////////////////////////////////
+printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
+///////////////////////////////////////////
+        */
+
         //zero compressive stress
         double dL = len - sv->len0[j];
         if (dL < 0.0) continue;
@@ -342,7 +349,19 @@ void generic_spring_solver(
 	}
 	old_size = size;
 
-	for (i = 0; i < size; ++i)
+    /*
+//TEMP DEBUG
+///////////////////////////////////////////////////////////////////////
+for (i = 0; i < size; ++i)
+{
+    char msg[25];
+    sprintf(msg,"sv[%d].bendforce",i);
+    fprint_general_vector(stdout,msg,sv[i].bendforce,dim,"\n");
+}
+///////////////////////////////////////////////////////////////////////
+    */	
+
+    for (i = 0; i < size; ++i)
 	{
 	    compute_spring_accel1(&sv[i],accel[i],dim);
 	}
@@ -352,7 +371,20 @@ void generic_spring_solver(
 	    x_old[i][j] = sv[i].x[j];
 	    v_old[i][j] = sv[i].v[j];
 	}
-	for (n = 0; n < n_loop; ++n)
+	
+    /*
+//TEMP DEBUG
+///////////////////////////////////////////////////////////////////////
+for (i = 0; i < size; ++i)
+{
+    char msg[25];
+    sprintf(msg,"accel[%d]",i);
+    fprint_general_vector(stdout,msg,accel[i],dim,"\n");
+}
+///////////////////////////////////////////////////////////////////////
+    */
+    
+    for (n = 0; n < n_loop; ++n)
 	{
 	    for (i = 0; i < size; ++i)
 	    for (j = 0; j < dim; ++j)
@@ -445,7 +477,7 @@ void generic_spring_solver(
                 {
                     x_old[i][j] = sv[i].x[j];
                     v_old[i][j] = sv[i].v[j];
-                    if (isnan(x_old[i][j]))
+                    if (std::isnan(x_old[i][j]) || std::isinf(x_old[i][j]))
                     {
                         printf("After loop %d: x_old[%d][%d] = %f\n",n,i,j,x_old[i][j]);
                         LOC(); clean_up(ERROR);

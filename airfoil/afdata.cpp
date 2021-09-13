@@ -903,7 +903,13 @@ void clearRegisteredPoints(Front* front)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
-        (*s)->extra = nullptr;
+        
+        if ((*s)->extra)
+        {
+            REGISTERED_PTS* registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            FT_FreeThese(2,registered_pts->global_ids,registered_pts);
+            (*s)->extra = nullptr;
+        }
     }
 }
 
@@ -1317,158 +1323,6 @@ void modifyInitialization(
 
 }	/* end modifyInitialization */
 
-void setStressColor(
-	Front *front)
-{
-	INTERFACE *intfc = front->interf;
-	SURFACE **s;
-	TRI *tri;
-	POINT *p;
-	double f[MAXD];
-	int i,j;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double ks = af_params->ks;
-	double max_color = -HUGE;
-	double min_color = HUGE;
-	int n,N;
-	double *color;
-	
-	n = 0;
-	intfc_surface_loop(intfc,s)
-	{
-	    if (Boundary(*s)) continue;
-	    surf_tri_loop(*s,tri)
-	    {
-		n++;
-		naturalStressOfTri(tri,ks);
-		if (max_color < tri->color)
-		    max_color = tri->color;
-		if (min_color > tri->color)
-		    min_color = tri->color;
-	    }
-	}
-	FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
-	n = 0;
-	intfc_surface_loop(intfc,s)
-	{
-	    if (Boundary(*s)) continue;
-	    surf_tri_loop(*s,tri)
-		tri->color = log(tri->color-min_color+1);
-	}
-	/* Smoothing loop */
-	intfc_surface_loop(intfc,s)
-	{
-	    if (Boundary(*s)) continue;
-	    I_SmoothSurfColor(*s,3);
-	}
-}	/* end setStressColor */
-
-void initMovieStress(
-	char *inname,
-	Front *front)
-{
-	char string[100];
-	FILE *infile = fopen(inname,"r");
-	front->print_gview_color = NO;
-	if (CursorAfterStringOpt(infile,
-            "Type y to plot surface stress: "))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-	    {
-		front->print_gview_color = YES;
-		FT_AddVtkIntfcMovieVariable(front,"VMSTRESS");
-		return;
-	    }
-        }
-        fclose(infile);
-}	/* end initMovieStress */
-
-void poisson_ratio(
-	Front *front)
-{
-        INTERFACE *intfc = front->interf;
-        SURFACE **s;
-	CURVE **c;
-	BOND *b;
-	double x_min, y_min, x_max, y_max;
-
-        intfc_surface_loop(intfc,s)
-        {
-            if (Boundary(*s)) continue;
-	    surf_pos_curve_loop(*s,c)
-	    {
-		b = (*c)->first;
-		x_min = x_max = b->start->_coords[0];
-		y_min = y_max = b->start->_coords[1];
-		for (b = (*c)->first; b != NULL; b = b->next)
-		{
-		    if (x_min > b->end->_coords[0])
-			x_min = b->end->_coords[0];
-
-		    if (x_max < b->end->_coords[0])
-			x_max = b->end->_coords[0];
-
-		    if (y_min > b->end->_coords[1])
-			y_min = b->end->_coords[1];
-
-		    if (y_max < b->end->_coords[1])
-			y_max = b->end->_coords[1];
-		}
-		printf("curve x-d boundary: x_min: %f\t x_max: %f\n",
-					x_min,x_max);
-		printf("curve y-d boundary: y_min: %f\t y_max: %f\n\n",
-					y_min,y_max);
-	    }
-	}
-}	/* poisson_ratio */
-
-static void naturalStressOfTri(
-	TRI *tri,
-	double ks)
-{
-	double tau[3];
-	double sigma[3];
-	int i,j;
-	double len,len0;
-	double vec[3];
-	double s[3],c[3];
-	double b1,b2,arg,sigma1,sigma2;
-
-	for (i = 0; i < 3; ++i)
-	{
-	    len0 = tri->side_length0[i];
-	    for (j = 0; j < 3; ++j)
-	    {
-		vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j] -
-			Coords(Point_of_tri(tri)[i])[j];
-	    }
-	    len = Mag3d(vec);
-	    tau[i] = ks*(len - len0);
-	    c[i] = vec[0]/len;
-	    s[i] = vec[1]/len;
-	}
-	if (Mag3d(tau) < 1.0e-8) // tolerance
-	{
-	    tri->color = 0.0;
-	    return;
-	}
-	// Convert to Cartesian tensor
-	for (i = 0; i < 3; ++i)
-	{
-	    sigma[i] = sqr(c[i])*tau[0] + sqr(s[i])*tau[1] + s[i]*c[i]*tau[2];
-	}
-	// Diagonalize the stress tensor for principal directions
-	b1 = -(sigma[0] + sigma[1]);
-	b2 = sigma[0]*sigma[1] - 0.25*sqr(sigma[2]);
-	arg = sqr(b1) - 4.0*b2;
-	sigma1 = 0.5*(-b1 + sqrt(arg));
-	sigma2 = 0.5*(-b1 - sqrt(arg));
-	// Use von Mises stress as a measure
-	tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
-}	/* end naturalStressOfTri */
-
 static void singleCanopyModification(
 	Front *front)
 {
@@ -1733,3 +1587,317 @@ static void rotateParachuteSet(
 					center,phi,theta,NO);
 	}
 }	/* end rotateParachuteSet */
+
+void initMovieStress(
+	char *inname,
+	Front *front)
+{
+	char string[100];
+	FILE *infile = fopen(inname,"r");
+	front->print_gview_color = NO;
+	if (CursorAfterStringOpt(infile,
+            "Type y to plot surface stress: "))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            front->print_gview_color = YES;
+            //TODO: This never gets an array to plot,
+            //      should have a third argument like
+            //      FT_AddVtkScalarMovieVariable() and
+            //      FT_AddVtkVectorMovieVariable() do.
+            FT_AddVtkIntfcMovieVariable(front,"VMSTRESS");
+            return;
+        }
+    }
+    fclose(infile);
+}	/* end initMovieStress */
+
+void setStressColor(
+	Front *front)
+{
+	INTERFACE *intfc = front->interf;
+	SURFACE **s;
+	TRI *tri;
+	POINT *p;
+	double f[MAXD];
+	int i,j;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	double ks = af_params->ks;
+	double max_color = -HUGE;
+	double min_color = HUGE;
+	int n,N;
+	double *color;
+	
+    //TODO: Need to check if ELASTIC_BOUNDARY
+	n = 0;
+	intfc_surface_loop(intfc,s)
+	{
+	    if (Boundary(*s)) continue;
+	    surf_tri_loop(*s,tri)
+	    {
+            n++;
+            naturalStressOfTri(tri,ks);
+            if (max_color < tri->color)
+                max_color = tri->color;
+            if (min_color > tri->color)
+                min_color = tri->color;
+	    }
+	}
+	FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
+	
+    n = 0;
+	intfc_surface_loop(intfc,s)
+	{
+	    if (Boundary(*s)) continue;
+	    surf_tri_loop(*s,tri)
+        {
+		    tri->color = log(tri->color - min_color + 1);
+        }
+	}
+	
+    /* Smoothing loop */
+	intfc_surface_loop(intfc,s)
+	{
+	    if (Boundary(*s)) continue;
+	    I_SmoothSurfColor(*s,3);
+	}
+}	/* end setStressColor */
+
+static void naturalStressOfTri(
+	TRI *tri,
+	double ks)
+{
+	double tau[3];
+	double sigma[3];
+	double len,len0;
+	double vec[3];
+	double s[3],c[3];
+	double b1,b2,arg,sigma1,sigma2;
+	int i,j;
+
+	for (i = 0; i < 3; ++i)
+	{
+	    len0 = tri->side_length0[i];
+	    for (j = 0; j < 3; ++j)
+	    {
+            vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j]
+                      - Coords(Point_of_tri(tri)[i])[j];
+	    }
+	    len = Mag3d(vec);
+	    tau[i] = ks*(len - len0);
+	    c[i] = vec[0]/len;
+	    s[i] = vec[1]/len;
+	}
+
+	if (Mag3d(tau) < 1.0e-8) // tolerance
+	{
+	    tri->color = 0.0;
+	    return;
+	}
+	
+    // Convert to Cartesian tensor
+	for (i = 0; i < 3; ++i)
+	{
+        //TODO: According to our 2015 paper in the Journal of Fluids and Structures
+        //      We should be multiplying the vector of natural stresses by the inverse
+        //      of the matrix that is used in the below computation.
+        //      Investigate if the computation below is correct or not.
+	    sigma[i] = sqr(c[i])*tau[0] + sqr(s[i])*tau[1] + s[i]*c[i]*tau[2];
+	}
+	
+    // Diagonalize the stress tensor for principal directions
+	b1 = -(sigma[0] + sigma[1]);
+	b2 = sigma[0]*sigma[1] - 0.25*sqr(sigma[2]);
+	arg = sqr(b1) - 4.0*b2;
+	sigma1 = 0.5*(-b1 + sqrt(arg));
+	sigma2 = 0.5*(-b1 - sqrt(arg));
+	
+    // Use von Mises stress as a measure
+	tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
+}	/* end naturalStressOfTri */
+
+extern void vtkPlotSurfaceStress(
+    Front *front)
+{
+    char *outname = OutName(front);
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+    TRI *tri;
+    POINT *p;
+    char dirname[200],fname[200];
+    int i,j;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    int n,N;
+    double *color;
+    FILE *vfile;
+    int num_tri;
+
+    n = 0;
+    sprintf(dirname,"%s/%s%s",outname,"vtk.ts",
+            right_flush(front->step,7));
+    if (!create_directory(dirname,NO))
+    {
+        printf("Cannot create directory %s\n",dirname);
+        clean_up(ERROR);
+    }
+    sprintf(fname,"%s/%s",dirname,"stress.vtk");
+
+    vfile = fopen(fname,"w");
+    fprintf(vfile,"# vtk DataFile Version 3.0\n");
+    fprintf(vfile,"Surface stress\n");
+    fprintf(vfile,"ASCII\n");
+    fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
+
+    num_tri = 0;
+
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        num_tri += (*s)->num_tri;
+    }
+    
+    //TODO: 3*num_tri includes duplicate points,
+    //      should it be the actual number of points instead?
+    fprintf(vfile,"POINTS %d double\n", 3*num_tri);
+    
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+            for (i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+            }
+        }
+    }
+
+    fprintf(vfile,"CELLS %i %i\n",num_tri,4*num_tri);
+    n = 0;
+    
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+        fprintf(vfile,"3 %i %i %i\n",3*n,3*n+1,3*n+2);
+        n++;
+        }
+    }
+    fprintf(vfile, "CELL_TYPES %i\n",num_tri);
+        intfc_surface_loop(intfc,s)
+    {
+            if (Boundary(*s)) continue;
+            surf_tri_loop(*s,tri)
+            {
+                fprintf(vfile,"5\n");
+            }
+        }
+
+    fprintf(vfile, "CELL_DATA %i\n", num_tri);
+        fprintf(vfile, "SCALARS von_Mises_stress double\n");
+        fprintf(vfile, "LOOKUP_TABLE default\n");
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+        fprintf(vfile,"%f\n",tri->color);
+        }
+    }
+}   /* end vtkPlotSurfaceStress */
+
+extern void gviewSurfaceStress(
+    Front *front)
+{
+    char *outname = OutName(front);
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+    TRI *tri;
+    POINT *p;
+    double f[MAXD];
+    char dirname[200];
+    int i,j;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    double ks = af_params->ks;
+    double max_color = -HUGE;
+    double min_color = HUGE;
+    int n,N;
+    double *color;
+
+    n = 0;
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+        n++;
+        naturalStressOfTri(tri,ks);
+        if (max_color < tri->color)
+            max_color = tri->color;
+        if (min_color > tri->color)
+            min_color = tri->color;
+        }
+    }
+    FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
+    n = 0;
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        tri->color = log(tri->color-min_color+1);
+    }
+    /* Smoothing loop */
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        I_SmoothSurfColor(*s,3);
+    }
+    sprintf(dirname,"%s/gview/%s-ts%s",outname,"gv.stress",
+            right_flush(front->step,7));
+    gview_plot_color_scaled_interface(dirname,intfc);
+}   /* end gviewSurfaceStress */
+
+//TODO: This clearly does not compute the poisson_ratio -- it doesn't do anything.
+//      Also should be moved to another file if implemented.
+void poisson_ratio(Front *front)
+{
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+	CURVE **c;
+	BOND *b;
+	double x_min, y_min, x_max, y_max;
+
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+	    surf_pos_curve_loop(*s,c)
+        {
+            b = (*c)->first;
+            x_min = x_max = b->start->_coords[0];
+            y_min = y_max = b->start->_coords[1];
+            for (b = (*c)->first; b != NULL; b = b->next)
+            {
+                if (x_min > b->end->_coords[0])
+                x_min = b->end->_coords[0];
+
+                if (x_max < b->end->_coords[0])
+                x_max = b->end->_coords[0];
+
+                if (y_min > b->end->_coords[1])
+                y_min = b->end->_coords[1];
+
+                if (y_max < b->end->_coords[1])
+                y_max = b->end->_coords[1];
+            }
+            printf("curve x-d boundary: x_min: %f\t x_max: %f\n",
+                        x_min,x_max);
+            printf("curve y-d boundary: y_min: %f\t y_max: %f\n\n",
+                        y_min,y_max);
+        }
+	}
+}	/* poisson_ratio */
+

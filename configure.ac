@@ -163,7 +163,7 @@ with_petsc=no
 AS_IF([test "x${petsc_dir}" != xno],
       [with_petsc=yes
        petscinc="-I${petsc_dir}/include"
-       petsclib="-L${petsc_dir}/lib ${petsc_libflags}"])
+       petsclib="-L${petsc_dir}/lib ${petsc_libflags} -Wl,-rpath-link=${petsc_dir}/lib -Wl,-rpath=${petsc_dir}/lib"])
 
 AC_SUBST(PETSC_CFLAGS,${petscinc})
 AC_SUBST(PETSC_LIBS,${petsclib})
@@ -374,11 +374,11 @@ with_nlopt=no
 AS_IF([test "x${nlopt_dir}" != xno],
       [with_nlopt=yes
        nloptinc="-I${nlopt_dir}/include"
-       nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags}"],
+       nloptlib="-L${nlopt_dir}/lib ${nlopt_libflags} -Wl,-rpath-link=${nlopt_dir}/lib -Wl,-rpath=${nlopt_dir}/lib"],
        [test "x${nlopt_inc}" != xno && test "x${nlopt_lib}" != xno],
        [with_nlopt=yes
         nloptinc="-I${nlopt_inc}"
-        nloptlib="-L${nlopt_lib} ${nlopt_libflags}"])
+        nloptlib="-L${nlopt_lib} ${nlopt_libflags} -Wl,-rpath-link=${nlopt_lib} -Wl,-rpath=${nlopt_lib}"])
 
 AC_SUBST(NLOPT_CFLAGS,${nloptinc})
 AC_SUBST(NLOPT_LIBS,${nloptlib})

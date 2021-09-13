@@ -117,7 +117,7 @@ struct _FBOX {
 
 typedef struct _FBOX FBOX;
 	
-	boolean	box_sect(
+boolean	box_sect(
 	double	fbox1[2][3],
 	double	fbox2[2][3],
 	double	tol)
@@ -132,7 +132,7 @@ typedef struct _FBOX FBOX;
 	return YES;
 }
 
-	void	box_merge(
+void box_merge(
 	double	fbox1[2][3],
 	double	fbox2[2][3])
 {
@@ -145,7 +145,7 @@ typedef struct _FBOX FBOX;
 	}
 }
 
-	void	box_of_tri(
+void box_of_tri(
 	double	fbox[2][3],
 	TRI	*t)
 {
@@ -171,7 +171,7 @@ typedef struct _FBOX FBOX;
 
 #define	MAX_SMOOTH_TRIS	2000
 
-	void	smooth_tris_in_boxes(
+void smooth_tris_in_boxes(
 	int		*smin,
 	int		*smax,
 	int		**ips,

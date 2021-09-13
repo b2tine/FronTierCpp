@@ -1991,7 +1991,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     //      lagged values for the STATE::is_fixed etc. boolean flags from
     //      the previous time step. 
     setCollisionFreePoints3d(elastic_intfc);
-        //setCollisionFreePoints3d((*newfront)->interf);
     
     if (!debugging("bendforce_off"))
     {
@@ -3281,6 +3280,12 @@ static void print_max_fabric_speed(Front* fr)
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
     }
+
+    if (max_speed > 1000)
+    {
+        printf("\n\n\tmax speed of fabric/canopy exceeds 1000 m/s\n\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
 }
 
 static void print_max_string_speed(Front* fr)
@@ -3327,6 +3332,12 @@ static void print_max_string_speed(Front* fr)
         state = (STATE*)left_state(max_pt);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
+    }
+
+    if (max_speed > 1000)
+    {
+        printf("\n\n\tmax speed of elastic strings exceeds 1000 m/s\n\n");
+        LOC(); clean_up(EXIT_FAILURE);
     }
 }
 
@@ -3793,6 +3804,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         STATE* sl = (STATE*)left_state(p);
         sl->is_fixed = false;
         sl->is_movableRG = false;
+        sl->is_registeredpt = false;
         
         if ((surf = Surface_of_hs(hs)))
         {
@@ -3803,7 +3815,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
             if (is_registered_point(surf,p))
             {
                 sl->is_registeredpt = true;
-                sl->is_fixed = true;
+                sl->is_fixed = true;//TODO: to remove
             }
         }
     }
@@ -3812,13 +3824,18 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     BOND* b;
     intfc_curve_loop(intfc,c)
     {
-        if (hsbdry_type(*c) != FIXED_HSBDRY)
-            continue;
+        if (hsbdry_type(*c) != FIXED_HSBDRY &&
+            hsbdry_type(*c) != STRING_HSBDRY) continue;
 
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
             STATE* sl = (STATE*)left_state(b->end);
-            sl->is_fixed = true;
+            if (hsbdry_type(*c) == FIXED_HSBDRY)
+                sl->is_fixed = true;
+            /*
+            else if (is_registered_point(*c,b->end))
+                sl->is_registeredpt = true;
+            */ //TODO: define registered points on curves!
         }
     }
 

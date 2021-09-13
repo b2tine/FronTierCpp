@@ -3766,17 +3766,8 @@ LOCAL void show_TRI_list(
 	(void) printf("\n\n");
 }		/*end show_TRI_list*/
 
-LOCAL	void set_tri_list_tolerance(RECT_GRID *rgr)
+LOCAL void set_tri_list_tolerance(RECT_GRID *rgr)
 {
-	/*
-    double hmin = HUGE_VAL;
-	for (int i = 0; i < 3; ++i)
-    {
-        if (hmin > rgr->h[i])
-            hmin = rgr->h[i];
-    }
-    */
-
     double* h = rgr->h;
 	double hmin = min3(h[0],h[1],h[2]);
 

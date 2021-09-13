@@ -1430,7 +1430,6 @@ EXPORT void FT_AddVtkVectorMovieVariable(
 	double **vector_var_field)
 {
 	static VTK_MOVIE_VAR *vtk_movie_var;
-	int i;
 
         if (debugging("trace"))
             (void) printf("Entering FT_AddVtkVectorMovieVariable()\n");
@@ -1455,8 +1454,11 @@ EXPORT void FT_AddVtkVectorMovieVariable(
 	    front->vtk_movie_var = vtk_movie_var;
 	}
 	else
+    {
 	    vtk_movie_var = front->vtk_movie_var;
-	i = front->vtk_movie_var->num_vector_var;
+    }
+
+	int i = front->vtk_movie_var->num_vector_var;
 	vtk_movie_var->vector_var[i] = vector_var_field;
 	sprintf(vtk_movie_var->vector_var_name[i],"%s",var_name);
 	front->vtk_movie_var->num_vector_var += 1;
@@ -1471,7 +1473,6 @@ EXPORT void FT_AddVtkScalarMovieVariable(
 	double *scalar_var_field)
 {
 	static VTK_MOVIE_VAR *vtk_movie_var;
-	int i;
 
         if (debugging("trace"))
             (void) printf("Entering FT_AddVtkScalarMovieVariable()\n");
@@ -1496,8 +1497,11 @@ EXPORT void FT_AddVtkScalarMovieVariable(
 	    front->vtk_movie_var = vtk_movie_var;
 	}
 	else
+    {
 	    vtk_movie_var = front->vtk_movie_var;
-	i = front->vtk_movie_var->num_scalar_var;
+    }
+    
+    int i = front->vtk_movie_var->num_scalar_var;
 	vtk_movie_var->scalar_var[i] = scalar_var_field;
 	sprintf(vtk_movie_var->scalar_var_name[i],"%s",var_name);
 	front->vtk_movie_var->num_scalar_var += 1;
@@ -1511,10 +1515,9 @@ EXPORT void FT_AddVtkIntfcMovieVariable(
 	const char *var_name)
 {
 	static VTK_MOVIE_VAR *vtk_movie_var;
-	int i;
 
-        if (debugging("trace"))
-            (void) printf("Entering FT_AddVtkIntfcMovieVariable()\n");
+    if (debugging("trace"))
+        (void) printf("Entering FT_AddVtkIntfcMovieVariable()\n");
 
 	if (front->vtk_movie_var == NULL)
 	{
@@ -1536,12 +1539,17 @@ EXPORT void FT_AddVtkIntfcMovieVariable(
 	    front->vtk_movie_var = vtk_movie_var;
 	}
 	else
+    {
 	    vtk_movie_var = front->vtk_movie_var;
+    }
+
 	vtk_movie_var->plot_intfc_var = YES;
 	sprintf(vtk_movie_var->intfc_var_name,"%s",var_name);
 
-    //TODO: see other FT_AddVtk*() functions ...
-    //  Need to add fields to VTK_MOVIE_VAR structure
+    //TODO: see other FT_AddVtk*() functions for how to add more
+    //      than one intfc variable -- currently hardcoded to plot
+    //      only triangle stress, but we would also like to plot the
+    //      pressure distribution on surfaces eventually.
 
         if (debugging("trace"))
             (void) printf("Leaving FT_AddVtkIntfcMovieVariable()\n");

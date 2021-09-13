@@ -52,6 +52,11 @@ enum IF_PROB_TYPE
     RAMP
 };
 
+struct BWFSTEP_PARAMS
+{
+    double H;
+};
+
 
 enum EBM_COORD
 {
@@ -158,6 +163,8 @@ struct VPARAMS {
 struct IF_PARAMS
 {
     int dim;
+    IF_PROB_TYPE prob_type;
+    POINTER prob_params;
     POINTER level_func_params;
 	NS_SCHEME num_scheme;
     double rho1;
@@ -227,14 +234,19 @@ typedef enum _TIME_FUNC_TYPE TIME_FUNC_TYPE;
 
 struct _TIME_DEPENDENT_PARAMS {
 	TIME_FUNC_TYPE td_type;
-	double v_base[MAXD],p_base;
-	double v_peak[MAXD],p_peak;
-	double v_tail[MAXD],p_tail;
-	double v_amp[MAXD],p_amp;
+	double v_base[MAXD], p_base;
+	double v_peak[MAXD], p_peak;
+	double v_tail[MAXD], p_tail;
+	double v_amp[MAXD], p_amp;
 	double omega,phase;
 	double T[10];
 };
 typedef struct _TIME_DEPENDENT_PARAMS TIME_DEPENDENT_PARAMS;
+
+struct TRANSLATION_PARAMS
+{
+    double vel[3];
+};
 
 struct _SPLIT_STATE_PARAMS {
 	int dir;
@@ -272,19 +284,17 @@ struct _OPEN_PIPE_PARAMS
 };
 typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
 
-/******************************************************************************
- * 		lcartsn.h
- * A simple incompressible flow solver using the ghost fluid method and the
- * projection method.
- *
- * the main function is 
- * 	L_CARTESIAN::solve().
- *
- * References:
- ******************************************************************************/
+
+struct GHOST_COMPUTATION
+{
+    //int icoords[MAXD];
+    //GRID_DIRECTION dir;
+    double vel[MAXD];
+    double force[MAXD];
+};
+
 
 class SOLVER;
-class Incompress_Solver_Basis;
 
 class KE_PARAMS;
 
@@ -325,6 +335,7 @@ public:
     double max_speed;
 	double min_pressure;
     double max_pressure;
+    double mu_max {0.0};
     
     double U_FreeStream;   //far field velocity (Inlet/Outlet speed)
     
@@ -332,6 +343,7 @@ public:
 	double max_value; //for debugging
 	
     double max_dt;
+    double visc_max_dt;
 	double min_dt;
 	double *top_h;
 	double vmin[MAXD],vmax[MAXD];
@@ -353,6 +365,8 @@ public:
     void printEnstrophy();
     void printEnstrophy2d();
     void printEnstrophy3d();
+
+    void printProblemSpecificStats();
 
 	//Initialization of States
 	void (*getInitialState) (COMPONENT,double*,IF_FIELD*,int,int,
@@ -478,6 +492,9 @@ protected:
 	void makeGlobalColorMap(int&);
 	void paintConnectedRegion(int,int);
 	boolean paintToSolveGridPoint2(int);
+
+    //for storing precomputed values (to avoid recomputing)
+    std::vector<GHOST_COMPUTATION> ghost_data[6];
 
 protected:
 
@@ -687,6 +704,7 @@ protected:
 };
 
 
+extern int face_index(int idir, int nb);
 extern int next_index_in_dir(int* icoords, GRID_DIRECTION dir, int dim, int* top_gmax);
 
 extern double getStateVort(POINTER);

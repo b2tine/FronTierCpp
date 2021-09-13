@@ -124,11 +124,15 @@ extern void initParachuteModules(Front *front)
 	    setCanopyBodyIndex(front);
     }
 
-	if (debugging("trace"))
+	if (debugging("init_geom"))
 	{
         std::string gvdir = OutName(front);
         gvdir += "/ginit";
 	    gview_plot_interface(gvdir.c_str(),front->interf);
+	}
+
+	if (debugging("trace"))
+	{
 	    printf("Leaving initParachuteModules()\n");
 	}
 }	/* end initParachuteModules */
@@ -147,8 +151,6 @@ extern void initParachuteDefault(
     //      should just get rid of these enums and just use a single
     //      print_airfoil_stat3d() function
     af_params->spring_model = MODEL2;
-        //af_params->spring_model = MODEL1;
-
 	
     af_params->gore_len_fac = 1.0;
     af_params->attach_gores = NO;
@@ -197,6 +199,7 @@ static void initMultiModule(
 
     INTERFACE *cur_intfc;
     cur_intfc = current_interface();
+    set_current_interface(intfc);
 
 	FT_VectorMemoryAlloc((POINTER*)&surfs,num_canopy,sizeof(SURFACE*));
 

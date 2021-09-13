@@ -87,7 +87,7 @@ EXPORT	void set_gindex_to_point(
         int i;
 
         if (front->gpoints == NULL)
-            FT_VectorMemoryAlloc(&front->gpoints,max_gindex,sizeof(POINT*));
+            FT_VectorMemoryAlloc((POINTER*)&front->gpoints,max_gindex,sizeof(POINT*));
         intfc_surface_loop(intfc,s)
         {
             surf_tri_loop(*s,tri)
@@ -125,7 +125,7 @@ EXPORT	void set_gindex_to_tri(
         long gindex,max_gindex = intfc->max_tri_gindex;
 
         if (front->gtris == NULL)
-            FT_VectorMemoryAlloc(&front->gtris,max_gindex,sizeof(TRI*));
+            FT_VectorMemoryAlloc((POINTER*)&front->gtris,max_gindex,sizeof(TRI*));
         intfc_surface_loop(intfc,s)
         {
             surf_tri_loop(*s,tri)
@@ -337,7 +337,7 @@ LOCAL   void check_tri_global_index(INTERFACE *intfc)
         long *gindex_nt;
 
 
-        FT_VectorMemoryAlloc(&gindex_nt,intfc->max_tri_gindex,sizeof(long));
+        FT_VectorMemoryAlloc((POINTER*)&gindex_nt,intfc->max_tri_gindex,sizeof(long));
         for (i = 0; i < intfc->max_tri_gindex; ++i)
             gindex_nt[i] = 0;
 	intfc_surface_loop(intfc,s)

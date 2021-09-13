@@ -77,6 +77,7 @@ extern void setInitialIntfc(
             initKHIntfc(front,level_func_pack,inname);
             break;
 	    case TAYLOR_GREEN_VORTEX:
+        case BACKWARD_FACING_STEP:
         case CHANNEL_FLOW:
             iFparams->m_comp1 = SOLID_COMP;
             initChannelFlow(front,level_func_pack,inname);
@@ -524,10 +525,8 @@ extern void read_iF_prob_type(
 	{
         if (string[1] == 'U' || string[1] == 'u')
             *prob_type = BUBBLE_SURFACE;
-        /*
         else if (string[1] == 'A' || string[1] == 'a')
             *prob_type = BACKWARD_FACING_STEP;
-        */
 	}
     else if (string[0] == 'R' || string[0] == 'r')
 	{

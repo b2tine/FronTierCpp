@@ -259,17 +259,17 @@ struct _F_INTERFACE {
 typedef struct _F_INTERFACE F_INTERFACE;
 
 	/* F_INTERFACE access macros */
-#define f_interface(intfc)		((F_INTERFACE *) (intfc))
-#define f_user_interface(intfc)		(f_interface(intfc)->f_user_intfc)
-#define Computational_grid(intfc)					\
-				f_user_interface(intfc)._computational_grid
-#define computational_grid(intfc)	(&Computational_grid(intfc))
-#define	first_node(intfc)		(f_user_interface(intfc)._first_node)
-#define	last_node(intfc)		(f_user_interface(intfc)._last_node)
-#define size_of_state(intfc)		(f_user_interface(intfc)._sizest)
+#define f_interface(intfc) ((F_INTERFACE *) (intfc))
+#define f_user_interface(intfc)	(f_interface(intfc)->f_user_intfc)
+
+#define Computational_grid(intfc) f_user_interface(intfc)._computational_grid
+#define computational_grid(intfc) (&Computational_grid(intfc))
+#define	first_node(intfc) (f_user_interface(intfc)._first_node)
+#define	last_node(intfc) (f_user_interface(intfc)._last_node)
+#define size_of_state(intfc) (f_user_interface(intfc)._sizest)
 #define interpolate_intfc_states(intfc)	(f_user_interface(intfc)._interpolate_intfc_states)
-#define mono_comp_curves(intfc)		(f_user_interface(intfc)._mono_comp_curves)
-#define default_perform_redistribution_function(intfc)			\
+#define mono_comp_curves(intfc)	(f_user_interface(intfc)._mono_comp_curves)
+#define default_perform_redistribution_function(intfc) \
     f_user_interface(intfc)._default_perform_redistribution_function
 
 #define	interface_normal_function(intfc)				\
@@ -381,10 +381,13 @@ struct _F_HYPER_SURF {
 	boolean	        (*_perform_redistribution)(HYPER_SURF*,Front*,boolean);
 	NORMAL_FUNCTION _hypersurface_normal_function;
 	REDISTRIBUTION_DIRECTION _redistribution_direction;
-	/* Application related parameters */
-	/* for fluid physics */
+	
+    /* Application related parameters */
+	
+    /* for fluid physics */
 	double           _surface_tension;
-	/* for rigid body mechanics */
+	
+    /* for rigid body mechanics */
 	int	body_index;		/* To identify different body */
 	int	num_clips;		/* number of partitions of the rg */
         double  mass;			/* Total mass */
@@ -538,12 +541,12 @@ typedef struct _F_HYPER_SURF_BDRY F_HYPER_SURF_BDRY;
 		? right_start_state((oc)->curve) : right_end_state((oc)->curve))
 
 
-	/*
-	*	states at points which might be nodes
-	*
-	* [left/right]_state_at_point_on_curve, need b to distinguish
-	* between the start and end states at the node of a closed curve.
-	*/
+/*
+*	states at points which might be nodes
+*
+* [left/right]_state_at_point_on_curve, need b to distinguish
+* between the start and end states at the node of a closed curve.
+*/
 
 #define left_state_at_point_on_curve(p,b,c) 				\
 	(								\
@@ -566,8 +569,8 @@ typedef struct _F_HYPER_SURF_BDRY F_HYPER_SURF_BDRY;
 
 
 
-	/* states obtained by interpolation */
-	/* NOTE: the variable "state" must point to storage */
+/* states obtained by interpolation */
+/* NOTE: the variable "state" must point to storage */
 
 #define left_state_along_bond(t,b,c,state)				\
 	bi_interpolate_intfc_states((c)->interface,1.0-(t),(t),		\
@@ -588,7 +591,7 @@ typedef struct _F_HYPER_SURF_BDRY F_HYPER_SURF_BDRY;
 				    : right_end_state(c),state)
 
 
-	/* macros for hypersurface flag */
+/* macros for hypersurface flag */
 
 #define do_not_redistribute(hs)						\
     (Hs_flag(hs)._do_not_redistribute)
@@ -608,12 +611,13 @@ typedef struct _F_HYPER_SURF_BDRY F_HYPER_SURF_BDRY;
 #define omit_redistribution(hs)						\
     (do_not_redistribute(hs) || never_redistribute(hs))
 
-	/* Possible values for the wave_type of a CURVE */
+	
+/* Possible values for the wave_type of a CURVE */
 
 enum {
-	UNKNOWN_WAVE_TYPE             = UNKNOWN_BOUNDARY_TYPE,
-	ANY_WAVE_TYPE                 = UNKNOWN_BOUNDARY_TYPE,
-	PASSIVE_BOUNDARY	      = FIRST_USER_BOUNDARY_TYPE,
+	UNKNOWN_WAVE_TYPE = UNKNOWN_BOUNDARY_TYPE,
+	ANY_WAVE_TYPE = UNKNOWN_BOUNDARY_TYPE,
+	PASSIVE_BOUNDARY = FIRST_USER_BOUNDARY_TYPE,
 	DIRICHLET_BOUNDARY,
 	NEUMANN_BOUNDARY,
 	MOVABLE_BODY_BOUNDARY,
@@ -621,44 +625,42 @@ enum {
 	ICE_PARTICLE_BOUNDARY,
 	ELASTIC_STRING,
 	FIRST_PHYSICS_WAVE_TYPE,
-	CONTACT			      = FIRST_PHYSICS_WAVE_TYPE,
+	CONTACT	= FIRST_PHYSICS_WAVE_TYPE,
 	ELASTIC_BOUNDARY,
 	FIRST_SCALAR_PHYSICS_WAVE_TYPE = FIRST_PHYSICS_WAVE_TYPE + 20,
 	FIRST_VECTOR_PHYSICS_WAVE_TYPE = FIRST_SCALAR_PHYSICS_WAVE_TYPE + 100
 };
 
-	/* possible values for the start/end_status of a CURVE */
+
+/* possible values for the start/end_status of a CURVE */
 
 enum {
-        UNKNOWN_CURVE_STATUS 		= -3,
-	FIXED				= 0,
-	PASSIVE,
-        VIRTUAL,
-        INCIDENT,
+    UNKNOWN_CURVE_STATUS = -3,
+	FIXED = 0,
+    PASSIVE,
+    VIRTUAL,
+    INCIDENT,
 	REFLECTED,
 	FIRST_PHYSICS_CURVE_STATUS
 };
 
-#define is_passive_boundary(curve) ( wave_type(curve) == PASSIVE_BOUNDARY )
+#define is_passive_boundary(curve) (wave_type(curve) == PASSIVE_BOUNDARY)
 
-	/* correspondence of curves */
+/* correspondence of curves */
 #define correspond_curve(curve)						\
 	((correspond_hyper_surf(Hyper_surf(curve))!=NULL) ?		\
 		Curve_of_hs(correspond_hyper_surf(Hyper_surf(curve))) : NULL)
 
-	/* correspondence of nodes */
+/* correspondence of nodes */
 #define correspond_node(node)						\
 	((correspond_hyper_surf_bdry(Hyper_surf_bdry(node)) != NULL) ?	\
 	    Node_of_hsb(correspond_hyper_surf_bdry(Hyper_surf_bdry(node))) : \
 	    NULL)
 
-
 enum {
-
-	/* Possible values for the hsbdry_type of a HYPER_SURF_BDRY */
-
-	UNKNOWN_HSBDRY_TYPE        = -3,
-	PASSIVE_HSBDRY		   =  1,
+    /* Possible values for the hsbdry_type of a HYPER_SURF_BDRY */
+	UNKNOWN_HSBDRY_TYPE = -3,
+	PASSIVE_HSBDRY =  1,
 	FIXED_HSBDRY,
 	CLOSED_HSBDRY,
 	NEUMANN_HSBDRY,
@@ -674,63 +676,65 @@ enum {
 	STRING_HSBDRY,
 
 	/* Possible values for the node_type of a NODE */
-
-	UNKNOWN_NODE_TYPE       = UNKNOWN_HSBDRY_TYPE,
-	PASSIVE_NODE	        = PASSIVE_HSBDRY,
-	FIXED_NODE	        = FIXED_HSBDRY,
-	CLOSED_NODE	        = CLOSED_HSBDRY,
-	NEUMANN_NODE	        = NEUMANN_HSBDRY,
-	DIRICHLET_NODE	        = DIRICHLET_HSBDRY,
-	SUBDOMAIN_NODE	        = SUBDOMAIN_HSBDRY,
-	SOURCE_NODE	        = SOURCE_HSBDRY,
-	SINK_NODE	        = SINK_HSBDRY,
-	MONO_COMP_NODE	        = MONO_COMP_HSBDRY,
-	CONTACT_NODE		= CONTACT_HSBDRY,
+	UNKNOWN_NODE_TYPE = UNKNOWN_HSBDRY_TYPE,
+	PASSIVE_NODE = PASSIVE_HSBDRY,
+	FIXED_NODE = FIXED_HSBDRY,
+	CLOSED_NODE = CLOSED_HSBDRY,
+	NEUMANN_NODE = NEUMANN_HSBDRY,
+	DIRICHLET_NODE = DIRICHLET_HSBDRY,
+	SUBDOMAIN_NODE = SUBDOMAIN_HSBDRY,
+	SOURCE_NODE	= SOURCE_HSBDRY,
+	SINK_NODE = SINK_HSBDRY,
+	MONO_COMP_NODE = MONO_COMP_HSBDRY,
+	CONTACT_NODE = CONTACT_HSBDRY,
 	FIRST_PHYSICS_NODE_TYPE = FIRST_PHYSICS_HSBDRY_TYPE,
-	/* String node type */
+	
+    /* String node type */
 	MONO_STRING_NODE,
 
 	/* Possible values for the curve_type of a BOUNDARY CURVE */
-	DIRICHLET_CURVE         = DIRICHLET_HSBDRY,
-        PASSIVE_CURVE           = PASSIVE_HSBDRY,
-        FIXED_CURVE             = FIXED_HSBDRY,
-	MONO_COMP_CURVE	        = MONO_COMP_HSBDRY,
-	PRESET_CURVE	        = PRESET_HSBDRY,
+	DIRICHLET_CURVE = DIRICHLET_HSBDRY,
+    PASSIVE_CURVE = PASSIVE_HSBDRY,
+    FIXED_CURVE = FIXED_HSBDRY,
+	MONO_COMP_CURVE	= MONO_COMP_HSBDRY,
+	PRESET_CURVE = PRESET_HSBDRY,
 	FIRST_PHYSICS_CURVE_TYPE = FIRST_PHYSICS_HSBDRY_TYPE,
-	/*#bjet2 */
+	
+    /*#bjet2 */
 	NEUMANN_CURVE_P = FIRST_PHYSICS_HSBDRY_TYPE + 20,	/*physical moving curve  */
 	NEUMANN_CURVE_W,	/*fixed curve on wall */
 	NEUMANN_CURVE
 };
 
 
-#define node_type(node)			hsbdry_type(node)
-#define curve_type(node)		hsbdry_type(node)
+#define node_type(node)	hsbdry_type(node)
+#define curve_type(node) hsbdry_type(node)
 
 
-		/* The following macros are only valid in 2D */
+/* The following macros are only valid in 2D */
 
-#define is_physical_node(node)						\
-		(node_type(node) >= FIRST_PHYSICS_NODE_TYPE)
+#define is_physical_node(node) \
+    (node_type(node) >= FIRST_PHYSICS_NODE_TYPE)
 
-#define is_source_sink_node(node)					\
-		(node_type(node) == SOURCE_NODE || node_type(node) == SINK_NODE)
+#define is_source_sink_node(node) \
+    (node_type(node) == SOURCE_NODE || node_type(node) == SINK_NODE)
 
-#define is_closed_node(node)	(node_type(node) == CLOSED_NODE)
+#define is_closed_node(node) (node_type(node) == CLOSED_NODE)
 
-#define set_closed_node(node)	(node_type(node) = CLOSED_NODE)
+#define set_closed_node(node) (node_type(node) = CLOSED_NODE)
 
 #define is_fixed_node(node)	(node_type(node) == FIXED_NODE)
 
-#define is_passive_node(node)	(node_type(node) == PASSIVE_NODE)
+#define is_passive_node(node) (node_type(node) == PASSIVE_NODE)
 
 #define is_bdry_like_node(n) \
-	( is_bdry(n) || (node_type(n) == NEUMANN_NODE) )
+    (is_bdry(n) || (node_type(n) == NEUMANN_NODE))
 
 #define is_bdry_like_curve(c) \
-	( is_bdry(c) || (wave_type(c) == NEUMANN_BOUNDARY) )
+	(is_bdry(c) || (wave_type(c) == NEUMANN_BOUNDARY))
 
-		/* Possible time step control values */
+
+/* Possible time step control values */
 
 enum {
 	ERROR_IN_STEP = 0,
@@ -745,6 +749,7 @@ enum {
 	TIME_STEP,
 	FIRST_PHYSICS_MESSAGE_ID = FIRST_USER_MESSAGE_ID+100
 };
+
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

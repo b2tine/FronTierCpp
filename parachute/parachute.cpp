@@ -25,10 +25,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <iFluid.h>
+//#include <iFluid.h>
 #include <airfoil.h>
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
+static void setNewEquilibriumMesh(Front *front);
 static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
 static void xgraph_front(Front*,char*);
 
@@ -36,7 +37,6 @@ char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
 boolean ReSetTime;
 int RestartStep;
-int constrained_propagate;
 
 
 int main(int argc, char **argv)
@@ -93,6 +93,7 @@ int main(int argc, char **argv)
     front.extra1 = (POINTER)&iFparams;
     front.extra2 = (POINTER)&af_params;
     front.extra3 = (POINTER)&rgb_params;
+    
     read_iFparams(in_name,&iFparams);
 	initParachuteDefault(&front);
 
@@ -112,6 +113,7 @@ int main(int argc, char **argv)
 	else
 	{
 	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+        readAfExtraData(&front,restart_state_name);
 	}
 
 	FT_ReadTimeControl(in_name,&front);
@@ -132,8 +134,10 @@ int main(int argc, char **argv)
 	record_break_strings_gindex(&front);
 	set_unequal_strings(&front);
 
+    front._scatter_front_extra = scatterAirfoilExtra;
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
-	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+	
+    l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
     l_cartesian->initMesh();
     l_cartesian->writeMeshFileVTK();
 	
@@ -159,24 +163,33 @@ int main(int argc, char **argv)
         //TODO: If doing another move on a new set of registered points,
         //      then the below restart/reset code would clear the new
         //      registered points just set in setMotionParams()...
+        clearRegisteredPoints(&front);
+        resetFrontVelocity(&front);
+        resetRigidBodyVelocity(&front);
+        setNewEquilibriumMesh(&front); 
+
+        if (debugging("restart_save_draw"))
+        {
+	        FT_Save(&front);
+            FT_Draw(&front);
+                //vtkPlotSurfaceStress(&front);
+        }
+        
         if (ReSetTime)
         {
-            readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);
-            resetRigidBodyVelocity(&front);
-                //setRigidBodyMotionParams(&front,&rgb_params);
-                //modifyInitialization(&front);
-            set_equilibrium_mesh(&front);
-            static_mesh(front.interf) = YES;
+            //setRigidBodyMotionParams(&front,&rgb_params);
+            //modifyInitialization(&front);
             
-            read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+            //read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
             //TODO: need to call this instead???
             //      //restart_set_dirichlet_bdry_function(Front *front);
+            
             l_cartesian->initMesh(); //TODO: may be able to remove this one
             
             if (!af_params.no_fluid)
                 l_cartesian->setInitialCondition();
         
+            /*
             if (debugging("reset_time"))
             {
                 if (consistent_interface(front.interf) == NO)
@@ -187,6 +200,7 @@ int main(int argc, char **argv)
                 sprintf(gv_restart,"%s/gv_restart",out_name);
                 gview_plot_interface(gv_restart,front.interf);
             }
+            */
         }
         else
         {
@@ -195,9 +209,6 @@ int main(int argc, char **argv)
             //      For generating turbulent flow initial conditions.
             if (!af_params.no_fluid)
                 l_cartesian->readFrontInteriorStates(restart_state_name);
-            readAfExtraData(&front,restart_state_name);
-            clearRegisteredPoints(&front);
-            resetRigidBodyVelocity(&front);
         }
     }
     else
@@ -206,15 +217,18 @@ int main(int argc, char **argv)
             l_cartesian->setInitialCondition();
     }
 
-    //TODO: can we call this here instead (of where called above)?
-    //
-    //  setMotionParams(&front);
-
     l_cartesian->initMovieVariables();
-	initMovieStress(in_name,&front);
+    
+    //TODO: initMovieStress() is not implemented correctly.
+    //      See vtkPlotSurfaceStress() -- when it is working
+    //      correctly, consolidate functionality by passing
+    //      the stress array into initMovieStress() and modify
+    //      FT_AddVtkIntfcMovieVariable() in order to plot the
+    //      canopy surface stress.
+    initMovieStress(in_name,&front);
 	    
-	if (!RestartRun || ReSetTime)
-        resetFrontVelocity(&front);
+	if (!RestartRun && !ReSetTime)
+        zeroFrontVelocity(&front);
 
 	/* Propagate the front */
 	airfoil_driver(&front,l_cartesian);
@@ -269,10 +283,15 @@ void airfoil_driver(Front *front,
 	    FT_ResetTime(front);
 	    setStressColor(front);
 	    FT_Save(front);
+        
+        if (!RestartRun && !ReSetTime)
+        {
+            FT_Draw(front);
+                //vtkPlotSurfaceStress(front);
+        }
 
         l_cartesian->printFrontInteriorStates(out_name);
 	    printAfExtraData(front,out_name);
-        FT_Draw(front);
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
@@ -385,10 +404,11 @@ void airfoil_driver(Front *front,
 
         if (!af_params->no_fluid)
             l_cartesian->printEnstrophy();
-
+    
+        setStressColor(front);
+        
         if (FT_IsSaveTime(front))
         {
-            setStressColor(front);
             FT_Save(front);
             l_cartesian->printFrontInteriorStates(out_name);
             printAfExtraData(front,out_name);
@@ -397,6 +417,7 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
         {
             FT_Draw(front);
+                //vtkPlotSurfaceStress(front);
         }
 
         if (FT_TimeLimitReached(front))
@@ -419,6 +440,21 @@ void airfoil_driver(Front *front,
     FT_FreeMainIntfc(front);
 }       /* end airfoil_driver */
 
+
+static void setNewEquilibriumMesh(Front *front)
+{
+	FILE *infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes to set new mesh equilibrium state:"))
+    {
+	    char string[100];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        
+        if (string[0] == 'y' || string[0] == 'Y')
+            set_equilibrium_mesh(front);
+    }
+    fclose(infile);
+}
 
 void zero_state(
     COMPONENT comp,

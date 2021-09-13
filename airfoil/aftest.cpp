@@ -896,10 +896,10 @@ static void print_airfoil_stat3d(
 	switch (af_params->spring_model)
 	{
 	case MODEL1:
-	    print_airfoil_stat3d_1(front,out_name);//default
+	    print_airfoil_stat3d_1(front,out_name);
 	    break;
 	case MODEL2:
-	    print_airfoil_stat3d_2(front,out_name);
+	    print_airfoil_stat3d_2(front,out_name);//default
 	    break;
 	case MODEL3:
 	    printf("print_airfoil_stat3d_12() not implemented!\n");
@@ -908,11 +908,12 @@ static void print_airfoil_stat3d(
         break;
 	}
 
-    //TODO: verify these computations
-	print_drag3d(front,out_name);
 	print_strings(front,out_name);
 	if (pp_numnodes() == 1)
 	    print_rgb3d(front,out_name);
+    
+    if (af_params->no_fluid == YES) return;
+	print_drag3d(front,out_name);
 }	/* end print_airfoil_stat3d */
 
 static void print_airfoil_stat3d_1(

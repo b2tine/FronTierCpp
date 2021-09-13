@@ -11,8 +11,8 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 2.0
 Max step: 100000
-Print interval: 0.005
-Movie frame interval: 0.005
+Print interval: 0.0075
+Movie frame interval: 0.0075
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -27,31 +27,44 @@ Projection type can be
 Enter projection type: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
-Enter the number of rigid bodies: 1
+Enter the number of rigid bodies: 2
+
 For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
-Enter radius of the sphere: 0.5 0.5 0.5
+Enter radius of the sphere: 0.35 0.35 0.35
+
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
+Entering yes to turn off fluid solver: y
+
+For rigid body 2
+Enter type of rigid body: Sphere
+Enter center of the sphere: 6 6 17.0
+Enter radius of the sphere: 0.8 0.8 0.8
 
 Type yes if the rigid body is fixed: no
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
-Type yes if motion is preset: no
-Enter type of dynamic motion: COM_MOTION
+Type yes if motion is preset: yes
+Enter type of preset motion: TRANSLATION
 Enter the direction of motion: 0 0 1
-
-Enter the total mass for rigid body: 300
-Enter the initial center of mass for rigid body: 6 6 11.951
-
+Enter the initial center of mass for rigid body: 6 6 17.0
 Enter the initial center of mass velocity: 0 0 0
-Enter the initial center of mass velocityXXX: 0 0 -0.5
+Type yes to use prescribed velocity function: yes
+Enter the prescribed velocity function type: TRANSLATION
+Enter translation velocity: 0 0 3.5
 
-Enter yes to reset rigid body velocity: yes
+****************************************************
+TODO: Need to remove the second rigid body once
+      the desired folded canopy shape is obtained
+****************************************************
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
@@ -62,10 +75,10 @@ Enter circle center: 6 6
 Enter circle radius: 4.2672
 
 Enter yes to adjust cgal triangulation criteria: yes
-Enter B ratio: 0.3
-Enter min triangle edge length: 0.12
-Enter B ratioXXX: 0.125
+Enter B ratioXXX: 0.3
 Enter min triangle edge lengthXXX: 0.12
+Enter B ratio: 0.125
+Enter min triangle edge length: 0.12
 
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: no
@@ -80,18 +93,19 @@ Enter number of canopy optimization rounds: 0
 
 *************Airfoil parameters**************
 Enter yes to use GPU solver: no
-Entering yes to turn off fluid solver: no
+Entering yes to turn off fluid solver: yes
 Enter interior propagator: p
 
-Enter velocity functionXXX: Zero
+Enter velocity function: Zero
 
-Enter velocity function: FA
-Enter initial shape of fixed area: Ellipse
-Enter center of ellipse: 6 6
-Enter radii of ellipse: 0.5 0.5
-Enter area velocityXXX: 0 0 3.0
-Enter area velocity: 0 0 5.0
-Enter gravity: 0 0 -9.8
+XXXEnter velocity functionXXX: FA
+XXXEnter initial shape of fixed areaXXX: Ellipse
+XXXEnter center of ellipseXXX: 6 6
+XXXEnter radii of ellipseXXX: 0.6 0.6
+XXXEnter area velocityXXX: 0 0 3.5
+XXXEnter gravityXXX: 0 0 0
+
+Enter yes to keep registered points: yes
 
 Enter timestep to activate FSI: 5
 
@@ -101,28 +115,31 @@ Enter viscous parameter: 0.00793389
 Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
-Enter payload: 300
-Enter interior sub step number: 1
+Enter payload: 180
+Enter interior sub step number: 10
 Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending stiffness constant: 0.000
 Enter fabric bending damping constant: 0.0
+Enter fabric bending damping constantXXX: 0.000001
 Enter fabric friction constant: 0.25
-Enter fabric point mass: 0.001
+Enter fabric point massXXX: 0.001
+Enter fabric point mass: 0.00035
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
-Enter string friction constant: 0.3
+Enter string bending stiffness constant: 0.0000
+Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
-Enter strain limit: 0.05
-Enter compressive strain limit: 0.01
+Enter strain limit: 0.01
+Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.1
 
 ******************Turbulence Parameters****************
@@ -141,7 +158,7 @@ Enter yes to use no-slip boundary condition: no
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 15
+Enter velocity: 0 0 5
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -150,25 +167,20 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
-
-Type y to make viscosity field movie: y
-Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
-Type y to make scalar pressure field movie: y
-Type y to make scalar phi field movie: n
-
-Type y to make turbulent kinetic energy field movie: n
-Type y to make turbulent kinetic energy dissipation field movie: n
+Type y to make vector velocity field movie: n
 Type y to plot surface stress: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: max_speed
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
-Enter the debugging string: max_speed
-Enter the debugging stringX: collision_max_speed
-Enter the debugging stringX: rigid_body
+Enter the debugging string: bendforce_off
+Enter the debugging string: init_geom
+Enter the debugging string: rigid_body
+
+Enter the debugging stringXXX: collision_max_speed
 
 Enter the debugging stringXXX: trace
 Enter the debugging stringXXX: CLOCK

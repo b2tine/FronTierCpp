@@ -23,10 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "iFluid.h"
 
-	/*  Function Declarations */
+static void initialization_debugging(Front*,Incompress_Solver_Smooth_Basis*);
 static void ifluid_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static int l_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
-                        HYPER_SURF*,double*);
+static int l_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -89,6 +88,7 @@ int main(int argc, char **argv)
 	front.extra3 = (POINTER)&rgb_params;
 	
     read_iF_prob_type(in_name,&prob_type);
+    iFparams.prob_type = prob_type;
 	read_iFparams(in_name,&iFparams);
 
     if (debugging("trace"))
@@ -164,7 +164,10 @@ int main(int argc, char **argv)
 
 	l_cartesian->findStateAtCrossing = ifluid_find_state_at_crossing;
     l_cartesian->initMesh();
-    l_cartesian->writeMeshFileVTK();
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+    }
 
 	if (debugging("trace"))
 	    printf("Passed l_cartesian.initMesh()\n");
@@ -256,6 +259,11 @@ static void ifluid_driver(Front *front,
 
 	if (debugging("step_size"))
         printf("Time step from start: %f\n",front->dt);
+
+    
+    if (debugging("initialization"))
+        initialization_debugging(front,l_cartesian);
+
     
     for (;;)
     {
@@ -304,6 +312,7 @@ static void ifluid_driver(Front *front,
         /* Output section */
 
         l_cartesian->printEnstrophy();
+        l_cartesian->printProblemSpecificStats();
 
         if (FT_IsSaveTime(front))
         {
@@ -361,3 +370,27 @@ static int l_cartesian_vel(
 	((Incompress_Solver_Smooth_Basis*)params)->getVelocity(coords, vel);
 	return YES;
 }	/* end l_cartesian_vel */
+
+static void initialization_debugging(
+        Front* front,
+        Incompress_Solver_Smooth_Basis* l_cartesian)
+{
+    //show_COMP()
+    std::string dname = OutName(front);
+    std::string fname = dname + "/show_comp.txt";
+    FILE* outfile = fopen(fname.c_str(),"w");
+    show_COMP(outfile,front->interf);
+    fclose(outfile);
+
+    fname = dname + "/print_interface.txt";
+    outfile = fopen(fname.c_str(),"w");
+    i_fprint_interface(outfile,front->interf);
+    fclose(outfile);
+
+    //HYPER_SURF_BDRY** hsbs = hyper_surf_bdry_list(front->interf);
+    
+    printf("\nexiting after call to initialization_debugging()\n");
+    clean_up(0);
+}
+
+

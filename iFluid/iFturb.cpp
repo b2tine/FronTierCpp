@@ -332,7 +332,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 //      jump imposed by the ghost fluid method porosity model
                 //      to vanish -- destroying the porosity of the canopy
                 
-                //TODO: Is this the correct approach??
+                //TODO: What is the correct approach??
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
                 vel_nb[nb] = vel[l][index_nb];
             }

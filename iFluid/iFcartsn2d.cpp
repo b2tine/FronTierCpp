@@ -354,18 +354,6 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeProjectionSimple(void)
 	elliptic_solver.findStateAtCrossing = findStateAtCrossing;
 	elliptic_solver.skip_neumann_solver = skip_neumann_solver;
 
-    /*
-    paintAllGridPoint(TO_SOLVE);
-    setGlobalIndex();
-    setIndexMap();
-
-    elliptic_solver.ij_to_I = ij_to_I;
-    elliptic_solver.ilower = ilower;
-    elliptic_solver.iupper = iupper;
-	
-    elliptic_solver.solve(array);
-    */
-
 	paintAllGridPoint(NOT_SOLVED);
     num_colors = drawColorMap();
 
@@ -675,21 +663,16 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
     setFreeStreamVelocity();
 	
     start_clock("solve");
+    
     setDomain();
-
 	setComponent();
-	if (debugging("trace"))
-	    printf("Passed setComponent()\n");
-
+	
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();
-	if (debugging("trace"))
-	    printf("Passed setGlobalIndex()\n");
-	start_clock("setSmoothedProperties");
+
+    start_clock("setSmoothedProperties");
 	setSmoothedProperties();
 	stop_clock("setSmoothedProperties");
-	if (debugging("trace"))
-	    printf("Passed setSmoothedProperties()\n");
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
@@ -1001,39 +984,31 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                     }
                     else if (neumann_type_bdry(wave_type(hs)))
                     {
-                        if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+                        //TODO: Use flag added to hypersurface
+                        //      data structure, no_slip(hs), instead
+                        if (iFparams->use_no_slip)
                         {
-                            //TODO: this should get handled in the same way as interior wall bdrys
                             U_nb[nb] = getStateVel[l](intfc_state);
-                                //U_nb[nb] = vel[l][index];
-                                //U_nb_prev[nb] = prev_vel[l][index];
                         }
                         else
                         {
-                            //TODO: Use flag added to hypersurface
-                            //      data structure, no_slip(hs), instead
-                            if (iFparams->use_no_slip)
-                            {
-                                U_nb[nb] = getStateVel[l](intfc_state);
-                            }
-                            else
-                            {
-                                //Apply slip boundary condition
-                                //nb = 0; idir = 0, nbr = 0;
-                                //nb = 1; idir = 0, nbr = 1;
-                                //nb = 2; idir = 1, nbr = 0;
-                                //nb = 3; idir = 1, nbr = 1;
-                                double v_slip[MAXD] = {0.0};
-                                int idir = nb/2; int nbr = nb%2;
-                                setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                                U_nb[nb] = v_slip[l];
-                            }
+                            U_nb[nb] = ghost_data[nb][index].vel[l];
+                            /*
+                            //Apply slip boundary condition
+                            //nb = 0; idir = 0, nbr = 0;
+                            //nb = 1; idir = 0, nbr = 1;
+                            //nb = 2; idir = 1, nbr = 0;
+                            //nb = 3; idir = 1, nbr = 1;
+                            double v_slip[MAXD] = {0.0};
+                            int idir = nb/2; int nbr = nb%2;
+                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                            U_nb[nb] = v_slip[l];
+                            */
                         }
                         
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
-
                     }
                     else
                     {

@@ -290,10 +290,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-	double *x;
+	double *xsol;
 	int size = iupper - ilower;
-    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+    FT_VectorMemoryAlloc((POINTER*)&xsol,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
 
     PETSc solver;
     solver.Create(ilower, iupper-1, 5, 5);
@@ -357,7 +357,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    aII = 0.0;
 	    rhs = source[index];
 
-        std::set<int> SetIndices;
+        //std::set<int> SetIndices;
 
 	    for (l = 0; l < 4; ++l)
         {
@@ -369,6 +369,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             
             if (status == NO_PDE_BOUNDARY)
             {
+                /*
                 if (SetIndices.count(I_nb[l]) == 0)
                 {
                     solver.Set_A(I,I_nb[l],coeff[l]);
@@ -380,7 +381,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     solver.Add_A(I,I_nb[l],coeff[l]);
                     solver.FlushMatAssembly_A();
                 }
+                */
                 aII -= coeff[l];
+                solver.Set_A(I,I_nb[l],coeff[l]);
             }
             else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
@@ -525,6 +528,18 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 
                 
                 //Interpolate phi at the reflected point,
+                double phi_reflect;
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                
+                aII -= coeff[l];
+                rhs -= coeff[l]*phi_reflect; 
+                
+                /*
                 static INTRP_CELL blk_cell;
                 static bool first_phi_reflect = true;
 
@@ -547,8 +562,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 double phi_reflect;
                 FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
                         coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
-                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&phi_reflect,&soln[index]);*/
 
                 //Place interpolation coefficients of the points used in the
                 //approximiation into the system matrix.
@@ -610,8 +623,9 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 {
                     rhs -= coeff[l]*phi_reflect; 
                 }
-                
+
                 aII -= coeff[l];
+                */
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -706,7 +720,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         }
         solver.Set_b(I,rhs);
 	
-        SetIndices.clear();
+        //SetIndices.clear();
     }
 
 
@@ -772,8 +786,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         //TODO: skip residual check? GMRES often worse
 	    if(residual > 1)
 	    {
-            printf("\n The solution diverges! The residual "
-                   "is %g. Solve again using GMRES!\n",residual);
+		    printf("\n The solution diverges! The residual "
+                    "is %g after %d iterations. Solve again using GMRES!\n",
+                    residual,num_iter);
+
             
             solver.Reset_x();
             solver.Solve_GMRES();
@@ -792,7 +808,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	}
 	stop_clock("Petsc Solver");
 
-	solver.Get_x(x);
+	solver.Get_x(xsol);
 
 	if (debugging("PETSc"))
     {
@@ -808,7 +824,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    I = ij_to_I[i][j];
 	    if (I == -1) continue;
 	    
-        soln[index] = x[I-ilower];
+        soln[index] = xsol[I-ilower];
 	    
         if (max_soln < soln[index]) 
 	    {
@@ -867,7 +883,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	if (debugging("trace"))
             printf("Leaving solve2d()\n");
 
-    FT_FreeThese(1,x);
+    FT_FreeThese(1,xsol);
 }	/* end solve2d */
 
 void ELLIPTIC_SOLVER::solve3d(double *soln)
@@ -889,17 +905,13 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
-	double *x;	
+	double *xsol;	
     int size = iupper - ilower;
-    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+    FT_VectorMemoryAlloc((POINTER*)&xsol,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
         
     PETSc solver;
-    //TODO: Determine minimum number of nonzero entries in diagonal
-    //      and off-diagonal blocks. 15 was a conservative guess and
-    //      appears to be working, but likely not optimal...
-    solver.Create(ilower, iupper-1, 15, 15);
-        //solver.Create(ilower, iupper-1, 7, 7);
+    solver.Create(ilower, iupper - 1, 7, 7);
     
     solver.Reset_A();
 	solver.Reset_b();
@@ -963,7 +975,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    aII = 0.0;
 	    rhs = source[index];
         
-        std::set<int> SetIndices;
+        //std::set<int> SetIndices;
 
 	    for (l = 0; l < 6; ++l)
 	    {
@@ -974,6 +986,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             
             if (status == NO_PDE_BOUNDARY)
             {
+                /*
                 //NOTE: Includes ELASTIC_BOUNDARY when af_findcrossing used
                 if (SetIndices.count(I_nb[l]) == 0)
                 {
@@ -986,7 +999,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     solver.Add_A(I,I_nb[l],coeff[l]);
                     solver.FlushMatAssembly_A();
                 }
+                */
                 aII -= coeff[l];
+                solver.Set_A(I,I_nb[l],coeff[l]);
             }
             else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
@@ -1044,6 +1059,18 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     coords_reflect[m] = crx_coords[m] + v[m];
 
                 //Interpolate phi at the reflected point,
+                double phi_reflect;
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                    
+                aII -= coeff[l];
+                rhs -= coeff[l]*phi_reflect; 
+                
+                /*
                 static INTRP_CELL blk_cell;
                 static bool first_phi_reflect = true;
 
@@ -1066,12 +1093,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 double phi_reflect;
                 FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
                         coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
-                    /*
-                    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
-                        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                                getStateVar,&phi_reflect,&soln[index]);
-                    */
 
                 //Place interpolation coefficients of the points used in the
                 //approximiation into the system matrix.
@@ -1139,6 +1160,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 }
 
                 aII -= coeff[l];
+                */
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -1176,7 +1198,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         }
         solver.Set_b(I,rhs);
 
-        SetIndices.clear();
+        //SetIndices.clear();
 	}
 
 
@@ -1259,7 +1281,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	stop_clock("Petsc Solver");
 
-	solver.Get_x(x);
+	solver.Get_x(xsol);
 
 	if (debugging("PETSc"))
     {
@@ -1276,7 +1298,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    I = ijk_to_I[i][j][k];
 	    if (I == -1) continue;
 	    
-        soln[index] = x[I-ilower];
+        soln[index] = xsol[I-ilower];
 	    
         if (max_soln < soln[index]) 
 	    {
@@ -1339,7 +1361,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         error = checkSolver(icrds_max,YES);
     }
 
-    FT_FreeThese(1,x);
+    FT_FreeThese(1,xsol);
 }   /* end solve3d */
 
 /*
@@ -1663,7 +1685,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 //        }
 //    //
 	FT_FreeThese(1,x);
-}*/	/* end solve3d */
+}
+*/
+
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,
 	boolean print_details)

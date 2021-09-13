@@ -213,15 +213,17 @@ private:
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
+
 	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
 	void computeImpactZoneJac(std::vector<CD_HSE*>& list);
     void connectNearbyImpactZones(std::vector<CD_HSE*>& list);
-	void infoImpactZones();
-	void debugImpactZones();
 	void markImpactZonePoints(POINT* head);
 	void updateImpactZoneVelocity();
 	void updateImpactZoneVelocityForRG();
-	void detectProximityRGB();
+	void infoImpactZones();
+	void debugImpactZones();
+	
+    void detectProximityRGB();
 	void detectProximity(std::vector<CD_HSE*>& list);
 	void detectCollision(std::vector<CD_HSE*>& list);
     void aabbProximity(std::vector<CD_HSE*>& list);
@@ -231,6 +233,7 @@ private:
 
     void writeCollisionPoints();
     std::vector<POINT*> getCollisionPoints();
+    //TODO: write these functions
         //void writeProximityPoints();
         //std::vector<POINT*> getProximityPoints();
 };
@@ -262,7 +265,6 @@ POINT*& next_pt(POINT* p);
 void mergePoint(POINT* X, POINT* Y);
 int& weight(POINT* p);
 
-bool isImpactZonePoint(POINT*);
 bool isStaticRigidBody(const POINT*);
 bool isStaticRigidBody(const STATE*);
 bool isStaticRigidBody(const CD_HSE*);
@@ -272,6 +274,11 @@ bool isMovableRigidBody(const CD_HSE*);
 bool isRigidBody(const POINT*);
 bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
+bool isRegisteredPoint(const POINT*);
+bool isRegisteredPoint(const STATE*);
+bool isConstrainedPoint(const POINT*);
+bool isConstrainedPoint(const STATE*);
+bool isImpactZonePoint(POINT*);
 
 void initSurfaceState(SURFACE*,const double*);
 void initCurveState(CURVE*,const double*);

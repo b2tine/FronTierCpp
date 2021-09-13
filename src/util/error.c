@@ -32,9 +32,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	print_errors(), which prints them, or report_errors()
 *	which returns the number and sets a pointer to the error 
 *	list.   In addition, error messages are printed at the
-*	time of call in FILE file, if the routine
-*			set_error_immediate(file)
-*	has been called.   A call with file==NULL turns off such
+*	time of call in FILE file, if the routine set_error_immediate(file)
+*	has been called. A call with file == NULL turns off such
 *	printing, which is also the default.
 *
 *	Generally it is expected that calls to Error() and
@@ -73,10 +72,6 @@ EXPORT void print_errors(void)
 			      err->line_number,err->number,err->message);
 }		/*end print_errors*/
 
-
-
-
-
 LOCAL FILE *error_immediate = NULL;
 
 EXPORT void set_error_immediate(
@@ -84,10 +79,6 @@ EXPORT void set_error_immediate(
 {
 	error_immediate = file;
 }		/*end set_error_immediate*/
-
-
-
-
 
 EXPORT void log_error(
 	const char	*filename,

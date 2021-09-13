@@ -10,7 +10,7 @@ struct STATE
     double grad_phi[MAXD];      /* Gradient of Potential */
     double q;                   /* approx pres */
     double vel[MAXD];           /* Velocity */
-    double vel_old[MAXD];           /* previous step Velocity */
+    double vel_old[MAXD];       /* previous step Velocity */
     
     //TODO: 3d vorticity
     double vort;                /* Magnitude of Vorticity in 2D */

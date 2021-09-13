@@ -11,9 +11,9 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 Max time: 2.0
 Max step: 100000
-Print interval: 0.005
-Movie frame interval: 0.005
-CFL factor: 0.25
+Print interval: 0.0075
+Movie frame interval: 0.0075
+CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
@@ -35,7 +35,8 @@ Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Sphere
 Enter center of the sphere: 6 6 11.951
-Enter radius of the sphere: 0.5 0.5 0.5
+Enter radius of the sphere: 0.35 0.35 0.35
+Enter radius of the sphereXXX: 0.5 0.5 0.5
 
 Type yes if the rigid body is fixed: yes
 
@@ -101,6 +102,8 @@ Enter center velocityX: 3.5
 Enter radius of centerX: 0.55
 Enter stop motion timeX: 2.0
 
+Enter yes to keep registered points: yes
+
 
 Enter timestep to activate FSI: 5
 
@@ -116,8 +119,9 @@ Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 7500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.001
-Enter fabric bending damping constant: 0.000001
+Enter fabric bending stiffness constant: 0.000
+Enter fabric bending damping constant: 0.0
+Enter fabric bending damping constantXXX: 0.000001
 Enter fabric friction constant: 0.25
 Enter fabric point massXXX: 0.001
 Enter fabric point mass: 0.00035
@@ -126,7 +130,7 @@ Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
 Enter string damping constant: 0.1
-Enter string bending stiffness constant: 0.0001
+Enter string bending stiffness constant: 0.0000
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
 Enter string thickness: 0.004

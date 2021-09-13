@@ -79,92 +79,74 @@ LOCAL	void	i_user_read_surface(SURFACE*);
 LOCAL	void	i_user_fprint_surface(FILE*,SURFACE*);
 
 
-EXPORT	I_USER_INTERFACE *i_user_hook(
-	int		dim)
+EXPORT I_USER_INTERFACE *i_user_hook(int dim)
 {
-	int                     i;
-	static boolean             first = YES;
+	static boolean first = YES;
 	static I_USER_INTERFACE User_hooks[3];
 
 	if (first == YES)
 	{
-	    static COMP_LIST Default_excluded_comps = { 0,
-							0,
-							NULL,
-							i_is_excluded_comp,
-							i_add_comp_to_list
-						      };
-	    first = NO;
-	    for (i = 0; i < MAXD; ++i)
+	    static COMP_LIST Default_excluded_comps = {
+            0, 0, NULL, i_is_excluded_comp, i_add_comp_to_list};
+	    
+        first = NO;
+	    for (int i = 0; i < MAXD; ++i)
 	    {
 	        User_hooks[i].size_interface = sizeof(I_INTERFACE);
 	        User_hooks[i].size_point = sizeof(POINT);
 	        User_hooks[i].size_hyper_surf = sizeof(HYPER_SURF);
-	        User_hooks[i]._read_boundary_type_from_string =
-		    i_read_boundary_type_from_string;
+	        User_hooks[i]._read_boundary_type_from_string = i_read_boundary_type_from_string;
 	        User_hooks[i]._fprint_boundary_type = i_fprint_boundary_type;
 	        User_hooks[i]._user_make_interface = i_user_make_interface;
 	        User_hooks[i]._copy_interface = i_copy_interface;
 	        User_hooks[i]._user_copy_hyper_surf = i_user_copy_hyper_surf;
-	        User_hooks[i]._user_read_print_interface =
-		    i_user_read_print_interface;
+	        User_hooks[i]._user_read_print_interface = i_user_read_print_interface;
 	        User_hooks[i]._fprint_interface = i_fprint_interface;
 	        User_hooks[i]._user_fprint_interface = i_user_fprint_interface;
 	        User_hooks[i]._delete_interface = i_delete_interface;
 	        User_hooks[i]._make_hypersurface = i_make_hypersurface;
-	        User_hooks[i]._make_hypersurface_boundary =
-		    i_make_hypersurface_boundary;
-	        User_hooks[i]._fprint_intfc_rect_grids =
-		    i_fprint_intfc_rect_grids;
-	        User_hooks[i]._user_fprint_intfc_rect_grids =
-		    i_user_fprint_intfc_rect_grids;
-		User_hooks[i]._read_print_intfc_rect_grids =
-		    i_read_print_intfc_rect_grids;
-	        User_hooks[i]._user_read_print_intfc_rect_grids =
-		    i_user_read_print_intfc_rect_grids;
-		User_hooks[i]._Static_point = i_Static_point;
-	        User_hooks[i]._average_points = i_average_points;
+	        User_hooks[i]._make_hypersurface_boundary = i_make_hypersurface_boundary;
+	        User_hooks[i]._fprint_intfc_rect_grids = i_fprint_intfc_rect_grids;
+	        User_hooks[i]._user_fprint_intfc_rect_grids = i_user_fprint_intfc_rect_grids;
+		    User_hooks[i]._read_print_intfc_rect_grids = i_read_print_intfc_rect_grids;
+	        User_hooks[i]._user_read_print_intfc_rect_grids = i_user_read_print_intfc_rect_grids;
+		    User_hooks[i]._Static_point = i_Static_point;
+            User_hooks[i]._average_points = i_average_points;
 	        User_hooks[i]._copy_point = i_copy_point;
 	        User_hooks[i]._send_interface = i_send_interface;
 	        User_hooks[i]._receive_interface = i_receive_interface;
-	        User_hooks[i]._reconstruct_interface_pointers = 
-		    i_reconstruct_interface_pointers;
-	        User_hooks[i]._reconstruct_point_pointers = 
-		    i_reconstruct_point_pointers;
-	        User_hooks[i]._print_number_of_tangles =
-		    i_print_number_of_tangles;
+	        User_hooks[i]._reconstruct_interface_pointers = i_reconstruct_interface_pointers;
+	        User_hooks[i]._reconstruct_point_pointers = i_reconstruct_point_pointers;
+	        User_hooks[i]._print_number_of_tangles = i_print_number_of_tangles;
 	        User_hooks[i]._is_subdomain_boundary = i_is_subdomain_boundary;
 	        User_hooks[i]._fset_hyper_surf_color = i_fset_hyper_surf_color;
 	        User_hooks[i]._zoom_interface = i_zoom_interface;
 	        User_hooks[i]._reflect_point = i_reflect_point;
-	        User_hooks[i]._InterfaceTolerances._Parallel =
-		    0.00000762939453125; /*PARALLEL 2^-17 */
+	        User_hooks[i]._InterfaceTolerances._Parallel = 0.00000762939453125; /*PARALLEL 2^-17 */
 	        User_hooks[i]._InterfaceTolerances._Min_sin_sqr = 1.0e-6;
-		User_hooks[i]._InterfaceTolerances._MinScaledLength =
-		    pow(2.0,-10.0);
-		User_hooks[i]._InterfaceTolerances._MinScaledSeparation = 
-		    pow(2.0,-7.0);
-		User_hooks[i]._InterfaceTolerances._EndOfCurve =
-		    1.0 - User_hooks[i]._InterfaceTolerances.
-		    _MinScaledSeparation;
-		User_hooks[i]._InterfaceTolerances._StartOfCurve =
-		    User_hooks[i]._InterfaceTolerances._MinScaledSeparation;
-		User_hooks[i]._InterfaceTolerances._TolFac = 32.0;
-		User_hooks[i]._InterfaceTolerances._RcbMinScaledSep =
-		    User_hooks[i]._InterfaceTolerances._MinScaledLength;
-		User_hooks[i]._InterfaceTolerances._RobustFac = 0.01;
-		User_hooks[i]._InterfaceTolerances._RcbMacTol = 1.0e-5;
-		User_hooks[i]._InterfaceTolerances._RcbcRobustFac =
-		    User_hooks[i]._InterfaceTolerances._MinScaledLength;
-		User_hooks[i]._InterfaceTolerances._ReflectTol = 0.0001;
-		User_hooks[i]._InterfaceTolerances._ShortCurveNumPoints = 3;
+		    User_hooks[i]._InterfaceTolerances._MinScaledLength = pow(2.0,-10.0);
+		    User_hooks[i]._InterfaceTolerances._MinScaledSeparation = pow(2.0,-7.0);
+		    User_hooks[i]._InterfaceTolerances._EndOfCurve =
+                    1.0 - User_hooks[i]._InterfaceTolerances._MinScaledSeparation;
+		    User_hooks[i]._InterfaceTolerances._StartOfCurve =
+                    User_hooks[i]._InterfaceTolerances._MinScaledSeparation;
+		    User_hooks[i]._InterfaceTolerances._TolFac = 32.0;
+		    User_hooks[i]._InterfaceTolerances._RcbMinScaledSep =
+                    User_hooks[i]._InterfaceTolerances._MinScaledLength;
+            User_hooks[i]._InterfaceTolerances._RobustFac = 0.01;
+            User_hooks[i]._InterfaceTolerances._RcbMacTol = 1.0e-5;
+            User_hooks[i]._InterfaceTolerances._RcbcRobustFac =
+                        User_hooks[i]._InterfaceTolerances._MinScaledLength;
+            User_hooks[i]._InterfaceTolerances._ReflectTol = 0.0001;
+            User_hooks[i]._InterfaceTolerances._ShortCurveNumPoints = 3;
 	        User_hooks[i]._cross_tolerance = i_cross_tolerance;
 	        User_hooks[i]._excluded_comps = Default_excluded_comps;
-		User_hooks[i]._random01_seed[0] = 0xab83;
-		User_hooks[i]._random01_seed[1] = 0x0023;
-		User_hooks[i]._random01_seed[2] = 0x3eaa;
-		User_hooks[i]._random01 = i_random01;
+            User_hooks[i]._random01 = i_random01;
+            User_hooks[i]._random01_seed[0] = 0xab83;
+            User_hooks[i]._random01_seed[1] = 0x0023;
+            User_hooks[i]._random01_seed[2] = 0x3eaa;
 	    }
+
 	    User_hooks[0]._ChunkSize = 1250*sizeof(ALIGN);
 	    User_hooks[0]._nip = nearest_interface_point1d;
 	    User_hooks[0]._lnip = long_nearest_interface_point1d;
@@ -183,16 +165,14 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[0]._intersections = i_intersections1d;
 	    User_hooks[0]._print_intersections = i_print_intersections1d;
 	    User_hooks[0]._reflect_interface = i_reflect_interface1d;
-	    User_hooks[0]._make_interface_topology_lists =
-		make_point_comp_lists;
+	    User_hooks[0]._make_interface_topology_lists = make_point_comp_lists;
 
-	    for (i = 1; i < MAXD; ++i)
+	    for (int i = 1; i < MAXD; ++i)
 	    {
 	        User_hooks[i].size_bond = sizeof(BOND);
 	        User_hooks[i].size_curve = sizeof(CURVE);
 	        User_hooks[i].size_node = sizeof(NODE);
-	        User_hooks[i].size_hyper_surf_element =
-		    sizeof(HYPER_SURF_ELEMENT);
+	        User_hooks[i].size_hyper_surf_element = sizeof(HYPER_SURF_ELEMENT);
 	        User_hooks[i].size_hyper_surf_bdry = sizeof(HYPER_SURF_BDRY);
 	        User_hooks[i].size_o_node = sizeof(O_NODE);
 	        User_hooks[i]._make_node = i_make_node;
@@ -220,12 +200,9 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	        User_hooks[i]._insert_point_in_bond = i_insert_point_in_bond;
 	        User_hooks[i]._delete_start_of_bond = i_delete_start_of_bond;
 	        User_hooks[i]._delete_end_of_bond = i_delete_end_of_bond;
-	        User_hooks[i]._reconstruct_node_pointers = 
-		    i_reconstruct_node_pointers;
-	        User_hooks[i]._reconstruct_bond_pointers = 
-		    i_reconstruct_bond_pointers;
-	        User_hooks[i]._reconstruct_curve_pointers = 
-		    i_reconstruct_curve_pointers;
+	        User_hooks[i]._reconstruct_node_pointers = i_reconstruct_node_pointers;
+	        User_hooks[i]._reconstruct_bond_pointers = i_reconstruct_bond_pointers;
+	        User_hooks[i]._reconstruct_curve_pointers = i_reconstruct_curve_pointers;
 	        User_hooks[i]._attach_curve_to_node = i_attach_curve_to_node;
 	        User_hooks[i]._invert_curve = i_invert_curve;
 	        User_hooks[i]._reverse_curve = i_reverse_curve;
@@ -245,21 +222,21 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[1]._set_boundary = i_set_boundary2d;
 	    User_hooks[1]._intersections = i_intersections2d;
 	    User_hooks[1]._print_intersections = i_print_intersections2d;
-	    User_hooks[1]._print_crossing_elements =
-		i_print_crossing_elements2d;
+	    User_hooks[1]._print_crossing_elements = i_print_crossing_elements2d;
 	    User_hooks[1]._is_virtual_fixed_node = i_is_virtual_fixed_node;
 	    User_hooks[1]._reflect_interface = i_reflect_interface2d;
-	    User_hooks[1]._make_interface_topology_lists = 
-		make_bond_comp_lists;
+	    User_hooks[1]._make_interface_topology_lists = make_bond_comp_lists;
 	    User_hooks[1]._gview_plot_interface = i_gview_plot_interface;
 	    User_hooks[1]._consistent_interface = i_consistent_interface;
 	    User_hooks[2].size_bond_tri = sizeof(BOND_TRI);
 	    User_hooks[2].size_tri = sizeof(TRI);
-	    if (debugging("FullTGeo"))
+	    
+        if (debugging("FullTGeo"))
 	        set_tri_storage_type(FULL_TRI_GEOMETRY);
 	    else
 	        set_tri_storage_type(TRI_PLUS_NORMAL);
-	    User_hooks[2].size_surface = sizeof(SURFACE);
+	    
+        User_hooks[2].size_surface = sizeof(SURFACE);
 	    User_hooks[2]._ChunkSize = 50000*sizeof(ALIGN);
 	    User_hooks[2]._nip = nearest_interface_point3d;
 	    User_hooks[2]._lnip = long_nearest_interface_point3d;
@@ -272,12 +249,9 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[2]._reverse_bond = i_reverse_bond;
 	    User_hooks[2]._reorder_curve_link_list = i_reorder_curve_link_list;
 	    User_hooks[2]._insert_point_in_tri = i_insert_point_in_tri;
-	    User_hooks[2]._insert_point_in_tri_side = 
-		i_insert_point_in_tri_side;
-	    User_hooks[2]._undo_insert_point_in_tri =
-		i_undo_insert_point_in_tri;
-	    User_hooks[2]._undo_insert_point_in_tri_side = 
-		i_undo_insert_point_in_tri_side;
+	    User_hooks[2]._insert_point_in_tri_side = i_insert_point_in_tri_side;
+	    User_hooks[2]._undo_insert_point_in_tri = i_undo_insert_point_in_tri;
+	    User_hooks[2]._undo_insert_point_in_tri_side = i_undo_insert_point_in_tri_side;
 	    User_hooks[2]._make_tri = i_make_tri;
 	    User_hooks[2]._CBond = i_CBond;
 	    User_hooks[2]._make_surface = i_make_surface;
@@ -289,18 +263,14 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[2]._read_surface = i_read_surface;
 	    User_hooks[2]._user_read_surface = i_user_read_surface;
 	    User_hooks[2]._user_read_print_surface = i_user_read_print_surface;
-	    User_hooks[2]._reconstruct_surface_pointers = 
-		i_reconstruct_surface_pointers;
-	    User_hooks[2]._reconstruct_tri_pointers = 
-		i_reconstruct_tri_pointers;
+	    User_hooks[2]._reconstruct_surface_pointers = i_reconstruct_surface_pointers;
+	    User_hooks[2]._reconstruct_tri_pointers = i_reconstruct_tri_pointers;
 	    User_hooks[2]._set_boundary = i_set_boundary3d;
 	    User_hooks[2]._user_install_faces = i_user_install_faces;
-	    User_hooks[2]._assign_curve_boundary_flag = 
-		i_assign_curve_boundary_flag;
+	    User_hooks[2]._assign_curve_boundary_flag = i_assign_curve_boundary_flag;
 	    User_hooks[2]._intersections = i_intersections3d;
 	    User_hooks[2]._print_intersections = i_print_intersections3d;
-	    User_hooks[2]._print_crossing_elements =
-		i_print_crossing_elements3d;
+	    User_hooks[2]._print_crossing_elements = i_print_crossing_elements3d;
 	    User_hooks[2]._is_virtual_fixed_node = i_is_virtual_fixed_node;
 	    User_hooks[2]._reflect_interface = i_reflect_interface3d;
 	    User_hooks[2]._reflect_surface = i_reflect_surface;
@@ -308,6 +278,7 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    User_hooks[2]._consistent_interface = i_consistent_interface;
 	    User_hooks[2]._sort_bond_tris = i_sort_bond_tris;
 	}
+
 	if (dim < 1 || dim > 3)
 	{
 	    screen("ERROR in i_user_hook(), invalid dim %d\n",dim);
@@ -315,7 +286,10 @@ EXPORT	I_USER_INTERFACE *i_user_hook(
 	    return NULL;
 	}
 	else
-	    return User_hooks + dim - 1;
+    {
+        return User_hooks + dim - 1;
+    }
+
 }		/*end i_user_hook*/
 
 EXPORT	void	i_preserve_user_hooks(

@@ -1206,8 +1206,7 @@ EXPORT void gview_plot_color_scaled_interface(
 	double *BBL = topological_grid(intfc).GL;
 	double *BBU = topological_grid(intfc).GU;
 
-	if (intfc->dim != 3)
-	    return;
+	if (intfc->dim != 3) return;
 	if (create_directory(dname,YES) == FUNCTION_FAILED)
 	{
 	    (void) printf("WARNING in geomview_interface_plot(), directory "
@@ -3786,7 +3785,6 @@ EXPORT void vtk_interface_plot(
 				print_in_binary,time,step);
 	    vtk_print_box(dname,BBL,BBU,print_in_binary);
 	}
-
 }		/*end vtk_interface_plot*/
 
 

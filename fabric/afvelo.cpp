@@ -589,8 +589,8 @@ extern void initVelocityFunc(
         	fscanf(infile,"%lf",&vert_params->stop_time);
         	(void) printf("%f\n",vert_params->stop_time);
 		CursorAfterString(infile,"Enter center of vertical motion:");
-        	fscanf(infile,"%lf %lf",&vert_params->cen[0],
-                                &vert_params->cen[1]);
+        	fscanf(infile,"%lf %lf",&vert_params->cen[0],&vert_params->cen[1]);
+            (void) printf("%f %f\n",vert_params->cen[0],vert_params->cen[1]);
             	velo_func_pack.func_params = (POINTER)vert_params;
             	velo_func_pack.func = vertical_velo;
             	break;
@@ -872,7 +872,6 @@ typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
 
 static boolean within_shape(SHAPE_PARAMS,double*);
 
-//TODO: compare to airfoil directory version of this function
 static void init_fixarea_params(
 	Front *front,
 	FILE *infile,
@@ -882,18 +881,20 @@ static void init_fixarea_params(
 	SHAPE_PARAMS sparams;
 	int i,num_pts,dim = front->rect_grid->dim;
 	static REGISTERED_PTS *registered_pts;
-        SURFACE **s;
-        TRI *tri;
+    SURFACE **s;
+    TRI *tri;
 	POINT *p;
 	INTERFACE *intfc = front->interf;
 
 	(void) printf("Available initial areas are:\n");
 	(void) printf("\tRectangle (R)\n");
 	(void) printf("\tEllipse (E)\n");
-	CursorAfterString(infile,"Enter initial shape of fixed area:");
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-	switch (string[0])
+	
+    CursorAfterString(infile,"Enter initial shape of fixed area:");
+    fscanf(infile,"%s",string);
+    (void) printf("%s\n",string);
+	
+    switch (string[0])
 	{
 	case 'r':
 	case 'R':
@@ -916,89 +917,96 @@ static void init_fixarea_params(
             (void) printf("%f %f\n",sparams.R[0],sparams.R[1]);
 	    break;
 	}
-	CursorAfterString(infile,"Enter area velocity:");
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf",&fixarea_params->vel[i]);
-            (void) printf("%f ",fixarea_params->vel[i]);
-        }
-        (void) printf("\n");
+	
+    CursorAfterString(infile,"Enter area velocity:");
+    for (int i = 0; i < dim; ++i)
+    {
+        fscanf(infile,"%lf",&fixarea_params->vel[i]);
+        (void) printf("%f ",fixarea_params->vel[i]);
+    }
+    (void) printf("\n");
 
 	num_pts = 0;
-        if (!front->f_basic->RestartRun)
+    if (!front->f_basic->RestartRun)
+    {
+        /* Count number of registered points */
+        num_pts = 0;
+        reset_sort_status(intfc);
+        intfc_surface_loop(intfc,s)
         {
-            /* Count number of registered points */
-	    num_pts = 0;
-            reset_sort_status(intfc);
-            intfc_surface_loop(intfc,s)
-            {
-                if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                    wave_type(*s) != ELASTIC_STRING)
-                    continue;
-                surf_tri_loop(*s,tri)
-                {
-                    for (i = 0; i < 3; ++i)
-                    {
-                        p = Point_of_tri(tri)[i];
-                        if (sorted(p)) continue;
-                        sorted(p) = YES;
-	                if (within_shape(sparams,Coords(p)))
-		            num_pts++;	
-                    }
-                }
-            }
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
 
-	    FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                                sizeof(REGISTERED_PTS));
-	    FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,num_pts,
-				sizeof(int));
-	    registered_pts->num_pts = num_pts;
-
-            /* Record registered points */
-            num_pts = 0;	
-            reset_sort_status(intfc);
-            intfc_surface_loop(intfc,s)
+            surf_tri_loop(*s,tri)
             {
-                if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                    wave_type(*s) != ELASTIC_STRING)
-                    continue;
-	        (*s)->extra = (POINTER)registered_pts;
-                surf_tri_loop(*s,tri)
+                for (int i = 0; i < 3; ++i)
                 {
-                    for (i = 0; i < 3; ++i)
-                    {
-                        p = Point_of_tri(tri)[i];
-                        if (sorted(p)) continue;
-                        sorted(p) = YES;
-	                if (within_shape(sparams,Coords(p)))
-                        {
-		            registered_pts->global_ids[num_pts] = Gindex(p);	
-		            num_pts++;	
-                        }
-                    }
+                    p = Point_of_tri(tri)[i];
+                    if (sorted(p)) continue;
+            
+                    sorted(p) = YES;
+                    if (within_shape(sparams,Coords(p))) num_pts++;	
                 }
             }
         }
-        else
+
+        FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
+                sizeof(REGISTERED_PTS));
+        FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
+                num_pts,sizeof(int));
+        
+        registered_pts->num_pts = num_pts;
+
+        /* Record registered points */
+        num_pts = 0;	
+        reset_sort_status(intfc);
+        intfc_surface_loop(intfc,s)
         {
-            intfc_surface_loop(intfc,s)
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
+        
+            (*s)->extra = (POINTER)registered_pts;
+            surf_tri_loop(*s,tri)
             {
-                if (wave_type(*s) != ELASTIC_BOUNDARY &&
-                    wave_type(*s) != ELASTIC_STRING)
-                    continue;
-                if ((*s)->extra == NULL) continue;
-                registered_pts = (REGISTERED_PTS*)(*s)->extra;
-                num_pts = registered_pts->num_pts;
+                for (int i = 0; i < 3; ++i)
+                {
+                    p = Point_of_tri(tri)[i];
+                    if (sorted(p)) continue;
+                    
+                    sorted(p) = YES;
+                    if (within_shape(sparams,Coords(p)))
+                    {
+                        registered_pts->global_ids[num_pts] = Gindex(p);	
+                        num_pts++;	
+                    }
+                }
             }
         }
-        if (num_pts == 0) return;
-	FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,num_pts,
-				sizeof(int));
-	fixarea_params->num_pts = num_pts;
-        for (i = 0; i < num_pts; ++i)
+    }
+    else
+    {
+        //Restart runs
+        intfc_surface_loop(intfc,s)
         {
-	    fixarea_params->global_ids[i] = registered_pts->global_ids[i];	
+            if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_STRING) continue;
+            if ((*s)->extra == NULL) continue;
+            registered_pts = (REGISTERED_PTS*)(*s)->extra;
+            num_pts = registered_pts->num_pts;
+            break;
         }
+    }
+    
+    if (num_pts == 0) return;
+
+    FT_VectorMemoryAlloc((POINTER*)&fixarea_params->global_ids,
+            num_pts,sizeof(int));
+	
+    fixarea_params->num_pts = num_pts;
+    for (int i = 0; i < num_pts; ++i)
+    {
+        fixarea_params->global_ids[i] = registered_pts->global_ids[i];	
+    }
 }	/* end init_fixarea_params */
 
 static boolean within_shape(
@@ -1077,7 +1085,7 @@ static void init_fixpoint_params(
 	    	surf->extra = (POINTER)registered_pts;
 	    }
         }
-}	/* end init_fixarea_params */
+}	/* end init_fixpoint_params */
 
 static int marker_velo(
         POINTER params,

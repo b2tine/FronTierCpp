@@ -89,54 +89,59 @@ Incompress_Solver_Smooth_Basis::Incompress_Solver_Smooth_Basis(Front &front)
 //---------------------------------------------------------------
 void Incompress_Solver_Smooth_Basis::initMesh(void)
 {
-	int i,j,k, index;
-	double coords[MAXD];
-	int num_cells;
-
-	// init cell_center
-	IF_RECTANGLE rectangle;
-
 	if (debugging("trace"))
             (void) printf("Entering initMesh()\n");
-	
+    
     iFparams = (IF_PARAMS*)front->extra1;
     
     FT_MakeGridIntfc(front);
 	setDomain();
 
-	num_cells = 1;
-	for (i = 0; i < dim; ++i)
+	int num_cells = 1;
+	for (int i = 0; i < dim; ++i)
 	{
 	    num_cells *= (top_gmax[i] + 1);
 	}
-	cell_center.clear();
-	cell_center.insert(cell_center.end(),num_cells,rectangle);
 	
-	// setup vertices
-	// left to right, down to up
+    cell_center.clear();
+	IF_RECTANGLE rectangle;
+	cell_center.insert(cell_center.end(),num_cells,rectangle);
+
+    int nfaces = 2*dim;
+	for (int l = 0; l < nfaces; ++l)
+    {
+        ghost_data[l].clear();
+        GHOST_COMPUTATION gc;
+        ghost_data[l].insert(ghost_data[l].end(),num_cells,gc);
+    }
+	
+	
+    int index;
+    double coords[MAXD];
+
 	switch (dim)
 	{
 	case 2:
-	    for (j = 0; j <= top_gmax[1]; j++)
-	    for (i = 0; i <= top_gmax[0]; i++)
+	    for (int j = 0; j <= top_gmax[1]; j++)
+	    for (int i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	coords[0] = top_L[0] + top_h[0]*i;
 	    	coords[1] = top_L[1] + top_h[1]*j;
-		index = d_index2d(i,j,top_gmax);
+		    index = d_index2d(i,j,top_gmax);
 	    	cell_center[index].setCoords(coords,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
 	    }
 	    break;
 	case 3:
-	    for (k = 0; k <= top_gmax[2]; k++)
-	    for (j = 0; j <= top_gmax[1]; j++)
-	    for (i = 0; i <= top_gmax[0]; i++)
+	    for (int k = 0; k <= top_gmax[2]; k++)
+	    for (int j = 0; j <= top_gmax[1]; j++)
+	    for (int i = 0; i <= top_gmax[0]; i++)
 	    {
 	    	coords[0] = top_L[0] + top_h[0]*i;
 	    	coords[1] = top_L[1] + top_h[1]*j;
 	    	coords[2] = top_L[2] + top_h[2]*k;
-		index = d_index3d(i,j,k,top_gmax);
+		    index = d_index3d(i,j,k,top_gmax);
 	    	cell_center[index].setCoords(coords,dim);
 	    	cell_center[index].icoords[0] = i;
 	    	cell_center[index].icoords[1] = j;
@@ -153,14 +158,13 @@ void Incompress_Solver_Smooth_Basis::initMesh(void)
 
 void Incompress_Solver_Smooth_Basis::setComponent(void)
 {
-	int i;
 	static POINTER state;
     double coords[MAXD];
 	int size = (int)cell_center.size();
 	double **vel = field->vel;
 	double *pres = field->pres;
 	
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
         cell_center[i].comp = getComponent(cell_center[i].icoords);
     }
@@ -168,7 +172,7 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
     if(state == NULL)
         FT_ScalarMemoryAlloc((POINTER*)&state,front->sizest);
 
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
         if (cell_center[i].comp != -1 &&
             cell_center[i].comp != top_comp[i])
@@ -180,13 +184,13 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
                 (void) printf("FrontNearestIntfcState() failed\n");
                 (void) printf("old_comp = %d new_comp = %d\n",
                         cell_center[i].comp,top_comp[i]);
-                clean_up(ERROR);
+                LOC(); clean_up(EXIT_FAILURE);
             }
     
-            vel[0][i] = getStateXvel(state);
-            vel[1][i] = getStateYvel(state);
-            if (dim == 3)
-                vel[3][i] = getStateZvel(state);
+            for (int l = 0; l < dim; ++l)
+            {
+                vel[l][i] = getStateVel[l](state);
+            }
             pres[i] = getStatePres(state);
         }
         cell_center[i].comp = top_comp[i];
@@ -474,7 +478,6 @@ void Incompress_Solver_Smooth_Basis::setDomain()
 	static int current_size = 0;
 	INTERFACE *grid_intfc;
 	Table *T;
-	int i,size;
 
 	grid_intfc = front->grid_intfc;
 	top_grid = &topological_grid(grid_intfc);
@@ -490,10 +493,10 @@ void Incompress_Solver_Smooth_Basis::setDomain()
     field = iFparams->field;
 
 	hmin = top_h[0];
-	size = top_gmax[0] + 1;
-    for (i = 1; i < dim; ++i)
+	int size = top_gmax[0] + 1;
+    for (int i = 1; i < dim; ++i)
 	{
-        if (hmin > top_h[i]) hmin = top_h[i];
+        if (top_h[i] < hmin) hmin = top_h[i];
         size *= (top_gmax[i] + 1);
 	}
 
@@ -835,9 +838,20 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 	
     if (iFparams->min_speed != 0.0)
 	    max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
+    
+    //viscous time step restriction
+    visc_max_dt = HUGE;
+	
+    pp_global_max(&mu_max,1);
+    if (mu_max > MACH_EPS)
+    {
+        visc_max_dt = 0.5*hmin*hmin/mu_max;
+    }
 
-    //Is this the viscous time step?
-	min_dt = 0.0000001*sqr(hmin)/mu_min;
+    max_dt = std::min(max_dt,visc_max_dt);
+	
+    //TODO: Why do we need min_dt?
+    min_dt = 0.0000001*sqr(hmin)/mu_min;
 	
     if (debugging("trace"))
 	{
@@ -1617,6 +1631,8 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         tke = ke_params->field->k;
     }
 
+    mu_max = 0.0;
+
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
@@ -1626,7 +1642,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    comp  = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
  
-        getRectangleCenter(index, center);
+        getRectangleCenter(index,center);
 	    
         int icoords[MAXD];
         icoords[0] = i;
@@ -1719,6 +1735,11 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
             }
 	    }
 
+        //For computing viscous flux time step restriction
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -1726,6 +1747,25 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
+
+/*
+void Incompress_Solver_Smooth_2D_Basis::precompute()
+{
+	for (int j = jmin; j <= jmax; j++)
+    for (int i = imin; i <= imax; i++)
+	{
+	    int index  = d_index2d(i,j,top_gmax);
+	    COMPONENT comp = cell_center[index].comp;
+	    if (!ifluid_comp(comp)) continue;
+ 
+        int icoords[MAXD] = {0};
+        icoords[0] = i;
+        icoords[1] = j;
+
+        icoordsPrecompute(icoords);
+    }
+}
+*/
 
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_3D_Basis
@@ -2433,6 +2473,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         tke = ke_params->field->k;
     }
 
+    mu_max = 0.0;
+
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -2535,6 +2577,11 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
             }
 	    }
 
+        //For computing viscous flux time step restriction
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -4085,7 +4132,7 @@ double Incompress_Solver_Smooth_Basis::computeFieldPointPressureJump(
             
             /*Ghost Fluid Method(GFM): p_+ - p_- = alpha*Un*nor + beta*(Un*nor)^2*/
             /*p+ and p- is defined by normal vector*/
-            if(is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
+            if (is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
             {
                 next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
                 index_nb = d_index(ipn,top_gmax,dim);
@@ -4992,8 +5039,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 	double** vel,
 	double* v_slip)
 {
-    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
 
     int ghost_ic[MAXD];
     double coords[MAXD], crx_coords[MAXD];
@@ -5021,13 +5069,17 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     HYPER_SURF* hsurf;
     double range = 2;
 
-    //TODO: Difference if we use ghost_comp instead of comp in nip?
-    //      This is the correct usage of the api, remove previous version
-    //      when certain no problems occur.
+    //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
+    //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
+    //      step scenario -- to what degree is it working?
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    /*FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);*/
+    /*      
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
 
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
@@ -5127,6 +5179,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
     double dist_reflect = FT_GridSizeInDir(nor,front);
+
+    //TODO: need to check if dist_reflect > dist_ghost ???
     
         /*
         // Compute dist_reflect as the diagonal length of rect grid blocks
@@ -5196,7 +5250,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     {
         for (int j = 0; j < dim; ++j)
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-        
         return;
     }
     /////////////////////////////////////////////////////////////////////////
@@ -5260,6 +5313,7 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
 
+
     if (debugging("slip_boundary"))
     {
         printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field->mu[index]);
@@ -5269,6 +5323,15 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    }
+    
+    
+    //store data to avoid recomputing values in the fluid solver
+    int fid = face_index(idir,nb);
+    for (int i = 0; i < dim; ++i)
+    {
+        ghost_data[fid][index].vel[i] = v_slip[i];
+        ghost_data[fid][index].force[i] = tau_wall[i];
     }
 }
 
