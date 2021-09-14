@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
+static void qqshi_naturalStressOfTri(TRI*,double);
+
 static void singleCanopyModification(Front*);
 static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
@@ -1638,7 +1640,9 @@ void setStressColor(
 	    surf_tri_loop(*s,tri)
 	    {
             n++;
-            naturalStressOfTri(tri,ks);
+            qqshi_naturalStressOfTri(tri,ks);
+                //naturalStressOfTri(tri,ks);
+
             if (max_color < tri->color)
                 max_color = tri->color;
             if (min_color > tri->color)
@@ -1675,12 +1679,11 @@ static void naturalStressOfTri(
 	double vec[3];
 	double s[3],c[3];
 	double b1,b2,arg,sigma1,sigma2;
-	int i,j;
 
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 	    len0 = tri->side_length0[i];
-	    for (j = 0; j < 3; ++j)
+	    for (int j = 0; j < 3; ++j)
 	    {
             vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j]
                       - Coords(Point_of_tri(tri)[i])[j];
@@ -1691,14 +1694,17 @@ static void naturalStressOfTri(
 	    s[i] = vec[1]/len;
 	}
 
+    /*
+    //TODO: Is this needed?
 	if (Mag3d(tau) < 1.0e-8) // tolerance
 	{
 	    tri->color = 0.0;
 	    return;
 	}
+    */
 	
     // Convert to Cartesian tensor
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
         //TODO: According to our 2015 paper in the Journal of Fluids and Structures
         //      We should be multiplying the vector of natural stresses by the inverse
@@ -1707,6 +1713,8 @@ static void naturalStressOfTri(
 	    sigma[i] = sqr(c[i])*tau[0] + sqr(s[i])*tau[1] + s[i]*c[i]*tau[2];
 	}
 	
+    //TODO: compare below with qqshi SpringYMPR code
+    //
     // Diagonalize the stress tensor for principal directions
 	b1 = -(sigma[0] + sigma[1]);
 	b2 = sigma[0]*sigma[1] - 0.25*sqr(sigma[2]);
@@ -1717,6 +1725,87 @@ static void naturalStressOfTri(
     // Use von Mises stress as a measure
 	tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
 }	/* end naturalStressOfTri */
+
+
+//NEW -- qqshi SpringYMPR code
+static void qqshi_naturalStressOfTri(
+    TRI *tri,
+    double ks)
+{
+    double tau[3];
+    double sigma[3];
+    double len0;
+    double vec[3];
+    double s[3],c[3];
+    double b1,b2,arg,sigma1,sigma2;
+    double tcoords[3][MAXD];
+    double len[3];
+    double mapcof[3][3];
+    double A;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < MAXD; ++j)
+        {
+            vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j] -
+                    Coords(Point_of_tri(tri)[i])[j];
+            tcoords[i][j] = 0;
+        }
+        len[i] = Mag3d(vec);
+    }
+    
+    /*transform coordinates to triangle plane with point[0] as origin*/
+    tcoords[1][0] = len[0];
+    tcoords[2][0] = (sqr(len[2])+sqr(len[0])-sqr(len[1]))/(2*len[0]);
+    tcoords[2][1] = sqrt(sqr(len[2]) - sqr(tcoords[2][0]));
+
+    for (int i = 0; i < 3; ++i)
+    {
+        len0 = tri->side_length0[i];
+        for (int j = 0; j < 3; ++j)
+        {
+            vec[j] = tcoords[(i+1)%3][j] -
+                    tcoords[i][j];
+        }
+        tau[i] = ks*(len[i] - len0);
+        c[i] = vec[0]/len[i];
+        s[i] = vec[1]/len[i];
+    }
+
+    /* Convert to Cartesian tensor */
+    A = tri_area(tri);
+    
+    mapcof[0][0] = (tcoords[2][1]-tcoords[0][1])*(tcoords[1][1]-tcoords[0][1])*len[1]*len[1];
+    mapcof[0][1] = (tcoords[0][1]-tcoords[1][1])*(tcoords[2][1]-tcoords[1][1])*len[2]*len[2];
+    mapcof[0][2] = (tcoords[1][1]-tcoords[2][1])*(tcoords[0][1]-tcoords[2][1])*len[0]*len[0];
+
+    mapcof[1][0] = (tcoords[2][0]-tcoords[0][0])*(tcoords[1][0]-tcoords[0][0])*len[1]*len[1];
+    mapcof[1][1] = (tcoords[0][0]-tcoords[1][0])*(tcoords[2][0]-tcoords[1][0])*len[2]*len[2];
+    mapcof[1][2] = (tcoords[1][0]-tcoords[2][0])*(tcoords[0][0]-tcoords[2][0])*len[0]*len[0];
+
+    mapcof[2][0] = ((tcoords[2][1]-tcoords[0][1])*(tcoords[0][0]-tcoords[1][0])
+                  + (tcoords[0][0]-tcoords[2][0])*(tcoords[1][1]-tcoords[0][1]))*len[1]*len[1];
+    mapcof[2][1] = ((tcoords[0][1]-tcoords[1][1])*(tcoords[1][0]-tcoords[2][0])
+                  + (tcoords[1][0]-tcoords[0][0])*(tcoords[2][1]-tcoords[1][1]))*len[2]*len[2];
+    mapcof[2][2] = ((tcoords[1][1]-tcoords[2][1])*(tcoords[2][0]-tcoords[0][0])
+                  + (tcoords[2][0]-tcoords[1][0])*(tcoords[0][1]-tcoords[2][1]))*len[0]*len[0];
+
+    for (int i = 0; i < 3; ++i)
+    {
+        sigma[i] = mapcof[i][0]*tau[0] + mapcof[i][1]*tau[1] + mapcof[i][2]*tau[2];
+        sigma[i] /= 4.0*A*A;
+    }
+    sigma[2] *= 0.5;
+
+    /* Diagonalize the stress tensor for principal directions*/
+    b1 = 0.5 * (sigma[0] + sigma[1]);
+    b2 = sqrt(sqr(0.5*(sigma[0] - sigma[1]))+sqr(sigma[2]));
+    sigma1 = b1 + b2;
+    sigma2 = b1 - b2;
+
+    /* Use von Mises stress as a measure*/
+    tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
+}   /* end naturalStressOfTri */
 
 extern void vtkPlotSurfaceStress(
     Front *front)

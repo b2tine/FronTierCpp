@@ -143,7 +143,7 @@ struct AF_PARAMS
 
     //for Collision Handling
     bool collision_substepping {false};
-    int collsn_step_nsub {50};
+    int collsn_step_nsub {20};
 
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
