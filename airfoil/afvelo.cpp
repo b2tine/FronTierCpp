@@ -211,6 +211,19 @@ void setFabricPropagators(Front* front)
 	    	case 'p':
 	    	case 'P':
 	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
+                if (CursorAfterStringOpt(infile,"Enter yes for collision substepping:"))
+                {
+                    fscanf(infile,"%s",string);
+                    (void) printf("%s\n",string);
+                    if (string[0] == 'y' || string[0] == 'Y')
+                    {
+                        front->interior_propagate = elastic_set_propagate;
+                        
+                        CursorAfterString(infile,"Enter nsub per collision step:");
+                        fscanf(infile,"%d",&af_params->collsn_step_nsub);
+                        (void) printf("%d\n",af_params->collsn_step_nsub);
+                    }
+                }
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -221,6 +234,19 @@ void setFabricPropagators(Front* front)
 	else
     {
         front->interior_propagate = fourth_order_elastic_set_propagate;
+        if (CursorAfterStringOpt(infile,"Enter yes for collision substepping:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                front->interior_propagate = elastic_set_propagate;
+
+                CursorAfterString(infile,"Enter nsub per collision step:");
+                fscanf(infile,"%d",&af_params->collsn_step_nsub);
+                (void) printf("%d\n",af_params->collsn_step_nsub);
+            }
+        }
     }
 
 	af_params->n_sub = 1;
@@ -407,6 +433,7 @@ void setFabricParams(Front* front)
 	    }
 	}
 
+    af_params->m_l = 0.0;
 	if ( (dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	     (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{

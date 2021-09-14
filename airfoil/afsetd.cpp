@@ -283,6 +283,8 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
 ///////////////////////////////////////////
         */
 
+        //TODO: Maybe we should allow some degress of compressive strain?
+        
         //zero compressive stress
         double dL = len - sv->len0[j];
         if (dL < 0.0) continue;
@@ -493,6 +495,168 @@ for (i = 0; i < size; ++i)
 	if (debugging("trace"))
 	    (void) printf("Leaving generic_spring_solver()\n");
 }	/* end generic_spring_solver */
+
+//TODO: function interface should be adjusted ... or does it ???
+void spring_solver_RK4(
+	SPRING_VERTEX *sv,
+	int dim,
+	int size,
+	int n_loop,
+	double dt)
+{
+	static double **x_old,**x_new,**v_old,**v_new,**accel;
+	static int old_size = size;
+	int i,j,n;
+
+	if (debugging("trace"))
+	    (void) printf("Entering spring_solver_RK4()\n");
+
+	if (x_old == NULL)
+	{
+	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+	}
+	if (size > old_size)
+	{
+	    FT_FreeThese(5, x_old, v_old, x_new, v_new, accel);
+	    FT_MatrixMemoryAlloc((POINTER*)&x_old,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_old,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&x_new,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&v_new,size,3,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&accel,size,3,sizeof(double));
+	    printf("size = %d, old_size = %d\n", size, old_size);
+	}
+	old_size = size;
+
+    for (i = 0; i < size; ++i)
+	{
+	    compute_spring_accel1(&sv[i],accel[i],dim);
+	}
+
+	for (i = 0; i < size; ++i)
+	for (j = 0; j < dim; ++j)
+	{
+	    x_old[i][j] = sv[i].x[j];
+	    v_old[i][j] = sv[i].v[j];
+	}
+    
+    //TODO: Move loop out into a different function so the spring
+    //      solver substep logic can be called on a per substep basis
+    //      that manages the loop.
+    for (n = 0; n < n_loop; ++n)
+	{
+	    for (i = 0; i < size; ++i)
+	    for (j = 0; j < dim; ++j)
+	    {
+            x_new[i][j] = x_old[i][j] + dt*v_old[i][j]/6.0;
+            v_new[i][j] = v_old[i][j] + dt*accel[i][j]/6.0;
+	    	sv[i].x[j] = x_old[i][j] + 0.5*v_old[i][j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
+	    }
+	    
+        for (i = 0; i < size; ++i)
+            for (j = 0; j < 3; ++j)
+            {
+                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
+					sv[i].fluid_accel[j])*dt/6.0;
+	        }
+
+	    for (i = 0; i < size; ++i)
+	    {
+		    compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+	    
+        for (i = 0; i < size; ++i)
+	    for (j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
+	    	sv[i].x[j] = x_old[i][j] + 0.5*sv[i].v[j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + 0.5*accel[i][j]*dt;
+	    }
+	    
+        for (i = 0; i < size; ++i)
+            for (j = 0; j < 3; ++j)
+            {
+                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
+					sv[i].fluid_accel[j])*dt/3.0;
+	        }
+	
+	    for (i = 0; i < size; ++i)
+	    {
+		    compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+
+	    for (i = 0; i < size; ++i)
+	    for (j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] += dt*sv[i].v[j]/3.0;
+            v_new[i][j] += dt*accel[i][j]/3.0;
+	    	sv[i].x[j] = x_old[i][j] + sv[i].v[j]*dt;
+	    	sv[i].v[j] = v_old[i][j] + accel[i][j]*dt; 
+	    }
+
+        for (i = 0; i < size; ++i)
+            for (j = 0; j < 3; ++j)
+            {
+                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
+					sv[i].fluid_accel[j])*dt/3.0;
+	        }
+
+	    for (i = 0; i < size; ++i)
+	    {
+            compute_spring_accel1(&sv[i],accel[i],dim);
+	    }
+
+        for (i = 0; i < size; ++i)
+	    for (j = 0; j < dim; ++j)
+	    {
+		    x_new[i][j] += dt*sv[i].v[j]/6.0;
+            v_new[i][j] += dt*accel[i][j]/6.0;
+	    }
+
+	    for (i = 0; i < size; ++i)
+	    for (j = 0; j < dim; ++j)
+	    {
+            sv[i].x[j] = x_new[i][j];
+            sv[i].v[j] = v_new[i][j];
+	    }
+
+        for (i = 0; i < size; ++i)
+            for (j = 0; j < 3; ++j)
+            {
+                sv[i].ext_impul[j] += (sv[i].ext_accel[j] + 
+					sv[i].fluid_accel[j])*dt/6.0;
+            }
+
+	    if (n != n_loop-1)
+	    {
+            for (i = 0; i < size; ++i)
+                for (j = 0; j < 3; ++j)
+                {
+                    x_old[i][j] = sv[i].x[j];
+                    v_old[i][j] = sv[i].v[j];
+                    if (std::isnan(x_old[i][j]) || std::isinf(x_old[i][j]))
+                    {
+                        printf("After loop %d: x_old[%d][%d] = %f\n",n,i,j,x_old[i][j]);
+                        LOC(); clean_up(ERROR);
+                    }
+
+                }
+	    	for (i = 0; i < size; ++i)
+            {
+                compute_spring_accel1(&sv[i],accel[i],dim);
+            }
+	    }
+
+	}//end n loop
+
+	if (debugging("trace"))
+	    (void) printf("Leaving spring_solver_RK4()\n");
+}	/* end spring_solver_RK4 */
 
 extern void count_vertex_neighbors(
 	ELASTIC_SET *geom_set,
@@ -1381,24 +1545,73 @@ extern void set_elastic_params(
 	double dt_tol;
 
 	/* Set elastic set kinetic parameters */
-        geom_set->ks = af_params->ks;
-        geom_set->lambda_s = af_params->lambda_s;
-        geom_set->m_s = af_params->m_s;
-        geom_set->kl = af_params->kl;
-        geom_set->lambda_l = af_params->lambda_l;
-        geom_set->m_l = af_params->m_l;
-        geom_set->kg = af_params->kg;
-        geom_set->lambda_g = af_params->lambda_g;
-        geom_set->m_g = af_params->m_g;
+    geom_set->ks = af_params->ks;
+    geom_set->lambda_s = af_params->lambda_s;
+    geom_set->m_s = af_params->m_s;
+    geom_set->kl = af_params->kl;
+    geom_set->lambda_l = af_params->lambda_l;
+    geom_set->m_l = af_params->m_l;
+    geom_set->kg = af_params->kg;
+    geom_set->lambda_g = af_params->lambda_g;
+    geom_set->m_g = af_params->m_g;
 
 	/* Set elastic set time step */
-        dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
-        if (af_params->m_l != 0.0 &&
-            dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
-            dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
-        if (af_params->m_g != 0.0 &&
-            dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
-            dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
+    dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
+    
+    /*
+    const int Ms = 6;
+    dt_tol = 0.1*sqrt(0.5*af_params->m_s/(Ms*af_params->ks));
+    */
+
+    if (af_params->strings_present &&
+        dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
+    {
+        dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
+    }
+    
+    if (af_params->gores_present &&
+        dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
+    {
+        dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
+    }
+
+	pp_global_min(&dt_tol,1);
+	geom_set->dt_tol = dt_tol;
+}	/* end set_elastic_params */
+
+extern void set_elastic_params(
+	ELASTIC_SET *geom_set,
+    AF_PARAMS* af_params,
+	double fr_dt)
+{
+	double dt_tol;
+
+	/* Set elastic set kinetic parameters */
+    geom_set->ks = af_params->ks;
+    geom_set->lambda_s = af_params->lambda_s;
+    geom_set->m_s = af_params->m_s;
+    geom_set->kl = af_params->kl;
+    geom_set->lambda_l = af_params->lambda_l;
+    geom_set->m_l = af_params->m_l;
+    geom_set->kg = af_params->kg;
+    geom_set->lambda_g = af_params->lambda_g;
+    geom_set->m_g = af_params->m_g;
+
+	/* Set elastic set time step */
+    dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
+    
+    if (af_params->m_l != 0.0 &&
+        dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
+    {
+        dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
+    }
+    
+    if (af_params->m_g != 0.0 &&
+        dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
+    {
+        dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
+    }
+
 	pp_global_min(&dt_tol,1);
 	geom_set->dt_tol = dt_tol;
 }	/* end set_elastic_params */
@@ -1651,7 +1864,7 @@ static void assembleParachuteSet3d(
         geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
 
 
-    int nrg = 0;
+    int nrgn = 0;
     geom_set->load_node = NULL;
 
 	for (int i = 0; i < nn; ++i)
@@ -1661,10 +1874,11 @@ static void assembleParachuteSet3d(
             if (is_load_node(nodes[i]))
                 geom_set->load_node = nodes[i];
             else
-                geom_set->rg_string_nodes[nrg++] = nodes[i];
+                geom_set->rg_string_nodes[nrgn++] = nodes[i];
             reorder_string_curves(nodes[i]);
 	    }
 	}
+    geom_set->num_rgb_string_nodes = nrgn;
 
     if (debugging("intfc_assembly"))
     {
@@ -1674,7 +1888,7 @@ static void assembleParachuteSet3d(
     }
 
     set_current_interface(cur_intfc);
-}	/* end assembleParachuteSet */
+}	/* end assembleParachuteSet3d */
 
 extern void copy_from_client_point_set(
 	GLOBAL_POINT **point_set,

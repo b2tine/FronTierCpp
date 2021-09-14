@@ -104,6 +104,7 @@ public:
 	void initRigidBodyImpactZones();
 	
     void resolveCollision();
+    void resolveCollisionSubstep();
 
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}

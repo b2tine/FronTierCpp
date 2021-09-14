@@ -142,6 +142,9 @@ struct AF_PARAMS
     //INFLATION_ASSIST_PARAMS inflate_assist_params;
 
     //for Collision Handling
+    bool collision_substepping {false};
+    int collsn_step_nsub {50};
+
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
 
@@ -149,8 +152,9 @@ struct AF_PARAMS
     double string_thickness {0.004};
 
     double strain_limit {0.1};
-    double compressive_strain_limit {0.025};
+    double compressive_strain_limit {0.0};
     double strainrate_limit {0.1};
+    
 
     double vol_diff {0.0};
     double pre_tol;
@@ -256,12 +260,13 @@ struct ELASTIC_SET
 {
 	Front *front;
     NODE *load_node;
-    NODE *rg_string_nodes[5];
+    NODE *rg_string_nodes[10];
     SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
     int num_rgb_surfs;
+	int num_rgb_string_nodes;
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
@@ -278,6 +283,7 @@ struct ELASTIC_SET
     int total_num_verts;    /* Total number of spring-mass and rigid body points */
 	double dt_tol;
 	double dt;
+    int n_sub;
 };
 
 
@@ -307,8 +313,6 @@ extern void elastic_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 extern void ifluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-
-extern void fourth_order_elastic_set_propagate(Front*,double);
 
 extern void airfoil_curve_propagate(Front*,POINTER,CURVE*,CURVE*,double);
 extern int airfoil_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
@@ -344,6 +348,9 @@ extern void fourth_order_elastic_surf_propagate(Front*,double);
 extern void resolve_wall_collision(Front*,SPRING_VERTEX*,int);
 
 // afcnpy.cpp
+extern void fourth_order_elastic_set_propagate(Front*,double);
+extern void elastic_set_propagate(Front*,double);
+
 extern int airfoil_velo(POINTER,Front*,POINT*,
         HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
 extern int af_find_state_at_crossing(Front*,int*,
@@ -376,6 +383,7 @@ extern void count_vertex_neighbors(ELASTIC_SET*,SPRING_VERTEX*);
 extern void set_spring_vertex_memory(SPRING_VERTEX*,int);
 extern void compute_spring_accel1(SPRING_VERTEX*,double*,int);
 extern void generic_spring_solver(SPRING_VERTEX*,int,int,int,double);
+extern void spring_solver_RK4(SPRING_VERTEX*,int,int,int,double);
 extern void set_vertex_impulse(ELASTIC_SET*,SPRING_VERTEX*);
 extern void set_geomset_velocity(ELASTIC_SET*,SPRING_VERTEX*);
 extern void link_point_set(ELASTIC_SET*,GLOBAL_POINT**,GLOBAL_POINT*);
@@ -386,6 +394,7 @@ extern void set_surf_spring_vertex(ELASTIC_SET*,SURFACE*,SPRING_VERTEX*,int*,GLO
 extern void get_point_set_from(ELASTIC_SET*,GLOBAL_POINT**);
 extern void put_point_set_to(ELASTIC_SET*,GLOBAL_POINT**);
 extern void set_elastic_params(ELASTIC_SET*,double);
+extern void set_elastic_params(ELASTIC_SET*,AF_PARAMS*,double);
 extern void merge_global_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int);
 extern void copy_from_client_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int,double*,double*);
 extern void copy_to_client_point_set(GLOBAL_POINT**,GLOBAL_POINT*,int);

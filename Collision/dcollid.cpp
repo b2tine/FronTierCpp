@@ -479,6 +479,94 @@ void CollisionSolver3d::resolveCollision()
     updateFinalForRG();
 }
 
+void CollisionSolver3d::resolveCollisionSubstep()
+{
+	//catch floating point exception: nan/inf
+        //feenableexcept(FE_INVALID | FE_OVERFLOW);
+
+	computeAverageVelocity();
+    resetPositionCoordinates();
+            
+        //computeMaxSpeed(); //debug
+
+    // Apply impulses to enforce strain limiting
+    // distance/positional constraints on adjacent mesh vertices. 
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainRatePosnJac(MotionState::STATIC);
+            //limitStrainRatePosnGS(MotionState::STATIC);
+                //computeMaxSpeed(); //debug    
+        
+        //limitStrainPosnJac(MotionState::STATIC);
+            //computeMaxSpeed(); //debug
+    }
+
+    // Static proximity handling
+    start_clock("detectProximity");
+    //TODO: Check for fabric-fabric proximity and apply repulsions
+    //      in isolation before, checking all elements for proximity?
+    //      -- Good for avoiding crashes, but exacerbates fabric kicking/jumping.
+    //
+        //detectProximity(elasticHseList);
+        //abt_proximity.reset();
+    detectProximity(hseList);
+    stop_clock("detectProximity");
+    
+    /*
+    //TODO: updateImpactListVelocity() needs to be modified in order
+    //      to treat movable rigid bodies as impact zones.
+    if (getTimeStepSize() > 0.0)
+	    updateImpactZoneVelocityForRG(); // test for moving objects
+    */
+
+    saveAverageVelocity();
+	
+    // Check linear trajectories for collisions
+    start_clock("detectCollision");
+    //TODO: handle fabric-fabric collisions first?
+        //detectCollision(elasticHseList);
+    
+    //randomize list ordering for use with gauss-seidel updating
+    auto shuffledHseList = shuffleHseList(hseList);
+    detectCollision(shuffledHseList); //detectCollision(hseList);
+    stop_clock("detectCollision");
+
+    /*
+    //TODO: function needs fixing -- do we need this?
+    detectDomainBoundaryCollision();
+    */
+
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainPosnJac(MotionState::STATIC);
+            //limitStrainRatePosnGS(MotionState::STATIC);
+    }
+
+	//update position using final midstep velocity
+	updateFinalPosition();
+
+    //TODO: Check for proximity again at final positions??
+    //
+    //      Could use this proximity step to enforce history based updates
+    //      using positions from the first call to detectProximity() ...
+    //
+    //  detectProximity();
+
+
+    // Zero out the relative velocity between adjacent mesh vertices
+    // with excess edge strain directed along their connecting edge.
+    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+    {
+        limitStrainVelJAC();
+            //limitStrainVelGS();
+                //computeMaxSpeed(); //debug
+    }
+
+	updateFinalVelocity();
+
+    updateFinalForRG();
+}
+
 //for debuggging -- should rename to printMaxSpeed()
 void CollisionSolver3d::computeMaxSpeed()
 {
@@ -925,8 +1013,6 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 
         if (debugging("collision"))
         {
-            infoImpactZones();
-
             std::cout << "  #" << niter << ": "
                       << abt_collision->getCount() 
                       << " collision pairs";
@@ -1523,7 +1609,7 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         niter++;
         is_collision = false;
 
-    start_clock("dynamic_AABB_collision");
+        start_clock("dynamic_AABB_collision");
         
         aabbCollision(list);
         abt_collision->turn_on_GS_update();
@@ -1538,7 +1624,7 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
             LOC(); clean_up(EXIT_FAILURE);
         }
         
-    stop_clock("dynamic_AABB_collision");
+        stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
         /*
@@ -2161,25 +2247,25 @@ void updateImpactListVelocity(POINT* head)
         {
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
 	        minusVec(dx,xF,xR);
-            scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
-                //scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+            scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
+                //scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
 	        Cross3d(tmpV,xR,wxR);
 	    }
 
 	    for (int i = 0; i < 3; ++i)
 	    {
-            /*
             x_new[i] = x_cm[i] + dt*v_cm[i] + xF[i]
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-            */
 	    	
+            /*
             x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
                        + cos(avg_dt*mag_w)*xR[i] + wxR[i];
 
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
 		        //sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
+            */
 
             //TODO: see above todo regarding use of full time step
             //      for movable rigid body impact zones
@@ -2264,7 +2350,14 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
     {
         StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
         StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
+        /*
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        StrainStats bss = computeStrainImpulsesPosn(shuffledStringBondList,mstate);
         
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        StrainStats tss = computeStrainImpulsesPosn(shuffledFabricTriList,mstate);
+        */
+
         if (debugging("strain_limiting"))
         {
             printf("    %d BOND Strain Edges -- total_edge_length = %f\n",
@@ -2704,12 +2797,20 @@ void CollisionSolver3d::limitStrainVelGS()
 {
     turnOnGsUpdate();
 
-    const int MAX_ITER = 5;
+    const int MAX_ITER = 3;
     //const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
-        int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        //int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
+        //int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        int numBondStrainVel = computeStrainImpulsesVel(shuffledStringBondList);
+            //StrainStats bss = computeStrainImpulsesVel(shuffledStringBondList);
+        
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        int numTriStrainVel = computeStrainImpulsesVel(shuffledFabricTriList);
+            //StrainStats tss = computeStrainImpulsesVel(shuffledFabricTriList);
         
         if (debugging("strain_limiting"))
         {

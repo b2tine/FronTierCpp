@@ -349,6 +349,7 @@ void airfoil_driver(Front *front,
         FT_Propagate(front);
         FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
+        fflush(stdout);
 
         if (!af_params->no_fluid)
         {
