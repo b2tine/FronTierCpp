@@ -850,17 +850,17 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 
     max_dt = std::min(max_dt,visc_max_dt);
 	
-    //TODO: Why do we need min_dt?
+    //TODO: Is this correct??? See accum_dt and min_dt for projection step.
     min_dt = 0.0000001*sqr(hmin)/mu_min;
 	
-    if (debugging("trace"))
+    if (debugging("step_size"))
 	{
 	    if (max_dt == HUGE)
-	    	(void) printf("In setAdvectionDt: \n"
-			"max_dt = HUGE min_dt = %24.18g\n",min_dt);
+	    	(void) printf("In Incompress_Solver_Smooth_Basis::setAdvectionDt(): \n"
+                    "max_dt = HUGE min_dt = %24.18g\n",min_dt);
 	    else
-	    	(void) printf("In setAdvectionDt:\n"
-			"max_dt = %24.18g min_dt = %24.18g\n",max_dt,min_dt);
+	    	(void) printf("In Incompress_Solver_Smooth_Basis::setAdvectionDt():\n"
+                    "max_dt = %24.18g min_dt = %24.18g\n",max_dt,min_dt);
 	}
 }	/* end setAdvectionDt */
 

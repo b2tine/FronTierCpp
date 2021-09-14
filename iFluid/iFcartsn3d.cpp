@@ -680,7 +680,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 
 	// 2) projection step
 	accum_dt += m_dt;
-	if (accum_dt >= min_dt)
+	if (accum_dt >= min_dt) //TODO: How to set min_dt to keep poisson solver stable??
 	{
 	    start_clock("computeProjection");
 	    computeProjection();
