@@ -1649,7 +1649,9 @@ void setStressColor(
                 min_color = tri->color;
 	    }
 	}
-	FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
+	
+    //NOT USED
+        //FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
 	
     n = 0;
 	intfc_surface_loop(intfc,s)
