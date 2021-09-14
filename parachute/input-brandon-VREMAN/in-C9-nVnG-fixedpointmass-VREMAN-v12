@@ -40,7 +40,7 @@ Enter projection type: 3
 Enter projection typeXXX: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
 Enter yes to add rigid body: no
@@ -50,7 +50,7 @@ Enter type of rigid body: Sphere
 Enter center of the sphere: 6.0 6.0 0.951
 Enter radius of the sphere: 0.5 0.5 0.5
 
-Type yes if the rigid body is fixed: no
+Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
 Enter refinement level: 1
 
@@ -73,9 +73,16 @@ Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
+
+Enter yes to adjust cgal triangulation criteria: no
+    Enter B ratioXXX:
+    Enter min triangle edge lengthXXX:
+
 Enter initial position of load: 6 6 1.451
+Enter yes to fix the load node: yes
+
 Enter yes to install the strings to RGB: no
-Enter the body index of the target RGB: 1
+    Enter the body index of the target RGBXXX: 1
 
 Enter number of canopy optimization rounds: 0
 

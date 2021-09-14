@@ -830,21 +830,28 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 
 void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 {
-	pp_global_max(&max_speed,1);
-	if (max_speed > MACH_EPS)
+    max_dt = HUGE;
+    pp_global_max(&max_speed,1);
+
+    if (max_speed > MACH_EPS)
+    {
 	    max_dt = hmin/max_speed;
-	else
-	    max_dt = HUGE;
-	
+    }
+
     if (iFparams->min_speed != 0.0)
-	    max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
-    
+    {
+        //TODO: input file option for setting min_speed
+        max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
+    }
+
     //viscous time step restriction
     visc_max_dt = HUGE;
-	
     pp_global_max(&mu_max,1);
+
     if (mu_max > MACH_EPS)
     {
+        //TODO: Is this correct for our scheme?
+        //      Too restrictive?
         visc_max_dt = 0.5*hmin*hmin/mu_max;
     }
 

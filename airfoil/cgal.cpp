@@ -1732,12 +1732,11 @@ static void installString(
 	    bond = string_curves[i]->first;
 	    for (j = 1; j < nb; ++j)
 	    {
-		for (k = 0; k < 3; ++k)
-		    coords[k] = Coords(string_nodes[i]->posn)[k] +
-					j*dir[k]*spacing;
-		insert_point_in_bond(Point(coords),bond,string_curves[i]);
-		bond->length0 = spacing;
-		bond = bond->next;
+            for (k = 0; k < 3; ++k)
+                coords[k] = Coords(string_nodes[i]->posn)[k] + j*dir[k]*spacing;
+            insert_point_in_bond(Point(coords),bond,string_curves[i]);
+            bond->length0 = spacing;
+            bond = bond->next;
 	    }
 	    bond->length0 = spacing;
 	    af_params->string_curves.push_back(string_curves[i]);
