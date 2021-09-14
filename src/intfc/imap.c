@@ -106,10 +106,15 @@ EXPORT	void I_SmoothSurfColor(
 	{
 	    n = 0;
 	    surf_tri_loop(surf,tri)
-            	color[n++] = ave_color(tri);
-	    n = 0;
+        {
+            color[n++] = ave_color(tri);
+        }
+
+        n = 0;
 	    surf_tri_loop(surf,tri)
-		tri->color = color[n++];
+        {
+            tri->color = color[n++];
+        }
 	}
 	free_these(1,color);
 }	/* end I_SmoothSurfColor */

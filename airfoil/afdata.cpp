@@ -1630,7 +1630,7 @@ void setStressColor(
 	int n,N;
 	double *color;
 	
-    //TODO: Need to check if ELASTIC_BOUNDARY
+    //TODO: Need to check if ELASTIC_BOUNDARY?
 	n = 0;
 	intfc_surface_loop(intfc,s)
 	{
