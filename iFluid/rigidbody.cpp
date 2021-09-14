@@ -175,6 +175,9 @@ static void init_rigid_sphere(
             FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
                                         &surf);
         }
+
+        HYPER_SURF* hs = Hyper_surf(surf);
+        rgb_shape(hs) = SPHERE;
 }	/* end init_rigid_sphere */
 
 static void init_rigid_box(
@@ -225,6 +228,9 @@ static void init_rigid_box(
         {
             FT_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,2,&surf);
         }
+
+        HYPER_SURF* hs = Hyper_surf(surf);
+        rgb_shape(hs) = BOX;
 }	/* end init_rigid_box */
 
 static void init_rigid_cylinder(
@@ -284,6 +290,9 @@ static void init_rigid_cylinder(
 	        FT_MakeCylinderSurf(front,cen,radius,height/2,
                     idir,neg_comp,pos_comp,w_type,&surf);
         }
+
+        HYPER_SURF* hs = Hyper_surf(surf);
+        rgb_shape(hs) = CYLINDER;
 }	/* end init_rigid_cylinder */
 
 static void init_rigid_human(
@@ -326,6 +335,9 @@ static void init_rigid_human(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	        wave_type(surf) = NEUMANN_BOUNDARY;
 	}
+
+    HYPER_SURF* hs = Hyper_surf(surf);
+    rgb_shape(hs) = HUMAN;
 }	/* end init_rigid_human */
 
 static void surf_com_translation(

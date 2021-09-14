@@ -47,7 +47,7 @@ Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphere: 6.0 6.0 0.951
+Enter center of the sphere: 6.0 6.0 0.0
 Enter radius of the sphere: 0.5 0.5 0.5
 
 Type yes if the rigid body is fixed: no
@@ -58,14 +58,14 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
-Enter the initial center of mass for rigid body: 6 6 0.951
+Enter the initial center of mass for rigid body: 6 6 0.0
 Enter the initial center of mass velocity: 0 0 0
 
 ************Parachute parameters*************
 Enter number of canopy surfaces: 1
 Enter canopy surface type: FLAT
 Enter type of canopy boundary: C
-Enter the height of the plane: 7
+Enter the height of the plane: 12
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
@@ -73,19 +73,16 @@ Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
-Enter initial position of load: 6 6 1.3586
-    Enter initial position of loadXXX: 6 6 1.451
+
+Enter initial position of load: 6 6 1.0
 Enter yes to fix the load node: no
-
 Enter yes to install the strings to RGB: no
-
 Entering yes to modify initialization: yes
 Enter yes for rotation of canopy: no
 
-Enter new load position: 1.0046
-Enter connection position: 0.5 0.5 1.151
+Enter new load position: 6 6 0.5
+Enter connection position: 6 6 0.8
 Enter yes to fix new load node: no
-
 Enter yes to install the multi-parachute to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to skip rg_nodes in x direction for 1: yes

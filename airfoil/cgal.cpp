@@ -1689,7 +1689,7 @@ static void installString(
     {
     fscanf(infile,"%s",string);
     (void) printf("%s\n",string);
-    if (string[0] != 'y' || string[0] != 'Y')
+    if (string[0] == 'y' || string[0] == 'Y')
         {
             FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
             CursorAfterString(infile,"Enter string radius: ");
@@ -2003,6 +2003,7 @@ static void connectStringtoRGB(
 
 	if (debugging("trace"))
 	    printf("Entering connectStringtoRGB() \n");
+
 	linkSurfaceTriPoint(intfc, rg_surf);
 
 	/* find and make rg_string_node */
@@ -2109,7 +2110,7 @@ static void connectStringtoRGB(
         char string[100];
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] != 'y' || string[0] != 'Y')
+        if (string[0] == 'y' || string[0] == 'Y')
         {
             FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
             CursorAfterString(infile,"Enter string radius: ");
@@ -2264,29 +2265,37 @@ static void findPointsonRGB(
 	    }
 	}
 
+    HYPER_SURF* hs = Hyper_surf(rg_surf);
+
 	/* for one-point cases, repeat finding with a lower z coordinate */
-	if (candidate.size() == 1)
-	{
-	    double z_coord = Coords(candidate.front())[2] - 0.5*h[2];
-	    candidate.clear();
-	    surf_tri_loop(rg_surf, tri)
-	    {
-		for (i = 0; i < 3; ++i)
-		{
-		    pt = Point_of_tri(tri)[i];
-		    if ( (fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
-			 (std::find(candidate.begin(),candidate.end(),pt)
-					== candidate.end()) )
-			candidate.push_back(pt);
-		}
-	    }
-	}
+	if (rgb_shape(hs) != SPHERE)
+    {
+        if (candidate.size() == 1)
+        {
+            double z_coord = Coords(candidate.front())[2] - 0.5*h[2];
+            candidate.clear();
+
+            surf_tri_loop(rg_surf, tri)
+            {
+                for (i = 0; i < 3; ++i)
+                {
+                    pt = Point_of_tri(tri)[i];
+                    if ( (fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
+                     (std::find(candidate.begin(),candidate.end(),pt)
+                            == candidate.end()) )
+                    {
+                        candidate.push_back(pt);
+                    }
+                }
+            }
+        }
+    }
 
 	if (candidate.size() <= 4)
 	{
 	    target = candidate;
 	    if (debugging("trace"))
-		printf("Leaving findPointsonRGB() \n");
+            printf("Leaving findPointsonRGB() \n");
 	    return;
 	}
 
@@ -2297,7 +2306,8 @@ static void findPointsonRGB(
 	y_max.push_back(candidate.front());
 	y_min.push_back(candidate.front());
 	POINT* tmp;
-	for (it = candidate.begin() + 1; it != candidate.end(); ++it)
+	
+    for (it = candidate.begin() + 1; it != candidate.end(); ++it)
 	{
 	    /* find points with the max and min x coordinate */
 	    tmp = x_max.front();
