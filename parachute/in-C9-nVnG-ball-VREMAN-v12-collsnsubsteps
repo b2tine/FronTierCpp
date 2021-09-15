@@ -155,7 +155,7 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: bendforce_off
 Enter the debugging string: max_speed
-Enter the debugging string: iFluid_set_dt
+Enter the debugging string: step_size
 Enter the debugging string: PETSc
 
 Enter the debugging string: Xkeps_solve

@@ -1820,11 +1820,9 @@ extern void vtkPlotSurfaceStress(
     POINT *p;
     char dirname[200],fname[200];
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-    int n,N;
     double *color;
     FILE *vfile;
 
-    n = 0;
     sprintf(dirname,"%s/%s%s",outname,"vtk.ts",
             right_flush(front->step,7));
     if (!create_directory(dirname,NO))
