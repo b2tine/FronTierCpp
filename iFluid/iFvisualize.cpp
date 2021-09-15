@@ -131,11 +131,12 @@ void Incompress_Solver_Smooth_Basis::vtkPlotSurfacePressure()
 }
 */
 
-FT_GetStatesAtPoint(point,hse,hs,&sl,&sr);
-if (pos_side)
-    *pres += getStatePres(sr);
-else
-    *pres += getStatePres(sl);
+
+//FT_GetStatesAtPoint(point,hse,hs,&sl,&sr);
+//if (pos_side)
+//    *pres += getStatePres(sr);
+//else
+//    *pres += getStatePres(sl);
 
 
 

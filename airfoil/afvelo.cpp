@@ -385,6 +385,15 @@ void setFabricParams(Front* front)
         //      back to normal fluid structure interaction routine.
     }
 
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
+    }
+
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
 	{
 	    CursorAfterString(infile,"Enter fabric spring constant:");
@@ -426,11 +435,11 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->total_canopy_mass);
             }
             else
-	    {
-	        CursorAfterString(infile,"Enter fabric point mass:");
+            {
+                CursorAfterString(infile,"Enter fabric point mass:");
                 fscanf(infile,"%lf",&af_params->m_s);
                 (void) printf("%f\n",af_params->m_s);
-	    }
+            }
 	}
 
     af_params->m_l = 0.0;
@@ -607,15 +616,6 @@ void setFabricParams(Front* front)
         (void) printf("%f\n",af_params->payload);
     }
 	
-    af_params->use_total_mass = NO;
-    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->use_total_mass = YES;
-    }
-
     if (af_params->use_total_mass)
         convert_to_point_mass(front,af_params);
 	

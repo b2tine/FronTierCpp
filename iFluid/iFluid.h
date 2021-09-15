@@ -424,7 +424,7 @@ public:
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
     virtual void writeMeshFileVTK();
-    virtual void vtkPlotSurfacePressure();
+        //virtual void vtkPlotSurfacePressure();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
