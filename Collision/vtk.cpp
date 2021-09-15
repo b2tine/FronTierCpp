@@ -10,6 +10,7 @@ void vtk_write_pointset(
     std::ofstream outfile(fname+".vtk");
     int npts = points.size();
 
+    //TODO: should we use Version 2.0 ?
 	outfile << "# vtk DataFile Version 3.0\n";
     outfile << "annotated point set\n";
     outfile << "ASCII\n";

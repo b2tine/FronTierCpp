@@ -132,7 +132,7 @@ static void compute_total_canopy_force2d(
         double *pos_force,
         double *neg_force)
 {
-		
+    printf("\nWARNING compute_total_canopy_force2d() not implemented\n");
 }	/* end compute_total_canopy_force2d */
 
 static void compute_total_canopy_force3d(
@@ -157,27 +157,36 @@ static void compute_total_canopy_force3d(
 	    pfile = fopen("payload","w");
 	    fprintf(pfile,"\"Net lift vs time\"\n");
 	}
-	for (i = 0; i < 3; ++i)
-	    pos_force[i] = neg_force[i] = 0.0;
-	next_tri(intfc,NULL,NULL);
+	
+    for (i = 0; i < 3; ++i)
+    {
+	    pos_force[i] = 0.0;
+        neg_force[i] = 0.0;
+    }
+
+    next_tri(intfc,NULL,NULL);
 	while (next_tri(intfc,&tri,&surf))
 	{
-	    if (wave_type(surf) != ELASTIC_BOUNDARY)
-		continue; 
-	    pres_p = pres_m = 0.0;
-	    for (i = 0; i < 3; ++i)
+	    if (wave_type(surf) != ELASTIC_BOUNDARY) continue; 
+	    
+        pres_p = 0.0;
+        pres_m = 0.0;
+	    
+        for (i = 0; i < 3; ++i)
 	    {
-		p = Point_of_tri(tri)[i];
-		FT_GetStatesAtPoint(p,Hyper_surf_element(tri),Hyper_surf(surf),
-				(POINTER*)&sl,(POINTER*)&sr);
-		pres_m += sl->pres;
-		pres_p += sr->pres;
-		area[i] = Tri_normal(tri)[i];
+            p = Point_of_tri(tri)[i];
+            FT_GetStatesAtPoint(p,Hyper_surf_element(tri),Hyper_surf(surf),
+                    (POINTER*)&sl,(POINTER*)&sr);
+            pres_m += sl->pres;
+            pres_p += sr->pres;
+            area[i] = Tri_normal(tri)[i];
 	    }
+
+        //TODO: This does not look correct below
 	    for (i = 0; i < 3; ++i)
 	    {
-		pos_force[i] -= pres_p*area[i]/3.0;
-		neg_force[i] += pres_m*area[i]/3.0;
+            pos_force[i] -= pres_p*area[i]/3.0;
+            neg_force[i] += pres_m*area[i]/3.0;
 	    }
 	}
 	if (debugging("trace"))
@@ -1961,11 +1970,10 @@ static void elastic_set_propagate_serial(
     {
         int cd_nsub = collsn_nsub;
 
-            //if (n == num_collsn_steps && remainder_num_steps > 0)
         if (n == 1 && remainder_num_steps > 0)
         {
-            //adjust collsn_dt for substep with different number
-            //of n_sub (spring solver) steps
+            //adjust collsn_dt for first collision substep that may
+            //have a different number of n_sub (spring solver) substeps
             cd_nsub = collsn_nsub + remainder_num_steps;
         }
             

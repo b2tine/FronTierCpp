@@ -30,6 +30,7 @@ struct STATE
     double impulse[MAXD];       /* Accum impact from external force */
     double bendforce[MAXD];       /* bending force */
 
+    double press_diff;          //For visualizing surface pressure
 
 	/* for collision */
 	struct UF

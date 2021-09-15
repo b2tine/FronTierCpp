@@ -1605,12 +1605,7 @@ void initMovieStress(
         if (string[0] == 'y' || string[0] == 'Y')
         {
             front->print_gview_color = YES;
-            //TODO: This never gets an array to plot,
-            //      should have a third argument like
-            //      FT_AddVtkScalarMovieVariable() and
-            //      FT_AddVtkVectorMovieVariable() do.
             FT_AddVtkIntfcMovieVariable(front,"VMSTRESS");
-            return;
         }
     }
     fclose(infile);
@@ -1809,6 +1804,56 @@ static void qqshi_naturalStressOfTri(
     tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
 }   /* end naturalStressOfTri */
 
+extern void gviewSurfaceStress(
+    Front *front)
+{
+    char *outname = OutName(front);
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+    TRI *tri;
+    POINT *p;
+    double f[MAXD];
+    char dirname[200];
+    int i,j;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    double ks = af_params->ks;
+    double max_color = -HUGE;
+    double min_color = HUGE;
+    int n,N;
+    double *color;
+
+    n = 0;
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+        n++;
+        naturalStressOfTri(tri,ks);
+        if (max_color < tri->color)
+            max_color = tri->color;
+        if (min_color > tri->color)
+            min_color = tri->color;
+        }
+    }
+    FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
+    n = 0;
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        tri->color = log(tri->color-min_color+1);
+    }
+    /* Smoothing loop */
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        I_SmoothSurfColor(*s,3);
+    }
+    sprintf(dirname,"%s/gview/%s-ts%s",outname,"gv.stress",
+            right_flush(front->step,7));
+    gview_plot_color_scaled_interface(dirname,intfc);
+}   /* end gviewSurfaceStress */
 
 extern void vtkPlotSurfaceStress(
     Front *front)
@@ -1823,8 +1868,7 @@ extern void vtkPlotSurfaceStress(
     double *color;
     FILE *vfile;
 
-    sprintf(dirname,"%s/%s%s",outname,"vtk.ts",
-            right_flush(front->step,7));
+    sprintf(dirname,"%s/%s%s",outname,"vtk.ts",right_flush(front->step,7));
     if (!create_directory(dirname,NO))
     {
         printf("Cannot create directory %s\n",dirname);
@@ -1930,56 +1974,75 @@ extern void vtkPlotSurfaceStress(
     }
 }   /* end vtkPlotSurfaceStress */
 
-extern void gviewSurfaceStress(
-    Front *front)
-{
-    char *outname = OutName(front);
-    INTERFACE *intfc = front->interf;
-    SURFACE **s;
-    TRI *tri;
-    POINT *p;
-    double f[MAXD];
-    char dirname[200];
-    int i,j;
-    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-    double ks = af_params->ks;
-    double max_color = -HUGE;
-    double min_color = HUGE;
-    int n,N;
-    double *color;
 
-    n = 0;
-    intfc_surface_loop(intfc,s)
-    {
-        if (Boundary(*s)) continue;
-        surf_tri_loop(*s,tri)
-        {
-        n++;
-        naturalStressOfTri(tri,ks);
-        if (max_color < tri->color)
-            max_color = tri->color;
-        if (min_color > tri->color)
-            min_color = tri->color;
-        }
-    }
-    FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
-    n = 0;
-    intfc_surface_loop(intfc,s)
-    {
-        if (Boundary(*s)) continue;
-        surf_tri_loop(*s,tri)
-        tri->color = log(tri->color-min_color+1);
-    }
-    /* Smoothing loop */
-    intfc_surface_loop(intfc,s)
-    {
-        if (Boundary(*s)) continue;
-        I_SmoothSurfColor(*s,3);
-    }
-    sprintf(dirname,"%s/gview/%s-ts%s",outname,"gv.stress",
-            right_flush(front->step,7));
-    gview_plot_color_scaled_interface(dirname,intfc);
-}   /* end gviewSurfaceStress */
+/*
+//TODO: Turn this debugging block from coating_mono_hyper_surf3d()
+//      into a stand alone function.
+void write_centerline_velocity_and_pressure_differential_on_canopy(Front* front)
+{
+	    int icrd_nb[MAXD],index_nb,n;
+	    POINTER l_state,u_state;
+	    double crx_coords[MAXD],crx_nb[MAXD];
+	    static double *pl,*pu,*vz,*x;
+	    FILE *pfile;
+	    char pname[200];
+
+	    n = 0;
+	    if (pu == NULL)
+	    {
+	    	FT_VectorMemoryAlloc((POINTER*)&pu,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&pl,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&vz,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&x,top_gmax[1],sizeof(double));
+	    }
+	    
+        icrd_nb[0] = icoords[0] = top_gmax[0]/2;
+	    for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
+	    {
+	    	icrd_nb[1] = icoords[1];
+	        for (icoords[2] = 2; icoords[2] < top_gmax[2]-1; ++icoords[2])
+            {
+                index = d_index(icoords,top_gmax,dim);
+                icrd_nb[2] = icoords[2] + 1;
+                index_nb = d_index(icrd_nb,top_gmax,dim);
+                if (top_comp[index] != top_comp[index_nb] 
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+                        UPPER,top_comp[index],&l_state,&hs,crx_coords)
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
+                        LOWER,top_comp[index_nb],&u_state,&hs,crx_coords)
+                    )
+                {
+                    pl[n] = getStatePres(l_state);
+                    pu[n] = getStatePres(u_state);
+                    vz[n] = getStateZvel(l_state);
+                    x[n] = crx_coords[1];
+                    n++;
+                }
+            }
+	    }
+
+	    sprintf(pname,"cpres-%d.xg",front->step);
+	    pfile = fopen(pname,"w");
+	    fprintf(pfile,"\"Lower pressure\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pl[i]);
+	    fprintf(pfile,"\n\n\"Upper pressure\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pu[i]);
+	    fprintf(pfile,"\n\n\"Pressure difference\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
+	    fclose(pfile);
+	    
+        sprintf(pname,"cvelz-%d.xg",front->step);
+        pfile = fopen(pname,"w");
+	    fprintf(pfile,"\"Z-velocity\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],vz[i]);
+	    fclose(pfile);
+}
+
+*/
 
 //TODO: This clearly does not compute the poisson_ratio -- it doesn't do anything.
 //      Also should be moved to another file if implemented.

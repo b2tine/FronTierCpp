@@ -2435,8 +2435,11 @@ static void print_drag3d(
         FILE *dfile, *xlfile, *ylfile;
         static boolean first = YES;
         int fcount = 0, dim;
-        double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
+        
+        double (*getStateVel[3])(POINTER) = {
+            getStateXvel, getStateYvel, getStateZvel
+        };
+        
         FILE* pafile;
 	    FILE *xforce, *yforce, *zforce;
 

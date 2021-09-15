@@ -68,6 +68,7 @@ extern void elastic_point_propagate(
     }
 }
 
+//TODO: I think we can do this with EnforceFlowSpecifiedStates ?
 static void elastic_point_propagate_const_dP(
         Front *front,
         POINTER wave,
@@ -234,12 +235,15 @@ static void elastic_point_propagate_fsi(
     */
 
 	/* Impulse is incremented by the fluid pressure force */
+        
+    double dP = sl->pres - sr->pres;
 	for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
 	    if (front->step > af_params->fsi_startstep)
         {
-            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+            dv[i] = dP*nor[i]/area_dens;
+            //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
         else if (debugging("rigid_canopy"))
         {
@@ -1055,19 +1059,20 @@ static void coating_mono_hyper_surf3d(
 
 	if (debugging("trace"))
 	    (void) printf("Entering coating_mono_hyper_surf3d()\n");
-	immersed_surf = NULL;
+	
+    immersed_surf = NULL;
 	for (s = grid_intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
-		immersed_surf = *s;
-		comp = base_comp = negative_component(*s);
-		break;
+            immersed_surf = *s;
+            base_comp = negative_component(*s);
+            comp = negative_component(*s);
+            break;
 	    }
 	}
 
-	if (immersed_surf == NULL)
-	    return;
+	if (immersed_surf == NULL) return;
 
 	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
 	for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
@@ -1098,28 +1103,30 @@ static void coating_mono_hyper_surf3d(
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
-		if (base_comp == negative_component(*s))
-		{
-		    negative_component(*s) = base_comp - 1;
-		    positive_component(*s) = base_comp + 1;
-		}
+            if (base_comp == negative_component(*s))
+            {
+                negative_component(*s) = base_comp - 1;
+                positive_component(*s) = base_comp + 1;
+            }
 	    }
 	}
 	
     if (debugging("coat_comp"))
 	{
+        //prints comps along centerline of grid
 	    icoords[0] = top_gmax[0]/2;
 	    for (icoords[2] = 0; icoords[2] <= top_gmax[2]; ++icoords[2])
 	    {
 	    	for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
 	    	{
-		    index = d_index(icoords,top_gmax,dim);
-		    printf("%d",top_comp[index]);
+                index = d_index(icoords,top_gmax,dim);
+                printf("%d",top_comp[index]);
 	    	}
 	    	printf("\n");
 	    }
 	}
 
+    //TODO: Extract this into function and put in afdata.cpp
 	if (debugging("immersed_surf") && front->step%1 == 0)
 	{
 	    int icrd_nb[MAXD],index_nb,n;
@@ -1137,50 +1144,53 @@ static void coating_mono_hyper_surf3d(
 	    	FT_VectorMemoryAlloc((POINTER*)&vz,top_gmax[1],sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&x,top_gmax[1],sizeof(double));
 	    }
-	    icrd_nb[0] = icoords[0] = top_gmax[0]/2;
+	    
+        icrd_nb[0] = icoords[0] = top_gmax[0]/2;
 	    for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
 	    {
 	    	icrd_nb[1] = icoords[1];
 	        for (icoords[2] = 2; icoords[2] < top_gmax[2]-1; ++icoords[2])
-		{
-		    index = d_index(icoords,top_gmax,dim);
-	    	    icrd_nb[2] = icoords[2] + 1;
-		    index_nb = d_index(icrd_nb,top_gmax,dim);
-		    if (top_comp[index] != top_comp[index_nb] &&
-			FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
-                                UPPER,top_comp[index],&l_state,&hs,crx_coords)
-                        &&
-                        FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
-                                LOWER,top_comp[index_nb],&u_state,&hs,
-                                crx_coords))
-		    {
-			pl[n] = getStatePres(l_state);
-			pu[n] = getStatePres(u_state);
-			vz[n] = getStateZvel(l_state);
-			x[n] = crx_coords[1];
-			n++;
-		    }
-		}
+            {
+                index = d_index(icoords,top_gmax,dim);
+                icrd_nb[2] = icoords[2] + 1;
+                index_nb = d_index(icrd_nb,top_gmax,dim);
+                if (top_comp[index] != top_comp[index_nb] 
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+                        UPPER,top_comp[index],&l_state,&hs,crx_coords)
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
+                        LOWER,top_comp[index_nb],&u_state,&hs,crx_coords)
+                    )
+                {
+                    pl[n] = getStatePres(l_state);
+                    pu[n] = getStatePres(u_state);
+                    vz[n] = getStateZvel(l_state);
+                    x[n] = crx_coords[1];
+                    n++;
+                }
+            }
 	    }
+
 	    sprintf(pname,"cpres-%d.xg",front->step);
 	    pfile = fopen(pname,"w");
 	    fprintf(pfile,"\"Lower pressure\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pl[i]);
+            fprintf(pfile,"%f %f\n",x[i],pl[i]);
 	    fprintf(pfile,"\n\n\"Upper pressure\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pu[i]);
+            fprintf(pfile,"%f %f\n",x[i],pu[i]);
 	    fprintf(pfile,"\n\n\"Pressure difference\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
+            fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
 	    fclose(pfile);
-	    sprintf(pname,"cvelz-%d.xg",front->step);
-	    pfile = fopen(pname,"w");
+	    
+        sprintf(pname,"cvelz-%d.xg",front->step);
+        pfile = fopen(pname,"w");
 	    fprintf(pfile,"\"Z-velocity\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],vz[i]);
+            fprintf(pfile,"%f %f\n",x[i],vz[i]);
 	    fclose(pfile);
 	}
+
 	if (debugging("trace"))
 	    (void) printf("Leaving coating_mono_hyper_surf3d()\n");
 }	/* end coating_mono_hyper_surf3d */
