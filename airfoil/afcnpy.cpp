@@ -3965,15 +3965,20 @@ static void setSurfVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
             }
             sorted(p) = YES;
         }
 	}
 
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
-    //  reduce_high_freq_vel(front,surf); //TODO: should this be used?
+    
+    //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
+    //  reduce_high_freq_vel(front,surf);
+
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -4080,8 +4085,10 @@ static void setCurveVelocity(
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = nor_speed*nor[j];
-                    sr->vel[j] = nor_speed*nor[j];
+                    sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
                 }
             }
         }
@@ -4211,8 +4218,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                //sl->vel[j] = nor_speed*nor[j];
+                //sr->vel[j] = nor_speed*nor[j];
             }
 		}
         
@@ -4257,8 +4266,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                //sl->vel[j] = nor_speed*nor[j];
+                //sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
