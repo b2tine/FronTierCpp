@@ -1882,7 +1882,8 @@ static void elastic_set_propagate_serial(
     static boolean first = YES;
 	if (first)
     {
-        set_elastic_params(&geom_set,af_params,fr_dt);
+        geom_set.front = fr;
+        set_elastic_params(&geom_set,fr_dt);
         if (debugging("step_size"))
             print_elastic_params(geom_set);
     }

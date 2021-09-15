@@ -1602,13 +1602,13 @@ extern void set_elastic_params(
 	/* Set elastic set time step */
     dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
-    if (af_params->m_l != 0.0 &&
+    if (af_params->strings_present &&
         dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
     {
         dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
     }
     
-    if (af_params->m_g != 0.0 &&
+    if (af_params->gores_present &&
         dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
     {
         dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
