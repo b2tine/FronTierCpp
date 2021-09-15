@@ -328,6 +328,8 @@ public:
 	Incompress_Solver_Smooth_Basis(Front &front);
 	virtual ~Incompress_Solver_Smooth_Basis() {};
 
+	int dim;
+
 	double m_dt;
 	double old_dt;
 	double accum_dt {0.0};
@@ -342,13 +344,16 @@ public:
     double min_value; //for debugging
 	double max_value; //for debugging
 	
+	double min_dt;
     double max_dt;
     double visc_max_dt;
-	double min_dt;
-	double *top_h;
-	double vmin[MAXD],vmax[MAXD];
-	int dim;
-	int icrds_max[MAXD];
+	
+    double *top_h;
+	
+	double vmin[MAXD];
+    double vmax[MAXD];
+    int icrds_max[MAXD];
+    double abs_vmax[MAXD];
 
 	void initMesh(void);
     void readFrontInteriorStates(char *state_name);

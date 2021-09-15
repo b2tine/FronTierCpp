@@ -750,9 +750,9 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 	m_comp[1] = iFparams->m_comp2;
 	m_smoothing_radius = iFparams->smoothing_radius;
 	mu_min = HUGE;
-	for(i = 0; i < 2; i++)
+	for (i = 0; i < 2; i++)
 	{
-	    if(ifluid_comp(m_comp[i]))
+	    if (ifluid_comp(m_comp[i]))
 	    {
 		    mu_min = std::min(mu_min,m_mu[i]);
 		    rho_min = std::min(rho_min,m_rho[i]);
@@ -775,27 +775,39 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 	{
 	    vmin[i] = HUGE;
 	    vmax[i] = -HUGE;
+        abs_vmax[i] = -HUGE;
 	}
+
 	switch (dim)
 	{
 	case 2:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
-		index = d_index2d(i,j,top_gmax);
-	    	fscanf(infile,"%lf",&field->rho[index]);
-	    	fscanf(infile,"%lf",&field->pres[index]);
-	    	fscanf(infile,"%lf",&field->phi[index]);
-	    	fscanf(infile,"%lf",&field->mu[index]);
-		speed = 0.0;
-		for (l = 0; l < dim; ++l)
-		{
-	    	    fscanf(infile,"%lf",&vel[l][index]);
-		    speed += fabs(vel[l][index]); 
-		    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
-		    if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
-		}
-		if (speed > max_speed) max_speed = speed;
+            index = d_index2d(i,j,top_gmax);
+            fscanf(infile,"%lf",&field->rho[index]);
+            fscanf(infile,"%lf",&field->pres[index]);
+            fscanf(infile,"%lf",&field->phi[index]);
+            fscanf(infile,"%lf",&field->mu[index]);
+            
+            speed = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                fscanf(infile,"%lf",&vel[l][index]);
+                speed += sqr(vel[l][index]); 
+                if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
+                if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmin[l]));
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmax[l]));
+            }
+
+            speed = sqrt(speed);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+            }
 	    }
 	    break;
 	case 3:
@@ -803,20 +815,31 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
+            index = d_index3d(i,j,k,top_gmax);
 	    	fscanf(infile,"%lf",&field->rho[index]);
 	    	fscanf(infile,"%lf",&field->pres[index]);
 	    	fscanf(infile,"%lf",&field->phi[index]);
 	    	fscanf(infile,"%lf",&field->mu[index]);
-		speed = 0.0;
-		for (l = 0; l < dim; ++l)
-		{
-	    	    fscanf(infile,"%lf",&vel[l][index]);
-		    speed += fabs(vel[l][index]);
-                    if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
-                    if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
-		}
-		if (speed > max_speed) max_speed = speed;
+		
+            speed = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                fscanf(infile,"%lf",&vel[l][index]);
+                speed += sqr(vel[l][index]);
+                if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
+                if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmin[l]));
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmax[l]));
+            }
+    
+            speed = sqrt(speed);
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                icrds_max[0] = i;
+                icrds_max[1] = j;
+                icrds_max[2] = k;
+            }
 	    }
 	}
 
@@ -828,31 +851,53 @@ void Incompress_Solver_Smooth_Basis::readFrontInteriorStates(char *restart_name)
 }
 
 
+//TODO: Need to be using vmax array to compute:
+//
+//      convect_max_dt =
+//          1.0/(abs_vmax[0]/top_h[0] + abs_vmax[1]/top_h[1] + abs_vmax[2]/top_h[2]); 
+//
+//      viscous_max_dt =
+//          1.0/((mu_max/rho)*(2/sqr(top_h[0]) + 2/sqr(top_h[1]) +2/sqr(top_h[2])));
+//
+//      From Fedkiw Paper:
+//          "A Boundary Condition Capturing Method for Multiphase Incompressible Flow"
+//
 void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 {
     max_dt = HUGE;
     pp_global_max(&max_speed,1);
+	pp_global_max(abs_vmax,dim);
 
     if (max_speed > MACH_EPS)
     {
-	    max_dt = hmin/max_speed;
+            //max_dt = hmin/max_speed;
+        double mesh_val = 0.0;
+        for (int i = 0; i < dim; ++i)
+            mesh_val += abs_vmax[i]/top_h[i];
+        max_dt = 1.0/mesh_val;
     }
-
-    if (iFparams->min_speed != 0.0)
+ 
+    /*
+    //TODO: input file option for setting iFparams->min_speed
+    if (iFparams->min_speed > MACH_EPS) //if (iFparams->min_speed != 0.0)
     {
-        //TODO: input file option for setting min_speed
         max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
     }
+    */
 
     //viscous time step restriction
     visc_max_dt = HUGE;
     pp_global_max(&mu_max,1);
+    pp_global_max(&rho_min,1);
 
     if (mu_max > MACH_EPS)
     {
         //TODO: Is this correct for our scheme?
-        //      Too restrictive?
-        visc_max_dt = 0.5*hmin*hmin/mu_max;
+            //visc_max_dt = 0.5*hmin*hmin/mu_max;
+        double mesh_val = 0.0;
+        for (int i = 0; i < dim; ++i)
+            mesh_val += 2.0/sqr(top_h[i]);
+        visc_max_dt = 1.0/((mu_max/rho_min)*mesh_val);
     }
 
     max_dt = std::min(max_dt,visc_max_dt);
@@ -860,7 +905,7 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
     //TODO: Is this correct??? See accum_dt and min_dt for projection step.
     min_dt = 0.0000001*sqr(hmin)/mu_min;
 	
-    if (debugging("iFluid_set_dt"))
+    if (debugging("ifluid_dt"))
 	{
 	    if (max_dt == HUGE)
 	    	(void) printf("In Incompress_Solver_Smooth_Basis::setAdvectionDt(): \n"
@@ -1641,6 +1686,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
     }
 
     mu_max = 0.0;
+    rho_min = HUGE;
 
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -1716,7 +1762,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 break;
             case KEPSILON:
                 mu[index] += mu_t[index];
-                pres[index] += 2.0/3.0*tke[index];
+                    //pres[index] += 2.0/3.0*tke[index];
                 break;
             case VREMAN:
                 mu[index] += computeMuOfVremanModel(icoords);
@@ -1745,14 +1791,12 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    }
 
         //For computing viscous flux time step restriction
-        if (mu[index] > mu_max)
-        {
-            mu_max = mu[index];
-        }
+        if (mu_max < mu[index]) mu_max = mu[index];
+        if (rho[index] < rho_min) rho_min = rho[index];
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
+        //FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
@@ -2483,6 +2527,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
     }
 
     mu_max = 0.0;
+    rho_min = HUGE;
 
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
@@ -2587,10 +2632,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	    }
 
         //For computing viscous flux time step restriction
-        if (mu[index] > mu_max)
-        {
-            mu_max = mu[index];
-        }
+        if (mu_max < mu[index]) mu_max = mu[index];
+        if (rho[index] < rho_min) rho_min = rho[index];
 	}
 
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
@@ -4025,6 +4068,7 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
     {
         vmin[i] = HUGE;
         vmax[i] = -HUGE;
+        abs_vmax[i] = -HUGE;
     }
 	
     switch (dim)
@@ -4041,6 +4085,8 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
                 speed += sqr(vel[l][index]);
                 if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                 if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmin[l]));
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmax[l]));
             }
             speed = sqrt(speed);
 		
@@ -4065,6 +4111,8 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
                 speed += sqr(vel[l][index]);
                 if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
                 if (vmax[l] < vel[l][index]) vmax[l] = vel[l][index];
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmin[l]));
+                abs_vmax[l] = std::max(abs_vmax[l], std::abs(vmax[l]));
             }
             speed = sqrt(speed);
 
@@ -4080,6 +4128,7 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 	}
 
 	pp_global_max(&max_speed,1);
+	pp_global_max(abs_vmax,dim);
 	pp_global_max(vmax,dim);
 	pp_global_min(vmin,dim);
 }	/* end computeMaxSpeed */
