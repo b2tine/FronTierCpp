@@ -20,8 +20,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 ***********************************************
 Max time: 15.0
 Max step: 10000
-Print interval: 0.1
-Movie frame interval: 0.01
+Print interval: 0.05
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -105,7 +105,7 @@ Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 50000
-Enter string damping constant: 0.05
+Enter string damping constant: 0.01
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.35
 Enter string point mass: 0.0015
@@ -116,7 +116,7 @@ Enter strain limit: 0.01
 Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.1
 
-Enter yes for collision substepping: no
+Enter yes for collision substepping: yes
 Enter nsub per collision step: 20
 
 ******************Turbulence Parameters****************
@@ -150,11 +150,12 @@ Type y to make turbulent kinetic energy dissipation field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: bendforce_off
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
+Enter the debugging string: bendforce_off
 Enter the debugging string: max_speed
+Enter the debugging string: ifluid_dt
 Enter the debugging string: PETSc
 
 Enter the debugging string: Xkeps_solve

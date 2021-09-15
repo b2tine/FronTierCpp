@@ -43,7 +43,7 @@ Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 0
 
 ************Rigid body parameters*************
-Enter yes to add rigid body: no
+Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
 Enter type of rigid body: Sphere
@@ -73,16 +73,9 @@ Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
-
-Enter yes to adjust cgal triangulation criteria: no
-    Enter B ratioXXX:
-    Enter min triangle edge lengthXXX:
-
 Enter initial position of load: 6 6 1.451
-Enter yes to fix the load node: yes
-
-Enter yes to install the strings to RGB: no
-    Enter the body index of the target RGBXXX: 1
+Enter yes to install the strings to RGB: yes
+Enter the body index of the target RGB: 1
 
 Enter number of canopy optimization rounds: 0
 

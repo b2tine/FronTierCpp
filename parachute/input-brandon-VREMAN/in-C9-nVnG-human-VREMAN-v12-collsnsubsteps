@@ -40,19 +40,21 @@ Enter projection type: 3
 Enter projection typeXXX: SIMPLE
 Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
-Enter gravity: 0 0 0
+Enter gravity: 0 0 -9.8
 
 ************Rigid body parameters*************
-Enter yes to add rigid body: no
+Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
-Enter type of rigid body: Sphere
-Enter center of the sphere: 6.0 6.0 0.951
-Enter radius of the sphere: 0.5 0.5 0.5
 
-Type yes if the rigid body is fixed: yes
-Type yes to use CGAL for rigid body: yes
-Enter refinement level: 1
+Enter type of rigid body: Human
+Enter the vtk file name for human body: input-vtk/human_body.vtk
+Enter center of the human body: 6.0 6.0 0.951
+Enter enlargement coefficient: 1.5
+Enter yes to skip rg_nodes in y direction for 1: yes
+
+Type yes if the rigid body is fixed: no
+Type yes to use CGAL for rigid body: no
 
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
@@ -73,16 +75,9 @@ Enter yes to cut a vent on canopy: no
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
-
-Enter yes to adjust cgal triangulation criteria: no
-    Enter B ratioXXX:
-    Enter min triangle edge lengthXXX:
-
 Enter initial position of load: 6 6 1.451
-Enter yes to fix the load node: yes
-
-Enter yes to install the strings to RGB: no
-    Enter the body index of the target RGBXXX: 1
+Enter yes to install the strings to RGB: yes
+Enter the body index of the target RGB: 1
 
 Enter number of canopy optimization rounds: 0
 
@@ -99,7 +94,7 @@ Enter inertial parameter: 38.559
 Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
-Enter interior sub step number: 1
+Enter interior sub step number: 10
 Enter area density of canopy: 0.5
 
 Enter fabric spring constant: 5000
