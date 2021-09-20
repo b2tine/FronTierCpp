@@ -12,7 +12,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 *************Boundary parameters*************
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 12.0
+Enter velocity: 0 0 50.0
 Enter pressure: 0
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -46,12 +46,14 @@ Enter gravity: 0 0 -9.8
 Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
 For rigid body 1
-Enter type of rigid body: Sphere
-Enter center of the sphere: 6.0 6.0 0.951
-Enter radius of the sphere: 0.5 0.5 0.5
+Enter type of rigid body: Human
+Enter the vtk file name for human body: input-vtk/human_body.vtk
+Enter center of the human body: 6.0 6.0 0.951
+Enter enlargement coefficient: 1.5
+Enter yes to skip rg_nodes in y direction for 1: yes
 
 Type yes if the rigid body is fixed: no
-Type yes to use CGAL for rigid body: yes
+Type yes to use CGAL for rigid body: no
 Enter refinement level: 1
 
 Type yes if motion is preset: no
@@ -69,7 +71,7 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: no
+Enter yes to cut a vent on canopy: yes
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
@@ -106,7 +108,8 @@ Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.25
-Enter fabric total mass: 28.6026
+Enter fabric total mass: 28.3166
+    Enter fabric total massXXX: 28.6026
     Enter fabric point massXXX: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
