@@ -69,7 +69,7 @@ Enter the height of the plane: 7
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
-Enter yes to cut a vent on canopy: no
+Enter yes to cut a vent on canopy: yes
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
@@ -112,7 +112,7 @@ Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.25
-Enter fabric total mass: 28.6026
+Enter fabric total mass: 28.3166
     XXXEnter fabric point massXXX: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
