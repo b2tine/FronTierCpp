@@ -22,7 +22,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 5.0 0 0
+Enter velocity: 25.0 0 0
 Enter pressure: 100
                             XXXEnter pressureXXX: 1.0
 Enter density: 1.0
@@ -70,8 +70,7 @@ Enter the number of rigid bodies: 1
 
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphereXXX: 0.275 0.496 0.496
-Enter center of the sphere: 0.325 0.496 0.496
+Enter center of the sphere: 0.725 0.496 0.496
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
@@ -82,7 +81,7 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 1 0 0
 Enter the total mass for rigid body: 10
-Enter the initial center of mass for rigid body: 0.275 0.496 0.496
+Enter the initial center of mass for rigid body: 0.725 0.496 0.496
 Enter the initial center of mass velocity: 0 0 0
 
 *******************************************************
@@ -97,7 +96,7 @@ Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-Enter the debugging string: max_dt
+Enter the debugging stringXXX: max_dt
 
 Enter the debugging stringXXX: init_intfc
 Enter the debugging stringXXX: flow_through
