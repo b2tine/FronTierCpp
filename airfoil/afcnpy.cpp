@@ -1998,6 +1998,9 @@ static void elastic_set_propagate_serial(
     }
 
 
+//BELOW JUST SAVED FOR REFERENCE
+//////////////////////////////////////////////////////////////////////////////////    
+
     //TODO: Can't just reduce dt without reducing dt and
     //      calling FT_Propagate() again.
     //
@@ -2036,6 +2039,7 @@ static void elastic_set_propagate_serial(
                 *newfront = NULL;
             }
             */
+//////////////////////////////////////////////////////////////////////////////////    
 
 } /*end elastic_set_propagate_serial*/
 
@@ -3977,6 +3981,7 @@ static void setSurfVelocity(
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
     
     //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
+    //
     //  reduce_high_freq_vel(front,surf);
 
 }	/* end setSurfVelocity */
