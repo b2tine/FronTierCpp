@@ -214,7 +214,8 @@ void G_CARTESIAN::setComponent(void)
 		for (j = 0; j < dim; ++j)
 		    momn[j][i] = state->momn[j];
 	    }
-	    cell_center[i].comp = top_comp[i];
+	    
+        cell_center[i].comp = top_comp[i];
 	}
 }	/* end setComponent() */
 
@@ -787,12 +788,26 @@ void G_CARTESIAN::solve(double dt)
 	if (debugging("trace"))
 	    printf("Entering solve()\n");
 	start_clock("solve");
-	setDomain();
-	appendOpenEndStates(); /* open boundary test */
-	scatMeshStates();
+	
+    setDomain();
+	
+    appendOpenEndStates(); /* open boundary test */
+	
+    //TODO: Should be called before scatMeshStates()?
+    //      
+    //      Ok to call before setComponent()?
+    //      --Probably ok when using a hardcoded value for mu corresponding
+    //      to a single fluid. Get working for single component before attempting
+    //      to implement for 2 fluid component runs.
+    computeSGSTerms();
+
+    scatMeshStates();
 
 	adjustGFMStates();
-	setComponent();
+	
+    setComponent();
+
+        //computeSGSTerms(); //Moved to before call to scatMeshStates() ... correct?
 	
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
@@ -815,7 +830,8 @@ void G_CARTESIAN::solve(double dt)
 	stop_clock("copyMeshStates");
 
 	setAdvectionDt();
-	stop_clock("solve");
+	
+    stop_clock("solve");
 	if (debugging("trace"))
 	    printf("Leaving solve()\n");
 }	/* end solve */
@@ -824,16 +840,11 @@ void G_CARTESIAN::solve(double dt)
 // check http://en.wikipedia.org/wiki/Bilinear_interpolation
 void G_CARTESIAN::getVelocity(double *p, double *U)
 {
-        double **vel = eqn_params->vel;
-
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
-					NULL);
-        if (dim > 1)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
-					NULL);
-        if (dim > 2)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
-					NULL);
+    double **vel = eqn_params->vel;
+    for (int i = 0; i < dim; ++i)
+    {
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[i],getStateXvel,&U[i],nullptr);
+    }
 }
 
 void G_CARTESIAN::getRectangleIndex(int index, int &i, int &j)
@@ -1054,6 +1065,7 @@ void G_CARTESIAN::setDomain()
 	for (i = 0; i < size; ++i)
 	for (j = 0; j < 2; ++j)
 	{
+        //TODO: Need mu here?
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
@@ -1064,16 +1076,17 @@ void G_CARTESIAN::setDomain()
 void G_CARTESIAN::allocMeshVst(
 	SWEEP *vst)
 {
-	int i,size;
-
-	size = 1;
-        for (i = 0; i < dim; ++i)
-	    size *= (top_gmax[i]+1);
+	int size = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        size *= (top_gmax[i] + 1);
+    }
 
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
+	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
 }	/* end allocMeshVst*/
 
 void G_CARTESIAN::allocMeshFlux(
@@ -1344,7 +1357,8 @@ void G_CARTESIAN::setAdvectionDt()
    
     //TEMP: hardcode mu_max (temporary measure for debugging)
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    mu_max = eqn_params->mu1; //hardcoded
+    mu_max = eqn_params->mu2; //hardcoded
+    //TODO: When variable mu implemented need to find max value, mu_max.
     
     if (mu_max > MACH_EPS)
     {
@@ -1921,6 +1935,7 @@ void G_CARTESIAN::copyMeshStates()
 	double *dens = eqn_params->dens;
 	double *pres = eqn_params->pres;
 	double *engy = eqn_params->engy;
+	double *mu = eqn_params->mu;
 	double *vort = eqn_params->vort;
 	double **vort3d = eqn_params->vort3d;
 	int symmetry[MAXD];
@@ -1937,6 +1952,7 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	    symmetry[0] = ODD;
 	    FT_ParallelExchGridArrayBuffer(mom[0],front,symmetry);
 	    FT_ParallelExchGridArrayBuffer(vel[0],front,symmetry);
@@ -1954,6 +1970,7 @@ void G_CARTESIAN::copyMeshStates()
         FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
 	    
@@ -1979,6 +1996,7 @@ void G_CARTESIAN::copyMeshStates()
         FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	    
 	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
         for (l = 0; l < dim; ++l)
@@ -1997,6 +2015,7 @@ void G_CARTESIAN::copyMeshStates()
 	}
 }	/* end copyMeshStates */
 
+//OLD -- 2d only
 void G_CARTESIAN::compSGS(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -2910,13 +2929,15 @@ void G_CARTESIAN::numericalFlux(
 
 void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 {
+	FT_ParallelExchGridArrayBuffer(m_vst->dens,front,nullptr);
+	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
+	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+	
+    /*
 	int i,j,k,l,index;
 
-	FT_ParallelExchGridArrayBuffer(m_vst->dens,front,NULL);
-	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,NULL);
-	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,NULL);
-	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
-	/*
 	switch (dim)
 	{
 	case 1:
@@ -3156,6 +3177,7 @@ void G_CARTESIAN::copyToMeshVst(
 		m_vst->dens[index] = dens[index];
 		m_vst->engy[index] = engy[index];
 		m_vst->pres[index] = pres[index];
+		m_vst->mu[index] = mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3168,6 +3190,7 @@ void G_CARTESIAN::copyToMeshVst(
 		m_vst->dens[index] = dens[index];
 		m_vst->engy[index] = engy[index];
 		m_vst->pres[index] = pres[index];
+		m_vst->mu[index] = mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3181,6 +3204,7 @@ void G_CARTESIAN::copyToMeshVst(
 		m_vst->dens[index] = dens[index];
 		m_vst->engy[index] = engy[index];
 		m_vst->pres[index] = pres[index];
+		m_vst->mu[index] = mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3194,9 +3218,10 @@ void G_CARTESIAN::copyFromMeshVst(
 	STATE state;
 	COMPONENT comp;
 	double *dens = field.dens;
+	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
-	double **momn = field.momn;
+	double *mu = field.mu;
 	
 	//GFM
 	if(eqn_params->tracked)
@@ -3219,6 +3244,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		state.dens = m_vst.dens[index];
 		state.engy = m_vst.engy[index];
 		state.pres = m_vst.pres[index];
+		state.mu = m_vst.mu[index];
 		for (l = 0; l < dim; ++l)
 		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
@@ -3229,6 +3255,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		dens[index] = state.dens;
 		engy[index] = state.engy;
 		pres[index] = state.pres;
+		mu[index] = state.mu;
 		for (l = 0; l < dim; ++l)
 		    momn[l][index] = state.momn[l];
 	    }
@@ -3242,6 +3269,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		state.dens = m_vst.dens[index];
 		state.engy = m_vst.engy[index];
 		state.pres = m_vst.pres[index];
+		state.mu = m_vst.mu[index];
 		for (l = 0; l < dim; ++l)
 		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
@@ -3252,6 +3280,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		dens[index] = state.dens;
 		engy[index] = state.engy;
 		pres[index] = state.pres;
+		mu[index] = state.mu;
 		for (l = 0; l < dim; ++l)
 		    momn[l][index] = state.momn[l];
 	    }
@@ -3266,6 +3295,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		state.dens = m_vst.dens[index];
 		state.engy = m_vst.engy[index];
 		state.pres = m_vst.pres[index];
+		state.mu = m_vst.mu[index];
 		for (l = 0; l < dim; ++l)
 		    state.momn[l] = m_vst.momn[l][index];
 		if (gas_comp(top_comp[index]))
@@ -3276,6 +3306,7 @@ void G_CARTESIAN::copyFromMeshVst(
 		dens[index] = state.dens;
 		engy[index] = state.engy;
 		pres[index] = state.pres;
+		mu[index] = state.mu;
 		for (l = 0; l < dim; ++l)
 		    momn[l][index] = state.momn[l];
 	    }
@@ -3737,7 +3768,7 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
+	FT_FreeThese(5,vst->dens,vst->momn,vst->engy,vst->pres,vst->mu);
 }	/* end freeVstFlux */
 
 void G_CARTESIAN::freeFlux(
@@ -5835,84 +5866,84 @@ void G_CARTESIAN::errFunction()
 
 void G_CARTESIAN::adjustGFMStates()
 {
-        if(eqn_params->tracked)
-        {
-           double ***Gvel = eqn_params->Gvel;
-           double **Gdens = eqn_params->Gdens;
-           double **Gpres = eqn_params->Gpres;
-           int i,j,k,ii,jj,kk,index,index1,ind;
-           int icoords[3];
+    if(eqn_params->tracked)
+    {
+       double ***Gvel = eqn_params->Gvel;
+       double **Gdens = eqn_params->Gdens;
+       double **Gpres = eqn_params->Gpres;
+       int i,j,k,ii,jj,kk,index,index1,ind;
+       int icoords[3];
 
-           for (i = 0; i <= top_gmax[0]; i++)
-           for (j = 0; j <= top_gmax[1]; j++)
-           for (k = 0; k <= top_gmax[2]; k++)
-           {
-                icoords[0] = i;
-                icoords[1] = j;
-                icoords[2] = k;
-                index = d_index(icoords,top_gmax,dim);
+       for (i = 0; i <= top_gmax[0]; i++)
+       for (j = 0; j <= top_gmax[1]; j++)
+       for (k = 0; k <= top_gmax[2]; k++)
+       {
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            index = d_index(icoords,top_gmax,dim);
 
-                if (cell_center[index].comp != top_comp[index])
+            if (cell_center[index].comp != top_comp[index])
+            {
+                if (top_comp[index] == GAS_COMP1)
+                    ind = 0;
+                else
+                    ind = 1;
+
+                for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
                 {
-                    if (top_comp[index] == GAS_COMP1)
-                        ind = 0;
-                    else
-                        ind = 1;
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+         for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
 
-                    for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (jj = 0; (j+jj) >= 0; jj--)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) >= 0; ii--)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
+                     if (Gdens[ind][index] != 0)
+                         break;
                 }
-           }
-        }
+
+                for (jj = 0; (j+jj) >= 0; jj--)
+                {
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+         for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+
+                for (ii = 0; (i+ii) >= 0; ii--)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+         for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+
+                for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     Gdens[ind][index] = Gdens[ind][index1];
+         for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0)
+                         break;
+                }
+            }
+       }
+    }
 }	/* end adjustGFMState */
 
 void G_CARTESIAN::appendOpenEndStates()

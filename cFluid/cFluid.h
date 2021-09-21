@@ -147,7 +147,11 @@ typedef struct
 	double ***Gvel;
 	double **Gpres;
 
-	// Base front for comparison
+	//LES Turbulence
+    bool use_eddy_viscosity {false};
+    
+    
+    //Base front for comparison
 	boolean use_base_soln;
         char base_dir_name[200];
         int num_step;
@@ -322,6 +326,7 @@ struct SWEEP
     double **momn;          /* momentum vector */
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
+    double *mu;
 };
 
 struct FSWEEP
@@ -479,7 +484,10 @@ private:
     
 
     //For LES turbulence
-    double computeEddyViscosity(int *icoords);//TODO: Implementation
+    void computeSGSTerms();
+
+    void computeEddyViscosity2d();//TODO: Implementation
+    void computeEddyViscosity3d();//TODO: Implementation
     double computeEddyViscosityVremanModel(int *icoords);//TODO: Implementation
 
 

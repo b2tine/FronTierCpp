@@ -369,6 +369,10 @@ void G_CARTESIAN::computeViscousFlux2d(
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
 
+    //TODO: Update mu at beginning of time step to include mu_t
+    //      from eddy viscosity SGS model.
+    
+    //TODO: Get mu from m_vst instead?
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
@@ -455,6 +459,10 @@ void G_CARTESIAN::computeViscousFlux3d(
     double w_yz = 0.25*(sten[2][2][1].vel[2] - sten[2][0][1].vel[2]
             - sten[0][2][1].vel[2] + sten[0][0][1].vel[2])/top_h[1]/top_h[2];
 
+    //TODO: Update mu at beginning of time step to include mu_t
+    //      from eddy viscosity SGS model.
+    
+    //TODO: Get mu from m_vst instead?
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     

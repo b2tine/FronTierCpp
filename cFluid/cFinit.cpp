@@ -1457,9 +1457,9 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
     fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->mu1);
     (void) printf("%f %f\n",eqn_params->rho1,eqn_params->mu1);
 
+    eqn_params->rho2 = eqn_params->rho1;
     eqn_params->p2 = eqn_params->p1;
     eqn_params->mu2 = eqn_params->mu1;
-    eqn_params->rho2 = eqn_params->rho1;
 
     /*
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
@@ -1480,6 +1480,7 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	(void) printf("\n");
 
     eqn_params->tracked = NO;
+    //TODO: Should just remove this option?
     CursorAfterString(infile,"Type yes to track the interface:");
     fscanf(infile,"%s",str);
     (void) printf("%s\n",str);
@@ -1554,6 +1555,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	    }
 	    break;
 	}
+
 	scatMeshStates();
 }	/* end initChannelFlowStates */
 
