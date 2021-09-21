@@ -95,12 +95,12 @@ void G_CARTESIAN::computeEddyViscosity3d()
 }
 
 //TODO: Implement boundary aware version, which includes setting slip velocity etc.
-void G_CARTESIAN::computeEddyViscosityVremanModel()
+double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 {
     //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
     //LOC(); clean_up(EXIT_FAILURE);
 
-    double **vel = field->vel;
+    double **vel = field.vel;
 
     double C_v = 0.025;
         //double C_v = eqn_params->C_v;
@@ -178,12 +178,14 @@ void G_CARTESIAN::computeEddyViscosityVremanModel()
     else
         nu_t = C_v*sqrt(B_beta/sum_alpha);
  
-    double mu_t = nu_t*field->dens[index];
+    double mu_t = nu_t*field.dens[index0];
+        //double mu_t = nu_t*field.dens[index];
 
     if (std::isinf(mu_t) || std::isnan(mu_t))
     {
         printf("\nERROR: inf/nan eddy viscosity!\n");
-        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field->dens[index]);
+        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index0]);
+            //printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index]);
         LOC(); clean_up(EXIT_FAILURE);
     }
 

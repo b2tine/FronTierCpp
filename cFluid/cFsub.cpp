@@ -79,6 +79,12 @@ extern double getStatePres(POINTER state)
 	return fstate->pres;
 }	/* end getStatePres */
 
+extern double getStateMu(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->mu;
+}	/* end getStatePres */
+
 extern double getStateVort(POINTER state)
 {
 	STATE *fstate = (STATE*)state;

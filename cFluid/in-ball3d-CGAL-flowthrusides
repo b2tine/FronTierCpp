@@ -89,9 +89,11 @@ Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 
-Type y to make vector velocity field movie: y
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
+Type y to make scalar viscosity field movie: n
+
+Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************

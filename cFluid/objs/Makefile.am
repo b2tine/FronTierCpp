@@ -25,6 +25,8 @@ libcFluid_la_SOURCES = \
 ../cFweno.cpp \
 ../cFvisc.h \
 ../cFvisc.cpp \
+../cFturb.h \
+../cFturb.cpp \
 ../rigidbody.h \
 ../rigidbody.cpp
 								

@@ -1456,18 +1456,20 @@ void G_CARTESIAN::augmentMovieVariables()
 
 void G_CARTESIAN::initMovieVariables()
 {
-	boolean set_bound = NO;
 	FILE *infile = fopen(InName(front),"r");
 	char string[100];
 	double var_max,var_min;
 
+	boolean set_bound = NO;
 	if (CursorAfterStringOpt(infile,"Type y to set movie bounds:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'Y' || string[0] == 'y')
-                set_bound = YES;
+            set_bound = YES;
         }
+    }
 
 	    /* Begin hdf movies */
 	switch (dim)
@@ -1550,7 +1552,24 @@ void G_CARTESIAN::initMovieVariables()
 				"pres",0,eqn_params->pres,getStatePres,
 				var_max,var_min);
 	    }
-	    CursorAfterString(infile,"Type y to make movie of vorticity:");
+	    
+        CursorAfterString(infile,"Type y to make movie of viscosity:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+	    {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max viscosity:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+ 
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "visc",0,eqn_params->mu,getStateMu,var_max,var_min);
+	    }
+
+        CursorAfterString(infile,"Type y to make movie of vorticity:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'Y' || string[0] == 'y')
@@ -1672,7 +1691,7 @@ void G_CARTESIAN::initMovieVariables()
 	if (dim != 1)
 	{
 	    if (CursorAfterStringOpt(infile,
-		"Type y to make vector velocity field movie:"))
+		    "Type y to make vector velocity field movie:"))
 	    {
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
@@ -1694,6 +1713,14 @@ void G_CARTESIAN::initMovieVariables()
                 (void)printf("%s\n",string);
                 if (string[0] == 'Y' || string[0] == 'y')
                     FT_AddVtkScalarMovieVariable(front,"PRESSURE",field.pres);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar viscosity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"VISC",field.mu);
             }
 	}
 
@@ -3164,10 +3191,13 @@ void G_CARTESIAN::copyToMeshVst(
 	SWEEP *m_vst)
 {
 	int i,j,k,l,index;
-	double *dens = field.dens;
+	
+    double *dens = field.dens;
+	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
-	double **momn = field.momn;
+	double *mu = field.mu;
+
 	switch (dim)
 	{
 	case 1:

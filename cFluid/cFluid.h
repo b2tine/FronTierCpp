@@ -132,12 +132,13 @@ typedef struct
 	double shock_position;
 	double contact_vel;
     
-    double *mu;
 	double **vel;
 	double **mom;
 	double *dens;
 	double *engy;
 	double *pres;
+    double *mu;
+
 	double *vort;    /* Vorticity-2d */
     double **vort3d; /* Vorticity-3d */
 
@@ -596,6 +597,7 @@ extern double getStateXmom(POINTER);
 extern double getStateYmom(POINTER);
 extern double getStateZmom(POINTER);
 extern double getStatePres(POINTER);
+extern double getStateMu(POINTER);
 extern double getStateVort(POINTER);
 extern double getStateXvel(POINTER);
 extern double getStateYvel(POINTER);

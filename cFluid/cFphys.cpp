@@ -168,6 +168,15 @@ extern void read_cFluid_params(
 	    clean_up(ERROR);
 	}
 
+	eqn_params->use_eddy_viscosity = false;
+	if (CursorAfterStringOpt(infile,"Enter yes to use eddy viscosity:"))
+	{
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            eqn_params->use_eddy_viscosity = true;
+	}
+
 	eqn_params->use_base_soln = NO;
 	if (CursorAfterStringOpt(infile,
 		"Enter yes for comparison with base data:"))
