@@ -1079,11 +1079,11 @@ void G_CARTESIAN::allocMeshVst(
 void G_CARTESIAN::allocMeshFlux(
 	FSWEEP *flux)
 {
-	int i,size;
-
-	size = 1;
-        for (i = 0; i < dim; ++i)
-	    size *= (top_gmax[i]+1);
+	int size = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        size *= (top_gmax[i]+1);
+    }
 
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
@@ -1094,13 +1094,13 @@ void G_CARTESIAN::allocDirVstFlux(
         SWEEP *vst,
         FSWEEP *flux)
 {
-	int i,size;
-
-	size = 1;
-    for (i = 0; i < dim; ++i)
+	int size = 0;
+    for (int i = 0; i < dim; ++i)
     {
-        if (size < top_gmax[i]+7) 
-            size = top_gmax[i]+7;
+        if (size < top_gmax[i] + 7)
+        {
+            size = top_gmax[i] + 7;
+        }
     }
 
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
@@ -1117,8 +1117,8 @@ void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,
         FSWEEP* flux)
 {
-        FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
-        FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
+    FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
+    FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::checkVst(SWEEP *vst)
@@ -1137,12 +1137,14 @@ void G_CARTESIAN::checkVst(SWEEP *vst)
 
 void G_CARTESIAN::checkFlux(FSWEEP *flux)
 {
-	int i,j,index;
-	//for (j = imin[1]; j < imax[1]; j++)
-	j = 140;
-	for (i = imin[0]; i <= imax[0]; i++)
+	//for (int j = imin[1]; j < imax[1]; j++) //{ for i ... }
+    
+    int j = (imin[1] + imax[1])/2;
+	    //int j = 140;
+	
+    for (int i = imin[0]; i <= imax[0]; i++)
 	{	
-	    index  = d_index2d(i,j,top_gmax);
+	    int index  = d_index2d(i,j,top_gmax);
 	    printf("%d %f  %f\n",i,flux->momn_flux[1][index],
 				flux->engy_flux[index]);
 	}
@@ -1244,19 +1246,29 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	double **momn = field.momn;
 
 	setDomain();
-	m_dens[0] = eqn_params->rho1;		
+	
+    m_dens[0] = eqn_params->rho1;		
 	m_dens[1] = eqn_params->rho2;		
-	m_mu[0] = eqn_params->mu1;		
+	
+    m_mu[0] = eqn_params->mu1;		
 	m_mu[1] = eqn_params->mu2;		
-	if (eqn_params->prob_type == FLUID_SOLID_CIRCLE ||
+	
+    if (eqn_params->prob_type == FLUID_SOLID_CIRCLE ||
 	    eqn_params->prob_type == FLUID_RIGID_BODY ||
 	    eqn_params->prob_type == FLUID_CRYSTAL ||
 	    eqn_params->prob_type == CHANNEL_FLOW)
-	    m_comp[0] = SOLID_COMP;
+    {
+        m_comp[0] = SOLID_COMP;
+    }
 	else
+    {
 	    m_comp[0] = GAS_COMP1;
+    }
 	m_comp[1] = GAS_COMP2;
-	m_smoothing_radius = top_h[0] < top_h[1] ? top_h[1] : top_h[0];
+    
+    m_smoothing_radius = std::max(top_h[0], top_h[1]);
+    m_smoothing_radius = std::max(m_smoothing_radius, top_h[2]);
+	    //m_smoothing_radius = top_h[0] < top_h[1] ? top_h[1] : top_h[0];
 	m_smoothing_radius *= 2.0;
 	
 	st_tmp.dim = eqn_params->dim;
@@ -3862,6 +3874,9 @@ void G_CARTESIAN::addMeshFluxToVst(
 	}
 }	/* end addMeshFluxToVst */
 
+//TODO: Write new version of appendGhostBuffer() to include ELASTIC_BOUNDARY
+//      like in cfabric directory version. Also write setElasticStates() that
+//      gets called (copy from cfabric directory as well).
 void G_CARTESIAN::appendGhostBuffer(
 	SWEEP *vst,
 	SWEEP *m_vst,
