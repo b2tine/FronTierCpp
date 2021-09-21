@@ -866,37 +866,40 @@ extern void set_node_spring_vertex(
 	{
 	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
 	    if (extra != NULL)
-	    {
-		if (extra->af_node_type == PRESET_NODE)
-		{
-            mass = geom_set->m_s;
-		    is_fixed = YES;
-		}
-		else if (extra->af_node_type == LOAD_NODE || 
-			extra->af_node_type == RG_STRING_NODE)
-		{
-            Front *front = geom_set->front;
-            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-		    mass = af_params->payload;
-            //TODO: If multiple RG_STRING_NODE nodes,
-            //      should the mass be a fraction of the total
-            //      payload (which is the mass of the RGB)?
-            //      i.e. mass = payload/(double)num_rg_string_nodes;
-            //
-            //      The above has been added in cgal.cpp : connectStringtoRGB().
-            //      Leaving this todo and comment for now since it is not obvious.
-		}
-		else if (extra->af_node_type == GORE_NODE)
-                    mass = geom_set->m_g;
-		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_l;
-		else if (extra->af_node_type == THR_LOAD_NODE)
-		    mass = geom_set->m_l;
-        else if (extra->af_node_type == SEC_LOAD_NODE)
-		    mass = geom_set->m_l;
-	    }
+        {
+            if (extra->af_node_type == PRESET_NODE)
+            {
+                mass = geom_set->m_s;
+                is_fixed = YES;
+            }
+            else if (extra->af_node_type == LOAD_NODE || 
+                     extra->af_node_type == RG_STRING_NODE)
+            {
+                //TODO: Is this being set correctly?
+                Front *front = geom_set->front;
+                AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+                mass = af_params->payload;
+                //TODO: If multiple RG_STRING_NODE nodes,
+                //      should the mass be a fraction of the total
+                //      payload (which is the mass of the RGB)?
+                //      i.e. mass = payload/(double)num_rg_string_nodes;
+                //
+                //      The above has been added in cgal.cpp : connectStringtoRGB().
+                //      Leaving this todo and comment for now since it is not obvious.
+            }
+            else if (extra->af_node_type == GORE_NODE)
+                mass = geom_set->m_g;
+            else if (extra->af_node_type == STRING_NODE)
+                mass = geom_set->m_l;
+            else if (extra->af_node_type == THR_LOAD_NODE)
+                mass = geom_set->m_l;
+            else if (extra->af_node_type == SEC_LOAD_NODE)
+                mass = geom_set->m_l;
+        }
 	    else
+        {
             mass = geom_set->m_s;
+        }
 	}
 	else
 	{
@@ -904,24 +907,30 @@ extern void set_node_spring_vertex(
 	    boolean on_canopy = NO;
 	    node_out_curve_loop(node, c)
 	    {
-		if (wave_type(*c) == ELASTIC_BOUNDARY)
-		    on_canopy = YES;
+		    if (wave_type(*c) == ELASTIC_BOUNDARY)
+		        on_canopy = YES;
 	    }
-	    node_in_curve_loop(node, c)
+	    
+        node_in_curve_loop(node, c)
 	    {
-		if (wave_type(*c) == ELASTIC_BOUNDARY)
-		    on_canopy = YES;
+		    if (wave_type(*c) == ELASTIC_BOUNDARY)
+		        on_canopy = YES;
 	    }
-	    if (on_canopy)
-		mass = geom_set->m_s;
-	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+	    
+        if (on_canopy)
+		    mass = geom_set->m_s;
+	    
+        AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
 	    Front *front = geom_set->front;
-            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	    if (extra != NULL && extra->af_node_type == PRESET_NODE)
-		is_fixed = YES;
-	    if (extra != NULL && extra->af_node_type == LOAD_NODE)
-		mass = af_params->payload;
+        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	    
+        if (extra != NULL && extra->af_node_type == PRESET_NODE)
+		    is_fixed = YES;
+	    
+        if (extra != NULL && extra->af_node_type == LOAD_NODE)
+	    	mass = af_params->payload;
 	}
+
 	if (mass == 0.0)
 	{
 	    printf("ERROR: mass is not set for some node\n");
@@ -937,6 +946,7 @@ extern void set_node_spring_vertex(
 	sv[*n].ext_impul = point_set[gindex]->impuls;
 	sv[*n].fluid_accel = point_set[gindex]->fluid_accel;
 	sv[*n].other_accel = point_set[gindex]->other_accel;
+
 	for (c = node->out_curves; c && *c; ++c)
 	{
 	    if (dim == 2 && wave_type(*c) == PASSIVE_HSBDRY) continue;
@@ -948,23 +958,27 @@ extern void set_node_spring_vertex(
 	    sv[*n].len0[nn] = bond_length0(b);
 	    sv[*n].m = mass;
 	    sv[*n].ix_nb[nn] = b->end->indx; //important for gpu
-	    if (dim == 3)
+	    
+        if (dim == 3)
 	    {
-		if (is_fixed || is_load_node(node) || is_rg_string_node(node))
-		    sv[*n].k[nn] = 0.0;
-		else if (hsbdry_type(*c) == STRING_HSBDRY)
-		    sv[*n].k[nn] = kl;
-		else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-		    sv[*n].k[nn] = ks;
-		else if (hsbdry_type(*c) == GORE_HSBDRY)
-		    sv[*n].k[nn] = kg;
-		else if (hsbdry_type(*c) == FIXED_HSBDRY)
-		    is_fixed = YES;
+            if (is_fixed || is_load_node(node) || is_rg_string_node(node))
+                sv[*n].k[nn] = 0.0;
+            else if (hsbdry_type(*c) == STRING_HSBDRY)
+                sv[*n].k[nn] = kl;
+            else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+                sv[*n].k[nn] = ks;
+            else if (hsbdry_type(*c) == GORE_HSBDRY)
+                sv[*n].k[nn] = kg;
+            else if (hsbdry_type(*c) == FIXED_HSBDRY)
+                is_fixed = YES;
 	    }
 	    else
+        {
 		    sv[*n].k[nn] = kl;
+        }
 	    ++nn;
 	}
+
 	for (c = node->in_curves; c && *c; ++c)
 	{
 	    if (dim == 2 && wave_type(*c) == PASSIVE_HSBDRY) continue;
@@ -976,24 +990,28 @@ extern void set_node_spring_vertex(
 	    sv[*n].len0[nn] = bond_length0(b);
 	    sv[*n].m = mass;
 	    sv[*n].ix_nb[nn] = b->start->indx; //important for gpu
-	    if (dim == 3)
+	    
+        if (dim == 3)
 	    {
-		if (is_fixed || is_load_node(node) || is_rg_string_node(node))
-		    sv[*n].k[nn] = 0.0;
-		else if (hsbdry_type(*c) == STRING_HSBDRY)
-		    sv[*n].k[nn] = kl;
-		else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-		    sv[*n].k[nn] = ks;
-		else if (hsbdry_type(*c) == GORE_HSBDRY)
-		    sv[*n].k[nn] = kg;
-		else if (hsbdry_type(*c) == FIXED_HSBDRY)
-		    is_fixed = YES;
+            if (is_fixed || is_load_node(node) || is_rg_string_node(node))
+                sv[*n].k[nn] = 0.0;
+            else if (hsbdry_type(*c) == STRING_HSBDRY)
+                sv[*n].k[nn] = kl;
+            else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+                sv[*n].k[nn] = ks;
+            else if (hsbdry_type(*c) == GORE_HSBDRY)
+                sv[*n].k[nn] = kg;
+            else if (hsbdry_type(*c) == FIXED_HSBDRY)
+                is_fixed = YES;
 	    }
 	    else
+        {
             sv[*n].k[nn] = kl;
+        }
 	    ++nn;
 	}
-	if (dim == 3)
+	
+    if (dim == 3)
 	{
 	    BOND_TRI **btris;
 	    TRI **tris,*tri_list[500];
@@ -1004,55 +1022,54 @@ extern void set_node_spring_vertex(
 	    p = node->posn;
 	    for (c = node->out_curves; c && *c; ++c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->first;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+            b = (*c)->first;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (j = 0; j < nt; ++j)
+                {
+                    if (!pointer_in_list((POINTER)tris[j],num_tris, (POINTER*)tri_list))
+                        tri_list[num_tris++] = tris[j];
+                }
+            }
 	    }
+
 	    for (c = node->in_curves; c && *c; ++c)
 	    {
-		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->last;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
+		    if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+		    b = (*c)->last;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (j = 0; j < nt; ++j)
+                {
+                    if (!pointer_in_list((POINTER)tris[j],num_tris, (POINTER*)tri_list))
+                        tri_list[num_tris++] = tris[j];
+                }
+            }
 	    }
+
 	    for (i = 0; i < num_tris; ++i)
-	    {
-		tri = tri_list[i];
-		for (side = 0; side < 3; ++side)
-		{
-		    if (p == Point_of_tri(tri)[side])
-		    {
-			if (is_side_bdry(tri,side))
-			    continue;
-			p_nb = Point_of_tri(tri)[(side+1)%3];
-			gindex_nb = Gindex(p_nb);
-			sv[*n].x_nb[nn] = point_set[gindex_nb]->x;
-			sv[*n].v_nb[nn] = point_set[gindex_nb]->v;
-			sv[*n].ix_nb[nn] = p_nb->indx;
-			sv[*n].k[nn] = ks;
-			if (is_fixed) sv[*n].k[nn] = 0.0;
-			sv[*n].len0[nn] = tri->side_length0[side];
-			++nn;
-		    }
-		}
-	    }
+        {
+            tri = tri_list[i];
+            for (side = 0; side < 3; ++side)
+            {
+                if (p == Point_of_tri(tri)[side])
+                {
+                    if (is_side_bdry(tri,side)) continue;
+                    p_nb = Point_of_tri(tri)[(side+1)%3];
+                    gindex_nb = Gindex(p_nb);
+                    sv[*n].x_nb[nn] = point_set[gindex_nb]->x;
+                    sv[*n].v_nb[nn] = point_set[gindex_nb]->v;
+                    sv[*n].ix_nb[nn] = p_nb->indx;
+                    sv[*n].k[nn] = ks;
+                    if (is_fixed) sv[*n].k[nn] = 0.0;
+                    sv[*n].len0[nn] = tri->side_length0[side];
+                    ++nn;
+                }
+            }
+        }
 	    
         //TODO: should load_nodes and rg_string_nodes be handled differently than a fixed node?
         if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
@@ -1061,24 +1078,27 @@ extern void set_node_spring_vertex(
 	    	for (i = 0; i < sv[*n].num_nb; ++i)
 		        sv[*n].k[i] = 0.0;
 	    }
-	}
+	
+    }
 	else
 	{
 	    sv[*n].lambda = lambda_l;
 	    if (is_fixed)
-            {
-                sv[*n].lambda = 0.0;
-                for (i = 0; i < sv[*n].num_nb; ++i)
-                    sv[*n].k[i] = 0.0;
-            }
-	}
-        for (i = 0; i < dim; ++i)
         {
+            sv[*n].lambda = 0.0;
+            for (i = 0; i < sv[*n].num_nb; ++i)
+                sv[*n].k[i] = 0.0;
+        }
+	}
+        
+    for (i = 0; i < dim; ++i)
+    {
 	    if (is_fixed || g == NULL)
 	    	sv[*n].ext_accel[i] = 0;
 	    else
 	    	sv[*n].ext_accel[i] = g[i];
 	}
+
 	(*n)++;
 }	/* end set_node_spring_vertex */
 
@@ -1138,9 +1158,9 @@ extern void set_curve_spring_vertex(
 	    }
 	    else if (wave_type(curve) == ELASTIC_BOUNDARY)
 	    {
-		kl = geom_set->ks;
-                m_l = geom_set->m_s;
-                lambda_l = geom_set->lambda_s;
+		    kl = geom_set->ks;
+            m_l = geom_set->m_s;
+            lambda_l = geom_set->lambda_s;
 	    }
 	}
 
@@ -1155,13 +1175,16 @@ extern void set_curve_spring_vertex(
 	    sv[i].ext_impul = point_set[gindex]->impuls;
 	    sv[i].fluid_accel = point_set[gindex]->fluid_accel;
 	    sv[i].other_accel = point_set[gindex]->other_accel;
-	    gindex_nb = Gindex(b->start);
+	    
+        gindex_nb = Gindex(b->start);
 	    sv[i].x_nb[0] = point_set[gindex_nb]->x;
 	    sv[i].v_nb[0] = point_set[gindex_nb]->v;
-	    gindex_nb = Gindex(b->next->end);
+	    
+        gindex_nb = Gindex(b->next->end);
 	    sv[i].x_nb[1] = point_set[gindex_nb]->x;
 	    sv[i].v_nb[1] = point_set[gindex_nb]->v;
-	    sv[i].ix_nb[0] = b->start->indx;
+	    
+        sv[i].ix_nb[0] = b->start->indx;
 	    sv[i].ix_nb[1] = b->next->end->indx;
 	    sv[i].len0[0] = bond_length0(b);
 	    sv[i].len0[1] = bond_length0(b->next);
@@ -1169,39 +1192,43 @@ extern void set_curve_spring_vertex(
 	    sv[i].m = m_l;
 	    sv[i].num_nb = 2;
 	    sv[i].lambda = lambda_l;
-	    if (dim == 3)
+	
+        if (dim == 3)
 	    {
 	    	if (hsbdry_type(curve) == FIXED_HSBDRY || g == NULL)
 	    	{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = 0;
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = 0;
 	    	}
-		else
-		{
-            	    for (j = 0; j < dim; ++j)
-	    	    	sv[i].ext_accel[j] = g[j];
-		}
+            else
+            {
+                for (j = 0; j < dim; ++j)
+                    sv[i].ext_accel[j] = g[j];
+            }
 	    }
 	    else if (dim == 2 && g)
 	    {
                 for (j = 0; j < dim; ++j)
                 	sv[i].ext_accel[j] = g[j];
 	    }
+
 	    SURFACE** surf;
 	    boolean is_stationary_point = NO;
 	    intfc_surface_loop(front->interf, surf)
 	    {
-		is_stationary_point = is_registered_point(*surf, b->end);
-		if (is_stationary_point) break;
+		    is_stationary_point = is_registered_point(*surf, b->end);
+		    if (is_stationary_point) break;
 	    }
-	    if (is_stationary_point)
+	    
+        if (is_stationary_point)
 	    {
-		sv[i].k[0] = sv[i].k[1] = 0.0;
-		sv[i].lambda = 0.0;
-		for (j = 0; j < dim; ++j)
-		    sv[i].ext_accel[j] = 0.0;
+		    sv[i].k[0] = sv[i].k[1] = 0.0;
+		    sv[i].lambda = 0.0;
+		    for (j = 0; j < dim; ++j)
+		        sv[i].ext_accel[j] = 0.0;
 	    }
-	    ++i;
+	    
+        ++i;
 	}
 
 	if (dim == 3)
@@ -1213,51 +1240,61 @@ extern void set_curve_spring_vertex(
 	    double ks;
 
 	    if (hsbdry_type(curve) == FIXED_HSBDRY)
-		ks = 0.0;
+		    ks = 0.0;
 	    else
-		ks = geom_set->ks;
-	    i = *n;
-	    for (b = curve->first; b != curve->last; b = b->next)
+		    ks = geom_set->ks;
+	    
+        i = *n;
+	    
+        for (b = curve->first; b != curve->last; b = b->next)
 	    {
-		SURFACE** surf;
-		boolean is_stationary_point = NO;
-		intfc_surface_loop(front->interf, surf)
-		{
-		    is_stationary_point = is_registered_point(*surf, b->end);
-		    if (is_stationary_point) break;
-		}
-		p = b->end;
-		nn = sv[i].num_nb;
-		sv[i].m = m_l;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				gindex_nb = Gindex(p_nb);
-				sv[i].x_nb[nn] = point_set[gindex_nb]->x;
-				sv[i].v_nb[nn] = point_set[gindex_nb]->v;
-				sv[i].ix_nb[nn] = p_nb->indx;
-				sv[i].k[nn] = ks;
-				sv[i].len0[nn] = tris[j]->side_length0[side];
-				if (is_stationary_point) sv[i].k[nn] = 0.0;
-				++nn;
-			    }
-			}
-		    }
-		}
-		sv[i].num_nb = nn;
-		i++;
+		    SURFACE** surf;
+		    boolean is_stationary_point = NO;
+            intfc_surface_loop(front->interf, surf)
+            {
+                is_stationary_point = is_registered_point(*surf, b->end);
+                if (is_stationary_point) break;
+            }
+            
+            p = b->end;
+            nn = sv[i].num_nb;
+            sv[i].m = m_l;
+            
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (j = 0; j < nt; ++j)
+                {
+                    for (side = 0; side < 3; ++side)
+                    {
+                        if (p == Point_of_tri(tris[j])[side])
+                        {
+                            if (is_side_bdry(tris[j],side)) continue;
+                            p_nb = Point_of_tri(tris[j])[(side+1)%3];
+                            gindex_nb = Gindex(p_nb);
+                            sv[i].x_nb[nn] = point_set[gindex_nb]->x;
+                            sv[i].v_nb[nn] = point_set[gindex_nb]->v;
+                            sv[i].ix_nb[nn] = p_nb->indx;
+                            sv[i].k[nn] = ks;
+                            sv[i].len0[nn] = tris[j]->side_length0[side];
+                            
+                            if (is_stationary_point)
+                            {
+                                sv[i].k[nn] = 0.0;
+                            }
+                            
+                            ++nn;
+                        }
+                    }
+                }
+            }
+
+            sv[i].num_nb = nn;
+            i++;
 	    }
 	}
-	*n = i;
+	
+    *n = i;
 }	/* end set_curve_spring_vertex */
 
 extern void set_surf_spring_vertex(

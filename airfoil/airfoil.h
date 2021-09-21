@@ -261,12 +261,14 @@ struct ELASTIC_SET
 	Front *front;
     NODE *load_node;
     NODE *rg_string_nodes[10];
+	    //CURVE *string_curves[60]; //TODO: Need this?
     SURFACE *rgb_surfs[20];
 	SURFACE *surfs[100];
 	CURVE *curves[1000];
 	NODE *nodes[1000];
     int num_rgb_surfs;
 	int num_rgb_string_nodes;
+	    //int num_string_curves; //TODO: Need this?
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
