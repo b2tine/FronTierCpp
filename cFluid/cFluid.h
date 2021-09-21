@@ -477,9 +477,16 @@ private:
     void computeViscousFlux3d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil3d* vsten);
     
+
+    //For LES turbulence
+    double computeEddyViscosity(int *icoords);//TODO: Implementation
+    double computeEddyViscosityVremanModel(int *icoords);//TODO: Implementation
+
+
     // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
+    // TODO: Move these, and related, functions out of class if possible
 	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);
