@@ -4033,8 +4033,10 @@ static void setCurveVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
+                sl->vel[j] = sl->impulse[j] + vel[j];
+                sr->vel[j] = sl->impulse[j] + vel[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
             }
         }
 
@@ -4055,8 +4057,10 @@ static void setCurveVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
+                sl->vel[j] = sl->impulse[j] + vel[j];
+                sr->vel[j] = sl->impulse[j] + vel[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
             }
         }
 
@@ -4148,8 +4152,10 @@ static void new_setNodeVelocity2d(
         
         for (j = 0; j < 2; ++j)
         {
-            sl->vel[j] = vel[j];
-            sr->vel[j] = vel[j];
+            sl->vel[j] = sl->impulse[j] + vel[j];
+            sr->vel[j] = sl->impulse[j] + vel[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
             max_speed += sqr(vel[j]);
         }
 
@@ -4300,7 +4306,9 @@ extern void set_geomset_velocity(
     }
     for (int i = 0; i < nn; ++i)
 	{
-	    if (is_load_node(geom_set->nodes[i])) continue;
+	        //if (is_load_node(geom_set->nodes[i])) continue;
+	    if (is_load_node(geom_set->nodes[i]) ||
+            is_rg_string_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 
@@ -4577,8 +4585,7 @@ extern void setSpecialNodeForce(
 
 	intfc_node_loop(intfc, n)
 	{
-	    if ( (!is_load_node(*n)) && (!is_rg_string_node(*n)) )
-            continue;
+	    if ( (!is_load_node(*n)) && (!is_rg_string_node(*n)) ) continue;
 
         for (k = 0; k < dim; ++k)
         {
