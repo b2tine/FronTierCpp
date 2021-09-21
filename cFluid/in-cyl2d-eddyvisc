@@ -1,0 +1,79 @@
+Max time: 3.0
+Max step: 100000
+Print interval: 0.25
+Movie frame interval: 0.025
+CFL factor: 0.75
+Redistribution interval: 5
+
+*******************************************************
+
+Domain limit in 0-th dimension: 0 2
+Domain limit in 1-th dimension: 0 1
+
+Computational grid: 100 50
+
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY 
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY 
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: CONSTANT
+Enter velocity: 5.0 0
+Enter pressure: 1
+Enter density: 1
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+*******************************************************
+Problem type can be
+	TWO_FLUID_BUBBLE
+	TWO_FLUID_RT
+	TWO_FLUID_BUBBLE
+	FLUID_SOLID_CIRCLE
+Enter problem type: FLUID_SOLID_CIRCLE
+
+Enter the center of the circle: 0.275 0.5
+Enter radius of the circle: 0.075
+Enter yes if the object is fixed: yes
+
+
+Numerical scheme for interior solver can be
+        TVD_1st_ORDER
+        TVD_2nd_ORDER
+        TVD_4th_ORDER
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Point propagator order can be (1,2,4)
+Enter order of point propagator: 4
+Enter order of point propagatorXXX: 2
+
+Enter gamma, pinf, einf of ambient air: 1.67 0 0
+Enter density and pressure of ambient air: 1.0 1.0 
+Enter density and viscosity of the fluid: 1.0 0.01
+Enter gravity: 0 0 
+
+Type yes to track the interface: no
+
+
+Enter yes to use eddy viscosity: yes
+
+
+*******************************************************
+
+Type y to make movie of density: y
+Type y to make movie of pressure: y
+Type y to make movie of vorticity: y
+Type y to make movie of velocity: y
+
+Type y to make movie of viscosity: y
+    XXXType y to make scalar viscosity field movieXXX: y
+************Debugging options*****************
+
+Enter yes for debugging: yes
+
+Enter the debugging stringX: max_dt
+Enter the debugging stringX: no_viscflux
+
+Enter the debugging stringX: trace
+Enter the debugging stringX: CLOCK
+Enter the debugging stringX: step_size
