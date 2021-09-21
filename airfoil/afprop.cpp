@@ -1226,8 +1226,11 @@ static void load_node_propagate(
 	{
 	    (void)printf("\nEntering load_node_propagate()\n");
 	}
-	for (i = 0; i < dim; ++i)
-	    f[i] = 0.0;
+	
+    for (i = 0; i < dim; ++i) f[i] = 0.0;
+
+    //TODO: Why do we have to compute the force, f, here and in setSpecialNodeForce()
+
 	node_out_curve_loop(oldn,c)
 	{
 	    b = (*c)->first;
@@ -1255,8 +1258,8 @@ static void load_node_propagate(
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 0.0;
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
 	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i])*dt;
-	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
-	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	        //newsl->impulse[i] = newsr->impulse[i] = 0.0;
 	}
 
 	node_out_curve_loop(newn,c)
@@ -1307,8 +1310,7 @@ static void rg_string_node_propagate(
     for (i = 0; i < dim; ++i)
 	{
 	    if (Coords(oldn->posn)[i] <= gr->L[i] || 
-		Coords(oldn->posn)[i] > gr->U[i])
-		break;
+		    Coords(oldn->posn)[i] > gr->U[i]) break;
 	}
 	
     if (i != dim || oldn->extra == NULL) return;
@@ -1327,6 +1329,8 @@ static void rg_string_node_propagate(
 
     for (i = 0; i < dim; ++i) f[i] = 0.0;
 	
+    //TODO: Why do we have to compute the force, f, here and in setSpecialNodeForce()
+
     /* calculate the force from the string chords */
 	node_out_curve_loop(oldn,c)
     {
@@ -1405,6 +1409,7 @@ static void rg_string_node_propagate(
             accel[i] = 0.0;
 	}
 
+    //TODO: -= g[i] correct???
     for (i = 0; i < dim; ++i)
         accel[i] -= g[i];
 
@@ -1432,14 +1437,14 @@ static void rg_string_node_propagate(
 	    newp->force[i] = f[i];
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
-	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
-	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	        //newsl->impulse[i] = newsr->impulse[i] = 0.0;
 	}
 
-        if (debugging("trace"))
-        {
-            (void)printf("Leaving rg_string_node_propagate()\n\n");
-        }
+    if (debugging("trace"))
+    {
+        (void)printf("Leaving rg_string_node_propagate()\n\n");
+    }
 }	/* end rg_string_node_propagate */
 
 extern int airfoil_node_propagate(

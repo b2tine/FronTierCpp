@@ -2913,8 +2913,14 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //component of the relative velocity in the direction
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
-            if (fabs(vcomp01) < MACH_EPS) continue;
-            //TODO: Specify a tolerance for the relative velocity in input file.
+            
+             //Don't correct when points approaching (vcomp01 < ) -- zero compressive stress
+             //TODO: May need to set a negative lower bound to avoid bonds shrinking too small
+            if (vcomp01 < MACH_EPS) continue;
+                //if (fabs(vcomp01) < MACH_EPS) continue;
+            
+             
+             //TODO: Specify a tolerance for the relative velocity in input file.
                 
             double I = 0.5*vcomp01;
 

@@ -4014,8 +4014,11 @@ static void setCurveVelocity(
         string_nodes[0] = curve->start;
         string_nodes[1] = curve->end;
 
+        //TODO: Need to check for rg_string_node here???
         for (int i = 0; i < 2; ++i)
         {
+            //This is redundant because the MONO_COMP_CURVE block below will get string nodes
+            //that attach to canopy, but we need this here in the case of unattached strings
             if (!is_string_node(string_nodes[i])) continue;
 
             p = curve->start->posn;
