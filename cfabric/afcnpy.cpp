@@ -2204,6 +2204,8 @@ extern void setSpecialNodeForce(
 		b = (*c)->last;
 		set_bond_length(b,dim);
 	    }
+
+        //TODO: Do these forces have correct orientation?
 	    node_out_curve_loop(*n,c)
 	    {
 		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
@@ -2213,6 +2215,7 @@ extern void setSpecialNodeForce(
 		    vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
 		    vec[i] /= bond_length(b);
 		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            //TODO: Zero compressive stress?
 		}
 	    }
 	    node_in_curve_loop(*n,c)
@@ -2224,6 +2227,7 @@ extern void setSpecialNodeForce(
 		    vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
 		    vec[i] /= bond_length(b);
 		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            //TODO: Zero compressive stress?
 		}
 	    }
 	    for (i = 0; i < dim; ++i)
