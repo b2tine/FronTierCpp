@@ -85,7 +85,7 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 mu[index] = eqn_params->mu2;
                 break;
             default:
-                printf("\nERROR computeEddyViscosity2d(): unrecognized component!\n");
+                printf("\nERROR computeEddyViscosity3d(): unrecognized component!\n");
                 printf("\t\tcomp = %d\n", comp);
                 LOC(); clean_up(EXIT_FAILURE);
         }
@@ -135,6 +135,20 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
+        /*
+        //TEMP
+        double vel_p = vel[j][index[2*i+1]];
+        if (std::isinf(vel_p) || std::isnan(vel_p))
+            vel_p = 0.0;
+        
+        //TEMP
+        double vel_m = vel[j][index[2*i]];
+        if (std::isinf(vel_m) || std::isnan(vel_m))
+            vel_m = 0.0;
+        
+        alpha[i][j] = 0.5*(vel_p - vel_m)/top_h[i];
+        */
+
         alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
         sum_alpha += alpha[i][j]*alpha[i][j];
     }
@@ -173,7 +187,7 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
     //  (about 10x larger than MACH_EPS)
     double nu_t;
-    if (B_beta < MACH_EPS || sum_alpha < MACH_EPS)
+    if (sum_alpha < MACH_EPS || B_beta < MACH_EPS)
         nu_t = 0.0;
     else
         nu_t = C_v*sqrt(B_beta/sum_alpha);
@@ -184,8 +198,28 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     if (std::isinf(mu_t) || std::isnan(mu_t))
     {
         printf("\nERROR: inf/nan eddy viscosity!\n");
-        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index0]);
+        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index0,field.dens[index0]);
             //printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index]);
+        printf("B_beta = %g  sum_alpha = %g\n",B_beta,sum_alpha);
+
+        printf("\n");
+        for (int i = 0; i < dim; ++i)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                printf("alpha[%d][%d] = %g   ",i,j,alpha[i][j]);
+            }
+            printf("\n\n");
+        }
+
+        for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
+        {
+            printf("vel[%d][%d] = %g    vel[%d][%d] = %g\n\n",
+                    j,index[2*i+1],vel[j][index[2*i+1]],
+                    j,index[2*i],vel[j][index[2*i]]);
+        }
+
         LOC(); clean_up(EXIT_FAILURE);
     }
 
