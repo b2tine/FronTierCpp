@@ -60,8 +60,12 @@ static void linkCurveTriBond(CURVE*,SURFACE*);
 static bool ptinbox(double *c, double *l, double *u);
 static bool ptoutcircle(double*,double*,double);
 static void foldSurface(FILE*,SURFACE*);
+
 static void findStringNodePoints(SURFACE*,double*,POINT**,int,CURVE**);
-static void installString(FILE*,Front*,SURFACE*,CURVE*,POINT**,int);
+static void installStrings(FILE*,Front*,SURFACE*,CURVE*,POINT**,int);
+static void installStringsLoadNode(FILE*,Front*,SURFACE*,CURVE*,POINT**,int);
+static void installStringsRigidBody(FILE*,Front*,SURFACE*,CURVE*,POINT**,int);
+
 static void resetStringNodePoints(SURFACE*,POINT**,int*,CURVE**);
 static void setCurveZeroLength(CURVE*,double);
 static void setSurfZeroMesh(SURFACE*);
@@ -77,8 +81,7 @@ static void checkReducedTri(SURFACE*);
 static void findBeltNodePoints(SURFACE*,CURVE**,double*,POINT**,POINT**,int,
                     double);
 static void setNodePoints(CURVE*,double*,int,POINT**,double);
-static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,
-                    int);
+static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,int);
 static void connectTwoStringNodes(Front*,NODE*,NODE*);
 static void checkAndSeparateOverlappingPoints(SURFACE *surf);
 
@@ -469,7 +472,7 @@ static void CgalCircle(
 	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
 	{
 	    findStringNodePoints(*surf,out_nodes_coords,string_node_pts,num_strings,&cbdry);
-	    installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
+	    installStrings(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	}
 
     //TODO: Gore installation fails. Needs to be debugged.
@@ -986,7 +989,7 @@ static void CgalEllipse(
 
 	findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
                                 num_strings,&cbdry);
-	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
+	installStrings(infile,front,*surf,cbdry,string_node_pts,num_strings);
 
         if (gore_bool[0]=='y'|| gore_bool[0]=='Y')
         {
@@ -1238,7 +1241,7 @@ static void CgalCross(
 	setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
         checkAndSeparateOverlappingPoints(*surf);
-	installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
+	installStrings(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	FT_FreeThese(1,string_node_pts);
 }	/* end CgalCross */
 
@@ -1558,29 +1561,155 @@ static void findStringNodePoints(
 	*cbdry = canopy_bdry;
 }	/* end findStringNodePoints */
 
-/*
-//TODO: Write this function
-static void installString(
-	FILE *infile,
-	Front *front,
-	SURFACE *surf,
-	CURVE *canopy_bdry,
-	POINT **string_node_pts,
-	int num_strings)
+static void installStrings(
+        FILE *infile,
+        Front *front,
+        SURFACE *surf,
+        CURVE *canopy_bdry,
+        POINT **string_node_pts,
+        int num_strings)
 {
-    if (...)
+	AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
+    af_params->rgb_payload = false;
+    
+	if (CursorAfterStringOpt(infile,"Enter yes to install the strings to RGB:"))
+	{
+        char string[25];
+	    fscanf(infile,"%s",string);
+	    printf("%s\n",string);
+	    if (string[0] == 'y' || string[0] == 'Y')
+	    {
+            af_params->rgb_payload = true;
+        }
+    }
+
+    if (af_params->rgb_payload)
     {
-        installStringsLoadNode(...);
+        installStringsRigidBody(infile,front,surf,canopy_bdry,string_node_pts,num_strings);
     }
     else
     {
-        installStringsRigidBody(...);
+        installStringsLoadNode(infile,front,surf,canopy_bdry,string_node_pts,num_strings);
+    }
+
+    //TODO: Can move this out of this function if the below block works correctly.
+    //      Not sure how/why the memory in af_params->string_curves does not become
+    //      corrupt after freeing the string_curves array used in the installStringsX()
+    //      functions above.
+    //
+    //Initialize string-fluid interaction
+    FINITE_STRING* finite_string;
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
+    {
+	    char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+            
+            CursorAfterString(infile,"Enter string radius:");
+            fscanf(infile,"%lf",&finite_string->radius); 
+            printf("%f\n",finite_string->radius);
+            
+            CursorAfterString(infile,"Enter string mass density:");
+            fscanf(infile,"%lf",&finite_string->dens); 
+            printf("%f\n",finite_string->dens);
+
+            if (CursorAfterStringOpt(infile,"Enter drag coefficient:"))
+            {
+                fscanf(infile,"%lf",&finite_string->c_drag); 
+                printf("%f\n",finite_string->c_drag);
+            }
+
+            //TODO: Need to be able to restart with FINITE_STRING in curve->extra
+            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+            auto string_curves = af_params->string_curves; //TODO: see if this memory persists as it should ...
+            for (int i = 0; i < string_curves.size(); ++i)
+            {
+                string_curves[i]->extra = (POINTER)finite_string;
+            }
+        }
     }
 }
-*/
 
-/*
-//TODO: write this function
+static void installStringsRigidBody(
+        FILE *infile,
+        Front *front,
+        SURFACE *surf,
+        CURVE *canopy_bdry,
+        POINT **string_node_pts,
+        int num_strings)
+{
+	INTERFACE *intfc = front->interf;
+
+    //Create nodes on the canopy boundary at the given string_node_pts
+	NODE **string_nodes;
+	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,sizeof(NODE*));
+
+	bool node_moved = false;
+	for (int i = 0; i < num_strings; ++i)
+	{
+	    BOND *bond;
+	    AF_NODE_EXTRA *extra;
+        
+        //Make start node of canopy_bdry curve correspond to string_node_pts[0] and assign to string_nodes[0]
+	    if (!node_moved)
+	    {
+            node_moved = true;
+            curve_bond_loop(canopy_bdry,bond)
+            {
+                if (bond->start == string_node_pts[i])
+                {
+                    move_closed_loop_node(canopy_bdry,bond);
+                    string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                    FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                    extra->af_node_type = STRING_NODE;
+                    string_nodes[i]->extra = (POINTER)extra;
+                    string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+                    break;
+                }
+            }
+
+            continue;
+        }
+	    
+        //Insert nodes on canopy_bdry curve corresponding to string_node_pts[i] and assign to string_nodes[i].
+        curve_bond_loop(canopy_bdry,bond)
+	    {
+            if (bond->start == string_node_pts[i])
+            {
+                split_curve(bond->start,bond,canopy_bdry,0,0,0,0);
+                string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                extra->af_node_type = STRING_NODE;
+                string_nodes[i]->extra = (POINTER)extra;
+                string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+                break;
+            }
+	    }
+
+	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
+	}
+
+    int rg_index;
+    CursorAfterString(infile,"Enter the body index of the target RGB:");
+    fscanf(infile,"%d",&rg_index);
+    (void) printf("%d\n",rg_index);
+
+    SURFACE **rg_surf;
+    intfc_surface_loop(intfc,rg_surf)
+    {
+        if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
+            (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
+        {
+            if (body_index(*rg_surf) == rg_index) break;
+        }
+    }
+    
+    connectStringtoRGB(front,*rg_surf,string_nodes,num_strings);
+}	/* end installStringsRigidBody */
+
 static void installStringsLoadNode(
 	FILE *infile,
 	Front *front,
@@ -1603,11 +1732,7 @@ static void installStringsLoadNode(
 	double length,len_fac;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    ////////////////////////////////////////////////////////////////////
-    //TODO: Group with the code at the end of this function,
-    //      and factor out of rigid body initialization.
-    //      Create separate functions for these two distinct
-    //      initializations.
+    
     CursorAfterString(infile,"Enter initial position of load:");
     fscanf(infile,"%lf %lf %lf",&cload[0],&cload[1],&cload[2]);
     (void) printf("%f %f %f\n",cload[0],cload[1],cload[2]);
@@ -1626,7 +1751,6 @@ static void installStringsLoadNode(
 	}
     nload->extra = (POINTER)extra;
     nload->size_of_extra = sizeof(AF_NODE_EXTRA);
-    ////////////////////////////////////////////////////////////////////
 
 
     //create new nodes at the string_node_pts
@@ -1708,12 +1832,11 @@ static void installStringsLoadNode(
 	}
         
 	FT_FreeThese(1,string_curves);
-}*/	/* end installStringsLoadNode */
+}	/* end installStringsLoadNode */
 
-//TODO: Rewrite below to fit the above framework
-//
-//static void installStringRigidBody()
-static void installString(
+/*
+//OLD VERSION -- SAVE FOR REFERENCE WHILE IMPLEMENTING NEW FUNCTIONS
+static void installStrings(
 	FILE *infile,
 	Front *front,
 	SURFACE *surf,
@@ -1852,35 +1975,35 @@ static void installString(
     //      Ideally we would like to initialize string-fluid interaction
     //      in its own function after the interface has been constructed.
     
-    /*
-    FINITE_STRING* finite_string = nullptr;
-    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
-    {
-    fscanf(infile,"%s",string);
-    (void) printf("%s\n",string);
-    if (string[0] == 'y' || string[0] == 'Y')
-        {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-            CursorAfterString(infile,"Enter string radius: ");
-            fscanf(infile,"%lf",&finite_string->radius); 
-            printf("%f\n",finite_string->radius);
-            CursorAfterString(infile,"Enter string mass density: ");
-            fscanf(infile,"%lf",&finite_string->dens); 
-            printf("%f\n",finite_string->dens);
-            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
-            {
-                fscanf(infile,"%lf",&finite_string->c_drag); 
-                printf("%f\n",finite_string->c_drag);
-            }
-        }
-    }
-    */
+        //
+        //    FINITE_STRING* finite_string = nullptr;
+        //    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
+        //    {
+        //    fscanf(infile,"%s",string);
+        //    (void) printf("%s\n",string);
+        //    if (string[0] == 'y' || string[0] == 'Y')
+        //        {
+        //            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+        //            CursorAfterString(infile,"Enter string radius: ");
+        //            fscanf(infile,"%lf",&finite_string->radius); 
+        //            printf("%f\n",finite_string->radius);
+        //            CursorAfterString(infile,"Enter string mass density: ");
+        //            fscanf(infile,"%lf",&finite_string->dens); 
+        //            printf("%f\n",finite_string->dens);
+        //            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
+        //            {
+        //                fscanf(infile,"%lf",&finite_string->c_drag); 
+        //                printf("%f\n",finite_string->c_drag);
+        //            }
+        //        }
+        //    }
+        //
 
 
     //TODO: Move load node (point mass) initialization here,
     //      or to a separate function...
 
-    /* make the all initial springs at their equilibruim length */
+    // make the all initial springs at their equilibruim length
     FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
 	
     double hmin = std::min(h[0],h[1]);
@@ -1911,7 +2034,7 @@ static void installString(
 	}
         
 	FT_FreeThese(1,string_curves);
-}	/* end installString */
+}*/	/* end installStrings */
 
 static void resetStringNodePoints(
 	SURFACE *surf,
@@ -2153,8 +2276,8 @@ static void resetGoreBdryZerolength(
 static void connectStringtoRGB(
         Front *front,
         SURFACE *rg_surf,
-	NODE **string_nodes,
-	int num_strings)
+        NODE **string_nodes,
+        int num_strings)
 {
 	int i, j, k;
 	int num;
@@ -2163,7 +2286,7 @@ static void connectStringtoRGB(
 	std::vector<CURVE*> delete_curves;
 	std::vector<POINT*>::iterator it;
 	NODE **rg_string_nodes, **n, *nload;
-	CURVE **c, **string_curves, **rg_curves;
+	CURVE **c, **rg_curves;
 	BOND *b;
 	AF_NODE_EXTRA *extra;
 	double dist, dist1;
@@ -2181,13 +2304,8 @@ static void connectStringtoRGB(
 	findPointsonRGB(front, rg_surf, target);
     int num_target = target.size();
     
-    //TODO: Need to save number of attachement points
-    //      for use in set_node_spring_vertex() when assigning
-    //      node mass.
-    //      mass_per_rg_string_node = payload/num_rg_string_nodes
     HYPER_SURF* hs = Hyper_surf(rg_surf);
     af_params->payload = total_mass(hs);
-        //af_params->payload = total_mass(hs)/num_target; //TODO: This isn't correct
     
     if (num_strings == 1)
     {
@@ -2250,8 +2368,13 @@ static void connectStringtoRGB(
 	    linkCurveTriBond(rg_curves[i],rg_surf);
 	}
 
-	/* distinguish single parachute system from multi-parachute system */
-	
+    //TODO: Need to distinguish the multi-chute initialization
+    //      from DGB style initialization.
+    //      
+    //      For DGB: num_strings == 1
+    //               multi_para == NO
+    
+	//Distinguish single parachute system from multi-parachute system
     boolean multi_para = NO;
 	int string_curve_onenode = 1;
 	if (num_strings == 1)
@@ -2266,11 +2389,9 @@ static void connectStringtoRGB(
         */
 	}
 
-	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
-	
-    //TODO: would like to have string-fluid initialization outside
-    //      of this function. See comment in installString().
-    
+    /*
+    //TODO: Would like to have string-fluid interaction initialization decoupled from this function.
+    //
     //string-fluid interaction
     FINITE_STRING* finite_string = nullptr;
     FILE* infile = fopen(InName(front),"r");
@@ -2296,14 +2417,12 @@ static void connectStringtoRGB(
         }
     }
     fclose(infile);
-    //TODO: Need to be able to restart with FINITE_STRING in curve->extra
+    */
 
-
-    //TODO: Need to distinguish the multi-chute initialization
-    //      from DGB style initialization.
-    //      
-    //      For DGB: num_strings == 1
-    //               multi_para == NO
+    CURVE** string_curves;
+	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
+    double hmin = std::min(std::min(h[0],h[1]),h[2]);
+	
     for (k = 0; k < num_strings; ++k)
 	{
 	    NODE *start, *end;
@@ -2311,12 +2430,10 @@ static void connectStringtoRGB(
 	    {
             start = string_nodes[k];
             end = rg_string_nodes[0];
-            dist = distance_between_positions(Coords(start->posn),
-                        Coords(target[0]),3);
+            dist = distance_between_positions(Coords(start->posn),Coords(target[0]),3);
             for (i = 1; i < num; ++i)
             {
-                dist1 = distance_between_positions(Coords(start->posn),
-                        Coords(target[i]),3);
+                dist1 = distance_between_positions(Coords(start->posn),Coords(target[i]),3);
                 if (dist1 < dist)
                 {
                     end = rg_string_nodes[i];
@@ -2324,7 +2441,7 @@ static void connectStringtoRGB(
                 }
             }
 	    }
-	    else
+	    else //multi_para == YES
 	    {
             //TODO: probably need to move this into seperate for loop
             //      ... Also does not look correct, if it worked before
@@ -2333,36 +2450,45 @@ static void connectStringtoRGB(
             end = rg_string_nodes[k];
 	    }
 	    
-        double hmin = std::min(h[0],h[1]);
-        hmin = std::min(hmin,h[2]);
-
+        //TODO: What is the point of this loop???
+        //      Duplicates interface curves but allocates memory for each duplicate.
+        //      
+        //      If this is desired (to create a rope-like bundle of strings), then
+        //      they need to be marked in some way that they do not collide with each
+        //      other in the collision the solver -- create an array that contains all
+        //      of the strings in the bundle ...
         for (int l = 0; l < string_curve_onenode; ++l)
-	    {
-		string_curves[k] = make_curve(0,0,start,end);
-        string_curves[k]->extra = (POINTER)finite_string;
-
-		hsbdry_type(string_curves[k]) = STRING_HSBDRY;
-		spacing = separation(start->posn,end->posn,3);
-		for (j = 0; j < 3; ++j)
         {
-		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
+            string_curves[k] = make_curve(0,0,start,end);
+            hsbdry_type(string_curves[k]) = STRING_HSBDRY;
+            
+                //string_curves[k]->extra = (POINTER)finite_string;//for string-fluid interaction
+
+            spacing = separation(start->posn,end->posn,3);
+            for (j = 0; j < 3; ++j)
+            {
+                dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
+            }
+            
+            nb = rint(spacing/(0.40*hmin)) + 1;
+            spacing /= (double)nb;
+            b = string_curves[k]->first;
+            
+            for (i = 1; i < nb; ++i)
+            {
+                for (j = 0; j < 3; ++j)
+                {
+                    coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
+                }
+
+                insert_point_in_bond(Point(coords),b,string_curves[k]);
+                b->length0 = spacing;
+                b = b->next;
+            }
+            
+            b->length0 = spacing;
+            af_params->string_curves.push_back(string_curves[k]); //TODO: see if this memory persists as it should ...
         }
-        nb = rint(spacing/(0.40*hmin)) + 1;
-		spacing /= (double)nb;
-		b = string_curves[k]->first;
-		for (i = 1; i < nb; ++i)
-		{
-		    for (j = 0; j < 3; ++j)
-                coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
-		    insert_point_in_bond(Point(coords),b,string_curves[k]);
-		    b->length0 = spacing;
-		    b = b->next;
-		}
-		
-        b->length0 = spacing;
-		af_params->string_curves.push_back(string_curves[k]);
-	    }
-	
     }
 	
     FT_FreeThese(1,string_curves);
@@ -3060,7 +3186,7 @@ static void CgalCircleBelt(
         installCircleBeltString(front,*surf,belt,circle_node_pts,
                                 ubelt_node_pts,num_strings);
             
-        installString(infile,front,belt,curves[1],lbelt_node_pts,
+        installStrings(infile,front,belt,curves[1],lbelt_node_pts,
                                 num_strings);
         
             //gview_plot_interface("test-DGB0",front->interf);
