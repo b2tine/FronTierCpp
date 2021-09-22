@@ -28,7 +28,7 @@ Type yes to turn off auto-redistribution: y
 
 **************Fluid parameters***************
 Enter advection order: 4
-Enter yes for advection term extrapolation: no
+Enter yes for advection term extrapolation: yes
 
 Projection type can be
         SIMPLE
@@ -125,7 +125,7 @@ Enter string rounding tolerance: 0.000004
 
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.0
-Enter strain rate limit: 0.1
+Enter strain rate limit: 0.05
 
 Enter yes for collision substepping: yes
 Enter nsub per collision step: 20
