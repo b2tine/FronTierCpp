@@ -651,9 +651,7 @@ void CollisionSolver3d::computeAverageVelocity()
             sl = (STATE*)left_state(p); 
             for (int j = 0; j < 3; ++j)
     	    {
-                //TODO: MACH_EPS == 2.22045e-16 too small???
-                //if (dt > MACH_EPS)
-                if (dt > 1.0e-06) //TODO: what's best max_dt?
+                if (dt > 1.0e-08) //TODO: what's best max_dt?
                 {
                     sl->avgVel[j] = (Coords(p)[j] - sl->x_old[j])/dt;
                     sl->avgVel_old[j] = sl->avgVel[j];
