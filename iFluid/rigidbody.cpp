@@ -443,6 +443,7 @@ void setRigidBodyMotionParams(
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
                 wave_type(*s) == NEUMANN_BOUNDARY)
             {
+                rgb_params->is_fixed = false;
                 if (wave_type(*s) == NEUMANN_BOUNDARY)
                 {
                     rgb_params->is_fixed = true;
@@ -488,9 +489,7 @@ static void prompt_for_rigid_body_params(
                     rgb_params->no_fluid = YES;
             }
         }
-        
         count++;
-        //rgb_params->body_index = count++;
         
         if (rgb_params->is_fixed) return;
 
@@ -808,37 +807,39 @@ static void set_rgbody_params(
         RG_PARAMS* rg_params,
         HYPER_SURF* hs)
 {
-        int i,dim = rg_params->dim;
-	    body_index(hs) = rg_params->body_index;
-        total_mass(hs) = rg_params->total_mass;
-        mom_inertial(hs) = rg_params->moment_of_inertial;
-        angular_velo(hs) = rg_params->angular_velo;
-        motion_type(hs) = rg_params->motion_type;
-        vparams(hs) = rg_params->vparams;
-        vel_func(hs) = rg_params->vel_func;
-        surface_tension(hs) = 0.0;
-        
-        for (i = 0; i < dim; ++i)
-        {
-            center_of_mass(hs)[i] = rg_params->center_of_mass[i];
-            center_of_mass_velo(hs)[i] = rg_params->cen_of_mass_velo[i];
-            rotation_center(hs)[i] = rg_params->rotation_cen[i];
-            translation_dir(hs)[i] = rg_params->translation_dir[i];
-            if (dim == 3)
-            {
-                rotation_direction(hs)[i] = rg_params->rotation_dir[i];
-                p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
-                p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
-            }
-        }
-        
+    body_index(hs) = rg_params->body_index;
+    if (rg_params->is_fixed) return;
+
+    total_mass(hs) = rg_params->total_mass;
+    mom_inertial(hs) = rg_params->moment_of_inertial;
+    angular_velo(hs) = rg_params->angular_velo;
+    motion_type(hs) = rg_params->motion_type;
+    vparams(hs) = rg_params->vparams;
+    vel_func(hs) = rg_params->vel_func;
+    surface_tension(hs) = 0.0;
+    
+    int dim = rg_params->dim;
+    for (int i = 0; i < dim; ++i)
+    {
+        center_of_mass(hs)[i] = rg_params->center_of_mass[i];
+        center_of_mass_velo(hs)[i] = rg_params->cen_of_mass_velo[i];
+        rotation_center(hs)[i] = rg_params->rotation_cen[i];
+        translation_dir(hs)[i] = rg_params->translation_dir[i];
         if (dim == 3)
         {
-            for (i = 0; i < 4; i++)
-                euler_params(hs)[i] = rg_params->euler_params[i];
+            rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+            p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+            p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
         }
+    }
+    
+    if (dim == 3)
+    {
+        for (int i = 0; i < 4; i++)
+            euler_params(hs)[i] = rg_params->euler_params[i];
+    }
 
-        no_slip(hs) = rg_params->no_slip;
+    no_slip(hs) = rg_params->no_slip;
 }       /* end set_rgbody_params */
 
 /*

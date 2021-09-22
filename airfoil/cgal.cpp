@@ -285,8 +285,10 @@ static void CgalCircle(
         double *out_nodes_coords,*in_nodes_coords;
 	double *out_vtx_coords,*in_vtx_coords;
 	double ang_out, ang_in;
-	int out_vtx_oneside = 15, in_vtx_oneside = 2;
-	char gore_bool[10],vent_bool[10], string_bool[10],string[10];
+	
+    int out_vtx_oneside = 15, in_vtx_oneside = 2;
+	
+    char gore_bool[10],vent_bool[10], string_bool[10],string[10];
 	std::list<Cgal_Point> list_of_seeds;
 	
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -309,6 +311,7 @@ static void CgalCircle(
     (void) printf("%s\n",gore_bool);
     if (gore_bool[0]=='y' || gore_bool[0]=='Y')
     {
+        //TODO: would be overwritten if vent present
         CirR[1] = 0.1 * CirR[0];
         af_params->attach_gores = YES;
 	}
@@ -358,9 +361,9 @@ static void CgalCircle(
 	    if (0 == i % out_vtx_oneside)
 	    {
 		out_nodes_coords[i/out_vtx_oneside] =
-            CirCenter[0] + CirR[0]*cos(i*ang_out+offset);
-		out_nodes_coords[i/out_vtx_oneside+num_strings] = 
-            CirCenter[1] + CirR[0]*sin(i*ang_out+offset);
+            CirCenter[0] + CirR[0]*cos(i*ang_out+offset);//x coord
+		out_nodes_coords[i/out_vtx_oneside + num_strings] = 
+            CirCenter[1] + CirR[0]*sin(i*ang_out+offset);//y coord
 	    }
 	}
 
@@ -368,6 +371,7 @@ static void CgalCircle(
 		cdt.insert_constraint(v_out[i],v_out[i+1]);
 	cdt.insert_constraint(v_out[0],v_out[num_out_vtx-1]);
 
+    //vent boundary
 	if (CirR[1] != 0)
 	{
 	    for (i = 0; i < num_in_vtx; i++)
@@ -379,7 +383,7 @@ static void CgalCircle(
 	        {
 		    in_nodes_coords[i/in_vtx_oneside] =
                 CirCenter[0] + CirR[1]*cos(i*ang_in+offset);
-		    in_nodes_coords[i/in_vtx_oneside+num_strings] =
+		    in_nodes_coords[i/in_vtx_oneside + num_strings] =
                 CirCenter[1] + CirR[1]*sin(i*ang_in+offset);
 	        }
 	    }
@@ -395,7 +399,7 @@ static void CgalCircle(
 	    }
 	    if (vent_bool[0]=='y'|| vent_bool[0]=='Y')
 	    {
-		list_of_seeds.push_back(Cgal_Point(CirCenter[0], CirCenter[1]));
+		    list_of_seeds.push_back(Cgal_Point(CirCenter[0], CirCenter[1]));
 	    }
 	}
 	
@@ -464,8 +468,7 @@ static void CgalCircle(
 
 	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
 	{
-	    findStringNodePoints(*surf,out_nodes_coords,string_node_pts,
-                                num_strings,&cbdry);
+	    findStringNodePoints(*surf,out_nodes_coords,string_node_pts,num_strings,&cbdry);
 	    installString(infile,front,*surf,cbdry,string_node_pts,num_strings);
 	}
 
@@ -492,8 +495,11 @@ static void CgalCircle(
     setSurfZeroMesh(*surf);
 	setMonoCompBdryZeroLength(*surf);
 	FT_FreeThese(1,string_node_pts);
-	if (consistent_interface(front->interf) == NO)
-	    clean_up(ERROR);
+	
+    if (consistent_interface(front->interf) == NO)
+    {
+        LOC(); clean_up(ERROR);
+    }
 }	/* end CgalCircle */
 
 static void InstallInCurve(
@@ -1505,25 +1511,25 @@ static void findStringNodePoints(
 	CURVE **c;
 	BOND *bond;
 	int i;
-	surf_pos_curve_loop(surf,c)
+	
+    surf_pos_curve_loop(surf,c)
 	{
-	    if (canopy_bdry != NULL)
-		break;
+	    if (canopy_bdry != NULL) break;
 	    curve_bond_loop(*c,bond)
 	    if (Coords(bond->start)[0] == nodes_coords[0] &&
-            	Coords(bond->start)[1] == nodes_coords[num_strings])
+            Coords(bond->start)[1] == nodes_coords[num_strings])
 	    {
 	    	canopy_bdry = *c; 
 	    	break;
 	    }
 	}
+
 	surf_neg_curve_loop(surf,c)
 	{
-	    if (canopy_bdry != NULL)
-		break;
+	    if (canopy_bdry != NULL) break;
 	    curve_bond_loop(*c,bond)
 	    if (Coords(bond->start)[0] == nodes_coords[0] &&
-            	Coords(bond->start)[1] == nodes_coords[num_strings])
+            Coords(bond->start)[1] == nodes_coords[num_strings])
 	    {
 	    	canopy_bdry = *c; 
 	    	break;
@@ -1534,21 +1540,179 @@ static void findStringNodePoints(
 	{
 	    curve_bond_loop(canopy_bdry,bond)
 	    {
-		if (Coords(bond->start)[0] == nodes_coords[i] &&
-		    Coords(bond->start)[1] == nodes_coords[i+num_strings])
-		{
-		    string_node_pts[i] = bond->start;
-		}
+            if (Coords(bond->start)[0] == nodes_coords[i] &&
+                Coords(bond->start)[1] == nodes_coords[i+num_strings])
+            {
+                string_node_pts[i] = bond->start;
+            }
 	    }
+
+        //Why is this loop needed afer looping through the bonds above?
 	    if (Coords(canopy_bdry->end->posn)[0] == nodes_coords[i] &&
-		Coords(canopy_bdry->end->posn)[1] == nodes_coords[i+num_strings])
+		    Coords(canopy_bdry->end->posn)[1] == nodes_coords[i+num_strings])
 	    {
-		string_node_pts[i] = canopy_bdry->end->posn;
+            string_node_pts[i] = canopy_bdry->end->posn;
 	    }
 	}
+
 	*cbdry = canopy_bdry;
 }	/* end findStringNodePoints */
 
+/*
+//TODO: Write this function
+static void installString(
+	FILE *infile,
+	Front *front,
+	SURFACE *surf,
+	CURVE *canopy_bdry,
+	POINT **string_node_pts,
+	int num_strings)
+{
+    if (...)
+    {
+        installStringsLoadNode(...);
+    }
+    else
+    {
+        installStringsRigidBody(...);
+    }
+}
+*/
+
+/*
+//TODO: write this function
+static void installStringsLoadNode(
+	FILE *infile,
+	Front *front,
+	SURFACE *surf,
+	CURVE *canopy_bdry,
+	POINT **string_node_pts,
+	int num_strings)
+{
+	INTERFACE *intfc = front->interf;
+	char string[100];
+	double cload[MAXD],coords[MAXD],dir[MAXD];
+	NODE *nload,**string_nodes;
+	CURVE **string_curves,**c;
+	BOND *bond;
+	AF_NODE_EXTRA *extra;
+	boolean node_moved;
+	double spacing,*h = computational_grid(intfc)->h;
+	int nb;
+	int i, j,k;
+	double length,len_fac;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+    ////////////////////////////////////////////////////////////////////
+    //TODO: Group with the code at the end of this function,
+    //      and factor out of rigid body initialization.
+    //      Create separate functions for these two distinct
+    //      initializations.
+    CursorAfterString(infile,"Enter initial position of load:");
+    fscanf(infile,"%lf %lf %lf",&cload[0],&cload[1],&cload[2]);
+    (void) printf("%f %f %f\n",cload[0],cload[1],cload[2]);
+
+	nload = make_node(Point(cload));
+	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+    extra->af_node_type = LOAD_NODE;
+
+	if (CursorAfterStringOpt(infile,"Enter yes to fix the load node:"))
+	{
+	    char s[100];
+	    fscanf(infile,"%s",s);
+        (void) printf("%s\n",s);
+	    if (s[0] == 'Y' || s[0] == 'y')
+            extra->af_node_type = PRESET_NODE;
+	}
+    nload->extra = (POINTER)extra;
+    nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+    ////////////////////////////////////////////////////////////////////
+
+
+    //create new nodes at the string_node_pts
+	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,sizeof(NODE*));
+
+	node_moved = NO;
+	for (i = 0; i < num_strings; ++i)
+	{
+        //Make beginning of canopy_bdry CURVE correspond to string_node_pts[0]
+        //and assign to string_nodes[0].
+	    if (!node_moved)
+	    {
+            node_moved = YES;
+            curve_bond_loop(canopy_bdry,bond)
+            {
+                if (bond->start == string_node_pts[i])
+                {
+                    move_closed_loop_node(canopy_bdry,bond);
+                    string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                    FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                    extra->af_node_type = STRING_NODE;
+                    string_nodes[i]->extra = (POINTER)extra;
+                    string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+                    break;
+                }
+            }
+
+            continue;
+        }
+	    
+        //Insert NODEs on canopy_bdry CURVE that correspond to string_node_pts[i]
+        //and assign to string_nodes[i].
+        curve_bond_loop(canopy_bdry,bond)
+	    {
+            if (bond->start == string_node_pts[i])
+            {
+                split_curve(bond->start,bond,canopy_bdry,0,0,0,0);
+                string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                extra->af_node_type = STRING_NODE;
+                string_nodes[i]->extra = (POINTER)extra;
+                string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+                break;
+            }
+	    }
+
+	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
+	}
+
+
+    // make the all initial springs at their equilibruim length
+    FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
+	
+    double hmin = std::min(h[0],h[1]);
+    hmin = std::min(hmin,h[2]);
+
+    for (i = 0; i < num_strings; ++i)
+	{
+	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
+
+	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
+	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
+	    for (j = 0; j < 3; ++j)
+		dir[j] = (Coords(nload->posn)[j] -
+			Coords(string_nodes[i]->posn)[j])/spacing;
+	    nb = rint(spacing/(0.40*hmin)) + 1;
+	    spacing /= (double)nb;
+	    bond = string_curves[i]->first;
+	    for (j = 1; j < nb; ++j)
+	    {
+            for (k = 0; k < 3; ++k)
+                coords[k] = Coords(string_nodes[i]->posn)[k] + j*dir[k]*spacing;
+            insert_point_in_bond(Point(coords),bond,string_curves[i]);
+            bond->length0 = spacing;
+            bond = bond->next;
+	    }
+	    bond->length0 = spacing;
+	    af_params->string_curves.push_back(string_curves[i]);
+	}
+        
+	FT_FreeThese(1,string_curves);
+}*/	/* end installStringsLoadNode */
+
+//TODO: Rewrite below to fit the above framework
+//
+//static void installStringRigidBody()
 static void installString(
 	FILE *infile,
 	Front *front,
@@ -1597,45 +1761,50 @@ static void installString(
     ////////////////////////////////////////////////////////////////////
 
 
-
+    //create new nodes at the string_node_pts
 	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,sizeof(NODE*));
 
 	node_moved = NO;
 	for (i = 0; i < num_strings; ++i)
 	{
+        //Make beginning of canopy_bdry CURVE correspond to string_node_pts[0]
+        //and assign to string_nodes[0].
 	    if (!node_moved)
 	    {
-		node_moved = YES;
-		curve_bond_loop(canopy_bdry,bond)
-		{
-		    if (bond->start == string_node_pts[i])
-		    {
-			move_closed_loop_node(canopy_bdry,bond);
-			string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
-			FT_ScalarMemoryAlloc((POINTER*)&extra,
-					sizeof(AF_NODE_EXTRA));
-                	extra->af_node_type = STRING_NODE;
-                	string_nodes[i]->extra = (POINTER)extra;
-                	string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
-			break;
-		    }
-		}
-		continue;		
-	    }
-	    curve_bond_loop(canopy_bdry,bond)
-	    {
-		if (bond->start == string_node_pts[i])
-		{
-		    split_curve(bond->start,bond,canopy_bdry,0,0,0,0);
-		    string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
-                    FT_ScalarMemoryAlloc((POINTER*)&extra,
-					sizeof(AF_NODE_EXTRA));
+            node_moved = YES;
+            curve_bond_loop(canopy_bdry,bond)
+            {
+                if (bond->start == string_node_pts[i])
+                {
+                    move_closed_loop_node(canopy_bdry,bond);
+                    string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                    FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
                     extra->af_node_type = STRING_NODE;
                     string_nodes[i]->extra = (POINTER)extra;
                     string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
                     break;
-		}
+                }
+            }
+
+            continue;
+        }
+	    
+        //Insert NODEs on canopy_bdry CURVE that correspond to string_node_pts[i]
+        //and assign to string_nodes[i].
+        curve_bond_loop(canopy_bdry,bond)
+	    {
+            if (bond->start == string_node_pts[i])
+            {
+                split_curve(bond->start,bond,canopy_bdry,0,0,0,0);
+                string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                extra->af_node_type = STRING_NODE;
+                string_nodes[i]->extra = (POINTER)extra;
+                string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
+                break;
+            }
 	    }
+
 	    canopy_bdry = I_CurveOfPoint(intfc,bond->start,&bond);
 	}
 
@@ -1712,8 +1881,7 @@ static void installString(
     //      or to a separate function...
 
     /* make the all initial springs at their equilibruim length */
-    FT_VectorMemoryAlloc((POINTER*)&string_curves,
-            num_strings,sizeof(CURVE*));
+    FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
 	
     double hmin = std::min(h[0],h[1]);
     hmin = std::min(hmin,h[2]);
@@ -1763,40 +1931,40 @@ static void resetStringNodePoints(
 	    (void) printf("Entering resetStringNodePoints()\n");
 	    (void) printf("nv = %d\n",nv);
 	}
+
 	surf_pos_curve_loop(surf,c)
 	{
-	    if (canopy_bdry != NULL)
-		break;
+	    if (canopy_bdry != NULL) break;
 	    curve_bond_loop(*c,bond)
 	    {
-		for (i = 0; i < nv; ++i)
-		{
-		    if (bond->start == string_node_pts[i])
-		    {
-	    		canopy_bdry = *c; 
-	    		break;
-		    }	
-		    if (canopy_bdry != NULL)
-			break;
-		}
+            for (i = 0; i < nv; ++i)
+            {
+                if (bond->start == string_node_pts[i])
+                {
+                    canopy_bdry = *c; 
+                    break;
+                }	
+                
+                if (canopy_bdry != NULL) break;
+            }
 	    }
 	}
+
 	surf_neg_curve_loop(surf,c)
 	{
-	    if (canopy_bdry != NULL)
-		break;
+	    if (canopy_bdry != NULL) break;
 	    curve_bond_loop(*c,bond)
 	    {
-		for (i = 0; i < nv; ++i)
-		{
-		    if (bond->start == string_node_pts[i])
-		    {
-	    		canopy_bdry = *c; 
-	    		break;
-		    }	
-		    if (canopy_bdry != NULL)
-			break;
-		}
+            for (i = 0; i < nv; ++i)
+            {
+                if (bond->start == string_node_pts[i])
+                {
+                    canopy_bdry = *c; 
+                    break;
+                }	
+                
+                if (canopy_bdry != NULL) break;
+            }
 	    }
 	}
 
@@ -1805,21 +1973,25 @@ static void resetStringNodePoints(
 	    node_found = NO;
 	    curve_bond_loop(canopy_bdry,bond)
 	    {
-		if (bond->start == string_node_pts[i])
-		    node_found = YES;
+            if (bond->start == string_node_pts[i])
+	    	    node_found = YES;
 	    }
+
 	    if (canopy_bdry->last->end == string_node_pts[i])
-		node_found = YES;
-	    if (!node_found)
+		    node_found = YES;
+	    
+        if (!node_found)
 	    {
-		for (j = i; j < nv-1; ++j)
-		    string_node_pts[j] = string_node_pts[j+1];
-		nv--;
+            for (j = i; j < nv-1; ++j)
+                string_node_pts[j] = string_node_pts[j+1];
+		    nv--;
 	    }
 	}
+
 	*num_strings = nv;
 	*cbdry = canopy_bdry;
-	if (debugging("sewing"))
+	
+    if (debugging("sewing"))
 	{
 	    (void) printf("Leaving resetStringNodePoints()\n");
 	    (void) printf("nv = %d\n",nv);
@@ -2008,12 +2180,14 @@ static void connectStringtoRGB(
 	/* find and make rg_string_node */
 	findPointsonRGB(front, rg_surf, target);
     int num_target = target.size();
+    
     //TODO: Need to save number of attachement points
     //      for use in set_node_spring_vertex() when assigning
     //      node mass.
     //      mass_per_rg_string_node = payload/num_rg_string_nodes
     HYPER_SURF* hs = Hyper_surf(rg_surf);
-    af_params->payload = total_mass(hs)/num_target;
+    af_params->payload = total_mass(hs);
+        //af_params->payload = total_mass(hs)/num_target; //TODO: This isn't correct
     
     if (num_strings == 1)
     {
@@ -2061,16 +2235,13 @@ static void connectStringtoRGB(
 	for (i = 0; i < num; ++i)
 	{
 	    TRI *t = target[i]->tris[0];
-            int vertex = Vertex_of_point(t,target[i]);
+        int vertex = Vertex_of_point(t,target[i]);
 	    for (int j = 0; j < target[i]->num_tris; ++j)
-	    {
-		t = target[i]->tris[j];
-		vertex = Vertex_of_point(t,target[i]);
-		if (Coords(Point_of_tri(t)[Next_m3(vertex)])[2] < 
-		    Coords(target[i])[2] && 
-		    Coords(Point_of_tri(t)[Prev_m3(vertex)])[2] <
-		    Coords(target[i])[2])
-		    break;
+        {
+            t = target[i]->tris[j];
+            vertex = Vertex_of_point(t,target[i]);
+            if (Coords(Point_of_tri(t)[Next_m3(vertex)])[2] < Coords(target[i])[2] && 
+                Coords(Point_of_tri(t)[Prev_m3(vertex)])[2] < Coords(target[i])[2]) break;
 	    }
 	    NODE *rg_node = make_node(Point_of_tri(t)[Next_m3(vertex)]);
         rg_curves[i] = make_curve(0,0,rg_string_nodes[i], rg_node);
@@ -2095,8 +2266,7 @@ static void connectStringtoRGB(
         */
 	}
 
-	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,
-						sizeof(CURVE*));
+	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
 	
     //TODO: would like to have string-fluid initialization outside
     //      of this function. See comment in installString().
@@ -2174,9 +2344,10 @@ static void connectStringtoRGB(
 		hsbdry_type(string_curves[k]) = STRING_HSBDRY;
 		spacing = separation(start->posn,end->posn,3);
 		for (j = 0; j < 3; ++j)
-		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])
-							/ spacing;
-		nb = rint(spacing/(0.40*hmin)) + 1;
+        {
+		    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
+        }
+        nb = rint(spacing/(0.40*hmin)) + 1;
 		spacing /= (double)nb;
 		b = string_curves[k]->first;
 		for (i = 1; i < nb; ++i)
@@ -2243,31 +2414,33 @@ static void findPointsonRGB(
 	{
 	    for (i = 0; i < 3; ++i)
 	    {
-		pt = Point_of_tri(tri)[i];
-		if (candidate.empty())
-		    candidate.push_back(pt);
-		else
-		{
-		    POINT* tmp = candidate.front();
-		    if (fabs(Coords(pt)[2] - Coords(tmp)[2]) < 1.0e-6)
-		    {
-			if (std::find(candidate.begin(),candidate.end(),pt) 
-				== candidate.end())
-			    candidate.push_back(pt);
-		    }
-		    else if (Coords(pt)[2] > Coords(tmp)[2])
-		    {
-			candidate.clear();
-			candidate.push_back(pt);
-		    }
-		}
+            pt = Point_of_tri(tri)[i];
+            
+            if (candidate.empty())
+            {
+                candidate.push_back(pt);
+            }
+            else
+            {
+                POINT* tmp = candidate.front();
+                if (fabs(Coords(pt)[2] - Coords(tmp)[2]) < 1.0e-6)
+                {
+                    if (std::find(candidate.begin(),candidate.end(),pt) == candidate.end())
+                        candidate.push_back(pt);
+                }
+                else if (Coords(pt)[2] > Coords(tmp)[2])
+                {
+                    candidate.clear();
+                    candidate.push_back(pt);
+                }
+            }
 	    }
 	}
 
     HYPER_SURF* hs = Hyper_surf(rg_surf);
 
 	/* for one-point cases, repeat finding with a lower z coordinate */
-	if (rgb_shape(hs) != SPHERE)
+	if (rgb_shape(hs) != SPHERE) //TODO: Temporary to figure out mass and force etc.
     {
         if (candidate.size() == 1)
         {
@@ -2279,9 +2452,8 @@ static void findPointsonRGB(
                 for (i = 0; i < 3; ++i)
                 {
                     pt = Point_of_tri(tri)[i];
-                    if ( (fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
-                     (std::find(candidate.begin(),candidate.end(),pt)
-                            == candidate.end()) )
+                    if ((fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
+                        (std::find(candidate.begin(),candidate.end(),pt) == candidate.end()))
                     {
                         candidate.push_back(pt);
                     }
@@ -2311,36 +2483,47 @@ static void findPointsonRGB(
 	    /* find points with the max and min x coordinate */
 	    tmp = x_max.front();
 	    if (fabs(Coords(*it)[0] - Coords(tmp)[0]) < 1.0e-6)
-		x_max.push_back(*it);
-	    else if (Coords(*it)[0] > Coords(tmp)[0])
+        {
+            x_max.push_back(*it);
+        }
+        else if (Coords(*it)[0] > Coords(tmp)[0])
 	    {
-		x_max.clear();
-		x_max.push_back(*it);
+		    x_max.clear();
+		    x_max.push_back(*it);
 	    }
-	    tmp = x_min.front();
-	    if (fabs(Coords(*it)[0] - Coords(tmp)[0]) < 1.0e-6)
-		x_min.push_back(*it);
-	    else if (Coords(*it)[0] < Coords(tmp)[0])
+        tmp = x_min.front();
+
+        if (fabs(Coords(*it)[0] - Coords(tmp)[0]) < 1.0e-6)
+        {
+            x_min.push_back(*it);
+        }
+        else if (Coords(*it)[0] < Coords(tmp)[0])
 	    {
-		x_min.clear();
-		x_min.push_back(*it);
+	    	x_min.clear();
+		    x_min.push_back(*it);
 	    }
-	    /* find points with the max and min y coordinate */
+	    
+        /* find points with the max and min y coordinate */
 	    tmp = y_max.front();
 	    if (fabs(Coords(*it)[1] - Coords(tmp)[1]) < 1.0e-6)
-		y_max.push_back(*it);
-	    else if (Coords(*it)[1] > Coords(tmp)[1])
+        {
+            y_max.push_back(*it);
+        }
+        else if (Coords(*it)[1] > Coords(tmp)[1])
 	    {
-		y_max.clear();
-		y_max.push_back(*it);
+		    y_max.clear();
+		    y_max.push_back(*it);
 	    }
 	    tmp = y_min.front();
-	    if (fabs(Coords(*it)[1] - Coords(tmp)[1]) < 1.0e-6)
-		y_min.push_back(*it);
-	    else if (Coords(*it)[1] < Coords(tmp)[1])
+	    
+        if (fabs(Coords(*it)[1] - Coords(tmp)[1]) < 1.0e-6)
+        {
+            y_min.push_back(*it);
+        }
+        else if (Coords(*it)[1] < Coords(tmp)[1])
 	    {
-		y_min.clear();
-		y_min.push_back(*it);
+		    y_min.clear();
+		    y_min.push_back(*it);
 	    }
 	}	
     candidate.clear();
@@ -2348,26 +2531,29 @@ static void findPointsonRGB(
 	if (find_x == YES)
 	{
 	    if (x_max.size() == 1)
-		candidate.push_back(x_max.front());
+		    candidate.push_back(x_max.front());
 	    else
-		vector_extreme(x_max, 1, candidate);
-	    if (x_min.size() == 1)
-		candidate.push_back(x_min.front());
+		    vector_extreme(x_max, 1, candidate);
+	    
+        if (x_min.size() == 1)
+		    candidate.push_back(x_min.front());
 	    else
-		vector_extreme(x_min, 1, candidate);
+	    	vector_extreme(x_min, 1, candidate);
 	}
 	
     if (find_y == YES)
 	{
 	    if (y_max.size() == 1)
-		candidate.push_back(y_max.front());
+		    candidate.push_back(y_max.front());
 	    else
-		vector_extreme(y_max, 0, candidate);
-	    if (y_min.size() == 1)
-		candidate.push_back(y_min.front());
+		    vector_extreme(y_max, 0, candidate);
+	    
+        if (y_min.size() == 1)
+		    candidate.push_back(y_min.front());
 	    else
-		vector_extreme(y_min, 0, candidate);
+		    vector_extreme(y_min, 0, candidate);
 	}
+
 	target = candidate;
 
 	if (debugging("rigid_body"))
@@ -2405,50 +2591,54 @@ static void linkSurfaceTriPoint(
         INTERFACE *intfc,
         SURFACE *surf)
 {
-        TRI *tri,**ptris;
-        int i,j,num_point_tris;
-        POINT **pts;
-        std::vector<POINT*> pts_on_rgb;
+    TRI *tri,**ptris;
+    int i,j,num_point_tris;
+    POINT **pts;
+    std::vector<POINT*> pts_on_rgb;
 
-        if (debugging("trace"))
-            printf("Entering linkSurfaceTriPoint() \n");
-        num_point_tris = 0;
-        surf_tri_loop(surf,tri)
+    if (debugging("trace"))
+        printf("Entering linkSurfaceTriPoint() \n");
+    
+    num_point_tris = 0;
+    surf_tri_loop(surf,tri)
 	{
 	    pts = Point_of_tri(tri);
 	    for (j = 0; j < 3; j++)
-		pts[j]->num_tris = 0;
+            pts[j]->num_tris = 0;
 	}
-        surf_tri_loop(surf,tri)
+
+    surf_tri_loop(surf,tri)
+    {
+        pts = Point_of_tri(tri);
+        for (j = 0; j < 3; j++)
         {
-            pts = Point_of_tri(tri);
-            for (j = 0; j < 3; j++)
-            {
-                if (pts[j]->num_tris == 0)
-                    pts_on_rgb.push_back(pts[j]);
-                pts[j]->num_tris++;
-            }
-            num_point_tris += 3;
+            if (pts[j]->num_tris == 0)
+                pts_on_rgb.push_back(pts[j]);
+            pts[j]->num_tris++;
         }
-        intfc->point_tri_store_rgb = (TRI**)store(num_point_tris*sizeof(TRI*));
-        ptris = intfc->point_tri_store_rgb;
-        for (i = 0; i < pts_on_rgb.size(); ++i)
+        num_point_tris += 3;
+    }
+
+    intfc->point_tri_store_rgb = (TRI**)store(num_point_tris*sizeof(TRI*));
+    ptris = intfc->point_tri_store_rgb;
+    for (i = 0; i < pts_on_rgb.size(); ++i)
+    {
+        pts_on_rgb[i]->tris = ptris;
+        ptris += pts_on_rgb[i]->num_tris;
+        pts_on_rgb[i]->num_tris = 0;
+    }
+    
+    surf_tri_loop(surf,tri)
+    {
+        pts = Point_of_tri(tri);
+        for (j = 0; j < 3; j++)
         {
-            pts_on_rgb[i]->tris = ptris;
-            ptris += pts_on_rgb[i]->num_tris;
-            pts_on_rgb[i]->num_tris = 0;
+            pts[j]->tris[pts[j]->num_tris++] = tri;
         }
-        surf_tri_loop(surf,tri)
-        {
-            pts = Point_of_tri(tri);
-            for (j = 0; j < 3; j++)
-            {
-                pts[j]->tris[pts[j]->num_tris++] = tri;
-            }
-        }
-        if (debugging("trace"))
-            printf("Leaving linkSurfaceTriPoint() \n");
-        return;
+    }
+
+    if (debugging("trace"))
+        printf("Leaving linkSurfaceTriPoint() \n");
 }       /* end linkSurfaceTriPoint */
 
 extern void InstallNewLoadNode(

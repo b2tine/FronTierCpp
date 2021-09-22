@@ -246,7 +246,7 @@ typedef struct {
 
 struct _AF_NODE_EXTRA {
 	AF_NODE_TYPE af_node_type;
-	double accum_impulse;
+	int num; //generic counting variable -- using to keep track of how many rg_string_nodes there are
 };
 typedef struct _AF_NODE_EXTRA AF_NODE_EXTRA;
 

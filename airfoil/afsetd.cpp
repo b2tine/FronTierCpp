@@ -287,7 +287,7 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
         
         //zero compressive stress
         double dL = len - sv->len0[j];
-        if (dL < 0.0) continue;
+        if (dL <= 0.0) continue;
 
 	    for (int k = 0; k < dim; ++k)
 	    {
@@ -867,6 +867,7 @@ extern void set_node_spring_vertex(
 	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
 	    if (extra != NULL)
         {
+            //TODO: Need to deal with case of FIXED_LOAD_NODE AND FIXED_RG_STRING_NODE
             if (extra->af_node_type == PRESET_NODE)
             {
                 mass = geom_set->m_s;
@@ -882,10 +883,7 @@ extern void set_node_spring_vertex(
                 //TODO: If multiple RG_STRING_NODE nodes,
                 //      should the mass be a fraction of the total
                 //      payload (which is the mass of the RGB)?
-                //      i.e. mass = payload/(double)num_rg_string_nodes;
-                //
-                //      The above has been added in cgal.cpp : connectStringtoRGB().
-                //      Leaving this todo and comment for now since it is not obvious.
+                //      i.e. mass = total_mass(hs)/(double)num_rg_string_nodes;
             }
             else if (extra->af_node_type == GORE_NODE)
                 mass = geom_set->m_g;
@@ -1141,7 +1139,7 @@ extern void set_curve_spring_vertex(
 	    	m_l = geom_set->m_l;
 	    	lambda_l = 0.0;
 	    }
-	    else
+	    else //MONO_COMP_HSBDRY
 	    {
 	    	kl = geom_set->ks;
 	    	m_l = geom_set->m_s;
@@ -1903,7 +1901,7 @@ static void assembleParachuteSet3d(
         geom_set->total_num_verts += I_NumOfSurfInteriorPoints(rgb_surfs[i]);
 
 
-    int nrgn = 0;
+    int n_rgbsn = 0;
     geom_set->load_node = NULL;
 
 	for (int i = 0; i < nn; ++i)
@@ -1913,11 +1911,18 @@ static void assembleParachuteSet3d(
             if (is_load_node(nodes[i]))
                 geom_set->load_node = nodes[i];
             else
-                geom_set->rg_string_nodes[nrgn++] = nodes[i];
+                geom_set->rg_string_nodes[n_rgbsn++] = nodes[i];
             reorder_string_curves(nodes[i]);
 	    }
 	}
-    geom_set->num_rgb_string_nodes = nrgn;
+    geom_set->num_rgb_string_nodes = n_rgbsn;
+
+	NODE** rgs_nodes = geom_set->rg_string_nodes;
+    for (int i = 0; i < n_rgbsn; ++i)
+    {
+        AF_NODE_EXTRA* af_node_extra = (AF_NODE_EXTRA*)rgs_nodes[i]->extra;
+        af_node_extra->num = n_rgbsn;
+    }
 
     if (debugging("intfc_assembly"))
     {

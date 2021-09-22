@@ -58,21 +58,27 @@ static void checkSetGoreNodes(INTERFACE*);
 static void set_gore_node(NODE*);
 
 
-int countSurfPoints(INTERFACE* intfc) {
-	int num_fabric_pts  = 0;
+int countSurfPoints(INTERFACE* intfc)
+{
 	int surf_count = 0;
-	for (SURFACE** s = intfc->surfaces; s && *s; ++s)
+	int num_fabric_pts = 0;
+	
+    for (SURFACE** s = intfc->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == ELASTIC_BOUNDARY)
         {
-            if (wave_type(*s) == ELASTIC_BOUNDARY)
-	    {
-                num_fabric_pts += I_NumOfSurfPoints(*s);
-		surf_count++;
-	    }
+            num_fabric_pts += I_NumOfSurfPoints(*s);
+            surf_count++;
         }
-	return num_fabric_pts;
+    }
+	
+    return num_fabric_pts;
 }
 
-int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
+//TODO: Need to adapt for general case -- not just for pointmass
+//      and single attachement point on forebody for all strings
+int countStringPoints(INTERFACE* intfc, boolean is_parachute_system)
+{
 	int num_str_pts = 0;
         for (CURVE** c = intfc->curves; c && *c; ++c)
         {
@@ -85,9 +91,11 @@ int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
 	    if (is_parachute_system == YES)
 		num_str_pts -= 2; //exclude curve boundaries
         }
-	if (is_parachute_system == YES)
+	
+    if (is_parachute_system == YES)
 	    num_str_pts += 1; //load node
-	return num_str_pts;
+	
+    return num_str_pts;
 }
 
 void setMotionParams(Front* front)
@@ -511,6 +519,7 @@ void setFabricParams(Front* front)
         	CursorAfterString(infile,"Enter gore friction constant:");
         	fscanf(infile,"%lf",&af_params->lambda_g);
         	(void) printf("%f\n",af_params->lambda_g);
+            
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter gore total mass:");
@@ -599,7 +608,7 @@ void setFabricParams(Front* front)
                     bs_gindex[i] = i;
             }
 	    }
-	}
+    }
 
     af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
@@ -1433,8 +1442,6 @@ extern void resetFrontVelocity(Front *front)
         
     if (string[0] == 'y' || string[0] == 'Y')
         zeroFrontVelocity(front);
-    
-    return;
 }
 
 extern void zeroFrontVelocity(Front *front)
@@ -1562,6 +1569,7 @@ static void set_gore_node(
 	}
 }	/* end set_gore_node */
 
+//TODO: check if general enough for our purposes or is just a hardcoded special case...
 static void convert_to_point_mass(
         Front *front,
         AF_PARAMS *af_params)
@@ -1581,24 +1589,29 @@ static void convert_to_point_mass(
             {
                 if (wave_type(*c) == ELASTIC_BOUNDARY)
                     num_fabric_pts +=  I_NumOfCurvePoints(*c);
-		else if (wave_type(*c) == ELASTIC_STRING)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c);
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
+                else if (wave_type(*c) == ELASTIC_STRING)
+                {
+                    num_str_pts += I_NumOfCurvePoints(*c);
+                    if (af_params->is_parachute_system == YES)
+                        num_str_pts -= 2; //exclude curve boundary
+                }
             }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
-	    if (num_str_pts != 0)
-		af_params->m_l = af_params->total_string_mass/num_str_pts;
-	    else
-		af_params->m_l = 0.002;
+    
+            if (af_params->is_parachute_system == YES)
+		        num_str_pts += 1; //load node
+	    
+            if (num_fabric_pts != 0)
+                af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+            else
+                af_params->m_s = 0.001;
+            
+            if (num_str_pts != 0)
+                af_params->m_l = af_params->total_string_mass/num_str_pts;
+            else
+                af_params->m_l = 0.002;
+
             break;
+        
         case 3:
             num_str_pts = num_fabric_pts = num_gore_pts = 0;
             for (s = intfc->surfaces; s && *s; ++s)
@@ -1606,33 +1619,41 @@ static void convert_to_point_mass(
                 if (wave_type(*s) == ELASTIC_BOUNDARY)
                     num_fabric_pts += I_NumOfSurfPoints(*s);
             }
+            
             for (c = intfc->curves; c && *c; ++c)
             {
                 if (hsbdry_type(*c) == STRING_HSBDRY)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c); 
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
-		else if (hsbdry_type(*c) == GORE_HSBDRY)
-		    num_gore_pts += I_NumOfCurvePoints(*c);
+                {
+                    num_str_pts += I_NumOfCurvePoints(*c); 
+                    if (af_params->is_parachute_system == YES)
+                        num_str_pts -= 2; //exclude curve boundary
+                }
+                else if (hsbdry_type(*c) == GORE_HSBDRY)
+                {
+                    num_gore_pts += I_NumOfCurvePoints(*c);
+                }
             }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    num_fabric_pts -= num_gore_pts;
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
+    
+            if (af_params->is_parachute_system == YES)
+	        	num_str_pts += 1; //load node
+	    
+            num_fabric_pts -= num_gore_pts;
+	        if (num_fabric_pts != 0)
+		        af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+            else
+		        af_params->m_s = 0.001;
+            
             if (num_str_pts != 0)
                 af_params->m_l = af_params->total_string_mass/num_str_pts;
             else
                 af_params->m_l = 0.002;
-	    if (num_gore_pts != 0)
-		af_params->m_g = af_params->total_gore_mass/num_gore_pts;
-	    else
-		af_params->m_g = 0.001;
-	    break;
+	    
+            if (num_gore_pts != 0)
+		        af_params->m_g = af_params->total_gore_mass/num_gore_pts;
+	        else
+		        af_params->m_g = 0.001;
+	    
+            break;
         }
 }       /* end convert_to_point_mass */
 

@@ -179,7 +179,7 @@ static void compute_total_canopy_force3d(
                     (POINTER*)&sl,(POINTER*)&sr);
             pres_m += sl->pres;
             pres_p += sr->pres;
-            area[i] = Tri_normal(tri)[i];
+            area[i] = Tri_normal(tri)[i];//TODO: NO -- see ifluid_compute_torque_and_force()
 	    }
 
         //TODO: This does not look correct below
@@ -3969,10 +3969,10 @@ static void setSurfVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
             sorted(p) = YES;
         }
@@ -4036,10 +4036,10 @@ static void setCurveVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = sl->impulse[j] + vel[j];
-                sr->vel[j] = sl->impulse[j] + vel[j];
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                //sl->vel[j] = sl->impulse[j] + vel[j];
+                //sr->vel[j] = sl->impulse[j] + vel[j];
             }
         }
 
@@ -4060,10 +4060,10 @@ static void setCurveVelocity(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = sl->impulse[j] + vel[j];
-                sr->vel[j] = sl->impulse[j] + vel[j];
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                    //sl->vel[j] = sl->impulse[j] + vel[j];
+                    //sr->vel[j] = sl->impulse[j] + vel[j];
             }
         }
 
@@ -4097,10 +4097,10 @@ static void setCurveVelocity(
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
+                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                        //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
@@ -4155,10 +4155,10 @@ static void new_setNodeVelocity2d(
         
         for (j = 0; j < 2; ++j)
         {
-            sl->vel[j] = sl->impulse[j] + vel[j];
-            sr->vel[j] = sl->impulse[j] + vel[j];
-                //sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
+            sl->vel[j] = vel[j];
+            sr->vel[j] = vel[j];
+                //sl->vel[j] = sl->impulse[j] + vel[j];
+                //sr->vel[j] = sl->impulse[j] + vel[j];
             max_speed += sqr(vel[j]);
         }
 
@@ -4209,11 +4209,7 @@ static void new_setNodeVelocity3d(
 		    
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
-                //TODO: should we compute max_speed
-                //      for use with set_max_front_speed()?
-                //      Should be the speed of the rigid body
-                //      center of motion that the rg_string_node
-                //      is attached to.
+                //This sets the rg_string_node vel
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -4232,10 +4228,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                //sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
             }
 		}
         
@@ -4261,7 +4257,6 @@ static void new_setNodeVelocity3d(
         
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
             {
-                //TODO: see above
                 for (j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
@@ -4280,10 +4275,10 @@ static void new_setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                //sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
+                    //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
             }
         }
     }
@@ -4309,9 +4304,9 @@ extern void set_geomset_velocity(
     }
     for (int i = 0; i < nn; ++i)
 	{
-	        //if (is_load_node(geom_set->nodes[i])) continue;
-	    if (is_load_node(geom_set->nodes[i]) ||
-            is_rg_string_node(geom_set->nodes[i])) continue;
+        if (is_load_node(geom_set->nodes[i])) continue;
+            //if (is_load_node(geom_set->nodes[i]) ||
+            //    is_rg_string_node(geom_set->nodes[i])) continue;
 	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 
@@ -4571,14 +4566,12 @@ extern void setSpecialNodeForce(
 	INTERFACE* intfc,
 	double kl)
 {
-	    //INTERFACE *intfc = front->interf;
 	int i, k;
 	double f[MAXD], vec[MAXD];
 	NODE **n;
 	CURVE **c;
 	BOND *b;
 	RECT_GRID *gr = &(intfc->table->rect_grid);
-	    //RECT_GRID *gr = front->rect_grid;
 	double *L = gr->L;
 	double *U = gr->U;
 	int dim = gr->dim;
@@ -4588,13 +4581,12 @@ extern void setSpecialNodeForce(
 
 	intfc_node_loop(intfc, n)
 	{
-	    if ( (!is_load_node(*n)) && (!is_rg_string_node(*n)) ) continue;
+	    if ((!is_load_node(*n)) && (!is_rg_string_node(*n))) continue;
 
         for (k = 0; k < dim; ++k)
         {
             if (Coords((*n)->posn)[k] <= L[k] ||
-                Coords((*n)->posn)[k] > U[k])
-                break;
+                Coords((*n)->posn)[k] > U[k]) break;
         }
         if (k != dim) continue;
 
@@ -4613,18 +4605,21 @@ extern void setSpecialNodeForce(
             set_bond_length(b,dim);
 	    }
 	    
-        //TODO: Do these forces have correct orientation?
         node_out_curve_loop(*n,c)
 	    {
             if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
             
             b = (*c)->first;
+            double dL = bond_length(b) - bond_length0(b);
+            
+            //TODO: Zero compressive stress?
+                //if (dL <= 0.0) continue;
+            
             for (i = 0; i < dim; ++i)
             {
                 vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
                 vec[i] /= bond_length(b);
-                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-                //TODO: Zero compressive stress?
+                f[i] += kl*dL*vec[i];
             }
 	    }
 	    
@@ -4633,12 +4628,16 @@ extern void setSpecialNodeForce(
             if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
             
             b = (*c)->last;
+            double dL = bond_length(b) - bond_length0(b);
+            
+            //TODO: Zero compressive stress?
+                //if (dL <= 0.0) continue;
+            
             for (i = 0; i < dim; ++i)
             {
                 vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
                 vec[i] /= bond_length(b);
-                f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-                //TODO: Zero compressive stress?
+                f[i] += kl*dL*vec[i];
             }
 	    }
 	    

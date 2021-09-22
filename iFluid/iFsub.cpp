@@ -1300,6 +1300,7 @@ static  void neumann_point_propagate(
         int i, dim = front->rect_grid->dim;
 	double *m_pre = field->pres;
 	double *m_phi = field->phi;
+    double *m_mu = field->mu;
 	double *m_vor = field->vort;
 	STATE *oldst,*newst;
 	POINTER sl,sr;
@@ -1324,7 +1325,7 @@ static  void neumann_point_propagate(
 
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below).
-	setStateViscosity(iFparams,newst,comp);
+	    //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 
@@ -1349,13 +1350,15 @@ static  void neumann_point_propagate(
     newst->q = oldst->pres;
     //newst->q = 0.0;
 	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+
     if (dim == 2)
     {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
 	FT_RecordMaxFrontSpeed(dim,0.0,NULL,Coords(newp),front);
-        return;
 }	/* end neumann_point_propagate */
 
 static  void dirichlet_point_propagate(
@@ -1570,7 +1573,7 @@ static void rgbody_point_propagate(
 
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below)?
-	setStateViscosity(iFparams,newst,comp);
+	    //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
@@ -1714,6 +1717,9 @@ static void rgbody_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+
     if (m_temp != NULL)
     {
         FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,getStateTemp,

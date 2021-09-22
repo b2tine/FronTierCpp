@@ -242,7 +242,7 @@ static void elastic_point_propagate_fsi(
 	    dv[i] = 0.0;
 	    if (front->step > af_params->fsi_startstep)
         {
-            dv[i] = dP*nor[i]/area_dens;
+            dv[i] = dP*nor[i]/area_dens;    //dv has units of acceleration
             //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
         else if (debugging("rigid_canopy"))
@@ -523,8 +523,8 @@ static void string_curve_propagation(
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
-	            newsr->impulse[i] = newsl->impulse[i] = 0.0;
-	            //newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
             }
 
             /*
@@ -680,15 +680,15 @@ static void gore_point_propagate(
 	    dv = 0.0;
 
 	    if (front->step > af_params->fsi_startstep)
-		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+		    dv = (sl->pres - sr->pres)*nor[i]/area_dens; //dv has units of acceleration
 	    
         if (debugging("rigid_canopy"))
 	    	dv = 0.0;
 
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = 0.0;
-	    //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+        newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+	        //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 }	/* end gore_point_propagate */
 
@@ -1207,7 +1207,6 @@ static void load_node_propagate(
 	double *g = af_params->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
-	double mass = af_params->payload;
 	CURVE **c;
 	STATE *sl,*sr,*newsl,*newsr;
 	double vec[MAXD],vec_mag;
@@ -1229,29 +1228,34 @@ static void load_node_propagate(
 	
     for (i = 0; i < dim; ++i) f[i] = 0.0;
 
-    //TODO: Why do we have to compute the force, f, here and in setSpecialNodeForce()
-
 	node_out_curve_loop(oldn,c)
 	{
 	    b = (*c)->first;
+        double dL = bond_length(b) - bond_length0(b);
+
 	    for (i = 0; i < dim; ++i)
 	    {
-		vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
-		vec[i] /= bond_length(b);
-		f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
 	    }
 	}
 	node_in_curve_loop(oldn,c)
 	{
 	    b = (*c)->last;
+        double dL = bond_length(b) - bond_length0(b);
+
 	    for (i = 0; i < dim; ++i)
 	    {
-		vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
-		vec[i] /= bond_length(b);
-		f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
 	    }
 	}
 
+	double mass = af_params->payload;
 	for (i = 0; i < dim; ++i)
 	{
 	    accel[i] = f[i]/mass;
@@ -1262,12 +1266,14 @@ static void load_node_propagate(
 	        //newsl->impulse[i] = newsr->impulse[i] = 0.0;
 	}
 
+    //set new bond lengths
 	node_out_curve_loop(newn,c)
 	{
 	    b = (*c)->first;
 	    set_bond_length(b,dim);
 	}
-	node_in_curve_loop(newn,c)
+	
+    node_in_curve_loop(newn,c)
 	{
 	    b = (*c)->last;
 	    set_bond_length(b,dim);
@@ -1304,8 +1310,12 @@ static void rg_string_node_propagate(
 	double V[MAXD];
 
     if (!is_rg_string_node(oldn)) return;
-        
-    double mass = af_params->payload;
+    
+    AF_NODE_EXTRA* af_node_extra = (AF_NODE_EXTRA*)oldn->extra;
+    int num_rg_string_nodes = af_node_extra->num; //total number of rg_string_nodes
+    int num_strings = Num_in_curves(oldn); //number of strings attached to the node
+
+    double mass = af_params->payload/num_rg_string_nodes/num_strings;
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -1335,24 +1345,32 @@ static void rg_string_node_propagate(
 	node_out_curve_loop(oldn,c)
     {
         if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        
         b = (*c)->first;
+        double dL = bond_length(b) - bond_length0(b);
+
         for (i = 0; i < dim; ++i)
         {
             vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
             vec[i] /= bond_length(b);
-            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
         
     node_in_curve_loop(oldn,c)
     {
         if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        
         b = (*c)->last;
+        double dL = bond_length(b) - bond_length0(b);
+
         for (i = 0; i < dim; ++i)
         {
             vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
             vec[i] /= bond_length(b);
-            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
 
@@ -1383,10 +1401,9 @@ static void rg_string_node_propagate(
 	{
 	    printf("ERROR in rg_string_node_propagate \n");
 	    printf("No related hs or hse found");
-	    clean_up(ERROR);
+	    LOC(); clean_up(ERROR);
 	}
 	
-    //TODO: hs should have wave_type == MOVABLE_BODY_BOUNDARY?
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
@@ -1409,9 +1426,10 @@ static void rg_string_node_propagate(
             accel[i] = 0.0;
 	}
 
-    //TODO: -= g[i] correct???
     for (i = 0; i < dim; ++i)
+    {
         accel[i] -= g[i];
+    }
 
     if (debugging("rigid_body"))
     {
@@ -1438,7 +1456,6 @@ static void rg_string_node_propagate(
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
 	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
-	        //newsl->impulse[i] = newsr->impulse[i] = 0.0;
 	}
 
     if (debugging("trace"))

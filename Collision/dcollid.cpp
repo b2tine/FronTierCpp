@@ -653,7 +653,7 @@ void CollisionSolver3d::computeAverageVelocity()
     	    {
                 //TODO: MACH_EPS == 2.22045e-16 too small???
                 //if (dt > MACH_EPS)
-                if (dt > 1.0e-05) //TODO: what's best max_dt?
+                if (dt > 1.0e-06) //TODO: what's best max_dt?
                 {
                     sl->avgVel[j] = (Coords(p)[j] - sl->x_old[j])/dt;
                     sl->avgVel_old[j] = sl->avgVel[j];
@@ -875,6 +875,10 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                 {
                     sl->avgVel[k] +=
                         (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                    
+                    //TODO: try this ...
+                    //
+                    //  sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num + sl->friction[k];
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
@@ -2317,18 +2321,17 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
     if (dt < 1.0e-08) return;
 
 	const int MAX_ITER = 3;
-	//const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
         StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
+        StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
         
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Edges -- total_edge_length = %f\n",
-                    bss.n_edges, bss.total_edge_length);
             printf("    %d TRI Strain Edges  -- total_edge_length = %f\n",
                     tss.n_edges, tss.total_edge_length);
+            printf("    %d BOND Strain Edges -- total_edge_length = %f\n",
+                    bss.n_edges, bss.total_edge_length);
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
@@ -2345,25 +2348,26 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
     turnOnGsUpdate();
 
 	const int MAX_ITER = 3;
-	//const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
-        StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
-        /*
-        auto shuffledStringBondList = shuffleHseList(stringBondList);
-        StrainStats bss = computeStrainImpulsesPosn(shuffledStringBondList,mstate);
+        //TODO: Bond list first or Tri list first?
+        //      Is there a difference?
+        
+        //StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
+        //StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
         
         auto shuffledFabricTriList = shuffleHseList(fabricTriList);
         StrainStats tss = computeStrainImpulsesPosn(shuffledFabricTriList,mstate);
-        */
+        
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        StrainStats bss = computeStrainImpulsesPosn(shuffledStringBondList,mstate);
 
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Edges -- total_edge_length = %f\n",
-                    bss.n_edges, bss.total_edge_length);
             printf("    %d TRI Strain Edges  -- total_edge_length = %f\n",
                     tss.n_edges, tss.total_edge_length);
+            printf("    %d BOND Strain Edges -- total_edge_length = %f\n",
+                    bss.n_edges, bss.total_edge_length);
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
@@ -2575,21 +2579,21 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 	
-    const int MAX_ITER = 2;
+    const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        auto shuffledStringBondList = shuffleHseList(stringBondList);
-        StrainStats bss = computeStrainRateImpulsesPosn(shuffledStringBondList,mstate);
-        
         auto shuffledFabricTriList = shuffleHseList(fabricTriList);
         StrainStats tss = computeStrainRateImpulsesPosn(shuffledFabricTriList,mstate);
         
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        StrainStats bss = computeStrainRateImpulsesPosn(shuffledStringBondList,mstate);
+        
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Rate Edges -- total_edge_length = %f\n",
-                    bss.n_edges, bss.total_edge_length);
             printf("    %d TRI Strain Rate Edges  -- total_edge_length = %f\n",
                     tss.n_edges, tss.total_edge_length);
+            printf("    %d BOND Strain Rate Edges -- total_edge_length = %f\n",
+                    bss.n_edges, bss.total_edge_length);
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
@@ -2604,18 +2608,18 @@ void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 2;
+	const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        StrainStats bss = computeStrainRateImpulsesPosn(stringBondList,mstate);
         StrainStats tss = computeStrainRateImpulsesPosn(fabricTriList,mstate);
+        StrainStats bss = computeStrainRateImpulsesPosn(stringBondList,mstate);
         
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Rate Edges -- total_edge_length = %f\n",
-                    bss.n_edges, bss.total_edge_length);
             printf("    %d TRI Strain Rate Edges  -- total_edge_length = %f\n",
                     tss.n_edges, tss.total_edge_length);
+            printf("    %d BOND Strain Rate Edges -- total_edge_length = %f\n",
+                    bss.n_edges, bss.total_edge_length);
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
@@ -2624,7 +2628,6 @@ void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
 	}
 }
 
-//int CollisionSolver3d::computeStrainRateImpulsesPosn(
 StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
         std::vector<CD_HSE*>& list,
         MotionState mstate)
@@ -2798,24 +2801,26 @@ void CollisionSolver3d::limitStrainVelGS()
     turnOnGsUpdate();
 
     const int MAX_ITER = 3;
-    //const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        //int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
-        //int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        //TODO: Bond list first or tri list first?
+        //      Is there a difference?
         
-        auto shuffledStringBondList = shuffleHseList(stringBondList);
-        int numBondStrainVel = computeStrainImpulsesVel(shuffledStringBondList);
-            //StrainStats bss = computeStrainImpulsesVel(shuffledStringBondList);
+        //int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        //int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
         
         auto shuffledFabricTriList = shuffleHseList(fabricTriList);
         int numTriStrainVel = computeStrainImpulsesVel(shuffledFabricTriList);
             //StrainStats tss = computeStrainImpulsesVel(shuffledFabricTriList);
         
+        auto shuffledStringBondList = shuffleHseList(stringBondList);
+        int numBondStrainVel = computeStrainImpulsesVel(shuffledStringBondList);
+            //StrainStats bss = computeStrainImpulsesVel(shuffledStringBondList);
+        
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Velocity Edges\n",numBondStrainVel);
             printf("    %d TRI Strain Velocity Edges\n",numTriStrainVel);
+            printf("    %d BOND Strain Velocity Edges\n",numBondStrainVel);
         }
 
         if (numBondStrainVel == 0 && numTriStrainVel == 0) break;
@@ -2828,20 +2833,20 @@ void CollisionSolver3d::limitStrainVelGS()
 void CollisionSolver3d::limitStrainVelJAC()
 {
     const int MAX_ITER = 3;
-    //const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
         int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
+        int numBondStrainVel = computeStrainImpulsesVel(stringBondList);
         
         if (debugging("strain_limiting"))
         {
-            printf("    %d BOND Strain Velocity Edges\n",numBondStrainVel);
             printf("    %d TRI Strain Velocity Edges\n",numTriStrainVel);
+            printf("    %d BOND Strain Velocity Edges\n",numBondStrainVel);
         }
 
         if (numBondStrainVel == 0 && numTriStrainVel == 0) break;
 
+        //TODO: pass in stringBondList and fabricTriList separately to applyStrainImpulses()
         applyStrainImpulses(MotionState::POSTCOLLISION);
 	}
 }
@@ -2913,11 +2918,12 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //component of the relative velocity in the direction
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
+            if (fabs(vcomp01) < MACH_EPS) continue;
             
-             //Don't correct when points approaching (vcomp01 < ) -- zero compressive stress
-             //TODO: May need to set a negative lower bound to avoid bonds shrinking too small
-            if (vcomp01 < MACH_EPS) continue;
-                //if (fabs(vcomp01) < MACH_EPS) continue;
+            //TODO: Don't correct when points approaching (vcomp01 < ) -- zero compressive stress
+            //      May need to set a negative lower bound to avoid bonds shrinking too small???
+            //      -- this didn't work well, at least without a lower bound...
+                //if (vcomp01 < MACH_EPS) continue;
             
              
              //TODO: Specify a tolerance for the relative velocity in input file.
