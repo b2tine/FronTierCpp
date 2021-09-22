@@ -447,6 +447,7 @@ void setRigidBodyMotionParams(
                 if (wave_type(*s) == NEUMANN_BOUNDARY)
                 {
                     rgb_params->is_fixed = true;
+                    rgb_params->total_mass = 1.0;
                 }
                 prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
@@ -808,9 +809,10 @@ static void set_rgbody_params(
         HYPER_SURF* hs)
 {
     body_index(hs) = rg_params->body_index;
+    total_mass(hs) = rg_params->total_mass;
+    
     if (rg_params->is_fixed) return;
 
-    total_mass(hs) = rg_params->total_mass;
     mom_inertial(hs) = rg_params->moment_of_inertial;
     angular_velo(hs) = rg_params->angular_velo;
     motion_type(hs) = rg_params->motion_type;
