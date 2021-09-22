@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INPUTDIR="input-brandon-FWE"
+INPUTDIR="input-brandon-FWE-v12"
 
 nohup ./parachute -d 3 -i ${INPUTDIR}/in-C9-nVnG-pointmass-VREMAN-v12 -o out-C9-nVnG-pointmass-VREMAN-v12 &
 nohup ./parachute -d 3 -i ${INPUTDIR}/in-C9-nVnG-ball-VREMAN-v12 -o out-C9-nVnG-ball-VREMAN-v12 &
