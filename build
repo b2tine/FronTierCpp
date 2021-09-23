@@ -107,7 +107,17 @@ function config_ds9 {
 ###########################################################
 
 ARCH="opt"
-OPT_FLAGS="-O2 -ffloat-store"
+OPT_FLAGS="-O1"
+#OPT_FLAGS="-O2 -ffloat-store"
+
+#NOTE: Code crashes with -O2, but appears to be ok with -O1.
+#
+#      -ffloat-store is meant to prevent errors occurring due
+#      to excessive precision in doubles on some architectures
+#        -- Not sure if there was a good reason for using this
+#           at some point or if we are fine without it.
+#       Extra precision is in general going to help us rather than
+#       hurt us it seems.
 
 DEBUG_FLAGS="-rdynamic"
 WARNING="-w"
