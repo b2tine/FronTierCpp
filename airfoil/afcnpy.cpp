@@ -2513,8 +2513,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	    {
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
             elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
-                //elastic_intfc = FT_CollectHypersurfFromSubdomains(*newfront,owner,ELASTIC_BOUNDARY);
-            
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
 	    }
 	    else

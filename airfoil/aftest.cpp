@@ -724,8 +724,10 @@ extern void print_airfoil_stat(
 	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	    int owner[MAXD] = {0};
 	    int owner_id = af_params->node_id[0];
-	    elas_intfc = FT_CollectHypersurfFromSubdomains(front, 
-					owner, ELASTIC_BOUNDARY);
+
+        //TODO: match function call in fourth order set propagate that also collects rigid bodies of the intfc
+	    elas_intfc = FT_CollectHypersurfFromSubdomains(front, owner, ELASTIC_BOUNDARY);
+
 	    collectNodeExtra(front,elas_intfc,owner_id);
 	    front->interf = elas_intfc;
 	}	
@@ -892,7 +894,6 @@ static void print_airfoil_stat3d(
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    //TODO: are these even applicable to current parachute code????
 	switch (af_params->spring_model)
 	{
 	case MODEL1:
@@ -913,7 +914,8 @@ static void print_airfoil_stat3d(
 	    print_rgb3d(front,out_name);
     
     if (af_params->no_fluid == YES) return;
-	print_drag3d(front,out_name);
+	
+    print_drag3d(front,out_name);
 }	/* end print_airfoil_stat3d */
 
 static void print_airfoil_stat3d_1(
@@ -953,7 +955,7 @@ static void print_airfoil_stat3d_1(
 	POINTER obj_max;
 
 	if (eskfile == NULL)
-        {
+    {
 	    sprintf(fname,"%s/max_index.dat",out_name);
             gfile = fopen(fname,"w");
 	    sprintf(fname,"%s/esk.xg",out_name);
@@ -988,56 +990,61 @@ static void print_airfoil_stat3d_1(
             samplez = fopen(fname,"w");
 	    sprintf(fname,"%s/vmax.xg",out_name);
             vmaxfile = fopen(fname,"w");
-            fprintf(eskfile,"Next\n""!Spr-kinetic energy vs. time\n"
-			    "color=blue\n");
-            fprintf(espfile,"Next\n""!Spr-potentl energy vs. time\n"
-			    "color=red\n""thickness=1.5\n");
-            fprintf(exkfile,"Next\n""!Ext-kinetic energy vs. time\n"
-			    "color=green\n""thickness=1.5\n");
-            fprintf(egpfile,"Next\n""!Ext-potential energy vs. time\n"
-			    "color=orange\n""thickness=1.5\n");
-            fprintf(enkfile,"Next\n""!Kinetic energy vs. time\n"
-			    "color=yellow\n""thickness=1.5\n");
-            fprintf(efile,"Next\n""!Total energy vs. time\n"
-			    "color=navy\n""thickness=1.5\n");
+            
+        fprintf(eskfile,"Next\n""!Spr-kinetic energy vs. time\n"
+            "color=blue\n");
+        fprintf(espfile,"Next\n""!Spr-potentl energy vs. time\n"
+            "color=red\n""thickness=1.5\n");
+        fprintf(exkfile,"Next\n""!Ext-kinetic energy vs. time\n"
+            "color=green\n""thickness=1.5\n");
+        fprintf(egpfile,"Next\n""!Ext-potential energy vs. time\n"
+            "color=orange\n""thickness=1.5\n");
+        fprintf(enkfile,"Next\n""!Kinetic energy vs. time\n"
+            "color=yellow\n""thickness=1.5\n");
+        fprintf(efile,"Next\n""!Total energy vs. time\n"
+            "color=navy\n""thickness=1.5\n");
 
-            fprintf(afile,"!Canopy area vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(sfile,"!String length vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(pfile,"!Payload hight vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(vfile,"!Payload velo vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(xcom_file,"!COM vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(vcom_file,"!V-COM vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(samplex,"!x-coords vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(sampley,"!y-coords vs. time\n""color=red\n"
-			    "thickness=1.5\n");
-            fprintf(samplez,"!z-coords vs. time\n""color=yellow\n"
-			    "thickness=1.5\n");
-        }
+        fprintf(afile,"!Canopy area vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(sfile,"!String length vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(pfile,"!Payload hight vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(vfile,"!Payload velo vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(xcom_file,"!COM vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(vcom_file,"!V-COM vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(samplex,"!x-coords vs. time\n""color=blue\n"
+            "thickness=1.5\n");
+        fprintf(sampley,"!y-coords vs. time\n""color=red\n"
+            "thickness=1.5\n");
+        fprintf(samplez,"!z-coords vs. time\n""color=yellow\n"
+            "thickness=1.5\n");
+    }
+
 	ks = af_params->ks;
-        m_s = af_params->m_s;
+    m_s = af_params->m_s;
 
 	esk = esp = epi = epb = egp = exk = enk = 0.0;
 	cnp_area = 0.0;
 	surf = NULL;
 	psample = NULL;
-	for (s = intfc->surfaces; s && *s; ++s)
+
+    for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    surf = *s;
+	    
+        surf = *s;
 	    zcom = center_of_mass(Hyper_surf(surf))[2];
 	    vcom = center_of_mass_velo(Hyper_surf(surf))[2];
-	    if (first)
+	    
+        if (first)
 	    {
-		np = I_NumOfSurfPoints(surf);
-		ip = np/2;
-		FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
+    		np = I_NumOfSurfPoints(surf);
+	    	ip = np/2;
+		    FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
 	    }
 	    else if (I_NumOfSurfPoints(surf) > np) 
 	    {
@@ -1045,102 +1052,120 @@ static void print_airfoil_stat3d_1(
             FT_FreeThese(1, pts);
             FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
         }
+
 	    I_ArrayOfSurfPoints(surf,pts);
 	    psample = pts[ip];
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		cnp_area += tri_area(tri);
-		for (j = 0; j < 3; ++j)
-            	{
-		    side_length = separation(Point_of_tri(tri)[j],
-                                Point_of_tri(tri)[(j+1)%3],3);
-		    x_diff = side_length - tri->side_length0[j];
-		    if (!is_side_bdry(tri,j))
-                epi += 0.5*ks*sqr(x_diff);
-		}
-	    }
-	    unsort_surf_point(surf);
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		for (j = 0; j < 3; ++j)
-		{
-                    p = Point_of_tri(tri)[j];
-		    if (sorted(p) || Boundary_point(p)) continue;
-		    for (k = 0; k < dim; ++k)
-		    {
-                if (fabs(p->vel[k]) > vmax)
+	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); tri = tri->next)
+        {
+            cnp_area += tri_area(tri);
+            for (j = 0; j < 3; ++j)
+            {
+                side_length = separation(Point_of_tri(tri)[j],Point_of_tri(tri)[(j+1)%3],3);
+                x_diff = side_length - tri->side_length0[j];
+                if (!is_side_bdry(tri,j))
                 {
-                    vmax = fabs(p->vel[k]);
-                    Gmax = Gindex(p);
-                    Posn_max = 0;
-                    obj_max = (POINTER)surf;
+                    epi += 0.5*ks*sqr(x_diff);
                 }
-                esk += 0.5*m_s*sqr(p->vel[k]);
-                egp += -g[k]*m_s*Coords(p)[k];
-                st = (STATE*)left_state(p);
-                exk += 0.5*m_s*sqr(st->impulse[k]);
-                enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
-		    }
-		    sorted(p) = YES;
-		}
-	    }
+            }
+        }
+
+	    unsort_surf_point(surf);
+        for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); tri = tri->next)
+        {
+            for (j = 0; j < 3; ++j)
+            {
+                p = Point_of_tri(tri)[j];
+                if (sorted(p) || Boundary_point(p)) continue;
+                
+                for (k = 0; k < dim; ++k)
+                {
+                    if (fabs(p->vel[k]) > vmax)
+                    {
+                        vmax = fabs(p->vel[k]);
+                        Gmax = Gindex(p);
+                        Posn_max = 0;
+                        obj_max = (POINTER)surf;
+                    }
+                
+                    esk += 0.5*m_s*sqr(p->vel[k]);
+                    egp += -g[k]*m_s*Coords(p)[k];
+                
+                    st = (STATE*)left_state(p);
+                    exk += 0.5*m_s*sqr(st->impulse[k]);
+                    enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
+                }
+                sorted(p) = YES;
+            }
+        }
 	}
 
 	if (surf != NULL)
+    {
+        //TODO: rewrite this function
 	    record_stretching_length(surf,out_name,front->time);
+    }
 
 	epi *= 0.5;	//Each side is counted twice
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (hsbdry_type(*c) == STRING_HSBDRY)
 	    {
-		kl = af_params->kl;
+		    kl = af_params->kl;
         	m_l = af_params->m_l;
 	    }
 	    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
 	    {
-		kl = af_params->ks;
+		    kl = af_params->ks;
         	m_l = af_params->m_s;
 	    }
 	    else if (hsbdry_type(*c) == GORE_HSBDRY)
-            {
-                kl = af_params->kg;
-                m_l = af_params->m_g;
-            }
+        {
+            kl = af_params->kg;
+            m_l = af_params->m_g;
+        }
 	    else
-		continue;
-	    curve = *c;
+        {
+		    continue;
+        }
+	    
+        curve = *c;
 	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		x_diff = bond_length(b) - bond_length0(b);
-		epb += 0.5*kl*sqr(x_diff);
-		if (b != curve->last)
-		    for (k = 0; k < dim; ++k)
-		    {
-			if (fabs(b->end->vel[k]) > vmax)
-			{
-			    vmax = fabs(b->end->vel[k]);
-			    Gmax = Gindex(b->end);
-			    Posn_max = 1;
-			    obj_max = (POINTER)curve;
-			}
-		    	esk += 0.5*m_l*sqr(b->end->vel[k]);
-			egp += -g[k]*m_l*Coords(b->end)[k];
-			st = (STATE*)left_state(b->end);
-			exk += 0.5*m_l*sqr(st->impulse[k]);
-			enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
-		    }
-	    }
+        {
+            x_diff = bond_length(b) - bond_length0(b);
+            epb += 0.5*kl*sqr(x_diff);
+            if (b != curve->last)
+            {
+                for (k = 0; k < dim; ++k)
+                {
+                    if (fabs(b->end->vel[k]) > vmax)
+                    {
+                        vmax = fabs(b->end->vel[k]);
+                        Gmax = Gindex(b->end);
+                        Posn_max = 1;
+                        obj_max = (POINTER)curve;
+                    }
+                
+                    esk += 0.5*m_l*sqr(b->end->vel[k]);
+                    egp += -g[k]*m_l*Coords(b->end)[k];
+                
+                    st = (STATE*)left_state(b->end);
+                    exk += 0.5*m_l*sqr(st->impulse[k]);
+                    enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
+                }
+            }
+        }
 	}
+
 	esp = epi + epb;
 
 	for (n = intfc->nodes; n && *n; ++n)
 	{
 	    node = *n;
 	    if (is_bdry_node(node)) continue;
-	    if (is_load_node(node)) 
+	
+        //TODO: Write block for RG_STRING_NODEs
+        if (is_load_node(node)) 
 	    {
 	    	STATE *sl;
 	    	pz = Coords(node->posn)[2];
@@ -1148,10 +1173,10 @@ static void print_airfoil_stat3d_1(
 	    	pv = sl->vel[2];
 	    	for (k = 0; k < dim; ++k)
 	    	{
-		    egp += -g[k]*payload*Coords(node->posn)[k];
-		    st = (STATE*)left_state(node->posn);
-		    exk += 0.5*payload*sqr(st->impulse[k]);
-		    enk += 0.5*payload*sqr(node->posn->vel[k] + st->impulse[k]);
+                egp += -g[k]*payload*Coords(node->posn)[k];
+                st = (STATE*)left_state(node->posn);
+                exk += 0.5*payload*sqr(st->impulse[k]);
+                enk += 0.5*payload*sqr(node->posn->vel[k] + st->impulse[k]);
 	    	}
 	    }
 	    else
@@ -1177,6 +1202,7 @@ static void print_airfoil_stat3d_1(
                 
                 esk += 0.5*m_l*sqr(node->posn->vel[k]);
                 egp += -g[k]*m_l*Coords(node->posn)[k];
+
                 st = (STATE*)left_state(node->posn);
                 exk += 0.5*m_l*sqr(st->impulse[k]);
                 enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
@@ -1199,6 +1225,7 @@ static void print_airfoil_stat3d_1(
 	    str_length += curve_length(*c);
 	    nc++;
 	}
+
 	if (nc != 0) str_length /= (double)nc;
 	
     if (first)
@@ -1206,7 +1233,9 @@ static void print_airfoil_stat3d_1(
 	    if (psample != NULL)
         {
 	    	for (k = 0; k < dim; ++k)
+            {
                 p0[k] = Coords(psample)[k];
+            }
         }
 	    first = NO;
 	}
@@ -1217,6 +1246,7 @@ static void print_airfoil_stat3d_1(
     fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
     fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
     fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
+
 	fflush(eskfile);
 	fflush(espfile);
 	fflush(egpfile);
@@ -1224,17 +1254,19 @@ static void print_airfoil_stat3d_1(
 	fflush(enkfile);
 	fflush(efile);
 
-        fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
-        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-        fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
-        fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
-        fprintf(vmaxfile,"%16.12f  %16.12f\n",front->time,vmax);
-	fflush(afile);
+    fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
+    fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
+    fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
+    fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
+    fprintf(vmaxfile,"%16.12f  %16.12f\n",front->time,vmax);
+	
+    fflush(afile);
 	fflush(sfile);
 	fflush(pfile);
 	fflush(vfile);
 	fflush(vmaxfile);
-        fprintf(gfile,"Max Gindex %d",Gmax);
+    
+    fprintf(gfile,"Max Gindex %d",Gmax);
 	if (Posn_max == 0) 
 	{
 	    surf = (SURFACE*)obj_max;
@@ -1252,19 +1284,20 @@ static void print_airfoil_stat3d_1(
 	    node = (NODE*)obj_max;
 	    fprintf(gfile," on node type:\n");
 	    if (is_gore_node(node))
-		fprintf(gfile," GORE_NODE\n");
+    		fprintf(gfile," GORE_NODE\n");
 	    else if (is_load_node(node))
-		fprintf(gfile," LOAD_NODE\n");
+	    	fprintf(gfile," LOAD_NODE\n");
 	    else
-		fprintf(gfile," Other NODE\n");
+		    fprintf(gfile," Other NODE\n");
 	}
 	fflush(gfile);
 
-        fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
-        fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
+    fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
+    fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
 	fflush(xcom_file);
 	fflush(vcom_file);
-	if (psample != NULL)
+
+    if (psample != NULL)
 	{
         fprintf(samplex,"%16.12f  %16.12f\n",front->time,Coords(psample)[0] - p0[0]);
         fprintf(sampley,"%16.12f  %16.12f\n",front->time,Coords(psample)[1] - p0[1]);
@@ -1287,10 +1320,13 @@ static void print_airfoil_stat3d_2(
 	BOND *b;
 	TRI *tri;
 	POINT *p;
-	static FILE *eskfile,*espfile,*egpfile,*efile,*exkfile,*enkfile;
+	
+    static FILE *eskfile,*espfile,*egpfile,*efile,*exkfile,*enkfile;
 	static FILE *afile,*sfile,*pfile,*vfile;
 	static FILE *xcom_file,*vcom_file;
-	static boolean first = YES;
+	
+    static boolean first = YES;
+
 	char fname[256];
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	double esk,esp,epi,epb,egp,exk,enk;
@@ -1303,7 +1339,7 @@ static void print_airfoil_stat3d_2(
 	STATE *st;
 
 	if (eskfile == NULL)
-        {
+    {
 	    sprintf(fname,"%s/esk.xg",out_name);
             eskfile = fopen(fname,"w");
 	    sprintf(fname,"%s/esp.xg",out_name);
@@ -1328,123 +1364,135 @@ static void print_airfoil_stat3d_2(
             xcom_file = fopen(fname,"w");
 	    sprintf(fname,"%s/vcom.xg",out_name);
             vcom_file = fopen(fname,"w");
-            fprintf(eskfile,"\"Spr-kinetic energy vs. time\"\n");
-            fprintf(espfile,"\"Spr-potentl energy vs. time\"\n");
-            fprintf(exkfile,"\"Ext-kinetic energy vs. time\"\n");
-            fprintf(egpfile,"\"Ext-potentl energy vs. time\"\n");
-            fprintf(enkfile,"\"Kinetic energy vs. time\"\n");
-            fprintf(efile,"\"Total energy vs. time\"\n");
-            fprintf(afile,"\"Canopy area vs. time\"\n");
-            fprintf(sfile,"\"String length vs. time\"\n");
-            fprintf(pfile,"\"Payload hight vs. time\"\n");
-            fprintf(vfile,"\"Payload velo vs. time\"\n");
-            fprintf(xcom_file,"\"COM vs. time\"\n");
-            fprintf(vcom_file,"\"V-COM vs. time\"\n");
-        }
-	ks = af_params->ks;
-        m_s = af_params->m_s;
+        
+        fprintf(eskfile,"\"Spr-kinetic energy vs. time\"\n");
+        fprintf(espfile,"\"Spr-potentl energy vs. time\"\n");
+        fprintf(exkfile,"\"Ext-kinetic energy vs. time\"\n");
+        fprintf(egpfile,"\"Ext-potentl energy vs. time\"\n");
+        fprintf(enkfile,"\"Kinetic energy vs. time\"\n");
+        fprintf(efile,"\"Total energy vs. time\"\n");
+        fprintf(afile,"\"Canopy area vs. time\"\n");
+        fprintf(sfile,"\"String length vs. time\"\n");
+        fprintf(pfile,"\"Payload hight vs. time\"\n");
+        fprintf(vfile,"\"Payload velo vs. time\"\n");
+        fprintf(xcom_file,"\"COM vs. time\"\n");
+        fprintf(vcom_file,"\"V-COM vs. time\"\n");
+    }
+	
+    ks = af_params->ks;
+    m_s = af_params->m_s;
 
 	esk = esp = epi = epb = egp = exk = enk = 0.0;
 	cnp_area = 0.0;
-	for (s = intfc->surfaces; s && *s; ++s)
+	
+    for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY)
-	    	continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+
 	    surf = *s;
 	    zcom = center_of_mass(Hyper_surf(surf))[2];
 	    vcom = center_of_mass_velo(Hyper_surf(surf))[2];
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
+	    
+        for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); tri = tri->next)
 	    {
-		cnp_area += tri_area(tri);
-		for (j = 0; j < 3; ++j)
-            	{
-		    side_length = separation(Point_of_tri(tri)[j],
-                                Point_of_tri(tri)[(j+1)%3],3);
-		    x_sqr = 0.0;
-		    for (k = 0; k < 3; ++k)
-		    {
-			vect[k] = Coords(Point_of_tri(tri)[(j+1)%3])[k]
-				- Coords(Point_of_tri(tri)[j])[k] -
-				tri->side_length0[j]*tri->side_dir0[j][k];
-			x_sqr += sqr(vect[k]);
-		    }
-		    if (!is_side_bdry(tri,j))
-                    	epi += 0.5*ks*x_sqr;
-		}
+            cnp_area += tri_area(tri);
+            for (j = 0; j < 3; ++j)
+            {
+                side_length = separation(Point_of_tri(tri)[j],
+                                    Point_of_tri(tri)[(j+1)%3],3);
+                x_sqr = 0.0;
+                for (k = 0; k < 3; ++k)
+                {
+                    vect[k] = Coords(Point_of_tri(tri)[(j+1)%3])[k]
+                        - Coords(Point_of_tri(tri)[j])[k] - tri->side_length0[j]*tri->side_dir0[j][k];
+                    
+                    x_sqr += sqr(vect[k]);
+                }
+
+                if (!is_side_bdry(tri,j))
+                {
+                    epi += 0.5*ks*x_sqr;
+                }
+            }
 	    }
+
 	    unsort_surf_point(surf);
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		for (j = 0; j < 3; ++j)
-		{
-                    p = Point_of_tri(tri)[j];
-		    if (sorted(p) || Boundary_point(p)) continue;
-		    for (k = 0; k < dim; ++k)
-		    {
-                    	esk += 0.5*m_s*sqr(p->vel[k]);
-			egp += -g[k]*m_s*Coords(p)[k];
-			st = (STATE*)left_state(p);
-			exk += 0.5*m_s*sqr(st->impulse[k]);
-			enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
-		    }
-		    sorted(p) = YES;
-		}
-	    }
+	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); tri = tri->next)
+        {
+            for (j = 0; j < 3; ++j)
+            {
+                p = Point_of_tri(tri)[j];
+                if (sorted(p) || Boundary_point(p)) continue;
+                for (k = 0; k < dim; ++k)
+                {
+                    esk += 0.5*m_s*sqr(p->vel[k]);
+                    egp += -g[k]*m_s*Coords(p)[k];
+                    st = (STATE*)left_state(p);
+                    exk += 0.5*m_s*sqr(st->impulse[k]);
+                    enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
+                }
+                sorted(p) = YES;
+            }
+        }
 	}
-	epi *= 0.5;	//Each side is counted twice
-	for (c = intfc->curves; c && *c; ++c)
+	
+    epi *= 0.5;	//Each side is counted twice
+	
+    for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (hsbdry_type(*c) == STRING_HSBDRY)
 	    {
-		kl = af_params->kl;
+	    	kl = af_params->kl;
         	m_l = af_params->m_l;
 	    }
 	    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
 	    {
-		kl = af_params->ks;
+		    kl = af_params->ks;
         	m_l = af_params->m_s;
 	    }
 	    else if (hsbdry_type(*c) == GORE_HSBDRY)
 	    {
-		kl = af_params->kg;
+		    kl = af_params->kg;
         	m_l = af_params->m_g;
 	    }
 	    else
-		continue;
-	    curve = *c;
+        {
+            continue;
+        }
+    
+        curve = *c;
 	    for (b = curve->first; b != NULL; b = b->next)
 	    {
-		x_sqr = 0.0;
-		for (k = 0; k < 3; ++k)
-		{
-		    vect[k] = Coords(b->end)[k] - Coords(b->start)[k]
-				- bond_length0(b)*b->dir0[k];
-		    x_sqr += sqr(vect[k]);
-		}
-		epb += 0.5*kl*x_sqr;
-		if (b != curve->last)
-		    for (k = 0; k < dim; ++k)
-		    {
-		    	esk += 0.5*m_l*sqr(b->end->vel[k]);
-			egp += -g[k]*m_l*Coords(b->end)[k];
-			st = (STATE*)left_state(b->end);
-			exk += 0.5*m_l*sqr(st->impulse[k]);
-			enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
-		    }
+            x_sqr = 0.0;
+            for (k = 0; k < 3; ++k)
+            {
+                vect[k] = Coords(b->end)[k] - Coords(b->start)[k] - bond_length0(b)*b->dir0[k];
+                x_sqr += sqr(vect[k]);
+            }
+    
+            epb += 0.5*kl*x_sqr;
+            if (b != curve->last)
+            {
+                for (k = 0; k < dim; ++k)
+                {
+                    esk += 0.5*m_l*sqr(b->end->vel[k]);
+                    egp += -g[k]*m_l*Coords(b->end)[k];
+                    st = (STATE*)left_state(b->end);
+                    exk += 0.5*m_l*sqr(st->impulse[k]);
+                    enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
+                }
+            }
 	    }
 	}
+
 	esp = epi + epb;
 
 	for (n = intfc->nodes; n && *n; ++n)
 	{
 	    node = *n;
-	    if (is_bdry_node(node)) 
-	    {
-		continue;
-	    }
-	    if (is_load_node(node))
+	    if (is_bdry_node(node)) continue;
+	    
+        if (is_load_node(node))
 	    {
 	    	STATE *sl;
 	    	pz = Coords(node->posn)[2];
@@ -1459,65 +1507,72 @@ static void print_airfoil_stat3d_2(
 	    	}
 	    }
 	    else
-	    {
-		if (is_gore_node(node))
-		{
-        	    m_l = af_params->m_g;
-		}
-		else
-		{
-        	    m_l = af_params->m_s;
-		}
-		for (k = 0; k < dim; ++k)
-		{
-		    esk += 0.5*m_l*sqr(node->posn->vel[k]);
-		    egp += -g[k]*m_l*Coords(node->posn)[k];
-		    st = (STATE*)left_state(node->posn);
-		    exk += 0.5*m_l*sqr(st->impulse[k]);
-		    enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
-		}
-	    }
+        {
+            if (is_gore_node(node))
+            {
+                m_l = af_params->m_g;
+            }
+            else
+            {
+                m_l = af_params->m_s;
+            }
+
+            for (k = 0; k < dim; ++k)
+            {
+                esk += 0.5*m_l*sqr(node->posn->vel[k]);
+                egp += -g[k]*m_l*Coords(node->posn)[k];
+        
+                st = (STATE*)left_state(node->posn);
+                exk += 0.5*m_l*sqr(st->impulse[k]);
+                enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
+            }
+        }
 	}
 
-	nc = 0;		str_length = 0.0;
-	for (c = intfc->curves; c && *c; ++c)
+	nc = 0;
+    str_length = 0.0;
+
+    for (c = intfc->curves; c && *c; ++c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY)
-		continue;
+	    if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 	    str_length += curve_length(*c);
 	    nc++;
 	}
+
 	if (nc != 0)
+    {
 	    str_length /= (double)nc;
+    }
+
 	if (first)
 	{
 	    first = NO;
 	}
 
 	fprintf(eskfile,"%16.12f  %16.12f\n",front->time,esk);
-        fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
-        fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
-        fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
-        fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
-        fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
-	fflush(eskfile);
+    fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
+    fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
+    fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
+    fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
+    fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
+    fflush(eskfile);
 	fflush(espfile);
 	fflush(egpfile);
 	fflush(exkfile);
 	fflush(enkfile);
 	fflush(efile);
 
-        fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
-        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-        fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
-        fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
-	fflush(afile);
+    fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
+    fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
+    fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
+    fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
+    fflush(afile);
 	fflush(sfile);
 	fflush(pfile);
 	fflush(vfile);
 
-        fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
-        fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
+    fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
+    fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
 	fflush(xcom_file);
 	fflush(vcom_file);
 }	/* end print_airfoil_stat3d_2 */
@@ -2419,7 +2474,7 @@ static void print_rgb3d(
         }
 }       /* end print_rgb3d */
 
-//TODO: REVIEW FOR ACCURACY -- also need to incoroporate shear stress effects
+//TODO: REVIEW FOR ACCURACY 
 static void print_drag3d(
         Front *front,
         char *out_name)
@@ -2434,7 +2489,6 @@ static void print_drag3d(
         char fname[200];
         FILE *dfile, *xlfile, *ylfile;
         static boolean first = YES;
-        int fcount = 0, dim;
         
         double (*getStateVel[3])(POINTER) = {
             getStateXvel, getStateYvel, getStateZvel
@@ -2443,10 +2497,8 @@ static void print_drag3d(
         FILE* pafile;
 	    FILE *xforce, *yforce, *zforce;
 
-        if (FT_Dimension() == 2)
-            return;
-        else
-            dim = FT_Dimension();
+        int dim = FT_Dimension();
+s       if (dim != 3) return;
 
         /*find the freestream velocity*/
         /*freestream is the air far upstream of an aerodynamic body*/
@@ -2455,6 +2507,8 @@ static void print_drag3d(
         double drag[MAXD]={0}, lift[MAXD]={0};
         double fvel_mag = 0.0;
 
+        //TODO: Record the inlet/freestream velocity on intitialization instead of doing this...
+        //
         //looks for the constant state dirichlet boundary (INLET)
         for (s = intfc->surfaces; s && *s; ++s)
         {
@@ -2465,8 +2519,7 @@ static void print_drag3d(
                 for (i = 0; i < dim; i++)
                     free_vel[i] = getStateVel[i](boundary_state(hs));
                 fvel_mag = Mag3d(free_vel);
-                if (fabs(fvel_mag) > MACH_EPS)
-                    break;
+                if (fabs(fvel_mag) > MACH_EPS) break;
             }
         }
 
@@ -2489,10 +2542,10 @@ static void print_drag3d(
         /*compute total force on fabric canopy*/
         /*for multiparachute problem*/
         /* one file is generated for each canopy*/
+        int fcount = 0;
         for (s = intfc->surfaces; s && *s; ++s)
         {
-            if (wave_type(*s) != ELASTIC_BOUNDARY || is_bdry(*s))
-                continue;
+            if (wave_type(*s) != ELASTIC_BOUNDARY || is_bdry(*s)) continue;
 
             /* drag force */
             sprintf(fname,"%s/drag-%d.xg",OutName(front),fcount);
@@ -2520,18 +2573,21 @@ static void print_drag3d(
                 pafile = fopen(fname,"w");
             else
                 pafile = fopen(fname,"a");
+
             /* total force in x direction */
             sprintf(fname,"%s/force-x-%d.xg",OutName(front),fcount);
             if (first)
                 xforce = fopen(fname,"w");
             else
                 xforce = fopen(fname,"a");
+            
             /* total force in y direction */
             sprintf(fname,"%s/force-y-%d.xg",OutName(front),fcount);
             if (first)
                 yforce = fopen(fname,"w");
             else
                 yforce = fopen(fname,"a");
+            
             /* total force in z direction */
             sprintf(fname,"%s/force-z-%d.xg",OutName(front),fcount);
             if (first)
@@ -2543,22 +2599,27 @@ static void print_drag3d(
             
             double parea = 0.0;
             double force[MAXD] = {0.0};
-            for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
-                        tri = tri->next)
+            
+            for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s); tri = tri->next)
             {
                 pres_drop = 0.0;
                 double pl = 0.0;
                 double pr = 0.0;
                 double vel_tri[MAXD] = {0.0};
                 double centroid[MAXD] = {0.0};
+
                 for(i = 0; i < 3; i++)
                 {
                     point = Point_of_tri(tri)[i];
+                
                     sl = (STATE*)left_state(point);
                     sr = (STATE*)right_state(point);
+                
                     pl += getStatePres(sl);
                     pr += getStatePres(sr);
+                
                     pres_drop += getStatePres(sl) - getStatePres(sr);
+                
                     for (int k = 0; k < 3; ++k)
                     {
                         centroid[k] += Coords(point)[k];
@@ -2569,6 +2630,7 @@ static void print_drag3d(
                 pl /= 3.0;
                 pr /= 3.0;
                 pres_drop /= 3.0;
+                
                 for (int k = 0; k < 3; ++k)
                 {
                     centroid[k] /= 3.0;
@@ -2585,7 +2647,6 @@ static void print_drag3d(
                 {
                     unit_nor_tri[i] = nor_tri[i]/mag_nor;
                     force_tri[i] = pres_drop*unit_nor_tri[i]*area_tri;
-                    //TODO: tangential force
                     force[i] += force_tri[i];
                 }
                 parea += Dot3d(unit_nor_tri,free_vel_dir)*area_tri;//projected to xy plane
