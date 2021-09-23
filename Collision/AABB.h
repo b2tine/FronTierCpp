@@ -164,8 +164,8 @@ public:
     void updateAABBTree(const std::vector<CD_HSE*>&);
     MotionState getType() {return type;}
 
-    bool turn_on_GS_update() {gauss_seidel = true;}
-    bool turn_off_GS_update() {gauss_seidel = false;}
+    void turn_on_GS_update() {gauss_seidel = true;}
+    void turn_off_GS_update() {gauss_seidel = false;}
     bool get_GS_update_status() const {return gauss_seidel;}
 
 private:
