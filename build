@@ -108,16 +108,9 @@ function config_ds9 {
 
 ARCH="opt"
 OPT_FLAGS="-O1"
-#OPT_FLAGS="-O2 -ffloat-store"
 
-#NOTE: Code crashes with -O2, but appears to be ok with -O1.
-#
-#      -ffloat-store is meant to prevent errors occurring due
-#      to excessive precision in doubles on some architectures
-#        -- Not sure if there was a good reason for using this
-#           at some point or if we are fine without it.
-#       Extra precision is in general going to help us rather than
-#       hurt us it seems.
+#NOTE: Code crashes with -O2. Most likely due to the use of
+#       goto in some functions of the base FronTier library
 
 DEBUG_FLAGS="-rdynamic"
 WARNING="-w"
@@ -126,18 +119,17 @@ for arg in $@ ; do
     if [[ "$arg" == "-d" ]]; then
         ARCH="dbg"
         OPT_FLAGS="-Og"
-        DEBUG_FLAGS="-gdwarf-2 -g3 -rdynamic"
+        DEBUG_FLAGS="-gdwarf-2 -g3 $DEBUG_FLAGS"
     elif [[ "$arg" == "-w" ]]; then
         WARNING="-Wall"
     elif [[ "$arg" == "-n" ]]; then
         NOMAKE=1
-    elif [[ "$arg" == "-s" ]]; then
-        SERIAL=1
     fi
 done
 
 export CFLAGS="$WARNING $DEBUG_FLAGS $OPT_FLAGS"
 export CXXFLAGS="-std=c++11 $WARNING $DEBUG_FLAGS $OPT_FLAGS"
+
 
 HOST=$(uname -n)
 
