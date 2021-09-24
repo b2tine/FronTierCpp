@@ -3125,9 +3125,17 @@ LOCAL void FrontPreAdvance3d(
             for (i = 0; i < dim; ++i)
                 old_vel[i] = center_of_mass_velo(*s)[i];
             
-            if (motion_type(*s) == PRESET_MOTION ||
-                motion_type(*s) == PRESET_COM_MOTION ||
-                motion_type(*s) == PRESET_TRANSLATION)
+
+            if (motion_type(*s) == COM_MOTION)
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    center_of_mass_velo(*s)[i] += dt*force[index][i]/total_mass(*s);
+                }
+            }
+            else if (motion_type(*s) == PRESET_MOTION ||
+                     motion_type(*s) == PRESET_COM_MOTION ||
+                     motion_type(*s) == PRESET_TRANSLATION)
             {
                 double coords[3];
                 for (i = 0; i < dim; ++i)
@@ -3163,6 +3171,8 @@ LOCAL void FrontPreAdvance3d(
                 {
                     center_of_mass_velo(*s)[i] +=
                         dt*translation_dir(*s)[i]*force[index][i]/total_mass(*s);
+                    //TODO: This looks wrong. Should it be:
+                    //          scalar = (trans_dir_vec dot force_vec)*dt/total_mass(*s)
                 }
             
                 /*
@@ -3177,13 +3187,6 @@ LOCAL void FrontPreAdvance3d(
                         center_of_mass_velo(*s)[2]);
                 }
                 */
-            }
-            else if (motion_type(*s) == COM_MOTION)
-            {
-                for (i = 0; i < dim; ++i)
-                {
-                    center_of_mass_velo(*s)[i] += dt*force[index][i]/total_mass(*s);
-                }
             }
             else if (motion_type(*s) == PRESET_ROTATION)
             {

@@ -331,7 +331,12 @@ static bool MovingPointToTriGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+
+                            //TODO: ADD impulse to sl->impulse?
+                            sl->impulse[k] += sl->collsnImpulse[k]; 
+                    
                     sl->collsnImpulse[k] = 0.0;
+                    
                     //move to new candidate position
                     Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
                 }
@@ -353,6 +358,10 @@ static bool MovingPointToTriGS(POINT* pts[])
                     for (int k = 0; k < 3; ++k)
                     {
                         sl->avgVel[k] += sl->collsnImpulse[k];
+
+                        //TODO: ADD impulse to sl->impulse?
+                        sl->impulse[k] += sl->collsnImpulse[k]; 
+
                         sl->collsnImpulse[k] = 0.0;
                         //move to new candidate position
                         //Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*dt;
@@ -526,6 +535,10 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+                        
+                            //TODO: ADD impulse to sl->impulse?
+                            sl->impulse[k] += sl->collsnImpulse[k]; 
+                
                     sl->collsnImpulse[k] = 0.0;
                     //move to new candidate position
                     Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
@@ -548,6 +561,10 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                     for (int k = 0; k < 3; ++k)
                     {
                         sl->avgVel[k] += sl->collsnImpulse[k];
+
+                            //TODO: ADD impulse to sl->impulse?
+                            sl->impulse[k] += sl->collsnImpulse[k]; 
+
                         sl->collsnImpulse[k] = 0.0;
                         //move to new candidate position
                         //Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*dt;

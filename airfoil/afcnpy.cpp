@@ -761,6 +761,7 @@ extern void compute_node_accel1(
 	(*n)++;
 }	/* end compute_node_accel1 */
 
+//TODO: This function does not look correct ...
 static void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)
 {
@@ -781,39 +782,52 @@ static void compute_center_of_mass_velo(
 	if (debugging("canopy"))
 	    (void) printf("Entering compute_center_of_mass_velo()\n");
 
+
+    //TODO: This function does not look correct ...
 	for (n = 0; n < geom_set->num_surfs; ++n)
 	{
-	    canopy = geom_set->surfs[n];
 	    for (j = 0; j < 3; ++j)
+        {
 	    	vcan[j] = 0.0;
-	    area = mass_canopy = 0.0;
+	    	xcan[j] = 0.0;
+        }
 	    
+        area = 0.0;
+        mass_canopy = 0.0;
+	    
+        canopy = geom_set->surfs[n];
+        
         surf_tri_loop(canopy,tri)
 	    {
 	    	for (j = 0; j < 3; ++j)
 	    	{
-		    vt[j] = 0.0;
-		    xt[j] = 0.0;
+		        vt[j] = 0.0;
+		        xt[j] = 0.0;
 	    	}
-	    	for (i = 0; i < 3; ++i)
+	    	
+            for (i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                state = (STATE*)left_state(p);
+                for (j = 0; j < 3; ++j)
+                {
+                    vt[j] += state->vel[j]/3.0;
+                    xt[j] += Coords(p)[j]/3.0;
+                }
+            }
+	    	
+            for (j = 0; j < 3; ++j)
 	    	{
-		    p = Point_of_tri(tri)[i];
-		    state = (STATE*)left_state(p);
-		    for (j = 0; j < 3; ++j)
-		    {
-		    	vt[j] += state->vel[j]/3.0;
-		    	xt[j] += Coords(p)[j]/3.0;
-		    }
+		        vcan[j] += vt[j]*tri_area(tri);
+		        xcan[j] += xt[j]*tri_area(tri);
 	    	}
-	    	for (j = 0; j < 3; ++j)
-	    	{
-		    vcan[j] += vt[j]*tri_area(tri);
-		    xcan[j] += xt[j]*tri_area(tri);
-	    	}
-	    	area += tri_area(tri);
+	    	
+            area += tri_area(tri);
 	    }
+
 	    mass_canopy += area_dens*area;
-	    for (j = 0; j < 3; ++j)
+	    
+        for (j = 0; j < 3; ++j)
 	    {
 	    	vcan[j] /= area;
 	    	xcan[j] /= area;
@@ -835,12 +849,10 @@ static void compute_center_of_mass_velo(
                 xload[j] = Coords(node->posn)[j];
             }
 
-            //NOTE: payload and rigid body mass are equal when a
-            //      rigid body is attached to the suspension lines.
-            //      See installString() and InstallNewLoadNode().
             payload = af_params->payload;
             xcom = center_of_mass(Hyper_surf(canopy));
             vcom = center_of_mass_velo(Hyper_surf(canopy));
+
             for (j = 0; j < 3; ++j)
             {
                 vcom[j] = (vcan[j]*mass_canopy + vload[j]*payload)/(mass_canopy + payload);
@@ -849,6 +861,7 @@ static void compute_center_of_mass_velo(
 	    }
 	    else
 	    {
+            //TODO: This does nothing
             xcom = center_of_mass(Hyper_surf(canopy));
             vcom = center_of_mass_velo(Hyper_surf(canopy));
 	    }	
@@ -1994,8 +2007,14 @@ static void elastic_set_propagate_serial(
                 collsn_dt);
     
         assign_interface_and_free_front(*newfront,sub_newfront);
-        geom_set.front = nullptr;
+            //geom_set.front = nullptr;
     }
+
+    //TODO: Can probably move setSpecialNodeForce() here.
+    //      Potentially compute_center_of_mass_velo() also.
+    setSpecialNodeForce((*newfront)->interf,geom_set.kl);
+    compute_center_of_mass_velo(&geom_set);
+
 
 
 //BELOW JUST SAVED FOR REFERENCE
@@ -2330,12 +2349,17 @@ static int elastic_set_propagate3d_serial(
     //  write from point_set to geom_set
     put_point_set_to(geom_set,point_set);
 	
-    // Calculate the real force on load_node and rg_string_node
-    setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //TODO: setSpecialNodeForce() SETS BOND LENGTH!
+    //      This is a nontrivial side effect that is not reflected
+    //      in the name of the function. 
+    //
+    // Calculate the force on load_node/rg_string_node
+            //setSpecialNodeForce(elastic_intfc,geom_set->kl);
 
 	set_vertex_impulse(geom_set,point_set);
 	set_geomset_velocity(geom_set,point_set);
-	compute_center_of_mass_velo(geom_set);
+	
+        //compute_center_of_mass_velo(geom_set);
 
 	if (!debugging("collision_off"))
     {
@@ -2377,10 +2401,13 @@ static int elastic_set_propagate3d_serial(
             delete collision_solver;
         }
         
-        setSpecialNodeForce(elastic_intfc,geom_set->kl);
-        compute_center_of_mass_velo(geom_set);
+        //setSpecialNodeForce(elastic_intfc,geom_set->kl);
+        //compute_center_of_mass_velo(geom_set);
     }
     
+    //setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //compute_center_of_mass_velo(geom_set);
+
 
     //TODO: Sync interfaces after collision handling?
     //      Or call in interior_propagate()?
@@ -4012,11 +4039,17 @@ static void setCurveVelocity(
         string_nodes[0] = curve->start;
         string_nodes[1] = curve->end;
 
-        //TODO: Need to check for rg_string_node here???
+        /*
+        //This is redundant because the MONO_COMP_CURVE block below will get string nodes
+        //that attach to canopy, but we need this here in the case of unattached strings
+        //
+        //But isn't propagating in the normal direction!!!!! This is Wrong unless it is a free
+        //floating string, but that case can be handled in setNodeVelocity().
+        
         for (int i = 0; i < 2; ++i)
         {
-            //This is redundant because the MONO_COMP_CURVE block below will get string nodes
-            //that attach to canopy, but we need this here in the case of unattached strings
+            
+            
             if (!is_string_node(string_nodes[i])) continue;
 
             p = curve->start->posn;
@@ -4036,10 +4069,9 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
-                //sl->vel[j] = sl->impulse[j] + vel[j];
-                //sr->vel[j] = sl->impulse[j] + vel[j];
             }
         }
+        */
 
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -4060,14 +4092,10 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
-                    //sl->vel[j] = sl->impulse[j] + vel[j];
-                    //sr->vel[j] = sl->impulse[j] + vel[j];
             }
         }
 
-        //TODO: Can we set non normal max front speed?
-        //
-        //      This appears to significantly improve string behavior
+        //This appears to significantly improve string behavior
         set_max_front_speed(dim,max_speed,NULL,crds_max,front);
     }
     else
@@ -4097,8 +4125,6 @@ static void setCurveVelocity(
                 {
                     sl->vel[j] = nor_speed*nor[j];
                     sr->vel[j] = nor_speed*nor[j];
-                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                        //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
@@ -4106,10 +4132,13 @@ static void setCurveVelocity(
         set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
+    /*
+    //SETS BOND LENGTH!
     for (b = curve->first; b != NULL; b = b->next)
     {
 	    set_bond_length(b,dim);
     }
+    */
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -4155,8 +4184,6 @@ static void new_setNodeVelocity2d(
         {
             sl->vel[j] = vel[j];
             sr->vel[j] = vel[j];
-                //sl->vel[j] = sl->impulse[j] + vel[j];
-                //sr->vel[j] = sl->impulse[j] + vel[j];
             max_speed += sqr(vel[j]);
         }
 
@@ -4188,6 +4215,7 @@ static void new_setNodeVelocity3d(
     double max_nor_speed = 0.0;
     double *crds_max = nullptr;
 
+    //TODO: Handle case when node is free end of string
 	for (c = node->out_curves; c && *c; ++c)
     {
 		if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
@@ -4228,8 +4256,6 @@ static void new_setNodeVelocity3d(
             {
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
             }
 		}
         
@@ -4275,8 +4301,6 @@ static void new_setNodeVelocity3d(
             {
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
             }
         }
     }
@@ -4560,6 +4584,7 @@ extern void scatterAirfoilExtra(
 	}
 }	/* end scatterAirfoilExtra */
 
+//SETS BOND LENGTH!
 extern void setSpecialNodeForce(
 	INTERFACE* intfc,
 	double kl)
@@ -4591,6 +4616,8 @@ extern void setSpecialNodeForce(
 	    for (i = 0; i < dim; ++i)
             f[i] = 0.0;
 	    
+	    ////////////////////////////////////////////////
+        //SETS BOND LENGTH!
         node_out_curve_loop(*n,c)
 	    {
             b = (*c)->first;
@@ -4602,16 +4629,14 @@ extern void setSpecialNodeForce(
             b = (*c)->last;
             set_bond_length(b,dim);
 	    }
-	    
+	    ////////////////////////////////////////////////
+        
         node_out_curve_loop(*n,c)
 	    {
             if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
             
             b = (*c)->first;
             double dL = bond_length(b) - bond_length0(b);
-            
-            //TODO: Zero compressive stress?
-                //if (dL <= 0.0) continue;
             
             for (i = 0; i < dim; ++i)
             {
@@ -4627,9 +4652,6 @@ extern void setSpecialNodeForce(
             
             b = (*c)->last;
             double dL = bond_length(b) - bond_length0(b);
-            
-            //TODO: Zero compressive stress?
-                //if (dL <= 0.0) continue;
             
             for (i = 0; i < dim; ++i)
             {

@@ -2498,7 +2498,7 @@ static void print_drag3d(
 	    FILE *xforce, *yforce, *zforce;
 
         int dim = FT_Dimension();
-s       if (dim != 3) return;
+        if (dim != 3) return;
 
         /*find the freestream velocity*/
         /*freestream is the air far upstream of an aerodynamic body*/

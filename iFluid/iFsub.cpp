@@ -1545,14 +1545,11 @@ static void rgbody_point_propagate(
 	IF_FIELD *field = iFparams->field;
     double vel[MAXD];
     int i, dim = front->rect_grid->dim;
-	double dn,*h = front->rect_grid->h;
 	double *m_pre = field->pres;
 	double *m_phi = field->phi;
 	double *m_vor = field->vort;
 	double *m_temp = field->temperature;
 	double *m_mu = field->mu;
-	double nor[MAXD],p1[MAXD];
-	double *p0 = Coords(oldp);
 	STATE *oldst,*newst;
 	POINTER sl,sr;
 	COMPONENT comp;
@@ -1575,12 +1572,21 @@ static void rgbody_point_propagate(
     //      done for the pressure (below)?
 	    //setStateViscosity(iFparams,newst,comp);
 	
+    double* p0 = Coords(oldp);
+	
+    double nor[MAXD];
     FT_NormalAtPoint(oldp,front,nor,comp);
-	dn = grid_size_in_direction(nor,h,dim);
+	
+	double *h = front->rect_grid->h;
+    double dn = grid_size_in_direction(nor,h,dim);
+	
+    double p1[MAXD];
+    for (i = 0; i < dim; ++i)
+    {
+        p1[i] = p0[i] + nor[i]*dn;
+    }
 
-	for (i = 0; i < dim; ++i)
-	    p1[i] = p0[i] + nor[i]*dn;
-
+    
     if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
     {
         if(!debugging("collision_off"))
@@ -1626,9 +1632,16 @@ static void rgbody_point_propagate(
             vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
                         + p_angular_velo(oldhs)[0] * crds_com[1];
 
-            // propagate by euler parameters
+            //Default position update (no rotation)
+            for (i = 0; i < dim; ++i)
+            {
+                Coords(newp)[i] = Coords(oldp)[i]
+                    + 0.5*(vel[i] + oldst->vel[i])*dt;
+            }
+    
+            //TODO: This is not completely ready to use -- prerequistes are missing ....
             if (motion_type(oldhs) == ROTATION ||
-                motion_type(oldhs) == PRESET_ROTATION)
+                motion_type(oldhs) == PRESET_ROTATION) // propagate by euler parameters
             {
                 double A[3][3],AI[3][3];
                 double ep[4];
@@ -1681,24 +1694,8 @@ static void rgbody_point_propagate(
                         Coords(newp)[j] += A[j][k]*initial[k];
                 }
             }
-		    else
-            {
-                for (i = 0; i < dim; ++i)
-                {
-                    Coords(newp)[i] = Coords(oldp)[i]
-                        + 0.5*(vel[i] + oldst->vel[i])*dt;
-                }
-            }
-    
-            for (i = 0; i < dim; ++i)
-            {
-                newst->vel[i] = vel[i];
-                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                        Coords(newp),front);
-            }
-	    
+            
         }
-        
     }
     else
     {
@@ -1706,10 +1703,13 @@ static void rgbody_point_propagate(
                 oldhse,oldhs,dt,vel);
     }
     
+    //velocity update
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = vel[i];
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
     }
+
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
@@ -2825,9 +2825,9 @@ static  void ifluid_compute_force_and_torque3d(
     }
 	/* end of counting the force on RG_STRING_NODE */
 
-	//if (front->step > 5)
-	if (front->step > iFparams->fsi_startstep)
-	{
+	        //if (front->step > 5)
+	    //if (front->step > iFparams->fsi_startstep)
+	    //{
         for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface); tri = tri->next)
         {
             for (i = 0; i < dim; ++i)
@@ -2861,7 +2861,7 @@ static  void ifluid_compute_force_and_torque3d(
                 }
             }
         }
-	}
+	    //}
 
 
         //TODO: force computation should include effects of shear stress from
