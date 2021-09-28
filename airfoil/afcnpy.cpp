@@ -3842,6 +3842,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
 	    (void) printf("Leaving fourth_order_elastic_set_propagate_parallel()\n");
 }*/	/* end fourth_order_elastic_set_propagate_parallel() */
 
+//TODO: Should we be reporting the normal velocity instead?
 static void print_max_fabric_speed(Front* fr)
 {
     SURFACE **s;
@@ -3889,8 +3890,8 @@ static void print_max_fabric_speed(Front* fr)
 
     if (max_speed > 1000)
     {
-        printf("\n\n\tmax speed of fabric/canopy exceeds 1000 m/s\n\n");
-        LOC(); clean_up(EXIT_FAILURE);
+        printf("\n\n\tWARNING: max speed of fabric/canopy exceeds 1000 m/s\n\n");
+        //LOC(); clean_up(EXIT_FAILURE);
     }
 }
 
@@ -3942,8 +3943,8 @@ static void print_max_string_speed(Front* fr)
 
     if (max_speed > 1000)
     {
-        printf("\n\n\tmax speed of elastic strings exceeds 1000 m/s\n\n");
-        LOC(); clean_up(EXIT_FAILURE);
+        printf("\n\n\tWARNING max speed of elastic strings exceeds 1000 m/s\n\n");
+        //LOC(); clean_up(EXIT_FAILURE);
     }
 }
 

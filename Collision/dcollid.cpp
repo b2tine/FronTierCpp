@@ -873,10 +873,6 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                 {
                     sl->avgVel[k] +=
                         (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
-                    
-                            //TODO: ADD TO IMPULSE???
-                            sl->impulse[k] +=
-                                (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
