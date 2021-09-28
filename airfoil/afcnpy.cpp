@@ -3850,7 +3850,6 @@ static void print_max_fabric_speed(Front* fr)
     POINT *pt;
     STATE *state;
     
-    double speed;
     double max_speed = -HUGE;
     POINT* max_pt = nullptr;
 
@@ -3864,12 +3863,18 @@ static void print_max_fabric_speed(Front* fr)
             for (int i = 0; i < 3; ++i)
             {
                 pt = Point_of_tri(tri)[i];
+	            
+                double nor[MAXD];
+                FT_NormalAtPoint(pt,fr,nor,NO_COMP);
+                
                 state = (STATE*)left_state(pt);
-                speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1])
-                            + sqr(state->vel[2]));
-                if (max_speed < speed)
+                double* vel = state->vel;
+                double nor_speed = scalar_product(vel,nor,3);
+                    //double speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1]) + sqr(state->vel[2]));
+                
+                if (max_speed < nor_speed)
                 {
-                    max_speed = speed;
+                    max_speed = nor_speed;
                     max_pt = pt;
                 }
             }
@@ -3883,15 +3888,15 @@ static void print_max_fabric_speed(Front* fr)
         printf("max speed of fabric/canopy: %g\n",max_speed);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
-        printf("Point Gindex: %d  coords = %f %f %f\n",
-                Gindex(max_pt),Coords(max_pt)[0],
-                Coords(max_pt)[1],Coords(max_pt)[2]);
+        printf("coords = %f %f %f    Point Gindex: %d\n",
+                Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2],
+                Gindex(max_pt));
     }
 
     if (max_speed > 1000)
     {
-        printf("\n\n\tWARNING: max speed of fabric/canopy exceeds 1000 m/s\n\n");
-        //LOC(); clean_up(EXIT_FAILURE);
+        printf("\n\n\tWARNING: max normal speed of fabric/canopy exceeds 1000 m/s\n\n");
+            //LOC(); clean_up(EXIT_FAILURE);
     }
 }
 
@@ -3936,15 +3941,15 @@ static void print_max_string_speed(Front* fr)
         printf("max speed of elastic strings: %g\n",max_speed);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
-        printf("Point Gindex: %d  coords = %f %f %f\n",
-                Gindex(max_pt),Coords(max_pt)[0],
-                Coords(max_pt)[1],Coords(max_pt)[2]);
+        printf("coords = %f %f %f    Point Gindex: %d\n",
+                Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2],
+                Gindex(max_pt));
     }
 
     if (max_speed > 1000)
     {
-        printf("\n\n\tWARNING max speed of elastic strings exceeds 1000 m/s\n\n");
-        //LOC(); clean_up(EXIT_FAILURE);
+        printf("\n\n\tWARNING: max speed of elastic strings exceeds 1000 m/s\n\n");
+            //LOC(); clean_up(EXIT_FAILURE);
     }
 }
 
