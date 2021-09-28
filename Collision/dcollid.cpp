@@ -405,8 +405,8 @@ void CollisionSolver3d::resolveCollision()
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainRatePosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainRatePosnJac(MotionState::STATIC);
+        limitStrainRatePosnGS(MotionState::STATIC);
                 //computeMaxSpeed(); //debug    
         
         //limitStrainPosnJac(MotionState::STATIC);
@@ -450,8 +450,8 @@ void CollisionSolver3d::resolveCollision()
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+        limitStrainPosnGS(MotionState::STATIC);
+            //limitStrainPosnJac(MotionState::STATIC);
     }
 
 	//update position using final midstep velocity
@@ -469,7 +469,8 @@ void CollisionSolver3d::resolveCollision()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainVelJAC();
+        //TODO: skip for now
+        //limitStrainVelJAC();
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
@@ -493,8 +494,8 @@ void CollisionSolver3d::resolveCollisionSubstep()
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainRatePosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainRatePosnJac(MotionState::STATIC);
+        limitStrainRatePosnGS(MotionState::STATIC);
                 //computeMaxSpeed(); //debug    
         
         //limitStrainPosnJac(MotionState::STATIC);
@@ -538,8 +539,8 @@ void CollisionSolver3d::resolveCollisionSubstep()
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainPosnJac(MotionState::STATIC);
+        limitStrainPosnGS(MotionState::STATIC);
     }
 
 	//update position using final midstep velocity
@@ -557,7 +558,8 @@ void CollisionSolver3d::resolveCollisionSubstep()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainVelJAC();
+        //TODO: skip for now
+            //limitStrainVelJAC();
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
@@ -2314,7 +2316,7 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
@@ -2341,7 +2343,7 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or Tri list first?
@@ -2573,7 +2575,7 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 	
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         auto shuffledFabricTriList = shuffleHseList(fabricTriList);
@@ -2602,7 +2604,7 @@ void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         StrainStats tss = computeStrainRateImpulsesPosn(fabricTriList,mstate);
@@ -2794,7 +2796,7 @@ void CollisionSolver3d::limitStrainVelGS()
 {
     turnOnGsUpdate();
 
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or tri list first?
@@ -2826,7 +2828,7 @@ void CollisionSolver3d::limitStrainVelGS()
 //jacobi iteration
 void CollisionSolver3d::limitStrainVelJAC()
 {
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);

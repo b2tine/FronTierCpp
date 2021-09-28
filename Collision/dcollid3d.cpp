@@ -331,6 +331,10 @@ static bool MovingPointToTriGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+                    
+                    //TODO: Correct treatment????
+                    sl->impulse[k] += sl->collsnImpulse[k];
+                    
                     sl->collsnImpulse[k] = 0.0;
                     
                     //move to new candidate position
@@ -501,18 +505,22 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING INTERACTIONS FOR NOW.
-    bool string_string = false;
+        //bool string_string = false;
 
-    //
+    //TODO: trying again with no string string impact zones
     //No Impact Zones for string-string interactions
-    //bool string_string = false;
-    //if (s0->is_stringpt && s2->is_stringpt)
-    //    string_string = true;
-    //
+    bool string_string = false;
+    if (s0->is_stringpt && s2->is_stringpt)
+    {
+        string_string = true;
+    }
+
 
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+    {
         rigid_body_point = true;
+    }
 
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     //if (status && (!is_detImpZone || string_string || rigid_body_point))
@@ -527,6 +535,10 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+                    
+                    //TODO: Correct treatment????
+                    sl->impulse[k] += sl->collsnImpulse[k];
+                    
                     sl->collsnImpulse[k] = 0.0;
 
                     //move to new candidate position
