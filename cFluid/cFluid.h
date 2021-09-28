@@ -133,14 +133,14 @@ typedef struct
 	double contact_vel;
     
 	double **vel;
+	double *vort;    /* Vorticity-2d */
+    double **vort3d; /* Vorticity-3d */
+
 	double **mom;
 	double *dens;
 	double *engy;
 	double *pres;
     double *mu;
-
-	double *vort;    /* Vorticity-2d */
-    double **vort3d; /* Vorticity-3d */
 
     //GFM
 	double **gnor;
