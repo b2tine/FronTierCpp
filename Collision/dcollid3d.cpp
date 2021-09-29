@@ -279,10 +279,12 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double rtol = CollisionSolver3d::getFabricRoundingTolerance();
+    bool string_present = false;
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
     {
         rtol = CollisionSolver3d::getStringRoundingTolerance();
+        string_present = true;
     } 
 
     bool status = false;
@@ -335,11 +337,14 @@ static bool MovingPointToTriGS(POINT* pts[])
 
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
+    {
         rigid_body_point = true;
+    }
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (status && (!is_detImpZone || rigid_body_point))
-    if (status && !is_detImpZone)
+            //if (status && (!is_detImpZone || rigid_body_point))
+        //if (status && !is_detImpZone)
+    if (status && (!is_detImpZone || string_present))
     {
         for (int j = 0; j < 4; ++j)
         {
@@ -402,8 +407,8 @@ static bool MovingPointToTriGS(POINT* pts[])
             }
         }
 
-    }
-    else if (status && is_detImpZone)
+    } 
+    else if (status && is_detImpZone && !string_present)//else if (status && is_detImpZone)
     {
         createImpactZone(pts,4);
         POINT* head = findSet(pts[0]);//could be a rigid body point
@@ -499,11 +504,16 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double rtol = CollisionSolver3d::getFabricRoundingTolerance();
+    bool string_present = false;
         //if (s0->is_stringpt && s2->is_stringpt)
     if (s0->is_stringpt || s2->is_stringpt)
     {
         rtol = CollisionSolver3d::getStringRoundingTolerance();
+        string_present = true;
     }
+    
+    //TODO: ALLOW IMPACT ZONES FOR STRING-STRING INTERACTIONS FOR NOW.
+        //bool string_present = false;
 
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
@@ -553,17 +563,6 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
             Coords(pts[j])[k] = sl->x_old[k];
     }
 
-    //TODO: ALLOW IMPACT ZONES FOR STRING-STRING INTERACTIONS FOR NOW.
-        //bool string_string = false;
-
-    //TODO: Trying again with no string string impact zones.
-    //
-    //No Impact Zones for string-string interactions
-    bool string_string = false;
-    if (s0->is_stringpt && s2->is_stringpt)
-    {
-        string_string = true;
-    }
 
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
@@ -572,8 +571,8 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     }
 
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    //if (status && (!is_detImpZone || string_string || rigid_body_point))
-    if (status && (!is_detImpZone || string_string))
+    //if (status && (!is_detImpZone || string_present || rigid_body_point))
+    if (status && (!is_detImpZone || string_present))
     {
         for (int j = 0; j < 4; ++j)
         {
@@ -637,7 +636,7 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         }
 
     }
-    else if (status && is_detImpZone && !string_string)
+    else if (status && is_detImpZone && !string_present)
     {
         createImpactZone(pts,4);
         POINT* head = findSet(pts[0]);
@@ -1097,19 +1096,19 @@ static bool EdgeToEdge(
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
-        //bool string_string = false;
+        //bool string_present = false;
     
     //TODO: TRY SKIPPING IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
-    bool string_string = false;
+    bool string_present = false;
     STATE* s0 = (STATE*)left_state(pts[0]);
     STATE* s2 = (STATE*)left_state(pts[2]);
-    if (s0->is_stringpt && s2->is_stringpt)
+    if (s0->is_stringpt || s2->is_stringpt)
     {
-        string_string = true;
+        string_present = true;
     }
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
-    if (!is_detImpZone || string_string)
+    if (!is_detImpZone || string_present)
     {
         double dt = root;
         if (mstate != MotionState::MOVING)
@@ -1168,7 +1167,7 @@ static void EdgeToEdgeImpulse(
     }
     
     //TODO: need input file option for overlap_coef
-    double overlap_coef = 0.25;
+    double overlap_coef = 0.5;
         //double overlap_coef = 0.1;
     double overlap = h - dist;
 
@@ -1658,7 +1657,7 @@ static void PointToTriImpulse(
     }
 	
     //TODO: Need to add input file option for overlap_coef
-    double overlap_coef = 0.25;
+    double overlap_coef = 0.5;
         //double overlap_coef = 0.1;
     double overlap = h - dist;
 
