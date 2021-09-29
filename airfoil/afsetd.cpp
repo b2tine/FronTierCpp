@@ -496,7 +496,8 @@ for (i = 0; i < size; ++i)
 	    (void) printf("Leaving generic_spring_solver()\n");
 }	/* end generic_spring_solver */
 
-//TODO: function interface should be adjusted ... or does it ???
+//TODO: Same as generic_spring_solver() -- after changing all instances of generic_spring_solver()
+//      to spring_solver_RK4() can delete generic_spring_solver().
 void spring_solver_RK4(
 	SPRING_VERTEX *sv,
 	int dim,
@@ -543,9 +544,6 @@ void spring_solver_RK4(
 	    v_old[i][j] = sv[i].v[j];
 	}
     
-    //TODO: Move loop out into a different function so the spring
-    //      solver substep logic can be called on a per substep basis
-    //      that manages the loop.
     for (n = 0; n < n_loop; ++n)
 	{
 	    for (i = 0; i < size; ++i)

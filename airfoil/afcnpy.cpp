@@ -109,7 +109,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
-//NOTE: nowhere used
+//TODO: nowhere used
 extern void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
@@ -253,55 +253,6 @@ int af_find_state_at_crossing(
     //      NEUMANN_PDE_BOUNDARY in order to be consistent
     return NEUMANN_PDE_BOUNDARY;
 }       /* af_find_state_at_crossing */
-
-/*
-//NOTE: old version -- save for now as reference
-//
-int af_find_state_at_crossing(
-    Front *front,
-    int *icoords,
-    GRID_DIRECTION dir,
-    int comp,
-    POINTER *state,
-    HYPER_SURF **hs,
-    double *crx_coords)
-{
-    boolean status;
-	HYPER_SURF_ELEMENT *hse;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-
-    status = FT_StateStructAtGridCrossing2(front,icoords,
-            dir,comp,state,hs,&hse,crx_coords);
-    
-    if (status == NO)
-        return NO_PDE_BOUNDARY;
-    if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE) 
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == ELASTIC_STRING)//2d string 
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == ELASTIC_BOUNDARY && 
-		af_params->with_porosity)
-	    return NO_PDE_BOUNDARY;
-	if (wave_type(*hs) == ELASTIC_BOUNDARY) //TMP
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY) //TMP
-	    return CONST_V_PDE_BOUNDARY;
-	if (wave_type(*hs) == DIRICHLET_BOUNDARY)
-	{
-	    if (boundary_state_function(*hs) &&
-            strcmp(boundary_state_function_name(*hs),
-                "flowThroughBoundaryState") == 0)
-        {
-            return CONST_P_PDE_BOUNDARY;
-        }
-        else
-        {
-            return CONST_V_PDE_BOUNDARY;
-        }
-    }
-
-    return NEUMANN_PDE_BOUNDARY;
-}*/       /* af_find_state_at_crossing */
 
 static boolean is_pore(
 	Front *front,
@@ -1924,8 +1875,6 @@ static void elastic_set_propagate_serial(
     printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d ss_dt = %f\n",
             fr_dt, geom_set.dt_tol, n_sub, ss_dt);
 
-    
-    //const int nsub_per_collsn_step = 50;
     int nsub_per_collsn_step = af_params->collsn_step_nsub;
     int collsn_nsub = nsub_per_collsn_step;
     
@@ -1938,17 +1887,8 @@ static void elastic_set_propagate_serial(
         remainder_num_steps = 0;
     }
     double collsn_dt = collsn_nsub*ss_dt;
-        //double collsn_dt = fr_dt/collsn_nsub;
-    
-    //if (remainder_num_steps != 0) num_collsn_steps++;
-
     printf("num_collsn_steps = %d\n",num_collsn_steps);
     
-    //const MAX_ITER = 5;
-    //const dt_frac = 0.5;
-    
-        //double start_dt = front->dt;
-
     *newfront = copy_front(fr);
     set_size_of_intfc_state(size_of_state(fr->interf));
     set_copy_intfc_states(YES); //Why set to NO in struct_advance_front3d() ???
@@ -1960,23 +1900,6 @@ static void elastic_set_propagate_serial(
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
     }
-    
-        /*
-        Front* sub_newfront;
-        
-        sub_newfront = copy_front(*newfront);
-        set_size_of_intfc_state(size_of_state(fr->interf));
-        set_copy_intfc_states(YES); //Why set to NO in struct_advance_front3d() ???
-        sub_newfront->interf = pp_copy_interface((*newfront)->interf);
-            //sub_newfront->interf = pp_copy_interface(fr->interf);
-        if (sub_newfront->interf == nullptr)
-        {
-            printf("\nERROR elastic_set_propagate_serial(): \
-                    unable to copy interface\n");
-            LOC(); clean_up(EXIT_FAILURE);
-                //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
-        }
-        */
 
     int status;
     for (int n = 1; n <= num_collsn_steps; ++n)
@@ -2020,6 +1943,10 @@ static void elastic_set_propagate_serial(
 //BELOW JUST SAVED FOR REFERENCE
 //////////////////////////////////////////////////////////////////////////////////    
 
+    //const MAX_ITER = 5;
+    //const dt_frac = 0.5;
+    
+        //double start_dt = front->dt;
     //TODO: Can't just reduce dt without reducing dt and
     //      calling FT_Propagate() again.
     //
@@ -2196,7 +2123,6 @@ static int elastic_set_propagate3d_serial(
     resetBendingForce(elastic_intfc);
     if (!debugging("bendforce_off"))
     {
-        //resetBendingForce(elastic_intfc); //Moved above to ensure is zeroed out for now
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
@@ -2307,10 +2233,8 @@ static int elastic_set_propagate3d_serial(
                     client_size_new[i],client_L,client_U);
 	    }
     
-            double ss_dt = geom_set->dt;
-            //int n_sub = geom_set->n_sub;
-            //spring_solver_RK4(sv,dim,size,n_sub,dt);
-
+        double ss_dt = geom_set->dt;
+        
         spring_solver_RK4(sv,dim,size,collsn_nsub,ss_dt);
 
         /*
@@ -2373,7 +2297,6 @@ static int elastic_set_propagate3d_serial(
                 try
                 {
                     collision_solver->resolveCollisionSubstep();
-                        //collision_solver->resolveCollision();
                 }
                 catch (...)
                 {
@@ -4002,8 +3925,6 @@ static void setSurfVelocity(
             {
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
-                    //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                    //sr->vel[j] = sr->impulse[j] + nor_speed*nor[j];
             }
             sorted(p) = YES;
         }
@@ -4332,10 +4253,11 @@ extern void set_geomset_velocity(
     }
     for (int i = 0; i < nn; ++i)
 	{
-        if (is_load_node(geom_set->nodes[i])) continue;
-            //if (is_load_node(geom_set->nodes[i]) ||
-            //    is_rg_string_node(geom_set->nodes[i])) continue;
-	    setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
+        if (is_load_node(geom_set->nodes[i]))
+        {
+            continue;
+        }
+        setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 
     //TODO: add rgb_surfs ?
@@ -4442,7 +4364,7 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
             if (is_registered_point(surf,p))
             {
                 sl->is_registeredpt = true;
-                sl->is_fixed = true;//TODO: to remove
+                sl->is_fixed = true;
             }
         }
     }
