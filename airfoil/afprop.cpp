@@ -1315,7 +1315,7 @@ static void rg_string_node_propagate(
     int num_rg_string_nodes = af_node_extra->num; //total number of rg_string_nodes
     int num_strings = Num_in_curves(oldn); //number of strings attached to the node
 
-    double mass = af_params->payload/num_rg_string_nodes/num_strings;
+    double mass = af_params->payload/num_rg_string_nodes;
 	
     for (i = 0; i < dim; ++i)
 	{
