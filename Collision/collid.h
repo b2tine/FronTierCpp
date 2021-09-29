@@ -9,10 +9,7 @@
 
 #define DEBUGGING false
 
-//TODO: Consistent use of ROUND_EPS AND MACH_EPS.
-//      Currently they are equal, and we can change all to MACH_EPS. 
-//
-//TODO: Currently unused -- should probably be something like 1.0e-09
+//TODO: Make input file option for ROUND_EPS
 const double ROUND_EPS = 5.0e-09;
 
 

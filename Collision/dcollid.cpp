@@ -2926,6 +2926,7 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             double VTOL = 0.05;
             if (fabs(vcomp01) <= VTOL*rel_speed) continue;
              
+            double I;
             if (vcomp01 > VTOL*rel_speed)
             {
                 I = 0.5*(vcomp01 - VTOL*rel_speed);
