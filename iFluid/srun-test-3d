@@ -3,6 +3,7 @@
 #SBATCH --job-name=mpi_job_test-3d   # Job name
 #SBATCH --ntasks=2                   # Number of MPI tasks (i.e. processes
 #SBATCH --cpus-per-task=1            # Number of cores per MPI task
+#SBATCH --mem-per-cpu=3G
 #SBATCH --nodes=1                    # Maximum number of nodes to be allocated
 #SBATCH --output=mpi_test_%j.log     # Path to the standard output and error files relative to the working directory
 
@@ -18,8 +19,11 @@ module load mvapich2/2.3.3-gcc-8.3.1
 #export LD_LIBRARY_PATH="/opt/petsc/petsc-3.13.4-dbg/lib:/usr/lib64:$LD_LIBRARY_PATH"
 echo $LD_LIBRARY_PATH
 
+
+INFILE="input-brandonLES/in-ball3d-CGAL-VREMAN"
+
 #Need to use mpiexec when using mvapich
-mpiexec -np 2 ./iFluid -d 3 -p 2 1 1 -i in-ball3d-CGAL-VREMAN_flothru_sides -o out-ball3d-test
+mpiexec -np 2 ./iFluid -d 3 -p 2 1 1 -i $INFILE  -o out-ball3d-test-p211
 
 
 #The commands below do not work with mvapich, but should with openmpi.
