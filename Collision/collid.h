@@ -11,7 +11,9 @@
 
 //TODO: Consistent use of ROUND_EPS AND MACH_EPS.
 //      Currently they are equal, and we can change all to MACH_EPS. 
-const double ROUND_EPS = DBL_EPSILON;
+//
+//TODO: Currently unused -- should probably be something like 1.0e-09
+const double ROUND_EPS = 5.0e-09;
 
 
 struct StrainStats

@@ -208,39 +208,47 @@ static bool MovingPointToTriJac(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    /*
     STATE* s = (STATE*)left_state(pts[3]);
     if (s->is_stringpt)
+    {
         tol = CollisionSolver3d::getStringRoundingTolerance();
-    */  
+    }
     
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
         for (int i = 0; i < 4; ++i)
         {
-            if (roots[i] < 0)
-                continue;
+            if (roots[i] < 0) continue;
     
+            //Stop a little short of computed coplanar dt
+            double candidate_dt = roots[i] - ROUND_EPS;
+
             for (int j = 0; j < 4; ++j)
             {
                 STATE* sl = (STATE*)left_state(pts[j]);
     		    for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                {
+                    Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*candidate_dt;
+                        //Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                }
 		    }
     
             MotionState mstate = MotionState::MOVING;
-            if (PointToTri(pts,tol,mstate,roots[i]))
+                //if (PointToTri(pts,tol,mstate,roots[i]))
+            if (PointToTri(pts,tol,mstate,candidate_dt))
             {
                 //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
-                    sl->collsn_dt = roots[i];
+                        //sl->collsn_dt = roots[i];
+                    sl->collsn_dt = candidate_dt;
                 }
                 
-                CollisionSolver3d::addCollisionTime(roots[i]);
+                CollisionSolver3d::addCollisionTime(candidate_dt);
+                    //CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
 	    }
@@ -250,7 +258,9 @@ static bool MovingPointToTriJac(POINT* pts[])
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
+        {
             Coords(pts[j])[k] = sl->x_old[k];
+        }
     }
     
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -269,12 +279,12 @@ static bool MovingPointToTriGS(POINT* pts[])
 	double roots[4] = {-1,-1,-1,dt};
 
     double rtol = CollisionSolver3d::getFabricRoundingTolerance();
-    //
-    //STATE* s = (STATE*)left_state(pts[3]);
-    //if (s->is_stringpt)
-    //    rtol = CollisionSolver3d::getStringRoundingTolerance();
-    //
-        
+    STATE* s = (STATE*)left_state(pts[3]);
+    if (s->is_stringpt)
+    {
+        rtol = CollisionSolver3d::getStringRoundingTolerance();
+    } 
+
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
@@ -282,25 +292,34 @@ static bool MovingPointToTriGS(POINT* pts[])
         {
             if (roots[i] < 0) continue;
     
+            //Stop a little short of computed coplanar dt
+            double candidate_dt = roots[i] - ROUND_EPS;
+
             for (int j = 0; j < 4; ++j)
             {
                 STATE* sl = (STATE*)left_state(pts[j]);
     		    for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                {
+                    Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*candidate_dt;
+                        //Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                }
 		    }
 
             MotionState mstate = MotionState::MOVING;
-            if (PointToTri(pts,rtol,mstate,roots[i]))
+                //if (PointToTri(pts,rtol,mstate,roots[i]))
+            if (PointToTri(pts,rtol,mstate,candidate_dt))
             {
                 //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
-                    sl->collsn_dt = roots[i];
+                        //sl->collsn_dt = roots[i];
+                    sl->collsn_dt = candidate_dt;
                 }
                     
-                CollisionSolver3d::addCollisionTime(roots[i]);
+                CollisionSolver3d::addCollisionTime(candidate_dt);
+                    //CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
 	    }
@@ -358,7 +377,12 @@ static bool MovingPointToTriGS(POINT* pts[])
                     for (int k = 0; k < 3; ++k)
                     {
                         sl->avgVel[k] += sl->collsnImpulse[k];
+                    
+                        //TODO: Correct treatment????
+                        sl->impulse[k] += sl->collsnImpulse[k];
+                        
                         sl->collsnImpulse[k] = 0.0;
+                        
                         //move to new candidate position
                         //Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*dt;
                     }
@@ -399,37 +423,48 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
     STATE* s0 = (STATE*)left_state(pts[0]);
     STATE* s2 = (STATE*)left_state(pts[2]);
 
-    double tol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt && s2->is_stringpt)
-        tol = CollisionSolver3d::getStringRoundingTolerance();
+    double rtol = CollisionSolver3d::getFabricRoundingTolerance();
+        //if (s0->is_stringpt && s2->is_stringpt)
+    if (s0->is_stringpt || s2->is_stringpt)
+    {
+        rtol = CollisionSolver3d::getStringRoundingTolerance();
+    }
 
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
     {
         for (int i = 0; i < 4; ++i)
         {
-            if (roots[i] < 0)
-                continue;
+            if (roots[i] < 0) continue;
+            
+            //Stop a little short of computed coplanar dt
+            double candidate_dt = roots[i] - ROUND_EPS;
                 
             for (int j = 0; j < 4; ++j)
             {
                 STATE* sl = (STATE*)left_state(pts[j]);
                 for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                {
+                    Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*candidate_dt;
+                        //Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                }
             }
 
             MotionState mstate = MotionState::MOVING;
-            if (EdgeToEdge(pts,tol,mstate,roots[i]))
+                //if (EdgeToEdge(pts,rtol,mstate,roots[i]))
+            if (EdgeToEdge(pts,rtol,mstate,candidate_dt))
             {
                 //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
-                    sl->collsn_dt = roots[i];
+                        //sl->collsn_dt = roots[i];
+                    sl->collsn_dt = candidate_dt;
                 }
 
-                CollisionSolver3d::addCollisionTime(roots[i]);
+                CollisionSolver3d::addCollisionTime(candidate_dt);
+                    //CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
         }
@@ -440,7 +475,9 @@ static bool MovingEdgeToEdgeJac(POINT* pts[])
     {
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
+        {
             Coords(pts[j])[k] = sl->x_old[k];
+        }
     }
     
 	bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
@@ -462,8 +499,11 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     STATE* s2 = (STATE*)left_state(pts[2]);
 
     double rtol = CollisionSolver3d::getFabricRoundingTolerance();
-    if (s0->is_stringpt && s2->is_stringpt)
+        //if (s0->is_stringpt && s2->is_stringpt)
+    if (s0->is_stringpt || s2->is_stringpt)
+    {
         rtol = CollisionSolver3d::getStringRoundingTolerance();
+    }
 
     bool status = false;
 	if (isCoplanar(pts,dt,roots))
@@ -471,26 +511,35 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
         for (int i = 0; i < 4; ++i)
         {
             if (roots[i] < 0) continue;
+
+            //Stop a little short of computed coplanar dt
+            double candidate_dt = roots[i] - ROUND_EPS;
                 
             for (int j = 0; j < 4; ++j)
             {
                 STATE* sl = (STATE*)left_state(pts[j]);
                 for (int k = 0; k < 3; ++k)
-                    Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                {
+                    Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*candidate_dt;
+                        //Coords(pts[j])[k] = sl->x_old[k] + roots[i]*sl->avgVel[k];
+                }
             }
 
             MotionState mstate = MotionState::MOVING;
-            if (EdgeToEdge(pts,rtol,mstate,roots[i]))
+                //if (EdgeToEdge(pts,rtol,mstate,roots[i]))
+            if (EdgeToEdge(pts,rtol,mstate,candidate_dt))
             {
                 //TODO: add points to set of collision points (no duplicate element set)
                 status = true;
                 for (int j = 0; j < 4; ++j)
                 {
                     STATE* sl = (STATE*)left_state(pts[j]);
-                    sl->collsn_dt = roots[i];
+                        //sl->collsn_dt = roots[i];
+                    sl->collsn_dt = candidate_dt;
                 }
                 
-                CollisionSolver3d::addCollisionTime(roots[i]);
+                CollisionSolver3d::addCollisionTime(candidate_dt);
+                    //CollisionSolver3d::addCollisionTime(roots[i]);
                 break;
             }
         }
@@ -507,14 +556,14 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING INTERACTIONS FOR NOW.
         //bool string_string = false;
 
-    //TODO: trying again with no string string impact zones
+    //TODO: Trying again with no string string impact zones.
+    //
     //No Impact Zones for string-string interactions
     bool string_string = false;
     if (s0->is_stringpt && s2->is_stringpt)
     {
         string_string = true;
     }
-
 
     bool rigid_body_point = false;
     if (isRigidBody(pts[0]) || isRigidBody(pts[3]))
@@ -562,6 +611,10 @@ static bool MovingEdgeToEdgeGS(POINT* pts[])
                     for (int k = 0; k < 3; ++k)
                     {
                         sl->avgVel[k] += sl->collsnImpulse[k];
+                        
+                        //TODO: Correct treatment????
+                        sl->impulse[k] += sl->collsnImpulse[k];
+                        
                         sl->collsnImpulse[k] = 0.0;
                         
                         //move to new candidate position
@@ -700,36 +753,47 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
         }
 	}
 
-	//elimiate invalid roots;
+	//eliminate invalid roots;
 	for (int i = 0; i < 3; ++i)
     {
         roots[i] -= MACH_EPS;
-        if (roots[i] < 0 || roots[i] > dt)
+        if (roots[i] < 0 || roots[i] >= dt)
             roots[i] = -1;
 	}
 
-	//sort the roots
-	if (roots[0] > roots[1])
-	    std::swap(roots[0], roots[1]);
-	if (roots[0] > roots[2])
-	    std::swap(roots[0], roots[2]);
-	if (roots[1] > roots[2])
-	    std::swap(roots[1], roots[2]);
+    std::sort(roots, roots + 3);
+        /*
+        //sort the roots
+        if (roots[0] > roots[1])
+            std::swap(roots[0], roots[1]);
+        if (roots[0] > roots[2])
+            std::swap(roots[0], roots[2]);
+        if (roots[1] > roots[2])
+            std::swap(roots[1], roots[2]);
+        */
 
 	if (roots[0] > MACH_EPS || roots[1] > MACH_EPS || roots[2] > MACH_EPS)
+    {
 	    return true;
-	else
-	    return false;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool TriToBond(const TRI* tri,const BOND* bd)
 {
 	bool status = false;
 
+    STATE* ss = (STATE*)left_state(bd->start);
+    STATE* se = (STATE*)left_state(bd->end);
+    
     double tol = CollisionSolver3d::getFabricThickness();
-    STATE* sl = (STATE*)left_state(bd->start);
-    if (sl->is_stringpt)
+    if (ss->is_stringpt || se->is_stringpt)
+    {
         tol = CollisionSolver3d::getStringThickness();
+    }
 
 	POINT* pts[4];
 	for (int i = 0; i < 3; ++i)
@@ -768,7 +832,15 @@ bool BondToBond(const BOND* b1, const BOND* b2)
 	pts[2] = b2->start;
 	pts[3] = b2->end;
 
-    double tol = CollisionSolver3d::getStringThickness();
+    STATE* s0 = (STATE*)left_state(pts[0]);
+    STATE* s2 = (STATE*)left_state(pts[2]);
+
+    double tol = CollisionSolver3d::getFabricThickness();
+        //if (s0->is_stringpt && s2->is_stringpt)
+    if (s0->is_stringpt || s2->is_stringpt)
+    {
+        tol = CollisionSolver3d::getStringThickness();
+    }
 
 	bool status = false;
     //TODO: add points to set of proximity points (no duplicate element set)
@@ -948,26 +1020,25 @@ static bool EdgeToEdge(
     }
 
     //compute the vector joining the closest points and the distance
-    double vec[3];
-    
     scalarMult(tC,x34,x34);
     addVec(Coords(pts[2]),x34,x34);
 
     scalarMult(sC,x12,x12);
     addVec(Coords(pts[0]),x12,x12);
 
+    double vec[3];
     minusVec(x34,x12,vec);
 
-    /*
-	double x13[3];
-    Pts2Vec(pts[0],pts[2],x13);
-    
-    scalarMult(tC,x34,x34);
-    addVec(x13,x34,vec);
+        /*
+        double x13[3];
+        Pts2Vec(pts[0],pts[2],x13);
+        
+        scalarMult(tC,x34,x34);
+        addVec(x13,x34,vec);
 
-    scalarMult(sC,x12,x12);
-    minusVec(vec,x12,vec);
-    */
+        scalarMult(sC,x12,x12);
+        minusVec(vec,x12,vec);
+        */
 
     
     double dist = Mag3d(vec);
@@ -1026,14 +1097,16 @@ static bool EdgeToEdge(
     }
 
     //TODO: ALLOW IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
-    bool string_string = false;
+        //bool string_string = false;
     
-    /*
+    //TODO: TRY SKIPPING IMPACT ZONES FOR STRING-STRING POINTS FOR NOW.
+    bool string_string = false;
     STATE* s0 = (STATE*)left_state(pts[0]);
     STATE* s2 = (STATE*)left_state(pts[2]);
     if (s0->is_stringpt && s2->is_stringpt)
+    {
         string_string = true;
-    */
+    }
 
     bool is_detImpZone = CollisionSolver3d::getImpZoneStatus();
     if (!is_detImpZone || string_string)
@@ -1083,7 +1156,9 @@ static void EdgeToEdgeImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
-    /*
+    //TODO: Impulse computations for inhomogeneous materials.
+    //      should use k and m for each individual point,
+    //      or at least use an average of point types.
     if (sl[0]->is_stringpt || sl[2]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
@@ -1091,10 +1166,10 @@ static void EdgeToEdgeImpulse(
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
     }
-    */
     
     //TODO: need input file option for overlap_coef
-    double overlap_coef = 0.1;
+    double overlap_coef = 0.25;
+        //double overlap_coef = 0.1;
     double overlap = h - dist;
 
 	double v_rel[3]; 
@@ -1571,8 +1646,9 @@ static void PointToTriImpulse(
 	for (int i = 0; i < 4; ++i)
 	    sl[i] = (STATE*)left_state(pts[i]);
 
-    /*
-    //TODO: Impulse computations for inhomogeneous materials
+    //TODO: Impulse computations for inhomogeneous materials.
+    //      should use k and m for each individual point,
+    //      or at least use an average of point types.
     if (sl[3]->is_stringpt)
     {
         h = CollisionSolver3d::getStringThickness();
@@ -1580,10 +1656,10 @@ static void PointToTriImpulse(
         m = CollisionSolver3d::getStringPointMass();
         mu = CollisionSolver3d::getStringFrictionConstant();
     }
-    */
 	
     //TODO: Need to add input file option for overlap_coef
-    double overlap_coef = 0.1;
+    double overlap_coef = 0.25;
+        //double overlap_coef = 0.1;
     double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity

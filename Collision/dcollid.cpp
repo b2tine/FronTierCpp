@@ -560,7 +560,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
     {
         //TODO: skip for now
             //limitStrainVelJAC();
-            //limitStrainVelGS();
+        limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
 
@@ -2553,6 +2553,7 @@ StrainStats CollisionSolver3d::computeStrainImpulsesPosn(
                             for (int j = 0; j < 3; ++j)
                             {
                                 sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                                //TODO: Need to add strain impulses to sl->impulse ???
                                 sl[k]->strainImpulse[j] = 0.0;
                             }
                             sl[k]->strain_num = 0;
@@ -2777,6 +2778,7 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                             for (int j = 0; j < 3; ++j)
                             {
                                 sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                                //TODO: Need to add strain impulses to sl->impulse ???
                                 sl[k]->strainImpulse[j] = 0.0;
                             }
                             sl[k]->strain_num = 0;
@@ -2906,6 +2908,8 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             for (int j = 0; j < 3; ++j)
                 vel_rel[j] = sl[1]->avgVel[j] - sl[0]->avgVel[j];
             
+            double rel_speed = Mag3d(vel_rel);
+            
             double vec01[MAXD];
             Pts2Vec(p[0],p[1],vec01);//p1 - p0
             double len = Mag3d(vec01);
@@ -2914,18 +2918,23 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //component of the relative velocity in the direction
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
-            if (fabs(vcomp01) < MACH_EPS) continue;
-            
-            //TODO: Don't correct when points approaching (vcomp01 < ) -- zero compressive stress
-            //      May need to set a negative lower bound to avoid bonds shrinking too small???
-            //      -- this didn't work well, at least without a lower bound...
-                //if (vcomp01 < MACH_EPS) continue;
-            
-             
-             //TODO: Specify a tolerance for the relative velocity in input file.
-                
-            double I = 0.5*vcomp01;
 
+                //if (fabs(vcomp01) < MACH_EPS) continue;
+                //double I = 0.5*vcomp01;
+
+            //TODO: Input file option for velocity constrain tolerance
+            double VTOL = 0.05;
+            if (fabs(vcomp01) <= VTOL*rel_speed) continue;
+             
+            if (vcomp01 > VTOL*rel_speed)
+            {
+                I = 0.5*(vcomp01 - VTOL*rel_speed);
+            }
+            else
+            {
+                I = 0.5*(vcomp01 + VTOL*rel_speed);
+            }
+            
             //Do not apply impulses to nodes attached to a rigid body
             if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
             {
@@ -3008,6 +3017,7 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
                         for (int j = 0; j < 3; ++j)
                         {
                             sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                            //TODO: Need to add strain impulses to sl->impulse ???
                             sl[k]->strainImpulse[j] = 0.0;
                         }
                         sl[k]->strain_num = 0;
@@ -3050,6 +3060,8 @@ void CollisionSolver3d::applyStrainImpulses(MotionState mstate)
                 {
                     sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
                 
+                    //TODO: Need to add strain impulses to sl->impulse ???
+                    
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
                         printf("inf/nan vel[%d]: strain_impulse = %f, strain_num = %d\n",
