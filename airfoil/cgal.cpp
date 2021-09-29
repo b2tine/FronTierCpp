@@ -2566,27 +2566,27 @@ static void findPointsonRGB(
     HYPER_SURF* hs = Hyper_surf(rg_surf);
 
 	/* for one-point cases, repeat finding with a lower z coordinate */
-	if (rgb_shape(hs) != SPHERE) //TODO: Temporary to figure out mass and force etc.
+	    //if (rgb_shape(hs) != SPHERE) //TODO: Temporary to figure out mass and force etc.
+        //{
+    if (candidate.size() == 1)
     {
-        if (candidate.size() == 1)
-        {
-            double z_coord = Coords(candidate.front())[2] - 0.5*h[2];
-            candidate.clear();
+        double z_coord = Coords(candidate.front())[2] - 0.5*h[2];
+        candidate.clear();
 
-            surf_tri_loop(rg_surf, tri)
+        surf_tri_loop(rg_surf, tri)
+        {
+            for (i = 0; i < 3; ++i)
             {
-                for (i = 0; i < 3; ++i)
+                pt = Point_of_tri(tri)[i];
+                if ((fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
+                    (std::find(candidate.begin(),candidate.end(),pt) == candidate.end()))
                 {
-                    pt = Point_of_tri(tri)[i];
-                    if ((fabs(Coords(pt)[2] - z_coord) < 0.1*h[2]) && 
-                        (std::find(candidate.begin(),candidate.end(),pt) == candidate.end()))
-                    {
-                        candidate.push_back(pt);
-                    }
+                    candidate.push_back(pt);
                 }
             }
         }
     }
+        //}
 
 	if (candidate.size() <= 4)
 	{
