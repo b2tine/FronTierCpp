@@ -3808,7 +3808,7 @@ static void print_max_fabric_speed(Front* fr)
     {
         printf("\n");
         state = (STATE*)left_state(max_pt);
-        printf("max speed of fabric/canopy: %g\n",max_speed);
+        printf("max normal speed of fabric/canopy: %g\n",max_speed);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
         printf("coords = %f %f %f    Point Gindex: %d\n",
@@ -3960,19 +3960,14 @@ static void setCurveVelocity(
 
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_vel[3] = {0};
         double max_speed = 0.0;
 
+        /*
         NODE* string_nodes[2];
         string_nodes[0] = curve->start;
         string_nodes[1] = curve->end;
 
-        /*
-        //This is redundant because the MONO_COMP_CURVE block below will get string nodes
-        //that attach to canopy, but we need this here in the case of unattached strings
-        //
-        //But isn't propagating in the normal direction!!!!! This is Wrong unless it is a free
-        //floating string, but that case can be handled in setNodeVelocity().
-        
         for (int i = 0; i < 2; ++i)
         {
             
@@ -4019,11 +4014,19 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
+
+                if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                {
+                    max_vel[j] = vel[j];
+                }
             }
         }
 
         //This appears to significantly improve string behavior
-        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
+        for (int k = 0; k < dim; ++k)
+        {
+            set_max_front_speed(k,max_vel[k],nullptr,nullptr,front);
+        }
     }
     else
     {
