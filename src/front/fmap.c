@@ -3554,26 +3554,30 @@ EXPORT	void FT_TimeControlFilter(Front *front)
 	new_dt = min3(dt1,dt2,dt3);
 
 	if (front->step+1 >= front->max_step)
-            front->time_limit_reached = YES;
+    {
+        front->time_limit_reached = YES;
+    }
 
-	if (new_dt > dt) 
-	    return;
+	if (new_dt > dt) return;
 
 	if (fabs(dt1 - new_dt) < 1e-15)
 	{
 	    front->is_movie_time = YES;
 	    (front->im)++;
 	}
-        if (fabs(dt2 - new_dt) < 1e-15)
-        {
-            front->is_print_time = YES;
-	    (front->ip)++;
-        }
-        if (fabs(dt3 - new_dt) < 1e-15)
-        {
-            front->time_limit_reached = YES;
-        }
-	front->dt = new_dt;
+    
+    if (fabs(dt2 - new_dt) < 1e-15)
+    {
+        front->is_print_time = YES;
+        (front->ip)++;
+    }
+    
+    if (fabs(dt3 - new_dt) < 1e-15)
+    {
+        front->time_limit_reached = YES;
+    }
+	
+    front->dt = new_dt;
 }	/* end FT_TimeControlFilter */
 
 EXPORT void FT_AddTimeStepToCounter(Front *front)
