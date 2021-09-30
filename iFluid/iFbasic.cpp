@@ -870,15 +870,21 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 
     if (max_speed > MACH_EPS)
     {
-            //max_dt = hmin/max_speed;
+        max_dt = hmin/max_speed;
+    }
+        
+        /*
+        //TODO: From Fedkiw paper -- producing very small dt's
         double mesh_val = 0.0;
         for (int i = 0; i < dim; ++i)
             mesh_val += abs_vmax[i]/top_h[i];
         max_dt = 1.0/mesh_val;
-    }
+        */
  
+
     /*
     //TODO: input file option for setting iFparams->min_speed
+    //          -- What/how is the min_speed used? 
     if (iFparams->min_speed > MACH_EPS) //if (iFparams->min_speed != 0.0)
     {
         max_dt = FT_Min(max_dt,hmin/iFparams->min_speed);
@@ -893,11 +899,14 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
     if (mu_max > MACH_EPS)
     {
         //TODO: Is this correct for our scheme?
-            //visc_max_dt = 0.5*hmin*hmin/mu_max;
         double mesh_val = 0.0;
         for (int i = 0; i < dim; ++i)
+        {
             mesh_val += 2.0/sqr(top_h[i]);
+        }
+
         visc_max_dt = 1.0/((mu_max/rho_min)*mesh_val);
+            //visc_max_dt = 0.5*hmin*hmin/mu_max;
     }
 
     max_dt = std::min(max_dt,visc_max_dt);
