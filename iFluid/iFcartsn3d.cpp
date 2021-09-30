@@ -38,12 +38,9 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
 {
-	int index;
 	static HYPERB_SOLVER hyperb_solver(*front);
-    double speed;
 
 	static double *rho;
-    
     if (rho == nullptr)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
@@ -102,6 +99,35 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
     hyperb_solver.dt = m_dt;
     hyperb_solver.computeAdvectionTerm();
 
+    double max_speed = 0.0;
+    for (int k = 0; k <= top_gmax[2]; k++)
+    for (int j = 0; j <= top_gmax[1]; j++)
+    for (int i = 0; i <= top_gmax[0]; i++)
+    {
+        int index = d_index3d(i,j,k,top_gmax);
+       
+        double speed = sqrt(sqr(field->vel[0][index])
+                          + sqr(field->vel[1][index])
+                          + sqr(field->vel[2][index]));
+
+        if (max_speed < speed)
+        {
+            max_speed = speed;
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
+        }
+        for (l = 0; l < dim; ++l)
+        {
+            if (vmin[l] > field->vel[l][index])
+                vmin[l] = field->vel[l][index];
+            if (vmax[l] < field->vel[l][index])
+                vmax[l] = field->vel[l][index];
+        }
+    }
+    pp_global_max(&max_speed,1);
+    pp_global_min(vmin,dim);
+    pp_global_max(vmax,dim);
     //TODO: scatter adv_term?
 }
 

@@ -917,13 +917,19 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
     if (debugging("ifluid_dt"))
 	{
 	    if (max_dt == HUGE)
-	    	(void) printf("In Incompress_Solver_Smooth_Basis::setAdvectionDt(): \n"
+        {
+	    	printf("\n\nIn Incompress_Solver_Smooth_Basis::setAdvectionDt(): \n\n"
                     "max_dt = HUGE min_dt = %24.18g visc_max_dt = %24.18g\n",
                     min_dt, visc_max_dt);
-	    else
-	    	(void) printf("In Incompress_Solver_Smooth_Basis::setAdvectionDt():\n"
+            printf("\t\t max_speed = %g\n",max_speed);
+        }
+        else
+        {
+            printf("\nIn Incompress_Solver_Smooth_Basis::setAdvectionDt():\n"
                     "max_dt = %24.18g min_dt = %24.18g visc_max_dt = %24.18g\n",
                     max_dt, min_dt, visc_max_dt);
+            printf("\t\t max_speed = %g\n",max_speed);
+        }
 	}
 }	/* end setAdvectionDt */
 

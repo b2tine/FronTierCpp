@@ -451,7 +451,7 @@ void CollisionSolver3d::resolveCollision()
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainPosnGS(MotionState::STATIC);
     }
 
 	//update position using final midstep velocity
@@ -539,7 +539,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
         limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
+            //limitStrainPosnGS(MotionState::STATIC);
     }
 
 	//update position using final midstep velocity

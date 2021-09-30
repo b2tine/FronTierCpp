@@ -3793,7 +3793,7 @@ static void print_max_fabric_speed(Front* fr)
     {
         printf("\n");
         state = (STATE*)left_state(max_pt);
-        printf("max speed of fabric/canopy: %g\n",max_speed);
+        printf("max normal speed of fabric/canopy: %g\n",max_speed);
         printf("Velocity: %g %g %g\n",
                 state->vel[0],state->vel[1],state->vel[2]);
         printf("coords = %f %f %f    Point Gindex: %d\n",
