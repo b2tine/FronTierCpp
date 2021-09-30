@@ -1729,8 +1729,11 @@ static void reduce_high_freq_vel(
 		FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 		for (j = 0; j < 3; ++j)
 	    	    FT_RecordMaxFrontSpeed(j,sl->vel[j],NULL,Coords(p),front);
-	    	FT_RecordMaxFrontSpeed(3,Mag3d(sl->vel),NULL,Coords(p),front);
-		if (max_speed < Mag3d(sl->vel)) 
+	    
+        //TODO: need to use normal veocity when setting in dir = dim    
+        FT_RecordMaxFrontSpeed(3,Mag3d(sl->vel),NULL,Coords(p),front);
+		
+        if (max_speed < Mag3d(sl->vel)) 
 		{
 		    	max_speed = Mag3d(sl->vel);
 		    	gindex_max = Gindex(p);
@@ -3858,7 +3861,6 @@ static void setSurfVelocity(
 	POINT *p;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD];
 	double *vel = nullptr;
@@ -3870,8 +3872,16 @@ static void setSurfVelocity(
     double max_nor_speed = 0.0;
     double *max_coords = nullptr;
 
+    /*
+    static STATE* max_nor_speed_state;
+    if (max_nor_speed_state == nullptr)
+    {
+        FT_ScalarMemoryAlloc((POINTER*)&max_nor_speed_state,sizeof(STATE));
+    }
+    */
+
 	unsort_surf_point(surf);
-	hs = Hyper_surf(surf);
+	HYPER_SURF* hs = Hyper_surf(surf);
 	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 			tri = tri->next)
 	{
@@ -3887,21 +3897,24 @@ static void setSurfVelocity(
             vel = point_set[gindex]->v;
             nor_speed = scalar_product(vel,nor,3);
             
-            if (max_nor_speed < fabs(nor_speed))
-            {
-                max_nor_speed = fabs(nor_speed);
-                max_coords = Coords(p);
-            }
-
             for (j = 0; j < 3; ++j)
             {
                 sl->vel[j] = nor_speed*nor[j];
                 sr->vel[j] = nor_speed*nor[j];
             }
+            
+            if (max_nor_speed < fabs(nor_speed))
+            {
+                max_nor_speed = fabs(nor_speed);
+                max_coords = Coords(p);
+                    //ft_assign(max_nor_speed_state,sl,fr->sizest);
+            }
+
             sorted(p) = YES;
         }
 	}
 
+    //TODO: any unintened side effects if pass in max_nor_speed_state to set_max_front_speed()???
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
     
     //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
@@ -3932,17 +3945,19 @@ static void setCurveVelocity(
 
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
+        double max_vel[3] = {0};
         double max_speed = 0.0;
 
         NODE* string_nodes[2];
         string_nodes[0] = curve->start;
         string_nodes[1] = curve->end;
 
-        //TODO: Need to check for rg_string_node here???
+        /*
+        //TODO: Nodes set in other functions, and in this case if max speed is set
+        //      then it would be overwriting the value set when traversing the mono_comp_hsbry
+        //      reducing the time step unnecessarily.
         for (int i = 0; i < 2; ++i)
         {
-            //This is redundant because the MONO_COMP_CURVE block below will get string nodes
-            //that attach to canopy, but we need this here in the case of unattached strings
             if (!is_string_node(string_nodes[i])) continue;
 
             p = curve->start->posn;
@@ -3964,6 +3979,7 @@ static void setCurveVelocity(
                 sr->vel[j] = vel[j];
             }
         }
+        */
 
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -3984,13 +4000,18 @@ static void setCurveVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
+
+                if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                {
+                    max_vel[j] = vel[j];
+                }
             }
         }
 
-        //TODO: Can we set non normal max front speed?
-        //
-        //      This appears to significantly improve string behavior
-        set_max_front_speed(dim,max_speed,NULL,crds_max,front);
+        for (int k = 0; k < dim; ++k)
+        {
+            set_max_front_speed(k,max_vel[k],nullptr,nullptr,front);
+        }
     }
     else
     {
@@ -4019,8 +4040,6 @@ static void setCurveVelocity(
                 {
                     sl->vel[j] = nor_speed*nor[j];
                     sr->vel[j] = nor_speed*nor[j];
-                        //sl->vel[j] = sl->impulse[j] + nor_speed*nor[j];
-                        //sr->vel[j] = sl->impulse[j] + nor_speed*nor[j];
                 }
             }
         }
