@@ -1920,8 +1920,11 @@ static void elastic_set_propagate_serial(
                 collsn_dt);
     
         assign_interface_and_free_front(*newfront,sub_newfront);
-        geom_set.front = nullptr;
+            //geom_set.front = nullptr;
     }
+
+    setSpecialNodeForce((*newfront)->interf,geom_set.kl);
+    compute_center_of_mass_velo(&geom_set);
 
 
 //BELOW JUST SAVED FOR REFERENCE
@@ -2257,12 +2260,19 @@ static int elastic_set_propagate3d_serial(
     //  write from point_set to geom_set
     put_point_set_to(geom_set,point_set);
 	
+    
+    //TODO: setSpecialNodeForce() SETS BOND LENGTH!
+    //      This is a nontrivial side effect that is not reflected
+    //      in the name of the function.
+
     // Calculate the real force on load_node and rg_string_node
-    setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //
+                //setSpecialNodeForce(elastic_intfc,geom_set->kl);
 
 	set_vertex_impulse(geom_set,point_set);
 	set_geomset_velocity(geom_set,point_set);
-	compute_center_of_mass_velo(geom_set);
+	
+        //compute_center_of_mass_velo(geom_set);
 
 	if (!debugging("collision_off"))
     {
@@ -2303,8 +2313,8 @@ static int elastic_set_propagate3d_serial(
             delete collision_solver;
         }
         
-        setSpecialNodeForce(elastic_intfc,geom_set->kl);
-        compute_center_of_mass_velo(geom_set);
+            //setSpecialNodeForce(elastic_intfc,geom_set->kl);
+            //compute_center_of_mass_velo(geom_set);
     }
     
 
@@ -3948,14 +3958,15 @@ static void setCurveVelocity(
         double max_vel[3] = {0};
         double max_speed = 0.0;
 
-        NODE* string_nodes[2];
-        string_nodes[0] = curve->start;
-        string_nodes[1] = curve->end;
-
         /*
         //TODO: Nodes set in other functions, and in this case if max speed is set
         //      then it would be overwriting the value set when traversing the mono_comp_hsbry
         //      reducing the time step unnecessarily.
+        
+        NODE* string_nodes[2];
+        string_nodes[0] = curve->start;
+        string_nodes[1] = curve->end;
+
         for (int i = 0; i < 2; ++i)
         {
             if (!is_string_node(string_nodes[i])) continue;
@@ -4047,10 +4058,13 @@ static void setCurveVelocity(
         set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
+    /*
+    //TODO: can't use this with collision substepping.
     for (b = curve->first; b != NULL; b = b->next)
     {
 	    set_bond_length(b,dim);
     }
+    */
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
