@@ -1311,12 +1311,6 @@ static void rg_string_node_propagate(
 
     if (!is_rg_string_node(oldn)) return;
     
-    AF_NODE_EXTRA* af_node_extra = (AF_NODE_EXTRA*)oldn->extra;
-    int num_rg_string_nodes = af_node_extra->num; //total number of rg_string_nodes
-    int num_strings = Num_in_curves(oldn); //number of strings attached to the node
-
-    double mass = af_params->payload/num_rg_string_nodes;
-	
     for (i = 0; i < dim; ++i)
 	{
 	    if (Coords(oldn->posn)[i] <= gr->L[i] || 
@@ -1404,6 +1398,17 @@ static void rg_string_node_propagate(
 	    LOC(); clean_up(ERROR);
 	}
 	
+    int num_rg_string_nodes = num_string_nodes(hs);
+    double mass = af_params->payload/num_rg_string_nodes;
+        //double mass = total_mass(hs)/num_rg_string_nodes;
+
+    if (debugging("rg_string_node"))
+    {
+        printf("\naf_params->payload = %g   num_rg_string_nodes = %d\n",
+                af_params->payload,num_rg_string_nodes);
+        printf("mass on rg_string_node = %g\n\n",mass);
+    }
+	
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
@@ -1452,10 +1457,19 @@ static void rg_string_node_propagate(
 	for (i = 0; i < dim; ++i)
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
-	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
-	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    newp->force[i] = f[i];
+
+        if (Mag3d(af_params->gravity) > MACH_EPS)
+        {
+	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+	        newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
+        }
+        else
+        {
+	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i];
+	        newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+        }
 	}
 
     if (debugging("trace"))

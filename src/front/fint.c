@@ -1176,29 +1176,34 @@ EXPORT	void	f_user_copy_hyper_surf(
 	   copy anyway */
 	{
 	    body_index(new_hs) = body_index(old_hs);
-            mom_inertial(new_hs) = mom_inertial(old_hs);
-            total_mass(new_hs) = total_mass(old_hs);
-            angular_velo(new_hs) = angular_velo(old_hs);
-            motion_type(new_hs) = motion_type(old_hs);
-            spherical_radius(new_hs) = spherical_radius(old_hs);
+        mom_inertial(new_hs) = mom_inertial(old_hs);
+        total_mass(new_hs) = total_mass(old_hs);
+        angular_velo(new_hs) = angular_velo(old_hs);
+        motion_type(new_hs) = motion_type(old_hs);
+        spherical_radius(new_hs) = spherical_radius(old_hs);
 	    vparams(new_hs) = vparams(old_hs);
 	    vel_func(new_hs) = vel_func(old_hs);
-            for (i = 0; i < old_hs->interface->dim; ++i)
-            {
-                center_of_mass(new_hs)[i] = center_of_mass(old_hs)[i];
-                center_of_mass_velo(new_hs)[i] =
-                                center_of_mass_velo(old_hs)[i];
-                rotation_direction(new_hs)[i] = rotation_direction(old_hs)[i];
-                rotation_center(new_hs)[i] = rotation_center(old_hs)[i];
-                translation_dir(new_hs)[i] = translation_dir(old_hs)[i];
-		p_mom_inertial(new_hs)[i] = p_mom_inertial(old_hs)[i];
-                p_angular_velo(new_hs)[i] = p_angular_velo(old_hs)[i];
-            }
-	    for (i = 0; i < 4; i++)
-            {
-                euler_params(new_hs)[i] = euler_params(old_hs)[i];
-                old_euler_params(new_hs)[i] = old_euler_params(old_hs)[i];
-            }
+            
+        for (i = 0; i < old_hs->interface->dim; ++i)
+        {
+            center_of_mass(new_hs)[i] = center_of_mass(old_hs)[i];
+            center_of_mass_velo(new_hs)[i] = center_of_mass_velo(old_hs)[i];
+            rotation_direction(new_hs)[i] = rotation_direction(old_hs)[i];
+            rotation_center(new_hs)[i] = rotation_center(old_hs)[i];
+            translation_dir(new_hs)[i] = translation_dir(old_hs)[i];
+            p_mom_inertial(new_hs)[i] = p_mom_inertial(old_hs)[i];
+            p_angular_velo(new_hs)[i] = p_angular_velo(old_hs)[i];
+        }
+	    
+        for (i = 0; i < 4; i++)
+        {
+            euler_params(new_hs)[i] = euler_params(old_hs)[i];
+            old_euler_params(new_hs)[i] = old_euler_params(old_hs)[i];
+        }
+
+        rgb_shape(new_hs) = rgb_shape(old_hs);
+        num_string_nodes(new_hs) = num_string_nodes(old_hs);
+        no_slip(new_hs) = no_slip(old_hs);
 	}
 }		/*end f_user_copy_hyper_surf*/
 

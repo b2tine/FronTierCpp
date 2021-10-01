@@ -143,13 +143,15 @@ struct AF_PARAMS
 
     //for Collision Handling
     bool collision_substepping {false};
-    int collsn_step_nsub {20};
+    int collsn_step_max_nsub {20};
 
     double fabric_eps {1.0e-06};
     double fabric_thickness {0.001};
 
     double string_eps {4.0e-06};
     double string_thickness {0.004};
+
+    double overlap_coefficient {0.1};
 
     double strain_limit {0.1};
     double compressive_strain_limit {0.0};
@@ -244,9 +246,9 @@ typedef struct {
 	double ave_accel;
 } C_PARAMS;
 
-struct _AF_NODE_EXTRA {
+struct _AF_NODE_EXTRA 
+{
 	AF_NODE_TYPE af_node_type;
-	int num; //generic counting variable -- using to keep track of how many rg_string_nodes there are
 };
 typedef struct _AF_NODE_EXTRA AF_NODE_EXTRA;
 
@@ -267,7 +269,6 @@ struct ELASTIC_SET
 	CURVE *curves[1000];
 	NODE *nodes[1000];
     int num_rgb_surfs;
-	int num_rgb_string_nodes;
 	    //int num_string_curves; //TODO: Need this?
 	int num_surfs;
 	int num_curves;

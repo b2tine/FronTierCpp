@@ -1911,16 +1911,10 @@ static void assembleParachuteSet3d(
             else
                 geom_set->rg_string_nodes[n_rgbsn++] = nodes[i];
             reorder_string_curves(nodes[i]);
+            //TODO: Does the node pointer become invalid after reorder string curves?
+            //      Or at least an incomplete copy of the original node?
 	    }
 	}
-    geom_set->num_rgb_string_nodes = n_rgbsn;
-
-	NODE** rgs_nodes = geom_set->rg_string_nodes;
-    for (int i = 0; i < n_rgbsn; ++i)
-    {
-        AF_NODE_EXTRA* af_node_extra = (AF_NODE_EXTRA*)rgs_nodes[i]->extra;
-        af_node_extra->num = n_rgbsn;
-    }
 
     if (debugging("intfc_assembly"))
     {

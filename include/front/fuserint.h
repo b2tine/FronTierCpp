@@ -416,6 +416,7 @@ struct _F_HYPER_SURF {
 	void	(*vel_func)(Front*,POINTER,double*,double*);
 	MOTION_TYPE motion_type;
     RIGID_BODY_SHAPE rgb_shape;
+    int num_string_nodes;
 
         boolean _no_slip;
 };
@@ -424,8 +425,6 @@ typedef struct _F_HYPER_SURF F_HYPER_SURF;
 	/* F_HYPER_SURF access macros */
 #define	f_hyper_surf(hs)	((F_HYPER_SURF *) Hyper_surf(hs))
 #define wave_type(hs)		(f_hyper_surf(hs)->_wave_type)
-#define rgb_shape(hs)		(f_hyper_surf(hs)->rgb_shape)
-#define no_slip(hs)		(f_hyper_surf(hs)->_no_slip)
 #define Hs_flag(hs)		(f_hyper_surf(hs)->_hs_flag)
 #define correspond_hyper_surf(hs)					\
 				(f_hyper_surf(hs)->_correspond_hyper_surf)
@@ -449,8 +448,11 @@ typedef struct _F_HYPER_SURF F_HYPER_SURF;
 #define p_angular_velo(hs)      (f_hyper_surf(hs)->p_angular_velo)
 #define euler_params(hs)        (f_hyper_surf(hs)->euler_params)
 #define old_euler_params(hs)    (f_hyper_surf(hs)->old_euler_params)
-#define vparams(hs)    		(f_hyper_surf(hs)->vparams)
-#define vel_func(hs)    	(f_hyper_surf(hs)->vel_func)
+#define vparams(hs)    		    (f_hyper_surf(hs)->vparams)
+#define vel_func(hs)    	    (f_hyper_surf(hs)->vel_func)
+#define rgb_shape(hs)		    (f_hyper_surf(hs)->rgb_shape)
+#define num_string_nodes(hs)    (f_hyper_surf(hs)->num_string_nodes)
+#define no_slip(hs)		        (f_hyper_surf(hs)->_no_slip)
 
 
 

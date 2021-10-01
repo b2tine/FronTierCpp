@@ -3355,7 +3355,7 @@ LOCAL void FrontPreAdvance3d(
                 center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + old_vel[i])*0.5;
             }
             
-            if (debugging("rigid_body"))
+            if (debugging("rigid_body_preadvance"))
             {
                 printf("Body index: %d\n",index);
                 printf("torque = %f %f %f\n",torque[index][0],
@@ -3386,7 +3386,7 @@ LOCAL void FrontPreAdvance3d(
                 center_of_mass(*s)[i] -= 0.5*(force[index][i]/total_mass(*s)*dt*dt);
             }
             
-            if (debugging("rigid_body"))
+            if (debugging("rigid_body_preadvance"))
             {
                 printf("Body index: %d\n",index);
                 printf("force = %f %f %f\n",force[index][0],
