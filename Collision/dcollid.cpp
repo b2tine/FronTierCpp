@@ -15,11 +15,18 @@
 inline POINT*& root(POINT*);
 inline POINT*& tail(POINT*);
 
+//behavior switches
+bool CollisionSolver3d::collision_off = false;
+void CollisionSolver3d::turnCollision_ON() {collision_off = false;}
+void CollisionSolver3d::turnCollision_OFF() {collision_off = true;}
+bool CollisionSolver3d::collisionEnabled() {return !collision_off;}
+
+bool CollisionSolver3d::s_detImpZone = false;
+bool CollisionSolver3d::gs_update = false;
+
 //default parameters for collision detection
 double CollisionSolver3d::s_dt = 1.0e-06;
 double CollisionSolver3d::s_cr = 1.0;
-bool CollisionSolver3d::s_detImpZone = false;
-bool CollisionSolver3d::gs_update = false;
 
 double CollisionSolver3d::s_eps = 1.0e-06;
 double CollisionSolver3d::s_thickness = 0.001;
@@ -35,16 +42,25 @@ double CollisionSolver3d::l_mu = 0.5;
 
 double CollisionSolver3d::overlap_coefficient = 0.1;
 
-//debugging variables
+
+/////////////////////////////////////////////////////
+//unused debugging variables -- TODO: Remove these
 int CollisionSolver3d::moving_edg_to_edg = 0;
 int CollisionSolver3d::moving_pt_to_tri = 0;
 int CollisionSolver3d::is_coplanar = 0;
 int CollisionSolver3d::edg_to_edg = 0;
 int CollisionSolver3d::pt_to_tri = 0;
+///////////////////////////////////////////////////
 
+
+Front* CollisionSolver3d::front;
 int CollisionSolver3d::tstep;
+double CollisionSolver3d::frame_dt;
 std::string CollisionSolver3d::outdir;
-Front* CollisionSolver3d::ft;
+
+void CollisionSolver3d::setFrameTimeStepSize(double new_dt){frame_dt = new_dt;}
+double CollisionSolver3d::getFrameTimeStepSize(){return frame_dt;}
+
 
 std::vector<double> CollisionSolver3d::CollisionTimes;
 
@@ -151,7 +167,7 @@ CollisionSolver3d::~CollisionSolver3d()
 {
     abt_proximity.reset();
     abt_collision.reset();
-    clearHseList();
+        //clearHseList();
 }
 
 void CollisionSolver3d::clearHseList()
@@ -178,12 +194,37 @@ void unsortHseList(std::vector<CD_HSE*>& list)
 	}
 }
 
-void CollisionSolver3d::initializeSystem(Front* front)
+//TODO: Need front to be static member of CollisionSolver3d for debugging/visualization.
+//      Should be moved into a constructor as soon as we can perform the same debugging
+//      and visualization file printing without it being static.
+void CollisionSolver3d::initFront(Front* fr)
 {
-    ft = front;
+    front = fr;
     setStep(front->step);
-    setTimeStepSize(front->dt);
     setOutputDirectory(OutName(front));
+    setFrameTimeStepSize(front->dt);
+    gpoints = front->gpoints;
+    gtris = front->gtris;
+}
+
+void CollisionSolver3d::initializeSystem(std::vector<CD_HSE*>& list)
+{
+    hseList = list;
+    recordOriginalPosition();
+    setHseTypeLists();
+    initializeImpactZones();
+}
+
+//Keep for now to retain backwards compatibility during FabricManager development
+void CollisionSolver3d::initializeSystem(Front* fr)
+{
+    front = fr;
+    setStep(front->step);
+    setOutputDirectory(OutName(front));
+    
+    setTimeStepSize(front->dt);
+        //setFrameTimeStepSize(front->dt);
+    
     assembleFromInterface(front->interf);
     recordOriginalPosition();
     setHseTypeLists();
@@ -512,7 +553,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
             //computeMaxSpeed(); //debug
     }
 
-    if (!debugging("collision_off"))
+    if (collisionEnabled())
     {
         // Static proximity handling
         start_clock("detectProximity");
@@ -1998,8 +2039,8 @@ void CollisionSolver3d::debugImpactZones()
 
     writeCollisionPoints();
     
-    FT_Save(ft);
-    FT_Draw(ft);
+    FT_Save(front);
+    FT_Draw(front);
 }
 
 void CollisionSolver3d::updateImpactZoneVelocityForRG()

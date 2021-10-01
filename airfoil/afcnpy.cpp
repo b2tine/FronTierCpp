@@ -23,9 +23,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 
-#include "collid.h"
+#include "FabricManager.h"
+//#include "collid.h"
+
 #include "airfoil.h"
 #include "bending.h"
+
+static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front);
 
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
@@ -1781,6 +1785,40 @@ static void print_elastic_params(
                         geom_set.dt_tol,geom_set.dt);
 }	/* end print_elastic_params */
 
+static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front)
+{
+    FABRIC_COLLISION_PARAMS collsn_params;
+    AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
+
+    collsn_params.fabric_eps = af_params->fabric_eps;
+    collsn_params.fabric_thickness = af_params->fabric_thickness;
+    collsn_params.mu_s = af_params->mu_s;
+    collsn_params.k_s = af_params->ks;
+    collsn_params.m_s = af_params->m_s;
+
+    collsn_params.string_eps = af_params->string_eps;
+    collsn_params.string_thickness = af_params->string_thickness;
+    collsn_params.mu_l = af_params->mu_l;
+    collsn_params.k_l = af_params->kl;
+    collsn_params.m_l = af_params->m_l;
+
+    collsn_params.overlap_coefficient = af_params->overlap_coefficient;
+
+    collsn_params.strain_limit = af_params->strain_limit;
+    collsn_params.compressive_strain_limit = af_params->compressive_strain_limit;
+    collsn_params.strainrate_limit = af_params->strainrate_limit;
+
+    collsn_params.coefRestitution = 1.0;
+            
+    collsn_params.collision_off = false;
+    if (debugging("collision_off")) //TODO: don't use debug string -- add input file option
+    {
+        collsn_params.collision_off = true;
+    }
+
+    return collsn_params;
+}
+
 void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
     Front* newfront;
@@ -2158,14 +2196,20 @@ static int elastic_set_propagate3d_serial(
         total_size = total_owner_size;
     }
 
-    //FabricManager fabric_manager;
-    //FabricManager fabric_manager(*newfront);
-    CollisionSolver3d* collision_solver = nullptr;
+    
+    FabricManager fabric_manager(*newfront);
+    FABRIC_COLLISION_PARAMS collsn_params = getFabricCollisionParams(*newfront);
+    fabric_manager.setCollisionParams(collsn_params);
+    fabric_manager.setCollisionTimeStep(collsn_dt);
+    
+        //CollisionSolver3d* collision_solver = nullptr;
 
     if (myid == owner_id)
 	{
-            //if (!debugging("collision_off"))
-        if (!debugging("collision_offXXX"))
+        fabric_manager.initializeSystem();
+
+        /*
+        if (!debugging("collision_off"))
         {
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
@@ -2190,6 +2234,7 @@ static int elastic_set_propagate3d_serial(
             collision_solver->setStringPointMass(af_params->m_l);
 
             collision_solver->setStrainLimit(af_params->strain_limit);
+            collision_solver->setCompressiveStrainLimit(af_params->compressive_strain_limit);
             collision_solver->setStrainRateLimit(af_params->strainrate_limit);
             //TODO: add input file options for number of strain limiting iterations
 
@@ -2203,6 +2248,7 @@ static int elastic_set_propagate3d_serial(
         {
             printf("COLLISION DETECTION OFF\n");
         }
+        */
 
         //write to GLOBAL_POINT** point_set
         get_point_set_from(geom_set,point_set);
@@ -2284,9 +2330,8 @@ static int elastic_set_propagate3d_serial(
 	
         //compute_center_of_mass_velo(geom_set);
 
-	    //if (!debugging("collision_off"))
-    if (!debugging("collision_offXXX"))
-    {
+    //if (!debugging("collision_off"))
+    //{
         if (myid == owner_id)
         {
             //TODO: Need resolveCollisionSubstep() to return an error code.
@@ -2296,11 +2341,12 @@ static int elastic_set_propagate3d_serial(
             {
                 try
                 {
-                    collision_solver->resolveCollisionSubstep();
+                    fabric_manager.resolveCollisionSubstep();
+                        //collision_solver->resolveCollisionSubstep();
                 }
                 catch (...)
                 {
-                    delete collision_solver;
+                    //delete collision_solver;
                     
                     free_front(*newfront);
                     *newfront = nullptr;
@@ -2321,13 +2367,13 @@ static int elastic_set_propagate3d_serial(
                         //return status;
                 }
             }
-            delete collision_solver;
+            //delete collision_solver;
         }
-        
-            //setSpecialNodeForce(elastic_intfc,geom_set->kl);
-            //compute_center_of_mass_velo(geom_set);
-    }
+    //}
     
+    //setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //compute_center_of_mass_velo(geom_set);
+
 
     //TODO: Sync interfaces after collision handling?
     //      Or call in interior_propagate()?
@@ -2393,7 +2439,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     static boolean first_break_strings = YES;
 	static double break_strings_time = af_params->break_strings_time;
 	static int break_strings_num = af_params->break_strings_num;
-        
 	if (debugging("trace"))
 	    (void) printf("Entering fourth_order_elastic_set_propagate3d_serial()\n");
 

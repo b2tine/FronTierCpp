@@ -100,16 +100,17 @@ struct AF_PARAMS
 	double ks {5000.0};  /* spring constant of surface */
 	double kl {50000.0}; /* spring constant of string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
-    double mu_s;        /* fabric static friction consant */
-    double mu_l;        /* string curves static friction consant */
+    double mu_s {0.0};        /* fabric static friction consant */
+    double mu_l {0.0};        /* string curves static friction consant */
     double lambda_bs {0.0};  /* bending damping factor of surface */
-	double lambda_s;		/* damping factor of surface */
-	double lambda_l;		/* damping factor of string curves */
-	double lambda_g;                /* damping factor of gore curves */
+	double lambda_s {0.01};		/* damping factor of surface */
+	double lambda_l {0.01};		/* damping factor of string curves */
+	double lambda_g {0.01};     /* damping factor of gore curves */
 	double m_s {0.001};	 /* point mass of surface */
 	double m_l {0.0015}; /* point mass of string curves */
 	double m_g {0.001};     /*(disabled) point mass of gore curves */
-	double total_string_mass;	/* Total mass of string chord */
+	
+    double total_string_mass;	/* Total mass of string chord */
 	double total_canopy_mass;	/* Total mass of string chord */
     double total_gore_mass;         /* Total mass of gore */
 

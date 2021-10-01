@@ -1,48 +1,51 @@
 #include "FabricManager.h"
 
 
-void FabricManager::initializeSystem(Front* newfront, double collsn_dt)
+void FabricManager::setCollisionTimeStep(double collsn_dt)
 {
-    front = newfront; //temporary until we figure out how ctor should be written
-
-    collision_solver->initializeSystem(newfront);//will want assembleFromInterface() to be called at FabricManager level
-    collision_solver->gpoints = newfront->gpoints;
-    collision_solver->gtris = newfront->gtris;
+    collision_solver->setTimeStepSize(collsn_dt);
+    //CollisionSolver3d::setTimeStepSize(collsn_dt);
+}
     
-    //Overwrite dt set by initializeSystem() with collsn_dt
-    CollisionSolver3d::setTimeStepSize(collsn_dt);
+void FabricManager::setCollisionParams(FABRIC_COLLISION_PARAMS params)
+{
+    std::copy(&params, &params + 1, &collsn_params);
 
-    //TODO: Does extra2 get copied when the front is copied? Looks like it ...
-    AF_PARAMS* af_params = (AF_PARAMS*)newfront->extra2;
-    
-    collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
-    collision_solver->setFabricThickness(af_params->fabric_thickness);
-    collision_solver->setFabricFrictionConstant(af_params->mu_s);
-    collision_solver->setFabricSpringConstant(af_params->ks);
-    collision_solver->setFabricPointMass(af_params->m_s);
+    collision_solver->setFabricRoundingTolerance(collsn_params.fabric_eps);
+    collision_solver->setFabricThickness(collsn_params.fabric_thickness);
+    collision_solver->setFabricFrictionConstant(collsn_params.mu_s);
+    collision_solver->setFabricSpringConstant(collsn_params.k_s);
+    collision_solver->setFabricPointMass(collsn_params.m_s);
 
-    collision_solver->setStringRoundingTolerance(af_params->string_eps);
-    collision_solver->setStringThickness(af_params->string_thickness);
-    collision_solver->setStringFrictionConstant(af_params->mu_l);
-    collision_solver->setStringSpringConstant(af_params->kl);
-    collision_solver->setStringPointMass(af_params->m_l);
+    collision_solver->setStringRoundingTolerance(collsn_params.string_eps);
+    collision_solver->setStringThickness(collsn_params.string_thickness);
+    collision_solver->setStringFrictionConstant(collsn_params.mu_l);
+    collision_solver->setStringSpringConstant(collsn_params.k_l);
+    collision_solver->setStringPointMass(collsn_params.m_l);
 
-    collision_solver->setStrainLimit(af_params->strain_limit);
-    collision_solver->setStrainRateLimit(af_params->strainrate_limit);
-    //TODO: add input file options for number of strain limiting iterations
+    collision_solver->setStrainLimit(collsn_params.strain_limit);
+    collision_solver->setCompressiveStrainLimit(collsn_params.compressive_strain_limit);
+    collision_solver->setStrainRateLimit(collsn_params.strainrate_limit);
 
-    //For elastic collision impulse control
-    collision_solver->setOverlapCoefficient(af_params->overlap_coefficient);
+    collision_solver->setOverlapCoefficient(collsn_params.overlap_coefficient);
 
-    collision_solver->setVolumeDiff(af_params->vol_diff);
-    collision_solver->setRestitutionCoef(1.0);
+    collision_solver->setRestitutionCoef(collsn_params.coefRestitution);
+}
+
+void FabricManager::initializeSystem()
+{
+    assembleHseListFromInterface();
+    collision_solver->initializeSystem(hseList);
 }
 
 //TODO: Can the action of setCollisionFreePoints() be performed in assembleFromInterface()?
-void FabricManager::assembleFromInterface(INTERFACE* intfc)
+//
+    //void FabricManager::assembleHseListFromInterface(INTERFACE* intfc)
+void FabricManager::assembleHseListFromInterface()
 {
 	clearHseList();
 
+    INTERFACE* intfc = front->interf;
 	SURFACE** s;
 	TRI *tri;
 	
@@ -115,3 +118,4 @@ void FabricManager::resolveCollisionSubstep()
 {
     collision_solver->resolveCollisionSubstep();
 }
+
