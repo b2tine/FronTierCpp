@@ -1590,6 +1590,7 @@ static void rgbody_point_propagate(
             for (i = 0; i < dim; ++i)
             {
                 newst->x_old[i] = Coords(oldp)[i];
+                newst->x_prevstep[i] = Coords(oldp)[i];
             }
         }
         

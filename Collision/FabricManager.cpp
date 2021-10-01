@@ -26,6 +26,7 @@ void FabricManager::setCollisionParams(FABRIC_COLLISION_PARAMS params)
     collision_solver->setStrainLimit(collsn_params.strain_limit);
     collision_solver->setCompressiveStrainLimit(collsn_params.compressive_strain_limit);
     collision_solver->setStrainRateLimit(collsn_params.strainrate_limit);
+    collision_solver->setStrainVelocityTol(collsn_params.strain_vel_tol);
 
     collision_solver->setOverlapCoefficient(collsn_params.overlap_coefficient);
 
@@ -35,6 +36,7 @@ void FabricManager::setCollisionParams(FABRIC_COLLISION_PARAMS params)
 void FabricManager::initializeSystem()
 {
     assembleHseListFromInterface();
+    recordOriginalPositions();
     collision_solver->initializeSystem(hseList);
 }
 
@@ -90,6 +92,35 @@ void FabricManager::assembleHseListFromInterface()
 	    curve_bond_loop(*c,b)
 	    {
             hseList.push_back(new CD_BOND(b,tag));
+	    }
+	}
+}
+
+void FabricManager::recordOriginalPositions()
+{
+    std::vector<CD_HSE*>::iterator it;
+	for (it = hseList.begin(); it < hseList.end(); ++it)
+    {
+	    for (int i = 0; i < (*it)->num_pts(); ++i)
+        {
+            POINT* pt = (*it)->Point_of_hse(i);
+            STATE* sl = (STATE*)left_state(pt); 
+            
+            //NOTE: sl->x_old and sl->x_prevstep for movable rigid body points
+            //      are recorded in rgbody_point_propagate()
+            if (isMovableRigidBody(pt)) continue;
+
+            for (int j = 0; j < 3; ++j)
+            {
+                sl->x_prevstep[j] = Coords(pt)[j];
+                    //sl->x_old[j] = Coords(pt)[j];
+            
+                if (std::isnan(sl->x_old[j]))
+                {
+                    std::cout << "nan_x_old" << std::endl;
+                    LOC(); clean_up(ERROR);
+                }
+            }
 	    }
 	}
 }

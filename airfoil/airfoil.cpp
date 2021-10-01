@@ -239,7 +239,11 @@ void airfoil_driver(Front *front,
 
         l_cartesian->printFrontInteriorStates(out_name);
         printAfExtraData(front,out_name);
-        FT_Draw(front);
+
+        if (!RestartRun && !ReSetTime)
+        {
+            FT_Draw(front);
+        }
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
@@ -329,7 +333,6 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
         front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-        front->dt = std::min(front->dt,springCharTimeStep(front));//TODO: this needed here?
 
         if (debugging("step_size"))
             printf("Time step from l_cartesian->max_dt(): %f\n",front->dt);
@@ -341,6 +344,8 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
              l_cartesian->printEnstrophy();
 
+        setStressColor(front);
+
         if (FT_IsSaveTime(front))
 	    {
             setStressColor(front);
@@ -348,6 +353,7 @@ void airfoil_driver(Front *front,
             l_cartesian->printFrontInteriorStates(out_name);
 	    	printAfExtraData(front,out_name);
 	    }
+        
         if (debugging("trace"))
             (void) printf("After print output()\n");
         

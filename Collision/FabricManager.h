@@ -13,7 +13,9 @@ public: //public temporarily
     std::unique_ptr<CollisionSolver3d> collision_solver;
         //CollisionSolver3d* collision_solver;
 
-	std::vector<CD_HSE*> hseList; //will need to move out of CollisionSolver3d
+    int substep;    //use to track which collsn substep we are on
+	
+    std::vector<CD_HSE*> hseList;
 
 public:
 
@@ -52,6 +54,7 @@ public:
 private:
 
     void assembleHseListFromInterface();
+    void recordOriginalPositions();
 };
 
 

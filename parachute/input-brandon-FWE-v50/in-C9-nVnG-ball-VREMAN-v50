@@ -20,8 +20,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 ***********************************************
 Max time: 2.5
 Max step: 10000
-Print interval: 0.025
-Movie frame interval: 0.0025
+Print interval: 0.015
+Movie frame interval: 0.001
 CFL factor: 0.5
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
@@ -96,7 +96,8 @@ Enter factor of smoothing radius: 1.0
 
 Enter payload: 300
 Enter interior sub step number: 1
-Enter area density of canopy: 0.5
+
+Enter area density of canopy: 0.588
 
 Enter yes to use total mass: yes
 
@@ -105,25 +106,32 @@ Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.25
-Enter fabric total mass: 28.6026
-    XXXEnter fabric point massXXX: 0.001
+Enter fabric total mass: 33.6367
+    XXXEnter fabric total massXXX: 28.6026
 Enter fabric thickness: 0.001
-Enter fabric rounding tolerance: 0.000001
+Enter fabric rounding tolerance: 0.00001
+    XXXEnter fabric rounding toleranceXXX: 0.000001
+
+Enter linear density of strings: 0.2336 -- Not in use yet, but it should be
 
 Enter string spring constant: 50000
 Enter string damping constant: 0.01
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.35
-Enter string total mass: 12.264
-    XXXEnter string point massXXX: 0.0015
-Enter string thickness: 0.004
-Enter string rounding tolerance: 0.000004
+Enter string total mass: 45.7856
+    XXXEnter string total massXXX: 12.264
 
-Enter overlap coefficient: 0.1
+Enter string thickness: 0.003568
+Enter string rounding tolerance: 0.00003568
+    XXXEnter string thicknessXXX: 0.004
+    XXXEnter string rounding toleranceXXX: 0.000004
+
+Enter overlap coefficient: 0.75
 
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.05
+Enter strain velocity constraint tolerance: 0.15
 
 Enter yes for collision substepping: yes
 Enter nsub per collision step: 20

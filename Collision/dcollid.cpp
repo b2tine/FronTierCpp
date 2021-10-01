@@ -115,6 +115,9 @@ double CollisionSolver3d::getCompressiveStrainLimit() {return compressive_strain
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
 double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
 
+void CollisionSolver3d::setStrainVelocityTol(double slim_vtol) {strain_vel_tol = slim_vtol;}
+double CollisionSolver3d::getStrainVeloctiyTol() {return strain_vel_tol;}
+
 //Overlap coefficient for elastic impulse control
 void CollisionSolver3d::setOverlapCoefficient(double coeff) {overlap_coefficient = coeff;}
 double CollisionSolver3d::getOverlapCoefficient() {return overlap_coefficient;}
@@ -375,6 +378,7 @@ void CollisionSolver3d::recordOriginalPosition()
 
             for (int j = 0; j < 3; ++j)
             {
+                //TODO: Don't want to update this every sub step.
                 sl->x_old[j] = Coords(pt)[j];
             
                 if (std::isnan(sl->x_old[j]))
@@ -454,11 +458,13 @@ void CollisionSolver3d::resolveCollision()
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
+        limitStrainPosnJac(MotionState::STATIC);
+        //limitStrainPosnGS(MotionState::STATIC);
+        
         limitStrainRatePosnJac(MotionState::STATIC);
             //limitStrainRatePosnGS(MotionState::STATIC);
                 //computeMaxSpeed(); //debug    
         
-        //limitStrainPosnJac(MotionState::STATIC);
             //computeMaxSpeed(); //debug
     }
 
@@ -502,8 +508,9 @@ void CollisionSolver3d::resolveCollision()
 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainPosnJac(MotionState::STATIC);
+        limitStrainRatePosnGS(MotionState::STATIC);
             //limitStrainPosnGS(MotionState::STATIC);
+            //limitStrainPosnJac(MotionState::STATIC);
     }
 
 	//update position using final midstep velocity
@@ -545,12 +552,13 @@ void CollisionSolver3d::resolveCollisionSubstep()
     // distance/positional constraints on adjacent mesh vertices. 
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainRatePosnJac(MotionState::STATIC);
+        limitStrainPosnJac(MotionState::STATIC);
+            //limitStrainPosnGS(MotionState::STATIC);
+                //computeMaxSpeed(); //debug
+        
+        //limitStrainRatePosnJac(MotionState::STATIC);
             //limitStrainRatePosnGS(MotionState::STATIC);
                 //computeMaxSpeed(); //debug    
-        
-        //limitStrainPosnJac(MotionState::STATIC);
-            //computeMaxSpeed(); //debug
     }
 
     if (collisionEnabled())
@@ -566,6 +574,13 @@ void CollisionSolver3d::resolveCollisionSubstep()
         detectProximity(hseList);
         stop_clock("detectProximity");
         
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainRatePosnGS(MotionState::STATIC);
+                //limitStrainRatePosnJac(MotionState::STATIC);
+                    //computeMaxSpeed(); //debug    
+        }
+
         /*
         //TODO: updateImpactListVelocity() needs to be modified in order
         //      to treat movable rigid bodies as impact zones.
@@ -591,11 +606,16 @@ void CollisionSolver3d::resolveCollisionSubstep()
         */
     }
 
+    /*
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainPosnJac(MotionState::STATIC);
+        limitStrainRatePosnJac(MotionState::STATIC);
+            //limitStrainRatePosnGS(MotionState::STATIC);
+            
+            //limitStrainPosnJac(MotionState::STATIC);
             //limitStrainPosnGS(MotionState::STATIC);
     }
+    */
 
 	//update position using final midstep velocity
 	updateFinalPosition();
@@ -758,8 +778,10 @@ void CollisionSolver3d::computeAverageVelocity()
             STATE* sl = (STATE*)left_state(max_pt);
             printf("x_old = [%f %f %f]\n",
                     sl->x_old[0],sl->x_old[1],sl->x_old[2]);
-	        printf("x_new = [%f %f %f]\n",
+	        /*
+            printf("x_new = [%f %f %f]\n",
                     Coords(max_pt)[0],Coords(max_pt)[1],Coords(max_pt)[2]);
+            */
 	        printf("dt = %f\n",dt);
             printf("Gindex(max_pt) = %d\n",Gindex(max_pt));
         }
@@ -782,7 +804,9 @@ void CollisionSolver3d::resetPositionCoordinates()
             
             STATE* sl = (STATE*)left_state(p);
             for (int j = 0; j < m_dim; ++j)
-                Coords(p)[j] =  sl->x_old[j];
+            {
+                Coords(p)[j] = sl->x_old[j];
+            }
 
             sorted(p);
         }
@@ -1046,7 +1070,7 @@ void CollisionSolver3d::revertAverageVelocity()
 
 void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
 {
-	std::cout << "Starting collision handling:\n";
+	std::cout << "\nStarting collision handling:\n";
 	
     const int MAX_ITER = 5;
     //const int MAX_ITER = 12;
@@ -2373,7 +2397,7 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
@@ -2400,7 +2424,7 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or Tri list first?
@@ -2632,7 +2656,7 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 	
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         auto shuffledFabricTriList = shuffleHseList(fabricTriList);
@@ -2661,7 +2685,7 @@ void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 3;
+	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         StrainStats tss = computeStrainRateImpulsesPosn(fabricTriList,mstate);
@@ -2729,7 +2753,13 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
 
             double lnew = distBetweenCoords(x_cand0,x_cand1);
             total_edge_length += lnew;
-            double lold = distance_between_positions(sl[0]->x_old,sl[1]->x_old,3);
+            
+            //TODO: Need to use x_prevstep since x_old is now
+            //      updated every collision substep.
+            double lold = distance_between_positions(sl[0]->x_prevstep,
+                                                     sl[1]->x_prevstep, 3);
+            //double lold = distance_between_positions(sl[0]->x_old, sl[1]->x_old,3);
+
             double delta_lold = lnew - lold;
 
             if (fabs(delta_lold) > TOL*lold)
@@ -2853,7 +2883,7 @@ void CollisionSolver3d::limitStrainVelGS()
 {
     turnOnGsUpdate();
 
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or tri list first?
@@ -2885,7 +2915,7 @@ void CollisionSolver3d::limitStrainVelGS()
 //jacobi iteration
 void CollisionSolver3d::limitStrainVelJAC()
 {
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         int numTriStrainVel = computeStrainImpulsesVel(fabricTriList);
@@ -2907,6 +2937,8 @@ void CollisionSolver3d::limitStrainVelJAC()
 int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
 {
     int numRelVelStrainEdges = 0;
+
+    double TOL = getStrainVeloctiyTol();
     bool gauss_seidel = getGsUpdateStatus();
 	
     unsortHseList(list);
@@ -2961,8 +2993,11 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
 
             double vel_rel[MAXD];
             for (int j = 0; j < 3; ++j)
+            {
                 vel_rel[j] = sl[1]->avgVel[j] - sl[0]->avgVel[j];
-            
+            }
+            double rel_speed = Mag3d(vel_rel);
+
             double vec01[MAXD];
             Pts2Vec(p[0],p[1],vec01);//p1 - p0
             double len = Mag3d(vec01);
@@ -2971,17 +3006,22 @@ int CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& list)
             //component of the relative velocity in the direction
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
-            if (fabs(vcomp01) < MACH_EPS) continue;
             
-            //TODO: Don't correct when points approaching (vcomp01 < ) -- zero compressive stress
-            //      May need to set a negative lower bound to avoid bonds shrinking too small???
-            //      -- this didn't work well, at least without a lower bound...
-                //if (vcomp01 < MACH_EPS) continue;
+                //if (fabs(vcomp01) < MACH_EPS) continue;
+                //double I = 0.5*vcomp01;
             
-             
-             //TODO: Specify a tolerance for the relative velocity in input file.
-                
-            double I = 0.5*vcomp01;
+            //TODO: Input file option for velocity constraint tolerance
+            if (fabs(vcomp01) <= TOL*rel_speed) continue;
+
+            double I;
+            if (vcomp01 > TOL*rel_speed)
+            {
+                I = 0.5*(vcomp01 - TOL*rel_speed);
+            }
+            else
+            {
+                I = 0.5*(vcomp01 + TOL*rel_speed);
+            }
 
             //Do not apply impulses to nodes attached to a rigid body
             if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))

@@ -512,6 +512,10 @@ void setFabricParams(Front* front)
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
 
+    CursorAfterStringOpt(infile,"Enter strain velocity constraint tolerance:");
+    fscanf(infile,"%lf",&af_params->strain_vel_tol);
+    (void) printf("%f\n",af_params->strain_vel_tol);
+
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{

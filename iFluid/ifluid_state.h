@@ -51,6 +51,7 @@ struct STATE
     double avgVel_old[3];
     double avgVel_postprox[3];
     double x_old[3];
+    double x_prevstep[3];
     int strain_num;
     int collsn_num;
 	int collsn_num_RG;

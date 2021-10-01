@@ -30,23 +30,24 @@ struct CollisionTimeStats
 
 struct FABRIC_COLLISION_PARAMS
 {
-    double fabric_eps {1.0e-06};
+    double fabric_eps {1.0e-05};
     double fabric_thickness {0.001};
     double mu_s;
     double k_s;
     double m_s;
 
-    double string_eps {4.0e-06};
+    double string_eps {4.0e-05};
     double string_thickness {0.004};
     double mu_l;
     double k_l;
     double m_l;
 
-    double overlap_coefficient {0.1};
+    double overlap_coefficient {0.5};
 
-    double strain_limit {0.1};
+    double strain_limit {0.01};
     double compressive_strain_limit {0.0};
-    double strainrate_limit {0.1};
+    double strainrate_limit {0.05};
+    double strain_vel_tol {0.15};
 
     double coefRestitution {1.0};
 
@@ -124,6 +125,8 @@ public:
 	double getCompressiveStrainLimit();
 	void setStrainRateLimit(double);
 	double getStrainRateLimit();
+    void setStrainVelocityTol(double);
+	double getStrainVeloctiyTol();
 	
     static void setRestitutionCoef(double);
 	static double getRestitutionCoef();
@@ -229,7 +232,8 @@ private:
 
     double strain_limit {0.1};
     double compressive_strain_limit {0.01};
-    double strainrate_limit {0.1};
+    double strainrate_limit {0.05};
+    double strain_vel_tol {0.15};
 
     static bool s_detImpZone;
 	static void turnOnImpZone();

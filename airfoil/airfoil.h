@@ -154,9 +154,10 @@ struct AF_PARAMS
 
     double overlap_coefficient {0.1};
 
-    double strain_limit {0.1};
+    double strain_limit {0.01};
     double compressive_strain_limit {0.0};
-    double strainrate_limit {0.1};
+    double strainrate_limit {0.05};
+    double strain_vel_tol {0.15};
     
 
     double vol_diff {0.0};
