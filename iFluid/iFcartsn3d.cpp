@@ -294,6 +294,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
             icrds_max[2] = k;
 	    }
 
+        //enforce upper bound fluid velocity -- useful hack for getting the
+        //projection method to relax into realistic flow on startup.
         if (speed > iFparams->ub_speed)
 	    {
 	    	for (l = 0; l < 3; ++l)

@@ -348,6 +348,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 else
                 {
                     double v_slip[MAXD] = {0.0};
+                    //TODO: Need to set slip boundary in isolation (precompute) at beginning of time step.
                     setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
                     vel_nb[nb] = v_slip[l];
                 }

@@ -5153,12 +5153,20 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     //      step scenario -- to what degree is it working?
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
     /*      
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
+
+    //TODO: We should get the ring of tris around the nearest interface point,
+    //      and possible consider other nearby interface points that are within
+    //      range. For a complex interface such as the human vtk model, there appears
+    //      to be some error in the fluid region between the head and the hands.
+    //      Excessively large velocities -- maybe not enough drag from the other
+    //      nearby interface points that aren't being taken into account.
 
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
