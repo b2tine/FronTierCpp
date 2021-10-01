@@ -626,29 +626,18 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
     start_clock("solve");
 	setDomain();
 
-    //TODO: Put into a debugging string block
-    /*
-    ///////////////////////////////////////
-    ////     For grid debugging       ////
-    //////////////////////////////////////
-    printf("\ntopological grid:\n");
-    print_RECT_GRID_structure(top_grid);
-    printf("\ncomputational grid:\n");
-    RECT_GRID *rgr = computational_grid(front->interf);
-    print_RECT_GRID_structure(rgr);
-    auto coords0 = cell_center[0].getCoords();
-    printf("\ncell_center[0].coords = %f %f %f\n",
-            coords0[0],coords0[1],coords0[2]);
-    auto coords1 = cell_center[1].getCoords();
-    printf("\ncell_center[1].coords = %f %f %f\n",
-            coords1[0],coords1[1],coords1[2]);
-    clean_up(0);
-    ///////////////////////////////////////
-    */
-
 	setComponent();
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
+
+    //////////////////////////////////////////////////////
+    //TEMP DEBUG
+    if (debugging("print_grids"))
+    {
+        debug_print_grids();
+        LOC(); exit(0);
+    }
+    //////////////////////////////////////////////////////
 
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();

@@ -167,6 +167,7 @@ int main(int argc, char **argv)
     if (pp_numnodes() == 1)
     {
         l_cartesian->writeMeshFileVTK();
+        l_cartesian->writeCompGridMeshFileVTK();
     }
 
 	if (debugging("trace"))

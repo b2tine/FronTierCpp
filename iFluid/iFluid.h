@@ -425,13 +425,16 @@ public:
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
-    virtual void writeMeshFileVTK();
+    
+    void writeMeshFileVTK();
+    void writeCompGridMeshFileVTK();
         //virtual void vtkPlotSurfacePressure();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
     //void consumeInjectionEvent(IF_Injection*);
 
+    void debug_print_grids();
 
 protected:
 	Front *front;
@@ -797,4 +800,5 @@ extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);
 extern int contact_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG);
+
 #endif

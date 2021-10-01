@@ -667,6 +667,15 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
     setDomain();
 	setComponent();
 	
+    //////////////////////////////////////////////////////
+    //TEMP DEBUG
+    if (debugging("print_grids"))
+    {
+        debug_print_grids();
+        LOC(); exit(0);
+    }
+    //////////////////////////////////////////////////////
+
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();
 

@@ -5770,3 +5770,35 @@ void Incompress_Solver_Smooth_Basis::setFreeStreamVelocity()
 	pp_global_max(&U_FreeStream,1);
 }
 
+
+///////////////////////////////////////
+////     For grid debugging       ////
+//////////////////////////////////////
+void Incompress_Solver_Smooth_Basis::debug_print_grids()
+{
+
+    printf("\ntopological grid:\n");
+    print_RECT_GRID_structure(top_grid);
+
+    auto coords0 = cell_center[0].getCoords();
+    printf("\ncell_center[0].coords = %f %f %f\n",
+            coords0[0],coords0[1],coords0[2]);
+
+    auto coords1 = cell_center[1].getCoords();
+    printf("\ncell_center[1].coords = %f %f %f\n",
+            coords1[0],coords1[1],coords1[2]);
+
+
+    printf("\ncomputational grid:\n");
+    RECT_GRID *rgr = computational_grid(front->interf);
+    print_RECT_GRID_structure(rgr);
+
+
+    printf("\ncomp grid interface:\n");
+    FT_MakeCompGridIntfc(front);
+    INTERFACE* comp_grid_intfc = front->comp_grid_intfc;
+    RECT_GRID* ctop_grid = &topological_grid(comp_grid_intfc);
+    print_RECT_GRID_structure(ctop_grid);
+}
+///////////////////////////////////////
+

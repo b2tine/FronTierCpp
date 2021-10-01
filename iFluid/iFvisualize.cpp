@@ -204,6 +204,70 @@ void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()
     fclose(file);
 }
 
+void Incompress_Solver_Smooth_Basis::writeCompGridMeshFileVTK()
+{
+    if (pp_numnodes() > 1)
+    {
+        printf("\n\tWARNING writeMeshFileVTK() not implemented in parallel yet\n\n");
+        return;
+    }
+
+    char dirname[250];
+    sprintf(dirname,"%s/vtk",OutName(front));
+
+    if (pp_mynode() == 0)
+    {
+        if (!create_directory(dirname,YES))
+        {
+            screen("Cannot create directory %s\n",dirname);
+            clean_up(ERROR);
+        }
+    }
+
+    char mesh_name[250];
+    sprintf(mesh_name,"%s/comp_grid.vtk",dirname);
+    FILE* file = fopen(mesh_name,"w");
+
+    fprintf(file,"# vtk DataFile Version 3.0\n"
+            "Computational Grid\n"
+            "ASCII\n"
+            "DATASET RECTILINEAR_GRID\n");
+
+    RECT_GRID* comp_grid = computational_grid(front->interf);
+    int* ctop_gmax = comp_grid->gmax;
+    double* ctop_L = comp_grid->L;
+    double* ctop_U = comp_grid->U;
+    double* ctop_h = comp_grid->h;
+
+    int NX = ctop_gmax[0] + 1;
+    int NY = ctop_gmax[1] + 1;
+    int NZ = ctop_gmax[2] + 1;
+
+    fprintf(file,"DIMENSIONS %d %d %d\n",NX,NY,NZ);
+
+    fprintf(file,"X_COORDINATES %d float\n",NX);
+    for (int i = 0; i <= ctop_gmax[0]; ++i)
+    {
+        fprintf(file,"%f ",ctop_L[0] + ctop_h[0]*i);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Y_COORDINATES %d float\n",NY);
+    for (int j = 0; j <= ctop_gmax[1]; ++j)
+    {
+        fprintf(file,"%f ",ctop_L[1] + ctop_h[1]*j);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Z_COORDINATES %d float\n",NZ);
+    for (int k = 0; k <= ctop_gmax[2]; ++k)
+    {
+        fprintf(file,"%f ",ctop_L[2] + ctop_h[2]*k);
+    }
+
+    fclose(file);
+}
+
 /*
 void Incompress_Solver_Smooth_Basis::writeGridComponentsVTK()
 {

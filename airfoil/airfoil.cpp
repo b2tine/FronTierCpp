@@ -165,7 +165,12 @@ int main(int argc, char **argv)
 	
     l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->initMesh();
-    l_cartesian->writeMeshFileVTK();
+    
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+        l_cartesian->writeCompGridMeshFileVTK();
+    }
         
 	l_cartesian->getInitialState = zero_state;
 
