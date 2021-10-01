@@ -2158,11 +2158,14 @@ static int elastic_set_propagate3d_serial(
         total_size = total_owner_size;
     }
 
+    //FabricManager fabric_manager;
+    //FabricManager fabric_manager(*newfront);
     CollisionSolver3d* collision_solver = nullptr;
 
     if (myid == owner_id)
 	{
-        if (!debugging("collision_off"))
+            //if (!debugging("collision_off"))
+        if (!debugging("collision_offXXX"))
         {
             collision_solver = new CollisionSolver3d();
             printf("COLLISION DETECTION ON\n");
@@ -2281,7 +2284,8 @@ static int elastic_set_propagate3d_serial(
 	
         //compute_center_of_mass_velo(geom_set);
 
-	if (!debugging("collision_off"))
+	    //if (!debugging("collision_off"))
+    if (!debugging("collision_offXXX"))
     {
         if (myid == owner_id)
         {

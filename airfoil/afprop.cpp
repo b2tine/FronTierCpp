@@ -1263,7 +1263,6 @@ static void load_node_propagate(
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
 	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i])*dt;
 	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
-	        //newsl->impulse[i] = newsr->impulse[i] = 0.0;
 	}
 
     //set new bond lengths
