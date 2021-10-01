@@ -921,14 +921,14 @@ void Incompress_Solver_Smooth_Basis::setAdvectionDt()
 	    	printf("\n\nIn Incompress_Solver_Smooth_Basis::setAdvectionDt(): \n\n"
                     "max_dt = HUGE min_dt = %24.18g visc_max_dt = %24.18g\n",
                     min_dt, visc_max_dt);
-            printf("\t\t max_speed = %g\n",max_speed);
         }
         else
         {
             printf("\nIn Incompress_Solver_Smooth_Basis::setAdvectionDt():\n"
                     "max_dt = %24.18g min_dt = %24.18g visc_max_dt = %24.18g\n",
                     max_dt, min_dt, visc_max_dt);
-            printf("\t\t max_speed = %g\n",max_speed);
+            printf("\t\t max_speed = %g   icrds_max = %d %d %d\n",
+                    max_speed,icrds_max[0],icrds_max[1],icrds_max[2]);
         }
 	}
 }	/* end setAdvectionDt */
@@ -1709,7 +1709,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	    index  = d_index2d(i,j,top_gmax);
         mu[index] = 0.0;
 
-	    comp  = cell_center[index].comp;
+	    comp = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) continue;
  
         getRectangleCenter(index,center);
@@ -4078,12 +4078,10 @@ void Incompress_Solver_Smooth_Basis::recordVelocity()
 
 void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 {
-	double speed;
-	int i,j,k,l,index;
 	double **vel = field->vel;
 
 	max_speed = 0.0;
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
     {
         vmin[i] = HUGE;
         vmax[i] = -HUGE;
@@ -4093,13 +4091,15 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
     switch (dim)
 	{
 	case 2:
-	    for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+	    for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
 	    {
-            index = d_index2d(i,j,top_gmax);
+            int index = d_index2d(i,j,top_gmax);
+	        COMPONENT comp = cell_center[index].comp;
+	        if (!ifluid_comp(comp)) continue;
             
-            speed = 0.0;
-            for (l = 0; l < dim; ++l)
+            double speed = 0.0;
+            for (int l = 0; l < dim; ++l)
             {
                 speed += sqr(vel[l][index]);
                 if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];
@@ -4118,14 +4118,16 @@ void Incompress_Solver_Smooth_Basis::computeMaxSpeed(void)
 	    }
 	    break;
 	case 3:
-	    for (k = kmin; k <= kmax; k++)
-	    for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+	    for (int k = kmin; k <= kmax; k++)
+	    for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
 	    {
-            index = d_index3d(i,j,k,top_gmax);
+            int index = d_index3d(i,j,k,top_gmax);
+	        COMPONENT comp = cell_center[index].comp;
+	        if (!ifluid_comp(comp)) continue;
             
-            speed = 0.0;
-            for (l = 0; l < dim; ++l)
+            double speed = 0.0;
+            for (int l = 0; l < dim; ++l)
             {
                 speed += sqr(vel[l][index]);
                 if (vmin[l] > vel[l][index]) vmin[l] = vel[l][index];

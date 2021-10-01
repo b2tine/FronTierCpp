@@ -38,6 +38,7 @@ typedef struct {
 	int num_pts;
 	int *global_ids;
 	double vel[MAXD];
+    double stop_time;
 } FIXAREA_PARAMS;
 
 static void initVelocityFunc(FILE*,Front*);
@@ -228,8 +229,8 @@ void setFabricPropagators(Front* front)
                         front->interior_propagate = elastic_set_propagate;
                         
                         CursorAfterString(infile,"Enter nsub per collision step:");
-                        fscanf(infile,"%d",&af_params->collsn_step_nsub);
-                        (void) printf("%d\n",af_params->collsn_step_nsub);
+                        fscanf(infile,"%d",&af_params->collsn_step_max_nsub);
+                        (void) printf("%d\n",af_params->collsn_step_max_nsub);
                     }
                 }
 	    	    break;
@@ -251,8 +252,8 @@ void setFabricPropagators(Front* front)
                 front->interior_propagate = elastic_set_propagate;
 
                 CursorAfterString(infile,"Enter nsub per collision step:");
-                fscanf(infile,"%d",&af_params->collsn_step_nsub);
-                (void) printf("%d\n",af_params->collsn_step_nsub);
+                fscanf(infile,"%d",&af_params->collsn_step_max_nsub);
+                (void) printf("%d\n",af_params->collsn_step_max_nsub);
             }
         }
     }
@@ -493,7 +494,12 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 	}
-	    
+	     
+    //For collision solver elastic impulse control
+    CursorAfterStringOpt(infile,"Enter overlap coefficient:");
+    fscanf(infile,"%lf",&af_params->overlap_coefficient);
+    (void) printf("%f\n",af_params->overlap_coefficient);
+    
     CursorAfterStringOpt(infile,"Enter strain limit:");
     fscanf(infile,"%lf",&af_params->strain_limit);
     (void) printf("%f\n",af_params->strain_limit);
@@ -505,6 +511,7 @@ void setFabricParams(Front* front)
     CursorAfterStringOpt(infile,"Enter strain rate limit:");
     fscanf(infile,"%lf",&af_params->strainrate_limit);
     (void) printf("%f\n",af_params->strainrate_limit);
+
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{

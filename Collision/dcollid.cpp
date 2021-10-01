@@ -33,6 +33,8 @@ double CollisionSolver3d::l_k = 50000;
 double CollisionSolver3d::l_m = 0.002;
 double CollisionSolver3d::l_mu = 0.5;
 
+double CollisionSolver3d::overlap_coefficient = 0.1;
+
 //debugging variables
 int CollisionSolver3d::moving_edg_to_edg = 0;
 int CollisionSolver3d::moving_pt_to_tri = 0;
@@ -87,6 +89,7 @@ double CollisionSolver3d::getStringFrictionConstant(){return l_mu;}
 void   CollisionSolver3d::setStringPointMass(double new_m){l_m = new_m;}
 double CollisionSolver3d::getStringPointMass(){return l_m;}
 
+//strain limiting
 void CollisionSolver3d::setStrainLimit(double slim) {strain_limit = slim;}
 double CollisionSolver3d::getStrainLimit() {return strain_limit;}
 
@@ -95,6 +98,11 @@ double CollisionSolver3d::getCompressiveStrainLimit() {return compressive_strain
 
 void CollisionSolver3d::setStrainRateLimit(double srlim) {strainrate_limit = srlim;}
 double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
+
+//Overlap coefficient for elastic impulse control
+void CollisionSolver3d::setOverlapCoefficient(double coeff) {overlap_coefficient = coeff;}
+double CollisionSolver3d::getOverlapCoefficient() {return overlap_coefficient;}
+
 
 double CollisionSolver3d::setVolumeDiff(double vd){vol_diff = vd;}
 

@@ -1859,13 +1859,18 @@ static void elastic_set_propagate_serial(
         n_sub = (int)(fr_dt/geom_set.dt_tol);
         ss_dt = fr_dt/((double)n_sub);
     }
+    else
+    {
+        n_sub = af_params->n_sub;
+        ss_dt = fr_dt/((double)n_sub);
+    }
     geom_set.n_sub = n_sub;
     geom_set.dt = ss_dt;
     
     printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d ss_dt = %f\n",
             fr_dt, geom_set.dt_tol, n_sub, ss_dt);
 
-    int nsub_per_collsn_step = af_params->collsn_step_nsub;
+    int nsub_per_collsn_step = af_params->collsn_step_max_nsub;
     int collsn_nsub = nsub_per_collsn_step;
     
     int num_collsn_steps = n_sub/nsub_per_collsn_step;
@@ -1895,7 +1900,6 @@ static void elastic_set_propagate_serial(
     for (int n = 1; n <= num_collsn_steps; ++n)
     {
         int cd_nsub = collsn_nsub;
-
         if (n == 1 && remainder_num_steps > 0)
         {
             //adjust collsn_dt for first collision substep that may
@@ -2185,6 +2189,9 @@ static int elastic_set_propagate3d_serial(
             collision_solver->setStrainLimit(af_params->strain_limit);
             collision_solver->setStrainRateLimit(af_params->strainrate_limit);
             //TODO: add input file options for number of strain limiting iterations
+
+            //For elastic collision impulse control
+            collision_solver->setOverlapCoefficient(af_params->overlap_coefficient);
 
             collision_solver->gpoints = (*newfront)->gpoints;
             collision_solver->gtris = (*newfront)->gtris;
@@ -3778,11 +3785,12 @@ static void print_max_fabric_speed(Front* fr)
                 state = (STATE*)left_state(pt);
                 double* vel = state->vel;
                 double nor_speed = scalar_product(vel,nor,3);
+                double abs_nor_speed = std::abs(nor_speed);
                     //double speed = sqrt(sqr(state->vel[0]) + sqr(state->vel[1]) + sqr(state->vel[2]));
                 
-                if (max_speed < nor_speed)
+                if (max_speed < abs_nor_speed)
                 {
-                    max_speed = nor_speed;
+                    max_speed = abs_nor_speed;
                     max_pt = pt;
                 }
             }

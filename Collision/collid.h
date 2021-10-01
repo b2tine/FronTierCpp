@@ -80,6 +80,9 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
+
+    static void setOverlapCoefficient(double);
+    static double getOverlapCoefficient();
 	
     double setVolumeDiff(double);
     
@@ -172,6 +175,8 @@ private:
 	static double l_m;
 	static double l_k;
 	static double l_mu;
+
+    static double overlap_coefficient;
 
     static bool gs_update;
 	static void turnOnGsUpdate();

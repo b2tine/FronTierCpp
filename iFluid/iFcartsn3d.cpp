@@ -51,7 +51,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
 	for (int j = 0; j <= top_gmax[1]; j++)
 	for (int i = 0; i <= top_gmax[0]; i++)
 	{
-	    index = d_index3d(i,j,k,top_gmax);
+	    int index = d_index3d(i,j,k,top_gmax);
 	    rho[index] = field->rho[index];
         for (int l = 0; l < dim; l++)
         {
@@ -117,7 +117,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
             icrds_max[1] = j;
             icrds_max[2] = k;
         }
-        for (l = 0; l < dim; ++l)
+        for (int l = 0; l < dim; ++l)
         {
             if (vmin[l] > field->vel[l][index])
                 vmin[l] = field->vel[l][index];

@@ -335,6 +335,9 @@ public:
 	double accum_dt {0.0};
 	
     double max_speed;
+    double coords_max_speed[MAXD];
+        //int icrds_max[MAXD];
+
 	double min_pressure;
     double max_pressure;
     double mu_max {0.0};
@@ -352,7 +355,6 @@ public:
 	
 	double vmin[MAXD];
     double vmax[MAXD];
-    int icrds_max[MAXD];
     double abs_vmax[MAXD];
 
 	void initMesh(void);

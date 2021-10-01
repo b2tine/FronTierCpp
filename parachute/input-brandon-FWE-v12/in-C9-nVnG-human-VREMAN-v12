@@ -20,7 +20,7 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 ***********************************************
 Max time: 15.0
 Max step: 10000
-Print interval: 0.025
+Print interval: 0.005
 Movie frame interval: 0.0025
 CFL factor: 0.5
 Redistribution interval: 10000000
@@ -42,6 +42,8 @@ Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 -9.8
 
+Enter upper bound for fluid speed: 500.0
+
 ************Rigid body parameters*************
 Enter yes to add rigid body: yes
 Enter the number of rigid bodies: 1
@@ -49,7 +51,7 @@ For rigid body 1
 
 Enter type of rigid body: Human
 Enter the vtk file name for human body: input-vtk/human_body.vtk
-Enter center of the human body: 6.0 6.0 0.951
+Enter center of the human body: 6.0 6.0 0.0
 Enter enlargement coefficient: 1.5
 Enter yes to skip rg_nodes in y direction for 1: yes
 
@@ -60,7 +62,7 @@ Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 300
-Enter the initial center of mass for rigid body: 6 6 0.951
+Enter the initial center of mass for rigid body: 6 6 0.0
 Enter the initial center of mass velocity: 0 0 0
 
 ************Parachute parameters*************
@@ -118,6 +120,8 @@ Enter string total mass: 12.264
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter overlap coefficient: 0.1
+
 Enter strain limit: 0.01
 Enter compressive strain limit: 0.0
 Enter strain rate limit: 0.05
@@ -163,6 +167,8 @@ Enter the debugging string: bendforce_off
 Enter the debugging string: max_speed
 Enter the debugging string: ifluid_dt
 Enter the debugging string: PETSc
+
+Enter the debugging stringX: rg_string_node
 
 Enter the debugging string: Xkeps_solve
 Enter the debugging string: Xprojection

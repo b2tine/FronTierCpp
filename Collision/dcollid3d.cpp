@@ -1078,8 +1078,7 @@ static void EdgeToEdgeImpulse(
     }
     */
     
-    //TODO: need input file option for overlap_coef
-    double overlap_coef = 0.1;
+    double overlap_coef = CollisionSolver3d::getOverlapCoefficient();
     double overlap = h - dist;
 
 	double v_rel[3]; 
@@ -1567,8 +1566,7 @@ static void PointToTriImpulse(
     }
     */
 	
-    //TODO: Need to add input file option for overlap_coef
-    double overlap_coef = 0.1;
+    double overlap_coef = CollisionSolver3d::getOverlapCoefficient();
     double overlap = h - dist;
 
 	//apply impulses to the average (linear trajectory) velocity
