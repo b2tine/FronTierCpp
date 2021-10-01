@@ -42,6 +42,8 @@ Enter advection order: 4
 Enter density and viscosity of the fluid: 1.29 0.00001813
 Enter gravity: 0 0 -9.8
 
+Enter upper bound for fluid speed: 500.0
+
 ************Rigid body parameters*************
 Enter yes to add rigid body: no
 Enter the number of rigid bodies: 1
