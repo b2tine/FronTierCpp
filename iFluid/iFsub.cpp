@@ -1459,10 +1459,12 @@ static  void dirichlet_point_propagate(
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
                     (POINTER)sparams,(POINTER)newst);	
 	    }
-            for (i = 0; i < dim; ++i)
-		FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),
-					front);
-	    speed = mag_vector(newst->vel,dim);
+            
+        for (i = 0; i < dim; ++i)
+        {
+            FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),front);
+        }
+        speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
 	}
 	if (debugging("dirichlet_bdry"))
@@ -1610,11 +1612,9 @@ static void rgbody_point_propagate(
             
             for (i = 0; i < dim; ++i)
             {
-                Coords(newp)[i] =
-                    Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
-                newst->vel[i] = vel[i];
-                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),
-                        NULL,Coords(newp),front);
+                Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
+                    //newst->vel[i] = vel[i];
+                    //FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
             }
         }
 	    else if (dim == 3)
@@ -1685,30 +1685,30 @@ static void rgbody_point_propagate(
             {
                 for (i = 0; i < dim; ++i)
                 {
-                    Coords(newp)[i] = Coords(oldp)[i]
-                        + 0.5*(vel[i] + oldst->vel[i])*dt;
+                    Coords(newp)[i] = Coords(oldp)[i] + 0.5*(vel[i] + oldst->vel[i])*dt;
                 }
             }
     
+            /*
             for (i = 0; i < dim; ++i)
             {
                 newst->vel[i] = vel[i];
-                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                        Coords(newp),front);
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
             }
+            */
 	    
         }
         
     }
     else
     {
-        fourth_order_point_propagate(front,NULL,oldp,newp,
-                oldhse,oldhs,dt,vel);
+        fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,oldhs,dt,vel);
     }
     
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = vel[i];
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
     }
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
@@ -1935,7 +1935,7 @@ extern void read_iFparams(
     }
 	
     iFparams->ub_speed = HUGE;
-    if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
+    if (CursorAfterStringOpt(infile,"Enter upper bound for fluid speed:"))
 	{
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);
@@ -2686,9 +2686,8 @@ static  void ifluid_compute_force_and_torque2d(
         }
         *torque = 0.0;
 
-	//if (front->step > 5)
-	if (front->step > iFparams->fsi_startstep)
-	{
+	//if (front->step > iFparams->fsi_startstep)
+	//{
             for (b = curve->first; b != NULL; b = b->next)
             {
                 if (force_on_hse(Hyper_surf_element(b),Hyper_surf(curve),gr,
@@ -2708,7 +2707,7 @@ static  void ifluid_compute_force_and_torque2d(
                     *torque += t;
                 }
             }
-	}
+	//}
 
     //TODO: Need to add rotational motion
          
@@ -2796,6 +2795,7 @@ static  void ifluid_compute_force_and_torque3d(
 	    b = (*c)->first;
 	    if (wave_type(b->_btris[0]->surface) == MOVABLE_BODY_BOUNDARY)
         {
+            //TODO: check is_rg_string_node
             rg_string_nodes[num++] = *n;
         }
 	}
@@ -2807,7 +2807,7 @@ static  void ifluid_compute_force_and_torque3d(
 
         for (i = 0; i < dim; ++i)
         {
-            force[i] += p->force[i];//Computed from setSpecialNodeForce()
+            force[i] += p->force[i];//Computed by setSpecialNodeForce()
             rr[i] = Coords(p)[i] - rotation_center(surface)[i];
         }
 
@@ -2815,19 +2815,18 @@ static  void ifluid_compute_force_and_torque3d(
         for (i = 0; i < dim; ++i)
             torque[i] += t[i];
     
-        if (debugging("rigid_body"))
+        if (debugging("rigid_body_force"))
         {
-            printf("rg_string_nodes coords = %f %f %f\n", 
+            printf("\nrg_string_nodes coords = %f %f %f\n", 
                 Coords(p)[0], Coords(p)[1], Coords(p)[2]);
-            printf("rg_string_nodes force = %f %f %f\n", 
+            printf("rg_string_nodes force = %f %f %f\n\n", 
                 p->force[0], p->force[1], p->force[2]);
         }
     }
 	/* end of counting the force on RG_STRING_NODE */
 
-	//if (front->step > 5)
-	if (front->step > iFparams->fsi_startstep)
-	{
+	//if (front->step > iFparams->fsi_startstep)
+	//{
         for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface); tri = tri->next)
         {
             for (i = 0; i < dim; ++i)
@@ -2861,12 +2860,9 @@ static  void ifluid_compute_force_and_torque3d(
                 }
             }
         }
-	}
+	//}
 
 
-        //TODO: force computation should include effects of shear stress from
-        //      turbulence model + wall functions (see to computeDiffusionCN() todos).
-        
     
         /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&

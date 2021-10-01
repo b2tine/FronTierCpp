@@ -447,7 +447,7 @@ void setRigidBodyMotionParams(
                 if (wave_type(*s) == NEUMANN_BOUNDARY)
                 {
                     rgb_params->is_fixed = true;
-                    rgb_params->total_mass = 1.0;
+                    rgb_params->total_mass = HUGE;
                 }
                 prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
@@ -783,17 +783,15 @@ static void prompt_for_rigid_body_params(
         //      NOTE: currently not being used. Still prototyping
         //
         //      "Enter yes to use slip wall boundary condition:"
-        rgb_params->no_slip = YES;
+        rgb_params->no_slip = NO;
         if (CursorAfterStringOpt(infile,
             "Type yes to use no-slip boundary condition:"))
         {
                 fscanf(infile,"%s",s);
                 (void) printf("%s\n",s);
-                //if (s[0] == 'y' || s[0] == 'Y')
-                if (s[0] == 'n' || s[0] == 'N')
+                if (s[0] == 'y' || s[0] == 'y')
                 {
-                    rgb_params->no_slip = NO;
-                    //rgb_params->no_slip = YES;
+                    rgb_params->no_slip = YES;
                 }
                 (void) fseek(infile,idpos,SEEK_SET);
         }

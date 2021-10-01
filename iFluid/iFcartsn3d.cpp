@@ -99,7 +99,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
     hyperb_solver.dt = m_dt;
     hyperb_solver.computeAdvectionTerm();
 
-    double max_speed = 0.0;
+    max_speed = 0.0;
     for (int k = 0; k <= top_gmax[2]; k++)
     for (int j = 0; j <= top_gmax[1]; j++)
     for (int i = 0; i <= top_gmax[0]; i++)
@@ -297,7 +297,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
         if (speed > iFparams->ub_speed)
 	    {
 	    	for (l = 0; l < 3; ++l)
+            {
                 vel[l][index] *= iFparams->ub_speed/speed;
+            }
             speed = iFparams->ub_speed;
 	    }
 	}
@@ -3010,15 +3012,15 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                 double massFluid = rhoF*VolFluid;
                 
                 double dragForce[MAXD] = {0.0};
-                if (front->step > iFparams->fsi_startstep)
-                {
+                //if (front->step > iFparams->fsi_startstep)
+                //{
                     for (int i = 0; i < 3; ++i)
                     {
                         dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
                         dragForce[i] *= ampFluidFactor;
                         //dragForce[i] *= massFluid/mass;
                     }
-                }
+                //}
 
                 if (debugging("string_fluid"))
                 {

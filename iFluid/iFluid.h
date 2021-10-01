@@ -335,8 +335,8 @@ public:
 	double accum_dt {0.0};
 	
     double max_speed;
-    double coords_max_speed[MAXD];
-        //int icrds_max[MAXD];
+    int icrds_max[MAXD];
+        //double coords_max_speed[MAXD];
 
 	double min_pressure;
     double max_pressure;
