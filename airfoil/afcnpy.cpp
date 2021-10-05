@@ -2041,7 +2041,6 @@ static int elastic_set_propagate3d_serial(
     int i,j,k;
     int dim = FT_Dimension();
     long max_point_gindex = fr->interf->max_point_gindex;
-	int owner[MAXD];
 	int owner_id = af_params->node_id[0];
     int myid = pp_mynode();
 	int gindex;
@@ -2076,8 +2075,12 @@ static int elastic_set_propagate3d_serial(
 
     geom_set->front = *newfront;
 
+    //TODO: Move this into separate intitialization function that is called
+    //      in the level above this function (in its calling function)/
 	if (first)
 	{
+
+	    int owner[MAXD];
         owner[0] = 0;
         owner[1] = 0;
         owner[2] = 0;
@@ -2138,7 +2141,9 @@ static int elastic_set_propagate3d_serial(
 	    	set_vertex_neighbors(geom_set,sv,point_set);
 		
             if (elastic_intfc != (*newfront)->interf)
+            {
                 delete_interface(elastic_intfc);
+            }
 	    }
 	    
         stop_clock("set_data");
@@ -2197,6 +2202,8 @@ static int elastic_set_propagate3d_serial(
     }
 
     
+    //TODO: FabricManager should be passed into this function, or the function
+    //      should be a member function of FabricManager.
     FabricManager fabric_manager(*newfront);
     FABRIC_COLLISION_PARAMS collsn_params = getFabricCollisionParams(*newfront);
     fabric_manager.setCollisionParams(collsn_params);
@@ -2207,48 +2214,6 @@ static int elastic_set_propagate3d_serial(
     if (myid == owner_id)
 	{
         fabric_manager.initializeSystem();
-
-        /*
-        if (!debugging("collision_off"))
-        {
-            collision_solver = new CollisionSolver3d();
-            printf("COLLISION DETECTION ON\n");
-            
-            collision_solver->initializeSystem(*newfront);
-            //Overwrite dt set by initializeSystem() with collsn_dt
-            CollisionSolver3d::setTimeStepSize(collsn_dt);
-        
-            collision_solver->setRestitutionCoef(1.0);
-            collision_solver->setVolumeDiff(af_params->vol_diff);
-            
-            collision_solver->setFabricRoundingTolerance(af_params->fabric_eps);
-            collision_solver->setFabricThickness(af_params->fabric_thickness);
-            collision_solver->setFabricFrictionConstant(af_params->mu_s);
-            collision_solver->setFabricSpringConstant(af_params->ks); 
-            collision_solver->setFabricPointMass(af_params->m_s);
-
-            collision_solver->setStringRoundingTolerance(af_params->string_eps);
-            collision_solver->setStringThickness(af_params->string_thickness);
-            collision_solver->setStringFrictionConstant(af_params->mu_l);
-            collision_solver->setStringSpringConstant(af_params->kl); 
-            collision_solver->setStringPointMass(af_params->m_l);
-
-            collision_solver->setStrainLimit(af_params->strain_limit);
-            collision_solver->setCompressiveStrainLimit(af_params->compressive_strain_limit);
-            collision_solver->setStrainRateLimit(af_params->strainrate_limit);
-            //TODO: add input file options for number of strain limiting iterations
-
-            //For elastic collision impulse control
-            collision_solver->setOverlapCoefficient(af_params->overlap_coefficient);
-
-            collision_solver->gpoints = (*newfront)->gpoints;
-            collision_solver->gtris = (*newfront)->gtris;
-        }
-        else
-        {
-            printf("COLLISION DETECTION OFF\n");
-        }
-        */
 
         //write to GLOBAL_POINT** point_set
         get_point_set_from(geom_set,point_set);
@@ -2276,27 +2241,12 @@ static int elastic_set_propagate3d_serial(
                     client_size_new[i],client_L,client_U);
 	    }
     
-        double ss_dt = geom_set->dt;
         
+        //spring solver
+        double ss_dt = geom_set->dt;
         spring_solver_RK4(sv,dim,size,collsn_nsub,ss_dt);
 
-        /*
-	    start_clock("spring_model");
-#if defined(__GPU__)
-            if (af_params->use_gpu)
-            {
-            	if (debugging("trace"))
-                    (void) printf("Enter gpu_spring_solver()\n");
-                gpu_spring_solver(sv,dim,size,n_sub,dt);
-                if (debugging("trace"))
-                    (void) printf("Left gpu_spring_solver()\n");
-            }
-            else
-#endif
-                generic_spring_solver(sv,dim,size,n_sub,dt);
-	    stop_clock("spring_model");
-        */
-
+        
         // Owner send and patch point_set_store from other processors
 	    for (i = 0; i < pp_numnodes(); i++)
         {
@@ -2330,46 +2280,42 @@ static int elastic_set_propagate3d_serial(
 	
         //compute_center_of_mass_velo(geom_set);
 
-    //if (!debugging("collision_off"))
-    //{
-        if (myid == owner_id)
+    if (myid == owner_id)
+    {
+        //TODO: Need resolveCollisionSubstep() to return an error code.
+        //      Temporarily have it emit an exception instead for
+        //      now while still prototyping new code.
+        if (FT_Dimension() == 3)
         {
-            //TODO: Need resolveCollisionSubstep() to return an error code.
-            //      Temporarily have it emit an exception instead for
-            //      now while still prototyping new code.
-            if (FT_Dimension() == 3)
+            try
             {
-                try
-                {
-                    fabric_manager.resolveCollisionSubstep();
-                        //collision_solver->resolveCollisionSubstep();
-                }
-                catch (...)
-                {
-                    //delete collision_solver;
-                    
-                    free_front(*newfront);
-                    *newfront = nullptr;
-                    
-                    //TODO: Should we clear rest of geom_set also?
-                    //      could write the below function to so:
-                    //
-                    //          clear_geom_set(geom_set);
-                    geom_set->front = nullptr;
-                
-                    //TEMPORARY: until we have fixed nsub_per_collsn_step
-                    //           working correctly, then we can try time step
-                    //           modification...
-                    printf("\nERROR elastic_set_propagate3d_serial(): \
-                            resolve_collision() failed!\n");
-                    LOC(); clean_up(EXIT_FAILURE);
-                        //status = MODIFY_TIME_STEP;
-                        //return status;
-                }
+                fabric_manager.resolveCollisionSubstep();
+                    //collision_solver->resolveCollisionSubstep();
             }
-            //delete collision_solver;
+            catch (...)
+            {
+                //delete collision_solver;
+                
+                free_front(*newfront);
+                *newfront = nullptr;
+                
+                //TODO: Should we clear rest of geom_set also?
+                //      could write the below function to so:
+                //
+                //          clear_geom_set(geom_set);
+                geom_set->front = nullptr;
+            
+                //TEMPORARY: until we have fixed nsub_per_collsn_step
+                //           working correctly, then we can try time step
+                //           modification...
+                printf("\nERROR elastic_set_propagate3d_serial(): \
+                        resolve_collision() failed!\n");
+                LOC(); clean_up(EXIT_FAILURE);
+                    //status = MODIFY_TIME_STEP;
+                    //return status;
+            }
         }
-    //}
+    }
     
     //setSpecialNodeForce(elastic_intfc,geom_set->kl);
     //compute_center_of_mass_velo(geom_set);

@@ -574,12 +574,14 @@ void CollisionSolver3d::resolveCollisionSubstep()
         detectProximity(hseList);
         stop_clock("detectProximity");
         
+        /*
         if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
             limitStrainRatePosnGS(MotionState::STATIC);
                 //limitStrainRatePosnJac(MotionState::STATIC);
                     //computeMaxSpeed(); //debug    
         }
+        */
 
         /*
         //TODO: updateImpactListVelocity() needs to be modified in order
@@ -628,6 +630,9 @@ void CollisionSolver3d::resolveCollisionSubstep()
     //  detectProximity();
 
 
+    /*
+    TODO: This has been moved inside detectCollision()!
+
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
@@ -636,6 +641,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
+    */
 
 	updateFinalVelocity();
 
@@ -1084,10 +1090,29 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         niter++;
 	    is_collision = false;
 	    
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainRatePosnGS(MotionState::MOVING);
+                //limitStrainRatePosnJac(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
+        }
+        */
+        
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainVelJAC();
+                //limitStrainVelGS();
+                    //computeMaxSpeed(); //debug
+        }
+        */
+
         start_clock("dynamic_AABB_collision");
         aabbCollision(list);
         abt_collision->turn_on_GS_update();
         abt_collision->query();
+        abt_collision->turn_off_GS_update();
         stop_clock("dynamic_AABB_collision");
 
         is_collision = abt_collision->getCollsnState();
@@ -1115,6 +1140,13 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
             {
                 limitStrainRatePosnGS(MotionState::MOVING);
                     //limitStrainRatePosnJac(MotionState::MOVING);
+                        //computeMaxSpeed(); //debug
+            }
+            
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainVelJAC();
+                    //limitStrainVelGS();
                         //computeMaxSpeed(); //debug
             }
         }
@@ -1690,8 +1722,25 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
         niter++;
         is_collision = false;
 
-        start_clock("dynamic_AABB_collision");
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainRatePosnGS(MotionState::MOVING);
+            //limitStrainRatePosnJac(MotionState::MOVING);
+                //computeMaxSpeed(); //debug
+        }
+        */
         
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainVelJAC();
+                //limitStrainVelGS();
+                    //computeMaxSpeed(); //debug
+        }
+        */
+
+        start_clock("dynamic_AABB_collision");
         aabbCollision(list);
         abt_collision->turn_on_GS_update();
         try
@@ -1773,6 +1822,13 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
                 //limitStrainRatePosnJac(MotionState::MOVING);
                     //computeMaxSpeed(); //debug
             }
+        
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainVelJAC();
+                    //limitStrainVelGS();
+                        //computeMaxSpeed(); //debug
+            }
         }
 
         if (niter >= MAXITER)
@@ -1803,6 +1859,24 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
     {
         niter++;
         is_collision = false;
+
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainRatePosnGS(MotionState::MOVING);
+            //limitStrainRatePosnJac(MotionState::MOVING);
+                //computeMaxSpeed(); //debug
+        }
+        */
+        
+        /*
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+        {
+            limitStrainVelJAC();
+                //limitStrainVelGS();
+                    //computeMaxSpeed(); //debug
+        }
+        */
 
         start_clock("dynamic_AABB_collision");
         aabbCollision(list);
@@ -1859,6 +1933,7 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                 //computeMaxSpeed(); //debug
         }
         
+            
         //TODO: Appropriate to limit strain rate during impact zone handling?
         if (is_collision)
         {
@@ -1868,7 +1943,15 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
                 //limitStrainRatePosnJac(MotionState::MOVING);
                     //computeMaxSpeed(); //debug
             }
+            
+            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
+            {
+                limitStrainVelJAC();
+                    //limitStrainVelGS();
+                        //computeMaxSpeed(); //debug
+            }
         }
+            
 
         if (niter >= MAXITER)
         {
