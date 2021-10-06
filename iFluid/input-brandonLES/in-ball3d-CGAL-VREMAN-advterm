@@ -22,7 +22,7 @@ Redistribution interval: 1000000
 Enter problem type: CHANNEL_FLOW
 
 Enter advection order: 4
-Enter yes for advection term extrapolation: no
+Enter yes for advection term extrapolation: yes
 
 Projection type can be
         SIMPLE

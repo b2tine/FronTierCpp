@@ -442,7 +442,8 @@ private:
         double *array;          // for scatter states;
 	SWEEP *st_field,st_tmp;
         FSWEEP *st_flux;
-        double **a,*b;
+        
+    double **a, *b; //*c;
 	
     void setSolverDomain(void);
 	void allocMeshVst(SWEEP*);
@@ -450,10 +451,13 @@ private:
 	void allocDirectionalVstFlux(SWEEP*,FSWEEP*);
 	void resetFlux(FSWEEP*);
 	void copyToMeshVst(SWEEP*);
-	void copyMeshVst(SWEEP,SWEEP*);
-	void computeMeshFlux(SWEEP,FSWEEP*);
+	void copyMeshVst(const SWEEP&,SWEEP*);
+	void computeMeshFlux(SWEEP,FSWEEP*); //TODO: can we pass const SWEEP& instead???
     void addSourceTerm(SWEEP*,FSWEEP*);
+    
+    void addMeshFluxToAdvectionTerm(const FSWEEP& flux, double B);
 	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
+
 	void copyFromMeshVst(const SWEEP&);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection1d(int,SWEEP*,FSWEEP*);
@@ -471,8 +475,8 @@ private:
 };
 
 
-extern	void upwind_flux(SWEEP*,FSWEEP*,double,int,int,int);
-extern	void weno5_flux(SWEEP*,FSWEEP*,double,int,int,int);
+extern void upwind_flux(SWEEP*,FSWEEP*,double,int,int,int);
+extern void weno5_flux(SWEEP*,FSWEEP*,double,int,int,int);
 
 extern void viewTopVariable(Front*,double*,boolean,double,double,char*,char*);
 extern double   compBdryFlux(Front*,double*,double,int,double,

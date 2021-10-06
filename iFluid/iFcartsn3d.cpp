@@ -56,6 +56,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
         for (int l = 0; l < dim; l++)
         {
             field->adv_term_old[l][index] = field->adv_term[l][index];
+            field->adv_term[l][index] = 0.0;
         }
 	}
 	hyperb_solver.rho = rho;
@@ -1012,12 +1013,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 {
                     double W0 = -0.5*m_dt/old_dt;
                     double W1 = 1.0 + 0.5*m_dt/old_dt;
-                    rhs -= m_dt*(W0*adv_flux_old[l][index]
-                            + W1*adv_flux[l][index]);
+                    rhs += W0*adv_flux_old[l][index] + W1*adv_flux[l][index];
                 }
                 else
                 {
-                    rhs -= m_dt*adv_flux[l][index];
+                    rhs += adv_flux[l][index];
                 }
             }
             

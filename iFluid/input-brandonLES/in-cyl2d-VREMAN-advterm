@@ -30,7 +30,7 @@ Enter yes if the object is fixed: yes
 
 *******************iFluid Parameters*******************
 Enter advection order: 4
-Enter yes for advection term extrapolation: no
+Enter yes for advection term extrapolation: yes
 
 Projection type can be
         PMI     (1)
