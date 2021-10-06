@@ -102,7 +102,6 @@ static void elastic_point_propagate_const_dP(
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 }
 
@@ -131,10 +130,11 @@ static void elastic_point_propagate_fsi(
     int* top_gmax = top_grid->gmax;
     double* top_h = top_grid->h;
 
-	double *vort = field->vort;
-	double **vel = field->vel;
-	double *pres = field->pres;
 	double *mu = field->mu;
+	double **vel = field->vel;
+	double *vort = field->vort;
+	double *pres = field->pres;
+
 	double pp[MAXD],pm[MAXD],nor[MAXD];
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
@@ -189,7 +189,7 @@ static void elastic_point_propagate_fsi(
                 getStatePres,&newsl->pres,&sl->pres);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
                 getStatePres,&newsr->pres,&sr->pres);
-        
+
         /*
         //Tangential stress (shear stress)
 	    for (int l = 0; l < dim; ++l)
@@ -261,7 +261,6 @@ static void elastic_point_propagate_fsi(
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 
 	/* Interpolating vorticity for the hyper surface point */
@@ -693,7 +692,6 @@ static void gore_point_propagate(
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	        //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 }	/* end gore_point_propagate */
 

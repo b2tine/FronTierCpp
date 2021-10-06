@@ -1812,7 +1812,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
             double W0 = -1.0*m_dt/(m_dt + old_dt);
             double W1 = 1.0 + m_dt/(m_dt + old_dt);
             movie_pres[index] = W0*old_pres + W1*pres[index];
-                //pres[index] = 2.0*halfstep_pres - old_pres; 
         }
 
         if (min_pressure > pres[index])

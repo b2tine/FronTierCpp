@@ -704,7 +704,6 @@ static void iF_flowThroughBoundaryState2d(
         double W1 = 1.0 + dt/(dt + old_dt);
         newst->movie_pres = W0*oldst->pres + W1*newst->pres;
     }
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
 
     //Since pressure is usually updated as
     //      
@@ -934,7 +933,6 @@ static void iF_flowThroughBoundaryState3d(
         double W1 = 1.0 + dt/(dt + old_dt);
         newst->movie_pres = W0*oldst->pres + W1*newst->pres;
     }
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
     
     newst->q = oldst->pres;
         //newst->q = 0.0;
@@ -1379,7 +1377,6 @@ static  void neumann_point_propagate(
         double W1 = 1.0 + dt/(dt + old_dt);
         newst->movie_pres = W0*oldst->pres + W1*newst->pres;
     }
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
     
     FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
             getStatePhi,&newst->phi,&oldst->phi);
@@ -1567,7 +1564,6 @@ static  void contact_point_propagate(
         W1 = 1.0 + dt/(dt + old_dt);
         newst->movie_pres = W0*oldst->pres + W1*newst->pres;
     }
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
 	
     setStateViscosity(iFparams,newst,negative_component(oldhs));
 	for (i = 0; i < dim; ++i)
@@ -1582,7 +1578,6 @@ static  void contact_point_propagate(
 	
     //extrapolate for p^{n+1}
     newst->movie_pres = W0*oldst->pres + W1*newst->pres;
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
     
     setStateViscosity(iFparams,newst,positive_component(oldhs));
 	for (i = 0; i < dim; ++i)
@@ -1784,7 +1779,6 @@ static void rgbody_point_propagate(
         double W1 = 1.0 + dt/(dt + old_dt);
         newst->movie_pres = W0*oldst->pres + W1*newst->pres;
     }
-        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
     
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);

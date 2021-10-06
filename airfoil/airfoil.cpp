@@ -348,7 +348,6 @@ void airfoil_driver(Front *front,
 
         if (FT_IsSaveTime(front))
 	    {
-            setStressColor(front);
             FT_Save(front);
             l_cartesian->printFrontInteriorStates(out_name);
 	    	printAfExtraData(front,out_name);
