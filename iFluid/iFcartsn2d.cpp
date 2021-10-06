@@ -1796,32 +1796,52 @@ void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmII(void)
 //  --> p^{n+1/2} = phi^{n+1} - 0.5*nu*dt*grad^2(phi^{n+1})
 void Incompress_Solver_Smooth_2D_Cartesian::computePressurePmIII(void)
 {
-    int i,j,index;
-    double mu0;
 	double *rho = field->rho;
 	double *pres = field->pres;
+	double *movie_pres = field->movie_pres;
 	double *phi = field->phi;
 	double *q = field->q;
+	double **grad_q = field->grad_q;
 	double *div_U = field->div_U;
+    double *mu = field->mu;
 
 	if (debugging("field_var"))
 	{
-	    for (j = jmin; j <= jmax; j++)
-        for (i = imin; i <= imax; i++)
+	    for (int j = jmin; j <= jmax; j++)
+        for (int i = imin; i <= imax; i++)
 	    {
-            index = d_index2d(i,j,top_gmax);
+            int index = d_index2d(i,j,top_gmax);
             field->old_var[0][index] = pres[index];
 	    }
 	}
 	
-    for (j = 0; j <= top_gmax[1]; j++)
-    for (i = 0; i <= top_gmax[0]; i++)
+    for (int j = 0; j <= top_gmax[1]; j++)
+    for (int i = 0; i <= top_gmax[0]; i++)
 	{
-        index = d_index2d(i,j,top_gmax);
-        mu0 = field->mu[index];
-        pres[index] = phi[index] - 0.5*mu0*div_U[index];//If use computeDiffusionCN()
-            //pres[index] = phi[index] - mu0*div_U[index];//If use computeDiffusionImplicit()
+        int index = d_index2d(i,j,top_gmax);
+        
+        //save p^{n-1/2}
+        double old_pres = pres[index];
+
+        //compute p^{n+1/2}
+        pres[index] = phi[index] - 0.5*mu[index]*div_U[index];//If use computeDiffusionCN()
+        //pres[index] = phi[index] - mu[index]*div_U[index];//If use computeDiffusionImplicit()
+        
+        //record q -- For PmIII q = 0 (for PmI and PmII q = p^{n+1/2})
         q[index] = 0.0;
+        for (int l = 0; l < dim; ++l)
+        {
+            grad_q[l][index] = 0.0;
+        }
+
+        //linear extrapolation to get p^{n+1}
+        if (m_dt + old_dt != 0.0)
+        {
+            double W0 = -1.0*m_dt/(m_dt + old_dt);
+            double W1 = 1.0 + m_dt/(m_dt + old_dt);
+            movie_pres[index] = W0*old_pres + W1*pres[index];
+                //movie_pres[index] = 2.0*pres[index] - old_pres; 
+        }
 	}
 
 	FT_ParallelExchGridArrayBuffer(pres,front,NULL);

@@ -561,7 +561,7 @@ struct _Front {
 	TSTEP_CONTROL	Tstep;
 
 		/* Real and mesh times for front->interf */
-	double dt, *dt_frac, time, max_time;
+	double dt, old_dt, *dt_frac, time, max_time;
 	double print_time_interval, movie_frame_interval;
 	boolean is_print_time,is_movie_time,time_limit_reached;
 	boolean two_step_interface;

@@ -5,7 +5,11 @@
 struct STATE
 {
     double dens;                /* Density */
-    double pres;                /* Pressure */
+    double pres;                /* Pressure at n+1/2 */
+
+    //TODO: if successful rename movie_pres to endstep_pres or similar
+    double movie_pres;          /* Lineraly Extrapolated Pressure at n+1 */
+    
     double phi;                 /* Potential */
     double grad_phi[MAXD];      /* Gradient of Potential */
     double q;                   /* approx pres */

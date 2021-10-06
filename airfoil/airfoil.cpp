@@ -391,8 +391,12 @@ void zero_state(
     IF_PARAMS *iFparams)
 {
     for (int i = 0; i < dim; ++i)
+    {
         field->vel[i][index] = 0.0;
+    }
+    
     field->pres[index] = 0.0;
+    field->movie_pres[index] = 0.0;
 }
 
 

@@ -3501,6 +3501,7 @@ EXPORT void FT_ResetTime(Front *front)
 {
 	front->time = 0.0;
     front->dt = 0.0;
+    front->old_dt = 0.0;
     front->step = 0;
 	front->im = front->ip = 0;
     front->is_print_time = NO;
@@ -3584,6 +3585,7 @@ EXPORT void FT_AddTimeStepToCounter(Front *front)
 {
 	++(front->step);
 	front->time += front->dt;
+    front->old_dt = front->dt;
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 

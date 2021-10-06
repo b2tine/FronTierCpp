@@ -189,6 +189,7 @@ static void elastic_point_propagate_fsi(
                 getStatePres,&newsl->pres,&sl->pres);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
                 getStatePres,&newsr->pres,&sr->pres);
+        
         /*
         //Tangential stress (shear stress)
 	    for (int l = 0; l < dim; ++l)
@@ -234,15 +235,20 @@ static void elastic_point_propagate_fsi(
     }
     */
 
+
 	/* Impulse is incremented by the fluid pressure force */
-        
+    
+    //TODO: Should we be using dP = sl->movie_pres - sr->movie_pres ???
+    //      The idea being that we are using the pressure p^{n} (movie_pres)
+    //      instead of the halfstep pressure p^{n-1/2} (pres).
+    
     double dP = sl->pres - sr->pres;
-	for (int i = 0; i < dim; ++i)
+    for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
 	    if (front->step > af_params->fsi_startstep)
         {
-            dv[i] = dP*nor[i]/area_dens;    //dv has units of acceleration
+            dv[i] = dP*nor[i]/area_dens; //dv has units of acceleration
             //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
         else if (debugging("rigid_canopy"))
@@ -270,7 +276,6 @@ static void elastic_point_propagate_fsi(
 	        for (int i = 0; i < dim; ++i)
 	        {
 	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                 vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),

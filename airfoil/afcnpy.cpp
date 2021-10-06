@@ -113,7 +113,7 @@ static void spring_force_at_point1(
 	}
 }	/* end spring_force_at_point1 */
 
-//TODO: nowhere used
+//TODO: UNUSED FUNCTION
 extern void compute_total_canopy_force(
 	Front *front,
 	double *pos_force,
@@ -131,6 +131,7 @@ extern void compute_total_canopy_force(
 	}
 }	/* end compute_total_canopy_force */
 
+//TODO: UNUSED FUNCTION
 static void compute_total_canopy_force2d(
 	Front *front,
         double *pos_force,
@@ -139,6 +140,7 @@ static void compute_total_canopy_force2d(
     printf("\nWARNING compute_total_canopy_force2d() not implemented\n");
 }	/* end compute_total_canopy_force2d */
 
+//TODO: UNUSED FUNCTION
 static void compute_total_canopy_force3d(
 	Front *front,
         double *pos_force,

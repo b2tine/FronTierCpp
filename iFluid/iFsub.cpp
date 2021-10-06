@@ -112,6 +112,12 @@ extern int next_index_in_dir(
 	return index;
 }
 
+extern double getStateMoviePres(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->movie_pres;
+}	/* end getStatePres */
+
 extern double getStatePres(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
@@ -487,8 +493,11 @@ static void iF_flowThroughBoundaryState2d(
 	double f_vort;		// vort flux
 	double f_pres;		// pressure flux
 	double f_phi;		// phi flux
-	double dn,dt = front->dt;
+	double dn;
 	int i,j,dim = front->rect_grid->dim;
+
+    double dt = front->dt;
+    double old_dt = front->old_dt;
 
 	STATE* oldst;
     STATE* newst = (STATE*)state;
@@ -687,7 +696,16 @@ static void iF_flowThroughBoundaryState2d(
         newst->pres -= dt/dn*f_pres;
         newst->phi -= dt/dn*f_phi;
     }
-    
+
+    //extrapolate for p^{n+1}
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+
     //Since pressure is usually updated as
     //      
     //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
@@ -745,6 +763,7 @@ static void iF_flowThroughBoundaryState3d(
     
     int dim = front->rect_grid->dim;
     double dt = front->dt;
+    double old_dt = front->old_dt;
 	
     STATE *oldst, *newst = (STATE*)state;
     STATE  **sts;
@@ -908,6 +927,15 @@ static void iF_flowThroughBoundaryState3d(
         }
     }
 
+    //extrapolate for p^{n+1}
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+    
     newst->q = oldst->pres;
         //newst->q = 0.0;
      
@@ -1343,6 +1371,16 @@ static  void neumann_point_propagate(
     FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
+    //extrapolate for p^{n+1}
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+    
     FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
             getStatePhi,&newst->phi,&oldst->phi);
 
@@ -1415,6 +1453,7 @@ static  void dirichlet_point_propagate(
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
         newst->vort = 0.0;
 
+        //TODO: set boundary pressure to non-zero val?
         newst->pres = 0.0;
         newst->phi = 0.0;
 	    newst->q = 0.0;
@@ -1504,8 +1543,8 @@ static  void contact_point_propagate(
 	FT_GetStatesAtPoint(oldp,oldhse,oldhs,&sl,&sr);
 	oldst = (STATE*)sl;
 	p0 = Coords(newp);
-	FT_IntrpStateVarAtCoords(front,-1,p0,m_pre,getStatePres,&pres,
-				&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,-1,p0,m_pre,getStatePres,&pres,&oldst->pres);
+    
 	if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,-1,p0,m_vor,getStateVort,&vort,
@@ -1514,16 +1553,38 @@ static  void contact_point_propagate(
 
 	newst = (STATE*)left_state(newp);
 	newst->vort = vort;
-	newst->pres = pres;
-	setStateViscosity(iFparams,newst,negative_component(oldhs));
+	
+    newst->pres = pres;
+    
+    //extrapolate for p^{n+1}
+    double W0 = 0.0;
+    double W1 = 0.0;
+
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        W0 = -1.0*dt/(dt + old_dt);
+        W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+	
+    setStateViscosity(iFparams,newst,negative_component(oldhs));
 	for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
 	}
+
 	newst = (STATE*)right_state(newp);
 	newst->vort = vort;
-	newst->pres = pres;
-	setStateViscosity(iFparams,newst,positive_component(oldhs));
+	
+    newst->pres = pres;
+	
+    //extrapolate for p^{n+1}
+    newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+    
+    setStateViscosity(iFparams,newst,positive_component(oldhs));
 	for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
@@ -1715,6 +1776,16 @@ static void rgbody_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
 	
+    //extrapolate for p^{n+1}
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+        //newst->movie_pres = 2.0*newst->pres - oldst->pres;
+    
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	
@@ -1759,10 +1830,9 @@ extern void fluid_print_front_states(
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl),
-                                getStatePres(sr));
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePhi(sl),
-                                getStatePhi(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl), getStatePres(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStateMoviePres(sl), getStateMoviePres(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStatePhi(sl), getStatePhi(sr));
             if (dim == 2)
             {
                 fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
@@ -1813,6 +1883,7 @@ extern void fluid_read_front_states(
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
             lstate = (STATE*)sl;        rstate = (STATE*)sr;
             fscanf(infile,"%lf %lf",&lstate->pres,&rstate->pres);
+            fscanf(infile,"%lf %lf",&lstate->movie_pres,&rstate->movie_pres);
             fscanf(infile,"%lf %lf",&lstate->phi,&rstate->phi);
             fscanf(infile,"%lf %lf",&lstate->vel[0],&rstate->vel[0]);
             fscanf(infile,"%lf %lf",&lstate->vel[1],&rstate->vel[1]);

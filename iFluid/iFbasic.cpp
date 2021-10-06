@@ -507,8 +507,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
         {
             if (field != NULL)
             {
-                FT_FreeThese(18,array,source,diff_coeff,field->mu,
-                    field->rho,field->pres,field->phi,field->grad_phi,
+                FT_FreeThese(19,array,source,diff_coeff,field->mu,field->rho,
+                    field->pres,field->movie_pres,field->phi,field->grad_phi,
                     field->q,field->div_U,field->vort,field->vel,
                     field->vel_star,field->prev_vel,field->grad_q,field->f_surf,
                     field->adv_term,field->adv_term_old,domain_status);
@@ -528,6 +528,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&field->mu,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->rho,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->pres,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->movie_pres,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,2,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
@@ -562,8 +563,8 @@ void Incompress_Solver_Smooth_Basis::setDomain()
         {
             if (field != NULL)
             {
-                FT_FreeThese(18,array,source,diff_coeff,field->mu,
-                    field->rho,field->pres,field->phi,field->grad_phi,
+                FT_FreeThese(19,array,source,diff_coeff,field->mu,field->rho,
+                    field->pres,field->movie_pres,field->phi,field->grad_phi,
                     field->q,field->div_U,field->vel,field->vel_star,
                     field->prev_vel,field->vorticity,field->grad_q,field->f_surf,
                     field->adv_term,field->adv_term_old,domain_status);
@@ -583,6 +584,7 @@ void Incompress_Solver_Smooth_Basis::setDomain()
             FT_VectorMemoryAlloc((POINTER*)&field->mu,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->rho,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->pres,size,sizeof(double));
+            FT_VectorMemoryAlloc((POINTER*)&field->movie_pres,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->q,size,sizeof(double));
             FT_MatrixMemoryAlloc((POINTER*)&field->grad_q,3,size,sizeof(double));
             FT_VectorMemoryAlloc((POINTER*)&field->phi,size,sizeof(double));
@@ -966,8 +968,9 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
                     (void) printf("%f %f\n",var_min,var_max);
 		}
 		FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres",0,field->pres,getStatePres,
-				var_max,var_min);
+				"pres",0,field->movie_pres,getStateMoviePres,var_max,var_min);
+		    //FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+			//    	"pres",0,field->pres,getStatePres,var_max,var_min);
 	    }
 	    CursorAfterString(infile,"Type y to make movie of vorticity:");
             fscanf(infile,"%s",string);
@@ -1035,9 +1038,9 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres-yz",0,field->pres,getStatePres,
-				0.0,0.0);
-	    	CursorAfterString(infile,"Type y to make movie of velocity:");
+				"pres-yz",0,field->pres,getStatePres,0.0,0.0);
+	    	
+            CursorAfterString(infile,"Type y to make movie of velocity:");
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
@@ -1045,7 +1048,8 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
 				"velo-yz-y",0,field->vel[1],getStateYvel,
 				0.0,0.0);
-		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+		    
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
 				"velo-yz-z",0,field->vel[2],getStateZvel,
 				0.0,0.0);
 		}
@@ -1059,20 +1063,20 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
-		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres-xz",1,field->pres,getStatePres,
-				0.0,0.0);
+		    
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+				"pres-xz",1,field->pres,getStatePres,0.0,0.0);
+
 	    	CursorAfterString(infile,"Type y to make movie of velocity:");
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
 		{
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"velo-xz-x",1,field->vel[0],getStateXvel,
-				0.0,0.0);
+				"velo-xz-x",1,field->vel[0],getStateXvel,0.0,0.0);
+
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"velo-xz-z",1,field->vel[2],getStateZvel,
-				0.0,0.0);
+				"velo-xz-z",1,field->vel[2],getStateZvel,0.0,0.0);
 		}
 	    }
 	    CursorAfterString(infile,"Type y to make xy cross section movie:");
@@ -1085,19 +1089,18 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres-xy",2,field->pres,getStatePres,
-				0.0,0.0);
+				"pres-xy",2,field->pres,getStatePres,0.0,0.0);
+
 	    	CursorAfterString(infile,"Type y to make movie of velocity:");
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
             	if (string[0] == 'Y' || string[0] == 'y')
 		{
 		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"velo-xy-x",2,field->vel[0],getStateXvel,
-				0.0,0.0);
-		    FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"velo-xy-y",2,field->vel[1],getStateYvel,
-				0.0,0.0);
+				"velo-xy-x",2,field->vel[0],getStateXvel,0.0,0.0);
+		    
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+				"velo-xy-y",2,field->vel[1],getStateYvel,0.0,0.0);
 		}
 	    }
 	}
@@ -1112,7 +1115,10 @@ void Incompress_Solver_Smooth_Basis::initMovieVariables()
             fscanf(infile,"%s",string);
             (void)printf("%s\n",string);
             if (string[0] == 'Y' || string[0] == 'y')
-                FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+            {
+                FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->movie_pres);
+                //FT_AddVtkScalarMovieVariable(front,"PRESSURE",field->pres);
+            }
         }
         if (CursorAfterStringOpt(infile,
                     "Type y to make scalar phi field movie:"))
@@ -3593,47 +3599,41 @@ void Incompress_Solver_Smooth_Basis::computeFieldPointGradQ(
 	    grad_field[i] = 0.5*(q_edge[i][1] - q_edge[i][0])/top_h[i];
 }      /* end computeFieldPointGradQ */
 
-//TODO: See NOTE below
 void Incompress_Solver_Smooth_Basis::setReferencePressure()
 {
-	int i,j,k,index;
 	double *pres = iFparams->field->pres;
-        double diff_pres;
 
 	switch(dim)
-        {
+    {
 	case 2:
-	    index = d_index2d(imin,jmin,top_gmax);
-        diff_pres = pres[index] - iFparams->ref_pres;
-	    for (j = 0; j <= top_gmax[1]; ++j)
-        for (i = 0; i <= top_gmax[0]; ++i)
-	    {
-            index = d_index2d(i,j,top_gmax);
-            if (!ifluid_comp(top_comp[index]))
-                continue;
-            pres[index] -= diff_pres;
-            //NOTE:
-            //pres[index] = pres[index] - diff_pres 
-            //pres[index] = pres[index] - (pres[index] - iFparams-ref_pres)
-            //pres[index] = iFparams->ref_pres
-	    }
+        {
+            int min_index = d_index2d(imin,jmin,top_gmax);
+            double diff_pres = pres[min_index] - iFparams->ref_pres;
+            
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
+            {
+                int index = d_index2d(i,j,top_gmax);
+                if (!ifluid_comp(top_comp[index])) continue;
+                pres[index] -= diff_pres;
+            }
+        }
 	    break;
+
 	case 3:
-        index = d_index3d(imin,jmin,kmin,top_gmax);
-        diff_pres = pres[index] - iFparams->ref_pres;
-	    for (k = 0; k <= top_gmax[2]; ++k)
-	    for (j = 0; j <= top_gmax[1]; ++j)
-        for (i = 0; i <= top_gmax[0]; ++i)
-	    {
-            index = d_index3d(i,j,k,top_gmax);
-            if (!ifluid_comp(top_comp[index]))
-                continue;
-            pres[index] -= diff_pres;
-            //NOTE:
-            //pres[index] = pres[index] - diff_pres 
-            //pres[index] = pres[index] - (pres[index] - iFparams-ref_pres)
-            //pres[index] = iFparams->ref_pres
-	    }
+        {
+            int min_index = d_index3d(imin,jmin,kmin,top_gmax);
+            double diff_pres = pres[min_index] - iFparams->ref_pres;
+
+            for (int k = 0; k <= top_gmax[2]; ++k)
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
+            {
+                int index = d_index3d(i,j,k,top_gmax);
+                if (!ifluid_comp(top_comp[index])) continue;
+                pres[index] -= diff_pres;
+            }
+        }
 	    break;
 	}
 }	/* end setReferencePressure */
