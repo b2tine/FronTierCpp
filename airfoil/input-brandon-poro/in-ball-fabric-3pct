@@ -42,6 +42,10 @@ XEnter gravityX: 0.0 0.0 -9.8 OFF FOR NOW
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
 
+**************Fluid parameters***************
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
+
 Projection type can be
         PMI     (1)
         PMII    (2)
@@ -53,6 +57,7 @@ Available elliptic methods are:
         Simple elliptic (S)
         Dual elliptic (DU)
 Enter elliptic method: Simple
+******************************************
 
 Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
@@ -85,6 +90,8 @@ Enter area density of canopy: 0.1
 
 Enter fabric spring constant: 1000
 Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.15
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
@@ -92,10 +99,22 @@ Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 5000
 Enter string damping constant: 0.01
+Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.15
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
+
+Enter overlap coefficient: 0.2
+
+Enter strain limit: 0.03
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.075
+Enter strain velocity constraint tolerance: 0.25
+
+Enter yes for collision substepping: yes
+Enter nsub per collision step: 30
+    XXXEnter nsub per collision stepXXX: 75
 
 
 **************** Rigid Body *****************
@@ -137,8 +156,12 @@ Type y to make scalar phi field movie: y
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: bendforce_off
 Enter the debugging string: max_speed
 Enter the debugging string: PETSc
+Enter the debugging string: ifluid_dt
+
 Enter the debugging stringX: pressure_drop
 
 Enter the debugging stringX: trace
