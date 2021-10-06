@@ -74,7 +74,7 @@ Available types of canopy boundaries are:
 Enter type of canopy boundary: R
 Enter the height of the plane: 0.72
 Enter lower bounds of the rectangle: 0.69 0.69
-Enter upper bounds of the rectangle: 0.131 0.131
+Enter upper bounds of the rectangle: 1.31 1.31
 Enter yes for fixed boundary: yes
 Enter yes to install boundary on each side: no
 

@@ -75,7 +75,7 @@ Available types of canopy boundaries are:
 Enter type of canopy boundary: R
 Enter the height of the plane: 2.072
 Enter lower bounds of the rectangle: 0.69 0.69
-Enter upper bounds of the rectangle: 0.131 0.131
+Enter upper bounds of the rectangle: 1.31 1.31
 Enter yes for fixed boundary: yes
 Enter yes to install boundary on each side: no
 
@@ -124,7 +124,7 @@ Enter the number of rigid bodies: 1
 
 For rigid body 1
 Enter type of rigid body: Sphere
-Enter center of the sphere: 0.499 0.499 0.801
+Enter center of the sphere: 1.0 1.0 0.801
 Enter radius of the sphere: 0.075 0.075 0.075
 Type yes if the rigid body is fixed: yes
 Type yes to use CGAL for rigid body: yes
