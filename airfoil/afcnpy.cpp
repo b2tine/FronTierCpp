@@ -457,6 +457,7 @@ extern void propagate_curve(
         }
 }	/* end propagate_curve */
 
+//TODO: This function needs some refactoring/debugging
 static void reduce_high_freq_vel(
 	Front *front,
 	SURFACE *canopy)
@@ -469,10 +470,12 @@ static void reduce_high_freq_vel(
 	HYPER_SURF *hs;
 	HYPER_SURF_ELEMENT *hse;
 	STATE *sl,*sr;
-	double max_speed;
 	double crds_max[MAXD];
 	int i,j,gindex_max;
 	int l,num_layers = af_params->num_smooth_layers;
+	
+    double max_speed;
+    double max_nor_speed = 0.0;
 
 	hs = Hyper_surf(canopy);
 
@@ -522,15 +525,26 @@ static void reduce_high_freq_vel(
 	    	{
 		    p = Point_of_tri(tri)[i];
 		    if (sorted(p) || Boundary_point(p)) continue;
-		    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		    for (j = 0; j < 3; ++j)
+		    
+            double nor[MAXD];
+            FT_NormalAtPoint(p,front,nor,NO_COMP);
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+		    double nor_speed = scalar_product(vv[ncan],nor,3);
+		    
+            for (j = 0; j < 3; ++j)
 		    {
-		    	sl->vel[j] = vv[ncan][j];
-		    	sr->vel[j] = vv[ncan][j];
+		    	sl->vel[j] = nor_speed*nor[j];
+		    	sr->vel[j] = nor_speed*nor[j];
+		    	    //sl->vel[j] = vv[ncan][j];
+		    	    //sr->vel[j] = vv[ncan][j];
 		    }
+
 		    if (max_speed < Mag3d(sl->vel)) 
-		    	max_speed = Mag3d(sl->vel);
-		    ncan++;
+            {
+                max_speed = Mag3d(sl->vel);
+            }
+             
+            ncan++;
 		    sorted(p) = YES;
 	    	}
 	    }
@@ -548,22 +562,27 @@ static void reduce_high_freq_vel(
 	    hse = Hyper_surf_element(tri);
 	    for (i = 0; i < 3; ++i)
 	    {
-		p = Point_of_tri(tri)[i];
-		if (sorted(p) || Boundary_point(p)) continue;
-		FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		for (j = 0; j < 3; ++j)
-	    	    FT_RecordMaxFrontSpeed(j,sl->vel[j],NULL,Coords(p),front);
-	    
-        //TODO: need to use normal veocity when setting in dir = dim    
-        FT_RecordMaxFrontSpeed(3,Mag3d(sl->vel),NULL,Coords(p),front);
+            p = Point_of_tri(tri)[i];
+            if (sorted(p) || Boundary_point(p)) continue;
+            
+            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+            
+            for (j = 0; j < 3; ++j)
+            {
+                FT_RecordMaxFrontSpeed(j,sl->vel[j],NULL,Coords(p),front);
+            }    
+	        
+            //need to use normal veocity when setting for dir = dim (= 3)   
+            FT_RecordMaxFrontSpeed(3,Mag3d(sl->vel),NULL,Coords(p),front);
 		
         if (max_speed < Mag3d(sl->vel)) 
 		{
-		    	max_speed = Mag3d(sl->vel);
-		    	gindex_max = Gindex(p);
-		    	for (j = 0; j < 3; ++j)
+		    max_speed = Mag3d(sl->vel);
+		    gindex_max = Gindex(p);
+		    for (j = 0; j < 3; ++j)
 			    crds_max[j] = Coords(p)[j];
 		}
+
 		sorted(p) = YES;
 	    }
 	}
@@ -738,6 +757,16 @@ static void elastic_set_propagate_serial(
         //set_propagation_limits(front,*newfront); //TODO: Useful here?
 
 
+
+    //TODO: Need the FabricManager here.
+    //      Perform initialization using newfront...
+    
+
+
+    //TODO: In the collsn substepping loop below we advance forward in time
+    //      using the spring solver along with applying repulsions, friction
+    //      and strain limiting.
+
     int status;
     for (int n = 1; n <= num_collsn_steps; ++n)
     {
@@ -768,6 +797,15 @@ static void elastic_set_propagate_serial(
     
         assign_interface_and_free_front(*newfront,sub_newfront);
     }
+
+
+    //TODO: Then compute new effective velocities (linear trajectories)
+    //      and call detectCollision() via the FabricManager.
+    //
+    //      The velocity constraint of strain limiting procedure could
+    //      be applied here after the vertices have been moved to their
+    //      final collision free position.
+
 
     //setSpecialNodeForce((*newfront)->interf,geom_set.kl);
     //compute_center_of_mass_velo(&geom_set);
@@ -828,10 +866,10 @@ static int elastic_set_propagate3d_serial(
     geom_set->front = *newfront;
 
 
-    static SPRING_VERTEX *sv;
-    static GLOBAL_POINT **point_set;
-    static GLOBAL_POINT *point_set_store;
-	static GLOBAL_POINT **client_point_set_store;
+    static SPRING_VERTEX* sv;
+    static GLOBAL_POINT** point_set;
+    static GLOBAL_POINT* point_set_store;
+	static GLOBAL_POINT** client_point_set_store;
     
     INTERFACE *elastic_intfc = nullptr;
 
@@ -1426,7 +1464,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
         if (myid == owner_id)
         {
             if (FT_Dimension() == 3)
-                collision_solver->resolveCollision();
+                collision_solver->resolveCollisionSubstep();
             delete collision_solver;
         }
         
@@ -1752,7 +1790,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
             if (FT_Dimension() == 3)
             {
                 start_clock("resolveCollision");
-                collision_solver->resolveCollision();
+                collision_solver->resolveCollisionSubstep();
                 stop_clock("resolveCollision");
             }
             delete collision_solver;
@@ -2130,7 +2168,7 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(
     if (!debugging("collision_off") && FT_Dimension() == 3) 
     {
         start_clock("resolveCollision");
-        collision_solver->resolveCollision();
+        collision_solver->resolveCollisionSubstep();
         stop_clock("resolveCollision");
         delete collision_solver;
 
@@ -2459,7 +2497,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
         if (!debugging("collision_off") && FT_Dimension() == 3) 
         {
             start_clock("resolveCollision");
-            collision_solver->resolveCollision();
+            collision_solver->resolveCollisionSubstep();
             stop_clock("resolveCollision");
             delete collision_solver;
         }
@@ -2640,6 +2678,9 @@ static void setSurfVelocity(
     double max_nor_speed = 0.0;
     double *max_coords = nullptr;
 
+    //temporary variable to test reduce_high_freq_vel() function 
+    static double prev_max_nor_speed = HUGE;
+
     /*
     static STATE* max_nor_speed_state;
     if (max_nor_speed_state == nullptr)
@@ -2682,13 +2723,23 @@ static void setSurfVelocity(
         }
 	}
 
-    //TODO: any unintened side effects if pass in max_nor_speed_state to set_max_front_speed()???
     set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
     
     //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
-    //
-    //  reduce_high_freq_vel(front,surf);
-
+    if (debugging("reduce_highfreq_vel"))
+    {
+        //Hardcode 3x prev_max_nor_speed to test
+        if (max_nor_speed > 3.0*prev_max_nor_speed)
+        {
+            printf("\nEntering reduce_high_freq_vel()\n");
+            reduce_high_freq_vel(front,surf);
+            prev_max_nor_speed = Spfr(front)[3];
+        }
+        else
+        {
+            prev_max_nor_speed = max_nor_speed;
+        }
+    }
 }	/* end setSurfVelocity */
 
 static void setCurveVelocity(
@@ -2817,7 +2868,7 @@ static void setCurveVelocity(
     }
 
     /*
-    //TODO: can't use this with collision substepping.
+    //TODO: How significant is this????
     for (b = curve->first; b != NULL; b = b->next)
     {
 	    set_bond_length(b,dim);

@@ -153,7 +153,6 @@ public:
     void initializeImpactZones();
 	void initRigidBodyImpactZones();
 	
-    void resolveCollision();
     void resolveCollisionSubstep();
 
 	void setDomainBoundary(double* L,double *U);

@@ -1,6 +1,7 @@
 #ifndef FABRIC_MANAGER_H
 #define FABRIC_MANAGER_H
 
+#include "airfoil.h"
 #include "collid.h"
 
 
@@ -19,6 +20,7 @@ public: //public temporarily
 
 public:
 
+    //TODO: Will need to abandon this Ctor taking Front* front
     FabricManager(Front* fr)
         : front{fr}, 
         collision_solver{std::unique_ptr<CollisionSolver3d>(new CollisionSolver3d)}
@@ -52,6 +54,13 @@ public:
     void resolveCollisionSubstep();
 
 private:
+
+    //TODO: Write allocation routine for this like in the "first" initialization block in afcnpy.cpp
+    SPRING_VERTEX* sv;
+    ELASTIC_SET* geom_set;
+    GLOBAL_POINT** point_set;
+    GLOBAL_POINT* point_set_store;
+    GLOBAL_POINT** client_point_set_store;
 
     void assembleHseListFromInterface();
     void recordOriginalPositions();
