@@ -21,97 +21,42 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-
-
 #include "FabricManager.h"
-//#include "collid.h"
-
-#include "airfoil.h"
 #include "bending.h"
 
-static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front);
 
-static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
-static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
-static boolean is_pore(Front*,HYPER_SURF_ELEMENT*,double*);
+#define	MAX_NUM_RING1 30
+
+
 static void compute_total_canopy_force2d(Front*,double*,double*);
 static void compute_total_canopy_force3d(Front*,double*,double*);
-static void compute_center_of_mass_velo(ELASTIC_SET*);
-static void reduce_high_freq_vel(Front*,SURFACE*);
-static void smooth_vel(double*,POINT*,TRI*,SURFACE*);
-static boolean curve_in_pointer_list(CURVE*,CURVE**);
-static void setNodeVelocity(ELASTIC_SET*,NODE*,double**,GLOBAL_POINT**);
+
 static void setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
 static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
-static void new_setNodeVelocity(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
-static void new_setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+static void setNodeVelocity(ELASTIC_SET*,NODE*,double**,GLOBAL_POINT**);
+static void setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
+static void setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 
-static void new_setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);//doesn't exist
-static void new_setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);//doesn't exist
+static void reduce_high_freq_vel(Front*,SURFACE*);
+static void smooth_vel(double*,POINT*,TRI*,SURFACE*);
+
+static void compute_center_of_mass_velo(ELASTIC_SET*);
 
 static void break_string_curve(CURVE*,double);
 static void linkGlobalIndexToTri(INTERFACE*,TRI***);//nowhere used
 
 static void setCollisionFreePoints3d(INTERFACE*);
 
+static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front);
+static void print_elastic_params(const ELASTIC_SET& geom_set);
+
 static void fourth_order_elastic_set_propagate3d_serial(Front*,Front**,double);
 static void elastic_set_propagate_serial(Front* fr, Front** newfront, double fr_dt);
 static int elastic_set_propagate3d_serial(ELASTIC_SET*, Front*, Front**, int, double);
 static void new_fourth_order_elastic_set_propagate3d_parallel_1(Front*,Front**,double);
 
-static void print_elastic_params(const ELASTIC_SET& geom_set);
-
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
-
-#define 	MAX_NUM_RING1		30
-
-static void spring_force_at_point1(
-	double *f,
-	POINT *p,
-	TRI *tri,
-	SURFACE *surf,
-	double ks)
-{
-	TRI *tris[MAX_NUM_RING1];
-	int i,j,k,nt;
-	POINT *p_nb;
-	double length0,length,dir[3];
-	
-	if (is_registered_point(surf,p))
-	{
-	    for (i = 0; i < 3; ++i)
-		f[i] = 0.0;
-	    return;
-	}
-	PointAndFirstRingTris(p,Hyper_surf_element(tri),Hyper_surf(surf),
-				&nt,tris);
-	for (k = 0; k < 3; ++k) f[k] = 0.0;
-	for (i = 0; i < nt; ++i)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-		if (Point_of_tri(tris[i])[j] == p)
-		{
-		    length0 = tris[i]->side_length0[j];
-		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
-		    length = separation(p,p_nb,3);
-	    	    for (k = 0; k < 3; ++k)
-		    {
-			dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
-			f[k] += ks*(length - length0)*dir[k];
-		    }
-		    if (is_side_bdry(tris[i],(j+2)%3))
-		    {
-			(void) printf("Detect boundary "
-				"in spring_force_at_point1()\n");
-			clean_up(ERROR);
-		    }
-		}
-	    }
-	}
-}	/* end spring_force_at_point1 */
 
 //TODO: UNUSED FUNCTION
 extern void compute_total_canopy_force(
@@ -199,19 +144,6 @@ static void compute_total_canopy_force3d(
 	    (void) printf("Leaving compute_total_canopy_force3d()\n");
 }	/* end compute_total_canopy_force3d */
 
-int airfoil_velo(
-    POINTER params,
-    Front *front,
-    POINT *p,
-    HYPER_SURF_ELEMENT *hse,
-    HYPER_SURF *hs,
-    double *vel)
-{
-	/*TMP to be written*/
-    vel[0] = vel[1] = vel[2] = 0.0;
-	return YES;
-}
-
 //GFM at ELASTIC_BOUNDARY:
 //      Add artificial source terms at boundary and have
 //      the fluid solver treat as NO_PDE_BOUNDARY
@@ -260,464 +192,6 @@ int af_find_state_at_crossing(
     return NEUMANN_PDE_BOUNDARY;
 }       /* af_find_state_at_crossing */
 
-static boolean is_pore(
-	Front *front,
-	HYPER_SURF_ELEMENT *hse,
-	double *crx_coords)
-{
-	INTERFACE *intfc = front->grid_intfc;
-	SURFACE **s;
-	TRI *tri;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double gamma = af_params->porosity;
-	static int current_step = -1;
-
-	if (front->rect_grid->dim != 3) return NO;
-	if (gamma == 0.0) return NO;
-	if (front->step != current_step)
-	{
-	    double R;
-	    current_step = front->step;
-	    for (s = intfc->surfaces; s && *s; ++s)
-	    {
-		if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-		for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
-				tri = tri->next)
-		{
-		    R = drand48();
-		    if (R < gamma) Tri_index(tri) = 0;
-		    else Tri_index(tri) = 1;
-		}
-	    }
-	}
-	tri = Tri_of_hse(hse);
-	return (Tri_index(tri) == 0) ? YES : NO;
-}	/* end is_pore */
-
-extern void assign_node_field(
-	NODE *node,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,dim = Dimension(node->interface);
-	CURVE **c;
-
-	for (i = 0; i < dim; ++i)
-	{
-	    Coords(node->posn)[i] = x[*n][i];
-	    node->posn->vel[i] = v[*n][i];
-	}
-	for (c = node->out_curves; c && *c; ++c)
-	    set_bond_length((*c)->first,dim);
-	for (c = node->in_curves; c && *c; ++c)
-	    set_bond_length((*c)->last,dim);
-	(*n)++;
-}	/* end assign_node_field */
-	
-extern void assign_curve_field(
-	CURVE *curve,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,j,dim = Dimension(curve->interface);
-	BOND *b;
-
-	i = *n;
-	for (b = curve->first; b != curve->last; b = b->next)
-	{
-	    for (j = 0; j < dim; ++j)
-	    {
-	    	Coords(b->end)[j] = x[i][j];
-	    	b->end->vel[j] = v[i][j];
-	    }
-	    set_bond_length(b,dim);
-	    i++;
-	}
-	set_bond_length(curve->first,dim);
-	set_bond_length(curve->last,dim);
-	*n = i;
-}	/* end assign_curve_field */
-	
-extern void assign_surf_field(
-	SURFACE *surf,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,j,k;
-	TRI *tri;
-	POINT *p;
-	STATE *sl,*sr;
-
-	unsort_surf_point(surf);
-	i = *n;
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		sl = (STATE*)left_state(p);
-		sr = (STATE*)right_state(p);
-		for (k = 0; k < 3; ++k)
-		{
-		    Coords(p)[k] = x[i][k];
-		    p->vel[k] = v[i][k];
-		}
-		sorted(p) = YES;
-	    	++i;
-	    }
-	}
-	*n = i;
-}	/* end assign_surf_field */
-	
-extern void compute_surf_accel1(
-	ELASTIC_SET *geom_set,
-	SURFACE *surf,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	int j,k;
-	TRI *tri;
-	POINT *p;
-	int dim = 3;
-	double ks = geom_set->ks;
-	double m_s = geom_set->m_s;
-	double lambda_s = geom_set->lambda_s;
-
-	unsort_surf_point(surf);
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		for (k = 0; k < dim; ++k)
-		{
-		    x[*n][k] = Coords(p)[k];
-		    v[*n][k] = p->vel[k];
-		}
-	    	spring_force_at_point1(f[*n],p,tri,surf,ks);
-		for (k = 0; k < dim; ++k)
-		{
-		    f[*n][k] -= lambda_s*(v[*n][k]);
-		    f[*n][k] /= m_s;
-		}
-		sorted(p) = YES;
-	    	++(*n);
-	    }
-	}
-}	/* end compute_surf_accel1 */
-
-extern void compute_curve_accel1(
-	ELASTIC_SET *geom_set,
-	CURVE *curve,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,j;
-	double x_diff;
-	BOND *b;
-	double dir[MAXD],len,len0,vect[MAXD];
-	int dim = Dimension(curve->interface);
-	double kl,m_l,lambda_l;
-
-	if (dim == 3)
-	{
-	    if (hsbdry_type(curve) == STRING_HSBDRY)
-	    {
-	    	kl = geom_set->kl;
-	    	m_l = geom_set->m_l;
-	    	lambda_l = geom_set->lambda_l;
-	    }
-	    else if (hsbdry_type(curve) == GORE_HSBDRY)
-	    {
-	    	kl = geom_set->kg;
-	    	m_l = geom_set->m_g;
-	    	lambda_l = geom_set->lambda_g;
-	    }
-	    else
-	    {
-	    	kl = geom_set->ks;
-	    	m_l = geom_set->m_s;
-	    	lambda_l = geom_set->lambda_s;
-	    }
-	}
-	else
-	{
-	    kl = geom_set->kl;
-	    m_l = geom_set->m_l;
-	    lambda_l = geom_set->lambda_l;
-	}
-	i = *n;
-	for (b = curve->first; b != curve->last; b = b->next)
-	{
-	    x[i] = Coords(b->end);
-	    v[i] = b->end->vel;
-	    for (j = 0; j < dim; ++j)
-	    {
-		f[i][j] = -lambda_l*v[i][j]/m_l;
-	    }
-	    i++;
-	}
-
-	i = *n;
-	for (b = curve->first; b != NULL; b = b->next)
-	{
-	    len = separation(b->start,b->end,dim);
-	    len0 = bond_length0(b);
-	    x_diff = len - len0; 
-	    for (j = 0; j < dim; ++j)
-	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
-		vect[j] = x_diff*dir[j];
-		if (b != curve->first)
-		{
-	    	    f[i-1][j]   += kl*vect[j]/m_l;
-		}
-		if (b != curve->last)
-		{
-	    	    f[i][j] -= kl*vect[j]/m_l;
-		}
-	    }
-	    if (b != curve->last) i++;
-	}
-
-	if (dim == 3)
-	{
-	    POINT *p,*p_nb;
-	    BOND_TRI **btris;
-	    TRI **tris;
-	    int j,k,side,nt;
-	    double length0,length;
-	    double ks = geom_set->ks;
-	    i = *n;
-	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				length0 = tris[j]->side_length0[side];
-				length = separation(p,p_nb,3);
-				for (k = 0; k < 3; ++k)
-                {
-                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
-                    f[i][k] += ks*(length - length0)*dir[k]/m_l;
-                }
-			    }
-			}
-		    }
-		}
-		i++;
-	    }
-	}
-	*n = i;
-}	/* end compute_curve_accel1 */
-
-extern void compute_node_accel1(
-	ELASTIC_SET *geom_set,
-	NODE *node,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	CURVE **c;
-	BOND *b;
-	double x_diff,len0,len,dir[MAXD],vect[MAXD];
-	POINT *p,*p_nb;
-	INTERFACE *intfc = geom_set->front->interf;
-	int i,j,dim = Dimension(intfc);
-	double ks = geom_set->ks;
-	double kl = geom_set->kl;
-	double kg = geom_set->kg;
-	double mass;
-	double lambda_s = geom_set->lambda_s;
-	double lambda_l = geom_set->lambda_l;
-	double lambda_g = geom_set->lambda_g;
-
-	if (dim == 3)
-	{
-	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
-	    if (extra != NULL)
-	    {
-		if (extra->af_node_type == LOAD_NODE)
-		{
-	    	    Front *front = geom_set->front;
-	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-		    mass = af_params->payload;
-		}
-		else if (extra->af_node_type == GORE_NODE)
-                    mass = geom_set->m_g;
-		else if (extra->af_node_type == STRING_NODE)
-                    mass = geom_set->m_l;
-	    }
-	    else
-            mass = geom_set->m_s;
-	}
-	else if (dim == 2)
-	{
-	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
-            mass = geom_set->m_l;
-	    if (extra->af_node_type == LOAD_NODE)
-            {
-                Front *front = geom_set->front;
-                AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-                mass = af_params->payload;
-            }
-	}
-
-	x[*n] = Coords(node->posn);
-	v[*n] = node->posn->vel;
-	for (i = 0; i < dim; ++i)
-	{
-	    f[*n][i] = 0.0;
-	}
-	for (c = node->out_curves; c && *c; ++c)
-	{
-	    b = (*c)->first;
-	    len = separation(b->start,b->end,dim);
-	    len0 = bond_length0(b);
-	    x_diff = len - len0; 
-	    for (j = 0; j < dim; ++j)
-	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
-		vect[j] = x_diff*dir[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   += ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   += kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   += kl*vect[j]/mass;
-	    }
-	}
-	for (c = node->in_curves; c && *c; ++c)
-	{
-	    if (curve_in_pointer_list(*c,node->out_curves) && 
-		!is_closed_curve(*c)) 
-		continue;
-	    b = (*c)->last;
-	    len = separation(b->start,b->end,dim);
-	    len0 = bond_length0(b);
-	    x_diff = len - len0; 
-	    for (j = 0; j < dim; ++j)
-	    {
-		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
-				/len;
-		vect[j] = x_diff*dir[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   -= ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   -= kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   -= kl*vect[j]/mass;
-	    }
-	}
-	if (dim == 3)
-	{
-	    BOND_TRI **btris;
-	    TRI **tris,*tri_list[500];
-	    int k,side,nt,num_tris;
-	    TRI *tri;
-
-	    num_tris = 0;
-	    p = node->posn;
-	    for (c = node->out_curves; c && *c; ++c)
-	    {
-		b = (*c)->first;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (c = node->in_curves; c && *c; ++c)
-	    {
-		b = (*c)->last;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (i = 0; i < num_tris; ++i)
-	    {
-		tri = tri_list[i];
-		for (side = 0; side < 3; ++side)
-		{
-		    if (p == Point_of_tri(tri)[side])
-		    {
-			if (is_side_bdry(tri,side))
-			    continue;
-			p_nb = Point_of_tri(tri)[(side+1)%3];
-			len0 = tri->side_length0[side];
-			len = separation(p,p_nb,3);
-    			x_diff = len - len0; 
-			for (k = 0; k < 3; ++k)
-                       	{
-                       	    dir[k] = (Coords(p_nb)[k] - 
-					Coords(p)[k])/len;
-                       	    f[*n][k] += ks*x_diff*dir[k]/mass;
-                       	}
-		    }
-		}
-	    }
-	    if (!is_load_node(node))
-	    {
-	    	for (i = 0; i < 3; ++i)
-	    	    f[*n][i] -= lambda_s*v[*n][i]/mass;
-	    }
-	}
-	else
-	{
-	    for (i = 0; i < 3; ++i)
-	    	f[*n][i] -= lambda_l*v[*n][i]/mass;
-	}
-	(*n)++;
-}	/* end compute_node_accel1 */
-
 static void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)
 {
@@ -741,36 +215,42 @@ static void compute_center_of_mass_velo(
 	for (n = 0; n < geom_set->num_surfs; ++n)
 	{
 	    canopy = geom_set->surfs[n];
-	    for (j = 0; j < 3; ++j)
-	    	vcan[j] = 0.0;
+
+	    for (j = 0; j < 3; ++j) vcan[j] = 0.0;
 	    area = mass_canopy = 0.0;
 	    
         surf_tri_loop(canopy,tri)
 	    {
 	    	for (j = 0; j < 3; ++j)
 	    	{
-		    vt[j] = 0.0;
-		    xt[j] = 0.0;
+                vt[j] = 0.0;
+                xt[j] = 0.0;
 	    	}
-	    	for (i = 0; i < 3; ++i)
+	    	
+            for (i = 0; i < 3; ++i)
 	    	{
-		    p = Point_of_tri(tri)[i];
-		    state = (STATE*)left_state(p);
-		    for (j = 0; j < 3; ++j)
-		    {
-		    	vt[j] += state->vel[j]/3.0;
-		    	xt[j] += Coords(p)[j]/3.0;
-		    }
+                p = Point_of_tri(tri)[i];
+                state = (STATE*)left_state(p);
+		    
+                for (j = 0; j < 3; ++j)
+                {
+                    vt[j] += state->vel[j]/3.0;
+                    xt[j] += Coords(p)[j]/3.0;
+                }
 	    	}
+
 	    	for (j = 0; j < 3; ++j)
 	    	{
-		    vcan[j] += vt[j]*tri_area(tri);
-		    xcan[j] += xt[j]*tri_area(tri);
+                vcan[j] += vt[j]*tri_area(tri);
+                xcan[j] += xt[j]*tri_area(tri);
 	    	}
+
 	    	area += tri_area(tri);
 	    }
-	    mass_canopy += area_dens*area;
-	    for (j = 0; j < 3; ++j)
+	    
+        mass_canopy += area_dens*area;
+	    
+        for (j = 0; j < 3; ++j)
 	    {
 	    	vcan[j] /= area;
 	    	xcan[j] /= area;
@@ -792,9 +272,6 @@ static void compute_center_of_mass_velo(
                 xload[j] = Coords(node->posn)[j];
             }
 
-            //NOTE: payload and rigid body mass are equal when a
-            //      rigid body is attached to the suspension lines.
-            //      See installString() and InstallNewLoadNode().
             payload = af_params->payload;
             xcom = center_of_mass(Hyper_surf(canopy));
             vcom = center_of_mass_velo(Hyper_surf(canopy));
@@ -810,6 +287,7 @@ static void compute_center_of_mass_velo(
             vcom = center_of_mass_velo(Hyper_surf(canopy));
 	    }	
 	}
+
 	if (debugging("canopy"))
 	    (void) printf("Leaving compute_center_of_mass_velo()\n");
 }	/* end compute_center_of_mass_velo */
@@ -852,666 +330,6 @@ static void smooth_vel(
 	for (k = 0; k < 3; ++k)
 	    vel[k] /= (double)np;
 }	/* end smooth_vel */
-
-extern void compute_node_accel2(
-	ELASTIC_SET *geom_set,
-	NODE *node,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	CURVE **c;
-	BOND *b;
-	double x_diff,len0,len,dir[MAXD],vect[MAXD];
-	POINT *p,*p_nb;
-	int i,j,dim = Dimension(node->interface);
-	double ks = geom_set->ks;
-	double kl = geom_set->kl;
-	double kg = geom_set->kg;
-	double mass;
-	double lambda_s = geom_set->lambda_s;
-	double lambda_l = geom_set->lambda_l;
-	double lambda_g = geom_set->lambda_g;
-
-	if (dim == 3)
-	{
-	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
-	    if (extra != NULL)
-	    {
-		if (extra->af_node_type == LOAD_NODE)
-		{
-	    	    Front *front = geom_set->front;
-	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	    	    mass = af_params->payload;
-		}
-		else if (extra->af_node_type == GORE_NODE)
-		    mass = geom_set->m_g;
-		else if (extra->af_node_type == STRING_NODE)
-		    mass = geom_set->m_l;
-	    }
-	    else
-            mass = geom_set->m_s;
-	}
-	else
-	    mass = geom_set->m_l;
-
-	for (i = 0; i < dim; ++i)
-	{
-	    x[*n][i] = Coords(node->posn)[i];
-	    v[*n][i] = node->posn->vel[i];
-	    f[*n][i] = 0.0;
-	}
-	for (c = node->out_curves; c && *c; ++c)
-	{
-	    b = (*c)->first;
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] - len0*b->dir0[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   += kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   += ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   += kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   += kl*vect[j]/mass;
-	    }
-	}
-	for (c = node->in_curves; c && *c; ++c)
-	{
-	    if (curve_in_pointer_list(*c,node->out_curves) && 
-		!is_closed_curve(*c)) 
-		continue;
-	    b = (*c)->last;
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
-				len0*b->dir0[j];
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   -= kl*vect[j]/mass;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   -= ks*vect[j]/mass;
-		    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    	    	f[*n][j]   -= kg*vect[j]/mass;
-		}
-		else
-		    f[*n][j]   -= kl*vect[j]/mass;
-	    }
-	}
-	if (dim == 3)
-	{
-	    BOND_TRI **btris;
-	    TRI **tris,*tri_list[500];
-	    int k,side,nt,num_tris;
-	    TRI *tri;
-
-	    num_tris = 0;
-	    p = node->posn;
-	    for (c = node->out_curves; c && *c; ++c)
-	    {
-		b = (*c)->first;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (c = node->in_curves; c && *c; ++c)
-	    {
-		b = (*c)->last;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (i = 0; i < num_tris; ++i)
-	    {
-		tri = tri_list[i];
-		for (side = 0; side < 3; ++side)
-		{
-		    if (p == Point_of_tri(tri)[side])
-		    {
-			if (is_side_bdry(tri,side))
-			    continue;
-			p_nb = Point_of_tri(tri)[(side+1)%3];
-			len0 = tri->side_length0[side];
-			len = separation(p,p_nb,3);
-			x_diff = len - len0;
-			for (k = 0; k < 3; ++k)
-            {
-                dir[k] = tri->side_dir0[side][k]; 
-                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - len0*dir[k];
-                f[*n][k] += ks*vect[k]/mass;
-            }
-		    }
-		}
-	    }
-	    if (!is_load_node(node))
-	    {
-	    	for (i = 0; i < 3; ++i)
-	    	    f[*n][i] -= lambda_s*v[*n][i]/mass;
-	    }
-	}
-	else
-	{
-	    for (i = 0; i < 3; ++i)
-	    	f[*n][i] -= lambda_l*v[*n][i]/mass;
-	}
-	(*n)++;
-}	/* end compute_node_accel2 */
-
-extern void compute_curve_accel2(
-	ELASTIC_SET *geom_set,
-	CURVE *curve,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,j;
-	double x_diff;
-	BOND *b;
-	double dir[MAXD],len0,vect[MAXD];
-	int dim = Dimension(curve->interface);
-	double kl,m_l,lambda_l,ks,lambda_s;
-
-	if (dim == 3)
-	{
-	    if (hsbdry_type(curve) == STRING_HSBDRY)
-	    {
-	    	kl = geom_set->kl;
-	    	m_l = geom_set->m_l;
-	    	lambda_l = geom_set->lambda_l;
-	    }
-	    else if (hsbdry_type(curve) == GORE_HSBDRY)
-	    {
-	    	kl = geom_set->kg;
-	    	m_l = geom_set->m_g;
-	    	lambda_l = geom_set->lambda_g;
-	    }
-	    else
-	    {
-	    	kl = geom_set->ks;
-	    	m_l = geom_set->m_s;
-	    	lambda_l = geom_set->lambda_s;
-	    }
-	    ks = geom_set->ks;
-	    lambda_s = geom_set->lambda_s;
-	}
-	else
-	{
-	    kl = geom_set->kl;
-	    m_l = geom_set->m_l;
-	    lambda_l = geom_set->lambda_l;
-	}
-	i = *n;
-	for (b = curve->first; b != curve->last; b = b->next)
-	{
-	    for (j = 0; j < dim; ++j)
-	    {
-	    	x[i][j] = Coords(b->end)[j];
-	    	v[i][j] = b->end->vel[j];
-		    f[i][j] = -lambda_l*v[i][j]/m_l;
-	    }
-	    i++;
-	}
-
-	i = *n;
-	for (b = curve->first; b != NULL; b = b->next)
-	{
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
-				len0*b->dir0[j];
-		if (b != curve->first)
-		{
-	    	    f[i-1][j]   += kl*vect[j]/m_l;
-		}
-		if (b != curve->last)
-		{
-	    	    f[i][j] -= kl*vect[j]/m_l;
-		}
-	    }
-	    if (b != curve->last) i++;
-	}
-
-	if (dim == 3)
-	{
-	    POINT *p,*p_nb;
-	    BOND_TRI **btris;
-	    TRI **tris;
-	    int j,k,side,nt;
-	    double length0,length;
-	    i = *n;
-	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				length0 = tris[j]->side_length0[side];
-				for (k = 0; k < 3; ++k)
-                        	{
-                            	    dir[k] = tris[j]->side_dir0[side][k]; 
-				    vect[k] = Coords(p_nb)[k] - Coords(p)[k]
-					- length0*dir[k];
-                            	    f[i][k] += ks*vect[k]/m_l;
-                        	}
-			    }
-			}
-		    }
-		}
-		i++;
-	    }
-	}
-	*n = i;
-}	/* end compute_curve_accel2 */
-
-extern void compute_surf_accel2(
-	ELASTIC_SET *geom_set,
-	SURFACE *surf,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	int j,k;
-	TRI *tri;
-	POINT *p;
-	int dim = 3;
-	double ks = geom_set->ks;
-	double m_s = geom_set->m_s;
-	double lambda_s = geom_set->lambda_s;
-
-	unsort_surf_point(surf);
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		for (k = 0; k < dim; ++k)
-		{
-		    x[*n][k] = Coords(p)[k];
-		    v[*n][k] = p->vel[k];
-		}
-	    	spring_force_at_point2(f[*n],p,tri,surf,ks);
-		for (k = 0; k < dim; ++k)
-		{
-		    f[*n][k] -= lambda_s*(v[*n][k]);
-		    f[*n][k] /= m_s;
-		}
-		sorted(p) = YES;
-	    	++(*n);
-	    }
-	}
-}	/* end compute_surf_accel2 */
-
-static void spring_force_at_point2(
-	double *f,
-	POINT *p,
-	TRI *tri,
-	SURFACE *surf,
-	double ks)
-{
-	TRI *tris[MAX_NUM_RING1];
-	int i,j,k,nt;
-	POINT *p_nb;
-	double length0,length,dir[3],vect[3];
-	
-	PointAndFirstRingTris(p,Hyper_surf_element(tri),Hyper_surf(surf),
-				&nt,tris);
-	for (k = 0; k < 3; ++k) f[k] = 0.0;
-	for (i = 0; i < nt; ++i)
-	{
-	    for (j = 0; j < 3; ++j)
-	    {
-		if (Point_of_tri(tris[i])[j] == p)
-		{
-		    length0 = tris[i]->side_length0[j];
-		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
-		    length = separation(p,p_nb,3);
-            for (k = 0; k < 3; ++k)
-		    {
-                dir[k] = tris[i]->side_dir0[j][k];
-                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
-                f[k] += ks*vect[k];
-		    }
-		    if (is_side_bdry(tris[i],(j+2)%3))
-		    {
-                (void) printf("Detect boundary "
-                    "in spring_force_at_point2()\n");
-                clean_up(ERROR);
-		    }
-		}
-	    }
-	}
-}	/* end spring_force_at_point2 */
-
-extern void compute_node_accel3(
-	ELASTIC_SET *geom_set,
-	NODE *node,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	CURVE **c;
-	BOND *b;
-	double x_diff,len0,len,dir[MAXD],vect[MAXD];
-	POINT *p,*p_nb;
-	int i,j,dim = Dimension(node->interface);
-	double ks = geom_set->ks;
-	double kl = geom_set->kl;
-	double m_s = geom_set->m_s;
-	double m_l = geom_set->m_l;
-	double lambda_s = geom_set->lambda_s;
-	double lambda_l = geom_set->lambda_l;
-	double payload;
-
-	if (dim == 3)
-	{
-	    if (is_load_node(node))
-	    {
-	    	Front *front = geom_set->front;
-	    	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-
-	    	payload = af_params->payload;
-	    }
-	}
-
-	for (i = 0; i < dim; ++i)
-	{
-	    x[*n][i] = Coords(node->posn)[i];
-	    v[*n][i] = node->posn->vel[i];
-	    f[*n][i] = 0.0;
-	}
-	for (c = node->out_curves; c && *c; ++c)
-	{
-	    b = (*c)->first;
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
-				/bond_length(b) - b->dir0[j]);
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   += kl*vect[j]/payload;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   += kl*vect[j]/m_s;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   += ks*vect[j]/m_s;
-		}
-		else
-		    f[*n][j]   += kl*vect[j]/m_l;
-	    }
-	}
-	for (c = node->in_curves; c && *c; ++c)
-	{
-	    b = (*c)->last;
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
-				/bond_length(b) - b->dir0[j]);
-		if (dim == 3)
-		{
-		    if (is_load_node(node) == YES)
-		    	f[*n][j]   -= kl*vect[j]/payload;
-		    else if (hsbdry_type(*c) == STRING_HSBDRY)
-	    	    	f[*n][j]   -= kl*vect[j]/m_s;
-		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    	    	f[*n][j]   -= ks*vect[j]/m_s;
-		}
-		else
-		    f[*n][j]   -= kl*vect[j]/m_l;
-	    }
-	}
-	if (dim == 3)
-	{
-	    BOND_TRI **btris;
-	    TRI **tris;
-	    int k,side,nt,ns;
-	    SURFACE *out_surfs[10];
-
-	    ns = 0;
-	    for (c = node->out_curves; c && *c; ++c)
-	    {
-		b = (*c)->first;
-		p = b->start;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    out_surfs[ns++] = (*btris)->surface;
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				len0 = tris[j]->side_length0[side];
-				len = separation(p,p_nb,3);
-	    			x_diff = len - len0; 
-				for (k = 0; k < 3; ++k)
-                {
-                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
-                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
-                    f[*n][k] += ks*vect[k]/m_s;
-                }
-			    }
-			}
-		    }
-		}
-	    }
-	    for (c = node->in_curves; c && *c; ++c)
-	    {
-		if (is_closed_curve(*c)) continue;
-		b = (*c)->last;
-		p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    boolean duplicate_surf = NO;
-		    for (j = 0; j < ns; ++j)
-			if ((*btris)->surface == out_surfs[j])
-			    duplicate_surf = YES;
-		    if (duplicate_surf == YES) continue;
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				len0 = tris[j]->side_length0[side];
-				len = separation(p,p_nb,3);
-				x_diff = len - len0;
-				for (k = 0; k < 3; ++k)
-                {
-                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
-                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
-                    f[*n][k] += ks*vect[k]/m_s;
-                }
-			    }
-			}
-		    }
-		}
-	    }
-	    if (!is_load_node(node))
-	    {
-	    	for (i = 0; i < 3; ++i)
-	    	    f[*n][i] -= lambda_s*v[*n][i]/m_s;
-	    }
-	}
-	else
-	{
-	    for (i = 0; i < 3; ++i)
-	    	f[*n][i] -= lambda_l*v[*n][i]/m_l;
-	}
-	(*n)++;
-}	/* end compute_node_accel3 */
-
-extern void compute_curve_accel3(
-	ELASTIC_SET *geom_set,
-	CURVE *curve,
-	double **f,
-	double **x,
-	double **v,
-	int *n)
-{
-	int i,j;
-	double x_diff;
-	BOND *b;
-	double dir[MAXD],len0,vect[MAXD];
-	int dim = Dimension(curve->interface);
-	double kl,m_l,lambda_l;
-
-	if (dim == 3)
-	{
-	    if (hsbdry_type(curve) == STRING_HSBDRY)
-	    {
-	    	kl = geom_set->kl;
-	    	m_l = geom_set->m_l;
-	    	lambda_l = geom_set->lambda_l;
-	    }
-	    else
-	    {
-	    	kl = geom_set->ks;
-	    	m_l = geom_set->m_s;
-	    	lambda_l = geom_set->lambda_s;
-	    }
-	}
-	else
-	{
-	    kl = geom_set->kl;
-	    m_l = geom_set->m_l;
-	    lambda_l = geom_set->lambda_l;
-	}
-	i = *n;
-	for (b = curve->first; b != curve->last; b = b->next)
-	{
-	    for (j = 0; j < dim; ++j)
-	    {
-	    	x[i][j] = Coords(b->end)[j];
-	    	v[i][j] = b->end->vel[j];
-            f[i][j] = -lambda_l*v[i][j]/m_l;
-	    }
-	    i++;
-	}
-
-	i = *n;
-	for (b = curve->first; b != NULL; b = b->next)
-	{
-	    len0 = bond_length0(b);
-	    for (j = 0; j < dim; ++j)
-	    {
-		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])/bond_length(b) - b->dir0[j]);
-		if (b != curve->first)
-		{
-	    	    f[i-1][j]   += kl*vect[j]/m_l;
-		}
-		if (b != curve->last)
-		{
-	    	    f[i][j] -= kl*vect[j]/m_l;
-		}
-	    }
-	    if (b != curve->last) i++;
-	}
-	printf("f[20] = %f %f\n",f[20][0],f[20][1]);
-
-	if (dim == 3)
-	{
-	    POINT *p,*p_nb;
-	    BOND_TRI **btris;
-	    TRI **tris;
-	    int j,k,side,nt;
-	    double length0,length;
-	    i = *n;
-	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				p_nb = Point_of_tri(tris[j])[(side+1)%3];
-				length0 = tris[j]->side_length0[side];
-				length = separation(p,p_nb,3);
-				for (k = 0; k < 3; ++k)
-                {
-                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
-                    vect[k] = length0*(dir[k] - tris[j]->side_dir0[side][k]);
-                    f[i][k] += kl*vect[k]/m_l;
-                }
-			    }
-			}
-		    }
-		}
-		i++;
-	    }
-	}
-	*n = i;
-}	/* end compute_curve_accel3 */
-
-static boolean curve_in_pointer_list(
-	CURVE *c,
-	CURVE **c_list)
-{
-	CURVE **pc;
-	if (c_list == NULL) return NO;
-	for (pc = c_list; pc && *pc; ++pc)
-	{
-	    if (c == *pc) return YES;
-	}
-	return NO;
-}	/* end curve_in_pointer_list */
 
 extern boolean is_registered_point(
 	SURFACE *surf,
@@ -1844,20 +662,6 @@ void elastic_set_propagate(Front* fr, double fr_dt)
 {
     Front* newfront;
    
-    /*
-    newfront = copy_front(fr);
-    set_size_of_intfc_state(size_of_state(fr->interf));
-    set_copy_intfc_states(YES);
-    newfront->interf = pp_copy_interface(fr->interf);
-    
-    if (newfront->interf == NULL)
-    {
-        (void) printf("\nERROR elastic_set_propagate(): \
-                unable to copy interface\n");
-        LOC(); clean_up(EXIT_FAILURE);
-    }
-    */
-
     if (pp_numnodes() > 1 && !debugging("collision_off"))
     {
         printf("\nERROR elastic_set_propagate(): \
@@ -1892,23 +696,19 @@ static void elastic_set_propagate_serial(
     }
 
     int n_sub = af_params->n_sub;
-    double ss_dt = fr_dt/af_params->n_sub;
+    double ss_dt = fr_dt/((double)n_sub);
 
-    if (fr_dt > geom_set.dt_tol)
+    double ss_dt_tol = af_params->ss_dt_relax*geom_set.dt_tol;
+    if (fr_dt > ss_dt_tol)
     {
-        n_sub = (int)(fr_dt/geom_set.dt_tol);
-        ss_dt = fr_dt/((double)n_sub);
-    }
-    else
-    {
-        n_sub = af_params->n_sub;
+        n_sub = (int)(fr_dt/ss_dt_tol);
         ss_dt = fr_dt/((double)n_sub);
     }
     geom_set.n_sub = n_sub;
     geom_set.dt = ss_dt;
     
-    printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d ss_dt = %f\n",
-            fr_dt, geom_set.dt_tol, n_sub, ss_dt);
+    printf("fr_dt = %f ss_dt_tol = %f n_sub = %d ss_dt = %f\n",
+            fr_dt, ss_dt_tol, n_sub, ss_dt);
 
     int nsub_per_collsn_step = af_params->collsn_step_max_nsub;
     int collsn_nsub = nsub_per_collsn_step;
@@ -1926,7 +726,7 @@ static void elastic_set_propagate_serial(
     
     *newfront = copy_front(fr);
     set_size_of_intfc_state(size_of_state(fr->interf));
-    set_copy_intfc_states(YES); //Why set to NO in struct_advance_front3d() ???
+    set_copy_intfc_states(YES);
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
@@ -1935,15 +735,18 @@ static void elastic_set_propagate_serial(
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
     }
+        //set_propagation_limits(front,*newfront); //TODO: Useful here?
+
 
     int status;
     for (int n = 1; n <= num_collsn_steps; ++n)
     {
         int cd_nsub = collsn_nsub;
+        
+        //adjust collsn_dt for first collision substep that may
+        //have a different number of n_sub (spring solver) substeps
         if (n == 1 && remainder_num_steps > 0)
         {
-            //adjust collsn_dt for first collision substep that may
-            //have a different number of n_sub (spring solver) substeps
             cd_nsub = collsn_nsub + remainder_num_steps;
         }
             
@@ -1964,63 +767,13 @@ static void elastic_set_propagate_serial(
                 collsn_dt);
     
         assign_interface_and_free_front(*newfront,sub_newfront);
-            //geom_set.front = nullptr;
     }
 
-    setSpecialNodeForce((*newfront)->interf,geom_set.kl);
-    compute_center_of_mass_velo(&geom_set);
-
-
-//BELOW JUST SAVED FOR REFERENCE
-//////////////////////////////////////////////////////////////////////////////////    
-
-    //const MAX_ITER = 5;
-    //const dt_frac = 0.5;
-    
-        //double start_dt = front->dt;
-    //TODO: Can't just reduce dt without reducing dt and
-    //      calling FT_Propagate() again.
-    //
-    //      Instead should reduce number of spring solver substeps
-    //      per call to collision handler, but still need to get to
-    //      the end of the timestep.
-    
-    /*
-    int count = 0;
-    while (status == MODIFY_TIME_STEP)
-    {
-        double reduced_dt = dt_frac*start_dt;
-        printf("\ndt_frac = %f reduced dt = %f\n",dt_frac,reduced_dt);
-        front->dt = reduced_dt;
-
-            // *front->max_scaled_propagation = 0.0;
-        status = elastic_set_propagate3d_serial(&geom_set,fr,newfront,fr_dt);
-
-        count++;
-        if (count >= MAX_ITER)
-        {
-            printf("\nERROR elastic_set_propagate_serial(): \
-                    modified step %d times\n",MAX_ITER);
-            LOC(); clean_up(EXIT_FAILURE);
-        }
-    }
-    */
-   
-    //printf("Final front->dt = %f\n",front->dt);
-
-            /*
-            if (status != GOOD_STEP)
-            {
-            //TODO: use if fail .. then retry
-                free_front(*newfront);
-                *newfront = NULL;
-            }
-            */
-//////////////////////////////////////////////////////////////////////////////////    
+    //setSpecialNodeForce((*newfront)->interf,geom_set.kl);
+    //compute_center_of_mass_velo(&geom_set);
 
 } /*end elastic_set_propagate_serial*/
 
-//TODO: Return error code if collision handling fails.
 static int elastic_set_propagate3d_serial(
         ELASTIC_SET* geom_set,
         Front* fr,
@@ -2028,25 +781,21 @@ static int elastic_set_propagate3d_serial(
         int collsn_nsub,
         double collsn_dt)
 {
+    int myid = pp_mynode();
+
     static const char *fname = "elastic_set_propagate3d_serial";
 	static int total_size = 0;
     static int size = 0;
     static int total_owner_size, owner_size, total_client_size, client_size;
 	static int *client_size_old, *client_size_new;
-    static SPRING_VERTEX *sv;
-    static boolean first = YES;
-    static GLOBAL_POINT **point_set;
-    static GLOBAL_POINT *point_set_store;
-	static GLOBAL_POINT **client_point_set_store;
-    
+
     AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
-    int i,j,k;
-    int dim = FT_Dimension();
-    long max_point_gindex = fr->interf->max_point_gindex;
 	int owner_id = af_params->node_id[0];
-    int myid = pp_mynode();
+    int dim = FT_Dimension();
+
+    long max_point_gindex = fr->interf->max_point_gindex;
 	int gindex;
-    INTERFACE *elastic_intfc = nullptr;
+    
 	double *L = fr->rect_grid->L;
 	double *U = fr->rect_grid->U;
 	double *h = fr->rect_grid->h;
@@ -2075,10 +824,21 @@ static int elastic_set_propagate3d_serial(
     }
         //set_propagation_limits(front,*newfront); //TODO: Useful here?
 
+    
     geom_set->front = *newfront;
 
+
+    static SPRING_VERTEX *sv;
+    static GLOBAL_POINT **point_set;
+    static GLOBAL_POINT *point_set_store;
+	static GLOBAL_POINT **client_point_set_store;
+    
+    INTERFACE *elastic_intfc = nullptr;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
     //TODO: Move this into separate intitialization function that is called
     //      in the level above this function (in its calling function)/
+    static boolean first = YES;
 	if (first)
 	{
 
@@ -2092,14 +852,13 @@ static int elastic_set_propagate3d_serial(
 
 	    FT_VectorMemoryAlloc((POINTER*)&point_set,max_point_gindex,sizeof(GLOBAL_POINT*));
 	    
-        for (i = 0; i < max_point_gindex; ++i)
+        for (int i = 0; i < max_point_gindex; ++i)
 		    point_set[i] = NULL;
 
 	    if (pp_numnodes() > 1)
 	    {
             int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
             elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
-            
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
 	    }
 	    else
@@ -2121,8 +880,11 @@ static int elastic_set_propagate3d_serial(
             FT_VectorMemoryAlloc((POINTER*)&client_point_set_store,
                     pp_numnodes(),sizeof(GLOBAL_POINT*));
 
-            for (i = 0; i < pp_numnodes(); i++)
-                client_size_old[i] = client_size_new[i] = 0;
+            for (int i = 0; i < pp_numnodes(); i++)
+            {
+                client_size_old[i] = 0;
+                client_size_new[i] = 0;
+            }
 
             assembleParachuteSet(elastic_intfc,geom_set);
             
@@ -2151,6 +913,8 @@ static int elastic_set_propagate3d_serial(
         stop_clock("set_data");
 	    first = NO;
 	}
+    //end initialization of point_set and sv array etc.
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
 	elastic_intfc = (*newfront)->interf;
 
@@ -2183,8 +947,11 @@ static int elastic_set_propagate3d_serial(
             FT_VectorMemoryAlloc((POINTER*)&point_set_store,total_size,sizeof(GLOBAL_POINT));
             FT_VectorMemoryAlloc((POINTER*)&sv,size,sizeof(SPRING_VERTEX));
 	    }
-	    for (i = 0; i < max_point_gindex; ++i)
-                point_set[i] = NULL;
+
+	    for (int i = 0; i < max_point_gindex; ++i)
+        {
+            point_set[i] = nullptr;
+        }
 	    
         link_point_set(geom_set,point_set,point_set_store);
 	    count_vertex_neighbors(geom_set,sv);
@@ -2210,8 +977,6 @@ static int elastic_set_propagate3d_serial(
     FABRIC_COLLISION_PARAMS collsn_params = getFabricCollisionParams(*newfront);
     fabric_manager.setCollisionParams(collsn_params);
     fabric_manager.setCollisionTimeStep(collsn_dt);
-    
-        //CollisionSolver3d* collision_solver = nullptr;
 
     if (myid == owner_id)
 	{
@@ -2220,12 +985,14 @@ static int elastic_set_propagate3d_serial(
         //write to GLOBAL_POINT** point_set
         get_point_set_from(geom_set,point_set);
         
-	    for (i = 0; i < pp_numnodes(); i++)
+	    for (int i = 0; i < pp_numnodes(); i++)
 	    {
             if (i == myid) continue;
+            
             pp_recv(5,i,client_L,MAXD*sizeof(double));
             pp_recv(6,i,client_U,MAXD*sizeof(double));
-            pp_recv(1,i,client_size_new+i,sizeof(int));
+            pp_recv(1,i,client_size_new + i,sizeof(int));
+            
             if (client_size_new[i] > client_size_old[i])
             {
                 client_size_old[i] = client_size_new[i];
@@ -2244,21 +1011,20 @@ static int elastic_set_propagate3d_serial(
 	    }
     
         
-        //spring solver
+        //compute candidate positions and velocities with spring solver
         double ss_dt = geom_set->dt;
         spring_solver_RK4(sv,dim,size,collsn_nsub,ss_dt);
 
         
         // Owner send and patch point_set_store from other processors
-	    for (i = 0; i < pp_numnodes(); i++)
+	    for (int i = 0; i < pp_numnodes(); i++)
         {
             if (i == myid) continue;
-            copy_to_client_point_set(point_set,
-                        client_point_set_store[i],client_size_new[i]);
-            pp_send(3,client_point_set_store[i],
-                        client_size_new[i]*sizeof(GLOBAL_POINT),i);
+            copy_to_client_point_set(point_set, client_point_set_store[i], client_size_new[i]);
+            pp_send(3, client_point_set_store[i], client_size_new[i]*sizeof(GLOBAL_POINT),i);
         }
-	}
+	}//owner_id
+
 
     if (myid != owner_id)
     {
@@ -2269,13 +1035,10 @@ static int elastic_set_propagate3d_serial(
     put_point_set_to(geom_set,point_set);
 	
     
-    //TODO: setSpecialNodeForce() SETS BOND LENGTH!
-    //      This is a nontrivial side effect that is not reflected
-    //      in the name of the function.
-
-    // Calculate the real force on load_node and rg_string_node
+    //TODO: What about the weight of the mass -- not accounted for in setSpecialNodeForce() ???
     //
-                //setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    // Calculate the real force on load_node and rg_string_node
+    setSpecialNodeForce(elastic_intfc,geom_set->kl);
 
 	set_vertex_impulse(geom_set,point_set);
 	set_geomset_velocity(geom_set,point_set);
@@ -2292,12 +1055,9 @@ static int elastic_set_propagate3d_serial(
             try
             {
                 fabric_manager.resolveCollisionSubstep();
-                    //collision_solver->resolveCollisionSubstep();
             }
             catch (...)
             {
-                //delete collision_solver;
-                
                 free_front(*newfront);
                 *newfront = nullptr;
                 
@@ -2310,6 +1070,8 @@ static int elastic_set_propagate3d_serial(
                 //TEMPORARY: until we have fixed nsub_per_collsn_step
                 //           working correctly, then we can try time step
                 //           modification...
+                //
+                //TODO: Or compute intersection???
                 printf("\nERROR elastic_set_propagate3d_serial(): \
                         resolve_collision() failed!\n");
                 LOC(); clean_up(EXIT_FAILURE);
@@ -2319,8 +1081,8 @@ static int elastic_set_propagate3d_serial(
         }
     }
     
-    //setSpecialNodeForce(elastic_intfc,geom_set->kl);
-    //compute_center_of_mass_velo(geom_set);
+    setSpecialNodeForce(elastic_intfc,geom_set->kl);
+        //compute_center_of_mass_velo(geom_set);
 
 
     //TODO: Sync interfaces after collision handling?
@@ -2337,15 +1099,6 @@ static int elastic_set_propagate3d_serial(
 
 	if (debugging("trace"))
 	    (void) printf("Leaving fourth_order_elastic_set_propagate3d_serial()\n");
-
-    /*
-    //TODO: Use this to implement inflation assist functionality
-    //
-	if (front->_EnforceFlowSpecifedStates != NULL)
-	{
-	    (*front->_EnforceFlowSpecifedStates)(*newfront);
-	}
-    */
 
     status = GOOD_STEP;
     return status;
@@ -4081,15 +2834,15 @@ static void setNodeVelocity(
 	switch(dim)
 	{
 	case 2:
-	    new_setNodeVelocity2d(geom_set,node,point_set);
+	    setNodeVelocity2d(geom_set,node,point_set);
 	    return;
 	case 3:
-	    new_setNodeVelocity3d(geom_set,node,point_set);
+	    setNodeVelocity3d(geom_set,node,point_set);
 	    return;
 	}
 }	/* end setNodeVelocity */
 
-static void new_setNodeVelocity2d(
+static void setNodeVelocity2d(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	GLOBAL_POINT **point_set)
@@ -4123,7 +2876,7 @@ static void new_setNodeVelocity2d(
 	}
 }	/* end setNodeVelocity2d */
 
-static void new_setNodeVelocity3d(
+static void setNodeVelocity3d(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	GLOBAL_POINT **point_set)
@@ -4336,7 +3089,6 @@ extern void collectNodeExtra(
 	}
 }	/* end collectNodeExtra */
 
-
 static void setCollisionFreePoints3d(INTERFACE* intfc)
 {
     POINT *p;
@@ -4543,8 +3295,7 @@ extern void setSpecialNodeForce(
         }
         if (k != dim) continue;
 
-	    for (i = 0; i < dim; ++i)
-            f[i] = 0.0;
+	    for (i = 0; i < dim; ++i) f[i] = 0.0;
 	    
         node_out_curve_loop(*n,c)
 	    {
@@ -4587,6 +3338,8 @@ extern void setSpecialNodeForce(
                 f[i] += kl*dL*vec[i];
             }
 	    }
+
+        //TODO: What about the weight of the mass?
 	    
         //The update
         for (i = 0; i < dim; ++i)

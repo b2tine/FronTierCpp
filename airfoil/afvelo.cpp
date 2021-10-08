@@ -23,23 +23,37 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <airfoil.h>
 
-typedef struct {
+struct VERTICAL_PARAMS
+{
 	double cen[MAXD];
 	double v0;
 	double stop_time;
-} VERTICAL_PARAMS;
+};
 
-typedef struct {
+struct RANDOMV_PARAMS
+{
 	double v0[MAXD];
 	double stop_time;
-} RANDOMV_PARAMS;
+};
 
-typedef struct {
+struct FIXAREA_PARAMS
+{
 	int num_pts;
 	int *global_ids;
 	double vel[MAXD];
     double stop_time;
-} FIXAREA_PARAMS;
+};
+
+struct SHAPE_PARAMS 
+{
+	int shape_id;
+	double L[2];
+	double U[2];
+	double cen[2];
+	double R[2];
+};
+
+static boolean within_shape(SHAPE_PARAMS,double*);
 
 static void initVelocityFunc(FILE*,Front*);
 static int zero_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
@@ -55,49 +69,11 @@ static void restart_fixarea_params(Front*,FILE*,FIXAREA_PARAMS*);
 static void init_fixpoint_params(Front*,FILE*,FIXAREA_PARAMS*);
 
 static void convert_to_point_mass(Front*, AF_PARAMS*);
+static int countSurfPoints(INTERFACE* intfc);
+static int countStringPoints(INTERFACE* intfc, boolean is_parachute_system);
+
 static void checkSetGoreNodes(INTERFACE*);
 static void set_gore_node(NODE*);
-
-
-int countSurfPoints(INTERFACE* intfc)
-{
-	int surf_count = 0;
-	int num_fabric_pts = 0;
-	
-    for (SURFACE** s = intfc->surfaces; s && *s; ++s)
-    {
-        if (wave_type(*s) == ELASTIC_BOUNDARY)
-        {
-            num_fabric_pts += I_NumOfSurfPoints(*s);
-            surf_count++;
-        }
-    }
-	
-    return num_fabric_pts;
-}
-
-//TODO: Need to adapt for general case -- not just for pointmass
-//      and single attachement point on forebody for all strings
-int countStringPoints(INTERFACE* intfc, boolean is_parachute_system)
-{
-	int num_str_pts = 0;
-        for (CURVE** c = intfc->curves; c && *c; ++c)
-        {
-            if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else
-		continue;
-	    if (is_parachute_system == YES)
-		num_str_pts -= 2; //exclude curve boundaries
-        }
-	
-    if (is_parachute_system == YES)
-	    num_str_pts += 1; //load node
-	
-    return num_str_pts;
-}
 
 void setMotionParams(Front* front)
 {
@@ -265,6 +241,13 @@ void setFabricPropagators(Front* front)
         (void) printf("%d\n",af_params->n_sub);
     }
 
+	af_params->ss_dt_relax = 1.0;
+	if (CursorAfterStringOpt(infile,"Enter spring solver time step relaxation parameter:"))
+    {
+        fscanf(infile,"%lf",&af_params->ss_dt_relax);
+        (void) printf("%f\n",af_params->ss_dt_relax);
+    }
+    
     fclose(infile);
 }
 
@@ -657,6 +640,50 @@ void setFabricParams(Front* front)
 	fclose(infile);
 }	/* end setFabricParams */
 
+
+static int countSurfPoints(INTERFACE* intfc)
+{
+	int surf_count = 0;
+	int num_fabric_pts = 0;
+	
+    for (SURFACE** s = intfc->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == ELASTIC_BOUNDARY)
+        {
+            num_fabric_pts += I_NumOfSurfPoints(*s);
+            surf_count++;
+        }
+    }
+	
+    return num_fabric_pts;
+}
+
+//TODO: Need to adapt for general case -- not just for pointmass
+//      and single attachement point on forebody for all strings
+static int countStringPoints(INTERFACE* intfc, boolean is_parachute_system)
+{
+	int num_str_pts = 0;
+    for (CURVE** c = intfc->curves; c && *c; ++c)
+    {
+        if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else
+            continue;
+    
+        if (is_parachute_system == YES)
+            num_str_pts -= 2; //exclude curve boundaries
+    }
+	
+
+    //TODO: account for non point load runs -- add number of rg_string_nodes instead
+    if (is_parachute_system == YES)
+	    num_str_pts += 1; //load node
+	
+    return num_str_pts;
+}
+
 static void initVelocityFunc(
 	FILE *infile,
 	Front *front)
@@ -1008,7 +1035,6 @@ static int toroidal_velo(
 	return YES;
 }       /* end toroidal_velo */
 
-
 static int parabolic_velo(
         POINTER params,
         Front *front,
@@ -1061,17 +1087,6 @@ static int singular_velo(
 	    vel[dim-1] = 0.0;
 	return YES;
 }	/* end sigular_velo */
-
-struct _SHAPE_PARAMS {
-	int shape_id;
-	double L[2];
-	double U[2];
-	double cen[2];
-	double R[2];
-};
-typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
-
-static boolean within_shape(SHAPE_PARAMS,double*);
 
 static void init_fixarea_params(
 	Front *front,
@@ -1408,7 +1423,7 @@ static void init_fixpoint_params(
 	    	surf->extra = (POINTER)registered_pts;
 	    }
         }
-}	/* end init_fixarea_params */
+}	/* end init_fixpoint_params */
 
 static int marker_velo(
         POINTER params,
@@ -1535,51 +1550,6 @@ extern void zeroFrontVelocity(Front *front)
 	}
 }	/* end resetFrontVelocity */
 
-static void checkSetGoreNodes(
-	INTERFACE *intfc)
-{
-	CURVE **c;
-	intfc_curve_loop(intfc,c)
-	{
-	    if (hsbdry_type(*c) == GORE_HSBDRY)
-	    {
-            set_gore_node((*c)->start);
-            set_gore_node((*c)->end);
-	    }
-	}
-}	/* end checkSetGoreNodes */
-
-
-static void set_gore_node(
-	NODE *n)
-{
-	static AF_NODE_EXTRA *extra;
-	boolean is_gore_node = NO;
-	CURVE **c;
-
-	for (c = n->in_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return;
-	    else if (hsbdry_type(*c) == GORE_HSBDRY)
-		is_gore_node = YES;
-	for (c = n->out_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return;
-	    else if (hsbdry_type(*c) == GORE_HSBDRY)
-		is_gore_node = YES;
-	if (!is_gore_node) return;
-	if (n->extra == NULL)
-	{
-	    if (extra ==  NULL)
-	    {
-	    	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-		extra->af_node_type = GORE_NODE;
-	    }
-	    n->extra = (POINTER)extra;
-	    n->size_of_extra = sizeof(AF_NODE_EXTRA);
-	}
-}	/* end set_gore_node */
-
 //TODO: check if general enough for our purposes or is just a hardcoded special case...
 static void convert_to_point_mass(
         Front *front,
@@ -1667,4 +1637,51 @@ static void convert_to_point_mass(
             break;
         }
 }       /* end convert_to_point_mass */
+
+//TODO: Should move to afsetd.cpp
+static void checkSetGoreNodes(
+	INTERFACE *intfc)
+{
+	CURVE **c;
+	intfc_curve_loop(intfc,c)
+	{
+	    if (hsbdry_type(*c) == GORE_HSBDRY)
+	    {
+            set_gore_node((*c)->start);
+            set_gore_node((*c)->end);
+	    }
+	}
+}	/* end checkSetGoreNodes */
+
+
+//TODO: Should move to afsetd.cpp
+static void set_gore_node(
+	NODE *n)
+{
+	static AF_NODE_EXTRA *extra;
+	boolean is_gore_node = NO;
+	CURVE **c;
+
+	for (c = n->in_curves; c && *c; ++c)
+	    if (hsbdry_type(*c) == STRING_HSBDRY)
+		return;
+	    else if (hsbdry_type(*c) == GORE_HSBDRY)
+		is_gore_node = YES;
+	for (c = n->out_curves; c && *c; ++c)
+	    if (hsbdry_type(*c) == STRING_HSBDRY)
+		return;
+	    else if (hsbdry_type(*c) == GORE_HSBDRY)
+		is_gore_node = YES;
+	if (!is_gore_node) return;
+	if (n->extra == NULL)
+	{
+	    if (extra ==  NULL)
+	    {
+	    	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+		extra->af_node_type = GORE_NODE;
+	    }
+	    n->extra = (POINTER)extra;
+	    n->size_of_extra = sizeof(AF_NODE_EXTRA);
+	}
+}	/* end set_gore_node */
 

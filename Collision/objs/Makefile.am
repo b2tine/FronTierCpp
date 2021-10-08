@@ -16,8 +16,6 @@ noinst_LTLIBRARIES = libCollision.la
 
 
 libCollision_la_SOURCES = \
-../FabricManager.h \
-../FabricManager.cpp \
 ../collid.h \
 ../dcollid.cpp \
 ../dcollid3d.cpp \

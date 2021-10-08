@@ -374,7 +374,7 @@ extern void airfoil_curve_propagate(
 		case PASSIVE_HSBDRY:
 		    return passive_curve_propagation(front,wave,oldc,newc,dt);
 		default:
-	    	    return;
+            return;
 	    }
 	}
 	else if (dim == 2)
@@ -1217,6 +1217,7 @@ static void load_node_propagate(
 	int i,dim = FT_Dimension();
 
 	if (!is_load_node(oldn)) return;
+
 	oldp = oldn->posn;
 	newp = newn->posn;
 	sl = (STATE*)left_state(oldp);
@@ -1241,7 +1242,6 @@ static void load_node_propagate(
             vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
             vec[i] /= bond_length(b);
             f[i] += kl*dL*vec[i];
-                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
 	    }
 	}
 	node_in_curve_loop(oldn,c)
@@ -1254,7 +1254,6 @@ static void load_node_propagate(
             vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
             vec[i] /= bond_length(b);
             f[i] += kl*dL*vec[i];
-                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
 	    }
 	}
 
@@ -1486,20 +1485,20 @@ extern int airfoil_node_propagate(
 	NODE *oldn,
 	NODE *newn,
 	RPROBLEM        **rp,
-        double          dt,
-        double          *dt_frac,
-        NODE_FLAG       flag,
-        POINTER         user)
+    double          dt,
+    double          *dt_frac,
+    NODE_FLAG       flag,
+    POINTER         user)
 {
 	if (is_load_node(oldn))
-	    load_node_propagate(front,oldn,newn,dt);
-	else if (is_rg_string_node(oldn))
-	    rg_string_node_propagate(front,oldn,newn,dt);
-	else
-	    return GOOD_NODE;
+    {
+        load_node_propagate(front,oldn,newn,dt);
+    }
+    else if (is_rg_string_node(oldn))
+    {
+        rg_string_node_propagate(front,oldn,newn,dt);
+    }
 
-    //TODO: return a meaningful exit status for
-    //      time step modification in propagate_node_points()
 	return GOOD_NODE;
 }	/* end airfoil_node_propagate */
 
@@ -1547,6 +1546,8 @@ static void passive_curve_propagation(
 		for (i = 0; i < dim; ++i)
 		    btrist->vel[i] = oldst->vel[i];
 	    }
+
+        //NOTE: Appears to call iFluid contact_point_propagate()
             ifluid_point_propagate(front,wave,oldp,newp,
                         Hyper_surf_element(oldb->_btris[0]->tri),
                         Hyper_surf(oldb->_btris[0]->surface),dt,V);

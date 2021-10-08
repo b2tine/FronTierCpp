@@ -282,7 +282,9 @@ void AABBTree::updatePointMap(const std::vector<CD_HSE*>& hseList)
     {
          std::vector<long> ids;
          for (int i = 0; i < it->num_pts(); i++) 
+         {
               ids.push_back(it->Point_of_hse(i)->global_index);
+         }
          vhMap.insert({ids, it});
     }
 }

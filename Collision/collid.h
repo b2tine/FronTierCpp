@@ -17,7 +17,10 @@ const double ROUND_EPS = DBL_EPSILON;
 struct StrainStats
 {
     int n_edges;
+    int n_edges_tensile;
+    int n_edges_compress;
     double total_edge_length;
+    double total_vel_violation;
 };
 
 
@@ -255,19 +258,20 @@ private:
 
     void limitStrainVelJAC();
     void limitStrainVelGS();
-    int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
+    StrainStats computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     
-    void applyStrainImpulses(MotionState mstate);
+    void applyStrainImpulses(std::vector<CD_HSE*>& list, MotionState mstate);
 
 	void computeMaxSpeed();
 	void computeAverageVelocity();
     void resetPositionCoordinates();
-	void updateFinalPosition();
-	void updateFinalVelocity();
-    void updateFinalStates();
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
+	
+    void updateFinalStates();
+    void updateFinalPosition();
+	void updateFinalVelocity();
 
 	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
 	void computeImpactZoneJac(std::vector<CD_HSE*>& list);

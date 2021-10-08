@@ -1372,7 +1372,7 @@ LOCAL void propagate_surface_points(
 	    {
 		double *h = front->rect_grid->h;
 		double dist = distance_between_positions(Coords(oldp),
-					Coords(newp),3)/h[0];//TODO: Should prob use hmin
+					Coords(newp),3)/h[0];//TODO: Should prob use hmin or hmax
 		if (front->max_scaled_prop_dist < dist)
 		    front->max_scaled_prop_dist = dist;
 	    }

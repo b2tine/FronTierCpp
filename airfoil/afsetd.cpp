@@ -23,6 +23,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
+#define MAX_NUM_RING1 30
+
+static void count_surf_neighbors(SURFACE*,SPRING_VERTEX*,int*);
+static void count_curve_neighbors(CURVE*,SPRING_VERTEX*,int*);
+static void count_node_neighbors(NODE*,SPRING_VERTEX*,int*);
+
 static void link_surf_point_set(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**,
 				GLOBAL_POINT*,int*);
 static void link_curve_point_set(ELASTIC_SET*,CURVE*,GLOBAL_POINT**,
@@ -38,10 +44,6 @@ static void surf_put_point_set_to(SURFACE*,GLOBAL_POINT**);
 static void curve_put_point_set_to(CURVE*,GLOBAL_POINT**);
 static void node_put_point_set_to(NODE*,GLOBAL_POINT**);
 
-static void count_surf_neighbors(SURFACE*,SPRING_VERTEX*,int*);
-static void count_curve_neighbors(CURVE*,SPRING_VERTEX*,int*);
-static void count_node_neighbors(NODE*,SPRING_VERTEX*,int*);
-
 static void get_point_value_from(POINT*,GLOBAL_POINT**);
 static void put_point_value_to(POINT*,GLOBAL_POINT**);
 static void set_node_impulse(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
@@ -52,87 +54,88 @@ static void reorder_string_curves(NODE*);
 static void assembleParachuteSet2d(INTERFACE*,ELASTIC_SET*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
-//static void computeElasticForce(SPRING_VERTEX*, double*);
+static void set_equilibrium_mesh2d(Front*);
+static void set_equilibrium_mesh3d(Front*);
 
-#define 	MAX_NUM_RING1		30
 
 static void count_node_neighbors(
 	NODE *node,
 	SPRING_VERTEX *sv,
 	int *n)
 {
-	CURVE **c;
-        BOND *b;
-	POINT *p,*p_nb;
-	int num_nb;
-	int i,j,dim;
+    int num_nb = 0;
+	int dim = Dimension(node->interface);
 
-	dim = Dimension(node->interface);
-	num_nb = 0;
+	CURVE **c;
 	for (c = node->out_curves; c && *c; ++c)
 	{
 	    if (dim == 3 && hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
 	    num_nb++;
 	}
-	for (c = node->in_curves; c && *c; ++c)
+	
+    for (c = node->in_curves; c && *c; ++c)
 	{
 	    if (dim == 3 && hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
 	    num_nb++;
 	}
+
 	sv[*n].ix = node->posn->indx = *n;
-	if (dim == 3)
+	
+    if (dim == 3)
 	{
 	    BOND_TRI **btris;
 	    TRI **tris,*tri_list[500];
-	    int k,side,nt,num_tris;
 	    TRI *tri;
 
-	    num_tris = 0;
-	    p = node->posn;
+	    int num_tris = 0;
+	    POINT *p = node->posn;
+
 	    for (c = node->out_curves; c && *c; ++c)
-	    {
-	    	if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->first;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (c = node->in_curves; c && *c; ++c)
-	    {
-	    	if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
-		b = (*c)->last;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			if (!pointer_in_list((POINTER)tris[j],num_tris,
-					(POINTER*)tri_list))
-			    tri_list[num_tris++] = tris[j];
-		    }
-		}
-	    }
-	    for (i = 0; i < num_tris; ++i)
-	    {
-		tri = tri_list[i];
-		for (side = 0; side < 3; ++side)
-		{
-		    if (p == Point_of_tri(tri)[side])
-		    {
-			if (is_side_bdry(tri,side))
-			    continue;
-			num_nb++;
-		    }
-		}
-	    }
+        {
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+
+            BOND* b = (*c)->first;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                int nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (int j = 0; j < nt; ++j)
+                {
+                    if (!pointer_in_list((POINTER)tris[j],num_tris,(POINTER*)tri_list))
+                        tri_list[num_tris++] = tris[j];
+                }
+            }
+        }
+	    
+        for (c = node->in_curves; c && *c; ++c)
+        {
+            if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+    
+            BOND* b = (*c)->last;
+            for (btris = Btris(b); btris && *btris; ++btris)
+            {
+                int nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (int j = 0; j < nt; ++j)
+                {
+                    if (!pointer_in_list((POINTER)tris[j],num_tris,(POINTER*)tri_list))
+                        tri_list[num_tris++] = tris[j];
+                }
+            }
+        }
+	    
+        for (int i = 0; i < num_tris; ++i)
+        {
+            tri = tri_list[i];
+            for (int side = 0; side < 3; ++side)
+            {
+                if (p == Point_of_tri(tri)[side])
+                {
+                    if (is_side_bdry(tri,side)) continue;
+                    num_nb++;
+                }
+            }
+        }
 	}
+
 	sv[*n].num_nb = num_nb;
 	(*n)++;
 }	/* end count_node_neighbors */
@@ -142,60 +145,57 @@ static void count_curve_neighbors(
 	SPRING_VERTEX *sv,
 	int *n)
 {
-	int i,j;
-	BOND *b;
-	int dim = Dimension(curve->interface);
-
 	if (curve->first == curve->last) return; // no interior point
 
-	i = *n;
+	int i = *n;
+	
+    BOND *b;
 	for (b = curve->first; b != curve->last; b = b->next)
 	{
 	    sv[i].num_nb = 2;
 	    i++;
 	}
 
+	int dim = Dimension(curve->interface);
 	if (dim == 2)
 	{
 	    i = *n;
 	    for (b = curve->first; b != curve->last; b = b->next)
 	    {
-		POINT *p = b->end;
-		sv[i].ix = p->indx = i;
-		i++;
+            POINT *p = b->end;
+            sv[i].ix = p->indx = i;
+            i++;
 	    }
 	}
 
 	if (dim == 3)
 	{
-	    POINT *p,*p_nb;
-	    BOND_TRI **btris;
-	    TRI **tris;
-	    int j,side,nt;
 	    i = *n;
 	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		p = b->end;
-		for (btris = Btris(b); btris && *btris; ++btris)
-		{
-		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
-		    for (j = 0; j < nt; ++j)
-		    {
-			for (side = 0; side < 3; ++side)
-			{
-			    if (p == Point_of_tri(tris[j])[side])
-			    {
-				if (is_side_bdry(tris[j],side))
-				    continue;
-				sv[i].num_nb++;
-			    }
-			}
-		    }
-		}
-		sv[i].ix = p->indx = i;
-		i++;
-	    }
+        {
+            POINT* p = b->end;
+            for (BOND_TRI** btris = Btris(b); btris && *btris; ++btris)
+            {
+	            TRI **tris;
+                int nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+                for (int j = 0; j < nt; ++j)
+                {
+                    for (int side = 0; side < 3; ++side)
+                    {
+                        if (p == Point_of_tri(tris[j])[side])
+                        {
+                            if (is_side_bdry(tris[j],side)) continue;
+                            sv[i].num_nb++;
+                        }
+                    }
+                }
+            }
+
+            sv[i].ix = p->indx = i;
+            i++;
+        }
 	}
+
 	*n = i;
 }	/* end count_curve_neighbors */
 
@@ -204,29 +204,26 @@ static void count_surf_neighbors(
 	SPRING_VERTEX *sv,
 	int *n)
 {
-	int i,j,k,nt;
-	TRI *tri;
-	POINT *p;
-	int dim = 3;
-	TRI *tris[MAX_NUM_RING1];
-
-	unsort_surf_point(surf);
-	i = *n;
-	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
-			tri = tri->next)
+    int i = *n;
+    TRI *tris[MAX_NUM_RING1];
+	
+    unsort_surf_point(surf);
+	for (TRI* tri = first_tri(surf); !at_end_of_tri_list(tri,surf); tri = tri->next)
 	{
-	    for (j = 0; j < 3; ++j)
+	    for (int j = 0; j < 3; ++j)
 	    {
-		p = Point_of_tri(tri)[j];
-		if (sorted(p) || Boundary_point(p)) continue;
-		PointAndFirstRingTris(p,Hyper_surf_element(tri),
-			Hyper_surf(surf),&nt,tris);
-		sv[i].num_nb = nt;
-		sv[i].ix = p->indx = i;
-	    	++i;
-		sorted(p) = YES;
+            POINT* p = Point_of_tri(tri)[j];
+            if (sorted(p) || Boundary_point(p)) continue;
+            sorted(p) = YES;
+            
+            int nt;
+            PointAndFirstRingTris(p,Hyper_surf_element(tri),Hyper_surf(surf),&nt,tris);
+            sv[i].num_nb = nt;
+            sv[i].ix = p->indx = i;
+            i++;
 	    }
 	}
+
 	*n = i;
 }	/* end count_surf_neighbors */
 
@@ -236,14 +233,13 @@ extern void set_spring_vertex_memory(
 {
 	for (int i = 0; i < size; ++i)
 	{
-	    if (sv[i].x_nb != NULL)
+	    if (sv[i].x_nb != nullptr)
         {
 		    FT_FreeThese(5, sv[i].x_nb, sv[i].v_nb, sv[i].k,
                     sv[i].len0, sv[i].ix_nb);
         }
 
 	    int num_nb = sv[i].num_nb;
-
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].x_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].v_nb,num_nb,sizeof(double*));
 	    FT_VectorMemoryAlloc((POINTER*)&sv[i].k,num_nb,sizeof(double));
@@ -252,7 +248,9 @@ extern void set_spring_vertex_memory(
 	    
 	    // reset external acceleration
         for (int j = 0; j < MAXD; ++j)
+        {
 		    sv[i].ext_accel[j] = 0.0;
+        }
 	}
 }	/* end set_spring_vertex_memory */
 
@@ -283,17 +281,14 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
 ///////////////////////////////////////////
         */
 
-        //TODO: Maybe we should allow some degress of compressive strain?
+        double dL = len - sv->len0[j];
         
         //zero compressive stress
-        double dL = len - sv->len0[j];
         if (dL <= 0.0) continue;
 
 	    for (int k = 0; k < dim; ++k)
 	    {
             accel[k] += sv->k[j]*dL*vec[k]/len/sv->m;
-            //accel[k] += sv->k[j]*(len - sv->len0[j])*vec[k]/len/sv->m;
-            //accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m;
 	    }
 	}
 
@@ -877,11 +872,13 @@ extern void set_node_spring_vertex(
                 //TODO: Is this being set correctly?
                 Front *front = geom_set->front;
                 AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+                    
                 mass = af_params->payload;
-                //TODO: If multiple RG_STRING_NODE nodes,
-                //      should the mass be a fraction of the total
-                //      payload (which is the mass of the RGB)?
-                //      i.e. mass = total_mass(hs)/(double)num_rg_string_nodes;
+
+                if (extra->af_node_type == RG_STRING_NODE)
+                {
+                    mass = af_params->payload/af_params->num_rg_string_nodes;
+                }
             }
             else if (extra->af_node_type == GORE_NODE)
                 mass = geom_set->m_g;
@@ -2144,4 +2141,292 @@ static void set_surf_impulse(
 	    }
 	}
 }	/* end set_surf_impulse */
+
+extern void set_equilibrium_mesh(
+	Front *front)
+{
+	switch (front->rect_grid->dim)
+	{
+	case 2:
+	    set_equilibrium_mesh2d(front);
+	    return;
+	case 3:
+	    set_equilibrium_mesh3d(front);
+	    return;
+	}
+}	/* end set_equilibrium_mesh */
+
+static void set_equilibrium_mesh2d(
+	Front *front)
+{
+	CURVE **c,*curve;
+	BOND *b;
+	short unsigned int seed[3] = {2,72,7172};
+	double len0,total_length = 0.0;
+	int i,n = 0;
+	INTERFACE *intfc = front->interf;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	int dim = front->rect_grid->dim;
+
+	for (c = intfc->curves; c && *c; ++c)
+	{
+	    if (wave_type(*c) != ELASTIC_BOUNDARY &&
+		wave_type(*c) != ELASTIC_STRING) 
+		continue;
+	    curve = *c;
+	    for (b = curve->first; b != NULL; b = b->next)
+	    {
+		total_length +=  bond_length(b);
+		n++;
+	    }
+	    len0 = total_length/(double)n;
+	    for (b = curve->first; b != NULL; b = b->next)
+	    {
+		b->length0 = len0;
+		for (i = 0; i < dim; ++i)
+		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])
+				/b->length0;	
+	    }
+	    for (b = curve->first; b != curve->last; b = b->next)
+	    {
+		if (af_params->pert_params.pert_type == PARALLEL_RAND_PERT) 
+		{
+		    double dx_rand;
+		    double tan[MAXD];
+		    tangent(b->end,b,curve,tan,front); 
+		    dx_rand = (erand48(seed) - 0.5)*len0;
+		    for (i = 0; i < dim; ++i)
+		    	Coords(b->end)[i] += 0.2*dx_rand*tan[i];
+		}
+		else if (af_params->pert_params.pert_type == 
+				ORTHOGONAL_RAND_PERT)
+		{
+		    double dx_rand;
+		    double nor[MAXD];
+		    double amp = af_params->pert_params.pert_amp;
+		    FT_NormalAtPoint(b->end,front,nor,NO_COMP); 
+		    if (amp > 1.0) amp = 1.0;
+		    dx_rand = (erand48(seed) - 0.5)*amp*len0;
+		    for (i = 0; i < dim; ++i)
+		    	Coords(b->end)[i] += dx_rand*nor[i];
+		}
+		else if (af_params->pert_params.pert_type == SINE_PERT)
+		{
+		    /* This assumes the curve is horizontal */
+		    double amp = af_params->pert_params.pert_amp;
+		    double L = Coords(curve->start->posn)[0]; 
+		    double U = Coords(curve->end->posn)[0];
+		    double x = Coords(b->end)[0];
+		    for (i = 1; i < dim; ++i)
+		    	Coords(b->end)[i] += amp*sin(PI*(x-L)/(U-L));
+		}
+	    }
+	    for (b = curve->first; b != NULL; b = b->next)
+		set_bond_length(b,2);
+	    never_redistribute(Hyper_surf(curve)) = YES;
+	}
+}	/* end set_equilibrium_mesh2d */
+
+//TODO: Compare to set{Curve,Surf}ZeroMesh() functions in cgal.cpp
+//      Consolidate functionality if possible.
+static void set_equilibrium_mesh3d(
+	Front *front)
+{
+	SURFACE **s,*surf;
+	CURVE **c;
+	TRI *t;
+	int i,j,dir;
+	short unsigned int seed[3] = {2,72,7172};
+	double max_len,min_len,ave_len,len;
+	double vec[3],*cen,radius,amp;
+	double x0,xl,xu;
+	double dx_rand;
+	double count;
+	INTERFACE *intfc = front->interf;
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	BOND *b;
+	double gore_len_fac = af_params->gore_len_fac;
+
+	for (c = intfc->curves; c && *c; ++c)
+	{
+        if (hsbdry_type(*c) != STRING_HSBDRY ||
+            hsbdry_type(*c) != GORE_HSBDRY) continue;
+
+	    for (b = (*c)->first; b != NULL; b = b->next)
+	    {
+            set_bond_length(b,3);
+            b->length0 = bond_length(b);
+            
+            if (hsbdry_type(*c) == GORE_HSBDRY)
+                b->length0 *= gore_len_fac;
+            
+            for (i = 0; i < 3; ++i)
+            {
+                b->dir0[i] =
+                    (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
+            }
+	    }
+    
+        never_redistribute(Hyper_surf(*c)) = YES;
+	}
+
+	for (s = intfc->surfaces; s && *s; ++s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf = *s;
+	    ave_len = 0.0;
+	    max_len = 0.0;
+	    min_len = HUGE;
+	    count = 0.0;
+	    for (t = first_tri(surf); !at_end_of_tri_list(t,surf); t = t->next)
+	    {
+		for (i = 0; i < 3; ++i)
+		{
+		    t->side_length0[i] = separation(Point_of_tri(t)[i],
+			Point_of_tri(t)[(i+1)%3],3);
+		    for (j = 0; j < 3; ++j)
+		    {
+		    	t->side_dir0[i][j] = 
+				(Coords(Point_of_tri(t)[(i+1)%3])[j] -
+				 Coords(Point_of_tri(t)[i])[j])/
+				 t->side_length0[i];
+		    }
+		    if (max_len < t->side_length0[i]) 
+			max_len = t->side_length0[i];
+		    if (min_len > t->side_length0[i])
+			min_len = t->side_length0[i];
+		    ave_len += t->side_length0[i];
+		    count += 1.0;
+		}
+	    }
+	    never_redistribute(Hyper_surf(surf)) = YES;
+	}
+	printf("Original length:\n");
+	printf("min_len = %16.12f\n",min_len);
+	printf("max_len = %16.12f\n",max_len);
+	printf("ave_len = %16.12f\n",ave_len/count);
+
+	for (s = intfc->surfaces; s && *s; ++s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf = *s;
+	    switch (af_params->pert_params.pert_type)
+	    {
+	    case ORTHOGONAL_RAND_PERT:
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		{
+		    for (j = 0; j < 3; ++j)
+		    {
+			vec[j] = Coords(Point_of_tri(t)[i])[j] -
+				 Coords(Point_of_tri(t)[(i+1)%3])[j];
+		    }
+		    for (j = 0; j < 3; ++j)
+		    {
+		    	dx_rand = (2.0 + erand48(seed))/3.0;
+			vec[j] *= dx_rand;
+			Coords(Point_of_tri(t)[j])[2] += vec[j]; 
+		    }
+		}
+		break;
+	    case PARALLEL_RAND_PERT:
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		{
+		    for (j = 0; j < 3; ++j)
+		    {
+			vec[j] = Coords(Point_of_tri(t)[i])[j] -
+				 Coords(Point_of_tri(t)[(i+1)%3])[j];
+		    }
+		    dx_rand = (2.0 + erand48(seed))/3.0;
+		    for (j = 0; j < 3; ++j)
+		    {
+			vec[j] *= dx_rand;
+			Coords(Point_of_tri(t)[i])[j] = vec[j] +
+				Coords(Point_of_tri(t)[(i+1)%3])[j];
+		    }
+		}
+		break;
+	    case RADIAL_PERT:
+		cen = af_params->pert_params.cen;
+		radius = af_params->pert_params.pert_radius;
+		amp = af_params->pert_params.pert_amp;
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		    sorted(Point_of_tri(t)[i]) = NO;
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		{
+		    POINT *p = Point_of_tri(t)[i];
+		    double r;
+		    if (Boundary_point(p)) continue;
+		    if (sorted(p)) continue;
+		    r = sqr(Coords(p)[0] - cen[0]) + 
+			sqr(Coords(p)[1] - cen[1]);
+		    r = sqrt(r);
+		    if (r < radius)
+		    	Coords(p)[2] += amp*(1.0 - r/radius);
+		    sorted(p) = YES;
+		}
+		break;
+	    case LINEAR_PERT:
+		x0 = af_params->pert_params.x0;
+		xl = af_params->pert_params.xl;
+		xu = af_params->pert_params.xu;
+		amp = af_params->pert_params.pert_amp;
+		dir = af_params->pert_params.dir;
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		    sorted(Point_of_tri(t)[i]) = NO;
+	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
+				t = t->next)
+		for (i = 0; i < 3; ++i)
+		{
+		    POINT *p = Point_of_tri(t)[i];
+		    if (sorted(p)) continue;
+		    if (Coords(p)[dir] < x0)
+			Coords(p)[2] += amp*(Coords(p)[dir] - xl)/(x0 - xl);
+		    else
+			Coords(p)[2] += amp*(xu - Coords(p)[dir])/(xu - x0);
+		    sorted(p) = YES;
+		}
+		break;
+	    case NO_PERT:
+	    default:
+		break;
+	    }
+	}
+	for (s = intfc->surfaces; s && *s; ++s)
+	{
+	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    surf = *s;
+	    ave_len = 0.0;
+	    max_len = 0.0;
+	    min_len = HUGE;
+	    count = 0.0;
+	    for (t = first_tri(surf); !at_end_of_tri_list(t,surf); t = t->next)
+	    {
+		for (i = 0; i < 3; ++i)
+		{
+		    len = separation(Point_of_tri(t)[i],
+			Point_of_tri(t)[(i+1)%3],3);
+		    if (max_len < len) 
+			max_len = len;
+		    if (min_len > len)
+			min_len = len;
+		    ave_len += len;
+		    count += 1.0;
+		}
+	    }
+	}
+	printf("Perturbed length:\n");
+	printf("min_len = %16.12f\n",min_len);
+	printf("max_len = %16.12f\n",max_len);
+	printf("ave_len = %16.12f\n",ave_len/count);
+}	/* end set_equilibrium_mesh3d */
 

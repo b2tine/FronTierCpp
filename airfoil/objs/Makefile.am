@@ -28,6 +28,8 @@ noinst_LTLIBRARIES = libairfoil.la
 
 
 libairfoil_la_SOURCES = \
+../FabricManager.h \
+../FabricManager.cpp \
 ../airfoil.h \
 ../airfoil_sv.h \
 ../afcnpy.cpp \

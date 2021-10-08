@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <numeric>
+#include <algorithm>
 
 
 enum class CD_HSE_TYPE

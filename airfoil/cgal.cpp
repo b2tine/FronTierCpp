@@ -2307,6 +2307,7 @@ static void connectStringtoRGB(
     HYPER_SURF* hs = Hyper_surf(rg_surf);
     num_string_nodes(hs) = num_target;
     af_params->payload = total_mass(hs);
+    af_params->num_rg_string_nodes = num_target;
     
     if (num_strings == 1)
     {

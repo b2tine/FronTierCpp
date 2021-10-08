@@ -1294,20 +1294,20 @@ extern void ifluid_point_propagate(
 	{
         case SUBDOMAIN_BOUNDARY:
             return;
-	case MOVABLE_BODY_BOUNDARY:
-	case ICE_PARTICLE_BOUNDARY:
-	    return rgbody_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	case NEUMANN_BOUNDARY:
-	case GROWING_BODY_BOUNDARY:
-	    return neumann_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	case DIRICHLET_BOUNDARY:
-	    return dirichlet_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	default:
-	    return contact_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
+        case MOVABLE_BODY_BOUNDARY:
+        case ICE_PARTICLE_BOUNDARY:
+            return rgbody_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        case NEUMANN_BOUNDARY:
+        case GROWING_BODY_BOUNDARY:
+            return neumann_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        case DIRICHLET_BOUNDARY:
+            return dirichlet_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        default:
+            return contact_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
 	}
 }       /* ifluid_point_propagate */
 
@@ -1641,6 +1641,7 @@ static void rgbody_point_propagate(
 
     if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
     {
+        //TODO: Use input file option instead of debugging string to switch collision off
         if(!debugging("collision_off"))
         {
             for (i = 0; i < dim; ++i)
