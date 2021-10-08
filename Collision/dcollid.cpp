@@ -2946,7 +2946,7 @@ void CollisionSolver3d::limitStrainVelGS()
             printf("    %d BOND Strain Velocity Edges -- total_vel_violation = %f\n",
                     bss.n_edges, bss.total_vel_violation);
             printf("    \t%d Expansion Edges  -- %d Compression Edges\n",
-                    tss.n_edges_tensile, tss.n_edges_compress); 
+                    bss.n_edges_tensile, bss.n_edges_compress); 
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
@@ -2974,7 +2974,7 @@ void CollisionSolver3d::limitStrainVelJAC()
             printf("    %d BOND Strain Velocity Edges -- total_vel_violation = %f\n",
                     bss.n_edges, bss.total_vel_violation);
             printf("    \t%d Expansion Edges  -- %d Compression Edges\n",
-                    tss.n_edges_tensile, tss.n_edges_compress); 
+                    bss.n_edges_tensile, bss.n_edges_compress); 
         }
 
         if (bss.n_edges == 0 && tss.n_edges == 0) break;
