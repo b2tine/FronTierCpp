@@ -1418,6 +1418,11 @@ static void getAmbientState(
         state->mu = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
+	    for (i = 0; i < dim; ++i)
+	    {
+	    	state->vel[i] = 0.0;
+	    	state->momn[i] = 0.0;
+	    }
 	    state->engy = 0.0;
 	    break;
 	default:
@@ -1508,6 +1513,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
+	double **vel = field.vel;
 
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
@@ -1536,7 +1542,10 @@ void G_CARTESIAN::initChannelFlowStates()
             pres[index] = state.pres;
             engy[index] = state.engy;
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+                vel[l][index] = state.vel[l];
+            }
         }
 	    break;
 	
@@ -1556,7 +1565,10 @@ void G_CARTESIAN::initChannelFlowStates()
             pres[index] = state.pres;
             engy[index] = state.engy;
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+                vel[l][index] = state.vel[l];
+            }
         }
 	    break;
 	}

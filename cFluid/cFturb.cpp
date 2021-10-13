@@ -128,6 +128,9 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
             break;
     }
 
+    COMPONENT comp = top_comp[index0];
+    if (!gas_comp(comp)) return 0.0;
+
     double sum_alpha = 0.0;
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
@@ -145,6 +148,18 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
         
         alpha[i][j] = 0.5*(vel_p - vel_m)/top_h[i];
         */
+
+        //TEMP
+        if (std::isinf(vel[j][index[2*i+1]]) || std::isnan(vel[j][index[2*i+1]]))
+        {
+            vel[j][index[2*i+1]] = 0.0;
+        }
+        
+        //TEMP
+        if (std::isinf(vel[j][index[2*i]]) || std::isnan(vel[j][index[2*i]]))
+        {
+            vel[j][index[2*i]] = 0.0;
+        }
 
         alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
         sum_alpha += alpha[i][j]*alpha[i][j];
@@ -220,6 +235,10 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
                     j,index[2*i+1],vel[j][index[2*i+1]],
                     j,index[2*i],vel[j][index[2*i]]);
         }
+
+        auto coords0 = cell_center[index0].getCoords();
+        printf("coords0 = %f %f\n\n",coords0[0],coords0[1]);
+        //printf("coords0 = %f %f %f\n\n",coords0[0],coords0[1],coords0[2]);
 
         LOC(); clean_up(EXIT_FAILURE);
     }
