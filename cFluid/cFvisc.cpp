@@ -80,8 +80,10 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         VSWEEP* vs = &vsten->st[j][i];
         vs->icoords[0] = icoords[0] + i - 1;
         vs->icoords[1] = icoords[1] + j - 1;
+        
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
+        
         if (vs->comp != comp)
         {
             //TODO: Can we eliminate this warning?
@@ -114,8 +116,10 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         vs->icoords[0] = icoords[0] + i - 1;
         vs->icoords[1] = icoords[1] + j - 1;
         vs->icoords[2] = icoords[2] + k - 1;
+        
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
+        
         if (vs->comp != comp)
         {
             setViscousGhostState(comp,vs,m_vst);
@@ -178,8 +182,7 @@ void G_CARTESIAN::setViscousGhostState(
         }*/
         default:
         {
-            printf("setViscousGhostState() ERROR: "
-                    "unknown boundary type\n");
+            printf("\n\nsetViscousGhostState() ERROR: unknown boundary type\n\n");
             LOC(); clean_up(EXIT_FAILURE);
         }
     }
@@ -331,7 +334,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 
     //TODO: modify vel_reflect -- slip velocity etc. 
-
     for (int j = 0; j < dim; ++j)
     {
         vs->vel[j] = vel_reflect[j];

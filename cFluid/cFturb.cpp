@@ -9,7 +9,8 @@
 //
 void G_CARTESIAN::computeSGSTerms()
 {
-    //TODO: Add conditional for computing SGS terms
+    if (!eqn_params->use_eddy_viscosity) return;
+
     switch (dim)
     {
         case 2:
@@ -27,8 +28,6 @@ void G_CARTESIAN::computeSGSTerms()
 
 void G_CARTESIAN::computeEddyViscosity2d()
 {
-    if (!eqn_params->use_eddy_viscosity) return;
-
     double* mu = field.mu;
 
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -61,8 +60,6 @@ void G_CARTESIAN::computeEddyViscosity2d()
 
 void G_CARTESIAN::computeEddyViscosity3d()
 {
-    if (!eqn_params->use_eddy_viscosity) return;
-
     double* mu = field.mu;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
@@ -188,10 +185,14 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     //  (about 10x larger than MACH_EPS)
     double nu_t;
     if (sum_alpha < MACH_EPS || B_beta < MACH_EPS)
+    {
         nu_t = 0.0;
+    }
     else
+    {
         nu_t = C_v*sqrt(B_beta/sum_alpha);
- 
+    }
+
     double mu_t = nu_t*field.dens[index0];
         //double mu_t = nu_t*field.dens[index];
 

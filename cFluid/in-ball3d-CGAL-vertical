@@ -89,6 +89,7 @@ Type y to make vector vorticity field movie: y
 ************Debugging options*****************
 
 Enter yes for debugging: yes
+Enter the debugging string: cfluid_dt
 Enter the debugging string: flow_through
 
 Enter the debugging stringXXX: no_viscflux

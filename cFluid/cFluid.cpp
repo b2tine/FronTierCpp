@@ -325,7 +325,7 @@ static int g_cartesian_vel(
 	double *vel)
 {
 	double *coords = Coords(p);
-	((G_CARTESIAN_EB*)params)->getVelocity(coords, vel);
+	((G_CARTESIAN*)params)->getVelocity(coords, vel);
 	return YES;
 }	/* end g_cartesian_vel */
 

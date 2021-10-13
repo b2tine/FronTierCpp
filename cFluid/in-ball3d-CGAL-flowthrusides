@@ -98,6 +98,8 @@ Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: cfluid_dt
+
 Enter the debugging stringXXX: max_dt
 
 Enter the debugging stringXXX: init_intfc

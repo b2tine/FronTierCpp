@@ -79,7 +79,8 @@ Type y to make movie of viscosity: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 
-Enter the debugging stringX: max_dt
+Enter the debugging string: cfluid_dt
+
 Enter the debugging stringX: no_viscflux
 
 Enter the debugging stringX: trace

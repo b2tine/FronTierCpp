@@ -83,7 +83,7 @@ extern double getStateMu(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
 	return fstate->mu;
-}	/* end getStatePres */
+}	/* end getStateMu */
 
 extern double getStateVort(POINTER state)
 {
