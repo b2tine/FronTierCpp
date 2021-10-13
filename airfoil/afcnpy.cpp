@@ -781,8 +781,8 @@ static void elastic_set_propagate_serial(
             
         collsn_dt = cd_nsub*ss_dt;
 
-        printf("\nCollision Sub Step #%d\n",n);
-        printf("\tcollsn_nsub = %d  collsn_dt = %f\n",cd_nsub,collsn_dt);
+        printf("\nCollision Sub Step #%d: ",n);
+        printf("\tcollsn_nsub = %d  collsn_dt = %f\n\n",cd_nsub,collsn_dt);
 
         Front* sub_newfront;
         

@@ -85,8 +85,7 @@ Enter yes to use total mass: yes
 Enter fabric total mass: 2.95561
 Enter string total mass: 0.0
 
-Enter fabric spring constant: 4000
-    XXXEnter fabric spring constantXXX: 5000
+Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
@@ -101,7 +100,7 @@ Enter string friction constant: 0.3
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.00004
 
-Enter overlap coefficient: 0.1
+Enter overlap coefficient: 0.2
     XXXEnter overlap coefficientXXX: 0.5
     XXXEnter overlap coefficientXXX: 0.25
 
@@ -139,7 +138,8 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
-Enter the debugging string: reduce_highfreq_vel
+
+Enter the debugging stringXXX: reduce_highfreq_vel
 
 Enter the debugging stringXXX: bendforce_off
 

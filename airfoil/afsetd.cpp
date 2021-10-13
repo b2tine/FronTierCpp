@@ -265,14 +265,29 @@ extern void compute_spring_accel1(
 	//acceleration due to elastic stretching force
     for (int j = 0; j < sv->num_nb; ++j)
 	{
-	    double len = 0.0;
+	    double v_rel[MAXD];
 	    double vec[MAXD];
+	    
+        double len = 0.0;
 	    for (int k = 0; k < dim; ++k)
 	    {
+            v_rel[k] = sv->v_nb[j][k] - sv->v[k];
             vec[k] = sv->x_nb[j][k] - sv->x[k];
             len += vec[k]*vec[k];
 	    }
 	    len = sqrt(len);
+
+        //additional damping
+        double comp_vrel = 0.0;
+        for (int k = 0; k < dim; ++k)
+        {
+            comp_vrel += v_rel[k]*vec[k]/len;
+        }
+
+        for (int k = 0; k < dim; ++k)
+        {
+            accel[k] -= sv->lambda*comp_vrel*vec[k]/len;
+        }
 
         /*
 //TEMP DEBUG

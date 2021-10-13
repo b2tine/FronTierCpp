@@ -346,6 +346,8 @@ static void ProcessPointToTriGS(POINT* pts[])
 
 static void ProcessPointToTriCollsnGS(POINT* pts[])
 {
+	double dt = CollisionSolver3d::getTimeStepSize();
+
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
@@ -378,6 +380,9 @@ static void ProcessPointToTriCollsnGS(POINT* pts[])
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
                     sl->collsnImpulse[k] = 0.0;
+                
+                    //move to new candidate position
+                        Coords(pts[j])[k] += sl->avgVel[k]*(dt - sl->collsn_dt);
                 }
                 sl->collsn_num = 0;
             }
@@ -390,6 +395,8 @@ static void ProcessPointToTriCollsnGS(POINT* pts[])
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
         {
+            //compute new effective velocity (linear trajectory)
+                sl->avgVel[k] = (Coords(pts[j])[k] - sl->x_old[k])/dt;
             Coords(pts[j])[k] = sl->x_old[k];
         }
     }
@@ -558,6 +565,8 @@ static void ProcessEdgeToEdgeGS(POINT* pts[])
 
 static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
 {
+	double dt = CollisionSolver3d::getTimeStepSize();
+
     for (int j = 0; j < 4; ++j)
     {
         STATE* sl = (STATE*)left_state(pts[j]);
@@ -574,7 +583,7 @@ static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
             sl->collsn_num = 0;
         }
     }
-    
+
     //apply elastic repulsion impulse if still not well separated
     STATE* s0 = (STATE*)left_state(pts[0]);
     STATE* s2 = (STATE*)left_state(pts[2]);
@@ -596,6 +605,9 @@ static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
                     sl->collsnImpulse[k] = 0.0;
+                
+                    //move to new candidate position
+                        Coords(pts[j])[k] += sl->avgVel[k]*(dt - sl->collsn_dt);
                 }
                 sl->collsn_num = 0;
             }
@@ -608,6 +620,8 @@ static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
         STATE* sl = (STATE*)left_state(pts[j]);
         for (int k = 0; k < 3; ++k)
         {
+            //compute new effective velocity (linear trajectory)
+                sl->avgVel[k] = (Coords(pts[j])[k] - sl->x_old[k])/dt;
             Coords(pts[j])[k] = sl->x_old[k];
         }
     }
