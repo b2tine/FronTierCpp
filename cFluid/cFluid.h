@@ -485,9 +485,20 @@ private:
     //For LES turbulence
     void computeSGSTerms();
 
-    void computeEddyViscosity2d();//TODO: Implementation
-    void computeEddyViscosity3d();//TODO: Implementation
-    double computeEddyViscosityVremanModel(int *icoords);//TODO: Implementation
+    void computeEddyViscosity2d();
+    void computeEddyViscosity3d();
+    
+    double computeEddyViscosityVremanModel(int *icoords);
+    
+    double computeEddyViscosityVremanModel_BdryAware(int *icoords);
+    
+    std::vector<std::vector<double>> computeVelocityGradient(int *icoords);
+    
+    void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
+    void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);//TODO: Implementation
 
 
     // -------------------------------------------------------

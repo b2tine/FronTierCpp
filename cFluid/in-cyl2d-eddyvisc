@@ -1,16 +1,16 @@
 Max time: 3.0
 Max step: 100000
-Print interval: 0.25
-Movie frame interval: 0.025
-CFL factor: 0.75
-Redistribution interval: 5
+Print interval: 0.05
+Movie frame interval: 0.01
+CFL factor: 0.5
+Redistribution interval: 1000000000
 
 *******************************************************
 
-Domain limit in 0-th dimension: 0 2
+Domain limit in 0-th dimension: 0 2.5
 Domain limit in 1-th dimension: 0 1.5
 
-Computational grid: 100 75
+Computational grid: 125 75
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -19,9 +19,9 @@ Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 5.0 0
-Enter pressure: 1
-Enter density: 1
+Enter velocity: 10.0 0
+Enter pressure: 50.0
+Enter density: 1.5
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -43,11 +43,14 @@ Numerical scheme for interior solver can be
 Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
-Enter order of point propagatorXXX: 2
+    XXXEnter order of point propagatorXXX: 2
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
-Enter density and pressure of ambient air: 1.0 1.0 
-Enter density and viscosity of the fluid: 1.0 0.01
+Enter density and pressure of ambient air: 1.0 1.0
+ 
+Enter density and viscosity of the fluid: 1.0 0.0007
+    XXXEnter density and viscosity of the fluidXXX: 1.0 0.01
+
 Enter gravity: 0 0 
 
 Type yes to track the interface: no
@@ -62,11 +65,15 @@ Type y to make movie of density: y
 Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
-
 Type y to make movie of viscosity: y
-    XXXType y to make scalar viscosity field movieXXX: y
-************Debugging options*****************
 
+Type y to make scalar density field movie: n
+Type y to make scalar pressure field movie: n
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: n
+Type y to make scalar viscosity field movie: n
+
+************Debugging options*****************
 Enter yes for debugging: yes
 
 Enter the debugging string: cfluid_dt

@@ -55,6 +55,7 @@ void G_CARTESIAN::computeEddyViscosity2d()
         }
 
         mu[index] += computeEddyViscosityVremanModel(icoords);
+            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
     }
 }
 
@@ -88,10 +89,10 @@ void G_CARTESIAN::computeEddyViscosity3d()
         }
 
         mu[index] += computeEddyViscosityVremanModel(icoords);
+            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
     }
 }
 
-//TODO: Implement boundary aware version, which includes setting slip velocity etc.
 double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 {
     //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
@@ -246,101 +247,100 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     return mu_t;
 }   /* end computeEddyViscosityVremanModel */
 
-/*
-//TODO: MODIFY FOR USE WITH G_CARTESIAN!
-
-//From Vreman 2004 paper
-double G_CARTESIAN::computeEddyViscosityVremanModel(
-	int *icoords)
+//TODO: Implement boundary aware version, which includes setting slip velocity etc.
+double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 {
-    int index = d_index(icoords,top_gmax,dim);
-        //int index[6], index0;
-        //double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+    //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
+    //LOC(); clean_up(EXIT_FAILURE);
+
+    double **vel = field.vel;
+
     double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-        //double **vel = field->vel;
-        
-    double C_v = iFparams->C_v;
 
-   // //
-   // //TODO: add switch to run below without detecting boundaries (for comparison)
-   // switch (dim)
-   // {
-   //     case 2:
-   //         index0 = d_index2d(icoords[0],icoords[1],top_gmax);
-   //         index[0] = d_index2d(icoords[0]-1,icoords[1],top_gmax);
-   //         index[1] = d_index2d(icoords[0]+1,icoords[1],top_gmax);
-   //         index[2] = d_index2d(icoords[0],icoords[1]-1,top_gmax);
-   //         index[3] = d_index2d(icoords[0],icoords[1]+1,top_gmax);
-   //         break;
-   //     
-   //     case 3:
-   //         index0 = d_index3d(icoords[0],icoords[1],icoords[2],top_gmax); 
-   //         index[0] = d_index3d(icoords[0]-1,icoords[1],icoords[2],top_gmax); 
-   //         index[1] = d_index3d(icoords[0]+1,icoords[1],icoords[2],top_gmax);
-   //         index[2] = d_index3d(icoords[0],icoords[1]-1,icoords[2],top_gmax);
-   //         index[3] = d_index3d(icoords[0],icoords[1]+1,icoords[2],top_gmax);
-   //         index[4] = d_index3d(icoords[0],icoords[1],icoords[2]-1,top_gmax);
-   //         index[5] = d_index3d(icoords[0],icoords[1],icoords[2]+1,top_gmax);
-   //         break;
-   // }
+    //TODO:    //double C_v = eqn_params->C_v;
+    double C_v = 0.025;
+    
 
-   //	double sum_alpha = 0.0;
-   // for (int i = 0; i < dim; ++i)
-   // for (int j = 0; j < dim; ++j)
-   // {
-   //     alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
-   //     sum_alpha += alpha[i][j]*alpha[i][j];
-   // }
-   // //
-
+    //TODO: Implement computeVelocityGradient()
     auto alpha = computeVelocityGradient(icoords);
-   	
+
     double sum_alpha = 0.0;
     for (int i = 0; i < dim; ++i)
-	for (int j = 0; j < dim; ++j)
-	{
-	    sum_alpha += alpha[i][j]*alpha[i][j];
+    for (int j = 0; j < dim; ++j)
+    {
+        sum_alpha += alpha[i][j]*alpha[i][j];
     }
-
+ 
     for (int i = 0; i < dim; ++i)
-	for (int j = 0; j < dim; ++j)
-	{
-	    beta[i][j] = 0.0;
-	    for (int k = 0; k < dim; ++k)
+    for (int j = 0; j < dim; ++j)
+    {
+        beta[i][j] = 0.0;
+        for (int k = 0; k < dim; ++k)
+        {
             beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
-	}
+        }
+    }
 
     double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
- 
+
     //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
     //  (about 10x larger than MACH_EPS)
     double nu_t;
-    if (B_beta < MACH_EPS || sum_alpha < MACH_EPS)
+    if (sum_alpha < MACH_EPS || B_beta < MACH_EPS)
+    {
         nu_t = 0.0;
+    }
     else
+    {
         nu_t = C_v*sqrt(B_beta/sum_alpha);
-    
-    double mu_t = nu_t*field->rho[index];
+    }
+
+    int index = d_index(icoords,top_gmax,dim);
+    double mu_t = nu_t*field.dens[index];
 
     if (std::isinf(mu_t) || std::isnan(mu_t))
     {
-        printf("ERROR: inf/nan eddy viscosity!\n");
-        printf("nu_t = %g  rho[%d] = %g\n",nu_t,index,field->rho[index]);
+        printf("\nERROR: inf/nan eddy viscosity!\n");
+        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index]);
+        printf("B_beta = %g  sum_alpha = %g\n",B_beta,sum_alpha);
+
+        printf("\n");
+        for (int i = 0; i < dim; ++i)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                printf("alpha[%d][%d] = %g   ",i,j,alpha[i][j]);
+            }
+            printf("\n\n");
+        }
+
+        auto coords = cell_center[index].getCoords();
+        printf("coords = ");
+        for (int i = 0; i < dim; ++i)
+        {
+            printf("%f  ", coords[i]);
+        }
+        printf("\n\n");
+
         LOC(); clean_up(EXIT_FAILURE);
     }
 
     return mu_t;
-}*/	/* end computeEddyViscosityVremanModel*/
+}   /* end computeEddyViscosityVremanModel_BdryAware */
 
-/*
-//TODO: MODIFY FOR USE WITH G_CARTESIAN!
+//TODO: ADAPT FOR USE WITH G_CARTESIAN
 std::vector<std::vector<double>>
 G_CARTESIAN::computeVelocityGradient(
 	int *icoords)
 {
-    double** vel = field->vel;
+    ///////////////////////////////////////////////////////////////////////////////
+    printf("\nERROR computeVelocityGradient(): function not implemented yet\n");
+    LOC(); clean_up(EXIT_FAILURE);
+    ///////////////////////////////////////////////////////////////////////////////
+
+    double** vel = field.vel;
 
     GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
     boolean fr_crx_grid_seg;
@@ -353,11 +353,12 @@ G_CARTESIAN::computeVelocityGradient(
 
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
-    if (!ifluid_comp(comp)) return J;
+    if (!gas_comp(comp)) return J;
 
     double vel_nb[2];
     double d_h[2];
 
+    /*
     for (int l = 0; l < dim; ++l)
     for (int m = 0; m < dim; ++m)
     {
@@ -387,7 +388,7 @@ G_CARTESIAN::computeVelocityGradient(
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
-                    wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
                 if (iFparams->use_no_slip)
                 {
@@ -402,6 +403,7 @@ G_CARTESIAN::computeVelocityGradient(
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
+                //TODO: How are these handled in cFluid?
                 if (boundary_state_function_name(hs) &&
                         strcmp(boundary_state_function_name(hs),
                             "flowThroughBoundaryState") == 0)
@@ -426,8 +428,46 @@ G_CARTESIAN::computeVelocityGradient(
     }
 
     return J;
+    */
 }
-*/
+
+void G_CARTESIAN::setSlipBoundary(
+        int *icoords,
+        int idir,
+        int nb,
+        int comp,
+        HYPER_SURF *hs,
+        POINTER state,
+        double** vel,
+        double* v_slip)
+{
+    //printf("\nERROR setSlipBoundary(): function not implemented yet\n");
+    //LOC(); clean_up(EXIT_FAILURE);
+
+    setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
+
+    //TODO: Write GNOR implementation and compare results.
+    //
+    //      setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
+}
+
+// Based on finding the nearest interface point to the ghost point
+// computed using FT_FindNearestIntfcPointInRange()
+void G_CARTESIAN::setSlipBoundaryNIP(
+    int *icoords,
+    int idir,
+    int nb,
+    int comp, 
+    HYPER_SURF *hs,
+    POINTER state, 
+    double** vel,
+    double* v_slip)
+{ 
+    printf("\nERROR setSlipBoundaryNIP(): function not implemented yet\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    //TODO: Implemenent
+}
 
 double computeWallShearStress(
         double u_tan,

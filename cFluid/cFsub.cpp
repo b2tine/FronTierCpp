@@ -659,11 +659,13 @@ extern void cF_flowThroughBoundaryState2d(
 
 	for (j = 0; j < 2; ++j)
 	{
+        //normal component of velocity
 	    for (i = 0; i < dim; ++i)
 	    {
             u[j] += oldst->vel[i]*dir[i];
 	    }
 
+        //orthogonal direction velocity
 	    for (i = 0; i < dim; ++i)
 	    {
             v[j][i] = oldst->vel[i] - u[j]*dir[i];
