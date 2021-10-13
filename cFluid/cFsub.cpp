@@ -567,6 +567,10 @@ extern void cF_flowThroughBoundaryState(
     }
 }
 
+//TODO: need to do viscosity too?
+//      Visc appears to get reflected back into domain for lateral flowthru boundaries.
+//
+//      OR maybe just need to handle the flowthru bdry's in computeVelocityGradient()...
 extern void cF_flowThroughBoundaryState2d(
         double          *p0,
         HYPER_SURF      *hs,

@@ -5451,106 +5451,126 @@ void G_CARTESIAN::setNeumannStates(
 		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
-	    for (j = 0; j < dim; ++j)
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+	    
+        for (j = 0; j < dim; ++j)
 	    {
-		v[j] = coords_ref[j] - crx_coords[j];
-		vn += v[j]*nor[j];
+		    v[j] = coords_ref[j] - crx_coords[j];
+		    vn += v[j]*nor[j];
 	    }
-	    for (j = 0; j < dim; ++j)
-		v[j] = 2.0*vn*nor[j] - v[j];
-	    for (j = 0; j < dim; ++j)
+	    
+        for (j = 0; j < dim; ++j)
+		    v[j] = 2.0*vn*nor[j] - v[j];
+	    
+        for (j = 0; j < dim; ++j)
 		coords_ref[j] = crx_coords[j] + v[j];
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
-			&m_vst->momn[0][index]);
-	    if (dim > 1)
-		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[1],getStateYmom,&st_tmp.momn[1],
-			&m_vst->momn[1][index]);
-	    if (dim > 2)
-		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
-			&m_vst->momn[2][index]);
+                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        //TODO: for loop instead of if statements
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
+	    
+        if (dim > 1)
+		    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+			    m_vst->momn[1],getStateYmom,&st_tmp.momn[1],
+			    &m_vst->momn[1][index]);
+	    
+        if (dim > 2)
+		    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+			    m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
+			    &m_vst->momn[2][index]);
+
 		/* Galileo Transformation */
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
-		vn += v[j]*nor[j];
+		    v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+		    vn += v[j]*nor[j];
 	    }
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */
-            for (j = 0; j < dim; j++)
+            
+        /* Only normal component is reflected, 
+            relative tangent velocity is zero */
+        for (j = 0; j < dim; j++)
 	    {
             //NOTE: vel_ref is the intfc velocity
-                v[j] = vel_ref[j] - 1.0*vn*nor[j];
-		st_tmp.momn[j] = v[j]*st_tmp.dens;
+            v[j] = vel_ref[j] - 1.0*vn*nor[j];
+    		st_tmp.momn[j] = v[j]*st_tmp.dens;
 	    }
 
 	    st_tmp.engy = EosEnergy(&st_tmp);
-	    /* debugging printout */
+
+        /* debugging printout */
 	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    {
-		printf("negative engrgy! \n");
-		printf("icoords = %d %d %d \n", icoords[0],icoords[1],
-						icoords[2]);
-		printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],
-			st_tmp.momn[1],st_tmp.momn[2],st_tmp.pres,
-			st_tmp.engy);
-		printf("st_tmp.dim = %d, idir = %d, nb = %d \n",
-			st_tmp.dim,idir,nb);
-		printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
-			st_tmp.eos->einf,st_tmp.eos->pinf);
-		printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
-						coords_ref[2]);
-		clean_up(0);
+    		printf("negative engrgy! \n");
+	    	printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
+		    printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
+                    st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
+		    printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
+		    printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+                    st_tmp.eos->einf,st_tmp.eos->pinf);
+		
+            printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],coords_ref[2]);
+            LOC(); clean_up(EXIT_FAILURE);
 	    }
 
 	    if (nb == 0)
-	    {
-		vst->dens[nrad-i] = st_tmp.dens;
-		vst->engy[nrad-i] = st_tmp.engy;
-		vst->pres[nrad-i] = st_tmp.pres;
-	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-i] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][nrad-i] = st_tmp.momn[0];
-	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind3[idir][j]];
-	    }
+        {
+            vst->dens[nrad-i] = st_tmp.dens;
+            vst->engy[nrad-i] = st_tmp.engy;
+            vst->pres[nrad-i] = st_tmp.pres;
+                
+            for (j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+            
+            if (dim == 1)
+            {
+                vst->momn[0][nrad-i] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
 	    else
-	    {
-		vst->dens[n+nrad+i-1] = st_tmp.dens;
-		vst->engy[n+nrad+i-1] = st_tmp.engy;
-		vst->pres[n+nrad+i-1] = st_tmp.pres;
-	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+i-1] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
-	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind3[idir][j]];
-	    }
+        {
+            vst->dens[n+nrad+i-1] = st_tmp.dens;
+            vst->engy[n+nrad+i-1] = st_tmp.engy;
+            vst->pres[n+nrad+i-1] = st_tmp.pres;
+        
+            for (j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+            if (dim == 1)
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
 	}
+
 	if (debugging("neumann_buffer"))
 	    (void) printf("Leaving setNeumannStates()\n");
 }	/* end setNeumannStates */
@@ -5572,114 +5592,138 @@ void G_CARTESIAN::setDirichletStates(
 	int		ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 
 	if (nb == 0)
-	{
-	  if (boundary_state(hs) != NULL)
-	  {
-	    //preset state bdry
-	    state = (STATE*)boundary_state(hs);
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		vst->dens[nrad-k] = state->dens;
-		vst->engy[nrad-k] = state->engy;
-		vst->pres[nrad-k] = state->pres;
-		
-		for (j = 0; j < 3; j++)
+    {
+        if (boundary_state(hs) != NULL)
+        {
+          //preset state bdry
+          state = (STATE*)boundary_state(hs);
+          for (k = istart; k <= nrad; ++k)
+          {
+              vst->dens[nrad-k] = state->dens;
+              vst->engy[nrad-k] = state->engy;
+              vst->pres[nrad-k] = state->pres;
+            
+              for (j = 0; j < 3; j++)
+                  vst->momn[j][nrad-k] = 0.0;
+
+              if (dim == 1)
+              {
+                  vst->momn[0][nrad-k] = state->momn[0];
+              }
+              else if (dim == 2)
+              {
+                  for (j = 0; j < 2; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
+              }
+              else if (dim == 3)
+              {
+                  for (j = 0; j < 3; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
+              }
+          }
+        }
+        else if (boundary_state_function(hs) &&
+                strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
+        {
+            //TODO: why not using the state value to extrapolate???
+            for (k = istart; k <= nrad; ++k)
+            {
+                index = d_index(icoords,top_gmax, dim);
+                vst->dens[nrad-k] = m_vst->dens[index];
+                vst->engy[nrad-k] = m_vst->engy[index];
+                vst->pres[nrad-k] = m_vst->pres[index];
+
+                for (j = 0; j < 3; j++)
                     vst->momn[j][nrad-k] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][nrad-k] = state->momn[0];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
-	    }
-	  }
-	  else if (boundary_state_function(hs) &&
-              strcmp(boundary_state_function_name(hs),
-	      "cF_flowThroughBoundaryState") == 0)
-	  {
-        //TODO: why not using the state value to extrapolate???
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		index = d_index(icoords,top_gmax, dim);
-		vst->dens[nrad-k] = m_vst->dens[index];
-		vst->engy[nrad-k] = m_vst->engy[index];
-		vst->pres[nrad-k] = m_vst->pres[index];
-		
-		for (j = 0; j < 3; j++)
-                    vst->momn[j][nrad-k] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][nrad-k] = m_vst->momn[0][index];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][nrad-k] = m_vst->momn[ind2[dir][j]][index];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
-	    }
-	  }
-	  else
-	  {
-	    (void) printf("Unimplemented Dirichlet boundary type!\n");
-	    clean_up(ERROR);
-	  }
-	}
+
+                if (dim == 1)
+                {
+                    vst->momn[0][nrad-k] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][nrad-k] = m_vst->momn[ind2[dir][j]][index];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
+                }
+            }
+        }
+        else
+        {
+            (void) printf("Unimplemented Dirichlet boundary type!\n");
+            LOC(); clean_up(ERROR);
+        }
+    }
 	else
 	{
-	  if (boundary_state(hs) != NULL)
-	  {
-	    state = (STATE*)boundary_state(hs);
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		vst->dens[n+nrad+k-1] = state->dens;
-		vst->engy[n+nrad+k-1] = state->engy;
-		vst->pres[n+nrad+k-1] = state->pres;
-		
-		for (j = 0; j < 3; j++)
+        if (boundary_state(hs) != NULL)
+        {
+            state = (STATE*)boundary_state(hs);
+            for (k = istart; k <= nrad; ++k)
+            {
+                vst->dens[n+nrad+k-1] = state->dens;
+                vst->engy[n+nrad+k-1] = state->engy;
+                vst->pres[n+nrad+k-1] = state->pres;
+                
+                for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][n+nrad+k-1] = state->momn[0];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
-	    }
-	  }
-	  else if (boundary_state_function(hs) &&
-              strcmp(boundary_state_function_name(hs),
-	      "cF_flowThroughBoundaryState") == 0)
-	  {
-        //TODO: why not using the state value to extrapolate???
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		index = d_index(icoords,top_gmax, dim);
-		vst->dens[n+nrad+k-1] = m_vst->dens[index];
-		vst->engy[n+nrad+k-1] = m_vst->engy[index];
-		vst->pres[n+nrad+k-1] = m_vst->pres[index];
-		
-		for (j = 0; j < 3; j++)
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = state->momn[0];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
+                }
+            }
+        }
+        else if (boundary_state_function(hs) &&
+                strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
+        {
+            //TODO: why not using the state value to extrapolate???
+            for (k = istart; k <= nrad; ++k)
+            {
+                index = d_index(icoords,top_gmax, dim);
+                vst->dens[n+nrad+k-1] = m_vst->dens[index];
+                vst->engy[n+nrad+k-1] = m_vst->engy[index];
+                vst->pres[n+nrad+k-1] = m_vst->pres[index];
+
+                for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][n+nrad+k-1] = 
-					m_vst->momn[ind2[dir][j]][index];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+k-1] = 
-					m_vst->momn[ind3[dir][j]][index];
-	    }
-	  }
-	  else
-	  {
-	    (void) printf("Unimplemented Dirichlet boundary type!\n");
-	    clean_up(ERROR);
-	  }
-	}
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = m_vst->momn[ind2[dir][j]][index];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[dir][j]][index];
+                }
+            }
+        }
+        else
+        {
+            (void) printf("Unimplemented Dirichlet boundary type!\n");
+            LOC(); clean_up(ERROR);
+        }
+    }
 }
 
 void G_CARTESIAN::initSampleVelocity(char *in_name)

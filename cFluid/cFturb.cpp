@@ -403,10 +403,8 @@ G_CARTESIAN::computeVelocityGradient(
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: How are these handled in cFluid?
-                if (boundary_state_function_name(hs) &&
-                        strcmp(boundary_state_function_name(hs),
-                            "flowThroughBoundaryState") == 0)
+                if (boundary_state_function(hs) &&
+                    strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
                 {
                     //OUTLET
                     vel_nb[nb] = intfc_state->vel[l];
