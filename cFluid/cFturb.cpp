@@ -2,13 +2,17 @@
 #include "cFturb.h"
 
     
-//TODO: Other SGS terms.
-//      -- Turbulent heat flux,
-//      -- Turbulent kinetic energy transport and diffusion,
-//      -- etc.
-//
+//TODO: Add other SGS terms.
 void G_CARTESIAN::computeSGSTerms()
 {
+    computeEddyViscosity();
+}
+
+void G_CARTESIAN::computeEddyViscosity()
+{
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
+
     if (!eqn_params->use_eddy_viscosity) return;
 
     switch (dim)
@@ -20,7 +24,7 @@ void G_CARTESIAN::computeSGSTerms()
             computeEddyViscosity3d();
             break;
         default:
-            printf("\nERROR computeSGSTerms(): dim must be equal to 2 or 3\n");
+            printf("\nERROR computeSGSTerms(): invalid dim\n");
             printf("\t\t dim = %d\n\n",dim);
             LOC(); clean_up(EXIT_FAILURE);
     }
@@ -56,6 +60,11 @@ void G_CARTESIAN::computeEddyViscosity2d()
 
         mu[index] += computeEddyViscosityVremanModel(icoords);
             //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
     }
 }
 
@@ -90,6 +99,11 @@ void G_CARTESIAN::computeEddyViscosity3d()
 
         mu[index] += computeEddyViscosityVremanModel(icoords);
             //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+    
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
     }
 }
 
@@ -136,20 +150,24 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
-        /*
         //TEMP
         double vel_p = vel[j][index[2*i+1]];
         if (std::isinf(vel_p) || std::isnan(vel_p))
+        {
             vel_p = 0.0;
-        
+        }
+
         //TEMP
         double vel_m = vel[j][index[2*i]];
         if (std::isinf(vel_m) || std::isnan(vel_m))
+        {
             vel_m = 0.0;
-        
-        alpha[i][j] = 0.5*(vel_p - vel_m)/top_h[i];
-        */
+        }
 
+        alpha[i][j] = 0.5*(vel_p - vel_m)/top_h[i];
+        sum_alpha += alpha[i][j]*alpha[i][j];
+
+        /*
         //TEMP
         if (std::isinf(vel[j][index[2*i+1]]) || std::isnan(vel[j][index[2*i+1]]))
         {
@@ -164,6 +182,7 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 
         alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
         sum_alpha += alpha[i][j]*alpha[i][j];
+        */
     }
 
     //TODO: Implement boundary aware computeVelocityGradient(), which includes

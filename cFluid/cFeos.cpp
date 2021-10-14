@@ -106,22 +106,22 @@ extern double EosMaxBehindShockPres(
 	return p1;
 }	/* end EosMaxBehindShockPres */
 
-extern void CovertVstToState(
+extern void ConvertVstToState(
 	STATE		*state,
 	SWEEP		*vst,
 	EOS_PARAMS	*eos,
 	int		ind,
 	int		dim)
 {
-	int	i;
-
 	state->dim = dim;
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	for (i = 0; i < dim; ++i)
-	    state->momn[i] = vst->momn[i][ind];
-	state->pres = EosPressure(state);
+	for (int i = 0; i < dim; ++i)
+    {
+        state->momn[i] = vst->momn[i][ind];
+    }
+    state->pres = EosPressure(state);
 }
 
 extern void EosSetTVDParams(

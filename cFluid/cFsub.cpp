@@ -1468,32 +1468,40 @@ extern void readFrontStates(
 	infile = fopen(fname,"r");
 	
 	/* Initialize states at the interface */
-        next_output_line_containing_string(infile,"Interface gas states:");
-        next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-	    lstate = (STATE*)sl;	rstate = (STATE*)sr;
-            fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
-            fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
-	    for (i = 0; i < dim; ++i)
-            	fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
-	    
-	    comp = negative_component(hs);
-	    lstate->eos = &eos[comp];
-	    lstate->dim = dim;
-	    if(gas_comp(comp))
-	    	lstate->pres = EosPressure(lstate);
-		
-	    comp = positive_component(hs);
+    next_output_line_containing_string(infile,"Interface gas states:");
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        lstate = (STATE*)sl;	rstate = (STATE*)sr;
 
-	    rstate->eos = &eos[comp];
-	    rstate->dim = dim;
-	    if(gas_comp(comp))
-	    	rstate->pres = EosPressure(rstate);
-	    lstate->dim = rstate->dim = dim;
+        fscanf(infile,"%lf %lf",&lstate->mu,&rstate->mu);
+        fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
+        fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
         }
-	FT_MakeGridIntfc(front);
+
+        comp = negative_component(hs);
+        lstate->eos = &eos[comp];
+        if(gas_comp(comp))
+        {
+            lstate->pres = EosPressure(lstate);
+        }
+
+        comp = positive_component(hs);
+        rstate->eos = &eos[comp];
+        if(gas_comp(comp))
+        {
+            rstate->pres = EosPressure(rstate);
+        }
+
+        lstate->dim = dim;
+        rstate->dim = dim;
+    }
+
+    FT_MakeGridIntfc(front);
 	fclose(infile);
 }
 

@@ -152,12 +152,14 @@ int main(int argc, char **argv)
 	velo_func_pack.func = g_cartesian_vel;
 	velo_func_pack.point_propagate = cFluid_point_propagate;
 	FT_InitFrontVeloFunc(&front,&velo_func_pack);
-	if (debugging("trace"))
+
+    if (debugging("trace"))
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	g_cartesian.initMesh();
-        g_cartesian.initMovieVariables();
-	if (RestartRun)
+    g_cartesian.initMovieVariables();
+
+    if (RestartRun)
 	{
 	    readFrontStates(&front,restart_state_name);
 	    g_cartesian.readInteriorStates(restart_state_name);
@@ -313,7 +315,8 @@ static  void gas_driver(
 
 	if (FT_Dimension() == 1)
 	    g_cartesian.errFunction();
-	if (debugging("trace")) printf("After time loop\n");
+	
+    if (debugging("trace")) printf("After time loop\n");
 }       /* end gas_driver */
 
 static int g_cartesian_vel(

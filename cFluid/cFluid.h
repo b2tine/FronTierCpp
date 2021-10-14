@@ -399,9 +399,13 @@ private:
 	double m_t;         // time
 	double max_speed;	// for stability of convection
 
-    double mu_max;      // for viscous flux time step restriction
-	double min_dens;
-    double min_pres;    // minimum physical variables
+    //for viscous flux time step restriction
+    double mu_max {-1};
+	double rho_min {-1};
+
+    //User defined minimum physical variables
+    double min_dens;
+    double min_pres;
     double min_mu;
 
 	// for parallel partition
@@ -431,8 +435,8 @@ private:
 	// -------------------------------------------------------
 	// 		compressible solver functions
 	// -------------------------------------------------------
-	void setAdvectionDt(void);
-	void computeAdvection(void);
+	void setMaxTimestep(void);
+	void advanceSolution(void);
 
 	/* Mesh memory management */
 	bool withinStencilLen(int*,int);
@@ -485,6 +489,7 @@ private:
     //For LES turbulence
     void computeSGSTerms();
 
+    void computeEddyViscosity();
     void computeEddyViscosity2d();
     void computeEddyViscosity3d();
     
@@ -644,7 +649,7 @@ extern double EosSoundSpeed(STATE*);
 extern double EosSoundSpeedSqr(STATE*);
 extern double EosMaxBehindShockPres(double,STATE*);
 extern void EosSetTVDParams(SCHEME_PARAMS*,EOS_PARAMS*);
-extern void CovertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
+extern void ConvertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
 extern void findGhostState(STATE,STATE,STATE*);
 
 /* Riemann solution functions */
