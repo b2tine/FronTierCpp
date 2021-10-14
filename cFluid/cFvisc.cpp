@@ -338,7 +338,112 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         vs->vel[j] = vel_reflect[j];
     }
 
-    //TODO: see setSlipBoundary() in cFturb.cpp for next steps ...
+    //TODO: below is from setSlipBoundary() -- applies here also I believe
+    //
+    /*
+    double vel_rel[MAXD] = {0.0};
+    double vn = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_rel_nor[j] = vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+    }
+    double mag_vtan = Magd(vel_rel_tan,dim);
+
+    /////////////////////////////////////////////////////////////////////////
+    //if (iFparams->use_eddy_visc == NO)
+    //{
+    //    for (int j = 0; j < dim; ++j)
+    //        v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+    //    return;
+    //}
+    /////////////////////////////////////////////////////////////////////////
+
+    if (debugging("slip_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
+        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
+    }
+
+    double mu_l;
+    double rho_l;
+
+    switch (comp)
+    {
+        case GAS_COMP1:
+            mu_l = m_mu[0];
+            rho_l = m_dens[0];
+            break;
+        case GAS_COMP2:
+            mu_l = m_mu[1];
+            rho_l = m_dens[1];
+            break;
+        default:
+            printf("Unknown fluid COMPONENT: %d\n",comp);
+            LOC(); clean_up(EXIT_FAILURE);
+            break;
+    }
+    
+    double tau_wall[MAXD] = {0.0};
+    double mag_tau_wall = computeWallShearStress(mag_vtan,
+                    dist_reflect,mu_l,rho_l,45.0);
+    //NOTE: In all numerical experiments, Newton's method converged
+    //      when the initial guess for the dimensionless wall velocity
+    //      was in the range of 40-50.
+
+    if (mag_vtan > MACH_EPS)
+    {
+        for (int j = 0; j < dim; ++j)
+            tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+    }
+
+    // Interpolate the effective viscosity at the reflected point
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+                getStateMu,&mu_reflect,nullptr);
+        //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+        //      getStateMu,&mu_reflect,&field.mu[index]);
+    if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
+    
+    double vel_ghost_tan[MAXD] = {0.0};
+    double vel_ghost_rel[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+    }
+
+
+    if (debugging("slip_boundary"))
+    {
+        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mag_tau_wall = %g\n",mag_tau_wall);
+        fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    }
+    */
 }
 
 void G_CARTESIAN::computeViscousFlux2d(
