@@ -406,7 +406,7 @@ private:
     //User defined minimum physical variables
     double min_dens;
     double min_pres;
-    double min_mu;
+        //double min_mu;//TODO: don't think we need this
 
 	// for parallel partition
 	int NLblocks, ilower, iupper;

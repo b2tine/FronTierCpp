@@ -74,6 +74,9 @@ static int modify_contact_node(NODE*,NODE*,O_CURVE*,O_CURVE*,O_CURVE*,O_CURVE*,
                               double,double*,NODE_FLAG);
 
 
+/*
+//TODO: Now a global function in base FronTier library.
+//      Remove this when certain new function working.
 extern int next_index_in_dir(
         int* icoords,
         GRID_DIRECTION dir,
@@ -108,6 +111,7 @@ extern int next_index_in_dir(
     int index = d_index(icrds,top_gmax,dim);
 	return index;
 }
+*/
 
 extern double getStatePres(POINTER state)
 {

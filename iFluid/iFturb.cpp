@@ -329,7 +329,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
 
             if (!fr_crx_grid_seg)
             {
-                int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == ELASTIC_BOUNDARY)
@@ -340,7 +340,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 //      to vanish -- destroying the porosity of the canopy
                 
                 //TODO: Is this the correct approach??
-                int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||

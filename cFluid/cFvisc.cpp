@@ -1,5 +1,4 @@
 #include "cFluid.h"
-//#include "cFvisc.h"
 
 static double (*getStateVel[MAXD])(Locstate) =
                {getStateXvel,getStateYvel,getStateZvel};
@@ -338,6 +337,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     {
         vs->vel[j] = vel_reflect[j];
     }
+
+    //TODO: see setSlipBoundary() in cFturb.cpp for next steps ...
 }
 
 void G_CARTESIAN::computeViscousFlux2d(

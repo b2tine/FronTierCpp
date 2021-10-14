@@ -89,9 +89,10 @@ void G_CARTESIAN::initMesh(void)
 	    (void) printf("Entering g_cartesian.initMesh()\n");
 	
     /*TMP*/
-    min_mu = 0.0000001; //TODO: Need input file options for these
+    //TODO: Need input file options for these
 	min_dens = 0.0001;
 	min_pres = 0.0001;
+        //min_mu = 0.0000001; //TODO: don't think we need this...
 
 	FT_MakeGridIntfc(front);
 	setDomain();
@@ -705,6 +706,11 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 	}
 }	/* end scatMeshFlux */
 
+//TODO: Can modify this function to add application specific source terms
+//      to the momentum and energy balance equations.
+//
+//      Eg. Compressible Ergun equation source term for enforcing pressure
+//      jump boundary condition at porous interface.
 void G_CARTESIAN::addSourceTerm(
 	const SWEEP& m_vst,
 	FSWEEP *m_flux,
@@ -789,12 +795,14 @@ void G_CARTESIAN::addSourceTerm(
 	}
 }	/* end addSourceTerm */
 
-// for initial condition: setInitialCondition();
-// for the source term of the momentum equation: computeSourceTerm();
 void G_CARTESIAN::solve(double dt)
 {
 	m_dt = dt;
-	max_speed = 0.0;
+	
+    //TODO: Could set default mu_max, rho_min values here with
+    //      max_speed -- could write function that sets all these
+    //      values to their default at beginning of every timestep.
+    max_speed = 0.0;
 
 	if (debugging("trace")) printf("Entering solve()\n");
 	start_clock("solve");
@@ -824,12 +832,11 @@ void G_CARTESIAN::solve(double dt)
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
-	// 1) solve for intermediate velocity
-	start_clock("computeAdvection");
+	start_clock("advanceSolution");
 
 	advanceSolution();
 
-	stop_clock("computeAdvection");
+	stop_clock("advanceSolution");
 	
     if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
@@ -1394,18 +1401,6 @@ void G_CARTESIAN::setMaxTimestep()
     {
 	    max_dt = hmin/max_speed/static_cast<double>(dim);
     }
-        /*
-        //TODO: Remove when sure below working correctly
-        if (max_speed != 0.0)
-        {
-            max_dt = hmin/max_speed/static_cast<double>(dim);
-        }
-        else
-        {
-            max_dt = 0.0;
-        }
-        */
-
     
     /*
     //TODO: Do we need this? max_speed is really the maximum wave speed
@@ -1420,19 +1415,12 @@ void G_CARTESIAN::setMaxTimestep()
         max_dt = 1.0/mesh_val;
     }
     */
-
     
     //viscous time step restriction
     visc_max_dt = HUGE;
 	pp_global_max(&mu_max,1);
         //pp_global_max(&rho_min,1);
    
-            //TEMP: hardcode mu_max (temporary measure for debugging)
-            //EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        
-            //mu_max = eqn_params->mu2; //hardcoded
-            //mu_max = eqn_params->mu1; //hardcoded
-    
     if (mu_max > MACH_EPS)
     {
         visc_max_dt = 0.5*hmin*hmin/mu_max;
@@ -1447,7 +1435,7 @@ void G_CARTESIAN::setMaxTimestep()
 
         visc_max_dt = 1.0/((mu_max/rho_min)*mesh_val);
         
-        //OR should mu_max/rho_min just be nu_max??
+            //OR: should mu_max/rho_min just be nu_max??
         */
     }
 
@@ -5830,13 +5818,33 @@ void G_CARTESIAN::initSampleVelocity(char *in_name)
 
 void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 {
+    /*
 	if (state->mu < min_mu)
+    {
+        printf("\n\nWARNING checkCorrectForTolerance(): \
+                state->mu = %g < min_mu = %g\n",state->mu, min_mu);
+        printf("setting to min_mu\n\n");
 	    state->mu = min_mu;
-	if (state->dens < min_dens)
-	    state->dens = min_dens;
-	if (state->pres < min_pres)
-	    state->pres = min_pres;
-	state->engy = EosEnergy(state);
+    }
+    */
+    
+    if (state->dens < min_dens)
+    {
+        printf("\n\nWARNING checkCorrectForTolerance(): \
+                state->dens = %g < min_dens = %g\n",state->dens, min_dens);
+        printf("setting to min_dens\n\n");
+        state->dens = min_dens;
+    }
+    
+    if (state->pres < min_pres)
+    {
+        printf("\n\nWARNING checkCorrectForTolerance(): \
+                state->pres = %g < min_pres = %g\n",state->pres, min_pres);
+        printf("setting to min_pres\n\n");
+        state->pres = min_pres;
+    }
+
+    state->engy = EosEnergy(state);
 }	/* end checkCorrectForTolerance */
 
 boolean G_CARTESIAN::needBufferFromIntfc(

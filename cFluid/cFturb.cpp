@@ -1,6 +1,12 @@
 #include "cFluid.h"
 #include "cFturb.h"
 
+static double (*getStateVel[MAXD])(Locstate) =
+               {getStateXvel,getStateYvel,getStateZvel};
+
+static double (*getStateMom[MAXD])(Locstate) =
+               {getStateXmom,getStateYmom,getStateZmom};
+
     
 //TODO: Add other SGS terms.
 void G_CARTESIAN::computeSGSTerms()
@@ -39,18 +45,22 @@ void G_CARTESIAN::computeEddyViscosity2d()
     {
         int icoords[MAXD] = {i, j, 0};
         int index = d_index(icoords,top_gmax,dim);
-        mu[index] = 0.0;
         
         COMPONENT comp = top_comp[index];
-        if (!gas_comp(comp)) continue;
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
 
+        double mu_molecular;
         switch (comp)
         {
             case GAS_COMP1:
-                mu[index] = eqn_params->mu1;
+                mu_molecular = eqn_params->mu1;
                 break;
             case GAS_COMP2:
-                mu[index] = eqn_params->mu2;
+                mu_molecular = eqn_params->mu2;
                 break;
             default:
                 printf("\nERROR computeEddyViscosity2d(): unrecognized component!\n");
@@ -58,8 +68,8 @@ void G_CARTESIAN::computeEddyViscosity2d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        mu[index] += computeEddyViscosityVremanModel(icoords);
-            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
+            //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
 
         if (mu[index] > mu_max)
         {
@@ -78,18 +88,22 @@ void G_CARTESIAN::computeEddyViscosity3d()
     {
         int icoords[MAXD] = {i, j, k};
         int index = d_index(icoords,top_gmax,dim);
-        mu[index] = 0.0;
         
         COMPONENT comp = top_comp[index];
-        if (!gas_comp(comp)) continue;
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
 
+        double mu_molecular;
         switch (comp)
         {
             case GAS_COMP1:
-                mu[index] = eqn_params->mu1;
+                mu_molecular = eqn_params->mu1;
                 break;
             case GAS_COMP2:
-                mu[index] = eqn_params->mu2;
+                mu_molecular = eqn_params->mu2;
                 break;
             default:
                 printf("\nERROR computeEddyViscosity3d(): unrecognized component!\n");
@@ -97,8 +111,8 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        mu[index] += computeEddyViscosityVremanModel(icoords);
-            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
+            //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
     
         if (mu[index] > mu_max)
         {
@@ -166,42 +180,8 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 
         alpha[i][j] = 0.5*(vel_p - vel_m)/top_h[i];
         sum_alpha += alpha[i][j]*alpha[i][j];
-
-        /*
-        //TEMP
-        if (std::isinf(vel[j][index[2*i+1]]) || std::isnan(vel[j][index[2*i+1]]))
-        {
-            vel[j][index[2*i+1]] = 0.0;
-        }
-        
-        //TEMP
-        if (std::isinf(vel[j][index[2*i]]) || std::isnan(vel[j][index[2*i]]))
-        {
-            vel[j][index[2*i]] = 0.0;
-        }
-
-        alpha[i][j] = 0.5*(vel[j][index[2*i+1]] - vel[j][index[2*i]])/top_h[i];
-        sum_alpha += alpha[i][j]*alpha[i][j];
-        */
     }
 
-    //TODO: Implement boundary aware computeVelocityGradient(), which includes
-    //      setting slip velocity etc.
-    //      Will likely be a little more complicated than iFluid version, potentially
-    //      requiring the state velocity and momentum values to be set in accord with
-    //      computed slip velocity.... 
-        
-        /*
-        auto alpha = computeVelocityGradient(icoords);
-
-        double sum_alpha = 0.0;
-        for (int i = 0; i < dim; ++i)
-        for (int j = 0; j < dim; ++j)
-        {
-            sum_alpha += alpha[i][j]*alpha[i][j];
-        }
-        */
- 
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
@@ -229,13 +209,11 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     }
 
     double mu_t = nu_t*field.dens[index0];
-        //double mu_t = nu_t*field.dens[index];
 
     if (std::isinf(mu_t) || std::isnan(mu_t))
     {
         printf("\nERROR: inf/nan eddy viscosity!\n");
         printf("nu_t = %g  dens[%d] = %g\n",nu_t,index0,field.dens[index0]);
-            //printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index]);
         printf("B_beta = %g  sum_alpha = %g\n",B_beta,sum_alpha);
 
         printf("\n");
@@ -258,7 +236,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 
         auto coords0 = cell_center[index0].getCoords();
         printf("coords0 = %f %f\n\n",coords0[0],coords0[1]);
-        //printf("coords0 = %f %f %f\n\n",coords0[0],coords0[1],coords0[2]);
 
         LOC(); clean_up(EXIT_FAILURE);
     }
@@ -266,7 +243,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
     return mu_t;
 }   /* end computeEddyViscosityVremanModel */
 
-//TODO: Implement boundary aware version, which includes setting slip velocity etc.
 double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 {
     //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
@@ -350,16 +326,24 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 }   /* end computeEddyViscosityVremanModel_BdryAware */
 
 //TODO: ADAPT FOR USE WITH G_CARTESIAN
-std::vector<std::vector<double>>
-G_CARTESIAN::computeVelocityGradient(
-	int *icoords)
+//TODO: Implement boundary aware computeVelocityGradient(), which includes
+//      setting slip velocity etc.
+//      Will likely be a little more complicated than iFluid version, potentially
+//      requiring the state velocity and momentum values to be set in accordance with
+//      the computed slip velocity.... 
+std::vector<std::vector<double>> 
+G_CARTESIAN::computeVelocityGradient(int *icoords)
 {
     ///////////////////////////////////////////////////////////////////////////////
     printf("\nERROR computeVelocityGradient(): function not implemented yet\n");
     LOC(); clean_up(EXIT_FAILURE);
     ///////////////////////////////////////////////////////////////////////////////
 
-    double** vel = field.vel;
+    std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
+
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+    if (!gas_comp(comp)) return J;
 
     GRID_DIRECTION dir[3][2] = {{WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}};
     boolean fr_crx_grid_seg;
@@ -368,16 +352,11 @@ G_CARTESIAN::computeVelocityGradient(
     HYPER_SURF *hs;
     double crx_coords[MAXD];
 
-    std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
-
-    int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-    if (!gas_comp(comp)) return J;
-
     double vel_nb[2];
     double d_h[2];
+    
+    double** vel = field.vel;
 
-    /*
     for (int l = 0; l < dim; ++l)
     for (int m = 0; m < dim; ++m)
     {
@@ -392,7 +371,7 @@ G_CARTESIAN::computeVelocityGradient(
 
             if (!fr_crx_grid_seg)
             {
-                int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == ELASTIC_BOUNDARY)
@@ -401,24 +380,17 @@ G_CARTESIAN::computeVelocityGradient(
                 //      canopy via the slip boundary condition causes the pressure
                 //      jump imposed by the ghost fluid method porosity model
                 //      to vanish -- destroying the porosity of the canopy
-                
-                //TODO: What is the correct approach??
-                int index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                //
+                //      Above referring to iFluid solver -- what can/can't we do here?
+                int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
-                if (iFparams->use_no_slip)
-                {
-                    vel_nb[nb] = intfc_state->vel[l];
-                }
-                else
-                {
-                    double v_slip[MAXD] = {0.0};
-                    setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
-                    vel_nb[nb] = v_slip[l];
-                }
+                double v_slip[MAXD] = {0.0};
+                setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,vel,v_slip);
+                vel_nb[nb] = v_slip[l];
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
@@ -445,7 +417,6 @@ G_CARTESIAN::computeVelocityGradient(
     }
 
     return J;
-    */
 }
 
 void G_CARTESIAN::setSlipBoundary(
@@ -468,22 +439,331 @@ void G_CARTESIAN::setSlipBoundary(
     //      setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
 }
 
-// Based on finding the nearest interface point to the ghost point
-// computed using FT_FindNearestIntfcPointInRange()
+//TODO: Make function return the computed slip velocity,
+//      v_slip, as a std::vector<double>
 void G_CARTESIAN::setSlipBoundaryNIP(
-    int *icoords,
-    int idir,
-    int nb,
-    int comp, 
-    HYPER_SURF *hs,
-    POINTER state, 
-    double** vel,
-    double* v_slip)
-{ 
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_slip)
+{
+    ///////////////////////////////////////////////////////////////////////
     printf("\nERROR setSlipBoundaryNIP(): function not implemented yet\n");
     LOC(); clean_up(EXIT_FAILURE);
+    ///////////////////////////////////////////////////////////////////////
 
-    //TODO: Implemenent
+    
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
+    
+    double vel_intfc_gcrx[MAXD];
+    for (int i = 0; i < dim; ++i)
+    {
+        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ghost_ic[i] = icoords[i];
+    }
+    
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    int ghost_index = d_index(ghost_ic,top_gmax,dim);
+    COMPONENT ghost_comp = top_comp[ghost_index];
+    
+    for (int j = 0; j < dim; ++j)
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+
+    ////////////////////////////////////////////////////////////////////////
+    double intrp_coeffs[MAXD] = {0.0};
+    HYPER_SURF_ELEMENT* hsurf_elem;
+    HYPER_SURF* hsurf;
+    double range = 2;
+
+    //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
+    //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
+    //      step scenario -- to what degree is it working?
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
+    /*      
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+
+    //TODO: We should get the ring of tris around the nearest interface point,
+    //      and possible consider other nearby interface points that are within
+    //      range. For a complex interface such as the human vtk model, there appears
+    //      to be some error in the fluid region between the head and the hands.
+    //      Excessively large velocities -- maybe not enough drag from the other
+    //      nearby interface points that aren't being taken into account.
+
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    
+    //compute the normal and velocity vectors at the interface point
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+            {
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                /*
+                STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                */
+
+                /////////////////////////////////////////////////////////////
+                STATE* ss;
+                STATE* se;
+
+                if (gas_comp(negative_component(hsurf)))
+                {
+                    ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else if (gas_comp(positive_component(hsurf)))
+                {
+                    ss = (STATE*)right_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)right_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else
+                {
+                    printf("ERROR setSlipBoundaryNIP(): "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+                /////////////////////////////////////////////////////////////
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                }
+            }
+            break;
+
+        case 3:
+            {
+                TRI* nearTri = Tri_of_hse(hsurf_elem);
+                const double* tnor = Tri_normal(nearTri);
+                //NOTE: Tri_normal() does not return a unit vector
+                
+                STATE* st[3];
+
+                if (gas_comp(negative_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                }
+                else if (gas_comp(positive_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                }
+                else
+                {
+                    printf("ERROR setSlipBoundaryNIP(): "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = tnor[i];
+
+                    vel_intfc[i] = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                }
+            }
+            break;
+	}
+
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+        
+    if (comp == negative_component(hsurf))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
+    
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+    double dist_reflect = FT_GridSizeInDir(nor,front);
+
+    //TODO: need to check if dist_reflect > dist_ghost ???
+    
+        /*
+        // Compute dist_reflect as the diagonal length of rect grid blocks
+        double dist_reflect = 0.0;
+        for (int j = 0; j < 3; ++j)
+             dist_reflect += sqr(top_h[j]);
+        dist_reflect = sqrt(dist_reflect);
+        */
+
+    //The desired reflected point
+    for (int j = 0; j < dim; ++j)
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    ////////////////////////////////////////////////////////////////////////
+   
+
+    ////////////////////////////////////////////////////////////////////////
+    if (debugging("slip_boundary"))
+    {
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        printf("idir = %d nb = %d\n",idir,nb);
+        fprint_int_vector(stdout,"icoords",icoords,dim,", ");
+        fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
+        fprint_general_vector(stdout,"coords",coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g\n",dist_ghost,dist_reflect);
+        printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
+                dist_ghost/dist_reflect, dist_reflect - dist_ghost);
+    }
+    ////////////////////////////////////////////////////////////////////////
+
+    // Interpolate the velocity at the reflected point
+    int index = d_index(icoords,top_gmax,dim);
+    double vel_reflect[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+ 
+    double vel_rel[MAXD] = {0.0};
+    double vn = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_rel_nor[j] = vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+    }
+    double mag_vtan = Magd(vel_rel_tan,dim);
+
+    /*
+    /////////////////////////////////////////////////////////////////////////
+    if (iFparams->use_eddy_visc == NO)
+    {
+        for (int j = 0; j < dim; ++j)
+            v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+        return;
+    }
+    /////////////////////////////////////////////////////////////////////////
+    */
+
+    if (debugging("slip_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
+        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
+    }
+
+    double mu_l;
+    double rho_l;
+
+    switch (comp)
+    {
+        case GAS_COMP1:
+            mu_l = m_mu[0];
+            rho_l = m_dens[0];
+            break;
+        case GAS_COMP2:
+            mu_l = m_mu[1];
+            rho_l = m_dens[1];
+            break;
+        default:
+            printf("Unknown fluid COMPONENT: %d\n",comp);
+            LOC(); clean_up(EXIT_FAILURE);
+            break;
+    }
+    
+    double tau_wall[MAXD] = {0.0};
+    double mag_tau_wall = computeWallShearStress(mag_vtan,
+                    dist_reflect,mu_l,rho_l,45.0);
+    //NOTE: In all numerical experiments, Newton's method converged
+    //      when the initial guess for the dimensionless wall velocity
+    //      was in the range of 40-50.
+
+    if (mag_vtan > MACH_EPS)
+    {
+        for (int j = 0; j < dim; ++j)
+            tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+    }
+
+    // Interpolate the effective viscosity at the reflected point
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+                getStateMu,&mu_reflect,nullptr);
+    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+                getStateMu,&mu_reflect,&field.mu[index]);*/
+    if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
+    
+    double vel_ghost_tan[MAXD] = {0.0};
+    double vel_ghost_rel[MAXD] = {0.0};
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+    }
+
+
+    if (debugging("slip_boundary"))
+    {
+        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mag_tau_wall = %g\n",mag_tau_wall);
+        fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+    }
+    
+    /*
+    //store data to avoid recomputing values in the fluid solver
+    int fid = face_index(idir,nb);
+    for (int i = 0; i < dim; ++i)
+    {
+        ghost_data[fid][index].vel[i] = v_slip[i];
+        ghost_data[fid][index].force[i] = tau_wall[i];
+    }
+    */
 }
 
 double computeWallShearStress(

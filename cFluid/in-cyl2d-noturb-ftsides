@@ -10,7 +10,8 @@ Redistribution interval: 1000000000
 Domain limit in 0-th dimension: 0 3.3
 Domain limit in 1-th dimension: 0 2.5
 
-Computational grid: 165 125
+Computational grid: 250 190
+    XComputational gridX: 165 125
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -53,8 +54,8 @@ Enter order of point propagator: 4
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
 Enter density and pressure of ambient air: 1.0 20.0
  
-Enter density and viscosity of the fluid: 1.0 0.0007
-    XXXEnter density and viscosity of the fluidXXX: 1.0 0.01
+Enter density and viscosity of the fluid: 1.0 0.0001
+    XXXEnter density and viscosity of the fluidXXX: 1.0 0.0007
 
 Enter gravity: 0 0 
 
