@@ -93,6 +93,7 @@ POINT* CD_TRI::Point_of_hse(int i) const
 //TODO: Need to verify this is working properly
 //
 //      What if two adjacent TRIs become folded? 
+//      Bending stiffness could help exclude this scenario ...
 bool adjacentHSE(CD_HSE* A, CD_HSE* B)
 {
     int nA = A->num_pts();

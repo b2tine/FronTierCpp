@@ -2028,6 +2028,30 @@ void Incompress_Solver_Smooth_2D_Cartesian::setInitialCondition()
 	    }
 	}
 
+    double* mu = field->mu;
+    double* rho = field->rho;
+
+    for (int index = 0; index < size; index++)
+    {
+        mu[index] = 0.0;
+        rho[index] = 0.0;
+        
+        comp = top_comp[i];
+        if (!ifluid_comp(comp)) continue;
+
+        switch (comp)
+        {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+        }
+    }
+
     double *pres = field->pres;
     double *phi = field->phi;
     double *q = field->q;
