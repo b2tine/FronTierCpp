@@ -5317,8 +5317,6 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     {
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
                 getStateVel[j],&vel_reflect[j],&vel[j][index]);
-        /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
-                getStateVel[j],&vel_reflect[j],nullptr);*/
     }
  
     double vel_rel[MAXD] = {0.0};
