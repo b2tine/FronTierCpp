@@ -777,7 +777,7 @@ static void print_airfoil_stat3d_2(
                 for (k = 0; k < dim; ++k)
                 {
                     esk += 0.5*m_s*sqr(p->vel[k]);
-                    egp += -g[k]*m_s*Coords(p)[k];
+                    egp += -g[k]*m_s*Coords(p)[k];//TODO: domain doesn't always start at z = 0
                     st = (STATE*)left_state(p);
                     exk += 0.5*m_s*sqr(st->impulse[k]);
                     enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);

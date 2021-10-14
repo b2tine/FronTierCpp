@@ -1641,7 +1641,7 @@ static void rgbody_point_propagate(
 
     if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
     {
-        //TODO: Use input file option instead of debugging string to switch collision off
+        //TODO: Any harm in doing this even when collision turned off?
         if(!debugging("collision_off"))
         {
             for (i = 0; i < dim; ++i)
@@ -1799,6 +1799,7 @@ static void rgbody_point_propagate(
 			getStateVort,&newst->vort,&oldst->vort);
 	}
     
+    //TODO: Any harm in doing this even when collision turned off?
     if(!debugging("collision_off"))
     {
         /* copy newst to the other STATE; used in collision solver */
