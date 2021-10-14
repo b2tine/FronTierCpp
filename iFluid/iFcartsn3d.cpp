@@ -2002,7 +2002,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::surfaceTension(
 
 void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 {
-	int i;
 	COMPONENT comp;
 	double coords[MAXD];
 	int size = (int)cell_center.size();
@@ -2020,7 +2019,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	m_sigma = iFparams->surf_tension;
 	mu_min = rho_min = HUGE;
 	
-    for (i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
 	{
 	    if (ifluid_comp(m_comp[i]))
 	    {
@@ -2037,7 +2036,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
         mu[index] = 0.0;
         rho[index] = 0.0;
         
-        comp = top_comp[i];
+        comp = top_comp[index];
         if (!ifluid_comp(comp)) continue;
 
         switch (comp)
@@ -2058,7 +2057,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
     double *q = field->q;
 
 	// Initialize state at cell_center
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
     {
         getRectangleCenter(i, coords);
         comp = top_comp[i];
