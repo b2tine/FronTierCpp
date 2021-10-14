@@ -814,11 +814,6 @@ void G_CARTESIAN::solve(double dt)
     ///////////////////////////////////////////////////////////////////////////
     //TODO: Should be called before scatMeshStates()?
     //      
-    //      Ok to call before setComponent()?
-    //      --Probably ok when using a hardcoded value for mu corresponding
-    //      to a single fluid. Get working for single component before attempting
-    //      to implement for 2 fluid component runs.
-    
     computeSGSTerms();
     
     ///////////////////////////////////////////////////////////////////////////
