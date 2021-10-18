@@ -26,13 +26,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *******************************************************************/
 #include "cFluid.h"
 
-class ToFill
+
+struct ToFill
 {
-public:
     int icoords[3];
 };
 
-EXPORT void tecplot_interface_states(const char*, INTERFACE	*);
+EXPORT void tecplot_interface_states(const char*, INTERFACE*);
 
 static double (*getStateVel[MAXD])(Locstate) =
                {getStateXvel,getStateYvel,getStateZvel};
@@ -46,9 +46,9 @@ static void printInputStencil(SWEEP,int);
 //		L_RECTANGLE
 //----------------------------------------------------------------
 
-L_RECTANGLE::L_RECTANGLE(): m_index(-1), comp(-1)
-{
-}
+L_RECTANGLE::L_RECTANGLE()
+    : m_index(-1), comp(-1)
+{}
 
 void L_RECTANGLE::setCoords(
 	double *coords,
@@ -66,10 +66,6 @@ std::vector<double> L_RECTANGLE::getCoords()
 //--------------------------------------------------------------------------
 // 		G_CARTESIAN
 //--------------------------------------------------------------------------
-
-G_CARTESIAN::~G_CARTESIAN()
-{
-}
 
 //---------------------------------------------------------------
 //	initMesh
@@ -226,158 +222,6 @@ void G_CARTESIAN::setComponent(void)
 	}
 }	/* end setComponent() */
 
-void G_CARTESIAN::setInitialIntfc(
-	LEVEL_FUNC_PACK *level_func_pack,
-	char *inname)
-{
-	dim = front->rect_grid->dim;
-	eqn_params = (EQN_PARAMS*)front->extra1;
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	case TWO_FLUID_RM:
-	    initSinePertIntfc(level_func_pack,inname);
-	    break;
-	case TWO_FLUID_RM_RAND:
-	    initRandPertIntfc(level_func_pack,inname);
-	    break;
-	case TWO_FLUID_BUBBLE:
-	case FLUID_SOLID_CIRCLE:
-	    initCirclePlaneIntfc(level_func_pack,inname);
-	    break;
-	case IMPLOSION:
-	    initImplosionIntfc(level_func_pack,inname);
-	    break;
-	case MT_FUSION:
-	    initMTFusionIntfc(level_func_pack,inname);
-	    break;
-	case PROJECTILE:
-	    initProjectileIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_RECT:
-	    initRectPlaneIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_TRIANGLE:
-	    initTrianglePlaneIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_CYLINDER:
-         initCylinderPlaneIntfc(level_func_pack,inname);
-         break;
-	case RIEMANN_PROB:
-	case ONED_BLAST:
-	case ONED_SSINE:
-	case ONED_ASINE:
-	    initRiemannProb(level_func_pack,inname);
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    initObliqueIntfc(level_func_pack,inname);
-	    break;
-    case CHANNEL_FLOW:
-        initChannelFlow(level_func_pack,inname);
-        break;
-	default:
-	    (void) printf("Problem type not implemented, code needed!\n");
-	    clean_up(ERROR);
-	}
-}	/* end setInitialIntfc */
-
-void G_CARTESIAN::setProbParams(char *inname)
-{
-	dim = front->rect_grid->dim;
-	eqn_params = (EQN_PARAMS*)front->extra1;
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    setRayleiTaylorParams(inname);
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    setBubbleParams(inname);
-	    break;
-	case IMPLOSION:
-	    setImplosionParams(inname);
-	    break;
-	case MT_FUSION:
-	    setMTFusionParams(inname);
-	    break;
-	case PROJECTILE:
-	case FLUID_SOLID_CIRCLE:
-	case FLUID_SOLID_RECT:
-	case FLUID_SOLID_TRIANGLE:
-	case FLUID_SOLID_CYLINDER:
-    case CHANNEL_FLOW:
-	    setChannelFlowParams(inname); //setProjectileParams(inname);
-	    break;
-	case RIEMANN_PROB:
-	    setRiemProbParams(inname);
-	    break;
-	case ONED_BLAST:
-	case ONED_SSINE:
-	case ONED_ASINE:
-	    setOnedParams(inname);
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	default:
-	    printf("In setProbParams(), unknown problem type!\n");
-	    clean_up(ERROR);
-	}
-}	/* end setProbParams */
-
-void G_CARTESIAN::setInitialStates()
-{
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    initRayleiTaylorStates();
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    initRichtmyerMeshkovStates();
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    initBubbleStates();
-	    break;
-	case IMPLOSION:
-	    initImplosionStates();
-	    break;
-	case MT_FUSION:
-	    initMTFusionStates();
-	    break;
-	case PROJECTILE:
-    case FLUID_SOLID_CIRCLE:
-    case FLUID_SOLID_RECT:
-    case FLUID_SOLID_TRIANGLE:
-    case FLUID_SOLID_CYLINDER:
-    case CHANNEL_FLOW:
-	    initChannelFlowStates(); //initProjectileStates();
-	    break;
-	case RIEMANN_PROB:
-	    initRiemProbStates();
-	    break;
-	case ONED_BLAST:
-	    initBlastWaveStates();
-	    break;
-	case ONED_SSINE:
-	    initShockSineWaveStates();
-	    break;
-	case ONED_ASINE:
-	    initAccuracySineWaveStates();
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    initRichtmyerMeshkovStates();
-	    break;
-	default:
-	    (void) printf("In setInitialStates(), case not implemented!\n");
-	    clean_up(ERROR);
-	}
-	copyMeshStates();
-}	/* end setInitialStates */
-
 void G_CARTESIAN::advanceSolution(void)
 {
 	int order;
@@ -514,6 +358,7 @@ void G_CARTESIAN::computeMeshFlux(
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
     
+    //TODO: Use input file option instead of debugging string for viscous flux
 	if (!debugging("no_viscflux"))
     {
         addViscousFlux(&m_vst,m_flux,delta_t);
@@ -1078,7 +923,9 @@ void G_CARTESIAN::setDomain()
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
+        {
             eqn_params->Gvel[j][k][i] = 0.0;
+        }
 	}
 }
 
@@ -1165,14 +1012,11 @@ void G_CARTESIAN::checkVst(SWEEP *vst)
 
 void G_CARTESIAN::checkFlux(FSWEEP *flux)
 {
-	//for (int j = imin[1]; j < imax[1]; j++) //{ for i ... }
-    
-    int j = (imin[1] + imax[1])/2;
-	    //int j = 140;
+    int j_line = (imin[1] + imax[1])/2;
 	
     for (int i = imin[0]; i <= imax[0]; i++)
 	{	
-	    int index  = d_index2d(i,j,top_gmax);
+	    int index  = d_index2d(i,j_line,top_gmax);
 	    printf("%d %f  %f\n",i,flux->momn_flux[1][index],
 				flux->engy_flux[index]);
 	}
@@ -1281,6 +1125,64 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    }
 	}
 	fclose(outfile);
+}
+
+extern void readFrontStates(
+	Front		*front,
+	char		*restart_name)
+{
+	FILE 		*infile;
+	EQN_PARAMS 	*eqn_params = (EQN_PARAMS*)front->extra1;
+	INTERFACE 	*intfc = front->interf;
+        STATE 		*sl,*sr;
+        POINT 		*p;
+        HYPER_SURF 	*hs;
+        HYPER_SURF_ELEMENT *hse;
+	STATE 		*lstate,*rstate;
+	char 		fname[100];
+	int 		i,dim = front->rect_grid->dim;
+	int		comp;
+	EOS_PARAMS	*eos = eqn_params->eos;
+
+	sprintf(fname,"%s-gas",restart_name);
+	infile = fopen(fname,"r");
+	
+	/* Initialize states at the interface */
+    next_output_line_containing_string(infile,"Interface gas states:");
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        lstate = (STATE*)sl;	rstate = (STATE*)sr;
+
+        fscanf(infile,"%lf %lf",&lstate->mu,&rstate->mu);
+        fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
+        fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
+        }
+
+        comp = negative_component(hs);
+        lstate->eos = &eos[comp];
+        if(gas_comp(comp))
+        {
+            lstate->pres = EosPressure(lstate);
+        }
+
+        comp = positive_component(hs);
+        rstate->eos = &eos[comp];
+        if(gas_comp(comp))
+        {
+            rstate->pres = EosPressure(rstate);
+        }
+
+        lstate->dim = dim;
+        rstate->dim = dim;
+    }
+
+    FT_MakeGridIntfc(front);
+	fclose(infile);
 }
 
 void G_CARTESIAN::readInteriorStates(char *restart_name)

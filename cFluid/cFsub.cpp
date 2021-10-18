@@ -1445,65 +1445,7 @@ extern double linear_flux(
 	    return a*(um - ul);
 	else
 	    return a*(ur - um);
-}	/* end net_uwind_flux */
-
-extern void readFrontStates(
-	Front		*front,
-	char		*restart_name)
-{
-	FILE 		*infile;
-	EQN_PARAMS 	*eqn_params = (EQN_PARAMS*)front->extra1;
-	INTERFACE 	*intfc = front->interf;
-        STATE 		*sl,*sr;
-        POINT 		*p;
-        HYPER_SURF 	*hs;
-        HYPER_SURF_ELEMENT *hse;
-	STATE 		*lstate,*rstate;
-	char 		fname[100];
-	int 		i,dim = front->rect_grid->dim;
-	int		comp;
-	EOS_PARAMS	*eos = eqn_params->eos;
-
-	sprintf(fname,"%s-gas",restart_name);
-	infile = fopen(fname,"r");
-	
-	/* Initialize states at the interface */
-    next_output_line_containing_string(infile,"Interface gas states:");
-    next_point(intfc,NULL,NULL,NULL);
-    while (next_point(intfc,&p,&hse,&hs))
-    {
-        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-        lstate = (STATE*)sl;	rstate = (STATE*)sr;
-
-        fscanf(infile,"%lf %lf",&lstate->mu,&rstate->mu);
-        fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
-        fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
-        for (i = 0; i < dim; ++i)
-        {
-            fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
-        }
-
-        comp = negative_component(hs);
-        lstate->eos = &eos[comp];
-        if(gas_comp(comp))
-        {
-            lstate->pres = EosPressure(lstate);
-        }
-
-        comp = positive_component(hs);
-        rstate->eos = &eos[comp];
-        if(gas_comp(comp))
-        {
-            rstate->pres = EosPressure(rstate);
-        }
-
-        lstate->dim = dim;
-        rstate->dim = dim;
-    }
-
-    FT_MakeGridIntfc(front);
-	fclose(infile);
-}
+}	/* end upwind_flux */
 
 extern void reflectVectorThroughPlane(
 	double *vec,

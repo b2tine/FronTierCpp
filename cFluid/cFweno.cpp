@@ -81,12 +81,13 @@ extern void WENO_flux(
 	    vflux->engy_flux[i] = -lambda*(flux[4][i+1] - flux[4][i]);
 	    if (isnan(vflux->dens_flux[i]))
 	    {
-		int j;
-		for (j = 0; j < extend_size; ++j)
-		    printf("u = %f %f %f %f %f\n",
-			u_old[0][j],u_old[1][j],u_old[2][j],
-			u_old[3][j],u_old[4][j]);
-		clean_up(ERROR);
+            for (int j = 0; j < extend_size; ++j)
+            {
+                printf("u = %f %f %f %f %f\n",
+                u_old[0][j],u_old[1][j],u_old[2][j],
+                u_old[3][j],u_old[4][j]);
+            }
+            clean_up(ERROR);
 	    }
 	}
 }	/* end weno5_flux */

@@ -179,30 +179,6 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
-/*
-struct RG_PARAMS 
-{
-    int dim;
-    boolean no_fluid;               //For benchmark tests
-    double  total_mass;             //Total mass
-    double  moment_of_inertial;     //Moment of inertial about the axis
-    double  center_of_mass[MAXD];   //Center of mass
-    double  rotation_dir[MAXD];     //Direction of rotation
-    double  translation_dir[MAXD];  //Restricted direction of motion
-    double  rotation_cen[MAXD];     //Center of rotation
-    double  cen_of_mass_velo[MAXD]; //Center of mass velocity
-    double  angular_velo;           //Angular velocity of rotation
-    double  p_moment_of_inertial[MAXD];
-    double  p_angular_velo[MAXD];
-    double  euler_params[4];
-    double  old_euler_params[4];
-    MOTION_TYPE motion_type;
-};
-*/
-
-//typedef class G_CARTESIAN G_CARTESIAN_EB;
-
-
 struct VAR_BDRY_PARAMS 
 {
 	int dim;
@@ -248,10 +224,11 @@ struct RIEM_STATE
 
 struct CENTERED_WAVE
 {
-    int wave_type;                                  /* simple wave or shock */
-    double  speed_leading_edge,speed_trailing_edge; /* for simple wave */
-    double  speed_shock;                            /* for shock */
-    double  speed_contact;                          /* for contact line */
+    int wave_type;                      /* simple wave or shock */
+    double  speed_leading_edge;         /* for simple wave */
+    double speed_trailing_edge;
+    double  speed_shock;                /* for shock */
+    double  speed_contact;              /* for contact line */
 };
 
 struct RIEMANN_SOLN
@@ -337,7 +314,10 @@ public:
 	
     //G_CARTESIAN();
 	G_CARTESIAN(Front &front);
-	int dim;
+	
+    ~G_CARTESIAN() = default;
+	
+    int dim;
 	double m_dt;			// time increment
 	double max_dt;			// max_dt from cartesian (advection)
     double visc_max_dt;     
@@ -359,9 +339,6 @@ public:
 
 	// main step function
 	void solve(double dt);		
-
-	// constructor
-	~G_CARTESIAN();
 
 private:
 	
@@ -503,7 +480,7 @@ private:
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
     void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
-            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);//TODO: Implementation
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
 
     // -------------------------------------------------------

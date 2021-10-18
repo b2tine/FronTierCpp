@@ -67,23 +67,24 @@ extern double EosInternalEnergy(
 {
 	double		pres = state->pres;
 	double		dens = state->dens;
-	EOS_PARAMS	*eos = state->eos;
+	EOS_PARAMS* eos = state->eos;
 	double		gamma = eos->gamma;
 
-	return (pres+gamma*eos->pinf)/(gamma-1) - dens*eos->einf;
+	return (pres+gamma*eos->pinf)/(gamma-1.0) - dens*eos->einf;
 }
 
 extern double EosEnergy(
 	STATE *state)
 {
-	int	i,dim = state->dim;
+	int	dim = state->dim;
 	double	dens = state->dens;
 	double	*momn = state->momn;
-	double	e;
 	
-	e = 0.0;
-	for (i = 0; i < dim; ++i)
-	    e += 0.5*sqr(momn[i])/dens;
+	double e = 0.0;
+	for (int i = 0; i < dim; ++i)
+    {
+        e += 0.5*sqr(momn[i])/dens;
+    }
 	e += EosInternalEnergy(state);
 
 	return e;

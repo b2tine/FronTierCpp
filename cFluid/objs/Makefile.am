@@ -18,7 +18,6 @@ libcFluid_la_SOURCES = \
 ../cFcartsn.cpp \
 ../cFeos.cpp \
 ../cFinit.cpp \
-../cFphys.cpp \
 ../cFriem.cpp \
 ../cFsub.cpp \
 ../cFtvd.cpp \

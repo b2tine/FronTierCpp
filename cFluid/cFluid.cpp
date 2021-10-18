@@ -270,7 +270,7 @@ static  void gas_driver(
 
         FT_SetTimeStep(front);
         
-        if (debugging("cfluid_dt"))
+        if (debugging("step_size"))
         {
             printf("\nStep size from front:    %20.14f\n",front->dt);
             printf("\nStep size from interior: %20.14f\n",CFL*g_cartesian.max_dt);
