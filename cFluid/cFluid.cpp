@@ -198,22 +198,35 @@ static  void gas_driver(
 	    g_cartesian.solve(front->dt);
 
 	    FT_Save(front);
-            g_cartesian.printFrontInteriorStates(out_name);
-            if (compare_with_base_data(front))
-            {
-                g_cartesian.compareWithBaseData(out_name);
-                g_cartesian.freeBaseFront();
-            }
-            FT_Draw(front);
+        g_cartesian.printFrontInteriorStates(out_name);
+            
+        if (compare_with_base_data(front))
+        {
+            g_cartesian.compareWithBaseData(out_name);
+            g_cartesian.freeBaseFront();
+        }
+        
+        FT_Draw(front);
 
 	    FT_SetTimeStep(front);
+        
+        /*
+        if (debugging("cfluid_dt"))
+        {
+            printf("\nfront->dt = %g    CFL*g_cartesian.max_dt = %g*%g = %g\n,"
+                    front->dt, CFL, g_cartesian.max_dt, CFL*g_cartesian.max_dt);
+        }
+        */
+
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
         //TODO: incorporate min_dt into time step determination
 
 	    FT_SetOutputCounter(front);
-        }
-        else
-	    FT_SetOutputCounter(front);
+    }
+    else
+    {
+        FT_SetOutputCounter(front);
+    }
 
 	FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
@@ -227,13 +240,11 @@ static  void gas_driver(
 
 	if (debugging("trace"))
         printf("Before time loop\n");
-        
+    
+    /* Propagating interface for time step dt */
     for (;;)
     {
-        /* Propagating interface for time step dt */
-
-        if(debugging("CLOCK"))
-                reset_clock();
+        if(debugging("CLOCK")) reset_clock();
 
         start_clock("time_loop");
         print_storage("Storage at start of time step","trace");
@@ -258,11 +269,11 @@ static  void gas_driver(
         //TODO: Add option for using a fixed time step.
 
         FT_SetTimeStep(front);
-        if (debugging("step_size"))
+        
+        if (debugging("cfluid_dt"))
         {
-            (void) printf("Step size from front:    %20.14f\n",front->dt);
-            (void) printf("Step size from interior: %20.14f\n",
-                        CFL*g_cartesian.max_dt);
+            printf("\nStep size from front:    %20.14f\n",front->dt);
+            printf("\nStep size from interior: %20.14f\n",CFL*g_cartesian.max_dt);
         }
         
         front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);

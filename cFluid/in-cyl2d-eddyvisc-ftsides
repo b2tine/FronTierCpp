@@ -20,7 +20,7 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 20.0 0
+Enter velocity: 80.0 0
 Enter pressure: 100.0
 Enter density: 3.0
 For upper boundary in 0-th dimension

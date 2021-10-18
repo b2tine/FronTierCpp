@@ -335,8 +335,8 @@ std::vector<std::vector<double>>
 G_CARTESIAN::computeVelocityGradient(int *icoords)
 {
     ///////////////////////////////////////////////////////////////////////////////
-    printf("\nERROR computeVelocityGradient(): function not implemented yet\n");
-    LOC(); clean_up(EXIT_FAILURE);
+        //printf("\nERROR computeVelocityGradient(): function not implemented yet\n");
+        //LOC(); clean_up(EXIT_FAILURE);
     ///////////////////////////////////////////////////////////////////////////////
 
     std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
@@ -452,11 +452,12 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 	double* v_slip)
 {
     ///////////////////////////////////////////////////////////////////////
-    printf("\nERROR setSlipBoundaryNIP(): function not implemented yet\n");
-    LOC(); clean_up(EXIT_FAILURE);
+        //printf("\nERROR setSlipBoundaryNIP(): function not implemented yet\n");
+        //LOC(); clean_up(EXIT_FAILURE);
     ///////////////////////////////////////////////////////////////////////
 
     
+    //TODO: dir is unused here?
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
@@ -479,9 +480,10 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     COMPONENT ghost_comp = top_comp[ghost_index];
     
     for (int j = 0; j < dim; ++j)
+    {
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+    }
 
-    ////////////////////////////////////////////////////////////////////////
     double intrp_coeffs[MAXD] = {0.0};
     HYPER_SURF_ELEMENT* hsurf_elem;
     HYPER_SURF* hsurf;
@@ -521,12 +523,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
                 normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
                 normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
 
-                /*
-                STATE* ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
-                STATE* se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
-                */
-
-                /////////////////////////////////////////////////////////////
                 STATE* ss;
                 STATE* se;
 
@@ -546,7 +542,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
                             "no fluid component on hypersurface\n");
                     LOC(); clean_up(EXIT_FAILURE);
                 }
-                /////////////////////////////////////////////////////////////
 
                 for (int i = 0; i < dim; ++i)
                 {
@@ -560,7 +555,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             {
                 TRI* nearTri = Tri_of_hse(hsurf_elem);
                 const double* tnor = Tri_normal(nearTri);
-                //NOTE: Tri_normal() does not return a unit vector
                 
                 STATE* st[3];
 
@@ -593,6 +587,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             break;
 	}
 
+    //NOTE: Tri_normal() does not return a unit vector
     double mag_nor = Magd(nor,dim);
     for (int i = 0; i < dim; ++i)
         nor[i] /= mag_nor;
@@ -616,13 +611,14 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         dist_reflect = sqrt(dist_reflect);
         */
 
+    
     //The desired reflected point
     for (int j = 0; j < dim; ++j)
+    {
         coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
-    ////////////////////////////////////////////////////////////////////////
-   
+    }
 
-    ////////////////////////////////////////////////////////////////////////
+    
     if (debugging("slip_boundary"))
     {
         printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
@@ -638,8 +634,8 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
                 dist_ghost/dist_reflect, dist_reflect - dist_ghost);
     }
-    ////////////////////////////////////////////////////////////////////////
 
+    
     // Interpolate the velocity at the reflected point
     int index = d_index(icoords,top_gmax,dim);
     double vel_reflect[MAXD] = {0.0};
