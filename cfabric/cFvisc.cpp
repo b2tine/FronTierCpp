@@ -86,8 +86,6 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         
         if (vs->comp != comp)
         {
-            //TODO: Can we eliminate this warning?
-            //          Warning: calling long_nearest_interface_point2d()
             setViscousGhostState(icoords,comp,vs,m_vst);
         }
         else

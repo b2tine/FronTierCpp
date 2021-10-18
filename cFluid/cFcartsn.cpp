@@ -1165,14 +1165,14 @@ extern void readFrontStates(
 
         comp = negative_component(hs);
         lstate->eos = &eos[comp];
-        if(gas_comp(comp))
+        if (gas_comp(comp))
         {
             lstate->pres = EosPressure(lstate);
         }
 
         comp = positive_component(hs);
         rstate->eos = &eos[comp];
-        if(gas_comp(comp))
+        if (gas_comp(comp))
         {
             rstate->pres = EosPressure(rstate);
         }
@@ -3220,6 +3220,7 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
+//TODO: velocity?
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {
