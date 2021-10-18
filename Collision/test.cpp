@@ -111,7 +111,7 @@ static void propagation_driver(Front *front)
         //collision detect and handling
         collision_solver->initializeSystem(front);
         collision_solver->setFabricFrictionConstant(0.0);
-        collision_solver->resolveCollision();
+        collision_solver->resolveCollisionSubstep();
 
         FT_AddTimeStepToCounter(front);
 
