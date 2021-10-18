@@ -546,7 +546,7 @@ private:
 	void setOnedParams(char*);
 	void setObliqueParams(char*);
 	void readBaseFront(int i);
-	void readBaseStates(char *restart_name);
+	void readBaseStates(char *restart_state_name);
 	void readFrontInteriorStates(char *restart_state_name);
 
 	void compSGS(void); //UNUSED FUNCTION (subgrid model by Hyunkyung Lim)
