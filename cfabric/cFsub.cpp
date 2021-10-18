@@ -1203,6 +1203,7 @@ double burger_flux(
 
 // Flux of Riemann solution of linear equation u_t + au_x = 0
 
+//TODO: should be named upwind (linear) flux
 extern double linear_flux(	
 	double a,
 	double ul,
@@ -1213,7 +1214,8 @@ extern double linear_flux(
 	    return a*(um - ul);
 	else
 	    return a*(ur - um);
-}	/* end net_uwind_flux */
+}	/* end linear_flux */
+
 /*
 extern void readFrontStates(
 	Front		*front,
