@@ -60,7 +60,7 @@ Enter refinement level: 1
 Type yes if motion is preset: no
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 1 0 0
-Enter the total mass for rigid body: 5.0
+Enter the total mass for rigid body: 2.5
 Enter the initial center of mass for rigid body: 0.275 0.496 0.496
 Enter the initial center of mass velocity: 0 0 0
 

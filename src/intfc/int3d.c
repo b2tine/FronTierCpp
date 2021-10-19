@@ -387,7 +387,8 @@ LOCAL	void copy_tris(
 
 		/* Allocate Tmp Storage for Copied Tris */
 
-	h_size = 5*(s->interface->num_points) + 1;
+	h_size = 4*(s->interface->num_points) + 1;
+	    //h_size = 5*(s->interface->num_points) + 1;
 	uni_array(&ntris,s->num_tri,sizeof(TRI *));
 	uni_array(&hash_table,h_size,sizeof(P_LINK));
 	reset_hash_table(hash_table,h_size);

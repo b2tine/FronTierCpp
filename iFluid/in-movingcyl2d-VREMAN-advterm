@@ -1,8 +1,8 @@
 Max time: 3.0
 Max step: 5000
-Print interval: 0.5
-Movie frame interval: 0.015
-CFL factor: 0.75
+Print interval: 0.25
+Movie frame interval: 0.005
+CFL factor: 0.5
 Redistribution interval: 100000000
 
 Domain limit in 0-th dimension: 0 2.694
