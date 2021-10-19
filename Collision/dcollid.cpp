@@ -2302,8 +2302,11 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
+        //TODO: Probably need to limit the bonds in order beginning from the
+        //      load node or rg_string_node like hair strand strain limiting
         StrainStats bss = computeStrainImpulsesPosn(stringBondList,mstate);
+        
+        StrainStats tss = computeStrainImpulsesPosn(fabricTriList,mstate);
         
         if (debugging("strain_limiting"))
         {
@@ -2337,12 +2340,14 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
         //TODO: Bond list first or Tri list first?
         //      Is there a difference?
         
-        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
-        StrainStats tss = computeStrainImpulsesPosn(shuffledFabricTriList,mstate);
-        
+        //TODO: Probably need to limit the bonds in order beginning from the
+        //      load node or rg_string_node like hair strand strain limiting
         auto shuffledStringBondList = shuffleHseList(stringBondList);
         StrainStats bss = computeStrainImpulsesPosn(shuffledStringBondList,mstate);
 
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        StrainStats tss = computeStrainImpulsesPosn(shuffledFabricTriList,mstate);
+        
         if (debugging("strain_limiting"))
         {
             printf("    %d TRI Strain Edges  -- total_edge_length = %f\n",
@@ -2578,11 +2583,13 @@ void CollisionSolver3d::limitStrainRatePosnGS(MotionState mstate)
     const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
-        StrainStats tss = computeStrainRateImpulsesPosn(shuffledFabricTriList,mstate);
-        
+        //TODO: Probably need to limit the bonds in order beginning from the
+        //      load node or rg_string_node like hair strand strain limiting
         auto shuffledStringBondList = shuffleHseList(stringBondList);
         StrainStats bss = computeStrainRateImpulsesPosn(shuffledStringBondList,mstate);
+        
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        StrainStats tss = computeStrainRateImpulsesPosn(shuffledFabricTriList,mstate);
         
         if (debugging("strain_limiting"))
         {
@@ -2612,8 +2619,10 @@ void CollisionSolver3d::limitStrainRatePosnJac(MotionState mstate)
 	const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
-        StrainStats tss = computeStrainRateImpulsesPosn(fabricTriList,mstate);
+        //TODO: Probably need to limit the bonds in order beginning from the
+        //      load node or rg_string_node like hair strand strain limiting
         StrainStats bss = computeStrainRateImpulsesPosn(stringBondList,mstate);
+        StrainStats tss = computeStrainRateImpulsesPosn(fabricTriList,mstate);
         
         if (debugging("strain_limiting"))
         {
@@ -2828,11 +2837,13 @@ void CollisionSolver3d::limitStrainVelGS()
         //TODO: Bond list first or tri list first?
         //      Is there a difference?
         
-        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
-        StrainStats tss = computeStrainImpulsesVel(shuffledFabricTriList);
-        
+        //TODO: Probably need to limit the bonds in order beginning from the
+        //      load node or rg_string_node like hair strand strain limiting
         auto shuffledStringBondList = shuffleHseList(stringBondList);
         StrainStats bss = computeStrainImpulsesVel(shuffledStringBondList);
+        
+        auto shuffledFabricTriList = shuffleHseList(fabricTriList);
+        StrainStats tss = computeStrainImpulsesVel(shuffledFabricTriList);
         
         if (debugging("strain_limiting"))
         {
@@ -3294,14 +3305,25 @@ bool isRegisteredPoint(const STATE* sl)
     return sl->is_registeredpt;
 }
 
+bool isLoadNode(const POINT* p)
+{
+    STATE* sl = (STATE*)left_state(p);
+    return sl->is_load_node;
+}
+
+bool isLoadNode(const STATE* sl)
+{
+    return sl->is_load_node;
+}
+
 bool isConstrainedPoint(const POINT* p)
 {
-    return isRegisteredPoint(p) || isRigidBody(p);
+    return isRegisteredPoint(p) || isRigidBody(p) || isLoadNode(p);
 }
 
 bool isConstrainedPoint(const STATE* sl)
 {
-    return isRegisteredPoint(sl) || isRigidBody(sl);
+    return isRegisteredPoint(sl) || isRigidBody(sl) || isLoadNode(p);
 }
 
 bool isImpactZonePoint(POINT* p)

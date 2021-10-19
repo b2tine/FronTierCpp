@@ -334,6 +334,8 @@ bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
 bool isRegisteredPoint(const POINT*);
 bool isRegisteredPoint(const STATE*);
+bool isLoadNode(const POINT*);
+bool isLoadNode(const STATE*);
 bool isConstrainedPoint(const POINT*);
 bool isConstrainedPoint(const STATE*);
 bool isImpactZonePoint(POINT*);

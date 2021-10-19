@@ -65,6 +65,7 @@ struct STATE
     bool has_strainlim_collsn;
     bool is_fixed;
 	bool is_movableRG;
+	bool is_load_node;
     bool is_stringpt;
     bool is_registeredpt;
 };
