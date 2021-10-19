@@ -1631,7 +1631,8 @@ static void rgbody_point_propagate(
 
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below)?
-	    //setStateViscosity(iFparams,newst,comp);
+    //
+    //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
@@ -1784,8 +1785,13 @@ static void rgbody_point_propagate(
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	
+    //TODO: Is this correct, or only use setStateViscosity() above???
     FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);
+    /*
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,nullptr);
+    */
 
     if (m_temp != NULL)
     {
@@ -3206,7 +3212,7 @@ static void promptForDirichletBdryState(
 	case 'P':
 	    get_parabolic_state_params(front,infile,&func_params);
 	    FT_InsertDirichletBoundary(front,iF_parabolicBoundaryState,
-			"iF_splitBoundaryState",func_params,NULL,*hs,i_hs);
+			"iF_parabolicBoundaryState",func_params,NULL,*hs,i_hs);
 	    break;
 	default:
 	    (void) printf("Unknown Dirichlet boundary!\n");

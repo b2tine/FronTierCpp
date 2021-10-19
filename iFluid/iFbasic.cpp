@@ -5392,11 +5392,13 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;
+    /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
                 getStateMu,&mu_reflect,nullptr);
-    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,&field->mu[index]);*/
     if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index]; //TODO: May not need this anymore
+    */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
+                getStateMu,&mu_reflect,&field->mu[index]);
     
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
