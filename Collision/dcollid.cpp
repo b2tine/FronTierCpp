@@ -3323,7 +3323,7 @@ bool isConstrainedPoint(const POINT* p)
 
 bool isConstrainedPoint(const STATE* sl)
 {
-    return isRegisteredPoint(sl) || isRigidBody(sl) || isLoadNode(p);
+    return isRegisteredPoint(sl) || isRigidBody(sl) || isLoadNode(sl);
 }
 
 bool isImpactZonePoint(POINT* p)
