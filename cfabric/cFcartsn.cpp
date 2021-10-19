@@ -343,9 +343,9 @@ void G_CARTESIAN::computeMeshFlux(
 	}
 
     //TODO: Use input file option instead of debugging string for viscous flux
-    if (!debugging("viscflux")) //if (!debugging("no_viscflux"))
+    if (debugging("viscflux")) //if (!debugging("no_viscflux"))
     {
-        //addViscousFlux(&m_vst,m_flux,delta_t);
+       addViscousFlux(&m_vst,m_flux,delta_t);
     }
 
 	addSourceTerm(m_vst,m_flux,delta_t);
@@ -639,8 +639,7 @@ void G_CARTESIAN::solve(double dt)
 	
     ///////////////////////////////////////////////////////////////////////////
     //TODO: Should be called before scatMeshStates()?
-    //
-        //computeSGSTerms();
+    computeSGSTerms();
 
     ///////////////////////////////////////////////////////////////////////////
 

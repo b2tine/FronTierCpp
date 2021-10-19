@@ -325,10 +325,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     //Interpolate Density and Momentum at the reflected point
     //and compute the velocity.
     double dens_reflect;
+    /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
             getStateDens,&dens_reflect,nullptr);
-    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
-            getStateDens,&dens_reflect,&m_vst->dens[index]);*/
+    */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+            getStateDens,&dens_reflect,&m_vst->dens[index]);
 
     double mom_reflect[MAXD];
     double vel_reflect[MAXD];
@@ -337,10 +339,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         //TODO: Make sure the interface value has been set in case it is
         //      needed as the default value (since we are passing nullptr
         //      as the defailt value). Same for above.
+        /*
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
                 getStateMom[j],&mom_reflect[j],nullptr);
-        /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
-                getStateMom[j],&momn_reflect[j],&m_vst->momn[j][index]);*/
+        */
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
+                getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
         vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
@@ -432,11 +436,13 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;
+    /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
                 getStateMu,&mu_reflect,nullptr);
-        //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-        //      getStateMu,&mu_reflect,&field.mu[index]);
     if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
+    */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+            getStateMu,&mu_reflect,&field.mu[index]);
     
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};

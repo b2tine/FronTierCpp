@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 	FT_ReadSpaceDomain(in_name,&f_basic);
 	FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
+
 	if (debugging("sample_velocity"))
             g_cartesian.initSampleVelocity(in_name);
 

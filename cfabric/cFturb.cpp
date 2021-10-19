@@ -68,8 +68,8 @@ void G_CARTESIAN::computeEddyViscosity2d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-            //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+            //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
         if (mu[index] > mu_max)
         {
@@ -111,8 +111,8 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-            //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+            //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
         if (mu[index] > mu_max)
         {
@@ -721,11 +721,13 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;
+    /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
                 getStateMu,&mu_reflect,nullptr);
-    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-                getStateMu,&mu_reflect,&field.mu[index]);*/
     if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
+    */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+                getStateMu,&mu_reflect,&field.mu[index]);
     
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};

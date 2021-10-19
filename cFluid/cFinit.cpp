@@ -485,16 +485,16 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
 	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
-	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p1);
-	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p1);
+	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
+	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
     CursorAfterString(infile,"Enter density and viscosity of the fluid:");
-    fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->mu1);
-    (void) printf("%f %f\n",eqn_params->rho1,eqn_params->mu1);
+    fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
+    (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
 
-    eqn_params->rho2 = eqn_params->rho1;
-    eqn_params->p2 = eqn_params->p1;
-    eqn_params->mu2 = eqn_params->mu1;
+    eqn_params->rho1 = eqn_params->rho2;
+    eqn_params->mu1 = eqn_params->mu2;
+    eqn_params->p1 = eqn_params->p2;
 
 	CursorAfterString(infile,"Enter gravity:");
 	for (i = 0; i < dim; ++i)
@@ -528,16 +528,26 @@ void G_CARTESIAN::initChannelFlowStates()
 	double coords[MAXD];
 	COMPONENT comp;
 	STATE *sl,*sr,state;
-        POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
+    POINT *p;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
 	INTERFACE *intfc = front->interf;
-	double *mu = field.mu;
+	
+    double *mu = field.mu;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
 	double **vel = field.vel;
+
+    m_dens[0] = eqn_params->rho1;
+    m_dens[1] = eqn_params->rho2;
+
+    m_mu[0] = eqn_params->mu1;
+    m_mu[1] = eqn_params->mu2;
+
+    m_comp[0] = SOLID_COMP;
+    m_comp[1] = GAS_COMP2;
 
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
