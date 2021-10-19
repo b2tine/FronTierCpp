@@ -70,15 +70,15 @@ extern double EosInternalEnergy(
 	EOS_PARAMS* eos = state->eos;
 	double		gamma = eos->gamma;
 
-	return (pres+gamma*eos->pinf)/(gamma-1.0) - dens*eos->einf;
+	return (pres + gamma*eos->pinf)/(gamma - 1.0) - dens*eos->einf;
 }
 
 extern double EosEnergy(
 	STATE *state)
 {
 	int	dim = state->dim;
-	double	dens = state->dens;
-	double	*momn = state->momn;
+	double dens = state->dens;
+	double* momn = state->momn;
 	
 	double e = 0.0;
 	for (int i = 0; i < dim; ++i)

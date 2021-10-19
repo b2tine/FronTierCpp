@@ -5550,6 +5550,7 @@ void G_CARTESIAN::GFMGhostState(
 	ghost_st->engy = EosEnergy(ghost_st);
 }
 
+//TODO: Need to set slip velocity here too???
 void G_CARTESIAN::setNeumannStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,

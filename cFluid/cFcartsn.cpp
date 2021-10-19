@@ -247,7 +247,7 @@ void G_CARTESIAN::advanceSolution(void)
 	}
 	
     solveRungeKutta(order);
-}	/* end computeAdvection */
+}	/* end advanceSolution */
 
 
 void G_CARTESIAN::solveRungeKutta(int order)
@@ -5336,6 +5336,7 @@ void G_CARTESIAN::GFMGhostState(
 	ghost_st->engy = EosEnergy(ghost_st);
 }
 
+//TODO: Need to set slip velocity here too???
 void G_CARTESIAN::setNeumannStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -5408,7 +5409,7 @@ void G_CARTESIAN::setNeumannStates(
 		    v[j] = 2.0*vn*nor[j] - v[j];
 	    
         for (j = 0; j < dim; ++j)
-		coords_ref[j] = crx_coords[j] + v[j];
+		    coords_ref[j] = crx_coords[j] + v[j];
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
@@ -5439,6 +5440,8 @@ void G_CARTESIAN::setNeumannStates(
 		    vn += v[j]*nor[j];
 	    }
             
+        //TODO: Is this sufficient for slip wall bdry?
+        //
         /* Only normal component is reflected, 
             relative tangent velocity is zero */
         for (j = 0; j < dim; j++)

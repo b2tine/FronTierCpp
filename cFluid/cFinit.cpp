@@ -2723,9 +2723,7 @@ void G_CARTESIAN::initRandPertIntfc(
         fclose(infile);
 }        /* end initPertIntfc */
 
-static void assign_seeds(
-
-	unsigned short int *seeds)
+static void assign_seeds(unsigned short int *seeds)
 {
 	seeds[0] = 271;
 	seeds[1] = 6253;

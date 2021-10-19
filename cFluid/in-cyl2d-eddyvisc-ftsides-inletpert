@@ -1,7 +1,7 @@
 Max time: 3.0
 Max step: 100000
 Print interval: 0.05
-Movie frame interval: 0.01
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 1000000000
 
@@ -20,10 +20,10 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 50.0 0
+Enter velocity: 25.0 0
 Enter pressure: 100.0
 Enter density: 3.0
-Enter yes for inlet boundary perturbation: no
+Enter yes for inlet boundary perturbation: yes
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -50,12 +50,12 @@ Numerical scheme for interior solver can be
 Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
-    XXXEnter order of point propagatorXXX: 2
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
 Enter density and pressure of ambient air: 1.0 20.0
  
-Enter density and viscosity of the fluid: 1.0 0.0001
+Enter density and viscosity of the fluid: 1.0 0.001
+    XXXEnter density and viscosity of the fluidXXX: 1.0 0.0001
     XXXEnter density and viscosity of the fluidXXX: 1.0 0.0007
 
 Enter gravity: 0 0 

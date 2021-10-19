@@ -154,6 +154,7 @@ struct EQN_PARAMS
 
 	//LES Turbulence
     bool use_eddy_viscosity {false};
+    bool perturb_const_inlet_bdry {false};
     
     
     //Base front for comparison
@@ -179,6 +180,8 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
+//TODO: This should be named PISTON_BDRY_PARAMS or similar
+//      -- not generic variable bdry
 struct VAR_BDRY_PARAMS 
 {
 	int dim;

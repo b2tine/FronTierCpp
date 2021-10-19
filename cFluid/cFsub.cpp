@@ -24,7 +24,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cFluid.h"
 
-	/*  Function Declarations */
+#include <functional>
+#include <chrono>
+#include <random>
+
+
+/*  Function Declarations */
 static void neumann_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 static void dirichlet_point_propagate(Front*,POINTER,POINT*,POINT*,
@@ -143,45 +148,46 @@ extern void read_dirichlet_bdry_data(
 	{
 	    if (rect_boundary_type(intfc,i,j) == DIRICHLET_BOUNDARY)
 	    {
-		hs = FT_RectBoundaryHypSurf(intfc,DIRICHLET_BOUNDARY,i,j);
-		if (hs == NULL)
-		{
-		    printf("ERROR: cannot find Dirichlet boundary"
-			   " in dimension %d direction %d\n",i,j);
-		    clean_up(ERROR);
-		}
-		if (j == 0)
-		    sprintf(msg,"For lower boundary in %d-th dimension",i);
-		else
-		    sprintf(msg,"For upper boundary in %d-th dimension",i);
-		CursorAfterString(infile,msg);
-		(void) printf("\n");
-		promptForDirichletBdryState(infile,front,&hs,1,i_hs);
-		i_hs++;
+            hs = FT_RectBoundaryHypSurf(intfc,DIRICHLET_BOUNDARY,i,j);
+            if (hs == NULL)
+            {
+                printf("ERROR: cannot find Dirichlet boundary"
+                   " in dimension %d direction %d\n",i,j);
+                clean_up(ERROR);
+            }
+            if (j == 0)
+                sprintf(msg,"For lower boundary in %d-th dimension",i);
+            else
+                sprintf(msg,"For upper boundary in %d-th dimension",i);
+            CursorAfterString(infile,msg);
+            (void) printf("\n");
+            
+            promptForDirichletBdryState(infile,front,&hs,1,i_hs);
+            i_hs++;
 	    }
 	    else if (rect_boundary_type(intfc,i,j) == MIXED_TYPE_BOUNDARY)
 	    {
-		hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,
-					&nhs);
-		printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",
-					i,j,nhs);
-		if (dim == 2)
-		{
-		    for (k = 0; k < nhs; ++k)
-		    {
-			CURVE *c = Curve_of_hs(hss[k]);
-		    	(void) printf("Curve %d start and end at: ",k+1);
-		    	(void) printf("(%f %f)->(%f %f)\n",
-				  Coords(c->start->posn)[0],
-				  Coords(c->start->posn)[1],
-				  Coords(c->end->posn)[0],
-				  Coords(c->end->posn)[1]);
-			promptForDirichletBdryState(infile,front,hss+k,1,i_hs);
-			i_hs++;
-		    }
-		}
+            hss = FT_MixedBoundaryHypSurfs(intfc,i,j,DIRICHLET_BOUNDARY,&nhs);
+            printf("Number of Dirichlet boundaries on dir %d side %d: %d\n",
+                        i,j,nhs);
+            if (dim == 2)
+            {
+                for (k = 0; k < nhs; ++k)
+                {
+                CURVE *c = Curve_of_hs(hss[k]);
+                    (void) printf("Curve %d start and end at: ",k+1);
+                    (void) printf("(%f %f)->(%f %f)\n",
+                      Coords(c->start->posn)[0],
+                      Coords(c->start->posn)[1],
+                      Coords(c->end->posn)[0],
+                      Coords(c->end->posn)[1]);
+                promptForDirichletBdryState(infile,front,hss+k,1,i_hs);
+                i_hs++;
+                }
+            }
 	    }
 	}
+
 	hss = FT_InteriorHypSurfs(intfc,DIRICHLET_BOUNDARY,&nhs);
 	if (nhs == 0 || hss == NULL) return;
 
@@ -1205,7 +1211,7 @@ static  void neumann_point_propagate(
 	set_state_max_speed(front,newst,Coords(newp));
 }	/* end neumann_point_propagate */
 
-static  void dirichlet_point_propagate(
+static void dirichlet_point_propagate(
         Front *front,
         POINTER wave,
         POINT *oldp,
@@ -1216,7 +1222,7 @@ static  void dirichlet_point_propagate(
         double              *V)
 {
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        int i, dim = front->rect_grid->dim;
+    int dim = front->rect_grid->dim;
 	STATE *sl,*sr,*newst = NULL;
 	STATE *bstate;
 	FLOW_THROUGH_PARAMS ft_params;
@@ -1246,23 +1252,66 @@ static  void dirichlet_point_propagate(
 	if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
+
 	    newst->dens = bstate->dens;
-	    newst->engy = bstate->engy;
-            for (i = 0; i < dim; ++i)
+        newst->pres = bstate->pres;
+        for (int i = 0; i < dim; ++i)
+        {
 	    	newst->vel[i] = bstate->vel[i];
-            newst->pres = bstate->pres;
-            newst->eos = bstate->eos;
-            newst->vort = 0.0;
-	    set_state_max_speed(front,newst,Coords(oldp));
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        //TODO: TEMPORARY PROTOTYPING CODE
+        //
+        //perturb the velocity
+        if (eqn_params->perturb_const_inlet_bdry == true)
+        {
+            for (int i = 0; i < dim; ++i)
+            {
+                //if (std::abs(newst->vel[i]) > 0.0)
+                //if (std::abs(bstate->vel[i]) > 0.0) { ... }
+                auto seed = static_cast<long unsigned int>(
+                    std::chrono::system_clock::now().time_since_epoch().count());
+                
+                //generate uniformly distributed random number in the interval [-1.0, 1.0]
+                auto gen_uniform = std::bind(
+                        std::uniform_real_distribution<double>{-1.0,1.0},
+                        std::default_random_engine{seed});
+
+                //perturb at most 25% of the specified constant velocity
+                double max_vel_perturb = 0.25*bstate->vel[i];
+
+                double vel_perturbation = max_vel_perturb*gen_uniform();
+                newst->vel[i] += vel_perturbation;
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////
+        
+        for (int i = 0; i < dim; ++i)
+        {
+	    	newst->momn[i] = newst->dens*newst->vel[i];
+        }
+
+        newst->eos = bstate->eos;
+        newst->engy = EosEnergy(newst);
+	        //newst->engy = bstate->engy;
+	    
+        //TODO: Should vort/vort3d be non-zero for turbulent inlet bdry?
+        newst->vort = 0.0;
+
+        set_state_max_speed(front,newst,Coords(oldp));
 
 	    if (debugging("dirichlet_bdry"))
 	    {
-		printf("Preset boundary state:\n");
-		print_general_vector("Velocity: ",newst->vel,dim,"\n");
-		printf("Density: %f\n",newst->dens);
-		printf("Energy: %f\n",newst->engy);
-		printf("Pressure: %f\n",newst->pres);
-		printf("Vorticity: %f\n",newst->vort);
+            printf("Preset boundary state %s:\n", 
+                eqn_params->perturb_const_inlet_bdry == false ?
+                    "\b" : "(With Velocity Perturbation)");
+            
+            print_general_vector("Velocity: ",newst->vel,dim,"\n");
+            printf("Density: %f\n",newst->dens);
+            printf("Energy: %f\n",newst->engy);
+            printf("Pressure: %f\n",newst->pres);
+            printf("Vorticity: %f\n",newst->vort);
 	    }
 	}
 	else if (boundary_state_function(oldhs))
@@ -1389,13 +1438,14 @@ static void set_state_max_speed(
 	STATE *state,
 	double *coords)
 {
-	int i,dim = front->rect_grid->dim;
-	double c,s;
-	s = 0.0;
-	for (i = 0; i < dim; ++i)
+	int dim = front->rect_grid->dim;
+	double s = 0.0;
+	for (int i = 0; i < dim; ++i)
+    {
 	    s += sqr(state->momn[i]/state->dens);
-	s = sqrt(s);
-	c = EosSoundSpeed(state);
+    }
+    s = sqrt(s);
+	double c = EosSoundSpeed(state);
 	set_max_front_speed(dim,s+c,NULL,coords,front);
 }	/* end set_state_max_speed */
 
@@ -1539,38 +1589,65 @@ static void promptForDirichletBdryState(
 	case 'c':			// Constant state
 	case 'C':
 	    comp = gas_comp(positive_component(hs[0])) ? 
-				positive_component(hs[0]) :
-				negative_component(hs[0]);
-	    state->eos = &(eqn_params->eos[comp]);
+				positive_component(hs[0]) : negative_component(hs[0]);
+	    
+        state->eos = &(eqn_params->eos[comp]);
+
 	    CursorAfterString(infile,"Enter velocity:");
 	    for (k = 0; k < dim; ++k)
 	    {
-		fscanf(infile,"%lf",&state->vel[k]);
-		(void) printf("%f ",state->vel[k]);
+            fscanf(infile,"%lf",&state->vel[k]);
+            (void) printf("%f ",state->vel[k]);
 	    }
 	    (void) printf("\n");
+
 	    CursorAfterString(infile,"Enter pressure:");
 	    fscanf(infile,"%lf",&state->pres);
 	    (void) printf("%f\n",state->pres);
+
 	    CursorAfterString(infile,"Enter density:");
 	    fscanf(infile,"%lf",&state->dens);
 	    (void) printf("%f\n",state->dens);
+
 	    for (k = 0; k < dim; ++k)
-                       state->momn[k] = state->dens*state->vel[k];
-	    state->engy = EosEnergy(state);
-	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,
-			(POINTER)state,hs[0],i_hs);
+        {
+            state->momn[k] = state->dens*state->vel[k];
+        }
+        state->engy = EosEnergy(state);
+
+	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,hs[0],i_hs);
 	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
-	    break;
-	case 'f':			// Flow through state
+        {
+            bstate_index(hs[i]) = bstate_index(hs[0]);
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////
+        //TODO: TEMPORARY PROTOTYPING CODE
+        eqn_params->perturb_const_inlet_bdry = false;
+        if (CursorAfterStringOpt(infile,"Enter yes for inlet boundary perturbation:"))
+        {
+            char string[50];
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                eqn_params->perturb_const_inlet_bdry = true;
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////////////////
+        break;
+	
+    case 'f':			// Flow through state
 	case 'F':
 	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
 			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);
 	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
-	    break;
-	case 'v':			// Flow through state
+        {
+            bstate_index(hs[i]) = bstate_index(hs[0]);
+        }
+        break;
+	
+    case 'v':			// Variable state
 	case 'V':
 	    get_variable_bdry_params(dim,infile,&func_params);
 	    FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
@@ -1945,10 +2022,10 @@ static void get_variable_bdry_params(
 
 extern void restart_set_dirichlet_bdry_function(Front *front)
 {
-        INTERFACE *intfc = front->interf;
-        int i;
-        BOUNDARY_STATE  *bstate;
-        const char *s;
+    INTERFACE *intfc = front->interf;
+    int i;
+    BOUNDARY_STATE  *bstate;
+    const char *s;
 	CURVE **curves;
 	SURFACE **surfs;
 	int comp;
@@ -1956,17 +2033,20 @@ extern void restart_set_dirichlet_bdry_function(Front *front)
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	int dim = Dimension(intfc);
 
-        for (i = 0; i < num_bstates(intfc); ++i)
-        {
-            bstate = bstate_list(intfc)[i];
-            if (bstate == NULL) continue;
-            s = bstate->_boundary_state_function_name;
-            if (s == NULL) continue;
-            if (strcmp(s,"cF_flowThroughBoundaryState") == 0)
-                bstate->_boundary_state_function = cF_flowThroughBoundaryState;
-	    else if (strcmp(s,"cF_variableBoundaryState") == 0)
-                bstate->_boundary_state_function = cF_variableBoundaryState;
-        }
+    for (i = 0; i < num_bstates(intfc); ++i)
+    {
+        bstate = bstate_list(intfc)[i];
+        if (bstate == NULL) continue;
+        
+        s = bstate->_boundary_state_function_name;
+        if (s == NULL) continue;
+        
+        if (strcmp(s,"cF_flowThroughBoundaryState") == 0)
+            bstate->_boundary_state_function = cF_flowThroughBoundaryState;
+        else if (strcmp(s,"cF_variableBoundaryState") == 0)
+            bstate->_boundary_state_function = cF_variableBoundaryState;
+    }
+
 	switch (dim)
 	{
 	case 2:

@@ -49,11 +49,11 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static VELO_FUNC_PACK velo_func_pack;
 	static EQN_PARAMS eqn_params;
-	int i;
 	RG_PARAMS rgb_params;
-        char test_name[100];
+    char test_name[100];
 
-	G_CARTESIAN	g_cartesian(front);
+	
+    G_CARTESIAN	g_cartesian(front);
 
 
 	/* Initialize basic computational data */
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 
 	if (eqn_params.use_base_soln == YES)
 	{
-        for (i = 0; i < f_basic.dim; ++i)
+        for (int i = 0; i < f_basic.dim; ++i)
             eqn_params.f_basic->subdomains[i] = f_basic.subdomains[i];
 	}
 
@@ -110,8 +110,10 @@ int main(int argc, char **argv)
 	if (!RestartRun)
 	{
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);
-	    if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
-	    FT_InitIntfc(&front,&level_func_pack);
+	    
+        if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
+	    
+        FT_InitIntfc(&front,&level_func_pack);
 
 	    insert_objects(&front);
         initRigidBody(&front);
@@ -121,12 +123,17 @@ int main(int argc, char **argv)
 	    
         if (debugging("trace"))
 	    	printf("Passed g_cartesian.setProbParams()\n");
+
 	    read_dirichlet_bdry_data(in_name,&front);
+
 	    read_open_end_bdry_data(in_name,&front);
-	    if (f_basic.dim < 3)
+	    
+        if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
-	    FT_RedistMesh(&front);
-	    if (debugging("trace"))
+	    
+        FT_RedistMesh(&front);
+	    
+        if (debugging("trace"))
                 (void) printf("Passed FT_InitIntfc()\n");
 	    if (debugging("init_intfc"))
 	    {
@@ -220,7 +227,6 @@ static  void gas_driver(
         */
 
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
-        //TODO: incorporate min_dt into time step determination
 
 	    FT_SetOutputCounter(front);
     }
