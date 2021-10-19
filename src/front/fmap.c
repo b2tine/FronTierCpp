@@ -1412,7 +1412,8 @@ LOCAL boolean build_linear_element(
                 }
             }
 	    }
-	    if (extrapolation_permitted == YES)
+	    
+        if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 3; i++)
 		    {
@@ -1456,8 +1457,9 @@ LOCAL boolean build_linear_element(
                 }
             }
 	    }
-        /*
+        
         //TODO: Is this acceptable? Why only used in 2d currently?
+        //          -- CURRENTLY TESTING 
 	    if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 4; i++)
@@ -1470,7 +1472,6 @@ LOCAL boolean build_linear_element(
             blk_cell->is_linear = YES;
 	    	return FUNCTION_SUCCEEDED;
 	    }
-        */
     }
 	return FUNCTION_FAILED;
 }	/* end build_linear_element */
