@@ -247,6 +247,7 @@ struct AF_PARAMS
     double string_eps {4.0e-06};
     double string_thickness {0.004};
 
+    double inelastic_impulse_coeff {1.0};
     double overlap_coefficient {0.1};
 
     double strain_limit {0.01};

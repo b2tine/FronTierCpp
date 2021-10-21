@@ -394,7 +394,9 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
+    //TODO: Should check for is_rg_string_node() be omitted??? see xlchen code
+        //if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
+    if (!is_load_node(oldc->start))
     {
         oldp = oldc->start->posn;
         newp = newc->start->posn;
@@ -402,7 +404,8 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
+        //if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
+    if (!is_load_node(oldc->end))
     {
         oldp = oldc->end->posn;
         newp = newc->end->posn;
@@ -1458,9 +1461,15 @@ static void rg_string_node_propagate(
 	for (i = 0; i < dim; ++i)
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
-	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	    newp->force[i] = f[i];
+	    
+        newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+        newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
 
+        /*
+        //TODO: Is below correct, or do we always divide the spring force by the mass???
+        //
         if (Mag3d(af_params->gravity) > MACH_EPS)
         {
 	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
@@ -1471,6 +1480,7 @@ static void rg_string_node_propagate(
 	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i];
 	        newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
         }
+        */
 	}
 
     if (debugging("trace"))

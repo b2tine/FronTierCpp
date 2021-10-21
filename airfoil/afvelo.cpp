@@ -335,6 +335,7 @@ void setFabricParams(Front* front)
         if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
         {
             fscanf(infile,"%d",&af_params->fsi_startstep);
+            printf("%d\n",af_params->fsi_startstep);
         }
         iFparams->fsi_startstep = af_params->fsi_startstep;
 
@@ -477,27 +478,46 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 	}
-	     
+
+
+    //For collision solver inelastic impulse control
+    if (CursorAfterStringOpt(infile,"Enter collision inelastic impulse relaxation parameter:"))
+    {
+        fscanf(infile,"%lf",&af_params->inelastic_impulse_coeff);
+        (void) printf("%f\n",af_params->inelastic_impulse_coeff);
+    }
+
     //For collision solver elastic impulse control
-    CursorAfterStringOpt(infile,"Enter overlap coefficient:");
-    fscanf(infile,"%lf",&af_params->overlap_coefficient);
-    (void) printf("%f\n",af_params->overlap_coefficient);
+    if (CursorAfterStringOpt(infile,"Enter overlap coefficient:"))
+    {
+        fscanf(infile,"%lf",&af_params->overlap_coefficient);
+        (void) printf("%f\n",af_params->overlap_coefficient);
+    }
     
-    CursorAfterStringOpt(infile,"Enter strain limit:");
-    fscanf(infile,"%lf",&af_params->strain_limit);
-    (void) printf("%f\n",af_params->strain_limit);
-            
-    CursorAfterStringOpt(infile,"Enter compressive strain limit:");
-    fscanf(infile,"%lf",&af_params->compressive_strain_limit);
-    (void) printf("%f\n",af_params->compressive_strain_limit);
+    //strain limiting parameters
+    if (CursorAfterStringOpt(infile,"Enter strain limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->strain_limit);
+        (void) printf("%f\n",af_params->strain_limit);
+    }
 
-    CursorAfterStringOpt(infile,"Enter strain rate limit:");
-    fscanf(infile,"%lf",&af_params->strainrate_limit);
-    (void) printf("%f\n",af_params->strainrate_limit);
+    if (CursorAfterStringOpt(infile,"Enter compressive strain limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->compressive_strain_limit);
+        (void) printf("%f\n",af_params->compressive_strain_limit);
+    }
 
-    CursorAfterStringOpt(infile,"Enter strain velocity constraint tolerance:");
-    fscanf(infile,"%lf",&af_params->strain_vel_tol);
-    (void) printf("%f\n",af_params->strain_vel_tol);
+    if (CursorAfterStringOpt(infile,"Enter strain rate limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->strainrate_limit);
+        (void) printf("%f\n",af_params->strainrate_limit);
+    }
+
+    if (CursorAfterStringOpt(infile,"Enter strain velocity constraint tolerance:"))
+    {
+        fscanf(infile,"%lf",&af_params->strain_vel_tol);
+        (void) printf("%f\n",af_params->strain_vel_tol);
+    }
 
 
 	if (dim == 3 && af_params->is_parachute_system == YES)

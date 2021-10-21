@@ -163,6 +163,7 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
 	int size = (int)cell_center.size();
 	double **vel = field->vel;
 	double *pres = field->pres;
+	double *mu = field->mu;
 	
 	for (int i = 0; i < size; i++)
 	{
@@ -192,6 +193,7 @@ void Incompress_Solver_Smooth_Basis::setComponent(void)
                 vel[l][i] = getStateVel[l](state);
             }
             pres[i] = getStatePres(state);
+            mu[i] = getStateMu(state);
         }
         cell_center[i].comp = top_comp[i];
 	}
@@ -1713,7 +1715,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
     for (i = imin; i <= imax; i++)
 	{
 	    index  = d_index2d(i,j,top_gmax);
-
 	    comp = cell_center[index].comp;
 	    if (!ifluid_comp(comp))
         {
@@ -1755,19 +1756,20 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         }
         else if (iFparams->use_eddy_visc == YES)
 	    {
-            double mu_mol;
             switch (comp)
             {
                 case LIQUID_COMP1:
-                    mu_mol = m_mu[0];
+                    mu[index] = m_mu[0];
                     rho[index] = m_rho[0];
                     break;
                 case LIQUID_COMP2:
-                    mu_mol = m_mu[1];
+                    mu[index] = m_mu[1];
                     rho[index] = m_rho[1];
                     break;
             }
-
+            
+            double mu_turb = 0.0;
+            
             switch (iFparams->eddy_visc_model)
             {
             case BALDWIN_LOMAX:
@@ -1781,24 +1783,27 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                          wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
-                    mu[index] = mu_mol + computeMuOfBaldwinLomax(icoords,dist,first);
+                    mu_turb = computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
             case KEPSILON:
-                mu[index] = mu_mol + mu_t[index];
+                mu_turb = mu_t[index];
                         //pres[index] += 2.0/3.0*tke[index];
                 break;
             case VREMAN:
-                mu[index] = mu_mol + computeMuOfVremanModel(icoords);
+                mu_turb = computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
-                mu[index] = mu_mol + computeMuofSmagorinskyModel(icoords); 
+                mu_turb = computeMuofSmagorinskyModel(icoords); 
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
             } 
+
+            //in case we want to record mu_turb separately from the total viscosity
+            mu[index] += mu_turb;
         }
         else
 	    {
@@ -1825,25 +1830,6 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
 }	/* end setSmoothedProperties2d */
-
-/*
-void Incompress_Solver_Smooth_2D_Basis::precompute()
-{
-	for (int j = jmin; j <= jmax; j++)
-    for (int i = imin; i <= imax; i++)
-	{
-	    int index  = d_index2d(i,j,top_gmax);
-	    COMPONENT comp = cell_center[index].comp;
-	    if (!ifluid_comp(comp)) continue;
- 
-        int icoords[MAXD] = {0};
-        icoords[0] = i;
-        icoords[1] = j;
-
-        icoordsPrecompute(icoords);
-    }
-}
-*/
 
 //-------------------------------------------------------------------------------
 //               Incompress_Solver_Smooth_3D_Basis
@@ -2523,7 +2509,6 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	int range = (int)(m_smoothing_radius+1);
 	boolean first = YES;
 
-    //zero f_surf array
     for (k = kmin; k <= kmax; k++)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
@@ -2581,7 +2566,8 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 ifluid_comp(positive_component(hs)) &&
                 ifluid_comp(negative_component(hs)) && 
                 positive_component(hs) != negative_component(hs))
-        {//SURFACE TENSION
+        {
+            //SURFACE TENSION
             sign = (comp == m_comp[0]) ? -1 : 1;
             D = smoothedDeltaFunction(center,point);
             H = smoothedStepFunction(center,point,sign);
@@ -2601,18 +2587,20 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         }
         else if (iFparams->use_eddy_visc == YES)
         {
-            double mu_mol;
             switch (comp)
             {
                 case LIQUID_COMP1:
-                    mu_mol = m_mu[0];
+                    mu[index] = m_mu[0];
                     rho[index] = m_rho[0];
                     break;
                 case LIQUID_COMP2:
-                    mu_mol = m_mu[1];
+                    mu[index] = m_mu[1];
                     rho[index] = m_rho[1];
                     break;
             }
+
+            //in case we want to record mu_turb separately at the index
+            double mu_turb = 0.0;
 
             switch (iFparams->eddy_visc_model)
             {
@@ -2627,23 +2615,25 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                          wave_type(hs) == ELASTIC_BOUNDARY))
                 {
                     dist = distance_between_positions(center,point,dim);
-                    mu[index] = mu_mol + computeMuOfBaldwinLomax(icoords,dist,first);
+                    mu_turb = computeMuOfBaldwinLomax(icoords,dist,first);
                     first = NO;
                 }
                 break;
             case KEPSILON:
-                mu[index] = mu_mol + mu_t[index];
+                mu_turb = mu_t[index];
                 break;
             case VREMAN:
-                mu[index] = mu_mol + computeMuOfVremanModel(icoords);
+                mu_turb = computeMuOfVremanModel(icoords);
                 break;
             case SMAGORINSKY:
-                mu[index] = mu_mol + computeMuofSmagorinskyModel(icoords);
+                mu_turb = computeMuofSmagorinskyModel(icoords);
                 break;
             default:
                 (void) printf("Unknown eddy viscosity model!\n");
                 clean_up(ERROR);
             } 
+
+            mu[index] += mu_turb;
         }
 	    else
 	    {
@@ -3777,6 +3767,7 @@ void Incompress_Solver_Smooth_Basis::applicationSetStates(void)
 	double **vel = field->vel;
 	double *pres = field->pres;
 	double *phi = field->phi;
+	double *mu = field->mu;
 	
 	setDomain();
 
@@ -5392,14 +5383,20 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
 
     // Interpolate the effective viscosity at the reflected point
     double mu_reflect;
-    /*
+    
+    //TODO: Need to ensure intfc state is set correctly if we want to
+    //      use it as the default value (by passing nullptr as last arg).
+    //
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
                 getStateMu,&mu_reflect,nullptr);
-    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index]; //TODO: May not need this anymore
-    */
+    
+    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
+
+    /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
                 getStateMu,&mu_reflect,&field->mu[index]);
-    
+    */
+
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
     

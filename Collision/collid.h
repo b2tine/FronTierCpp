@@ -9,9 +9,9 @@
 
 #define DEBUGGING false
 
-//TODO: Consistent use of ROUND_EPS AND MACH_EPS.
-//      Currently they are equal, and we can change all to MACH_EPS. 
-const double ROUND_EPS = DBL_EPSILON;
+//MACH_EPS is essentially used to prevent division by zero.
+//ROUND_EPS is intended for more general use such as detecting colinearity
+const double ROUND_EPS = 1.0e-10;
 
 
 struct StrainStats
@@ -45,6 +45,7 @@ struct FABRIC_COLLISION_PARAMS
     double k_l;
     double m_l;
 
+    double inelastic_impulse_coeff {1.0};
     double overlap_coefficient {0.5};
 
     double strain_limit {0.01};
@@ -118,6 +119,9 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
+
+    static void setInelasticImpulseCoefficient(double);
+    static double getInelasticImpulseCoefficient();
 
     static void setOverlapCoefficient(double);
     static double getOverlapCoefficient();
@@ -226,6 +230,7 @@ private:
 	static double l_k;
 	static double l_mu;
 
+    static double inelastic_impulse_coeff;
     static double overlap_coefficient;
 
     static bool gs_update;

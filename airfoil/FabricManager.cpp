@@ -28,6 +28,7 @@ void FabricManager::setCollisionParams(FABRIC_COLLISION_PARAMS params)
     collision_solver->setStrainRateLimit(collsn_params.strainrate_limit);
     collision_solver->setStrainVelocityTol(collsn_params.strain_vel_tol);
 
+    collision_solver->setInelasticImpulseCoefficient(collsn_params.inelastic_impulse_coeff);
     collision_solver->setOverlapCoefficient(collsn_params.overlap_coefficient);
 
     collision_solver->setRestitutionCoef(collsn_params.coefRestitution);

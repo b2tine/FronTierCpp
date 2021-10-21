@@ -277,6 +277,9 @@ extern void compute_spring_accel1(
 	    }
 	    len = sqrt(len);
 
+        /*
+        //TODO: Can not do this for springs connecting string to triangle
+        //      at the parachute canopy skirt
         //additional damping
         double comp_vrel = 0.0;
         for (int k = 0; k < dim; ++k)
@@ -288,6 +291,7 @@ extern void compute_spring_accel1(
         {
             accel[k] -= sv->lambda*comp_vrel*vec[k]/len;
         }
+        */
 
         /*
 //TEMP DEBUG

@@ -126,8 +126,9 @@ int main(int argc, char **argv)
         optimizeElasticMesh(&front);
         set_equilibrium_mesh(&front);
         FT_SetGlobalIndex(&front);
-        static_mesh(front.interf) = YES;
+        //static_mesh(front.interf) = YES;
     }
+    static_mesh(front.interf) = YES;
 
     setMotionParams(&front);
 

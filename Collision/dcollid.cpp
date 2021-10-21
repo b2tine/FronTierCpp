@@ -40,6 +40,7 @@ double CollisionSolver3d::l_k = 50000;
 double CollisionSolver3d::l_m = 0.002;
 double CollisionSolver3d::l_mu = 0.5;
 
+double CollisionSolver3d::inelastic_impulse_coeff = 1.0;
 double CollisionSolver3d::overlap_coefficient = 0.1;
 
 
@@ -117,6 +118,10 @@ double CollisionSolver3d::getStrainRateLimit() {return strainrate_limit;}
 
 void CollisionSolver3d::setStrainVelocityTol(double slim_vtol) {strain_vel_tol = slim_vtol;}
 double CollisionSolver3d::getStrainVeloctiyTol() {return strain_vel_tol;}
+
+//For inelastic impulse control
+void CollisionSolver3d::setInelasticImpulseCoefficient(double coeff) {inelastic_impulse_coeff = coeff;}
+double CollisionSolver3d::getInelasticImpulseCoefficient() {return inelastic_impulse_coeff;}
 
 //Overlap coefficient for elastic impulse control
 void CollisionSolver3d::setOverlapCoefficient(double coeff) {overlap_coefficient = coeff;}
@@ -471,13 +476,16 @@ void CollisionSolver3d::resolveCollisionSubstep()
     {
         // Static proximity handling
         start_clock("detectProximity");
+
         //TODO: Check for fabric-fabric proximity and apply repulsions
         //      in isolation before, checking all elements for proximity?
         //      -- Good for avoiding crashes, but exacerbates fabric kicking/jumping.
         //
-            //detectProximity(elasticHseList);
-            //abt_proximity.reset();
+        
+        //detectProximity(elasticHseList);
+        //abt_proximity.reset();
         detectProximity(hseList);
+        
         stop_clock("detectProximity");
         
         /*
@@ -500,10 +508,12 @@ void CollisionSolver3d::resolveCollisionSubstep()
         
         // Check linear trajectories for collisions
         start_clock("detectCollision");
+        
         //TODO: handle fabric-fabric collisions only first?
             //detectCollision(elasticHseList);
         
         detectCollision(hseList);
+        
         stop_clock("detectCollision");
 
         /*
@@ -512,20 +522,11 @@ void CollisionSolver3d::resolveCollisionSubstep()
         */
     }
 
-    /*
-    if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-    {
-        limitStrainRatePosnJac(MotionState::STATIC);
-            //limitStrainRatePosnGS(MotionState::STATIC);
-            
-            //limitStrainPosnJac(MotionState::STATIC);
-            //limitStrainPosnGS(MotionState::STATIC);
-    }
-    */
-
 	//update position using final midstep velocity
 	updateFinalPosition();
 
+    //TODO: is this helping or hurting us?
+    /*
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
@@ -534,6 +535,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
+    */
 
 	updateFinalVelocity();
 
@@ -809,7 +811,9 @@ bool getProximity(const CD_HSE* a, const CD_HSE* b)
 	}
 }
 
-//For Jacobi velocity update
+//TODO: Pass a std::vector<CD_HSE*> list as argument so we can use this
+//      function to update movable rigid body velocity in isolation before
+//      calling updateImpactZoneVelocityForRG().
 void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
 {
 	POINT *p;
@@ -841,10 +845,6 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                     sl->avgVel[k] +=
                         (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
                     
-                    //TODO: try this ...
-                    //
-                    //  sl->avgVel[k] += sl->collsnImpulse[k]/sl->collsn_num + sl->friction[k];
-                
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
                         printf("inf/nan avgVel[%d]: impulse = %f,"
@@ -860,7 +860,9 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                 sl->collsn_num = 0;
             }
 
-            /*
+            /////////////////////////////////////////////////////////////////
+            //TODO: This should be in its own function ...
+            //
             //NOTE: This is for rigid-rigid body collision.
             if (sl->collsn_num_RG > 0)
             {
@@ -871,7 +873,7 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                 }
                 sl->collsn_num_RG = 0;
             }
-            */
+            /////////////////////////////////////////////////////////////////
 
             if (debugging("average_velocity"))
             {
@@ -999,15 +1001,15 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
                 //computeMaxSpeed(); //debug
         }
         
-        if (is_collision)
+        //if (is_collision)
+        //{
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
-            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-            {
-                limitStrainRatePosnGS(MotionState::MOVING);
-                    //limitStrainRatePosnJac(MotionState::MOVING);
-                        //computeMaxSpeed(); //debug
-            }
+            limitStrainRatePosnGS(MotionState::MOVING);
+                //limitStrainRatePosnJac(MotionState::MOVING);
+                    //computeMaxSpeed(); //debug
         }
+        //}
 
         if (niter >= MAX_ITER) break;
 	}
@@ -1657,23 +1659,22 @@ void CollisionSolver3d::computeImpactZoneGS(std::vector<CD_HSE*>& list)
                 //computeMaxSpeed(); //debug
         }
         
-        /*      
         //TODO: Appropriate to limit strain rate during impact zone handling?
         //
         //      Most recent experiments confirm we should not limit the strain
         //      rate of points belonging to impact zones. Leaving commented out
         //      for now in case we wish some points to be excluded from impact
         //      zones and apply impulses instead.
-        if (is_collision)
+        
+        //if (is_collision)
+        //{
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
-            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-            {
-                limitStrainRatePosnGS(MotionState::MOVING);
-                //limitStrainRatePosnJac(MotionState::MOVING);
-                    //computeMaxSpeed(); //debug
-            }
+            limitStrainRatePosnGS(MotionState::MOVING);
+            //limitStrainRatePosnJac(MotionState::MOVING);
+                //computeMaxSpeed(); //debug
         }
-        */
+        //}
 
         if (niter >= MAXITER)
         {
@@ -1758,18 +1759,16 @@ void CollisionSolver3d::computeImpactZoneJac(std::vector<CD_HSE*>& list)
         }
         
             
-        /*
         //TODO: Appropriate to limit strain rate during impact zone handling?
-        if (is_collision)
+        //if (is_collision)
+        //{
+        if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
         {
-            if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
-            {
-                limitStrainRatePosnGS(MotionState::MOVING);
-                //limitStrainRatePosnJac(MotionState::MOVING);
-                    //computeMaxSpeed(); //debug
-            }
+            limitStrainRatePosnGS(MotionState::MOVING);
+            //limitStrainRatePosnJac(MotionState::MOVING);
+                //computeMaxSpeed(); //debug
         }
-        */
+        //}
             
 
         if (niter >= MAXITER)
@@ -2080,7 +2079,6 @@ void updateImpactListVelocity(POINT* head)
     //
     double dt = CollisionSolver3d::getTimeStepSize();
     
-    //TODO: Is this justified, or just use the full step dt?
     avg_dt /= num_pts;
     avg_dt = 0.5*(avg_dt + dt);
     
@@ -2160,7 +2158,7 @@ void updateImpactListVelocity(POINT* head)
 	//compute angular velocity w: I*w = L;
 	double w[3];
     
-    if (fabs(myDet3d(I)) < MACH_EPS)
+    if (fabs(myDet3d(I)) < ROUND_EPS)
     {
         //I is non-invertible, calculate pseudoinverse with SVD
         arma::mat arI(3, 3);
@@ -2217,7 +2215,7 @@ void updateImpactListVelocity(POINT* head)
         STATE* sl = (STATE*)left_state(p);
 	    minusVec(sl->x_old,x_cm,dx);
 	    
-        if (mag_w < MACH_EPS)
+        if (mag_w < ROUND_EPS)
         {
 	        for (int i = 0; i < 3; ++i)
             {
@@ -2231,7 +2229,6 @@ void updateImpactListVelocity(POINT* head)
 	        scalarMult(Dot3d(dx,w)/Dot3d(w,w),w,xF);
 	        minusVec(dx,xF,xR);
             scalarMult(sin(dt*mag_w)/mag_w,w,tmpV);
-                //scalarMult(sin(avg_dt*mag_w)/mag_w,w,tmpV);
 	        Cross3d(tmpV,xR,wxR);
 	    }
 
@@ -2241,17 +2238,6 @@ void updateImpactListVelocity(POINT* head)
                        + cos(dt*mag_w)*xR[i] + wxR[i];
 	
 		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-	    	
-            /*
-            x_new[i] = x_cm[i] + avg_dt*v_cm[i] + xF[i]
-                       + cos(avg_dt*mag_w)*xR[i] + wxR[i];
-
-		    sl->avgVel[i] = (x_new[i] - sl->x_old[i])/dt;
-		        //sl->avgVel[i] = (x_new[i] - sl->x_old[i])/avg_dt;
-            */
-
-            //TODO: see above todo regarding use of full time step
-            //      for movable rigid body impact zones
         }    
 
 	    for (int i = 0; i < 3; ++i)
@@ -2299,7 +2285,7 @@ void CollisionSolver3d::limitStrainPosnJac(MotionState mstate)
     double dt = getTimeStepSize();
     if (dt < 1.0e-08) return;
 
-	const int MAX_ITER = 2;
+	const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Probably need to limit the bonds in order beginning from the
@@ -2334,7 +2320,7 @@ void CollisionSolver3d::limitStrainPosnGS(MotionState mstate)
 
     turnOnGsUpdate();
 
-	const int MAX_ITER = 2;
+	const int MAX_ITER = 3;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or Tri list first?
@@ -2727,6 +2713,7 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                 //      that are incident to an impact zone point in the
                 //      same manner as those incident to rigid body points?
             
+                /*
                 //Do not apply impulses to nodes attached to a rigid body or
                 //belonging to an active impact zone.
                 if (!(isConstrainedPoint(sl[0]) || isImpactZonePoint(p[0])) &&
@@ -2760,8 +2747,8 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                     continue;
                     //printf("ERROR: \n"); LOC(); clean_up(EXIT_FAILURE);
                 }
+                */
                 
-                /*
                 //Do not apply impulses to nodes attached to a rigid body
                 if (!isConstrainedPoint(sl[0]) && !isConstrainedPoint(sl[1]))
                 {
@@ -2791,7 +2778,6 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                     continue;
                     //printf("ERROR: \n"); LOC(); clean_up(EXIT_FAILURE);
                 }
-                */
                 
                 numStrainRateEdges++;
                 numTensileEdges += t_edge;
@@ -2831,7 +2817,7 @@ void CollisionSolver3d::limitStrainVelGS()
 {
     turnOnGsUpdate();
 
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         //TODO: Bond list first or tri list first?
@@ -2867,7 +2853,7 @@ void CollisionSolver3d::limitStrainVelGS()
 //jacobi iteration
 void CollisionSolver3d::limitStrainVelJAC()
 {
-    const int MAX_ITER = 3;
+    const int MAX_ITER = 2;
     for (int iter = 0; iter < MAX_ITER; ++iter)
     {
         StrainStats tss = computeStrainImpulsesVel(fabricTriList);
@@ -2964,7 +2950,7 @@ StrainStats CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& li
             //of the edge joining points a and b (a-->b)
             double vcomp01 = Dot3d(vel_rel,vec01);
             
-                //if (fabs(vcomp01) < MACH_EPS) continue;
+                //if (fabs(vcomp01) < ROUND_EPS) continue;
                 //double I = 0.5*vcomp01;
             
             //TODO: Input file option for velocity constraint tolerance

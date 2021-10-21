@@ -1632,7 +1632,7 @@ static void rgbody_point_propagate(
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below)?
     //
-    //setStateViscosity(iFparams,newst,comp);
+        //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
@@ -2014,20 +2014,23 @@ extern void read_iFparams(
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);
 	}
-	iFparams->total_div_cancellation = NO;
-        if (CursorAfterStringOpt(infile,	
-		"Enter yes to use total divergence cancellation:"))
+	
+    iFparams->total_div_cancellation = NO;
+    if (CursorAfterStringOpt(infile,	
+        "Enter yes to use total divergence cancellation:"))
 	{
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    	iFparams->total_div_cancellation = YES;
 	}
-        if (CursorAfterStringOpt(infile,
-		"Enter density and viscosity of the fluid:"))
-        {
-            fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
-            (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
+    
+    //TODO: Is this a problem??
+    if (CursorAfterStringOpt(infile,
+        "Enter density and viscosity of the fluid:"))
+    {
+        fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
+        (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
 	}
 
 	iFparams->use_eddy_visc = NO;

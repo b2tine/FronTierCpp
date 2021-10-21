@@ -665,40 +665,44 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
 	tmp[1] = ((STATE*)left_state(pts[1]))->avgVel;
 	tmp[2] = ((STATE*)left_state(pts[2]))->avgVel;
 	tmp[3] = ((STATE*)left_state(pts[3]))->avgVel;
-	isCoplanarHelper(tmp, v);
+	
+    isCoplanarHelper(tmp, v);
 
 	tmp[0] = ((STATE*)left_state(pts[0]))->x_old;
 	tmp[1] = ((STATE*)left_state(pts[1]))->x_old;
 	tmp[2] = ((STATE*)left_state(pts[2]))->x_old;
 	tmp[3] = ((STATE*)left_state(pts[3]))->x_old;
-	isCoplanarHelper(tmp, x);
+	
+    isCoplanarHelper(tmp, x);
 
 	//get roots "t" of a cubic equation
 	//(x12 + t*v12) x (x13 + t*v13)*(x14 + t*v14) = 0
 	//transform to a*t^3 + b*t^2 + c*t + d = 0
-	double a, b, c, d;
-	double vv[3], vx[3], xx[3];
-	vv[0] = v[1][1]*v[2][2]-v[1][2]*v[2][1];
-	vv[1] = v[1][0]*v[2][2]-v[1][2]*v[2][0];
-	vv[2] = v[1][0]*v[2][1]-v[1][1]*v[2][0];
+
+	double vv[3];
+	vv[0] = v[1][1]*v[2][2] - v[1][2]*v[2][1];
+	vv[1] = v[1][0]*v[2][2] - v[1][2]*v[2][0];
+	vv[2] = v[1][0]*v[2][1] - v[1][1]*v[2][0];
 	
-	vx[0] = v[1][1]*x[2][2]-v[1][2]*x[2][1]-v[2][1]*x[1][2]+v[2][2]*x[1][1];
-	vx[1] = v[1][0]*x[2][2]-v[1][2]*x[2][0]-v[2][0]*x[1][2]+v[2][2]*x[1][0];
-	vx[2] = v[1][0]*x[2][1]-v[1][1]*x[2][0]-v[2][0]*x[1][1]+v[2][1]*x[1][0];
+	double vx[3];
+	vx[0] = v[1][1]*x[2][2] - v[1][2]*x[2][1] - v[2][1]*x[1][2] + v[2][2]*x[1][1];
+	vx[1] = v[1][0]*x[2][2] - v[1][2]*x[2][0] - v[2][0]*x[1][2] + v[2][2]*x[1][0];
+	vx[2] = v[1][0]*x[2][1] - v[1][1]*x[2][0] - v[2][0]*x[1][1] + v[2][1]*x[1][0];
 
-	xx[0] = x[1][1]*x[2][2]-x[1][2]*x[2][1];
-	xx[1] = x[1][0]*x[2][2]-x[1][2]*x[2][0];
-	xx[2] = x[1][0]*x[2][1]-x[1][1]*x[2][0];
+	double xx[3];
+	xx[0] = x[1][1]*x[2][2] - x[1][2]*x[2][1];
+	xx[1] = x[1][0]*x[2][2] - x[1][2]*x[2][0];
+	xx[2] = x[1][0]*x[2][1] - x[1][1]*x[2][0];
 
-	a = v[3][0]*vv[0] - v[3][1]*vv[1] + v[3][2]*vv[2];
+	double a = v[3][0]*vv[0] - v[3][1]*vv[1] + v[3][2]*vv[2];
 
-	b = x[3][0]*vv[0] - x[3][1]*vv[1] + x[3][2]*vv[2] + 
-	    v[3][0]*vx[0] - v[3][1]*vx[1] + v[3][2]*vx[2];
+	double b = x[3][0]*vv[0] - x[3][1]*vv[1] + x[3][2]*vv[2] 
+                + v[3][0]*vx[0] - v[3][1]*vx[1] + v[3][2]*vx[2];
 
-	c = x[3][0]*vx[0] - x[3][1]*vx[1] + x[3][2]*vx[2] +
-            v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
+	double c = x[3][0]*vx[0] - x[3][1]*vx[1] + x[3][2]*vx[2] 
+                + v[3][0]*xx[0] - v[3][1]*xx[1] + v[3][2]*xx[2];
 
-	d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
+	double d = x[3][0]*xx[0] - x[3][1]*xx[1] + x[3][2]*xx[2]; 
 	
     //solve equation using method from "Art of Scientific Computing"
 	//transform equation to t^3+at^2+bt+c = 0
@@ -706,54 +710,60 @@ static bool isCoplanar(POINT* pts[], const double dt, double roots[])
     {
 	    b /= a; c /= a; d /= a;
 	    a = b; b = c; c = d;
-	    double Q, R, theta;
-	    double Q3, R2;
-	    Q = (a*a-3.0*b)/9.0;
-	    R = (2.0*a*a*a-9.0*a*b+27.0*c)/54.0;
-	    Q3 = Q*Q*Q;
-	    R2 = R*R;
+	    
+        double Q = (a*a - 3.0*b)/9.0;
+	    double R = (2.0*a*a*a - 9.0*a*b + 27.0*c)/54.0;
+	    double Q3 = Q*Q*Q;
+	    double R2 = R*R;
 
 	    if (R2 < Q3)
         {
 	        double Qsqrt = sqrt(Q);
-            theta = acos(R/sqrt(Q3));
-            roots[0] = -2.0*Qsqrt*cos(theta/3.0)-a/3.0;
-            roots[1] = -2.0*Qsqrt*cos((theta+2.0*M_PI)/3.0)-a/3.0;
-            roots[2] = -2.0*Qsqrt*cos((theta-2.0*M_PI)/3.0)-a/3.0;
+            double theta = acos(R/sqrt(Q3));
+            roots[0] = -2.0*Qsqrt*cos(theta/3.0) - a/3.0;
+            roots[1] = -2.0*Qsqrt*cos((theta + 2.0*M_PI)/3.0) - a/3.0;
+            roots[2] = -2.0*Qsqrt*cos((theta - 2.0*M_PI)/3.0) - a/3.0;
         }
 	    else
         {
-            double A, B;
             double sgn = (R > 0) ? 1.0 : -1.0;
-            A = -sgn*pow(fabs(R)+sqrt(R2-Q3),1.0/3.0);
-            B = (fabs(A) < MACH_EPS) ? 0.0 : Q/A;
-            roots[0] = (A+B)-a/3.0;
-            if (fabs(A-B) < MACH_EPS)
-                roots[1] = roots[2] = -0.5*(A+B)-a/3.0; //multiple roots
+            double A = -sgn*pow(fabs(R) + sqrt(R2 - Q3), 1.0/3.0);
+            double B = (fabs(A) < ROUND_EPS) ? 0.0 : Q/A;
+            
+            roots[0] = (A + B) - a/3.0;
+            
+            if (fabs(A - B) < ROUND_EPS)
+            {
+                //multiple roots
+                roots[1] = -0.5*(A + B) - a/3.0;
+                roots[2] = roots[1];
+            }
 	    }
 	}
 	else
     {
 		a = b; b = c; c = d;
-	   	double delta = b*b-4.0*a*c;
-	   	if (fabs(a) > MACH_EPS && delta > 0)
+	   	double delta = b*b - 4.0*a*c;
+	   	if (fabs(a) > ROUND_EPS && delta > 0)
         {
 		    double delta_sqrt = sqrt(delta);
-		    roots[0] = (-b+delta_sqrt)/(2.0*a);
-            roots[1] = (-b-delta_sqrt)/(2.0*a);
+		    roots[0] = (-b + delta_sqrt)/(2.0*a);
+            roots[1] = (-b - delta_sqrt)/(2.0*a);
 	   	}
-		else if (fabs(a) < MACH_EPS && fabs(b) > MACH_EPS)
+		else if (fabs(a) < ROUND_EPS && fabs(b) > ROUND_EPS)
 		{
 		    roots[0] = -c/b;
         }
 	}
 
-	//elimiate invalid roots;
+	//eliminate invalid roots;
 	for (int i = 0; i < 3; ++i)
     {
         roots[i] -= MACH_EPS;
         if (roots[i] < 0 || roots[i] > dt)
+        {
             roots[i] = -1;
+        }
 	}
 
     //sort in increasing order
@@ -903,7 +913,7 @@ static bool EdgeToEdge(
 	Cross3d(x12,x34,s1Xs2);
     double cross_mag = Mag3d(s1Xs2);
 
-    if (D < MACH_EPS || cross_mag < MACH_EPS)
+    if (D < ROUND_EPS || cross_mag < ROUND_EPS)
     {
         //Lines containing the edges are nearly parallel.
         //Setting sC = 0, and solving for tC yields tC = e/c.
@@ -968,21 +978,10 @@ static bool EdgeToEdge(
     }
 
     //Compute the closest pair of points
-    sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
-    tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
+    sC = fabs(sN) < ROUND_EPS ? 0.0 : sN/sD;
+    tC = fabs(tN) < ROUND_EPS ? 0.0 : tN/tD;
     
-    /*
-    if (sN == sD)
-        sC = 1.0;
-    else
-        sC = fabs(sN) < MACH_EPS ? 0.0 : sN/sD;
-
-    if (tN == tD)
-        tC = 1.0;
-    else
-        tC = fabs(tN) < MACH_EPS ? 0.0 : tN/tD;
-    */
-	    
+    
     if (std::isnan(sC) || std::isinf(sC) ||
         std::isnan(tC) || std::isinf(tC))
     {
@@ -991,41 +990,37 @@ static bool EdgeToEdge(
     }
 
     //compute the vector joining the closest points and the distance
+    double x3tC[3];
+    scalarMult(tC,x34,x3tC);
+    addVec(Coords(pts[2]),x3tC,x3tC);
+
+    double x1sC[3];
+    scalarMult(sC,x12,x1sC);
+    addVec(Coords(pts[0]),x1sC,x1sC);
+
     double vec[3];
-    
-    scalarMult(tC,x34,x34);
-    addVec(Coords(pts[2]),x34,x34);
-
-    scalarMult(sC,x12,x12);
-    addVec(Coords(pts[0]),x12,x12);
-
-    minusVec(x34,x12,vec);
-
-    /*
-	double x13[3];
-    Pts2Vec(pts[0],pts[2],x13);
-    
-    scalarMult(tC,x34,x34);
-    addVec(x13,x34,vec);
-
-    scalarMult(sC,x12,x12);
-    minusVec(vec,x12,vec);
-    */
+    minusVec(x3tC,x1sC,vec);
 
     
     double dist = Mag3d(vec);
     if (dist > tol) return false;
 
+    //TODO: use ROUND_EPS here or no?
     if (dist > 0.0)
     {
         scalarMult(1.0/dist,vec,vec);
     }
     else if (dist == 0.0 && mstate != MotionState::STATIC)
     {
+        //need vec to point from seg1 towards seg2
         for (int i = 0; i < 3; ++i)
             vec[i] = s1Xs2[i]/cross_mag;
-
-        //need vec to point from seg1 towards seg2
+    
+        /*
+        //This won't work because the vector joining the midpoints
+        //lies in the plane spanned by the two edge vectors, and is
+        //perpendicular to the cross product of the two edge vectors.
+        //
         double mid_s1[3], mid_s2[3], mid_s1s2[3];
         for (int i = 0; i < 3; ++i)
         {
@@ -1033,14 +1028,41 @@ static bool EdgeToEdge(
             mid_s2[i] = Coords(pts[2])[i] + 0.5*x34[i];
             mid_s1s2[i] = mid_s2[i] - mid_s1[i];
         }
-
+        
         if (Dot3d(vec,mid_s1s2) < 0.0)
         {
             for (int i = 0; i < 3; ++i)
                 vec[i] *= -1.0;
         }
+        */
 
-        //TODO: Can this block be used for mstate == MotionState::STATIC also?
+        STATE* s1 = (STATE*)left_state(pts[0]); double* x1_old = s1->x_old;
+        STATE* s2 = (STATE*)left_state(pts[1]); double* x2_old = s2->x_old;
+        double x12_old[3];
+        minusVec(x2_old,x1_old,x12_old);
+
+        STATE* s3 = (STATE*)left_state(pts[2]); double* x3_old = s3->x_old;
+        STATE* s4 = (STATE*)left_state(pts[3]); double* x4_old = s4->x_old;
+        double x34_old[3];
+        minusVec(x4_old,x3_old,x34_old);
+
+        double x3tC_old[3];
+        scalarMult(tC,x34_old,x3tC_old);
+        addVec(x3_old,x3tC_old,x3tC_old);
+
+        double x1sC_old[3];
+        scalarMult(sC,x12_old,x1sC_old);
+        addVec(x1_old,x1sC_old,x1sC_old);
+
+        //TODO: Could probably just use normalized vec_approx??
+        double vec_approx[3];
+        minusVec(x3tC_old,x1sC_old,vec_approx);
+        
+        if (Dot3d(vec,vec_approx) < 0.0)
+        {
+            for (int i = 0; i < 3; ++i)
+                vec[i] *= -1.0;
+        }
     }
     else if (dist == 0.0 && mstate == MotionState::STATIC)
     {
@@ -1212,7 +1234,8 @@ static void EdgeToEdgeImpulse(
         if (wab[0] + wab[1] < MACH_EPS || wab[2] + wab[3] < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = impulse[i];
+                //f_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
         }
         else
         {
@@ -1220,7 +1243,8 @@ static void EdgeToEdgeImpulse(
                               + sqr(wab[2]) + sqr(wab[3]);
         
             m_impulse[i] = 2.0*impulse[i]/wabs_sqr;
-            f_impulse[i] = 2.0*impulse[i]/wabs_sqr;
+                //f_impulse[i] = 2.0*impulse[i]/wabs_sqr;
+            f_impulse[i] = 2.0*inelastic_impulse[i]/wabs_sqr;
         }
     }
 
@@ -1275,7 +1299,7 @@ static void EdgeToEdgeImpulse(
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
-        //TODO: current nor vector not correct for rigid-rigid collision
+        //TODO: is current nor vector acceptable for rigid-rigid collision?
 	    if (isMovableRigidBody(pts[0]))
             SpreadImpactZoneImpulse(pts[0], -1.0*rigid_impulse[0], nor);
         if (isMovableRigidBody(pts[2]))
@@ -1312,7 +1336,7 @@ static void EdgeToEdgeImpulse(
             if (mstate == MotionState::STATIC)
             {
                 double friction_impulse = F[i];
-                if (fabs(vt) > MACH_EPS)
+                if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
                     if (fabs(mu*friction_impulse) < max_friction)
@@ -1419,8 +1443,9 @@ static void EdgeToEdgeInelasticImpulse(
     }
 
     //multiply inelastic impulses by relaxation parameter in [0,1]
-        //impulse[0] *= 0.25;
-        //impulse[1] *= 0.25;
+    double inelastic_coeff = CollisionSolver3d::getInelasticImpulseCoefficient();
+    impulse[0] *= inelastic_coeff;
+    impulse[1] *= inelastic_coeff;
 
     if (isStaticRigidBody(pts[0])) W[0] = 0.0;
     if (isStaticRigidBody(pts[1])) W[1] = 0.0;
@@ -1500,14 +1525,7 @@ static bool PointToTri(
     double mag_tnor = Mag3d(tri_nor);
     if (mag_tnor < MACH_EPS)
     {
-        //TODO: This warrants retrying the time step using a reduced
-        //      time step or an increase in the number of substeps.
-        //      Currently there is only one collision substep; it begins
-        //      after the spring solver (which uses adaptive substeps)
-        //      has finished computing the new candidate positions and
-        //      velocities of the fabric mesh points. Ideally we want to
-        //      to use collision substeps in between some number of spring
-        //      solver substeps.
+        //TODO: What if we ignore TRIs that have reduced to a line or a point??
         printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
                 \t\t\t (Mag3d(tri_nor) < MACH_EPS)\n\n");
         printf("\t\t\t tri_nor = %f %f %f\n\n",tri_nor[0],tri_nor[1],tri_nor[2]);
@@ -1523,9 +1541,7 @@ static bool PointToTri(
         scalarMult(1.0/mag_tnor,tri_nor,tri_nor);
     }
 
-    //correct the triangle's normal direction to point to same
-    //side as the point (not used right now, but may need at some
-    //for detecting/correcting interpenetration etc.)
+    //correct the triangle's normal direction to point to same side as the point 
     double side = Dot3d(x34,tri_nor);
     if (side < 0.0)
     {
@@ -1538,6 +1554,7 @@ static bool PointToTri(
 	double det = Dot3d(x13,x13)*Dot3d(x23,x23) - Dot3d(x13,x23)*Dot3d(x13,x23);
 	if (fabs(det) < MACH_EPS)
     {   
+        //TODO: What if we ignore TRIs that have reduced to a line or a point??
         printf("\n\tPointToTri() WARNING: degenerate TRI detected,\n \
                 \t\t\t (fabs(det) < MACH_EPS)\n\n");
         
@@ -1717,12 +1734,14 @@ static void PointToTriImpulse(
         if (fabs(sum_w) < MACH_EPS)
         {
             m_impulse[i] = impulse[i];
-            f_impulse[i] = impulse[i];
+                //f_impulse[i] = impulse[i];
+            f_impulse[i] = inelastic_impulse[i];
         }
         else
         {
             m_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
-            f_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
+                //f_impulse[i] = 2.0*impulse[i]/(1.0 + Dot3d(w, w));
+            f_impulse[i] = 2.0*inelastic_impulse[i]/(1.0 + Dot3d(w, w));
         }
     }
 
@@ -1777,7 +1796,7 @@ static void PointToTriImpulse(
 	if (isRigidBody(pts[0]) && isRigidBody(pts[1]) && 
 	    isRigidBody(pts[2]) && isRigidBody(pts[3]))
 	{
-        //TODO: investigate if this can be done correctly
+        //TODO: is current nor vector acceptable for rigid-rigid collision?
 	    if (isMovableRigidBody(pts[0]))
             SpreadImpactZoneImpulse(pts[0], -1.0*rigid_impulse[0], nor);
 	    if (isMovableRigidBody(pts[3]))
@@ -1814,7 +1833,7 @@ static void PointToTriImpulse(
             if (mstate == MotionState::STATIC)
             {
                 double friction_impulse = F[i];
-                if (fabs(vt) > MACH_EPS)
+                if (fabs(vt) > ROUND_EPS)
                 {
                     double delta_vt = max_friction;
                     if (fabs(mu*friction_impulse) < max_friction)
@@ -1928,8 +1947,9 @@ static void PointToTriInelasticImpulse(
     }
 
     //multiply inelastic impulses by relaxation parameter in [0,1]
-        //impulse[0] *= 0.25;
-        //impulse[1] *= 0.25;
+    double inelastic_coeff = CollisionSolver3d::getInelasticImpulseCoefficient();
+    impulse[0] *= inelastic_coeff;
+    impulse[1] *= inelastic_coeff;
     
     for (int i = 0; i < 3; ++i)
     {
