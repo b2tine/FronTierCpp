@@ -860,8 +860,11 @@ static int elastic_set_propagate3d_serial(
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
     }
-        //set_propagation_limits(front,*newfront); //TODO: Useful here?
 
+
+    //TODO: should call this function, in case we need the previous interface states
+    //
+    //  set_correspondence_between_interfaces((*newfront)->interf,fr->interf);
     
     geom_set->front = *newfront;
 

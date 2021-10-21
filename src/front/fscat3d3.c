@@ -984,7 +984,6 @@ EXPORT INTERFACE *collect_hyper_surfaces(
         set_copy_intfc_states(YES);
 
 	cut_intfc = cut_intfc_to_wave_types(intfc,w_type,ntypes);
-	    //cut_intfc = cut_intfc_to_wave_type(intfc,w_type);
 	gr = computational_grid(cut_intfc);
 
 	/* Patch in x-direction */
