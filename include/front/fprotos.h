@@ -269,6 +269,7 @@ IMPORT	void  	set_curve_gindex(Front*);
 IMPORT	void  	set_gindex_to_tri(Front*);
 IMPORT	void  	set_gindex_to_point(Front*);
 IMPORT  void	exchange_curve_gindex(Front*);
+IMPORT  void	exchange_surf_gindex(Front*);
 
         /* fgrid.c*/
 IMPORT  void    set_is_fabric_run(boolean);
