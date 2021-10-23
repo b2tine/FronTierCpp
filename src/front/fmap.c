@@ -101,7 +101,6 @@ EXPORT	void FT_InteriorPropagate(
     {
         interior_advance_front(front);
 
-        //TODO: error with remove_unphy_pair()
         if (front->grid_intfc != NULL)
         {
             FT_FreeGridIntfc(front);
