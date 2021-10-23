@@ -116,7 +116,7 @@ void FabricManager::recordOriginalPositions()
                 sl->x_prevstep[j] = Coords(pt)[j];
                     //sl->x_old[j] = Coords(pt)[j];
             
-                if (std::isnan(sl->x_old[j]))
+                if (std::isnan(sl->x_prevstep[j]))
                 {
                     std::cout << "nan_x_old" << std::endl;
                     LOC(); clean_up(ERROR);

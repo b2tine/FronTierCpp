@@ -99,12 +99,9 @@ EXPORT	void FT_InteriorPropagate(
 {
     if (front->interior_propagate != NULL)
     {
-        //TODO: rewrite to allow return of error code
-        //      for time step modification like FT_Propagate()
-        //      -- do inside interior_propagate() function
-        //         instead of here
         interior_advance_front(front);
 
+        //TODO: error with remove_unphy_pair()
         if (front->grid_intfc != NULL)
         {
             FT_FreeGridIntfc(front);
@@ -580,17 +577,18 @@ EXPORT	void FT_MakeGridIntfc(
 {
 	Table *T;
         COMPONENT *comps;
-	if (Tracking_algorithm(front) == SIMPLE_TRACKING)
-	    return;
-	if (debugging("grid_line_comp"))
+	if (Tracking_algorithm(front) == SIMPLE_TRACKING) return;
+	
+    if (debugging("grid_line_comp"))
 	    init_grid_debug(front);
-	communicate_default_comp(front);
-	front->grid_intfc = make_grid_intfc(front->interf,
-			EXPANDED_DUAL_GRID,NULL);
-	/* communicate the components */
-        T = table_of_interface(front->grid_intfc);
-        comps = T->components;
-        FT_ParallelExchGridIntArrayBuffer(comps,front);
+	
+    communicate_default_comp(front);
+	front->grid_intfc = make_grid_intfc(front->interf,EXPANDED_DUAL_GRID,NULL);
+	
+    /* communicate the components */
+    T = table_of_interface(front->grid_intfc);
+    comps = T->components;
+    FT_ParallelExchGridIntArrayBuffer(comps,front);
 }	/* end FT_MakeGridIntfc */
 
 EXPORT	void FT_MakeCompGridIntfc(

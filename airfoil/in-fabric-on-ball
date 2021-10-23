@@ -91,7 +91,7 @@ Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.1
 Enter fabric thickness: 0.0005
-Enter fabric rounding tolerance: 0.000005
+Enter fabric rounding tolerance: 0.0000075
 
 Enter string spring constant: 0
 Enter string damping constant: 0.01
@@ -103,7 +103,7 @@ Enter string rounding tolerance: 0.00004
 
 Enter collision inelastic impulse relaxation parameter: 0.25
 
-Enter overlap coefficient: 0.175
+Enter overlap coefficient: 0.225
     XXXEnter overlap coefficientXXX: 0.5
     XXXEnter overlap coefficientXXX: 0.25
 
@@ -141,7 +141,7 @@ Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 
-Enter the debugging string: bendforce_off
+Enter the debugging stringXXX: bendforce_off
 
 Enter the debugging stringXXX: reduce_highfreq_vel
 

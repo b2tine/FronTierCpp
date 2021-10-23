@@ -976,6 +976,7 @@ EXPORT	INTERFACE *make_grid_intfc(
 	    return NULL;
 	}
 
+    /////////////////////////////////////////////////////
     //TODO: Is this adjust_grid_intfc_points() ready?
     //      There is no comment/indication this it
     //      is not suitable for use.
@@ -985,7 +986,9 @@ EXPORT	INTERFACE *make_grid_intfc(
 	   add this function to ensure interface topology 
 	   does not break down due to tolerance 
 	*/
-	/*adjust_grid_intfc_points(grid_intfc); */
+	    adjust_grid_intfc_points(grid_intfc);
+    //////////////////////////////////////////////////////
+
 
 	if (debugging("make_grid_intfc"))
 	{
@@ -2516,11 +2519,13 @@ EXPORT void adjust_grid_intfc_points(INTERFACE *intfc)
 		    fabs(Coords(p)[i] - L[i] - (icoords[i]+1)*h[i]))
 		    icoords[i]++;
 		dist[i] = Coords(p)[i] - L[i] - icoords[i]*h[i];
+
 		if (fabs(dist[i]) > 0.004*h[i])
 		{
 		    to_adjust = NO;
 		    break;
 		}
+
 		if (max_dist < fabs(dist[i]))
 		{
 		    max_dist = fabs(dist[i]);
@@ -2528,10 +2533,12 @@ EXPORT void adjust_grid_intfc_points(INTERFACE *intfc)
 		    sign = (dist[i] > 0.0) ? 1 : -1;
 		}
 	    }
-	    if (to_adjust == NO) continue;
-	    Coords(p)[max_i] = L[max_i] + icoords[max_i]*h[max_i] +
-			sign*0.004*h[max_i];
-	    intfc->modified = YES;
+	    
+        if (to_adjust == NO) continue;
+	    
+        Coords(p)[max_i] = L[max_i] + icoords[max_i]*h[max_i] + sign*0.004*h[max_i];
+	    
+        intfc->modified = YES;
         }
 }	/* end adjust_grid_intfc_points */
 

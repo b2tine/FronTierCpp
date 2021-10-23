@@ -1019,19 +1019,15 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
     {
         //TODO: Return avg_vel to value before point to point collisions???
         //      
-        //      --This should most likely be called, but may be better if
-        //      we perform at least one pointwise collision iteration to
-        //      get the impact zone handling started. See todo in computeImpactZoneJac()
-        //      regarding a startup step...
-        //
         //      Experimenting with using lower number of collision iterations,
         //      and reverting the average velocity would seem to work against us.
         //      skip for now.
         
             //revertAverageVelocity();
 
-        computeImpactZoneGS(list);
-            //computeImpactZoneJac(list);
+        //TODO: Don't think Gauss-Seidel updating appropriate -- jagged interface results
+        computeImpactZoneJac(list);
+            //computeImpactZoneGS(list);
     }
     stop_clock("computeImpactZone");
 
@@ -1543,6 +1539,9 @@ void CollisionSolver3d::initRigidBodyImpactZones()
 {
     POINT* pts[3];
 	
+    //TODO: SHould we have static rigid body impact zones?
+    //unsortHseList(staticRigidTriList);
+
     unsortHseList(movableRigidTriList);
 	for (auto it = movableRigidTriList.begin(); it != movableRigidTriList.end(); ++it)
     {
@@ -2044,7 +2043,8 @@ void updateImpactListVelocity(POINT* head)
             //TODO: Document "impact zone anchoring" technique/idea
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = HUGE/num_surfpts;
+            m = 1000.0;
+                //m = HUGE/num_surfpts;
         }
         else if (isMovableRigidBody(p))
         {
@@ -2098,7 +2098,8 @@ void updateImpactListVelocity(POINT* head)
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = HUGE/num_surfpts;
+            m = 1000.0;
+                //m = HUGE/num_surfpts;
         }
         else if (isMovableRigidBody(p))
         {
@@ -2130,7 +2131,8 @@ void updateImpactListVelocity(POINT* head)
         {
             SURFACE* s = (SURFACE*)Surface_of_hs(p->hs);
             int num_surfpts = I_NumOfSurfInteriorPoints(s);
-            m = HUGE/num_surfpts;
+            m = 1000.0;
+                //m = HUGE/num_surfpts;
         }
         else if (isMovableRigidBody(p))
         {

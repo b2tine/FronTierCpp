@@ -754,8 +754,6 @@ static void elastic_set_propagate_serial(
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
     }
-        //set_propagation_limits(front,*newfront); //TODO: Useful here?
-
 
 
     //TODO: Need the FabricManager here.
@@ -799,9 +797,17 @@ static void elastic_set_propagate_serial(
     }
 
 
-    //TODO: Then compute new effective velocities (linear trajectories)
-    //      and call detectCollision() via the FabricManager.
+    //TODO: Should check the interface for intersections/crossing
+    //      here and attempt to correct before returning to the
+    //      calling function.
     //
+    //      Prevent remove_unphys_pair() from failing and crashing the run.
+    //
+        //CROSS  *cross;
+        //boolean intersection_status;
+        //intersection_status = intersections(newfront->interf,&cross,YES);
+
+    
     //      The velocity constraint of strain limiting procedure could
     //      be applied here after the vertices have been moved to their
     //      final collision free position.
@@ -2181,6 +2187,9 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(
 
 
     //sync interfaces after collision handling
+    pp_gsync();
+	exchange_curve_gindex(*newfront);
+	exchange_surf_gindex(*newfront);
     scatter_front(*newfront);
 
     if (debugging("max_speed"))

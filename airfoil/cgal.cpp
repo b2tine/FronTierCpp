@@ -315,7 +315,7 @@ static void CgalCircle(
     if (gore_bool[0]=='y' || gore_bool[0]=='Y')
     {
         //TODO: would be overwritten if vent present
-        CirR[1] = 0.1 * CirR[0];
+            //CirR[1] = 0.1 * CirR[0];
         af_params->attach_gores = YES;
 	}
 	else
