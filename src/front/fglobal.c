@@ -50,7 +50,7 @@ typedef struct _GBOND GBOND;
 LOCAL boolean point_out_domain(POINT*,INTERFACE*,double*,double*);
 LOCAL void merge_with_nb_surf_gindex(INTERFACE*,int,long*,int*,GTRI**);
 LOCAL void merge_with_nb_curve_gindex(INTERFACE*,int,long*,int*,GBOND**);
-LOCAL void exchange_surf_gindex(Front*);
+//LOCAL void exchange_surf_gindex(Front*);
 //LOCAL void exchange_curve_gindex(Front*);
 
 LOCAL boolean point_out_domain(
