@@ -1,7 +1,6 @@
 #ifndef CFVISC_H
 #define CFVISC_H
 
-//#include "cFluid.h"
 
 struct VFLUX
 {

@@ -757,7 +757,7 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        //TODO: should be YES by default
+        //TODO: 
         //      NOTE: currently not being used. Still prototyping
         //
         //      "Enter yes to use slip wall boundary condition:"

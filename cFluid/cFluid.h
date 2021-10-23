@@ -61,7 +61,7 @@ struct STATE
 	double dens;			/* density */
 	double momn[MAXD];		/* momentum density */
 	double vel[MAXD];		/* Velocity */
-    //double vel_old[MAXD];	/* Previous Time Step Velocity */
+        //double vel_old[MAXD];	/* Previous Time Step Velocity */
 	double vort;			/* Vorticity-2d */
 	double engy;			/* energy density */
 	double pres;			/* Pressure */
@@ -386,7 +386,6 @@ private:
     //User defined minimum physical variables
     double min_dens;
     double min_pres;
-        //double min_mu;//TODO: don't think we need this
 
 	// for parallel partition
 	int NLblocks, ilower, iupper;
@@ -489,7 +488,6 @@ private:
     // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
-    // TODO: Move these, and related, functions out of class if possible
 	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);
@@ -683,8 +681,6 @@ private:
 
 // cFinit.cpp
 extern void insert_objects(Front*);
-//extern void prompt_for_rigid_body_params(int,char*,RG_PARAMS*);
-//extern void set_rgbody_params(RG_PARAMS,HYPER_SURF*);
 
 
 

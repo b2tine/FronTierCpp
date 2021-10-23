@@ -861,7 +861,6 @@ static void rgbody_point_propagate_in_vacuum(
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
 
-            //TODO: test/verify
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
@@ -1010,7 +1009,7 @@ static void rgbody_point_propagate_in_fluid(
 	    newst = (STATE*)right_state(newp);
 	}
 
-    //TODO: need cFluid version of setStateViscosity()
+    //TODO: need cFluid version of setStateViscosity() ?
 	    //setStateViscosity(Fparams,newst,comp);
 
     FT_NormalAtPoint(oldp,front,nor,comp);
@@ -1203,7 +1202,6 @@ double burger_flux(
 
 // Flux of Riemann solution of linear equation u_t + au_x = 0
 
-//TODO: should be named upwind (linear) flux
 extern double linear_flux(	
 	double a,
 	double ul,
@@ -1367,15 +1365,6 @@ extern	void cfluid_compute_force_and_torque(
         clean_up(EXIT_FAILURE);
     }
     return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
-    /*
-	switch (fr->rect_grid->dim)
-	{
-	case 2:
-	    return cfluid_compute_force_and_torque2d(fr,hs,dt,force,torque);
-	case 3:
-	    return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
-	}
-    */
 }	/* end cfluid_compute_force_and_torque */
 
 static	void cfluid_compute_force_and_torque2d(

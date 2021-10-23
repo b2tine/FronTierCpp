@@ -5,8 +5,6 @@ Movie frame interval: 0.025
 CFL factor: 0.5
 Redistribution interval: 10000000000000
 
-Fixed time step: 0.0001
-
 *******************************************************
 
 Domain limit in 0-th dimension: 0 2.0
@@ -91,8 +89,7 @@ Type y to make vector vorticity field movie: y
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
 Enter the debugging string: flow_through
-
-Enter the debugging stringXXX: no_viscflux
+Enter the debugging string: no_viscflux
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK

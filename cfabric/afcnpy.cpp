@@ -2205,7 +2205,6 @@ extern void setSpecialNodeForce(
 		set_bond_length(b,dim);
 	    }
 
-        //TODO: Do these forces have correct orientation?
 	    node_out_curve_loop(*n,c)
 	    {
 		if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
@@ -2215,7 +2214,6 @@ extern void setSpecialNodeForce(
 		    vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
 		    vec[i] /= bond_length(b);
 		    f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
-            //TODO: Zero compressive stress?
 		}
 	    }
 	    node_in_curve_loop(*n,c)
@@ -2501,7 +2499,6 @@ extern void set_unequal_strings(Front *front)
 
 
 //TODO: Is this dead code? Not being called by anything and is static.
-//      Should also be in afset.cpp, where similiar functions are.
 static void linkGlobalIndexToTri(
         INTERFACE *intfc,
         TRI ***gtri)

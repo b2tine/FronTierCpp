@@ -348,19 +348,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
-
-    /*
-    /////////////////////////////////////////////////////////////////////////////////////
-    for (int j = 0; j < dim; ++j)
-    {
-        vs->vel[j] = vel_reflect[j];
-    }
-    /////////////////////////////////////////////////////////////////////////////////////
-    */
-
-    
-    
-    /////////////////////////////////////////////////////////////////////////////////////
     double vel_rel[MAXD] = {0.0};
     double vn = 0.0;
 
@@ -382,7 +369,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /////////////////////////////////////////////////////////////////////////
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     if (eqn_params->use_eddy_viscosity == NO)
     {
@@ -392,7 +378,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         }
         return;
     }
-    /////////////////////////////////////////////////////////////////////////
 
     if (debugging("slip_boundary"))
     {
@@ -460,7 +445,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         vs->vel[j] = v_slip[j];
         //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
-    /////////////////////////////////////////////////////////////////////////////////////
     
     if (debugging("slip_boundary"))
     {

@@ -325,12 +325,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     return mu_t;
 }   /* end computeEddyViscosityVremanModel_BdryAware */
 
-//TODO: ADAPT FOR USE WITH G_CARTESIAN
-//TODO: Implement boundary aware computeVelocityGradient(), which includes
-//      setting slip velocity etc.
-//      Will likely be a little more complicated than iFluid version, potentially
-//      requiring the state velocity and momentum values to be set in accordance with
-//      the computed slip velocity.... 
 std::vector<std::vector<double>> 
 G_CARTESIAN::computeVelocityGradient(int *icoords)
 {
@@ -430,8 +424,6 @@ void G_CARTESIAN::setSlipBoundary(
         double* v_slip)
 {
     //printf("\nERROR setSlipBoundary(): function not implemented yet\n");
-    //LOC(); clean_up(EXIT_FAILURE);
-
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
 
     //TODO: Write GNOR implementation and compare results.
@@ -502,9 +494,9 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
 
-    //TODO: We should get the ring of tris around the nearest interface point,
-    //      and possible consider other nearby interface points that are within
-    //      range. For a complex interface such as the human vtk model, there appears
+    //TODO: Should we get the ring of tris around the nearest interface point,
+    //      and possibly consider other nearby interface points that are within
+    //      range? For a complex interface such as the human vtk model, there appears
     //      to be some error in the fluid region between the head and the hands.
     //      Excessively large velocities -- maybe not enough drag from the other
     //      nearby interface points that aren't being taken into account.
@@ -667,16 +659,13 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /*
-    /////////////////////////////////////////////////////////////////////////
-    if (iFparams->use_eddy_visc == NO)
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    if (eqn_params->use_eddy_viscosity == NO)
     {
         for (int j = 0; j < dim; ++j)
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
         return;
     }
-    /////////////////////////////////////////////////////////////////////////
-    */
 
     if (debugging("slip_boundary"))
     {

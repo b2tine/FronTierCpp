@@ -88,7 +88,6 @@ void G_CARTESIAN::initMesh(void)
     //TODO: Need input file options for these
 	min_dens = 0.0001;
 	min_pres = 0.0001;
-        //min_mu = 0.0000001; //TODO: don't think we need this...
 
 	FT_MakeGridIntfc(front);
 	setDomain();
@@ -644,9 +643,6 @@ void G_CARTESIAN::solve(double dt)
 {
 	m_dt = dt;
 	
-    //TODO: Could set default mu_max, rho_min values here with
-    //      max_speed -- could write function that sets all these
-    //      values to their default at beginning of every timestep.
     max_speed = 0.0;
 
 	if (debugging("trace")) printf("Entering solve()\n");
@@ -1800,15 +1796,13 @@ double G_CARTESIAN::getVorticity(int i, int j)
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
                 //TODO: Need to handle the flow through boundary
-                //      differently, or is there an error in the
-                //      flow through boundary function itself?
                 u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
                 //TODO: Use a higher order approximation (3 point one sided)
-                //      See iFluid computeDivSimple().
+                //      See iFluid computeDivSimple() for example.
                 u_edge[idir][nb] = vel[(idir+1)%dim][index];
             }
             else
@@ -5336,7 +5330,6 @@ void G_CARTESIAN::GFMGhostState(
 	ghost_st->engy = EosEnergy(ghost_st);
 }
 
-//TODO: Need to set slip velocity here too???
 void G_CARTESIAN::setNeumannStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,

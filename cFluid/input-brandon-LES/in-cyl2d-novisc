@@ -15,21 +15,15 @@ Computational grid: 250 190
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
-Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY 
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 10.0 0
 Enter pressure: 100.0
 Enter density: 3.0
-Enter yes for inlet boundary perturbation: no
 For upper boundary in 0-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-
-For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 *******************************************************
@@ -61,8 +55,9 @@ Enter gravity: 0 0
 
 Type yes to track the interface: no
 
+*******************************************************
 
-Enter yes to use eddy viscosity: yes
+Enter yes to use eddy viscosity: no
 
 
 *******************************************************
@@ -73,7 +68,7 @@ Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: y
 
-Type y to make vector velocity field movie: y
+Type y to make vector velocity field movie: n
 Type y to make vector vorticity field movie: n
 Type y to make scalar density field movie: n
 Type y to make scalar pressure field movie: n
@@ -81,10 +76,8 @@ Type y to make scalar viscosity field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
-
 Enter the debugging string: cfluid_dt
-
-Enter the debugging stringX: no_viscflux
+Enter the debugging string: no_viscflux
 
 Enter the debugging stringX: trace
 Enter the debugging stringX: CLOCK

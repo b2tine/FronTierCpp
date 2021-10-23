@@ -55,7 +55,6 @@ void G_CARTESIAN::initMesh()
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
 	
-    //TODO: why was this done?
     /*TMP*/
 	min_dens = 0.0001;
 	min_pres = 0.0001;
@@ -187,36 +186,6 @@ void G_CARTESIAN::setComponent()
 	}
 }	/* end setComponent() */
 
-/*
-void G_CARTESIAN::computeConvectiveFlux()
-{
-    nrad = 3;
-    int order = 1;
-
-	static SWEEP *st_field;
-	static FSWEEP *st_flux;
-	
-	if (st_flux == NULL)
-	{
-	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
-	    
-        for (int i = 0; i < order; ++i)
-	    {
-	    	allocMeshVst(&st_field[i]);
-	    	allocMeshFlux(&st_flux[i]);
-	    }
-    }
-
-    double delta_t = m_dt;
-	copyToMeshVst(&st_field[0]);
-	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
-        //addMeshFluxToVst(&st_field[0],st_flux[0],1.0);
-	    //copyFromMeshVst(st_field[0]);
-    cFlux = &st_flux[0];
-}
-*/
-
 void G_CARTESIAN::advanceSolution()
 {
 	int order;
@@ -343,7 +312,7 @@ void G_CARTESIAN::computeMeshFlux(
 	}
 
     //TODO: Use input file option instead of debugging string for viscous flux
-    if (debugging("viscflux")) //if (!debugging("no_viscflux"))
+    if (!debugging("no_viscflux"))
     {
        addViscousFlux(&m_vst,m_flux,delta_t);
     }
@@ -649,11 +618,6 @@ void G_CARTESIAN::solve(double dt)
 
 	setComponent();
 
-    ////////////////////////////////////////////////////////////////
-    //TODO: part of diffusion implementation
-        //setGlobalIndex();//see iFbasic.cpp function and adapt to cfluid
-    ////////////////////////////////////////////////////////////////
-	
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
@@ -749,9 +713,6 @@ double G_CARTESIAN::getDistance(double *c0, double *c1)
 		    +(c0[1]-c1[1])*(c0[1]-c1[1]) );
 }
 
-
-// input : p[]
-// output: q[]
 
 void G_CARTESIAN::getNearestInterfacePoint(
 	double *p, 
@@ -5550,7 +5511,6 @@ void G_CARTESIAN::GFMGhostState(
 	ghost_st->engy = EosEnergy(ghost_st);
 }
 
-//TODO: Need to set slip velocity here too???
 void G_CARTESIAN::setNeumannStates(
 	SWEEP		*vst,
 	SWEEP		*m_vst,
@@ -6824,12 +6784,6 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	SCHEME_PARAMS scheme_params;
 	EOS_PARAMS	*eos;
 	
-    /*
-    static SWEEP vst;       //SWEEP is a data structure storing state values
-	static FSWEEP vflux;    //FSWEEP is a data structure storing flux of state values
-	static boolean first = YES;
-	*/
-
     COMPONENT comp;
 	int seg_min,seg_max;
 	static int icoords[MAXD];
@@ -7049,7 +7003,6 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    seg_min = seg_max + 1;
 	}
         
-    //TODO: see above todo in if (first) block
     freeDirVstFlux(&vst,&vflux);
 }	/* end addFluxAlongGridLine */
 

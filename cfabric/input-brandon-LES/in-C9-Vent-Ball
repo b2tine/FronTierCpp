@@ -153,4 +153,6 @@ Type yes to perturb the surface: n
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: no_viscflux
+
 Enter the debugging string: Xtrace

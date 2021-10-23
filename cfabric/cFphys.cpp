@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 static void getFabricState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 
-//TODO: Move to cFinit.cpp and remove cFphys.cpp entirely
 void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 {
 	char string[100];

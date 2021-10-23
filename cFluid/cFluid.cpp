@@ -35,7 +35,6 @@ static void gas_driver(Front*,G_CARTESIAN&);
 static int g_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
                         HYPER_SURF*,double*);
 static boolean compare_with_base_data(Front *front);
-//static void rgb_init(Front*,RG_PARAMS);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -218,14 +217,6 @@ static  void gas_driver(
 
 	    FT_SetTimeStep(front);
         
-        /*
-        if (debugging("cfluid_dt"))
-        {
-            printf("\nfront->dt = %g    CFL*g_cartesian.max_dt = %g*%g = %g\n,"
-                    front->dt, CFL, g_cartesian.max_dt, CFL*g_cartesian.max_dt);
-        }
-        */
-
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
 
 	    FT_SetOutputCounter(front);
@@ -272,8 +263,6 @@ static  void gas_driver(
         //step, assuming the propagation is hyperbolic and
         //is not dependent on second order derivatives of
         //the interface such as curvature, and etc.
-
-        //TODO: Add option for using a fixed time step.
 
         FT_SetTimeStep(front);
         

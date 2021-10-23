@@ -51,8 +51,6 @@ static void set_surf_impulse(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**);
 static void reorder_string_curves(NODE*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
-//static void computeElasticForce(SPRING_VERTEX*, double*);
-
 #define 	MAX_NUM_RING1		30
 
 static void count_node_neighbors(
@@ -277,10 +275,6 @@ extern void compute_spring_accel1(
             accel[k] += sv->k[j]*(1.0 - sv->len0[j]/len)*vec[k]/sv->m; 
         }
 	}
-
-        //TODO: Try to salvage this function, or just use
-        //      qqshi implementation in AngStiff_sprModel?
-        //computeElasticForce(sv,f);
 
 	for (int k = 0; k < dim; ++k)
     {

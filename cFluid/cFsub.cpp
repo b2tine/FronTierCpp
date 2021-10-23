@@ -573,10 +573,6 @@ extern void cF_flowThroughBoundaryState(
     }
 }
 
-//TODO: need to do viscosity too?
-//      Visc appears to get reflected back into domain for lateral flowthru boundaries.
-//
-//      OR maybe just need to handle the flowthru bdry's in computeVelocityGradient()...
 extern void cF_flowThroughBoundaryState2d(
         double          *p0,
         HYPER_SURF      *hs,
@@ -638,26 +634,6 @@ extern void cF_flowThroughBoundaryState2d(
 	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(dir,front);
 
-    /*
-	if (debugging("flow_through"))
-	{
-	    printf("Time step = %f  Normal grid size = %f\n",dt,dn);
-	    printf("Normal direction: ");
-	    for (j = 0; j < dim; ++j)
-            printf("%f ",nsten->nor[j]);
-	    printf("\n");
-	    printf("Nor_stencil at point p(%f %f)\n",Coords(oldp)[0],Coords(oldp)[1]);
-	    printf("Nor_stencil:\n");
-	    for (i = 0; i < nrad; ++i)
-	    {
-            for (j = 0; j < dim; ++j)
-	    	    printf("%f ",nsten->pts[i][j]);
-            printf("\n");
-	    }
-	}
-    */
-
-    //Replaces above block -- remove above if this is sufficient
     if (debugging("flow_through"))
     {
         (void) printf("Normal grid size = %f\n",dn);
@@ -748,34 +724,6 @@ extern void cF_flowThroughBoundaryState2d(
 	    for (i = 0; i < dim; ++i)
 	    	dir[i] = tsten[0]->dir[i];
 	    dn = FT_GridSizeInDir(dir,front);
-
-        /*
-	    if (debugging("flow_through"))
-	    {
-	    	(void) printf("Ambient component: %d\n",comp);
-	    	(void) printf("hs = %p  oldp->hs = %p\n",(POINTER)hs,(POINTER)oldp->hs);
-	    	(void) printf("Time step = %f  Tangential grid size = %f\n",dt,dn);
-	    	(void) printf("Tangential direction: ");
-	    	for (j = 0; j < dim; ++j)
-                (void) printf("%f ",tsten[0]->dir[j]);
-	    	(void) printf("\n");
-	    	(void) printf("Tan_stencil at point p(%f %f)\n",Coords(oldp)[0],Coords(oldp)[1]);
-	    	(void) printf("Left points:\n");
-	    	for (i = 0; i < nrad; ++i)
-	    	{
-                for (j = 0; j < dim; ++j)
-	    	    	(void) printf("%f ",Coords(tsten[0]->p[-i])[j]);
-                (void) printf("\n");
-	    	}
-	    	(void) printf("Right points:\n");
-	    	for (i = 0; i < nrad; ++i)
-	    	{
-                for (j = 0; j < dim; ++j)
-	    	    	(void) printf("%f ",Coords(tsten[0]->p[i])[j]);
-                (void) printf("\n");
-	    	}
-	    }
-        */
 
         if (debugging("flow_through"))
         {
@@ -898,26 +846,6 @@ extern void cF_flowThroughBoundaryState3d(
 	    dir[i] = nsten->nor[i];
 	dn = FT_GridSizeInDir(dir,front);
 
-    /*
-	if (debugging("flow_through"))
-	{
-	    printf("Time step = %f  Normal grid size = %f\n",dt,dn);
-	    printf("Normal direction: ");
-	    for (j = 0; j < dim; ++j)
-            printf("%f ",nsten->nor[j]);
-	    printf("\n");
-	    printf("Nor_stencil at point p(%f %f)\n",Coords(oldp)[0],Coords(oldp)[1]);
-	    printf("Nor_stencil:\n");
-	    for (i = 0; i < nrad; ++i)
-	    {
-            for (j = 0; j < dim; ++j)
-	    	    printf("%f ",nsten->pts[i][j]);
-            printf("\n");
-	    }
-	}
-    */
-
-    //Replaces above block -- remove above if this is sufficient
     if (debugging("flow_through"))
     {
         (void) printf("Normal grid size = %f\n",dn);
@@ -1002,34 +930,6 @@ extern void cF_flowThroughBoundaryState3d(
             for (i = 0; i < dim; ++i)
                 dir[i] = tsten[k]->dir[i];
             dn = FT_GridSizeInDir(dir,front);
-
-            /*
-            if (debugging("flow_through"))
-            {
-                (void) printf("Ambient component: %d\n",comp);
-                (void) printf("hs = %p  oldp->hs = %p\n",(POINTER)hs,(POINTER)oldp->hs);
-                (void) printf("Time step = %f  Tangential grid size = %f\n",dt,dn);
-                (void) printf("Tangential direction: ");
-                for (j = 0; j < dim; ++j)
-                    (void) printf("%f ",tsten[0]->dir[j]);
-                (void) printf("\n");
-                (void) printf("Tan_stencil at point p(%f %f)\n",Coords(oldp)[0],Coords(oldp)[1]);
-                (void) printf("Left points:\n");
-                for (i = 0; i < nrad; ++i)
-                {
-                    for (j = 0; j < dim; ++j)
-                        (void) printf("%f ",Coords(tsten[0]->p[-i])[j]);
-                    (void) printf("\n");
-                }
-                (void) printf("Right points:\n");
-                for (i = 0; i < nrad; ++i)
-                {
-                    for (j = 0; j < dim; ++j)
-                        (void) printf("%f ",Coords(tsten[0]->p[i])[j]);
-                    (void) printf("\n");
-                }
-            }
-            */
 
             if (debugging("flow_through"))
             {
@@ -1175,7 +1075,7 @@ static  void neumann_point_propagate(
                                 - center_of_mass(oldhs)[i];
             }
         
-            //if (dim == 2) //TODO: This is only for rotations in xy plane
+            //if (dim == 2) //This is only for rotations in xy plane
             vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
                      angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
             vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
@@ -1260,41 +1160,13 @@ static void dirichlet_point_propagate(
 	    	newst->vel[i] = bstate->vel[i];
         }
 
-        ///////////////////////////////////////////////////////////////////////
-        //TODO: TEMPORARY PROTOTYPING CODE
-        //
-        //perturb the velocity
-        if (eqn_params->perturb_const_inlet_bdry == true)
-        {
-            for (int i = 0; i < dim; ++i)
-            {
-                //if (std::abs(newst->vel[i]) > 0.0)
-                //if (std::abs(bstate->vel[i]) > 0.0) { ... }
-                auto seed = static_cast<long unsigned int>(
-                    std::chrono::system_clock::now().time_since_epoch().count());
-                
-                //generate uniformly distributed random number in the interval [-1.0, 1.0]
-                auto gen_uniform = std::bind(
-                        std::uniform_real_distribution<double>{-1.0,1.0},
-                        std::default_random_engine{seed});
-
-                //perturb at most 25% of the specified constant velocity
-                double max_vel_perturb = 0.25*bstate->vel[i];
-
-                double vel_perturbation = max_vel_perturb*gen_uniform();
-                newst->vel[i] += vel_perturbation;
-            }
-        }
-        ///////////////////////////////////////////////////////////////////////
         
         for (int i = 0; i < dim; ++i)
         {
 	    	newst->momn[i] = newst->dens*newst->vel[i];
         }
 
-        newst->eos = bstate->eos;
-        newst->engy = EosEnergy(newst);
-	        //newst->engy = bstate->engy;
+	    newst->engy = bstate->engy;
 	    
         //TODO: Should vort/vort3d be non-zero for turbulent inlet bdry?
         newst->vort = 0.0;
@@ -1620,23 +1492,7 @@ static void promptForDirichletBdryState(
         {
             bstate_index(hs[i]) = bstate_index(hs[0]);
         }
-
-        ///////////////////////////////////////////////////////////////////////////////////
-        //TODO: TEMPORARY PROTOTYPING CODE
-        eqn_params->perturb_const_inlet_bdry = false;
-        if (CursorAfterStringOpt(infile,"Enter yes for inlet boundary perturbation:"))
-        {
-            char string[50];
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-            {
-                eqn_params->perturb_const_inlet_bdry = true;
-            }
-        }
-        ///////////////////////////////////////////////////////////////////////////////////
         break;
-	
     case 'f':			// Flow through state
 	case 'F':
 	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,

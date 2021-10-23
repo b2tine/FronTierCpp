@@ -57,11 +57,6 @@ bool AABB::isCollid(const AABB& ab)
         if (ab.lowerbound[i] > upperbound[i]) return false;
     }
     return true;
-    /*
-    return (lowerbound[0] <= ab.upperbound[0] && upperbound[0] >= ab.lowerbound[0]) && 
-           (lowerbound[1] <= ab.upperbound[1] && upperbound[1] >= ab.lowerbound[1]) && 
-           (lowerbound[2] <= ab.upperbound[2] && upperbound[2] >= ab.lowerbound[2]); 
-    */
 }
 
 void AABB::updateAABBInfo(double dt)
