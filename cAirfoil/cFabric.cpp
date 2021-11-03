@@ -608,3 +608,9 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 	}
 }	/* end appendGhostBuffer */
 
+
+//TODO: ADD
+//CFABRIC_CARTESIAN::setElasticStates() etc.
+//
+
+
