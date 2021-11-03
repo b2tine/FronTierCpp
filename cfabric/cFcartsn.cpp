@@ -1178,6 +1178,7 @@ void G_CARTESIAN::readInteriorStates(char* restart_state_name)
             fscanf(infile,"%lf",&mu[index]);    
             fscanf(infile,"%lf",&dens[index]);
             fscanf(infile,"%lf",&engy[index]);
+            st_tmp.mu = mu[index];
             st_tmp.dens = dens[index];
             st_tmp.engy = engy[index];
             for (l = 0; l < dim; ++l)
@@ -1201,6 +1202,7 @@ void G_CARTESIAN::readInteriorStates(char* restart_state_name)
             fscanf(infile,"%lf",&mu[index]);
             fscanf(infile,"%lf",&dens[index]);
             fscanf(infile,"%lf",&engy[index]);
+            st_tmp.mu = mu[index];
             st_tmp.dens = dens[index];
             st_tmp.engy = engy[index];
             for (l = 0; l < dim; ++l)
@@ -2940,6 +2942,7 @@ void G_CARTESIAN::copyMeshVst(
 		m_vst->dens[index] = m_vst_orig.dens[index];
 		m_vst->engy[index] = m_vst_orig.engy[index];
 		m_vst->pres[index] = m_vst_orig.pres[index];
+        m_vst->mu[index] = m_vst_orig.mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
@@ -2952,6 +2955,7 @@ void G_CARTESIAN::copyMeshVst(
 		m_vst->dens[index] = m_vst_orig.dens[index];
 		m_vst->engy[index] = m_vst_orig.engy[index];
 		m_vst->pres[index] = m_vst_orig.pres[index];
+        m_vst->mu[index] = m_vst_orig.mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
@@ -2965,6 +2969,7 @@ void G_CARTESIAN::copyMeshVst(
 		m_vst->dens[index] = m_vst_orig.dens[index];
 		m_vst->engy[index] = m_vst_orig.engy[index];
 		m_vst->pres[index] = m_vst_orig.pres[index];
+        m_vst->mu[index] = m_vst_orig.mu[index];
 		for (l = 0; l < dim; ++l)
 		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }

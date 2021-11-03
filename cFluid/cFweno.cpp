@@ -288,9 +288,9 @@ static double weno5_scal(double *f)
     	double alpha[3];
     	double omega[3]; // weights for stencils
     	double sum;
-    	double a[3][5] = {{1.0/3, -7.0/6, 11.0/6, 0, 0}, 
-			  {0, -1.0/6, 5.0/6, 1.0/3, 0}, 
-			  {0, 0, 1.0/3, 5.0/6, -1.0/6}}; 
+    	double a[3][5] = {{1.0/3.0, -7.0/6.0, 11.0/6.0, 0, 0}, 
+			  {0, -1.0/6.0, 5.0/6.0, 1.0/3.0, 0}, 
+			  {0, 0, 1.0/3.0, 5.0/6.0, -1.0/6.0}}; 
 		//*** coefficients for 2nd-order ENO interpolation stencil
     	double w[5]; //weight for every point
 	double flux = 0.0;
@@ -328,12 +328,12 @@ static void f2is(
 	double *f, 
 	double *s)
 {
-	s[0] = 13.0/12*sqr((f[0] - 2.0*f[1] + f[2])) +
+	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2])) +
                 0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
-        s[1] = 13.0/12*sqr((f[1] - 2.0*f[2] + f[3])) +
-                0.25*sqr((f[1] - f[3]));
-        s[2] = 13.0/12*sqr((f[2] - 2.0*f[3] + f[4])) +
-                0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
+    s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) +
+            0.25*sqr((f[1] - f[3]));
+    s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) +
+            0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
 }
 
 static void matmvec(
@@ -341,16 +341,14 @@ static void matmvec(
 	double L[5][5], 
 	std::vector<double> x)
 {
-    	int i, j;
-
-    	for(i = 0; i < 5; ++i)
-    	{
-	    b[i] = 0.0;
-	    for(j = 0; j < 5; ++j)
-	    {
-	    	b[i] += L[i][j] * x[j]; 
-	    }
-    	}
+    for (int i = 0; i < 5; ++i)
+    {
+        b[i] = 0.0;
+        for (int j = 0; j < 5; ++j)
+        {
+            b[i] += L[i][j] * x[j]; 
+        }
+    }
 }
 
 static void u2f(
@@ -359,11 +357,11 @@ static void u2f(
 {
 	double v = u[1]/u[0];
 
-    	f[0] = u[1];
-    	f[1] = v*u[1] + u[5];
-    	f[2] = v*u[2];
-    	f[3] = v*u[3];
-    	f[4] = v*(u[4] + u[5]);
+    f[0] = u[1];
+    f[1] = v*u[1] + u[5];
+    f[2] = v*u[2];
+    f[3] = v*u[3];
+    f[4] = v*(u[4] + u[5]);
 }
 
 //TODO: Not working correctly

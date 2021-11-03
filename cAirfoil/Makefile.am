@@ -1,7 +1,8 @@
 SUBDIRS = objs
 
 
-AM_CPPFLAGS = -I$(top_srcdir)/cFluid \
+AM_CPPFLAGS = -I$(top_srcdir)/cAirfoil \
+			  -I$(top_srcdir)/cFluid \
 			  @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
@@ -13,7 +14,16 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
 
-noinst_PROGRAMS = cFluid_test
+noinst_PROGRAMS = cairfoil \
+				  cFluid_test
+
+
+
+cairfoil_SOURCES = fabric_Cplus.cpp
+caifoil_LDADD = $(builddir)/objs/libcAirfoil.la
+
+
+
 
 
 cFluid_test_SOURCES = cFluid_test.cpp

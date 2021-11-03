@@ -471,7 +471,7 @@ extern void elastic_point_propagate(
 
 	    if (debugging("rigid_canopy"))
             dv[i] = 0.0;
-        else if (front->step > 5)
+        else if (front->step > 5) //TODO: Do we need this for compressible fluid solver?
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
             
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];

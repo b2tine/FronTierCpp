@@ -141,6 +141,9 @@ struct EQN_PARAMS
     //LES Turbulence
     bool use_eddy_viscosity {false};
 
+    boolean with_porosity;
+    double porosity;
+    PORO_SCHEME poro_scheme;
 
 	// Base front for comparison
 	boolean use_base_soln;
@@ -148,10 +151,6 @@ struct EQN_PARAMS
     int num_step;
     int *steps;
     F_BASIC_DATA *f_basic;
-
-    boolean with_porosity;
-    double porosity;
-    PORO_SCHEME poro_scheme;
 };
 
 struct SCHEME_PARAMS
@@ -180,6 +179,19 @@ struct VAR_BDRY_PARAMS
     double bdry_pres;           /* Boundary pressure */
     int number_pistons;         /* Number of pistons */
 	double jet_duration_time;   /* Time duration for the jet */
+};
+
+struct OPEN_PIPE_PARAMS
+{
+	int dir;
+	int side;
+	double center[MAXD];
+	double radius;
+	int in_pipe_bdry;
+	int out_pipe_bdry;
+	boolean in_flow_through;
+	boolean out_flow_through;
+	STATE state[2];
 };
 
 /*********************************************************************
@@ -225,19 +237,6 @@ struct RIEMANN_INPUT
 {
     RIEM_STATE left_state;
     RIEM_STATE right_state;
-};
-
-struct OPEN_PIPE_PARAMS
-{
-	int dir;
-	int side;
-	double center[MAXD];
-	double radius;
-	int in_pipe_bdry;
-	int out_pipe_bdry;
-	boolean in_flow_through;
-	boolean out_flow_through;
-	STATE state[2];
 };
 
 struct L_RECTANGLE
@@ -338,7 +337,7 @@ public:
     void freeBaseFront();
     void errFunction();
 
-    //cFbase.cpp
+    //cFbasic.cpp
     void applicationSetComponent();
     void applicationSetStates();
 
@@ -419,11 +418,6 @@ private:
 	void setAdvectionDt();
 	void advanceSolution();
 	
-    /*
-    void computeConvectiveFlux();
-        FSWEEP *cFlux;
-    */
-
 	/* Mesh memory management */
 	bool withinStencilLen(int*,int);
 	void allocMeshVst(SWEEP*);

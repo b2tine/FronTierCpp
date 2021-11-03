@@ -125,7 +125,10 @@ extern void initFabricModules(Front* front)
     static RG_PARAMS rgb_params;
     rgb_params.dim = FT_Dimension();
     front->extra3 = (POINTER)&rgb_params;
-	initRigidBodies(front);
+    
+	//initRigidBodies(front);
+	initRigidBody(front);
+    setRigidBodyMotionParams(front,&rgb_params);
     
     initFabricDefault(front);
 

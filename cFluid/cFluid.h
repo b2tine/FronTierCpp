@@ -6,10 +6,12 @@
  **********************************************************************/
 
 #include <FronTier.h>
+#include "state.h"
 #include "rigidbody.h"
 #include "cFvisc.h"
 
 #include <vector>
+#include <string>
 #include <list>
 #include <assert.h>
 
@@ -17,7 +19,7 @@
 #define         SOLID_COMP		0
 #define         GAS_COMP1		2
 #define         GAS_COMP2		3
-#define         MAX_COMP                10
+#define         MAX_COMP        10
 
 #define		gas_comp(comp)   (((comp) == GAS_COMP1 || 	\
 		comp == GAS_COMP2) ? YES : NO)
@@ -49,27 +51,6 @@ enum PROB_TYPE
     CHANNEL_FLOW
 };
 
-struct EOS_PARAMS 
-{
-    double  gamma;
-    double  pinf;
-    double  einf;
-};
-
-struct STATE 
-{
-	double dens;			/* density */
-	double momn[MAXD];		/* momentum density */
-	double vel[MAXD];		/* Velocity */
-        //double vel_old[MAXD];	/* Previous Time Step Velocity */
-	double vort;			/* Vorticity-2d */
-	double engy;			/* energy density */
-	double pres;			/* Pressure */
-    double mu;              /* viscosity */
-	EOS_PARAMS *eos;
-	int dim;
-};
-
 enum NUM_SCHEME 
 {
 	TVD_FIRST_ORDER		=	1,
@@ -93,6 +74,14 @@ enum SHOCK_PARAMETER
 	BEHIND_VELOCITY,
 	SHOCK_SPEED,
 	SHOCK_MACH_NUMBER
+};
+
+//TODO: Move to cAirfoil
+enum class PORO_SCHEME
+{
+    NORMAL_REFLECTION,
+    REFLECTION,
+    RIEMANN
 };
 
 struct EQN_PARAMS
@@ -138,7 +127,7 @@ struct EQN_PARAMS
     
 	double **vel;
 	double *vort;    /* Vorticity-2d */
-    double **vort3d; /* Vorticity-3d */
+    double **vorticity; /* Vorticity-3d */
 
 	double **mom;
 	double *dens;
@@ -156,6 +145,12 @@ struct EQN_PARAMS
     bool use_eddy_viscosity {false};
     bool perturb_const_inlet_bdry {false};
     
+/////////////////////////////    
+//TODO: Move to cAirfoil
+    boolean with_porosity;
+    double porosity;
+    PORO_SCHEME poro_scheme;
+//////////////////////////////
     
     //Base front for comparison
 	boolean use_base_soln;
@@ -212,6 +207,7 @@ struct OPEN_PIPE_PARAMS
 *	Definition and structures for Riemann solution.              *
 **********************************************************************/
 
+#define         NO_WAVE                 1
 #define         GAMMA_PLUS              2
 #define         GAMMA_MINUS             3
 #define         LF_SHOCK                4
@@ -268,18 +264,17 @@ enum VISITED_TYPE
 };
 */
 
-class L_RECTANGLE 
+//TODO: Move to cAirfoil
+//copied in from ../solver/solver.h for use with af_find_state_at_crossing()
+enum
 {
-public:
-	int m_index;			// rectangle index
-	int comp;			 
-	double m_coords[MAXD];	
-	int icoords[MAXD];
-
-	L_RECTANGLE();
-
-	void setCoords(double*,int);
-    std::vector<double> getCoords();
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
 };
 
 struct FIELD
@@ -290,7 +285,7 @@ struct FIELD
 	double *engy;
 	double *pres;
     double *vort;
-    double **vort3d;
+    double **vorticity;
     double *mu;
 };
 
@@ -310,15 +305,42 @@ struct FSWEEP
     double *engy_flux;      /* internal energy flux */
 };
 
+class L_RECTANGLE 
+{
+    //TODO: Should make many of these private
+public:
+	int comp {-1};
+	int m_index {-1};
+	double m_coords[MAXD];
+	int icoords[MAXD];
+
+public:
+
+	void setCoords(double* coords, int dim)
+    {
+        for (int i = 0; i < dim; ++i)
+            m_coords[i] = coords[i];
+    }
+
+    std::vector<double> getCoords()
+    {
+        return std::vector<double>(m_coords,m_coords+3);
+    }
+};
 
 class G_CARTESIAN
 {
 public:
 	
-    //G_CARTESIAN();
-	G_CARTESIAN(Front &front);
+    EQN_PARAMS* eqn_params;
+
+	G_CARTESIAN(Front* ft)
+        : front{ft}
+    {
+        //eqn_params = (EQN_PARAMS*)front->extra1;
+    }
 	
-    ~G_CARTESIAN() = default;
+    virtual ~G_CARTESIAN() = default;
 	
     int dim;
 	double m_dt;			// time increment
@@ -331,7 +353,11 @@ public:
 	void setInitialStates(); 	// setup initial state
 	void setProbParams(char*); 	// setup initial state
 	void initMesh(void);		// setup the cartesian grid
-	void readInteriorStates(char*);
+
+    int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
+            POINTER*,HYPER_SURF**,double*);
+
+    void readInteriorStates(char*);
 	void printFrontInteriorStates(char*);
 	void initMovieVariables();
 	void getVelocity(double*,double*);
@@ -343,7 +369,8 @@ public:
 	// main step function
 	void solve(double dt);		
 
-private:
+//private:
+protected:
 	
     Front *front;
 	
@@ -351,7 +378,7 @@ private:
 	RECT_GRID *top_grid;
 	double *array;		// for scatter states;
 	COMPONENT *top_comp;
-	EQN_PARAMS *eqn_params;
+	    //EQN_PARAMS *eqn_params;
 	FIELD field;
 	FIELD *base_field;
 	Front *base_front;
@@ -438,13 +465,34 @@ private:
 	/* Directional flux solver */
 	void resetFlux(FSWEEP*);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*,double);
-	void addFluxAlongGridLine(int,int*,double,SWEEP*,FSWEEP*);
-	void augmentOneDimBuffer(int,int);
-	void numericalFlux(POINTER,SWEEP*,FSWEEP*,int);
-	void appendStencilBuffer2d(SWEEP*,SWEEP*,int,int);
-	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);
-	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
 	
+    virtual void addFluxAlongGridLine(int,int*,double,SWEEP*,FSWEEP*);
+	
+    void augmentOneDimBuffer(int,int);
+	void numericalFlux(POINTER,SWEEP*,FSWEEP*,int);
+	
+    virtual void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
+
+	void appendStencilBuffer2d(SWEEP*,SWEEP*,int,int);//UNUSED
+	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);//UNUSED
+	
+	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,int,int,int);
+	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
+    
+    /*
+    void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);//TODO: Need to implement/copy from cfabric
+    
+    void setElasticStatesRFB(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                        int*,int,int,int,int,int);
+
+    void setElasticStatesRFB_normal(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
+    void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+    */
+
+
 	/* Viscous flux */
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
@@ -457,6 +505,13 @@ private:
     void setNeumannViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+    
+    /*
+    //TODO: Implement this
+    void setElasticViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
+            double* crx_coords, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+    */
 
     void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil2d* vsten);
@@ -531,10 +586,10 @@ private:
 
 	void getPressureJumpParameter(double *coords0, double *coords1, 
 			double &theta, double &jumpPressure, 
-			double &jumpDerivative);
+			double &jumpDerivative);//NO DEFINITION
 
 	// velocity field query
-	void getVelocityGradient(double *p,double *gradU,double *gradV);
+	void getVelocityGradient(double *p,double *gradU,double *gradV);//NO DEFINITION
 
 	// ----------------------------------------------------------
 	// 		utility functions
@@ -563,10 +618,6 @@ private:
 	int  getComponent(double *coords);	
 	void save(char *filename);
 
-	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,
-					int,int,int);
-	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,
-					int,int);
 
 	//GFM
 	void solve_exp_value();
@@ -583,20 +634,6 @@ private:
 };
 
 // cFsub.cpp
-extern double getStateDens(POINTER);
-extern double getStateEngy(POINTER);
-extern double getStateXmom(POINTER);
-extern double getStateYmom(POINTER);
-extern double getStateZmom(POINTER);
-extern double getStatePres(POINTER);
-extern double getStateMu(POINTER);
-extern double getStateVort(POINTER);
-extern double getStateXvel(POINTER);
-extern double getStateYvel(POINTER);
-extern double getStateZvel(POINTER);
-extern double getStateXvort(POINTER);
-extern double getStateYvort(POINTER);
-extern double getStateZvort(POINTER);
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
 extern void read_dirichlet_bdry_data(char*,Front*);
@@ -613,13 +650,17 @@ extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
 /*	rgbody.c functions */
-extern void init_moving_bodies(EQN_PARAMS,char*,Front*);
 extern void cfluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,double*);
 extern void record_moving_body_data(char*,Front*);
+//TODO: Move the above function declarations and definitions into rigidbody.h/.cpp
+
 extern void read_cFluid_params(char*,EQN_PARAMS*);
 extern void readFrontStates(Front*,char*);
+
 extern void reflectVectorThroughPlane(double*,double*,double*,int);
 extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,STATE*);
+
+// cFeos.cpp
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);
 extern double EosEnergy(STATE*);
@@ -631,7 +672,7 @@ extern void ConvertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
 extern void findGhostState(STATE,STATE,STATE*);
 
 /* Riemann solution functions */
-/* cFriem.cpp */
+// cFriem.cpp
 extern boolean RiemannSolution(RIEMANN_INPUT,RIEMANN_SOLN*);
 extern boolean RiemannSolnAtXi(RIEMANN_SOLN*,RIEM_STATE*,double);
 
@@ -639,6 +680,7 @@ extern boolean RiemannSolnAtXi(RIEMANN_SOLN*,RIEM_STATE*,double);
 extern	void TVD_flux(POINTER,SWEEP*,FSWEEP*,int);
 extern	void WENO_flux(POINTER,SWEEP*,FSWEEP*,int);
 
+//Unused?
 class EOS
 {
 public:
@@ -653,7 +695,7 @@ private:
 };
 
 
-//Ever used?
+//Unused?
 class COMPRESSIBLE_GAS_SOLVER
 {
 public: 

@@ -24,7 +24,7 @@ struct RG_PARAMS
 	POINTER vparams;
     MOTION_TYPE motion_type;
     bool is_fixed {false};
-    boolean no_slip {YES};
+    boolean no_slip {NO};
 };
 
 

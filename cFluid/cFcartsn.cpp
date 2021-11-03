@@ -42,36 +42,10 @@ static double (*getStateMom[MAXD])(Locstate) =
 
 static void printInputStencil(SWEEP,int);
 
-//----------------------------------------------------------------
-//		L_RECTANGLE
-//----------------------------------------------------------------
-
-L_RECTANGLE::L_RECTANGLE()
-    : m_index(-1), comp(-1)
-{}
-
-void L_RECTANGLE::setCoords(
-	double *coords,
-	int dim)
-{
-	for (int i = 0; i < dim; ++i)
-        m_coords[i] = coords[i];
-}
-
-std::vector<double> L_RECTANGLE::getCoords()
-{
-    return std::vector<double>(m_coords,m_coords+3);
-}
-
 //--------------------------------------------------------------------------
 // 		G_CARTESIAN
 //--------------------------------------------------------------------------
 
-//---------------------------------------------------------------
-//	initMesh
-// include the following parts
-// 1) setup cell_center
-//---------------------------------------------------------------
 void G_CARTESIAN::initMesh(void)
 {
 	int i,j,k, index;
@@ -827,10 +801,6 @@ void G_CARTESIAN::save(char *filename)
 	fclose(hfile);
 }
 
-G_CARTESIAN::G_CARTESIAN(Front &front):front(&front)
-{
-}
-
 void G_CARTESIAN::setDomain()
 {
 	static boolean first = YES;
@@ -898,7 +868,7 @@ void G_CARTESIAN::setDomain()
         }
         else if (dim == 3)
         {
-            FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vort3d,dim,size,sizeof(double));
+            FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vorticity,dim,size,sizeof(double));
         }
 	    
 	    field.mu = eqn_params->mu;
@@ -908,7 +878,7 @@ void G_CARTESIAN::setDomain()
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
         field.vort = eqn_params->vort;
-	    field.vort3d = eqn_params->vort3d;
+	    field.vorticity = eqn_params->vorticity;
 	}
 
     //GFM
@@ -1701,7 +1671,7 @@ void G_CARTESIAN::initMovieVariables()
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'Y' || string[0] == 'y')
-                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field.vort3d);
+                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field.vorticity);
         }
     }
 
@@ -1726,7 +1696,7 @@ void G_CARTESIAN::computeVorticity()
         }
     case 3:
         {
-	        double** vort3d = eqn_params->vort3d;
+	        double** vorticity = eqn_params->vorticity;
             for (int k = imin[2]; k <= imax[2]; ++k)
             for (int j = imin[1]; j <= imax[1]; ++j)
             for (int i = imin[0]; i <= imax[0]; ++i)
@@ -1735,13 +1705,13 @@ void G_CARTESIAN::computeVorticity()
                 if (!gas_comp(top_comp[index]))
                 {
                     for (int l = 0; l < dim; ++l)
-                        vort3d[l][index] = 0.0;
+                        vorticity[l][index] = 0.0;
                     continue;
                 }
                 //TODO: Write boundary aware implementation for 3d
-                vort3d[0][index] = getVorticityX(i,j,k);
-                vort3d[1][index] = getVorticityY(i,j,k);
-                vort3d[2][index] = getVorticityZ(i,j,k);
+                vorticity[0][index] = getVorticityX(i,j,k);
+                vorticity[1][index] = getVorticityY(i,j,k);
+                vorticity[2][index] = getVorticityZ(i,j,k);
             }
             break;
         }
@@ -1931,7 +1901,7 @@ void G_CARTESIAN::copyMeshStates()
 	double *engy = eqn_params->engy;
 	double *mu = eqn_params->mu;
 	double *vort = eqn_params->vort;
-	double **vort3d = eqn_params->vort3d;
+	double **vorticity = eqn_params->vorticity;
 	int symmetry[MAXD];
 
 	switch (dim)
@@ -1995,7 +1965,7 @@ void G_CARTESIAN::copyMeshStates()
 	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
         for (l = 0; l < dim; ++l)
 	    {
-            FT_ParallelExchGridArrayBuffer(vort3d[l],front,symmetry);
+            FT_ParallelExchGridArrayBuffer(vorticity[l],front,symmetry);
         }
 
         for (l = 0; l < dim; ++l)
@@ -3335,7 +3305,8 @@ void G_CARTESIAN::copyFromMeshVst(
 	}
 }	/* end copyFromMeshVst */
 
-//TODO: need to apped mu?
+
+//UNUSED
 void G_CARTESIAN::appendStencilBuffer2d(
 	SWEEP *vst,
 	SWEEP *m_vst,
@@ -3609,7 +3580,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 
 }	/* end appendStencilBuffer2d */
 
-//TODO: need to apped mu?
+//UNUSED
 void G_CARTESIAN::appendStencilBuffer3d(
 	SWEEP *vst,
 	SWEEP *m_vst,

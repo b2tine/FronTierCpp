@@ -66,72 +66,6 @@ static void cF_variableBoundaryState3d(double*,HYPER_SURF*,Front*,
 static void pipe_end_func(Front*,POINTER,int*,COMPONENT,
 				int,int,int*,Locstate);
 
-extern double getStateDens(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->dens;
-}	/* end getStateDens */
-
-extern double getStateEngy(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->engy;
-}	/* end getStateEngy */
-
-extern double getStatePres(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->pres;
-}	/* end getStatePres */
-
-extern double getStateMu(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->mu;
-}	/* end getStateMu */
-
-extern double getStateVort(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->vort;
-}	/* end getStateVort */
-
-extern double getStateXmom(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->momn[0];
-}	/* end getStateXmom */
-
-extern double getStateYmom(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->momn[1];
-}	/* end getStateYmom */
-
-extern double getStateZmom(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->momn[2];
-}	/* end getStateZmom */
-
-extern double getStateXvel(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->vel[0];
-}	/* end getStateXvel */
-
-extern double getStateYvel(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->vel[1];
-}	/* end getStateYvel */
-
-extern double getStateZvel(POINTER state)
-{
-	STATE *fstate = (STATE*)state;
-	return fstate->vel[2];
-}	/* end getStateZvel */
-
 extern void read_dirichlet_bdry_data(
 	char *inname,
 	Front *front)
@@ -1168,7 +1102,7 @@ static void dirichlet_point_propagate(
 
 	    newst->engy = bstate->engy;
 	    
-        //TODO: Should vort/vort3d be non-zero for turbulent inlet bdry?
+        //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
         newst->vort = 0.0;
 
         set_state_max_speed(front,newst,Coords(oldp));
@@ -1495,8 +1429,10 @@ static void promptForDirichletBdryState(
         break;
     case 'f':			// Flow through state
 	case 'F':
+	    /*FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
+			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);*/
 	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);
+			"cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
 	    for (i = 1; i < nhs; ++i)
         {
             bstate_index(hs[i]) = bstate_index(hs[0]);

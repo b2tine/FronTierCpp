@@ -584,9 +584,9 @@ static  void neumann_point_propagate(
 
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
+        Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
 	    newst->vel[i] = vel[i];
-            FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
 	
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
@@ -627,7 +627,7 @@ static  void dirichlet_point_propagate(
     if (af_params->no_fluid == YES) return;
 
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        int i, dim = front->rect_grid->dim;
+    int dim = front->rect_grid->dim;
 	STATE *sl,*sr,*newst = NULL;
 	STATE *bstate;
 	FLOW_THROUGH_PARAMS ft_params;
@@ -659,11 +659,13 @@ static  void dirichlet_point_propagate(
 	    bstate = (STATE*)boundary_state(oldhs);
 	    newst->dens = bstate->dens;
 	    newst->engy = bstate->engy;
-            for (i = 0; i < dim; ++i)
-	    	newst->vel[i] = bstate->vel[i];
-            newst->pres = bstate->pres;
-            newst->eos = bstate->eos;
-            newst->vort = 0.0;
+        for (int i = 0; i < dim; ++i)
+        {
+            newst->vel[i] = bstate->vel[i];
+        }   
+        newst->pres = bstate->pres;
+        newst->eos = bstate->eos;
+        newst->vort = 0.0;
 	    set_state_max_speed(front,newst,Coords(oldp));
 
 	    if (debugging("dirichlet_bdry"))

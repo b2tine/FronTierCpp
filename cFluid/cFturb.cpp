@@ -325,20 +325,9 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     return mu_t;
 }   /* end computeEddyViscosityVremanModel_BdryAware */
 
-//TODO: ADAPT FOR USE WITH G_CARTESIAN
-//TODO: Implement boundary aware computeVelocityGradient(), which includes
-//      setting slip velocity etc.
-//      Will likely be a little more complicated than iFluid version, potentially
-//      requiring the state velocity and momentum values to be set in accordance with
-//      the computed slip velocity.... 
 std::vector<std::vector<double>> 
 G_CARTESIAN::computeVelocityGradient(int *icoords)
 {
-    ///////////////////////////////////////////////////////////////////////////////
-        //printf("\nERROR computeVelocityGradient(): function not implemented yet\n");
-        //LOC(); clean_up(EXIT_FAILURE);
-    ///////////////////////////////////////////////////////////////////////////////
-
     std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
 
     int index = d_index(icoords,top_gmax,dim);
@@ -754,7 +743,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     
     /*
-    //store data to avoid recomputing values in the fluid solver
+    //store data to avoid recomputing values in the fluid solver -- see iFluid handling of this
     int fid = face_index(idir,nb);
     for (int i = 0; i < dim; ++i)
     {
