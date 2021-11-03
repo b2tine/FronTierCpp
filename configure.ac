@@ -394,20 +394,22 @@ AM_CONDITIONAL([CGAL_ARMA_OPT],
                [test $with_cgal = yes && test $with_arma = yes])
 
 AM_COND_IF([CGAL_ARMA_OPT],
-           [AC_CONFIG_FILES([fabric/Makefile
+           [AC_CONFIG_FILES([BVH/Makefile
+                             BVH/objs/Makefile
+                             BVH/tests/Makefile
+                             Collision/Makefile
+                             Collision/objs/Makefile
+                             Collision/tests/Makefile
+                             fabric/Makefile
                              fabric/objs/Makefile
                              cfabric/Makefile
-                             cfabric/objs/Makefile])])
+                             cfabric/objs/Makefile
+                             cAirfoil/Makefile
+                             cAirfoil/objs/Makefile])])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],
-                       [AC_CONFIG_FILES([BVH/Makefile
-                                         BVH/objs/Makefile
-                                         BVH/tests/Makefile
-                                         Collision/Makefile
-                                         Collision/objs/Makefile
-                                         Collision/tests/Makefile
-                                         airfoil/Makefile
+                       [AC_CONFIG_FILES([airfoil/Makefile
                                          airfoil/objs/Makefile
                                          airfoil/tests/Makefile
                                          parachute/Makefile])])])
