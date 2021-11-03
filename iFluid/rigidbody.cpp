@@ -779,10 +779,6 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        //TODO: should be YES by default
-        //      NOTE: currently not being used. Still prototyping
-        //
-        //      "Enter yes to use slip wall boundary condition:"
         rgb_params->no_slip = NO;
         if (CursorAfterStringOpt(infile,
             "Type yes to use no-slip boundary condition:"))

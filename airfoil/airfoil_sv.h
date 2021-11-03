@@ -13,7 +13,7 @@ struct SPRING_VERTEX
 	int ix;
     int num_nb;
     double m;           //mass
-    double lambda;      //friction/damping coefficient
+    double lambda;      //damping coefficient
     double **x_nb;
     double **v_nb;
 	int *ix_nb;
