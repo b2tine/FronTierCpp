@@ -452,9 +452,9 @@ protected:
 	
     virtual void addFluxAlongGridLine(int,int*,double,SWEEP*,FSWEEP*);
 	
-    void augmentOneDimBuffer(int,int);
+    /* Advective flux */
 	void numericalFlux(POINTER,SWEEP*,FSWEEP*,int);
-	
+    
     virtual void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
 
 	void appendStencilBuffer2d(SWEEP*,SWEEP*,int,int);//UNUSED
@@ -467,7 +467,8 @@ protected:
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
     void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
-    void setViscousGhostState(int*, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst);
+    
+    virtual void setViscousGhostState(int* icoords, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst);
     
     void setDirichletViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
@@ -477,7 +478,6 @@ protected:
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
     
     /*
-    //TODO: Implement this
     virtual void setElasticViscousGhostState(int* icoords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);

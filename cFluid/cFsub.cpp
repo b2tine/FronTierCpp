@@ -1028,7 +1028,6 @@ extern void cFluid_point_propagate(
         case MOVABLE_BODY_BOUNDARY:
             return rgbody_point_propagate(front,wave,oldp,newp,
                     oldhse,oldhs,dt,V);
-        case ELASTIC_BOUNDARY://TODO: correct handling for ELASTIC_BOUNDARY???
         case NEUMANN_BOUNDARY:
             return neumann_point_propagate(front,wave,oldp,newp,
                     oldhse,oldhs,dt,V);

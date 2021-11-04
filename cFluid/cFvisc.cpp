@@ -146,6 +146,7 @@ void G_CARTESIAN::setViscousGhostState(
     int ghost_index = d_index(vs->icoords,top_gmax,dim);
     auto ghost_coords = cell_center[ghost_index].getCoords();
     
+    //TODO: Figure out which is the correct boundary enum
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
@@ -158,7 +159,7 @@ void G_CARTESIAN::setViscousGhostState(
     
     if (!nip_found)
     {
-        printf("setViscousGhostState() ERROR: "
+        printf("ERROR G_CARTESIAN::setViscousGhostState(): "
                 "can't find nearest interface point\n");
         LOC(); clean_up(EXIT_FAILURE);
     }
@@ -177,12 +178,6 @@ void G_CARTESIAN::setViscousGhostState(
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
         }
-        /*case ELASTIC_BOUNDARY:
-        {
-            //TODO: IMPLEMENTATION
-            //setElasticViscousGhostState(vs,comp,intrp_coeffs,hse,hs,state);
-            break;
-        }*/
         default:
         {
             printf("\n\nsetViscousGhostState() ERROR: unknown boundary type\n\n");
@@ -378,7 +373,13 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     {
         for (int j = 0; j < dim; ++j)
         {
+            //TODO: Is this correct?
             vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
+            
+            //What about this?
+            //
+            //  vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
+            //  vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
         }
         return;
     }

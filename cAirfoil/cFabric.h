@@ -24,6 +24,8 @@ protected:
 
     void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int) override;
 
+    void setViscousGhostState(int* icoords, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst) override;
+
 private:
 
     void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
@@ -38,12 +40,10 @@ private:
     void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
-    /*
     //TODO: Implement this
     void setElasticViscousGhostState(int* icoords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
-            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs) override;
-    */
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
 };
 
 

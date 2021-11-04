@@ -3935,9 +3935,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 	}
 }	/* end addMeshFluxToVst */
 
-//TODO: Write new version of appendGhostBuffer() to include ELASTIC_BOUNDARY
-//      like in cfabric directory version. Also write setElasticStates() that
-//      gets called (copy from cfabric directory as well).
 void G_CARTESIAN::appendGhostBuffer(
 	SWEEP *vst,
 	SWEEP *m_vst,

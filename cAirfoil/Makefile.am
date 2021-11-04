@@ -31,7 +31,8 @@ cFluid_test_LDADD = $(builddir)/objs/libcAirfoil.la
 
 
 tagsfile:
-	ctags *.h *.cpp \
+	ctags \
+		$(srcdir)/*.h $(srcdir)/*.cpp \
 		$(top_srcdir)/cFluid/*.h $(top_srcdir)/cFluid/*.cpp \
 		$(top_srcdir)/CGAL_Interface/*.h $(top_srcdir)/CGAL_Interface/*.cpp \
 		$(top_srcdir)/include/*/*.h $(top_srcdir)/src/*/*.c
