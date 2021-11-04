@@ -36,7 +36,7 @@ struct RG_PARAMS
     bool is_fixed {false};
         //RIGID_BODY_SHAPE;
 
-    boolean no_slip {YES};//TODO: should be NO by default?
+    boolean no_slip {NO};
 };
 
 
